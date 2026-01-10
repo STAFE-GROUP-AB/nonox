@@ -37,4 +37,60 @@ class Company extends Model
             'fiscal_year_end' => 'date',
         ];
     }
+
+    /**
+     * Get all parties (customers and suppliers) for this company.
+     */
+    public function parties(): HasMany
+    {
+        return $this->hasMany(Party::class);
+    }
+
+    /**
+     * Get all items for this company.
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(Item::class);
+    }
+
+    /**
+     * Get all accounts for this company.
+     */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    /**
+     * Get all quotes for this company.
+     */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
+    /**
+     * Get all orders for this company.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get all invoices for this company.
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * Get all vouchers for this company.
+     */
+    public function vouchers(): HasMany
+    {
+        return $this->hasMany(Voucher::class);
+    }
 }

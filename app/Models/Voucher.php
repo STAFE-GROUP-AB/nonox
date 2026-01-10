@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\VoucherValidationService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -22,7 +23,7 @@ class Voucher extends Model
     {
         return [
             'date' => 'date',
-            'lines' => 'array',
+            'lines' => 'array', // JSON används medvetet för flexibilitet i verifikationsrader
             'immutable' => 'boolean',
         ];
     }
@@ -34,17 +35,11 @@ class Voucher extends Model
 
     /**
      * Validate that debit equals credit (double-entry bookkeeping).
+     * Delegates to VoucherValidationService for reusability.
      */
     public function validateDoubleEntry(): bool
     {
-        $debitSum = 0;
-        $creditSum = 0;
-
-        foreach ($this->lines as $line) {
-            $debitSum += $line['debit'] ?? 0;
-            $creditSum += $line['credit'] ?? 0;
-        }
-
-        return round($debitSum, 2) === round($creditSum, 2);
+        $service = new VoucherValidationService();
+        return $service->validateDoubleEntry($this->lines ?? []);
     }
 }

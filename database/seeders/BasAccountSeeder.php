@@ -14,11 +14,18 @@ class BasAccountSeeder extends Seeder
      */
     public function run(): void
     {
-        // Hämta första företaget, eller skapa ett test-företag om inget finns
+        // Hämta första företaget
         $company = Company::first();
         
         if (!$company) {
-            return; // Ingen company finns, skippa seeding
+            // Skapa ett standard-företag för utveckling om inget finns
+            $company = Company::create([
+                'org_number' => '000000-0000',
+                'name' => 'Standard Företag AB',
+                'fiscal_year_start' => now()->startOfYear(),
+                'fiscal_year_end' => now()->endOfYear(),
+                'base_currency' => 'SEK',
+            ]);
         }
 
         $accounts = [
