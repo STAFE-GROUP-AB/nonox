@@ -1,0 +1,103 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Accounting;
+
+use App\Actions\Accounting\CarryForwardBalances;
+use App\Actions\Accounting\ChangeFirstFiscalYear;
+use App\Actions\Accounting\CreateNextFiscalYear;
+use App\Livewire\Concerns\ShowsToasts;
+use App\Models\Company;
+use App\Models\FiscalYear;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\View\View;
+use Livewire\Component;
+
+class FiscalYears extends Component
+{
+    use ShowsToasts;
+
+    public ?int $editingId = null;
+
+    public string $startDate = '';
+
+    public string $endDate = '';
+
+    public function createNext(CreateNextFiscalYear $createNextFiscalYear): void
+    {
+        $fiscalYear = $createNextFiscalYear($this->user(), $this->company());
+
+        $this->toast(__('Räkenskapsåret :label är skapat.', ['label' => $fiscalYear->label()]));
+    }
+
+    public function carryForward(int $fiscalYearId, CarryForwardBalances $carryForward): void
+    {
+        $fiscalYear = FiscalYear::findOrFail($fiscalYearId);
+        $next = $carryForward($this->user(), $fiscalYear);
+
+        $this->toast(__('Utgående balanser för :from är ingående balanser för :to.', ['from' => $fiscalYear->label(), 'to' => $next->label()]));
+    }
+
+    public function startEditing(int $fiscalYearId): void
+    {
+        $fiscalYear = FiscalYear::findOrFail($fiscalYearId);
+
+        $this->editingId = $fiscalYear->id;
+        $this->startDate = $fiscalYear->start_date->toDateString();
+        $this->endDate = $fiscalYear->end_date->toDateString();
+        $this->resetErrorBag();
+    }
+
+    public function cancelEditing(): void
+    {
+        $this->reset('editingId', 'startDate', 'endDate');
+    }
+
+    public function save(ChangeFirstFiscalYear $changeFirstFiscalYear): void
+    {
+        $fiscalYear = FiscalYear::findOrFail($this->editingId);
+
+        $changeFirstFiscalYear($this->user(), $fiscalYear, $this->startDate, $this->endDate);
+
+        $this->reset('editingId', 'startDate', 'endDate');
+        $this->toast(__('Räkenskapsåret är ändrat till :start – :end.', [
+            'start' => $fiscalYear->start_date->toDateString(),
+            'end' => $fiscalYear->end_date->toDateString(),
+        ]));
+    }
+
+    public function render(): View
+    {
+        $fiscalYears = FiscalYear::query()->orderByDesc('start_date')->get();
+
+        return view('livewire.accounting.fiscal-years', [
+            'fiscalYears' => $fiscalYears,
+            'canManage' => $this->user()->can('create', [FiscalYear::class, $this->company()]),
+            'canExport' => $this->user()->hasTeamPermission($this->company(), 'export:sie'),
+            'onlyYearId' => $fiscalYears->count() === 1 ? $fiscalYears->first()?->id : null,
+            'nextLabels' => $fiscalYears->mapWithKeys(fn (FiscalYear $year): array => [$year->id => (new FiscalYear([
+                'start_date' => $year->end_date->addDay(),
+                'end_date' => $year->end_date->addYear(),
+            ]))->label()])->all(),
+            'today' => now()->toImmutable()->startOfDay(),
+        ]);
+    }
+
+    private function user(): User
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user;
+    }
+
+    private function company(): Company
+    {
+        /** @var Company $company */
+        $company = $this->user()->currentCompany();
+
+        return $company;
+    }
+}

@@ -1,7 +1,5 @@
 import './bootstrap';
+import './voucher-editor';
 
-import Alpine from 'alpinejs';
-
-window.Alpine = Alpine;
-
-Alpine.start();
+// Alpine is provided and started by Livewire 3. Starting a second copy here
+// would give two Alpine instances on the same page.

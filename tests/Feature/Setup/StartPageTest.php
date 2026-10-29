@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\User;
+use App\Support\SetupStatus;
+
+function pretendEnvironment(string $environment): void
+{
+    app()->detectEnvironment(fn () => $environment);
+}
+
+it('opens the first-run guide on a new local installation', function () {
+    pretendEnvironment('local');
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Vi börjar med ditt företag')
+        ->assertSee('Steg 1 av 3');
+});
+
+it('never offers the first-run guide outside a local installation', function (string $environment) {
+    pretendEnvironment($environment);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Systemet är inte färdiginstallerat')
+        ->assertDontSee('Steg 1 av 3');
+})->with(['production', 'staging', 'testing']);
+
+it('shows the sign-in page once there is a user', function () {
+    pretendEnvironment('local');
+    User::factory()->withCompany()->create();
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Logga in')
+        ->assertSee(route('login'))
+        ->assertDontSee('Steg 1 av 3');
+});
+
+it('sends signed-in users to the overview', function () {
+    $this->actingAs(User::factory()->withCompany()->create())
+        ->get('/')
+        ->assertRedirect(route('dashboard'));
+});
+
+it('explains a missing piece in plain Swedish with one command', function () {
+    pretendEnvironment('local');
+
+    $this->mock(SetupStatus::class)->shouldReceive('problem')->andReturn([
+        'title' => 'Databasen behöver skapas',
+        'explanation' => 'Öppna Terminalen och klistra in raden nedan.',
+        'command' => 'psql -c "CREATE DATABASE nonox;"',
+        'details' => 'SQLSTATE[08006] database "nonox" does not exist',
+    ]);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Databasen behöver skapas')
+        ->assertSee('CREATE DATABASE nonox;', escape: false)
+        ->assertSee('Visa tekniska detaljer');
+});
+
+it('hides technical details from the public in production', function () {
+    pretendEnvironment('production');
+
+    $this->mock(SetupStatus::class)->shouldReceive('problem')->andReturn([
+        'title' => 'Databasen behöver skapas',
+        'explanation' => 'Öppna Terminalen.',
+        'command' => 'psql -h 10.0.0.5 -U secretuser',
+        'details' => 'SQLSTATE[08006] host 10.0.0.5',
+    ]);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Systemet är inte igång just nu')
+        ->assertDontSee('10.0.0.5')
+        ->assertDontSee('secretuser');
+});

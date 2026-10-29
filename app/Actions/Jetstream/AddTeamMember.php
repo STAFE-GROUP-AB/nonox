@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Jetstream;
 
-use App\Models\Team;
+use App\Models\Company;
 use App\Models\User;
 use Closure;
 use Illuminate\Support\Facades\Gate;
@@ -18,7 +20,7 @@ class AddTeamMember implements AddsTeamMembers
     /**
      * Add a new team member to the given team.
      */
-    public function add(User $user, Team $team, string $email, ?string $role = null): void
+    public function add(User $user, Company $team, string $email, ?string $role = null): void
     {
         Gate::forUser($user)->authorize('addTeamMember', $team);
 
@@ -38,7 +40,7 @@ class AddTeamMember implements AddsTeamMembers
     /**
      * Validate the add member operation.
      */
-    protected function validate(Team $team, string $email, ?string $role): void
+    protected function validate(Company $team, string $email, ?string $role): void
     {
         Validator::make([
             'email' => $email,
@@ -53,7 +55,7 @@ class AddTeamMember implements AddsTeamMembers
     /**
      * Get the validation rules for adding a team member.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
+     * @return array<string, array<int, mixed>>
      */
     protected function rules(): array
     {
@@ -68,7 +70,7 @@ class AddTeamMember implements AddsTeamMembers
     /**
      * Ensure that the user is not already on the team.
      */
-    protected function ensureUserIsNotAlreadyOnTeam(Team $team, string $email): Closure
+    protected function ensureUserIsNotAlreadyOnTeam(Company $team, string $email): Closure
     {
         return function ($validator) use ($team, $email) {
             $validator->errors()->addIf(

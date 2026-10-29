@@ -1,0 +1,260 @@
+#FLAGGA 0
+#KSUMMA
+#FORMAT PC8
+#SIETYP 4
+#PROGRAM "NONOX Ekonomisystem" 0.1.0
+#GEN 20261029 "Anna Andersson"
+#ORGNR 556334-3689
+#FNAMN "Exempelbolaget i Malmî AB"
+#ADRESS "" "Storgatan 1" "211 20 Malmî" "040-123 45"
+#FTYP AB
+#RAR 0 20260101 20261231
+#RAR -1 20250101 20251231
+#KPTYP BAS2026
+#VALUTA SEK
+#KONTO 1210 "Maskiner och andra tekniska anlÑggningar"
+#KONTO 1219 "Ackumulerade avskrivningar pÜ maskiner och andra tekniska anlÑggningar"
+#KONTO 1220 "Inventarier och verktyg"
+#KONTO 1229 "Ackumulerade avskrivningar pÜ inventarier och verktyg"
+#KONTO 1250 "Datorer"
+#KONTO 1259 "Ackumulerade avskrivningar pÜ datorer"
+#KONTO 1310 "Andelar i koncernfîretag"
+#KONTO 1350 "Andelar och vÑrdepapper i andra fîretag"
+#KONTO 1380 "Andra lÜngfristiga fordringar"
+#KONTO 1460 "Lager av handelsvaror"
+#KONTO 1510 "Kundfordringar"
+#KONTO 1610 "Kortfristiga fordringar hos anstÑllda"
+#KONTO 1630 "AvrÑkning fîr skatter och avgifter (skattekonto)"
+#KONTO 1650 "Momsfordran"
+#KONTO 1680 "Andra kortfristiga fordringar"
+#KONTO 1710 "Fîrutbetalda hyreskostnader"
+#KONTO 1790 "ôvriga fîrutbetalda kostnader och upplupna intÑkter"
+#KONTO 1910 "Kassa"
+#KONTO 1920 "PlusGiro"
+#KONTO 1930 "Fîretagskonto/checkkonto/affÑrskonto"
+#KONTO 1940 "ôvriga bankkonton"
+#KONTO 2081 "Aktiekapital"
+#KONTO 2086 "Reservfond"
+#KONTO 2091 "Balanserad vinst eller fîrlust"
+#KONTO 2098 "Vinst eller fîrlust frÜn fîregÜende Ür"
+#KONTO 2099 "èrets resultat"
+#KONTO 2150 "Ackumulerade îveravskrivningar"
+#KONTO 2350 "Andra lÜngfristiga skulder till kreditinstitut"
+#KONTO 2393 "LÜn frÜn nÑrstÜende personer, lÜngfristig del"
+#KONTO 2440 "Leverantîrsskulder"
+#KONTO 2510 "Skatteskulder"
+#KONTO 2611 "UtgÜende moms pÜ fîrsÑljning inom Sverige, 25 %"
+#KONTO 2614 "UtgÜende moms omvÑnd skattskyldighet, 25 %"
+#KONTO 2615 "UtgÜende moms import av varor, 25 %"
+#KONTO 2621 "UtgÜende moms pÜ fîrsÑljning inom Sverige, 12 %"
+#KONTO 2624 "UtgÜende moms omvÑnd skattskyldighet, 12 %"
+#KONTO 2631 "UtgÜende moms pÜ fîrsÑljning inom Sverige, 6 %"
+#KONTO 2634 "UtgÜende moms omvÑnd skattskyldighet, 6 %"
+#KONTO 2640 "IngÜende moms"
+#KONTO 2641 "Debiterad ingÜende moms"
+#KONTO 2645 "BerÑknad ingÜende moms pÜ fîrvÑrv frÜn utlandet"
+#KONTO 2650 "Redovisningskonto fîr moms"
+#KONTO 2710 "Personalskatt"
+#KONTO 2731 "AvrÑkning lagstadgade sociala avgifter"
+#KONTO 2890 "ôvriga kortfristiga skulder"
+#KONTO 2893 "Skulder till nÑrstÜende personer, kortfristig del"
+#KONTO 2910 "Upplupna lîner"
+#KONTO 2920 "Upplupna semesterlîner"
+#KONTO 2940 "Upplupna lagstadgade sociala och andra avgifter"
+#KONTO 2990 "ôvriga upplupna kostnader och fîrutbetalda intÑkter"
+#KONTO 3001 "FîrsÑljning inom Sverige, 25 % moms"
+#KONTO 3002 "FîrsÑljning inom Sverige, 12 % moms"
+#KONTO 3003 "FîrsÑljning inom Sverige, 6 % moms"
+#KONTO 3004 "FîrsÑljning inom Sverige, momsfri"
+#KONTO 3105 "FîrsÑljning varor till land utanfîr EU"
+#KONTO 3305 "FîrsÑljning tjÑnster till land utanfîr EU"
+#KONTO 3308 "FîrsÑljning tjÑnster till annat EU-land"
+#KONTO 3740 "ôres- och kronutjÑmning"
+#KONTO 3960 "Valutakursvinster pÜ fordringar och skulder av rîrelsekaraktÑr"
+#KONTO 3990 "ôvriga ersÑttningar och intÑkter"
+#KONTO 4010 "Inkîp material och varor"
+#KONTO 5010 "Lokalhyra"
+#KONTO 5060 "StÑdning och renhÜllning"
+#KONTO 5410 "Fîrbrukningsinventarier"
+#KONTO 5420 "Programvaror"
+#KONTO 5460 "Fîrbrukningsmaterial"
+#KONTO 5611 "Drivmedel fîr personbilar"
+#KONTO 5800 "Resekostnader"
+#KONTO 5810 "Biljetter"
+#KONTO 5831 "Kost och logi i Sverige"
+#KONTO 5910 "Annonsering"
+#KONTO 6071 "Representation, avdragsgill"
+#KONTO 6072 "Representation, ej avdragsgill"
+#KONTO 6110 "Kontorsmateriel"
+#KONTO 6211 "Fast telefoni"
+#KONTO 6212 "Mobiltelefon"
+#KONTO 6230 "Datakommunikation"
+#KONTO 6250 "Postbefordran"
+#KONTO 6310 "FîretagsfîrsÑkringar"
+#KONTO 6530 "RedovisningstjÑnster"
+#KONTO 6540 "IT-tjÑnster"
+#KONTO 6550 "Konsultarvoden"
+#KONTO 6570 "Bankkostnader"
+#KONTO 6970 "Tidningar, tidskrifter och facklitteratur"
+#KONTO 6981 "Fîreningsavgifter, avdragsgilla"
+#KONTO 6982 "Fîreningsavgifter, ej avdragsgilla"
+#KONTO 6991 "ôvriga externa kostnader, avdragsgilla"
+#KONTO 6992 "ôvriga externa kostnader, ej avdragsgilla"
+#KONTO 7010 "Lîner till kollektivanstÑllda"
+#KONTO 7210 "Lîner till tjÑnstemÑn"
+#KONTO 7220 "Lîner till fîretagsledare"
+#KONTO 7510 "Arbetsgivaravgifter"
+#KONTO 7690 "ôvriga personalkostnader"
+#KONTO 7832 "Avskrivningar pÜ inventarier och verktyg"
+#KONTO 7834 "Avskrivningar pÜ bilar och andra transportmedel"
+#KONTO 7960 "Valutakursfîrluster pÜ fordringar och skulder av rîrelsekaraktÑr"
+#KONTO 8010 "Utdelning pÜ andelar i koncernfîretag"
+#KONTO 8210 "Utdelningar pÜ andelar i andra fîretag"
+#KONTO 8220 "Resultat vid fîrsÑljning av vÑrdepapper i och lÜngfristiga fordringar hos andra fîretag"
+#KONTO 8310 "RÑnteintÑkter frÜn omsÑttningstillgÜngar"
+#KONTO 8314 "Skattefria rÑnteintÑkter"
+#KONTO 8410 "RÑntekostnader fîr lÜngfristiga skulder"
+#KONTO 8422 "DrîjsmÜlsrÑntor fîr leverantîrsskulder"
+#KONTO 8423 "RÑntekostnader fîr skatter och avgifter"
+#KONTO 8811 "AvsÑttning till periodiseringsfond"
+#KONTO 8819 "èterfîring frÜn periodiseringsfond"
+#KONTO 8910 "Skatt som belastar Ürets resultat"
+#KONTO 8999 "èrets resultat"
+#KTYP 1210 T
+#KTYP 1219 T
+#KTYP 1220 T
+#KTYP 1229 T
+#KTYP 1250 T
+#KTYP 1259 T
+#KTYP 1310 T
+#KTYP 1350 T
+#KTYP 1380 T
+#KTYP 1460 T
+#KTYP 1510 T
+#KTYP 1610 T
+#KTYP 1630 T
+#KTYP 1650 T
+#KTYP 1680 T
+#KTYP 1710 T
+#KTYP 1790 T
+#KTYP 1910 T
+#KTYP 1920 T
+#KTYP 1930 T
+#KTYP 1940 T
+#KTYP 2081 S
+#KTYP 2086 S
+#KTYP 2091 S
+#KTYP 2098 S
+#KTYP 2099 S
+#KTYP 2150 S
+#KTYP 2350 S
+#KTYP 2393 S
+#KTYP 2440 S
+#KTYP 2510 S
+#KTYP 2611 S
+#KTYP 2614 S
+#KTYP 2615 S
+#KTYP 2621 S
+#KTYP 2624 S
+#KTYP 2631 S
+#KTYP 2634 S
+#KTYP 2640 S
+#KTYP 2641 S
+#KTYP 2645 S
+#KTYP 2650 S
+#KTYP 2710 S
+#KTYP 2731 S
+#KTYP 2890 S
+#KTYP 2893 S
+#KTYP 2910 S
+#KTYP 2920 S
+#KTYP 2940 S
+#KTYP 2990 S
+#KTYP 3001 I
+#KTYP 3002 I
+#KTYP 3003 I
+#KTYP 3004 I
+#KTYP 3105 I
+#KTYP 3305 I
+#KTYP 3308 I
+#KTYP 3740 I
+#KTYP 3960 I
+#KTYP 3990 I
+#KTYP 4010 K
+#KTYP 5010 K
+#KTYP 5060 K
+#KTYP 5410 K
+#KTYP 5420 K
+#KTYP 5460 K
+#KTYP 5611 K
+#KTYP 5800 K
+#KTYP 5810 K
+#KTYP 5831 K
+#KTYP 5910 K
+#KTYP 6071 K
+#KTYP 6072 K
+#KTYP 6110 K
+#KTYP 6211 K
+#KTYP 6212 K
+#KTYP 6230 K
+#KTYP 6250 K
+#KTYP 6310 K
+#KTYP 6530 K
+#KTYP 6540 K
+#KTYP 6550 K
+#KTYP 6570 K
+#KTYP 6970 K
+#KTYP 6981 K
+#KTYP 6982 K
+#KTYP 6991 K
+#KTYP 6992 K
+#KTYP 7010 K
+#KTYP 7210 K
+#KTYP 7220 K
+#KTYP 7510 K
+#KTYP 7690 K
+#KTYP 7832 K
+#KTYP 7834 K
+#KTYP 7960 K
+#KTYP 8010 K
+#KTYP 8210 K
+#KTYP 8220 K
+#KTYP 8310 K
+#KTYP 8314 K
+#KTYP 8410 K
+#KTYP 8422 K
+#KTYP 8423 K
+#KTYP 8811 K
+#KTYP 8819 K
+#KTYP 8910 K
+#KTYP 8999 K
+#IB 0 1930 50000.00
+#IB 0 2081 -50000.00
+#UB 0 1930 51450.00
+#UB 0 2081 -50000.00
+#UB 0 2611 -250.00
+#UB -1 1930 50000.00
+#UB -1 2081 -50000.00
+#RES 0 3001 -1200.00
+#VER A 1 20260315 "Faktura 1001 - Kund i ôresund AB" 20261029 "Anna Andersson"
+{
+   #TRANS 1930 {} 1250.00
+   #TRANS 3001 {} -1000.00 20260315 "KonsulttjÑnst \"Projekt ô\""
+   #TRANS 2611 {} -250.00
+}
+#VER A 2 20260402 "FîrsÑljning" 20261029 "Anna Andersson"
+{
+   #TRANS 6110 {} 500.00
+   #TRANS 1930 {} -500.00
+}
+#VER A 3 20261029 "RÑttelse av A2: Fel konto" 20261029 "Anna Andersson"
+{
+   #TRANS 6110 {} -500.00
+   #TRANS 1930 {} 500.00
+}
+#VER B 1 20260501 "FîrsÑljning" 20261029 "Anna Andersson"
+{
+   #TRANS 1930 {} 200.00
+   #TRANS 3001 {} -200.00
+}
+#KSUMMA 1785016976

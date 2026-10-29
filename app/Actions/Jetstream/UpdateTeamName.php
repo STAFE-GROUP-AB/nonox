@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Actions\Jetstream;
 
-use App\Models\Team;
+use App\Models\Company;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -15,7 +17,7 @@ class UpdateTeamName implements UpdatesTeamNames
      *
      * @param  array<string, string>  $input
      */
-    public function update(User $user, Team $team, array $input): void
+    public function update(User $user, Company $team, array $input): void
     {
         Gate::forUser($user)->authorize('update', $team);
 

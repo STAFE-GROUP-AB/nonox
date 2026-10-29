@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Laravel\Jetstream\Features;
 use Laravel\Jetstream\Http\Livewire\ApiTokenManager;
@@ -12,7 +14,7 @@ use Tests\TestCase;
 
 class DeleteApiTokenTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_api_tokens_can_be_deleted(): void
     {
@@ -20,7 +22,7 @@ class DeleteApiTokenTest extends TestCase
             $this->markTestSkipped('API support is not enabled.');
         }
 
-        $this->actingAs($user = User::factory()->withPersonalTeam()->create());
+        $this->actingAs($user = User::factory()->withCompany()->create());
 
         $token = $user->tokens()->create([
             'name' => 'Test Token',

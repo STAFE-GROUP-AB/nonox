@@ -6,7 +6,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-mark class="block h-9 w-auto" />
+                        <x-application-mark class="text-xl" />
                     </a>
                 </div>
 
@@ -15,18 +15,26 @@
                     <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*')">
+                        {{ __('Bokföring') }}
+                    </x-nav-link>
                 </div>
             </div>
 
             <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <!-- Teams Dropdown -->
-                @if (Laravel\Jetstream\Jetstream::hasTeamFeatures())
+                <!-- Company switcher (AGENTS.md §3.5) -->
+                @php
+                    $currentCompany = Auth::user()->currentCompany();
+                    $companies = Auth::user()->companies();
+                @endphp
+
+                @if ($currentCompany)
                     <div class="ms-3 relative">
                         <x-dropdown align="right" width="60">
                             <x-slot name="trigger">
                                 <span class="inline-flex rounded-md">
                                     <button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none focus:bg-gray-50 active:bg-gray-50 transition ease-in-out duration-150">
-                                        {{ Auth::user()->currentTeam->name }}
+                                        {{ $currentCompany->name }}
 
                                         <svg class="ms-2 -me-0.5 size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
@@ -36,34 +44,41 @@
                             </x-slot>
 
                             <x-slot name="content">
-                                <div class="w-60">
-                                    <!-- Team Management -->
+                                <div class="w-60" x-data="{ search: '' }">
                                     <div class="block px-4 py-2 text-xs text-gray-400">
-                                        {{ __('Manage Team') }}
+                                        {{ __('Företag') }}
                                     </div>
 
-                                    <!-- Team Settings -->
-                                    <x-dropdown-link href="{{ route('teams.show', Auth::user()->currentTeam->id) }}">
-                                        {{ __('Team Settings') }}
+                                    <x-dropdown-link href="{{ route('teams.show', $currentCompany->id) }}">
+                                        {{ __('Inställningar för företaget') }}
                                     </x-dropdown-link>
 
-                                    @can('create', Laravel\Jetstream\Jetstream::newTeamModel())
-                                        <x-dropdown-link href="{{ route('teams.create') }}">
-                                            {{ __('Create New Team') }}
-                                        </x-dropdown-link>
-                                    @endcan
+                                    <x-dropdown-link href="{{ route('teams.create') }}">
+                                        {{ __('Lägg till ett företag') }}
+                                    </x-dropdown-link>
 
-                                    <!-- Team Switcher -->
-                                    @if (Auth::user()->allTeams()->count() > 1)
+                                    @if ($companies->count() > 1)
                                         <div class="border-t border-gray-200"></div>
 
                                         <div class="block px-4 py-2 text-xs text-gray-400">
-                                            {{ __('Switch Teams') }}
+                                            {{ __('Byt företag') }}
                                         </div>
 
-                                        @foreach (Auth::user()->allTeams() as $team)
-                                            <x-switchable-team :team="$team" />
-                                        @endforeach
+                                        @if ($companies->count() > 5)
+                                            <div class="px-4 pb-2">
+                                                <input type="search" x-model="search" x-on:click.stop x-on:keydown.stop
+                                                       placeholder="{{ __('Sök företag') }}"
+                                                       class="w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm" />
+                                            </div>
+                                        @endif
+
+                                        <div class="max-h-80 overflow-y-auto">
+                                            @foreach ($companies as $company)
+                                                <div x-show="search === '' || {{ Js::from(mb_strtolower($company->name.' '.$company->org_number)) }}.includes(search.toLowerCase())">
+                                                    <x-switchable-team :team="$company" />
+                                                </div>
+                                            @endforeach
+                                        </div>
                                     @endif
                                 </div>
                             </x-slot>
@@ -142,6 +157,9 @@
             <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*')">
+                {{ __('Bokföring') }}
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
@@ -181,35 +199,31 @@
                     </x-responsive-nav-link>
                 </form>
 
-                <!-- Team Management -->
-                @if (Laravel\Jetstream\Jetstream::hasTeamFeatures())
+                <!-- Company management -->
+                @if ($currentCompany)
                     <div class="border-t border-gray-200"></div>
 
                     <div class="block px-4 py-2 text-xs text-gray-400">
-                        {{ __('Manage Team') }}
+                        {{ __('Företag') }}
                     </div>
 
-                    <!-- Team Settings -->
-                    <x-responsive-nav-link href="{{ route('teams.show', Auth::user()->currentTeam->id) }}" :active="request()->routeIs('teams.show')">
-                        {{ __('Team Settings') }}
+                    <x-responsive-nav-link href="{{ route('teams.show', $currentCompany->id) }}" :active="request()->routeIs('teams.show')">
+                        {{ __('Inställningar för företaget') }}
                     </x-responsive-nav-link>
 
-                    @can('create', Laravel\Jetstream\Jetstream::newTeamModel())
-                        <x-responsive-nav-link href="{{ route('teams.create') }}" :active="request()->routeIs('teams.create')">
-                            {{ __('Create New Team') }}
-                        </x-responsive-nav-link>
-                    @endcan
+                    <x-responsive-nav-link href="{{ route('teams.create') }}" :active="request()->routeIs('teams.create')">
+                        {{ __('Lägg till ett företag') }}
+                    </x-responsive-nav-link>
 
-                    <!-- Team Switcher -->
-                    @if (Auth::user()->allTeams()->count() > 1)
+                    @if ($companies->count() > 1)
                         <div class="border-t border-gray-200"></div>
 
                         <div class="block px-4 py-2 text-xs text-gray-400">
-                            {{ __('Switch Teams') }}
+                            {{ __('Byt företag') }}
                         </div>
 
-                        @foreach (Auth::user()->allTeams() as $team)
-                            <x-switchable-team :team="$team" component="responsive-nav-link" />
+                        @foreach ($companies as $company)
+                            <x-switchable-team :team="$company" component="responsive-nav-link" />
                         @endforeach
                     @endif
                 @endif

@@ -1,20 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Laravel\Jetstream\Http\Livewire\TeamMemberManager;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 class LeaveTeamTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_users_can_leave_teams(): void
     {
-        $user = User::factory()->withPersonalTeam()->create();
+        $user = User::factory()->withCompany()->create();
 
         $user->currentTeam->users()->attach(
             $otherUser = User::factory()->create(), ['role' => 'admin']
@@ -30,7 +32,7 @@ class LeaveTeamTest extends TestCase
 
     public function test_team_owners_cant_leave_their_own_team(): void
     {
-        $this->actingAs($user = User::factory()->withPersonalTeam()->create());
+        $this->actingAs($user = User::factory()->withCompany()->create());
 
         Livewire::test(TeamMemberManager::class, ['team' => $user->currentTeam])
             ->call('leaveTeam')

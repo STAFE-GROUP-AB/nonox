@@ -1,23 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Team Settings') }}
+            {{ __('Inställningar för :company', ['company' => $team->name]) }}
         </h2>
     </x-slot>
 
-    <div>
-        <div class="max-w-7xl mx-auto py-10 sm:px-6 lg:px-8">
-            @livewire('teams.update-team-name-form', ['team' => $team])
+    <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-10">
+        <livewire:company.company-details-form :company="$team" />
 
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Personer i företaget') }}</h3>
             @livewire('teams.team-member-manager', ['team' => $team])
-
-            @if (Gate::check('delete', $team) && ! $team->personal_team)
-                <x-section-border />
-
-                <div class="mt-10 sm:mt-0">
-                    @livewire('teams.delete-team-form', ['team' => $team])
-                </div>
-            @endif
         </div>
     </div>
 </x-app-layout>

@@ -1,23 +1,11 @@
 @component('mail::message')
-{{ __('You have been invited to join the :team team!', ['team' => $invitation->team->name]) }}
+# {{ __('Du har bjudits in till :company', ['company' => $invitation->team->name]) }}
 
-@if (Laravel\Fortify\Features::enabled(Laravel\Fortify\Features::registration()))
-{{ __('If you do not have an account, you may create one by clicking the button below. After creating an account, you may click the invitation acceptance button in this email to accept the team invitation:') }}
-
-@component('mail::button', ['url' => route('register')])
-{{ __('Create Account') }}
-@endcomponent
-
-{{ __('If you already have an account, you may accept this invitation by clicking the button below:') }}
-
-@else
-{{ __('You may accept this invitation by clicking the button below:') }}
-@endif
-
+{{ __('Klicka på knappen och logga in med den här e-postadressen. Har du inget konto skapas det när du loggar in första gången.') }}
 
 @component('mail::button', ['url' => $acceptUrl])
-{{ __('Accept Invitation') }}
+{{ __('Gå med i :company', ['company' => $invitation->team->name]) }}
 @endcomponent
 
-{{ __('If you did not expect to receive an invitation to this team, you may discard this email.') }}
+{{ __('Väntade du dig inte den här inbjudan kan du bortse från mejlet.') }}
 @endcomponent

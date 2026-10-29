@@ -1,12 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Support\Audit\Audit;
+use App\Support\Tenancy\CurrentCompany;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
+use Illuminate\Support\Collection;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Jetstream\HasTeams;
 use Laravel\Sanctum\HasApiTokens;
@@ -15,40 +20,37 @@ class User extends Authenticatable
 {
     use HasApiTokens;
 
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory;
+
     use HasProfilePhoto;
     use HasTeams;
     use Notifiable;
-    use TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'name',
         'email',
-        'password',
+        'email_verified_at',
     ];
 
     /**
      * The attributes that should be hidden for serialization.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $hidden = [
-        'password',
         'remember_token',
-        'two_factor_recovery_codes',
-        'two_factor_secret',
     ];
 
     /**
      * The accessors to append to the model's array form.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $appends = [
         'profile_photo_url',
@@ -63,7 +65,43 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The selected company, but only while the user is still a member of it.
+     */
+    public function currentCompany(): ?Company
+    {
+        $company = $this->currentTeam;
+
+        if (! $company instanceof Company || ! $this->belongsToTeam($company)) {
+            return null;
+        }
+
+        return $company;
+    }
+
+    /** @return Collection<int, Company> */
+    public function companies(): Collection
+    {
+        return $this->allTeams()
+            ->filter(fn (mixed $company): bool => $company instanceof Company)
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->values();
+    }
+
+    public function switchCompany(Company $company): bool
+    {
+        $previous = $this->current_team_id;
+        $switched = (bool) $this->switchTeam($company);
+
+        CurrentCompany::forget();
+
+        if ($switched && $previous !== $company->id) {
+            Audit::record('company.switched', $company, ['from_company_id' => $previous], $company);
+        }
+
+        return $switched;
     }
 }

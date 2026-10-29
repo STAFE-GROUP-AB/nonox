@@ -1,42 +1,46 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
+use App\Domain\Accounting\AccountType;
+use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * An account in a company's chart of accounts (AGENTS.md §6.1).
+ *
+ * @property int $number
+ * @property string $name
+ * @property AccountType $type
+ * @property bool $is_active
+ */
 class Account extends Model
 {
-    /**
-     * Fillable attributes for mass assignment.
-     *
-     * @var array<int, string>
-     */
+    use BelongsToCompany;
+
+    /** @var list<string> */
     protected $fillable = [
         'company_id',
-        'account_number',
+        'number',
         'name',
         'type',
-        'active',
+        'sru_code',
+        'is_active',
+        'requires_cost_center',
+        'requires_project',
     ];
 
-    /**
-     * Casts for attribute types.
-     *
-     * @return array<string, string>
-     */
+    /** @return array<string, string> */
     protected function casts(): array
     {
         return [
-            'active' => 'boolean',
+            'number' => 'integer',
+            'type' => AccountType::class,
+            'is_active' => 'boolean',
+            'requires_cost_center' => 'boolean',
+            'requires_project' => 'boolean',
         ];
-    }
-
-    /**
-     * Get the company that owns the account.
-     */
-    public function company(): BelongsTo
-    {
-        return $this->belongsTo(Company::class);
     }
 }

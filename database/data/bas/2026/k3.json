@@ -1,0 +1,439 @@
+{
+  "version": "BAS 2026",
+  "framework": "K3",
+  "description": "Common accounts for limited companies under K3.",
+  "accounts": [
+    {
+      "number": 1210,
+      "name": "Maskiner och andra tekniska anläggningar"
+    },
+    {
+      "number": 1219,
+      "name": "Ackumulerade avskrivningar på maskiner och andra tekniska anläggningar"
+    },
+    {
+      "number": 1220,
+      "name": "Inventarier och verktyg"
+    },
+    {
+      "number": 1229,
+      "name": "Ackumulerade avskrivningar på inventarier och verktyg"
+    },
+    {
+      "number": 1250,
+      "name": "Datorer"
+    },
+    {
+      "number": 1259,
+      "name": "Ackumulerade avskrivningar på datorer"
+    },
+    {
+      "number": 1310,
+      "name": "Andelar i koncernföretag"
+    },
+    {
+      "number": 1350,
+      "name": "Andelar och värdepapper i andra företag"
+    },
+    {
+      "number": 1380,
+      "name": "Andra långfristiga fordringar"
+    },
+    {
+      "number": 1460,
+      "name": "Lager av handelsvaror"
+    },
+    {
+      "number": 1510,
+      "name": "Kundfordringar"
+    },
+    {
+      "number": 1610,
+      "name": "Kortfristiga fordringar hos anställda"
+    },
+    {
+      "number": 1630,
+      "name": "Avräkning för skatter och avgifter (skattekonto)"
+    },
+    {
+      "number": 1650,
+      "name": "Momsfordran"
+    },
+    {
+      "number": 1680,
+      "name": "Andra kortfristiga fordringar"
+    },
+    {
+      "number": 1710,
+      "name": "Förutbetalda hyreskostnader"
+    },
+    {
+      "number": 1790,
+      "name": "Övriga förutbetalda kostnader och upplupna intäkter"
+    },
+    {
+      "number": 1910,
+      "name": "Kassa"
+    },
+    {
+      "number": 1920,
+      "name": "PlusGiro"
+    },
+    {
+      "number": 1930,
+      "name": "Företagskonto/checkkonto/affärskonto"
+    },
+    {
+      "number": 1940,
+      "name": "Övriga bankkonton"
+    },
+    {
+      "number": 2081,
+      "name": "Aktiekapital"
+    },
+    {
+      "number": 2086,
+      "name": "Reservfond"
+    },
+    {
+      "number": 2091,
+      "name": "Balanserad vinst eller förlust"
+    },
+    {
+      "number": 2098,
+      "name": "Vinst eller förlust från föregående år"
+    },
+    {
+      "number": 2099,
+      "name": "Årets resultat"
+    },
+    {
+      "number": 2150,
+      "name": "Ackumulerade överavskrivningar"
+    },
+    {
+      "number": 2350,
+      "name": "Andra långfristiga skulder till kreditinstitut"
+    },
+    {
+      "number": 2393,
+      "name": "Lån från närstående personer, långfristig del"
+    },
+    {
+      "number": 2440,
+      "name": "Leverantörsskulder"
+    },
+    {
+      "number": 2510,
+      "name": "Skatteskulder"
+    },
+    {
+      "number": 2611,
+      "name": "Utgående moms på försäljning inom Sverige, 25 %"
+    },
+    {
+      "number": 2614,
+      "name": "Utgående moms omvänd skattskyldighet, 25 %"
+    },
+    {
+      "number": 2615,
+      "name": "Utgående moms import av varor, 25 %"
+    },
+    {
+      "number": 2621,
+      "name": "Utgående moms på försäljning inom Sverige, 12 %"
+    },
+    {
+      "number": 2624,
+      "name": "Utgående moms omvänd skattskyldighet, 12 %"
+    },
+    {
+      "number": 2631,
+      "name": "Utgående moms på försäljning inom Sverige, 6 %"
+    },
+    {
+      "number": 2634,
+      "name": "Utgående moms omvänd skattskyldighet, 6 %"
+    },
+    {
+      "number": 2640,
+      "name": "Ingående moms"
+    },
+    {
+      "number": 2641,
+      "name": "Debiterad ingående moms"
+    },
+    {
+      "number": 2645,
+      "name": "Beräknad ingående moms på förvärv från utlandet"
+    },
+    {
+      "number": 2650,
+      "name": "Redovisningskonto för moms"
+    },
+    {
+      "number": 2710,
+      "name": "Personalskatt"
+    },
+    {
+      "number": 2731,
+      "name": "Avräkning lagstadgade sociala avgifter"
+    },
+    {
+      "number": 2890,
+      "name": "Övriga kortfristiga skulder"
+    },
+    {
+      "number": 2893,
+      "name": "Skulder till närstående personer, kortfristig del"
+    },
+    {
+      "number": 2910,
+      "name": "Upplupna löner"
+    },
+    {
+      "number": 2920,
+      "name": "Upplupna semesterlöner"
+    },
+    {
+      "number": 2940,
+      "name": "Upplupna lagstadgade sociala och andra avgifter"
+    },
+    {
+      "number": 2990,
+      "name": "Övriga upplupna kostnader och förutbetalda intäkter"
+    },
+    {
+      "number": 3001,
+      "name": "Försäljning inom Sverige, 25 % moms"
+    },
+    {
+      "number": 3002,
+      "name": "Försäljning inom Sverige, 12 % moms"
+    },
+    {
+      "number": 3003,
+      "name": "Försäljning inom Sverige, 6 % moms"
+    },
+    {
+      "number": 3004,
+      "name": "Försäljning inom Sverige, momsfri"
+    },
+    {
+      "number": 3105,
+      "name": "Försäljning varor till land utanför EU"
+    },
+    {
+      "number": 3305,
+      "name": "Försäljning tjänster till land utanför EU"
+    },
+    {
+      "number": 3308,
+      "name": "Försäljning tjänster till annat EU-land"
+    },
+    {
+      "number": 3740,
+      "name": "Öres- och kronutjämning"
+    },
+    {
+      "number": 3960,
+      "name": "Valutakursvinster på fordringar och skulder av rörelsekaraktär"
+    },
+    {
+      "number": 3990,
+      "name": "Övriga ersättningar och intäkter"
+    },
+    {
+      "number": 4010,
+      "name": "Inköp material och varor"
+    },
+    {
+      "number": 5010,
+      "name": "Lokalhyra"
+    },
+    {
+      "number": 5060,
+      "name": "Städning och renhållning"
+    },
+    {
+      "number": 5410,
+      "name": "Förbrukningsinventarier"
+    },
+    {
+      "number": 5420,
+      "name": "Programvaror"
+    },
+    {
+      "number": 5460,
+      "name": "Förbrukningsmaterial"
+    },
+    {
+      "number": 5611,
+      "name": "Drivmedel för personbilar"
+    },
+    {
+      "number": 5800,
+      "name": "Resekostnader"
+    },
+    {
+      "number": 5810,
+      "name": "Biljetter"
+    },
+    {
+      "number": 5831,
+      "name": "Kost och logi i Sverige"
+    },
+    {
+      "number": 5910,
+      "name": "Annonsering"
+    },
+    {
+      "number": 6071,
+      "name": "Representation, avdragsgill"
+    },
+    {
+      "number": 6072,
+      "name": "Representation, ej avdragsgill"
+    },
+    {
+      "number": 6110,
+      "name": "Kontorsmateriel"
+    },
+    {
+      "number": 6211,
+      "name": "Fast telefoni"
+    },
+    {
+      "number": 6212,
+      "name": "Mobiltelefon"
+    },
+    {
+      "number": 6230,
+      "name": "Datakommunikation"
+    },
+    {
+      "number": 6250,
+      "name": "Postbefordran"
+    },
+    {
+      "number": 6310,
+      "name": "Företagsförsäkringar"
+    },
+    {
+      "number": 6530,
+      "name": "Redovisningstjänster"
+    },
+    {
+      "number": 6540,
+      "name": "IT-tjänster"
+    },
+    {
+      "number": 6550,
+      "name": "Konsultarvoden"
+    },
+    {
+      "number": 6570,
+      "name": "Bankkostnader"
+    },
+    {
+      "number": 6970,
+      "name": "Tidningar, tidskrifter och facklitteratur"
+    },
+    {
+      "number": 6981,
+      "name": "Föreningsavgifter, avdragsgilla"
+    },
+    {
+      "number": 6982,
+      "name": "Föreningsavgifter, ej avdragsgilla"
+    },
+    {
+      "number": 6991,
+      "name": "Övriga externa kostnader, avdragsgilla"
+    },
+    {
+      "number": 6992,
+      "name": "Övriga externa kostnader, ej avdragsgilla"
+    },
+    {
+      "number": 7010,
+      "name": "Löner till kollektivanställda"
+    },
+    {
+      "number": 7210,
+      "name": "Löner till tjänstemän"
+    },
+    {
+      "number": 7220,
+      "name": "Löner till företagsledare"
+    },
+    {
+      "number": 7510,
+      "name": "Arbetsgivaravgifter"
+    },
+    {
+      "number": 7690,
+      "name": "Övriga personalkostnader"
+    },
+    {
+      "number": 7832,
+      "name": "Avskrivningar på inventarier och verktyg"
+    },
+    {
+      "number": 7834,
+      "name": "Avskrivningar på bilar och andra transportmedel"
+    },
+    {
+      "number": 7960,
+      "name": "Valutakursförluster på fordringar och skulder av rörelsekaraktär"
+    },
+    {
+      "number": 8010,
+      "name": "Utdelning på andelar i koncernföretag"
+    },
+    {
+      "number": 8210,
+      "name": "Utdelningar på andelar i andra företag"
+    },
+    {
+      "number": 8220,
+      "name": "Resultat vid försäljning av värdepapper i och långfristiga fordringar hos andra företag"
+    },
+    {
+      "number": 8310,
+      "name": "Ränteintäkter från omsättningstillgångar"
+    },
+    {
+      "number": 8314,
+      "name": "Skattefria ränteintäkter"
+    },
+    {
+      "number": 8410,
+      "name": "Räntekostnader för långfristiga skulder"
+    },
+    {
+      "number": 8422,
+      "name": "Dröjsmålsräntor för leverantörsskulder"
+    },
+    {
+      "number": 8423,
+      "name": "Räntekostnader för skatter och avgifter"
+    },
+    {
+      "number": 8811,
+      "name": "Avsättning till periodiseringsfond"
+    },
+    {
+      "number": 8819,
+      "name": "Återföring från periodiseringsfond"
+    },
+    {
+      "number": 8910,
+      "name": "Skatt som belastar årets resultat"
+    },
+    {
+      "number": 8999,
+      "name": "Årets resultat"
+    }
+  ]
+}

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Mail;
 use Laravel\Jetstream\Features;
 use Laravel\Jetstream\Http\Livewire\TeamMemberManager;
@@ -13,7 +15,7 @@ use Tests\TestCase;
 
 class InviteTeamMemberTest extends TestCase
 {
-    use RefreshDatabase;
+    use DatabaseTransactions;
 
     public function test_team_members_can_be_invited_to_team(): void
     {
@@ -23,7 +25,7 @@ class InviteTeamMemberTest extends TestCase
 
         Mail::fake();
 
-        $this->actingAs($user = User::factory()->withPersonalTeam()->create());
+        $this->actingAs($user = User::factory()->withCompany()->create());
 
         Livewire::test(TeamMemberManager::class, ['team' => $user->currentTeam])
             ->set('addTeamMemberForm', [
@@ -44,7 +46,7 @@ class InviteTeamMemberTest extends TestCase
 
         Mail::fake();
 
-        $this->actingAs($user = User::factory()->withPersonalTeam()->create());
+        $this->actingAs($user = User::factory()->withCompany()->create());
 
         // Add the team member...
         $component = Livewire::test(TeamMemberManager::class, ['team' => $user->currentTeam])

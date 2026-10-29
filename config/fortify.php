@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Laravel\Fortify\Features;
 
 return [
@@ -73,7 +75,7 @@ return [
     |
     */
 
-    'home' => '/dashboard',
+    'home' => '/oversikt',
 
     /*
     |--------------------------------------------------------------------------
@@ -144,16 +146,8 @@ return [
     */
 
     'features' => [
-        Features::registration(),
-        Features::resetPasswords(),
-        // Features::emailVerification(),
+        // Passwordless sign-in (ADR-000): no registration, passwords or 2FA here.
         Features::updateProfileInformation(),
-        Features::updatePasswords(),
-        Features::twoFactorAuthentication([
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0,
-        ]),
     ],
 
 ];

@@ -1,0 +1,59 @@
+#FLAGGA 0
+#KSUMMA
+#PROGRAM "Annat bokf”ringsprogram" 3.1
+#FORMAT PC8
+#GEN 20270115 "Kim Kass”r"
+#SIETYP 4
+#ORGNR 556334-3689
+#FNAMN "Exempelbolaget i Malm” AB"
+#RAR 0 20260101 20261231
+#RAR -1 20250101 20251231
+#KPTYP BAS2026
+#KONTO 1510 "Kundfordringar"
+#KTYP 1510 T
+#KONTO 1930 "F”retagskonto"
+#KTYP 1930 T
+#KONTO 2081 "Aktiekapital"
+#KTYP 2081 S
+#KONTO 2611 "Utg†ende moms p† f”rs„ljning inom Sverige, 25 %"
+#KTYP 2611 S
+#KONTO 3001 "F”rs„ljning inom Sverige, 25 % moms"
+#KTYP 3001 I
+#KONTO 4010 "Ink”p material och varor"
+#KTYP 4010 K
+#KONTO 6999 "S„rskilda avgifter"
+#KTYP 6999 K
+#SRU 6999 7515
+#DIM 1 "Kostnadsst„lle"
+#DIM 6 "Projekt"
+#DIM 7 "Anst„lld"
+#OBJEKT 1 "10" "Restaurang Malm”"
+#OBJEKT 1 "20" "Restaurang Lund"
+#OBJEKT 6 "P1" "Ombyggnad k”k"
+#IB -1 1930 0.00
+#IB 0 1930 10000.00
+#IB 0 2081 -10000.00
+#UB 0 1930 11200.00
+#UB 0 2081 -10000.00
+#UB 0 2611 -250.00
+#RES 0 3001 -1000.00
+#RES 0 6999 50.00
+#VER A 1 20260110 "Faktura 1 - Kund i ™resund AB" 20260111 "KK"
+{
+   #TRANS 1510 {} 1250.00
+   #TRANS 3001 {1 "10" 6 "P1"} -1000.00 20260110 "Konsulttj„nst \"Projekt ™\""
+   #TRANS 2611 {} -250.00
+}
+#VER A 2 20260120 "Inbetalning faktura 1" 20260120 "KK"
+{
+   #TRANS 1930 {} 1250.00
+   #BTRANS 1930 {} 1205.00 20260120 "Fel belopp" "" "KK"
+   #RTRANS 1510 {} -1250.00 20260121 "" "" "KK"
+   #TRANS 1510 {} -1250.00 20260121
+}
+#VER K 5 20260201 "Avgift" 20260201
+{
+   #TRANS 6999 {1 "30" 7 "1"} 50.00
+   #TRANS 1930 {} -50.00
+}
+#KSUMMA 965058874

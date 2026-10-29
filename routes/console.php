@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+declare(strict_types=1);
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote')->hourly();
+use Illuminate\Support\Facades\Schedule;
+
+// Nightly integrity check of every company's ledger (AGENTS.md §6.4).
+Schedule::command('ledger:verify --all')->dailyAt('03:15')->withoutOverlapping();

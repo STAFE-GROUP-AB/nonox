@@ -1,24 +1,33 @@
 {
-    "name": "stafe-group-ab/oss-accounting",
+    "name": "stafe-group-ab/nonox",
     "type": "project",
-    "description": "STAFE OSS Accounting - Open Source Swedish Accounting System",
-    "keywords": ["laravel", "framework", "accounting", "swedish", "bokföring"],
-    "license": "MIT",
+    "description": "NONOX Ekonomisystem - open source Swedish bookkeeping and finance system",
+    "keywords": [
+        "laravel",
+        "framework",
+        "accounting",
+        "swedish",
+        "bokföring"
+    ],
+    "license": "AGPL-3.0-only",
     "require": {
-        "php": "^8.2",
-        "laravel/framework": "^11.0",
-        "laravel/jetstream": "^5.0",
-        "laravel/sanctum": "^4.0",
-        "laravel/tinker": "^2.9",
-        "livewire/livewire": "^3.6.4"
+        "php": "^8.4",
+        "brick/math": "^1.0",
+        "laravel/framework": "^13.0",
+        "laravel/jetstream": "^5.5",
+        "laravel/sanctum": "^4.3",
+        "laravel/tinker": "^3.0",
+        "livewire/livewire": "^4.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
-        "laravel/pint": "^1.13",
-        "laravel/sail": "^1.26",
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.32",
+        "laravel/sail": "^1.69",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^8.0",
-        "phpunit/phpunit": "^11.0"
+        "nunomaduro/collision": "^8.9",
+        "pestphp/pest": "^4.0",
+        "pestphp/pest-plugin-laravel": "^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -33,6 +42,14 @@
         }
     },
     "scripts": {
+        "setup": [
+            "Composer\\Config::disableProcessTimeout",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php -r \"exit(preg_match('/^APP_KEY=.+/m', file_get_contents('.env')) ? 0 : 1);\" || php artisan key:generate --ansi",
+            "@php artisan migrate --force --ansi",
+            "npm install",
+            "npm run build"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
@@ -45,8 +62,22 @@
         ],
         "post-create-project-cmd": [
             "@php artisan key:generate --ansi",
-            "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
+        ],
+        "lint": [
+            "pint --test"
+        ],
+        "analyse": [
+            "phpstan analyse --memory-limit=1G"
+        ],
+        "test": [
+            "@php artisan config:clear --ansi",
+            "pest"
+        ],
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
         ]
     },
     "extra": {
