@@ -24,18 +24,19 @@
                         <th class="pb-2 pr-2 font-medium w-28 text-right">{{ __('Á-pris') }}</th>
                         <th class="pb-2 pr-2 font-medium w-20 text-right">{{ __('Rabatt %') }}</th>
                         <th class="pb-2 pr-2 font-medium w-24">{{ __('Moms') }}</th>
+                        <th class="pb-2 pr-2 font-medium w-28 text-right">{{ __('Belopp') }}</th>
                         <th class="pb-2 w-8"><span class="sr-only">{{ __('Ta bort') }}</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($rows as $index => $row)
                         <tr wire:key="row-{{ $index }}">
-                            <td class="py-1 pr-2"><input type="text" list="article-options" class="{{ $cell }}" wire:model.blur="rows.{{ $index }}.article" aria-label="{{ __('Artikel, rad :line', ['line' => $index + 1]) }}" autocomplete="off"></td>
-                            <td class="py-1 pr-2 min-w-[14rem]"><input type="text" class="{{ $cell }}" wire:model.blur="rows.{{ $index }}.description" maxlength="255" aria-label="{{ __('Benämning, rad :line', ['line' => $index + 1]) }}"></td>
-                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" wire:model.blur="rows.{{ $index }}.quantity" aria-label="{{ __('Antal, rad :line', ['line' => $index + 1]) }}"></td>
-                            <td class="py-1 pr-2"><input type="text" class="{{ $cell }}" wire:model.blur="rows.{{ $index }}.unit" maxlength="10" aria-label="{{ __('Enhet, rad :line', ['line' => $index + 1]) }}"></td>
-                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" wire:model.blur="rows.{{ $index }}.price" aria-label="{{ __('Pris, rad :line', ['line' => $index + 1]) }}"></td>
-                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" wire:model.blur="rows.{{ $index }}.discount" aria-label="{{ __('Rabatt, rad :line', ['line' => $index + 1]) }}"></td>
+                            <td class="py-1 pr-2"><input type="text" list="article-options" class="{{ $cell }}" wire:model.live.blur="rows.{{ $index }}.article" aria-label="{{ __('Artikel, rad :line', ['line' => $index + 1]) }}" autocomplete="off"></td>
+                            <td class="py-1 pr-2 min-w-[14rem]"><input type="text" class="{{ $cell }}" wire:model.live.blur="rows.{{ $index }}.description" maxlength="255" aria-label="{{ __('Benämning, rad :line', ['line' => $index + 1]) }}"></td>
+                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" wire:model.live.blur="rows.{{ $index }}.quantity" aria-label="{{ __('Antal, rad :line', ['line' => $index + 1]) }}"></td>
+                            <td class="py-1 pr-2"><input type="text" class="{{ $cell }}" wire:model.live.blur="rows.{{ $index }}.unit" maxlength="10" aria-label="{{ __('Enhet, rad :line', ['line' => $index + 1]) }}"></td>
+                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" wire:model.live.blur="rows.{{ $index }}.price" aria-label="{{ __('Pris, rad :line', ['line' => $index + 1]) }}"></td>
+                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" wire:model.live.blur="rows.{{ $index }}.discount" aria-label="{{ __('Rabatt, rad :line', ['line' => $index + 1]) }}"></td>
                             <td class="py-1 pr-2">
                                 <select class="{{ $cell }}" wire:model.live="rows.{{ $index }}.vat_rate" aria-label="{{ __('Moms, rad :line', ['line' => $index + 1]) }}">
                                     @foreach($rates as $rate => $label)
@@ -43,6 +44,7 @@
                                     @endforeach
                                 </select>
                             </td>
+                            <td class="py-1 pr-2 text-right whitespace-nowrap" data-row-net>@if(($rowNets[$index] ?? null) !== null)<x-ui.amount :money="$kr($rowNets[$index])" :currency="false" />@endif</td>
                             <td class="py-1 text-center"><button type="button" class="text-gray-400 hover:text-accent-600" wire:click="removeRow({{ $index }})" aria-label="{{ __('Ta bort rad :line', ['line' => $index + 1]) }}">×</button></td>
                         </tr>
                     @endforeach

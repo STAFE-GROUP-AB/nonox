@@ -144,6 +144,7 @@ class SalesDocumentEditor extends Component
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(['id', 'number', 'name']),
             'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name']),
             'totals' => $this->previewTotals(),
+            'rowNets' => $this->previewRowNets(),
             'routeBase' => $this->routeBase(),
         ]);
     }

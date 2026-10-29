@@ -79,6 +79,34 @@ trait EditsSalesRows
     }
 
     /**
+     * Each row's amount excluding VAT while typing (quantity × price less
+     * discount), or null while the row cannot be read yet. Keyed like $rows.
+     *
+     * @return array<int, ?int>
+     */
+    protected function previewRowNets(bool $negate = false): array
+    {
+        $nets = [];
+
+        foreach ($this->rows as $index => $row) {
+            $quantity = InvoiceCalculator::quantity((string) ($row['quantity'] ?? ''));
+            $discount = InvoiceCalculator::discount((string) ($row['discount'] ?? ''));
+
+            try {
+                $price = trim((string) ($row['price'] ?? '')) === '' ? null : Money::parse((string) $row['price']);
+            } catch (InvalidArgumentException) {
+                $price = null;
+            }
+
+            $nets[$index] = $quantity === null || $discount === null || $price === null
+                ? null
+                : InvoiceCalculator::rowNet($price, $negate ? "-{$quantity}" : $quantity, $discount)->ore;
+        }
+
+        return $nets;
+    }
+
+    /**
      * Totals of the rows that can be read, while typing.
      *
      * @return array{net: int, vat: int, rounding: int, total: int, vat_by_rate: array<int, array{base: int, vat: int}>}

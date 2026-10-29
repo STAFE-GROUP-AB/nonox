@@ -260,6 +260,26 @@ describe('in the browser', function () {
         Livewire::test(InvoiceList::class)->set('filter', 'betalda')->assertSee('Kontorshuset AB');
     });
 
+    it('sums each row and the invoice as soon as a field is left', function () {
+        $component = Livewire::test(InvoiceEditor::class)
+            ->set('rows.0.description', 'Arbete')
+            ->set('rows.0.quantity', '45')
+            ->set('rows.0.unit', 'tim')
+            ->set('rows.0.price', '1450')
+            ->set('rows.0.discount', '10');
+
+        // 45 × 1 450 kr less 10 % = 58 725 kr; 25 % VAT on top = 73 406,25, rounded to 73 406.
+        $component->assertSee("58\u{00A0}725,00")
+            ->assertSee("73\u{00A0}406,00");
+
+        // Livewire 4: plain .blur no longer reaches the server, so the totals would stay at zero in the browser.
+        foreach (['article', 'description', 'quantity', 'unit', 'price', 'discount'] as $field) {
+            $component->assertSeeHtml("wire:model.live.blur=\"rows.0.{$field}\"");
+        }
+
+        $component->assertDontSeeHtml('wire:model.blur=');
+    });
+
     it('keeps a draft and explains what is missing', function () {
         Livewire::test(InvoiceEditor::class)
             ->set('rows.0.description', 'Konsulttimme')
