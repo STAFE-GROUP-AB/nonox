@@ -935,5 +935,22 @@
     "Offert": "Quote",
     "Orderbekräftelse": "Order confirmation",
     "Offertnummer": "Quote number",
-    "Ordernummer": "Order number"
+    "Ordernummer": "Order number",
+    "Påminnelse: :title från :company": "Reminder: :title from :company",
+    "Påminnelse :sequence är skickad till :email. Ny sista betaldag: :date.": "Reminder :sequence has been sent to :email. New last day to pay: :date.",
+    "Vi har inte fått betalt för faktura :number, som förföll :due. Det är kanske bara förbisett.": "We have not received payment for invoice :number, which was due :due. It may simply have been overlooked.",
+    "Betala senast": "Pay by",
+    "Fakturan finns som PDF i det här mejlet. Har du redan betalat kan du bortse från påminnelsen. Har du frågor, svara på det här mejlet.": "The invoice is attached to this email as a PDF. If you have already paid, please disregard this reminder. If you have questions, reply to this email.",
+    "Påminnelser": "Reminders",
+    "Påminnelse :sequence skickad :date till :email, betala senast :pay_by": "Reminder :sequence sent :date to :email, pay by :pay_by",
+    "Fakturan har förfallit. En påminnelse skickas till e-postadressen ovan med fakturan bifogad och tio dagar att betala.": "The invoice is overdue. A reminder is sent to the email address above with the invoice attached and ten days to pay.",
+    "Skicka påminnelse": "Send reminder",
+    "Registrera betalningen": "Register the payment",
+    "Artikel, rad": "Article, line",
+    "Benämning, rad": "Description, line",
+    "Antal, rad": "Quantity, line",
+    "Enhet, rad": "Unit, line",
+    "Pris, rad": "Price, line",
+    "Rabatt, rad": "Discount, line",
+    "Moms, rad": "VAT, line"
 }

@@ -101,9 +101,7 @@ class InvoiceEditor extends Component
     {
         return view('livewire.invoicing.invoice-editor', [
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(['id', 'number', 'name']),
-            'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name']),
-            'totals' => $this->previewTotals($this->credit),
-            'rowNets' => $this->previewRowNets($this->credit),
+            'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
             'canIssue' => $this->invoiceId === null
                 ? $this->user()->hasTeamPermission($this->company(), 'invoices:send')
                 : Gate::allows('issue', Invoice::query()->findOrFail($this->invoiceId)),

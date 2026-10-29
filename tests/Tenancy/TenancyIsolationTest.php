@@ -11,6 +11,7 @@ use App\Models\FiscalYear;
 use App\Models\ImportedVoucher;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
+use App\Models\InvoiceReminder;
 use App\Models\InvoiceRow;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
@@ -67,6 +68,7 @@ const COMPANY_SCOPED_MODELS = [
     InvoicePayment::class => 'invoicePaymentAttributes',
     SalesDocument::class => 'salesDocumentAttributes',
     SalesDocumentRow::class => 'salesDocumentRowAttributes',
+    InvoiceReminder::class => 'reminderAttributes',
 ];
 
 /** Runs inside the company's context. */
@@ -207,6 +209,19 @@ function salesDocumentRowAttributes(): array
     return [...array_diff_key(invoiceRowAttributes(), ['invoice_id' => true]), 'sales_document_id' => SalesDocument::create(salesDocumentAttributes())->id];
 }
 
+function reminderAttributes(): array
+{
+    return [
+        'invoice_id' => Invoice::create(invoiceAttributes())->id,
+        'sequence' => 1,
+        'sent_on' => '2026-04-01',
+        'pay_by' => '2026-04-11',
+        'remaining_ore' => 100,
+        'sent_to' => 'kund@exempel.test',
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
 function attachmentAttributes(): array
 {
     return [
@@ -238,7 +253,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

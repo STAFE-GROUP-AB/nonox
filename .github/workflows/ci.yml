@@ -75,6 +75,9 @@ jobs:
 
       - run: npm run build
 
+      - name: JavaScript tests (invoice row calculations)
+        run: npm test
+
       - name: Prepare environment
         run: |
           cp .env.example .env

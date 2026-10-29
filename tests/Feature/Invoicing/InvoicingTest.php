@@ -9,6 +9,7 @@ use App\Actions\Invoicing\SaveArticle;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Invoicing\SendInvoice;
+use App\Actions\Invoicing\SendReminder;
 use App\Domain\Accounting\LedgerVerifier;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceCalculator;
@@ -21,6 +22,7 @@ use App\Livewire\Invoicing\InvoiceActions;
 use App\Livewire\Invoicing\InvoiceEditor;
 use App\Livewire\Invoicing\InvoiceList;
 use App\Mail\InvoiceMail;
+use App\Mail\ReminderMail;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -227,6 +229,32 @@ it('sends the invoice as a PDF', function () {
         ->and((new InvoiceMail($invoice, $this->company))->render())->toContain('OCR-nummer 18');
 });
 
+it('reminds about an overdue invoice, with the invoice attached', function () {
+    Mail::fake();
+    $invoice = app(IssueInvoice::class)($this->owner, cateringDraft($this->owner, $this->company, $this->customer));
+
+    expect(fn () => app(SendReminder::class)($this->owner, $invoice, 'ekonomi@kontorshuset.test'))->toThrow(AuthorizationException::class);
+
+    $this->travelTo(CarbonImmutable::parse('2026-03-25 09:00:00'));
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-24'), Money::parse('936'));
+
+    $first = app(SendReminder::class)($this->owner, $invoice->fresh(), 'ekonomi@kontorshuset.test');
+    $second = app(SendReminder::class)($this->owner, $invoice->fresh(), 'ekonomi@kontorshuset.test');
+
+    expect([$first->sequence, $second->sequence])->toBe([1, 2])
+        ->and($first->pay_by->toDateString())->toBe('2026-04-04')
+        ->and($first->remaining_ore->ore)->toBe(100_000)
+        ->and(fn () => $first->delete())->toThrow(LogicException::class);
+
+    Mail::assertSent(ReminderMail::class, fn (ReminderMail $mail) => $mail->hasTo('ekonomi@kontorshuset.test') && $mail->attachments()[0]->as === 'Faktura-1.pdf');
+    expect((new ReminderMail($invoice, $first, $this->company))->render())->toContain("1\u{00A0}000,00")->toContain('2026-04-04');
+
+    Livewire::test(InvoiceActions::class, ['invoice' => $invoice->fresh()])
+        ->call('remind')
+        ->assertDispatched('toast', message: 'Påminnelse 3 är skickad till ekonomi@kontorshuset.test. Ny sista betaldag: 2026-04-04.')
+        ->assertSee('Påminnelse 1 skickad 2026-03-25');
+});
+
 describe('in the browser', function () {
     it('writes, issues, sends and gets paid for an invoice with toasts', function () {
         Mail::fake();
@@ -234,17 +262,15 @@ describe('in the browser', function () {
 
         Livewire::test(InvoiceEditor::class)
             ->set('customerId', (string) $this->customer->id)
-            ->set('rows.0.article', 'LUNCH')
-            ->assertSet('rows.0.description', 'Lunchbuffé')
-            ->assertSet('rows.0.vat_rate', '1200')
-            ->set('rows.0.quantity', '10')
-            ->assertSee("1\u{00A0}333,00")
+            ->set('rows', [['article' => 'LUNCH', 'description' => 'Lunchbuffé', 'quantity' => '10', 'unit' => 'st', 'price' => '119,00', 'discount' => '', 'vat_rate' => '1200', 'account' => '']])
             ->call('issue')
             ->assertHasNoErrors()
             ->assertRedirect();
 
-        $invoice = Invoice::query()->sole();
-        expect(session('toasts')[0]['message'])->toBe('Faktura 1 är skapad och bokförd. Skicka den till kunden här.');
+        $invoice = Invoice::query()->with('rows')->sole();
+        expect(session('toasts')[0]['message'])->toBe('Faktura 1 är skapad och bokförd. Skicka den till kunden här.')
+            ->and($invoice->total_ore->ore)->toBe(133_300)
+            ->and($invoice->rows[0]->article_id)->not->toBeNull();
 
         $this->get(route('invoicing.invoices.show', $invoice))->assertOk()->assertSee('Faktura 1');
         $this->get(route('invoicing.invoices.pdf', $invoice))->assertOk()->assertHeader('Content-Type', 'application/pdf');
@@ -260,24 +286,17 @@ describe('in the browser', function () {
         Livewire::test(InvoiceList::class)->set('filter', 'betalda')->assertSee('Kontorshuset AB');
     });
 
-    it('sums each row and the invoice as soon as a field is left', function () {
-        $component = Livewire::test(InvoiceEditor::class)
-            ->set('rows.0.description', 'Arbete')
-            ->set('rows.0.quantity', '45')
-            ->set('rows.0.unit', 'tim')
-            ->set('rows.0.price', '1450')
-            ->set('rows.0.discount', '10');
+    it('keeps the rows in the browser while they are written', function () {
+        app(SaveArticle::class)($this->owner, $this->company, ['number' => '1', 'name' => 'Arbete', 'unit' => 'tim', 'price' => '1450', 'vat_rate' => 2500]);
 
-        // 45 × 1 450 kr less 10 % = 58 725 kr; 25 % VAT on top = 73 406,25, rounded to 73 406.
-        $component->assertSee("58\u{00A0}725,00")
-            ->assertSee("73\u{00A0}406,00");
-
-        // Livewire 4: plain .blur no longer reaches the server, so the totals would stay at zero in the browser.
-        foreach (['article', 'description', 'quantity', 'unit', 'price', 'discount'] as $field) {
-            $component->assertSeeHtml("wire:model.live.blur=\"rows.0.{$field}\"");
-        }
-
-        $component->assertDontSeeHtml('wire:model.blur=');
+        // Totals and article filling run in resources/js/sales-rows.js (tested with npm test).
+        // No row field may talk to the server while typing: that overwrote what was typed.
+        Livewire::test(InvoiceEditor::class)
+            ->assertSeeHtml("salesRows(\$wire.entangle('rows')")
+            ->assertSeeHtml('Arbete')
+            ->assertSeeHtml('145000')
+            ->assertDontSeeHtml('wire:model.live.blur="rows')
+            ->assertDontSeeHtml('wire:model.blur="rows');
     });
 
     it('keeps a draft and explains what is missing', function () {

@@ -176,6 +176,12 @@ class Invoice extends Model
         return $this->hasMany(InvoicePayment::class)->orderBy('id');
     }
 
+    /** @return HasMany<InvoiceReminder, $this> */
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(InvoiceReminder::class)->orderBy('sequence');
+    }
+
     /** @return BelongsTo<Voucher, $this> */
     public function voucher(): BelongsTo
     {

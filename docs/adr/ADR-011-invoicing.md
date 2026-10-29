@@ -51,11 +51,32 @@
 - Rows are parsed by `SalesRowInput` for invoices, quotes and orders alike,
   so the three always calculate the same way.
 
+## Rows in the browser
+
+- While an invoice, quote or order is being written, its rows live in the
+  browser (Alpine, `resources/js/sales-rows.js`): filling from an article,
+  each row's amount and the totals follow every keystroke without a request.
+  The rows reach the server only when the document is saved. Livewire 4's
+  `wire:model.blur` no longer sends anything, and `.live.blur` made each field
+  a request whose answer could overwrite the next field being typed.
+- The browser calculates exactly like `InvoiceCalculator` (BigInt öre, half
+  away from zero). `tests/js/sales-math.test.mjs` checks the same cases as the
+  PHP tests (`npm test`, Node's built-in runner, no packages); CI runs it.
+  The server recalculates on save, and that is what counts.
+
+## Reminders
+
+- An overdue, unpaid invoice can be reminded by email: what remains, the OCR
+  number, a new date to pay by (ten days) and the invoice attached. Each
+  reminder is kept (`invoice_reminders`, append-only).
+- `TODO(legal-verify)`: no reminder fee and no late-payment interest are
+  charged until it is confirmed when they may be.
+
 ## Not yet
 
 - Reverse charge, EU and export invoices (the texts required by the VAT act)
   and foreign currency. Until then every invoice is a domestic invoice.
-- Reminders and late-payment interest, Peppol, bank file
+- Reminder fees and late-payment interest, Peppol, bank file
   matching of payments (camt.054/BgMax), recurring invoices.
 
 ## TODO(legal-verify)

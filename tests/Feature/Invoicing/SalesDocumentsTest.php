@@ -123,10 +123,7 @@ describe('in the browser', function () {
 
         Livewire::test(SalesDocumentEditor::class, ['kind' => SalesDocument::QUOTE])
             ->set('customerId', (string) $this->customer->id)
-            ->set('rows.0.description', 'Smörgåstårta')
-            ->set('rows.0.quantity', '3')
-            ->set('rows.0.price', '450')
-            ->set('rows.0.vat_rate', '1200')
+            ->set('rows', [['article' => '', 'description' => 'Smörgåstårta', 'quantity' => '3', 'unit' => 'st', 'price' => '450', 'discount' => '', 'vat_rate' => '1200', 'account' => '']])
             ->call('save')
             ->assertHasNoErrors()
             ->assertRedirect();

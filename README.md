@@ -43,11 +43,11 @@ Systemet byggs en del i taget. Det här finns i dag:
 **Fakturering**
 - ✅ Kundregister och artikelregister med pris, moms och intäktskonto.
 - ✅ Fakturor med OCR-nummer, PDF och utskick via e-post. De bokförs automatiskt, enligt fakturametoden eller kontantmetoden.
-- ✅ Inbetalningar, även delbetalningar, och kreditfakturor.
+- ✅ Inbetalningar, även delbetalningar, kreditfakturor och påminnelser via e-post.
 - ✅ Offerter och order (till exempel catering) som blir fakturor utan att något skrivs två gånger.
 
 **På väg** (i den här ordningen)
-- 🚧 Påminnelser, EU- och exportfakturor, bankfiler för inbetalningar.
+- 🚧 EU- och exportfakturor, bankfiler för inbetalningar.
 - 🚧 Leverantörsfakturor, attest och betalfiler.
 - 🚧 Lön, med timlöner, OB och personalliggare för restauranger. Förslaget och frågorna som först måste granskas juridiskt finns i [ADR-012](docs/adr/ADR-012-payroll.md).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
@@ -237,6 +237,7 @@ composer check      # alla tre i följd
 composer lint       # kodstil (Pint)
 composer analyse    # statisk analys (Larastan, nivå 8)
 composer test       # tester (Pest)
+npm test            # fakturaradernas uträkning i webbläsaren (Node)
 ```
 
 Rätta kodstilen automatiskt med `./vendor/bin/pint`.

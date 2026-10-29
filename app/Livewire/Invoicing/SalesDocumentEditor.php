@@ -142,9 +142,7 @@ class SalesDocumentEditor extends Component
             'editable' => $document === null || Gate::allows('update', $document),
             'canSend' => $document !== null && Gate::allows('send', $document),
             'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(['id', 'number', 'name']),
-            'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name']),
-            'totals' => $this->previewTotals(),
-            'rowNets' => $this->previewRowNets(),
+            'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
             'routeBase' => $this->routeBase(),
         ]);
     }

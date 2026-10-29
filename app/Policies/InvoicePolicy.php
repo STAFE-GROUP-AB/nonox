@@ -57,6 +57,11 @@ class InvoicePolicy
             && $this->can($user, $invoice, 'invoices:credit');
     }
 
+    public function remind(User $user, Invoice $invoice): bool
+    {
+        return ! $invoice->isCredit() && $invoice->isOverdue() && $this->can($user, $invoice, 'invoices:send');
+    }
+
     public function registerPayment(User $user, Invoice $invoice): bool
     {
         return $invoice->status === InvoiceStatus::Issued && $this->can($user, $invoice, 'payments:create');

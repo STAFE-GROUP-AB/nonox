@@ -44,16 +44,32 @@
         </x-ui.card>
     @endif
 
+    @if($canRemind || $invoice->reminders->isNotEmpty())
+        <x-ui.card :title="__('Påminnelser')">
+            @if($invoice->reminders->isNotEmpty())
+                <ul class="divide-y divide-gray-100 text-sm">
+                    @foreach($invoice->reminders as $reminder)
+                        <li class="py-2">{{ __('Påminnelse :sequence skickad :date till :email, betala senast :pay_by', ['sequence' => $reminder->sequence, 'date' => $reminder->sent_on->toDateString(), 'email' => $reminder->sent_to, 'pay_by' => $reminder->pay_by->toDateString()]) }}</li>
+                    @endforeach
+                </ul>
+            @endif
+            @if($canRemind)
+                <p class="mt-2 text-sm text-gray-700">{{ __('Fakturan har förfallit. En påminnelse skickas till e-postadressen ovan med fakturan bifogad och tio dagar att betala.') }}</p>
+                <x-button type="button" class="mt-3" wire:click="remind" wire:loading.attr="disabled">{{ __('Skicka påminnelse') }}</x-button>
+            @endif
+        </x-ui.card>
+    @endif
+
     @if($canPay)
         <x-ui.card :title="__('Registrera betalning')">
-            <form wire:submit="registerPayment" class="grid gap-4 sm:grid-cols-[10rem_12rem_auto] sm:items-end">
+            <form wire:submit="registerPayment" class="grid grid-cols-2 gap-4">
                 <x-ui.field for="paid_on" :label="__('Betaldag')" error="paid_on">
                     <input id="paid_on" type="date" class="{{ $input }} mt-1" wire:model="paidOn">
                 </x-ui.field>
                 <x-ui.field for="paid_amount" :label="__('Belopp')" error="amount">
                     <input id="paid_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="amount">
                 </x-ui.field>
-                <div><x-button wire:loading.attr="disabled">{{ __('Registrera') }}</x-button></div>
+                <div class="col-span-2"><x-button wire:loading.attr="disabled">{{ __('Registrera betalningen') }}</x-button></div>
             </form>
             <p class="mt-2 text-sm text-gray-500">{{ __('Betalningen bokförs på 1930 Företagskonto i serie C.') }}</p>
         </x-ui.card>

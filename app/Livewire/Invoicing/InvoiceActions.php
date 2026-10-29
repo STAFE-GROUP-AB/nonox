@@ -7,6 +7,7 @@ namespace App\Livewire\Invoicing;
 use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\RegisterPayment;
 use App\Actions\Invoicing\SendInvoice;
+use App\Actions\Invoicing\SendReminder;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Invoice;
 use App\Models\User;
@@ -52,6 +53,17 @@ class InvoiceActions extends Component
         $this->toast(__(':title är skickad till :email.', ['title' => $this->invoice()->title(), 'email' => $this->email]));
     }
 
+    public function remind(SendReminder $remind): void
+    {
+        $reminder = $remind($this->user(), $this->invoice(), $this->email);
+
+        $this->toast(__('Påminnelse :sequence är skickad till :email. Ny sista betaldag: :date.', [
+            'sequence' => $reminder->sequence,
+            'email' => $reminder->sent_to,
+            'date' => $reminder->pay_by->toDateString(),
+        ]));
+    }
+
     public function registerPayment(RegisterPayment $register): void
     {
         try {
@@ -80,12 +92,13 @@ class InvoiceActions extends Component
 
     public function render(): View
     {
-        $invoice = $this->invoice()->load(['payments.voucher.series', 'voucher.series', 'credits', 'creditInvoices']);
+        $invoice = $this->invoice()->load(['payments.voucher.series', 'voucher.series', 'credits', 'creditInvoices', 'reminders']);
 
         return view('livewire.invoicing.invoice-actions', [
             'invoice' => $invoice,
             'canSend' => $this->user()->can('send', $invoice),
             'canPay' => $this->user()->can('registerPayment', $invoice),
+            'canRemind' => $this->user()->can('remind', $invoice),
             'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->isEmpty(),
         ]);
     }
