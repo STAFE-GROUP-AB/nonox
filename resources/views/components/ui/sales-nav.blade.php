@@ -1,5 +1,7 @@
 @php
     $links = [
+        'invoicing.quotes' => __('Offerter'),
+        'invoicing.orders' => __('Order'),
         'invoicing.invoices.index' => __('Fakturor'),
         'invoicing.customers' => __('Kunder'),
         'invoicing.articles' => __('Artiklar'),
@@ -8,7 +10,7 @@
 
 <nav class="flex flex-wrap gap-2 print:hidden" aria-label="{{ __('Försäljning') }}">
     @foreach($links as $route => $label)
-        @php($active = request()->routeIs(str_replace('.index', '.*', $route)))
+        @php($active = request()->routeIs(str_replace('.index', '.*', $route), $route.'.*'))
         <a href="{{ route($route) }}" @class([
             'rounded-full px-4 py-1.5 text-sm font-medium',
             'bg-accent-600 text-white' => $active,

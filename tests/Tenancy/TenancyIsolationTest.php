@@ -15,6 +15,8 @@ use App\Models\InvoiceRow;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\Project;
+use App\Models\SalesDocument;
+use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
 use App\Models\User;
 use App\Models\VatReport;
@@ -63,6 +65,8 @@ const COMPANY_SCOPED_MODELS = [
     Invoice::class => 'invoiceAttributes',
     InvoiceRow::class => 'invoiceRowAttributes',
     InvoicePayment::class => 'invoicePaymentAttributes',
+    SalesDocument::class => 'salesDocumentAttributes',
+    SalesDocumentRow::class => 'salesDocumentRowAttributes',
 ];
 
 /** Runs inside the company's context. */
@@ -186,6 +190,21 @@ function invoicePaymentAttributes(): array
         'voucher_id' => Voucher::create(voucherAttributes())->id,
         'created_by' => User::factory()->create()->id,
     ];
+}
+
+function salesDocumentAttributes(): array
+{
+    return [
+        'kind' => 'QUOTE',
+        'number' => random_int(1, 1_000_000),
+        'customer_id' => Customer::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig kund AB'])->id,
+        'document_date' => '2026-04-01',
+    ];
+}
+
+function salesDocumentRowAttributes(): array
+{
+    return [...array_diff_key(invoiceRowAttributes(), ['invoice_id' => true]), 'sales_document_id' => SalesDocument::create(salesDocumentAttributes())->id];
 }
 
 function attachmentAttributes(): array

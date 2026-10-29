@@ -41,11 +41,21 @@
   registers, `invoices:send` issues and sends, `invoices:credit` credits,
   `payments:create` registers payments, `invoices:view` reads.
 
+## Quotes and orders
+
+- `sales_documents` holds quotes (offerter) and orders, each with its own
+  number series. They can be changed while open. A quote becomes an order,
+  and a quote or an order becomes a draft invoice, row for row; the document
+  then points to what it became. Neither is bookkeeping: nothing is posted
+  until the invoice is issued. Both can be sent as a PDF.
+- Rows are parsed by `SalesRowInput` for invoices, quotes and orders alike,
+  so the three always calculate the same way.
+
 ## Not yet
 
 - Reverse charge, EU and export invoices (the texts required by the VAT act)
   and foreign currency. Until then every invoice is a domestic invoice.
-- Offers and orders, reminders and late-payment interest, Peppol, bank file
+- Reminders and late-payment interest, Peppol, bank file
   matching of payments (camt.054/BgMax), recurring invoices.
 
 ## TODO(legal-verify)

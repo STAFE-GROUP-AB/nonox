@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.8
+- Version: 0.9
 - Datum: 2026-10-29
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -218,7 +218,10 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   betalning.
 - En kreditfaktura tar ut hela den obetalda fakturan och vänder dess
   verifikation.
-- Varje skapad, skickad och betald faktura skrivs till behandlingshistoriken.
+- Offerter och order kan bli order respektive fakturautkast med samma rader.
+  De bokförs inte; det gör först fakturan.
+- Varje skapad, skickad och betald faktura, offert och order skrivs till
+  behandlingshistoriken.
 
 ## 6. Belopp
 
@@ -273,3 +276,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.6 | 2026-10-29 | Kostnadsställen och projekt på verifikationsrader, i SIE-export och SIE-import. |
 | 0.7 | 2026-10-29 | Rapporter, momsdeklaration med bokföring av momsen och periodlås, årsskifte. |
 | 0.8 | 2026-10-29 | Kunder, artiklar, kundfakturor med OCR och PDF, betalningar och kreditfakturor. |
+| 0.9 | 2026-10-29 | Offerter och order som blir fakturor. |

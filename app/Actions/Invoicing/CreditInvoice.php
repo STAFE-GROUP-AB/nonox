@@ -41,15 +41,7 @@ class CreditInvoice
                 'your_reference' => $original->your_reference,
                 'our_reference' => $original->our_reference,
                 'notes' => __('Kreditering av faktura :number.', ['number' => $original->number]),
-                'rows' => $original->rows->map(fn (InvoiceRow $row): array => [
-                    'description' => $row->description,
-                    'quantity' => ltrim($row->quantity, '-'),
-                    'unit' => $row->unit,
-                    'price' => $row->unit_price_ore->format(withCurrency: false),
-                    'discount' => $row->discount_bp === 0 ? '' : (string) ($row->discount_bp / 100),
-                    'vat_rate' => $row->vat_rate,
-                    'account' => $row->account?->number,
-                ])->all(),
+                'rows' => $original->rows->map(fn (InvoiceRow $row): array => $row->asInput())->all(),
             ], $draft);
         });
     }

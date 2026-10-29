@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\SalesRowFields;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -29,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class InvoiceRow extends Model
 {
     use BelongsToCompany;
+    use SalesRowFields;
 
     /** @var list<string> */
     protected $fillable = [

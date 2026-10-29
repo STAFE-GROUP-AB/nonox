@@ -12,10 +12,12 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Invoicing\InvoiceController;
+use App\Http\Controllers\Invoicing\SalesDocumentController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Middleware\EnsureUserHasCompany;
+use App\Models\SalesDocument;
 use Illuminate\Support\Facades\Route;
 use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
 
@@ -76,6 +78,13 @@ Route::middleware([
         Route::get('/fakturor/{invoice}', [InvoiceController::class, 'show'])->whereUuid('invoice')->name('invoicing.invoices.show');
         Route::get('/fakturor/{invoice}/andra', [InvoiceController::class, 'edit'])->whereUuid('invoice')->name('invoicing.invoices.edit');
         Route::get('/fakturor/{invoice}/pdf', [InvoiceController::class, 'pdf'])->whereUuid('invoice')->name('invoicing.invoices.pdf');
+        foreach (['offerter' => ['invoicing.quotes', SalesDocument::QUOTE], 'ordrar' => ['invoicing.orders', SalesDocument::ORDER]] as $path => [$name, $kind]) {
+            Route::view("/{$path}", 'invoicing.sales-documents.index', ['kind' => $kind])->name($name);
+            Route::view("/{$path}/ny", 'invoicing.sales-documents.show', ['kind' => $kind, 'document' => null])->name("{$name}.create");
+            Route::get("/{$path}/{document}", [SalesDocumentController::class, 'show'])->whereUuid('document')->name("{$name}.show");
+            Route::get("/{$path}/{document}/pdf", [SalesDocumentController::class, 'pdf'])->whereUuid('document')->name("{$name}.pdf");
+        }
+
         Route::view('/kunder', 'invoicing.customers')->name('invoicing.customers');
         Route::view('/artiklar', 'invoicing.articles')->name('invoicing.articles');
 

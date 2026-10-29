@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Actions\Invoicing;
 
 use App\Domain\Invoicing\InvoiceCalculator;
-use App\Models\Account;
-use App\Models\Article;
+use App\Domain\Invoicing\SalesRowInput;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceRow;
 use App\Models\User;
-use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +18,6 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use InvalidArgumentException;
 
 /**
  * Creates or updates a draft invoice and recalculates its amounts. Nothing
@@ -75,7 +72,7 @@ class SaveDraftInvoice
             // validate() keeps only fields with rules, so the rows are read from the input itself.
             /** @var list<array<string, mixed>> $rowInput */
             $rowInput = array_values(array_filter((array) $input['rows'], is_array(...)));
-            $rows = $this->rows($rowInput, $draft?->isCredit() ?? false);
+            $rows = SalesRowInput::parse($rowInput, $draft?->isCredit() ?? false);
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
@@ -103,81 +100,5 @@ class SaveDraftInvoice
 
             return $invoice->load('rows');
         }));
-    }
-
-    /**
-     * @param  list<array<string, mixed>>  $input
-     * @return list<array{article_id: ?int, description: string, quantity: string, unit: string, unit_price_ore: int, discount_bp: int, vat_rate: int, account_id: int, net_ore: int}>
-     */
-    private function rows(array $input, bool $credit): array
-    {
-        $articles = Article::query()->whereIn('number', array_filter(array_map(fn (array $row): string => trim((string) ($row['article'] ?? '')), $input)))->get()->keyBy('number');
-        $accountNumbers = array_filter(array_map(fn (array $row): int => (int) ($row['account'] ?? 0), $input));
-        $accounts = Account::query()->whereIn('number', [...$accountNumbers, ...array_values(SaveArticle::DEFAULT_ACCOUNTS)])->get()->keyBy('number');
-        $accountsById = $accounts->keyBy('id');
-        $errors = [];
-        $rows = [];
-
-        foreach ($input as $index => $row) {
-            $line = $index + 1;
-            $article = $articles->get(trim((string) ($row['article'] ?? '')));
-            $quantity = InvoiceCalculator::quantity((string) ($row['quantity'] ?? ''));
-            $rate = (int) $row['vat_rate'];
-
-            if ($quantity === null || preg_match('/^-?0+(\.0+)?$/', $quantity) === 1) {
-                $errors["rows.{$index}.quantity"] = __('Rad :line: skriv ett antal, till exempel 2 eller 1,5.', ['line' => $line]);
-
-                continue;
-            }
-
-            if ($credit && ! str_starts_with($quantity, '-')) {
-                $quantity = "-{$quantity}";
-            }
-
-            try {
-                $price = Money::parse((string) ($row['price'] ?? '0'));
-            } catch (InvalidArgumentException) {
-                $errors["rows.{$index}.price"] = __('Rad :line: priset går inte att läsa. Skriv till exempel 149,00.', ['line' => $line]);
-
-                continue;
-            }
-
-            $discountBp = InvoiceCalculator::discount((string) ($row['discount'] ?? ''));
-
-            if ($discountBp === null) {
-                $errors["rows.{$index}.discount"] = __('Rad :line: rabatten ska vara mellan 0 och 100 procent.', ['line' => $line]);
-
-                continue;
-            }
-
-            $accountNumber = (int) ($row['account'] ?? 0);
-            $account = $accountNumber > 0
-                ? $accounts->get($accountNumber)
-                : ($article !== null ? $accountsById->get($article->account_id) : $accounts->get(SaveArticle::DEFAULT_ACCOUNTS[$rate]));
-
-            if (! $account instanceof Account) {
-                $errors["rows.{$index}.account"] = __('Rad :line: intäktskontot finns inte i kontoplanen.', ['line' => $line]);
-
-                continue;
-            }
-
-            $rows[] = [
-                'article_id' => $article?->id,
-                'description' => trim((string) $row['description']),
-                'quantity' => $quantity,
-                'unit' => mb_substr(trim((string) ($row['unit'] ?? '')) ?: ($article->unit ?? 'st'), 0, 10),
-                'unit_price_ore' => $price->ore,
-                'discount_bp' => $discountBp,
-                'vat_rate' => $rate,
-                'account_id' => $account->id,
-                'net_ore' => InvoiceCalculator::rowNet($price, $quantity, $discountBp)->ore,
-            ];
-        }
-
-        if ($errors !== []) {
-            throw ValidationException::withMessages($errors);
-        }
-
-        return $rows;
     }
 }

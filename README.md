@@ -44,9 +44,10 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Kundregister och artikelregister med pris, moms och intäktskonto.
 - ✅ Fakturor med OCR-nummer, PDF och utskick via e-post. De bokförs automatiskt, enligt fakturametoden eller kontantmetoden.
 - ✅ Inbetalningar, även delbetalningar, och kreditfakturor.
+- ✅ Offerter och order (till exempel catering) som blir fakturor utan att något skrivs två gånger.
 
 **På väg** (i den här ordningen)
-- 🚧 Offert → order → faktura, påminnelser, EU- och exportfakturor.
+- 🚧 Påminnelser, EU- och exportfakturor, bankfiler för inbetalningar.
 - 🚧 Leverantörsfakturor, attest och betalfiler.
 - 🚧 Lön (kräver först juridisk granskning, se [AGENTS.md](AGENTS.md)).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
@@ -66,7 +67,7 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 Var medveten om var projektet står innan du installerar:
 
 - ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export samt fakturering. Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** offerter och order, leverantörsfakturor, lön och bokslut.
+- 🚧 **Inte byggt ännu:** leverantörsfakturor, lön och bokslut.
 
 ### 1. Installera verktygen (en gång per dator)
 

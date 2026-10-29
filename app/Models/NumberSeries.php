@@ -23,6 +23,10 @@ class NumberSeries extends Model
 
     public const string INVOICES = 'invoices';
 
+    public const string QUOTES = 'quotes';
+
+    public const string ORDERS = 'orders';
+
     protected $table = 'number_series';
 
     /** @var list<string> */
