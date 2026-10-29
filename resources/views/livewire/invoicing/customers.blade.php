@@ -53,6 +53,14 @@
                             <span class="block font-medium text-gray-900">{{ $customer->name }}</span>
                             <span class="block text-sm text-gray-600">{{ collect([$customer->org_number, $customer->email, $customer->city])->filter()->implode(' · ') }}</span>
                         </span>
+                        <span class="w-36 flex-none text-right text-sm">
+                            <span class="block text-gray-500">{{ __('Fakturerat :year', ['year' => $year]) }}</span>
+                            <x-ui.amount :money="App\Support\Money\Money::ofOre((int) $customer->invoiced_this_year)" class="font-medium text-gray-900" />
+                        </span>
+                        <span class="w-32 flex-none text-right text-sm">
+                            <span class="block text-gray-500">{{ __('Obetalt') }}</span>
+                            <x-ui.amount :money="App\Support\Money\Money::ofOre((int) $customer->unpaid)" class="font-medium text-gray-900" />
+                        </span>
                         @if($canManage)
                             <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $customer->id }})">{{ __('Ändra') }}</button>
                         @endif

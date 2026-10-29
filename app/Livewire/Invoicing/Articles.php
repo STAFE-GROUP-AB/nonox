@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\SaveArticle;
+use App\Domain\Invoicing\InvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -80,8 +83,20 @@ class Articles extends Component
 
     public function render(): View
     {
+        $year = CarbonImmutable::today()->startOfYear();
+
         return view('livewire.invoicing.articles', [
-            'articles' => Article::query()->with('account')->orderBy('number')->get(),
+            'articles' => Article::query()
+                ->with('account')
+                ->withSum(['invoiceRows as sold_this_year' => fn (Builder $query) => $query->whereHas('invoice', fn (Builder $invoice) => $invoice
+                    ->where('status', '<>', InvoiceStatus::Draft->value)
+                    ->whereBetween('invoice_date', [$year->toDateString(), $year->endOfYear()->toDateString()]))], 'net_ore')
+                ->withSum(['invoiceRows as quantity_this_year' => fn (Builder $query) => $query->whereHas('invoice', fn (Builder $invoice) => $invoice
+                    ->where('status', '<>', InvoiceStatus::Draft->value)
+                    ->whereBetween('invoice_date', [$year->toDateString(), $year->endOfYear()->toDateString()]))], 'quantity')
+                ->orderBy('number')
+                ->get(),
+            'year' => $year->year,
             'revenueAccounts' => Account::query()->whereBetween('number', [3000, 3999])->where('is_active', true)->orderBy('number')->get(['number', 'name']),
             'canManage' => $this->user()->can('create', [Article::class, $this->company()]),
         ]);

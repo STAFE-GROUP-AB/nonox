@@ -1,20 +1,8 @@
 @php
     use App\Domain\Invoicing\InvoiceStatus;
-    use App\Support\Money\Money;
 @endphp
 
 <div class="space-y-6">
-    <div class="grid gap-4 sm:grid-cols-2">
-        <x-ui.card>
-            <p class="text-sm text-gray-500">{{ __('Obetalt hos kunder') }}</p>
-            <p class="mt-1 text-2xl font-semibold"><x-ui.amount :money="Money::ofOre($outstanding)" /></p>
-        </x-ui.card>
-        <x-ui.card>
-            <p class="text-sm text-gray-500">{{ __('Förfallna fakturor') }}</p>
-            <p @class(['mt-1 text-2xl font-semibold', 'text-accent-700' => $overdue > 0])>{{ $overdue }}</p>
-        </x-ui.card>
-    </div>
-
     <x-ui.card>
         <div class="flex flex-wrap items-center justify-between gap-4">
             <nav class="flex flex-wrap gap-2" aria-label="{{ __('Visa fakturor') }}">

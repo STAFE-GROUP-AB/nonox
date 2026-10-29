@@ -41,7 +41,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Behandlingshistorik över allt som görs.
 
 **Fakturering**
-- ✅ Kundregister och artikelregister med pris, moms och intäktskonto.
+- ✅ Kundregister och artikelregister under en egen flik, Register, med pris, moms och intäktskonto. Per kund visas vad den fakturerats i år och vad som är obetalt, per artikel vad som sålts i år.
+- ✅ Nyckeltal för företagaren överst under varje flik och på översikten: fakturerat i månaden, obetalt hos kunder och förfallet, order att fakturera, resultat hittills i år, pengar på bank och kassa och moms att betala. Var och en visas bara för roller som får se underlaget.
 - ✅ Fakturor med OCR-nummer, PDF och utskick via e-post. De bokförs automatiskt, enligt fakturametoden eller kontantmetoden.
 - ✅ Inbetalningar, även delbetalningar, kreditfakturor och påminnelser via e-post.
 - ✅ Offerter och order (till exempel catering) som blir fakturor utan att något skrivs två gånger.

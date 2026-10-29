@@ -9,6 +9,7 @@ use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * An article: a product or service with its price excluding VAT, its VAT
@@ -53,5 +54,11 @@ class Article extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    /** @return HasMany<InvoiceRow, $this> */
+    public function invoiceRows(): HasMany
+    {
+        return $this->hasMany(InvoiceRow::class);
     }
 }

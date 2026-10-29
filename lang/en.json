@@ -952,5 +952,22 @@
     "Enhet, rad": "Unit, line",
     "Pris, rad": "Price, line",
     "Rabatt, rad": "Discount, line",
-    "Moms, rad": "VAT, line"
+    "Moms, rad": "VAT, line",
+    "Fakturerat i :month": "Invoiced in :month",
+    "Exkl. moms. Förra månaden: :amount": "Excl. VAT. Last month: :amount",
+    "Inget har förfallit.": "Nothing is overdue.",
+    "Order att fakturera": "Orders to invoice",
+    "Exkl. moms. Öppna offerter: :amount": "Excl. VAT. Open quotes: :amount",
+    "Resultat hittills :year": "Result so far :year",
+    "Intäkter: :amount": "Revenue: :amount",
+    "Pengar på bank och kassa": "Money in bank and cash",
+    "Saldo enligt bokföringen, konto 1900–1999.": "Balance according to the books, accounts 1900–1999.",
+    "Saldo på momskontona, konto 2600–2699.": "Balance of the VAT accounts, accounts 2600–2699.",
+    "Register": "Registers",
+    "Nyckeltal": "Key figures",
+    "Fakturerat :year": "Invoiced :year",
+    "Obetalt": "Unpaid",
+    "Sålt :year": "Sold :year",
+    ":count faktura har förfallit, :amount": ":count invoice is overdue, :amount",
+    ":count fakturor har förfallit, :amount": ":count invoices are overdue, :amount"
 }

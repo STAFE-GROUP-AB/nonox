@@ -16,12 +16,15 @@
     ]);
 @endphp
 
-<nav class="flex flex-wrap gap-2" aria-label="{{ __('Bokföring') }}">
-    @foreach($links as $route => $label)
-        <a href="{{ route($route) }}" @class([
-            'rounded-full px-4 py-1.5 text-sm font-medium',
-            'bg-accent-600 text-white' => request()->routeIs(str_replace('.index', '.*', $route)),
-            'bg-white border border-gray-200 text-gray-700 hover:border-gray-300' => ! request()->routeIs(str_replace('.index', '.*', $route)),
-        ]) @if(request()->routeIs(str_replace('.index', '.*', $route))) aria-current="page" @endif>{{ $label }}</a>
-    @endforeach
-</nav>
+<div class="space-y-6">
+    <nav class="flex flex-wrap gap-2" aria-label="{{ __('Bokföring') }}">
+        @foreach($links as $route => $label)
+            <a href="{{ route($route) }}" @class([
+                'rounded-full px-4 py-1.5 text-sm font-medium',
+                'bg-accent-600 text-white' => request()->routeIs(str_replace('.index', '.*', $route)),
+                'bg-white border border-gray-200 text-gray-700 hover:border-gray-300' => ! request()->routeIs(str_replace('.index', '.*', $route)),
+            ]) @if(request()->routeIs(str_replace('.index', '.*', $route))) aria-current="page" @endif>{{ $label }}</a>
+        @endforeach
+    </nav>
+    <x-ui.kpis />
+</div>

@@ -48,13 +48,9 @@ class InvoiceList extends Component
             ->orderByDesc('created_at')
             ->paginate(25);
 
-        $open = Invoice::query()->where('status', InvoiceStatus::Issued->value)->where('kind', Invoice::INVOICE);
-
         return view('livewire.invoicing.invoice-list', [
             'invoices' => $invoices,
             'today' => $today,
-            'outstanding' => (int) (clone $open)->sum('total_ore') - (int) (clone $open)->sum('paid_ore'),
-            'overdue' => (clone $open)->whereDate('due_date', '<', $today)->count(),
             'canCreate' => $this->user()->can('create', [Invoice::class, $this->company()]),
         ]);
     }

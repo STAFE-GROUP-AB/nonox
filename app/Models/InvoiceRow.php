@@ -60,6 +60,12 @@ class InvoiceRow extends Model
         ];
     }
 
+    /** @return BelongsTo<Invoice, $this> */
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class);
+    }
+
     /** @return BelongsTo<Account, $this> */
     public function account(): BelongsTo
     {

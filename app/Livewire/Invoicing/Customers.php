@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\SaveCustomer;
+use App\Domain\Invoicing\InvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\NumberSeries;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -85,6 +90,7 @@ class Customers extends Component
     public function render(): View
     {
         $search = trim($this->search);
+        $year = CarbonImmutable::today()->startOfYear();
 
         return view('livewire.invoicing.customers', [
             'customers' => Customer::query()
@@ -93,8 +99,15 @@ class Customers extends Component
                     ->orWhere('org_number', 'ilike', "%{$search}%")
                     ->orWhere('email', 'ilike', "%{$search}%")
                     ->orWhereRaw('CAST(number AS TEXT) = ?', [$search])))
+                ->withSum(['invoices as invoiced_this_year' => fn (Builder $query) => $query
+                    ->where('status', '<>', InvoiceStatus::Draft->value)
+                    ->whereBetween('invoice_date', [$year->toDateString(), $year->endOfYear()->toDateString()])], 'net_ore')
+                ->withSum(['invoices as unpaid' => fn (Builder $query) => $query
+                    ->where('status', InvoiceStatus::Issued->value)
+                    ->where('kind', Invoice::INVOICE)], DB::raw('total_ore - paid_ore'))
                 ->orderBy('number')
                 ->paginate(25),
+            'year' => $year->year,
             'canManage' => $this->user()->can('create', [Customer::class, $this->company()]),
             'nextNumber' => NumberSeries::peek(NumberSeries::CUSTOMERS),
         ]);

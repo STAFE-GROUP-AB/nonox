@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * A customer (kundregister, AGENTS.md §7 Phase 2).
@@ -82,5 +83,11 @@ class Customer extends Model
             'country' => $this->country,
             'email' => $this->email,
         ];
+    }
+
+    /** @return HasMany<Invoice, $this> */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
     }
 }

@@ -62,6 +62,7 @@
                         <th class="py-2 pr-4 text-right font-medium">{{ __('Pris exkl. moms') }}</th>
                         <th class="py-2 pr-4 font-medium">{{ __('Moms') }}</th>
                         <th class="py-2 pr-4 font-medium">{{ __('Konto') }}</th>
+                        <th class="py-2 pr-4 text-right font-medium">{{ __('Sålt :year', ['year' => $year]) }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -73,6 +74,10 @@
                             <td class="py-2 pr-4 text-right"><x-ui.amount :money="$article->price_ore" /></td>
                             <td class="py-2 pr-4">{{ $rates[$article->vat_rate] ?? '' }}</td>
                             <td class="py-2 pr-4 tabular-nums">{{ $article->account?->number }}</td>
+                            <td class="py-2 pr-4 text-right">
+                                <x-ui.amount :money="App\Support\Money\Money::ofOre((int) $article->sold_this_year)" />
+                                <span class="block text-xs text-gray-500 tabular-nums">{{ rtrim(rtrim(number_format((float) $article->quantity_this_year, 3, ',', ' '), '0'), ',') }} {{ $article->unit }}</span>
+                            </td>
                             <td class="py-2 text-right">
                                 @if($canManage)
                                     <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $article->id }})">{{ __('Ändra') }}</button>

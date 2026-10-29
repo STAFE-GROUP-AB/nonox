@@ -4,6 +4,8 @@
             :title="__('Hej :name!', ['name' => Str::before($user->name, ' ')])"
             :lead="__('Här är översikten för :company.', ['company' => $company->name])" />
 
+        <x-ui.kpis />
+
         <x-ui.card :title="__('Kom igång')" :description="__('Ta det i den här ordningen. Du behöver inte göra allt i dag.')">
             <ol class="divide-y divide-gray-100">
                 @foreach($steps as $step)
