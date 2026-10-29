@@ -49,7 +49,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 **På väg** (i den här ordningen)
 - 🚧 Påminnelser, EU- och exportfakturor, bankfiler för inbetalningar.
 - 🚧 Leverantörsfakturor, attest och betalfiler.
-- 🚧 Lön (kräver först juridisk granskning, se [AGENTS.md](AGENTS.md)).
+- 🚧 Lön, med timlöner, OB och personalliggare för restauranger. Förslaget och frågorna som först måste granskas juridiskt finns i [ADR-012](docs/adr/ADR-012-payroll.md).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
