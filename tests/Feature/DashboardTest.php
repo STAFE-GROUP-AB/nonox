@@ -19,7 +19,7 @@ it('greets the user and guides them through the first steps', function () {
         ->assertSee('Hej Anna!')
         ->assertSee('Här är översikten för Ettan AB.')
         ->assertSee('Fyll i adress och bankgiro')
-        ->assertSee('Kommer snart')
+        ->assertSee(route('invoicing.invoices.create'), escape: false)
         ->assertDontSee('Jetstream')
         ->assertDontSee('Laravel');
 

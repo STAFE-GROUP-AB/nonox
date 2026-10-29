@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.7
+- Version: 0.8
 - Datum: 2026-10-29
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -201,13 +201,32 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Överföringen kan göras om så länge nästa år är öppet; de ingående
   balanserna ersätts då och det skrivs i behandlingshistoriken.
 
-## 5. Belopp
+## 5. Fakturering
+
+- Kunder och artiklar finns i egna register. Kunder får löpnummer;
+  personnummer sparas krypterade.
+- En faktura är ett utkast tills den skapas. Då får den nästa nummer i en
+  obruten nummerserie, ett OCR-nummer med kontrollsiffra och en kopia av
+  kundens uppgifter. Därefter kan fakturan inte ändras; databasen vägrar.
+  Ett fel rättas med en kreditfaktura
+  ([ADR-011](../adr/ADR-011-invoicing.md)).
+- Belopp: rad = antal × pris minus rabatt, moms per momssats på radernas
+  summa, totalen avrundad till hela kronor (öresavrundning).
+- Bokföring enligt fakturametoden: när fakturan skapas, verifikation i serie
+  B (1510 mot intäktskonton, utgående moms och 3740). Betalning: serie C,
+  1930 mot 1510. Enligt kontantmetoden bokförs intäkt och moms först vid
+  betalning.
+- En kreditfaktura tar ut hela den obetalda fakturan och vänder dess
+  verifikation.
+- Varje skapad, skickad och betald faktura skrivs till behandlingshistoriken.
+
+## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
   närmaste öre, och exakt mittemellan avrundas bort från noll
   ([ADR-006](../adr/ADR-006-money-and-audit-log.md)).
 
-## 6. Behandlingshistorik
+## 7. Behandlingshistorik
 
 - Alla ändringar av företag, medlemmar, kontoplan och räkenskapsår, alla
   bokföringar och rättelser av verifikationer, varje kontroll av huvudboken, varje
@@ -217,7 +236,7 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Tabellen går bara att lägga till i. Databasen själv vägrar ändringar och
   borttagningar.
 
-## 7. Öppna frågor (TODO legal-verify)
+## 8. Öppna frågor (TODO legal-verify)
 
 - Minsta längd för ett första räkenskapsår: `AGENTS.md` anger 6 månader;
   bokföringslagen 3 kap anger högst 18.
@@ -233,12 +252,16 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   38, 41).
 - Konto för obokfört resultat vid årsskifte per företagsform, särskilt
   handelsbolag.
+- Fakturans obligatoriska innehåll enligt mervärdesskattelagen; omvänd
+  skattskyldighet, EU- och exportfakturor är inte byggda ännu.
+- Kontantmetoden: obetalda fakturor vid räkenskapsårets slut ska bokföras som
+  fordringar vid bokslutet.
 - Inlästa verifikationer bokförs med en behandlingshistorikpost per inläsning,
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt
   BFNAR 2013:2?
 
-## 8. Ändringshistorik
+## 9. Ändringshistorik
 
 | Version | Datum | Ändring |
 |---|---|---|
@@ -249,3 +272,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.5 | 2026-10-29 | Inläsning av SIE4-filer i två steg med avstämning, historik för tillagda och borttagna rader. |
 | 0.6 | 2026-10-29 | Kostnadsställen och projekt på verifikationsrader, i SIE-export och SIE-import. |
 | 0.7 | 2026-10-29 | Rapporter, momsdeklaration med bokföring av momsen och periodlås, årsskifte. |
+| 0.8 | 2026-10-29 | Kunder, artiklar, kundfakturor med OCR och PDF, betalningar och kreditfakturor. |

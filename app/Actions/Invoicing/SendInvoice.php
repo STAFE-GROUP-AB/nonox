@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Invoicing;
+
+use App\Mail\InvoiceMail;
+use App\Models\Company;
+use App\Models\Invoice;
+use App\Models\User;
+use App\Support\Audit\Audit;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+
+/**
+ * Emails an issued invoice as a PDF to the customer, or to another address.
+ */
+class SendInvoice
+{
+    public function __invoke(User $user, Invoice $invoice, string $email): void
+    {
+        Gate::forUser($user)->authorize('send', $invoice);
+
+        Validator::make(['email' => $email], ['email' => ['required', 'email', 'max:255']], [], ['email' => __('e-post')])->validate();
+
+        $company = Company::query()->findOrFail($invoice->company_id);
+
+        Mail::to($email)->send(new InvoiceMail($invoice, $company));
+
+        $invoice->forceFill(['sent_at' => CarbonImmutable::now(), 'sent_to' => $email])->save();
+
+        Audit::record('invoice.sent', $invoice, ['number' => $invoice->number, 'to' => $email], $company, $user);
+    }
+}

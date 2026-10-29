@@ -13,6 +13,7 @@
     "require": {
         "php": "^8.4",
         "brick/math": "^1.0",
+        "dompdf/dompdf": "^3.1",
         "laravel/framework": "^13.0",
         "laravel/jetstream": "^5.5",
         "laravel/sanctum": "^4.3",

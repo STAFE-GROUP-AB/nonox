@@ -1,0 +1,105 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Invoicing;
+
+use App\Actions\Accounting\BookVoucher;
+use App\Domain\Accounting\VoucherSource;
+use App\Domain\Company\AccountingMethod;
+use App\Domain\Invoicing\InvoiceBooking;
+use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Invoicing\Ocr;
+use App\Models\Company;
+use App\Models\Customer;
+use App\Models\Invoice;
+use App\Models\NumberSeries;
+use App\Models\User;
+use App\Support\Audit\Audit;
+use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * Makes a draft a real invoice: the next invoice number (gapless, shared by
+ * invoices and credit invoices), an OCR reference, the customer as it is
+ * now, and under fakturametoden a voucher in series B. After this the
+ * invoice never changes.
+ *
+ * A credit invoice settles the invoice it credits: both are closed, and the
+ * receivable nets to zero.
+ */
+class IssueInvoice
+{
+    public function __construct(private readonly BookVoucher $bookVoucher) {}
+
+    public function __invoke(User $user, Invoice $invoice): Invoice
+    {
+        Gate::forUser($user)->authorize('issue', $invoice);
+
+        return CurrentCompany::run($invoice->company_id, fn (): Invoice => DB::transaction(function () use ($user, $invoice): Invoice {
+            /** @var Invoice $invoice */
+            $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+            $invoice->load(['rows.account']);
+            $company = Company::query()->findOrFail($invoice->company_id);
+            $customer = Customer::query()->findOrFail($invoice->customer_id);
+
+            if (! $invoice->isDraft()) {
+                throw ValidationException::withMessages(['invoice' => __('Fakturan är redan skickad.')]);
+            }
+
+            if ($invoice->rows->isEmpty() || $invoice->total_ore->isZero()) {
+                throw ValidationException::withMessages(['invoice' => __('Fakturan saknar belopp.')]);
+            }
+
+            $original = $invoice->isCredit() ? Invoice::query()->whereKey($invoice->credits_invoice_id)->lockForUpdate()->first() : null;
+
+            if ($invoice->isCredit() && ($original === null || $original->status !== InvoiceStatus::Issued || ! $original->paid_ore->isZero())) {
+                throw ValidationException::withMessages(['invoice' => __('Bara en obetald faktura kan krediteras.')]);
+            }
+
+            $number = NumberSeries::take(NumberSeries::INVOICES);
+
+            $invoice->forceFill([
+                'number' => $number,
+                'status' => $invoice->isCredit() ? InvoiceStatus::Paid : InvoiceStatus::Issued,
+                'ocr' => Ocr::forInvoiceNumber($number),
+                'customer_snapshot' => $customer->snapshot(),
+                'issued_at' => CarbonImmutable::now(),
+                'issued_by' => $user->id,
+                'paid_ore' => $invoice->isCredit() ? $invoice->total_ore->ore : 0,
+            ]);
+
+            if ($company->accounting_method === AccountingMethod::Fakturametoden) {
+                $voucher = ($this->bookVoucher)(
+                    $user,
+                    $company,
+                    $invoice->invoice_date,
+                    "{$invoice->title()}, {$customer->name}",
+                    'B',
+                    InvoiceBooking::issue($invoice, $invoice->rows),
+                    VoucherSource::Invoice,
+                    $invoice,
+                );
+
+                $invoice->voucher_id = $voucher->id;
+            }
+
+            $invoice->save();
+
+            $original?->forceFill(['status' => InvoiceStatus::Credited, 'paid_ore' => $original->total_ore->ore])->save();
+
+            Audit::record('invoice.issued', $invoice, [
+                'number' => $number,
+                'kind' => $invoice->kind,
+                'customer' => $customer->name,
+                'total_ore' => $invoice->total_ore->ore,
+                'credits' => $original?->number,
+            ], $company, $user);
+
+            return $invoice;
+        }));
+    }
+}

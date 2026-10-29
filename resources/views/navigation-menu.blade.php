@@ -15,7 +15,10 @@
                     <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*')">
+                    <x-nav-link href="{{ route('invoicing.invoices.index') }}" :active="request()->routeIs('invoicing.*')">
+                        {{ __('Försäljning') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*', 'vat.*')">
                         {{ __('Bokföring') }}
                     </x-nav-link>
                 </div>
@@ -157,7 +160,10 @@
             <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*')">
+            <x-responsive-nav-link href="{{ route('invoicing.invoices.index') }}" :active="request()->routeIs('invoicing.*')">
+                {{ __('Försäljning') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*', 'vat.*')">
                 {{ __('Bokföring') }}
             </x-responsive-nav-link>
         </div>

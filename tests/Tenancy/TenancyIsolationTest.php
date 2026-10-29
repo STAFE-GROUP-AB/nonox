@@ -3,10 +3,16 @@
 declare(strict_types=1);
 
 use App\Models\Account;
+use App\Models\Article;
 use App\Models\Company;
 use App\Models\CostCenter;
+use App\Models\Customer;
 use App\Models\FiscalYear;
 use App\Models\ImportedVoucher;
+use App\Models\Invoice;
+use App\Models\InvoicePayment;
+use App\Models\InvoiceRow;
+use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\Project;
 use App\Models\SieImport;
@@ -51,6 +57,12 @@ const COMPANY_SCOPED_MODELS = [
     ImportedVoucher::class => 'importedVoucherAttributes',
     VoucherRowHistory::class => 'voucherRowHistoryAttributes',
     VatReport::class => 'vatReportAttributes',
+    NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
+    Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
+    Article::class => 'articleAttributes',
+    Invoice::class => 'invoiceAttributes',
+    InvoiceRow::class => 'invoiceRowAttributes',
+    InvoicePayment::class => 'invoicePaymentAttributes',
 ];
 
 /** Runs inside the company's context. */
@@ -130,6 +142,52 @@ function vatReportAttributes(): array
     ];
 }
 
+function articleAttributes(): array
+{
+    return [
+        'number' => 'A'.random_int(1, 1_000_000),
+        'name' => 'Hemlig artikel',
+        'price_ore' => 100,
+        'vat_rate' => 2500,
+        'account_id' => Account::query()->firstOrCreate(['number' => 3001], ['name' => 'Försäljning', 'type' => 'REVENUE'])->id,
+    ];
+}
+
+function invoiceAttributes(): array
+{
+    return [
+        'customer_id' => Customer::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig kund AB'])->id,
+        'invoice_date' => '2026-03-01',
+        'due_date' => '2026-03-31',
+    ];
+}
+
+function invoiceRowAttributes(): array
+{
+    return [
+        'invoice_id' => Invoice::create(invoiceAttributes())->id,
+        'description' => 'Hemlig rad',
+        'quantity' => '1',
+        'unit_price_ore' => 100,
+        'vat_rate' => 2500,
+        'account_id' => articleAttributes()['account_id'],
+        'net_ore' => 100,
+        'position' => 0,
+    ];
+}
+
+function invoicePaymentAttributes(): array
+{
+    return [
+        'invoice_id' => Invoice::create(invoiceAttributes())->id,
+        'paid_on' => '2026-03-10',
+        'amount_ore' => 100,
+        'account_id' => Account::query()->firstOrCreate(['number' => 1930], ['name' => 'Bank', 'type' => 'ASSET'])->id,
+        'voucher_id' => Voucher::create(voucherAttributes())->id,
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
 function attachmentAttributes(): array
 {
     return [
@@ -161,7 +219,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

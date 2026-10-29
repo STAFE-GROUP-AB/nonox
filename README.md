@@ -40,8 +40,13 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ SIE4: export av varje räkenskapsår och inläsning i två steg med avstämning mot filen. Så flyttar du in bokföringen från ditt gamla program.
 - ✅ Behandlingshistorik över allt som görs.
 
+**Fakturering**
+- ✅ Kundregister och artikelregister med pris, moms och intäktskonto.
+- ✅ Fakturor med OCR-nummer, PDF och utskick via e-post. De bokförs automatiskt, enligt fakturametoden eller kontantmetoden.
+- ✅ Inbetalningar, även delbetalningar, och kreditfakturor.
+
 **På väg** (i den här ordningen)
-- 🚧 Kunder, artiklar, offert → order → faktura med OCR och PDF, kundinbetalningar.
+- 🚧 Offert → order → faktura, påminnelser, EU- och exportfakturor.
 - 🚧 Leverantörsfakturor, attest och betalfiler.
 - 🚧 Lön (kräver först juridisk granskning, se [AGENTS.md](AGENTS.md)).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
@@ -60,8 +65,8 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 
 Var medveten om var projektet står innan du installerar:
 
-- ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte och SIE-import och -export. Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** fakturering, leverantörsfakturor, lön och bokslut.
+- ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export samt fakturering. Se listan under Funktioner ovan.
+- 🚧 **Inte byggt ännu:** offerter och order, leverantörsfakturor, lön och bokslut.
 
 ### 1. Installera verktygen (en gång per dator)
 

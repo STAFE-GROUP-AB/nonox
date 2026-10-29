@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Domain\Accounting\SieImport\SieImportStatus;
 use App\Models\Company;
 use App\Models\FiscalYear;
+use App\Models\Invoice;
 use App\Models\SieImport;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -73,11 +74,12 @@ class DashboardController
                     'soon' => false,
                 ],
                 [
-                    'done' => false,
+                    'done' => Invoice::query()->whereNotNull('number')->exists(),
                     'title' => __('Skicka din första faktura'),
-                    'text' => __('Kunder, artiklar och fakturor med OCR-nummer och PDF.'),
-                    'link' => null,
-                    'soon' => true,
+                    'text' => __('Lägg upp kunden, skriv fakturan och skicka den som PDF. Den bokförs automatiskt, med OCR-nummer för betalningen.'),
+                    'link' => route('invoicing.invoices.create'),
+                    'allowed' => $user->hasTeamPermission($company, 'invoices:create'),
+                    'soon' => false,
                 ],
             ],
         ]);

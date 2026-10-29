@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\Vat\VatFileController;
@@ -70,6 +71,14 @@ Route::middleware([
             ->whereNumber('fiscalYear')
             ->name('accounting.fiscalYears.sie');
         Route::get('/verifikationsserier', VoucherSeriesController::class)->name('accounting.voucherSeries');
+        Route::view('/fakturor', 'invoicing.invoices.index')->name('invoicing.invoices.index');
+        Route::view('/fakturor/ny', 'invoicing.invoices.edit', ['invoice' => null])->name('invoicing.invoices.create');
+        Route::get('/fakturor/{invoice}', [InvoiceController::class, 'show'])->whereUuid('invoice')->name('invoicing.invoices.show');
+        Route::get('/fakturor/{invoice}/andra', [InvoiceController::class, 'edit'])->whereUuid('invoice')->name('invoicing.invoices.edit');
+        Route::get('/fakturor/{invoice}/pdf', [InvoiceController::class, 'pdf'])->whereUuid('invoice')->name('invoicing.invoices.pdf');
+        Route::view('/kunder', 'invoicing.customers')->name('invoicing.customers');
+        Route::view('/artiklar', 'invoicing.articles')->name('invoicing.articles');
+
         Route::view('/rapporter', 'accounting.reports')->name('accounting.reports');
         Route::view('/moms', 'vat.index')->name('vat.index');
         Route::get('/moms/{fiscalYear}/fil', VatFileController::class)->whereNumber('fiscalYear')->name('vat.file');
