@@ -69,7 +69,7 @@ class InviteEmployeeToPortal
             TeamInvitation::query()->where('team_id', $company->id)->whereRaw('lower(email) = ?', [mb_strtolower($email)])->delete();
 
             /** @var TeamInvitation $invitation */
-            $invitation = $company->teamInvitations()->create(['email' => $email, 'role' => 'employee']);
+            $invitation = $company->teamInvitations()->create(['email' => $email, 'role' => 'employee', 'name' => trim("{$employee->first_name} {$employee->last_name}")]);
 
             CurrentCompany::run($company, fn () => $employee->forceFill(['portal_invited_at' => now()])->save());
             Audit::record('payroll.employee_invited_to_portal', $employee, ['employee_number' => $employee->employee_number], $company, $user);

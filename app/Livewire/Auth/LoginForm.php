@@ -6,6 +6,7 @@ namespace App\Livewire\Auth;
 
 use App\Actions\Auth\SendLoginCode;
 use App\Actions\Auth\VerifyLoginCode;
+use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Support\LoginCodeAutofill;
 use App\Support\Toast;
@@ -17,7 +18,8 @@ use Livewire\Component;
 
 /**
  * Passwordless sign-in (ADR-000): email → one-time code → signed in. A new
- * address only adds a name step. The verified address is kept in the session,
+ * address only adds a name step, and not even that when an invitation to the
+ * address already carries the name. The verified address is kept in the session,
  * never trusted from the browser.
  */
 class LoginForm extends Component
@@ -108,6 +110,14 @@ class LoginForm extends Component
             return;
         }
 
+        $invitedName = TeamInvitation::query()->whereRaw('lower(email) = ?', [$email])->whereNotNull('name')->latest()->value('name');
+
+        if (is_string($invitedName) && trim($invitedName) !== '') {
+            $this->signIn($this->createUser($email, $invitedName), __('Välkommen, :name!', ['name' => $invitedName]));
+
+            return;
+        }
+
         session()->put(self::VERIFIED_EMAIL, $email);
         $this->step = 'name';
     }
@@ -127,10 +137,7 @@ class LoginForm extends Component
             attributes: ['name' => __('namn')],
         );
 
-        $user = User::firstOrCreate(
-            ['email' => $email],
-            ['name' => trim($this->name), 'email_verified_at' => now()],
-        );
+        $user = $this->createUser($email, $this->name);
 
         session()->forget(self::VERIFIED_EMAIL);
 
@@ -150,6 +157,14 @@ class LoginForm extends Component
         return view('livewire.auth.login-form', [
             'autofill' => LoginCodeAutofill::enabled(),
         ]);
+    }
+
+    private function createUser(string $email, string $name): User
+    {
+        return User::firstOrCreate(
+            ['email' => $email],
+            ['name' => trim($name), 'email_verified_at' => now()],
+        );
     }
 
     private function signIn(User $user, ?string $message = null): void

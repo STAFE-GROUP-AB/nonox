@@ -174,6 +174,30 @@ it('creates a verified account for a new address and sends it to /kom-igang', fu
     $this->get(route('dashboard'))->assertRedirect(route('onboarding'));
 });
 
+it('skips the name step when an invitation already carries the name', function () {
+    $owner = User::factory()->withCompany()->create();
+    $owner->currentCompany()->teamInvitations()->create(['email' => 'linda@example.test', 'role' => 'admin', 'name' => 'Linda Exempel']);
+
+    $component = Livewire::test(LoginForm::class)
+        ->set('email', 'Linda@Example.test')
+        ->call('sendCode');
+
+    $code = null;
+    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+        $code = $mail->code;
+
+        return true;
+    });
+
+    $component->set('code', $code)
+        ->call('verify')
+        ->assertNotSet('step', 'name')
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticatedAs(User::where('email', 'linda@example.test')->sole());
+    expect(User::where('email', 'linda@example.test')->sole()->name)->toBe('Linda Exempel');
+});
+
 it('creates the account for the verified address even if the email field is tampered with', function () {
     $component = Livewire::test(LoginForm::class)
         ->set('email', 'ny@example.com')

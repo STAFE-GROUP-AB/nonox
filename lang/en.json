@@ -1557,5 +1557,6 @@
     "Har inloggning till Min sida": "Has a login to My page",
     "Skicka inbjudan igen": "Send the invitation again",
     "Bjud in till Min sida": "Invite to My page",
-    "Inbjuden :date": "Invited :date"
+    "Inbjuden :date": "Invited :date",
+    "Välkommen, :name!": "Welcome, :name!"
 }

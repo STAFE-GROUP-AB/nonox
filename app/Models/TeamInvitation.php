@@ -7,6 +7,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Laravel\Jetstream\TeamInvitation as JetstreamTeamInvitation;
 
+/**
+ * @property ?string $name the invited person's name, when the inviter knows it
+ */
 class TeamInvitation extends JetstreamTeamInvitation
 {
     /**
@@ -17,6 +20,7 @@ class TeamInvitation extends JetstreamTeamInvitation
     protected $fillable = [
         'email',
         'role',
+        'name',
     ];
 
     /**
