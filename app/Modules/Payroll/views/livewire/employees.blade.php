@@ -87,8 +87,12 @@
             </form>
         </x-ui.card>
 
-        @if($editingId && ($form['salary_form'] ?? '') === 'MONTHLY')
+        @if($editingId && ($form['salary_form'] ?? '') === 'MONTHLY' && ! $endedOn)
             @include('payroll::partials.employee-salary')
+        @endif
+
+        @if($editingId)
+            @include('payroll::partials.employee-ending')
         @endif
     @endif
 

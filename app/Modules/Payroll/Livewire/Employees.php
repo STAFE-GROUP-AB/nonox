@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\ChangeSalary;
+use App\Modules\Payroll\Actions\EndEmployment;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\SaveEmployee;
 use App\Modules\Payroll\Actions\SavePensionPlan;
@@ -70,7 +71,8 @@ class Employees extends Component
         abort_unless(Gate::allows('manage', [Employee::class, $this->company()]), 403);
 
         $employee = Employee::query()->findOrFail($employeeId);
-        $employment = Employment::query()->with('costCenter')->where('employee_id', $employee->id)->whereNull('end_date')->latest('start_date')->first();
+        $employment = Employment::query()->with('costCenter')->where('employee_id', $employee->id)->whereNull('end_date')->latest('start_date')->first()
+            ?? Employment::query()->with('costCenter')->where('employee_id', $employee->id)->latest('start_date')->first();
 
         $this->editingId = $employee->id;
         $this->form = array_map(fn (mixed $value): string => (string) $value, [
@@ -94,11 +96,25 @@ class Employees extends Component
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form', 'raise');
+        $this->reset('showForm', 'editingId', 'form', 'raise', 'ending', 'confirmingEnd');
     }
 
     /** @var array<string, string> */
     public array $raise = ['valid_from' => '', 'salary' => '', 'reason' => ''];
+
+    /** @var array<string, string> */
+    public array $ending = ['end_date' => '', 'reason' => ''];
+
+    public function endEmployment(EndEmployment $end): void
+    {
+        $employee = Employee::query()->findOrFail((int) $this->editingId);
+        $employment = $end($this->user(), $this->company(), $employee, $this->ending['end_date'], $this->ending['reason']);
+
+        $this->reset('ending', 'confirmingEnd');
+        $this->toast(__('Anställningen för :name slutar :date. Lönekörningen för den månaden betalar lön till och med dagen och semesterersättning.', ['name' => $employee->first_name, 'date' => $employment->end_date?->toDateString()]));
+    }
+
+    public bool $confirmingEnd = false;
 
     public function changeSalary(ChangeSalary $change): void
     {
@@ -176,6 +192,7 @@ class Employees extends Component
             'canManage' => Gate::allows('manage', [Employee::class, $this->company()]),
             'members' => $this->showForm ? $this->company()->allUsers()->sortBy('name') : collect(),
             'pensionPlans' => PensionPlan::query()->orderBy('name')->get(),
+            'endedOn' => $this->endedOn(),
             'salaryHistory' => $this->editingId === null ? collect() : SalaryChange::query()->where('employee_id', $this->editingId)->orderByDesc('valid_from')->get(),
         ]);
     }
@@ -202,6 +219,22 @@ class Employees extends Component
         } catch (MissingPayrollRuleException) {
             return [];
         }
+    }
+
+    /** The last day of the employee's employment, once every employment has ended. */
+    private function endedOn(): ?CarbonImmutable
+    {
+        if ($this->editingId === null) {
+            return null;
+        }
+
+        $employments = Employment::query()->where('employee_id', $this->editingId)->get();
+
+        if ($employments->isEmpty() || $employments->contains(fn (Employment $employment): bool => $employment->end_date === null)) {
+            return null;
+        }
+
+        return $employments->max('end_date');
     }
 
     private function company(): Company

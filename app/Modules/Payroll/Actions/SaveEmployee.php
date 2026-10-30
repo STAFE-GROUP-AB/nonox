@@ -140,7 +140,9 @@ class SaveEmployee
             $sensitiveChanged = array_values(array_intersect(array_keys($employee->getDirty()), self::SENSITIVE));
             $employee->save();
 
+            // An ended employment is still the one edited; a new employment is only made for a new employee.
             $employment = Employment::query()->where('employee_id', $employee->id)->whereNull('end_date')->latest('start_date')->first()
+                ?? Employment::query()->where('employee_id', $employee->id)->latest('start_date')->first()
                 ?? new Employment(['employee_id' => $employee->id]);
             $employment->fill([
                 'start_date' => $validated['start_date'],

@@ -15,6 +15,7 @@ final readonly class VacationInput
 {
     /**
      * @param  list<array{description: string, amount_ore: int, closing_id: int}>  $yearEndPayouts  vacation pay from a closed semesterår, paid in this run (26, 26 a §§)
+     * @param  ?array{amount_ore: int, days: int, earning: string}  $termination  semesterersättning when the employment ends in the period (28 §)
      */
     public function __construct(
         public string $rule,
@@ -26,6 +27,7 @@ final readonly class VacationInput
         public array $yearEndPayouts = [],
         public string $countMethod = 'NET',
         public string $payoutTax = 'TABLE',
+        public ?array $termination = null,
     ) {}
 
     /** Paid days left: this year's earned days, then days saved from earlier years (18 §). */

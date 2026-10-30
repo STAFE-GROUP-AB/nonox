@@ -57,6 +57,13 @@ final class Vacation implements Step
                 explanation: ['vacation_year_closing_id' => $payout['closing_id']]));
         }
 
+        if ($vacation->termination !== null) {
+            // TODO(legal-verify): semesterersättning when the employment ends is taxed as an engångsbelopp.
+            $draft->add(new PayslipLineResult('SEMESTERERSATTNING', __('Semesterersättning vid anställningens slut, :days dagar och intjänad semester', ['days' => $vacation->termination['days']]),
+                $vacation->termination['amount_ore'], PayslipLineResult::TAX_ONE_OFF, true, false,
+                explanation: ['termination' => true, 'days' => $vacation->termination['days'], 'earning' => $vacation->termination['earning']]));
+        }
+
         $days = $this->semesterdagar($context);
 
         if ($days === []) {

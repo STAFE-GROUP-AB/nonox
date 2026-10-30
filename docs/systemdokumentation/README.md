@@ -393,7 +393,15 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   gång (rätt lön minus utbetald lön minus redan utbetald retroaktiv lön för
   månaden), så att samma skillnad aldrig betalas två gånger. Avdrag och
   semesterlön i de månaderna räknas inte om.
-- Semesterersättning när en anställning upphör (28–29 §§) hör till slutlönen.
+- Slutlön: en anställning avslutas med sista anställningsdag, som inte får
+  ligga i en redan attesterad månad. Lönekörningen för den månaden betalar
+  månadslönen till och med dagen och semesterersättning (28 §) för betalda
+  dagar som är kvar och semester som tjänats in under pågående intjänandeår,
+  värderad som semesterlöneskulden den sista dagen och skattad som
+  engångsbelopp. Ersättningen betalas en gång per anställning. Därefter är
+  den anställde inte med i lönekörningarna. Underlag för arbetsgivarintyg
+  (lön och frånvarodagar per månad, de sista tretton månaderna) kan hämtas
+  som CSV; uttaget loggas.
 
 ## 5c. NONOX AI (modul)
 

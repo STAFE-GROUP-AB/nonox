@@ -10,6 +10,8 @@ use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\VacationDays;
@@ -91,7 +93,49 @@ final class VacationLedger
             yearEndPayouts: $payouts,
             countMethod: self::method($settings),
             payoutTax: ($settings['vacation_payout_tax'] ?? 'TABLE') === 'ONE_OFF' ? 'ONE_OFF' : 'TABLE',
+            termination: $this->termination($employee, $employment, $periodStart, $settings, $rules, $runId),
         );
+    }
+
+    /**
+     * Semesterersättning when the employment ends in the period (28 §): the
+     * paid days left and the vacation earned in the running earning year,
+     * valued as in the semesterlöneskuld on the last day of employment. Paid
+     * once; a run that already paid it for the employment is not repeated.
+     *
+     * TODO(legal-verify): the value per day under 29 § without a collective
+     * agreement, and deduction for vacation taken in advance (förskottssemester).
+     *
+     * @param  array<string, mixed>  $settings
+     * @return ?array{amount_ore: int, days: int, earning: string}
+     */
+    private function termination(Employee $employee, Employment $employment, CarbonImmutable $periodStart, array $settings, RuleSet $rules, ?int $runId): ?array
+    {
+        $end = $employment->end_date;
+
+        if ($end === null || $employment->vacation_payout_with_salary || $end->lessThan($periodStart) || $end->greaterThan($periodStart->endOfMonth())) {
+            return null;
+        }
+
+        $paid = PayslipLine::query()
+            ->whereIn('payslip_id', Payslip::query()
+                ->where('employment_id', $employment->id)
+                ->whereIn('payroll_run_id', PayrollRun::query()->whereNotIn('status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])->when($runId !== null, fn ($query) => $query->whereKeyNot($runId))->select('id'))
+                ->select('id'))
+            ->where('explanation->termination', true)
+            ->exists();
+
+        if ($paid) {
+            return null;
+        }
+
+        $value = $this->liability(collect([$employee]), collect([$employee->id => $employment]), $end, $settings, $rules)[$employee->id] ?? null;
+
+        if ($value === null || $value['liability_ore'] <= 0) {
+            return null;
+        }
+
+        return ['amount_ore' => $value['liability_ore'], 'days' => $value['left'], 'earning' => $value['earning']];
     }
 
     /**
