@@ -95,4 +95,34 @@ class AttachToVoucher
             return $attachment;
         });
     }
+
+    /**
+     * Links a file already stored by the system, such as a registered
+     * supplier invoice, to the voucher that books it. The caller has
+     * authorised the booking; the file is not copied.
+     */
+    public function linkStoredFile(User $user, Voucher $voucher, string $path, string $name, string $mime, int $size, string $sha256): VoucherAttachment
+    {
+        return CurrentCompany::run($voucher->company_id, function () use ($user, $voucher, $path, $name, $mime, $size, $sha256): VoucherAttachment {
+            $attachment = VoucherAttachment::create([
+                'voucher_id' => $voucher->id,
+                'file_path' => $path,
+                'original_name' => $name,
+                'mime' => $mime,
+                'size' => $size,
+                'sha256' => $sha256,
+                'uploaded_by' => $user->id,
+            ]);
+
+            Audit::record('voucher.attachment_added', $voucher, [
+                'attachment_id' => $attachment->id,
+                'name' => $attachment->original_name,
+                'size' => $attachment->size,
+                'sha256' => $attachment->sha256,
+                'voucher_posted' => $voucher->isPosted(),
+            ], $voucher->company_id, $user);
+
+            return $attachment;
+        });
+    }
 }

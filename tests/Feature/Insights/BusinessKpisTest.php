@@ -52,10 +52,11 @@ it('sums sales, receivables, orders, result, bank and VAT in a few queries', fun
         'Fakturerat i mars' => 100_000,
         'Obetalt hos kunder' => 62_000,
         'Order att fakturera' => 250_000,
+        'Att betala till leverantörer' => 0,
         'Resultat hittills 2026' => 600_000,
         'Pengar på bank och kassa' => 550_000,
         'Moms att betala' => 12_000,
-    ])->and($queries)->toBeLessThanOrEqual(6);
+    ])->and($queries)->toBeLessThanOrEqual(7);
 });
 
 it('warns about overdue invoices', function () {
@@ -70,7 +71,7 @@ it('warns about overdue invoices', function () {
 it('shows a role only the figures it may read', function () {
     $labels = collect(app(BusinessKpis::class)->for(Bookkeeping::member($this->company, 'approver'), $this->company))->pluck('label')->all();
 
-    expect($labels)->toBe(['Fakturerat i mars', 'Obetalt hos kunder', 'Order att fakturera']);
+    expect($labels)->toBe(['Fakturerat i mars', 'Obetalt hos kunder', 'Order att fakturera', 'Att betala till leverantörer']);
 });
 
 it('shows the figures under every tab and per customer and article in the registers', function () {

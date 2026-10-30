@@ -15,6 +15,7 @@ use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\Invoicing\SalesDocumentController;
 use App\Http\Controllers\OnboardingController;
+use App\Http\Controllers\Payables\SupplierInvoiceController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Middleware\EnsureUserHasCompany;
@@ -88,6 +89,12 @@ Route::middleware([
         }
 
         Route::view('/kunder', 'invoicing.customers')->name('invoicing.customers');
+        Route::view('/leverantorer', 'payables.suppliers')->name('payables.suppliers');
+        Route::view('/leverantorsfakturor', 'payables.invoices.index')->name('payables.invoices.index');
+        Route::view('/leverantorsfakturor/ny', 'payables.invoices.edit', ['invoice' => null])->name('payables.invoices.create');
+        Route::get('/leverantorsfakturor/{supplierInvoice}', [SupplierInvoiceController::class, 'show'])->whereUuid('supplierInvoice')->name('payables.invoices.show');
+        Route::get('/leverantorsfakturor/{supplierInvoice}/andra', [SupplierInvoiceController::class, 'edit'])->whereUuid('supplierInvoice')->name('payables.invoices.edit');
+        Route::get('/leverantorsfakturor/{supplierInvoice}/faktura', [SupplierInvoiceController::class, 'file'])->whereUuid('supplierInvoice')->name('payables.invoices.file');
         Route::view('/artiklar', 'invoicing.articles')->name('invoicing.articles');
 
         Route::view('/rapporter', 'accounting.reports')->name('accounting.reports');

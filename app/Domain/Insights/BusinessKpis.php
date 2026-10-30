@@ -7,13 +7,16 @@ namespace App\Domain\Insights;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\SalesDocumentStatus;
+use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
 use App\Models\OpeningBalance;
 use App\Models\SalesDocument;
+use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\VoucherRow;
+use App\Policies\SupplierInvoicePolicy;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 
@@ -53,6 +56,10 @@ final class BusinessKpis
 
         if ($user->hasTeamPermission($company, 'invoices:view')) {
             array_push($kpis, ...$this->sales($today));
+        }
+
+        if (SupplierInvoicePolicy::canSeePayables($user, $company)) {
+            $kpis[] = $this->payables($today);
         }
 
         if ($user->hasTeamPermission($company, 'reports:view')) {
@@ -116,6 +123,39 @@ final class BusinessKpis
                 'warn' => false,
                 'link' => route('invoicing.orders'),
             ],
+        ];
+    }
+
+    /**
+     * @return array{label: string, value: Money, hint: ?string, warn: bool, link: ?string}
+     */
+    private function payables(CarbonImmutable $today): array
+    {
+        $open = [SupplierInvoiceStatus::Registered->value, SupplierInvoiceStatus::Approved->value];
+
+        $invoices = SupplierInvoice::query()
+            ->toBase()
+            ->whereIn('status', $open)
+            ->selectRaw('COALESCE(SUM(total_ore - paid_ore), 0) AS unpaid')
+            ->selectRaw('COUNT(*) FILTER (WHERE due_date < ?) AS overdue', [$today->toDateString()])
+            ->selectRaw('COUNT(*) FILTER (WHERE status = ?) AS awaiting_approval', [SupplierInvoiceStatus::Registered->value])
+            ->first();
+
+        $overdue = (int) ($invoices->overdue ?? 0);
+        $awaiting = (int) ($invoices->awaiting_approval ?? 0);
+
+        $hint = match (true) {
+            $overdue > 0 => __($overdue === 1 ? ':count faktura har förfallit.' : ':count fakturor har förfallit.', ['count' => $overdue]),
+            $awaiting > 0 => __($awaiting === 1 ? ':count faktura väntar på attest.' : ':count fakturor väntar på attest.', ['count' => $awaiting]),
+            default => __('Inget har förfallit.'),
+        };
+
+        return [
+            'label' => __('Att betala till leverantörer'),
+            'value' => Money::ofOre((int) ($invoices->unpaid ?? 0)),
+            'hint' => $hint,
+            'warn' => $overdue > 0,
+            'link' => route('payables.invoices.index', ['visa' => $overdue > 0 ? 'forfallna' : ($awaiting > 0 ? 'attest' : 'att-betala')]),
         ];
     }
 

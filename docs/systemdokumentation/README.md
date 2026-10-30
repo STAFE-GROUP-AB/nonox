@@ -4,12 +4,12 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.9
-- Datum: 2026-10-29
+- Version: 0.10
+- Datum: 2026-10-30
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
-  behandlingshistorik.
+  kundfakturor, leverantörsfakturor, behandlingshistorik.
 
 ## 1. Företag och behörighet
 
@@ -223,6 +223,29 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
 
+## 5a. Leverantörsfakturor
+
+- Leverantörer finns i ett eget register med löpnummer. Bankgiro och plusgiro
+  kontrolleras mot kontrollsiffran.
+- En leverantörsfaktura är ett utkast tills den registreras. Fakturan sparas
+  som PDF eller bild; filtypen läses från innehållet. Raderna (kostnad utan
+  moms per konto, med kostnadsställe eller projekt) plus momsen måste vara
+  lika med beloppet att betala.
+- När fakturan registreras får den nästa nummer i en obruten nummerserie och
+  en kopia av leverantörens uppgifter. Därefter kan den inte ändras eller tas
+  bort; databasen vägrar ([ADR-013](../adr/ADR-013-supplier-invoices.md)).
+- Bokföring enligt fakturametoden: vid registreringen, verifikation i serie D
+  på fakturadatum (kostnadskonton och 2641 ingående moms debet, 2440
+  leverantörsskulder kredit) med fakturan som underlag. Betalning: serie E,
+  2440 mot 1930. Enligt kontantmetoden bokförs kostnad och moms först vid
+  betalning, med fakturan som underlag på den första betalningen.
+- Attest: en registrerad faktura måste attesteras innan den kan betalas.
+  Den som registrerade fakturan får inte attestera den, om inte företaget har
+  stängt av kravet (för företag med en person). Ändringen av kravet skrivs
+  till behandlingshistoriken.
+- Varje sparat utkast, registrering, attest och betalning skrivs till
+  behandlingshistoriken. Betalningar kan bara läggas till, aldrig ändras.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -257,8 +280,10 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   handelsbolag.
 - Fakturans obligatoriska innehåll enligt mervärdesskattelagen; omvänd
   skattskyldighet, EU- och exportfakturor är inte byggda ännu.
-- Kontantmetoden: obetalda fakturor vid räkenskapsårets slut ska bokföras som
-  fordringar vid bokslutet.
+- Kontantmetoden: obetalda kundfakturor vid räkenskapsårets slut ska bokföras
+  som fordringar, och obetalda leverantörsfakturor som skulder, vid bokslutet.
+- Leverantörsfakturor med omvänd skattskyldighet och inköp från andra länder
+  (konton och momsrutor) är inte byggda ännu.
 - Inlästa verifikationer bokförs med en behandlingshistorikpost per inläsning,
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt
@@ -277,3 +302,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.7 | 2026-10-29 | Rapporter, momsdeklaration med bokföring av momsen och periodlås, årsskifte. |
 | 0.8 | 2026-10-29 | Kunder, artiklar, kundfakturor med OCR och PDF, betalningar och kreditfakturor. |
 | 0.9 | 2026-10-29 | Offerter och order som blir fakturor. |
+| 0.10 | 2026-10-30 | Leverantörer och leverantörsfakturor med underlag, attest och betalningar (serie D och E). |

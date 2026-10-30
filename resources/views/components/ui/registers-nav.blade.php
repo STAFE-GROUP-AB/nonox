@@ -2,6 +2,7 @@
     $links = [
         'invoicing.customers' => __('Kunder'),
         'invoicing.articles' => __('Artiklar'),
+        'payables.suppliers' => __('Leverantörer'),
     ];
 @endphp
 

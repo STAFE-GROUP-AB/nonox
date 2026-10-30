@@ -25,6 +25,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ReportingFramework $reporting_framework
  * @property int $fiscal_year_start_month
  * @property ?CarbonImmutable $locked_until_date
+ * @property bool $separate_supplier_approval
  */
 class Company extends JetstreamTeam
 {
@@ -83,6 +84,7 @@ class Company extends JetstreamTeam
             'vat_registered' => 'boolean',
             'f_skatt' => 'boolean',
             'employer_registered' => 'boolean',
+            'separate_supplier_approval' => 'boolean',
             'fiscal_year_start_month' => 'integer',
             'locked_until_date' => 'immutable_date',
             'archived_at' => 'immutable_datetime',

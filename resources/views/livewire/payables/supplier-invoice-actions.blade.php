@@ -1,0 +1,90 @@
+@php
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+@endphp
+
+<div class="space-y-6">
+    <x-ui.card>
+        <dl class="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
+            <div><dt class="text-gray-500">{{ __('Status') }}</dt><dd @class(['font-medium', 'text-accent-700' => $invoice->isOverdue()])>{{ $invoice->isOverdue() ? __('Förfallen') : $invoice->status->label() }}</dd></div>
+            <div><dt class="text-gray-500">{{ __('Att betala') }}</dt><dd class="font-medium"><x-ui.amount :money="$invoice->total_ore" /></dd></div>
+            <div><dt class="text-gray-500">{{ __('Förfallodag') }}</dt><dd class="font-medium tabular-nums">{{ $invoice->due_date->toDateString() }}</dd></div>
+            <div><dt class="text-gray-500">{{ __('Kvar att betala') }}</dt><dd class="font-medium"><x-ui.amount :money="$invoice->remaining()" /></dd></div>
+            <div class="sm:col-span-2"><dt class="text-gray-500">{{ __('Betala till') }}</dt><dd class="font-medium tabular-nums">
+                {{ $invoice->supplier?->paymentDetails() ?? __('Ingen betalningsuppgift i leverantörsregistret') }}
+                @if($invoice->ocr)
+                    <span class="block font-normal text-gray-600">{{ __('OCR :ocr', ['ocr' => $invoice->ocr]) }}</span>
+                @elseif($invoice->invoice_number)
+                    <span class="block font-normal text-gray-600">{{ __('Meddelande: faktura :number', ['number' => $invoice->invoice_number]) }}</span>
+                @endif
+            </dd></div>
+            <div><dt class="text-gray-500">{{ __('Leverantörens fakturanummer') }}</dt><dd class="font-medium">{{ $invoice->invoice_number ?? '–' }}</dd></div>
+            <div><dt class="text-gray-500">{{ __('Bokförd') }}</dt><dd class="font-medium">
+                @if($invoice->voucher)
+                    <a href="{{ route('accounting.vouchers.show', $invoice->voucher) }}" class="text-accent-600 hover:text-accent-700">{{ $invoice->voucher->reference() }}</a>
+                @else
+                    {{ __('Vid betalning (kontantmetoden)') }}
+                @endif
+            </dd></div>
+            <div><dt class="text-gray-500">{{ __('Registrerad av') }}</dt><dd class="font-medium">{{ $invoice->registeredBy?->name }}</dd></div>
+            <div><dt class="text-gray-500">{{ __('Attesterad av') }}</dt><dd class="font-medium">{{ $invoice->approvedBy?->name ?? __('Inte än') }}</dd></div>
+        </dl>
+    </x-ui.card>
+
+    <x-ui.card :title="__('Kontering')">
+        <ul class="divide-y divide-gray-100 text-sm">
+            @foreach($invoice->rows as $row)
+                <li class="flex justify-between gap-4 py-2">
+                    <span class="min-w-0">
+                        <span class="tabular-nums font-medium">{{ $row->account?->number }}</span> {{ $row->account?->name }}
+                        <span class="block text-gray-500">{{ collect([$row->description, $row->costCenter ? __('Kostnadsställe :code', ['code' => $row->costCenter->code]) : null, $row->project ? __('Projekt :code', ['code' => $row->project->code]) : null])->filter()->implode(' · ') }}</span>
+                    </span>
+                    <x-ui.amount :money="$row->amount_ore" />
+                </li>
+            @endforeach
+            @unless($invoice->vat_ore->isZero())
+                <li class="flex justify-between gap-4 py-2"><span><span class="tabular-nums font-medium">2641</span> {{ __('Ingående moms') }}</span><x-ui.amount :money="$invoice->vat_ore" /></li>
+            @endunless
+        </ul>
+    </x-ui.card>
+
+    @if($canApprove)
+        <x-ui.card :title="__('Attestera')">
+            <p class="text-sm text-gray-700">{{ __('Kontrollera att varorna eller tjänsterna är levererade och att beloppet stämmer. Därefter kan fakturan betalas.') }}</p>
+            <x-button type="button" class="mt-3" wire:click="approve" wire:loading.attr="disabled">{{ __('Attestera fakturan') }}</x-button>
+            <x-input-error for="approve" class="mt-2" />
+        </x-ui.card>
+    @elseif($blockedBySegregation)
+        <x-ui.card :title="__('Attestera')">
+            <p class="text-sm text-gray-700">{{ __('Du registrerade fakturan, så någon annan med rätt att attestera behöver godkänna den. Är ni bara en person i företaget kan en ägare stänga av kravet under Leverantörsfakturor.') }}</p>
+        </x-ui.card>
+    @endif
+
+    @if($canPay)
+        <x-ui.card :title="__('Registrera betalning')">
+            <form wire:submit="pay" class="grid grid-cols-2 gap-4">
+                <x-ui.field for="supplier_paid_on" :label="__('Betaldag')" error="paid_on">
+                    <input id="supplier_paid_on" type="date" class="{{ $input }} mt-1" wire:model="paidOn">
+                </x-ui.field>
+                <x-ui.field for="supplier_paid_amount" :label="__('Belopp')" error="amount">
+                    <input id="supplier_paid_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="amount">
+                </x-ui.field>
+                <div class="col-span-2"><x-button wire:loading.attr="disabled">{{ __('Registrera betalningen') }}</x-button></div>
+            </form>
+            <p class="mt-2 text-sm text-gray-500">{{ __('Betalningen bokförs från 1930 Företagskonto i serie E.') }}</p>
+        </x-ui.card>
+    @endif
+
+    @if($invoice->payments->isNotEmpty())
+        <x-ui.card :title="__('Betalningar')">
+            <ul class="divide-y divide-gray-100 text-sm">
+                @foreach($invoice->payments as $payment)
+                    <li class="flex justify-between gap-4 py-2">
+                        <span class="tabular-nums">{{ $payment->paid_on->toDateString() }}</span>
+                        <a href="{{ route('accounting.vouchers.show', $payment->voucher_id) }}" class="text-accent-600 hover:text-accent-700">{{ $payment->voucher?->reference() }}</a>
+                        <x-ui.amount :money="$payment->amount_ore" />
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
+</div>

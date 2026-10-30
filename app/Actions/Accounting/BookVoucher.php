@@ -28,15 +28,33 @@ class BookVoucher
      */
     public function __invoke(User $user, Company $company, CarbonImmutable $date, string $description, string $series, array $lines, VoucherSource $source, Model $subject): Voucher
     {
+        return $this->rows($user, $company, $date, $description, $series, array_map(
+            fn (int $account, int $amount): array => ['account' => $account, 'amount' => $amount],
+            array_keys($lines),
+            array_values($lines),
+        ), $source, $subject);
+    }
+
+    /**
+     * Like __invoke, with rows that may repeat an account and carry a text,
+     * a cost centre or a project (by code).
+     *
+     * @param  list<array{account: int, amount: int, description?: ?string, cost_center?: ?string, project?: ?string}>  $rows  debit positive
+     */
+    public function rows(User $user, Company $company, CarbonImmutable $date, string $description, string $series, array $rows, VoucherSource $source, Model $subject): Voucher
+    {
         $draft = ($this->saveDraft)($user, $company, [
             'voucher_date' => $date->toDateString(),
             'description' => mb_substr($description, 0, 255),
             'series' => $series,
-            'rows' => array_map(fn (int $account, int $amount): array => [
-                'account' => $account,
-                'debit_ore' => max($amount, 0),
-                'credit_ore' => max(-$amount, 0),
-            ], array_keys($lines), array_values($lines)),
+            'rows' => array_map(fn (array $row): array => [
+                'account' => $row['account'],
+                'debit_ore' => max($row['amount'], 0),
+                'credit_ore' => max(-$row['amount'], 0),
+                'description' => $row['description'] ?? null,
+                'cost_center' => $row['cost_center'] ?? null,
+                'project' => $row['project'] ?? null,
+            ], array_values(array_filter($rows, fn (array $row): bool => $row['amount'] !== 0))),
         ]);
 
         $draft->forceFill([

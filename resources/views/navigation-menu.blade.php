@@ -18,7 +18,10 @@
                     <x-nav-link href="{{ route('invoicing.invoices.index') }}" :active="request()->routeIs('invoicing.invoices.*', 'invoicing.quotes*', 'invoicing.orders*')">
                         {{ __('Försäljning') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('invoicing.customers') }}" :active="request()->routeIs('invoicing.customers', 'invoicing.articles')">
+                    <x-nav-link href="{{ route('payables.invoices.index') }}" :active="request()->routeIs('payables.invoices.*')">
+                        {{ __('Inköp') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('invoicing.customers') }}" :active="request()->routeIs('invoicing.customers', 'invoicing.articles', 'payables.suppliers')">
                         {{ __('Register') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*', 'vat.*')">
@@ -166,7 +169,10 @@
             <x-responsive-nav-link href="{{ route('invoicing.invoices.index') }}" :active="request()->routeIs('invoicing.invoices.*', 'invoicing.quotes*', 'invoicing.orders*')">
                 {{ __('Försäljning') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('invoicing.customers') }}" :active="request()->routeIs('invoicing.customers', 'invoicing.articles')">
+            <x-responsive-nav-link href="{{ route('payables.invoices.index') }}" :active="request()->routeIs('payables.invoices.*')">
+                {{ __('Inköp') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('invoicing.customers') }}" :active="request()->routeIs('invoicing.customers', 'invoicing.articles', 'payables.suppliers')">
                 {{ __('Register') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*', 'vat.*')">

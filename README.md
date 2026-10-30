@@ -41,15 +41,16 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Behandlingshistorik över allt som görs.
 
 **Fakturering**
-- ✅ Kundregister och artikelregister under en egen flik, Register, med pris, moms och intäktskonto. Per kund visas vad den fakturerats i år och vad som är obetalt, per artikel vad som sålts i år.
+- ✅ Kund-, artikel- och leverantörsregister under en egen flik, Register, med pris, moms och intäktskonto. Per kund visas vad den fakturerats i år och vad som är obetalt, per artikel vad som sålts i år.
 - ✅ Nyckeltal för företagaren överst under varje flik och på översikten: fakturerat i månaden, obetalt hos kunder och förfallet, order att fakturera, resultat hittills i år, pengar på bank och kassa och moms att betala. Var och en visas bara för roller som får se underlaget.
 - ✅ Fakturor med OCR-nummer, PDF och utskick via e-post. De bokförs automatiskt, enligt fakturametoden eller kontantmetoden.
 - ✅ Inbetalningar, även delbetalningar, kreditfakturor och påminnelser via e-post.
 - ✅ Offerter och order (till exempel catering) som blir fakturor utan att något skrivs två gånger.
+- ✅ Leverantörsfakturor: ladda upp fakturan som PDF eller bild, kontera per kostnadsställe (till exempel per restaurang), registrera, attestera och registrera betalningen. Fakturan blir underlag till verifikationen. Den som registrerar får inte attestera själv, om inte företaget bara är en person.
 
 **På väg** (i den här ordningen)
 - 🚧 EU- och exportfakturor, bankfiler för inbetalningar.
-- 🚧 Leverantörsfakturor, attest och betalfiler.
+- 🚧 Betalförslag och betalfiler till banken, leverantörsfakturor från utlandet och kreditnotor.
 - 🚧 Lön, med timlöner, OB och personalliggare för restauranger. Förslaget och frågorna som först måste granskas juridiskt finns i [ADR-012](docs/adr/ADR-012-payroll.md).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
@@ -67,8 +68,8 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 
 Var medveten om var projektet står innan du installerar:
 
-- ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export samt fakturering. Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** leverantörsfakturor, lön och bokslut.
+- ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering och leverantörsfakturor. Se listan under Funktioner ovan.
+- 🚧 **Inte byggt ännu:** betalfiler till banken, lön och bokslut.
 
 ### 1. Installera verktygen (en gång per dator)
 

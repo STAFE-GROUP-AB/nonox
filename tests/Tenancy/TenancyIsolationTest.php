@@ -19,6 +19,10 @@ use App\Models\Project;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
+use App\Models\Supplier;
+use App\Models\SupplierInvoice;
+use App\Models\SupplierInvoiceRow;
+use App\Models\SupplierPayment;
 use App\Models\User;
 use App\Models\VatReport;
 use App\Models\Voucher;
@@ -69,6 +73,10 @@ const COMPANY_SCOPED_MODELS = [
     SalesDocument::class => 'salesDocumentAttributes',
     SalesDocumentRow::class => 'salesDocumentRowAttributes',
     InvoiceReminder::class => 'reminderAttributes',
+    Supplier::class => ['number' => 1, 'name' => 'Hemlig leverantör AB', 'payment_terms_days' => 30],
+    SupplierInvoice::class => 'supplierInvoiceAttributes',
+    SupplierInvoiceRow::class => 'supplierInvoiceRowAttributes',
+    SupplierPayment::class => 'supplierPaymentAttributes',
 ];
 
 /** Runs inside the company's context. */
@@ -194,6 +202,37 @@ function invoicePaymentAttributes(): array
     ];
 }
 
+function supplierInvoiceAttributes(): array
+{
+    return [
+        'supplier_id' => Supplier::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig leverantör AB'])->id,
+        'invoice_date' => '2026-03-01',
+        'due_date' => '2026-03-31',
+    ];
+}
+
+function supplierInvoiceRowAttributes(): array
+{
+    return [
+        'supplier_invoice_id' => SupplierInvoice::create(supplierInvoiceAttributes())->id,
+        'account_id' => Account::query()->firstOrCreate(['number' => 4010], ['name' => 'Inköp', 'type' => 'EXPENSE'])->id,
+        'amount_ore' => 100,
+        'position' => 1,
+    ];
+}
+
+function supplierPaymentAttributes(): array
+{
+    return [
+        'supplier_invoice_id' => SupplierInvoice::create(supplierInvoiceAttributes())->id,
+        'paid_on' => '2026-03-10',
+        'amount_ore' => 100,
+        'account_id' => Account::query()->firstOrCreate(['number' => 1930], ['name' => 'Bank', 'type' => 'ASSET'])->id,
+        'voucher_id' => Voucher::create(voucherAttributes())->id,
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
 function salesDocumentAttributes(): array
 {
     return [
@@ -253,7 +292,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

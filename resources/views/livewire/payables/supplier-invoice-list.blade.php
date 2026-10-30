@@ -1,0 +1,81 @@
+@php
+    use App\Domain\Payables\SupplierInvoiceStatus;
+
+    $today = Carbon\CarbonImmutable::today();
+@endphp
+
+<div class="space-y-6">
+    <x-ui.card>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <nav class="flex flex-wrap gap-2" aria-label="{{ __('Visa leverantörsfakturor') }}">
+                @foreach(App\Livewire\Payables\SupplierInvoiceList::FILTERS as $key => $label)
+                    <button type="button" wire:click="$set('filter', '{{ $key }}')" @class([
+                        'rounded-full px-3 py-1 text-sm font-medium',
+                        'bg-gray-900 text-white' => $filter === $key,
+                        'bg-white border border-gray-200 text-gray-700 hover:border-gray-300' => $filter !== $key,
+                    ])>{{ __($label) }}</button>
+                @endforeach
+            </nav>
+            @if($canCreate)
+                <a href="{{ route('payables.invoices.create') }}" class="inline-flex items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Ny leverantörsfaktura') }}</a>
+            @endif
+        </div>
+
+        @if($invoices->isEmpty())
+            <x-ui.empty-state class="mt-6" :title="__('Inga leverantörsfakturor här')">
+                {{ __('Ladda upp fakturan som PDF eller bild, fyll i belopp och konto och registrera den. Den bokförs, attesteras och betalas härifrån.') }}
+            </x-ui.empty-state>
+        @else
+            <div class="mt-4 overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200 text-left text-gray-500">
+                            <th class="py-2 pr-4 font-medium">{{ __('Nummer') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Leverantör') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Fakturanummer') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Förfaller') }}</th>
+                            <th class="py-2 pr-4 text-right font-medium">{{ __('Belopp') }}</th>
+                            <th class="py-2 pr-4 text-right font-medium">{{ __('Kvar') }}</th>
+                            <th class="py-2 font-medium">{{ __('Status') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach($invoices as $invoice)
+                            <tr wire:key="supplier-invoice-{{ $invoice->id }}">
+                                <td class="py-2 pr-4">
+                                    <a href="{{ $invoice->isDraft() ? route('payables.invoices.edit', $invoice) : route('payables.invoices.show', $invoice) }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $invoice->number ?? __('Utkast') }}</a>
+                                </td>
+                                <td class="py-2 pr-4">{{ $invoice->supplier?->name }}</td>
+                                <td class="py-2 pr-4">{{ $invoice->invoice_number }}</td>
+                                <td class="py-2 pr-4 tabular-nums">{{ $invoice->due_date->toDateString() }}</td>
+                                <td class="py-2 pr-4 text-right"><x-ui.amount :money="$invoice->total_ore" /></td>
+                                <td class="py-2 pr-4 text-right">@unless($invoice->status === SupplierInvoiceStatus::Paid || $invoice->isDraft())<x-ui.amount :money="$invoice->remaining()" />@endunless</td>
+                                <td class="py-2">
+                                    @if($invoice->isOverdue($today))
+                                        <span class="inline-flex rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">{{ __('Förfallen') }}</span>
+                                    @else
+                                        <x-ui.badge :tone="$invoice->status === SupplierInvoiceStatus::Paid ? 'success' : 'neutral'">{{ $invoice->status->label() }}</x-ui.badge>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4">{{ $invoices->links() }}</div>
+        @endif
+    </x-ui.card>
+
+    <x-ui.card :title="__('Attest')">
+        <p class="text-sm text-gray-700">
+            {{ $company->separate_supplier_approval
+                ? __('Någon annan än den som registrerade en faktura måste attestera den innan den betalas.')
+                : __('Den som registrerade en faktura får också attestera den.') }}
+        </p>
+        @if($canChangeRule)
+            <button type="button" class="mt-3 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="setSeparateApproval({{ $company->separate_supplier_approval ? 'false' : 'true' }})">
+                {{ $company->separate_supplier_approval ? __('Tillåt att samma person registrerar och attesterar (för företag med en person)') : __('Kräv att någon annan attesterar') }}
+            </button>
+        @endif
+    </x-ui.card>
+</div>
