@@ -87,3 +87,18 @@
   invoices.
 - Kontantmetoden: invoices unpaid at the end of the fiscal year must be
   booked as receivables at bokslut (Phase 3).
+
+## Agreements (avtalsfakturering), added 2026-10-30
+
+- An agreement holds a customer, rows (as on an invoice), an interval of 1,
+  3, 6 or 12 months and the next invoice date. The day of that date is kept,
+  so an agreement on the 31st invoices on the last day of shorter months.
+- Each run makes an ordinary invoice through `SaveDraftInvoice`, linked by
+  `invoices.recurring_invoice_id`. By default it is a draft to check; with
+  "send automatically" it is issued (booked) and emailed through the same
+  actions as by hand. A changed agreement never changes invoices already made.
+- `invoices:run-agreements` runs every morning at 06:00 as the user who
+  created each agreement, with that user's rights, and catches up missed
+  dates (at most twelve per agreement and run). Past the end date the
+  agreement ends; paused agreements are skipped.
+

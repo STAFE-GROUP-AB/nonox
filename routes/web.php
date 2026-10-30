@@ -12,6 +12,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GettingStartedController;
+use App\Http\Controllers\Invoicing\AgreementController;
 use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\Invoicing\SalesDocumentController;
 use App\Http\Controllers\OnboardingController;
@@ -90,6 +91,9 @@ Route::middleware([
         }
 
         Route::view('/inbetalningar', 'invoicing.incoming-payments')->name('invoicing.incomingPayments');
+        Route::view('/avtal', 'invoicing.agreements.index')->name('invoicing.agreements');
+        Route::view('/avtal/nytt', 'invoicing.agreements.show', ['agreement' => null])->name('invoicing.agreements.create');
+        Route::get('/avtal/{agreement}', AgreementController::class)->whereUuid('agreement')->name('invoicing.agreements.show');
         Route::view('/kunder', 'invoicing.customers')->name('invoicing.customers');
         Route::view('/leverantorer', 'payables.suppliers')->name('payables.suppliers');
         Route::view('/leverantorsfakturor', 'payables.invoices.index')->name('payables.invoices.index');

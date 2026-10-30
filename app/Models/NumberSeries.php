@@ -33,6 +33,8 @@ class NumberSeries extends Model
 
     public const string PAYMENT_BATCHES = 'payment_batches';
 
+    public const string AGREEMENTS = 'agreements';
+
     protected $table = 'number_series';
 
     /** @var list<string> */

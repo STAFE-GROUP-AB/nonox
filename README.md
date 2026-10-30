@@ -47,6 +47,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Inbetalningar, även delbetalningar, kreditfakturor och påminnelser via e-post.
 - ✅ Läs in bankens fil med inbetalningar (ISO 20022 camt.054, ersätter BgMax). Fakturorna föreslås efter OCR-numret och bokförs med ett klick. Samma inbetalning bokförs aldrig två gånger.
 - ✅ Offerter och order (till exempel catering) som blir fakturor utan att något skrivs två gånger.
+- ✅ Avtalsfakturering: samma faktura varje månad, kvartal, halvår eller år. Som utkast att kontrollera, eller skapad, bokförd och mejlad automatiskt varje morgon.
 - ✅ Leverantörsfakturor: ladda upp fakturan som PDF eller bild, kontera per kostnadsställe (till exempel per restaurang), registrera, attestera och registrera betalningen. Fakturan blir underlag till verifikationen. Den som registrerar får inte attestera själv, om inte företaget bara är en person.
 
 **På väg** (i den här ordningen)

@@ -46,6 +46,7 @@ use LogicException;
  * @property ?CarbonImmutable $sent_at
  * @property ?string $sent_to
  * @property ?int $created_by
+ * @property ?string $recurring_invoice_id
  */
 class Invoice extends Model
 {

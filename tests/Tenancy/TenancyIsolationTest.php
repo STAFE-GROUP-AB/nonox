@@ -18,6 +18,8 @@ use App\Models\InvoiceRow;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\Project;
+use App\Models\RecurringInvoice;
+use App\Models\RecurringInvoiceRow;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\SieImport;
@@ -85,6 +87,8 @@ const COMPANY_SCOPED_MODELS = [
     SupplierPaymentBatchItem::class => 'paymentBatchItemAttributes',
     BankFileImport::class => 'bankFileImportAttributes',
     BankTransaction::class => 'bankTransactionAttributes',
+    RecurringInvoice::class => 'agreementAttributes',
+    RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
 /** Runs inside the company's context. */
@@ -287,6 +291,33 @@ function bankTransactionAttributes(): array
         'reference' => 'REF-'.random_int(1, 1_000_000),
         'booking_date' => '2026-03-20',
         'amount_ore' => 100,
+    ];
+}
+
+function agreementAttributes(): array
+{
+    return [
+        'number' => random_int(1, 1_000_000),
+        'customer_id' => Customer::query()->firstOrCreate(['number' => 1], ['name' => 'Hemlig kund AB'])->id,
+        'name' => 'Hemligt avtal',
+        'interval_months' => 1,
+        'invoice_day' => 1,
+        'next_invoice_date' => '2026-04-01',
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function agreementRowAttributes(): array
+{
+    return [
+        'recurring_invoice_id' => RecurringInvoice::create(agreementAttributes())->id,
+        'description' => 'Hemlig rad',
+        'quantity' => '1',
+        'unit_price_ore' => 100,
+        'vat_rate' => 2500,
+        'account_id' => articleAttributes()['account_id'],
+        'net_ore' => 100,
+        'position' => 0,
     ];
 }
 
