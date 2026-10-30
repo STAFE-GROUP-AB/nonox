@@ -18,6 +18,7 @@ use App\Modules\Payroll\Livewire\MyAbsence;
 use App\Modules\Payroll\Livewire\MyExpenses;
 use App\Modules\Payroll\Livewire\MyPayslips;
 use App\Modules\Payroll\Livewire\PayrollHome;
+use App\Modules\Payroll\Livewire\PayrollReportsPage;
 use App\Modules\Payroll\Livewire\PayrollRules;
 use App\Modules\Payroll\Livewire\PayrollRunList;
 use App\Modules\Payroll\Livewire\PayrollRunPage;
@@ -76,6 +77,7 @@ class PayrollServiceProvider extends ServiceProvider
         Livewire::component('payroll.vacation-year', VacationYearPage::class);
         Livewire::component('payroll.absence-requests', AbsenceRequestList::class);
         Livewire::component('payroll.agi', AgiPage::class);
+        Livewire::component('payroll.reports', PayrollReportsPage::class);
 
         Blade::anonymousComponentPath(__DIR__.'/views/components', 'payroll');
         Event::listen(TeamMemberAdded::class, LinkEmployeeLogin::class);

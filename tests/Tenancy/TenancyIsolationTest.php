@@ -51,6 +51,7 @@ use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRuleVerification;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\PayrollYearClosing;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\PensionPlan;
@@ -133,6 +134,7 @@ const COMPANY_SCOPED_MODELS = [
     VacationLiabilitySnapshot::class => 'payrollVacationLiabilityAttributes',
     VacationYearClosing::class => 'payrollVacationYearClosingAttributes',
     AgiSubmission::class => 'payrollAgiSubmissionAttributes',
+    PayrollYearClosing::class => 'payrollYearClosingAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
@@ -490,6 +492,11 @@ function payrollVacationYearClosingAttributes(): array
     ];
 }
 
+function payrollYearClosingAttributes(): array
+{
+    return ['year' => random_int(2000, 2099), 'totals' => [], 'closed_by' => User::factory()->create()->id];
+}
+
 function payrollAgiSubmissionAttributes(): array
 {
     return [
@@ -562,7 +569,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

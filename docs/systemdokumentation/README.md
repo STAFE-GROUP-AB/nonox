@@ -393,6 +393,17 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   gång (rätt lön minus utbetald lön minus redan utbetald retroaktiv lön för
   månaden), så att samma skillnad aldrig betalas två gånger. Avdrag och
   semesterlön i de månaderna räknas inte om.
+- Lönerapporter (Lön → Rapporter) räknas per utbetalningsmånad från
+  attesterade lönekörningar: lönejournal, lönearter, hittills i år per
+  anställd, kostnad per kostnadsställe, pension per pensionsplan och en
+  avstämning per månad av skatt och arbetsgivaravgifter mellan lönebeskeden,
+  den senast inlämnade arbetsgivardeklarationen och lönebokföringen (2710
+  och 7510). En revisor ser bara de sammanställda rapporterna.
+- Löneårsskifte: ett kalenderår avslutas när året är slut, alla lönekörningar
+  med utbetalning i året är bokförda och alla månader med lön har en
+  inlämnad arbetsgivardeklaration. Årets summor sparas och ingen lönekörning
+  kan sedan få utbetalningsdag i året. Avslutet kan inte ändras eller tas
+  bort (databasregel). Semesteråret avslutas separat.
 - Slutlön: en anställning avslutas med sista anställningsdag, som inte får
   ligga i en redan attesterad månad. Lönekörningen för den månaden betalar
   månadslönen till och med dagen och semesterersättning (28 §) för betalda

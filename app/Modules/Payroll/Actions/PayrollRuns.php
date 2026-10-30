@@ -25,6 +25,7 @@ use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\PayrollYearClosing;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
@@ -78,7 +79,13 @@ class PayrollRuns
                 throw ValidationException::withMessages(['period' => __('Det finns redan en lönekörning för :period.', ['period' => $start->translatedFormat('F Y')])]);
             }
 
-            $run = PayrollRun::create(['period' => $period, 'payment_date' => $paymentDate ?? $this->defaultPaymentDate($company, $start)]);
+            $paymentDate ??= $this->defaultPaymentDate($company, $start);
+
+            if (PayrollYearClosing::isClosed($paymentDate->year)) {
+                throw ValidationException::withMessages(['period' => __('Löneåret :year är avslutat. Ingen lön kan betalas ut i det.', ['year' => $paymentDate->year])]);
+            }
+
+            $run = PayrollRun::create(['period' => $period, 'payment_date' => $paymentDate]);
             Audit::record('payroll.run_created', $run, ['period' => $period, 'payment_date' => $run->payment_date->toDateString()], $company, $user);
 
             return $run;

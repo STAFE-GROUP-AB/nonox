@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * A line of a payslip, with the rule version and the explanation that produced it.
  *
+ * @property int $id
+ * @property int $payslip_id
  * @property int $pay_code_id
  * @property string $description
  * @property ?string $quantity
