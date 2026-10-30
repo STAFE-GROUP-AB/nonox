@@ -1119,7 +1119,6 @@
     "Företagskontots IBAN": "IBAN of the company account",
     "Avtals-id för filöverföring": "Agreement id for file transfer",
     "Får du av banken när filöverföring kopplas på.": "The bank gives it to you when file transfer is set up.",
-    "Betalfiler kan i dag göras för Handelsbanken och Nordea. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.": "Payment files can currently be made for Handelsbanken and Nordea. Send a first file to the bank's test service before paying for real.",
     ":bank, konto :iban, avtals-id :agreement": ":bank, account :iban, agreement id :agreement",
     "Ingen bank är vald ännu. En ägare eller administratör fyller i den här.": "No bank has been chosen yet. An owner or administrator fills it in here.",
     "Attesterade fakturor som inte redan finns i en betalfil. Fakturor som förfaller inom en vecka är förvalda.": "Approved invoices that are not already in a payment file. Invoices due within a week are preselected.",
@@ -1213,5 +1212,11 @@
     "Spara avtalet": "Save the agreement",
     "Fakturor från avtalet": "Invoices from the agreement",
     "Avtalsfakturering: samma fakturor varje månad, kvartal eller år, utan att skriva dem på nytt.": "Agreement invoicing: the same invoices every month, quarter or year, without writing them again.",
-    "Raderna faktureras likadant varje gång. Priser är utan moms.": "The rows are invoiced the same way every time. Prices are excl. VAT."
+    "Raderna faktureras likadant varje gång. Priser är utan moms.": "The rows are invoiced the same way every time. Prices are excl. VAT.",
+    "Kund- eller avtalsnumret för filtjänsten hos Danske Bank.": "The customer or agreement number for Danske Bank's file service.",
+    "Organisationsnumret eller ert SHB-nummer.": "The organisation number or your SHB number.",
+    "16 följt av organisationsnumret, tolv siffror, till exempel 165566778899. Kontot ska vara kopplat till Betaltjänst via fil.": "16 followed by the organisation number, twelve digits, for example 165566778899. The account must be connected to Betaltjänst via fil.",
+    "Avtals-id:t (kundnumret) som Nordea gav för Corporate eGateway eller filöverföring.": "The agreement id (customer number) Nordea gave for Corporate eGateway or file transfer.",
+    "EDI-avtalets kundnummer från SEB, 10 eller 14 tecken.": "The EDI agreement's customer number from SEB, 10 or 14 characters.",
+    "Betalfiler kan i dag göras för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea och SEB. Swedbank och sparbankerna kommer. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.": "Payment files can currently be made for Danske Bank, Handelsbanken, Länsförsäkringar, Nordea and SEB. Swedbank and the savings banks are coming. Send a first file to the bank's test service before paying for real."
 }

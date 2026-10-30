@@ -11,7 +11,7 @@
         @if($editingBank && $canChangeBank)
             <form wire:submit="saveBank" class="grid gap-4 sm:grid-cols-3">
                 <x-ui.field for="payment_bank" :label="__('Bank')" error="payment_bank">
-                    <select id="payment_bank" class="{{ $input }} mt-1" wire:model="bank.payment_bank">
+                    <select id="payment_bank" class="{{ $input }} mt-1" wire:model.live="bank.payment_bank">
                         <option value="">{{ __('Välj bank…') }}</option>
                         @foreach(PaymentBank::cases() as $option)
                             <option value="{{ $option->value }}">{{ $option->label() }}</option>
@@ -21,7 +21,7 @@
                 <x-ui.field for="payment_iban" :label="__('Företagskontots IBAN')" error="iban">
                     <input id="payment_iban" type="text" class="{{ $input }} mt-1 tabular-nums" wire:model="bank.iban" placeholder="SE45 5000 0000 0583 9825 7466">
                 </x-ui.field>
-                <x-ui.field for="payment_agreement" :label="__('Avtals-id för filöverföring')" error="bank_agreement_id" :hint="__('Får du av banken när filöverföring kopplas på.')">
+                <x-ui.field for="payment_agreement" :label="__('Avtals-id för filöverföring')" error="bank_agreement_id" :hint="PaymentBank::tryFrom($bank['payment_bank'])?->agreementHint() ?? __('Får du av banken när filöverföring kopplas på.')">
                     <input id="payment_agreement" type="text" class="{{ $input }} mt-1" wire:model="bank.bank_agreement_id">
                 </x-ui.field>
                 <div class="sm:col-span-3 flex items-center gap-4">
@@ -31,7 +31,7 @@
                     @endif
                 </div>
             </form>
-            <p class="mt-4 text-sm text-gray-600">{{ __('Betalfiler kan i dag göras för Handelsbanken och Nordea. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.') }}</p>
+            <p class="mt-4 text-sm text-gray-600">{{ __('Betalfiler kan i dag göras för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea och SEB. Swedbank och sparbankerna kommer. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.') }}</p>
         @elseif($company->payment_bank)
             <div class="flex flex-wrap items-center justify-between gap-4 text-sm">
                 <p class="text-gray-700">{{ __(':bank, konto :iban, avtals-id :agreement', ['bank' => $company->payment_bank->label(), 'iban' => $company->iban, 'agreement' => $company->bank_agreement_id]) }}</p>

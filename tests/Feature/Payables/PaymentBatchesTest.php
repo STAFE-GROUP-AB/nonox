@@ -103,6 +103,34 @@ it('makes a pain.001 file with OCR for bankgiro and a message for plusgiro', fun
         ->and($text('//p:RmtInf/p:Ustrd'))->toBe(['Faktura EL-12']);
 });
 
+it('follows each bank\'s own guide', function (string $bank, ?string $scheme, array $serviceLevel, array $bankgiroAgent, array $plusgiroAgent, ?string $purpose) {
+    app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => $bank, 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => '165566778899']);
+    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100', '4455667');
+    $power = approvedSupplierInvoice($this->owner, $this->company, $this->power, '50');
+
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'));
+    $doc = new DOMDocument;
+    $doc->loadXML(Storage::disk('local')->get($batch->file_path));
+    $path = new DOMXPath($doc);
+    $path->registerNamespace('p', CreditTransferFile::NAMESPACE);
+    $text = fn (string $query): array => array_map(fn (DOMNode $node): string => $node->textContent, iterator_to_array($path->query($query)));
+    $agent = fn (string $id): array => array_map(fn (string $value): string => (string) preg_replace('/\s+/', '', $value), $text("//p:CdtTrfTxInf[p:CdtrAcct/p:Id/p:Othr/p:Id='{$id}']/p:CdtrAgt/p:FinInstnId/*[self::p:BIC or self::p:ClrSysMmbId]"));
+
+    expect($text('//p:DbtrAgt/p:FinInstnId/p:BIC'))->toBe([PaymentBank::from($bank)->bic()])
+        ->and($text('//p:InitgPty//p:SchmeNm/p:Cd'))->toBe($scheme === null ? [] : [$scheme])
+        ->and($text('//p:PmtTpInf/p:SvcLvl/*'))->toBe($serviceLevel)
+        ->and($text('//p:PmtTpInf/p:CtgyPurp/p:Cd'))->toBe($purpose === null ? [] : [$purpose])
+        ->and($agent('4123451'))->toBe($plusgiroAgent)
+        ->and($agent('50501055'))->toBe($bankgiroAgent)
+        ->and($text('//p:CdtTrfTxInf/p:Cdtr/p:Nm'))->toBe(['Elbolaget AB', 'Grossisten AB']);
+})->with([
+    'Danske Bank' => ['DANSKE', 'CUST', ['NURG'], ['DABASESX'], ['DABASESX'], null],
+    'Handelsbanken' => ['HANDELSBANKEN', 'BANK', ['NURG'], ['SESBA9900'], ['SESBA9500'], 'SUPP'],
+    'Länsförsäkringar' => ['LANSFORSAKRINGAR', null, [], ['SESBA9900'], ['SESBA9960'], null],
+    'Nordea' => ['NORDEA', 'CUST', ['NURG'], ['BGABSESS'], ['NDEASESS'], null],
+    'SEB' => ['SEB', 'CUST', ['MPNS'], ['SESBA9900'], ['SESBA9960'], null],
+]);
+
 it('pays to the bankgiro the supplier had when the invoice was registered', function () {
     useHandelsbanken($this->owner, $this->company);
     $invoice = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100');

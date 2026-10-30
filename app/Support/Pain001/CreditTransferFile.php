@@ -54,9 +54,13 @@ final class CreditTransferFile
         $xml->startElement('OrgId');
         $xml->startElement('Othr');
         $xml->writeElement('Id', $agreementId);
-        $xml->startElement('SchmeNm');
-        $xml->writeElement('Cd', $bank->initiatingPartyScheme());
-        $xml->endElement();
+
+        if ($bank->initiatingPartyScheme() !== null) {
+            $xml->startElement('SchmeNm');
+            $xml->writeElement('Cd', $bank->initiatingPartyScheme());
+            $xml->endElement();
+        }
+
         $xml->endElement();
         $xml->endElement();
         $xml->endElement();
@@ -68,18 +72,30 @@ final class CreditTransferFile
         $xml->writeElement('PmtMtd', 'TRF');
         $xml->writeElement('NbOfTxs', (string) count($transfers));
         $xml->writeElement('CtrlSum', $total);
-        $xml->startElement('PmtTpInf');
-        $xml->startElement('SvcLvl');
-        $xml->writeElement('Cd', 'NURG');
-        $xml->endElement();
+        if ($bank->serviceLevel() !== null || $bank->categoryPurpose() !== null) {
+            $xml->startElement('PmtTpInf');
 
-        if ($bank->categoryPurpose() !== null) {
-            $xml->startElement('CtgyPurp');
-            $xml->writeElement('Cd', $bank->categoryPurpose());
+            $serviceLevel = $bank->serviceLevel();
+
+            if ($serviceLevel !== null) {
+                $xml->startElement('SvcLvl');
+
+                foreach ($serviceLevel as $element => $value) {
+                    $xml->writeElement($element, $value);
+                }
+
+                $xml->endElement();
+            }
+
+            if ($bank->categoryPurpose() !== null) {
+                $xml->startElement('CtgyPurp');
+                $xml->writeElement('Cd', $bank->categoryPurpose());
+                $xml->endElement();
+            }
+
             $xml->endElement();
         }
 
-        $xml->endElement();
         $xml->writeElement('ReqdExctnDt', $executionDate->toDateString());
         $xml->startElement('Dbtr');
         $xml->writeElement('Nm', self::text($debtorName, 70));
@@ -93,6 +109,7 @@ final class CreditTransferFile
         $xml->startElement('DbtrAgt');
         $xml->startElement('FinInstnId');
         $xml->writeElement('BIC', $bank->bic());
+        self::country($xml, $bank);
         $xml->endElement();
         $xml->endElement();
 
@@ -127,6 +144,7 @@ final class CreditTransferFile
 
         if (isset($agent['bic'])) {
             $xml->writeElement('BIC', $agent['bic']);
+            self::country($xml, $bank);
         }
 
         if (isset($agent['clearing'])) {
@@ -181,6 +199,17 @@ final class CreditTransferFile
             $xml->endElement();
         }
 
+        $xml->endElement();
+    }
+
+    private static function country(XMLWriter $xml, PaymentBank $bank): void
+    {
+        if (! $bank->agentCountry()) {
+            return;
+        }
+
+        $xml->startElement('PstlAdr');
+        $xml->writeElement('Ctry', 'SE');
         $xml->endElement();
     }
 
