@@ -19,12 +19,9 @@ class AiModule implements Module
 {
     public const string KEY = 'ai';
 
-    /** The providers a company can choose; GoZero Core is the only one so far. */
-    public const array PROVIDERS = ['GOZERO_CORE' => 'GoZero Core AI'];
-
     public const array PERMISSIONS = ['ai:use', 'ai:settings'];
 
-    public const array DEFAULTS = ['provider' => 'GOZERO_CORE', 'quality' => 'standard', 'api_key' => null];
+    public const array DEFAULTS = ['provider' => 'OPENAI', 'model' => null, 'api_keys' => []];
 
     public function key(): string
     {
@@ -93,7 +90,7 @@ class AiModule implements Module
 
     public function canDisable(Company $company): ModuleCheck
     {
-        return new ModuleCheck(warnings: [__('API-nyckeln till AI-leverantören finns kvar krypterad om modulen slås på igen.')]);
+        return new ModuleCheck(warnings: [__('API-nycklarna finns kvar krypterade om modulen slås på igen.')]);
     }
 
     public function onEnable(Company $company, User $by): void

@@ -22,7 +22,7 @@ use App\Models\VoucherAttachment;
 use App\Models\VoucherRow;
 use App\Models\VoucherSeries;
 use App\Modules\Ai\Actions\AnalyzeDocument;
-use App\Modules\Ai\Support\GozeroCore\GozeroCoreException;
+use App\Modules\Ai\Support\AiAnalysisException;
 use App\Support\Money\Money;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
@@ -200,7 +200,7 @@ class VoucherEditor extends Component
 
         try {
             $answer = $analyze->voucher($this->user(), $this->company(), $path, (string) $mime);
-        } catch (GozeroCoreException $exception) {
+        } catch (AiAnalysisException $exception) {
             $this->toast($exception->getMessage(), 'error');
 
             return;
@@ -219,7 +219,7 @@ class VoucherEditor extends Component
         ], (array) $answer['rows']), $this->blankRow()]);
         $this->aiResult = [
             'notes' => (string) ($answer['notes'] ?? ''),
-            'confidence' => isset($answer['confidence']) ? (float) $answer['confidence'] : null,
+            'confidence' => null,
             'supplier' => null,
             // An unpaid supplier invoice belongs in the payables, where it gets a supplier, a due date and a payment.
             'supplier_invoice' => ($answer['document_type'] ?? null) === 'SUPPLIER_INVOICE'

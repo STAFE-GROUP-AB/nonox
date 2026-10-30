@@ -9,21 +9,25 @@ use App\Models\AuditLog;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
+use App\Modules\Ai\Agents\SupplierInvoiceAgent;
+use App\Modules\Ai\Agents\VoucherAgent;
 use App\Modules\Ai\AiModule;
 use App\Modules\Ai\Livewire\AiSettingsForm;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
-use Illuminate\Http\Client\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Sleep;
+use Laravel\Ai\Exceptions\RateLimitedException;
+use Laravel\Ai\Files\Document;
+use Laravel\Ai\Files\Image;
+use Laravel\Ai\Prompts\AgentPrompt;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 
-const TEST_CORE_KEY = 'gzc_test_abcdefghijklmnopqrstuvwxyz0123456789ABCD';
+const TEST_OPENAI_KEY = 'sk-test-abcdefghijklmnopqrstuvwxyz0123456789ABCD';
 
 beforeEach(function () {
     Storage::fake('local');
@@ -36,9 +40,9 @@ beforeEach(function () {
     $this->supplier = app(SaveSupplier::class)($this->owner, $this->company, ['name' => 'Grossisten AB', 'org_number' => '556036-0793', 'payment_terms_days' => 30, 'default_account' => 4010]);
 });
 
-function withCoreKey(): void
+function withOpenAiKey(): void
 {
-    app(ModuleManager::class)->updateSettings(AiModule::KEY, test()->company, test()->owner, ['api_key' => Crypt::encryptString(TEST_CORE_KEY)]);
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, test()->company, test()->owner, ['provider' => 'OPENAI', 'api_keys' => ['OPENAI' => Crypt::encryptString(TEST_OPENAI_KEY)]]);
 }
 
 function invoicePdf(): UploadedFile
@@ -46,47 +50,59 @@ function invoicePdf(): UploadedFile
     return UploadedFile::fake()->createWithContent('faktura.pdf', "%PDF-1.4\n1 0 obj << /Type /Page >> endobj\n%%EOF");
 }
 
-/** @return array<string, mixed> what Core answers for the grocery invoice */
-function coreInvoiceAnswer(): array
+/** @return array<string, mixed> what the agent answers for the grocery invoice */
+function invoiceAnswer(array $overrides = []): array
 {
     return [
-        'id' => 'job-1', 'status' => 'succeeded',
-        'output' => [
-            'supplier_name' => 'Grossisten AB', 'supplier_org_number' => '556036-0793', 'supplier_vat_number' => '', 'supplier_bankgiro' => '', 'supplier_plusgiro' => '', 'supplier_iban' => '',
-            'supplier_address' => '', 'supplier_postal_code' => '', 'supplier_city' => '', 'supplier_email' => '', 'supplier_phone' => '',
-            'invoice_number' => '7001', 'ocr' => '7001234', 'invoice_date' => '2026-03-02', 'due_date' => '2026-04-01', 'currency' => 'SEK',
-            'total' => 1568.0, 'vat_total' => 168.0, 'is_credit_note' => false, 'vat_treatment' => 'DOMESTIC', 'description' => 'Livsmedel och dryck',
-            'rows' => [
-                ['account' => 4010, 'amount_excl_vat' => 1000.0, 'vat_rate_percent' => 12, 'description' => 'Livsmedel'],
-                ['account' => 4010, 'amount_excl_vat' => 400.0, 'vat_rate_percent' => 25, 'description' => 'Dryck'],
-                ['account' => 9999, 'amount_excl_vat' => 1.0, 'vat_rate_percent' => 25, 'description' => 'Konto som inte finns'],
-            ],
-            'notes' => 'Förfallodagen är svår att läsa.',
+        'supplier_name' => 'Grossisten AB', 'supplier_org_number' => '556036-0793', 'supplier_vat_number' => '', 'supplier_bankgiro' => '', 'supplier_plusgiro' => '', 'supplier_iban' => '',
+        'supplier_address' => '', 'supplier_postal_code' => '', 'supplier_city' => '', 'supplier_email' => '', 'supplier_phone' => '',
+        'invoice_number' => '7001', 'ocr' => '7001234', 'invoice_date' => '2026-03-02', 'due_date' => '2026-04-01', 'currency' => 'SEK',
+        'total' => 1568.0, 'vat_total' => 168.0, 'is_credit_note' => false, 'vat_treatment' => 'DOMESTIC', 'description' => 'Livsmedel och dryck',
+        'rows' => [
+            ['account' => 4010, 'amount_excl_vat' => 1000.0, 'vat_rate_percent' => 12, 'description' => 'Livsmedel'],
+            ['account' => 4010, 'amount_excl_vat' => 400.0, 'vat_rate_percent' => 25, 'description' => 'Dryck'],
+            ['account' => 9999, 'amount_excl_vat' => 1.0, 'vat_rate_percent' => 25, 'description' => 'Konto som inte finns'],
         ],
-        'meta' => ['confidence' => 0.91, 'units' => 1, 'quality' => 'standard'],
+        'notes' => 'Förfallodagen är svår att läsa.',
+        ...$overrides,
     ];
 }
 
-it('keeps the company\'s API key encrypted and shows only its ending', function () {
+it('checks a new key with the provider and keeps it encrypted per provider', function () {
+    Http::fake([
+        'api.openai.com/v1/models' => Http::response(['data' => []]),
+        'api.anthropic.com/v1/models' => Http::response(['error' => ['type' => 'authentication_error']], 401),
+    ]);
+
     Livewire::test(AiSettingsForm::class, ['company' => $this->company])
-        ->assertSee('GoZero Core AI')
-        ->set('apiKey', 'not-a-key')
+        ->assertSee('OpenAI (ChatGPT)')
+        ->assertSee('Anthropic (Claude)')
+        ->assertSee('Google (Gemini)')
+        ->assertSee('platform.openai.com')
+        ->set('apiKey', 'inte-en-nyckel')
         ->call('save')
-        ->assertHasErrors('api_key')
-        ->set('apiKey', TEST_CORE_KEY)
+        ->assertHasErrors('apiKey')
+        ->set('apiKey', TEST_OPENAI_KEY)
         ->call('save')
         ->assertDispatched('toast')
         ->assertSee('…ABCD')
-        ->assertDontSee(TEST_CORE_KEY);
+        ->assertDontSee(TEST_OPENAI_KEY)
+        ->set('provider', 'ANTHROPIC')
+        ->assertSee('console.anthropic.com')
+        ->set('apiKey', 'sk-ant-abcdefghijklmnopqrstuvwxyz0123456789')
+        ->call('save')
+        ->assertHasErrors('apiKey');
 
-    $stored = app(ModuleManager::class)->settings(AiModule::KEY, $this->company)['api_key'];
-    expect($stored)->not->toContain('gzc_')
-        ->and(Crypt::decryptString($stored))->toBe(TEST_CORE_KEY);
+    $settings = app(ModuleManager::class)->settings(AiModule::KEY, $this->company);
+    expect($settings['provider'])->toBe('OPENAI')
+        ->and(Crypt::decryptString($settings['api_keys']['OPENAI']))->toBe(TEST_OPENAI_KEY)
+        ->and($settings['api_keys'])->not->toHaveKey('ANTHROPIC');
+    Http::assertSent(fn ($request) => $request->url() === 'https://api.openai.com/v1/models' && $request->hasHeader('Authorization', 'Bearer '.TEST_OPENAI_KEY));
 });
 
-it('fills in a supplier invoice from the PDF through GoZero Core and saves nothing', function () {
-    withCoreKey();
-    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response(coreInvoiceAnswer())]);
+it('fills in a supplier invoice from the PDF through the chosen provider and saves nothing', function () {
+    withOpenAiKey();
+    SupplierInvoiceAgent::fake([invoiceAnswer()]);
 
     Livewire::test(SupplierInvoiceEditor::class)
         ->set('file', invoicePdf())
@@ -103,34 +119,32 @@ it('fills in a supplier invoice from the PDF through GoZero Core and saves nothi
             ['account' => '4010', 'amount' => "1\u{a0}000,00", 'vat_rate' => '1200', 'description' => 'Livsmedel', 'cost_center' => '', 'project' => ''],
             ['account' => '4010', 'amount' => '400,00', 'vat_rate' => '2500', 'description' => 'Dryck', 'cost_center' => '', 'project' => ''],
         ])
-        ->assertSee('Säkerhet: 91 %')
         ->assertSee('Förfallodagen är svår att läsa.');
 
-    Http::assertSent(function (Request $request): bool {
-        $body = $request->data();
-
-        return $request->hasHeader('Authorization', 'Bearer '.TEST_CORE_KEY)
-            && $request->hasHeader('Idempotency-Key')
-            && $body['options']['mode'] === 'sync'
-            && $body['options']['language'] === 'sv'
-            && $body['documents'][0]['mime'] === 'application/pdf'
-            && str_contains($body['text'][0], '4010 ')
-            && $body['output_schema']['type'] === 'object'
-            && isset($body['output_schema']['properties']['rows']);
-    });
+    SupplierInvoiceAgent::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->attachments->first() instanceof Document
+        && str_contains($prompt->prompt, '4010 ')
+        && $prompt->model === 'gpt-5-mini'
+        && $prompt->provider->driver() === 'openai');
 
     expect(SupplierInvoice::query()->count())->toBe(0);
 
     $audit = AuditLog::query()->where('action', 'ai.document_analyzed')->sole();
-    expect($audit->payload)->toMatchArray(['kind' => 'supplier_invoice', 'job_id' => 'job-1', 'units' => 1])
+    expect($audit->payload)->toMatchArray(['kind' => 'supplier_invoice', 'provider' => 'OPENAI', 'model' => 'gpt-5-mini'])
         ->and(json_encode($audit->payload))->not->toContain('7001');
 });
 
+it('uses the company\'s chosen model and provider', function () {
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['provider' => 'ANTHROPIC', 'model' => 'claude-sonnet-5-5', 'api_keys' => ['ANTHROPIC' => Crypt::encryptString('sk-ant-abcdefghijklmnopqrstuvwxyz0123456789')]]);
+    SupplierInvoiceAgent::fake([invoiceAnswer()]);
+
+    Livewire::test(SupplierInvoiceEditor::class)->set('file', invoicePdf())->call('analyze')->assertSet('invoiceNumber', '7001');
+
+    SupplierInvoiceAgent::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->model === 'claude-sonnet-5-5' && $prompt->provider->driver() === 'anthropic');
+});
+
 it('creates and links a supplier that is not in the register when the person ticks it', function () {
-    withCoreKey();
-    $answer = coreInvoiceAnswer();
-    $answer['output'] = [...$answer['output'], 'supplier_name' => 'Scandinavian Photo', 'supplier_org_number' => '', 'supplier_vat_number' => 'SE556679651101', 'supplier_bankgiro' => '5050-1055', 'supplier_city' => 'Stockholm', 'supplier_email' => 'order@example.test'];
-    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response($answer)]);
+    withOpenAiKey();
+    SupplierInvoiceAgent::fake([invoiceAnswer(['supplier_name' => 'Scandinavian Photo', 'supplier_org_number' => '', 'supplier_vat_number' => 'SE556679651101', 'supplier_bankgiro' => '5050-1055', 'supplier_city' => 'Stockholm', 'supplier_email' => 'order@example.test'])]);
 
     Livewire::test(SupplierInvoiceEditor::class)
         ->set('file', invoicePdf())
@@ -150,11 +164,8 @@ it('creates and links a supplier that is not in the register when the person tic
 });
 
 it('leaves the register alone when the person unticks it', function () {
-    withCoreKey();
-    $answer = coreInvoiceAnswer();
-    $answer['output']['supplier_org_number'] = '556677-8899';
-    $answer['output']['supplier_name'] = 'Okänd AB';
-    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response($answer)]);
+    withOpenAiKey();
+    SupplierInvoiceAgent::fake([invoiceAnswer(['supplier_org_number' => '556677-8899', 'supplier_name' => 'Okänd AB'])]);
 
     Livewire::test(SupplierInvoiceEditor::class)
         ->set('file', invoicePdf())
@@ -166,61 +177,21 @@ it('leaves the register alone when the person unticks it', function () {
     expect(Supplier::query()->where('name', 'Okänd AB')->exists())->toBeFalse();
 });
 
-it('polls a job Core runs in the background', function () {
-    withCoreKey();
-    Sleep::fake();
-    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['quality' => 'high']);
-    Http::fake([
-        'api.gozerocore.com/v1/analyze' => Http::response(['id' => 'job-2', 'status' => 'queued', 'poll_url' => '/v1/jobs/job-2'], 202),
-        'api.gozerocore.com/v1/jobs/job-2' => Http::sequence()->push(['id' => 'job-2', 'status' => 'running'])->push([...coreInvoiceAnswer(), 'id' => 'job-2']),
-    ]);
-
-    Livewire::test(SupplierInvoiceEditor::class)->set('file', invoicePdf())->call('analyze')->assertSet('invoiceNumber', '7001');
-
-    Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/analyze') && $request->data()['options']['mode'] === 'async' && $request->data()['options']['quality'] === 'high');
-    Sleep::assertSleptTimes(2);
-});
-
-it('explains a missing or refused key in Swedish and keeps the form as it was', function () {
+it('says in Swedish when there is no key or the provider refuses, and keeps the form as it was', function () {
     Livewire::test(SupplierInvoiceEditor::class)
         ->set('file', invoicePdf())
         ->call('analyze')
-        ->assertDispatched('toast', message: 'NONOX AI saknar API-nyckel. Lägg in företagets nyckel under Företagsinställningar → Moduler → NONOX AI.', type: 'error')
+        ->assertDispatched('toast', message: 'NONOX AI saknar leverantör eller API-nyckel. Välj leverantör och lägg in nyckeln under Företagsinställningar → Moduler → NONOX AI.', type: 'error')
         ->assertSet('invoiceNumber', '');
 
-    withCoreKey();
-    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response(['error' => ['type' => 'authentication_error', 'code' => 'key.invalid']], 401)]);
+    withOpenAiKey();
+    SupplierInvoiceAgent::fake(fn () => throw RateLimitedException::forProvider('openai'));
 
     Livewire::test(SupplierInvoiceEditor::class)
         ->set('file', invoicePdf())
         ->call('analyze')
-        ->assertDispatched('toast', type: 'error')
+        ->assertDispatched('toast', message: 'OpenAI (ChatGPT) tar inte emot fler analyser just nu. Försök igen om en stund.', type: 'error')
         ->assertSet('invoiceNumber', '');
-});
-
-it('says when Core\'s content gate refuses a document and what to change', function () {
-    withCoreKey();
-    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response(['error' => ['type' => 'gate_rejected', 'code' => 'gate.irrelevant', 'message' => 'Not relevant.', 'details' => ['reason_code' => 'document_only', 'retryable' => false]]], 422)]);
-
-    Livewire::test(SupplierInvoiceEditor::class)
-        ->set('file', invoicePdf())
-        ->call('analyze')
-        ->assertDispatched('toast', message: 'GoZero Core:s innehållsfilter avvisade underlaget (document_only). Tenantens domänbeskrivning i GoZero Core behöver omfatta ekonomiska underlag som fakturor och kvitton.', type: 'error');
-});
-
-it('explains a job Core rejects in the background the same way', function () {
-    withCoreKey();
-    Sleep::fake();
-    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['quality' => 'high']);
-    Http::fake([
-        'api.gozerocore.com/v1/analyze' => Http::response(['id' => 'job-4', 'status' => 'queued'], 202),
-        'api.gozerocore.com/v1/jobs/job-4' => Http::response(['id' => 'job-4', 'status' => 'rejected', 'error' => ['type' => 'gate_rejected', 'code' => 'gate.irrelevant', 'details' => ['reason_code' => 'document_only']]]),
-    ]);
-
-    Livewire::test(SupplierInvoiceEditor::class)
-        ->set('file', invoicePdf())
-        ->call('analyze')
-        ->assertDispatched('toast', message: 'GoZero Core:s innehållsfilter avvisade underlaget (document_only). Tenantens domänbeskrivning i GoZero Core behöver omfatta ekonomiska underlag som fakturor och kvitton.', type: 'error');
 });
 
 it('shows the analyse button only where NONOX AI is on and the user may use it', function () {
@@ -234,46 +205,36 @@ it('shows the analyse button only where NONOX AI is on and the user may use it',
 });
 
 it('proposes a balanced voucher from a receipt and posts nothing', function () {
-    withCoreKey();
-    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response([
-        'id' => 'job-3', 'status' => 'succeeded',
-        'output' => [
-            'document_type' => 'RECEIPT', 'date' => '2026-03-05', 'description' => 'Kontorsmaterial, Pappershandeln', 'counterparty' => 'Pappershandeln', 'total' => 125.0, 'vat_total' => 25.0,
-            'rows' => [
-                ['account' => 6110, 'debit' => 100.0, 'credit' => 0.0, 'description' => 'Kontorsmaterial'],
-                ['account' => 2641, 'debit' => 25.0, 'credit' => 0.0, 'description' => ''],
-                ['account' => 1930, 'debit' => 0.0, 'credit' => 125.0, 'description' => ''],
-            ],
-            'notes' => '',
+    withOpenAiKey();
+    VoucherAgent::fake([[
+        'document_type' => 'RECEIPT', 'date' => '2026-03-05', 'description' => 'Kontorsmaterial, Pappershandeln', 'counterparty' => 'Pappershandeln', 'total' => 125.0, 'vat_total' => 25.0,
+        'rows' => [
+            ['account' => 6110, 'debit' => 100.0, 'credit' => 0.0, 'description' => 'Kontorsmaterial'],
+            ['account' => 2641, 'debit' => 25.0, 'credit' => 0.0, 'description' => ''],
+            ['account' => 1930, 'debit' => 0.0, 'credit' => 125.0, 'description' => ''],
         ],
-        'meta' => ['confidence' => 0.88, 'units' => 1],
-    ])]);
+        'notes' => '',
+    ]]);
 
     $component = Livewire::test(VoucherEditor::class)
         ->set('uploads', [UploadedFile::fake()->image('kvitto.jpg', 400, 600)])
         ->call('analyze')
         ->assertSet('voucherDate', '2026-03-05')
-        ->assertSet('description', 'Kontorsmaterial, Pappershandeln');
+        ->assertSet('description', 'Kontorsmaterial, Pappershandeln')
+        ->assertDontSee('obetald leverantörsfaktura');
 
     $rows = $component->get('rows');
     expect(array_column(array_slice($rows, 0, 3), 'account'))->toBe(['6110', '2641', '1930'])
         ->and($rows[2]['credit'])->toBe('125,00')
         ->and(Voucher::query()->count())->toBe(0);
 
-    Http::assertSent(fn (Request $request): bool => $request->data()['images'][0]['mime'] === 'image/jpeg');
+    VoucherAgent::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->attachments->first() instanceof Image);
 });
 
 it('sends an unpaid supplier invoice from bookkeeping to the supplier invoice page, where the supplier can be created', function () {
-    withCoreKey();
-    $invoice = coreInvoiceAnswer();
-    $invoice['output'] = [...$invoice['output'], 'supplier_name' => 'Scandinavian Photo', 'supplier_org_number' => '556679-6511'];
-    Http::fake(['api.gozerocore.com/v1/analyze' => Http::sequence()
-        ->push([
-            'id' => 'job-5', 'status' => 'succeeded',
-            'output' => ['document_type' => 'SUPPLIER_INVOICE', 'date' => '2026-03-02', 'description' => 'Faktura', 'counterparty' => 'Scandinavian Photo', 'total' => 1568.0, 'vat_total' => 168.0, 'rows' => [], 'notes' => ''],
-            'meta' => ['confidence' => 0.9, 'units' => 1],
-        ])
-        ->push($invoice)]);
+    withOpenAiKey();
+    VoucherAgent::fake([['document_type' => 'SUPPLIER_INVOICE', 'date' => '2026-03-02', 'description' => 'Faktura', 'counterparty' => 'Scandinavian Photo', 'total' => 1568.0, 'vat_total' => 168.0, 'rows' => [], 'notes' => '']]);
+    SupplierInvoiceAgent::fake([invoiceAnswer(['supplier_name' => 'Scandinavian Photo', 'supplier_org_number' => '556679-6511'])]);
 
     Livewire::test(VoucherEditor::class)
         ->set('uploads', [invoicePdf()])
@@ -299,8 +260,8 @@ it('sends an unpaid supplier invoice from bookkeeping to the supplier invoice pa
 
 it('does not take over another person\'s document', function () {
     session()->put(SupplierInvoiceEditor::HANDOFF, ['file' => 'someone-elses.pdf', 'user' => 999999, 'company' => $this->company->id]);
-    Http::fake();
+    SupplierInvoiceAgent::fake();
 
-    Livewire::test(SupplierInvoiceEditor::class)->assertSet('file', null);
-    Http::assertNothingSent();
+    Livewire::test(SupplierInvoiceEditor::class)->assertSet('file', null)->assertSet('analyzeOnLoad', false);
+    SupplierInvoiceAgent::assertNeverPrompted();
 });

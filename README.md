@@ -59,7 +59,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - 🚧 Automatisk avstämning mot bankens svar, import av varor från länder utanför EU och fakturor i utländsk valuta.
 - ✅ Moduler: tillägg som varje företag slår på och av under Företagsinställningar → Moduler, utan att något raderas.
 - ✅ Lön som modul (påbörjad), enligt [PAYROLL_MODULE.md](PAYROLL_MODULE.md): anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag, arbetsgivaravgifter med sänkningen för unga, lönekörning med attest, lönebokföring i serie L, lönebesked som PDF och en egen portal för anställda (Min sida, `/anstalld`) med inbjudan via e-post. Alla satser är data med källa som måste kontrolleras av en behörig person innan de används.
-- ✅ NONOX AI (modul): dra in en leverantörsfaktura eller ett kvitto och låt AI fylla i förslaget med konton och belopp via Laravel AI SDK och GoZero Core AI. Du kontrollerar och sparar; AI:n sparar aldrig själv.
+- ✅ NONOX AI (modul): dra in en leverantörsfaktura eller ett kvitto och låt AI fylla i förslaget med konton och belopp via Laravel AI SDK och OpenAI, Claude eller Gemini med företagets egen API-nyckel. Du kontrollerar och sparar; AI:n sparar aldrig själv.
 - ✅ Självservice på Min sida: sjukanmälan, vård av barn och semesteransökan som godkänns under Lön → Ansökningar, med e-post åt båda håll.
 - ✅ Eget varumärke per företag: logga och färger på fakturor, offerter, order, lönebesked och Min sida.
 - ✅ Lön: semester enligt semesterlagen (sammalöneregeln, procentregeln, semesterersättning med lönen) med saldo på lönebeskedet och Min sida, helgarbete (9 §), sparade dagar och semesterårsskifte, och semesterlöneskuld som rapport och månadsbokföring.

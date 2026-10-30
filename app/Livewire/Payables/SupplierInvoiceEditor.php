@@ -20,7 +20,7 @@ use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\User;
 use App\Modules\Ai\Actions\AnalyzeDocument;
-use App\Modules\Ai\Support\GozeroCore\GozeroCoreException;
+use App\Modules\Ai\Support\AiAnalysisException;
 use App\Support\Money\Money;
 use App\Support\Toast;
 use Carbon\CarbonImmutable;
@@ -202,7 +202,7 @@ class SupplierInvoiceEditor extends Component
 
         try {
             $answer = $analyze->supplierInvoice($this->user(), $this->company(), $path, (string) $mime);
-        } catch (GozeroCoreException $exception) {
+        } catch (AiAnalysisException $exception) {
             $this->toast($exception->getMessage(), 'error');
 
             return;
@@ -231,7 +231,7 @@ class SupplierInvoiceEditor extends Component
 
         $this->aiResult = [
             'notes' => (string) ($answer['notes'] ?? ''),
-            'confidence' => isset($answer['confidence']) ? (float) $answer['confidence'] : null,
+            'confidence' => null,
             'supplier' => null,
             'new_supplier' => $answer['supplier_id'] === null && filled($answer['supplier_name'] ?? null) ? $this->newSupplier($answer) : null,
         ];

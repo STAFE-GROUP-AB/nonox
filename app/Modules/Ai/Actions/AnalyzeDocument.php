@@ -11,8 +11,8 @@ use App\Models\User;
 use App\Modules\Ai\Agents\SupplierInvoiceAgent;
 use App\Modules\Ai\Agents\VoucherAgent;
 use App\Modules\Ai\AiModule;
-use App\Modules\Ai\Support\GozeroCore\AnalysisReceipt;
-use App\Modules\Ai\Support\GozeroCore\GozeroCoreException;
+use App\Modules\Ai\Support\AiAnalysisException;
+use App\Modules\Ai\Support\AiProvider;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
@@ -20,13 +20,21 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Crypt;
 use Laravel\Ai\Ai;
+use Laravel\Ai\Contracts\Providers\TextProvider;
+use Laravel\Ai\Exceptions\InsufficientCreditsException;
+use Laravel\Ai\Exceptions\ProviderConnectionException;
+use Laravel\Ai\Exceptions\ProviderOverloadedException;
+use Laravel\Ai\Exceptions\RateLimitedException;
 use Laravel\Ai\Files\Document;
 use Laravel\Ai\Files\Image;
+use Throwable;
 
 /**
- * Analyses a document with the company's AI provider and returns a proposal
+ * Analyses a document with the company's AI provider (OpenAI, Anthropic or
+ * Google, through the Laravel AI SDK with the company's own key) and returns a proposal
  * for a person to check: nothing is saved or posted here. Accounts the
  * company's chart lacks are dropped, and a supplier is only suggested when
  * it matches one already in the register. The audit log records that an
@@ -35,6 +43,9 @@ use Laravel\Ai\Files\Image;
 class AnalyzeDocument
 {
     private const array IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+    /** Seconds to wait for the provider. */
+    private const int TIMEOUT = 120;
 
     public function __construct(private readonly ModuleManager $modules) {}
 
@@ -87,32 +98,71 @@ class AnalyzeDocument
             throw new AuthorizationException;
         }
 
-        $settings = $this->modules->settings(AiModule::KEY, $company);
-        $key = $settings['api_key'] ?? null;
-
-        if (! is_string($key) || $key === '') {
-            throw new GozeroCoreException(__('NONOX AI saknar API-nyckel. Lägg in företagets nyckel under Företagsinställningar → Moduler → NONOX AI.'), 'key.missing');
-        }
+        [$provider, $model, $key] = self::providerFor($company);
 
         $file = $mime === 'application/pdf'
             ? Document::fromPath($path)
-            : (in_array($mime, self::IMAGE_TYPES, true) ? Image::fromPath($path, $mime) : throw new GozeroCoreException(__('Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG eller WebP.'), 'input.unsupported'));
+            : (in_array($mime, self::IMAGE_TYPES, true) ? Image::fromPath($path, $mime) : throw new AiAnalysisException(__('Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG eller WebP.')));
 
-        $provider = Ai::build([
-            'name' => "nonox_ai_company_{$company->id}",
-            'driver' => 'gozerocore',
-            'key' => Crypt::decryptString($key),
-            'url' => config('services.gozerocore.url'),
-            'timeout' => config('services.gozerocore.timeout'),
-            'quality' => (string) ($settings['quality'] ?? 'standard'),
-        ]);
+        $built = Ai::build(['name' => "nonox_ai_company_{$company->id}", 'driver' => $provider->driver(), 'key' => $key]);
 
-        $response = $agent->prompt($this->context($company), attachments: [$file], provider: $provider->name(), timeout: (int) config('services.gozerocore.timeout'));
-        $receipt = app(AnalysisReceipt::class);
+        try {
+            $response = $agent->prompt($this->context($company), attachments: [$file], provider: $built->name(), model: $model, timeout: self::TIMEOUT);
+        } catch (Throwable $exception) {
+            throw new AiAnalysisException(self::message($provider, $exception), previous: $exception);
+        }
 
-        Audit::record('ai.document_analyzed', null, ['kind' => $kind, 'provider' => $settings['provider'] ?? 'GOZERO_CORE', 'job_id' => $receipt->jobId, 'units' => $receipt->units, 'confidence' => $receipt->confidence], $company, $user);
+        Audit::record('ai.document_analyzed', null, [
+            'kind' => $kind,
+            'provider' => $provider->value,
+            'model' => $model ?? ($built instanceof TextProvider ? $built->defaultTextModel() : null),
+            'input_tokens' => $response->usage->inputTokens,
+            'output_tokens' => $response->usage->outputTokens,
+        ], $company, $user);
 
-        return [...(array) $response->toArray(), 'confidence' => $receipt->confidence, 'job_id' => $receipt->jobId];
+        return (array) $response->toArray();
+    }
+
+    /**
+     * The company's provider, model and decrypted key.
+     *
+     * @return array{AiProvider, ?string, string}
+     */
+    public static function providerFor(Company $company): array
+    {
+        $settings = app(ModuleManager::class)->settings(AiModule::KEY, $company);
+        $provider = AiProvider::tryFrom((string) ($settings['provider'] ?? ''));
+        $key = $provider === null ? null : (((array) ($settings['api_keys'] ?? []))[$provider->value] ?? null);
+
+        if ($provider === null || ! is_string($key) || $key === '') {
+            throw new AiAnalysisException(__('NONOX AI saknar leverantör eller API-nyckel. Välj leverantör och lägg in nyckeln under Företagsinställningar → Moduler → NONOX AI.'));
+        }
+
+        $model = filled($settings['model'] ?? null) ? (string) $settings['model'] : $provider->defaultModel();
+
+        return [$provider, $model, Crypt::decryptString($key)];
+    }
+
+    /** What went wrong, said in Swedish. */
+    private static function message(AiProvider $provider, Throwable $exception): string
+    {
+        $status = null;
+
+        for ($cause = $exception; $cause !== null; $cause = $cause->getPrevious()) {
+            if ($cause instanceof RequestException) {
+                $status = $cause->response->status();
+            }
+        }
+
+        return match (true) {
+            $exception instanceof RateLimitedException => __(':provider tar inte emot fler analyser just nu. Försök igen om en stund.', ['provider' => $provider->label()]),
+            $exception instanceof InsufficientCreditsException => __('Kontot hos :provider saknar pengar. Fyll på under fakturering hos :provider.', ['provider' => $provider->label()]),
+            $exception instanceof ProviderOverloadedException => __(':provider är överbelastat just nu. Försök igen om en stund.', ['provider' => $provider->label()]),
+            $exception instanceof ProviderConnectionException => __('Det gick inte att nå :provider. Kontrollera internetanslutningen och försök igen.', ['provider' => $provider->label()]),
+            in_array($status, [401, 403], true) => __(':provider godtog inte API-nyckeln. Lägg in en ny under Moduler → NONOX AI.', ['provider' => $provider->label()]),
+            $status === 404 => __('Modellen finns inte hos :provider. Töm fältet Modell under Moduler → NONOX AI för att använda standardmodellen.', ['provider' => $provider->label()]),
+            default => __('Analysen misslyckades hos :provider. Fyll i uppgifterna själv eller försök igen.', ['provider' => $provider->label()]),
+        };
     }
 
     /** The company's chart of accounts, for the agent to choose from. */

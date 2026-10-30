@@ -8,19 +8,21 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Ai\AiModule;
+use App\Modules\Ai\Support\AiProvider;
 use App\Modules\ModuleManager;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
- * NONOX AI's settings under Moduler: the provider, its quality and the
- * company's own API key. The key is stored encrypted and never shown again;
- * only its last four characters.
+ * NONOX AI's settings under Moduler: which AI provider the company uses, the
+ * model, and the company's own API key per provider. A key is checked with the
+ * provider before it is saved, stored encrypted and never shown again; only
+ * its last four characters.
  */
 class AiSettingsForm extends Component
 {
@@ -31,9 +33,9 @@ class AiSettingsForm extends Component
     #[Locked]
     public int $companyId;
 
-    public string $provider = 'GOZERO_CORE';
+    public string $provider = 'OPENAI';
 
-    public string $quality = 'standard';
+    public string $model = '';
 
     public string $apiKey = '';
 
@@ -43,8 +45,8 @@ class AiSettingsForm extends Component
 
         $settings = app(ModuleManager::class)->settings(AiModule::KEY, $company);
         $this->companyId = $company->id;
-        $this->provider = (string) ($settings['provider'] ?? 'GOZERO_CORE');
-        $this->quality = (string) ($settings['quality'] ?? 'standard');
+        $this->provider = (AiProvider::tryFrom((string) ($settings['provider'] ?? '')) ?? AiProvider::OpenAi)->value;
+        $this->model = (string) ($settings['model'] ?? '');
     }
 
     public function save(ModuleManager $modules): void
@@ -52,28 +54,49 @@ class AiSettingsForm extends Component
         $company = Company::query()->findOrFail($this->companyId);
         abort_unless($this->user()->hasTeamPermission($company, 'ai:settings'), 403);
 
-        Validator::make(['provider' => $this->provider, 'quality' => $this->quality, 'api_key' => $this->apiKey], [
-            'provider' => ['required', Rule::in(array_keys(AiModule::PROVIDERS))],
-            'quality' => ['required', Rule::in(['standard', 'high'])],
-            'api_key' => ['nullable', 'string', 'regex:/^gzc_(live|test)_[A-Za-z0-9]{20,}$/'],
-        ], ['api_key.regex' => __('Nyckeln ska börja med gzc_live_ eller gzc_test_.')])->validate();
+        $this->validate([
+            'provider' => ['required', Rule::enum(AiProvider::class)],
+            'model' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9.\-_:\/]+$/'],
+        ]);
 
-        $settings = ['provider' => $this->provider, 'quality' => $this->quality];
+        $provider = AiProvider::from($this->provider);
+        $keys = (array) ($modules->settings(AiModule::KEY, $company)['api_keys'] ?? []);
+        $key = trim($this->apiKey);
 
-        if (trim($this->apiKey) !== '') {
-            $settings['api_key'] = Crypt::encryptString(trim($this->apiKey));
+        if ($key !== '') {
+            if (preg_match($provider->keyPattern(), $key) !== 1) {
+                throw ValidationException::withMessages(['apiKey' => __('Det ser inte ut som en API-nyckel från :provider. Kopiera hela nyckeln från länken ovan.', ['provider' => $provider->label()])]);
+            }
+
+            if ($provider->accepts($key) === false) {
+                throw ValidationException::withMessages(['apiKey' => __(':provider godtog inte nyckeln. Kontrollera att du kopierat hela nyckeln och att kontot har betalning inlagd.', ['provider' => $provider->label()])]);
+            }
+
+            $keys[$provider->value] = Crypt::encryptString($key);
         }
 
-        $modules->updateSettings(AiModule::KEY, $company, $this->user(), $settings);
+        if (! isset($keys[$provider->value])) {
+            throw ValidationException::withMessages(['apiKey' => __('Lägg in en API-nyckel från :provider.', ['provider' => $provider->label()])]);
+        }
+
+        $modules->updateSettings(AiModule::KEY, $company, $this->user(), [
+            'provider' => $provider->value,
+            'model' => trim($this->model) === '' ? null : trim($this->model),
+            'api_keys' => $keys,
+        ]);
         $this->apiKey = '';
-        $this->toast(__('Inställningarna för NONOX AI är sparade.'));
+        $this->toast(__('NONOX AI använder nu :provider.', ['provider' => $provider->label()]));
     }
 
     public function render(): View
     {
-        $stored = app(ModuleManager::class)->settings(AiModule::KEY, Company::query()->findOrFail($this->companyId))['api_key'] ?? null;
+        $keys = (array) (app(ModuleManager::class)->settings(AiModule::KEY, Company::query()->findOrFail($this->companyId))['api_keys'] ?? []);
+        $provider = AiProvider::tryFrom($this->provider) ?? AiProvider::OpenAi;
+        $stored = $keys[$provider->value] ?? null;
 
         return view('ai::livewire.settings-form', [
+            'providers' => AiProvider::cases(),
+            'current' => $provider,
             'keyEnding' => is_string($stored) ? substr(Crypt::decryptString($stored), -4) : null,
         ]);
     }

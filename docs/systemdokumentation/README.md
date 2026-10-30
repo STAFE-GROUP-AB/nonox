@@ -347,10 +347,11 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   hand. Därför ändrar modulen ingenting i verifikationsflödet.
 - Bara konton som finns aktiva i företagets kontoplan föreslås, och en
   leverantör väljs bara när den redan finns i registret.
-- Underlaget skickas till den AI-leverantör företaget valt (GoZero Core AI)
-  med företagets egen API-nyckel, som lagras krypterad. Behandlingshistoriken
-  visar att en analys gjorts, med leverantörens jobb-id, kostnad i enheter och
-  säkerhet, men aldrig underlagets innehåll ([ADR-018](../adr/ADR-018-nonox-ai.md)).
+- Underlaget skickas till den AI-leverantör företaget valt (OpenAI, Anthropic
+  eller Google) med företagets egen API-nyckel, som kontrolleras hos
+  leverantören och lagras krypterad. Behandlingshistoriken visar att en analys
+  gjorts, med leverantör, modell och antal token, men aldrig underlagets
+  innehåll ([ADR-018](../adr/ADR-018-nonox-ai.md)).
 
 ## 6. Belopp
 
