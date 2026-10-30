@@ -29,6 +29,7 @@ use LogicException;
  * @property ?CarbonImmutable $approved_at
  * @property ?string $rule_snapshot_hash
  * @property ?string $posted_voucher_id
+ * @property ?string $tax_voucher_id
  */
 class PayrollRun extends Model
 {
@@ -108,6 +109,12 @@ class PayrollRun extends Model
     public function payslips(): HasMany
     {
         return $this->hasMany(Payslip::class);
+    }
+
+    /** @return BelongsTo<Voucher, $this> the voucher that booked the tax and contributions against the tax account */
+    public function taxVoucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class, 'tax_voucher_id');
     }
 
     /** @return BelongsTo<Voucher, $this> */

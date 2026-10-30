@@ -358,7 +358,15 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   engångsbelopp och knyts till den körningen när den attesteras, så att de
   aldrig betalas två gånger. Ett stängt semesterår går inte att ändra.
   Sparade dagar används efter årets egna dagar och gäller i fem år.
-- Utbetalningsfil och arbetsgivardeklaration är inte byggda ännu. Semester­
+- Lönefil: för en attesterad lönekörning skapas en ISO 20022 pain.001.001.03
+  med kategorin SALA, en betalning per anställd till dess bankkonto (clearing
+  och kontonummer), från företagets bank enligt betalningsinställningarna.
+  Behandlingshistoriken visar vem som tog ut filen, antal och summa, aldrig
+  kontonummer.
+- Skattekontot: när lönen är bokförd bokförs personalskatten (2710) och
+  arbetsgivaravgifter med särskild löneskatt (2730) mot 1630 den dag
+  Skatteverket drar dem, en gång per lönekörning.
+- Arbetsgivardeklarationen är inte byggd ännu. Semester­
   ersättning när en anställning upphör (28–29 §§) hör till slutlönen.
 
 ## 5c. NONOX AI (modul)

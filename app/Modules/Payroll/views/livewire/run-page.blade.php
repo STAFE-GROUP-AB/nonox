@@ -28,6 +28,7 @@
                         <button type="button" class="text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
                     </span>
                 @elseif($canPay)
+                    <a href="{{ route('payroll.runs.payment-file', $run) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Hämta lönefil till banken') }}</a>
                     <x-button type="button" wire:click="markPaid" wire:loading.attr="disabled">{{ __('Markera som utbetald') }}</x-button>
                 @elseif($canPost)
                     <x-button type="button" wire:click="post" wire:loading.attr="disabled">{{ __('Bokför lönen') }}</x-button>
@@ -39,6 +40,21 @@
             </div>
         </div>
         <x-input-error for="run" class="mt-2" />
+        @error('payment_file') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+        @if($run->status === 'POSTED' && $canPostTax)
+            <div class="mt-4 flex flex-wrap items-end gap-3 rounded-lg bg-gray-50 p-4 text-sm">
+                @if($run->taxVoucher)
+                    <span class="text-gray-700">{{ __('Skatt och avgifter är bokförda mot skattekontot:') }}</span>
+                    <a href="{{ route('accounting.vouchers.show', $run->taxVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Verifikation :voucher', ['voucher' => $run->taxVoucher->reference()]) }}</a>
+                @else
+                    <span class="min-w-0 flex-1 text-gray-700">{{ __('När Skatteverket drar skatt och arbetsgivaravgifter från skattekontot: bokför det här.') }}</span>
+                    <label class="text-gray-600">{{ __('Dag') }}
+                        <input type="date" class="mt-1 block rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500" wire:model="taxDate">
+                    </label>
+                    <x-button type="button" wire:click="postTax" wire:loading.attr="disabled">{{ __('Bokför mot skattekontot') }}</x-button>
+                @endif
+            </div>
+        @endif
         @if($missingAccounts !== [] && in_array($run->status, ['APPROVED', 'PAID'], true))
             <div class="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
                 {{ __('Kontoplanen saknar :accounts, som lönen bokförs på.', ['accounts' => implode(', ', $missingAccounts)]) }}

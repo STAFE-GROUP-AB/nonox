@@ -39,6 +39,7 @@ use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -55,6 +56,9 @@ use LogicException;
  */
 class PayrollRuns
 {
+    /** Avräkning för skatter och avgifter (skattekonto). */
+    public const int TAX_ACCOUNT = 1630;
+
     public function __construct(
         private readonly PayrollCalculator $calculator,
         private readonly ContextBuilder $contexts,
@@ -420,6 +424,46 @@ class PayrollRuns
 
             $run->forceFill(['status' => PayrollRun::POSTED, 'posted_voucher_id' => $voucher->id])->save();
             Audit::record('payroll.run_posted', $run, ['period' => $run->period, 'voucher' => $voucher->reference()], $company, $user);
+
+            return $run;
+        }));
+    }
+
+    /**
+     * Books the run's withheld tax (2710) and its contributions and special
+     * payroll tax (2730) against the tax account, on the day Skatteverket
+     * draws them (PAYROLL_MODULE.md B.12). Once per run.
+     */
+    public function postTax(User $user, PayrollRun $run, CarbonImmutable $date): PayrollRun
+    {
+        $company = Company::query()->findOrFail($run->company_id);
+        $this->modules->ensureEnabled(PayrollModule::KEY, $company);
+
+        if (! $user->hasTeamPermission($company, 'payroll:post')) {
+            throw new AuthorizationException;
+        }
+
+        return CurrentCompany::run($company, fn (): PayrollRun => DB::transaction(function () use ($user, $company, $run, $date): PayrollRun {
+            /** @var PayrollRun $run */
+            $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
+
+            if ($run->status !== PayrollRun::POSTED || $run->tax_voucher_id !== null) {
+                throw ValidationException::withMessages(['run' => [__('Skatten kan bokföras när lönen är bokförd, och bara en gång.')]]);
+            }
+
+            $payslipIds = Payslip::query()->where('payroll_run_id', $run->id)->pluck('id');
+            $tax = (int) Payslip::query()->whereIn('id', $payslipIds)->sum('tax_ore');
+            $contributions = (int) Payslip::query()->whereIn('id', $payslipIds)->sum('employer_contribution_ore')
+                + (int) PayslipLine::query()->whereIn('payslip_id', $payslipIds)->whereIn('pay_code_id', PayCode::query()->where('code', 'SARSKILD_LONESKATT')->select('id'))->sum('amount_ore');
+
+            $voucher = app(BookVoucher::class)->rows($user, $company, $date, __('Skatt och avgifter, :title', ['title' => $run->title()]), 'L', array_values(array_filter([
+                $tax > 0 ? ['account' => SalaryVoucher::TAX, 'amount' => $tax, 'description' => __('Personalskatt')] : null,
+                $contributions > 0 ? ['account' => SalaryVoucher::CONTRIBUTIONS_LIABILITY, 'amount' => $contributions, 'description' => __('Arbetsgivaravgifter och särskild löneskatt')] : null,
+                ['account' => self::TAX_ACCOUNT, 'amount' => -($tax + $contributions), 'description' => __('Skattekontot')],
+            ])), VoucherSource::Payroll, $run);
+
+            $run->forceFill(['tax_voucher_id' => $voucher->id])->save();
+            Audit::record('payroll.tax_posted', $run, ['voucher' => $voucher->reference(), 'tax_ore' => $tax, 'contributions_ore' => $contributions], $company, $user);
 
             return $run;
         }));

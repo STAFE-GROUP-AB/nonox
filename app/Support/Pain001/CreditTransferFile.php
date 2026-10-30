@@ -31,7 +31,9 @@ final class CreditTransferFile
         CarbonImmutable $executionDate,
         array $transfers,
         ?string $debtorBankgiro = null,
+        ?string $categoryPurpose = null,
     ): string {
+        $categoryPurpose ??= $bank->categoryPurpose();
         $xml = new XMLWriter;
         $xml->openMemory();
         $xml->setIndent(true);
@@ -73,7 +75,7 @@ final class CreditTransferFile
         $xml->writeElement('PmtMtd', 'TRF');
         $xml->writeElement('NbOfTxs', (string) count($transfers));
         $xml->writeElement('CtrlSum', $total);
-        if ($bank->serviceLevel() !== null || $bank->categoryPurpose() !== null) {
+        if ($bank->serviceLevel() !== null || $categoryPurpose !== null) {
             $xml->startElement('PmtTpInf');
 
             $serviceLevel = $bank->serviceLevel();
@@ -88,9 +90,9 @@ final class CreditTransferFile
                 $xml->endElement();
             }
 
-            if ($bank->categoryPurpose() !== null) {
+            if ($categoryPurpose !== null) {
                 $xml->startElement('CtgyPurp');
-                $xml->writeElement('Cd', $bank->categoryPurpose());
+                $xml->writeElement('Cd', $categoryPurpose);
                 $xml->endElement();
             }
 
@@ -152,7 +154,10 @@ final class CreditTransferFile
         $xml->endElement();
         $xml->endElement();
 
-        $agent = $bank->creditorAgent($transfer->scheme === CreditTransfer::BANKGIRO ? 'BGNR' : 'PGNR');
+        // A bank account is reached through its clearing number; a giro number through the bank's giro agent.
+        $agent = $transfer->scheme === CreditTransfer::BANK_ACCOUNT
+            ? ['clearing' => substr((string) $transfer->clearing, 0, 4)]
+            : $bank->creditorAgent($transfer->scheme === CreditTransfer::BANKGIRO ? 'BGNR' : 'PGNR');
         $xml->startElement('CdtrAgt');
         $xml->startElement('FinInstnId');
 

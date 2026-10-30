@@ -1847,5 +1847,19 @@
     "Varav moms (om det står på kvittot)": "Of which VAT (if shown on the receipt)",
     "Kvitto": "Receipt",
     "Ta en bild med mobilen eller välj en PDF.": "Take a picture with your phone or choose a PDF.",
-    "Skicka utlägget": "Send the outlay"
+    "Skicka utlägget": "Send the outlay",
+    "Välj den dag skatten dras från skattekontot.": "Choose the day the tax is drawn from the tax account.",
+    "Skatt och avgifter är bokförda mot skattekontot som :voucher.": "Tax and contributions are booked against the tax account as :voucher.",
+    "Skatten kan bokföras när lönen är bokförd, och bara en gång.": "The tax can be booked once the salary is posted, and only once.",
+    "Skatt och avgifter, :title": "Tax and contributions, :title",
+    "Arbetsgivaravgifter och särskild löneskatt": "Employer contributions and special payroll tax",
+    "Skattekontot": "The tax account",
+    "Välj bank och fyll i IBAN och avtals-id under Leverantörer → Betalningar först. Lönefilen använder samma bankuppgifter.": "Choose the bank and fill in IBAN and agreement id under Suppliers → Payments first. The salary file uses the same bank details.",
+    "Bankkonto saknas för :names. Fyll i clearingnummer och kontonummer under Lön → Anställda.": "Bank account missing for :names. Fill in clearing number and account number under Payroll → Employees.",
+    "Ingen i lönekörningen har något att få utbetalt.": "Nobody in the payroll run has anything to be paid.",
+    "Hämta lönefil till banken": "Download the salary file for the bank",
+    "Skatt och avgifter är bokförda mot skattekontot:": "Tax and contributions are booked against the tax account:",
+    "När Skatteverket drar skatt och arbetsgivaravgifter från skattekontot: bokför det här.": "When Skatteverket draws tax and employer contributions from the tax account: book it here.",
+    "Dag": "Day",
+    "Bokför mot skattekontot": "Book against the tax account"
 }

@@ -15,6 +15,7 @@ use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -51,6 +52,8 @@ class PayrollRunPage extends Component
         abort_unless(Gate::allows('view', $run), 403);
 
         $this->runId = $run->id;
+        // Skatteverket draws tax and contributions around the 12th of the month after payment.
+        $this->taxDate = $run->payment_date->addMonthNoOverflow()->day(12)->toDateString();
     }
 
     public function addInput(PayrollRuns $runs): void
@@ -122,6 +125,22 @@ class PayrollRunPage extends Component
         $this->toast(__(':title är bokförd som :voucher.', ['title' => $run->title(), 'voucher' => $run->voucher?->reference()]));
     }
 
+    public string $taxDate = '';
+
+    public function postTax(PayrollRuns $runs): void
+    {
+        $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->taxDate) === 1 ? CarbonImmutable::parse($this->taxDate) : null;
+
+        if ($date === null) {
+            $this->addError('run', __('Välj den dag skatten dras från skattekontot.'));
+
+            return;
+        }
+
+        $run = $runs->postTax($this->user(), $this->run(), $date);
+        $this->toast(__('Skatt och avgifter är bokförda mot skattekontot som :voucher.', ['voucher' => $run->taxVoucher?->reference()]));
+    }
+
     public function addAccounts(AddPayrollAccounts $add): void
     {
         $company = $this->user()->currentCompany() ?? abort(404);
@@ -140,7 +159,7 @@ class PayrollRunPage extends Component
         return view('payroll::livewire.run-page', [
             'run' => $run,
             'employees' => Employee::query()->orderBy('employee_number')->get(['id', 'employee_number', 'first_name', 'last_name']),
-            'payCodes' => PayCode::query()->where('is_active', true)->whereNotIn('category', ['SICK', 'ABSENCE'])->orderBy('code')->get(['id', 'code', 'name_sv', 'unit']),
+            'payCodes' => PayCode::query()->where('is_active', true)->whereNotIn('category', ['SICK', 'ABSENCE', 'VACATION', 'PENSION', 'ALLOWANCE_TAXABLE'])->orderBy('code')->get(['id', 'code', 'name_sv', 'unit']),
             'inputs' => PayrollInput::query()->with(['employee:id,first_name,last_name', 'payCode:id,code,name_sv'])->where('payroll_run_id', $run->id)->orderBy('id')->get(),
             'absences' => Absence::query()->with('employee:id,first_name,last_name')->where('status', 'APPROVED')
                 ->whereDate('date_from', '<=', $run->periodEnd()->toDateString())->whereDate('date_to', '>=', $run->periodStart()->toDateString())->orderBy('date_from')->get(),
@@ -151,6 +170,7 @@ class PayrollRunPage extends Component
             'canSeeSensitive' => $canSeeSensitive,
             'canPay' => Gate::allows('pay', $run),
             'canPost' => Gate::allows('post', $run),
+            'canPostTax' => $company !== null && $user->hasTeamPermission($company, 'payroll:post'),
             'missingAccounts' => $company === null ? [] : AddPayrollAccounts::missing($company),
         ]);
     }
