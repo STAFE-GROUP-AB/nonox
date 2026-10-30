@@ -95,7 +95,8 @@ final class PayrollModule implements Module
     public function navigation(): array
     {
         return [
-            ['label' => __('Lön'), 'route' => 'payroll.runs.index', 'permission' => 'payroll:view', 'active' => 'payroll.*'],
+            ['label' => __('Lön'), 'route' => 'payroll.runs.index', 'permission' => 'payroll:view', 'active' => 'payroll.runs.*'],
+            ['label' => __('Mina lönebesked'), 'route' => 'payroll.self.payslips', 'permission' => 'self:payslips', 'active' => 'payroll.self.*'],
         ];
     }
 

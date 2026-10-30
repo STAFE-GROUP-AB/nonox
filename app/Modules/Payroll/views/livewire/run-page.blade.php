@@ -144,6 +144,9 @@
                                 </td><td class="py-1 text-right"><x-ui.amount :money="$payslip->tax_ore->negated()" /></td></tr>
                             </tbody>
                         </table>
+                        @if(! $run->isOpen())
+                            <a href="{{ route('payroll.payslips.pdf', $payslip) }}" target="_blank" class="mt-2 inline-block text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Lönebesked som PDF') }}</a>
+                        @endif
                         @foreach($payslip->warnings as $warning)
                             <p class="mt-2 text-sm text-accent-700">{{ $warning }}</p>
                         @endforeach

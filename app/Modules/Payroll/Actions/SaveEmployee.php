@@ -68,6 +68,11 @@ class SaveEmployee
             'weekly_hours' => ['nullable', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
             'position_title' => ['nullable', 'string', 'max:255'],
             'cost_center' => ['nullable', 'string', 'max:20'],
+            'user_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($company): void {
+                if (! $company->hasUser(User::query()->find((int) $value) ?? new User)) {
+                    $fail(__('Användaren är inte medlem i företaget.'));
+                }
+            }],
         ], [
             'bank_clearing.regex' => __('Clearingnumret har fyra eller fem siffror.'),
             'bank_account.regex' => __('Kontonumret ska bara innehålla siffror.'),
@@ -97,6 +102,12 @@ class SaveEmployee
                     ?? throw ValidationException::withMessages(['cost_center' => __('Kostnadsstället :code finns inte.', ['code' => $validated['cost_center']])]);
             }
 
+            $linkedUserId = blank($validated['user_id'] ?? null) ? null : (int) $validated['user_id'];
+
+            if ($linkedUserId !== null && Employee::query()->where('user_id', $linkedUserId)->when($employee !== null, fn ($query) => $query->whereKeyNot($employee?->id))->exists()) {
+                throw ValidationException::withMessages(['user_id' => __('Inloggningen hör redan till en annan anställd.')]);
+            }
+
             $isNew = $employee === null;
             $employee ??= new Employee(['employee_number' => NumberSeries::take(NumberSeries::EMPLOYEES)]);
             $employee->fill([
@@ -114,6 +125,7 @@ class SaveEmployee
                 'tax_residence' => $validated['tax_residence'],
                 'tax_table' => $validated['tax_table'] ?? null,
                 'tax_column' => $validated['tax_column'] ?? null,
+                'user_id' => $linkedUserId,
             ]);
             $changed = array_keys(array_diff_key($employee->getDirty(), array_flip(self::SENSITIVE)));
             $sensitiveChanged = array_values(array_intersect(array_keys($employee->getDirty()), self::SENSITIVE));

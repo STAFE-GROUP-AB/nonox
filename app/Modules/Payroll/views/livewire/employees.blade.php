@@ -52,6 +52,12 @@
                     <x-ui.field for="employee_rate" :label="__('Sysselsättningsgrad, %')" error="employment_rate"><input id="employee_rate" type="number" class="{{ $input }} mt-1" wire:model="form.employment_rate"></x-ui.field>
                     <x-ui.field for="employee_weekly_hours" :label="__('Arbetstid, timmar per vecka')" error="weekly_hours" :hint="__('Behövs för frånvaro och sjuklön.')"><input id="employee_weekly_hours" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.weekly_hours"></x-ui.field>
                     <x-ui.field for="employee_cost_center" :label="__('Kostnadsställe (frivilligt)')" error="cost_center"><input id="employee_cost_center" type="text" class="{{ $input }} mt-1" wire:model="form.cost_center"></x-ui.field>
+                    <x-ui.field for="employee_user" :label="__('Inloggning (frivilligt)')" error="user_id" :hint="__('Den anställde ser sina egna lönebesked under Mina lönebesked.')" class="sm:col-span-2">
+                        <select id="employee_user" class="{{ $input }} mt-1" wire:model="form.user_id">
+                            <option value="">{{ __('Ingen inloggning') }}</option>
+                            @foreach($members as $member)<option value="{{ $member->id }}">{{ $member->name }} ({{ $member->email }})</option>@endforeach
+                        </select>
+                    </x-ui.field>
                 </div>
 
                 <div class="flex items-center gap-4">

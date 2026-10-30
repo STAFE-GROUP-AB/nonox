@@ -45,7 +45,7 @@ class Employees extends Component
             'address' => '', 'postal_code' => '', 'city' => '', 'bank_clearing' => '', 'bank_account' => '',
             'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1',
             'start_date' => now()->toDateString(), 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY',
-            'salary' => '', 'employment_rate' => '100', 'weekly_hours' => '40', 'position_title' => '', 'cost_center' => '',
+            'salary' => '', 'employment_rate' => '100', 'weekly_hours' => '40', 'position_title' => '', 'cost_center' => '', 'user_id' => '',
         ];
         $this->showForm = true;
         $this->resetErrorBag();
@@ -60,7 +60,7 @@ class Employees extends Component
 
         $this->editingId = $employee->id;
         $this->form = array_map(fn (mixed $value): string => (string) $value, [
-            ...$employee->only(['first_name', 'last_name', 'personal_number', 'email', 'phone', 'address', 'postal_code', 'city', 'bank_clearing', 'bank_account', 'tax_residence', 'tax_table', 'tax_column']),
+            ...$employee->only(['first_name', 'last_name', 'personal_number', 'email', 'phone', 'address', 'postal_code', 'city', 'bank_clearing', 'bank_account', 'tax_residence', 'tax_table', 'tax_column', 'user_id']),
             'start_date' => $employment?->start_date->toDateString(),
             'employment_type' => $employment === null ? 'TILLSVIDARE' : $employment->employment_type,
             'salary_form' => $employment === null ? 'MONTHLY' : $employment->salary_form,
@@ -98,6 +98,7 @@ class Employees extends Component
                 ->orderBy('employee_number')
                 ->get(),
             'canManage' => Gate::allows('manage', [Employee::class, $this->company()]),
+            'members' => $this->showForm ? $this->company()->allUsers()->sortBy('name') : collect(),
         ]);
     }
 

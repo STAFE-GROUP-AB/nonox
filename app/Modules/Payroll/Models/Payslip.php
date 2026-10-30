@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * A payslip of one employment in one run.
  *
  * @property int $id
+ * @property int $company_id
  * @property int $payroll_run_id
  * @property int $employee_id
  * @property int $employment_id

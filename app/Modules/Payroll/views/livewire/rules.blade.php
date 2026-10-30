@@ -28,11 +28,19 @@
                     @foreach($rows as $row)
                         @forelse($row['versions'] as $version)
                             <tr>
-                                <td class="py-2 pr-4 font-mono text-xs">{{ $row['key'] }}</td>
-                                <td class="py-2 pr-4 font-mono text-xs break-all">{{ json_encode($version->value, JSON_UNESCAPED_UNICODE) }}
-                                    <a href="{{ $version->source_url }}" target="_blank" rel="noopener" class="block font-sans text-accent-600 hover:text-accent-700">{{ __('Källa') }}</a>
+                                <td class="py-2 pr-4 align-top">
+                                    <span class="block font-medium text-gray-900">{{ App\Modules\Payroll\Support\RulePresenter::name($row['key']) }}</span>
+                                    <span class="block font-mono text-xs text-gray-400">{{ $row['key'] }}</span>
                                 </td>
-                                <td class="py-2 pr-4 tabular-nums whitespace-nowrap">{{ $version->valid_from->toDateString() }} – {{ $version->valid_to?->toDateString() }}</td>
+                                <td class="py-2 pr-4 align-top">
+                                    <ul class="space-y-0.5">
+                                        @foreach(App\Modules\Payroll\Support\RulePresenter::lines($row['key'], $version->value) as $line)
+                                            <li>{{ $line }}</li>
+                                        @endforeach
+                                    </ul>
+                                    <a href="{{ $version->source_url }}" target="_blank" rel="noopener" class="mt-1 inline-block text-xs text-accent-600 hover:text-accent-700">{{ __('Källa') }}</a>
+                                </td>
+                                <td class="py-2 pr-4 align-top tabular-nums whitespace-nowrap">{{ $version->valid_from->toDateString() }} – {{ $version->valid_to?->toDateString() }}</td>
                                 <td class="py-2">
                                     @if($version->isVerified())
                                         <x-ui.badge tone="success">{{ $version->verified_by }}</x-ui.badge>
@@ -68,7 +76,10 @@
                             @endif
                         @empty
                             <tr>
-                                <td class="py-2 pr-4 font-mono text-xs">{{ $row['key'] }}</td>
+                                <td class="py-2 pr-4">
+                                    <span class="block font-medium text-gray-900">{{ App\Modules\Payroll\Support\RulePresenter::name($row['key']) }}</span>
+                                    <span class="block font-mono text-xs text-gray-400">{{ $row['key'] }}</span>
+                                </td>
                                 <td class="py-2 pr-4 text-gray-500" colspan="2">{{ __('Saknas') }}</td>
                                 <td class="py-2"><span class="inline-flex rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">{{ __('Saknas') }}</span></td>
                             </tr>

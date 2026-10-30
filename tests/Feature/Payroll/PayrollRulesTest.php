@@ -120,3 +120,19 @@ it('lets a company check a rule for itself only, from the page', function () {
     expect(CurrentCompany::run($company, fn () => RuleSet::for(CarbonImmutable::parse('2026-05-25'))->get('sink.rate')))->toBe(['bp' => 2250])
         ->and(fn () => CurrentCompany::run($other, fn () => RuleSet::for(CarbonImmutable::parse('2026-05-25'))->get('sink.rate')))->toThrow(MissingPayrollRuleException::class, 'not verified');
 });
+
+it('shows rule values as Swedish text, not JSON', function () {
+    [$owner, $company] = Bookkeeping::company();
+    app(ModuleManager::class)->enable(PayrollModule::KEY, $company, $owner);
+    testRule('employer_contribution.full', '2026-01-01', ['bp' => 3142, 'components_bp' => ['allman_loneavgift' => 1262]]);
+    testRule('prisbasbelopp', '2026-01-01', ['ore' => 5_920_000]);
+
+    $this->actingAs($owner)->get(route('payroll.rules', ['datum' => '2026-03-25']))
+        ->assertOk()
+        ->assertSee('Arbetsgivaravgift, full')
+        ->assertSee('31,42 %')
+        ->assertSee('varav allmän löneavgift 12,62 %')
+        ->assertSee('59 200 kr')
+        ->assertDontSee('{&quot;bp&quot;', false)
+        ->assertDontSee('"bp"', false);
+});
