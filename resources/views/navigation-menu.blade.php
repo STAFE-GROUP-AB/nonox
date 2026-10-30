@@ -5,8 +5,13 @@
     $moduleNav = [];
 
     if ($navCompany !== null) {
-        foreach (app(App\Modules\ModuleManager::class)->enabledModules($navCompany) as $navModule) {
-            foreach ($navModule->navigation() as $item) {
+        $navEnabled = app(App\Modules\ModuleManager::class)->enabledModules($navCompany);
+
+        foreach (app(App\Modules\ModuleRegistry::class)->all() as $navModule) {
+            // A module that is off may still show its archive (PAYROLL_MODULE.md A.6).
+            $navItems = in_array($navModule, $navEnabled, true) ? $navModule->navigation() : $navModule->archiveNavigation($navCompany);
+
+            foreach ($navItems as $item) {
                 if ($navUser->hasTeamPermission($navCompany, $item['permission'])) {
                     $moduleNav[] = $item;
                 }

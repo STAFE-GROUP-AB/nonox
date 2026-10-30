@@ -404,6 +404,15 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   inlämnad arbetsgivardeklaration. Årets summor sparas och ingen lönekörning
   kan sedan få utbetalningsdag i året. Avslutet kan inte ändras eller tas
   bort (databasregel). Semesteråret avslutas separat.
+- Avstängning av lönemodulen: modulen kan inte stängas av så länge en
+  lönekörning är attesterad men inte bokförd, en månad med lön saknar
+  inlämnad arbetsgivardeklaration eller ett godkänt utlägg som en
+  lönekörning har tagit med inte är utbetalt. Ingen data tas bort. Medan
+  modulen är avstängd finns Lönearkivet (`/lonearkiv`) kvar för den som har
+  behörigheten payroll:archive-view: lönekörningar med lönebesked som PDF,
+  arbetsgivardeklarationernas filer och de sammanställda rapporterna, bara
+  att läsa. Den som bara är anställd i företaget får ett besked om att Min
+  sida är stängd.
 - Slutlön: en anställning avslutas med sista anställningsdag, som inte får
   ligga i en redan attesterad månad. Lönekörningen för den månaden betalar
   månadslönen till och med dagen och semesterersättning (28 §) för betalda

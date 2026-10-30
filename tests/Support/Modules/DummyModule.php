@@ -79,6 +79,11 @@ final class DummyModule implements Module
         return ["{$this->key}:archive-view"];
     }
 
+    public function archiveNavigation(Company $company): array
+    {
+        return [];
+    }
+
     public function navigation(): array
     {
         return [['label' => "Modul {$this->key}", 'route' => 'dummy.index', 'permission' => "{$this->key}:view", 'active' => 'dummy.*']];

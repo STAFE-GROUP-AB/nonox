@@ -45,6 +45,9 @@ interface Module
     /** @return list<array{label: string, route: string, permission: string, active: string}> */
     public function navigation(): array;
 
+    /** @return list<array{label: string, route: string, permission: string, active: string}> navigation while the module is off, for its archive */
+    public function archiveNavigation(Company $company): array;
+
     /** Livewire component name for the module's settings, shown when it is on. */
     public function settingsComponent(): ?string;
 

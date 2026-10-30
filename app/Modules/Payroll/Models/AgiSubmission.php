@@ -81,6 +81,17 @@ class AgiSubmission extends Model
         ];
     }
 
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            self::GENERATED => __('Skapad, inte inlämnad'),
+            self::SUBMITTED => __('Inlämnad'),
+            self::ACCEPTED => __('Godkänd'),
+            self::REJECTED => __('Avvisad'),
+            default => __('Ersatt av rättelse'),
+        };
+    }
+
     public function filename(): string
     {
         return 'Arbetsgivardeklaration-'.$this->period.($this->sequence > 1 ? "-rattelse-{$this->sequence}" : '').'.xml';

@@ -60,8 +60,8 @@
                                                     <x-ui.badge :tone="$statuses[$submission->status][1]">{{ $statuses[$submission->status][0] }}</x-ui.badge>
                                                     <span class="text-xs text-gray-500">
                                                         {{ $submission->sequence > 1 ? __('Rättelse :number', ['number' => $submission->sequence - 1]) : __('Första filen') }}
-                                                        · {{ trans_choice(':count individuppgift|:count individuppgifter', count($submission->individuals)) }}
-                                                        @if($submission->removals > 0) · {{ trans_choice(':count borttag|:count borttag', $submission->removals) }} @endif
+                                                        · {{ count($submission->individuals) === 1 ? __('1 individuppgift') : __(':count individuppgifter', ['count' => count($submission->individuals)]) }}
+                                                        @if($submission->removals > 0) · {{ __(':count borttag', ['count' => $submission->removals]) }} @endif
                                                         @if($submission->receipt_reference) · {{ __('Kvittens :receipt', ['receipt' => $submission->receipt_reference]) }} @endif
                                                     </span>
                                                     <x-ui.link :href="route('payroll.agi.file', $submission)">{{ __('Hämta fil') }}</x-ui.link>

@@ -76,6 +76,11 @@ class AiModule implements Module
         return [];
     }
 
+    public function archiveNavigation(Company $company): array
+    {
+        return [];
+    }
+
     public function navigation(): array
     {
         return [];

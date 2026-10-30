@@ -66,7 +66,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Lön: förmåner (kost, bil, drivmedel), traktamente och milersättning, tjänstepension med särskild löneskatt, utlägg med kvitto från Min sida, lönefil till banken (pain.001, SALA) och bokföring mot skattekontot.
 - ✅ Lön: arbetsgivardeklaration (AGI) per utbetalningsmånad som XML enligt Skatteverkets schema 1.1, med rättelser och borttag, kvittens och deklarationsdagar.
 - ✅ Lön: lönerevision med retroaktiv lön, slutlön med semesterersättning, underlag för arbetsgivarintyg, lönerapporter med avstämning mot deklaration och bokföring, och löneårsskifte.
-- 🚧 Lön: lönearkiv när modulen stängs av, och flytt av lönedata.
+- ✅ Lön: Lönearkiv som finns kvar när lönemodulen stängs av, och spärrar mot att stänga av med obokförd lön, odeklarerade månader eller obetalda utlägg.
+- 🚧 Lön: flytt av lönedata från det gamla lönesystemet.
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).

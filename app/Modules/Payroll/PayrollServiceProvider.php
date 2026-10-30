@@ -17,6 +17,7 @@ use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\MyAbsence;
 use App\Modules\Payroll\Livewire\MyExpenses;
 use App\Modules\Payroll\Livewire\MyPayslips;
+use App\Modules\Payroll\Livewire\PayrollArchive;
 use App\Modules\Payroll\Livewire\PayrollHome;
 use App\Modules\Payroll\Livewire\PayrollReportsPage;
 use App\Modules\Payroll\Livewire\PayrollRules;
@@ -78,6 +79,7 @@ class PayrollServiceProvider extends ServiceProvider
         Livewire::component('payroll.absence-requests', AbsenceRequestList::class);
         Livewire::component('payroll.agi', AgiPage::class);
         Livewire::component('payroll.reports', PayrollReportsPage::class);
+        Livewire::component('payroll.archive', PayrollArchive::class);
 
         Blade::anonymousComponentPath(__DIR__.'/views/components', 'payroll');
         Event::listen(TeamMemberAdded::class, LinkEmployeeLogin::class);
@@ -86,5 +88,6 @@ class PayrollServiceProvider extends ServiceProvider
         $middleware = ['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY];
         Route::middleware($middleware)->group(__DIR__.'/routes/web.php');
         Route::middleware($middleware)->group(__DIR__.'/routes/portal.php');
+        Route::middleware(array_values(array_diff($middleware, ['module:'.PayrollModule::KEY])))->group(__DIR__.'/routes/archive.php');
     }
 }

@@ -12,7 +12,11 @@ use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\SeedPayCodes;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
+use App\Modules\Payroll\Models\AgiSubmission;
+use App\Modules\Payroll\Models\Expense;
+use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\WorkSchedule;
+use App\Modules\Payroll\Support\Agi\AgiDeclaration;
 use App\Support\Tenancy\CurrentCompany;
 
 /**
@@ -92,6 +96,18 @@ final class PayrollModule implements Module
         return ['payroll:archive-view'];
     }
 
+    /** The archive is shown only for a company that has approved payroll to keep. */
+    public function archiveNavigation(Company $company): array
+    {
+        if (! CurrentCompany::run($company, fn (): bool => PayrollRun::query()->whereNotIn('status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])->exists())) {
+            return [];
+        }
+
+        return [
+            ['label' => __('Lönearkiv'), 'route' => 'payroll.archive', 'permission' => 'payroll:archive-view', 'active' => 'payroll.archive*'],
+        ];
+    }
+
     public function navigation(): array
     {
         return [
@@ -110,16 +126,43 @@ final class PayrollModule implements Module
     }
 
     /**
-     * TODO(P-8, P-11): blockers for unposted payroll runs, unsubmitted AGI and
-     * unpaid approved expenses (PAYROLL_MODULE.md A.6) once those exist.
+     * PAYROLL_MODULE.md A.6: payroll cannot be turned off with runs that are
+     * not posted, months with pay that are not declared, or approved outlays
+     * a run has taken on but not paid. Drafts and data stay as they are.
      */
     public function canDisable(Company $company): ModuleCheck
     {
-        return new ModuleCheck(warnings: [
-            __('Anställda som bara har rollen Anställd kommer inte längre åt företaget.'),
-            __('Semestersaldon och semesterlöneskuld finns kvar i bokföringen.'),
-            __('Påminnelser om lönekörningar stoppas.'),
-        ]);
+        return CurrentCompany::run($company, function (): ModuleCheck {
+            $blockers = [];
+            $runs = PayrollRun::query()->where('status', '<>', PayrollRun::DRAFT)->orderBy('payment_date')->get();
+
+            foreach ($runs->where('status', '!==', PayrollRun::POSTED) as $run) {
+                $blockers[] = __('Lönekörningen :title är inte bokförd.', ['title' => $run->title()]);
+            }
+
+            $declared = AgiSubmission::query()->whereIn('status', [...AgiSubmission::REPORTED, AgiSubmission::CORRECTED])->pluck('period')->unique();
+
+            foreach ($runs->whereIn('status', AgiDeclaration::DECLARED_STATUSES)->map(fn (PayrollRun $run): string => $run->payment_date->format('Y-m'))->unique() as $period) {
+                if (! $declared->contains($period)) {
+                    $blockers[] = __('Arbetsgivardeklarationen för :period är inte inlämnad.', ['period' => $period]);
+                }
+            }
+
+            $outlays = Expense::query()->where('status', 'APPROVED')->whereNotNull('payroll_run_id')->count();
+
+            if ($outlays > 0) {
+                $blockers[] = $outlays === 1
+                    ? __('Ett godkänt utlägg är inte utbetalt med lönen.')
+                    : __(':count godkända utlägg är inte utbetalda med lönen.', ['count' => $outlays]);
+            }
+
+            return new ModuleCheck(blockers: $blockers, warnings: [
+                __('Anställda som bara har rollen Anställd kommer inte längre åt företaget.'),
+                __('Semestersaldon och semesterlöneskuld finns kvar i bokföringen.'),
+                __('Påminnelser om lönekörningar stoppas.'),
+                __('Lönekörningar, lönebesked, arbetsgivardeklarationer och rapporter finns kvar i Lönearkivet för den som har behörighet.'),
+            ]);
+        });
     }
 
     public function onEnable(Company $company, User $by): void
