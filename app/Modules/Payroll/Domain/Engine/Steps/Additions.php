@@ -23,7 +23,7 @@ final class Additions implements Step
     public function apply(PayrollContext $context, PayslipDraft $draft): void
     {
         foreach ($context->inputs as $input) {
-            if (in_array($input->category, self::NET_CATEGORIES, true)) {
+            if (in_array($input->category, self::NET_CATEGORIES, true) || in_array($input->code, Allowances::codes(), true)) {
                 continue;
             }
 

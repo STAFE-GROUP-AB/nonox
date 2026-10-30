@@ -59,7 +59,8 @@ final class PayslipPdf
         $employment = $payslip->employment;
         $codes = PayCode::query()->whereIn('id', $payslip->lines->pluck('pay_code_id'))->pluck('unit', 'id');
 
-        $earnings = $payslip->lines->filter(fn (PayslipLine $line): bool => $line->tax_effect !== PayslipLineResult::NET);
+        $earnings = $payslip->lines->filter(fn (PayslipLine $line): bool => ! in_array($line->tax_effect, [PayslipLineResult::NET, PayslipLineResult::EMPLOYER], true));
+        $employerLines = $payslip->lines->filter(fn (PayslipLine $line): bool => $line->tax_effect === PayslipLineResult::EMPLOYER);
         $afterTax = $payslip->lines->filter(fn (PayslipLine $line): bool => $line->tax_effect === PayslipLineResult::NET);
 
         $earlier = Payslip::query()
@@ -90,6 +91,7 @@ final class PayslipPdf
             'contributionRates' => array_values(array_unique(array_map(fn (mixed $part): int => (int) ((array) $part)['rate_bp'], (array) ($contribution['parts'] ?? [])))),
             'account' => self::maskedAccount($employee),
             'vacation' => $vacation,
+            'employerLines' => $employerLines->map(fn (PayslipLine $line): array => ['label' => $line->description, 'amount' => $line->amount_ore->ore])->values()->all(),
             'brand' => Brand::for($company),
         ])->render();
     }

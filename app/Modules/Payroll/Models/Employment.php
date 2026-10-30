@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $cost_center_id
  * @property ?string $weekly_hours
  * @property ?int $work_schedule_id
+ * @property ?int $pension_plan_id
  * @property ?string $vacation_rule
  * @property ?int $vacation_days_per_year
  * @property bool $vacation_payout_with_salary

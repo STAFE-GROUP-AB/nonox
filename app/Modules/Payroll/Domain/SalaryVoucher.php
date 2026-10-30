@@ -64,7 +64,31 @@ final class SalaryVoucher
                     continue;
                 }
 
+                // A benefit's value is not a cost of its own: what it is worth was booked when it was bought.
+                // Only the contributions on it cost, and those are in the employer contributions below.
+                if ((bool) ($line->explanation['benefit'] ?? false)) {
+                    continue;
+                }
+
                 $amount = $line->amount_ore->ore;
+
+                // Pension and the special payroll tax on it: the employer's cost against its liability.
+                if ($line->tax_effect === 'EMPLOYER') {
+                    $debit = $payCode->debit_account_id === null ? null : $accounts->get($payCode->debit_account_id);
+                    $credit = $payCode->credit_account_id === null ? null : $accounts->get($payCode->credit_account_id);
+
+                    if ($debit === null || $credit === null) {
+                        $missing[] = $payCode->name_sv;
+
+                        continue;
+                    }
+
+                    $rows[] = ['account' => $debit->number, 'amount' => $amount, 'description' => $line->description, 'cost_center' => $costCenter];
+                    $rows[] = ['account' => $credit->number, 'amount' => -$amount, 'description' => $line->description, 'cost_center' => null];
+
+                    continue;
+                }
+
                 $isNet = $line->tax_effect === 'NET';
                 $accountId = $isNet && $amount < 0 ? $payCode->credit_account_id : ($payCode->debit_account_id ?? $payCode->credit_account_id);
                 $account = $accountId === null ? null : $accounts->get($accountId);

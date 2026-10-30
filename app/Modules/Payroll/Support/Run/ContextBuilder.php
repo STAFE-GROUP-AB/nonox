@@ -16,6 +16,7 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
@@ -75,6 +76,7 @@ final class ContextBuilder
             absences: $this->absenceDays($employee, $periodStart, $periodEnd, $weekPattern),
             sickHistory: $this->sickHistory($employee, $periodStart),
             weekPattern: $weekPattern,
+            pension: $this->pension($employment),
             vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern, $run->id),
         );
     }
@@ -150,6 +152,23 @@ final class ContextBuilder
         $week = $schedule?->pattern['weeks'][0] ?? null;
 
         return is_array($week) ? array_map('strval', $week) : null;
+    }
+
+    /**
+     * The employment's pension plan as rates on pay below and above the
+     * threshold, or null without a plan.
+     *
+     * @return ?array{below_bp: int, above_bp: int, name: string}
+     */
+    private function pension(Employment $employment): ?array
+    {
+        $plan = $employment->pension_plan_id === null ? null : PensionPlan::query()->find($employment->pension_plan_id);
+
+        if (! $plan instanceof PensionPlan) {
+            return null;
+        }
+
+        return ['below_bp' => (int) ($plan->rules['below_bp'] ?? 0), 'above_bp' => (int) ($plan->rules['above_bp'] ?? 0), 'name' => $plan->name];
     }
 
     /**

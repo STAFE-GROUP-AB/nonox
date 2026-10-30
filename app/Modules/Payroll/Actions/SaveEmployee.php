@@ -12,6 +12,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
@@ -72,6 +73,7 @@ class SaveEmployee
             // Semesterlagen 4 § gives at least 25 days; an agreement may give more.
             'vacation_days_per_year' => ['nullable', 'integer', 'between:25,40'],
             'vacation_payout_with_salary' => ['nullable', 'boolean'],
+            'pension_plan_id' => ['nullable', 'integer'],
             'user_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($company): void {
                 if (! $company->hasUser(User::query()->find((int) $value) ?? new User)) {
                     $fail(__('Användaren är inte medlem i företaget.'));
@@ -151,6 +153,7 @@ class SaveEmployee
                 'vacation_rule' => blank($validated['vacation_rule'] ?? null) ? null : $validated['vacation_rule'],
                 'vacation_days_per_year' => blank($validated['vacation_days_per_year'] ?? null) ? null : (int) $validated['vacation_days_per_year'],
                 'vacation_payout_with_salary' => (bool) ($validated['vacation_payout_with_salary'] ?? false),
+                'pension_plan_id' => blank($validated['pension_plan_id'] ?? null) ? null : PensionPlan::query()->findOrFail((int) $validated['pension_plan_id'])->id,
             ])->save();
 
             // Only which fields changed is recorded; personal numbers and bank details never reach the log.

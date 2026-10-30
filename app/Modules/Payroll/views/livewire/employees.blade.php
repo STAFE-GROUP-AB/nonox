@@ -60,6 +60,12 @@
                         </select>
                     </x-ui.field>
                     <x-ui.field for="employee_vacation_days" :label="__('Semesterdagar per år')" error="vacation_days_per_year" :hint="__('Minst 25 enligt semesterlagen. Fler om avtalet ger det.')"><input id="employee_vacation_days" type="number" min="25" max="40" class="{{ $input }} mt-1" wire:model="form.vacation_days_per_year"></x-ui.field>
+                    <x-ui.field for="employee_pension" :label="__('Tjänstepension')" error="pension_plan_id">
+                        <select id="employee_pension" class="{{ $input }} mt-1" wire:model="form.pension_plan_id">
+                            <option value="">{{ __('Ingen') }}</option>
+                            @foreach($pensionPlans as $pensionPlan)<option value="{{ $pensionPlan->id }}">{{ $pensionPlan->name }}</option>@endforeach
+                        </select>
+                    </x-ui.field>
                     <label class="flex items-start gap-2 text-sm sm:col-span-3">
                         <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="form.vacation_payout_with_salary">
                         <span>{{ __('Betala semesterersättning med varje lön i stället för betalda semesterdagar') }}
@@ -137,6 +143,39 @@
                     </li>
                 @endforeach
             </ul>
+        @endif
+    </x-ui.card>
+
+    <x-ui.card :title="__('Pensionsplaner')" :description="__('Tjänstepension som arbetsgivaren betalar: en procent av lönen upp till 7,5 inkomstbasbelopp om året och en annan över. Särskild löneskatt räknas till. Satserna är era, från kollektivavtal eller egen policy.')">
+        @if($pensionPlans->isNotEmpty())
+            <ul class="divide-y divide-gray-100 text-sm">
+                @foreach($pensionPlans as $pensionPlan)
+                    <li class="flex justify-between py-2"><span class="font-medium text-gray-900">{{ $pensionPlan->name }}</span>
+                        <span class="tabular-nums text-gray-600">{{ __(':below % under taket, :above % över', ['below' => str_replace('.', ',', (string) (($pensionPlan->rules['below_bp'] ?? 0) / 100)), 'above' => str_replace('.', ',', (string) (($pensionPlan->rules['above_bp'] ?? 0) / 100))]) }}</span></li>
+                @endforeach
+            </ul>
+        @endif
+        @if($canManage)
+            @if($showPlanForm)
+                <form wire:submit="savePlan" class="mt-4 grid gap-4 sm:grid-cols-2">
+                    <x-ui.field for="plan_name" :label="__('Namn')" error="name"><input id="plan_name" type="text" class="{{ $input }} mt-1" wire:model="plan.name" placeholder="{{ __('Till exempel Visita–HRF') }}"></x-ui.field>
+                    <x-ui.field for="plan_template" :label="__('Mall')" error="template">
+                        <select id="plan_template" class="{{ $input }} mt-1" wire:model.live="plan.template">
+                            <option value="ITP1_LIKE">{{ __('Som ITP1 (tjänstemän)') }}</option>
+                            <option value="SAF_LO_LIKE">{{ __('Som SAF-LO (arbetare)') }}</option>
+                            <option value="CUSTOM">{{ __('Egen') }}</option>
+                        </select>
+                    </x-ui.field>
+                    <x-ui.field for="plan_below" :label="__('Procent av lönen upp till taket')" error="below_percent"><input id="plan_below" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="plan.below_percent"></x-ui.field>
+                    <x-ui.field for="plan_above" :label="__('Procent av lönen över taket')" error="above_percent"><input id="plan_above" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="plan.above_percent"></x-ui.field>
+                    <div class="flex items-center gap-4 sm:col-span-2">
+                        <x-button>{{ __('Spara planen') }}</x-button>
+                        <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('showPlanForm', false)">{{ __('Avbryt') }}</button>
+                    </div>
+                </form>
+            @else
+                <x-button type="button" class="mt-4" wire:click="$set('showPlanForm', true)">{{ __('Ny pensionsplan') }}</x-button>
+            @endif
         @endif
     </x-ui.card>
 </div>

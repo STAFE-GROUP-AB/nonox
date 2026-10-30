@@ -10,10 +10,12 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\SaveEmployee;
+use App\Modules\Payroll\Actions\SavePensionPlan;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use Carbon\CarbonImmutable;
@@ -55,7 +57,7 @@ class Employees extends Component
             'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1',
             'start_date' => now()->toDateString(), 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY',
             'salary' => '', 'employment_rate' => '100', 'weekly_hours' => '40', 'position_title' => '', 'cost_center' => '', 'user_id' => '',
-            'vacation_rule' => '', 'vacation_days_per_year' => '25', 'vacation_payout_with_salary' => false,
+            'vacation_rule' => '', 'vacation_days_per_year' => '25', 'vacation_payout_with_salary' => false, 'pension_plan_id' => '',
         ];
         $this->showForm = true;
         $this->resetErrorBag();
@@ -81,6 +83,7 @@ class Employees extends Component
             'cost_center' => $employment?->costCenter?->code,
             'vacation_rule' => $employment?->vacation_rule,
             'vacation_days_per_year' => $employment === null ? 25 : ($employment->vacation_days_per_year ?? 25),
+            'pension_plan_id' => $employment?->pension_plan_id,
         ]);
         $this->form['vacation_payout_with_salary'] = (bool) $employment?->vacation_payout_with_salary;
         $this->showForm = true;
@@ -101,6 +104,26 @@ class Employees extends Component
             : __('Uppgifterna för :name är sparade.', ['name' => "{$employee->first_name} {$employee->last_name}"]));
 
         $this->cancel();
+    }
+
+    /** @var array<string, string> */
+    public array $plan = ['name' => '', 'template' => 'ITP1_LIKE', 'below_percent' => '4,5', 'above_percent' => '30'];
+
+    public bool $showPlanForm = false;
+
+    public function updatedPlanTemplate(string $template): void
+    {
+        [$below, $above] = SavePensionPlan::TEMPLATES[$template] ?? [0, 0];
+        $this->plan['below_percent'] = str_replace('.', ',', (string) ($below / 100));
+        $this->plan['above_percent'] = str_replace('.', ',', (string) ($above / 100));
+    }
+
+    public function savePlan(SavePensionPlan $save): void
+    {
+        $plan = $save($this->user(), $this->company(), $this->plan);
+
+        $this->reset('plan', 'showPlanForm');
+        $this->toast(__('Pensionsplanen :name är sparad. Välj den på de anställda som ska ha den.', ['name' => $plan->name]));
     }
 
     public function invite(int $employeeId, InviteEmployeeToPortal $invite): void
@@ -132,6 +155,7 @@ class Employees extends Component
             'vacation' => $this->vacation($employees),
             'canManage' => Gate::allows('manage', [Employee::class, $this->company()]),
             'members' => $this->showForm ? $this->company()->allUsers()->sortBy('name') : collect(),
+            'pensionPlans' => PensionPlan::query()->orderBy('name')->get(),
         ]);
     }
 

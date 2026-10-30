@@ -38,7 +38,13 @@ final class PayslipDraft
 
     public function gross(): int
     {
-        return $this->sum(fn (PayslipLineResult $line): bool => $line->taxEffect !== PayslipLineResult::NET);
+        return $this->sum(fn (PayslipLineResult $line): bool => ! in_array($line->taxEffect, [PayslipLineResult::NET, PayslipLineResult::EMPLOYER], true));
+    }
+
+    /** What the employer pays besides the pay: pension premiums and the special payroll tax on them. */
+    public function employerCosts(): int
+    {
+        return $this->sum(fn (PayslipLineResult $line): bool => $line->taxEffect === PayslipLineResult::EMPLOYER);
     }
 
     public function taxableRegular(): int
@@ -67,7 +73,7 @@ final class PayslipDraft
      */
     public function cashBeforeTax(): int
     {
-        return $this->sum(fn (PayslipLineResult $line): bool => $line->taxEffect !== PayslipLineResult::NET && ! ($line->explanation['benefit'] ?? false));
+        return $this->sum(fn (PayslipLineResult $line): bool => ! in_array($line->taxEffect, [PayslipLineResult::NET, PayslipLineResult::EMPLOYER], true) && ! ($line->explanation['benefit'] ?? false));
     }
 
     private function sum(callable $filter): int

@@ -199,7 +199,10 @@
                             <td class="muted">{{ __('Arbetsgivaravgifter') }}@if(count($contributionRates) === 1) {{ $percent($contributionRates[0]) }}@endif</td>
                             <td class="num">{{ $kr($payslip->employer_contribution_ore->ore) }}</td>
                         </tr>
-                        <tr><td><strong>{{ __('Total kostnad för lönen') }}</strong></td><td class="num"><strong>{{ $kr($payslip->gross_ore->ore + $payslip->employer_contribution_ore->ore) }}</strong></td></tr>
+                        @foreach($employerLines as $employerLine)
+                            <tr><td class="muted">{{ $employerLine['label'] }}</td><td class="num">{{ $kr($employerLine['amount']) }}</td></tr>
+                        @endforeach
+                        <tr><td><strong>{{ __('Total kostnad för lönen') }}</strong></td><td class="num"><strong>{{ $kr($payslip->gross_ore->ore + $payslip->employer_contribution_ore->ore + array_sum(array_column($employerLines, 'amount'))) }}</strong></td></tr>
                     </table>
                     <div class="muted" style="margin-top: 1mm; font-size: 7pt">{{ __('Betalas till Skatteverket, inte dragna från din lön.') }}</div>
                 </td>

@@ -17,6 +17,9 @@ final readonly class PayslipLineResult
 
     public const string NET = 'NET';
 
+    /** A cost the employer pays on the employee's behalf (pension, its special payroll tax): never in gross or net pay. */
+    public const string EMPLOYER = 'EMPLOYER';
+
     /**
      * @param  array<string, mixed>  $explanation
      */

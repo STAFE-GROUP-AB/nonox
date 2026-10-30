@@ -21,6 +21,7 @@ final readonly class PayrollContext
      * @param  list<AbsenceInput>  $absences  approved absences in the period
      * @param  array{last_sick_period_end?: string, last_sick_period_days?: int, karens_count_12m?: int}  $sickHistory
      * @param  ?list<string>  $weekPattern  scheduled hours Monday to Sunday
+     * @param  ?array{below_bp: int, above_bp: int, name: string}  $pension  the employment's pension plan
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -46,5 +47,6 @@ final readonly class PayrollContext
         public array $sickHistory = [],
         public ?array $weekPattern = null,
         public ?VacationInput $vacation = null,
+        public ?array $pension = null,
     ) {}
 }
