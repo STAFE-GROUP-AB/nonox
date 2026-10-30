@@ -11,9 +11,10 @@ use App\Modules\Payroll\Domain\Engine\PayslipDraft;
 use App\Modules\Payroll\Domain\Engine\PayslipLineResult;
 use App\Modules\Payroll\Domain\Engine\Step;
 use App\Modules\Payroll\Domain\Units;
-use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
+use App\Modules\Payroll\Support\Calendar\VacationDays;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Carbon\CarbonImmutable;
 
 /**
  * Step 4 (PAYROLL_MODULE.md B.9), after the inputs so the vacation-pay basis
@@ -29,10 +30,12 @@ use Brick\Math\RoundingMode;
  *   simply not paid for hours not worked.
  * - Semesterersättning with every salary: 12 % of this payslip's
  *   vacation-pay basis, and no paid days (5 §, or a collective agreement).
+ * - After a semesterår is closed: pay for unused days that were not saved
+ *   (26 a §) and vacation pay on variable pay (16 a, 26 §§), taxed as an
+ *   engångsbelopp.
  *
- * TODO(legal-verify): 16 a § variable pay (12 % of variable pay during the
- * semesterår) and 16 b § imputed income for qualifying absence are not yet
- * included in the amounts.
+ * Saved days are paid at this year's value. TODO(legal-verify): the value of
+ * saved days under procentregeln.
  */
 final class Vacation implements Step
 {
@@ -48,16 +51,18 @@ final class Vacation implements Step
             $this->payout($context, $draft);
         }
 
-        $days = array_values(array_filter(
-            $context->absences,
-            fn (AbsenceInput $day): bool => $day->type === 'VACATION' && BigDecimal::of($day->hours)->isPositive() && SwedishHolidays::isVacationDay($day->date),
-        ));
+        foreach ($vacation->yearEndPayouts as $payout) {
+            // Paid after the semesterår, not with the vacation itself: an engångsbelopp.
+            $draft->add(new PayslipLineResult('SEMESTERLON', $payout['description'], $payout['amount_ore'], PayslipLineResult::TAX_ONE_OFF, true, false,
+                explanation: ['vacation_year_closing_id' => $payout['closing_id']]));
+        }
+
+        $days = $this->semesterdagar($context);
 
         if ($days === []) {
             return;
         }
 
-        usort($days, fn (AbsenceInput $a, AbsenceInput $b): int => $a->date <=> $b->date);
         $paid = array_slice($days, 0, $vacation->paidDaysLeft());
         $unpaid = array_slice($days, count($paid));
         $monthly = $context->salaryForm === 'MONTHLY';
@@ -141,6 +146,37 @@ final class Vacation implements Step
             BigDecimal::of($basis)->multipliedBy($percentBp)->dividedBy(Units::BASIS_POINTS, 0, RoundingMode::HalfUp)->toInt(), PayslipLineResult::TAX_TABLE, true, false,
             ruleVersionId: $context->rules->version('vacation.percent_rule')->id,
             explanation: ['basis_ore' => $basis, 'bp' => $percentBp]));
+    }
+
+    /**
+     * The vacation days in the period that count as semesterdagar, on days
+     * the employee was scheduled to work (VacationDays).
+     *
+     * @return list<AbsenceInput>
+     */
+    private function semesterdagar(PayrollContext $context): array
+    {
+        $byDate = [];
+
+        foreach ($context->absences as $day) {
+            if ($day->type === 'VACATION') {
+                $byDate[$day->date->toDateString()] = $day;
+            }
+        }
+
+        ksort($byDate);
+        $scheduled = fn (CarbonImmutable $date): bool => BigDecimal::of($byDate[$date->toDateString()]->hours)->isPositive();
+        $counted = [];
+
+        foreach (VacationDays::spells(array_values(array_map(fn (AbsenceInput $day): CarbonImmutable => $day->date, $byDate))) as $spell) {
+            foreach (VacationDays::counted($spell, $scheduled) as $date) {
+                if ($scheduled($date)) {
+                    $counted[] = $byDate[$date->toDateString()];
+                }
+            }
+        }
+
+        return $counted;
     }
 
     /**

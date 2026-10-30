@@ -27,6 +27,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
+use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Support\RulePresenter;
@@ -341,6 +342,16 @@ class PayrollRuns
                     $accumulator->forceFill(['value' => (int) $accumulator->value + (int) $delta])->save();
                 }
             }
+
+            // Vacation pay from a closed semesterår is paid once: the run that carries it claims it.
+            $closingIds = PayslipLine::query()
+                ->whereIn('payslip_id', Payslip::query()->where('payroll_run_id', $run->id)->select('id'))
+                ->whereRaw("explanation->>'vacation_year_closing_id' IS NOT NULL")
+                ->pluck('explanation')
+                ->map(fn (array $explanation): int => (int) $explanation['vacation_year_closing_id'])
+                ->unique()
+                ->all();
+            VacationYearClosing::query()->whereIn('id', $closingIds)->whereNull('payroll_run_id')->update(['payroll_run_id' => $run->id]);
 
             $run->forceFill(['status' => PayrollRun::APPROVED, 'approved_by' => $user->id, 'approved_at' => now()])->save();
             Audit::record('payroll.run_approved', $run, ['period' => $run->period, 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);

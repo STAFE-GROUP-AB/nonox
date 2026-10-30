@@ -139,7 +139,7 @@ class Employees extends Component
      * Vacation balances today, or none while the vacation rules are not checked.
      *
      * @param  Collection<int, Employee>  $employees
-     * @return array<int, array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, left: int, basis_ore: int, payout_with_salary: bool}>
+     * @return array<int, array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, saved: int, left: int, basis_ore: int, payout_with_salary: bool}>
      */
     private function vacation(Collection $employees): array
     {

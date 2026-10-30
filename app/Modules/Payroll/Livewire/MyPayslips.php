@@ -51,7 +51,7 @@ class MyPayslips extends Component
     /**
      * The employee's vacation today, or null while the rules are not checked.
      *
-     * @return ?array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, left: int, basis_ore: int, payout_with_salary: bool}
+     * @return ?array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, saved: int, left: int, basis_ore: int, payout_with_salary: bool}
      */
     private function vacation(Employee $employee): ?array
     {

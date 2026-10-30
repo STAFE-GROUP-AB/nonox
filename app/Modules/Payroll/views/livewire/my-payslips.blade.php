@@ -7,6 +7,9 @@
             @else
                 <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-900">{{ __(':count dagar', ['count' => $vacation['left']]) }}</p>
                 <p class="text-sm text-gray-600">{{ __('betald semester kvar till och med :date. Du har tagit ut :taken av :earned dagar.', ['date' => $vacation['year_end']->toDateString(), 'taken' => $vacation['taken'], 'earned' => $vacation['earned']]) }}</p>
+                @if($vacation['saved'] > 0)
+                    <p class="text-sm text-gray-600">{{ __('Av dem är :count sparade från tidigare år.', ['count' => $vacation['saved']]) }}</p>
+                @endif
             @endif
         </x-ui.card>
     @endif

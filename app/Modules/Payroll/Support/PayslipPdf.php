@@ -125,7 +125,7 @@ final class PayslipPdf
      * The vacation balance after this payslip's period, or null while the
      * vacation rules for the date are not checked.
      *
-     * @return ?array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, left: int, basis_ore: int, payout_with_salary: bool}
+     * @return ?array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, saved: int, left: int, basis_ore: int, payout_with_salary: bool}
      */
     private static function vacation(Payslip $payslip, Employee $employee, PayrollRun $run, Company $company): ?array
     {

@@ -34,9 +34,11 @@ final class Payroll
         'sick_pay.reinfection_window_days' => ['days' => 5],
         'a_sink.rate' => ['bp' => 1500],
         'tax.one_off_without_regular_salary' => ['bp' => 3000],
+        'tax.one_off' => ['columns' => ['1' => [[0, 25041, 0], [25042, 82800, 1000], [82801, 192000, 2100], [192001, 477600, 2600], [477601, 660000, 3400], [660001, null, 5400]], '2' => [[0, 65800, 0], [65801, 477600, 2600], [477601, 660000, 3400], [660001, null, 5500]], '3' => [[0, 25041, 0], [25042, 331200, 1000], [331201, 477600, 2600], [477601, 660000, 3400], [660001, null, 5500]], '4' => [[0, 25041, 0], [25042, 54000, 300], [54001, 192000, 2200], [192001, 660000, 2600], [660001, null, 4600]], '5' => [[0, 25041, 0], [25042, 32400, 1000], [32401, 160800, 2900], [160801, 184800, 3400], [184801, 660000, 3800], [660001, null, 5400]], '6' => [[0, 25041, 0], [25042, 160800, 2900], [160801, 184800, 3400], [184801, 660000, 3800], [660001, null, 5400]]], 'note' => '[from, to, rate bp] on the expected annual income in whole kronor (SKV 433 avsnitt 10).'],
         'vacation.minimum_days' => ['days' => 25],
         'vacation.supplement_sammaloneregeln' => ['bp_of_monthly_salary_per_day' => 43, 'weekly_bp' => 182, 'variable_pay_bp' => 1200],
         'vacation.percent_rule' => ['bp' => 1200],
+        'vacation.max_saved_days' => ['days_that_must_be_taken' => 20],
         'vacation.qualifying_absence_days' => ['SICK' => 180, 'PARENTAL' => 120, 'VAB' => 120, 'MILITARY' => 60],
     ];
 

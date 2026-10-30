@@ -320,8 +320,23 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   skulden på periodens sista dag (motkonton 7090 och 7519), mätt mot saldot i
   huvudboken på utbetalningsdagen, så att ingående balanser räknas. Varje
   bokförd skuld sparas per anställd i en tabell som bara går att lägga till i.
-- Utbetalningsfil, sparade semesterdagar och arbetsgivardeklaration är inte
-  byggda ännu.
+- Semesterdagar för den som arbetar helger (9 §): vid ledighet kortare än fem
+  vardagar räknas en lördag eller söndag som annars hade varit arbetsdag som
+  semesterdag. En vanlig söndag i schemat är en arbetsdag; röda dagar är det
+  aldrig.
+- Procentregelns underlag (16 b §): semesterlönegrundande lön utan lön för dagar
+  med semesterlönegrundande frånvaro (sjuklön och sjukavdrag), med avdrag för
+  tjänstledighet och obetald semester, plus den lön en timavlönad skulle ha haft
+  de dagarna (timmar enligt frånvaron × timlön).
+- Semesterårsskifte (18, 26, 26 a §§) under Lön → Semesterår: dagar som inte
+  tagits ut får sparas om de är fler än 20 och inga sparade dagar har använts
+  under året; resten betalas ut. Under sammalöneregeln betalas 12 % av den
+  rörliga lönen under året. Beloppen betalas i nästa lönekörning som
+  engångsbelopp och knyts till den körningen när den attesteras, så att de
+  aldrig betalas två gånger. Ett stängt semesterår går inte att ändra.
+  Sparade dagar används efter årets egna dagar och gäller i fem år.
+- Utbetalningsfil och arbetsgivardeklaration är inte byggda ännu. Semester­
+  ersättning när en anställning upphör (28–29 §§) hör till slutlönen.
 
 ## 6. Belopp
 
@@ -341,14 +356,16 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
 ## 8. Öppna frågor (TODO legal-verify)
 
-- Semester: lördagar och söndagar som semesterdagar för den som arbetar helger
-  (3 a § och 9 § tredje stycket); rörlig lön under sammalöneregeln (16 a §);
-  inräknad inkomst för semesterlönegrundande frånvaro under procentregeln
-  (16 b §); löneavdraget för semesterdagar under procentregeln för
-  månadsavlönade; skatt på semesterersättning som betalas med varje lön;
-  värdering av semesterlöneskulden under sammalöneregeln och sociala avgifter
-  på skulden för anställda med nedsatt avgift.
-
+- Semester: dagar för deltidsanställda som inte arbetar alla vardagar; om en
+  semester som delas på två månader ska bedömas som en ledighet (9 §);
+  löneavdraget för semesterdagar under procentregeln för månadsavlönade;
+  skatt på semesterersättning som betalas med varje lön (räknas nu enligt
+  tabell); begränsningen i 26 a § till dagar som tillsammans med intjänade
+  dagar överstiger 25; vilken lön som är rörlig lön (nu: tillägg som är
+  semesterlönegrundande, t.ex. OB); värdet av sparade dagar under
+  procentregeln; sparade dagar som inte tas ut inom fem år; värdering av
+  semesterlöneskulden under sammalöneregeln och sociala avgifter på skulden
+  för anställda med nedsatt avgift.
 - Minsta längd för ett första räkenskapsår: `AGENTS.md` anger 6 månader;
   bokföringslagen 3 kap anger högst 18.
 - BAS-licensen och kontroll av mallarnas kontonummer och namn mot den officiella

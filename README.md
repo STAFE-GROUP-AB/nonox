@@ -61,8 +61,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Lön som modul (påbörjad), enligt [PAYROLL_MODULE.md](PAYROLL_MODULE.md): anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag, arbetsgivaravgifter med sänkningen för unga, lönekörning med attest, lönebokföring i serie L, lönebesked som PDF och en egen portal för anställda (Min sida, `/anstalld`) med inbjudan via e-post. Alla satser är data med källa som måste kontrolleras av en behörig person innan de används.
 - ✅ Självservice på Min sida: sjukanmälan, vård av barn och semesteransökan som godkänns under Lön → Ansökningar, med e-post åt båda håll.
 - ✅ Eget varumärke per företag: logga och färger på fakturor, offerter, order, lönebesked och Min sida.
-- ✅ Lön: semester enligt semesterlagen (sammalöneregeln, procentregeln, semesterersättning med lönen) med saldo på lönebeskedet och Min sida, och semesterlöneskuld som rapport och månadsbokföring.
-- 🚧 Lön: sparad semester, förmåner, utlägg, utbetalningsfil och arbetsgivardeklaration (AGI).
+- ✅ Lön: semester enligt semesterlagen (sammalöneregeln, procentregeln, semesterersättning med lönen) med saldo på lönebeskedet och Min sida, helgarbete (9 §), sparade dagar och semesterårsskifte, och semesterlöneskuld som rapport och månadsbokföring.
+- 🚧 Lön: förmåner, utlägg, utbetalningsfil och arbetsgivardeklaration (AGI).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).

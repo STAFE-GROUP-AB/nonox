@@ -217,6 +217,9 @@
                                     <td>{{ __('Semesterersättning betalas med varje lön.') }}</td>
                                 @else
                                     <td class="num"><div class="muted">{{ __('Betalda dagar') }}</div><strong>{{ $vacation['earned'] }}</strong></td>
+                                    @if($vacation['saved'] > 0)
+                                        <td class="num"><div class="muted">{{ __('Sparade') }}</div><strong>{{ $vacation['saved'] }}</strong></td>
+                                    @endif
                                     <td class="num"><div class="muted">{{ __('Uttagna') }}</div><strong>{{ $vacation['taken'] }}</strong></td>
                                     <td class="num"><div class="muted">{{ __('Kvar') }}</div><strong style="font-size: 11pt">{{ $vacation['left'] }}</strong></td>
                                 @endif

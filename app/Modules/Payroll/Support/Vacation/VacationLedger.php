@@ -10,8 +10,9 @@ use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
-use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
+use App\Modules\Payroll\Support\Calendar\VacationDays;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -34,7 +35,8 @@ use Illuminate\Support\Facades\DB;
  * - The procentregeln basis is the vacation-pay basis of approved payslips
  *   paid in the intjänandeår.
  *
- * TODO: saved days (18 §) and the yearly roll-over (26 a §) are not yet kept.
+ * - Saved days from closed semesterår (VacationYearClosing) are added to
+ *   the days left and used after the year's own days.
  */
 final class VacationLedger
 {
@@ -62,9 +64,22 @@ final class VacationLedger
      * @param  array<string, mixed>  $settings
      * @param  ?list<string>  $weekPattern
      */
-    public function input(Employee $employee, Employment $employment, CarbonImmutable $periodStart, array $settings, RuleSet $rules, ?array $weekPattern): VacationInput
+    public function input(Employee $employee, Employment $employment, CarbonImmutable $periodStart, array $settings, RuleSet $rules, ?array $weekPattern, ?int $runId = null): VacationInput
     {
         $balance = $this->balances(collect([$employee]), collect([$employee->id => $employment]), $periodStart, $settings, $rules, [$employee->id => $weekPattern])[$employee->id];
+        $payouts = [];
+
+        foreach (VacationYearClosing::query()->where('employee_id', $employee->id)->where(fn ($query) => $query->whereNull('payroll_run_id')->when($runId !== null, fn ($own) => $own->orWhere('payroll_run_id', $runId)))->orderBy('year_start')->get() as $closing) {
+            $year = "{$closing->year_start->year}/{$closing->year_end->year}";
+
+            if ($closing->payout_ore > 0) {
+                $payouts[] = ['description' => __('Semesterlön för :days ej uttagna dagar, semesteråret :year', ['days' => $closing->days_paid_out, 'year' => $year]), 'amount_ore' => $closing->payout_ore, 'closing_id' => $closing->id];
+            }
+
+            if ($closing->variable_pay_ore > 0) {
+                $payouts[] = ['description' => __('Semesterlön på rörlig lön, semesteråret :year', ['year' => $year]), 'amount_ore' => $closing->variable_pay_ore, 'closing_id' => $closing->id];
+            }
+        }
 
         return new VacationInput(
             rule: $employment->vacation_rule ?? (string) ($settings['vacation_rule_default'] ?? 'SAMMALONEREGELN'),
@@ -72,6 +87,8 @@ final class VacationLedger
             daysTakenBefore: $balance['taken'],
             basisOre: $balance['basis_ore'],
             payoutWithSalary: (bool) $employment->vacation_payout_with_salary,
+            savedDays: $balance['saved'],
+            yearEndPayouts: $payouts,
         );
     }
 
@@ -84,7 +101,7 @@ final class VacationLedger
      * @param  array<string, mixed>  $settings
      * @param  array<int, ?list<string>>  $weekPatterns  by employee id
      * @param  ?CarbonImmutable  $takenThrough  count days taken up to and including this day instead of up to the day before
-     * @return array<int, array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, left: int, basis_ore: int, payout_with_salary: bool}>
+     * @return array<int, array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, saved: int, left: int, basis_ore: int, payout_with_salary: bool}>
      */
     public function balances(Collection $employees, Collection $employments, CarbonImmutable $day, array $settings, RuleSet $rules, array $weekPatterns = [], ?CarbonImmutable $takenThrough = null): array
     {
@@ -104,6 +121,7 @@ final class VacationLedger
             ->groupBy('employee_id');
 
         $bases = $this->bases($ids, $earningFrom, $earningTo);
+        $saved = $this->savedDays($ids, $yearFrom);
 
         $limits = array_map('intval', (array) $rules->get('vacation.qualifying_absence_days'));
         $result = [];
@@ -114,14 +132,17 @@ final class VacationLedger
             $earned = $employment === null ? 0 : $this->earned($employment, $own, $earningFrom, $earningTo, $limits, $rules);
             $taken = $this->taken($own, $yearFrom, $through, $weekPatterns[$employee->id] ?? null);
             $payout = (bool) $employment?->vacation_payout_with_salary;
+            $pool = $saved[$employee->id] ?? 0;
+            $imputed = $employment === null ? 0 : $this->imputedIncome($employment, $own, $earningFrom, $earningTo, $limits, $weekPatterns[$employee->id] ?? null);
 
             $result[$employee->id] = [
                 'year_start' => $yearFrom,
                 'year_end' => $years['year'][1],
                 'earned' => $payout ? 0 : $earned,
                 'taken' => $taken,
-                'left' => $payout ? 0 : max(0, $earned - $taken),
-                'basis_ore' => (int) ($bases[$employee->id] ?? 0),
+                'saved' => $payout ? 0 : $pool,
+                'left' => $payout ? 0 : max(0, $earned + $pool - $taken),
+                'basis_ore' => (int) ($bases[$employee->id] ?? 0) + $imputed,
                 'payout_with_salary' => $payout,
             ];
         }
@@ -130,24 +151,88 @@ final class VacationLedger
     }
 
     /**
-     * The vacation-pay basis of approved payslips paid between two days, by employee.
+     * The vacation-pay basis of approved payslips paid between two days, by
+     * employee (16 b §): the pay codes marked as vacation basis, without pay
+     * for days of qualifying absence (sick pay and its deductions), and with
+     * deductions for unpaid leave and unpaid or vacation days. Income for
+     * qualifying absence is added separately (imputedIncome).
      *
      * @param  list<int>  $ids
      * @return Collection<int|string, mixed>
      */
-    private function bases(array $ids, CarbonImmutable $from, CarbonImmutable $to): Collection
+    public function bases(array $ids, CarbonImmutable $from, CarbonImmutable $to): Collection
     {
         return DB::table('payslip_lines')
             ->join('payslips', 'payslips.id', '=', 'payslip_lines.payslip_id')
             ->join('payroll_runs', 'payroll_runs.id', '=', 'payslips.payroll_run_id')
             ->join('pay_codes', 'pay_codes.id', '=', 'payslip_lines.pay_code_id')
             ->whereIn('payslips.employee_id', $ids)
-            ->where('pay_codes.is_vacation_basis', true)
             ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
             ->whereBetween('payroll_runs.payment_date', [$from->toDateString(), $to->toDateString()])
+            ->where(fn ($query) => $query
+                ->where(fn ($basis) => $basis->where('pay_codes.is_vacation_basis', true)->where('pay_codes.category', '<>', 'SICK'))
+                ->orWhereIn('pay_codes.code', ['OBETALD_SEMESTER', 'SEMESTERAVDRAG'])
+                ->orWhere(fn ($leave) => $leave->where('pay_codes.code', 'FRANVAROAVDRAG')->whereIn(DB::raw("payslip_lines.explanation->>'type'"), self::NEVER_QUALIFYING)))
             ->groupBy('payslips.employee_id')
             ->selectRaw('payslips.employee_id, SUM(payslip_lines.amount_ore) AS basis')
             ->pluck('basis', 'payslips.employee_id');
+    }
+
+    /**
+     * Days saved from earlier semesterår still within five years (18 §), less
+     * the saved days already used, by employee.
+     *
+     * TODO(legal-verify): saved days that expire unused.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, int>
+     */
+    private function savedDays(array $ids, CarbonImmutable $yearFrom): array
+    {
+        $saved = [];
+
+        foreach (VacationYearClosing::query()->whereIn('employee_id', $ids)->whereDate('year_start', '<', $yearFrom->toDateString())->get() as $closing) {
+            $valid = $closing->year_end->addYears(5)->greaterThanOrEqualTo($yearFrom) ? $closing->days_saved : 0;
+            $saved[$closing->employee_id] = ($saved[$closing->employee_id] ?? 0) + $valid - $closing->saved_days_used;
+        }
+
+        return array_map(fn (int $days): int => max(0, $days), $saved);
+    }
+
+    /**
+     * For hourly pay: the income the employee would have had on days of
+     * qualifying absence in the earning year, by the hours of those days at
+     * the hourly rate (16 b § tredje stycket). Monthly pay keeps the salary
+     * for those days in the basis already.
+     *
+     * @param  Collection<int, Absence>  $absences
+     * @param  array<string, int>  $limits
+     * @param  ?list<string>  $weekPattern
+     */
+    private function imputedIncome(Employment $employment, Collection $absences, CarbonImmutable $from, CarbonImmutable $to, array $limits, ?array $weekPattern): int
+    {
+        if ($employment->salary_form !== 'HOURLY' || $employment->hourly_rate_ore === null) {
+            return 0;
+        }
+
+        $used = [];
+        $hours = BigDecimal::zero();
+
+        foreach ($absences as $absence) {
+            if (! isset($limits[$absence->type]) || $absence->hours === null) {
+                continue;
+            }
+
+            for ($day = $absence->date_from->max($from); $day->lessThanOrEqualTo($absence->date_to->min($to)); $day = $day->addDay()) {
+                $used[$absence->type] = ($used[$absence->type] ?? 0) + 1;
+
+                if ($used[$absence->type] <= $limits[$absence->type] && ContextBuilder::scheduled($day, $weekPattern)) {
+                    $hours = $hours->plus($absence->hours);
+                }
+            }
+        }
+
+        return $hours->multipliedBy($employment->hourly_rate_ore->ore)->toScale(0, RoundingMode::HalfUp)->toInt();
     }
 
     /**
@@ -255,7 +340,7 @@ final class VacationLedger
      * @param  Collection<int, Employee>  $employees
      * @param  Collection<int, Employment>  $employments  by employee id
      * @param  array<string, mixed>  $settings
-     * @return array<int, array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, left: int, basis_ore: int, payout_with_salary: bool}>
+     * @return array<int, array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, saved: int, left: int, basis_ore: int, payout_with_salary: bool}>
      */
     public function overview(Collection $employees, Collection $employments, CarbonImmutable $day, array $settings, RuleSet $rules, ?CarbonImmutable $takenThrough = null): array
     {
@@ -332,10 +417,17 @@ final class VacationLedger
     private function taken(Collection $absences, CarbonImmutable $from, CarbonImmutable $to, ?array $weekPattern): int
     {
         $days = 0;
+        $scheduled = fn (CarbonImmutable $day): bool => ContextBuilder::scheduled($day, $weekPattern);
 
         foreach ($absences->where('type', 'VACATION') as $absence) {
-            for ($day = $absence->date_from->max($from); $day->lessThanOrEqualTo($absence->date_to->min($to)); $day = $day->addDay()) {
-                if (ContextBuilder::scheduled($day, $weekPattern) && SwedishHolidays::isVacationDay($day)) {
+            $spell = [];
+
+            for ($day = $absence->date_from; $day->lessThanOrEqualTo($absence->date_to); $day = $day->addDay()) {
+                $spell[] = $day;
+            }
+
+            foreach (VacationDays::counted($spell, $scheduled) as $day) {
+                if ($day->betweenIncluded($from, $to) && $scheduled($day)) {
                     $days++;
                 }
             }

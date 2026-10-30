@@ -75,7 +75,7 @@ final class ContextBuilder
             absences: $this->absenceDays($employee, $periodStart, $periodEnd, $weekPattern),
             sickHistory: $this->sickHistory($employee, $periodStart),
             weekPattern: $weekPattern,
-            vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern),
+            vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern, $run->id),
         );
     }
 
@@ -153,14 +153,15 @@ final class ContextBuilder
     }
 
     /**
-     * A working day by the schedule, or Monday to Friday when there is none,
-     * and never a public holiday.
+     * A working day by the schedule, or Monday to Friday when there is none.
+     * Public holidays are never working days; an ordinary Sunday is one when
+     * the schedule has hours on Sundays.
      *
      * @param  ?list<string>  $weekPattern
      */
     public static function scheduled(CarbonImmutable $day, ?array $weekPattern): bool
     {
-        if (SwedishHolidays::isHoliday($day)) {
+        if (in_array($day->toDateString(), SwedishHolidays::forYear($day->year), true)) {
             return false;
         }
 

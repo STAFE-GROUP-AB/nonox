@@ -57,6 +57,7 @@ use App\Modules\Payroll\Models\RecurringInput;
 use App\Modules\Payroll\Models\SalaryChange;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
+use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
@@ -129,6 +130,7 @@ const COMPANY_SCOPED_MODELS = [
     TimeReport::class => 'payrollTimeReportAttributes',
     PayrollRuleVerification::class => 'payrollRuleVerificationAttributes',
     VacationLiabilitySnapshot::class => 'payrollVacationLiabilityAttributes',
+    VacationYearClosing::class => 'payrollVacationYearClosingAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
@@ -475,6 +477,17 @@ function payrollVacationLiabilityAttributes(): array
     ];
 }
 
+function payrollVacationYearClosingAttributes(): array
+{
+    return [
+        'employee_id' => Employee::create(payrollEmployeeAttributes())->id,
+        'year_start' => '2025-04-01', 'year_end' => '2026-03-31',
+        'days_earned' => 25, 'days_taken' => 20, 'saved_days_used' => 0, 'days_saved' => 5, 'days_paid_out' => 0,
+        'payout_ore' => 0, 'variable_basis_ore' => 0, 'variable_pay_ore' => 0,
+        'closed_by' => User::factory()->create()->id,
+    ];
+}
+
 function payrollTimeReportAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-03-02', 'hours' => '8', 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id];
@@ -539,7 +552,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

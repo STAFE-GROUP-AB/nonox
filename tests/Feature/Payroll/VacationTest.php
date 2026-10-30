@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Modules\ModuleManager;
+use App\Modules\Payroll\Actions\CloseVacationYear;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Absence;
@@ -9,10 +11,14 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\VacationYearClosing;
+use App\Modules\Payroll\Models\WorkSchedule;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Payroll;
 
@@ -143,4 +149,94 @@ it('shows the vacation liability per employee', function () {
         ->assertSee('Semesterlöneskuld')
         ->assertSee('Anna Kock')
         ->assertSee("43\u{a0}547,40");
+});
+
+it('counts a scheduled weekend as semesterdagar only in a vacation shorter than five days (9 §)', function () {
+    $schedule = WorkSchedule::create(['name' => 'Helgpersonal', 'pattern' => ['weeks' => [['8', '8', '8', '8', '0', '8', '8']]]]);
+    $anna = Payroll::employee($this->owner, $this->company);
+    Employment::query()->where('employee_id', $anna->id)->update(['work_schedule_id' => $schedule->id]);
+    $run = $this->runs->create($this->owner, $this->company, '2026-06');
+    $this->runs->recordAbsence($this->owner, $run, ['employee_id' => $anna->id, 'type' => 'VACATION', 'date_from' => '2026-06-06', 'date_to' => '2026-06-07', 'hours' => '8']);
+    $this->runs->recordAbsence($this->owner, $run, ['employee_id' => $anna->id, 'type' => 'VACATION', 'date_from' => '2026-06-22', 'date_to' => '2026-06-28', 'hours' => '8']);
+
+    [, $lines] = vacationPayslip($run, $anna->id);
+
+    // 6 June is nationaldagen and never counts; Sunday 7 June does in a short vacation.
+    // 22–28 June: five weekdays, so the weekend does not count, and Friday is not a working day: 4 days.
+    expect((string) $lines['SEMESTERTILLAGG']->quantity)->toStartWith('5');
+});
+
+it('closes the semesterår: saves days beyond 20, pays the rest and vacation pay on variable pay once', function () {
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['vacation_year_start_month' => 7]);
+    $admin = Bookkeeping::member($this->company, 'admin');
+    $anna = Payroll::employee($this->owner, $this->company, ['start_date' => '2024-01-01']);
+    Absence::create(['employee_id' => $anna->id, 'type' => 'VACATION', 'date_from' => '2026-06-15', 'date_to' => '2026-06-17', 'hours' => '8', 'status' => 'APPROVED']);
+
+    $this->travelTo(CarbonImmutable::parse('2026-05-05 10:00:00'));
+    $may = $this->runs->create($this->owner, $this->company, '2026-05');
+    $this->runs->addInput($this->owner, $may, ['employee_id' => $anna->id, 'pay_code_id' => PayCode::query()->where('code', 'OBTILLAGG')->value('id'), 'amount' => '1 000']);
+    $this->runs->calculate($this->owner, $may);
+    $this->runs->approve($admin, $may->fresh());
+
+    $this->travelTo(CarbonImmutable::parse('2026-07-02 10:00:00'));
+    $close = app(CloseVacationYear::class);
+    $year = CarbonImmutable::parse('2025-07-01');
+    $preview = $close->preview($this->company, $year)[$anna->id];
+
+    expect($preview['earned'])->toBe(25)
+        ->and($preview['taken'])->toBe(3)
+        ->and($preview['left'])->toBe(22)
+        ->and($preview['max_save'])->toBe(5)
+        ->and($preview['variable_pay_ore'])->toBe(12_000)
+        ->and(fn () => $close($this->owner, $this->company, $year, [$anna->id => 6]))->toThrow(ValidationException::class, 'högst 5');
+
+    $close($this->owner, $this->company, $year, [$anna->id => 5]);
+
+    $closing = VacationYearClosing::query()->sole();
+    // 17 days at 32 000 kr × (4,6 % + 0,43 %) = 1 609,60 kr.
+    expect($closing->days_paid_out)->toBe(17)
+        ->and($closing->payout_ore)->toBe(17 * 160_960)
+        ->and(fn () => $close($this->owner, $this->company, $year, []))->toThrow(ValidationException::class, 'redan stängt');
+
+    $july = $this->runs->create($this->owner, $this->company, '2026-07');
+    [, $lines] = vacationPayslip($july, $anna->id);
+    $payouts = Payslip::query()->with('lines')->where('payroll_run_id', $july->id)->sole()->lines->where('description', '!=', 'Månadslön')->filter(fn ($line) => str_starts_with($line->description, 'Semesterlön'));
+
+    expect($payouts->sum(fn ($line) => $line->amount_ore->ore))->toBe(17 * 160_960 + 12_000)
+        ->and($payouts->every(fn ($line) => $line->tax_effect === 'ONE_OFF'))->toBeTrue();
+
+    $this->runs->approve($admin, $july->fresh());
+    expect($closing->fresh()->payroll_run_id)->toBe($july->id);
+
+    $this->travelTo(CarbonImmutable::parse('2026-08-03 10:00:00'));
+    $august = $this->runs->create($this->owner, $this->company, '2026-08');
+    $this->runs->calculate($this->owner, $august);
+    expect(Payslip::query()->with('lines')->where('payroll_run_id', $august->id)->sole()->lines->filter(fn ($line) => str_starts_with($line->description, 'Semesterlön'))->count())->toBe(0);
+
+    $balance = app(VacationLedger::class)->balances(collect([$anna]), Employment::query()->get()->keyBy('employee_id'), CarbonImmutable::parse('2026-08-03'), ['vacation_year_start_month' => 7], RuleSet::for(CarbonImmutable::parse('2026-08-03')))[$anna->id];
+    expect($balance['saved'])->toBe(5)
+        ->and($balance['left'])->toBe(30);
+});
+
+it('counts qualifying absence at the pay the employee would have had, not the sick pay (16 b §)', function () {
+    $admin = Bookkeeping::member($this->company, 'admin');
+    $linda = Payroll::employee($this->owner, $this->company, ['first_name' => 'Linda', 'personal_number' => '198001011231', 'start_date' => '2026-01-01', 'salary_form' => 'HOURLY', 'salary' => '180', 'employment_type' => 'TIMANSTALLD']);
+
+    foreach (['2026-01', '2026-02', '2026-03'] as $period) {
+        $this->travelTo(CarbonImmutable::parse("{$period}-05 10:00:00"));
+        $run = $this->runs->create($this->owner, $this->company, $period);
+        $this->runs->addInput($this->owner, $run, ['employee_id' => $linda->id, 'pay_code_id' => PayCode::query()->where('code', 'TIMLON')->value('id'), 'quantity' => '100']);
+
+        if ($period === '2026-02') {
+            $this->runs->recordAbsence($this->owner, $run, ['employee_id' => $linda->id, 'type' => 'SICK', 'date_from' => '2026-02-10', 'date_to' => '2026-02-11', 'hours' => '8']);
+        }
+
+        $this->runs->calculate($this->owner, $run);
+        $this->runs->approve($admin, $run->fresh());
+    }
+
+    $balance = app(VacationLedger::class)->balances(collect([$linda]), Employment::query()->get()->keyBy('employee_id'), CarbonImmutable::parse('2026-06-01'), ['vacation_year_start_month' => 4], RuleSet::for(CarbonImmutable::parse('2026-06-01')))[$linda->id];
+
+    // 300 hours worked plus the 16 sick hours she would have worked, at 180 kr; the sick pay itself is left out.
+    expect($balance['basis_ore'])->toBe(316 * 18_000);
 });
