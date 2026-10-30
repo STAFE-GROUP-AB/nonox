@@ -55,6 +55,8 @@ final class RuleSet
         'agi.field_codes',
         'agi.deadlines',
         'agi.schema_version',
+        'tax.rounding',
+        'tax.one_off',
     ];
 
     /**

@@ -7,6 +7,7 @@ namespace App\Modules\Payroll;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\ModuleRegistry;
 use App\Modules\Payroll\Console\ImportPayrollRulesCommand;
+use App\Modules\Payroll\Console\ImportTaxTablesCommand;
 use App\Modules\Payroll\Console\VerifyPayrollRuleCommand;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\PayrollHome;
@@ -36,7 +37,7 @@ class PayrollServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ImportPayrollRulesCommand::class, VerifyPayrollRuleCommand::class]);
+            $this->commands([ImportPayrollRulesCommand::class, VerifyPayrollRuleCommand::class, ImportTaxTablesCommand::class]);
         }
 
         Gate::policy(Employee::class, EmployeePolicy::class);

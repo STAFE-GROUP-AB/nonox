@@ -116,3 +116,19 @@ AGI XML schema version 1.1. Still to research: car benefit formula, foreign
 per diem by country, AGI field codes, the engångsbelopp tables (published as
 HTML only) and the tax table file layout (SKV 433, edition 36).
 
+## Tax tables (P-4, 2026-10-30)
+
+- `payroll:import-tax-tables {year} {file}` reads Skatteverket's
+  allmanna-tabeller-manad.txt by its record layout (postbeskrivning
+  allmänna tabeller 2026), checks that every table starts at 1 kr with
+  contiguous intervals and an open last one, and stores it with the file's
+  SHA-256. An imported year is never replaced. Golden tests use table 33
+  from the official 2026 file.
+- Amount rows give the tax in kronor. Percentage rows (monthly income over
+  80 000 kr, SKV 433 avsnitt 5) and SINK need the rule `tax.rounding`.
+  `TODO(legal-verify)`: how the percentage result is rounded and how öre in
+  the income are placed in the whole-krona intervals; until the rule is
+  verified such runs are blocked.
+- Engångsbelopp are published only as HTML; column 1 for 2026 is in
+  rules.json as `tax.one_off`, columns 2–6 must be added before use.
+

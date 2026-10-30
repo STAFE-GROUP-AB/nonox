@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; a qualified person must check each against its source with payroll:verify-rule before it is used. Missing on purpose until researched: benefit.car.formula, per_diem.foreign.by_country, agi.field_codes.",
+  "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; a qualified person must check each against its source with payroll:verify-rule before it is used. Missing on purpose until researched: benefit.car.formula, per_diem.foreign.by_country, agi.field_codes, tax.rounding, and tax.one_off columns 2–6.",
   "rules": [
     {
       "key": "employer_contribution.full",
@@ -398,6 +398,50 @@
       },
       "source_url": "https://www.skatteverket.se/foretag/etjansterochblanketter/allaetjanster/schemalagerxml.4.dfe345a107ebcc9baf80006452.html",
       "source_quote": "Arbetsgivardeklaration – XML-schema version 1.1"
+    },
+    {
+      "key": "tax.one_off",
+      "valid_from": "2026-01-01",
+      "valid_to": "2026-12-31",
+      "value": {
+        "columns": {
+          "1": [
+            [
+              0,
+              25041,
+              0
+            ],
+            [
+              25042,
+              82800,
+              1000
+            ],
+            [
+              82801,
+              192000,
+              2100
+            ],
+            [
+              192001,
+              477600,
+              2600
+            ],
+            [
+              477601,
+              660000,
+              3400
+            ],
+            [
+              660001,
+              null,
+              5400
+            ]
+          ]
+        },
+        "note": "Brackets of expected annual income in whole kronor: [from, to, rate in basis points]. Only column 1 transcribed; the other columns must be added before use."
+      },
+      "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
+      "source_quote": "Kolumn 1: 0–25 041 kr 0 %; 25 042–82 800 kr 10 %; 82 801–192 000 kr 21 %; 192 001–477 600 kr 26 %; 477 601–660 000 kr 34 %; 660 001 kr och mer 54 %"
     }
   ]
 }
