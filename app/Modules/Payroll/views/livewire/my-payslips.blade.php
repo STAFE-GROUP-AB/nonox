@@ -37,4 +37,17 @@
         </ul>
     @endif
 </x-ui.card>
+
+@if($imported->isNotEmpty())
+    <x-ui.card :title="__('Lönebesked från det tidigare lönesystemet')">
+        <ul class="divide-y divide-gray-100">
+            @foreach($imported as $old)
+                <li class="flex items-center justify-between gap-4 py-3">
+                    <span class="font-medium text-gray-900">{{ __('Lön :period', ['period' => \Carbon\CarbonImmutable::parse($old->period.'-01')->translatedFormat('F Y')]) }}</span>
+                    <a href="{{ route('payroll.imported-payslip', $old) }}" target="_blank" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Öppna PDF') }}</a>
+                </li>
+            @endforeach
+        </ul>
+    </x-ui.card>
+@endif
 </div>

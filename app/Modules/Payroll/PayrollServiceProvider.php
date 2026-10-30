@@ -19,6 +19,7 @@ use App\Modules\Payroll\Livewire\MyExpenses;
 use App\Modules\Payroll\Livewire\MyPayslips;
 use App\Modules\Payroll\Livewire\PayrollArchive;
 use App\Modules\Payroll\Livewire\PayrollHome;
+use App\Modules\Payroll\Livewire\PayrollMigrationPage;
 use App\Modules\Payroll\Livewire\PayrollReportsPage;
 use App\Modules\Payroll\Livewire\PayrollRules;
 use App\Modules\Payroll\Livewire\PayrollRunList;
@@ -80,6 +81,7 @@ class PayrollServiceProvider extends ServiceProvider
         Livewire::component('payroll.agi', AgiPage::class);
         Livewire::component('payroll.reports', PayrollReportsPage::class);
         Livewire::component('payroll.archive', PayrollArchive::class);
+        Livewire::component('payroll.migration', PayrollMigrationPage::class);
 
         Blade::anonymousComponentPath(__DIR__.'/views/components', 'payroll');
         Event::listen(TeamMemberAdded::class, LinkEmployeeLogin::class);

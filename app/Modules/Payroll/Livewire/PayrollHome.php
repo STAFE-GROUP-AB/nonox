@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Models\PayrollMigration;
 use App\Modules\Payroll\Models\PayrollRun;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -36,6 +37,7 @@ class PayrollHome extends Component
                 ['title' => __('Löneinställningar'), 'text' => __('Utbetalningsdag, semesterregel, betalsätt och hur lönebeskeden når de anställda.'), 'link' => route('teams.show', ['company' => $company->id, 'flik' => 'moduler']), 'ready' => true],
                 ['title' => __('Arbetsgivare hos Skatteverket'), 'text' => __('Företaget behöver vara registrerat som arbetsgivare innan den första lönen betalas ut.'), 'link' => route('teams.show', $company->id), 'ready' => $company->employer_registered],
                 ['title' => __('Anställda'), 'text' => __('Lägg upp de anställda med skattetabell, bankkonto och anställningsform.'), 'link' => route('payroll.employees'), 'ready' => Employee::query()->exists()],
+                ['title' => __('Flytt av lönedata'), 'text' => __('Kommer ni från ett annat lönesystem: läs in anställda, belopp hittills i år, semestersaldon och gamla lönebesked före den första lönekörningen. Annars hoppar ni över steget.'), 'link' => route('payroll.migration'), 'ready' => PayrollMigration::query()->where('status', PayrollMigration::COMPLETE)->exists()],
                 ['title' => __('Regler och skattetabeller'), 'text' => __('Arbetsgivaravgifter, skattetabeller och andra satser för året måste vara verifierade innan en lönekörning kan göras.'), 'link' => route('payroll.rules'), 'ready' => RuleSet::for(CarbonImmutable::today())->missing() === []],
                 ['title' => __('Första lönekörningen'), 'text' => __('Beräkna, kontrollera och attestera. Hämta lönefilen till banken och bokför lönen.'), 'link' => route('payroll.runs.index'), 'ready' => PayrollRun::query()->where('status', '<>', PayrollRun::DRAFT)->exists()],
                 ['title' => __('Arbetsgivardeklaration'), 'text' => __('Skapa filen för utbetalningsmånaden och lämna in den hos Skatteverket senast deklarationsdagen.'), 'link' => route('payroll.agi'), 'ready' => AgiSubmission::query()->whereIn('status', AgiSubmission::REPORTED)->exists()],

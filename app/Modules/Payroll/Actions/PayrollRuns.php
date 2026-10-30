@@ -24,6 +24,7 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
+use App\Modules\Payroll\Models\PayrollMigration;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\PayrollYearClosing;
 use App\Modules\Payroll\Models\Payslip;
@@ -213,6 +214,12 @@ class PayrollRuns
         return CurrentCompany::run($company, fn (): PayrollRun => DB::transaction(function () use ($user, $company, $run): PayrollRun {
             /** @var PayrollRun $run */
             $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
+
+            // Year-to-date totals from the earlier system must be in place before the first run (PAYROLL_MODULE.md B.16).
+            if (PayrollMigration::inProgress()) {
+                throw ValidationException::withMessages(['run' => [__('Flytten av lönedata från det tidigare lönesystemet är inte klar. Gör klart den under Lön → Flytt av lönedata innan lönen räknas.')]]);
+            }
+
             $rules = RuleSet::for($run->payment_date);
             $settings = $this->modules->settings(PayrollModule::KEY, $company);
             app(SeedPayCodes::class)($company);

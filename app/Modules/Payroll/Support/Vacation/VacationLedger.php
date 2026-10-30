@@ -12,6 +12,7 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
+use App\Modules\Payroll\Models\VacationOpeningBalance;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\VacationDays;
@@ -171,16 +172,23 @@ final class VacationLedger
 
         $limits = array_map('intval', (array) $rules->get('vacation.qualifying_absence_days'));
         $method = self::method($settings);
+        // Balances carried over from an earlier payroll system replace what this system cannot know about that year.
+        $openings = VacationOpeningBalance::query()->whereIn('employee_id', $ids)->whereDate('year_start', $yearFrom->toDateString())->get()->keyBy('employee_id');
         $result = [];
 
         foreach ($employees as $employee) {
             $employment = $employments->get($employee->id);
             $own = $absences->get($employee->id, collect());
-            $earned = $employment === null ? 0 : $this->earned($employment, $own, $earningFrom, $earningTo, $limits, $rules, self::scale($method, $weekPatterns[$employee->id] ?? null));
-            $taken = $this->taken($own, $yearFrom, $through, $weekPatterns[$employee->id] ?? null, $method);
+            $opening = $openings->get($employee->id);
+            $earned = match (true) {
+                $opening !== null => $opening->days_earned,
+                $employment === null => 0,
+                default => $this->earned($employment, $own, $earningFrom, $earningTo, $limits, $rules, self::scale($method, $weekPatterns[$employee->id] ?? null)),
+            };
+            $taken = $this->taken($own, $yearFrom, $through, $weekPatterns[$employee->id] ?? null, $method) + (int) $opening?->days_taken;
             $payout = (bool) $employment?->vacation_payout_with_salary;
-            $pool = $saved[$employee->id] ?? 0;
-            $imputed = $employment === null ? 0 : $this->imputedIncome($employment, $own, $earningFrom, $earningTo, $limits, $weekPatterns[$employee->id] ?? null);
+            $pool = ($saved[$employee->id] ?? 0) + (int) $opening?->days_saved;
+            $imputed = $opening?->basis_ore !== null || $employment === null ? 0 : $this->imputedIncome($employment, $own, $earningFrom, $earningTo, $limits, $weekPatterns[$employee->id] ?? null);
 
             $result[$employee->id] = [
                 'year_start' => $yearFrom,
@@ -189,7 +197,7 @@ final class VacationLedger
                 'taken' => $taken,
                 'saved' => $payout ? 0 : $pool,
                 'left' => $payout ? 0 : max(0, $earned + $pool - $taken),
-                'basis_ore' => (int) ($bases[$employee->id] ?? 0) + $imputed,
+                'basis_ore' => $opening->basis_ore ?? ((int) ($bases[$employee->id] ?? 0) + $imputed),
                 'payout_with_salary' => $payout,
             ];
         }

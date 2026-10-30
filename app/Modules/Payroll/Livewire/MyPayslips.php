@@ -11,6 +11,7 @@ use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\PayrollModule;
@@ -45,6 +46,7 @@ class MyPayslips extends Component
                 ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
                 ->orderByDesc('payroll_runs.payment_date')
                 ->get(['payslips.*', 'payroll_runs.period', 'payroll_runs.payment_date']),
+            'imported' => $employee === null ? collect() : ImportedPayslip::query()->where('employee_id', $employee->id)->orderByDesc('period')->get(),
         ]);
     }
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Payroll\Http\AgiFileController;
 use App\Modules\Payroll\Http\EmployerCertificateController;
 use App\Modules\Payroll\Http\ExpenseReceiptController;
+use App\Modules\Payroll\Http\MigrationTemplateController;
 use App\Modules\Payroll\Http\PayrollRunController;
 use App\Modules\Payroll\Http\PayslipController;
 use App\Modules\Payroll\Http\SalaryPaymentFileController;
@@ -21,6 +22,8 @@ Route::view('/lon/semesterskuld', 'payroll::vacation-liability')->name('payroll.
 Route::view('/lon/korningar', 'payroll::runs')->name('payroll.runs.index');
 Route::get('/lon/korningar/{run}', PayrollRunController::class)->whereNumber('run')->name('payroll.runs.show');
 Route::get('/lon/korningar/{run}/lonefil', SalaryPaymentFileController::class)->whereNumber('run')->name('payroll.runs.payment-file');
+Route::view('/lon/flytt', 'payroll::migration')->name('payroll.migration');
+Route::get('/lon/flytt/mall/{template}', MigrationTemplateController::class)->whereIn('template', ['anstallda', 'hittills-i-ar', 'semester'])->name('payroll.migration.template');
 Route::view('/lon/rapporter', 'payroll::reports')->name('payroll.reports');
 Route::view('/lon/arbetsgivardeklaration', 'payroll::agi')->name('payroll.agi');
 Route::get('/lon/arbetsgivardeklaration/{submission}/fil', AgiFileController::class)->whereNumber('submission')->name('payroll.agi.file');

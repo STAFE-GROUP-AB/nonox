@@ -46,8 +46,10 @@ use App\Modules\Payroll\Models\CollectiveAgreement;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\Expense;
+use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
+use App\Modules\Payroll\Models\PayrollMigration;
 use App\Modules\Payroll\Models\PayrollRuleVerification;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -59,6 +61,7 @@ use App\Modules\Payroll\Models\RecurringInput;
 use App\Modules\Payroll\Models\SalaryChange;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
+use App\Modules\Payroll\Models\VacationOpeningBalance;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Support\Tenancy\CompanyScope;
@@ -135,6 +138,9 @@ const COMPANY_SCOPED_MODELS = [
     VacationYearClosing::class => 'payrollVacationYearClosingAttributes',
     AgiSubmission::class => 'payrollAgiSubmissionAttributes',
     PayrollYearClosing::class => 'payrollYearClosingAttributes',
+    PayrollMigration::class => 'payrollMigrationAttributes',
+    VacationOpeningBalance::class => 'payrollVacationOpeningAttributes',
+    ImportedPayslip::class => 'payrollImportedPayslipAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
@@ -490,6 +496,21 @@ function payrollVacationYearClosingAttributes(): array
         'payout_ore' => 0, 'variable_basis_ore' => 0, 'variable_pay_ore' => 0,
         'closed_by' => User::factory()->create()->id,
     ];
+}
+
+function payrollMigrationAttributes(): array
+{
+    return ['year' => 2026, 'report' => [], 'started_by' => User::factory()->create()->id];
+}
+
+function payrollVacationOpeningAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'year_start' => '2026-04-01', 'days_earned' => 25, 'days_taken' => 0, 'days_saved' => 0];
+}
+
+function payrollImportedPayslipAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'period' => '2026-01', 'file_path' => 'imported/x.pdf', 'original_name' => 'x.pdf', 'sha256' => bin2hex(random_bytes(32)), 'uploaded_by' => User::factory()->create()->id];
 }
 
 function payrollYearClosingAttributes(): array

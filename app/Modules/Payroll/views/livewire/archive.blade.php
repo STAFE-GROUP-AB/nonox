@@ -51,4 +51,17 @@
             </ul>
         @endif
     </x-ui.card>
+
+    @if($imported->isNotEmpty())
+        <x-ui.card :title="__('Lönebesked från det tidigare lönesystemet')">
+            <ul class="divide-y divide-gray-100 text-sm">
+                @foreach($imported as $old)
+                    <li wire:key="archive-imported-{{ $old->id }}" class="flex flex-wrap items-center justify-between gap-2 py-2">
+                        <span><span class="tabular-nums">{{ $old->period }}</span> · {{ $old->employee?->first_name }} {{ $old->employee?->last_name }}</span>
+                        <x-ui.link :href="route('payroll.imported-payslip', $old)">{{ __('Lönebesked (PDF)') }}</x-ui.link>
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
 </div>

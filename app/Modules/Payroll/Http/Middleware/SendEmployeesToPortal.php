@@ -25,7 +25,7 @@ class SendEmployeesToPortal
      */
     private const array ALWAYS = ['logout', 'livewire.*', '*-livewire.*', 'team-invitations.*', 'current-team.update'];
 
-    private const array PORTAL = ['payroll.portal.*', 'teams.logo'];
+    private const array PORTAL = ['payroll.portal.*', 'payroll.imported-payslip', 'teams.logo'];
 
     public function __construct(private readonly ModuleManager $modules) {}
 

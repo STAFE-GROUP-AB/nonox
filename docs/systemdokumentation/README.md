@@ -265,7 +265,15 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   betaldagen i serie E. Betalningsuppgifterna tas från leverantörens uppgifter
   när fakturan registrerades.
 
-## 5b. Lön (modul, under uppbyggnad)
+## 5b. Lön (modul)
+
+Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
+lönekörningens flöde (beräkning, attest, utbetalning, bokföring, skattekonto,
+arbetsgivardeklaration), semester, frånvaro, förmåner och pension, lönerevision
+och slutlön, rapporter och årsskifte, avstängning med lönearkiv och flytt av
+lönedata från ett tidigare lönesystem. Varje lönekörning går igenom stegen
+utkast → beräknad → attesterad → utbetald → bokförd; från attesten är
+lönebeskeden låsta i databasen.
 
 - Lön är en modul som varje företag slår på under Moduler. Den följer
   `PAYROLL_MODULE.md`.
@@ -404,6 +412,18 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   inlämnad arbetsgivardeklaration. Årets summor sparas och ingen lönekörning
   kan sedan få utbetalningsdag i året. Avslutet kan inte ändras eller tas
   bort (databasregel). Semesteråret avslutas separat.
+- Flytt av lönedata (Lön → Flytt av lönedata): från ett tidigare lönesystem
+  läses anställda, belopp hittills i år (bruttolön, skatt, avgiftsunderlag,
+  arbetsgivaravgifter, förmåner och engångsbelopp), semestersaldon för det
+  pågående semesteråret och gamla lönebesked (PDF) in från CSV-filer i ett
+  eget, dokumenterat format. Varje fil läses in bara när alla rader är rätt.
+  Beloppen hittills i år blir årets ackumulatorer och de ingående
+  semestersaldona ersätter det systemet inte själv kan veta om året. Medan
+  flytten pågår kan ingen lönekörning räknas. Flytten är klar först när
+  inläst skatt och inlästa arbetsgivaravgifter stämmer med bokföringen för
+  året (2710 kredit, 7510 netto), med en marginal på en krona per anställd
+  för öresavrundning. Varje steg loggas. Gamla lönebesked sparas med
+  kontrollsumma, i Lönearkivet och på den anställdes Min sida.
 - Avstängning av lönemodulen: modulen kan inte stängas av så länge en
   lönekörning är attesterad men inte bokförd, en månad med lön saknar
   inlämnad arbetsgivardeklaration eller ett godkänt utlägg som en
@@ -467,6 +487,17 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   procentregeln; sparade dagar som inte tas ut inom fem år; värdering av
   semesterlöneskulden under sammalöneregeln och sociala avgifter på skulden
   för anställda med nedsatt avgift.
+- Lön: AGI-beloppens avrundning till hela kronor och skillnaden mot
+  Skatteverkets egen avgiftsberäkning; deklarationsdag för företag med
+  omsättning över 40 miljoner kronor; arbetsgivardeklaration för enskild
+  firma; direkt inlämning via Skatteverkets API; om Skatteverkets XSD får
+  följa med i ett öppet förråd; hur särskild löneskatt på pensionskostnader
+  når skattekontot; semesterersättning vid anställningens slut (29 §) utan
+  kollektivavtal och avdrag för förskottssemester; skatt på
+  semesterersättning vid anställningens slut som engångsbelopp; vilka
+  uppgifter arbetsgivarintyget kräver; retroaktiv lön på avdrag och
+  semesterlön i redan utbetalda månader; det tidigare lönesystemets egna
+  exportformat (t.ex. PAXml) och API.
 - Minsta längd för ett första räkenskapsår: `AGENTS.md` anger 6 månader;
   bokföringslagen 3 kap anger högst 18.
 - BAS-licensen och kontroll av mallarnas kontonummer och namn mot den officiella
@@ -512,3 +543,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.13 | 2026-10-30 | Avtalsfakturering. |
 | 0.14 | 2026-10-30 | Kreditnotor från leverantörer och inköp där köparen redovisar momsen. |
 | 0.15 | 2026-10-30 | Moduler och lönemodulens första del: regler, skattetabeller, beräkning och attesterade lönekörningar. |
+| 0.16 | 2026-10-31 | Lönemodulen: lönebesked och Min sida, semester, förmåner, traktamente och pension, utlägg, lönefil och skattekontot, arbetsgivardeklaration (AGI), lönerevision och retroaktiv lön, slutlön, rapporter, löneårsskifte, lönearkiv och flytt av lönedata. |

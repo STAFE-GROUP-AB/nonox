@@ -7,6 +7,7 @@ namespace App\Modules\Payroll\Livewire;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Payroll\Models\AgiSubmission;
+use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +45,7 @@ class PayrollArchive extends Component
             'open' => $open,
             'payslips' => $open === null ? collect() : Payslip::query()->with('employee')->where('payroll_run_id', $open->id)->get()->sortBy(fn (Payslip $payslip): int => (int) $payslip->employee?->employee_number),
             'submissions' => AgiSubmission::query()->orderByDesc('period')->orderByDesc('sequence')->get(),
+            'imported' => ImportedPayslip::query()->with('employee')->orderByDesc('period')->get(),
         ]);
     }
 

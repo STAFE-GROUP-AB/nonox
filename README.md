@@ -58,7 +58,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Kreditnotor från leverantörer (kvittas mot en faktura eller betalas tillbaka) och inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet i Sverige, med momsen i rätt rutor.
 - 🚧 Automatisk avstämning mot bankens svar, import av varor från länder utanför EU och fakturor i utländsk valuta.
 - ✅ Moduler: tillägg som varje företag slår på och av under Företagsinställningar → Moduler, utan att något raderas.
-- ✅ Lön som modul (påbörjad), enligt [PAYROLL_MODULE.md](PAYROLL_MODULE.md): anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag, arbetsgivaravgifter med sänkningen för unga, lönekörning med attest, lönebokföring i serie L, lönebesked som PDF och en egen portal för anställda (Min sida, `/anstalld`) med inbjudan via e-post. Alla satser är data med källa som måste kontrolleras av en behörig person innan de används.
+- ✅ Lön som modul, enligt [PAYROLL_MODULE.md](PAYROLL_MODULE.md): anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag, arbetsgivaravgifter med sänkningen för unga, lönekörning med attest, lönebokföring i serie L, lönebesked som PDF och en egen portal för anställda (Min sida, `/anstalld`) med inbjudan via e-post. Alla satser är data med källa som måste kontrolleras av en behörig person innan de används.
 - ✅ NONOX AI (modul): dra in en leverantörsfaktura eller ett kvitto och låt AI fylla i förslaget med konton och belopp via Laravel AI SDK och OpenAI, Claude eller Gemini med företagets egen API-nyckel. Du kontrollerar och sparar; AI:n sparar aldrig själv.
 - ✅ Självservice på Min sida: sjukanmälan, vård av barn och semesteransökan som godkänns under Lön → Ansökningar, med e-post åt båda håll.
 - ✅ Eget varumärke per företag: logga och färger på fakturor, offerter, order, lönebesked och Min sida.
@@ -67,7 +67,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Lön: arbetsgivardeklaration (AGI) per utbetalningsmånad som XML enligt Skatteverkets schema 1.1, med rättelser och borttag, kvittens och deklarationsdagar.
 - ✅ Lön: lönerevision med retroaktiv lön, slutlön med semesterersättning, underlag för arbetsgivarintyg, lönerapporter med avstämning mot deklaration och bokföring, och löneårsskifte.
 - ✅ Lön: Lönearkiv som finns kvar när lönemodulen stängs av, och spärrar mot att stänga av med obokförd lön, odeklarerade månader eller obetalda utlägg.
-- 🚧 Lön: flytt av lönedata från det gamla lönesystemet.
+- ✅ Lön: flytt av lönedata från ett tidigare lönesystem (anställda, belopp hittills i år, semestersaldon och gamla lönebesked) med avstämning mot bokföringen. Se [guiden för att flytta](docs/migration/leaving-fortnox.md).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
