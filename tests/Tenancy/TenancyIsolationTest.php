@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Account;
+use App\Models\ArchivePackage;
 use App\Models\Article;
 use App\Models\BankFileImport;
 use App\Models\BankTransaction;
@@ -97,6 +98,7 @@ const COMPANY_SCOPED_MODELS = [
     ImportedVoucher::class => 'importedVoucherAttributes',
     VoucherRowHistory::class => 'voucherRowHistoryAttributes',
     VatReport::class => 'vatReportAttributes',
+    ArchivePackage::class => 'archivePackageAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
     Article::class => 'articleAttributes',
@@ -207,6 +209,14 @@ function voucherRowHistoryAttributes(): array
         'position' => 0,
         'account_number' => 1930,
         'amount_ore' => 100,
+    ];
+}
+
+function archivePackageAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'created_by' => User::factory()->create()->id,
     ];
 }
 

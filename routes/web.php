@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Accounting\ArchivePackageController;
 use App\Http\Controllers\Accounting\ReportCsvController;
 use App\Http\Controllers\Accounting\SieExportController;
 use App\Http\Controllers\Accounting\SieImportController;
@@ -79,6 +80,10 @@ Route::middleware([
         Route::get('/rakenskapsar/{fiscalYear}/sie-fil', [SieExportController::class, 'show'])
             ->whereNumber('fiscalYear')
             ->name('accounting.fiscalYears.sie');
+        Route::get('/rakenskapsar/{fiscalYear}/arkivpaket/{archivePackage}', [ArchivePackageController::class, 'show'])
+            ->whereNumber('fiscalYear')
+            ->whereNumber('archivePackage')
+            ->name('accounting.fiscalYears.archive');
         Route::get('/verifikationsserier', VoucherSeriesController::class)->name('accounting.voucherSeries');
         Route::view('/fakturor', 'invoicing.invoices.index')->name('invoicing.invoices.index');
         Route::view('/fakturor/ny', 'invoicing.invoices.edit', ['invoice' => null])->name('invoicing.invoices.create');

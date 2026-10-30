@@ -6,12 +6,15 @@ namespace App\Livewire\Accounting;
 
 use App\Actions\Accounting\CarryForwardBalances;
 use App\Actions\Accounting\ChangeFirstFiscalYear;
+use App\Actions\Accounting\CreateArchivePackage;
 use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\ArchivePackage;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -38,6 +41,23 @@ class FiscalYears extends Component
         $next = $carryForward($this->user(), $fiscalYear);
 
         $this->toast(__('Utgående balanser för :from är ingående balanser för :to.', ['from' => $fiscalYear->label(), 'to' => $next->label()]));
+    }
+
+    public function createArchive(int $fiscalYearId, CreateArchivePackage $createArchivePackage): void
+    {
+        try {
+            $package = $createArchivePackage($this->user(), FiscalYear::findOrFail($fiscalYearId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast($package->status === ArchivePackage::DONE
+            ? __('Arkivpaketet är klart att ladda ner.')
+            : ($package->status === ArchivePackage::FAILED
+                ? (string) $package->error
+                : __('Arkivpaketet skapas. Det kan ta några minuter för ett stort år; sidan visar när det är klart.')), $package->status === ArchivePackage::FAILED ? 'error' : 'success');
     }
 
     public function startEditing(int $fiscalYearId): void
@@ -71,11 +91,18 @@ class FiscalYears extends Component
     public function render(): View
     {
         $fiscalYears = FiscalYear::query()->orderByDesc('start_date')->get();
+        $canArchive = $this->user()->hasTeamPermission($this->company(), 'export:archive');
+        $packages = $canArchive
+            ? ArchivePackage::query()->whereIn('id', ArchivePackage::query()->selectRaw('max(id)')->groupBy('fiscal_year_id'))->get()->keyBy('fiscal_year_id')
+            : collect();
 
         return view('livewire.accounting.fiscal-years', [
             'fiscalYears' => $fiscalYears,
             'canManage' => $this->user()->can('create', [FiscalYear::class, $this->company()]),
             'canExport' => $this->user()->hasTeamPermission($this->company(), 'export:sie'),
+            'canArchive' => $canArchive,
+            'packages' => $packages,
+            'building' => $packages->contains(fn (ArchivePackage $package): bool => $package->isBusy()),
             'onlyYearId' => $fiscalYears->count() === 1 ? $fiscalYears->first()?->id : null,
             'nextLabels' => $fiscalYears->mapWithKeys(fn (FiscalYear $year): array => [$year->id => (new FiscalYear([
                 'start_date' => $year->end_date->addDay(),

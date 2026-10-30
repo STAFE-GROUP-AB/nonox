@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Accounting\CreateArchivePackage;
+use App\Models\FiscalYear;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\AgiPage;
@@ -11,6 +13,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\Agi\AgiDeadlines;
 use App\Modules\Payroll\Support\Agi\AgiXml;
+use App\Support\Archive\ArchivePackageBuilder;
 use App\Support\Luhn;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -165,4 +168,24 @@ it('shows the months with their declaration day and creates the file from the pa
         ->assertSee('Markera som inlämnad');
 
     $this->get(route('payroll.agi'))->assertOk();
+});
+
+it('puts the year\'s payslips and employer declarations in the archive package', function () {
+    $this->runs->approve($this->admin, $this->run->fresh());
+    $submission = $this->agi->generate($this->owner, $this->company, '2026-04');
+    $year = FiscalYear::query()->orderBy('start_date')->firstOrFail();
+
+    $package = app(CreateArchivePackage::class)($this->owner, $year);
+    $zip = new ZipArchive;
+    $path = tempnam(sys_get_temp_dir(), 'arkiv');
+    file_put_contents($path, Storage::disk('local')->get((string) $package->file_path));
+    $zip->open($path);
+    $names = collect(range(0, $zip->numFiles - 1))->map(fn (int $i): string => (string) $zip->getNameIndex($i))->map(fn (string $name): string => substr($name, strpos($name, '/') + 1));
+    $agi = (string) $zip->getFromName(ArchivePackageBuilder::name($this->company, $year).'/lon/arbetsgivardeklarationer/'.$submission->filename());
+    $zip->close();
+    unlink($path);
+
+    expect($package->status)->toBe('DONE')
+        ->and($names)->toContain('lon/lonebesked/Lonebesked-2026-04-'.$this->anna->id.'.pdf')
+        ->and($agi)->toBe((string) Storage::disk('local')->get($submission->xml_path));
 });

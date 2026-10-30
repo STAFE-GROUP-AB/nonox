@@ -33,4 +33,11 @@ class FiscalYearPolicy
 
         return $company instanceof Company && $user->hasTeamPermission($company, 'export:sie');
     }
+
+    public function exportArchive(User $user, FiscalYear $fiscalYear): bool
+    {
+        $company = $fiscalYear->company;
+
+        return $company instanceof Company && $user->hasTeamPermission($company, 'export:archive');
+    }
 }

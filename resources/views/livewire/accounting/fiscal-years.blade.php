@@ -2,7 +2,7 @@
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
 @endphp
 
-<div class="space-y-6">
+<div class="space-y-6" @if($building) wire:poll.5s @endif>
     <x-ui.card :title="__('Dina räkenskapsår')">
         @if($canManage)
             <x-slot:action>
@@ -44,6 +44,19 @@
                                 @if($canExport)
                                     <a href="{{ route('accounting.fiscalYears.sie', $fiscalYear) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700" title="{{ __('Hela bokföringen för året i SIE4-format, som alla svenska ekonomiprogram kan läsa.') }}">{{ __('Ladda ner SIE-fil') }}</a>
                                 @endif
+                                @if($canArchive)
+                                    @php($package = $packages->get($fiscalYear->id))
+                                    @if($package?->isBusy())
+                                        <span class="text-sm text-gray-600">{{ __('Arkivpaketet skapas…') }}</span>
+                                    @else
+                                        @if($package?->status === 'DONE')
+                                            <a href="{{ route('accounting.fiscalYears.archive', [$fiscalYear, $package]) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700" title="{{ __('Skapat :date, :files filer.', ['date' => $package->completed_at?->setTimezone('Europe/Stockholm')->format('Y-m-d H:i'), 'files' => $package->file_count]) }}">{{ __('Ladda ner arkivpaket (:size)', ['size' => Illuminate\Support\Number::fileSize((int) $package->size, precision: 1)]) }}</a>
+                                        @elseif($package?->status === 'FAILED')
+                                            <span class="text-sm text-accent-800">{{ $package->error }}</span>
+                                        @endif
+                                        <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="createArchive({{ $fiscalYear->id }})" wire:loading.attr="disabled" title="{{ __('En ZIP-fil med årets SIE-fil, rapporter, underlag, fakturor, momsdeklarationer, lönebesked, behandlingshistorik och systemdokumentation, med en kontrollsumma för varje fil.') }}">{{ $package?->status === 'DONE' ? __('Skapa nytt arkivpaket') : __('Skapa arkivpaket') }}</button>
+                                    @endif
+                                @endif
                                 @if($canManage)
                                     @php($nextLabel = $nextLabels[$fiscalYear->id])
                                     <span x-data="{ confirming: false }" class="inline-flex flex-wrap items-center gap-3">
@@ -68,6 +81,9 @@
 
     <x-input-error for="fiscal_year" />
     <p class="text-sm text-gray-500">{{ __('Vid årsskiftet förs utgående balanser över som ingående balanser till nästa år. Ett resultat som inte är bokfört förs till Årets resultat. Har du bokfört något i det gamla året efteråt, för över igen. Ett räkenskapsår stängs vid bokslutet, som kommer i en senare version.') }}</p>
+    @if($canArchive)
+        <p class="text-sm text-gray-500">{{ __('Arkivpaketet är en ZIP-fil med allt som räknas som räkenskapsinformation för året, i format som går att läsa utan NONOX. Bokföringslagen kräver att den sparas i sju år efter utgången av det kalenderår då räkenskapsåret avslutades. Ladda ner paketet efter bokslutet och spara det på ett säkert ställe.') }}</p>
+    @endif
     @if($canExport)
         <p class="text-sm text-gray-500">{{ __('SIE-filen innehåller hela årets bokföring: kontoplan, ingående och utgående balanser och alla bokförda verifikationer. Din revisor eller redovisningsbyrå kan läsa in den i sitt program, och du kan alltid ta med dig bokföringen härifrån.') }}</p>
     @endif

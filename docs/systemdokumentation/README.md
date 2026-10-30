@@ -494,6 +494,40 @@ lönebeskeden låsta i databasen.
 - Tabellen går bara att lägga till i. Databasen själv vägrar ändringar och
   borttagningar.
 
+## 7a. Arkivpaket
+
+- Under Räkenskapsår skapar den som har behörigheten `export:archive` (ägare,
+  administratör, redovisningskonsult, revisor) ett arkivpaket per räkenskapsår.
+  Paketet byggs i bakgrunden och sparas; tidigare paket finns kvar, och ett år
+  har högst ett paket under arbete åt gången.
+- Paketet är en ZIP-fil med en mapp `Arkiv_<organisationsnummer>_<årets
+  datum>` som innehåller:
+  - `sie/`: årets SIE4-fil (samma som SIE-exporten).
+  - `rapporter/`: saldobalans, resultatrapport, balansrapport, huvudbok och
+    verifikationslista för hela året som CSV och PDF. Långa rapporter delas i
+    flera PDF-filer om 500 rader.
+  - `verifikationer/<verifikation>/`: underlagen till varje bokförd
+    verifikation under sitt ursprungliga namn.
+  - `kundfakturor/`: utfärdade kund- och kreditfakturor med fakturadatum under
+    året, som PDF i fakturans egen layout.
+  - `leverantorsfakturor/`: leverantörsfakturorna med fakturadatum under året,
+    som de laddades upp.
+  - `moms/`: rutor och belopp för varje redovisad momsperiod och filen till
+    Skatteverket.
+  - `lon/`: lönebesked för attesterade lönekörningar med utbetalningsdag under
+    året, lönebesked från ett tidigare lönesystem och arbetsgivardeklarationerna
+    (XML) för årets månader.
+  - `behandlingshistorik/`: alla poster för företaget från årets första dag
+    till dess paketet skapas, som CSV och JSON, med användarens namn och
+    e-post.
+  - `systemdokumentation/`: den här dokumentationen i den version som gällde
+    när paketet skapades.
+  - `LASMIG.txt` som förklarar paketet på svenska, `manifest.json` med storlek
+    och SHA-256 för varje fil och `SHA256SUMS.txt` som kan kontrolleras med
+    `shasum -a 256 -c` eller `sha256sum -c`.
+- Paketets egen SHA-256 sparas och skrivs i behandlingshistoriken när paketet
+  skapas, och varje nedladdning loggas. Filerna går att läsa utan NONOX.
+
 ## 8. Öppna frågor (TODO legal-verify)
 
 - Semester: vilken metod ett kollektivavtal föreskriver för deltidsanställdas
@@ -543,6 +577,11 @@ lönebeskeden låsta i databasen.
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt
   BFNAR 2013:2?
+- Arkivpaket: räcker det att paketet innehåller underlag, fakturor och
+  lönebesked per räkenskapsår, eller ska även räkenskapsinformation som hör
+  till året men daterats utanför det (till exempel en faktura daterad efter
+  årsskiftet för en kostnad som periodiserats) följa med? Och ska paketet
+  signeras eller tidsstämplas utöver kontrollsummorna?
 
 ## 9. Ändringshistorik
 
@@ -565,3 +604,4 @@ lönebeskeden låsta i databasen.
 | 0.15 | 2026-10-30 | Moduler och lönemodulens första del: regler, skattetabeller, beräkning och attesterade lönekörningar. |
 | 0.16 | 2026-10-31 | Lönemodulen: lönebesked och Min sida, semester, förmåner, traktamente och pension, utlägg, lönefil och skattekontot, arbetsgivardeklaration (AGI), lönerevision och retroaktiv lön, slutlön, rapporter, löneårsskifte, lönearkiv och flytt av lönedata. |
 | 0.17 | 2026-10-31 | Utlägg med bara kvittot: NONOX AI läser uppgifterna, den som godkänner kontrollerar och rättar. |
+| 0.18 | 2026-10-31 | Arkivpaket per räkenskapsår med SIE, rapporter, underlag, fakturor, moms, lön, behandlingshistorik och systemdokumentation, med SHA-256 för varje fil. |

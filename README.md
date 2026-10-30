@@ -41,6 +41,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Årsskifte: utgående balanser blir ingående balanser för nästa år.
 - ✅ SIE4: export av varje räkenskapsår och inläsning i två steg med avstämning mot filen. Så flyttar du in bokföringen från ditt gamla program.
 - ✅ Behandlingshistorik över allt som görs.
+- ✅ Arkivpaket per räkenskapsår: en ZIP med SIE-fil, rapporter som PDF och CSV, underlag, fakturor, momsdeklarationer, lönebesked, behandlingshistorik och systemdokumentation, med en kontrollsumma (SHA-256) för varje fil. Går att läsa utan NONOX och sparas i sju år.
 
 **Fakturering**
 - ✅ Kund-, artikel- och leverantörsregister under en egen flik, Register, med pris, moms och intäktskonto. Per kund visas vad den fakturerats i år och vad som är obetalt, per artikel vad som sålts i år.
