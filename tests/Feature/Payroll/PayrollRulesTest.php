@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
+use App\Modules\Payroll\Livewire\PayrollRules;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\PayrollModule;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
@@ -97,4 +99,24 @@ it('imports the 2026 rules as unverified versions, leaving verified ones alone',
         ->and($verified->fresh()->value)->toBe(['ore' => 1])
         ->and($missing)->toContain('employer_contribution.full')
         ->and($missing)->not->toContain('prisbasbelopp');
+});
+
+it('lets a company check a rule for itself only, from the page', function () {
+    [$owner, $company] = Bookkeeping::company();
+    [$otherOwner, $other] = Bookkeeping::company();
+    app(ModuleManager::class)->enable(PayrollModule::KEY, $company, $owner);
+    $rule = testRule('sink.rate', '2026-01-01', ['bp' => 2250], verified: false);
+    $this->actingAs($owner);
+
+    Livewire\Livewire::test(PayrollRules::class)
+        ->call('check', $rule->id)
+        ->assertSee('Öppna källan och jämför värdet')
+        ->call('verify')
+        ->assertHasErrors('confirmed')
+        ->set('confirmed', true)
+        ->call('verify')
+        ->assertDispatched('toast');
+
+    expect(CurrentCompany::run($company, fn () => RuleSet::for(CarbonImmutable::parse('2026-05-25'))->get('sink.rate')))->toBe(['bp' => 2250])
+        ->and(fn () => CurrentCompany::run($other, fn () => RuleSet::for(CarbonImmutable::parse('2026-05-25'))->get('sink.rate')))->toThrow(MissingPayrollRuleException::class, 'not verified');
 });

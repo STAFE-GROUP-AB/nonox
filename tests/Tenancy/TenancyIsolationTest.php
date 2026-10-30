@@ -47,6 +47,8 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
+use App\Modules\Payroll\Models\PayrollRuleVerification;
+use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
@@ -124,6 +126,7 @@ const COMPANY_SCOPED_MODELS = [
     Benefit::class => 'payrollBenefitAttributes',
     Expense::class => 'payrollExpenseAttributes',
     TimeReport::class => 'payrollTimeReportAttributes',
+    PayrollRuleVerification::class => 'payrollRuleVerificationAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
@@ -447,6 +450,16 @@ function payrollExpenseAttributes(): array
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'type' => 'OUTLAY', 'date' => '2026-03-02', 'amount_ore' => 100];
 }
 
+function payrollRuleVerificationAttributes(): array
+{
+    return [
+        'payroll_rule_version_id' => PayrollRuleVersion::create(['key' => 'test.'.random_int(1, 1_000_000), 'valid_from' => '2026-01-01', 'value' => ['bp' => 1], 'source_url' => 'https://example.test'])->id,
+        'verified_by' => User::factory()->create()->id,
+        'verifier_name' => 'Testperson',
+        'verified_at' => now(),
+    ];
+}
+
 function payrollTimeReportAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-03-02', 'hours' => '8', 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id];
@@ -511,7 +524,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

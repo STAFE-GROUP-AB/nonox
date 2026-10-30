@@ -16,6 +16,7 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\WorkSchedule;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -68,6 +69,7 @@ final class ContextBuilder
             weeklyHours: $employment->weekly_hours === null ? null : (string) $employment->weekly_hours,
             absences: $this->absenceDays($employee, $periodStart, $periodEnd),
             sickHistory: $this->sickHistory($employee, $periodStart),
+            weekPattern: $this->weekPattern($employment),
         );
     }
 
@@ -121,6 +123,23 @@ final class ContextBuilder
             'last_sick_period_days' => (int) $last->date_from->diffInDays($last->date_to->min($periodStart->subDay())) + 1,
             'karens_count_12m' => $sick->count(),
         ];
+    }
+
+    /**
+     * The first week of the employment's schedule, or the company's first
+     * schedule (created when payroll is turned on). Rotating schedules use
+     * the first week only. TODO: rotating weeks.
+     *
+     * @return ?list<string>
+     */
+    private function weekPattern(Employment $employment): ?array
+    {
+        $schedule = $employment->work_schedule_id === null
+            ? WorkSchedule::query()->orderBy('id')->first()
+            : WorkSchedule::query()->find($employment->work_schedule_id);
+        $week = $schedule?->pattern['weeks'][0] ?? null;
+
+        return is_array($week) ? array_map('strval', $week) : null;
     }
 
     /** @return Collection<int, Absence> */

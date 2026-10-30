@@ -1406,7 +1406,6 @@
     "Skattetabell och kolumn saknas för den anställda.": "The tax table and column are missing for the employee.",
     "Nettolönen blev negativ. :amount förs över som en fordran på den anställda.": "Net pay was negative. :amount is carried forward as a claim on the employee.",
     "Månadslön": "Monthly salary",
-    "Delmånad räknad på arbetsschema stöds inte än. Välj kalenderdagar i löneinställningarna.": "Part months by work schedule are not supported yet. Choose calendar days in the payroll settings.",
     "Månadslön, :days av :total dagar": "Monthly salary, :days of :total days",
     "Sjukavdrag": "Sick deduction",
     "Sjuklön :percent %, :hours timmar": "Sick pay :percent %, :hours hours",
@@ -1505,5 +1504,15 @@
     "Arbetsgivaravgifter": "Employer contributions",
     "Personalskatt": "Employee tax",
     "Arbetsgivaravgifter att betala": "Employer contributions to pay",
-    "Utbetalda nettolöner": "Net salaries paid"
+    "Utbetalda nettolöner": "Net salaries paid",
+    "Bekräfta att du har jämfört värdet med källan.": "Confirm that you have compared the value with the source.",
+    "Regeln :key är kontrollerad av dig för :company.": "The rule :key is verified by you for :company.",
+    "Heltid 40 h mån–fre": "Full time 40 h Mon–Fri",
+    "Kontrollera": "Verify",
+    "Källan säger:": "The source says:",
+    "Öppna källan och jämför värdet": "Open the source and compare the value",
+    "Jag har jämfört värdet med källan och tar ansvar för att det stämmer för vårt företag.": "I have compared the value with the source and take responsibility for it being right for our company.",
+    "Markera som kontrollerad": "Mark as verified",
+    "Månadslön, :days av :total arbetsdagar": "Monthly salary, :days of :total working days",
+    "Arbetsschema saknas på anställningen. Det behövs för delmånad räknad på arbetsdagar.": "The employment has no work schedule. It is needed for part months counted in working days."
 }

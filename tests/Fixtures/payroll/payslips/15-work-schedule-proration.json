@@ -1,0 +1,39 @@
+{
+  "description": "Employed from 16 April, prorated by working days: 11 of 20 (Good Friday and Easter Monday are public holidays)",
+  "context": {
+    "birth_date": "1990-06-15",
+    "tax_residence": "SE",
+    "tax_table": 33,
+    "tax_column": 1,
+    "tax_adjustment_percent_bp": null,
+    "salary_form": "MONTHLY",
+    "monthly_salary_ore": 3200000,
+    "hourly_rate_ore": null,
+    "employment_rate_bp": 10000,
+    "employment_start": "2026-04-16",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [],
+    "accumulators": {},
+    "settings": {
+      "proration_method": "WORK_SCHEDULE"
+    },
+    "week_pattern": [
+      "8",
+      "8",
+      "8",
+      "8",
+      "8",
+      "0",
+      "0"
+    ]
+  },
+  "expected": {
+    "gross_ore": 1760000,
+    "tax_ore": 280800,
+    "net_ore": 1479200,
+    "employer_contribution_ore": 552992
+  }
+}

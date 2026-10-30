@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Livewire;
 
+use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Payroll\Actions\VerifyPayrollRule;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
+use App\Modules\Payroll\Models\PayrollRuleVerification;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +23,12 @@ use Livewire\Component;
  */
 class PayrollRules extends Component
 {
+    use ShowsToasts;
+
+    public ?int $checking = null;
+
+    public bool $confirmed = false;
+
     #[Url(as: 'datum', except: '')]
     public string $date = '';
 
@@ -32,9 +41,35 @@ class PayrollRules extends Component
         abort_unless($user->hasTeamPermission($company, 'payroll:view'), 403);
     }
 
+    public function check(int $ruleId): void
+    {
+        $this->checking = $ruleId;
+        $this->confirmed = false;
+        $this->resetErrorBag();
+    }
+
+    public function verify(VerifyPayrollRule $verify): void
+    {
+        if (! $this->confirmed) {
+            $this->addError('confirmed', __('Bekräfta att du har jämfört värdet med källan.'));
+
+            return;
+        }
+
+        /** @var User $user */
+        $user = Auth::user();
+        /** @var Company $company */
+        $company = $user->currentCompany();
+        $rule = PayrollRuleVersion::query()->findOrFail($this->checking);
+        $verify($user, $company, $rule);
+
+        $this->reset('checking', 'confirmed');
+        $this->toast(__('Regeln :key är kontrollerad av dig för :company.', ['key' => $rule->key, 'company' => $company->name]));
+    }
+
     public function render(): View
     {
-        $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->date) ?: CarbonImmutable::today();
+        $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->date) === 1 ? CarbonImmutable::parse($this->date) : CarbonImmutable::today();
         $versions = PayrollRuleVersion::query()
             ->whereIn('key', RuleSet::REQUIRED_KEYS)
             ->whereDate('valid_from', '<=', $date->toDateString())
@@ -43,7 +78,14 @@ class PayrollRules extends Component
             ->get()
             ->groupBy('key');
 
+        /** @var User $user */
+        $user = Auth::user();
+        /** @var Company $company */
+        $company = $user->currentCompany();
+
         return view('payroll::livewire.rules', [
+            'companyChecks' => PayrollRuleVerification::query()->get()->keyBy('payroll_rule_version_id'),
+            'canVerify' => $user->hasTeamPermission($company, 'payroll:settings'),
             'day' => $date,
             'rows' => array_map(fn (string $key): array => [
                 'key' => $key,

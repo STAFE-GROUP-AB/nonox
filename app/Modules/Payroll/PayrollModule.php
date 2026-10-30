@@ -12,6 +12,8 @@ use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\SeedPayCodes;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
+use App\Modules\Payroll\Models\WorkSchedule;
+use App\Support\Tenancy\CurrentCompany;
 
 /**
  * Lön (PAYROLL_MODULE.md Part B). Every rate, threshold and table it uses is
@@ -125,6 +127,12 @@ final class PayrollModule implements Module
         app(ModuleManager::class)->seedSettings(self::KEY, $company, PayrollSettings::DEFAULTS);
         app(CreateDefaultVoucherSeries::class)($company);
         app(SeedPayCodes::class)($company);
+
+        CurrentCompany::run($company, function (): void {
+            if (! WorkSchedule::query()->exists()) {
+                WorkSchedule::create(['name' => __('Heltid 40 h mån–fre'), 'pattern' => ['weeks' => [['8', '8', '8', '8', '8', '0', '0']]]]);
+            }
+        });
     }
 
     public function onDisable(Company $company, User $by): void {}

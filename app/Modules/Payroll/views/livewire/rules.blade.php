@@ -36,11 +36,36 @@
                                 <td class="py-2">
                                     @if($version->isVerified())
                                         <x-ui.badge tone="success">{{ $version->verified_by }}</x-ui.badge>
+                                    @elseif($companyChecks->has($version->id))
+                                        <x-ui.badge tone="success">{{ $companyChecks->get($version->id)->verifier_name }}</x-ui.badge>
+                                        <span class="block text-xs text-gray-500">{{ $companyChecks->get($version->id)->verified_at->setTimezone(config('app.timezone'))->format('Y-m-d') }}</span>
                                     @else
                                         <span class="inline-flex rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">{{ __('Ej kontrollerad') }}</span>
+                                        @if($canVerify && $checking !== $version->id)
+                                            <button type="button" class="mt-1 block text-xs font-medium text-accent-600 hover:text-accent-700" wire:click="check({{ $version->id }})">{{ __('Kontrollera') }}</button>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>
+                            @if($checking === $version->id)
+                                <tr>
+                                    <td colspan="4" class="bg-gray-50 px-4 py-3">
+                                        @if($version->source_quote)
+                                            <p class="text-sm text-gray-700">{{ __('Källan säger:') }} <q>{{ $version->source_quote }}</q></p>
+                                        @endif
+                                        <p class="mt-1 text-sm"><a href="{{ $version->source_url }}" target="_blank" rel="noopener" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Öppna källan och jämför värdet') }}</a></p>
+                                        <label class="mt-3 flex items-start gap-2 text-sm">
+                                            <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="confirmed">
+                                            <span>{{ __('Jag har jämfört värdet med källan och tar ansvar för att det stämmer för vårt företag.') }}</span>
+                                        </label>
+                                        <x-input-error for="confirmed" class="mt-1" />
+                                        <div class="mt-3 flex items-center gap-3">
+                                            <x-button type="button" wire:click="verify">{{ __('Markera som kontrollerad') }}</x-button>
+                                            <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('checking', null)">{{ __('Avbryt') }}</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endif
                         @empty
                             <tr>
                                 <td class="py-2 pr-4 font-mono text-xs">{{ $row['key'] }}</td>

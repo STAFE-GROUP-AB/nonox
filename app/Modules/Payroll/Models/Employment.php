@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $position_title
  * @property ?int $cost_center_id
  * @property ?string $weekly_hours
+ * @property ?int $work_schedule_id
  */
 class Employment extends Model
 {

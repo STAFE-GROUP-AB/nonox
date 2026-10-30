@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * A work schedule: hours per weekday, possibly over rotating weeks.
+ *
+ * @property string $name
+ * @property array{weeks?: list<list<string|int>>} $pattern
  */
 class WorkSchedule extends Model
 {

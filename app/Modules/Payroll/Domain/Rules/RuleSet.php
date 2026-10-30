@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Domain\Rules;
 
+use App\Modules\Payroll\Models\PayrollRuleVerification;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
  * The payroll rules valid on one date (normally the payment date), loaded in
- * one query. Only verified versions count. A missing or unverified rule
+ * two queries. Only verified versions count. A missing or unverified rule
  * throws MissingPayrollRuleException; there is no default.
  */
 final class RuleSet
@@ -69,15 +71,22 @@ final class RuleSet
         private readonly array $unverified,
     ) {}
 
+    /**
+     * The rules for a date. A version counts when it is verified for the
+     * whole installation, or by the current company.
+     */
     public static function for(CarbonImmutable $date): self
     {
+        $companyId = CurrentCompany::id();
+        $companyChecked = $companyId === null ? [] : PayrollRuleVerification::query()->pluck('payroll_rule_version_id')->all();
+
         $versions = PayrollRuleVersion::query()
             ->whereDate('valid_from', '<=', $date->toDateString())
             ->where(fn ($query) => $query->whereNull('valid_to')->orWhereDate('valid_to', '>=', $date->toDateString()))
             ->orderBy('valid_from')
             ->get();
 
-        $verified = $versions->filter(fn (PayrollRuleVersion $version): bool => $version->isVerified())->keyBy('key');
+        $verified = $versions->filter(fn (PayrollRuleVersion $version): bool => $version->isVerified() || in_array($version->id, $companyChecked, true))->keyBy('key');
         $unverified = array_values(array_diff($versions->pluck('key')->unique()->all(), $verified->keys()->all()));
 
         return new self($date, $verified, $unverified);

@@ -20,6 +20,7 @@ final readonly class PayrollContext
      * @param  array<string, mixed>  $settings
      * @param  list<AbsenceInput>  $absences  approved absences in the period
      * @param  array{last_sick_period_end?: string, last_sick_period_days?: int, karens_count_12m?: int}  $sickHistory
+     * @param  ?list<string>  $weekPattern  scheduled hours Monday to Sunday
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -43,5 +44,6 @@ final readonly class PayrollContext
         public ?string $weeklyHours = null,
         public array $absences = [],
         public array $sickHistory = [],
+        public ?array $weekPattern = null,
     ) {}
 }
