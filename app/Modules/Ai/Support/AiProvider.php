@@ -6,10 +6,13 @@ namespace App\Modules\Ai\Support;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Laravel\Ai\Ai;
+use Laravel\Ai\Contracts\Providers\TextProvider;
 
 /**
  * The AI providers a company can use with its own API key, through the
- * Laravel AI SDK's built-in drivers. A consumer subscription (ChatGPT Plus,
+ * Laravel AI SDK's built-in drivers. Which model is cheapest or smartest at
+ * each provider is the SDK's knowledge and follows SDK updates. A consumer subscription (ChatGPT Plus,
  * Claude Pro, Gemini Advanced) cannot be used by another application; an API
  * key is the only way, so each provider says where to create one.
  */
@@ -38,14 +41,19 @@ enum AiProvider: string
         };
     }
 
-    /** The model used unless the company chooses another; null leaves the SDK's own default. */
-    public function defaultModel(): ?string
+    /**
+     * The provider's cheapest and smartest text models as the installed
+     * Laravel AI SDK knows them; no request is made.
+     *
+     * @return array{CHEAPEST: string, SMARTEST: string}
+     */
+    public function models(): array
     {
-        return match ($this) {
-            self::OpenAi => 'gpt-5-mini',
-            self::Anthropic => 'claude-opus-4-8',
-            self::Gemini => null,
-        };
+        $provider = Ai::build(['name' => 'nonox_ai_models_'.strtolower($this->value), 'driver' => $this->driver(), 'key' => 'unused']);
+
+        return $provider instanceof TextProvider
+            ? ['CHEAPEST' => $provider->cheapestTextModel(), 'SMARTEST' => $provider->smartestTextModel()]
+            : ['CHEAPEST' => '', 'SMARTEST' => ''];
     }
 
     /** Where the customer creates an API key. */

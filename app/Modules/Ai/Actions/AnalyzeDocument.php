@@ -98,13 +98,14 @@ class AnalyzeDocument
             throw new AuthorizationException;
         }
 
-        [$provider, $model, $key] = self::providerFor($company);
+        [$provider, $choice, $custom, $key] = self::providerFor($company);
 
         $file = $mime === 'application/pdf'
             ? Document::fromPath($path)
             : (in_array($mime, self::IMAGE_TYPES, true) ? Image::fromPath($path, $mime) : throw new AiAnalysisException(__('Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG eller WebP.')));
 
         $built = Ai::build(['name' => "nonox_ai_company_{$company->id}", 'driver' => $provider->driver(), 'key' => $key]);
+        $model = $built instanceof TextProvider ? self::modelFor($built, $choice, $custom) : $custom;
 
         try {
             $response = $agent->prompt($this->context($company), attachments: [$file], provider: $built->name(), model: $model, timeout: self::TIMEOUT);
@@ -115,7 +116,7 @@ class AnalyzeDocument
         Audit::record('ai.document_analyzed', null, [
             'kind' => $kind,
             'provider' => $provider->value,
-            'model' => $model ?? ($built instanceof TextProvider ? $built->defaultTextModel() : null),
+            'model' => $model,
             'input_tokens' => $response->usage->inputTokens,
             'output_tokens' => $response->usage->outputTokens,
         ], $company, $user);
@@ -124,9 +125,9 @@ class AnalyzeDocument
     }
 
     /**
-     * The company's provider, model and decrypted key.
+     * The company's provider, model choice and decrypted key.
      *
-     * @return array{AiProvider, ?string, string}
+     * @return array{AiProvider, string, ?string, string} provider, model choice, custom model, key
      */
     public static function providerFor(Company $company): array
     {
@@ -138,9 +139,23 @@ class AnalyzeDocument
             throw new AiAnalysisException(__('NONOX AI saknar leverantör eller API-nyckel. Välj leverantör och lägg in nyckeln under Företagsinställningar → Moduler → NONOX AI.'));
         }
 
-        $model = filled($settings['model'] ?? null) ? (string) $settings['model'] : $provider->defaultModel();
+        $choice = in_array($settings['model_choice'] ?? null, AiModule::MODEL_CHOICES, true) ? (string) $settings['model_choice'] : 'CHEAPEST';
+        $custom = filled($settings['model'] ?? null) ? (string) $settings['model'] : null;
 
-        return [$provider, $model, Crypt::decryptString($key)];
+        return [$provider, $choice === 'CUSTOM' && $custom === null ? 'CHEAPEST' : $choice, $custom, Crypt::decryptString($key)];
+    }
+
+    /**
+     * The model a choice means at a provider: the SDK keeps which of each
+     * provider's models is cheapest and smartest up to date.
+     */
+    public static function modelFor(TextProvider $provider, string $choice, ?string $custom): string
+    {
+        return match ($choice) {
+            'SMARTEST' => $provider->smartestTextModel(),
+            'CUSTOM' => (string) $custom,
+            default => $provider->cheapestTextModel(),
+        };
     }
 
     /** What went wrong, said in Swedish. */
@@ -160,7 +175,7 @@ class AnalyzeDocument
             $exception instanceof ProviderOverloadedException => __(':provider är överbelastat just nu. Försök igen om en stund.', ['provider' => $provider->label()]),
             $exception instanceof ProviderConnectionException => __('Det gick inte att nå :provider. Kontrollera internetanslutningen och försök igen.', ['provider' => $provider->label()]),
             in_array($status, [401, 403], true) => __(':provider godtog inte API-nyckeln. Lägg in en ny under Moduler → NONOX AI.', ['provider' => $provider->label()]),
-            $status === 404 => __('Modellen finns inte hos :provider. Töm fältet Modell under Moduler → NONOX AI för att använda standardmodellen.', ['provider' => $provider->label()]),
+            $status === 404 => __('Modellen finns inte hos :provider. Välj den billigaste modellen under Moduler → NONOX AI.', ['provider' => $provider->label()]),
             default => __('Analysen misslyckades hos :provider. Fyll i uppgifterna själv eller försök igen.', ['provider' => $provider->label()]),
         };
     }

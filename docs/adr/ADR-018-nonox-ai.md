@@ -17,9 +17,18 @@ saved and posted (BFL: the company is responsible for every voucher).
 - The application talks to the providers through the **Laravel AI SDK**
   (`laravel/ai`, MIT) and its built-in drivers, which take PDFs and pictures
   and return structured output. Agents (`SupplierInvoiceAgent`,
-  `VoucherAgent`) describe the task and the answer's schema. Default models:
-  `gpt-5-mini` (OpenAI), `claude-opus-4-8` (Anthropic), the SDK's default for
-  Gemini; a company can choose another model.
+  `VoucherAgent`) describe the task and the answer's schema.
+- **The model is chosen by the SDK.** By default NONOX uses the provider's
+  cheapest text model as the installed Laravel AI SDK knows it
+  (`cheapestTextModel()`); a company can choose the provider's best model
+  (`smartestTextModel()`) or name its own. Which model is cheapest or best is
+  the SDK's knowledge and follows SDK updates, so companies get newer and
+  cheaper models without changing anything.
+- NONOX offers no shared key and no hosted AI: the project's promise is that
+  a company decides everything itself, and a company that runs NONOX on its
+  own machine needs its own key anyway. The settings page explains what that
+  means: their own account and cost, the document sent to the provider under
+  the provider's terms, and that the AI only proposes.
 - **Each company uses its own API key** per provider, checked with the
   provider's free model list before it is saved, stored encrypted and never
   shown again; only its last four characters. Without a key there is no

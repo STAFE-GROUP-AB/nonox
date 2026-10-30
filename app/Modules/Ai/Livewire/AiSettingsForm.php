@@ -35,6 +35,8 @@ class AiSettingsForm extends Component
 
     public string $provider = 'OPENAI';
 
+    public string $modelChoice = 'CHEAPEST';
+
     public string $model = '';
 
     public string $apiKey = '';
@@ -46,6 +48,7 @@ class AiSettingsForm extends Component
         $settings = app(ModuleManager::class)->settings(AiModule::KEY, $company);
         $this->companyId = $company->id;
         $this->provider = (AiProvider::tryFrom((string) ($settings['provider'] ?? '')) ?? AiProvider::OpenAi)->value;
+        $this->modelChoice = in_array($settings['model_choice'] ?? null, AiModule::MODEL_CHOICES, true) ? (string) $settings['model_choice'] : 'CHEAPEST';
         $this->model = (string) ($settings['model'] ?? '');
     }
 
@@ -56,8 +59,9 @@ class AiSettingsForm extends Component
 
         $this->validate([
             'provider' => ['required', Rule::enum(AiProvider::class)],
-            'model' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9.\-_:\/]+$/'],
-        ]);
+            'modelChoice' => ['required', Rule::in(AiModule::MODEL_CHOICES)],
+            'model' => [Rule::requiredIf($this->modelChoice === 'CUSTOM'), 'nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9.\-_:\/]+$/'],
+        ], ['model.required' => __('Skriv namnet på modellen, eller välj den billigaste.')]);
 
         $provider = AiProvider::from($this->provider);
         $keys = (array) ($modules->settings(AiModule::KEY, $company)['api_keys'] ?? []);
@@ -81,6 +85,7 @@ class AiSettingsForm extends Component
 
         $modules->updateSettings(AiModule::KEY, $company, $this->user(), [
             'provider' => $provider->value,
+            'model_choice' => $this->modelChoice,
             'model' => trim($this->model) === '' ? null : trim($this->model),
             'api_keys' => $keys,
         ]);
@@ -97,6 +102,7 @@ class AiSettingsForm extends Component
         return view('ai::livewire.settings-form', [
             'providers' => AiProvider::cases(),
             'current' => $provider,
+            'models' => $provider->models(),
             'keyEnding' => is_string($stored) ? substr(Crypt::decryptString($stored), -4) : null,
         ]);
     }

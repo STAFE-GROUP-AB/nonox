@@ -21,7 +21,10 @@ class AiModule implements Module
 
     public const array PERMISSIONS = ['ai:use', 'ai:settings'];
 
-    public const array DEFAULTS = ['provider' => 'OPENAI', 'model' => null, 'api_keys' => []];
+    /** CHEAPEST: the provider's cheapest suitable model; SMARTEST: its best; CUSTOM: the model named in "model". */
+    public const array MODEL_CHOICES = ['CHEAPEST', 'SMARTEST', 'CUSTOM'];
+
+    public const array DEFAULTS = ['provider' => 'OPENAI', 'model_choice' => 'CHEAPEST', 'model' => null, 'api_keys' => []];
 
     public function key(): string
     {

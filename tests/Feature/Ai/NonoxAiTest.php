@@ -13,6 +13,7 @@ use App\Modules\Ai\Agents\SupplierInvoiceAgent;
 use App\Modules\Ai\Agents\VoucherAgent;
 use App\Modules\Ai\AiModule;
 use App\Modules\Ai\Livewire\AiSettingsForm;
+use App\Modules\Ai\Support\AiProvider;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -123,23 +124,40 @@ it('fills in a supplier invoice from the PDF through the chosen provider and sav
 
     SupplierInvoiceAgent::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->attachments->first() instanceof Document
         && str_contains($prompt->prompt, '4010 ')
-        && $prompt->model === 'gpt-5-mini'
+        && $prompt->model === $prompt->provider->cheapestTextModel()
         && $prompt->provider->driver() === 'openai');
 
     expect(SupplierInvoice::query()->count())->toBe(0);
 
     $audit = AuditLog::query()->where('action', 'ai.document_analyzed')->sole();
-    expect($audit->payload)->toMatchArray(['kind' => 'supplier_invoice', 'provider' => 'OPENAI', 'model' => 'gpt-5-mini'])
+    expect($audit->payload)->toMatchArray(['kind' => 'supplier_invoice', 'provider' => 'OPENAI', 'model' => AiProvider::OpenAi->models()['CHEAPEST']])
         ->and(json_encode($audit->payload))->not->toContain('7001');
 });
 
 it('uses the company\'s chosen model and provider', function () {
-    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['provider' => 'ANTHROPIC', 'model' => 'claude-sonnet-5-5', 'api_keys' => ['ANTHROPIC' => Crypt::encryptString('sk-ant-abcdefghijklmnopqrstuvwxyz0123456789')]]);
-    SupplierInvoiceAgent::fake([invoiceAnswer()]);
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['provider' => 'ANTHROPIC', 'model_choice' => 'CUSTOM', 'model' => 'claude-sonnet-5-5', 'api_keys' => ['ANTHROPIC' => Crypt::encryptString('sk-ant-abcdefghijklmnopqrstuvwxyz0123456789')]]);
+    // The second answer has more decimals than öre, as a model may give; it is rounded, not refused.
+    SupplierInvoiceAgent::fake([invoiceAnswer(), invoiceAnswer(['total' => 62.632828560952])]);
 
     Livewire::test(SupplierInvoiceEditor::class)->set('file', invoicePdf())->call('analyze')->assertSet('invoiceNumber', '7001');
 
     SupplierInvoiceAgent::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->model === 'claude-sonnet-5-5' && $prompt->provider->driver() === 'anthropic');
+
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['model_choice' => 'SMARTEST']);
+    Livewire::test(SupplierInvoiceEditor::class)->set('file', invoicePdf())->call('analyze')->assertSet('total', '62,63');
+
+    SupplierInvoiceAgent::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->model === $prompt->provider->smartestTextModel());
+});
+
+it('explains what using your own key means and shows the models the SDK picks', function () {
+    Livewire::test(AiSettingsForm::class, ['company' => $this->company])
+        ->assertSee('Det här innebär det att använda NONOX AI')
+        ->assertSee('NONOX tar inget betalt')
+        ->assertSee('Billigaste lämpliga modellen (rekommenderas)')
+        ->assertSee(AiProvider::OpenAi->models()['CHEAPEST'])
+        ->set('provider', 'GEMINI')
+        ->assertSee(AiProvider::Gemini->models()['CHEAPEST'])
+        ->assertSee('aistudio.google.com');
 });
 
 it('creates and links a supplier that is not in the register when the person ticks it', function () {

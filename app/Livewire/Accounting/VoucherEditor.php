@@ -25,6 +25,8 @@ use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Support\AiAnalysisException;
 use App\Support\Money\Money;
 use App\Support\Toast;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -206,7 +208,7 @@ class VoucherEditor extends Component
             return;
         }
 
-        $amount = fn (mixed $value): string => (float) $value === 0.0 ? '' : Money::parse((string) $value)->format(withCurrency: false);
+        $amount = fn (mixed $value): string => (float) $value === 0.0 ? '' : Money::parse((string) BigDecimal::of((string) $value)->toScale(2, RoundingMode::HalfUp))->format(withCurrency: false);
 
         $this->voucherDate = (string) ($answer['date'] ?: $this->voucherDate);
         $this->description = (string) ($answer['description'] ?? $this->description);

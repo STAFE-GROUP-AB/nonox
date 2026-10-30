@@ -23,6 +23,8 @@ use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Support\AiAnalysisException;
 use App\Support\Money\Money;
 use App\Support\Toast;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -208,7 +210,7 @@ class SupplierInvoiceEditor extends Component
             return;
         }
 
-        $amount = fn (mixed $value): string => Money::parse((string) $value)->format(withCurrency: false);
+        $amount = fn (mixed $value): string => Money::parse((string) BigDecimal::of((string) $value)->toScale(2, RoundingMode::HalfUp))->format(withCurrency: false);
 
         $this->supplierId = $answer['supplier_id'] === null ? $this->supplierId : (string) $answer['supplier_id'];
         $this->invoiceNumber = (string) ($answer['invoice_number'] ?? $this->invoiceNumber);
