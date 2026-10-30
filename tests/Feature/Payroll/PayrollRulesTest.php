@@ -83,3 +83,18 @@ it('shows every rule with its status to payroll staff', function () {
         ->assertSee('Ej kontrollerad')
         ->assertSee('regler saknas eller är inte kontrollerade');
 });
+
+it('imports the 2026 rules as unverified versions, leaving verified ones alone', function () {
+    $verified = testRule('prisbasbelopp', '2026-01-01', ['ore' => 1], '2026-12-31');
+
+    expect(Artisan::call('payroll:import-rules', ['year' => 2026]))->toBe(0);
+
+    $imported = PayrollRuleVersion::query()->whereNull('verified_at')->get();
+    $missing = RuleSet::for(CarbonImmutable::parse('2026-05-25'))->missing();
+
+    expect($imported->count())->toBeGreaterThan(30)
+        ->and($imported->every(fn (PayrollRuleVersion $rule): bool => str_starts_with($rule->source_url, 'https://') || str_starts_with($rule->source_url, 'http://')))->toBeTrue()
+        ->and($verified->fresh()->value)->toBe(['ore' => 1])
+        ->and($missing)->toContain('employer_contribution.full')
+        ->and($missing)->not->toContain('prisbasbelopp');
+});

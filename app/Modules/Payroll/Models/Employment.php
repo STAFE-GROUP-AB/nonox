@@ -4,13 +4,27 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Models;
 
+use App\Models\CostCenter;
+use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * An employment of an employee: form, salary, extent, schedule and dimensions.
+ *
+ * @property int $employee_id
+ * @property CarbonImmutable $start_date
+ * @property ?CarbonImmutable $end_date
+ * @property string $employment_type
+ * @property string $salary_form
+ * @property ?Money $monthly_salary_ore
+ * @property ?Money $hourly_rate_ore
+ * @property int $employment_rate_bp
+ * @property ?string $position_title
+ * @property ?int $cost_center_id
  */
 class Employment extends Model
 {
@@ -53,6 +67,12 @@ class Employment extends Model
             'vacation_days_per_year' => 'integer',
             'payment_day' => 'integer',
         ];
+    }
+
+    /** @return BelongsTo<CostCenter, $this> */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 
     /** @return BelongsTo<Employee, $this> */

@@ -1,8 +1,9 @@
 # ADR-012: Payroll (lön) – proposal and legal review
 
-- Status: **Proposed**. No payroll code is written until this ADR is accepted
-  and the questions below have answers from someone qualified (AGENTS.md §7,
-  Phase 4).
+- Status: **Superseded in scope by `PAYROLL_MODULE.md`** (2026-10-30), which
+  makes payroll an optional module and every rate versioned data that blocks
+  a run until a named, qualified person has verified it (`payroll:verify-rule`).
+  The questions below remain the checklist for that verification.
 - Date: 2026-10-29
 
 ## Why now
@@ -101,3 +102,17 @@ Booking
   they must be data with valid-from dates, never constants in code.
 - Payroll gets the same guarantees as the ledger: locked pay runs are
   immutable, corrections are new entries, everything is in the audit log.
+
+## Status of the questions (2026-10-30)
+
+Researched values with sources and quotes are in
+`app/Modules/Payroll/database/data/2026/rules.json` (imported unverified):
+employer contributions (31.42 %, reduced rates by birth year, the temporary
+youth reduction from 1 April 2026, the 1 000 kr threshold, regional support),
+särskild löneskatt, SINK, prisbasbelopp and inkomstbasbelopp, kostförmån,
+traktamente, milersättning, sjuklön (sjuklönelagen 6–8 §§), semester
+(semesterlagen 3–4, 16 a–b, 18 §§), gifts, friskvård, AGI deadlines and the
+AGI XML schema version 1.1. Still to research: car benefit formula, foreign
+per diem by country, AGI field codes, the engångsbelopp tables (published as
+HTML only) and the tax table file layout (SKV 433, edition 36).
+
