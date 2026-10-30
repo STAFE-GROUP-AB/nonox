@@ -38,6 +38,23 @@ use App\Models\VoucherNumberCounter;
 use App\Models\VoucherRow;
 use App\Models\VoucherRowHistory;
 use App\Models\VoucherSeries;
+use App\Modules\Payroll\Models\Absence;
+use App\Modules\Payroll\Models\Accumulator;
+use App\Modules\Payroll\Models\Benefit;
+use App\Modules\Payroll\Models\CollectiveAgreement;
+use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\Models\Expense;
+use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollInput;
+use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\PayslipLine;
+use App\Modules\Payroll\Models\PensionPlan;
+use App\Modules\Payroll\Models\RecurringInput;
+use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Payroll\Models\TimeReport;
+use App\Modules\Payroll\Models\WorkSchedule;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\MissingCompanyContext;
@@ -90,6 +107,23 @@ const COMPANY_SCOPED_MODELS = [
     BankTransaction::class => 'bankTransactionAttributes',
     RecurringInvoice::class => 'agreementAttributes',
     CompanyModule::class => ['module_key' => 'hemlig', 'enabled' => true],
+    WorkSchedule::class => 'payrollWorkScheduleAttributes',
+    CollectiveAgreement::class => 'payrollCollectiveAgreementAttributes',
+    PensionPlan::class => 'payrollPensionPlanAttributes',
+    Employee::class => 'payrollEmployeeAttributes',
+    Employment::class => 'payrollEmploymentAttributes',
+    SalaryChange::class => 'payrollSalaryChangeAttributes',
+    PayCode::class => 'payrollPayCodeAttributes',
+    PayrollRun::class => 'payrollPayrollRunAttributes',
+    PayrollInput::class => 'payrollPayrollInputAttributes',
+    RecurringInput::class => 'payrollRecurringInputAttributes',
+    Payslip::class => 'payrollPayslipAttributes',
+    PayslipLine::class => 'payrollPayslipLineAttributes',
+    Accumulator::class => 'payrollAccumulatorAttributes',
+    Absence::class => 'payrollAbsenceAttributes',
+    Benefit::class => 'payrollBenefitAttributes',
+    Expense::class => 'payrollExpenseAttributes',
+    TimeReport::class => 'payrollTimeReportAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
@@ -321,6 +355,101 @@ function agreementRowAttributes(): array
         'net_ore' => 100,
         'position' => 0,
     ];
+}
+
+function payrollWorkScheduleAttributes(): array
+{
+    return ['name' => 'Heltid', 'pattern' => ['weeks' => [[8, 8, 8, 8, 8, 0, 0]]]];
+}
+
+function payrollCollectiveAgreementAttributes(): array
+{
+    return ['name' => 'Generisk', 'rules' => []];
+}
+
+function payrollPensionPlanAttributes(): array
+{
+    return ['name' => 'Pension', 'template' => 'CUSTOM', 'rules' => []];
+}
+
+function payrollEmployeeAttributes(): array
+{
+    return [
+        'employee_number' => random_int(1, 1_000_000),
+        'first_name' => 'Hemlig',
+        'last_name' => 'Anställd',
+        'personal_number' => '198001010000',
+        'birth_date' => '1980-01-01',
+    ];
+}
+
+function payrollEmploymentAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'start_date' => '2026-01-01', 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY', 'monthly_salary_ore' => 3_000_000];
+}
+
+function payrollSalaryChangeAttributes(): array
+{
+    $employment = Employment::create(payrollEmploymentAttributes());
+
+    return ['employee_id' => $employment->employee_id, 'employment_id' => $employment->id, 'valid_from' => '2026-04-01', 'monthly_salary_ore' => 3_100_000];
+}
+
+function payrollPayCodeAttributes(): array
+{
+    return ['code' => 'L'.random_int(1, 1_000_000), 'name_sv' => 'Månadslön', 'name_en' => 'Monthly salary', 'category' => 'SALARY', 'unit' => 'AMOUNT', 'is_taxable' => true, 'tax_method' => 'TABLE', 'is_contribution_basis' => true, 'is_vacation_basis' => true, 'is_pension_basis' => true];
+}
+
+function payrollPayrollRunAttributes(): array
+{
+    return ['period' => '2026-04', 'payment_date' => '2026-04-24'];
+}
+
+function payrollPayrollInputAttributes(): array
+{
+    return ['payroll_run_id' => PayrollRun::create(payrollPayrollRunAttributes())->id, 'employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id, 'amount_ore' => 100];
+}
+
+function payrollRecurringInputAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id, 'amount_ore' => 100, 'valid_from' => '2026-01-01'];
+}
+
+function payrollPayslipAttributes(): array
+{
+    $employment = Employment::create(payrollEmploymentAttributes());
+
+    return ['payroll_run_id' => PayrollRun::create(payrollPayrollRunAttributes())->id, 'employee_id' => $employment->employee_id, 'employment_id' => $employment->id];
+}
+
+function payrollPayslipLineAttributes(): array
+{
+    return ['payslip_id' => Payslip::create(payrollPayslipAttributes())->id, 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id, 'description' => 'Månadslön', 'amount_ore' => 100, 'tax_effect' => 'TABLE', 'explanation' => []];
+}
+
+function payrollAccumulatorAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'scope' => 'CALENDAR_YEAR', 'year' => 2026, 'key' => 'gross_ytd', 'value' => 100];
+}
+
+function payrollAbsenceAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'type' => 'SICK', 'date_from' => '2026-03-02', 'date_to' => '2026-03-03'];
+}
+
+function payrollBenefitAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'type' => 'MEAL', 'value_rule' => [], 'valid_from' => '2026-01-01'];
+}
+
+function payrollExpenseAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'type' => 'OUTLAY', 'date' => '2026-03-02', 'amount_ore' => 100];
+}
+
+function payrollTimeReportAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-03-02', 'hours' => '8', 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id];
 }
 
 function salesDocumentAttributes(): array

@@ -1,0 +1,64 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Payroll\Models;
+
+use App\Support\Money\MoneyCast;
+use App\Support\Tenancy\BelongsToCompany;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+/**
+ * A payslip of one employment in one run.
+ */
+class Payslip extends Model
+{
+    use BelongsToCompany;
+
+    protected $table = 'payslips';
+
+    /** @var list<string> */
+    protected $fillable = [
+        'company_id',
+        'payroll_run_id',
+        'employee_id',
+        'employment_id',
+        'gross_ore',
+        'taxable_ore',
+        'tax_ore',
+        'net_ore',
+        'contribution_basis_ore',
+        'employer_contribution_ore',
+        'pdf_path',
+        'published_at',
+        'hash',
+    ];
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'gross_ore' => MoneyCast::class,
+            'taxable_ore' => MoneyCast::class,
+            'tax_ore' => MoneyCast::class,
+            'net_ore' => MoneyCast::class,
+            'contribution_basis_ore' => MoneyCast::class,
+            'employer_contribution_ore' => MoneyCast::class,
+            'published_at' => 'immutable_datetime',
+        ];
+    }
+
+    /** @return HasMany<PayslipLine, $this> */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(PayslipLine::class);
+    }
+
+    /** @return BelongsTo<Employee, $this> */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
+    }
+}

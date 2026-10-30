@@ -8,6 +8,9 @@ use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\ModuleRegistry;
 use App\Modules\Payroll\Livewire\PayrollHome;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
+use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Policies\EmployeePolicy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -27,6 +30,8 @@ class PayrollServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/views', 'payroll');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+
+        Gate::policy(Employee::class, EmployeePolicy::class);
 
         Livewire::component(PayrollSettingsForm::NAME, PayrollSettingsForm::class);
         Livewire::component('payroll.home', PayrollHome::class);
