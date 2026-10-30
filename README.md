@@ -85,8 +85,8 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 
 Var medveten om var projektet står innan du installerar:
 
-- ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering och leverantörsfakturor. Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** lön och bokslut.
+- ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering, leverantörsfakturor, lön (modul) och NONOX AI (modul). Se listan under Funktioner ovan.
+- 🚧 **Inte byggt ännu:** bokslut, anläggningsregister och årsredovisning, EU- och exportfakturor samt utländsk valuta.
 
 ### 1. Installera verktygen (en gång per dator)
 
