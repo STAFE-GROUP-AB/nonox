@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Models\VatReport;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -86,6 +87,7 @@ it('asks the same number of queries for two clients as for six', function () {
         DB::flushQueryLog();
         DB::enableQueryLog();
         app(CompanyOverview::class)->for($this->consultant->fresh());
+        app(CompanyOverview::class)->months($this->consultant->fresh());
         $queries = count(DB::getQueryLog());
         DB::disableQueryLog();
 
@@ -121,4 +123,41 @@ it('is reached from the company menu at a Swedish address', function () {
 
     $this->get('/mina-foretag')->assertOk()->assertSee('Mina företag')->assertSee('Moms att redovisa');
     $this->get(route('dashboard'))->assertOk()->assertSee(route('companies.overview'));
+});
+
+it('shows each client month by month: posted, locked, VAT and AGI', function () {
+    $company = clientCompany();
+    $company->forceFill(['name' => 'Bistro Hamnen AB', 'locked_until_date' => '2026-01-31'])->save();
+    CurrentCompany::run($company, function () use ($company): void {
+        Bookkeeping::post($company->owner, $company, 10_000, 1930, 3001, '2026-03-05');
+        Bookkeeping::post($company->owner, $company, 20_000, 1930, 3001, '2026-03-20');
+        VatReport::query()->create([
+            'period_start' => '2026-02-01', 'period_end' => '2026-02-28', 'boxes' => [49 => 0],
+            'voucher_id' => Bookkeeping::post($company->owner, $company, 100, 1930, 3001, '2026-02-28')->id, 'created_by' => $company->owner->id,
+        ]);
+    });
+    $this->actingAs($this->consultant);
+
+    $status = app(CompanyOverview::class)->months($this->consultant);
+    $cells = $status['rows'][0]['cells'];
+
+    expect($status['months'])->toBe(['2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04'])
+        ->and($cells['2026-03']['posted'])->toBe(2)
+        ->and($cells['2026-01']['locked'])->toBeTrue()
+        ->and($cells['2026-02']['locked'])->toBeFalse()
+        ->and($cells['2026-01']['vat'])->toBe('LATE')
+        ->and($cells['2026-01']['vat_due'])->toBe('2026-03-12')
+        ->and($cells['2026-02']['vat'])->toBe('REPORTED')
+        ->and($cells['2026-03']['vat'])->toBe('DUE')
+        ->and($cells['2026-03']['vat_due'])->toBe('2026-05-12')
+        ->and($cells['2026-04']['vat'])->toBe('OPEN')
+        ->and($cells['2026-03']['agi'])->toBeNull();
+
+    Livewire::test(CompanyOverviewPage::class)
+        ->set('tab', 'manader')
+        ->assertSee('mar 2026')
+        ->assertSee('Bistro Hamnen AB')
+        ->assertSee('Moms försenad')
+        ->assertSee('Moms redovisad')
+        ->assertSee('2 ver.');
 });

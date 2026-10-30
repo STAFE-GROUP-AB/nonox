@@ -25,26 +25,33 @@ class CompanyOverviewPage extends Component
     #[Url(as: 'alla', except: false)]
     public bool $showAll = false;
 
+    /** uppgifter: what waits; manader: month by month. */
+    #[Url(as: 'vy', except: 'uppgifter')]
+    public string $tab = 'uppgifter';
+
     public function render(CompanyOverview $overview): View
     {
         /** @var User $user */
         $user = Auth::user();
-        $rows = $overview->for($user);
         $needle = mb_strtolower(trim($this->search));
         $digits = (string) preg_replace('/\D/', '', $needle);
+        $matches = fn (array $row): bool => $needle === ''
+            || str_contains(mb_strtolower($row['company']->name), $needle)
+            || ($digits !== '' && str_contains((string) preg_replace('/\D/', '', (string) $row['company']->org_number), $digits));
 
-        $shown = array_values(array_filter($rows, function (array $row) use ($needle, $digits): bool {
-            if (! $this->showAll && $needle === '' && $row['tasks'] === []) {
-                return false;
-            }
+        if ($this->tab === 'manader') {
+            $status = $overview->months($user);
 
-            if ($needle === '') {
-                return true;
-            }
+            return view('livewire.company.overview-months', [
+                'months' => $status['months'],
+                'rows' => array_values(array_filter($status['rows'], $matches)),
+                'currentId' => $user->current_team_id,
+            ]);
+        }
 
-            return str_contains(mb_strtolower($row['company']->name), $needle)
-                || ($digits !== '' && str_contains((string) preg_replace('/\D/', '', (string) $row['company']->org_number), $digits));
-        }));
+        $rows = $overview->for($user);
+
+        $shown = array_values(array_filter($rows, fn (array $row): bool => ($this->showAll || $needle !== '' || $row['tasks'] !== []) && $matches($row)));
 
         return view('livewire.company.overview', [
             'rows' => $shown,

@@ -198,7 +198,9 @@ it('shows the employer declaration due on Mina företag with the day from the ru
 
     expect($task['label'])->toBe('AGI att lämna, äldsta 2026-04')
         ->and($task['due'])->toBe('2026-05-12')
-        ->and($task['overdue'])->toBeFalse();
+        ->and($task['overdue'])->toBeFalse()
+        ->and(app(CompanyOverview::class)->months($this->owner->fresh())['rows'][0]['cells']['2026-04'])
+        ->toMatchArray(['agi' => 'DUE', 'agi_due' => '2026-05-12']);
 
     $this->agi->submitted($this->owner, $this->agi->generate($this->owner, $this->company, '2026-04'), 'KV-1');
 

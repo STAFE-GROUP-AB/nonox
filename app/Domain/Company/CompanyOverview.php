@@ -90,24 +90,16 @@ final class CompanyOverview
     public function for(User $user, ?CarbonImmutable $today = null): array
     {
         $today ??= CarbonImmutable::today();
-        $this->today = $today;
-        $this->agiRules = collect();
-        $companies = $user->companies();
-        $ids = $companies->pluck('id')->all();
+        $companies = $this->prepare($user, $today);
+        $ids = array_values($companies->pluck('id')->all());
 
         if ($ids === []) {
             return [];
         }
 
-        foreach ($companies as $company) {
-            $this->roles[$company->id] = $user->ownsTeam($company) ? null : (string) $company->getRelationValue('membership')?->getAttribute('role');
-        }
-
         // Read across the user's own companies at once; each id comes from their memberships.
         return CompanyScope::bypass(function () use ($companies, $ids, $today): array {
-            $modules = CompanyModule::query()->whereIn('company_id', $ids)->where('enabled', true)->get(['company_id', 'module_key', 'settings']);
-            $this->modules = $modules->groupBy('company_id')->map(fn (Collection $rows): array => $rows->pluck('module_key')->all())->all();
-            $this->payrollSettings = $modules->where('module_key', PayrollModule::KEY)->mapWithKeys(fn (CompanyModule $module): array => [$module->company_id => (array) $module->settings])->all();
+            $this->loadModules($ids);
 
             $drafts = $this->countBy(Voucher::query()->whereIn('company_id', $ids)->where('status', VoucherStatus::Draft->value));
             $toApprove = $this->countBy(SupplierInvoice::query()->whereIn('company_id', $ids)->where('status', SupplierInvoiceStatus::Registered->value));
@@ -220,10 +212,7 @@ final class CompanyOverview
             }
         }
 
-        $this->agiRules = PayrollRuleVersion::query()->where('key', 'agi.deadlines')->orderBy('valid_from')->get();
-        $this->agiVerified = PayrollRuleVerification::query()->whereIn('company_id', $ids)->whereIn('payroll_rule_version_id', $this->agiRules->modelKeys())
-            ->get(['company_id', 'payroll_rule_version_id'])->groupBy('company_id')
-            ->map(fn (Collection $rows): array => $rows->pluck('payroll_rule_version_id')->map(fn (mixed $id): int => (int) $id)->values()->all())->all();
+        $this->loadAgiRules($ids);
 
         $requests = $this->countBy(Absence::query()->whereIn('company_id', $ids)->where('status', 'REQUESTED'));
 
@@ -236,6 +225,142 @@ final class CompanyOverview
             'runs' => $this->countBy(PayrollRun::query()->whereIn('company_id', $ids)->where('status', PayrollRun::CALCULATED)),
             'requests' => $requests,
         ];
+    }
+
+    /**
+     * Months with what has happened in each company: vouchers posted, the
+     * period locked, the VAT period declared and the employer declaration
+     * submitted, the way a firm follows its clients month by month.
+     *
+     * @return array{
+     *     months: list<string>,
+     *     rows: list<array{
+     *         company: Company,
+     *         cells: array<string, array{posted: ?int, locked: bool, vat: ?string, vat_due: ?string, agi: ?string, agi_due: ?string}>
+     *     }>
+     * }
+     */
+    public function months(User $user, int $count = 6, ?CarbonImmutable $today = null): array
+    {
+        $today ??= CarbonImmutable::today();
+        $companies = $this->prepare($user, $today);
+        $ids = array_values($companies->pluck('id')->all());
+        $first = $today->startOfMonth()->subMonthsNoOverflow($count - 1);
+        $months = array_map(fn (int $i): string => $first->addMonthsNoOverflow($i)->format('Y-m'), range(0, $count - 1));
+
+        if ($ids === []) {
+            return ['months' => $months, 'rows' => []];
+        }
+
+        return CompanyScope::bypass(function () use ($companies, $ids, $months, $first, $today): array {
+            $this->loadModules($ids);
+            $payrollIds = array_values(array_filter($ids, fn (int $id): bool => $this->enabled($id, PayrollModule::KEY)));
+            $this->loadAgiRules($payrollIds);
+
+            $posted = Voucher::query()->whereIn('company_id', $ids)->where('status', VoucherStatus::Posted->value)
+                ->whereDate('voucher_date', '>=', $first->toDateString())->whereDate('voucher_date', '<=', $today->endOfMonth()->toDateString())
+                ->groupBy('company_id', DB::raw("to_char(voucher_date, 'YYYY-MM')"))
+                ->select('company_id', DB::raw("to_char(voucher_date, 'YYYY-MM') as month"), DB::raw('count(*) as aggregate'))->get()
+                ->mapWithKeys(fn (Voucher $voucher): array => ["{$voucher->company_id}:{$voucher->getAttribute('month')}" => (int) $voucher->getAttribute('aggregate')])->all();
+            $years = FiscalYear::query()->whereIn('company_id', $ids)->orderBy('start_date')->get()->groupBy('company_id');
+            $reported = VatReport::query()->whereIn('company_id', $ids)->get(['company_id', 'period_start'])
+                ->map(fn (VatReport $report): string => "{$report->company_id}:{$report->period_start->toDateString()}")->all();
+            $paid = $payrollIds === [] ? [] : PayrollRun::query()->whereIn('company_id', $payrollIds)->whereIn('status', [PayrollRun::APPROVED, PayrollRun::PAID, PayrollRun::POSTED])
+                ->select('company_id', DB::raw("to_char(payment_date, 'YYYY-MM') as month"))->distinct()->get()
+                ->map(fn (PayrollRun $run): string => "{$run->company_id}:{$run->getAttribute('month')}")->all();
+            $declared = $payrollIds === [] ? [] : AgiSubmission::query()->whereIn('company_id', $payrollIds)->whereIn('status', AgiSubmission::REPORTED)
+                ->select('company_id', 'period')->distinct()->get()->map(fn (AgiSubmission $submission): string => "{$submission->company_id}:{$submission->period}")->all();
+
+            $rows = $companies->map(function (Company $company) use ($months, $posted, $years, $reported, $paid, $declared, $today): array {
+                $id = $company->id;
+                $seesLedger = $this->may($id, 'reports:view');
+                $seesPayroll = $this->may($id, 'payroll:view');
+                $vatPeriods = [];
+
+                if ($company->vat_registered && $seesLedger) {
+                    foreach ($years->get($id, collect()) as $year) {
+                        foreach (VatPeriods::of($year, $company->vat_period) as $period) {
+                            $vatPeriods[$period['end']->format('Y-m')] = $period;
+                        }
+                    }
+                }
+
+                $cells = [];
+
+                foreach ($months as $month) {
+                    $period = $vatPeriods[$month] ?? null;
+                    $vatDue = $period === null ? null : VatDeadlines::for($company->vat_period, $period['end'], $company->turnover_over_40_msek);
+                    $agiDue = $seesPayroll && in_array("{$id}:{$month}", $paid, true) ? $this->agiDeadline($id, $month) : null;
+                    $monthEnd = CarbonImmutable::parse("{$month}-01")->endOfMonth()->startOfDay();
+
+                    $cells[$month] = [
+                        'posted' => $seesLedger ? ($posted["{$id}:{$month}"] ?? 0) : null,
+                        'locked' => $company->locked_until_date !== null && $company->locked_until_date->greaterThanOrEqualTo($monthEnd),
+                        'vat' => $period === null ? null : match (true) {
+                            in_array("{$id}:{$period['start']->toDateString()}", $reported, true) => 'REPORTED',
+                            $period['end']->greaterThanOrEqualTo($today) => 'OPEN',
+                            $vatDue !== null && $vatDue->lessThan($today) => 'LATE',
+                            default => 'DUE',
+                        },
+                        'vat_due' => $vatDue?->toDateString(),
+                        'agi' => ! $seesPayroll || ! in_array("{$id}:{$month}", $paid, true) ? null : match (true) {
+                            in_array("{$id}:{$month}", $declared, true) => 'REPORTED',
+                            $agiDue !== null && $agiDue->lessThan($today) => 'LATE',
+                            default => 'DUE',
+                        },
+                        'agi_due' => $agiDue?->toDateString(),
+                    ];
+                }
+
+                return ['company' => $company, 'cells' => $cells];
+            });
+
+            return ['months' => $months, 'rows' => array_values($rows->sortBy(fn (array $row): string => mb_strtolower($row['company']->name))->all())];
+        });
+    }
+
+    /**
+     * The user's companies, with the user's role in each remembered.
+     *
+     * @return Collection<int, Company>
+     */
+    private function prepare(User $user, CarbonImmutable $today): Collection
+    {
+        $this->today = $today;
+        $this->agiRules = collect();
+        $this->roles = [];
+        $companies = $user->companies();
+
+        foreach ($companies as $company) {
+            $this->roles[$company->id] = $user->ownsTeam($company) ? null : (string) $company->getRelationValue('membership')?->getAttribute('role');
+        }
+
+        return $companies;
+    }
+
+    /**
+     * @param  list<int>  $ids
+     */
+    private function loadModules(array $ids): void
+    {
+        $modules = CompanyModule::query()->whereIn('company_id', $ids)->where('enabled', true)->get(['company_id', 'module_key', 'settings']);
+        $this->modules = $modules->groupBy('company_id')->map(fn (Collection $rows): array => $rows->pluck('module_key')->all())->all();
+        $this->payrollSettings = $modules->where('module_key', PayrollModule::KEY)->mapWithKeys(fn (CompanyModule $module): array => [$module->company_id => (array) $module->settings])->all();
+    }
+
+    /**
+     * @param  list<int>  $ids  companies with payroll turned on
+     */
+    private function loadAgiRules(array $ids): void
+    {
+        if ($ids === []) {
+            return;
+        }
+
+        $this->agiRules = PayrollRuleVersion::query()->where('key', 'agi.deadlines')->orderBy('valid_from')->get();
+        $this->agiVerified = PayrollRuleVerification::query()->whereIn('company_id', $ids)->whereIn('payroll_rule_version_id', $this->agiRules->modelKeys())
+            ->get(['company_id', 'payroll_rule_version_id'])->groupBy('company_id')
+            ->map(fn (Collection $rows): array => $rows->pluck('payroll_rule_version_id')->map(fn (mixed $id): int => (int) $id)->values()->all())->all();
     }
 
     /**

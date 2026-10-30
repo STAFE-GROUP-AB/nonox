@@ -44,6 +44,10 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
   kommer från den kontrollerade regeln `agi.deadlines`; utan kontrollerad
   regel visas ingen dag.
+- Fliken Månad för månad visar de senaste sex månaderna per företag: antal
+  bokförda verifikationer, om månaden är låst, och för momsperioder som slutar
+  i månaden respektive månader med utbetald lön om momsdeklarationen och
+  arbetsgivardeklarationen är redovisade, att redovisa eller försenade.
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 
@@ -638,3 +642,4 @@ lönebeskeden låsta i databasen.
 | 0.17 | 2026-10-31 | Utlägg med bara kvittot: NONOX AI läser uppgifterna, den som godkänner kontrollerar och rättar. |
 | 0.18 | 2026-10-31 | Arkivpaket per räkenskapsår med SIE, rapporter, underlag, fakturor, moms, lön, behandlingshistorik och systemdokumentation, med SHA-256 för varje fil. |
 | 0.19 | 2026-10-31 | Mina företag: översikt över alla företag och vad som väntar i vart och ett, för byråer och ägare med flera företag. |
+| 0.20 | 2026-10-31 | Mina företag: sista dag för moms och AGI, och månadsstatus per företag. |

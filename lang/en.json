@@ -2147,5 +2147,17 @@
     "AGI att lämna, äldsta :month": "Employer declarations to submit, oldest :month",
     "försenad, sista dag var :date": "late, the last day was :date",
     "sista dag :date": "last day :date",
-    "Omsättningen är över 40 miljoner kronor om året (andra deklarationsdagar för moms)": "Turnover is above 40 million kronor a year (other VAT declaration days)"
+    "Omsättningen är över 40 miljoner kronor om året (andra deklarationsdagar för moms)": "Turnover is above 40 million kronor a year (other VAT declaration days)",
+    "redovisad": "reported",
+    "försenad": "late",
+    "att redovisa": "to report",
+    "pågår": "in progress",
+    "Per månad: antal bokförda verifikationer, om perioden är låst, och om momsen och arbetsgivardeklarationen för månaden är redovisade.": "Per month: the number of posted vouchers, whether the period is locked, and whether the month's VAT and employer declaration are reported.",
+    "Bokförda verifikationer": "Posted vouchers",
+    ":count ver.": ":count vch.",
+    "Låst": "Locked",
+    "Sista dag :date": "Last day :date",
+    "AGI": "AGI",
+    "Vad som väntar": "What is waiting",
+    "Månad för månad": "Month by month"
 }

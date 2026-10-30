@@ -2,6 +2,7 @@
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
 @endphp
 <div class="space-y-6">
+    @include('livewire.company.overview-tabs')
     <div class="flex flex-wrap items-end gap-4">
         <x-ui.field for="company_search" :label="__('Sök företag')" class="min-w-64 flex-1">
             <input id="company_search" type="search" class="{{ $input }} mt-1" wire:model.live.debounce.300ms="search" placeholder="{{ __('Namn eller organisationsnummer') }}">
