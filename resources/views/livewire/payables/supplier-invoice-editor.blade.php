@@ -34,6 +34,7 @@
             <p class="mt-1 text-xs text-gray-500">{{ __('Fakturan blir underlag till verifikationen när den bokförs.') }}</p>
         </div>
         @error('file') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+        @include('ai::partials.analyze-panel', ['canAnalyze' => $aiAvailable && ($file || $fileUrl)])
     </x-ui.card>
 
     <div class="space-y-6" x-data="supplierRows($wire.entangle('rows'), $wire.entangle('total'), $wire.entangle('vat'), $wire.entangle('vatTreatment'))">

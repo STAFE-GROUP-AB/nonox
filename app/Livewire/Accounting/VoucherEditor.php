@@ -19,10 +19,13 @@ use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherRow;
 use App\Models\VoucherSeries;
+use App\Modules\Ai\Actions\AnalyzeDocument;
+use App\Modules\Ai\Support\GozeroCore\GozeroCoreException;
 use App\Support\Money\Money;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -66,6 +69,9 @@ class VoucherEditor extends Component
     public array $uploads = [];
 
     public string $template = '';
+
+    /** @var ?array{notes: string, confidence: ?float, supplier: ?string} what NONOX AI proposed, for the person to check */
+    public ?array $aiResult = null;
 
     public string $templateAmount = '';
 
@@ -168,6 +174,51 @@ class VoucherEditor extends Component
         $this->attachUploads($attach, Voucher::query()->findOrFail($this->voucherId));
     }
 
+    /**
+     * Lets NONOX AI read the newest document and propose the voucher. The
+     * rows are filled in for the person to check; nothing is saved or posted.
+     */
+    public function analyze(AnalyzeDocument $analyze): void
+    {
+        $upload = $this->uploads === [] ? null : end($this->uploads);
+        $attachment = $upload === null && $this->voucherId !== null
+            ? VoucherAttachment::query()->where('voucher_id', $this->voucherId)->latest('id')->first()
+            : null;
+        [$path, $mime] = match (true) {
+            $upload instanceof TemporaryUploadedFile => [(string) $upload->getRealPath(), (string) $upload->getMimeType()],
+            $attachment instanceof VoucherAttachment => [Storage::disk(AttachToVoucher::DISK)->path($attachment->file_path), $attachment->mime],
+            default => [null, null],
+        };
+
+        if ($path === null) {
+            $this->toast(__('Dra först in underlaget som PDF eller bild.'), 'error');
+
+            return;
+        }
+
+        try {
+            $answer = $analyze->voucher($this->user(), $this->company(), $path, (string) $mime);
+        } catch (GozeroCoreException $exception) {
+            $this->toast($exception->getMessage(), 'error');
+
+            return;
+        }
+
+        $amount = fn (mixed $value): string => (float) $value === 0.0 ? '' : Money::parse((string) $value)->format(withCurrency: false);
+
+        $this->voucherDate = (string) ($answer['date'] ?: $this->voucherDate);
+        $this->description = (string) ($answer['description'] ?? $this->description);
+        $this->rows = array_values([...array_map(fn (mixed $row): array => [
+            ...$this->blankRow(),
+            'account' => (string) ((array) $row)['account'],
+            'debit' => $amount(((array) $row)['debit'] ?? 0),
+            'credit' => $amount(((array) $row)['credit'] ?? 0),
+            'description' => (string) (((array) $row)['description'] ?? ''),
+        ], (array) $answer['rows']), $this->blankRow()]);
+        $this->aiResult = ['notes' => (string) ($answer['notes'] ?? ''), 'confidence' => $answer['confidence'] ?? null, 'supplier' => null];
+        $this->toast(__('NONOX AI har föreslagit verifikationen. Kontrollera konton och belopp innan du sparar eller bokför.'));
+    }
+
     public function removeUpload(int $index): void
     {
         unset($this->uploads[$index]);
@@ -238,6 +289,7 @@ class VoucherEditor extends Component
                 : VoucherAttachment::query()->where('voucher_id', $this->voucherId)->orderBy('id')->get(),
             'accounts' => Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name']),
             'seriesOptions' => VoucherSeries::query()->orderBy('code')->get(['code', 'name']),
+            'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),
             'canPost' => $this->user()->hasTeamPermission($this->company(), 'vouchers:post'),
         ]);
     }

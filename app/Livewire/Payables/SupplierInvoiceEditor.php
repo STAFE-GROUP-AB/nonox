@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Payables;
 
+use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Payables\DeleteSupplierInvoiceDraft;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplierInvoice;
@@ -17,10 +18,13 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\User;
+use App\Modules\Ai\Actions\AnalyzeDocument;
+use App\Modules\Ai\Support\GozeroCore\GozeroCoreException;
 use App\Support\Money\Money;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -64,6 +68,9 @@ class SupplierInvoiceEditor extends Component
     public array $rows = [];
 
     public ?TemporaryUploadedFile $file = null;
+
+    /** @var ?array{notes: string, confidence: ?float, supplier: ?string} what NONOX AI filled in, for the person to check */
+    public ?array $aiResult = null;
 
     public function mount(?SupplierInvoice $invoice = null): void
     {
@@ -126,6 +133,64 @@ class SupplierInvoiceEditor extends Component
         $this->redirectRoute('payables.invoices.show', ['supplierInvoice' => $invoice->id]);
     }
 
+    /**
+     * Lets NONOX AI read the invoice and fill in the form. Nothing is saved:
+     * the person checks every field and saves as usual.
+     */
+    public function analyze(AnalyzeDocument $analyze): void
+    {
+        $invoice = $this->invoiceId === null ? null : SupplierInvoice::query()->findOrFail($this->invoiceId);
+        [$path, $mime] = match (true) {
+            $this->file !== null => [(string) $this->file->getRealPath(), (string) $this->file->getMimeType()],
+            $invoice instanceof SupplierInvoice && $invoice->file_path !== null => [Storage::disk(AttachToVoucher::DISK)->path($invoice->file_path), (string) $invoice->file_mime],
+            default => [null, null],
+        };
+
+        if ($path === null) {
+            $this->toast(__('Dra först in fakturan som PDF eller bild.'), 'error');
+
+            return;
+        }
+
+        try {
+            $answer = $analyze->supplierInvoice($this->user(), $this->company(), $path, (string) $mime);
+        } catch (GozeroCoreException $exception) {
+            $this->toast($exception->getMessage(), 'error');
+
+            return;
+        }
+
+        $amount = fn (mixed $value): string => Money::parse((string) $value)->format(withCurrency: false);
+
+        $this->supplierId = $answer['supplier_id'] === null ? $this->supplierId : (string) $answer['supplier_id'];
+        $this->invoiceNumber = (string) ($answer['invoice_number'] ?? $this->invoiceNumber);
+        $this->ocr = (string) ($answer['ocr'] ?? '');
+        $this->invoiceDate = (string) ($answer['invoice_date'] ?: $this->invoiceDate);
+        $this->dueDate = (string) ($answer['due_date'] ?? '');
+        $this->description = (string) ($answer['description'] ?? '');
+        $this->credit = (bool) ($answer['is_credit_note'] ?? false);
+        $this->vatTreatment = (string) ($answer['vat_treatment'] ?? 'DOMESTIC');
+        $this->total = $amount($answer['total'] ?? 0);
+        $this->vat = $amount($answer['vat_total'] ?? 0);
+        $this->rows = array_values(array_map(fn (mixed $row): array => [
+            'account' => (string) ((array) $row)['account'],
+            'amount' => $amount(((array) $row)['amount_excl_vat'] ?? 0),
+            'vat_rate' => (string) (((int) (((array) $row)['vat_rate_percent'] ?? 25)) * 100),
+            'description' => (string) (((array) $row)['description'] ?? ''),
+            'cost_center' => '',
+            'project' => '',
+        ], (array) $answer['rows']));
+
+        $this->aiResult = [
+            'notes' => (string) ($answer['notes'] ?? ''),
+            'confidence' => $answer['confidence'] ?? null,
+            'supplier' => $answer['supplier_id'] === null
+                ? trim(implode(', ', array_filter([(string) ($answer['supplier_name'] ?? ''), (string) ($answer['supplier_org_number'] ?? ''), filled($answer['supplier_bankgiro'] ?? null) ? 'bankgiro '.$answer['supplier_bankgiro'] : null])))
+                : null,
+        ];
+        $this->toast(__('NONOX AI har fyllt i fakturan. Kontrollera varje uppgift innan du sparar.'));
+    }
+
     public function delete(DeleteSupplierInvoiceDraft $delete): void
     {
         $delete($this->user(), SupplierInvoice::query()->findOrFail($this->invoiceId));
@@ -145,6 +210,7 @@ class SupplierInvoiceEditor extends Component
             'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
             'projects' => Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
             'treatments' => VatTreatment::cases(),
+            'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),
             'canRegister' => $invoice === null
                 ? $this->user()->can('create', [SupplierInvoice::class, $this->company()])
                 : $this->user()->can('register', $invoice),

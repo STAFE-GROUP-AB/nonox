@@ -175,6 +175,7 @@
         </div>
 
         @error('uploads') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+        @include('ai::partials.analyze-panel', ['canAnalyze' => $aiAvailable && ($uploads !== [] || $attachments->isNotEmpty())])
 
         @if($attachments->isNotEmpty() || $uploads !== [])
             <ul class="mt-4 divide-y divide-gray-100 text-sm">

@@ -338,6 +338,20 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Utbetalningsfil och arbetsgivardeklaration är inte byggda ännu. Semester­
   ersättning när en anställning upphör (28–29 §§) hör till slutlönen.
 
+## 5c. NONOX AI (modul)
+
+- NONOX AI läser en leverantörsfaktura, ett kvitto eller annat underlag och
+  fyller i ett förslag: leverantör, fakturauppgifter, belopp, moms och konton,
+  eller en hel verifikation. Förslaget sparas och bokförs aldrig av AI:n; det
+  gör en person efter kontroll, på samma sätt som när uppgifterna skrivs in för
+  hand. Därför ändrar modulen ingenting i verifikationsflödet.
+- Bara konton som finns aktiva i företagets kontoplan föreslås, och en
+  leverantör väljs bara när den redan finns i registret.
+- Underlaget skickas till den AI-leverantör företaget valt (GoZero Core AI)
+  med företagets egen API-nyckel, som lagras krypterad. Behandlingshistoriken
+  visar att en analys gjorts, med leverantörens jobb-id, kostnad i enheter och
+  säkerhet, men aldrig underlagets innehåll ([ADR-018](../adr/ADR-018-nonox-ai.md)).
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
