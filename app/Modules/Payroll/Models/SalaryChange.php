@@ -4,12 +4,23 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Models;
 
+use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * A salary change from a date; a past date drives retroactive pay.
+ *
+ * @property int $id
+ * @property int $company_id
+ * @property int $employee_id
+ * @property int $employment_id
+ * @property CarbonImmutable $valid_from
+ * @property ?Money $monthly_salary_ore
+ * @property ?Money $hourly_rate_ore
+ * @property ?string $reason
  */
 class SalaryChange extends Model
 {

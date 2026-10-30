@@ -13,10 +13,12 @@ use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PensionPlan;
+use App\Modules\Payroll\Models\SalaryChange;
 use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -155,6 +157,14 @@ class SaveEmployee
                 'vacation_payout_with_salary' => (bool) ($validated['vacation_payout_with_salary'] ?? false),
                 'pension_plan_id' => blank($validated['pension_plan_id'] ?? null) ? null : PensionPlan::query()->findOrFail((int) $validated['pension_plan_id'])->id,
             ])->save();
+
+            // With a salary history, a salary edited on the employee card is a new salary from this month.
+            if ($employment->wasChanged('monthly_salary_ore') && $employment->monthly_salary_ore !== null && SalaryChange::query()->where('employment_id', $employment->id)->exists()) {
+                SalaryChange::query()->updateOrCreate(
+                    ['employment_id' => $employment->id, 'valid_from' => CarbonImmutable::today()->startOfMonth()->toDateString()],
+                    ['employee_id' => $employee->id, 'monthly_salary_ore' => $employment->monthly_salary_ore, 'reason' => __('Ändrad i personalkortet')],
+                );
+            }
 
             // Only which fields changed is recorded; personal numbers and bank details never reach the log.
             Audit::record($isNew ? 'payroll.employee_created' : 'payroll.employee_updated', $employee, [

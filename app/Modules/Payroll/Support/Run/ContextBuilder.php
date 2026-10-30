@@ -9,6 +9,7 @@ use App\Modules\Payroll\Domain\Engine\AbsenceInput;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
+use App\Modules\Payroll\Domain\Engine\Steps\BaseSalary;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
@@ -18,10 +19,15 @@ use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\PensionPlan;
+use App\Modules\Payroll\Models\SalaryChange;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -31,6 +37,8 @@ use Illuminate\Support\Collection;
  */
 final class ContextBuilder
 {
+    public const string RETRO_CODE = 'RETROLON';
+
     public function __construct(private readonly VacationLedger $vacation) {}
 
     /**
@@ -51,7 +59,7 @@ final class ContextBuilder
             taxColumn: $employee->tax_column,
             taxAdjustmentPercentBp: null,
             salaryForm: $employment->salary_form,
-            monthlySalaryOre: $employment->monthly_salary_ore?->ore,
+            monthlySalaryOre: $this->salaryAt($employment, $periodStart),
             hourlyRateOre: $employment->hourly_rate_ore?->ore,
             employmentRateBp: $employment->employment_rate_bp,
             employmentStart: $employment->start_date,
@@ -64,7 +72,7 @@ final class ContextBuilder
 
                 return new PayInput($code->code, $input->note ?: $code->name_sv, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
                     $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore);
-            })->all()), ...$this->outlays($run, $employee)],
+            })->all()), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
                 ->where('scope', 'CALENDAR_YEAR')
@@ -178,6 +186,106 @@ final class ContextBuilder
 
             return new PayInput('UTLAGG', ExpenseClaims::label($expense), 'EXPENSE', false, 'NONE', false, false, amountOre: $expense->amount_ore->ore);
         })->all());
+    }
+
+    /**
+     * The monthly salary in force on the first day of a period: the latest
+     * salary change from that day or earlier, or the employment's salary when
+     * there is no history.
+     */
+    public static function salaryAt(Employment $employment, CarbonImmutable $day): ?int
+    {
+        $change = SalaryChange::query()
+            ->where('employment_id', $employment->id)
+            ->whereDate('valid_from', '<=', $day->toDateString())
+            ->orderByDesc('valid_from')
+            ->orderByDesc('id')
+            ->first();
+
+        return $change->monthly_salary_ore->ore ?? $employment->monthly_salary_ore?->ore;
+    }
+
+    /**
+     * Retroactive pay (PAYROLL_MODULE.md B.14): for each earlier approved
+     * month from the first salary change on, the monthly salary line as it
+     * should have been at the salary now in force for that month, less what
+     * was paid and any retroactive pay already paid for the month. Derived
+     * from the data each time, so it is never paid twice.
+     *
+     * TODO(legal-verify): absence deductions and vacation pay in those months
+     * were valued on the old salary and are not recalculated.
+     *
+     * @param  Collection<int, PayCode>  $payCodes  by id
+     * @return list<PayInput>
+     */
+    private function retroactive(PayrollRun $run, Employment $employment, Collection $payCodes): array
+    {
+        // The first entry is the salary the history started from; months before the first real change are not revisited.
+        $from = SalaryChange::query()->where('employment_id', $employment->id)->orderBy('valid_from')->orderBy('id')->skip(1)->first()?->valid_from->format('Y-m');
+
+        if ($from === null) {
+            return [];
+        }
+
+        $payslips = Payslip::query()
+            ->with('lines')
+            ->where('employment_id', $employment->id)
+            ->whereIn('payroll_run_id', PayrollRun::query()->whereIn('status', [PayrollRun::APPROVED, PayrollRun::PAID, PayrollRun::POSTED])->whereKeyNot($run->id)->select('id'))
+            ->get();
+        $runs = PayrollRun::query()->whereIn('id', $payslips->pluck('payroll_run_id'))->pluck('period', 'id');
+        $codes = $payCodes->pluck('code', 'id');
+        $owed = [];
+
+        foreach ($payslips as $payslip) {
+            $period = (string) $runs->get($payslip->payroll_run_id);
+
+            foreach ($payslip->lines as $line) {
+                /** @var PayslipLine $line */
+                $code = $codes->get($line->pay_code_id);
+                $month = $code === self::RETRO_CODE ? (string) ($line->explanation['retro_period'] ?? '') : $period;
+
+                if ($month < $from || $month >= $run->period) {
+                    continue;
+                }
+
+                if ($code === self::RETRO_CODE) {
+                    $owed[$month] = ($owed[$month] ?? 0) - $line->amount_ore->ore;
+
+                    continue;
+                }
+
+                $used = (int) ($line->explanation['monthly_salary_ore'] ?? 0);
+
+                if ($code !== BaseSalary::CODE || $used <= 0) {
+                    continue;
+                }
+
+                $expected = (int) self::salaryAt($employment, CarbonImmutable::parse("{$month}-01"));
+                $owed[$month] = ($owed[$month] ?? 0) + BigDecimal::of($line->amount_ore->ore)->multipliedBy($expected - $used)->dividedBy($used, 0, RoundingMode::HalfUp)->toInt();
+            }
+        }
+
+        $owed = array_filter($owed);
+
+        if ($owed === []) {
+            return [];
+        }
+
+        $payCode = $payCodes->first(fn (PayCode $code): bool => $code->code === self::RETRO_CODE)
+            ?? throw new PayrollBlockedException(__('Lönearten Retroaktiv lön saknas. Spara den nya lönen igen under Lön → Anställda, så läggs lönearten till.'));
+        ksort($owed);
+
+        return array_map(fn (string $month, int $amount): PayInput => new PayInput(
+            self::RETRO_CODE,
+            __('Retroaktiv lön för :period', ['period' => $month]),
+            $payCode->category,
+            $payCode->is_taxable,
+            $payCode->tax_method,
+            $payCode->is_contribution_basis,
+            $payCode->is_vacation_basis,
+            amountOre: $amount,
+            explanation: ['retro_period' => $month],
+        ), array_map('strval', array_keys($owed)), array_values($owed));
     }
 
     /**

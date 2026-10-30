@@ -385,6 +385,14 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   godkänd markeras de tidigare filerna som ersatta. Deklarationsdagen visas
   per månad från regeldata (agi.deadlines). Varje nedladdning loggas,
   eftersom filen innehåller personnummer.
+- Lönerevision: en ny månadslön gäller från den första i en månad och
+  sparas som lönehistorik. Lönekörningen använder lönen som gällde periodens
+  första dag. Har en månad redan attesterats med den gamla lönen räknas
+  skillnaden på månadslöneraden fram i nästa lönekörning som retroaktiv lön
+  per månad, skattad som engångsbelopp. Beloppet räknas fram ur data varje
+  gång (rätt lön minus utbetald lön minus redan utbetald retroaktiv lön för
+  månaden), så att samma skillnad aldrig betalas två gånger. Avdrag och
+  semesterlön i de månaderna räknas inte om.
 - Semesterersättning när en anställning upphör (28–29 §§) hör till slutlönen.
 
 ## 5c. NONOX AI (modul)

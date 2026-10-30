@@ -8,6 +8,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Actions\ChangeSalary;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\SaveEmployee;
 use App\Modules\Payroll\Actions\SavePensionPlan;
@@ -16,6 +17,7 @@ use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PensionPlan;
+use App\Modules\Payroll\Models\SalaryChange;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use Carbon\CarbonImmutable;
@@ -92,7 +94,25 @@ class Employees extends Component
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form');
+        $this->reset('showForm', 'editingId', 'form', 'raise');
+    }
+
+    /** @var array<string, string> */
+    public array $raise = ['valid_from' => '', 'salary' => '', 'reason' => ''];
+
+    public function changeSalary(ChangeSalary $change): void
+    {
+        $employee = Employee::query()->findOrFail((int) $this->editingId);
+        $salary = $change($this->user(), $this->company(), $employee, $this->raise['valid_from'], $this->raise['salary'], $this->raise['reason']);
+
+        $this->reset('raise');
+        $current = Employment::query()->whereKey($salary->employment_id)->first()?->monthly_salary_ore;
+
+        if ($current !== null) {
+            $this->form['salary'] = $current->format(withCurrency: false);
+        }
+
+        $this->toast(__('Ny lön för :name från :date är sparad. Månader som redan är utbetalda rättas med retroaktiv lön i nästa lönekörning.', ['name' => $employee->first_name, 'date' => $salary->valid_from->toDateString()]));
     }
 
     public function save(SaveEmployee $save): void
@@ -156,6 +176,7 @@ class Employees extends Component
             'canManage' => Gate::allows('manage', [Employee::class, $this->company()]),
             'members' => $this->showForm ? $this->company()->allUsers()->sortBy('name') : collect(),
             'pensionPlans' => PensionPlan::query()->orderBy('name')->get(),
+            'salaryHistory' => $this->editingId === null ? collect() : SalaryChange::query()->where('employee_id', $this->editingId)->orderByDesc('valid_from')->get(),
         ]);
     }
 

@@ -43,7 +43,7 @@ final class Additions implements Step
                 $input->vacationBasis,
                 $input->quantity,
                 $rate,
-                explanation: ['source' => 'input', 'category' => $input->category, 'benefit' => $input->category === 'BENEFIT'],
+                explanation: ['source' => 'input', 'category' => $input->category, 'benefit' => $input->category === 'BENEFIT', ...$input->explanation],
             ));
         }
     }

@@ -1910,5 +1910,22 @@
     "Omsättning upp till 40 miljoner kronor": "Turnover up to 40 million kronor",
     "Omsättning över 40 miljoner kronor": "Turnover over 40 million kronor",
     ":count individuppgift|:count individuppgifter": ":count individual return|:count individual returns",
-    ":count borttag|:count borttag": ":count removal|:count removals"
+    ":count borttag|:count borttag": ":count removal|:count removals",
+    "Ny lön för :name från :date är sparad. Månader som redan är utbetalda rättas med retroaktiv lön i nästa lönekörning.": "The new salary for :name from :date is saved. Months already paid are corrected with retroactive pay in the next payroll run.",
+    "Lönearten Retroaktiv lön saknas. Spara den nya lönen igen under Lön → Anställda, så läggs lönearten till.": "The pay code Retroactive pay is missing. Save the new salary again under Payroll → Employees and the pay code is added.",
+    "Retroaktiv lön för :period": "Retroactive pay for :period",
+    "En ny lön gäller från den första dagen i en månad.": "A new salary applies from the first day of a month.",
+    "Lönen ska vara större än noll.": "The salary must be more than zero.",
+    "Den anställde har ingen pågående anställning.": "The employee has no current employment.",
+    "Lönerevision med retroaktiv lön gäller månadslön. Ändra timlönen i personalkortet.": "Salary revision with retroactive pay applies to monthly salaries. Change the hourly rate on the employee card.",
+    "Ändra lönen i personalkortet för anställningens första månad.": "Change the salary on the employee card for the first month of the employment.",
+    "Lön när historiken började": "Salary when the history began",
+    "Ändrad i personalkortet": "Changed on the employee card",
+    "Lönerevision": "Salary revision",
+    "En ny månadslön gäller från den första i en månad. Har en månad redan betalats ut med den gamla lönen läggs skillnaden till som retroaktiv lön i nästa lönekörning, skattad som engångsbelopp.": "A new monthly salary applies from the first of a month. When a month was already paid at the old salary, the difference is added as retroactive pay in the next payroll run, taxed as a one-off payment.",
+    "Ny lön från": "New salary from",
+    "Till exempel 33 500": "For example 33 500",
+    "Orsak (frivilligt)": "Reason (optional)",
+    "Till exempel Lönerevision 2026": "For example Salary revision 2026",
+    "Spara ny lön": "Save new salary"
 }

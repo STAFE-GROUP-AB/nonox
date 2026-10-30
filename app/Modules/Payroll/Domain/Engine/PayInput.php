@@ -24,6 +24,8 @@ final readonly class PayInput
         public ?string $quantity = null,
         public ?int $rateOre = null,
         public ?int $amountOre = null,
+        /** @var array<string, mixed> carried onto the payslip line */
+        public array $explanation = [],
     ) {}
 
     /** The amount, or quantity × rate rounded half up to öre. */

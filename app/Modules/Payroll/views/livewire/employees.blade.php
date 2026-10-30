@@ -86,6 +86,10 @@
                 </div>
             </form>
         </x-ui.card>
+
+        @if($editingId && ($form['salary_form'] ?? '') === 'MONTHLY')
+            @include('payroll::partials.employee-salary')
+        @endif
     @endif
 
     <x-ui.card>
