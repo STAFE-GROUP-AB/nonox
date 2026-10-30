@@ -28,9 +28,13 @@ class CompanyController
         /** @var User $user */
         $user = $request->user();
 
+        // The company comes from the user's list of companies, where Laravel forbids lazy loading
+        // when there are several; load what the settings page reads.
+        $team = $this->findForMember($user, $company)->loadMissing(['owner', 'users', 'teamInvitations']);
+
         return view('teams.show', [
             'user' => $user,
-            'team' => $this->findForMember($user, $company),
+            'team' => $team,
         ]);
     }
 

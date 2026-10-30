@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-10">
+    <div class="max-w-3xl py-10 px-4 sm:px-6 lg:px-10 space-y-10">
         @if($invitations->isNotEmpty())
             <section class="bg-white shadow sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900">{{ __('Du är inbjuden') }}</h3>

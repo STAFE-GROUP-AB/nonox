@@ -35,18 +35,23 @@ final readonly class Brand
     /**
      * The company's own colours for the app itself, as the accent palette
      * the interface is built on (50 lightest to 950 darkest, each as
-     * "r g b" for CSS variables). Null when the company has not chosen a
-     * colour: the app then keeps the NONOX palette. Shade 600 carries white
-     * button text and 700 text on white, so both are darkened until they
-     * reach 4.5:1 (WCAG 2.2 AA), however light the chosen colour is.
+     * "r g b" for CSS variables). The accent colour is preferred, then the
+     * main colour; one that is nearly white (a background colour on the
+     * documents) is passed over. Null when there is no usable colour: the
+     * app then keeps the NONOX palette. Shade 500 carries white initials and
+     * marks, so it is darkened to 3:1; 600 carries white button text and 700
+     * text on white, so both reach 4.5:1 (WCAG 2.2 AA).
      *
      * @return array<int, string>|null
      */
     public static function interfacePalette(Company $company): ?array
     {
-        $color = $company->brand_color;
+        $color = collect([$company->brand_accent_color, $company->brand_color])
+            ->first(fn (mixed $candidate): bool => is_string($candidate)
+                && preg_match('/^#[0-9A-Fa-f]{6}$/', $candidate) === 1
+                && self::contrast($candidate, '#FFFFFF') >= 1.2);
 
-        if (! is_string($color) || preg_match('/^#[0-9A-Fa-f]{6}$/', $color) !== 1) {
+        if (! is_string($color)) {
             return null;
         }
 
@@ -55,13 +60,14 @@ final readonly class Brand
             self::rgb($hex),
             self::rgb($with),
         ));
-        $readable = function (string $hex) use ($mix): string {
-            for ($step = 0.0; self::contrast($hex, '#FFFFFF') < 4.5 && $step < 1.0; $step += 0.05) {
+        $readable = function (string $hex, float $ratio = 4.5) use ($mix): string {
+            for ($step = 0.0; self::contrast($hex, '#FFFFFF') < $ratio && $step < 1.0; $step += 0.05) {
                 $hex = $mix($hex, '#000000', 0.05);
             }
 
             return $hex;
         };
+        $mark = $readable($color, 3.0);
         $button = $readable($color);
         $text = $readable($mix($button, '#000000', 0.12));
 
@@ -71,7 +77,7 @@ final readonly class Brand
             200 => $mix($color, '#FFFFFF', 0.72),
             300 => $mix($color, '#FFFFFF', 0.52),
             400 => $mix($color, '#FFFFFF', 0.28),
-            500 => $color,
+            500 => $mark,
             600 => $button,
             700 => $text,
             800 => $mix($text, '#000000', 0.25),

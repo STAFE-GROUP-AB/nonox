@@ -5,7 +5,7 @@
         </h2>
     </x-slot>
 
-    <div class="max-w-3xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-3xl py-10 px-4 sm:px-6 lg:px-10">
         <livewire:company.create-company-form />
     </div>
 </x-app-layout>

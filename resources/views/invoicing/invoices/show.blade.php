@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-6xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-8">
         <x-ui.page-heading :title="$invoice->title()" :lead="($invoice->customer_snapshot['name'] ?? '').' · '.$invoice->invoice_date->toDateString()" />
         <x-ui.sales-nav />
         <div class="grid gap-6 lg:grid-cols-[1fr_24rem]">

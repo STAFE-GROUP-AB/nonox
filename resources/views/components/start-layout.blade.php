@@ -15,12 +15,12 @@
         :root {
             --paper: #f7f5f0;
             --card: #ffffff;
-            --ink: #1f1d1a;
+            --ink: #17171a;
             --muted: #625d55;
             --line: #e4dfd5;
-            --accent: #9e2a1b;
+            --accent: #d4330b;
             --accent-ink: #ffffff;
-            --accent-soft: #f6e6e2;
+            --accent-soft: #ffe5db;
             --good: #2f6b3a;
             --good-soft: #e5f0e6;
             --field: #ffffff;
@@ -30,14 +30,14 @@
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --paper: #171513;
-                --card: #211f1c;
+                --paper: #17171a;
+                --card: #202024;
                 --ink: #f2efe9;
                 --muted: #b2aba0;
                 --line: #36322c;
-                --accent: #e2735f;
+                --accent: #ff6a42;
                 --accent-ink: #1a0f0c;
-                --accent-soft: #3a211c;
+                --accent-soft: #3d1a10;
                 --good: #8fc79a;
                 --good-soft: #1f2e22;
                 --field: #1a1816;
@@ -59,8 +59,9 @@
         .shell { max-width: 36rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
         .brand { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.5rem; }
         .brand img { height: 2.25rem; width: auto; display: block; }
+        h1 { letter-spacing: -0.02em; }
         .brand span { color: var(--muted); font-size: .95rem; padding-left: .75rem; border-left: 1px solid var(--line); }
-        .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 2rem; }
+        .card { background: var(--card); border: 1px solid var(--line); border-radius: 28px; padding: 2.25rem; }
         h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 .5rem; letter-spacing: -.01em; }
         h2 { font-size: 1.15rem; margin: 0 0 .25rem; }
         p { margin: 0 0 1rem; }
@@ -76,7 +77,7 @@
         .hint { display: block; color: var(--muted); font-size: .875rem; margin-top: .35rem; }
         input[type=text], input[type=email], select {
             width: 100%; padding: .7rem .8rem; font: inherit; color: var(--ink);
-            background: var(--field); border: 1px solid var(--line); border-radius: 8px;
+            background: var(--field); border: 1px solid var(--line); border-radius: 12px;
         }
         input:focus, select:focus, button:focus-visible, a:focus-visible {
             outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 1px; border-color: var(--accent);
@@ -90,7 +91,7 @@
         .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: 1.75rem; }
         .button {
             display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-            padding: .8rem 1.4rem; border-radius: 8px; border: 1px solid transparent;
+            padding: .8rem 1.4rem; border-radius: 12px; border: 1px solid transparent;
             background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600;
             text-decoration: none; cursor: pointer;
         }
@@ -112,7 +113,7 @@
 </head>
 <body>
     <div class="shell">
-        <div class="brand"><img src="{{ asset('brand/nonox.svg') }}" alt="NONOX"><span>Ekonomisystem</span></div>
+        <div class="brand"><picture><source srcset="{{ asset('brand/nonox-light.svg') }}" media="(prefers-color-scheme: dark)"><img src="{{ asset('brand/nonox.svg') }}" alt="NONOX"></picture><span>Ekonomisystem</span></div>
 
         {{ $slot }}
 

@@ -17,6 +17,16 @@ it('shows the settings of a company the user belongs to', function () {
     expect(route('teams.show', $company->id, false))->toBe("/foretag/{$company->id}");
 });
 
+it('shows the settings when the user has several companies, as an accounting firm does', function () {
+    $user = User::factory()->withCompany()->create();
+    $first = $user->currentCompany();
+    $second = Company::factory()->create(['user_id' => $user->id]);
+    $first->users()->attach(User::factory()->create(), ['role' => 'bookkeeper']);
+
+    $this->actingAs($user)->get(route('teams.show', $first->id))->assertOk()->assertSee($first->name);
+    $this->actingAs($user)->get(route('teams.show', $second->id))->assertOk()->assertSee($second->name);
+});
+
 it('answers 404 for another company so its existence is not revealed', function () {
     $user = User::factory()->withCompany()->create();
     $other = Company::factory()->create();

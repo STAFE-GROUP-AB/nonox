@@ -19,11 +19,15 @@ the employee portal, and want the app to follow them.
 - The accent colour is a palette of CSS variables (`--accent-50` to
   `--accent-950`, "r g b"), used by Tailwind as `accent-*`. NONOX's
   palette is the default in `resources/css/app.css`.
-- When the company has chosen a main colour under Varumärke, the app layout
-  replaces the variables with a palette computed from it
-  (`Brand::interfacePalette`). Shades 600 (buttons, white text) and 700
-  (text on white) are darkened until they reach 4.5:1 against white, so a
-  light company colour still meets WCAG 2.2 AA.
+- When the company has chosen its own colours under Varumärke, the app
+  layout replaces the variables with a palette computed from them
+  (`Brand::interfacePalette`): the accent colour first, then the main
+  colour, passing over one that is nearly white (below 1.2:1 against white,
+  a background colour on the documents). Shade 500 (white initials and
+  marks) is darkened to 3:1, and 600 (buttons, white text) and 700 (text on
+  white) to 4.5:1, so a light company colour still meets WCAG 2.2 AA.
+- Pages use the full width beside the sidebar; only the short one-off forms
+  (getting started, new company) keep a reading width.
 - NONOX's bright vermilion (#ff4a1c) is shade 500 and is used for marks,
   avatars and the active menu item only: against white text it reaches
   3.4:1, too little for button text. Buttons use shade 600 (#d4330b, 4.9:1).

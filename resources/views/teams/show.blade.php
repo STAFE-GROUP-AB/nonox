@@ -14,14 +14,14 @@
         $tab = array_key_exists((string) request('flik'), $tabs) ? (string) request('flik') : 'uppgifter';
     @endphp
 
-    <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-10">
+    <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-10">
         @if(count($tabs) > 1)
             <nav class="flex flex-wrap gap-2" aria-label="{{ __('Företagsinställningar') }}">
                 @foreach($tabs as $key => $label)
                     <a href="{{ route('teams.show', ['company' => $team->id, 'flik' => $key]) }}" @class([
-                        'rounded-full px-4 py-1.5 text-sm font-medium',
-                        'bg-accent-600 text-white' => $tab === $key,
-                        'bg-white border border-gray-200 text-gray-700 hover:border-gray-300' => $tab !== $key,
+                        'rounded-full px-4 py-2 text-sm font-semibold transition',
+                        'bg-ink text-white' => $tab === $key,
+                        'bg-stone-200/60 text-gray-800 hover:bg-stone-200' => $tab !== $key,
                     ]) @if($tab === $key) aria-current="page" @endif>{{ $label }}</a>
                 @endforeach
             </nav>

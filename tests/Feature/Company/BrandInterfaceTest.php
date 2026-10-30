@@ -26,5 +26,19 @@ it('keeps button and link text readable whatever colour the company chooses', fu
 
     expect(Brand::contrast($hex($palette[600]), '#FFFFFF'))->toBeGreaterThanOrEqual(4.5)
         ->and(Brand::contrast($hex($palette[700]), '#FFFFFF'))->toBeGreaterThanOrEqual(4.5)
-        ->and($palette[500])->toBe(implode(' ', [hexdec(substr($color, 1, 2)), hexdec(substr($color, 3, 2)), hexdec(substr($color, 5, 2))]));
-})->with(['dark green' => '#1E6B52', 'light yellow' => '#FFE14D', 'pale pink' => '#FADADD', 'black' => '#000000']);
+        ->and(Brand::contrast($hex($palette[500]), '#FFFFFF'))->toBeGreaterThanOrEqual(3.0);
+})->with(['dark green' => '#1E6B52', 'light yellow' => '#FFE14D', 'pale pink' => '#E8A0A8', 'black' => '#000000']);
+
+it('prefers the accent colour and passes over a nearly white main colour', function () {
+    [, $company] = Bookkeeping::company();
+
+    $company->forceFill(['brand_color' => '#F6F4F0', 'brand_accent_color' => '#FD5532'])->save();
+    expect(Brand::interfacePalette($company)[50])->not->toBeNull()
+        ->and(Brand::interfacePalette($company)[600])->not->toBe('246 244 240');
+
+    $company->forceFill(['brand_color' => '#1E6B52', 'brand_accent_color' => null])->save();
+    expect(Brand::interfacePalette($company)[500])->toBe('30 107 82');
+
+    $company->forceFill(['brand_color' => '#F6F4F0', 'brand_accent_color' => '#FFFFFF'])->save();
+    expect(Brand::interfacePalette($company))->toBeNull();
+});

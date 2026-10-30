@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-8">
         <x-ui.page-heading :title="__('Verifikationsserier')" :lead="__('Varje verifikation får ett löpnummer i en serie, till exempel A1, A2, A3. Serien visar varifrån verifikationen kommer.')" />
         <x-ui.bookkeeping-nav />
 

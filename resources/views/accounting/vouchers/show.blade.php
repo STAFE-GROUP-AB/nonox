@@ -5,7 +5,7 @@
 @endphp
 
 <x-app-layout>
-    <div class="max-w-7xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-8">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <x-ui.page-heading
                 :title="$voucher->isPosted() ? __('Verifikation :reference', ['reference' => $voucher->reference()]) : __('Utkast')"

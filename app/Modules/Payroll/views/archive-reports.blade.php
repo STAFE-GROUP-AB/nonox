@@ -1,5 +1,5 @@
 <x-app-layout>
-    <div class="max-w-5xl mx-auto py-10 px-4 sm:px-6 lg:px-8 space-y-8">
+    <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-8">
         <x-ui.page-heading :title="__('Lönearkiv')" :lead="__('Lönekörningar, lönebesked och arbetsgivardeklarationer, att läsa. Arkivet finns kvar även när lönemodulen är avstängd.')" />
         <nav class="flex flex-wrap gap-2" aria-label="{{ __('Lönearkiv') }}">
             @foreach(['payroll.archive' => __('Körningar och deklarationer'), 'payroll.archive.reports' => __('Rapporter')] as $route => $label)
