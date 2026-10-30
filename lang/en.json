@@ -1439,7 +1439,6 @@
     "Ingen är anställd under perioden.": "Nobody is employed during the period.",
     ":name: regeln :key saknas eller är inte kontrollerad för :date. Se Lön → Regler.": ":name: the rule :key is missing or not verified for :date. See Payroll → Rules.",
     "Lönearten :code finns inte. Slå av och på lönemodulen för att lägga till systemets lönearter.": "The pay code :code does not exist. Turn the payroll module off and on to add the system pay codes.",
-    "Du beräknade lönekörningen och kan därför inte attestera den. Någon annan med rätt att attestera behöver göra det.": "You calculated the payroll run and therefore cannot approve it. Someone else with approval rights needs to do it.",
     "Lönekörningen är inte beräknad.": "The payroll run is not calculated.",
     "Du behöver behörighet till kontoplanen och löneinställningarna för att lägga till konton.": "You need permission to the chart of accounts and the payroll settings to add accounts.",
     "Lönekörningar": "Payroll runs",
@@ -1532,5 +1531,6 @@
     "Den anställde ser sina egna lönebesked under Mina lönebesked.": "The employee sees their own payslips under My payslips.",
     "Ingen inloggning": "No login",
     ":count regler är inte kontrollerade för utbetalningsdagen :date: :rules. Öppna Lön → Regler, jämför varje värde med källan och markera det som kontrollerat.": ":count rules are not checked for the payment date :date: :rules. Open Payroll → Rules, compare each value with its source and mark it as checked.",
-    "Kontrollera reglerna": "Check the rules"
+    "Kontrollera reglerna": "Check the rules",
+    "Du beräknade lönekörningen och kan därför inte attestera den. Någon annan med rätt att attestera behöver göra det. Är du ensam i företaget kan ägaren slå av kravet under Företagsinställningar → Moduler → Lön → Inställningar.": "You calculated the payroll run and therefore cannot approve it. Someone else with approval rights needs to do it. If you are alone in the company, the owner can turn this off under Company settings → Modules → Payroll → Settings."
 }

@@ -308,7 +308,7 @@ class PayrollRuns
         $this->modules->ensureEnabled(PayrollModule::KEY, $company);
 
         if ((new PayrollRunPolicy)->blockedBySegregation($user, $run)) {
-            throw ValidationException::withMessages(['run' => [__('Du beräknade lönekörningen och kan därför inte attestera den. Någon annan med rätt att attestera behöver göra det.')]]);
+            throw ValidationException::withMessages(['run' => [__('Du beräknade lönekörningen och kan därför inte attestera den. Någon annan med rätt att attestera behöver göra det. Är du ensam i företaget kan ägaren slå av kravet under Företagsinställningar → Moduler → Lön → Inställningar.')]]);
         }
 
         Gate::forUser($user)->authorize('approve', $run);
