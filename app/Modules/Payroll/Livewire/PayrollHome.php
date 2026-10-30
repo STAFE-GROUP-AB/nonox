@@ -7,6 +7,7 @@ namespace App\Modules\Payroll\Livewire;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
+use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayrollRun;
 use Carbon\CarbonImmutable;
@@ -36,7 +37,8 @@ class PayrollHome extends Component
                 ['title' => __('Arbetsgivare hos Skatteverket'), 'text' => __('Företaget behöver vara registrerat som arbetsgivare innan den första lönen betalas ut.'), 'link' => route('teams.show', $company->id), 'ready' => $company->employer_registered],
                 ['title' => __('Anställda'), 'text' => __('Lägg upp de anställda med skattetabell, bankkonto och anställningsform.'), 'link' => route('payroll.employees'), 'ready' => Employee::query()->exists()],
                 ['title' => __('Regler och skattetabeller'), 'text' => __('Arbetsgivaravgifter, skattetabeller och andra satser för året måste vara verifierade innan en lönekörning kan göras.'), 'link' => route('payroll.rules'), 'ready' => RuleSet::for(CarbonImmutable::today())->missing() === []],
-                ['title' => __('Första lönekörningen'), 'text' => __('Beräkna, kontrollera och attestera. Utbetalning, bokföring och arbetsgivardeklaration kommer härnäst.'), 'link' => route('payroll.runs.index'), 'ready' => PayrollRun::query()->where('status', '<>', PayrollRun::DRAFT)->exists()],
+                ['title' => __('Första lönekörningen'), 'text' => __('Beräkna, kontrollera och attestera. Hämta lönefilen till banken och bokför lönen.'), 'link' => route('payroll.runs.index'), 'ready' => PayrollRun::query()->where('status', '<>', PayrollRun::DRAFT)->exists()],
+                ['title' => __('Arbetsgivardeklaration'), 'text' => __('Skapa filen för utbetalningsmånaden och lämna in den hos Skatteverket senast deklarationsdagen.'), 'link' => route('payroll.agi'), 'ready' => AgiSubmission::query()->whereIn('status', AgiSubmission::REPORTED)->exists()],
             ],
         ]);
     }

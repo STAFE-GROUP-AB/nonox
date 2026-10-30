@@ -453,12 +453,14 @@ class PayrollRuns
 
             $payslipIds = Payslip::query()->where('payroll_run_id', $run->id)->pluck('id');
             $tax = (int) Payslip::query()->whereIn('id', $payslipIds)->sum('tax_ore');
-            $contributions = (int) Payslip::query()->whereIn('id', $payslipIds)->sum('employer_contribution_ore')
-                + (int) PayslipLine::query()->whereIn('payslip_id', $payslipIds)->whereIn('pay_code_id', PayCode::query()->where('code', 'SARSKILD_LONESKATT')->select('id'))->sum('amount_ore');
+            // What the arbetsgivardeklaration debits: withheld tax and employer contributions. Särskild löneskatt
+            // on pension is paid through the company's preliminary tax and stays on 2514 until it is.
+            // TODO(legal-verify): how särskild löneskatt on pension costs reaches the tax account.
+            $contributions = (int) Payslip::query()->whereIn('id', $payslipIds)->sum('employer_contribution_ore');
 
             $voucher = app(BookVoucher::class)->rows($user, $company, $date, __('Skatt och avgifter, :title', ['title' => $run->title()]), 'L', array_values(array_filter([
                 $tax > 0 ? ['account' => SalaryVoucher::TAX, 'amount' => $tax, 'description' => __('Personalskatt')] : null,
-                $contributions > 0 ? ['account' => SalaryVoucher::CONTRIBUTIONS_LIABILITY, 'amount' => $contributions, 'description' => __('Arbetsgivaravgifter och särskild löneskatt')] : null,
+                $contributions > 0 ? ['account' => SalaryVoucher::CONTRIBUTIONS_LIABILITY, 'amount' => $contributions, 'description' => __('Arbetsgivaravgifter')] : null,
                 ['account' => self::TAX_ACCOUNT, 'amount' => -($tax + $contributions), 'description' => __('Skattekontot')],
             ])), VoucherSource::Payroll, $run);
 

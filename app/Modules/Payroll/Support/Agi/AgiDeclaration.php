@@ -1,0 +1,192 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Payroll\Support\Agi;
+
+use App\Modules\Payroll\Domain\Engine\PayslipLineResult;
+use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\PayslipLine;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * What a company declares for one payment month (PAYROLL_MODULE.md B.13):
+ * every approved run paid in the month, summed per employee into an
+ * individuppgift, and the totals for the huvuduppgift. Runs the current
+ * company's scope.
+ *
+ * Amounts are reported in whole kronor, dropping the öre.
+ * TODO(legal-verify): Skatteverket's rounding of amounts with öre, and
+ * whether the summed contributions may differ from Skatteverket's own
+ * calculation per individual by the öre dropped.
+ */
+final class AgiDeclaration
+{
+    /** Runs whose payslips are fixed and paid out in the month. */
+    public const array DECLARED_STATUSES = [PayrollRun::APPROVED, PayrollRun::PAID, PayrollRun::POSTED];
+
+    private const array CAR_BENEFIT = ['BILFORMAN'];
+
+    private const array FUEL_BENEFIT = ['DRIVMEDELSFORMAN'];
+
+    private const array MILEAGE = ['MILERSATTNING'];
+
+    private const array PER_DIEM = ['TRAKTAMENTE_HEL', 'TRAKTAMENTE_HALV', 'TRAKTAMENTE_NATT'];
+
+    private const int ORE_PER_KRONA = 100;
+
+    /**
+     * @param  array<int, AgiIndividual>  $individuals  by employee id
+     * @param  list<int>  $runIds
+     */
+    private function __construct(
+        public readonly string $period,
+        public readonly array $individuals,
+        public readonly int $taxOre,
+        public readonly int $contributionsOre,
+        public readonly array $runIds,
+    ) {}
+
+    /**
+     * @throws ValidationException when a run paid in the month is not approved, or an amount would be negative
+     */
+    public static function for(string $period): self
+    {
+        $month = CarbonImmutable::parse("{$period}-01");
+        $runs = PayrollRun::query()
+            ->whereBetween('payment_date', [$month->startOfMonth()->toDateString(), $month->endOfMonth()->toDateString()])
+            ->get();
+
+        $open = $runs->reject(fn (PayrollRun $run): bool => in_array($run->status, self::DECLARED_STATUSES, true));
+
+        if ($open->isNotEmpty()) {
+            throw ValidationException::withMessages(['period' => [__('Lönekörningen :title betalas ut i månaden men är inte attesterad. Attestera den eller ändra utbetalningsdagen först.', ['title' => $open->first()->title()])]]);
+        }
+
+        $payslips = Payslip::query()->with(['employee', 'lines'])->whereIn('payroll_run_id', $runs->pluck('id'))->get();
+        $codes = PayCode::query()->pluck('code', 'id');
+        $individuals = [];
+
+        foreach ($payslips->groupBy('employee_id') as $employeePayslips) {
+            $employee = $employeePayslips->first()?->employee;
+
+            if (! $employee instanceof Employee) {
+                continue;
+            }
+
+            $individual = self::individual($employee, $employeePayslips, $codes);
+
+            if ($individual !== null) {
+                $individuals[$individual->employeeId] = $individual;
+            }
+        }
+
+        ksort($individuals);
+
+        return new self(
+            $period,
+            $individuals,
+            (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->tax_ore->ore),
+            (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->employer_contribution_ore->ore),
+            array_values($runs->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()),
+        );
+    }
+
+    public function taxKronor(): int
+    {
+        return intdiv($this->taxOre, self::ORE_PER_KRONA);
+    }
+
+    public function contributionsKronor(): int
+    {
+        return intdiv($this->contributionsOre, self::ORE_PER_KRONA);
+    }
+
+    /**
+     * The employee's own payment lowers the benefit values as one line among
+     * the other benefits; when it pays for the car or fuel, the reduction is
+     * moved there so no field goes below nothing.
+     *
+     * @param  array{cash: int, other: int, car: int, fuel: int}  $amounts
+     * @return array{cash: int, other: int, car: int, fuel: int}
+     */
+    private static function ownPaymentAcrossBenefits(array $amounts): array
+    {
+        foreach (['car', 'fuel'] as $field) {
+            if ($amounts['other'] >= 0) {
+                break;
+            }
+
+            $moved = min($amounts[$field], -$amounts['other']);
+            $amounts[$field] -= $moved;
+            $amounts['other'] += $moved;
+        }
+
+        return $amounts;
+    }
+
+    /**
+     * @param  Collection<int, Payslip>  $payslips
+     * @param  Collection<int, string>  $codes
+     */
+    private static function individual(Employee $employee, Collection $payslips, Collection $codes): ?AgiIndividual
+    {
+        $amounts = ['cash' => 0, 'other' => 0, 'car' => 0, 'fuel' => 0];
+        $mileage = false;
+        $perDiem = false;
+
+        foreach ($payslips->flatMap->lines as $line) {
+            /** @var PayslipLine $line */
+            $code = (string) ($codes[$line->pay_code_id] ?? '');
+            $amount = $line->amount_ore->ore;
+
+            $mileage = $mileage || in_array($code, self::MILEAGE, true);
+            $perDiem = $perDiem || in_array($code, self::PER_DIEM, true);
+
+            if (! in_array($line->tax_effect, [PayslipLineResult::TAX_TABLE, PayslipLineResult::TAX_ONE_OFF], true)) {
+                continue;
+            }
+
+            $field = match (true) {
+                in_array($code, self::CAR_BENEFIT, true) => 'car',
+                in_array($code, self::FUEL_BENEFIT, true) => 'fuel',
+                ($line->explanation['benefit'] ?? false) === true => 'other',
+                default => 'cash',
+            };
+            $amounts[$field] += $amount;
+        }
+
+        $amounts = self::ownPaymentAcrossBenefits($amounts);
+        $tax = (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->tax_ore->ore);
+
+        if (min($amounts) < 0 || $tax < 0) {
+            throw ValidationException::withMessages(['period' => [__('Beloppen för :name blir negativa för månaden. Arbetsgivardeklarationen tar bara positiva belopp; rätta en tidigare månad i stället.', ['name' => "{$employee->first_name} {$employee->last_name}"])]]);
+        }
+
+        if (array_sum($amounts) === 0 && $tax === 0 && ! $mileage && ! $perDiem) {
+            return null;
+        }
+
+        return new AgiIndividual(
+            employeeId: $employee->id,
+            specificationNumber: max(1, (int) $employee->employee_number),
+            cashKronor: intdiv($amounts['cash'], self::ORE_PER_KRONA),
+            otherBenefitsKronor: intdiv($amounts['other'], self::ORE_PER_KRONA),
+            carBenefitKronor: intdiv($amounts['car'], self::ORE_PER_KRONA),
+            fuelBenefitKronor: intdiv($amounts['fuel'], self::ORE_PER_KRONA),
+            taxKronor: intdiv($tax, self::ORE_PER_KRONA),
+            taxForm: match ($employee->tax_residence) {
+                'NON_RESIDENT_SINK' => AgiIndividual::TAX_SINK,
+                'NON_RESIDENT_A_SINK' => AgiIndividual::TAX_A_SINK,
+                default => AgiIndividual::TAX_PRELIMINARY,
+            },
+            mileage: $mileage,
+            perDiem: $perDiem,
+        );
+    }
+}

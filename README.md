@@ -63,7 +63,9 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Självservice på Min sida: sjukanmälan, vård av barn och semesteransökan som godkänns under Lön → Ansökningar, med e-post åt båda håll.
 - ✅ Eget varumärke per företag: logga och färger på fakturor, offerter, order, lönebesked och Min sida.
 - ✅ Lön: semester enligt semesterlagen (sammalöneregeln, procentregeln, semesterersättning med lönen) med saldo på lönebeskedet och Min sida, helgarbete (9 §), sparade dagar och semesterårsskifte, och semesterlöneskuld som rapport och månadsbokföring.
-- 🚧 Lön: förmåner, utlägg, utbetalningsfil och arbetsgivardeklaration (AGI).
+- ✅ Lön: förmåner (kost, bil, drivmedel), traktamente och milersättning, tjänstepension med särskild löneskatt, utlägg med kvitto från Min sida, lönefil till banken (pain.001, SALA) och bokföring mot skattekontot.
+- ✅ Lön: arbetsgivardeklaration (AGI) per utbetalningsmånad som XML enligt Skatteverkets schema 1.1, med rättelser och borttag, kvittens och deklarationsdagar.
+- 🚧 Lön: rapporter, årsskifte, slutlön, retroaktiv lön, lönearkiv och flytt av lönedata.
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).

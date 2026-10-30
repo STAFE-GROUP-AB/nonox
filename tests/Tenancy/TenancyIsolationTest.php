@@ -40,6 +40,7 @@ use App\Models\VoucherRowHistory;
 use App\Models\VoucherSeries;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
+use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Benefit;
 use App\Modules\Payroll\Models\CollectiveAgreement;
 use App\Modules\Payroll\Models\Employee;
@@ -131,6 +132,7 @@ const COMPANY_SCOPED_MODELS = [
     PayrollRuleVerification::class => 'payrollRuleVerificationAttributes',
     VacationLiabilitySnapshot::class => 'payrollVacationLiabilityAttributes',
     VacationYearClosing::class => 'payrollVacationYearClosingAttributes',
+    AgiSubmission::class => 'payrollAgiSubmissionAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
@@ -485,6 +487,14 @@ function payrollVacationYearClosingAttributes(): array
         'days_earned' => 25, 'days_taken' => 20, 'saved_days_used' => 0, 'days_saved' => 5, 'days_paid_out' => 0,
         'payout_ore' => 0, 'variable_basis_ore' => 0, 'variable_pay_ore' => 0,
         'closed_by' => User::factory()->create()->id,
+    ];
+}
+
+function payrollAgiSubmissionAttributes(): array
+{
+    return [
+        'period' => '2026-03', 'sequence' => random_int(1, 1_000_000), 'xml_path' => 'agi/test.xml', 'sha256' => str_repeat('a', 64),
+        'tax_ore' => 0, 'contributions_ore' => 0, 'individuals' => [], 'generated_by' => User::factory()->create()->id,
     ];
 }
 

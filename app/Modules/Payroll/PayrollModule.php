@@ -80,7 +80,7 @@ final class PayrollModule implements Module
         return [
             'owner' => array_values(array_diff(self::PERMISSIONS, ['payroll:view-sensitive'])),
             'admin' => ['payroll:view', 'payroll:approve', 'payroll:archive-view', 'payroll:settings'],
-            'accountant' => ['payroll:view', 'payroll:post', 'payroll:archive-view'],
+            'accountant' => ['payroll:view', 'payroll:post', 'payroll:agi-submit', 'payroll:archive-view'],
             'auditor' => ['payroll:archive-view'],
             'payroll_admin' => $payroll,
             'employee' => self::SELF_SERVICE,

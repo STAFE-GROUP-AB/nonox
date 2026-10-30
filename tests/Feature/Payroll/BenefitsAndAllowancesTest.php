@@ -104,6 +104,7 @@ it('adds the pension premium and special payroll tax as the employer\'s cost and
     expect($by(7410))->toBe(144_000)
         ->and($by(2740))->toBe(-144_000)
         ->and($by(7530))->toBe(34_934)
+        ->and($by(2514))->toBe(-34_934)
         ->and($rows->sum(fn ($row) => $row->debit_ore->ore - $row->credit_ore->ore))->toBe(0);
 });
 

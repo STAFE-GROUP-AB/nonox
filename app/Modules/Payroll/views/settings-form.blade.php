@@ -17,6 +17,7 @@
         'payslip_delivery' => __('Lönebesked'),
         'employee_self_service' => __('Självservice för anställda'),
         'agi_submission_mode' => __('Arbetsgivardeklaration'),
+        'agi_deadline_group' => __('Deklarationsdag för arbetsgivardeklarationen'),
         'holiday_calendar' => __('Helgdagskalender'),
     ];
     $values = [
@@ -29,6 +30,8 @@
         'PORTAL' => __('I portalen'), 'PORTAL_AND_EMAIL_NOTICE' => __('I portalen, med avisering via e-post'),
         'FILE' => __('Fil till Skatteverket'), 'API' => __('Direkt till Skatteverket'),
         'SE' => __('Sverige'),
+        'TURNOVER_UP_TO_40_MSEK' => __('Omsättning upp till 40 miljoner kronor'),
+        'TURNOVER_OVER_40_MSEK' => __('Omsättning över 40 miljoner kronor'),
         'NET' => __('Bara schemalagda arbetsdagar, färre dagar för färre arbetsdagar i veckan'),
         'GROSS' => __('Alla vardagar, 25 dagar för alla'),
         'TABLE' => __('Enligt skattetabell, som lönen'),

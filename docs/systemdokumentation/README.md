@@ -366,8 +366,26 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Skattekontot: när lönen är bokförd bokförs personalskatten (2710) och
   arbetsgivaravgifter med särskild löneskatt (2730) mot 1630 den dag
   Skatteverket drar dem, en gång per lönekörning.
-- Arbetsgivardeklarationen är inte byggd ännu. Semester­
-  ersättning när en anställning upphör (28–29 §§) hör till slutlönen.
+- Skattekontot bokas med personalskatt och arbetsgivaravgifter, det som
+  arbetsgivardeklarationen debiterar. Särskild löneskatt på pensions­
+  kostnader bokas på 2514 och betalas med företagets preliminärskatt.
+- Arbetsgivardeklaration (AGI): per utbetalningsmånad skapas en XML-fil
+  enligt Skatteverkets schema version 1.1 av alla attesterade lönekörningar
+  med utbetalning i månaden. Huvuduppgiften har summa arbetsgivaravgifter
+  (fält 487) och avdragen skatt (497); varje anställd får en individuppgift
+  med kontant ersättning (011), förmåner (012, 013, 018), avdragen skatt
+  (001, eller 274/275 för SINK och A-SINK), kryss för milersättning (050)
+  och traktamente (051). Specifikationsnumret är den anställdes nummer, så
+  att en rättelse ersätter rätt uppgift. Belopp anges i hela kronor utan
+  öre. Filen sparas med SHA-256 och valideras mot schemat när det finns
+  installerat. Statusen följs för hand: skapad, inlämnad (med kvittens­
+  nummer), godkänd eller avvisad. En ny fil för en redan inlämnad månad är
+  en rättelse: alla individuppgifter skickas om och den som inte längre
+  finns i månaden får en borttagsmarkering (fält 205). När rättelsen är
+  godkänd markeras de tidigare filerna som ersatta. Deklarationsdagen visas
+  per månad från regeldata (agi.deadlines). Varje nedladdning loggas,
+  eftersom filen innehåller personnummer.
+- Semesterersättning när en anställning upphör (28–29 §§) hör till slutlönen.
 
 ## 5c. NONOX AI (modul)
 

@@ -45,7 +45,7 @@ final class PayCodeCatalog
         'TRAKT_SKATTEPLIKTIG' => ['name_sv' => 'Traktamente, skattepliktig del', 'name_en' => 'Per diem, taxable part', 'category' => 'ALLOWANCE_TAXABLE', 'unit' => 'DAYS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => 7322, 'credit' => null],
         'UTLAGG' => ['name_sv' => 'Utlägg', 'name_en' => 'Outlay repayment', 'category' => 'EXPENSE', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 2890, 'credit' => null],
         'TJANSTEPENSION' => ['name_sv' => 'Tjänstepension', 'name_en' => 'Occupational pension', 'category' => 'PENSION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7410, 'credit' => 2740],
-        'SARSKILD_LONESKATT' => ['name_sv' => 'Särskild löneskatt på pension', 'name_en' => 'Special payroll tax on pension', 'category' => 'PENSION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7530, 'credit' => 2730],
+        'SARSKILD_LONESKATT' => ['name_sv' => 'Särskild löneskatt på pension', 'name_en' => 'Special payroll tax on pension', 'category' => 'PENSION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7530, 'credit' => 2514],
         'FORSKOTT' => ['name_sv' => 'Avdrag för förskott', 'name_en' => 'Advance deduction', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 1680],
         'NETTOAVDRAG' => ['name_sv' => 'Nettolöneavdrag', 'name_en' => 'Net deduction', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 2890],
     ];
@@ -60,6 +60,7 @@ final class PayCodeCatalog
         1680 => 'Andra kortfristiga fordringar',
         1930 => 'Företagskonto/checkkonto/affärskonto',
         2710 => 'Personalskatt',
+        2514 => 'Beräknad särskild löneskatt på pensionskostnader',
         2730 => 'Lagstadgade sociala avgifter och särskild löneskatt',
         2740 => 'Avtalade sociala avgifter',
         2890 => 'Övriga kortfristiga skulder',

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Payroll\Http\AgiFileController;
 use App\Modules\Payroll\Http\ExpenseReceiptController;
 use App\Modules\Payroll\Http\PayrollRunController;
 use App\Modules\Payroll\Http\PayslipController;
@@ -18,4 +19,6 @@ Route::view('/lon/semesterskuld', 'payroll::vacation-liability')->name('payroll.
 Route::view('/lon/korningar', 'payroll::runs')->name('payroll.runs.index');
 Route::get('/lon/korningar/{run}', PayrollRunController::class)->whereNumber('run')->name('payroll.runs.show');
 Route::get('/lon/korningar/{run}/lonefil', SalaryPaymentFileController::class)->whereNumber('run')->name('payroll.runs.payment-file');
+Route::view('/lon/arbetsgivardeklaration', 'payroll::agi')->name('payroll.agi');
+Route::get('/lon/arbetsgivardeklaration/{submission}/fil', AgiFileController::class)->whereNumber('submission')->name('payroll.agi.file');
 Route::get('/lon/lonebesked/{payslip}', PayslipController::class)->whereNumber('payslip')->name('payroll.payslips.pdf');

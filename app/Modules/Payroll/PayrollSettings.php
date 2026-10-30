@@ -28,6 +28,7 @@ final class PayrollSettings
         'payslip_delivery' => ['PORTAL', 'PORTAL_AND_EMAIL_NOTICE'],
         'employee_self_service' => null,
         'agi_submission_mode' => ['FILE', 'API'],
+        'agi_deadline_group' => ['TURNOVER_UP_TO_40_MSEK', 'TURNOVER_OVER_40_MSEK'],
         'holiday_calendar' => ['SE'],
     ];
 
@@ -53,6 +54,8 @@ final class PayrollSettings
         'payslip_delivery' => 'PORTAL',
         'employee_self_service' => true,
         'agi_submission_mode' => 'FILE',
+        // Skatteverket's declaration days depend on the company's taxable turnover.
+        'agi_deadline_group' => 'TURNOVER_UP_TO_40_MSEK',
         'holiday_calendar' => 'SE',
     ];
 }
