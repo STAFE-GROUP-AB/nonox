@@ -5,10 +5,19 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Models;
 
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * An absence. Sensitive: only payroll:view-sensitive may read the type, and every read is audit-logged (B.15).
+ *
+ * @property int $employee_id
+ * @property string $type
+ * @property CarbonImmutable $date_from
+ * @property CarbonImmutable $date_to
+ * @property ?string $hours
+ * @property string $status
  */
 class Absence extends Model
 {
@@ -42,5 +51,11 @@ class Absence extends Model
             'doctor_certificate_received' => 'boolean',
             'note' => 'encrypted',
         ];
+    }
+
+    /** @return BelongsTo<Employee, $this> */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
     }
 }

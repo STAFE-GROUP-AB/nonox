@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Domain\Engine\Steps;
 
 use App\Modules\Payroll\Domain\Engine\PayInput;
+use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
 use App\Modules\Payroll\Domain\Engine\PayslipDraft;
 use App\Modules\Payroll\Domain\Engine\PayslipLineResult;
@@ -27,6 +28,10 @@ final class Additions implements Step
             }
 
             $rate = $input->rateOre ?? ($input->quantity !== null && $input->amountOre === null ? $context->hourlyRateOre : null);
+
+            if ($input->amountOre === null && $rate === null) {
+                throw new PayrollBlockedException(__(':item saknar belopp eller timpris.', ['item' => $input->description]));
+            }
             $priced = new PayInput($input->code, $input->description, $input->category, $input->taxable, $input->taxMethod, $input->contributionBasis, $input->vacationBasis, $input->quantity, $rate, $input->amountOre);
 
             $draft->add(new PayslipLineResult(

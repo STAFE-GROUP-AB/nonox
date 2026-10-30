@@ -115,6 +115,7 @@ it('blocks instead of guessing', function (array $change, string $message) {
 })->with([
     'no tax table' => [['tax_table' => null], 'Skattetabell och kolumn saknas'],
     'part month by schedule' => [['employment_start' => '2026-04-16', 'settings' => ['proration_method' => 'WORK_SCHEDULE']], 'arbetsschema'],
+    'hours without a rate on a monthly salary' => [['inputs' => [['code' => 'OVERTID', 'description' => 'Övertid', 'category' => 'ADDITION', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution_basis' => true, 'vacation_basis' => false, 'quantity' => '2']]], 'saknar belopp eller timpris'],
     'one-off payment' => [['inputs' => [['code' => 'BONUS', 'description' => 'Bonus', 'category' => 'ADDITION', 'taxable' => true, 'tax_method' => 'ONE_OFF', 'contribution_basis' => true, 'vacation_basis' => false, 'amount_ore' => 500_000]]], 'engångsbelopp'],
 ]);
 

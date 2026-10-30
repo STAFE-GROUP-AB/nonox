@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * A year-to-date or vacation-year total per employee and key.
+ *
+ * @property int $employee_id
+ * @property string $scope
+ * @property int $year
+ * @property string $key
+ * @property int $value
  */
 class Accumulator extends Model
 {

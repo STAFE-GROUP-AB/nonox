@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Modules\Contracts\Module;
 use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Actions\SeedPayCodes;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
 
 /**
@@ -92,7 +93,7 @@ final class PayrollModule implements Module
     public function navigation(): array
     {
         return [
-            ['label' => __('Lön'), 'route' => 'payroll.index', 'permission' => 'payroll:view', 'active' => 'payroll.*'],
+            ['label' => __('Lön'), 'route' => 'payroll.runs.index', 'permission' => 'payroll:view', 'active' => 'payroll.*'],
         ];
     }
 
@@ -123,6 +124,7 @@ final class PayrollModule implements Module
     {
         app(ModuleManager::class)->seedSettings(self::KEY, $company, PayrollSettings::DEFAULTS);
         app(CreateDefaultVoucherSeries::class)($company);
+        app(SeedPayCodes::class)($company);
     }
 
     public function onDisable(Company $company, User $by): void {}

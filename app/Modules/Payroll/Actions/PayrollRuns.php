@@ -1,0 +1,358 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Payroll\Actions;
+
+use App\Models\Company;
+use App\Models\User;
+use App\Modules\ModuleManager;
+use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
+use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
+use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
+use App\Modules\Payroll\Domain\Rules\RuleSet;
+use App\Modules\Payroll\Models\Absence;
+use App\Modules\Payroll\Models\Accumulator;
+use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollInput;
+use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\PayslipLine;
+use App\Modules\Payroll\PayrollModule;
+use App\Modules\Payroll\Policies\PayrollRunPolicy;
+use App\Modules\Payroll\Support\Run\ContextBuilder;
+use App\Modules\Payroll\Support\Tax\MissingTaxTableException;
+use App\Support\Audit\Audit;
+use App\Support\Money\Money;
+use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
+use LogicException;
+
+/**
+ * The payroll run workflow (PAYROLL_MODULE.md B.10): create, add inputs and
+ * absence, calculate, reopen and approve. Every action checks that payroll
+ * is on, and every change is audited. Calculation either succeeds for every
+ * employee or changes nothing and lists what blocks it.
+ */
+class PayrollRuns
+{
+    public function __construct(
+        private readonly PayrollCalculator $calculator,
+        private readonly ContextBuilder $contexts,
+        private readonly ModuleManager $modules,
+    ) {}
+
+    public function create(User $user, Company $company, string $period, ?CarbonImmutable $paymentDate = null): PayrollRun
+    {
+        $this->modules->ensureEnabled(PayrollModule::KEY, $company);
+        Gate::forUser($user)->authorize('create', [PayrollRun::class, $company]);
+
+        $start = CarbonImmutable::createFromFormat('!Y-m', $period)
+            ?: throw ValidationException::withMessages(['period' => __('Välj månad.')]);
+
+        return CurrentCompany::run($company, function () use ($user, $company, $period, $start, $paymentDate): PayrollRun {
+            if (PayrollRun::query()->where('period', $period)->where('type', 'REGULAR')->exists()) {
+                throw ValidationException::withMessages(['period' => __('Det finns redan en lönekörning för :period.', ['period' => $start->translatedFormat('F Y')])]);
+            }
+
+            $run = PayrollRun::create(['period' => $period, 'payment_date' => $paymentDate ?? $this->defaultPaymentDate($company, $start)]);
+            Audit::record('payroll.run_created', $run, ['period' => $period, 'payment_date' => $run->payment_date->toDateString()], $company, $user);
+
+            return $run;
+        });
+    }
+
+    /**
+     * @param  array{employee_id: int|string, pay_code_id: int|string, quantity?: ?string, amount?: ?string, note?: ?string}  $input
+     */
+    public function addInput(User $user, PayrollRun $run, array $input): PayrollInput
+    {
+        $company = $this->open($user, $run);
+
+        $validated = Validator::make($input, [
+            'employee_id' => ['required', 'integer'],
+            'pay_code_id' => ['required', 'integer'],
+            'quantity' => ['nullable', 'regex:/^\d{1,6}([.,]\d{1,3})?$/'],
+            'amount' => ['nullable', 'string'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ], ['quantity.regex' => __('Skriv antal timmar eller enheter, till exempel 12,5.')])->validate();
+
+        if (blank($validated['quantity'] ?? null) === blank($validated['amount'] ?? null)) {
+            throw ValidationException::withMessages(['amount' => __('Skriv antingen antal eller belopp.')]);
+        }
+
+        try {
+            $amount = blank($validated['amount'] ?? null) ? null : Money::parse((string) $validated['amount']);
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['amount' => __('Beloppet går inte att läsa.')]);
+        }
+
+        return CurrentCompany::run($company, fn (): PayrollInput => DB::transaction(function () use ($user, $company, $run, $validated, $amount): PayrollInput {
+            Employee::query()->findOrFail((int) $validated['employee_id']);
+            PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
+
+            $input = PayrollInput::create([
+                'payroll_run_id' => $run->id,
+                'employee_id' => (int) $validated['employee_id'],
+                'pay_code_id' => (int) $validated['pay_code_id'],
+                'quantity' => blank($validated['quantity'] ?? null) ? null : str_replace(',', '.', (string) $validated['quantity']),
+                'amount_ore' => $amount?->ore,
+                'note' => $validated['note'] ?? null,
+                'source' => 'MANUAL',
+            ]);
+            $this->backToDraft($run);
+
+            Audit::record('payroll.input_added', $run, ['input_id' => $input->id, 'employee_id' => $input->employee_id], $company, $user);
+
+            return $input;
+        }));
+    }
+
+    public function removeInput(User $user, PayrollRun $run, PayrollInput $input): void
+    {
+        $company = $this->open($user, $run);
+
+        CurrentCompany::run($company, function () use ($user, $company, $run, $input): void {
+            DB::transaction(function () use ($run, $input): void {
+                $input->delete();
+                $this->backToDraft($run);
+            });
+
+            Audit::record('payroll.input_removed', $run, ['input_id' => $input->id], $company, $user);
+        });
+    }
+
+    /**
+     * Records approved absence for an employee: sick days, leave and other
+     * types, with the scheduled hours missed per day.
+     *
+     * @param  array{employee_id: int|string, type: string, date_from: string, date_to: string, hours: string}  $input
+     */
+    public function recordAbsence(User $user, PayrollRun $run, array $input): Absence
+    {
+        $company = $this->open($user, $run);
+
+        $validated = Validator::make($input, [
+            'employee_id' => ['required', 'integer'],
+            'type' => ['required', Rule::in(['SICK', 'VAB', 'PARENTAL', 'LEAVE_UNPAID', 'LEAVE_PAID', 'STUDY', 'MILITARY', 'OTHER'])],
+            'date_from' => ['required', 'date_format:Y-m-d'],
+            'date_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'hours' => ['required', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
+        ], ['hours.regex' => __('Skriv timmar per dag, till exempel 8 eller 7,5.')], ['date_from' => __('första dagen'), 'date_to' => __('sista dagen')])->validate();
+
+        return CurrentCompany::run($company, fn (): Absence => DB::transaction(function () use ($user, $company, $run, $validated): Absence {
+            Employee::query()->findOrFail((int) $validated['employee_id']);
+
+            $absence = Absence::create([
+                'employee_id' => (int) $validated['employee_id'],
+                'type' => $validated['type'],
+                'date_from' => $validated['date_from'],
+                'date_to' => $validated['date_to'],
+                'hours' => str_replace(',', '.', (string) $validated['hours']),
+                'status' => 'APPROVED',
+                'approved_by' => $user->id,
+            ]);
+            $this->backToDraft($run);
+
+            // The type is sensitive; the audit log records that absence was registered, not why.
+            Audit::record('payroll.absence_recorded', $absence, ['employee_id' => $absence->employee_id], $company, $user);
+
+            return $absence;
+        }));
+    }
+
+    /**
+     * Calculates every employment in the period. Either every payslip is
+     * calculated and stored, or nothing changes and the blockers are thrown.
+     *
+     * @throws ValidationException listing what blocks the run
+     */
+    public function calculate(User $user, PayrollRun $run): PayrollRun
+    {
+        $company = $this->open($user, $run);
+
+        return CurrentCompany::run($company, fn (): PayrollRun => DB::transaction(function () use ($user, $company, $run): PayrollRun {
+            /** @var PayrollRun $run */
+            $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
+            $rules = RuleSet::for($run->payment_date);
+            $settings = $this->modules->settings(PayrollModule::KEY, $company);
+            $payCodes = PayCode::query()->get()->keyBy('id');
+            $codeIds = $payCodes->pluck('id', 'code');
+            $employments = Employment::query()
+                ->with('employee')
+                ->whereDate('start_date', '<=', $run->periodEnd()->toDateString())
+                ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $run->periodStart()->toDateString()))
+                ->get();
+            $inputs = PayrollInput::query()->where('payroll_run_id', $run->id)->get()->groupBy('employee_id');
+            $results = [];
+            $blockers = [];
+
+            if ($employments->isEmpty()) {
+                throw ValidationException::withMessages(['run' => [__('Ingen är anställd under perioden.')]]);
+            }
+
+            foreach ($employments as $employment) {
+                $employee = $employment->employee ?? throw new LogicException("Employment {$employment->id} has no employee.");
+                $name = "{$employee->first_name} {$employee->last_name}";
+
+                try {
+                    $context = $this->contexts->build($run, $employee, $employment, $inputs->get($employee->id, collect()), $payCodes, $settings, $rules);
+                    $results[] = [$employment, $this->calculator->calculate($context)];
+                } catch (PayrollBlockedException|MissingTaxTableException $exception) {
+                    $blockers[] = "{$name}: {$exception->getMessage()}";
+                } catch (MissingPayrollRuleException $exception) {
+                    $blockers[] = __(':name: regeln :key saknas eller är inte kontrollerad för :date. Se Lön → Regler.', ['name' => $name, 'key' => $exception->key, 'date' => $exception->date->toDateString()]);
+                }
+            }
+
+            foreach ($results as [$employment, $result]) {
+                foreach ($result->lines as $line) {
+                    if (! $codeIds->has($line->code)) {
+                        $blockers[] = __('Lönearten :code finns inte. Slå av och på lönemodulen för att lägga till systemets lönearter.', ['code' => $line->code]);
+                    }
+                }
+            }
+
+            if ($blockers !== []) {
+                throw ValidationException::withMessages(['run' => array_values(array_unique($blockers))]);
+            }
+
+            $this->deletePayslips($run);
+
+            foreach ($results as [$employment, $result]) {
+                $payslip = Payslip::create([
+                    'payroll_run_id' => $run->id,
+                    'employee_id' => $employment->employee_id,
+                    'employment_id' => $employment->id,
+                    'gross_ore' => $result->gross(),
+                    'taxable_ore' => $result->taxableRegular() + $result->taxableOneOff(),
+                    'tax_ore' => $result->taxOre,
+                    'net_ore' => $result->netOre,
+                    'contribution_basis_ore' => $result->contributionBasis(),
+                    'employer_contribution_ore' => $result->employerContributionOre,
+                    'accumulator_deltas' => $result->accumulatorDeltas,
+                    'tax_explanation' => $result->taxExplanation,
+                    'contribution_explanation' => $result->contributionExplanation,
+                    'warnings' => $result->warnings,
+                ]);
+
+                foreach ($result->lines as $line) {
+                    PayslipLine::create([
+                        'payslip_id' => $payslip->id,
+                        'pay_code_id' => (int) $codeIds[$line->code],
+                        'description' => $line->description,
+                        'quantity' => $line->quantity,
+                        'rate_ore' => $line->rateOre,
+                        'amount_ore' => $line->amountOre,
+                        'tax_effect' => $line->taxEffect,
+                        'rule_version_id' => $line->ruleVersionId,
+                        'explanation' => $line->explanation,
+                    ]);
+                }
+            }
+
+            $run->forceFill([
+                'status' => PayrollRun::CALCULATED,
+                'calculated_by' => $user->id,
+                'calculated_at' => now(),
+                'rule_snapshot_hash' => $rules->snapshotHash(),
+            ])->save();
+
+            Audit::record('payroll.run_calculated', $run, ['period' => $run->period, 'payslips' => count($results), 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);
+
+            return $run;
+        }));
+    }
+
+    public function reopen(User $user, PayrollRun $run): PayrollRun
+    {
+        $company = $this->open($user, $run);
+
+        return CurrentCompany::run($company, fn (): PayrollRun => DB::transaction(function () use ($user, $company, $run): PayrollRun {
+            $this->backToDraft($run);
+            Audit::record('payroll.run_reopened', $run, ['period' => $run->period], $company, $user);
+
+            return $run;
+        }));
+    }
+
+    public function approve(User $user, PayrollRun $run): PayrollRun
+    {
+        $company = Company::query()->findOrFail($run->company_id);
+        $this->modules->ensureEnabled(PayrollModule::KEY, $company);
+
+        if ((new PayrollRunPolicy)->blockedBySegregation($user, $run)) {
+            throw ValidationException::withMessages(['run' => [__('Du beräknade lönekörningen och kan därför inte attestera den. Någon annan med rätt att attestera behöver göra det.')]]);
+        }
+
+        Gate::forUser($user)->authorize('approve', $run);
+
+        return CurrentCompany::run($company, fn (): PayrollRun => DB::transaction(function () use ($user, $company, $run): PayrollRun {
+            /** @var PayrollRun $run */
+            $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
+
+            if ($run->status !== PayrollRun::CALCULATED) {
+                throw ValidationException::withMessages(['run' => [__('Lönekörningen är inte beräknad.')]]);
+            }
+
+            foreach (Payslip::query()->where('payroll_run_id', $run->id)->get() as $payslip) {
+                foreach ($payslip->accumulator_deltas as $key => $delta) {
+                    $accumulator = Accumulator::query()->firstOrNew(['employee_id' => $payslip->employee_id, 'scope' => 'CALENDAR_YEAR', 'year' => $run->payment_date->year, 'key' => $key]);
+                    $accumulator->forceFill(['value' => (int) $accumulator->value + (int) $delta])->save();
+                }
+            }
+
+            $run->forceFill(['status' => PayrollRun::APPROVED, 'approved_by' => $user->id, 'approved_at' => now()])->save();
+            Audit::record('payroll.run_approved', $run, ['period' => $run->period, 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);
+
+            return $run;
+        }));
+    }
+
+    private function open(User $user, PayrollRun $run): Company
+    {
+        $company = Company::query()->findOrFail($run->company_id);
+        $this->modules->ensureEnabled(PayrollModule::KEY, $company);
+        Gate::forUser($user)->authorize('update', $run);
+
+        return $company;
+    }
+
+    /** A change to inputs or absence makes the calculation out of date. */
+    private function backToDraft(PayrollRun $run): void
+    {
+        $this->deletePayslips($run);
+        $run->forceFill(['status' => PayrollRun::DRAFT, 'calculated_by' => null, 'calculated_at' => null, 'rule_snapshot_hash' => null])->save();
+    }
+
+    private function deletePayslips(PayrollRun $run): void
+    {
+        $ids = Payslip::query()->where('payroll_run_id', $run->id)->pluck('id');
+        PayslipLine::query()->whereIn('payslip_id', $ids)->delete();
+        Payslip::query()->whereIn('id', $ids)->delete();
+    }
+
+    /**
+     * The company's payment day in the month, moved back to Friday when it
+     * falls on a weekend. TODO: public holidays (holiday calendar SE).
+     */
+    private function defaultPaymentDate(Company $company, CarbonImmutable $month): CarbonImmutable
+    {
+        $day = (int) ($this->modules->settings(PayrollModule::KEY, $company)['default_payment_day'] ?? 25);
+        $date = $month->setDay(min($day, $month->daysInMonth));
+
+        while ($date->isWeekend()) {
+            $date = $date->subDay();
+        }
+
+        return $date;
+    }
+}

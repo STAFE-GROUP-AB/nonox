@@ -12,9 +12,13 @@ use App\Modules\Payroll\Console\VerifyPayrollRuleCommand;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\PayrollHome;
 use App\Modules\Payroll\Livewire\PayrollRules;
+use App\Modules\Payroll\Livewire\PayrollRunList;
+use App\Modules\Payroll\Livewire\PayrollRunPage;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
 use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Policies\EmployeePolicy;
+use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -41,11 +45,14 @@ class PayrollServiceProvider extends ServiceProvider
         }
 
         Gate::policy(Employee::class, EmployeePolicy::class);
+        Gate::policy(PayrollRun::class, PayrollRunPolicy::class);
 
         Livewire::component(PayrollSettingsForm::NAME, PayrollSettingsForm::class);
         Livewire::component('payroll.home', PayrollHome::class);
         Livewire::component('payroll.rules', PayrollRules::class);
         Livewire::component('payroll.employees', Employees::class);
+        Livewire::component('payroll.run-list', PayrollRunList::class);
+        Livewire::component('payroll.run-page', PayrollRunPage::class);
 
         Route::middleware(['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY])
             ->group(__DIR__.'/routes/web.php');

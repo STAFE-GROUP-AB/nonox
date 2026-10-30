@@ -45,7 +45,7 @@ class Employees extends Component
             'address' => '', 'postal_code' => '', 'city' => '', 'bank_clearing' => '', 'bank_account' => '',
             'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1',
             'start_date' => now()->toDateString(), 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY',
-            'salary' => '', 'employment_rate' => '100', 'position_title' => '', 'cost_center' => '',
+            'salary' => '', 'employment_rate' => '100', 'weekly_hours' => '40', 'position_title' => '', 'cost_center' => '',
         ];
         $this->showForm = true;
         $this->resetErrorBag();
@@ -66,6 +66,7 @@ class Employees extends Component
             'salary_form' => $employment === null ? 'MONTHLY' : $employment->salary_form,
             'salary' => ($employment?->salary_form === 'HOURLY' ? $employment->hourly_rate_ore : $employment?->monthly_salary_ore)?->format(withCurrency: false),
             'employment_rate' => $employment === null ? '100' : (string) intdiv((int) $employment->employment_rate_bp, 100),
+            'weekly_hours' => $employment?->weekly_hours,
             'position_title' => $employment?->position_title,
             'cost_center' => $employment?->costCenter?->code,
         ]);

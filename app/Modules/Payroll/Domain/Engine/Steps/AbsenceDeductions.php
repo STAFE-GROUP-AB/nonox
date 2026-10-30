@@ -46,7 +46,7 @@ final class AbsenceDeductions implements Step
         foreach ($byType as $type => $hours) {
             $amount = $hours->multipliedBy($hourValue)->toScale(0, RoundingMode::HalfUp)->toInt();
 
-            $draft->add(new PayslipLineResult('AVDRAG_'.$type, __('Avdrag för frånvaro, :hours timmar', ['hours' => (string) $hours]), -$amount, PayslipLineResult::TAX_TABLE, true, true, (string) $hours, $hourValue->toScale(0, RoundingMode::HalfUp)->toInt(),
+            $draft->add(new PayslipLineResult('FRANVAROAVDRAG', __('Avdrag för frånvaro, :hours timmar', ['hours' => (string) $hours]), -$amount, PayslipLineResult::TAX_TABLE, true, true, (string) $hours, $hourValue->toScale(0, RoundingMode::HalfUp)->toInt(),
                 explanation: ['type' => $type, 'hours' => (string) $hours, 'hour_value_ore' => (string) $hourValue->toScale(Units::SHOWN_DECIMALS, RoundingMode::HalfUp)]));
         }
     }

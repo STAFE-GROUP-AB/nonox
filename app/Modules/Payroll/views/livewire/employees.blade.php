@@ -50,6 +50,7 @@
                     </x-ui.field>
                     <x-ui.field for="employee_salary" :label="__('Lön, kronor')" error="salary"><input id="employee_salary" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.salary"></x-ui.field>
                     <x-ui.field for="employee_rate" :label="__('Sysselsättningsgrad, %')" error="employment_rate"><input id="employee_rate" type="number" class="{{ $input }} mt-1" wire:model="form.employment_rate"></x-ui.field>
+                    <x-ui.field for="employee_weekly_hours" :label="__('Arbetstid, timmar per vecka')" error="weekly_hours" :hint="__('Behövs för frånvaro och sjuklön.')"><input id="employee_weekly_hours" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.weekly_hours"></x-ui.field>
                     <x-ui.field for="employee_cost_center" :label="__('Kostnadsställe (frivilligt)')" error="cost_center"><input id="employee_cost_center" type="text" class="{{ $input }} mt-1" wire:model="form.cost_center"></x-ui.field>
                 </div>
 

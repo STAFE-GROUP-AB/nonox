@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.14
+- Version: 0.15
 - Datum: 2026-10-30
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -265,6 +265,27 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   betaldagen i serie E. Betalningsuppgifterna tas från leverantörens uppgifter
   när fakturan registrerades.
 
+## 5b. Lön (modul, under uppbyggnad)
+
+- Lön är en modul som varje företag slår på under Moduler. Den följer
+  `PAYROLL_MODULE.md`.
+- Alla satser och belopp (arbetsgivaravgifter, sjuklön, skatteregler) är
+  versionerade regler med källa. En regel används först när en namngiven,
+  behörig person har kontrollerat den, och ändras aldrig därefter; en ändring
+  blir en ny version. Saknas en kontrollerad regel för utbetalningsdagen
+  stoppas lönekörningen.
+- Skatteavdraget tas från Skatteverkets skattetabeller, inlästa från deras fil
+  med kontrollsumma.
+- En lönekörning beräknas för alla anställda eller inte alls. När den är
+  attesterad kan den inte ändras; databasen vägrar. Den som beräknade får inte
+  attestera, om inte företaget har stängt av kravet. Fel rättas i en senare
+  lönekörning.
+- Personnummer och bankuppgifter sparas krypterade och skrivs aldrig till
+  behandlingshistoriken. Frånvarons orsak visas bara för den som har
+  behörighet till känsliga uppgifter.
+- Utbetalning, lönebokföring i serie L och arbetsgivardeklaration är inte
+  byggda ännu.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -327,3 +348,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.12 | 2026-10-30 | Inläsning av inbetalningar från bankens fil (camt.054) med förslag på faktura efter OCR. |
 | 0.13 | 2026-10-30 | Avtalsfakturering. |
 | 0.14 | 2026-10-30 | Kreditnotor från leverantörer och inköp där köparen redovisar momsen. |
+| 0.15 | 2026-10-30 | Moduler och lönemodulens första del: regler, skattetabeller, beräkning och attesterade lönekörningar. |

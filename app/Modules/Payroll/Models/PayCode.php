@@ -9,6 +9,18 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * A pay code (löneart): category, tax and contribution treatment, AGI field and accounts.
+ *
+ * @property int $id
+ * @property string $code
+ * @property string $name_sv
+ * @property string $category
+ * @property bool $is_taxable
+ * @property string $tax_method
+ * @property bool $is_contribution_basis
+ * @property bool $is_vacation_basis
+ * @property ?int $debit_account_id
+ * @property ?int $credit_account_id
+ * @property bool $is_system
  */
 class PayCode extends Model
 {

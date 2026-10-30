@@ -65,6 +65,7 @@ class SaveEmployee
             'salary_form' => ['required', Rule::in(['MONTHLY', 'HOURLY'])],
             'salary' => ['required', 'string'],
             'employment_rate' => ['nullable', 'integer', 'between:1,100'],
+            'weekly_hours' => ['nullable', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
             'position_title' => ['nullable', 'string', 'max:255'],
             'cost_center' => ['nullable', 'string', 'max:20'],
         ], [
@@ -127,6 +128,7 @@ class SaveEmployee
                 'monthly_salary_ore' => $validated['salary_form'] === 'MONTHLY' ? $salary->ore : null,
                 'hourly_rate_ore' => $validated['salary_form'] === 'HOURLY' ? $salary->ore : null,
                 'employment_rate_bp' => ((int) ($validated['employment_rate'] ?? 100)) * 100,
+                'weekly_hours' => blank($validated['weekly_hours'] ?? null) ? null : str_replace(',', '.', (string) $validated['weekly_hours']),
                 'position_title' => $validated['position_title'] ?? null,
                 'cost_center_id' => $costCenterId,
             ])->save();
