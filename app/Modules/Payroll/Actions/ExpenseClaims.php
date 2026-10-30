@@ -10,13 +10,17 @@ use App\Domain\Accounting\VoucherSource;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Ai\Actions\AnalyzeDocument;
+use App\Modules\Ai\Support\AiAnalysisException;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Jobs\AnalyzeExpenseReceipt;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -24,12 +28,17 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Throwable;
 
 /**
  * Outlays (utlägg) an employee claims on Min sida with a receipt. Payroll
  * staff approve them with a cost account: the approval books the cost and the
  * input VAT against 2890 with the receipt attached, and the next payroll run
  * repays the employee through the same account (PAYROLL_MODULE.md B.11).
+ *
+ * With NONOX AI turned on the employee sends only the receipt: the AI reads
+ * date, what was bought, amount and VAT and proposes a cost account, and the
+ * person who approves checks and corrects it. Nothing is booked before that.
  */
 class ExpenseClaims
 {
@@ -40,10 +49,16 @@ class ExpenseClaims
 
     private const array RECEIPT_TYPES = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic'];
 
-    public function __construct(private readonly ModuleManager $modules, private readonly BookVoucher $book, private readonly AttachToVoucher $attach) {}
+    public const string AI_PENDING = 'PENDING';
+
+    public const string AI_DONE = 'DONE';
+
+    public const string AI_FAILED = 'FAILED';
+
+    public function __construct(private readonly ModuleManager $modules, private readonly BookVoucher $book, private readonly AttachToVoucher $attach, private readonly AnalyzeDocument $analyze) {}
 
     /**
-     * @param  array<string, mixed>  $input  date, description, amount, vat
+     * @param  array<string, mixed>  $input  date, description, amount, vat; not used when NONOX AI reads the receipt
      */
     public function submit(User $user, Company $company, array $input, UploadedFile $receipt): Expense
     {
@@ -51,6 +66,10 @@ class ExpenseClaims
 
         if (! $user->hasTeamPermission($company, 'self:expenses')) {
             throw new AuthorizationException;
+        }
+
+        if (AnalyzeDocument::readsReceiptsFor($company)) {
+            return $this->submitReceipt($user, $company, $receipt);
         }
 
         $validated = Validator::make([...$input, 'receipt' => $receipt], [
@@ -76,7 +95,47 @@ class ExpenseClaims
             throw ValidationException::withMessages(['amount' => __('Beloppet ska vara större än noll och momsen mindre än beloppet.')]);
         }
 
-        return CurrentCompany::run($company, function () use ($user, $company, $validated, $amount, $vat, $receipt): Expense {
+        return $this->store($user, $company, $receipt, [
+            'date' => $validated['date'],
+            'description' => $validated['description'],
+            'amount_ore' => $amount->ore,
+            'vat_ore' => $vat->ore,
+        ]);
+    }
+
+    /**
+     * Stores an outlay sent with only the receipt and has NONOX AI read it.
+     * Until then the date is the day it was sent and the amount zero; an
+     * outlay without an amount cannot be approved.
+     */
+    private function submitReceipt(User $user, Company $company, UploadedFile $receipt): Expense
+    {
+        Validator::make(['receipt' => $receipt], [
+            'receipt' => ['required', 'file', 'max:10240', 'mimes:'.implode(',', self::RECEIPT_TYPES)],
+        ], [
+            'receipt.required' => __('Lägg till en bild eller PDF av kvittot.'),
+            'receipt.mimes' => __('Kvittot ska vara en bild eller en PDF.'),
+        ])->validate();
+
+        $expense = $this->store($user, $company, $receipt, [
+            'date' => CarbonImmutable::today()->toDateString(),
+            'description' => null,
+            'amount_ore' => 0,
+            'vat_ore' => 0,
+            'ai_status' => self::AI_PENDING,
+        ]);
+
+        AnalyzeExpenseReceipt::dispatch($company->id, $expense->id);
+
+        return $expense->refresh();
+    }
+
+    /**
+     * @param  array<string, mixed>  $details
+     */
+    private function store(User $user, Company $company, UploadedFile $receipt, array $details): Expense
+    {
+        return CurrentCompany::run($company, function () use ($user, $company, $receipt, $details): Expense {
             $employee = Employee::query()->where('user_id', $user->id)->first()
                 ?? throw ValidationException::withMessages(['amount' => __('Ditt konto är inte kopplat till någon anställd. Be din arbetsgivare koppla det.')]);
 
@@ -85,33 +144,134 @@ class ExpenseClaims
             $path = (string) $receipt->storeAs("expense-receipts/{$company->id}", basename('kvitto-'.time().'-'.uniqid().'.'.$extension), AttachToVoucher::DISK);
 
             $expense = Expense::create([
+                ...$details,
                 'employee_id' => $employee->id,
                 'type' => 'OUTLAY',
-                'date' => $validated['date'],
-                'description' => $validated['description'],
-                'amount_ore' => $amount->ore,
-                'vat_ore' => $vat->ore,
                 'receipt_path' => $path,
                 'receipt_name' => mb_substr($receipt->getClientOriginalName(), 0, 255),
                 'receipt_mime' => (string) $receipt->getMimeType(),
                 'status' => 'SUBMITTED',
                 'requested_by' => $user->id,
             ]);
-            Audit::record('payroll.expense_submitted', $expense, ['employee_id' => $employee->id, 'amount_ore' => $amount->ore], $company, $user);
+            Audit::record('payroll.expense_submitted', $expense, ['employee_id' => $employee->id, 'amount_ore' => $details['amount_ore']], $company, $user);
 
             return $expense;
         });
     }
 
     /**
-     * Approves the outlay and books it: the cost and input VAT against what
-     * the company now owes the employee, with the receipt as underlag.
+     * Lets NONOX AI read the receipt of an outlay still waiting for a
+     * decision, and stores what it read as a proposal. A reading that fails
+     * says why, so the person who approves fills in the details instead.
      */
-    public function approve(User $user, Expense $expense, int $accountNumber, ?string $vat = null): Expense
+    public function readReceipt(Expense $expense): Expense
+    {
+        $company = Company::query()->findOrFail($expense->company_id);
+
+        return CurrentCompany::run($company, function () use ($company, $expense): Expense {
+            if ($expense->status !== 'SUBMITTED' || $expense->ai_status !== self::AI_PENDING) {
+                return $expense;
+            }
+
+            $user = User::query()->find($expense->requested_by);
+            $disk = Storage::disk(AttachToVoucher::DISK);
+
+            if ($user === null || $expense->receipt_path === null || ! $disk->exists($expense->receipt_path)) {
+                return $this->readingFailed($expense, __('Kvittot finns inte kvar att läsa. Fyll i uppgifterna själv.'));
+            }
+
+            try {
+                $answer = $this->analyze->expenseReceipt($user, $company, $disk->path($expense->receipt_path), (string) $expense->receipt_mime);
+            } catch (AiAnalysisException $exception) {
+                return $this->readingFailed($expense, $exception->getMessage());
+            } catch (Throwable $exception) {
+                report($exception);
+
+                return $this->readingFailed($expense, __('NONOX AI kunde inte läsa kvittot. Fyll i uppgifterna själv eller låt NONOX AI läsa det igen.'));
+            }
+
+            return $this->applyReading($company, $expense, $answer);
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $answer
+     */
+    private function applyReading(Company $company, Expense $expense, array $answer): Expense
+    {
+        $notes = array_filter([trim((string) ($answer['notes'] ?? ''))]);
+
+        if (($answer['is_receipt'] ?? true) === false) {
+            return $this->readingFailed($expense, implode(' ', [__('Filen ser inte ut som ett kvitto.'), ...$notes]));
+        }
+
+        $total = (int) round(((float) ($answer['total'] ?? 0)) * 100);
+        $vat = (int) round(((float) ($answer['vat_total'] ?? 0)) * 100);
+        $date = (string) ($answer['date'] ?? '');
+        $readDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1 && CarbonImmutable::parse($date)->lessThanOrEqualTo(CarbonImmutable::today()) ? $date : null;
+
+        if ($readDate === null) {
+            $notes[] = __('Datumet gick inte att läsa. Kontrollera det.');
+        }
+
+        if ($vat < 0 || ($total > 0 && $vat >= $total)) {
+            $vat = 0;
+            $notes[] = __('Momsen gick inte att läsa. Kontrollera den.');
+        }
+
+        $expense->forceFill([
+            'date' => $readDate ?? $expense->date->toDateString(),
+            'description' => mb_substr(trim((string) ($answer['description'] ?? '')), 0, 255) ?: null,
+            'amount_ore' => max(0, $total),
+            'vat_ore' => $total > 0 ? $vat : 0,
+            'ai_account_number' => is_int($answer['account'] ?? null) ? $answer['account'] : null,
+            'ai_status' => $total > 0 ? self::AI_DONE : self::AI_FAILED,
+            'ai_notes' => $total > 0 ? (implode(' ', $notes) ?: null) : implode(' ', [__('Beloppet gick inte att läsa. Fyll i det själv.'), ...$notes]),
+        ])->save();
+        Audit::record('payroll.expense_read_by_ai', $expense, ['amount_ore' => $expense->amount_ore->ore, 'status' => $expense->ai_status], $company);
+
+        return $expense;
+    }
+
+    private function readingFailed(Expense $expense, string $reason): Expense
+    {
+        $expense->forceFill(['ai_status' => self::AI_FAILED, 'ai_notes' => $reason])->save();
+
+        return $expense;
+    }
+
+    /** Has NONOX AI read the receipt again, for an outlay still waiting for a decision. */
+    public function readAgain(User $user, Expense $expense): Expense
     {
         $company = $this->staff($user, $expense);
 
-        return CurrentCompany::run($company, fn (): Expense => DB::transaction(function () use ($user, $company, $expense, $accountNumber, $vat): Expense {
+        if (! AnalyzeDocument::readsReceiptsFor($company)) {
+            throw ValidationException::withMessages(['expense' => __('NONOX AI är inte påslaget för företaget.')]);
+        }
+
+        if ($expense->status !== 'SUBMITTED') {
+            throw ValidationException::withMessages(['expense' => __('Utlägget är redan besvarat.')]);
+        }
+
+        CurrentCompany::run($company, fn () => $expense->forceFill(['ai_status' => self::AI_PENDING, 'ai_notes' => null])->save());
+        AnalyzeExpenseReceipt::dispatch($company->id, $expense->id);
+
+        return $expense->refresh();
+    }
+
+    /**
+     * Approves the outlay and books it: the cost and input VAT against what
+     * the company now owes the employee, with the receipt as underlag. The
+     * person approving may correct date, text and amount, which is how an
+     * outlay NONOX AI read wrongly, or could not read, is put right.
+     *
+     * @param  array<string, mixed>  $details  date, description, amount; blank keeps what is stored
+     */
+    public function approve(User $user, Expense $expense, int $accountNumber, ?string $vat = null, array $details = []): Expense
+    {
+        $company = $this->staff($user, $expense);
+
+        return CurrentCompany::run($company, fn (): Expense => DB::transaction(function () use ($user, $company, $expense, $accountNumber, $vat, $details): Expense {
             /** @var Expense $expense */
             $expense = Expense::query()->whereKey($expense->id)->lockForUpdate()->firstOrFail();
 
@@ -121,6 +281,16 @@ class ExpenseClaims
 
             if ($expense->requested_by === $user->id && ($this->modules->settings(PayrollModule::KEY, $company)['segregation_of_duties'] ?? true)) {
                 throw ValidationException::withMessages(['expense' => __('Du kan inte godkänna ditt eget utlägg. Någon annan med ansvar för lönerna behöver göra det.')]);
+            }
+
+            $corrected = $this->correct($expense, $details);
+
+            if ($expense->amount_ore->ore <= 0) {
+                throw ValidationException::withMessages(['amount' => __('Fyll i beloppet på kvittot innan utlägget godkänns.')]);
+            }
+
+            if (blank($expense->description)) {
+                throw ValidationException::withMessages(['description' => __('Skriv vad utlägget gäller innan det godkänns.')]);
             }
 
             $account = Account::query()->where('number', $accountNumber)->where('is_active', true)->first()
@@ -145,10 +315,48 @@ class ExpenseClaims
             }
 
             $expense->forceFill(['status' => 'APPROVED', 'account_id' => $account->id, 'vat_ore' => $vatOre, 'decided_by' => $user->id, 'decided_at' => now(), 'voucher_id' => $voucher->id])->save();
-            Audit::record('payroll.expense_approved', $expense, ['voucher' => $voucher->reference()], $company, $user);
+            Audit::record('payroll.expense_approved', $expense, ['voucher' => $voucher->reference(), 'corrected' => $corrected], $company, $user);
 
             return $expense;
         }));
+    }
+
+    /**
+     * Applies the approver's corrections to the outlay (not saved here).
+     *
+     * @param  array<string, mixed>  $details
+     * @return list<string> the fields that changed
+     */
+    private function correct(Expense $expense, array $details): array
+    {
+        $before = ['date' => $expense->date->toDateString(), 'description' => (string) $expense->description, 'amount' => $expense->amount_ore->ore];
+        $date = trim((string) ($details['date'] ?? ''));
+        $description = trim((string) ($details['description'] ?? ''));
+        $amount = trim((string) ($details['amount'] ?? ''));
+
+        if ($date !== '') {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) !== 1 || CarbonImmutable::parse($date)->greaterThan(CarbonImmutable::today())) {
+                throw ValidationException::withMessages(['date' => __('Datumet kan inte vara i framtiden.')]);
+            }
+
+            $expense->date = CarbonImmutable::parse($date);
+        }
+
+        if ($description !== '') {
+            $expense->description = mb_substr($description, 0, 255);
+        }
+
+        if ($amount !== '') {
+            try {
+                $expense->amount_ore = Money::parse($amount);
+            } catch (InvalidArgumentException) {
+                throw ValidationException::withMessages(['amount' => __('Beloppet går inte att läsa. Skriv till exempel 249 eller 249,50.')]);
+            }
+        }
+
+        $after = ['date' => $expense->date->toDateString(), 'description' => (string) $expense->description, 'amount' => $expense->amount_ore->ore];
+
+        return array_keys(array_diff_assoc($after, $before));
     }
 
     public function reject(User $user, Expense $expense, string $reason): Expense

@@ -37,31 +37,56 @@
         @endif
     </x-ui.card>
 
-    <x-ui.card :title="__('Utlägg att godkänna')" :description="__('Välj kostnadskonto. Utlägget bokförs med kvittot som underlag och betalas tillbaka med nästa lön.')">
+    <x-ui.card :title="__('Utlägg att godkänna')" :description="$aiReads ? __('NONOX AI har läst kvittona och föreslår konto. Kontrollera mot kvittot, rätta det som behövs och godkänn. Utlägget bokförs med kvittot som underlag och betalas tillbaka med nästa lön.') : __('Välj kostnadskonto. Utlägget bokförs med kvittot som underlag och betalas tillbaka med nästa lön.')">
         @if($expenses->isEmpty())
             <p class="text-sm text-gray-600">{{ __('Inga utlägg väntar.') }}</p>
         @else
-            <ul class="divide-y divide-gray-100">
+            <ul class="divide-y divide-gray-100" @if($expenses->contains('ai_status', 'PENDING')) wire:poll.5s @endif>
                 @foreach($expenses as $expense)
                     <li class="space-y-3 py-4" wire:key="expense-{{ $expense->id }}">
-                        <div class="flex flex-wrap items-end gap-4">
+                        <div class="flex flex-wrap items-center gap-3">
                             <span class="min-w-0 flex-1">
-                                <span class="block font-medium text-gray-900">{{ $expense->employee?->first_name }} {{ $expense->employee?->last_name }} · {{ $expense->description }}</span>
-                                <span class="block text-sm text-gray-600 tabular-nums">{{ $expense->date->toDateString() }} · {{ $expense->amount_ore->format() }}</span>
+                                <span class="block font-medium text-gray-900">{{ $expense->employee?->first_name }} {{ $expense->employee?->last_name }} · {{ $expense->description ?? $expense->receipt_name }}</span>
                                 <a href="{{ route('payroll.expenses.receipt', $expense) }}" target="_blank" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Visa kvittot') }}</a>
                             </span>
-                            <label class="text-sm text-gray-600">{{ __('Konto') }}
-                                <select class="{{ $input }} mt-1" wire:model="expenseAccount.{{ $expense->id }}">
-                                    <option value="">{{ __('Välj…') }}</option>
-                                    @foreach($accounts as $account)<option value="{{ $account->number }}">{{ $account->number }} {{ $account->name }}</option>@endforeach
-                                </select>
-                            </label>
-                            <label class="text-sm text-gray-600">{{ __('Moms') }}
-                                <input type="text" inputmode="decimal" class="{{ $input }} mt-1 w-28" wire:model="expenseVat.{{ $expense->id }}">
-                            </label>
-                            <x-button type="button" wire:click="approveExpense({{ $expense->id }})" wire:loading.attr="disabled">{{ __('Godkänn') }}</x-button>
-                            <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('rejectingExpense', {{ $expense->id }})">{{ __('Avslå') }}</button>
+                            @if($expense->ai_status === 'PENDING')
+                                <span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">{{ __('NONOX AI läser kvittot…') }}</span>
+                            @elseif($expense->ai_status === 'DONE')
+                                <span class="rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-800">{{ __('Läst av NONOX AI') }}</span>
+                            @elseif($expense->ai_status === 'FAILED')
+                                <span class="rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-800">{{ __('NONOX AI kunde inte läsa allt') }}</span>
+                            @endif
+                            @if($aiReads && $expense->ai_status !== null && $expense->ai_status !== 'PENDING')
+                                <button type="button" class="text-sm text-gray-600 underline" wire:click="readExpenseAgain({{ $expense->id }})" wire:loading.attr="disabled">{{ __('Läs kvittot igen') }}</button>
+                            @endif
                         </div>
+                        @if($expense->ai_notes)
+                            <p class="rounded-lg bg-gray-50 p-3 text-sm text-gray-700">{{ $expense->ai_notes }}</p>
+                        @endif
+                        @if($expense->ai_status !== 'PENDING')
+                            <div class="flex flex-wrap items-end gap-4">
+                                <label class="text-sm text-gray-600">{{ __('Datum') }}
+                                    <input type="date" class="{{ $input }} mt-1" wire:model="expenseDate.{{ $expense->id }}">
+                                </label>
+                                <label class="min-w-48 flex-1 text-sm text-gray-600">{{ __('Vad utlägget gäller') }}
+                                    <input type="text" class="{{ $input }} mt-1" wire:model="expenseDescription.{{ $expense->id }}">
+                                </label>
+                                <label class="text-sm text-gray-600">{{ __('Belopp') }}
+                                    <input type="text" inputmode="decimal" class="{{ $input }} mt-1 w-32" wire:model="expenseAmount.{{ $expense->id }}">
+                                </label>
+                                <label class="text-sm text-gray-600">{{ __('Moms') }}
+                                    <input type="text" inputmode="decimal" class="{{ $input }} mt-1 w-28" wire:model="expenseVat.{{ $expense->id }}">
+                                </label>
+                                <label class="text-sm text-gray-600">{{ __('Konto') }}
+                                    <select class="{{ $input }} mt-1" wire:model="expenseAccount.{{ $expense->id }}">
+                                        <option value="">{{ __('Välj…') }}</option>
+                                        @foreach($accounts as $account)<option value="{{ $account->number }}">{{ $account->number }} {{ $account->name }}</option>@endforeach
+                                    </select>
+                                </label>
+                                <x-button type="button" wire:click="approveExpense({{ $expense->id }})" wire:loading.attr="disabled">{{ __('Godkänn') }}</x-button>
+                                <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('rejectingExpense', {{ $expense->id }})">{{ __('Avslå') }}</button>
+                            </div>
+                        @endif
                         @if($rejectingExpense === $expense->id)
                             <form wire:submit="rejectExpense" class="flex flex-wrap items-end gap-3 rounded-lg bg-gray-50 p-3">
                                 <x-ui.field for="reject_expense_reason" :label="__('Skäl, som den anställde ser')" error="reason" class="min-w-64 flex-1">

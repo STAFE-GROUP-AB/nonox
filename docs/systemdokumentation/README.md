@@ -335,6 +335,14 @@ lönebeskeden låsta i databasen.
   bokförs kostnaden och ingående moms mot 2890 med kvittot som underlag, och
   nästa lönekörning betalar tillbaka beloppet via 2890. Ett utlägg knyts till
   den körning som betalar det och betalas aldrig två gånger.
+- Utlägg med NONOX AI påslaget: den anställde skickar bara kvittot. NONOX AI
+  läser datum, vad som köptes, belopp och moms och föreslår ett kostnadskonto
+  (4000–7999) ur kontoplanen. Förslaget lagras på utlägget, som väntar på
+  godkännande; ingenting bokförs av AI:n. Den som godkänner ser kvittot och
+  AI:ns anteckningar, kan rätta datum, text, belopp, moms och konto, eller låta
+  AI:n läsa kvittot igen. Kunde AI:n inte läsa beloppet fyller den som godkänner
+  i det; ett utlägg utan belopp kan inte godkännas. Vilka fält som rättades vid
+  godkännandet står i behandlingshistoriken.
 - Semesterlöneskuld: kvarvarande betalda dagar plus dagarna som tjänas in i
   innevarande intjänandeår, värderade under sammalöneregeln till företagets
   dagsvärde (löneinställning, % av månadslönen) plus semestertillägg, och under
@@ -450,6 +458,10 @@ lönebeskeden låsta i databasen.
   eller en hel verifikation. Förslaget sparas och bokförs aldrig av AI:n; det
   gör en person efter kontroll, på samma sätt som när uppgifterna skrivs in för
   hand. Därför ändrar modulen ingenting i verifikationsflödet.
+- Ett utlägg från Min sida läses av NONOX AI i bakgrunden när modulen är
+  påslagen, utan att den anställde själv behöver behörigheten att använda AI.
+  Läsningen är ett förslag som lagras på utlägget tills någon med ansvar för
+  lönerna godkänner eller avslår det (avsnitt 5b).
 - Bara konton som finns aktiva i företagets kontoplan föreslås, och en
   leverantör väljs bara när den redan finns i registret.
 - Underlaget skickas till den AI-leverantör företaget valt (OpenAI, Anthropic
@@ -544,3 +556,4 @@ lönebeskeden låsta i databasen.
 | 0.14 | 2026-10-30 | Kreditnotor från leverantörer och inköp där köparen redovisar momsen. |
 | 0.15 | 2026-10-30 | Moduler och lönemodulens första del: regler, skattetabeller, beräkning och attesterade lönekörningar. |
 | 0.16 | 2026-10-31 | Lönemodulen: lönebesked och Min sida, semester, förmåner, traktamente och pension, utlägg, lönefil och skattekontot, arbetsgivardeklaration (AGI), lönerevision och retroaktiv lön, slutlön, rapporter, löneårsskifte, lönearkiv och flytt av lönedata. |
+| 0.17 | 2026-10-31 | Utlägg med bara kvittot: NONOX AI läser uppgifterna, den som godkänner kontrollerar och rättar. |

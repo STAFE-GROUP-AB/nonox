@@ -32,6 +32,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?CarbonImmutable $decided_at
  * @property ?string $rejection_reason
  * @property ?string $voucher_id
+ * @property ?string $ai_status
+ * @property ?string $ai_notes
+ * @property ?int $ai_account_number
  */
 class Expense extends Model
 {
@@ -60,6 +63,9 @@ class Expense extends Model
         'decided_at',
         'rejection_reason',
         'voucher_id',
+        'ai_status',
+        'ai_notes',
+        'ai_account_number',
     ];
 
     /** @return array<string, string> */
@@ -71,6 +77,7 @@ class Expense extends Model
             'vat_ore' => MoneyCast::class,
             'trip_data' => 'array',
             'decided_at' => 'immutable_datetime',
+            'ai_account_number' => 'integer',
         ];
     }
 

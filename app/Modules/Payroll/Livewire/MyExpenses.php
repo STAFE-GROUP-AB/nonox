@@ -7,6 +7,7 @@ namespace App\Modules\Payroll\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Payroll\Actions\ExpenseClaims;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Expense;
@@ -18,7 +19,8 @@ use Livewire\WithFileUploads;
 
 /**
  * Min sida: claim an outlay with a photo of the receipt and follow it until
- * it is repaid with the pay.
+ * it is repaid with the pay. With NONOX AI turned on the photo is all that
+ * is asked for; the AI reads the rest.
  */
 class MyExpenses extends Component
 {
@@ -48,19 +50,25 @@ class MyExpenses extends Component
             return;
         }
 
-        $claims->submit($this->user(), $this->company(), $this->expense, $this->receipt);
+        $expense = $claims->submit($this->user(), $this->company(), $this->expense, $this->receipt);
 
         $this->reset('open', 'receipt');
-        $this->toast(__('Utlägget är skickat. Det betalas tillbaka med lönen när det är godkänt.'));
+        $this->toast($expense->ai_status === null
+            ? __('Utlägget är skickat. Det betalas tillbaka med lönen när det är godkänt.')
+            : __('Kvittot är skickat. NONOX AI läser datum, belopp och moms, och utlägget betalas tillbaka med lönen när det är godkänt.'));
     }
 
     public function render(): View
     {
         $employee = Employee::query()->where('user_id', $this->user()->id)->first();
 
+        $expenses = $employee === null ? collect() : Expense::query()->where('employee_id', $employee->id)->whereNotNull('requested_by')->latest('date')->latest('id')->limit(10)->get();
+
         return view('payroll::livewire.my-expenses', [
             'employee' => $employee,
-            'expenses' => $employee === null ? collect() : Expense::query()->where('employee_id', $employee->id)->whereNotNull('requested_by')->latest('date')->limit(10)->get(),
+            'expenses' => $expenses,
+            'aiReads' => AnalyzeDocument::readsReceiptsFor($this->company()),
+            'reading' => $expenses->contains(fn (Expense $expense): bool => $expense->ai_status === ExpenseClaims::AI_PENDING),
         ]);
     }
 

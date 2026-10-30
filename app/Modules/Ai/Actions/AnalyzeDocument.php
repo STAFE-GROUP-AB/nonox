@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Ai\Agents\ExpenseReceiptAgent;
 use App\Modules\Ai\Agents\SupplierInvoiceAgent;
 use App\Modules\Ai\Agents\VoucherAgent;
 use App\Modules\Ai\AiModule;
@@ -87,14 +88,40 @@ class AnalyzeDocument
         });
     }
 
+    /** Whether an outlay sent with only the receipt is read by NONOX AI. */
+    public static function readsReceiptsFor(Company $company): bool
+    {
+        return app(ModuleManager::class)->isEnabled(AiModule::KEY, $company);
+    }
+
+    /**
+     * Reads the receipt of an outlay an employee sent. The employee needs no
+     * AI permission of their own: the company turned NONOX AI on, and the
+     * answer is only a proposal for the person who approves the outlay. A
+     * cost account outside the chart, or outside 4000-7999, is dropped.
+     *
+     * @return array<string, mixed>
+     */
+    public function expenseReceipt(User $user, Company $company, string $path, string $mime): array
+    {
+        $answer = $this->ask($user, $company, new ExpenseReceiptAgent, $path, $mime, 'expense_receipt', 'self:expenses');
+
+        return CurrentCompany::run($company, function () use ($answer): array {
+            $account = (int) ($answer['account'] ?? 0);
+            $answer['account'] = $account >= 4000 && $account <= 7999 && in_array($account, $this->accountNumbers(), true) ? $account : null;
+
+            return $answer;
+        });
+    }
+
     /**
      * @return array<string, mixed>
      */
-    private function ask(User $user, Company $company, SupplierInvoiceAgent|VoucherAgent $agent, string $path, string $mime, string $kind): array
+    private function ask(User $user, Company $company, SupplierInvoiceAgent|VoucherAgent|ExpenseReceiptAgent $agent, string $path, string $mime, string $kind, string $permission = 'ai:use'): array
     {
         $this->modules->ensureEnabled(AiModule::KEY, $company);
 
-        if (! $user->hasTeamPermission($company, 'ai:use')) {
+        if (! $user->hasTeamPermission($company, $permission)) {
             throw new AuthorizationException;
         }
 

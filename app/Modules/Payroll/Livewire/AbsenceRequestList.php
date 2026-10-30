@@ -8,6 +8,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Payroll\Actions\AbsenceRequests;
 use App\Modules\Payroll\Actions\ExpenseClaims;
 use App\Modules\Payroll\Models\Absence;
@@ -35,6 +36,15 @@ class AbsenceRequestList extends Component
 
     /** @var array<int, string> VAT per outlay */
     public array $expenseVat = [];
+
+    /** @var array<int, string> amount per outlay, to correct what NONOX AI read */
+    public array $expenseAmount = [];
+
+    /** @var array<int, string> date per outlay */
+    public array $expenseDate = [];
+
+    /** @var array<int, string> what the outlay was, per outlay */
+    public array $expenseDescription = [];
 
     public ?int $rejectingExpense = null;
 
@@ -72,7 +82,11 @@ class AbsenceRequestList extends Component
     public function approveExpense(int $expenseId, ExpenseClaims $claims): void
     {
         try {
-            $expense = $claims->approve($this->user(), Expense::query()->findOrFail($expenseId), (int) ($this->expenseAccount[$expenseId] ?? 0), $this->expenseVat[$expenseId] ?? null);
+            $expense = $claims->approve($this->user(), Expense::query()->findOrFail($expenseId), (int) ($this->expenseAccount[$expenseId] ?? 0), $this->expenseVat[$expenseId] ?? null, [
+                'date' => $this->expenseDate[$expenseId] ?? '',
+                'description' => $this->expenseDescription[$expenseId] ?? '',
+                'amount' => $this->expenseAmount[$expenseId] ?? '',
+            ]);
         } catch (ValidationException $exception) {
             $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
 
@@ -80,6 +94,20 @@ class AbsenceRequestList extends Component
         }
 
         $this->toast(__('Utlägget är godkänt och bokfört. Det betalas tillbaka med nästa lön.'));
+    }
+
+    public function readExpenseAgain(int $expenseId, ExpenseClaims $claims): void
+    {
+        try {
+            $expense = $claims->readAgain($this->user(), Expense::query()->findOrFail($expenseId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        unset($this->expenseAccount[$expenseId], $this->expenseVat[$expenseId], $this->expenseAmount[$expenseId], $this->expenseDate[$expenseId], $this->expenseDescription[$expenseId]);
+        $this->toast($expense->ai_status === ExpenseClaims::AI_FAILED ? (string) $expense->ai_notes : __('NONOX AI har läst kvittot igen. Kontrollera uppgifterna.'), $expense->ai_status === ExpenseClaims::AI_FAILED ? 'error' : 'success');
     }
 
     public function rejectExpense(ExpenseClaims $claims): void
@@ -98,8 +126,15 @@ class AbsenceRequestList extends Component
         $expenses = Expense::query()->with('employee:id,first_name,last_name')->where('status', 'SUBMITTED')->orderBy('date')->get();
 
         foreach ($expenses as $expense) {
-            $this->expenseAccount[$expense->id] ??= '';
+            if ($expense->ai_status === ExpenseClaims::AI_PENDING) {
+                continue;
+            }
+
+            $this->expenseAccount[$expense->id] ??= $expense->ai_account_number === null ? '' : (string) $expense->ai_account_number;
             $this->expenseVat[$expense->id] ??= $expense->vat_ore->format(withCurrency: false);
+            $this->expenseAmount[$expense->id] ??= $expense->amount_ore->ore === 0 ? '' : $expense->amount_ore->format(withCurrency: false);
+            $this->expenseDate[$expense->id] ??= $expense->date->toDateString();
+            $this->expenseDescription[$expense->id] ??= (string) $expense->description;
         }
 
         $pending = Absence::query()->with('employee:id,employee_number,first_name,last_name')->where('status', 'REQUESTED')->orderBy('date_from')->get();
@@ -110,6 +145,7 @@ class AbsenceRequestList extends Component
 
         return view('payroll::livewire.absence-requests', [
             'expenses' => $expenses,
+            'aiReads' => AnalyzeDocument::readsReceiptsFor($this->company()),
             'accounts' => Account::query()->where('is_active', true)->whereBetween('number', [4000, 7999])->orderBy('number')->get(['number', 'name']),
             'pending' => $pending,
             'decided' => Absence::query()->with('employee:id,first_name,last_name')->whereNotNull('requested_by')->whereIn('status', ['APPROVED', 'REJECTED'])->latest('decided_at')->limit(10)->get(),
