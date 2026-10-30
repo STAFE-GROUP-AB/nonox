@@ -313,6 +313,29 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   betaldagen i serie E. Betalningsuppgifterna tas från leverantörens uppgifter
   när fakturan registrerades.
 
+## 5a2. Anläggningsregister
+
+- Under Bokföring → Anläggningar registreras tillgångar som skrivs av över
+  flera år (inventarier, datorer, maskiner, bilar) med anskaffningsdag,
+  anskaffningsvärde, restvärde, nyttjandeperiod och första avskrivningsmånad,
+  samt konton. Förslagen följer BAS (till exempel 1220, 1229 och 7832 för
+  inventarier) och kan ändras per tillgång. Inköpet bokförs som vanligt när
+  tillgången köps; registret bokför avskrivningarna och avyttringen.
+- Avskrivningen är linjär enligt plan: det som ska skrivas av fördelas jämnt
+  över nyttjandeperioden. För varje månad räknas hur mycket som ska vara
+  avskrivet vid månadens slut, och skillnaden mot det som redan är avskrivet
+  bokförs; avrundningen blir därför exakt och en missad månad tas igen. En
+  månads avskrivning bokförs en gång, som en verifikation i serie A den sista
+  dagen i månaden, och varje tillgångs del sparas i
+  `fixed_asset_depreciations`, som databasen inte låter ändra eller ta bort.
+- En tillgång som flyttas från ett annat system tar med det som redan är
+  avskrivet.
+- Vid försäljning eller utrangering bokas anskaffningsvärdet och de
+  ackumulerade avskrivningarna bort, priset exklusive moms bokförs på valt
+  konto och skillnaden blir vinst (3973) eller förlust (7973).
+- När en månad har bokförts kan bara benämning och anteckning ändras.
+- Registret kräver behörigheten att hantera räkenskapsår (bokslut).
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -629,6 +652,11 @@ lönebeskeden låsta i databasen.
   inkomstdeklarationen lämnas och visas därför inte. Momsdagarna för månads-
   och kvartalsmoms är hämtade från Skatteverkets sida och broschyr SKV 408
   (2026) och ska kontrolleras av en behörig person.
+- Anläggningar: skattemässiga avskrivningar (räkenskapsenlig avskrivning,
+  30- och 20-regeln) och överavskrivningar (2150/8850) hanteras inte; registret
+  följer planen. Moms vid försäljning av inventarier och om avyttringsmånaden
+  ska skrivas av lämnas till användaren. Kontot 7835 för avskrivningar på
+  datorer ska kontrolleras mot gällande BAS.
 - Arkivpaket: räcker det att paketet innehåller underlag, fakturor och
   lönebesked per räkenskapsår, eller ska även räkenskapsinformation som hör
   till året men daterats utanför det (till exempel en faktura daterad efter
@@ -661,3 +689,4 @@ lönebeskeden låsta i databasen.
 | 0.20 | 2026-10-31 | Mina företag: sista dag för moms och AGI, och månadsstatus per företag. |
 | 0.21 | 2026-10-31 | Mina företag: ansvarig konsult och byråns anteckningar, Byråvy per månad, och kundens panel Din redovisningsbyrå. |
 | 0.22 | 2026-10-31 | Nytt utseende (ADR-019): mörk sidomeny, nya färger, och appen följer företagets egen färg under Varumärke. |
+| 0.23 | 2026-11-01 | Anläggningsregister med linjära avskrivningar enligt plan, avyttring och utrangering. |

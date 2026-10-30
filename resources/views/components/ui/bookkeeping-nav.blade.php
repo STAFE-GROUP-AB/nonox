@@ -9,6 +9,7 @@
         'vat.index' => $can('vat:prepare') ? __('Moms') : null,
         'accounting.accounts' => __('Kontoplan'),
         'accounting.fiscalYears' => __('Räkenskapsår'),
+        'accounting.fixedAssets' => $can('fiscal-years:manage') ? __('Anläggningar') : null,
         'accounting.voucherSeries' => __('Verifikationsserier'),
         'accounting.costCenters' => __('Kostnadsställen'),
         'accounting.projects' => __('Projekt'),

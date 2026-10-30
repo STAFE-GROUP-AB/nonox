@@ -71,7 +71,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Lön: lönerevision med retroaktiv lön, slutlön med semesterersättning, underlag för arbetsgivarintyg, lönerapporter med avstämning mot deklaration och bokföring, och löneårsskifte.
 - ✅ Lön: Lönearkiv som finns kvar när lönemodulen stängs av, och spärrar mot att stänga av med obokförd lön, odeklarerade månader eller obetalda utlägg.
 - ✅ Lön: flytt av lönedata från ett tidigare lönesystem (anställda, belopp hittills i år, semestersaldon och gamla lönebesked) med avstämning mot bokföringen. Se [guiden för att flytta](docs/migration/leaving-fortnox.md).
-- 🚧 Bokslut, anläggningsregister och årsredovisning.
+- ✅ Anläggningsregister: inventarier, datorer, maskiner och bilar med linjära avskrivningar som bokförs varje månad, och försäljning eller utrangering.
+- 🚧 Bokslut och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 

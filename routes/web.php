@@ -119,6 +119,7 @@ Route::middleware([
         Route::get('/rapporter/csv', ReportCsvController::class)->name('accounting.reports.csv');
         Route::view('/kostnadsstallen', 'accounting.dimensions', ['dimension' => 'kostnadsstallen'])->name('accounting.costCenters');
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');
+        Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');
         Route::get('/importera-sie', [SieImportController::class, 'index'])->name('accounting.sieImports.index');
         Route::post('/importera-sie', [SieImportController::class, 'store'])->name('accounting.sieImports.store');
         Route::get('/importera-sie/{sieImport}', [SieImportController::class, 'show'])
