@@ -1,0 +1,37 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Payroll;
+
+use App\Http\Middleware\EnsureUserHasCompany;
+use App\Modules\ModuleRegistry;
+use App\Modules\Payroll\Livewire\PayrollHome;
+use App\Modules\Payroll\Livewire\PayrollSettingsForm;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
+
+/**
+ * Registers the payroll module. Its routes always carry module:payroll, so
+ * they answer 404 for companies that have not turned payroll on.
+ */
+class PayrollServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->make(ModuleRegistry::class)->register(new PayrollModule);
+    }
+
+    public function boot(): void
+    {
+        $this->loadViewsFrom(__DIR__.'/views', 'payroll');
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+
+        Livewire::component(PayrollSettingsForm::NAME, PayrollSettingsForm::class);
+        Livewire::component('payroll.home', PayrollHome::class);
+
+        Route::middleware(['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY])
+            ->group(__DIR__.'/routes/web.php');
+    }
+}
