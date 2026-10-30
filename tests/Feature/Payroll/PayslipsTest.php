@@ -7,6 +7,7 @@ use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Http\Middleware\SendEmployeesToPortal;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\MyPayslips;
 use App\Modules\Payroll\Mail\EmployeePortalInvitationMail;
@@ -16,6 +17,7 @@ use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -106,6 +108,17 @@ it('shows the company logo in the portal to employees', function () {
 
     $this->actingAs($this->worker)->get(route('payroll.portal.home'))->assertSee(route('teams.logo', $this->company->id));
     $this->actingAs($this->worker)->get(route('teams.logo', $this->company->id))->assertOk()->assertHeader('Content-Type', 'image/png');
+});
+
+it('lets an employee\'s clicks on Min sida reach Livewire', function () {
+    $route = collect(app('router')->getRoutes()->getRoutes())->first(fn ($route) => str_ends_with((string) $route->getName(), 'livewire.update'));
+    $request = Request::create('/'.$route->uri(), 'POST');
+    $request->setRouteResolver(fn () => $route->bind($request));
+    $request->setUserResolver(fn () => $this->worker);
+
+    $response = app(SendEmployeesToPortal::class)->handle($request, fn () => response('passed'));
+
+    expect($response->getContent())->toBe('passed');
 });
 
 it('tells an employee without a linked login what to do', function () {
