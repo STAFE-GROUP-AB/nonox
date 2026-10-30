@@ -1400,5 +1400,12 @@
     "Lägg upp personalen med skattetabell och kontonummer. Uppgifterna används i lönekörningarna och arbetsgivardeklarationen.": "Add the staff with tax table and account number. The details are used in payroll runs and the employer declaration.",
     "per timme": "per hour",
     "per månad": "per month",
-    "Personalen på lönelistan.": "The staff on the payroll."
+    "Personalen på lönelistan.": "The staff on the payroll.",
+    "Skatteavdrag för A-SINK stöds inte än.": "Withholding for A-SINK is not supported yet.",
+    "Skatt på engångsbelopp stöds inte än. Betala ut beloppet som vanlig lön eller vänta på nästa version.": "Tax on one-off payments is not supported yet. Pay the amount as regular salary or wait for the next version.",
+    "Skattetabell och kolumn saknas för den anställda.": "The tax table and column are missing for the employee.",
+    "Nettolönen blev negativ. :amount förs över som en fordran på den anställda.": "Net pay was negative. :amount is carried forward as a claim on the employee.",
+    "Månadslön": "Monthly salary",
+    "Delmånad räknad på arbetsschema stöds inte än. Välj kalenderdagar i löneinställningarna.": "Part months by work schedule are not supported yet. Choose calendar days in the payroll settings.",
+    "Månadslön, :days av :total dagar": "Monthly salary, :days of :total days"
 }
