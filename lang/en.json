@@ -1767,5 +1767,7 @@
     "Raderna ovan är kostnaderna. Momsen och skulden till leverantören läggs till automatiskt.": "The rows above are the costs. The VAT and the liability to the supplier are added automatically.",
     "Det här ser ut som en obetald leverantörsfaktura.": "This looks like an unpaid supplier invoice.",
     "Registrera den som leverantörsfaktura i stället, så får den förfallodag, betalning och leverantör, och leverantören kan skapas direkt. Bokför den bara här om den redan är betald.": "Register it as a supplier invoice instead, so it gets a due date, a payment and a supplier, and the supplier can be created at once. Only book it here if it is already paid.",
-    "Registrera som leverantörsfaktura": "Register as supplier invoice"
+    "Registrera som leverantörsfaktura": "Register as supplier invoice",
+    "Analyserar underlaget, brukar ta högst 20 sekunder:": "Analysing the document, usually takes at most 20 seconds:",
+    "Det tar längre tid än vanligt, vänta lite till…": "This is taking longer than usual, please wait a little longer…"
 }

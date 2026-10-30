@@ -1,15 +1,29 @@
 {{-- NONOX AI: the analyse button and what the AI could not settle, beside the document. --}}
 @if($aiAvailable ?? false)
     <div class="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex flex-wrap items-center justify-between gap-3"
+             x-data="{
+                 running: false, left: 20, timer: null,
+                 run(method) {
+                     this.running = true;
+                     this.left = 20;
+                     this.timer = setInterval(() => { if (this.left > 0) this.left--; }, 1000);
+                     $wire.call(method).finally(() => { clearInterval(this.timer); this.running = false; });
+                 },
+             }"
+             x-init="@js($analyzeOnLoad ?? false) && run('analyzeHandoff')">
             <div class="min-w-0">
                 <p class="text-sm font-semibold text-gray-900">{{ __('NONOX AI') }}</p>
-                <p class="text-xs text-gray-600">{{ __('Läser underlaget och fyller i ett förslag. Inget sparas förrän du gör det.') }}</p>
+                <p class="text-xs text-gray-600" x-show="! running">{{ __('Läser underlaget och fyller i ett förslag. Inget sparas förrän du gör det.') }}</p>
+                <p class="text-xs text-gray-700" x-show="running" x-cloak aria-live="polite">
+                    <span x-show="left > 0">{{ __('Analyserar underlaget, brukar ta högst 20 sekunder:') }} <span class="font-semibold tabular-nums" x-text="left + ' s'"></span></span>
+                    <span x-show="left === 0">{{ __('Det tar längre tid än vanligt, vänta lite till…') }}</span>
+                </p>
             </div>
-            <button type="button" wire:click="analyze" wire:loading.attr="disabled" wire:target="analyze"
+            <button type="button" x-on:click="run('analyze')" x-bind:disabled="running"
                 class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60">
-                <span wire:loading.remove wire:target="analyze">{{ __('Analysera') }}</span>
-                <span wire:loading wire:target="analyze">{{ __('Analyserar…') }}</span>
+                <span x-show="! running">{{ __('Analysera') }}</span>
+                <span x-show="running" x-cloak class="tabular-nums" x-text="left > 0 ? left + ' s' : '…'"></span>
             </button>
         </div>
 

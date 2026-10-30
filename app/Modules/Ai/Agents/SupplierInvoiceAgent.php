@@ -38,6 +38,9 @@ class SupplierInvoiceAgent implements Agent, HasStructuredOutput
         Svea or Collector), the supplier is still the seller; take the seller's organisation number from its
         VAT number (SE + 10 digits + 01) when only that is printed. Write description and notes in Swedish. Put anything you are unsure of in notes.
         Leave a field empty, or 0, only when it is not printed on the invoice.
+        LANGUAGE: every text value in the answer (description, notes, row texts) must be written in Swedish with
+        the Swedish letters å, ä and ö. Never write English, and never replace å, ä or ö with aa, ae, oe or a, a, o.
+        Keep names, numbers and codes exactly as printed.
         TEXT;
     }
 
@@ -64,14 +67,14 @@ class SupplierInvoiceAgent implements Agent, HasStructuredOutput
             'vat_total' => $schema->number()->description('Total VAT, as printed; 0 when no VAT.')->required(),
             'is_credit_note' => $schema->boolean()->description('True for a credit note.')->required(),
             'vat_treatment' => $schema->string()->enum(['DOMESTIC', 'EU_GOODS', 'EU_SERVICES', 'NON_EU_SERVICES', 'SE_REVERSE_GOODS', 'SE_REVERSE_SERVICES'])->required(),
-            'description' => $schema->string()->description('Short Swedish description of what was bought.')->required(),
+            'description' => $schema->string()->description('Short text in Swedish with å, ä and ö, description of what was bought.')->required(),
             'rows' => $schema->array()->items($schema->object([
                 'account' => $schema->integer()->description('Account number from the given chart of accounts.')->required(),
                 'amount_excl_vat' => $schema->number()->description('Amount excluding VAT.')->required(),
                 'vat_rate_percent' => $schema->integer()->enum([25, 12, 6, 0])->required(),
-                'description' => $schema->string()->description('Short Swedish text for the row.')->required(),
+                'description' => $schema->string()->description('Short text in Swedish with å, ä and ö, text for the row.')->required(),
             ]))->required(),
-            'notes' => $schema->string()->description('Swedish notes on anything uncertain, or empty string.')->required(),
+            'notes' => $schema->string()->description('Notes in Swedish with å, ä and ö, on anything uncertain, or empty string.')->required(),
         ];
     }
 }

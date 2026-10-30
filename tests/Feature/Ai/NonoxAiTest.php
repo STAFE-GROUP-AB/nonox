@@ -283,6 +283,10 @@ it('sends an unpaid supplier invoice from bookkeeping to the supplier invoice pa
         ->assertRedirect(route('payables.invoices.create'));
 
     Livewire::test(SupplierInvoiceEditor::class)
+        ->assertSet('analyzeOnLoad', true)
+        ->assertSet('invoiceNumber', '')
+        ->call('analyzeHandoff')
+        ->assertSet('analyzeOnLoad', false)
         ->assertSet('invoiceNumber', '7001')
         ->assertSee('Scandinavian Photo finns inte i leverantörsregistret.')
         ->call('save');

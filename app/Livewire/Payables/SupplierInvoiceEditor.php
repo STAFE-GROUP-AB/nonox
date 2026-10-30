@@ -78,6 +78,9 @@ class SupplierInvoiceEditor extends Component
     /** @var ?array{notes: string, confidence: ?float, supplier: ?string, new_supplier: ?array<string, mixed>} what NONOX AI filled in, for the person to check */
     public ?array $aiResult = null;
 
+    /** A document handed over from bookkeeping waits to be analysed until the page is shown. */
+    public bool $analyzeOnLoad = false;
+
     /** Create the supplier NONOX AI read from the invoice when it is not in the register. */
     public bool $createSupplier = true;
 
@@ -145,8 +148,9 @@ class SupplierInvoiceEditor extends Component
 
     /**
      * A document the voucher page recognised as a supplier invoice: it becomes
-     * this invoice's file and is read again, as an invoice, by NONOX AI. Only
-     * the same person in the same company can take it over.
+     * this invoice's file and is read again, as an invoice, by NONOX AI once
+     * the page is shown. Only the same person in the same company can take it
+     * over.
      */
     private function takeHandoff(): void
     {
@@ -163,7 +167,18 @@ class SupplierInvoiceEditor extends Component
         }
 
         $this->file = $file;
-        $this->analyze(app(AnalyzeDocument::class));
+        $this->analyzeOnLoad = true;
+    }
+
+    /** Analyses the handed-over document once the page is on screen, with the countdown running. */
+    public function analyzeHandoff(AnalyzeDocument $analyze): void
+    {
+        if (! $this->analyzeOnLoad) {
+            return;
+        }
+
+        $this->analyzeOnLoad = false;
+        $this->analyze($analyze);
     }
 
     /**

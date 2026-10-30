@@ -29,6 +29,9 @@ class VoucherAgent implements Agent, HasStructuredOutput
         Debits must equal credits exactly. Amounts are numbers with a dot as decimal separator. Use the date
         printed on the document (YYYY-MM-DD). Write description and notes in Swedish; put anything uncertain,
         such as a private expense or a missing VAT amount, in notes.
+        LANGUAGE: every text value in the answer (description, notes, row texts) must be written in Swedish with
+        the Swedish letters å, ä and ö. Never write English, and never replace å, ä or ö with aa, ae, oe or a, a, o.
+        Keep names, numbers and codes exactly as printed.
         TEXT;
     }
 
@@ -38,7 +41,7 @@ class VoucherAgent implements Agent, HasStructuredOutput
             'document_type' => $schema->string()->enum(['RECEIPT', 'SUPPLIER_INVOICE', 'CUSTOMER_INVOICE', 'OTHER'])
                 ->description('RECEIPT: already paid (card, cash, Swish). SUPPLIER_INVOICE: an invoice to the company that is still to be paid (due date, OCR, bankgiro or plusgiro, not marked as paid). CUSTOMER_INVOICE: an invoice the company has sent. OTHER: anything else.')->required(),
             'date' => $schema->string()->description('Date of the business event, YYYY-MM-DD.')->required(),
-            'description' => $schema->string()->description('Short Swedish description, e.g. the seller and what was bought.')->required(),
+            'description' => $schema->string()->description('Short text in Swedish with å, ä and ö, description, e.g. the seller and what was bought.')->required(),
             'counterparty' => $schema->string()->description('Seller or counterparty name, or empty string.')->required(),
             'total' => $schema->number()->description('Total amount including VAT, as printed.')->required(),
             'vat_total' => $schema->number()->description('Total VAT as printed; 0 when no VAT.')->required(),
@@ -46,9 +49,9 @@ class VoucherAgent implements Agent, HasStructuredOutput
                 'account' => $schema->integer()->description('Account number from the given chart of accounts.')->required(),
                 'debit' => $schema->number()->description('Debit amount, 0 if credit.')->required(),
                 'credit' => $schema->number()->description('Credit amount, 0 if debit.')->required(),
-                'description' => $schema->string()->description('Short Swedish row text, or empty string.')->required(),
+                'description' => $schema->string()->description('Short text in Swedish with å, ä and ö, row text, or empty string.')->required(),
             ]))->required(),
-            'notes' => $schema->string()->description('Swedish notes on anything uncertain, or empty string.')->required(),
+            'notes' => $schema->string()->description('Notes in Swedish with å, ä and ö, on anything uncertain, or empty string.')->required(),
         ];
     }
 }
