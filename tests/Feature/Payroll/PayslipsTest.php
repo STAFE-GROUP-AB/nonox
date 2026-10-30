@@ -10,6 +10,7 @@ use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\MyPayslips;
 use App\Modules\Payroll\Mail\EmployeePortalInvitationMail;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Support\PayslipPdf;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -140,4 +141,22 @@ it('links an existing member at once and refuses an employee without email', fun
         ->and(fn () => $invite($this->worker, $this->company, $cy))->toThrow(AuthorizationException::class);
 
     Mail::assertNothingSent();
+});
+
+it('lays out the payslip with every column, the employer\'s cost and a preview mark before approval', function () {
+    $html = PayslipPdf::html($this->payslip);
+
+    expect($html)
+        ->toContain('April 2026')
+        ->toContain('Löneart')->toContain('Antal')->toContain('À-pris')->toContain('Belopp')
+        ->toContain('Summa lön och ersättningar')
+        ->toContain('Tabell 33, kolumn 1')
+        ->toContain('19900615-XXXX')
+        ->toContain('Arbetsgivaravgifter 31,42 %')
+        ->toContain('UTKAST')
+        ->toContain('Förhandsgranskning');
+
+    $this->runs->approve($this->admin, $this->run->fresh());
+
+    expect(PayslipPdf::html($this->payslip->fresh()))->not->toContain('UTKAST');
 });

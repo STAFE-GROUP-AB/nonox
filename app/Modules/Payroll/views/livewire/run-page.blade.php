@@ -134,6 +134,7 @@
                             <span class="tabular-nums">{{ __('Skatt') }} <x-ui.amount :money="$payslip->tax_ore" /></span>
                             <span class="tabular-nums font-semibold">{{ __('Netto') }} <x-ui.amount :money="$payslip->net_ore" /></span>
                             <span class="tabular-nums text-gray-500">{{ __('Arbetsgivaravgift') }} <x-ui.amount :money="$payslip->employer_contribution_ore" /></span>
+                            <a href="{{ route('payroll.payslips.pdf', $payslip) }}" target="_blank" class="font-medium text-accent-600 hover:text-accent-700" onclick="event.stopPropagation()">{{ $run->isOpen() ? __('Förhandsgranska') : __('Lönebesked som PDF') }}</a>
                         </summary>
                         <table class="mt-3 w-full text-sm">
                             <tbody class="divide-y divide-gray-50">
@@ -147,9 +148,6 @@
                                 </td><td class="py-1 text-right"><x-ui.amount :money="$payslip->tax_ore->negated()" /></td></tr>
                             </tbody>
                         </table>
-                        @if(! $run->isOpen())
-                            <a href="{{ route('payroll.payslips.pdf', $payslip) }}" target="_blank" class="mt-2 inline-block text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Lönebesked som PDF') }}</a>
-                        @endif
                         @foreach($payslip->warnings as $warning)
                             <p class="mt-2 text-sm text-accent-700">{{ $warning }}</p>
                         @endforeach

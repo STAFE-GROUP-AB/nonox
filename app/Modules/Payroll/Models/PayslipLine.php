@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @property int $pay_code_id
  * @property string $description
+ * @property ?string $quantity
+ * @property ?Money $rate_ore
  * @property Money $amount_ore
  * @property string $tax_effect
  * @property array<string, mixed> $explanation
