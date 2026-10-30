@@ -48,6 +48,13 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   bokförda verifikationer, om månaden är låst, och för momsperioder som slutar
   i månaden respektive månader med utbetald lön om momsdeklarationen och
   arbetsgivardeklarationen är redovisade, att redovisa eller försenade.
+- Varje företag kan ha en ansvarig redovisningskonsult, vald bland
+  företagets medlemmar med rollen Redovisningskonsult av en sådan konsult,
+  ägaren eller en administratör. Alla i företaget ser vem som är ansvarig.
+  Konsulterna kan skriva en anteckning om företaget som bara medlemmar med
+  rollen Redovisningskonsult ser (tabellen `client_profiles`).
+  Behandlingshistoriken visar att anteckningen ändrats och hur lång den är,
+  inte vad den säger.
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 

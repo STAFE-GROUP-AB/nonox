@@ -7,6 +7,7 @@ use App\Models\ArchivePackage;
 use App\Models\Article;
 use App\Models\BankFileImport;
 use App\Models\BankTransaction;
+use App\Models\ClientProfile;
 use App\Models\Company;
 use App\Models\CompanyModule;
 use App\Models\CostCenter;
@@ -99,6 +100,7 @@ const COMPANY_SCOPED_MODELS = [
     VoucherRowHistory::class => 'voucherRowHistoryAttributes',
     VatReport::class => 'vatReportAttributes',
     ArchivePackage::class => 'archivePackageAttributes',
+    ClientProfile::class => 'clientProfileAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
     Article::class => 'articleAttributes',
@@ -210,6 +212,11 @@ function voucherRowHistoryAttributes(): array
         'account_number' => 1930,
         'amount_ore' => 100,
     ];
+}
+
+function clientProfileAttributes(): array
+{
+    return ['note' => 'Hemlig anteckning'];
 }
 
 function archivePackageAttributes(): array

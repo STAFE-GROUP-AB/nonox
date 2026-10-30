@@ -10,6 +10,7 @@ use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Domain\Vat\VatDeadlines;
 use App\Domain\Vat\VatPeriods;
+use App\Models\ClientProfile;
 use App\Models\Company;
 use App\Models\CompanyModule;
 use App\Models\FiscalYear;
@@ -84,7 +85,12 @@ final class CompanyOverview
      *     role: string,
      *     tasks: list<array{key: string, label: string, count: int, destination: string, urgent: bool, due: ?string, overdue: bool}>,
      *     last_posted: ?string,
-     *     attention: int
+     *     attention: int,
+     *     responsible: ?array{id: int, name: string},
+     *     consultants: array<int, string>,
+     *     note: ?string,
+     *     can_assign: bool,
+     *     can_note: bool
      * }>
      */
     public function for(User $user, ?CarbonImmutable $today = null): array
@@ -111,8 +117,13 @@ final class CompanyOverview
             $reported = VatReport::query()->whereIn('company_id', $ids)->get(['company_id', 'period_start'])
                 ->groupBy('company_id')->map(fn (Collection $rows): array => $rows->map(fn (VatReport $report): string => $report->period_start->toDateString())->all())->all();
             $payroll = $this->payroll(array_values(array_filter($ids, fn (int $id): bool => $this->enabled($id, PayrollModule::KEY))));
+            $profiles = ClientProfile::query()->whereIn('company_id', $ids)->get()->keyBy('company_id');
+            $consultants = DB::table('team_user')->join('users', 'users.id', '=', 'team_user.user_id')
+                ->whereIn('team_user.team_id', $ids)->where('team_user.role', ClientProfile::FIRM_ROLE)
+                ->orderBy('users.name')->get(['team_user.team_id', 'users.id', 'users.name'])
+                ->groupBy('team_id')->map(fn (Collection $rows): array => $rows->mapWithKeys(fn (object $row): array => [(int) $row->id => (string) $row->name])->all())->all();
 
-            $rows = $companies->map(function (Company $company) use ($drafts, $toApprove, $toPay, $overdue, $lastPosted, $years, $reported, $payroll, $today): array {
+            $rows = $companies->map(function (Company $company) use ($drafts, $toApprove, $toPay, $overdue, $lastPosted, $years, $reported, $payroll, $today, $profiles, $consultants): array {
                 $id = $company->id;
                 /** @var Collection<int, FiscalYear> $companyYears */
                 $companyYears = $years->get($id, collect());
@@ -134,6 +145,7 @@ final class CompanyOverview
                     'tasks' => $tasks,
                     'last_posted' => $this->may($id, 'vouchers:view') && isset($lastPosted[$id]) ? CarbonImmutable::parse((string) $lastPosted[$id])->toDateString() : null,
                     'attention' => array_sum(array_column($tasks, 'count')),
+                    ...$this->clientProfile($id, $profiles->get($id), $consultants[$id] ?? []),
                 ];
             });
 
@@ -317,6 +329,29 @@ final class CompanyOverview
 
             return ['months' => $months, 'rows' => array_values($rows->sortBy(fn (array $row): string => mb_strtolower($row['company']->name))->all())];
         });
+    }
+
+    /**
+     * The responsible consultant for everyone, and the firm's note only for
+     * the firm's consultants.
+     *
+     * @param  array<int, string>  $consultants
+     * @return array{responsible: ?array{id: int, name: string}, consultants: array<int, string>, note: ?string, can_assign: bool, can_note: bool}
+     */
+    private function clientProfile(int $companyId, ?ClientProfile $profile, array $consultants): array
+    {
+        $role = $this->roles[$companyId] ?? null;
+        $isConsultant = $role === ClientProfile::FIRM_ROLE;
+        $responsibleId = $profile?->responsible_user_id;
+        $canAssign = $isConsultant || $role === null || $role === 'admin';
+
+        return [
+            'responsible' => $responsibleId !== null && isset($consultants[$responsibleId]) ? ['id' => $responsibleId, 'name' => $consultants[$responsibleId]] : null,
+            'consultants' => $canAssign ? $consultants : [],
+            'note' => $isConsultant ? $profile?->note : null,
+            'can_assign' => $canAssign && $consultants !== [],
+            'can_note' => $isConsultant,
+        ];
     }
 
     /**

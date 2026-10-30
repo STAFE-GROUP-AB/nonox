@@ -2159,5 +2159,17 @@
     "Sista dag :date": "Last day :date",
     "AGI": "AGI",
     "Vad som väntar": "What is waiting",
-    "Månad för månad": "Month by month"
+    "Månad för månad": "Month by month",
+    "Ansvarig är sparad.": "The responsible person is saved.",
+    "Anteckningen är sparad. Den syns bara för redovisningskonsulterna.": "The note is saved. Only the accounting consultants can see it.",
+    "Den ansvarige ska vara redovisningskonsult i företaget.": "The responsible person must be an accounting consultant in the company.",
+    "Anteckningen får vara högst :max tecken.": "The note may be at most :max characters.",
+    "Bara de jag är ansvarig för": "Only those I am responsible for",
+    "Ansvarig": "Responsible",
+    "Ansvarig för :company": "Responsible for :company",
+    "Ingen vald": "None chosen",
+    "Byråns anteckning (syns inte för kunden)": "The firm's note (not shown to the client)",
+    "Spara anteckningen": "Save the note",
+    "Ändra anteckning": "Change note",
+    "Lägg till anteckning": "Add note"
 }
