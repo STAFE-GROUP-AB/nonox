@@ -59,6 +59,8 @@ final class RuleSet
         'agi.schema_version',
         'tax.rounding',
         'tax.one_off',
+        'tax.one_off_without_regular_salary',
+        'a_sink.rate',
     ];
 
     /**

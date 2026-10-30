@@ -32,6 +32,8 @@ final class Payroll
         'sick_pay.karensavdrag_percent_of_weekly' => ['bp' => 2000, 'max_occasions_per_12_months' => 10],
         'sick_pay.employer_period_days' => ['days' => 14],
         'sick_pay.reinfection_window_days' => ['days' => 5],
+        'a_sink.rate' => ['bp' => 1500],
+        'tax.one_off_without_regular_salary' => ['bp' => 3000],
     ];
 
     public static function setUp(Company $company, User $owner): void

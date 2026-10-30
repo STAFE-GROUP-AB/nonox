@@ -23,6 +23,7 @@ final class Accumulators implements Step
             'tax_ytd' => $draft->taxOre,
             'contribution_basis_ytd' => $draft->contributionBasis(),
             'benefit_ytd' => $benefits,
+            'one_off_ytd' => $draft->taxableOneOff(),
         ] as $key => $value) {
             $draft->accumulatorDeltas[$key] = ($draft->accumulatorDeltas[$key] ?? 0) + $value;
         }

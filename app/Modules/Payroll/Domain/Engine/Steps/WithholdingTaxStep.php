@@ -9,14 +9,19 @@ use App\Modules\Payroll\Domain\Engine\PayrollContext;
 use App\Modules\Payroll\Domain\Engine\PayslipDraft;
 use App\Modules\Payroll\Domain\Engine\Step;
 use App\Modules\Payroll\Domain\Tax\WithholdingTax;
+use App\Modules\Payroll\Domain\Units;
 
 /**
- * Step 9: preliminary tax (PAYROLL_MODULE.md B.7). SINK is a flat rate; a
- * jämkning percentage replaces the table; otherwise the table and column.
+ * Step 9: preliminary tax (PAYROLL_MODULE.md B.7). SINK and A-SINK are flat
+ * rates on all taxable pay. Otherwise regular pay is taxed by the table and
+ * column, or by a jämkning percentage, which then applies to one-off
+ * payments too. One-off payments (bonus, retroactive pay) are taxed by the
+ * engångsbelopp table on the expected annual income: regular pay for a full
+ * year plus this and earlier one-off payments of the year (Skatteverket,
+ * "Engångsbelopp"); without regular pay, by the flat rate for that case.
  *
- * TODO(legal-verify): one-off payments need the expected annual income as
- * Skatteverket defines it, A-SINK and the mandatory withholding when tax
- * information is missing. Until verified these payslips are blocked.
+ * TODO(legal-verify): the mandatory withholding when tax information is
+ * missing; here such payslips are blocked.
  */
 final class WithholdingTaxStep implements Step
 {
@@ -27,31 +32,44 @@ final class WithholdingTaxStep implements Step
         $regular = $draft->taxableRegular();
         $oneOff = $draft->taxableOneOff();
 
-        if ($context->taxResidence === 'NON_RESIDENT_SINK') {
-            $result = $this->tax->sink($regular + $oneOff, $context->rules);
+        $flat = match ($context->taxResidence) {
+            'NON_RESIDENT_SINK' => $this->tax->flat($regular + $oneOff, 'sink.rate', 'sink', $context->rules),
+            'NON_RESIDENT_A_SINK' => $this->tax->flat($regular + $oneOff, 'a_sink.rate', 'a_sink', $context->rules),
+            default => null,
+        };
+
+        if ($flat !== null) {
+            $draft->taxOre = $flat->taxOre;
+            $draft->taxExplanation = $flat->explanation;
+
+            return;
+        }
+
+        if ($context->taxAdjustmentPercentBp !== null) {
+            $result = $this->tax->adjustedPercent($regular + $oneOff, $context->taxAdjustmentPercentBp, $context->rules);
             $draft->taxOre = $result->taxOre;
             $draft->taxExplanation = $result->explanation;
 
             return;
         }
 
-        if ($context->taxResidence !== 'SE') {
-            throw new PayrollBlockedException(__('Skatteavdrag för A-SINK stöds inte än.'));
-        }
-
-        if ($oneOff !== 0) {
-            throw new PayrollBlockedException(__('Skatt på engångsbelopp stöds inte än. Betala ut beloppet som vanlig lön eller vänta på nästa version.'));
-        }
-
-        if ($context->taxAdjustmentPercentBp === null && ($context->taxTable === null || $context->taxColumn === null)) {
+        if ($context->taxTable === null || $context->taxColumn === null) {
             throw new PayrollBlockedException(__('Skattetabell och kolumn saknas för den anställda.'));
         }
 
-        $result = $context->taxAdjustmentPercentBp !== null
-            ? $this->tax->adjustedPercent($regular, $context->taxAdjustmentPercentBp, $context->rules)
-            : $this->tax->fromTable($context->paymentDate->year, (int) $context->taxTable, (int) $context->taxColumn, $regular, $context->rules);
+        $regularTax = $this->tax->fromTable($context->paymentDate->year, $context->taxTable, $context->taxColumn, $regular, $context->rules);
+        $draft->taxOre = $regularTax->taxOre;
+        $draft->taxExplanation = $regularTax->explanation;
 
-        $draft->taxOre = $result->taxOre;
-        $draft->taxExplanation = $result->explanation;
+        if ($oneOff === 0) {
+            return;
+        }
+
+        $oneOffTax = $regular <= 0
+            ? $this->tax->flat($oneOff, 'tax.one_off_without_regular_salary', 'one_off_without_regular_salary', $context->rules)
+            : $this->tax->oneOff($oneOff, $regular * Units::MONTHS_PER_YEAR + $oneOff + ($context->accumulators['one_off_ytd'] ?? 0), $context->taxColumn, $context->rules);
+
+        $draft->taxOre += $oneOffTax->taxOre;
+        $draft->taxExplanation = ['regular' => $regularTax->explanation, 'one_off' => [...$oneOffTax->explanation, 'amount_ore' => $oneOff, 'tax_ore' => $oneOffTax->taxOre]];
     }
 }

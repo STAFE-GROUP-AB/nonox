@@ -132,3 +132,21 @@ HTML only) and the tax table file layout (SKV 433, edition 36).
 - Engångsbelopp are published only as HTML; column 1 for 2026 is in
   rules.json as `tax.one_off`, columns 2–6 must be added before use.
 
+## Rounding, one-off tax and A-SINK (2026-10-30)
+
+- `tax.rounding` = DOWN_TO_KRONA: "Belopp som avser skatt eller avgift enligt
+  skatteförfarandelagen (2011:1244) ska anges i hela krontal så att öretal
+  faller bort" (skatteförfarandeförordningen 22 kap. 1 §). SINK-lagen 7 § and
+  A-SINK-lagen 9 § say the same for their tax.
+- One-off payments (SFL 11 kap. 17 §) use the engångsbelopp table for the
+  column on the expected annual income, which Skatteverket defines as the
+  total gross income including benefits, this and earlier one-off payments of
+  the year at the main employer for the whole year. Here: regular taxable pay
+  of the period × 12 + this one-off + one-offs earlier in the year. Without
+  regular pay, 30 % ("Om du inte har tidsbestämd lön ska arbetsgivaren dra av
+  30 procent"). A jämkning percentage applies to one-off payments too.
+- A-SINK: 15 % (lag 1991:591 9 §), withheld by the payer (SFL 13 kap. 4 §).
+- Still open: how a salary with öre is placed in a table interval (no source
+  found; öre are dropped), and the mandatory withholding when tax
+  information is missing (blocked).
+

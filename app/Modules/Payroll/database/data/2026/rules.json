@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; a qualified person must check each against its source with payroll:verify-rule before it is used. Missing on purpose until researched: benefit.car.formula, per_diem.foreign.by_country, agi.field_codes, tax.rounding, and tax.one_off columns 2–6.",
+  "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; each company checks them against the sources in Lön → Regler (or an installation verifies them with payroll:verify-rule) before use. Missing until researched: per_diem.foreign.by_country (Skatteverket publishes it as CSV/API, see rättslig vägledning), and how a salary with öre is placed in a table interval.",
   "rules": [
     {
       "key": "employer_contribution.full",
@@ -400,6 +400,16 @@
       "source_quote": "Arbetsgivardeklaration – XML-schema version 1.1"
     },
     {
+      "key": "tax.rounding",
+      "valid_from": "2026-01-01",
+      "valid_to": null,
+      "value": {
+        "mode": "DOWN_TO_KRONA"
+      },
+      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandeforordning-20111261_sfs-2011-1261/",
+      "source_quote": "22 kap. 1 §: Belopp som avser skatt eller avgift enligt skatteförfarandelagen (2011:1244) ska anges i hela krontal så att öretal faller bort."
+    },
+    {
       "key": "tax.one_off",
       "valid_from": "2026-01-01",
       "valid_to": "2026-12-31",
@@ -436,12 +446,221 @@
               null,
               5400
             ]
+          ],
+          "2": [
+            [
+              0,
+              65800,
+              0
+            ],
+            [
+              65801,
+              477600,
+              2600
+            ],
+            [
+              477601,
+              660000,
+              3400
+            ],
+            [
+              660001,
+              null,
+              5500
+            ]
+          ],
+          "3": [
+            [
+              0,
+              25041,
+              0
+            ],
+            [
+              25042,
+              331200,
+              1000
+            ],
+            [
+              331201,
+              477600,
+              2600
+            ],
+            [
+              477601,
+              660000,
+              3400
+            ],
+            [
+              660001,
+              null,
+              5500
+            ]
+          ],
+          "4": [
+            [
+              0,
+              25041,
+              0
+            ],
+            [
+              25042,
+              54000,
+              300
+            ],
+            [
+              54001,
+              192000,
+              2200
+            ],
+            [
+              192001,
+              660000,
+              2600
+            ],
+            [
+              660001,
+              null,
+              4600
+            ]
+          ],
+          "5": [
+            [
+              0,
+              25041,
+              0
+            ],
+            [
+              25042,
+              32400,
+              1000
+            ],
+            [
+              32401,
+              160800,
+              2900
+            ],
+            [
+              160801,
+              184800,
+              3400
+            ],
+            [
+              184801,
+              660000,
+              3800
+            ],
+            [
+              660001,
+              null,
+              5400
+            ]
+          ],
+          "6": [
+            [
+              0,
+              25041,
+              0
+            ],
+            [
+              25042,
+              160800,
+              2900
+            ],
+            [
+              160801,
+              184800,
+              3400
+            ],
+            [
+              184801,
+              660000,
+              3800
+            ],
+            [
+              660001,
+              null,
+              5400
+            ]
           ]
         },
-        "note": "Brackets of expected annual income in whole kronor: [from, to, rate in basis points]. Only column 1 transcribed; the other columns must be added before use."
+        "note": "[from, to, rate bp] on the expected annual income in whole kronor (SKV 433 avsnitt 10)."
       },
       "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
-      "source_quote": "Kolumn 1: 0–25 041 kr 0 %; 25 042–82 800 kr 10 %; 82 801–192 000 kr 21 %; 192 001–477 600 kr 26 %; 477 601–660 000 kr 34 %; 660 001 kr och mer 54 %"
+      "source_quote": "Med årslön … menas totala bruttoinkomsten (inkl. förmåner och aktuellt engångsbelopp samt eventuellt tidigare under året utbetalda engångsbelopp) som du kan beräknas få hos din huvudarbetsgivare under hela året."
+    },
+    {
+      "key": "tax.one_off_without_regular_salary",
+      "valid_from": "2026-01-01",
+      "valid_to": null,
+      "value": {
+        "bp": 3000
+      },
+      "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
+      "source_quote": "Om du inte har tidsbestämd lön ska arbetsgivaren dra av 30 procent i skatt på engångsbeloppet."
+    },
+    {
+      "key": "a_sink.rate",
+      "valid_from": "2026-01-01",
+      "valid_to": null,
+      "value": {
+        "bp": 1500
+      },
+      "source_url": "https://data.riksdagen.se/dokument/sfs-1991-591.text",
+      "source_quote": "9 §: Särskild inkomstskatt tas ut med 15 procent av den skattepliktiga inkomsten. Öretal som uppkommer vid beräkning av skatten bortfaller."
+    },
+    {
+      "key": "benefit.car.formula",
+      "valid_from": "2026-01-01",
+      "valid_to": "2026-12-31",
+      "value": {
+        "prisbasbelopp_share_bp": 2900,
+        "interest": {
+          "state_rate_share_bp": 7000,
+          "plus_bp": 100,
+          "min_bp": 50,
+          "state_rate_bp": 255
+        },
+        "price_share_bp": 1300,
+        "reductions_ore": {
+          "electric": 35000000,
+          "hydrogen": 35000000,
+          "plug_in_hybrid": 14000000,
+          "gas": 10000000
+        },
+        "reduction_max_bp": 5000,
+        "long_service_mil": 3000,
+        "long_service_share_bp": 7500
+      },
+      "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+      "source_quote": "61 kap. 5 §: summan av 0,29 prisbasbelopp, ett ränterelaterat belopp (nybilspris × (70 procent av statslåneräntan + 0,01), lägst 0,5 procent), ett prisrelaterat belopp (13 procent av nybilspriset) och bilens fordonsskatt; 8 a §; 9 §. Statslåneränta 30 november 2025: 2,55 procent (https://skatteverket.se/download/18.1522bf3f19aea8075ba3285/1767885159120/belopp-och-procentsatser-for-inkomstaret-2026.pdf)."
+    },
+    {
+      "key": "agi.field_codes",
+      "valid_from": "2026-01-01",
+      "valid_to": null,
+      "value": {
+        "tax": "001",
+        "cash_salary": "011",
+        "other_benefits": "012",
+        "car_benefit": "013",
+        "fuel_benefit": "018",
+        "expense_allowance_other": "020",
+        "mileage_flag": "050",
+        "per_diem_flag": "051",
+        "occupational_pension": "030",
+        "no_work_tax_credit": "032",
+        "sink_tax": "274",
+        "a_sink_tax": "275",
+        "activity_type": "112",
+        "personal_number": "215",
+        "specification_number": "570",
+        "workplace_number": "060",
+        "rut": "021",
+        "rot": "022",
+        "cash_no_contributions": "131"
+      },
+      "source_url": "https://www.skatteverket.se/agbeskrivning",
+      "source_quote": "Fältkoder i arbetsgivardeklarationen på individnivå: 001 Avdragen preliminärskatt, 011 Kontant bruttolön med mera, 012 Övriga skattepliktiga förmåner, 013 Skattepliktig bilförmån, 274 Avdragen skatt SINK, 275 Avdragen skatt A-SINK, 215 Person-, samordnings- eller organisationsnummer, 570 Specifikationsnummer."
     }
   ]
 }

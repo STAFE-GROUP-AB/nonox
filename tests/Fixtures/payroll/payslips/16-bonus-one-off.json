@@ -1,0 +1,43 @@
+{
+  "description": "Bonus 5 000 kr on 32 000 kr: expected annual salary 32 000 × 12 + 5 000 = 389 000 kr gives 26 % in column 1 (1 300 kr), regular tax 6 381 kr from table 33",
+  "context": {
+    "birth_date": "1990-06-15",
+    "tax_residence": "SE",
+    "tax_table": 33,
+    "tax_column": 1,
+    "tax_adjustment_percent_bp": null,
+    "salary_form": "MONTHLY",
+    "monthly_salary_ore": 3200000,
+    "hourly_rate_ore": null,
+    "employment_rate_bp": 10000,
+    "employment_start": "2025-01-01",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [
+      {
+        "code": "BONUS",
+        "description": "Bonus",
+        "category": "ADDITION",
+        "taxable": true,
+        "tax_method": "ONE_OFF",
+        "contribution_basis": true,
+        "vacation_basis": false,
+        "amount_ore": 500000
+      }
+    ],
+    "accumulators": {
+      "contribution_basis_ytd": 9600000
+    },
+    "settings": {
+      "proration_method": "CALENDAR_DAYS"
+    }
+  },
+  "expected": {
+    "gross_ore": 3700000,
+    "tax_ore": 768100,
+    "net_ore": 2931900,
+    "employer_contribution_ore": 1162540
+  }
+}

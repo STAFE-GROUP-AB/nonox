@@ -17,9 +17,11 @@ use InvalidArgumentException;
  * rounding of a percentage result come from verified rules; nothing here is
  * a rate.
  *
+ * Tax computed as a percentage is stated in whole kronor with öre dropped
+ * (rule tax.rounding: skatteförfarandeförordningen 22 kap. 1 §).
+ *
  * TODO(legal-verify): how a period income with öre is placed in the table's
- * whole-krona intervals (here: the whole kronor, öre dropped), and the
- * rounding of tax computed as a percentage (rule tax.rounding).
+ * whole-krona intervals (here: the whole kronor, öre dropped).
  */
 final class WithholdingTax
 {
@@ -61,9 +63,18 @@ final class WithholdingTax
      */
     public function sink(int $taxableOre, RuleSet $rules): Withholding
     {
-        $bp = (int) ((array) $rules->get('sink.rate'))['bp'];
+        return $this->flat($taxableOre, 'sink.rate', 'sink', $rules);
+    }
 
-        return new Withholding($this->percent($taxableOre, $bp, $rules), ['method' => 'sink', 'rate_bp' => $bp, 'rule' => $rules->version('sink.rate')->id]);
+    /**
+     * A flat rate from a rule: SINK, A-SINK (a_sink.rate) or a one-off
+     * payment without regular salary (tax.one_off_without_regular_salary).
+     */
+    public function flat(int $taxableOre, string $ruleKey, string $method, RuleSet $rules): Withholding
+    {
+        $bp = (int) ((array) $rules->get($ruleKey))['bp'];
+
+        return new Withholding($this->percent($taxableOre, $bp, $rules), ['method' => $method, 'rate_bp' => $bp, 'rule' => $rules->version($ruleKey)->id]);
     }
 
     /**
