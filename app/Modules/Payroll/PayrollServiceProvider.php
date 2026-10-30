@@ -6,7 +6,10 @@ namespace App\Modules\Payroll;
 
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\ModuleRegistry;
+use App\Modules\Payroll\Console\ImportPayrollRulesCommand;
+use App\Modules\Payroll\Console\VerifyPayrollRuleCommand;
 use App\Modules\Payroll\Livewire\PayrollHome;
+use App\Modules\Payroll\Livewire\PayrollRules;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Policies\EmployeePolicy;
@@ -31,10 +34,15 @@ class PayrollServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'payroll');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
+        if ($this->app->runningInConsole()) {
+            $this->commands([ImportPayrollRulesCommand::class, VerifyPayrollRuleCommand::class]);
+        }
+
         Gate::policy(Employee::class, EmployeePolicy::class);
 
         Livewire::component(PayrollSettingsForm::NAME, PayrollSettingsForm::class);
         Livewire::component('payroll.home', PayrollHome::class);
+        Livewire::component('payroll.rules', PayrollRules::class);
 
         Route::middleware(['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY])
             ->group(__DIR__.'/routes/web.php');

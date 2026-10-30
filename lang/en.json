@@ -1338,5 +1338,17 @@
     "Sverige": "Sweden",
     "Ja": "Yes",
     "Spara löneinställningarna": "Save the payroll settings",
-    "Löner, lönebesked, semester och arbetsgivardeklaration.": "Salaries, payslips, vacation and employer declaration."
+    "Löner, lönebesked, semester och arbetsgivardeklaration.": "Salaries, payslips, vacation and employer declaration.",
+    "Regler för lön": "Payroll rules",
+    "Satser och belopp som lönekörningarna använder, med källa och kontroll.": "Rates and amounts the payroll runs use, with source and verification.",
+    "Gäller den": "Valid on",
+    "Alla regler är kontrollerade för :date.": "All rules are verified for :date.",
+    ":count av :total regler saknas eller är inte kontrollerade för :date. En lönekörning med utbetalning den dagen stoppas tills de är det.": ":count of :total rules are missing or not verified for :date. A payroll run paid on that day is blocked until they are.",
+    "Varje sats hämtas från Skatteverket, Försäkringskassan eller lagtexten och används först när en namngiven, behörig person har kontrollerat den mot källan. Ett kontrollerat värde ändras aldrig; en ändring blir en ny version med nytt datum.": "Every rate is taken from Skatteverket, Försäkringskassan or the law and is used only once a named, qualified person has checked it against the source. A verified value never changes; a change becomes a new version with a new date.",
+    "Regel": "Rule",
+    "Värde": "Value",
+    "Gäller": "Valid",
+    "Kontrollerad": "Verified",
+    "Källa": "Source",
+    "Ej kontrollerad": "Not verified"
 }

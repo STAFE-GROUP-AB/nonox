@@ -6,6 +6,8 @@ namespace App\Modules\Payroll\Livewire;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Payroll\Domain\Rules\RuleSet;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -31,7 +33,7 @@ class PayrollHome extends Component
                 ['title' => __('Löneinställningar'), 'text' => __('Utbetalningsdag, semesterregel, betalsätt och hur lönebeskeden når de anställda.'), 'link' => route('teams.show', ['company' => $company->id, 'flik' => 'moduler']), 'ready' => true],
                 ['title' => __('Arbetsgivare hos Skatteverket'), 'text' => __('Företaget behöver vara registrerat som arbetsgivare innan den första lönen betalas ut.'), 'link' => route('teams.show', $company->id), 'ready' => $company->employer_registered],
                 ['title' => __('Anställda'), 'text' => __('Lägg upp de anställda med skattetabell, bankkonto och anställningsform.'), 'link' => null, 'ready' => false],
-                ['title' => __('Regler och skattetabeller'), 'text' => __('Arbetsgivaravgifter, skattetabeller och andra satser för året måste vara verifierade innan en lönekörning kan göras.'), 'link' => null, 'ready' => false],
+                ['title' => __('Regler och skattetabeller'), 'text' => __('Arbetsgivaravgifter, skattetabeller och andra satser för året måste vara verifierade innan en lönekörning kan göras.'), 'link' => route('payroll.rules'), 'ready' => RuleSet::for(CarbonImmutable::today())->missing() === []],
                 ['title' => __('Första lönekörningen'), 'text' => __('Beräkna, kontrollera, attestera och betala.'), 'link' => null, 'ready' => false],
             ],
         ]);
