@@ -7,11 +7,13 @@ namespace App\Modules\Payroll\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\SaveEmployee;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Component;
 
@@ -88,6 +90,23 @@ class Employees extends Component
             : __('Uppgifterna för :name är sparade.', ['name' => "{$employee->first_name} {$employee->last_name}"]));
 
         $this->cancel();
+    }
+
+    public function invite(int $employeeId, InviteEmployeeToPortal $invite): void
+    {
+        $employee = Employee::query()->findOrFail($employeeId);
+
+        try {
+            $sent = $invite($this->user(), $this->company(), $employee);
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast($sent
+            ? __('Inbjudan till Min sida är skickad till :email.', ['email' => $employee->email])
+            : __(':name var redan medlem i företaget och är nu kopplad till sin inloggning.', ['name' => $employee->first_name]));
     }
 
     public function render(): View

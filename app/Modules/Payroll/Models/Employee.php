@@ -18,8 +18,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $company_id
  * @property int $employee_number
  * @property ?int $user_id
+ * @property ?CarbonImmutable $portal_invited_at
  * @property string $first_name
  * @property string $last_name
+ * @property ?string $email
  * @property string $personal_number
  * @property CarbonImmutable $birth_date
  * @property ?string $bank_clearing
@@ -88,6 +90,7 @@ class Employee extends Model
             'tax_adjustment_valid_to' => 'immutable_date',
             'emergency_contact' => 'encrypted',
             'notes' => 'encrypted',
+            'portal_invited_at' => 'immutable_datetime',
         ];
     }
 

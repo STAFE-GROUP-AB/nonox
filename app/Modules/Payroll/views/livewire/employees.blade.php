@@ -94,6 +94,18 @@
                                 <span class="block text-xs text-gray-500">{{ $employment->salary_form === 'HOURLY' ? __('per timme') : __('per månad') }}</span>
                             </span>
                         @endif
+                        <span class="w-40 text-right text-xs">
+                            @if($employee->user_id)
+                                <span class="text-gray-600">{{ __('Har inloggning till Min sida') }}</span>
+                            @elseif($canManage)
+                                <button type="button" class="font-medium text-accent-600 hover:text-accent-700" wire:click="invite({{ $employee->id }})" wire:loading.attr="disabled">
+                                    {{ $employee->portal_invited_at ? __('Skicka inbjudan igen') : __('Bjud in till Min sida') }}
+                                </button>
+                                @if($employee->portal_invited_at)
+                                    <span class="block text-gray-500">{{ __('Inbjuden :date', ['date' => $employee->portal_invited_at->setTimezone(config('app.timezone'))->format('Y-m-d')]) }}</span>
+                                @endif
+                            @endif
+                        </span>
                         @if($canManage)
                             <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $employee->id }})">{{ __('Ändra') }}</button>
                         @endif

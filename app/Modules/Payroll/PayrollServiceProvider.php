@@ -9,6 +9,8 @@ use App\Modules\ModuleRegistry;
 use App\Modules\Payroll\Console\ImportPayrollRulesCommand;
 use App\Modules\Payroll\Console\ImportTaxTablesCommand;
 use App\Modules\Payroll\Console\VerifyPayrollRuleCommand;
+use App\Modules\Payroll\Http\Middleware\SendEmployeesToPortal;
+use App\Modules\Payroll\Listeners\LinkEmployeeLogin;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\MyPayslips;
 use App\Modules\Payroll\Livewire\PayrollHome;
@@ -22,9 +24,13 @@ use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Policies\EmployeePolicy;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Policies\PayslipPolicy;
+use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Jetstream\Events\TeamMemberAdded;
 use Livewire\Livewire;
 
 /**
@@ -59,7 +65,12 @@ class PayrollServiceProvider extends ServiceProvider
         Livewire::component('payroll.run-page', PayrollRunPage::class);
         Livewire::component('payroll.my-payslips', MyPayslips::class);
 
-        Route::middleware(['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY])
-            ->group(__DIR__.'/routes/web.php');
+        Blade::anonymousComponentPath(__DIR__.'/views/components', 'payroll');
+        Event::listen(TeamMemberAdded::class, LinkEmployeeLogin::class);
+        $this->app->make(Router::class)->pushMiddlewareToGroup('web', SendEmployeesToPortal::class);
+
+        $middleware = ['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY];
+        Route::middleware($middleware)->group(__DIR__.'/routes/web.php');
+        Route::middleware($middleware)->group(__DIR__.'/routes/portal.php');
     }
 }

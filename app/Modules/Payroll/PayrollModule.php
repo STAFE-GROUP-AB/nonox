@@ -96,7 +96,6 @@ final class PayrollModule implements Module
     {
         return [
             ['label' => __('Lön'), 'route' => 'payroll.runs.index', 'permission' => 'payroll:view', 'active' => 'payroll.runs.*'],
-            ['label' => __('Mina lönebesked'), 'route' => 'payroll.self.payslips', 'permission' => 'self:payslips', 'active' => 'payroll.self.*'],
         ];
     }
 

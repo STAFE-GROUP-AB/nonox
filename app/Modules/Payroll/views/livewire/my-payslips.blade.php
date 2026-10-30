@@ -1,5 +1,7 @@
 <x-ui.card>
-    @if($payslips->isEmpty())
+    @if($employee === null)
+        <x-ui.empty-state :title="__('Ditt konto är inte kopplat till någon anställd')">{{ __('Be din arbetsgivare koppla din inloggning till dig under Lön → Anställda. Sedan visas dina lönebesked här.') }}</x-ui.empty-state>
+    @elseif($payslips->isEmpty())
         <x-ui.empty-state :title="__('Inga lönebesked ännu')">{{ __('När din lön är attesterad visas lönebeskedet här.') }}</x-ui.empty-state>
     @else
         <ul class="divide-y divide-gray-100">
@@ -13,7 +15,7 @@
                         <span class="block text-xs text-gray-500">{{ __('Netto') }}</span>
                         <x-ui.amount :money="$payslip->net_ore" class="text-lg font-semibold" />
                     </span>
-                    <a href="{{ route('payroll.payslips.pdf', $payslip) }}" target="_blank" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Öppna PDF') }}</a>
+                    <a href="{{ route('payroll.portal.payslip', $payslip) }}" target="_blank" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Öppna PDF') }}</a>
                 </li>
             @endforeach
         </ul>

@@ -6,9 +6,11 @@ namespace App\Modules\Payroll\Livewire;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\PayrollModule;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
@@ -22,6 +24,7 @@ class MyPayslips extends Component
     public function mount(): void
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'self:payslips'), 404);
+        abort_unless((bool) (app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company())['employee_self_service'] ?? true), 404);
     }
 
     public function render(): View
