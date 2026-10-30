@@ -18,6 +18,8 @@ final readonly class PayrollContext
      * @param  list<PayInput>  $inputs
      * @param  array<string, int>  $accumulators  calendar-year values before this payslip, by key
      * @param  array<string, mixed>  $settings
+     * @param  list<AbsenceInput>  $absences  approved absences in the period
+     * @param  array{last_sick_period_end?: string, last_sick_period_days?: int, karens_count_12m?: int}  $sickHistory
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -38,5 +40,8 @@ final readonly class PayrollContext
         public array $accumulators,
         public array $settings,
         public RuleSet $rules,
+        public ?string $weeklyHours = null,
+        public array $absences = [],
+        public array $sickHistory = [],
     ) {}
 }

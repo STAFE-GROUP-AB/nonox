@@ -1407,5 +1407,11 @@
     "Nettolönen blev negativ. :amount förs över som en fordran på den anställda.": "Net pay was negative. :amount is carried forward as a claim on the employee.",
     "Månadslön": "Monthly salary",
     "Delmånad räknad på arbetsschema stöds inte än. Välj kalenderdagar i löneinställningarna.": "Part months by work schedule are not supported yet. Choose calendar days in the payroll settings.",
-    "Månadslön, :days av :total dagar": "Monthly salary, :days of :total days"
+    "Månadslön, :days av :total dagar": "Monthly salary, :days of :total days",
+    "Sjukavdrag": "Sick deduction",
+    "Sjuklön :percent %, :hours timmar": "Sick pay :percent %, :hours hours",
+    "Karensavdrag": "Qualifying-day deduction",
+    "Sjukperioden är längre än arbetsgivarperioden. Anmäl sjukfallet till Försäkringskassan.": "The sick period is longer than the employer's period. Report the case to Försäkringskassan.",
+    "Avdrag för frånvaro, :hours timmar": "Absence deduction, :hours hours",
+    "Veckoarbetstid saknas på anställningen. Den behövs för frånvaro och sjuklön.": "Weekly working hours are missing on the employment. They are needed for absence and sick pay."
 }

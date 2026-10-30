@@ -1,0 +1,45 @@
+{
+  "description": "Sick again 4 days after a 3-day period ended: the period continues, no new karensavdrag",
+  "context": {
+    "birth_date": "1990-06-15",
+    "tax_residence": "SE",
+    "tax_table": 33,
+    "tax_column": 1,
+    "tax_adjustment_percent_bp": null,
+    "salary_form": "MONTHLY",
+    "monthly_salary_ore": 3200000,
+    "hourly_rate_ore": null,
+    "employment_rate_bp": 10000,
+    "employment_start": "2025-01-01",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [],
+    "accumulators": {
+      "contribution_basis_ytd": 9600000
+    },
+    "settings": {
+      "proration_method": "CALENDAR_DAYS"
+    },
+    "weekly_hours": "40",
+    "absences": [
+      {
+        "type": "SICK",
+        "date": "2026-04-07",
+        "hours": "8"
+      }
+    ],
+    "sick_history": {
+      "last_sick_period_end": "2026-04-03",
+      "last_sick_period_days": 3,
+      "karens_count_12m": 1
+    }
+  },
+  "expected": {
+    "gross_ore": 3170462,
+    "tax_ore": 633000,
+    "net_ore": 2537462,
+    "employer_contribution_ore": 996159
+  }
+}

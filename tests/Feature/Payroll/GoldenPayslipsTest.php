@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Payroll\Domain\Engine\AbsenceInput;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
@@ -29,6 +30,10 @@ beforeEach(function () {
         'employer_contribution.min_annual_basis' => ['ore' => 100_000],
         'sink.rate' => ['bp' => 2250],
         'tax.rounding' => ['mode' => 'DOWN_TO_KRONA'],
+        'sick_pay.percentage' => ['bp' => 8000],
+        'sick_pay.karensavdrag_percent_of_weekly' => ['bp' => 2000, 'max_occasions_per_12_months' => 10],
+        'sick_pay.employer_period_days' => ['days' => 14],
+        'sick_pay.reinfection_window_days' => ['days' => 5],
     ] as $key => $value) {
         PayrollRuleVersion::create(['key' => $key, 'valid_from' => '2026-01-01', 'value' => $value, 'source_url' => 'https://example.test'])
             ->forceFill(['verified_by' => 'Testperson', 'verified_at' => now()])->save();
@@ -62,6 +67,9 @@ function payrollContextFrom(array $data): PayrollContext
         accumulators: $data['accumulators'],
         settings: $data['settings'],
         rules: RuleSet::for(CarbonImmutable::parse($data['payment_date'])),
+        weeklyHours: $data['weekly_hours'] ?? null,
+        absences: array_map(fn (array $absence): AbsenceInput => new AbsenceInput($absence['type'], CarbonImmutable::parse($absence['date']), $absence['hours']), $data['absences'] ?? []),
+        sickHistory: $data['sick_history'] ?? [],
     );
 }
 
@@ -116,4 +124,22 @@ it('explains tax and contributions', function () {
     expect($result->taxExplanation)->toMatchArray(['method' => 'table', 'table' => 33, 'column' => 1, 'amount_kronor' => 6381])
         ->and($result->contributionExplanation['rule'])->toBe('youth_reduction')
         ->and($result->contributionExplanation['parts'])->toBe([['basis_ore' => 2_500_000, 'rate_bp' => 2081], ['basis_ore' => 700_000, 'rate_bp' => 3142]]);
+});
+
+it('stops sick pay after the employer\'s period and asks for Försäkringskassan', function () {
+    $fixture = json_decode((string) file_get_contents(base_path('tests/Fixtures/payroll/payslips/01-full-month.json')), true)['context'];
+    $days = array_map(fn (int $day): array => ['type' => 'SICK', 'date' => sprintf('2026-04-%02d', $day), 'hours' => '8'], range(1, 16));
+
+    $result = app(PayrollCalculator::class)->calculate(payrollContextFrom([...$fixture, 'weekly_hours' => '40', 'absences' => $days]));
+    $sickPay = collect($result->lines)->firstWhere('code', 'SJUKLON');
+
+    expect($sickPay->explanation['hours'])->toBe('112')
+        ->and($result->warnings)->toContain('Sjukperioden är längre än arbetsgivarperioden. Anmäl sjukfallet till Försäkringskassan.');
+});
+
+it('needs the weekly hours for absence', function () {
+    $fixture = json_decode((string) file_get_contents(base_path('tests/Fixtures/payroll/payslips/11-sick-two-days.json')), true)['context'];
+
+    expect(fn () => app(PayrollCalculator::class)->calculate(payrollContextFrom([...$fixture, 'weekly_hours' => null])))
+        ->toThrow(PayrollBlockedException::class, 'Veckoarbetstid saknas');
 });
