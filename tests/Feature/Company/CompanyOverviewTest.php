@@ -54,6 +54,7 @@ it('shows each client with what waits there and opens the task in the right comp
     $this->actingAs($this->consultant);
 
     Livewire::test(CompanyOverviewPage::class)
+        ->set('tab', 'uppgifter')
         ->assertSee('Bistro Hamnen AB')
         ->assertSee('Moms att redovisa, äldsta 2026-01-01 – 2026-01-31')
         ->assertSee('försenad, sista dag var 2026-03-12')
@@ -126,11 +127,12 @@ it('is reached from the company menu at a Swedish address', function () {
     $this->consultant->switchCompany($company);
     $this->actingAs($this->consultant->fresh());
 
-    $this->get('/mina-foretag')->assertOk()->assertSee('Mina företag')->assertSee('Moms att redovisa');
+    $this->get('/mina-foretag')->assertOk()->assertSee('Byråvy')->assertSee('Pågår');
+    $this->get('/mina-foretag?vy=uppgifter')->assertOk()->assertSee('Moms att redovisa');
     $this->get(route('dashboard'))->assertOk()->assertSee(route('companies.overview'));
 });
 
-it('shows each client month by month: posted, locked, VAT and AGI', function () {
+it('shows each client month by month: posted up to, bank, VAT, AGI and receivables', function () {
     $company = clientCompany();
     $company->forceFill(['name' => 'Bistro Hamnen AB', 'locked_until_date' => '2026-01-31'])->save();
     CurrentCompany::run($company, function () use ($company): void {
@@ -156,15 +158,27 @@ it('shows each client month by month: posted, locked, VAT and AGI', function () 
         ->and($cells['2026-03']['vat'])->toBe('DUE')
         ->and($cells['2026-03']['vat_due'])->toBe('2026-05-12')
         ->and($cells['2026-04']['vat'])->toBe('OPEN')
-        ->and($cells['2026-03']['agi'])->toBeNull();
+        ->and($cells['2026-03']['agi'])->toBe('NONE');
+
+    expect($cells['2026-03']['posted_until'])->toBe('2026-03-20')
+        ->and($cells['2026-04']['posted_until'])->toBe('2026-03-20')
+        ->and($cells['2025-12']['posted_until'])->toBeNull()
+        ->and($cells['2026-03']['bank'])->toBeNull()
+        ->and($cells['2026-03']['receivables'])->toBe(0);
 
     Livewire::test(CompanyOverviewPage::class)
-        ->set('tab', 'manader')
-        ->assertSee('mar 2026')
+        ->assertSee('Klienter, april 2026')
         ->assertSee('Bistro Hamnen AB')
-        ->assertSee('Moms försenad')
-        ->assertSee('Moms redovisad')
-        ->assertSee('2 ver.');
+        ->assertSee('BH')
+        ->assertSee('Pågår')
+        ->set('month', '2026-03')
+        ->assertSee('Klienter, mars 2026')
+        ->assertSee('Att göra')
+        ->assertSee('2026-03-20')
+        ->set('month', '2026-02')
+        ->assertSee('Lämnad')
+        ->assertSee('Mar')
+        ->assertSee('Maj');
 });
 
 it('lets the firm choose a responsible consultant and keep a note the client does not see', function () {
@@ -176,6 +190,7 @@ it('lets the firm choose a responsible consultant and keep a note the client doe
     $this->actingAs($this->consultant);
 
     Livewire::test(CompanyOverviewPage::class)
+        ->set('tab', 'uppgifter')
         ->set('showAll', true)
         ->call('assign', $bistro->id, (string) $this->consultant->id)
         ->assertDispatched('toast')

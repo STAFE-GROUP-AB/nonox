@@ -10,6 +10,7 @@ use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Domain\Vat\VatDeadlines;
 use App\Domain\Vat\VatPeriods;
+use App\Models\BankTransaction;
 use App\Models\ClientProfile;
 use App\Models\Company;
 use App\Models\CompanyModule;
@@ -240,40 +241,56 @@ final class CompanyOverview
     }
 
     /**
-     * Months with what has happened in each company: vouchers posted, the
-     * period locked, the VAT period declared and the employer declaration
-     * submitted, the way a firm follows its clients month by month.
+     * Months with where each company stands, the way a firm follows its
+     * clients: posted up to which day, vouchers posted, the month locked,
+     * bank payments not yet matched, the VAT period and the employer
+     * declaration (REPORTED, DUE, LATE, OPEN; for VAT also QUARTER or YEAR
+     * when no period ends in the month, NONE when the company has no VAT or
+     * payroll for it), and what customers still owe on invoices issued by
+     * the end of the month.
      *
      * @return array{
      *     months: list<string>,
      *     rows: list<array{
      *         company: Company,
-     *         cells: array<string, array{posted: ?int, locked: bool, vat: ?string, vat_due: ?string, agi: ?string, agi_due: ?string}>
+     *         cells: array<string, array{posted: ?int, posted_until: ?string, locked: bool, bank: ?int, receivables: ?int, vat: ?string, vat_due: ?string, agi: ?string, agi_due: ?string}>
      *     }>
      * }
      */
-    public function months(User $user, int $count = 6, ?CarbonImmutable $today = null): array
+    public function months(User $user, int $back = 5, int $ahead = 0, ?CarbonImmutable $today = null): array
     {
         $today ??= CarbonImmutable::today();
         $companies = $this->prepare($user, $today);
         $ids = array_values($companies->pluck('id')->all());
-        $first = $today->startOfMonth()->subMonthsNoOverflow($count - 1);
-        $months = array_map(fn (int $i): string => $first->addMonthsNoOverflow($i)->format('Y-m'), range(0, $count - 1));
+        $first = $today->startOfMonth()->subMonthsNoOverflow($back);
+        $months = array_map(fn (int $i): string => $first->addMonthsNoOverflow($i)->format('Y-m'), range(0, $back + $ahead));
+        $last = CarbonImmutable::parse(end($months).'-01')->endOfMonth();
 
         if ($ids === []) {
             return ['months' => $months, 'rows' => []];
         }
 
-        return CompanyScope::bypass(function () use ($companies, $ids, $months, $first, $today): array {
+        return CompanyScope::bypass(function () use ($companies, $ids, $months, $first, $last, $today): array {
             $this->loadModules($ids);
             $payrollIds = array_values(array_filter($ids, fn (int $id): bool => $this->enabled($id, PayrollModule::KEY)));
             $this->loadAgiRules($payrollIds);
 
-            $posted = Voucher::query()->whereIn('company_id', $ids)->where('status', VoucherStatus::Posted->value)
-                ->whereDate('voucher_date', '>=', $first->toDateString())->whereDate('voucher_date', '<=', $today->endOfMonth()->toDateString())
-                ->groupBy('company_id', DB::raw("to_char(voucher_date, 'YYYY-MM')"))
-                ->select('company_id', DB::raw("to_char(voucher_date, 'YYYY-MM') as month"), DB::raw('count(*) as aggregate'))->get()
-                ->mapWithKeys(fn (Voucher $voucher): array => ["{$voucher->company_id}:{$voucher->getAttribute('month')}" => (int) $voucher->getAttribute('aggregate')])->all();
+            $from = $first->toDateString();
+            $postedRows = Voucher::query()->whereIn('company_id', $ids)->where('status', VoucherStatus::Posted->value)
+                ->whereDate('voucher_date', '<=', $last->toDateString())
+                ->selectRaw("company_id, case when voucher_date < ? then 'earlier' else to_char(voucher_date, 'YYYY-MM') end as month, count(*) as aggregate, max(voucher_date) as last", [$from])
+                ->groupByRaw('1, 2')->get();
+            $posted = $postedRows->mapWithKeys(fn (Voucher $voucher): array => ["{$voucher->company_id}:{$voucher->getAttribute('month')}" => (int) $voucher->getAttribute('aggregate')])->all();
+            $postedUntil = $postedRows->mapWithKeys(fn (Voucher $voucher): array => ["{$voucher->company_id}:{$voucher->getAttribute('month')}" => CarbonImmutable::parse((string) $voucher->getAttribute('last'))->toDateString()])->all();
+            $bank = BankTransaction::query()->whereIn('company_id', $ids)->whereNull('invoice_id')->whereDate('booking_date', '<=', $last->toDateString())
+                ->selectRaw("company_id, case when booking_date < ? then 'earlier' else to_char(booking_date, 'YYYY-MM') end as month, count(*) as aggregate", [$from])
+                ->groupByRaw('1, 2')->get()
+                ->mapWithKeys(fn (BankTransaction $row): array => ["{$row->company_id}:{$row->getAttribute('month')}" => (int) $row->getAttribute('aggregate')])->all();
+            $hasBank = BankTransaction::query()->whereIn('company_id', $ids)->distinct()->pluck('company_id')->map(fn (mixed $id): int => (int) $id)->all();
+            $receivables = Invoice::query()->whereIn('company_id', $ids)->where('status', InvoiceStatus::Issued->value)->whereDate('invoice_date', '<=', $last->toDateString())
+                ->selectRaw("company_id, case when invoice_date < ? then 'earlier' else to_char(invoice_date, 'YYYY-MM') end as month, sum(total_ore - paid_ore) as aggregate", [$from])
+                ->groupByRaw('1, 2')->get()
+                ->mapWithKeys(fn (Invoice $row): array => ["{$row->company_id}:{$row->getAttribute('month')}" => (int) $row->getAttribute('aggregate')])->all();
             $years = FiscalYear::query()->whereIn('company_id', $ids)->orderBy('start_date')->get()->groupBy('company_id');
             $reported = VatReport::query()->whereIn('company_id', $ids)->get(['company_id', 'period_start'])
                 ->map(fn (VatReport $report): string => "{$report->company_id}:{$report->period_start->toDateString()}")->all();
@@ -283,10 +300,12 @@ final class CompanyOverview
             $declared = $payrollIds === [] ? [] : AgiSubmission::query()->whereIn('company_id', $payrollIds)->whereIn('status', AgiSubmission::REPORTED)
                 ->select('company_id', 'period')->distinct()->get()->map(fn (AgiSubmission $submission): string => "{$submission->company_id}:{$submission->period}")->all();
 
-            $rows = $companies->map(function (Company $company) use ($months, $posted, $years, $reported, $paid, $declared, $today): array {
+            $rows = $companies->map(function (Company $company) use ($months, $posted, $postedUntil, $bank, $hasBank, $receivables, $years, $reported, $paid, $declared, $today, $payrollIds): array {
                 $id = $company->id;
                 $seesLedger = $this->may($id, 'reports:view');
+                $seesInvoices = $this->may($id, 'invoices:view');
                 $seesPayroll = $this->may($id, 'payroll:view');
+                $hasPayroll = in_array($id, $payrollIds, true);
                 $vatPeriods = [];
 
                 if ($company->vat_registered && $seesLedger) {
@@ -298,8 +317,16 @@ final class CompanyOverview
                 }
 
                 $cells = [];
+                // Totals carried from before the first month: "earlier" sorts before every YYYY-MM.
+                $until = $postedUntil["{$id}:earlier"] ?? null;
+                $openBank = $bank["{$id}:earlier"] ?? 0;
+                $owed = $receivables["{$id}:earlier"] ?? 0;
 
                 foreach ($months as $month) {
+                    $until = $postedUntil["{$id}:{$month}"] ?? $until;
+                    $openBank += $bank["{$id}:{$month}"] ?? 0;
+                    $owed += $receivables["{$id}:{$month}"] ?? 0;
+
                     $period = $vatPeriods[$month] ?? null;
                     $vatDue = $period === null ? null : VatDeadlines::for($company->vat_period, $period['end'], $company->turnover_over_40_msek);
                     $agiDue = $seesPayroll && in_array("{$id}:{$month}", $paid, true) ? $this->agiDeadline($id, $month) : null;
@@ -307,15 +334,21 @@ final class CompanyOverview
 
                     $cells[$month] = [
                         'posted' => $seesLedger ? ($posted["{$id}:{$month}"] ?? 0) : null,
+                        'posted_until' => $seesLedger ? $until : null,
+                        'bank' => $seesLedger && in_array($id, $hasBank, true) ? $openBank : null,
+                        'receivables' => $seesInvoices ? $owed : null,
                         'locked' => $company->locked_until_date !== null && $company->locked_until_date->greaterThanOrEqualTo($monthEnd),
-                        'vat' => $period === null ? null : match (true) {
+                        'vat' => ! $seesLedger ? null : match (true) {
+                            ! $company->vat_registered => 'NONE',
+                            $period === null => $company->vat_period === VatPeriod::Yearly ? 'YEAR' : 'QUARTER',
                             in_array("{$id}:{$period['start']->toDateString()}", $reported, true) => 'REPORTED',
                             $period['end']->greaterThanOrEqualTo($today) => 'OPEN',
                             $vatDue !== null && $vatDue->lessThan($today) => 'LATE',
                             default => 'DUE',
                         },
                         'vat_due' => $vatDue?->toDateString(),
-                        'agi' => ! $seesPayroll || ! in_array("{$id}:{$month}", $paid, true) ? null : match (true) {
+                        'agi' => ! $seesPayroll ? ($hasPayroll ? null : 'NONE') : match (true) {
+                            ! in_array("{$id}:{$month}", $paid, true) => 'NONE',
                             in_array("{$id}:{$month}", $declared, true) => 'REPORTED',
                             $agiDue !== null && $agiDue->lessThan($today) => 'LATE',
                             default => 'DUE',

@@ -22,6 +22,20 @@ const accent = {
     950: '#320c09',
 };
 
+/*
+ * The 2027 look from the NONOX landing page: near-black ink for selected
+ * states and a bright signal colour for what is late or waiting.
+ */
+const signal = {
+    50: '#fff3ee',
+    100: '#ffe4da',
+    200: '#ffc6b2',
+    500: '#ff4a1c',
+    600: '#eb3d10',
+    700: '#c2300c',
+    800: '#9a2810',
+};
+
 /** @type {import('tailwindcss').Config} */
 export default {
     content: [
@@ -38,6 +52,8 @@ export default {
                 indigo: accent,
                 gray: colors.stone,
                 paper: '#f7f5f0',
+                ink: '#17171a',
+                signal,
             },
             fontFamily: {
                 sans: ['ui-sans-serif', 'system-ui', '-apple-system', '"Segoe UI"', 'Roboto', '"Helvetica Neue"', 'Arial', ...defaultTheme.fontFamily.sans],

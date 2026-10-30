@@ -31,9 +31,13 @@ class CompanyOverviewPage extends Component
     #[Url(as: 'alla', except: false)]
     public bool $showAll = false;
 
-    /** uppgifter: what waits; manader: month by month. */
-    #[Url(as: 'vy', except: 'uppgifter')]
-    public string $tab = 'uppgifter';
+    /** manad: the clients month by month; uppgifter: what waits. */
+    #[Url(as: 'vy', except: 'manad')]
+    public string $tab = 'manad';
+
+    /** The month shown in the month view, YYYY-MM; empty is this month. */
+    #[Url(as: 'manad', except: '')]
+    public string $month = '';
 
     /** Only companies the user is responsible for. */
     #[Url(as: 'mina', except: false)]
@@ -83,13 +87,24 @@ class CompanyOverviewPage extends Component
             || str_contains(mb_strtolower($row['company']->name), $needle)
             || ($digits !== '' && str_contains((string) preg_replace('/\D/', '', (string) $row['company']->org_number), $digits));
 
-        if ($this->tab === 'manader') {
-            $status = $overview->months($user);
+        if ($this->tab === 'manad') {
+            $status = $overview->months($user, back: 2, ahead: 1);
+            $month = in_array($this->month, $status['months'], true) ? $this->month : now()->format('Y-m');
+            $weight = fn (array $row): int => collect([$row['cells'][$month]['vat'], $row['cells'][$month]['agi']])
+                ->map(fn (?string $state): int => match ($state) {
+                    'LATE' => 2,
+                    'DUE' => 1,
+                    default => 0,
+                })->sum() + (($row['cells'][$month]['bank'] ?? 0) > 0 ? 1 : 0);
+            $rows = collect($status['rows'])->filter($matches)
+                ->sortBy([fn (array $a, array $b): int => $weight($b) <=> $weight($a), fn (array $a, array $b): int => strnatcasecmp($a['company']->name, $b['company']->name)])
+                ->values()->all();
 
             return view('livewire.company.overview-months', [
                 'months' => $status['months'],
-                'rows' => array_values(array_filter($status['rows'], $matches)),
-                'currentId' => $user->current_team_id,
+                'selected' => $month,
+                'rows' => $rows,
+                'firm' => $this->firmName($user),
             ]);
         }
 
@@ -106,6 +121,17 @@ class CompanyOverviewPage extends Component
             'roleLabels' => collect(Jetstream::$roles)->mapWithKeys(fn ($role): array => [$role->key => $role->name])->put('owner', __('Ägare'))->all(),
             'currentId' => $user->current_team_id,
         ]);
+    }
+
+    /**
+     * The firm the user works for, as the page heading names it: the
+     * company the user owns when it is only one, otherwise the user.
+     */
+    private function firmName(User $user): string
+    {
+        $owned = $user->companies()->filter(fn (Company $company): bool => $user->ownsTeam($company));
+
+        return $owned->count() === 1 ? (string) $owned->first()?->name : $user->name;
     }
 
     /** One of the user's own companies; another answers 404. */

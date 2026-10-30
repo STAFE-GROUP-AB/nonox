@@ -44,10 +44,15 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
   kommer från den kontrollerade regeln `agi.deadlines`; utan kontrollerad
   regel visas ingen dag.
-- Fliken Månad för månad visar de senaste sex månaderna per företag: antal
-  bokförda verifikationer, om månaden är låst, och för momsperioder som slutar
-  i månaden respektive månader med utbetald lön om momsdeklarationen och
-  arbetsgivardeklarationen är redovisade, att redovisa eller försenade.
+- Fliken Månad för månad (Byråvy) visar alla företag för en vald månad,
+  bland föregående två, innevarande och nästa: bokfört till och med (senaste
+  bokförda verifikationens datum till och med månadens slut), inlästa
+  bankposter som ännu inte är kopplade till en faktura, momsen och
+  arbetsgivardeklarationen för månaden (Lämnad, Att göra, Försenad, Pågår,
+  Kvartal eller Helår när ingen momsperiod slutar i månaden, Ej aktuell) och
+  vad kunderna är skyldiga på fakturor utfärdade till och med månadens slut.
+  Företag med försenat eller ogjort hamnar överst. En försenad eller ogjord
+  deklaration öppnar rätt sida i rätt företag.
 - Varje företag kan ha en ansvarig redovisningskonsult, vald bland
   företagets medlemmar med rollen Redovisningskonsult av en sådan konsult,
   ägaren eller en administratör. Alla i företaget ser vem som är ansvarig.
