@@ -12,12 +12,18 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * An absence. Sensitive: only payroll:view-sensitive may read the type, and every read is audit-logged (B.15).
  *
+ * @property int $id
+ * @property int $company_id
  * @property int $employee_id
  * @property string $type
  * @property CarbonImmutable $date_from
  * @property CarbonImmutable $date_to
  * @property ?string $hours
  * @property string $status
+ * @property ?string $note
+ * @property ?int $requested_by
+ * @property ?CarbonImmutable $decided_at
+ * @property ?string $rejection_reason
  */
 class Absence extends Model
 {
@@ -39,6 +45,9 @@ class Absence extends Model
         'note',
         'status',
         'approved_by',
+        'requested_by',
+        'decided_at',
+        'rejection_reason',
     ];
 
     /** @return array<string, string> */
@@ -50,6 +59,7 @@ class Absence extends Model
             'extent_bp' => 'integer',
             'doctor_certificate_received' => 'boolean',
             'note' => 'encrypted',
+            'decided_at' => 'immutable_datetime',
         ];
     }
 

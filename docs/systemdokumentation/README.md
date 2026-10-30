@@ -305,6 +305,12 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   lön. Saldot räknas fram ur anställningar, frånvaro och attesterade
   lönebesked; inget saldo lagras som kan glida isär från underlaget.
   Semesterlöner bokförs på 7082.
+- Självservice: en anställd anmäler sjukdom eller vård av barn och ansöker om
+  semester på Min sida. Ansökan räknas inte i lönen förrän någon med ansvar för
+  lönekörningar har godkänt den, med timmar per dag (förvalt veckoarbetstiden
+  delat med fem). Den som ansökt kan inte godkänna sin egen ansökan om
+  attestkravet är på. En månad vars lönekörning redan är attesterad tar inte
+  emot frånvaro; en beräknad körning blir utkast igen.
 - Semesterlöneskuld: kvarvarande betalda dagar plus dagarna som tjänas in i
   innevarande intjänandeår, värderade under sammalöneregeln till företagets
   dagsvärde (löneinställning, % av månadslönen) plus semestertillägg, och under

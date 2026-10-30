@@ -11,7 +11,9 @@ use App\Modules\Payroll\Console\ImportTaxTablesCommand;
 use App\Modules\Payroll\Console\VerifyPayrollRuleCommand;
 use App\Modules\Payroll\Http\Middleware\SendEmployeesToPortal;
 use App\Modules\Payroll\Listeners\LinkEmployeeLogin;
+use App\Modules\Payroll\Livewire\AbsenceRequestList;
 use App\Modules\Payroll\Livewire\Employees;
+use App\Modules\Payroll\Livewire\MyAbsence;
 use App\Modules\Payroll\Livewire\MyPayslips;
 use App\Modules\Payroll\Livewire\PayrollHome;
 use App\Modules\Payroll\Livewire\PayrollRules;
@@ -66,6 +68,8 @@ class PayrollServiceProvider extends ServiceProvider
         Livewire::component('payroll.run-page', PayrollRunPage::class);
         Livewire::component('payroll.my-payslips', MyPayslips::class);
         Livewire::component('payroll.vacation-liability', VacationLiabilityReport::class);
+        Livewire::component('payroll.my-absence', MyAbsence::class);
+        Livewire::component('payroll.absence-requests', AbsenceRequestList::class);
 
         Blade::anonymousComponentPath(__DIR__.'/views/components', 'payroll');
         Event::listen(TeamMemberAdded::class, LinkEmployeeLogin::class);

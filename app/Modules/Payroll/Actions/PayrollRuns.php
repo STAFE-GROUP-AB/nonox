@@ -468,7 +468,7 @@ class PayrollRuns
     }
 
     /** A change to inputs or absence makes the calculation out of date. */
-    private function backToDraft(PayrollRun $run): void
+    public function backToDraft(PayrollRun $run): void
     {
         $this->deletePayslips($run);
         $run->forceFill(['status' => PayrollRun::DRAFT, 'calculated_by' => null, 'calculated_at' => null, 'rule_snapshot_hash' => null])->save();

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Company\UpdateCompanyBranding;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
@@ -11,10 +12,13 @@ use App\Modules\Payroll\Livewire\MyPayslips;
 use App\Modules\Payroll\Mail\EmployeePortalInvitationMail;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\PayslipPdf;
+use App\Support\Branding\Brand;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -97,8 +101,8 @@ it('keeps employees in the portal, away from the rest of the system', function (
 });
 
 it('shows the company logo in the portal to employees', function () {
-    Illuminate\Support\Facades\Storage::fake(App\Support\Branding\Brand::DISK);
-    app(App\Actions\Company\UpdateCompanyBranding::class)($this->owner, $this->company, [], Illuminate\Http\UploadedFile::fake()->image('logo.png', 200, 80));
+    Storage::fake(Brand::DISK);
+    app(UpdateCompanyBranding::class)($this->owner, $this->company, [], UploadedFile::fake()->image('logo.png', 200, 80));
 
     $this->actingAs($this->worker)->get(route('payroll.portal.home'))->assertSee(route('teams.logo', $this->company->id));
     $this->actingAs($this->worker)->get(route('teams.logo', $this->company->id))->assertOk()->assertHeader('Content-Type', 'image/png');
