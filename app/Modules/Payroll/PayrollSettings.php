@@ -18,6 +18,7 @@ final class PayrollSettings
         'vacation_year_start_month' => null,
         'vacation_rule_default' => ['SAMMALONEREGELN', 'PROCENTREGELN'],
         'vacation_liability_booking' => ['MONTHLY', 'YEAR_END'],
+        'vacation_day_value_percent' => null,
         'net_pay_rounding' => ['ORE', 'WHOLE_KRONOR'],
         'segregation_of_duties' => null,
         'use_employment_dimensions' => null,
@@ -37,6 +38,8 @@ final class PayrollSettings
         'vacation_year_start_month' => 4,
         'vacation_rule_default' => 'SAMMALONEREGELN',
         'vacation_liability_booking' => 'MONTHLY',
+        // The value of one vacation day under sammalöneregeln for the liability; semesterlagen sets none, 4.6 % is common in collective agreements.
+        'vacation_day_value_percent' => '4.6',
         'net_pay_rounding' => 'ORE',
         'segregation_of_duties' => true,
         'use_employment_dimensions' => true,

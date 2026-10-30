@@ -305,8 +305,17 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   lön. Saldot räknas fram ur anställningar, frånvaro och attesterade
   lönebesked; inget saldo lagras som kan glida isär från underlaget.
   Semesterlöner bokförs på 7082.
-- Utbetalningsfil, semesterlöneskuld, sparade semesterdagar och
-  arbetsgivardeklaration är inte byggda ännu.
+- Semesterlöneskuld: kvarvarande betalda dagar plus dagarna som tjänas in i
+  innevarande intjänandeår, värderade under sammalöneregeln till företagets
+  dagsvärde (löneinställning, % av månadslönen) plus semestertillägg, och under
+  procentregeln till 12 % av underlaget. Sociala avgifter med den anställdes
+  senaste avgiftssats. När företaget bokför skulden varje månad tar
+  lönekörningens verifikation i serie L med raderna som för 2920 och 2940 till
+  skulden på periodens sista dag (motkonton 7090 och 7519), mätt mot saldot i
+  huvudboken på utbetalningsdagen, så att ingående balanser räknas. Varje
+  bokförd skuld sparas per anställd i en tabell som bara går att lägga till i.
+- Utbetalningsfil, sparade semesterdagar och arbetsgivardeklaration är inte
+  byggda ännu.
 
 ## 6. Belopp
 
@@ -330,7 +339,9 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   (3 a § och 9 § tredje stycket); rörlig lön under sammalöneregeln (16 a §);
   inräknad inkomst för semesterlönegrundande frånvaro under procentregeln
   (16 b §); löneavdraget för semesterdagar under procentregeln för
-  månadsavlönade; skatt på semesterersättning som betalas med varje lön.
+  månadsavlönade; skatt på semesterersättning som betalas med varje lön;
+  värdering av semesterlöneskulden under sammalöneregeln och sociala avgifter
+  på skulden för anställda med nedsatt avgift.
 
 - Minsta längd för ett första räkenskapsår: `AGENTS.md` anger 6 månader;
   bokföringslagen 3 kap anger högst 18.

@@ -18,6 +18,7 @@ use App\Modules\Payroll\Livewire\PayrollRules;
 use App\Modules\Payroll\Livewire\PayrollRunList;
 use App\Modules\Payroll\Livewire\PayrollRunPage;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
+use App\Modules\Payroll\Livewire\VacationLiabilityReport;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
@@ -64,6 +65,7 @@ class PayrollServiceProvider extends ServiceProvider
         Livewire::component('payroll.run-list', PayrollRunList::class);
         Livewire::component('payroll.run-page', PayrollRunPage::class);
         Livewire::component('payroll.my-payslips', MyPayslips::class);
+        Livewire::component('payroll.vacation-liability', VacationLiabilityReport::class);
 
         Blade::anonymousComponentPath(__DIR__.'/views/components', 'payroll');
         Event::listen(TeamMemberAdded::class, LinkEmployeeLogin::class);

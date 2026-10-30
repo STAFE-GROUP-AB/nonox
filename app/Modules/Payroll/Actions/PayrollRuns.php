@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Actions;
 
 use App\Actions\Accounting\BookVoucher;
+use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\VoucherSource;
 use App\Models\Account;
 use App\Models\Company;
+use App\Models\FiscalYear;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
@@ -24,11 +26,13 @@ use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
+use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Support\RulePresenter;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
 use App\Modules\Payroll\Support\Tax\MissingTaxTableException;
+use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -383,22 +387,75 @@ class PayrollRuns
             $payCodes = PayCode::query()->get()->keyBy('id');
             $accounts = Account::query()->whereIn('id', $payCodes->pluck('debit_account_id')->merge($payCodes->pluck('credit_account_id'))->filter()->unique())->get()->keyBy('id');
 
+            $salaryRows = SalaryVoucher::rows($payslips, $payCodes, $accounts);
+            $liability = $this->vacationLiability($company, $run);
+
             $voucher = app(BookVoucher::class)->rows(
                 $user,
                 $company,
                 $run->payment_date,
                 $run->title(),
                 'L',
-                SalaryVoucher::rows($payslips, $payCodes, $accounts),
+                [...$salaryRows, ...($liability['rows'] ?? [])],
                 VoucherSource::Payroll,
                 $run,
             );
+
+            if ($liability !== null) {
+                VacationLiabilitySnapshot::create($liability['snapshot']);
+            }
 
             $run->forceFill(['status' => PayrollRun::POSTED, 'posted_voucher_id' => $voucher->id])->save();
             Audit::record('payroll.run_posted', $run, ['period' => $run->period, 'voucher' => $voucher->reference()], $company, $user);
 
             return $run;
         }));
+    }
+
+    /**
+     * The vacation liability at the end of the run's period and the voucher
+     * rows that bring 2920 and 2940 to it, when the company books it monthly
+     * (PAYROLL_MODULE.md B.12). Null when booked at year end.
+     *
+     * @return ?array{rows: list<array{account: int, amount: int, description: string}>, snapshot: array<string, mixed>}
+     */
+    private function vacationLiability(Company $company, PayrollRun $run): ?array
+    {
+        $settings = $this->modules->settings(PayrollModule::KEY, $company);
+
+        if (($settings['vacation_liability_booking'] ?? 'MONTHLY') !== 'MONTHLY') {
+            return null;
+        }
+
+        $day = $run->periodEnd();
+        $employments = Employment::query()
+            ->whereDate('start_date', '<=', $day->toDateString())
+            ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $day->toDateString()))
+            ->orderBy('start_date')
+            ->get()
+            ->keyBy('employee_id');
+        $employees = Employee::query()->whereIn('id', $employments->keys())->get();
+        $values = app(VacationLedger::class)->liability($employees, $employments, $day, $settings, RuleSet::for($run->payment_date));
+        $liability = array_sum(array_column($values, 'liability_ore'));
+        $contributions = array_sum(array_column($values, 'contributions_ore'));
+        $needed = [SalaryVoucher::VACATION_LIABILITY_CHANGE, SalaryVoucher::VACATION_LIABILITY, SalaryVoucher::VACATION_CONTRIBUTIONS_CHANGE, SalaryVoucher::VACATION_CONTRIBUTIONS_LIABILITY];
+        $accounts = Account::query()->whereIn('number', $needed)->pluck('id', 'number');
+        $missing = array_diff($needed, $accounts->keys()->all());
+
+        if ($missing !== []) {
+            throw ValidationException::withMessages(['run' => [__('Konto :accounts för semesterlöneskulden saknas. Lägg till kontona under Lön → Kom igång.', ['accounts' => implode(', ', $missing)])]]);
+        }
+
+        // The change is measured against what the ledger already holds on 2920 and 2940, so opening balances and manual entries count.
+        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', $run->payment_date->toDateString())->whereDate('end_date', '>=', $run->payment_date->toDateString())->first();
+        $balances = $fiscalYear === null ? collect() : (new LedgerQuery($fiscalYear, $run->payment_date->addDay(), $run->payment_date))->openingBalances();
+        $booked = fn (int $number): int => -(int) ($balances[$accounts[$number]] ?? 0);
+        $rows = SalaryVoucher::vacationLiabilityRows($liability - $booked(SalaryVoucher::VACATION_LIABILITY), $contributions - $booked(SalaryVoucher::VACATION_CONTRIBUTIONS_LIABILITY));
+
+        return [
+            'rows' => $rows,
+            'snapshot' => ['payroll_run_id' => $run->id, 'as_of' => $day->toDateString(), 'liability_ore' => $liability, 'contributions_ore' => $contributions, 'employees' => $values],
+        ];
     }
 
     private function open(User $user, PayrollRun $run): Company

@@ -53,6 +53,7 @@ class PayrollSettingsForm extends Component
                 $values !== null => ['required', Rule::in($values)],
                 $key === 'default_payment_day' => ['required', 'integer', 'between:1,28'],
                 $key === 'vacation_year_start_month' => ['required', 'integer', 'between:1,12'],
+                $key === 'vacation_day_value_percent' => ['required', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
                 default => ['boolean'],
             };
         }

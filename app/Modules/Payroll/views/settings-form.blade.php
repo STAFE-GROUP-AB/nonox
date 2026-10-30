@@ -7,6 +7,7 @@
         'vacation_year_start_month' => __('Semesteråret börjar månad'),
         'vacation_rule_default' => __('Semesterregel'),
         'vacation_liability_booking' => __('Semesterlöneskuld bokförs'),
+        'vacation_day_value_percent' => __('Dagsvärde i semesterlöneskulden, % av månadslönen'),
         'net_pay_rounding' => __('Avrundning av nettolön'),
         'segregation_of_duties' => __('Den som beräknar får inte attestera'),
         'use_employment_dimensions' => __('Kostnadsställe och projekt från anställningen'),
@@ -38,6 +39,9 @@
                         <option value="{{ $value }}">{{ $values[$value] ?? $value }}</option>
                     @endforeach
                 </select>
+            @elseif($key === 'vacation_day_value_percent')
+                <input id="payroll_{{ $key }}" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
+                <p class="mt-1 text-xs text-gray-500">{{ __('För sammalöneregeln. Semesterlagen anger inget dagsvärde; 4,6 % är vanligt i kollektivavtal. Semestertillägget räknas till.') }}</p>
             @elseif(in_array($key, ['default_payment_day', 'vacation_year_start_month'], true))
                 <input id="payroll_{{ $key }}" type="number" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
             @else

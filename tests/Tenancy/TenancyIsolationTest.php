@@ -56,6 +56,7 @@ use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\Models\RecurringInput;
 use App\Modules\Payroll\Models\SalaryChange;
 use App\Modules\Payroll\Models\TimeReport;
+use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
@@ -127,6 +128,7 @@ const COMPANY_SCOPED_MODELS = [
     Expense::class => 'payrollExpenseAttributes',
     TimeReport::class => 'payrollTimeReportAttributes',
     PayrollRuleVerification::class => 'payrollRuleVerificationAttributes',
+    VacationLiabilitySnapshot::class => 'payrollVacationLiabilityAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 
@@ -460,6 +462,19 @@ function payrollRuleVerificationAttributes(): array
     ];
 }
 
+function payrollVacationLiabilityAttributes(): array
+{
+    $year = random_int(2030, 2099);
+
+    return [
+        'payroll_run_id' => PayrollRun::create(['period' => "{$year}-04", 'payment_date' => "{$year}-04-24"])->id,
+        'as_of' => "{$year}-04-30",
+        'liability_ore' => 100,
+        'contributions_ore' => 31,
+        'employees' => [],
+    ];
+}
+
 function payrollTimeReportAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-03-02', 'hours' => '8', 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id];
@@ -524,7 +539,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

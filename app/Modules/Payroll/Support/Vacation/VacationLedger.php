@@ -13,6 +13,8 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -90,7 +92,7 @@ final class VacationLedger
         $years = self::years($day, (int) ($settings['vacation_year_start_month'] ?? 4));
         [$earningFrom, $earningTo] = $years['earning'];
         [$yearFrom] = $years['year'];
-        $ids = $employees->pluck('id')->all();
+        $ids = array_values($employees->map(fn (Employee $employee): int => $employee->id)->all());
 
         $absences = Absence::query()
             ->whereIn('employee_id', $ids)
@@ -101,17 +103,7 @@ final class VacationLedger
             ->get()
             ->groupBy('employee_id');
 
-        $bases = DB::table('payslip_lines')
-            ->join('payslips', 'payslips.id', '=', 'payslip_lines.payslip_id')
-            ->join('payroll_runs', 'payroll_runs.id', '=', 'payslips.payroll_run_id')
-            ->join('pay_codes', 'pay_codes.id', '=', 'payslip_lines.pay_code_id')
-            ->whereIn('payslips.employee_id', $ids)
-            ->where('pay_codes.is_vacation_basis', true)
-            ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
-            ->whereBetween('payroll_runs.payment_date', [$earningFrom->toDateString(), $earningTo->toDateString()])
-            ->groupBy('payslips.employee_id')
-            ->selectRaw('payslips.employee_id, SUM(payslip_lines.amount_ore) AS basis')
-            ->pluck('basis', 'payslips.employee_id');
+        $bases = $this->bases($ids, $earningFrom, $earningTo);
 
         $limits = array_map('intval', (array) $rules->get('vacation.qualifying_absence_days'));
         $result = [];
@@ -135,6 +127,126 @@ final class VacationLedger
         }
 
         return $result;
+    }
+
+    /**
+     * The vacation-pay basis of approved payslips paid between two days, by employee.
+     *
+     * @param  list<int>  $ids
+     * @return Collection<int|string, mixed>
+     */
+    private function bases(array $ids, CarbonImmutable $from, CarbonImmutable $to): Collection
+    {
+        return DB::table('payslip_lines')
+            ->join('payslips', 'payslips.id', '=', 'payslip_lines.payslip_id')
+            ->join('payroll_runs', 'payroll_runs.id', '=', 'payslips.payroll_run_id')
+            ->join('pay_codes', 'pay_codes.id', '=', 'payslip_lines.pay_code_id')
+            ->whereIn('payslips.employee_id', $ids)
+            ->where('pay_codes.is_vacation_basis', true)
+            ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
+            ->whereBetween('payroll_runs.payment_date', [$from->toDateString(), $to->toDateString()])
+            ->groupBy('payslips.employee_id')
+            ->selectRaw('payslips.employee_id, SUM(payslip_lines.amount_ore) AS basis')
+            ->pluck('basis', 'payslips.employee_id');
+    }
+
+    /**
+     * The vacation liability (semesterlöneskuld) at the end of a day, per
+     * employee: the paid days left in the semesterår plus the days being
+     * earned in the current intjänandeår, valued at what they will cost, and
+     * the employer's contributions on it.
+     *
+     * - Sammalöneregeln: a day is worth the company's day value (setting,
+     *   % of the monthly salary) plus the supplement.
+     * - Procentregeln: days left are worth 12 % of the earning year's basis
+     *   per paid day; the year being earned is 12 % of its basis so far.
+     * - Contributions use the rate of the employee's latest approved payslip,
+     *   or the full rate.
+     *
+     * TODO(legal-verify): valuation of the liability under sammalöneregeln
+     * (BFN guidance) and contributions for employees with reduced rates.
+     *
+     * @param  Collection<int, Employee>  $employees
+     * @param  Collection<int, Employment>  $employments  by employee id
+     * @param  array<string, mixed>  $settings
+     * @return array<int, array{name: string, left: int, earning: string, liability_ore: int, contributions_ore: int}>
+     */
+    public function liability(Collection $employees, Collection $employments, CarbonImmutable $day, array $settings, RuleSet $rules): array
+    {
+        $balances = $this->overview($employees, $employments, $day, $settings, $rules, $day);
+        $years = self::years($day, (int) ($settings['vacation_year_start_month'] ?? 4));
+        [$yearFrom, $yearTo] = $years['year'];
+        $ids = array_values($employees->map(fn (Employee $employee): int => $employee->id)->all());
+        $current = $this->bases($ids, $yearFrom, $day);
+        $limits = array_map('intval', (array) $rules->get('vacation.qualifying_absence_days'));
+        $absences = Absence::query()->whereIn('employee_id', $ids)->where('status', 'APPROVED')
+            ->whereDate('date_from', '<=', $day->toDateString())->whereDate('date_to', '>=', $yearFrom->toDateString())->get()->groupBy('employee_id');
+        $percentBp = (int) ((array) $rules->get('vacation.percent_rule'))['bp'];
+        $fullRateBp = (int) ((array) $rules->get('employer_contribution.full'))['bp'];
+        $rates = $this->contributionRates($ids);
+        $result = [];
+
+        foreach ($employees as $employee) {
+            $employment = $employments->get($employee->id);
+            $balance = $balances[$employee->id] ?? null;
+
+            if ($employment === null || $balance === null || $balance['payout_with_salary']) {
+                continue;
+            }
+
+            $earning = $this->earnedExact($employment, $absences->get($employee->id, collect()), $yearFrom, $yearTo, $day, $limits, $rules);
+            $monthly = $employment->salary_form === 'MONTHLY';
+            $rule = $monthly ? ($employment->vacation_rule ?? (string) ($settings['vacation_rule_default'] ?? 'SAMMALONEREGELN')) : 'PROCENTREGELN';
+
+            if ($rule === 'SAMMALONEREGELN') {
+                $supplementBp = (int) ((array) $rules->get('vacation.supplement_sammaloneregeln'))['bp_of_monthly_salary_per_day'];
+                $dayValueBp = BigDecimal::of(str_replace(',', '.', (string) ($settings['vacation_day_value_percent'] ?? '4.6')))->multipliedBy(100)->plus($supplementBp);
+                $salary = BigDecimal::of((int) $employment->monthly_salary_ore?->ore)->multipliedBy($employment->employment_rate_bp)->dividedBy(10000, 10, RoundingMode::HalfUp);
+                $value = $salary->multipliedBy($dayValueBp)->dividedBy(10000, 10, RoundingMode::HalfUp)->multipliedBy($earning->plus($balance['left']));
+            } else {
+                $perDay = $balance['earned'] > 0
+                    ? BigDecimal::of($balance['basis_ore'])->multipliedBy($percentBp)->dividedBy(10000, 10, RoundingMode::HalfUp)->dividedBy($balance['earned'], 10, RoundingMode::HalfUp)
+                    : BigDecimal::zero();
+                $value = $perDay->multipliedBy($balance['left'])->plus(BigDecimal::of((int) ($current[$employee->id] ?? 0))->multipliedBy($percentBp)->dividedBy(10000, 10, RoundingMode::HalfUp));
+            }
+
+            $liability = $value->toScale(0, RoundingMode::HalfUp)->toInt();
+            $rateBp = $rates[$employee->id] ?? $fullRateBp;
+
+            $result[$employee->id] = [
+                'name' => "{$employee->first_name} {$employee->last_name}",
+                'left' => $balance['left'],
+                'earning' => (string) $earning->toScale(2, RoundingMode::HalfUp),
+                'liability_ore' => $liability,
+                'contributions_ore' => BigDecimal::of($liability)->multipliedBy($rateBp)->dividedBy(10000, 0, RoundingMode::HalfUp)->toInt(),
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Each employee's contribution rate on the latest approved payslip, in basis points.
+     *
+     * @param  list<int>  $ids
+     * @return array<int, int>
+     */
+    private function contributionRates(array $ids): array
+    {
+        $latest = DB::table('payslips')
+            ->join('payroll_runs', 'payroll_runs.id', '=', 'payslips.payroll_run_id')
+            ->whereIn('payslips.employee_id', $ids)
+            ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
+            ->where('payslips.contribution_basis_ore', '>', 0)
+            ->orderBy('payroll_runs.payment_date')
+            ->get(['payslips.employee_id', 'payslips.employer_contribution_ore', 'payslips.contribution_basis_ore']);
+        $rates = [];
+
+        foreach ($latest as $row) {
+            $rates[(int) $row->employee_id] = (int) round((int) $row->employer_contribution_ore * 10000 / (int) $row->contribution_basis_ore);
+        }
+
+        return $rates;
     }
 
     /**
@@ -165,11 +277,22 @@ final class VacationLedger
      */
     private function earned(Employment $employment, Collection $absences, CarbonImmutable $from, CarbonImmutable $to, array $limits, RuleSet $rules): int
     {
+        return $this->earnedExact($employment, $absences, $from, $to, $to, $limits, $rules)->toScale(0, RoundingMode::Up)->toInt();
+    }
+
+    /**
+     * Paid days earned in an intjänandeår up to a day, not rounded (7 §).
+     *
+     * @param  Collection<int, Absence>  $absences
+     * @param  array<string, int>  $limits
+     */
+    private function earnedExact(Employment $employment, Collection $absences, CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $through, array $limits, RuleSet $rules): BigDecimal
+    {
         $start = $employment->start_date->max($from);
-        $end = ($employment->end_date ?? $to)->min($to);
+        $end = ($employment->end_date ?? $to)->min($to)->min($through);
 
         if ($start->greaterThan($end)) {
-            return 0;
+            return BigDecimal::zero();
         }
 
         $employed = (int) $start->diffInDays($end) + 1;
@@ -199,7 +322,7 @@ final class VacationLedger
         $perYear = $employment->vacation_days_per_year ?? (int) ((array) $rules->get('vacation.minimum_days'))['days'];
         $daysInYear = (int) $from->diffInDays($to) + 1;
 
-        return (int) ceil($perYear * max(0, $employed - $lost) / $daysInYear);
+        return BigDecimal::of($perYear)->multipliedBy(max(0, $employed - $lost))->dividedBy($daysInYear, 10, RoundingMode::HalfUp);
     }
 
     /**

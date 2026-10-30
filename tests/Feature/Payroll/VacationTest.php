@@ -134,3 +134,13 @@ it('earns fewer days after unpaid leave and only counts other absence beyond its
     expect($balance()['earned'])->toBe(19)
         ->and($balance()['year_start']->toDateString())->toBe('2026-04-01');
 });
+
+it('shows the vacation liability per employee', function () {
+    Payroll::employee($this->owner, $this->company);
+
+    $this->get(route('payroll.vacationLiability', ['datum' => '2026-04-30']))
+        ->assertOk()
+        ->assertSee('Semesterlöneskuld')
+        ->assertSee('Anna Kock')
+        ->assertSee("43\u{a0}547,40");
+});

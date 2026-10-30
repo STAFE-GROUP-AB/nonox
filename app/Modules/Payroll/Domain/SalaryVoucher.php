@@ -29,6 +29,14 @@ final class SalaryVoucher
 
     public const int BANK = 1930;
 
+    public const int VACATION_LIABILITY_CHANGE = 7090;
+
+    public const int VACATION_LIABILITY = 2920;
+
+    public const int VACATION_CONTRIBUTIONS_CHANGE = 7519;
+
+    public const int VACATION_CONTRIBUTIONS_LIABILITY = 2940;
+
     /**
      * @param  Collection<int, Payslip>  $payslips  with lines and employment.costCenter
      * @param  Collection<int, PayCode>  $payCodes  by id
@@ -86,5 +94,22 @@ final class SalaryVoucher
             ['account' => self::CONTRIBUTIONS_LIABILITY, 'amount' => -$contributions, 'description' => __('Arbetsgivaravgifter att betala')],
             ['account' => self::BANK, 'amount' => -$net, 'description' => __('Utbetalda nettolöner')],
         ];
+    }
+
+    /**
+     * The change in the vacation liability since the last booking: an
+     * increase is a cost (7090, 7519) against the liability (2920, 2940), a
+     * decrease the reverse.
+     *
+     * @return list<array{account: int, amount: int, description: string}>
+     */
+    public static function vacationLiabilityRows(int $liabilityChange, int $contributionsChange): array
+    {
+        return array_values(array_filter([
+            ['account' => self::VACATION_LIABILITY_CHANGE, 'amount' => $liabilityChange, 'description' => __('Förändring av semesterlöneskuld')],
+            ['account' => self::VACATION_LIABILITY, 'amount' => -$liabilityChange, 'description' => __('Semesterlöneskuld')],
+            ['account' => self::VACATION_CONTRIBUTIONS_CHANGE, 'amount' => $contributionsChange, 'description' => __('Sociala avgifter på semesterlöneskuld')],
+            ['account' => self::VACATION_CONTRIBUTIONS_LIABILITY, 'amount' => -$contributionsChange, 'description' => __('Upplupna sociala avgifter på semesterlöneskuld')],
+        ], fn (array $row): bool => $row['amount'] !== 0));
     }
 }

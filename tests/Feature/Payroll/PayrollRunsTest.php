@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AddPayrollAccounts;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\PayrollRunList;
@@ -12,6 +13,8 @@ use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
+use App\Modules\Payroll\PayrollModule;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -186,6 +189,53 @@ it('books a paid run as a balanced salary voucher in series L', function () {
     expect($posted->status)->toBe(PayrollRun::POSTED)
         ->and($posted->voucher->reference())->toBe('L1')
         ->and($posted->voucher->voucher_date->toDateString())->toBe('2026-04-24')
-        ->and($lines)->toBe([1930 => -2_424_869, 2710 => -597_900, 2730 => -949_754, 7010 => 3_200_000 - 295_385, 7081 => 236_308 - 118_154, 7510 => 949_754])
-        ->and(array_sum($lines))->toBe(0);
+        // Semesterlöneskuld 30 April: 25 days left + 25 × 30 / 365 being earned, each worth
+        // 32 000 kr × (4,6 % + 0,43 %) = 1 609,60 kr; contributions at this payslip's 31,42 %.
+        ->and($lines)->toBe([1930 => -2_424_869, 2710 => -597_900, 2730 => -949_754, 2920 => -4_354_740, 2940 => -1_368_259, 7010 => 3_200_000 - 295_385, 7081 => 236_308 - 118_154, 7090 => 4_354_740, 7510 => 949_754, 7519 => 1_368_259])
+        ->and(array_sum($lines))->toBe(0)
+        ->and(VacationLiabilitySnapshot::query()->sole()->liability_ore)->toBe(4_354_740);
+});
+
+it('books the vacation liability against what the ledger already holds on 2920', function () {
+    app(AddPayrollAccounts::class)($this->owner, $this->company);
+    // A liability carried over from the previous system: 10 000 kr on 2920.
+    Bookkeeping::post($this->owner, $this->company, 1_000_000, 2099, 2920, '2026-03-31');
+    CurrentCompany::set($this->company);
+
+    $run = $this->runs->create($this->owner, $this->company, '2026-04');
+    $this->runs->calculate($this->owner, $run);
+    $this->runs->approve($this->admin, $run->fresh());
+    $this->runs->markPaid($this->owner, $run->fresh());
+    $credit = $this->runs->post($this->owner, $run->fresh())->voucher->load('rows.account')->rows
+        ->filter(fn ($row) => $row->account->number === 2920)
+        ->sum(fn ($row) => $row->credit_ore->ore - $row->debit_ore->ore);
+
+    expect($credit)->toBe(4_354_740 - 1_000_000);
+});
+
+it('books only the change in the vacation liability, and nothing when booked at year end', function () {
+    app(AddPayrollAccounts::class)($this->owner, $this->company);
+    $book = function (string $period) {
+        $run = $this->runs->create($this->owner, $this->company, $period);
+        $this->runs->calculate($this->owner, $run);
+        $this->runs->approve($this->admin, $run->fresh());
+        $this->runs->markPaid($this->owner, $run->fresh());
+
+        return $this->runs->post($this->owner, $run->fresh())->voucher->load('rows.account')->rows
+            ->filter(fn ($row) => $row->account->number === 2920)
+            ->sum(fn ($row) => $row->credit_ore->ore - $row->debit_ore->ore);
+    };
+
+    $april = $book('2026-04');
+    $this->travelTo(CarbonImmutable::parse('2026-05-10 10:00:00'));
+    $may = $book('2026-05');
+
+    // May adds the 31 days earned in May: 25 × 31 / 365 × 1 609,60 kr.
+    expect($april)->toBe(4_354_740)
+        ->and($may)->toBe(341_764);
+
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['vacation_liability_booking' => 'YEAR_END']);
+    $this->travelTo(CarbonImmutable::parse('2026-06-10 10:00:00'));
+
+    expect($book('2026-06'))->toBe(0);
 });
