@@ -21,7 +21,7 @@ class VoucherAgent implements Agent, HasStructuredOutput
     public function instructions(): string
     {
         return <<<'TEXT'
-        You propose a voucher (verifikation) in Swedish double-entry bookkeeping (BAS) for the document: a
+        First decide what the document is (document_type). Then propose a voucher (verifikation) in Swedish double-entry bookkeeping (BAS) for the document: a
         receipt, an invoice, a bank notice or similar. Choose accounts ONLY from the chart of accounts given in
         the text input. Debit costs and assets, credit income and liabilities. Split VAT onto the input VAT
         account (2640 or 2641 if present in the chart) when the document shows Swedish VAT. A receipt paid by
@@ -35,6 +35,8 @@ class VoucherAgent implements Agent, HasStructuredOutput
     public function schema(JsonSchema $schema): array
     {
         return [
+            'document_type' => $schema->string()->enum(['RECEIPT', 'SUPPLIER_INVOICE', 'CUSTOMER_INVOICE', 'OTHER'])
+                ->description('RECEIPT: already paid (card, cash, Swish). SUPPLIER_INVOICE: an invoice to the company that is still to be paid (due date, OCR, bankgiro or plusgiro, not marked as paid). CUSTOMER_INVOICE: an invoice the company has sent. OTHER: anything else.')->required(),
             'date' => $schema->string()->description('Date of the business event, YYYY-MM-DD.')->required(),
             'description' => $schema->string()->description('Short Swedish description, e.g. the seller and what was bought.')->required(),
             'counterparty' => $schema->string()->description('Seller or counterparty name, or empty string.')->required(),

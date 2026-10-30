@@ -10,10 +10,12 @@ use App\Actions\Accounting\RemoveAttachment;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Domain\Accounting\VoucherTemplate;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Livewire\Payables\SupplierInvoiceEditor;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Project;
+use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
@@ -70,7 +72,7 @@ class VoucherEditor extends Component
 
     public string $template = '';
 
-    /** @var ?array{notes: string, confidence: ?float, supplier: ?string} what NONOX AI proposed, for the person to check */
+    /** @var ?array{notes: string, confidence: ?float, supplier: ?string, supplier_invoice?: bool} what NONOX AI proposed, for the person to check */
     public ?array $aiResult = null;
 
     public string $templateAmount = '';
@@ -215,8 +217,33 @@ class VoucherEditor extends Component
             'credit' => $amount(((array) $row)['credit'] ?? 0),
             'description' => (string) (((array) $row)['description'] ?? ''),
         ], (array) $answer['rows']), $this->blankRow()]);
-        $this->aiResult = ['notes' => (string) ($answer['notes'] ?? ''), 'confidence' => $answer['confidence'] ?? null, 'supplier' => null];
+        $this->aiResult = [
+            'notes' => (string) ($answer['notes'] ?? ''),
+            'confidence' => isset($answer['confidence']) ? (float) $answer['confidence'] : null,
+            'supplier' => null,
+            // An unpaid supplier invoice belongs in the payables, where it gets a supplier, a due date and a payment.
+            'supplier_invoice' => ($answer['document_type'] ?? null) === 'SUPPLIER_INVOICE'
+                && $upload instanceof TemporaryUploadedFile
+                && $this->user()->can('create', [SupplierInvoice::class, $this->company()]),
+        ];
         $this->toast(__('NONOX AI har föreslagit verifikationen. Kontrollera konton och belopp innan du sparar eller bokför.'));
+    }
+
+    /**
+     * Takes the document NONOX AI recognised as an unpaid supplier invoice to
+     * the supplier invoice page, where it is read again as an invoice and the
+     * supplier can be created. Only the uploaded file moves; nothing is saved.
+     */
+    public function toSupplierInvoice(): void
+    {
+        $upload = $this->uploads === [] ? null : end($this->uploads);
+
+        if (! $upload instanceof TemporaryUploadedFile) {
+            return;
+        }
+
+        session()->put(SupplierInvoiceEditor::HANDOFF, ['file' => $upload->getFilename(), 'user' => $this->user()->id, 'company' => $this->company()->id]);
+        $this->redirectRoute('payables.invoices.create');
     }
 
     public function removeUpload(int $index): void

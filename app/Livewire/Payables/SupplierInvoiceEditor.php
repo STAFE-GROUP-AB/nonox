@@ -44,6 +44,9 @@ class SupplierInvoiceEditor extends Component
     use ShowsToasts;
     use WithFileUploads;
 
+    /** Session key for a document handed over from the voucher page by NONOX AI. */
+    public const string HANDOFF = 'ai.supplier_invoice_handoff';
+
     #[Locked]
     public ?string $invoiceId = null;
 
@@ -112,6 +115,7 @@ class SupplierInvoiceEditor extends Component
         abort_unless(Gate::allows('create', [SupplierInvoice::class, $this->company()]), 403);
 
         $this->invoiceDate = now()->toDateString();
+        $this->takeHandoff();
     }
 
     public function save(SaveSupplierInvoice $save): void
@@ -137,6 +141,29 @@ class SupplierInvoiceEditor extends Component
             ? __(':title är registrerad och väntar på attest. Den bokförs när den regleras (kontantmetoden).', ['title' => $invoice->title()])
             : __(':title är registrerad och bokförd. Den väntar nu på attest.', ['title' => $invoice->title()]));
         $this->redirectRoute('payables.invoices.show', ['supplierInvoice' => $invoice->id]);
+    }
+
+    /**
+     * A document the voucher page recognised as a supplier invoice: it becomes
+     * this invoice's file and is read again, as an invoice, by NONOX AI. Only
+     * the same person in the same company can take it over.
+     */
+    private function takeHandoff(): void
+    {
+        $handoff = session()->pull(self::HANDOFF);
+
+        if (! is_array($handoff) || ($handoff['user'] ?? null) !== $this->user()->id || ($handoff['company'] ?? null) !== $this->company()->id) {
+            return;
+        }
+
+        $file = TemporaryUploadedFile::createFromLivewire((string) $handoff['file']);
+
+        if (! $file->exists()) {
+            return;
+        }
+
+        $this->file = $file;
+        $this->analyze(app(AnalyzeDocument::class));
     }
 
     /**

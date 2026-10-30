@@ -238,7 +238,7 @@ it('proposes a balanced voucher from a receipt and posts nothing', function () {
     Http::fake(['api.gozerocore.com/v1/analyze' => Http::response([
         'id' => 'job-3', 'status' => 'succeeded',
         'output' => [
-            'date' => '2026-03-05', 'description' => 'Kontorsmaterial, Pappershandeln', 'counterparty' => 'Pappershandeln', 'total' => 125.0, 'vat_total' => 25.0,
+            'document_type' => 'RECEIPT', 'date' => '2026-03-05', 'description' => 'Kontorsmaterial, Pappershandeln', 'counterparty' => 'Pappershandeln', 'total' => 125.0, 'vat_total' => 25.0,
             'rows' => [
                 ['account' => 6110, 'debit' => 100.0, 'credit' => 0.0, 'description' => 'Kontorsmaterial'],
                 ['account' => 2641, 'debit' => 25.0, 'credit' => 0.0, 'description' => ''],
@@ -261,4 +261,42 @@ it('proposes a balanced voucher from a receipt and posts nothing', function () {
         ->and(Voucher::query()->count())->toBe(0);
 
     Http::assertSent(fn (Request $request): bool => $request->data()['images'][0]['mime'] === 'image/jpeg');
+});
+
+it('sends an unpaid supplier invoice from bookkeeping to the supplier invoice page, where the supplier can be created', function () {
+    withCoreKey();
+    $invoice = coreInvoiceAnswer();
+    $invoice['output'] = [...$invoice['output'], 'supplier_name' => 'Scandinavian Photo', 'supplier_org_number' => '556679-6511'];
+    Http::fake(['api.gozerocore.com/v1/analyze' => Http::sequence()
+        ->push([
+            'id' => 'job-5', 'status' => 'succeeded',
+            'output' => ['document_type' => 'SUPPLIER_INVOICE', 'date' => '2026-03-02', 'description' => 'Faktura', 'counterparty' => 'Scandinavian Photo', 'total' => 1568.0, 'vat_total' => 168.0, 'rows' => [], 'notes' => ''],
+            'meta' => ['confidence' => 0.9, 'units' => 1],
+        ])
+        ->push($invoice)]);
+
+    Livewire::test(VoucherEditor::class)
+        ->set('uploads', [invoicePdf()])
+        ->call('analyze')
+        ->assertSee('Det här ser ut som en obetald leverantörsfaktura.')
+        ->call('toSupplierInvoice')
+        ->assertRedirect(route('payables.invoices.create'));
+
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->assertSet('invoiceNumber', '7001')
+        ->assertSee('Scandinavian Photo finns inte i leverantörsregistret.')
+        ->call('save');
+
+    $created = SupplierInvoice::query()->sole();
+    expect($created->file_path)->not->toBeNull()
+        ->and(Supplier::query()->find($created->supplier_id)?->name)->toBe('Scandinavian Photo')
+        ->and(session()->has(SupplierInvoiceEditor::HANDOFF))->toBeFalse();
+});
+
+it('does not take over another person\'s document', function () {
+    session()->put(SupplierInvoiceEditor::HANDOFF, ['file' => 'someone-elses.pdf', 'user' => 999999, 'company' => $this->company->id]);
+    Http::fake();
+
+    Livewire::test(SupplierInvoiceEditor::class)->assertSet('file', null);
+    Http::assertNothingSent();
 });

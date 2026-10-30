@@ -1764,5 +1764,8 @@
     "Org.nr :number": "Org. no. :number",
     "Skapa leverantören med de här uppgifterna och koppla fakturan till den när du sparar": "Create the supplier with these details and link the invoice to it when you save",
     "Så här bokförs fakturan när du registrerar den": "This is how the invoice is booked when you register it",
-    "Raderna ovan är kostnaderna. Momsen och skulden till leverantören läggs till automatiskt.": "The rows above are the costs. The VAT and the liability to the supplier are added automatically."
+    "Raderna ovan är kostnaderna. Momsen och skulden till leverantören läggs till automatiskt.": "The rows above are the costs. The VAT and the liability to the supplier are added automatically.",
+    "Det här ser ut som en obetald leverantörsfaktura.": "This looks like an unpaid supplier invoice.",
+    "Registrera den som leverantörsfaktura i stället, så får den förfallodag, betalning och leverantör, och leverantören kan skapas direkt. Bokför den bara här om den redan är betald.": "Register it as a supplier invoice instead, so it gets a due date, a payment and a supplier, and the supplier can be created at once. Only book it here if it is already paid.",
+    "Registrera som leverantörsfaktura": "Register as supplier invoice"
 }

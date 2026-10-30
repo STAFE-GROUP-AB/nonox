@@ -26,6 +26,13 @@
                 @if(! empty($aiResult['supplier']))
                     <p class="text-accent-800">{{ __('Leverantören finns inte i registret: :supplier. Lägg till den under Leverantörer och välj den sedan.', ['supplier' => $aiResult['supplier']]) }}</p>
                 @endif
+                @if(! empty($aiResult['supplier_invoice']))
+                    <div class="mt-2 rounded-lg border border-accent-200 bg-white p-3">
+                        <p class="font-medium text-gray-900">{{ __('Det här ser ut som en obetald leverantörsfaktura.') }}</p>
+                        <p class="mt-1 text-gray-700">{{ __('Registrera den som leverantörsfaktura i stället, så får den förfallodag, betalning och leverantör, och leverantören kan skapas direkt. Bokför den bara här om den redan är betald.') }}</p>
+                        <button type="button" wire:click="toSupplierInvoice" class="mt-2 inline-flex rounded-lg bg-accent-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Registrera som leverantörsfaktura') }}</button>
+                    </div>
+                @endif
                 @if(! empty($aiResult['notes']))
                     <p class="text-gray-700">{{ $aiResult['notes'] }}</p>
                 @endif
