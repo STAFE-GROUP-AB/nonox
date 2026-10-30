@@ -21,6 +21,7 @@ use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -371,6 +372,7 @@ class PayrollRuns
 
         return CurrentCompany::run($company, function () use ($user, $company, $run): PayrollRun {
             $run->forceFill(['status' => PayrollRun::PAID])->save();
+            Expense::query()->where('payroll_run_id', $run->id)->where('status', 'APPROVED')->update(['status' => 'PAID']);
             Audit::record('payroll.run_paid', $run, ['period' => $run->period], $company, $user);
 
             return $run;

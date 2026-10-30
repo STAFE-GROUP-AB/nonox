@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Support\Run;
 
+use App\Modules\Payroll\Actions\ExpenseClaims;
 use App\Modules\Payroll\Domain\Engine\AbsenceInput;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
@@ -13,6 +14,7 @@ use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -57,12 +59,12 @@ final class ContextBuilder
             periodStart: $periodStart,
             periodEnd: $periodEnd,
             paymentDate: $run->payment_date,
-            inputs: array_values($inputs->map(function (PayrollInput $input) use ($payCodes): PayInput {
+            inputs: [...array_values($inputs->map(function (PayrollInput $input) use ($payCodes): PayInput {
                 $code = $payCodes->get($input->pay_code_id) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
 
                 return new PayInput($code->code, $input->note ?: $code->name_sv, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
                     $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore);
-            })->all()),
+            })->all()), ...$this->outlays($run, $employee)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
                 ->where('scope', 'CALENDAR_YEAR')
@@ -152,6 +154,30 @@ final class ContextBuilder
         $week = $schedule?->pattern['weeks'][0] ?? null;
 
         return is_array($week) ? array_map('strval', $week) : null;
+    }
+
+    /**
+     * Approved outlays not yet repaid: they are claimed by this run, so the
+     * same outlay is never repaid twice, and repaid as net additions.
+     *
+     * @return list<PayInput>
+     */
+    private function outlays(PayrollRun $run, Employee $employee): array
+    {
+        $expenses = Expense::query()
+            ->where('employee_id', $employee->id)
+            ->where('status', 'APPROVED')
+            ->where(fn ($query) => $query->whereNull('payroll_run_id')->orWhere('payroll_run_id', $run->id))
+            ->orderBy('date')
+            ->get();
+
+        return array_values($expenses->map(function (Expense $expense) use ($run): PayInput {
+            if ($expense->payroll_run_id === null) {
+                $expense->forceFill(['payroll_run_id' => $run->id])->save();
+            }
+
+            return new PayInput('UTLAGG', ExpenseClaims::label($expense), 'EXPENSE', false, 'NONE', false, false, amountOre: $expense->amount_ore->ore);
+        })->all());
     }
 
     /**

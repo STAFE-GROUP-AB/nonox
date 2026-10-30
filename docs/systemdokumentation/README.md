@@ -311,6 +311,22 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   delat med fem). Den som ansökt kan inte godkänna sin egen ansökan om
   attestkravet är på. En månad vars lönekörning redan är attesterad tar inte
   emot frånvaro; en beräknad körning blir utkast igen.
+- Förmåner (kost, bil, drivmedel, övrigt) beskattas och ger arbetsgivaravgift
+  men betalas inte ut. Kostförmån värderas med Skatteverkets belopp ur
+  reglerna, och den anställdes egen betalning dras från nettolönen och sänker
+  förmånsvärdet. Förmånsvärdet bokförs inte som en egen kostnad; den verkliga
+  kostnaden bokfördes vid inköpet och avgifterna på förmånen ligger i 7510.
+- Milersättning och inrikes traktamente är skattefria upp till reglernas belopp
+  och betalas med nettolönen (7331, 7321); det som betalas över blir
+  skattepliktig lön (7332, 7322).
+- Tjänstepension enligt anställningens pensionsplan: en procent av lönen upp
+  till 7,5 inkomstbasbelopp om året och en annan över, plus särskild löneskatt.
+  Båda är arbetsgivarens kostnad, syns på lönebeskedet för information och
+  bokförs 7410/2740 och 7530/2730.
+- Utlägg: den anställde lämnar in med kvitto på Min sida. När det godkänns
+  bokförs kostnaden och ingående moms mot 2890 med kvittot som underlag, och
+  nästa lönekörning betalar tillbaka beloppet via 2890. Ett utlägg knyts till
+  den körning som betalar det och betalas aldrig två gånger.
 - Semesterlöneskuld: kvarvarande betalda dagar plus dagarna som tjänas in i
   innevarande intjänandeår, värderade under sammalöneregeln till företagets
   dagsvärde (löneinställning, % av månadslönen) plus semestertillägg, och under
