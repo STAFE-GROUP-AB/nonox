@@ -1490,5 +1490,20 @@
     "Arbetstid, timmar per vecka": "Working hours per week",
     "Behövs för frånvaro och sjuklön.": "Needed for absence and sick pay.",
     "Regler": "Rules",
-    ":item saknar belopp eller timpris.": ":item has no amount or hourly rate."
+    ":item saknar belopp eller timpris.": ":item has no amount or hourly rate.",
+    ":title är markerad som utbetald.": ":title is marked as paid.",
+    ":title är bokförd som :voucher.": ":title is booked as :voucher.",
+    "Alla konton finns redan.": "All accounts already exist.",
+    "Kontona :accounts är tillagda i kontoplanen.": "The accounts :accounts have been added to the chart of accounts.",
+    "Lönekörningen är inte markerad som utbetald.": "The payroll run is not marked as paid.",
+    "Markera som utbetald": "Mark as paid",
+    "Bokför lönen": "Book the payroll",
+    "Verifikation :voucher": "Voucher :voucher",
+    "Kontoplanen saknar :accounts, som lönen bokförs på.": "The chart of accounts lacks :accounts, which payroll is booked on.",
+    "Lägg till kontona": "Add the accounts",
+    "Lönearterna :codes saknar konto. Lägg till kontona under Lön → Kom igång.": "The pay codes :codes have no account. Add the accounts under Payroll → Get started.",
+    "Arbetsgivaravgifter": "Employer contributions",
+    "Personalskatt": "Employee tax",
+    "Arbetsgivaravgifter att betala": "Employer contributions to pay",
+    "Utbetalda nettolöner": "Net salaries paid"
 }

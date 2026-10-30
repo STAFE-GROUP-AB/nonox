@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Payroll\Actions\AddPayrollAccounts;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\PayrollRunList;
 use App\Modules\Payroll\Livewire\PayrollRunPage;
@@ -135,4 +136,32 @@ describe('in the browser', function () {
             ->call('approve')
             ->assertDispatched('toast', message: 'Lön april 2026 är attesterad och kan inte längre ändras.');
     });
+});
+
+it('books a paid run as a balanced salary voucher in series L', function () {
+    $run = $this->runs->create($this->owner, $this->company, '2026-04');
+    $this->runs->recordAbsence($this->owner, $run, ['employee_id' => $this->anna->id, 'type' => 'SICK', 'date_from' => '2026-04-07', 'date_to' => '2026-04-08', 'hours' => '8']);
+    $this->runs->calculate($this->owner, $run);
+    $this->runs->approve($this->admin, $run->fresh());
+
+    expect(fn () => $this->runs->post($this->owner, $run->fresh()))->toThrow(AuthorizationException::class);
+
+    $this->runs->markPaid($this->owner, $run->fresh());
+    expect(fn () => $this->runs->post($this->owner, $run->fresh()))->toThrow(ValidationException::class, 'saknar konto');
+
+    app(AddPayrollAccounts::class)($this->owner, $this->company);
+    $posted = $this->runs->post($this->owner, $run->fresh());
+    $lines = [];
+
+    foreach ($posted->voucher->load('rows.account')->rows as $row) {
+        $lines[$row->account->number] = ($lines[$row->account->number] ?? 0) + $row->debit_ore->ore - $row->credit_ore->ore;
+    }
+
+    ksort($lines);
+
+    expect($posted->status)->toBe(PayrollRun::POSTED)
+        ->and($posted->voucher->reference())->toBe('L1')
+        ->and($posted->voucher->voucher_date->toDateString())->toBe('2026-04-24')
+        ->and($lines)->toBe([1930 => -2_424_869, 2710 => -597_900, 2730 => -949_754, 7010 => 3_200_000 - 295_385, 7081 => 236_308 - 118_154, 7510 => 949_754])
+        ->and(array_sum($lines))->toBe(0);
 });

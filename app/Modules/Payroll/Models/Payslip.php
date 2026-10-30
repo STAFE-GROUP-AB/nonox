@@ -76,6 +76,12 @@ class Payslip extends Model
         return $this->hasMany(PayslipLine::class);
     }
 
+    /** @return BelongsTo<Employment, $this> */
+    public function employment(): BelongsTo
+    {
+        return $this->belongsTo(Employment::class);
+    }
+
     /** @return BelongsTo<Employee, $this> */
     public function employee(): BelongsTo
     {

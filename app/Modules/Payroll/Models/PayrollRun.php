@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Models;
 
+use App\Models\Voucher;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use LogicException;
 
@@ -26,6 +28,7 @@ use LogicException;
  * @property ?int $approved_by
  * @property ?CarbonImmutable $approved_at
  * @property ?string $rule_snapshot_hash
+ * @property ?string $posted_voucher_id
  */
 class PayrollRun extends Model
 {
@@ -36,6 +39,10 @@ class PayrollRun extends Model
     public const string CALCULATED = 'CALCULATED';
 
     public const string APPROVED = 'APPROVED';
+
+    public const string PAID = 'PAID';
+
+    public const string POSTED = 'POSTED';
 
     protected $table = 'payroll_runs';
 
@@ -101,6 +108,12 @@ class PayrollRun extends Model
     public function payslips(): HasMany
     {
         return $this->hasMany(Payslip::class);
+    }
+
+    /** @return BelongsTo<Voucher, $this> */
+    public function voucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class, 'posted_voucher_id');
     }
 
     /** @return HasMany<PayrollInput, $this> */

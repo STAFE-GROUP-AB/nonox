@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Actions;
 
+use App\Actions\Accounting\BookVoucher;
+use App\Domain\Accounting\VoucherSource;
+use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
@@ -11,6 +14,7 @@ use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
+use App\Modules\Payroll\Domain\SalaryVoucher;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\Employee;
@@ -312,6 +316,62 @@ class PayrollRuns
 
             $run->forceFill(['status' => PayrollRun::APPROVED, 'approved_by' => $user->id, 'approved_at' => now()])->save();
             Audit::record('payroll.run_approved', $run, ['period' => $run->period, 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);
+
+            return $run;
+        }));
+    }
+
+    /**
+     * Records that the bank has paid the net salaries of an approved run.
+     */
+    public function markPaid(User $user, PayrollRun $run): PayrollRun
+    {
+        $company = Company::query()->findOrFail($run->company_id);
+        $this->modules->ensureEnabled(PayrollModule::KEY, $company);
+        Gate::forUser($user)->authorize('pay', $run);
+
+        return CurrentCompany::run($company, function () use ($user, $company, $run): PayrollRun {
+            $run->forceFill(['status' => PayrollRun::PAID])->save();
+            Audit::record('payroll.run_paid', $run, ['period' => $run->period], $company, $user);
+
+            return $run;
+        });
+    }
+
+    /**
+     * Books a paid run as a salary voucher in series L on the payment date.
+     */
+    public function post(User $user, PayrollRun $run): PayrollRun
+    {
+        $company = Company::query()->findOrFail($run->company_id);
+        $this->modules->ensureEnabled(PayrollModule::KEY, $company);
+        Gate::forUser($user)->authorize('post', $run);
+
+        return CurrentCompany::run($company, fn (): PayrollRun => DB::transaction(function () use ($user, $company, $run): PayrollRun {
+            /** @var PayrollRun $run */
+            $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
+
+            if ($run->status !== PayrollRun::PAID) {
+                throw ValidationException::withMessages(['run' => [__('Lönekörningen är inte markerad som utbetald.')]]);
+            }
+
+            $payslips = Payslip::query()->with(['lines', 'employment.costCenter'])->where('payroll_run_id', $run->id)->get();
+            $payCodes = PayCode::query()->get()->keyBy('id');
+            $accounts = Account::query()->whereIn('id', $payCodes->pluck('debit_account_id')->merge($payCodes->pluck('credit_account_id'))->filter()->unique())->get()->keyBy('id');
+
+            $voucher = app(BookVoucher::class)->rows(
+                $user,
+                $company,
+                $run->payment_date,
+                $run->title(),
+                'L',
+                SalaryVoucher::rows($payslips, $payCodes, $accounts),
+                VoucherSource::Payroll,
+                $run,
+            );
+
+            $run->forceFill(['status' => PayrollRun::POSTED, 'posted_voucher_id' => $voucher->id])->save();
+            Audit::record('payroll.run_posted', $run, ['period' => $run->period, 'voucher' => $voucher->reference()], $company, $user);
 
             return $run;
         }));

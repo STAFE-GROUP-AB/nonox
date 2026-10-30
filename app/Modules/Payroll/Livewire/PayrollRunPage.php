@@ -6,6 +6,7 @@ namespace App\Modules\Payroll\Livewire;
 
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\User;
+use App\Modules\Payroll\Actions\AddPayrollAccounts;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
@@ -102,6 +103,28 @@ class PayrollRunPage extends Component
         $this->toast(__(':title är attesterad och kan inte längre ändras.', ['title' => $this->run()->title()]));
     }
 
+    public function markPaid(PayrollRuns $runs): void
+    {
+        $runs->markPaid($this->user(), $this->run());
+
+        $this->toast(__(':title är markerad som utbetald.', ['title' => $this->run()->title()]));
+    }
+
+    public function post(PayrollRuns $runs): void
+    {
+        $run = $runs->post($this->user(), $this->run());
+
+        $this->toast(__(':title är bokförd som :voucher.', ['title' => $run->title(), 'voucher' => $run->voucher?->reference()]));
+    }
+
+    public function addAccounts(AddPayrollAccounts $add): void
+    {
+        $company = $this->user()->currentCompany() ?? abort(404);
+        $added = $add($this->user(), $company);
+
+        $this->toast($added === [] ? __('Alla konton finns redan.') : __('Kontona :accounts är tillagda i kontoplanen.', ['accounts' => implode(', ', $added)]));
+    }
+
     public function render(): View
     {
         $run = $this->run();
@@ -121,6 +144,9 @@ class PayrollRunPage extends Component
             'canApprove' => Gate::allows('approve', $run),
             'blockedBySegregation' => $run->status === PayrollRun::CALCULATED && (new PayrollRunPolicy)->blockedBySegregation($user, $run),
             'canSeeSensitive' => $canSeeSensitive,
+            'canPay' => Gate::allows('pay', $run),
+            'canPost' => Gate::allows('post', $run),
+            'missingAccounts' => $company === null ? [] : AddPayrollAccounts::missing($company),
         ]);
     }
 

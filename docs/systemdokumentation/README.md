@@ -283,7 +283,12 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Personnummer och bankuppgifter sparas krypterade och skrivs aldrig till
   behandlingshistoriken. Frånvarons orsak visas bara för den som har
   behörighet till känsliga uppgifter.
-- Utbetalning, lönebokföring i serie L och arbetsgivardeklaration är inte
+- När lönen är utbetald bokförs lönekörningen som en verifikation i serie L
+  på utbetalningsdagen: varje lönerad på lönearternas konton (med
+  anställningens kostnadsställe), personalskatt på 2710, arbetsgivaravgifter
+  på 7510 mot 2730 och nettolönerna mot 1930. Verifikationen balanserar alltid:
+  brutto − skatt ± nettoposter = netto.
+- Utbetalningsfil, semesterlöneskuld och arbetsgivardeklaration är inte
   byggda ännu.
 
 ## 6. Belopp

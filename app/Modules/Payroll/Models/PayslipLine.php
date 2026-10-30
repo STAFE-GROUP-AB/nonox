@@ -4,12 +4,19 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Models;
 
+use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * A line of a payslip, with the rule version and the explanation that produced it.
+ *
+ * @property int $pay_code_id
+ * @property string $description
+ * @property Money $amount_ore
+ * @property string $tax_effect
+ * @property array<string, mixed> $explanation
  */
 class PayslipLine extends Model
 {

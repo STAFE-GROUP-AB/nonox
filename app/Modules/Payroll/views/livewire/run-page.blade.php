@@ -27,12 +27,24 @@
                         <x-button type="button" wire:click="approve">{{ __('Ja, attestera') }}</x-button>
                         <button type="button" class="text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
                     </span>
+                @elseif($canPay)
+                    <x-button type="button" wire:click="markPaid" wire:loading.attr="disabled">{{ __('Markera som utbetald') }}</x-button>
+                @elseif($canPost)
+                    <x-button type="button" wire:click="post" wire:loading.attr="disabled">{{ __('Bokför lönen') }}</x-button>
+                @elseif($run->voucher)
+                    <a href="{{ route('accounting.vouchers.show', $run->voucher) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Verifikation :voucher', ['voucher' => $run->voucher->reference()]) }}</a>
                 @elseif($blockedBySegregation)
                     <span class="text-sm text-gray-600">{{ __('Någon annan än du behöver attestera, eftersom du beräknade lönekörningen.') }}</span>
                 @endif
             </div>
         </div>
         <x-input-error for="run" class="mt-2" />
+        @if($missingAccounts !== [] && in_array($run->status, ['APPROVED', 'PAID'], true))
+            <div class="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
+                {{ __('Kontoplanen saknar :accounts, som lönen bokförs på.', ['accounts' => implode(', ', $missingAccounts)]) }}
+                <button type="button" class="ml-2 font-medium text-accent-600 hover:text-accent-700" wire:click="addAccounts">{{ __('Lägg till kontona') }}</button>
+            </div>
+        @endif
         @if($blockers !== [])
             <div class="mt-4 rounded-lg border border-accent-200 bg-accent-50 p-4 text-sm text-accent-800" role="alert">
                 <p class="font-medium">{{ __('Det här måste lösas innan lönekörningen kan beräknas:') }}</p>

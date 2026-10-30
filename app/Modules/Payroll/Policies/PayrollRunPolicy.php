@@ -44,6 +44,16 @@ class PayrollRunPolicy
             && ! $this->blockedBySegregation($user, $run);
     }
 
+    public function pay(User $user, PayrollRun $run): bool
+    {
+        return $run->status === PayrollRun::APPROVED && $this->can($user, $run, 'payroll:run');
+    }
+
+    public function post(User $user, PayrollRun $run): bool
+    {
+        return $run->status === PayrollRun::PAID && $this->can($user, $run, 'payroll:post');
+    }
+
     public function blockedBySegregation(User $user, PayrollRun $run): bool
     {
         $company = Company::query()->find($run->company_id);
