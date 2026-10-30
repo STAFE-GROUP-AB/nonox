@@ -8,6 +8,7 @@ use Generator;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
+use Illuminate\Support\Str;
 use Laravel\Ai\Contracts\Gateway\StepTextGateway;
 use Laravel\Ai\Contracts\Providers\TextProvider;
 use Laravel\Ai\Files\Document;
@@ -61,7 +62,9 @@ final class GozeroCoreGateway implements StepTextGateway
             ->acceptJson()
             ->timeout($timeout);
 
-        $response = $client->withHeaders(['Idempotency-Key' => 'nonox-'.hash('sha256', (string) json_encode($body))])->post('analyze', $body);
+        // One key per attempt: it protects a single request against a network retry. A key derived from
+        // the document alone would make Core replay an earlier answer, a refusal included, for 24 hours.
+        $response = $client->withHeaders(['Idempotency-Key' => 'nonox-'.Str::uuid7()])->post('analyze', $body);
         $data = $this->checked($response);
         $deadline = time() + $timeout;
 
