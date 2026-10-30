@@ -24,34 +24,34 @@
     @page { margin: 0; }
     body { margin: 0; font-family: 'DejaVu Sans', sans-serif; font-size: 8.6pt; line-height: 1.35; color: #1f2933; }
     .page { padding: 16mm 16mm 26mm; }
-    .bar { height: 3.5mm; background: #9e2a1b; }
+    .bar { height: 3.5mm; background: {{ $brand->color }}; }
     table { width: 100%; border-collapse: collapse; }
     td, th { vertical-align: top; padding: 0; }
     .muted { color: #616e7c; }
     .right { text-align: right; }
     .num { text-align: right; white-space: nowrap; }
     .label { font-size: 6.8pt; letter-spacing: 0.9pt; text-transform: uppercase; color: #616e7c; }
-    .eyebrow { font-size: 7.2pt; letter-spacing: 1.4pt; text-transform: uppercase; color: #9e2a1b; font-weight: bold; }
+    .eyebrow { font-size: 7.2pt; letter-spacing: 1.4pt; text-transform: uppercase; color: {{ $brand->accent }}; font-weight: bold; }
     .company { font-size: 12.5pt; font-weight: bold; }
     .month { font-size: 21pt; font-weight: bold; letter-spacing: -0.4pt; margin-top: 1mm; }
     .card { border: 0.3mm solid #d9dee4; border-radius: 1.8mm; padding: 3.2mm 4mm; }
     .facts td { padding: 0.6mm 0; }
     .tile { border-radius: 1.8mm; padding: 3.2mm 4mm; background: #f4f5f7; }
-    .tile.net { background: #9e2a1b; color: #ffffff; }
+    .tile.net { background: {{ $brand->color }}; color: {{ $brand->onColor() }}; }
     .tile .amount { font-size: 13pt; font-weight: bold; margin-top: 1mm; white-space: nowrap; }
-    .tile.net .label { color: #f6d9d3; }
+    .tile.net .label { color: {{ $brand->onColor() }}; opacity: 0.8; }
     .tile.net .amount { font-size: 15pt; }
     .lines { table-layout: fixed; margin-top: 7mm; }
     .lines th { font-size: 6.8pt; letter-spacing: 0.9pt; text-transform: uppercase; color: #616e7c; font-weight: normal; text-align: left; padding: 0 0 1.8mm; border-bottom: 0.4mm solid #1f2933; }
     .lines th.num { text-align: right; }
     .lines td { padding: 2mm 0; border-bottom: 0.2mm solid #e4e7eb; }
-    .lines .section td { padding: 4mm 0 1.2mm; border-bottom: none; font-weight: bold; font-size: 7.6pt; color: #9e2a1b; letter-spacing: 0.6pt; text-transform: uppercase; }
+    .lines .section td { padding: 4mm 0 1.2mm; border-bottom: none; font-weight: bold; font-size: 7.6pt; color: {{ $brand->accent }}; letter-spacing: 0.6pt; text-transform: uppercase; }
     .lines .subtotal td { border-bottom: none; font-weight: bold; padding-top: 2.2mm; }
     .lines .total td { border-top: 0.6mm solid #1f2933; border-bottom: none; padding-top: 3mm; font-size: 12pt; font-weight: bold; }
     .lines .note { display: block; font-size: 7.2pt; color: #616e7c; }
-    .preview { position: fixed; top: 105mm; left: 0; right: 0; text-align: center; font-size: 72pt; font-weight: bold; color: #9e2a1b; opacity: 0.08; transform: rotate(-28deg); letter-spacing: 6pt; }
-    .preview-note { background: #fbeeeb; color: #86231a; border-radius: 1.8mm; padding: 2.4mm 4mm; margin-bottom: 6mm; font-weight: bold; }
-    .notice { margin-top: 4mm; border-left: 0.8mm solid #9e2a1b; padding: 1.5mm 3mm; background: #fbeeeb; }
+    .preview { position: fixed; top: 105mm; left: 0; right: 0; text-align: center; font-size: 72pt; font-weight: bold; color: {{ $brand->color }}; opacity: 0.08; transform: rotate(-28deg); letter-spacing: 6pt; }
+    .preview-note { background: {{ $brand->tint() }}; color: {{ $brand->accent }}; border-radius: 1.8mm; padding: 2.4mm 4mm; margin-bottom: 6mm; font-weight: bold; }
+    .notice { margin-top: 4mm; border-left: 0.8mm solid {{ $brand->color }}; padding: 1.5mm 3mm; background: {{ $brand->tint() }}; }
     .footer { position: fixed; bottom: 9mm; left: 16mm; right: 16mm; font-size: 6.8pt; color: #616e7c; border-top: 0.2mm solid #d9dee4; padding-top: 2.4mm; }
 </style>
 </head>
@@ -78,7 +78,12 @@
         <table>
             <tr>
                 <td style="width: 55%">
-                    <div class="company">{{ $company->legal_name ?: $company->name }}</div>
+                    @if($logo = $brand->logoDataUri())
+                        <img src="{{ $logo }}" alt="{{ $company->legal_name ?: $company->name }}" style="max-height: 16mm; max-width: 60mm; margin-bottom: 1.5mm"><br>
+                        <strong>{{ $company->legal_name ?: $company->name }}</strong>
+                    @else
+                        <div class="company">{{ $company->legal_name ?: $company->name }}</div>
+                    @endif
                     <div class="muted">{{ __('Org.nr') }} {{ $company->org_number }}</div>
                     @if($address)<div class="muted">{{ $address }}</div>@endif
                 </td>

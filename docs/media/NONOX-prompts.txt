@@ -1,0 +1,18 @@
+Design a logo for "NONOX", an open-source Swedish bookkeeping and accounting software.
+Concept: freedom and openness. Open source forever, customers can take all data and leave at any time. Express openness and no lock-in.
+Symbol: bold geometric vermilion #FF5A36 ring with a clean real gap cut into the right side, like an open circle. Must work alone at 32 px.
+Wordmark: exact text "NONOX", five letters N O N O X. Heavy, wide geometric sans-serif capitals, tight even spacing. Both O letters echo the open ring with a small right-side gap. N and X solid simple.
+Horizontal lockup, symbol left, wordmark right, vertically centered. Wordmark ink black #15171C; warm off-white #F7F5F0 background. Gaps are genuine negative space showing background, not closed colored bridges.
+Flat vector appearance, crisp edges, modern confident Scandinavian finance brand. Generous empty space, centered canvas.
+Avoid green, leaves, checkmarks, coins, piggy banks, calculators, ledger books, keyhole padlocks, swooshes, globes, gradients, shadows, 3D, textures, mockups, mascots, resemblance to existing accounting brands. No extra text.
+
+VARIANTS
+
+ICON
+Use the reference NONOX symbol only: a bold vermilion #FF5A36 open ring with a small clean horizontal gap on its right, centered on a deep ink #15171C rounded-square app icon background. No text. Flat uniform vector colors, no texture, gradients, shadows or mockup. Square canvas.
+
+WHITE
+Reproduce the reference NONOX horizontal logo as a single-color version, all symbol and lettering pure white on uniform deep ink #15171C. Exact word NONOX, N O N O X, preserving the small gaps on the right of both O letters and symbol. No extra text. Flat uniform vector colors, no textures, gradients or shadows.
+
+BLACK
+Reproduce the reference NONOX horizontal logo as a black-only version on pure white for print and invoices. Exact word NONOX, N O N O X, preserving the small gaps on the right of both O letters and symbol. No extra text. Flat uniform vector colors, no textures, gradients or shadows.

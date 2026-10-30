@@ -1,4 +1,8 @@
 @props(['title' => __('Min sida')])
+@php
+    $company = auth()->user()?->currentCompany();
+    $brand = $company ? App\Support\Branding\Brand::for($company) : null;
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -6,6 +10,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ $title }} · {{ auth()->user()?->currentCompany()?->name }}</title>
+        @include('partials.favicon')
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
     </head>
@@ -13,11 +18,16 @@
         <x-ui.toaster />
 
         <div class="min-h-screen bg-paper">
-            <header class="border-b border-gray-200 bg-white">
+            <header class="border-b border-gray-200 bg-white" style="border-top: 4px solid {{ $brand?->color ?? App\Support\Branding\Brand::DEFAULT_COLOR }}">
                 <div class="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-4">
-                    <div class="min-w-0">
-                        <p class="truncate text-xs font-medium uppercase tracking-wide text-gray-500">{{ auth()->user()?->currentCompany()?->name }}</p>
-                        <p class="text-lg font-semibold text-gray-900">{{ __('Min sida') }}</p>
+                    <div class="flex min-w-0 items-center gap-3">
+                        @if($company?->logo_path)
+                            <img src="{{ route('teams.logo', $company->id) }}?v={{ md5($company->logo_path) }}" alt="{{ $company->name }}" class="h-10 max-w-36 object-contain">
+                        @endif
+                        <div class="min-w-0">
+                            <p class="truncate text-xs font-medium uppercase tracking-wide" style="color: {{ $brand?->accent ?? '#616e7c' }}">{{ $company?->name }}</p>
+                            <p class="text-lg font-semibold text-gray-900">{{ __('Min sida') }}</p>
+                        </div>
                     </div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -29,6 +39,11 @@
             <main class="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:py-10">
                 {{ $slot }}
             </main>
+
+            <footer class="mx-auto flex max-w-2xl items-center justify-center gap-2 px-4 pb-8 text-xs text-gray-500">
+                <span>{{ __('Drivs med') }}</span>
+                <img src="{{ asset('brand/nonox.svg') }}" alt="NONOX" class="h-4 w-auto">
+            </footer>
         </div>
 
         @livewireScripts

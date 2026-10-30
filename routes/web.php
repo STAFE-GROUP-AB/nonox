@@ -10,6 +10,7 @@ use App\Http\Controllers\Accounting\VoucherSeriesController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
+use App\Http\Controllers\CompanyLogoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Invoicing\AgreementController;
@@ -49,6 +50,7 @@ Route::middleware([
 
     Route::get('/foretag/nytt', [CompanyController::class, 'create'])->name('teams.create');
     Route::get('/foretag/{company}', [CompanyController::class, 'show'])->whereNumber('company')->name('teams.show');
+    Route::get('/foretag/{company}/logotyp', CompanyLogoController::class)->whereNumber('company')->name('teams.logo');
     Route::put('/aktuellt-foretag', [CompanyController::class, 'switch'])->name('current-team.update');
 
     Route::get('/foretagsinbjudningar/{invitation}', [CompanyInvitationController::class, 'accept'])

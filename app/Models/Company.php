@@ -21,6 +21,9 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * A company is a Jetstream team (AGENTS.md §3). The table stays `teams`.
  *
  * @property LegalForm $legal_form
+ * @property ?string $logo_path
+ * @property ?string $brand_color
+ * @property ?string $brand_accent_color
  * @property AccountingMethod $accounting_method
  * @property VatPeriod $vat_period
  * @property ReportingFramework $reporting_framework
@@ -66,6 +69,9 @@ class Company extends JetstreamTeam
         'plusgiro',
         'iban',
         'bic',
+        'logo_path',
+        'brand_color',
+        'brand_accent_color',
     ];
 
     /** @var array<string, class-string> */

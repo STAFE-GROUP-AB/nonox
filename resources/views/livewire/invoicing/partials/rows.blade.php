@@ -31,7 +31,7 @@
                         <th class="pb-2 pr-2 font-medium">{{ __('Benämning') }}</th>
                         <th class="pb-2 pr-2 font-medium w-20 text-right">{{ __('Antal') }}</th>
                         <th class="pb-2 pr-2 font-medium w-16">{{ __('Enhet') }}</th>
-                        <th class="pb-2 pr-2 font-medium w-28 text-right">{{ __('Á-pris') }}</th>
+                        <th class="pb-2 pr-2 font-medium w-28 text-right">{{ __('À-pris') }}</th>
                         <th class="pb-2 pr-2 font-medium w-20 text-right">{{ __('Rabatt %') }}</th>
                         <th class="pb-2 pr-2 font-medium w-24">{{ __('Moms') }}</th>
                         <th class="pb-2 pr-2 font-medium w-28 text-right">{{ __('Belopp') }}</th>

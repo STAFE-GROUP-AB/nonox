@@ -20,19 +20,21 @@
     .head td { vertical-align: top; }
     .meta td { padding: 1mm 0; }
     .rows th { text-align: left; font-weight: normal; color: #616e7c; border-bottom: 1px solid #cbd2d9; padding: 2mm 2mm 2mm 0; }
+    .rows th.right { text-align: right; }
     .rows td { border-bottom: 1px solid #e4e7eb; padding: 2mm 2mm 2mm 0; }
     .sum td { padding: 1mm 0; }
     .total td { font-size: 12pt; font-weight: bold; border-top: 2px solid #1f2933; padding-top: 2mm; }
     .box { border: 1px solid #cbd2d9; border-radius: 2mm; padding: 4mm; margin-top: 8mm; }
+    @include('invoicing.partials.brand-style')
     .footer { position: fixed; bottom: -14mm; left: 0; right: 0; font-size: 7.5pt; color: #616e7c; border-top: 1px solid #e4e7eb; padding-top: 2mm; }
 </style>
 </head>
 <body>
+    <div class="brand-bar"></div>
     <table class="head">
         <tr>
             <td style="width: 55%">
-                <strong style="font-size: 12pt">{{ $company->legal_name ?: $company->name }}</strong><br>
-                <span class="muted">{{ $company->address_line1 }}@if($company->address_line2)<br>{{ $company->address_line2 }}@endif<br>{{ trim($company->postal_code.' '.$company->city) }}</span>
+                @include('invoicing.partials.brand-sender')
             </td>
             <td>
                 <h1>{{ $document->isQuote() ? __('Offert') : __('Orderbekräftelse') }}</h1>
@@ -69,7 +71,7 @@
             <tr>
                 <th>{{ __('Benämning') }}</th>
                 <th class="right">{{ __('Antal') }}</th>
-                <th class="right">{{ __('Á-pris') }}</th>
+                <th class="right">{{ __('À-pris') }}</th>
                 <th class="right">{{ __('Rabatt') }}</th>
                 <th class="right">{{ __('Moms') }}</th>
                 <th class="right">{{ __('Belopp') }}</th>

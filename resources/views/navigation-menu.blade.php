@@ -23,7 +23,7 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-application-mark class="text-xl" />
+                        <x-application-mark />
                     </a>
                 </div>
 

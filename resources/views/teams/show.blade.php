@@ -8,6 +8,7 @@
     @php
         $tabs = array_filter([
             'uppgifter' => __('Uppgifter och personer'),
+            'varumarke' => Gate::allows('update', $team) ? __('Varumärke') : null,
             'moduler' => auth()->user()->hasTeamPermission($team, 'modules:manage') ? __('Moduler') : null,
         ]);
         $tab = array_key_exists((string) request('flik'), $tabs) ? (string) request('flik') : 'uppgifter';
@@ -28,6 +29,8 @@
 
         @if($tab === 'moduler')
             <livewire:modules.company-modules-tab :company="$team" />
+        @elseif($tab === 'varumarke')
+            <livewire:company.brand-settings :company="$team" />
         @else
             <livewire:company.company-details-form :company="$team" />
 

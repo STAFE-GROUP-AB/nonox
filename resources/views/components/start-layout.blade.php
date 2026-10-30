@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $title ? $title." – NONOX" : 'NONOX Ekonomisystem' }}</title>
+    @include('partials.favicon')
     <style>
         /*
          * Self-contained on purpose: the start pages must work even before the
@@ -56,9 +57,9 @@
             -webkit-font-smoothing: antialiased;
         }
         .shell { max-width: 36rem; margin: 0 auto; padding: 2.5rem 1.25rem 4rem; }
-        .brand { display: flex; align-items: baseline; gap: .5rem; margin-bottom: 2.5rem; }
-        .brand b { font-size: 1.25rem; letter-spacing: .08em; color: var(--accent); }
-        .brand span { color: var(--muted); font-size: .95rem; }
+        .brand { display: flex; align-items: center; gap: .75rem; margin-bottom: 2.5rem; }
+        .brand img { height: 2.25rem; width: auto; display: block; }
+        .brand span { color: var(--muted); font-size: .95rem; padding-left: .75rem; border-left: 1px solid var(--line); }
         .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 2rem; }
         h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 .5rem; letter-spacing: -.01em; }
         h2 { font-size: 1.15rem; margin: 0 0 .25rem; }
@@ -111,7 +112,7 @@
 </head>
 <body>
     <div class="shell">
-        <div class="brand"><b>NONOX</b><span>Ekonomisystem</span></div>
+        <div class="brand"><img src="{{ asset('brand/nonox.svg') }}" alt="NONOX"><span>Ekonomisystem</span></div>
 
         {{ $slot }}
 

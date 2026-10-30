@@ -6,6 +6,7 @@ namespace App\Domain\Invoicing;
 
 use App\Models\Company;
 use App\Models\SalesDocument;
+use App\Support\Branding\Brand;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -29,6 +30,7 @@ final class SalesDocumentPdf
         $pdf->loadHtml(view('invoicing.sales-pdf', [
             'document' => $document,
             'company' => $company,
+            'brand' => Brand::for($company),
             'totals' => InvoiceCalculator::totals($document->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all()),
         ])->render());
         $pdf->setPaper('A4');

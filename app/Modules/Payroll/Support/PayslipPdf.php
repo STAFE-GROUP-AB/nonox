@@ -18,6 +18,7 @@ use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
+use App\Support\Branding\Brand;
 use Carbon\CarbonImmutable;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -89,6 +90,7 @@ final class PayslipPdf
             'contributionRates' => array_values(array_unique(array_map(fn (mixed $part): int => (int) ((array) $part)['rate_bp'], (array) ($contribution['parts'] ?? [])))),
             'account' => self::maskedAccount($employee),
             'vacation' => $vacation,
+            'brand' => Brand::for($company),
         ])->render();
     }
 

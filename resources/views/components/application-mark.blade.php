@@ -1,3 +1,1 @@
-<span {{ $attributes->merge(['class' => 'inline-flex items-baseline gap-1.5 font-bold tracking-[0.08em] text-accent-600']) }}>
-    NONOX
-</span>
+<img src="{{ asset('brand/nonox.svg') }}" alt="NONOX" {{ $attributes->merge(['class' => 'h-7 w-auto']) }}>
