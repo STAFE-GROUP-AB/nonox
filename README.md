@@ -55,7 +55,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Betalfiler till banken (ISO 20022 pain.001) för attesterade leverantörsfakturor, för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. Betalningarna bokförs när banken har betalat.
 - ✅ Kreditnotor från leverantörer (kvittas mot en faktura eller betalas tillbaka) och inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet i Sverige, med momsen i rätt rutor.
 - 🚧 Automatisk avstämning mot bankens svar, import av varor från länder utanför EU och fakturor i utländsk valuta.
-- 🚧 Lön, med timlöner, OB och personalliggare för restauranger. Förslaget och frågorna som först måste granskas juridiskt finns i [ADR-012](docs/adr/ADR-012-payroll.md).
+- ✅ Moduler: tillägg som varje företag slår på och av under Företagsinställningar → Moduler, utan att något raderas.
+- 🚧 Lön som modul, enligt [PAYROLL_MODULE.md](PAYROLL_MODULE.md). Alla satser och tabeller är data som måste verifieras innan en lönekörning släpps igenom; frågorna finns i [ADR-012](docs/adr/ADR-012-payroll.md).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).

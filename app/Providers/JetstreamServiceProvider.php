@@ -13,6 +13,7 @@ use App\Domain\Company\CompanyRole;
 use App\Models\Company;
 use App\Models\CompanyMembership;
 use App\Models\TeamInvitation;
+use App\Modules\ModuleRegistry;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Jetstream\Jetstream;
 
@@ -40,14 +41,39 @@ class JetstreamServiceProvider extends ServiceProvider
         Jetstream::removeTeamMembersUsing(RemoveTeamMember::class);
     }
 
-    private function configurePermissions(): void
+    /**
+     * Core roles and permissions, plus those of every installed module. Module
+     * roles are always registered; whether they grant anything depends on the
+     * module being on for the company (User::hasTeamPermission).
+     */
+    public function configurePermissions(): void
     {
-        Jetstream::permissions(CompanyRole::PERMISSIONS);
+        $modules = $this->app->make(ModuleRegistry::class)->all();
+        $modulePermissions = [];
+
+        foreach ($modules as $module) {
+            array_push($modulePermissions, ...$module->permissions());
+        }
+
+        Jetstream::permissions(array_values(array_unique([...CompanyRole::PERMISSIONS, ...$modulePermissions])));
         Jetstream::defaultApiTokenPermissions([]);
 
         foreach (CompanyRole::cases() as $role) {
-            Jetstream::role($role->value, $role->label(), $role->permissions())
+            $permissions = $role->permissions();
+
+            foreach ($modules as $module) {
+                array_push($permissions, ...($module->rolePermissions()[$role->value] ?? []));
+            }
+
+            Jetstream::role($role->value, $role->label(), array_values(array_unique($permissions)))
                 ->description($role->description());
+        }
+
+        foreach ($modules as $module) {
+            foreach ($module->roles() as $key => $label) {
+                Jetstream::role($key, $label, $module->rolePermissions()[$key] ?? [])
+                    ->description(__('Roll i modulen :module.', ['module' => $module->name()]));
+            }
         }
     }
 }

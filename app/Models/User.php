@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Modules\ModuleManager;
+use App\Modules\ModuleRegistry;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Factories\UserFactory;
@@ -27,7 +29,9 @@ class User extends Authenticatable
     use HasFactory;
 
     use HasProfilePhoto;
-    use HasTeams;
+    use HasTeams {
+        hasTeamPermission as jetstreamHasTeamPermission;
+    }
     use Notifiable;
 
     /**
@@ -107,6 +111,35 @@ class User extends Authenticatable
         }
 
         return $switched;
+    }
+
+    /**
+     * Jetstream's check, with modules: a permission that belongs to a module
+     * is false while the module is off for the company, except the module's
+     * archive permissions, and the owner gets only the module permissions the
+     * module gives owners (PAYROLL_MODULE.md A.7).
+     *
+     * @param  mixed  $team
+     */
+    public function hasTeamPermission($team, string $permission): bool
+    {
+        $module = app(ModuleRegistry::class)->moduleForPermission($permission);
+
+        if ($module === null || ! $team instanceof Company) {
+            return $this->jetstreamHasTeamPermission($team, $permission);
+        }
+
+        $enabled = app(ModuleManager::class)->isEnabled($module->key(), $team);
+
+        if (! $enabled && ! in_array($permission, $module->archivePermissions(), true)) {
+            return false;
+        }
+
+        if ($this->ownsTeam($team)) {
+            return in_array($permission, $module->rolePermissions()['owner'] ?? [], true);
+        }
+
+        return $this->jetstreamHasTeamPermission($team, $permission);
     }
 
     public function hidesPanel(string $panel, Company $company): bool

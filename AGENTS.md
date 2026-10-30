@@ -357,7 +357,7 @@ Each phase ships vertically: migrations → actions → policies → Livewire UI
 - Employees, employment terms, salary types, tax tables (Skatteverket), employer contributions (arbetsgivaravgifter incl. reduced rates by age), vacation (semesterlagen), sick pay (karensavdrag)
 - Payslips, salary payment file, salary vouchers in series L
 - AGI (arbetsgivardeklaration på individnivå) file/API submission
-- **Do not start Phase 4 without a separate ADR and legal review.**
+- **Payroll is specified in `PAYROLL_MODULE.md`** (an optional module, built on the module framework). Every rate, threshold and table is data marked `TODO(legal-verify)` until verified; a run without a verified rule is blocked.
 
 ### Out of scope until explicitly added
 Inventory/warehouse, time reporting, point of sale, CRM. Design the API so these can be separate modules later.

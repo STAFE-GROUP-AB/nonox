@@ -6,13 +6,18 @@ namespace App\Livewire\Company;
 
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\TeamInvitation;
+use App\Modules\ModuleManager;
+use App\Modules\ModuleRegistry;
+use App\Modules\Rules\AvailableRole;
 use App\Support\Audit\Audit;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 use Laravel\Jetstream\Actions\UpdateTeamMemberRole;
 use Laravel\Jetstream\Contracts\RemovesTeamMembers;
 use Laravel\Jetstream\Http\Livewire\TeamMemberManager;
 use Laravel\Jetstream\Jetstream;
+use Laravel\Jetstream\Role;
 
 /**
  * Jetstream's member manager with a toast after every action, and with the
@@ -52,8 +57,25 @@ class MemberManager extends TeamMemberManager
         }
     }
 
+    /**
+     * Jetstream's roles, without those of modules that are off for the
+     * company (PAYROLL_MODULE.md A.7).
+     *
+     * @return list<Role>
+     */
+    public function getRolesProperty()
+    {
+        return array_values(array_filter(parent::getRolesProperty(), function (Role $role): bool {
+            $module = app(ModuleRegistry::class)->moduleForRole($role->key);
+
+            return $module === null || app(ModuleManager::class)->isEnabled($module->key(), $this->team);
+        }));
+    }
+
     public function updateRole(UpdateTeamMemberRole $updater): void
     {
+        Validator::make(['role' => $this->currentRole], ['role' => [new AvailableRole($this->team)]])->validate();
+
         $name = $this->managingRoleFor->name;
         $role = Jetstream::findRole($this->currentRole);
 

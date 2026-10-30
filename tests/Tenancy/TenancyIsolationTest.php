@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\BankFileImport;
 use App\Models\BankTransaction;
 use App\Models\Company;
+use App\Models\CompanyModule;
 use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\FiscalYear;
@@ -88,6 +89,7 @@ const COMPANY_SCOPED_MODELS = [
     BankFileImport::class => 'bankFileImportAttributes',
     BankTransaction::class => 'bankTransactionAttributes',
     RecurringInvoice::class => 'agreementAttributes',
+    CompanyModule::class => ['module_key' => 'hemlig', 'enabled' => true],
     RecurringInvoiceRow::class => 'agreementRowAttributes',
 ];
 

@@ -24,7 +24,7 @@ enum CompanyRole: string
         'supplier-invoices:create', 'supplier-invoices:approve', 'payments:create', 'payments:approve',
         'vat:prepare', 'vat:submit',
         'reports:view', 'export:sie', 'export:archive', 'import:sie', 'import:fortnox',
-        'api-tokens:manage', 'settings:manage', 'audit-log:view',
+        'api-tokens:manage', 'settings:manage', 'audit-log:view', 'modules:manage',
     ];
 
     public function label(): string

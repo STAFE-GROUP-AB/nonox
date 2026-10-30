@@ -7,6 +7,7 @@ namespace App\Actions\Jetstream;
 use App\Models\Company;
 use App\Models\TeamInvitation as TeamInvitationModel;
 use App\Models\User;
+use App\Modules\Rules\AvailableRole;
 use Closure;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -71,7 +72,7 @@ class InviteTeamMember implements InvitesTeamMembers
                 }),
             ],
             'role' => Jetstream::hasRoles()
-                            ? ['required', 'string', new Role]
+                            ? ['required', 'string', new Role, new AvailableRole($team)]
                             : null,
         ]);
     }

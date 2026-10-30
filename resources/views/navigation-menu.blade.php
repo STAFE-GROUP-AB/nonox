@@ -1,3 +1,20 @@
+@php
+    // Navigation of modules that are on for the company, filtered by permission (PAYROLL_MODULE.md A.5).
+    $navUser = auth()->user();
+    $navCompany = $navUser?->currentCompany();
+    $moduleNav = [];
+
+    if ($navCompany !== null) {
+        foreach (app(App\Modules\ModuleManager::class)->enabledModules($navCompany) as $navModule) {
+            foreach ($navModule->navigation() as $item) {
+                if ($navUser->hasTeamPermission($navCompany, $item['permission'])) {
+                    $moduleNav[] = $item;
+                }
+            }
+        }
+    }
+@endphp
+
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,6 +44,11 @@
                     <x-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*', 'vat.*')">
                         {{ __('Bokföring') }}
                     </x-nav-link>
+                    @foreach($moduleNav as $item)
+                        <x-nav-link href="{{ route($item['route']) }}" :active="request()->routeIs($item['active'])">
+                            {{ $item['label'] }}
+                        </x-nav-link>
+                    @endforeach
                 </div>
             </div>
 
@@ -178,6 +200,11 @@
             <x-responsive-nav-link href="{{ route('accounting.vouchers.index') }}" :active="request()->routeIs('accounting.*', 'vat.*')">
                 {{ __('Bokföring') }}
             </x-responsive-nav-link>
+            @foreach($moduleNav as $item)
+                <x-responsive-nav-link href="{{ route($item['route']) }}" :active="request()->routeIs($item['active'])">
+                    {{ $item['label'] }}
+                </x-responsive-nav-link>
+            @endforeach
         </div>
 
         <!-- Responsive Settings Options -->
