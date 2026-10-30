@@ -64,7 +64,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ NONOX AI (modul): dra in en leverantörsfaktura eller ett kvitto och låt AI fylla i förslaget med konton och belopp via Laravel AI SDK och OpenAI, Claude eller Gemini med företagets egen API-nyckel. Du kontrollerar och sparar; AI:n sparar aldrig själv.
 - ✅ NONOX AI för utlägg: den anställde skickar bara kvittot från Min sida, AI:n läser datum, vad som köptes, belopp och moms och föreslår konto, och den som godkänner kontrollerar och rättar.
 - ✅ Självservice på Min sida: sjukanmälan, vård av barn och semesteransökan som godkänns under Lön → Ansökningar, med e-post åt båda håll.
-- ✅ Eget varumärke per företag: logga och färger på fakturor, offerter, order, lönebesked och Min sida.
+- ✅ Eget varumärke per företag: logga och färger på fakturor, offerter, order, lönebesked och Min sida, och hela appen får företagets färg (med läsbar kontrast) i stället för NONOX:s.
 - ✅ Lön: semester enligt semesterlagen (sammalöneregeln, procentregeln, semesterersättning med lönen) med saldo på lönebeskedet och Min sida, helgarbete (9 §), sparade dagar och semesterårsskifte, och semesterlöneskuld som rapport och månadsbokföring.
 - ✅ Lön: förmåner (kost, bil, drivmedel), traktamente och milersättning, tjänstepension med särskild löneskatt, utlägg med kvitto från Min sida, lönefil till banken (pain.001, SALA) och bokföring mot skattekontot.
 - ✅ Lön: arbetsgivardeklaration (AGI) per utbetalningsmånad som XML enligt Skatteverkets schema 1.1, med rättelser och borttag, kvittens och deklarationsdagar.

@@ -14,8 +14,8 @@
         'NONE' => [__('Ej aktuell'), 'neutral'],
     ];
     $pill = fn (string $tone): string => match ($tone) {
-        'late' => 'bg-signal-500 text-white',
-        'todo' => 'bg-signal-100 text-signal-800',
+        'late' => 'bg-accent-600 text-white',
+        'todo' => 'bg-accent-100 text-accent-800',
         default => 'bg-stone-100 text-gray-800',
     };
     $kronor = fn (int $ore): string => number_format(intdiv($ore, 100), 0, ',', "\u{a0}")."\u{a0}kr";

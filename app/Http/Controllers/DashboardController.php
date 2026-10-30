@@ -42,7 +42,7 @@ class DashboardController
             'user' => $user,
             'company' => $company,
             'canManage' => $user->can('update', $company),
-            'firm' => FirmActivity::visibleTo($user, $company) ? FirmActivity::for($company) : null,
+            'firm' => FirmActivity::forViewer($user, $company),
             'hideGettingStarted' => $user->hidesPanel(GettingStartedController::PANEL, $company),
             'steps' => [
                 [

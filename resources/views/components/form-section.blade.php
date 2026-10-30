@@ -8,14 +8,14 @@
 
     <div class="mt-5 md:mt-0 md:col-span-2">
         <form wire:submit="{{ $submit }}">
-            <div class="px-4 py-5 bg-white sm:p-6 shadow {{ isset($actions) ? 'sm:rounded-tl-md sm:rounded-tr-md' : 'sm:rounded-md' }}">
+            <div class="bg-white px-4 py-5 shadow-sm ring-1 ring-stone-200 sm:p-6 {{ isset($actions) ? 'rounded-t-3xl' : 'rounded-3xl' }}">
                 <div class="grid grid-cols-6 gap-6">
                     {{ $form }}
                 </div>
             </div>
 
             @if (isset($actions))
-                <div class="flex items-center justify-end px-4 py-3 bg-gray-50 text-end sm:px-6 shadow sm:rounded-bl-md sm:rounded-br-md">
+                <div class="flex items-center justify-end rounded-b-3xl bg-paper px-4 py-3 text-end ring-1 ring-stone-200 sm:px-6">
                     {{ $actions }}
                 </div>
             @endif

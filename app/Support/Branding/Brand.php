@@ -32,6 +32,56 @@ final readonly class Brand
         return new self($color, $company->brand_accent_color ?? $color, $company->logo_path);
     }
 
+    /**
+     * The company's own colours for the app itself, as the accent palette
+     * the interface is built on (50 lightest to 950 darkest, each as
+     * "r g b" for CSS variables). Null when the company has not chosen a
+     * colour: the app then keeps the NONOX palette. Shade 600 carries white
+     * button text and 700 text on white, so both are darkened until they
+     * reach 4.5:1 (WCAG 2.2 AA), however light the chosen colour is.
+     *
+     * @return array<int, string>|null
+     */
+    public static function interfacePalette(Company $company): ?array
+    {
+        $color = $company->brand_color;
+
+        if (! is_string($color) || preg_match('/^#[0-9A-Fa-f]{6}$/', $color) !== 1) {
+            return null;
+        }
+
+        $mix = fn (string $hex, string $with, float $amount): string => sprintf('#%02X%02X%02X', ...array_map(
+            fn (int $c, int $w): int => (int) round($c + ($w - $c) * $amount),
+            self::rgb($hex),
+            self::rgb($with),
+        ));
+        $readable = function (string $hex) use ($mix): string {
+            for ($step = 0.0; self::contrast($hex, '#FFFFFF') < 4.5 && $step < 1.0; $step += 0.05) {
+                $hex = $mix($hex, '#000000', 0.05);
+            }
+
+            return $hex;
+        };
+        $button = $readable($color);
+        $text = $readable($mix($button, '#000000', 0.12));
+
+        $palette = [
+            50 => $mix($color, '#FFFFFF', 0.94),
+            100 => $mix($color, '#FFFFFF', 0.86),
+            200 => $mix($color, '#FFFFFF', 0.72),
+            300 => $mix($color, '#FFFFFF', 0.52),
+            400 => $mix($color, '#FFFFFF', 0.28),
+            500 => $color,
+            600 => $button,
+            700 => $text,
+            800 => $mix($text, '#000000', 0.25),
+            900 => $mix($text, '#000000', 0.45),
+            950 => $mix($text, '#000000', 0.7),
+        ];
+
+        return array_map(fn (string $hex): string => implode(' ', self::rgb($hex)), $palette);
+    }
+
     /** Black or white, whichever reads best on the main colour (WCAG contrast). */
     public function onColor(): string
     {

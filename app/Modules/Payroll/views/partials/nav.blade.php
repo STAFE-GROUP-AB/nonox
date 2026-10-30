@@ -3,7 +3,7 @@
     @foreach(['payroll.runs.index' => __('Lönekörningar'), 'payroll.requests' => $pendingRequests > 0 ? __('Ansökningar (:count)', ['count' => $pendingRequests]) : __('Ansökningar'), 'payroll.employees' => __('Anställda'), 'payroll.agi' => __('Arbetsgivardeklaration'), 'payroll.reports' => __('Rapporter'), 'payroll.vacationYear' => __('Semesterår'), 'payroll.vacationLiability' => __('Semesterskuld'), 'payroll.rules' => __('Regler'), 'payroll.migration' => __('Flytt av lönedata'), 'payroll.index' => __('Kom igång')] as $route => $label)
         @php($active = request()->routeIs($route === 'payroll.runs.index' ? 'payroll.runs.*' : $route))
         <a href="{{ route($route) }}" @class([
-            'rounded-full px-4 py-1.5 text-sm font-medium',
+            'rounded-full px-4 py-2 text-sm font-semibold transition',
             'bg-accent-600 text-white' => $active,
             'bg-white border border-gray-200 text-gray-700 hover:border-gray-300' => ! $active,
         ]) @if($active) aria-current="page" @endif>{{ $label }}</a>

@@ -1,10 +1,10 @@
 @props(['title' => null, 'description' => null, 'action' => null])
 
-<section {{ $attributes->merge(['class' => 'bg-white border border-gray-200 rounded-xl p-6 sm:p-8']) }}>
+<section {{ $attributes->merge(['class' => 'rounded-3xl bg-white p-6 shadow-sm ring-1 ring-stone-200 sm:p-8']) }}>
     @if($title || $action)
         <div class="flex flex-wrap items-baseline justify-between gap-2">
             @if($title)
-                <h2 class="text-lg font-semibold text-gray-900">{{ $title }}</h2>
+                <h2 class="text-lg font-bold tracking-tight text-ink">{{ $title }}</h2>
             @endif
             {{ $action }}
         </div>

@@ -55,10 +55,19 @@ final class FirmActivity
     /** Signing in and similar entries say nothing about the work. */
     private const array IGNORED = ['auth.signed_in', 'auth.signed_out', 'company.switched', 'company.client_note_changed', 'company.responsible_changed'];
 
-    public static function visibleTo(User $user, Company $company): bool
+    /**
+     * The panel for a member who may read the audit trail and is not one of
+     * the company's consultants; null otherwise or when there are none.
+     *
+     * @return array{responsible: ?string, consultants: list<string>, days: list<array{date: string, entries: list<array{name: string, label: string, count: int}>}>}|null
+     */
+    public static function forViewer(User $user, Company $company): ?array
     {
-        return $user->hasTeamPermission($company, 'audit-log:view')
-            && DB::table('team_user')->where('team_id', $company->id)->where('user_id', $user->id)->value('role') !== ClientProfile::FIRM_ROLE;
+        if (! $user->hasTeamPermission($company, 'audit-log:view')) {
+            return null;
+        }
+
+        return self::for($company, viewer: $user);
     }
 
     /**
@@ -68,14 +77,15 @@ final class FirmActivity
      *     days: list<array{date: string, entries: list<array{name: string, label: string, count: int}>}>
      * }|null null when no member of the company is a consultant
      */
-    public static function for(Company $company, ?CarbonImmutable $today = null): ?array
+    public static function for(Company $company, ?CarbonImmutable $today = null, ?User $viewer = null): ?array
     {
         $today ??= CarbonImmutable::today('Europe/Stockholm');
         $consultants = DB::table('team_user')->join('users', 'users.id', '=', 'team_user.user_id')
             ->where('team_user.team_id', $company->id)->where('team_user.role', ClientProfile::FIRM_ROLE)
             ->orderBy('users.name')->pluck('users.name', 'users.id')->map(fn (mixed $name): string => (string) $name)->all();
 
-        if ($consultants === []) {
+        // A consultant does not need a panel about the firm's own work.
+        if ($consultants === [] || ($viewer !== null && isset($consultants[$viewer->id]))) {
             return null;
         }
 

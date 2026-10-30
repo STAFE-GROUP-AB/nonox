@@ -1,4 +1,19 @@
 @tailwind base;
+
+/* NONOX's accent, as "r g b" so Tailwind's opacity modifiers work. A company's own colour replaces it (layouts/app). */
+:root {
+    --accent-50: 255 244 239;
+    --accent-100: 255 229 219;
+    --accent-200: 255 200 180;
+    --accent-300: 255 161 132;
+    --accent-400: 255 118 81;
+    --accent-500: 255 74 28;
+    --accent-600: 212 51 11;
+    --accent-700: 185 44 10;
+    --accent-800: 143 35 11;
+    --accent-900: 111 29 12;
+    --accent-950: 61 13 4;
+}
 @tailwind components;
 @tailwind utilities;
 
