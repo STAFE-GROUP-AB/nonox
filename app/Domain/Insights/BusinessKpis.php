@@ -40,7 +40,18 @@ final class BusinessKpis
 
     private const array VAT = [2600, 2699];
 
+    public const string SALES = 'sales';
+
+    public const string PAYABLES = 'payables';
+
+    public const string LEDGER = 'ledger';
+
     /**
+     * The figures of the given groups that the user may see: sales under
+     * Försäljning, payables under Inköp, the ledger under Bokföring, all of
+     * them on the overview.
+     *
+     * @param  list<string>  $groups
      * @return list<array{
      *     label: string,
      *     value: Money,
@@ -49,20 +60,20 @@ final class BusinessKpis
      *     link: ?string
      * }>
      */
-    public function for(User $user, Company $company, ?CarbonImmutable $today = null): array
+    public function for(User $user, Company $company, array $groups = [self::SALES, self::PAYABLES, self::LEDGER], ?CarbonImmutable $today = null): array
     {
         $today ??= CarbonImmutable::today();
         $kpis = [];
 
-        if ($user->hasTeamPermission($company, 'invoices:view')) {
+        if (in_array(self::SALES, $groups, true) && $user->hasTeamPermission($company, 'invoices:view')) {
             array_push($kpis, ...$this->sales($today));
         }
 
-        if (SupplierInvoicePolicy::canSeePayables($user, $company)) {
-            $kpis[] = $this->payables($today);
+        if (in_array(self::PAYABLES, $groups, true) && SupplierInvoicePolicy::canSeePayables($user, $company)) {
+            array_push($kpis, ...$this->payables($today));
         }
 
-        if ($user->hasTeamPermission($company, 'reports:view')) {
+        if (in_array(self::LEDGER, $groups, true) && $user->hasTeamPermission($company, 'reports:view')) {
             array_push($kpis, ...$this->ledger($today, $user->hasTeamPermission($company, 'vat:prepare')));
         }
 
@@ -127,35 +138,58 @@ final class BusinessKpis
     }
 
     /**
-     * @return array{label: string, value: Money, hint: ?string, warn: bool, link: ?string}
+     * @return list<array{label: string, value: Money, hint: ?string, warn: bool, link: ?string}>
      */
     private function payables(CarbonImmutable $today): array
     {
-        $open = [SupplierInvoiceStatus::Registered->value, SupplierInvoiceStatus::Approved->value];
+        $month = $today->startOfMonth();
+        $previous = $month->subMonth();
+        $registered = SupplierInvoiceStatus::Registered->value;
+        $open = [$registered, SupplierInvoiceStatus::Approved->value];
 
         $invoices = SupplierInvoice::query()
             ->toBase()
-            ->whereIn('status', $open)
-            ->selectRaw('COALESCE(SUM(total_ore - paid_ore), 0) AS unpaid')
-            ->selectRaw('COUNT(*) FILTER (WHERE due_date < ?) AS overdue', [$today->toDateString()])
-            ->selectRaw('COUNT(*) FILTER (WHERE status = ?) AS awaiting_approval', [SupplierInvoiceStatus::Registered->value])
+            ->selectRaw('COALESCE(SUM(total_ore - paid_ore) FILTER (WHERE status IN (?, ?)), 0) AS unpaid', $open)
+            ->selectRaw('COALESCE(SUM(total_ore - paid_ore) FILTER (WHERE status IN (?, ?) AND due_date < ?), 0) AS overdue', [...$open, $today->toDateString()])
+            ->selectRaw('COUNT(*) FILTER (WHERE status IN (?, ?) AND due_date < ?) AS overdue_count', [...$open, $today->toDateString()])
+            ->selectRaw('COALESCE(SUM(total_ore) FILTER (WHERE status = ?), 0) AS awaiting', [$registered])
+            ->selectRaw('COUNT(*) FILTER (WHERE status = ?) AS awaiting_count', [$registered])
+            ->selectRaw('COALESCE(SUM(total_ore - vat_ore) FILTER (WHERE status <> ? AND invoice_date BETWEEN ? AND ?), 0) AS this_month', [SupplierInvoiceStatus::Draft->value, $month->toDateString(), $month->endOfMonth()->toDateString()])
+            ->selectRaw('COALESCE(SUM(total_ore - vat_ore) FILTER (WHERE status <> ? AND invoice_date BETWEEN ? AND ?), 0) AS last_month', [SupplierInvoiceStatus::Draft->value, $previous->toDateString(), $previous->endOfMonth()->toDateString()])
             ->first();
 
-        $overdue = (int) ($invoices->overdue ?? 0);
-        $awaiting = (int) ($invoices->awaiting_approval ?? 0);
-
-        $hint = match (true) {
-            $overdue > 0 => __($overdue === 1 ? ':count faktura har förfallit.' : ':count fakturor har förfallit.', ['count' => $overdue]),
-            $awaiting > 0 => __($awaiting === 1 ? ':count faktura väntar på attest.' : ':count fakturor väntar på attest.', ['count' => $awaiting]),
-            default => __('Inget har förfallit.'),
-        };
+        $overdueCount = (int) ($invoices->overdue_count ?? 0);
+        $awaitingCount = (int) ($invoices->awaiting_count ?? 0);
 
         return [
-            'label' => __('Att betala till leverantörer'),
-            'value' => Money::ofOre((int) ($invoices->unpaid ?? 0)),
-            'hint' => $hint,
-            'warn' => $overdue > 0,
-            'link' => route('payables.invoices.index', ['visa' => $overdue > 0 ? 'forfallna' : ($awaiting > 0 ? 'attest' : 'att-betala')]),
+            [
+                'label' => __('Inköpt i :month', ['month' => $today->translatedFormat('F')]),
+                'value' => Money::ofOre((int) ($invoices->this_month ?? 0)),
+                'hint' => __('Exkl. moms. Förra månaden: :amount', ['amount' => Money::ofOre((int) ($invoices->last_month ?? 0))->format()]),
+                'warn' => false,
+                'link' => route('payables.invoices.index'),
+            ],
+            [
+                'label' => __('Att betala till leverantörer'),
+                'value' => Money::ofOre((int) ($invoices->unpaid ?? 0)),
+                'hint' => $overdueCount === 0
+                    ? __('Inget har förfallit.')
+                    : __($overdueCount === 1 ? ':count faktura har förfallit, :amount' : ':count fakturor har förfallit, :amount', [
+                        'count' => $overdueCount,
+                        'amount' => Money::ofOre((int) ($invoices->overdue ?? 0))->format(),
+                    ]),
+                'warn' => $overdueCount > 0,
+                'link' => route('payables.invoices.index', ['visa' => $overdueCount > 0 ? 'forfallna' : 'att-betala']),
+            ],
+            [
+                'label' => __('Väntar på attest'),
+                'value' => Money::ofOre((int) ($invoices->awaiting ?? 0)),
+                'hint' => $awaitingCount === 0
+                    ? __('Inget väntar.')
+                    : __($awaitingCount === 1 ? ':count faktura väntar på attest.' : ':count fakturor väntar på attest.', ['count' => $awaitingCount]),
+                'warn' => false,
+                'link' => route('payables.invoices.index', ['visa' => 'attest']),
+            ],
         ];
     }
 

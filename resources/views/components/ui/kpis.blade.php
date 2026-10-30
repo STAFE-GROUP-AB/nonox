@@ -1,11 +1,14 @@
 {{--
-    The owner's key figures, shown under every section's tabs. Each figure
-    links to where it comes from. BusinessKpis decides what this user may see.
+    The owner's key figures for one section: sales, payables or the ledger
+    (all of them when no group is given). Each figure links to where it comes
+    from. BusinessKpis decides what this user may see.
 --}}
+@props(['groups' => null])
+
 @php
     $user = auth()->user();
     $company = $user?->currentCompany();
-    $kpis = $company === null ? [] : app(App\Domain\Insights\BusinessKpis::class)->for($user, $company);
+    $kpis = $company === null ? [] : ($groups === null ? app(App\Domain\Insights\BusinessKpis::class)->for($user, $company) : app(App\Domain\Insights\BusinessKpis::class)->for($user, $company, $groups));
 @endphp
 
 @if($kpis !== [])

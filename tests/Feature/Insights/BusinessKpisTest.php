@@ -52,7 +52,9 @@ it('sums sales, receivables, orders, result, bank and VAT in a few queries', fun
         'Fakturerat i mars' => 100_000,
         'Obetalt hos kunder' => 62_000,
         'Order att fakturera' => 250_000,
+        'Inköpt i mars' => 0,
         'Att betala till leverantörer' => 0,
+        'Väntar på attest' => 0,
         'Resultat hittills 2026' => 600_000,
         'Pengar på bank och kassa' => 550_000,
         'Moms att betala' => 12_000,
@@ -71,13 +73,15 @@ it('warns about overdue invoices', function () {
 it('shows a role only the figures it may read', function () {
     $labels = collect(app(BusinessKpis::class)->for(Bookkeeping::member($this->company, 'approver'), $this->company))->pluck('label')->all();
 
-    expect($labels)->toBe(['Fakturerat i mars', 'Obetalt hos kunder', 'Order att fakturera', 'Att betala till leverantörer']);
+    expect($labels)->toBe(['Fakturerat i mars', 'Obetalt hos kunder', 'Order att fakturera', 'Inköpt i mars', 'Att betala till leverantörer', 'Väntar på attest']);
 });
 
-it('shows the figures under every tab and per customer and article in the registers', function () {
-    $this->get(route('invoicing.invoices.index'))->assertOk()->assertSee('Obetalt hos kunder')->assertSee('Pengar på bank och kassa');
-    $this->get(route('accounting.vouchers.index'))->assertOk()->assertSee('Resultat hittills 2026');
-    $this->get(route('dashboard'))->assertOk()->assertSee('Order att fakturera');
+it('shows each tab its own figures, all of them on the overview, and per customer and article in the registers', function () {
+    $this->get(route('invoicing.invoices.index'))->assertOk()->assertSee('Obetalt hos kunder')->assertDontSee('Pengar på bank och kassa')->assertDontSee('Att betala till leverantörer');
+    $this->get(route('payables.invoices.index'))->assertOk()->assertSee('Väntar på attest')->assertDontSee('Obetalt hos kunder');
+    $this->get(route('accounting.vouchers.index'))->assertOk()->assertSee('Resultat hittills 2026')->assertDontSee('Order att fakturera');
+    $this->get(route('dashboard'))->assertOk()->assertSee('Order att fakturera')->assertSee('Att betala till leverantörer')->assertSee('Resultat hittills 2026');
+    $this->get(route('invoicing.customers'))->assertOk()->assertDontSee('Obetalt hos kunder');
 
     $this->get(route('invoicing.customers'))->assertOk()
         ->assertSee('Register')

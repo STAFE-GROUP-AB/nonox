@@ -26,5 +26,5 @@
             ]) @if(request()->routeIs(str_replace('.index', '.*', $route))) aria-current="page" @endif>{{ $label }}</a>
         @endforeach
     </nav>
-    <x-ui.kpis />
+    <x-ui.kpis :groups="['ledger']" />
 </div>

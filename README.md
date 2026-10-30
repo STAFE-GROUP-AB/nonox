@@ -42,7 +42,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 
 **Fakturering**
 - ✅ Kund-, artikel- och leverantörsregister under en egen flik, Register, med pris, moms och intäktskonto. Per kund visas vad den fakturerats i år och vad som är obetalt, per artikel vad som sålts i år.
-- ✅ Nyckeltal för företagaren överst under varje flik och på översikten: fakturerat i månaden, obetalt hos kunder och förfallet, order att fakturera, resultat hittills i år, pengar på bank och kassa och moms att betala. Var och en visas bara för roller som får se underlaget.
+- ✅ Nyckeltal för företagaren, egna för varje flik: under Försäljning fakturerat i månaden, obetalt och förfallet hos kunder och order att fakturera; under Inköp inköpt i månaden, att betala till leverantörer och vad som väntar på attest; under Bokföring resultat hittills i år, pengar på bank och kassa och moms att betala. Översikten visar alla. Var och en visas bara för roller som får se underlaget.
 - ✅ Fakturor med OCR-nummer, PDF och utskick via e-post. De bokförs automatiskt, enligt fakturametoden eller kontantmetoden.
 - ✅ Inbetalningar, även delbetalningar, kreditfakturor och påminnelser via e-post.
 - ✅ Läs in bankens fil med inbetalningar (ISO 20022 camt.054, ersätter BgMax). Fakturorna föreslås efter OCR-numret och bokförs med ett klick. Samma inbetalning bokförs aldrig två gånger.

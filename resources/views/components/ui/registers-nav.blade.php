@@ -17,5 +17,4 @@
             ]) @if($active) aria-current="page" @endif>{{ $label }}</a>
         @endforeach
     </nav>
-    <x-ui.kpis />
 </div>

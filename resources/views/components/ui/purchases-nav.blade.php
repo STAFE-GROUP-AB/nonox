@@ -9,5 +9,5 @@
             ]) @if($active) aria-current="page" @endif>{{ $label }}</a>
         @endforeach
     </nav>
-    <x-ui.kpis />
+    <x-ui.kpis :groups="['payables']" />
 </div>

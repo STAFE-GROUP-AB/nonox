@@ -1165,5 +1165,7 @@
     "Bokför valda": "Book selected",
     "1 inbetalning": "1 payment",
     ":count inbetalningar": ":count payments",
-    "Läs in bankens fil med inbetalningar, så prickas fakturorna av på OCR-numret.": "Read the bank's file of incoming payments, and the invoices are settled by their OCR number."
+    "Läs in bankens fil med inbetalningar, så prickas fakturorna av på OCR-numret.": "Read the bank's file of incoming payments, and the invoices are settled by their OCR number.",
+    "Inköpt i :month": "Purchased in :month",
+    "Inget väntar.": "Nothing is waiting."
 }
