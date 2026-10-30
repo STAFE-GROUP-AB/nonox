@@ -96,6 +96,14 @@ it('keeps employees in the portal, away from the rest of the system', function (
     $this->actingAs($this->owner)->get(route('dashboard'))->assertOk();
 });
 
+it('shows the company logo in the portal to employees', function () {
+    Illuminate\Support\Facades\Storage::fake(App\Support\Branding\Brand::DISK);
+    app(App\Actions\Company\UpdateCompanyBranding::class)($this->owner, $this->company, [], Illuminate\Http\UploadedFile::fake()->image('logo.png', 200, 80));
+
+    $this->actingAs($this->worker)->get(route('payroll.portal.home'))->assertSee(route('teams.logo', $this->company->id));
+    $this->actingAs($this->worker)->get(route('teams.logo', $this->company->id))->assertOk()->assertHeader('Content-Type', 'image/png');
+});
+
 it('tells an employee without a linked login what to do', function () {
     $this->actingAs($this->colleague)->get(route('payroll.portal.home'))
         ->assertOk()

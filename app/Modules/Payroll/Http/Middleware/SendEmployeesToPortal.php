@@ -18,8 +18,8 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class SendEmployeesToPortal
 {
-    /** Routes an employee may still reach: the portal, logging out, accepting invitations, Livewire itself. */
-    private const array ALLOWED = ['payroll.portal.*', 'logout', 'livewire.*', 'team-invitations.*', 'current-team.update'];
+    /** Routes an employee may still reach: the portal, the company logo it shows, logging out, accepting invitations, Livewire itself. */
+    private const array ALLOWED = ['payroll.portal.*', 'teams.logo', 'logout', 'livewire.*', 'team-invitations.*', 'current-team.update'];
 
     public function __construct(private readonly ModuleManager $modules) {}
 
