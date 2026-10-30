@@ -30,6 +30,7 @@ final class CreditTransferFile
         string $debtorIban,
         CarbonImmutable $executionDate,
         array $transfers,
+        ?string $debtorBankgiro = null,
     ): string {
         $xml = new XMLWriter;
         $xml->openMemory();
@@ -102,7 +103,20 @@ final class CreditTransferFile
         $xml->endElement();
         $xml->startElement('DbtrAcct');
         $xml->startElement('Id');
-        $xml->writeElement('IBAN', $debtorIban);
+
+        if ($bank->debtorAccountIsBankgiro()) {
+            $xml->startElement('Othr');
+            $xml->writeElement('Id', (string) $debtorBankgiro);
+            $xml->startElement('SchmeNm');
+            $xml->writeElement('Prtry', 'BGNR');
+            $xml->endElement();
+            $xml->endElement();
+        }
+
+        if (! $bank->debtorAccountIsBankgiro()) {
+            $xml->writeElement('IBAN', $debtorIban);
+        }
+
         $xml->endElement();
         $xml->writeElement('Ccy', 'SEK');
         $xml->endElement();
@@ -181,6 +195,16 @@ final class CreditTransferFile
 
             if ($transfer->ocr !== null) {
                 $xml->startElement('Strd');
+
+                if ($bank->remittedAmountWithReference()) {
+                    $xml->startElement('RfrdDocAmt');
+                    $xml->startElement('RmtdAmt');
+                    $xml->writeAttribute('Ccy', 'SEK');
+                    $xml->text(self::amount($transfer->amountOre));
+                    $xml->endElement();
+                    $xml->endElement();
+                }
+
                 $xml->startElement('CdtrRefInf');
                 $xml->startElement('Tp');
                 $xml->startElement('CdOrPrtry');

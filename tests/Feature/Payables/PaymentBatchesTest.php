@@ -104,6 +104,7 @@ it('makes a pain.001 file with OCR for bankgiro and a message for plusgiro', fun
 });
 
 it('follows each bank\'s own guide', function (string $bank, ?string $scheme, array $serviceLevel, array $bankgiroAgent, array $plusgiroAgent, ?string $purpose) {
+    $this->company->forceFill(['bankgiro' => '5402-9681'])->save();
     app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => $bank, 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => '165566778899']);
     $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '100', '4455667');
     $power = approvedSupplierInvoice($this->owner, $this->company, $this->power, '50');
@@ -129,7 +130,30 @@ it('follows each bank\'s own guide', function (string $bank, ?string $scheme, ar
     'Länsförsäkringar' => ['LANSFORSAKRINGAR', null, [], ['SESBA9900'], ['SESBA9960'], null],
     'Nordea' => ['NORDEA', 'CUST', ['NURG'], ['BGABSESS'], ['NDEASESS'], null],
     'SEB' => ['SEB', 'CUST', ['MPNS'], ['SESBA9900'], ['SESBA9960'], null],
+    'Swedbank' => ['SWEDBANK', 'BANK', ['NURG'], ['SESBA9900'], ['SESBA9960'], 'SUPP'],
 ]);
+
+it('pays from the company bankgiro with the amount beside the OCR at Swedbank', function () {
+    expect(fn () => app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'SWEDBANK', 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => '123456789123B001']))
+        ->toThrow(ValidationException::class, 'bankgiro');
+
+    $this->company->forceFill(['bankgiro' => '5402-9681'])->save();
+    app(SavePaymentBankSettings::class)($this->owner, $this->company, ['payment_bank' => 'SWEDBANK', 'iban' => 'SE4550000000058398257466', 'bank_agreement_id' => '123456789123B001']);
+    $food = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620', '4455667');
+
+    $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id], CarbonImmutable::parse('2026-03-12'));
+    $doc = new DOMDocument;
+    $doc->loadXML(Storage::disk('local')->get($batch->file_path));
+    $path = new DOMXPath($doc);
+    $path->registerNamespace('p', CreditTransferFile::NAMESPACE);
+    $text = fn (string $query): array => array_map(fn (DOMNode $node): string => $node->textContent, iterator_to_array($path->query($query)));
+
+    expect($text('//p:DbtrAcct/p:Id/p:Othr/p:Id'))->toBe(['54029681'])
+        ->and($text('//p:DbtrAcct/p:Id/p:Othr/p:SchmeNm/p:Prtry'))->toBe(['BGNR'])
+        ->and($text('//p:DbtrAcct/p:Id/p:IBAN'))->toBe([])
+        ->and($text('//p:Strd/p:RfrdDocAmt/p:RmtdAmt'))->toBe(['1620.00'])
+        ->and($text('//p:Strd/p:CdtrRefInf/p:Ref'))->toBe(['4455667']);
+});
 
 it('pays to the bankgiro the supplier had when the invoice was registered', function () {
     useHandelsbanken($this->owner, $this->company);

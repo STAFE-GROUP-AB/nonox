@@ -46,6 +46,10 @@ class CreatePaymentBatch
             throw ValidationException::withMessages(['batch' => __('Fyll i bank, IBAN och avtals-id under Betalfiler innan du skapar en betalfil.')]);
         }
 
+        if ($company->payment_bank->debtorAccountIsBankgiro() && blank($company->bankgiro)) {
+            throw ValidationException::withMessages(['batch' => __(':bank betalar från företagets bankgiro. Fyll i bankgiro under företagets uppgifter.', ['bank' => $company->payment_bank->label()])]);
+        }
+
         if ($executionDate->lessThan(CarbonImmutable::today())) {
             throw ValidationException::withMessages(['execution_date' => __('Betaldagen kan inte vara passerad.')]);
         }
@@ -94,6 +98,7 @@ class CreatePaymentBatch
                 (string) $company->iban,
                 $executionDate,
                 array_values($transfers),
+                preg_replace('/\D/', '', (string) $company->bankgiro),
             );
 
             $path = "betalfiler/{$company->id}/".Str::uuid()->toString().'.xml';

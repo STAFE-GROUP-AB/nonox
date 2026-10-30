@@ -25,6 +25,10 @@ same schema but differ in a few fields. Sources read for this decision:
   clearing) and *Supported payment types and examples* v5.3 (18 August 2026).
 - Länsförsäkringar Bank, *Message Implementation Guidelines pain.001.001.03
   and pain.002.001.03*, version 1.1 (12 November 2025).
+- Swedbank, *MIG CustomerCreditTransferInitiation pain.001.001.03* version
+  1.0.0 and *MIG Appendix* version 1.1.0 (service 1.0, which covers supplier
+  and bankgiro/plusgiro payments; also used by the savings banks), with
+  Swedbank's own pain.001.001.03 XSD.
 - The pain.001.001.03 XSD published by iso20022.org. Files made for both
   banks were validated against it while building (the XSD is not committed).
 
@@ -54,10 +58,16 @@ same schema but differ in a few fields. Sources read for this decision:
   - Länsförsäkringar: no scheme code for the initiating party (the example
     is "16" followed by the organisation number), no service level (only
     NPCA is accepted if sent), creditor agent SESBA 9900 / 9960.
-  - Swedbank and the savings banks (which use Swedbank's guide): not offered
-    until Swedbank's MIG 1.0 pain.001 (updated 28 April 2026) has been read;
-    it is only downloadable through Swedbank's site in a browser.
-  - Files for all five banks were validated against the ISO XSD.
+  - Swedbank and the savings banks: scheme `BANK` (agreement id format
+    nnnnnnnnnnnnAnnn), service level NURG, category purpose SUPP, debtor
+    account the company's own bankgiro (`Othr` + `Prtry` BGNR: "For
+    Domestic payments use Othr/BGNR"), debtor agent SWEDSESS, creditor agent
+    SESBA 9900 / 9960, and `RfrdDocAmt/RmtdAmt` beside an OCR reference
+    ("Required for Bankgiro payments").
+  - Files for all six banks were validated against the ISO XSD, and
+    Swedbank's against Swedbank's own XSD too.
+  - The camt.054 reader (ADR-015) was run against Swedbank's example credit
+    notification and read every payment, OCR and payer correctly.
 - **Whose details.** Payee details come from the supplier snapshot taken when
   the invoice was registered, not from the register now. A changed bank number
   in the register cannot redirect an invoice that was already approved, a

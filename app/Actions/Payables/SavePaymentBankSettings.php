@@ -11,6 +11,7 @@ use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * The bank that receives the company's payment files: which bank, the
@@ -41,6 +42,10 @@ class SavePaymentBankSettings
         ])->validate();
 
         $bank = PaymentBank::from((string) $validated['payment_bank']);
+
+        if ($bank->debtorAccountIsBankgiro() && blank($company->bankgiro)) {
+            throw ValidationException::withMessages(['payment_bank' => __(':bank betalar från företagets bankgiro. Fyll i bankgiro under företagets uppgifter först.', ['bank' => $bank->label()])]);
+        }
 
         $company->forceFill([
             'payment_bank' => $bank,

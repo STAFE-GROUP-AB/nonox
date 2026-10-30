@@ -31,7 +31,7 @@
                     @endif
                 </div>
             </form>
-            <p class="mt-4 text-sm text-gray-600">{{ __('Betalfiler kan i dag göras för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea och SEB. Swedbank och sparbankerna kommer. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.') }}</p>
+            <p class="mt-4 text-sm text-gray-600">{{ __('Betalfiler kan göras för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.') }}</p>
         @elseif($company->payment_bank)
             <div class="flex flex-wrap items-center justify-between gap-4 text-sm">
                 <p class="text-gray-700">{{ __(':bank, konto :iban, avtals-id :agreement', ['bank' => $company->payment_bank->label(), 'iban' => $company->iban, 'agreement' => $company->bank_agreement_id]) }}</p>

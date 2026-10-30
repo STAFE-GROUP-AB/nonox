@@ -1218,7 +1218,6 @@
     "16 följt av organisationsnumret, tolv siffror, till exempel 165566778899. Kontot ska vara kopplat till Betaltjänst via fil.": "16 followed by the organisation number, twelve digits, for example 165566778899. The account must be connected to Betaltjänst via fil.",
     "Avtals-id:t (kundnumret) som Nordea gav för Corporate eGateway eller filöverföring.": "The agreement id (customer number) Nordea gave for Corporate eGateway or file transfer.",
     "EDI-avtalets kundnummer från SEB, 10 eller 14 tecken.": "The EDI agreement's customer number from SEB, 10 or 14 characters.",
-    "Betalfiler kan i dag göras för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea och SEB. Swedbank och sparbankerna kommer. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.": "Payment files can currently be made for Danske Bank, Handelsbanken, Länsförsäkringar, Nordea and SEB. Swedbank and the savings banks are coming. Send a first file to the bank's test service before paying for real.",
     "Utkast till kreditnota": "Draft credit note",
     "Kreditnota :number": "Credit note :number",
     ":amount är registrerat. Kvar: :remaining.": ":amount has been registered. Remaining: :remaining.",
@@ -1254,5 +1253,9 @@
     "Moms du redovisar själv": "VAT you account for",
     "Bokförs som både utgående och ingående moms, så den kostar inget om du har full avdragsrätt.": "Booked as both output and input VAT, so it costs nothing if you have full right of deduction.",
     "Momssats": "VAT rate",
-    "Momssats, rad": "VAT rate, row"
+    "Momssats, rad": "VAT rate, row",
+    "Avtals-id:t för betalfilsavtalet, 16 tecken, till exempel 123456789123B001. Företagets bankgiro används som avsändarkonto.": "The agreement id of the payment file agreement, 16 characters, for example 123456789123B001. The company's bankgiro is used as the sending account.",
+    ":bank betalar från företagets bankgiro. Fyll i bankgiro under företagets uppgifter.": ":bank pays from the company's bankgiro. Fill in the bankgiro in the company details.",
+    ":bank betalar från företagets bankgiro. Fyll i bankgiro under företagets uppgifter först.": ":bank pays from the company's bankgiro. Fill in the bankgiro in the company details first.",
+    "Betalfiler kan göras för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. Skicka en första fil till bankens testtjänst innan du betalar på riktigt.": "Payment files can be made for Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank and the savings banks. Send a first file to the bank's test service before paying for real."
 }

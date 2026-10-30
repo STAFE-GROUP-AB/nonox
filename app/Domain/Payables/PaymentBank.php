@@ -19,6 +19,7 @@ enum PaymentBank: string
     case Lansforsakringar = 'LANSFORSAKRINGAR';
     case Nordea = 'NORDEA';
     case Seb = 'SEB';
+    case Swedbank = 'SWEDBANK';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum PaymentBank: string
             self::Lansforsakringar => 'Länsförsäkringar',
             self::Nordea => 'Nordea',
             self::Seb => 'SEB',
+            self::Swedbank => 'Swedbank och sparbankerna',
         };
     }
 
@@ -40,6 +42,7 @@ enum PaymentBank: string
             self::Lansforsakringar => 'ELLFSESS',
             self::Nordea => 'NDEASESS',
             self::Seb => 'ESSESESS',
+            self::Swedbank => 'SWEDSESS',
         };
     }
 
@@ -56,7 +59,7 @@ enum PaymentBank: string
     public function initiatingPartyScheme(): ?string
     {
         return match ($this) {
-            self::Handelsbanken => 'BANK',
+            self::Handelsbanken, self::Swedbank => 'BANK',
             self::Lansforsakringar => null,
             self::Danske, self::Nordea, self::Seb => 'CUST',
         };
@@ -71,7 +74,7 @@ enum PaymentBank: string
     public function serviceLevel(): ?array
     {
         return match ($this) {
-            self::Danske, self::Handelsbanken, self::Nordea => ['Cd' => 'NURG'],
+            self::Danske, self::Handelsbanken, self::Nordea, self::Swedbank => ['Cd' => 'NURG'],
             self::Seb => ['Prtry' => 'MPNS'],
             self::Lansforsakringar => null,
         };
@@ -80,7 +83,7 @@ enum PaymentBank: string
     /** CategoryPurpose for supplier payments, where the bank asks for it. */
     public function categoryPurpose(): ?string
     {
-        return $this === self::Handelsbanken ? 'SUPP' : null;
+        return in_array($this, [self::Handelsbanken, self::Swedbank], true) ? 'SUPP' : null;
     }
 
     /**
@@ -95,7 +98,7 @@ enum PaymentBank: string
 
         return match ($this) {
             self::Handelsbanken => ['clearing' => $bankgiro ? '9900' : '9500'],
-            self::Lansforsakringar, self::Seb => ['clearing' => $bankgiro ? '9900' : '9960'],
+            self::Lansforsakringar, self::Seb, self::Swedbank => ['clearing' => $bankgiro ? '9900' : '9960'],
             self::Nordea => ['bic' => $bankgiro ? 'BGABSESS' : 'NDEASESS'],
             self::Danske => ['bic' => 'DABASESX'],
         };
@@ -110,6 +113,25 @@ enum PaymentBank: string
             self::Lansforsakringar => __('16 följt av organisationsnumret, tolv siffror, till exempel 165566778899. Kontot ska vara kopplat till Betaltjänst via fil.'),
             self::Nordea => __('Avtals-id:t (kundnumret) som Nordea gav för Corporate eGateway eller filöverföring.'),
             self::Seb => __('EDI-avtalets kundnummer från SEB, 10 eller 14 tecken.'),
+            self::Swedbank => __('Avtals-id:t för betalfilsavtalet, 16 tecken, till exempel 123456789123B001. Företagets bankgiro används som avsändarkonto.'),
         };
+    }
+
+    /**
+     * Swedbank takes the company's own bankgiro number as the debtor account
+     * for domestic payments ("For Domestic payments use Othr/BGNR").
+     */
+    public function debtorAccountIsBankgiro(): bool
+    {
+        return $this === self::Swedbank;
+    }
+
+    /**
+     * Swedbank requires the paid amount (RfrdDocAmt/RmtdAmt) next to an OCR
+     * reference for bankgiro payments.
+     */
+    public function remittedAmountWithReference(): bool
+    {
+        return $this === self::Swedbank;
     }
 }
