@@ -31,7 +31,12 @@ class SupplierInvoiceAgent implements Agent, HasStructuredOutput
         must add up to total minus VAT. vat_treatment: DOMESTIC for Swedish VAT on the invoice, EU_GOODS or
         EU_SERVICES for an EU supplier without Swedish VAT (reverse charge), NON_EU_SERVICES for services from
         outside the EU, SE_REVERSE_GOODS or SE_REVERSE_SERVICES for Swedish reverse charge (construction,
-        metals). Write description and notes in Swedish. Put anything you are unsure of in notes.
+        metals). Equipment that costs less than half a price base amount (given in the text input when known)
+        is expensed as förbrukningsinventarier (54xx), not capitalised on 12xx. The rows are only the cost
+        side: the input VAT and the supplier liability are booked automatically, so never add rows for VAT
+        (26xx) or accounts payable (2440). If the invoice is assigned to a factoring company (for example
+        Svea or Collector), the supplier is still the seller; take the seller's organisation number from its
+        VAT number (SE + 10 digits + 01) when only that is printed. Write description and notes in Swedish. Put anything you are unsure of in notes.
         Leave a field empty, or 0, only when it is not printed on the invoice.
         TEXT;
     }
@@ -45,6 +50,11 @@ class SupplierInvoiceAgent implements Agent, HasStructuredOutput
             'supplier_bankgiro' => $schema->string()->description('Bankgiro number, or empty string.')->required(),
             'supplier_plusgiro' => $schema->string()->description('Plusgiro number, or empty string.')->required(),
             'supplier_iban' => $schema->string()->description('IBAN, or empty string.')->required(),
+            'supplier_address' => $schema->string()->description('Supplier street address, or empty string.')->required(),
+            'supplier_postal_code' => $schema->string()->description('Supplier postal code, or empty string.')->required(),
+            'supplier_city' => $schema->string()->description('Supplier city, or empty string.')->required(),
+            'supplier_email' => $schema->string()->description('Supplier e-mail address, or empty string.')->required(),
+            'supplier_phone' => $schema->string()->description('Supplier phone number, or empty string.')->required(),
             'invoice_number' => $schema->string()->description('The invoice number.')->required(),
             'ocr' => $schema->string()->description('OCR payment reference, digits only, or empty string.')->required(),
             'invoice_date' => $schema->string()->description('Invoice date YYYY-MM-DD.')->required(),

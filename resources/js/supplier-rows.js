@@ -6,17 +6,20 @@
  */
 
 import { formatOre, parseOre } from './money.js';
+import { supplierVoucher } from './supplier-booking.js';
 
 function blankRow() {
     return { account: '', amount: '', description: '', cost_center: '', project: '', vat_rate: '2500' };
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('supplierRows', (rows, total, vat, treatment) => ({
+    window.Alpine.data('supplierRows', (rows, total, vat, treatment, credit = false, accounts = null) => ({
         rows,
         total,
         vat,
         treatment,
+        credit,
+        accounts,
 
         /** Whether the buyer accounts for the VAT, so the invoice itself carries none. */
         get buyerLiable() {
@@ -57,6 +60,15 @@ document.addEventListener('alpine:init', () => {
             }
 
             return total - vat - amounts.reduce((sum, amount) => sum + amount, 0);
+        },
+
+        /** The whole voucher the invoice becomes when registered; null until the rows add up. */
+        get voucher() {
+            if (this.accounts === null || this.remaining !== 0) {
+                return null;
+            }
+
+            return supplierVoucher(this);
         },
 
         format(ore) {

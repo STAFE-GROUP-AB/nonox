@@ -7,6 +7,7 @@ namespace App\Livewire\Payables;
 use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Payables\DeleteSupplierInvoiceDraft;
 use App\Actions\Payables\RegisterSupplierInvoice;
+use App\Actions\Payables\SaveSupplier;
 use App\Actions\Payables\SaveSupplierInvoice;
 use App\Domain\Payables\VatTreatment;
 use App\Livewire\Concerns\ShowsToasts;
@@ -22,9 +23,11 @@ use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Support\GozeroCore\GozeroCoreException;
 use App\Support\Money\Money;
 use App\Support\Toast;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -69,8 +72,11 @@ class SupplierInvoiceEditor extends Component
 
     public ?TemporaryUploadedFile $file = null;
 
-    /** @var ?array{notes: string, confidence: ?float, supplier: ?string} what NONOX AI filled in, for the person to check */
+    /** @var ?array{notes: string, confidence: ?float, supplier: ?string, new_supplier: ?array<string, mixed>} what NONOX AI filled in, for the person to check */
     public ?array $aiResult = null;
+
+    /** Create the supplier NONOX AI read from the invoice when it is not in the register. */
+    public bool $createSupplier = true;
 
     public function mount(?SupplierInvoice $invoice = null): void
     {
@@ -183,11 +189,11 @@ class SupplierInvoiceEditor extends Component
 
         $this->aiResult = [
             'notes' => (string) ($answer['notes'] ?? ''),
-            'confidence' => $answer['confidence'] ?? null,
-            'supplier' => $answer['supplier_id'] === null
-                ? trim(implode(', ', array_filter([(string) ($answer['supplier_name'] ?? ''), (string) ($answer['supplier_org_number'] ?? ''), filled($answer['supplier_bankgiro'] ?? null) ? 'bankgiro '.$answer['supplier_bankgiro'] : null])))
-                : null,
+            'confidence' => isset($answer['confidence']) ? (float) $answer['confidence'] : null,
+            'supplier' => null,
+            'new_supplier' => $answer['supplier_id'] === null && filled($answer['supplier_name'] ?? null) ? $this->newSupplier($answer) : null,
         ];
+        $this->createSupplier = true;
         $this->toast(__('NONOX AI har fyllt i fakturan. Kontrollera varje uppgift innan du sparar.'));
     }
 
@@ -217,9 +223,61 @@ class SupplierInvoiceEditor extends Component
         ]);
     }
 
+    /**
+     * The supplier as NONOX AI read it, for the register.
+     *
+     * @param  array<string, mixed>  $answer
+     * @return array<string, mixed>
+     */
+    private function newSupplier(array $answer): array
+    {
+        $days = filled($answer['invoice_date'] ?? null) && filled($answer['due_date'] ?? null)
+            ? (int) CarbonImmutable::parse((string) $answer['invoice_date'])->diffInDays(CarbonImmutable::parse((string) $answer['due_date']))
+            : 30;
+
+        return array_filter([
+            'name' => (string) $answer['supplier_name'],
+            'org_number' => (string) ($answer['supplier_org_number'] ?? ''),
+            'vat_number' => strtoupper((string) preg_replace('/\s/', '', (string) ($answer['supplier_vat_number'] ?? ''))),
+            'bankgiro' => (string) ($answer['supplier_bankgiro'] ?? ''),
+            'plusgiro' => (string) ($answer['supplier_plusgiro'] ?? ''),
+            'iban' => (string) ($answer['supplier_iban'] ?? ''),
+            'address_line1' => (string) ($answer['supplier_address'] ?? ''),
+            'postal_code' => (string) ($answer['supplier_postal_code'] ?? ''),
+            'city' => (string) ($answer['supplier_city'] ?? ''),
+            'email' => (string) ($answer['supplier_email'] ?? ''),
+            'phone' => (string) ($answer['supplier_phone'] ?? ''),
+            'payment_terms_days' => max(0, min(365, $days)),
+            'default_account' => isset($answer['rows'][0]['account']) ? (int) $answer['rows'][0]['account'] : null,
+        ], fn (mixed $value): bool => $value !== '' && $value !== null);
+    }
+
+    /**
+     * Creates the supplier NONOX AI read, when the person has ticked it and
+     * chosen no other, and selects it for the invoice.
+     */
+    private function createSupplierFromAi(): void
+    {
+        $new = $this->aiResult['new_supplier'] ?? null;
+
+        if ($this->supplierId !== '' || ! $this->createSupplier || ! is_array($new)) {
+            return;
+        }
+
+        try {
+            $supplier = app(SaveSupplier::class)($this->user(), $this->company(), $new);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages(['supplier_id' => __('Leverantören kunde inte skapas: :reason Lägg till den under Leverantörer.', ['reason' => (string) collect($exception->errors())->flatten()->first()])]);
+        }
+
+        $this->supplierId = (string) $supplier->id;
+        $this->aiResult['new_supplier'] = null;
+    }
+
     private function persist(SaveSupplierInvoice $save): SupplierInvoice
     {
         $this->resetErrorBag();
+        $this->createSupplierFromAi();
         $this->validate(['file' => ['nullable', 'file', 'max:10240']], ['file.max' => __('Filen är för stor. Den får vara högst 10 MB.')]);
 
         return $save($this->user(), $this->company(), [

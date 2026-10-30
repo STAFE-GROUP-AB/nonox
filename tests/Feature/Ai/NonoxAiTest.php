@@ -6,6 +6,7 @@ use App\Actions\Payables\SaveSupplier;
 use App\Livewire\Accounting\VoucherEditor;
 use App\Livewire\Payables\SupplierInvoiceEditor;
 use App\Models\AuditLog;
+use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Modules\Ai\AiModule;
@@ -52,6 +53,7 @@ function coreInvoiceAnswer(): array
         'id' => 'job-1', 'status' => 'succeeded',
         'output' => [
             'supplier_name' => 'Grossisten AB', 'supplier_org_number' => '556036-0793', 'supplier_vat_number' => '', 'supplier_bankgiro' => '', 'supplier_plusgiro' => '', 'supplier_iban' => '',
+            'supplier_address' => '', 'supplier_postal_code' => '', 'supplier_city' => '', 'supplier_email' => '', 'supplier_phone' => '',
             'invoice_number' => '7001', 'ocr' => '7001234', 'invoice_date' => '2026-03-02', 'due_date' => '2026-04-01', 'currency' => 'SEK',
             'total' => 1568.0, 'vat_total' => 168.0, 'is_credit_note' => false, 'vat_treatment' => 'DOMESTIC', 'description' => 'Livsmedel och dryck',
             'rows' => [
@@ -122,6 +124,46 @@ it('fills in a supplier invoice from the PDF through GoZero Core and saves nothi
     $audit = AuditLog::query()->where('action', 'ai.document_analyzed')->sole();
     expect($audit->payload)->toMatchArray(['kind' => 'supplier_invoice', 'job_id' => 'job-1', 'units' => 1])
         ->and(json_encode($audit->payload))->not->toContain('7001');
+});
+
+it('creates and links a supplier that is not in the register when the person ticks it', function () {
+    withCoreKey();
+    $answer = coreInvoiceAnswer();
+    $answer['output'] = [...$answer['output'], 'supplier_name' => 'Scandinavian Photo', 'supplier_org_number' => '', 'supplier_vat_number' => 'SE556679651101', 'supplier_bankgiro' => '5050-1055', 'supplier_city' => 'Stockholm', 'supplier_email' => 'order@example.test'];
+    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response($answer)]);
+
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->set('file', invoicePdf())
+        ->call('analyze')
+        ->assertSet('supplierId', '')
+        ->assertSee('Scandinavian Photo finns inte i leverantörsregistret.')
+        ->assertSee('Org.nr 556679-6511')
+        ->assertSet('createSupplier', true)
+        ->call('save');
+
+    $supplier = Supplier::query()->where('name', 'Scandinavian Photo')->sole();
+    expect($supplier->org_number)->toBe('556679-6511')
+        ->and($supplier->bankgiro)->toBe('5050-1055')
+        ->and($supplier->email)->toBe('order@example.test')
+        ->and($supplier->payment_terms_days)->toBe(30)
+        ->and(SupplierInvoice::query()->sole()->supplier_id)->toBe($supplier->id);
+});
+
+it('leaves the register alone when the person unticks it', function () {
+    withCoreKey();
+    $answer = coreInvoiceAnswer();
+    $answer['output']['supplier_org_number'] = '556677-8899';
+    $answer['output']['supplier_name'] = 'Okänd AB';
+    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response($answer)]);
+
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->set('file', invoicePdf())
+        ->call('analyze')
+        ->set('createSupplier', false)
+        ->call('save')
+        ->assertHasErrors('supplier_id');
+
+    expect(Supplier::query()->where('name', 'Okänd AB')->exists())->toBeFalse();
 });
 
 it('polls a job Core runs in the background', function () {

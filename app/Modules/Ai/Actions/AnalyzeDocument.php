@@ -14,8 +14,11 @@ use App\Modules\Ai\AiModule;
 use App\Modules\Ai\Support\GozeroCore\AnalysisReceipt;
 use App\Modules\Ai\Support\GozeroCore\GozeroCoreException;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
+use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Crypt;
 use Laravel\Ai\Ai;
@@ -51,6 +54,7 @@ class AnalyzeDocument
         return CurrentCompany::run($company, function () use ($answer): array {
             $accounts = $this->accountNumbers();
             $answer['rows'] = array_values(array_filter((array) ($answer['rows'] ?? []), fn (mixed $row): bool => in_array((int) ((array) $row)['account'], $accounts, true)));
+            $answer['supplier_org_number'] = $this->orgNumber($answer);
             $answer['supplier_id'] = $this->matchSupplier($answer);
 
             return $answer;
@@ -115,14 +119,41 @@ class AnalyzeDocument
     private function context(Company $company): string
     {
         $chart = CurrentCompany::run($company, fn () => Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name']));
+        $context = "Chart of accounts (number name):\n".$chart->map(fn (Account $account): string => "{$account->number} {$account->name}")->implode("\n");
 
-        return "Chart of accounts (number name):\n".$chart->map(fn (Account $account): string => "{$account->number} {$account->name}")->implode("\n");
+        try {
+            $priceBase = (int) ((array) CurrentCompany::run($company, fn () => RuleSet::for(CarbonImmutable::today())->get('prisbasbelopp')))['ore'];
+            $context .= "\n\nHalf a price base amount (limit for förbrukningsinventarier): ".intdiv($priceBase, 200).' SEK';
+        } catch (MissingPayrollRuleException) {
+            // Without a checked price base amount the agent goes by the rule alone.
+        }
+
+        return $context;
     }
 
     /** @return list<int> */
     private function accountNumbers(): array
     {
         return array_values(Account::query()->where('is_active', true)->pluck('number')->map(fn (mixed $number): int => (int) $number)->all());
+    }
+
+    /**
+     * The supplier's organisation number, or the one inside a Swedish VAT
+     * number (SE + organisation number + 01) when only that is printed.
+     *
+     * @param  array<string, mixed>  $answer
+     */
+    private function orgNumber(array $answer): string
+    {
+        $printed = trim((string) ($answer['supplier_org_number'] ?? ''));
+
+        if ($printed !== '') {
+            return $printed;
+        }
+
+        $vat = strtoupper((string) preg_replace('/\s/', '', (string) ($answer['supplier_vat_number'] ?? '')));
+
+        return preg_match('/^SE(\d{6})(\d{4})01$/', $vat, $parts) === 1 ? "{$parts[1]}-{$parts[2]}" : '';
     }
 
     /**

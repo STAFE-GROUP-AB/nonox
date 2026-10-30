@@ -37,7 +37,15 @@
         @include('ai::partials.analyze-panel', ['canAnalyze' => $aiAvailable && ($file || $fileUrl)])
     </x-ui.card>
 
-    <div class="space-y-6" x-data="supplierRows($wire.entangle('rows'), $wire.entangle('total'), $wire.entangle('vat'), $wire.entangle('vatTreatment'))">
+    @php
+        $bookingAccounts = [
+            'names' => $accounts->mapWithKeys(fn ($account) => [$account->number => $account->name])->all(),
+            'vat' => collect($treatments)->mapWithKeys(fn ($treatment) => [$treatment->value => ['input' => $treatment->inputVatAccount(), 'output' => [2500 => $treatment->outputVatAccount(2500), 1200 => $treatment->outputVatAccount(1200), 600 => $treatment->outputVatAccount(600)]]])->all(),
+            'payables' => App\Domain\Payables\SupplierInvoiceBooking::PAYABLES,
+            'inputVat' => App\Domain\Payables\SupplierInvoiceBooking::INPUT_VAT,
+        ];
+    @endphp
+    <div class="space-y-6" x-data="supplierRows($wire.entangle('rows'), $wire.entangle('total'), $wire.entangle('vat'), $wire.entangle('vatTreatment'), $wire.entangle('credit'), @js($bookingAccounts))">
         @if($errors->has('invoice'))
             <div class="rounded-xl border border-accent-200 bg-accent-50 px-5 py-4 text-sm text-accent-800" role="alert">{{ $errors->first('invoice') }}</div>
         @endif
@@ -56,6 +64,16 @@
                         </select>
                     @endif
                 </x-ui.field>
+                @if(! empty($aiResult['new_supplier']) && $supplierId === '')
+                    <div class="rounded-lg border border-accent-200 bg-accent-50 p-4 text-sm sm:col-span-2">
+                        <p class="font-medium text-gray-900">{{ __(':name finns inte i leverantörsregistret.', ['name' => $aiResult['new_supplier']['name']]) }}</p>
+                        <p class="mt-1 text-gray-700">{{ collect([$aiResult['new_supplier']['org_number'] ?? null ? __('Org.nr :number', ['number' => $aiResult['new_supplier']['org_number']]) : null, $aiResult['new_supplier']['bankgiro'] ?? null ? __('Bankgiro :number', ['number' => $aiResult['new_supplier']['bankgiro']]) : null, $aiResult['new_supplier']['plusgiro'] ?? null ? __('Plusgiro :number', ['number' => $aiResult['new_supplier']['plusgiro']]) : null, $aiResult['new_supplier']['city'] ?? null])->filter()->implode(' · ') }}</p>
+                        <label class="mt-3 flex items-start gap-2">
+                            <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="createSupplier">
+                            <span>{{ __('Skapa leverantören med de här uppgifterna och koppla fakturan till den när du sparar') }}</span>
+                        </label>
+                    </div>
+                @endif
                 <x-ui.field for="supplier_invoice_treatment" :label="__('Vem redovisar momsen?')" error="vat_treatment" class="sm:col-span-2">
                     <select id="supplier_invoice_treatment" class="{{ $input }} mt-1" x-model="treatment">
                         @foreach($treatments as $treatment)
@@ -182,6 +200,31 @@
                     </template>
                 </p>
             </div>
+
+            <template x-if="voucher">
+                <div class="mt-5 rounded-lg bg-gray-50 p-4">
+                    <p class="text-sm font-medium text-gray-900">{{ __('Så här bokförs fakturan när du registrerar den') }}</p>
+                    <p class="text-xs text-gray-600">{{ __('Raderna ovan är kostnaderna. Momsen och skulden till leverantören läggs till automatiskt.') }}</p>
+                    <table class="mt-3 w-full text-sm tabular-nums">
+                        <thead>
+                            <tr class="text-left text-xs text-gray-500">
+                                <th class="py-1 pr-3 font-medium">{{ __('Konto') }}</th>
+                                <th class="py-1 pr-3 text-right font-medium">{{ __('Debet') }}</th>
+                                <th class="py-1 text-right font-medium">{{ __('Kredit') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <template x-for="(line, index) in voucher" :key="index">
+                                <tr>
+                                    <td class="py-1 pr-3"><span class="font-medium" x-text="line.account"></span> <span class="text-gray-600" x-text="line.name"></span></td>
+                                    <td class="py-1 pr-3 text-right" x-text="line.amount > 0 ? format(line.amount) : ''"></td>
+                                    <td class="py-1 text-right" x-text="line.amount < 0 ? format(-line.amount) : ''"></td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
 
             @foreach($errors->getMessages() as $key => $messages)
                 @if(str_starts_with($key, 'rows'))

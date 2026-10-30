@@ -1758,5 +1758,11 @@
     "API-nyckeln till AI-leverantören finns kvar krypterad om modulen slås på igen.": "The API key for the AI provider stays encrypted in case the module is turned on again.",
     "Dra in underlaget som PDF eller bild ovanför, och klicka sedan Analysera.": "Drop the document in above as a PDF or picture, then click Analyse.",
     "GoZero Core:s innehållsfilter avvisade underlaget (:reason). Tenantens domänbeskrivning i GoZero Core behöver omfatta ekonomiska underlag som fakturor och kvitton.": "GoZero Core's content gate refused the document (:reason). The tenant's domain description in GoZero Core needs to cover financial documents such as invoices and receipts.",
-    "GoZero Core:s innehållsfilter avvisade underlaget. Det går inte att analysera.": "GoZero Core's content gate refused the document. It cannot be analysed."
+    "GoZero Core:s innehållsfilter avvisade underlaget. Det går inte att analysera.": "GoZero Core's content gate refused the document. It cannot be analysed.",
+    "Leverantören kunde inte skapas: :reason Lägg till den under Leverantörer.": "The supplier could not be created: :reason Add it under Suppliers.",
+    ":name finns inte i leverantörsregistret.": ":name is not in the supplier register.",
+    "Org.nr :number": "Org. no. :number",
+    "Skapa leverantören med de här uppgifterna och koppla fakturan till den när du sparar": "Create the supplier with these details and link the invoice to it when you save",
+    "Så här bokförs fakturan när du registrerar den": "This is how the invoice is booked when you register it",
+    "Raderna ovan är kostnaderna. Momsen och skulden till leverantören läggs till automatiskt.": "The rows above are the costs. The VAT and the liability to the supplier are added automatically."
 }
