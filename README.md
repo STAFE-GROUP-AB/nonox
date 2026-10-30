@@ -50,7 +50,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 
 **På väg** (i den här ordningen)
 - 🚧 EU- och exportfakturor, bankfiler för inbetalningar.
-- 🚧 Betalförslag och betalfiler till banken, leverantörsfakturor från utlandet och kreditnotor.
+- ✅ Betalfiler till banken (ISO 20022 pain.001) för attesterade leverantörsfakturor, i dag för Handelsbanken och Nordea. Betalningarna bokförs när banken har betalat.
+- 🚧 Fler banker, automatisk avstämning mot bankens svar, leverantörsfakturor från utlandet och kreditnotor.
 - 🚧 Lön, med timlöner, OB och personalliggare för restauranger. Förslaget och frågorna som först måste granskas juridiskt finns i [ADR-012](docs/adr/ADR-012-payroll.md).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
@@ -69,7 +70,7 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 Var medveten om var projektet står innan du installerar:
 
 - ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering och leverantörsfakturor. Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** betalfiler till banken, lön och bokslut.
+- 🚧 **Inte byggt ännu:** inläsning av bankfiler, lön och bokslut.
 
 ### 1. Installera verktygen (en gång per dator)
 

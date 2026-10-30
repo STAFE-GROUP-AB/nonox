@@ -23,6 +23,8 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\SupplierPayment;
+use App\Models\SupplierPaymentBatch;
+use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
 use App\Models\VatReport;
 use App\Models\Voucher;
@@ -77,6 +79,8 @@ const COMPANY_SCOPED_MODELS = [
     SupplierInvoice::class => 'supplierInvoiceAttributes',
     SupplierInvoiceRow::class => 'supplierInvoiceRowAttributes',
     SupplierPayment::class => 'supplierPaymentAttributes',
+    SupplierPaymentBatch::class => 'paymentBatchAttributes',
+    SupplierPaymentBatchItem::class => 'paymentBatchItemAttributes',
 ];
 
 /** Runs inside the company's context. */
@@ -233,6 +237,33 @@ function supplierPaymentAttributes(): array
     ];
 }
 
+function paymentBatchAttributes(): array
+{
+    return [
+        'number' => random_int(1, 1_000_000),
+        'bank' => 'NORDEA',
+        'execution_date' => '2026-03-12',
+        'debtor_iban' => 'SE4550000000058398257466',
+        'debtor_bic' => 'NDEASESS',
+        'message_id' => 'NONOX-'.random_int(1, 1_000_000),
+        'payment_count' => 1,
+        'total_ore' => 100,
+        'file_path' => 'betalfiler/hemlig.xml',
+        'file_sha256' => str_repeat('0', 64),
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function paymentBatchItemAttributes(): array
+{
+    return [
+        'batch_id' => SupplierPaymentBatch::create(paymentBatchAttributes())->id,
+        'supplier_invoice_id' => SupplierInvoice::create(supplierInvoiceAttributes())->id,
+        'amount_ore' => 100,
+        'end_to_end_id' => 'LF1',
+    ];
+}
+
 function salesDocumentAttributes(): array
 {
     return [
@@ -292,7 +323,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

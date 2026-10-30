@@ -31,6 +31,8 @@ class NumberSeries extends Model
 
     public const string SUPPLIER_INVOICES = 'supplier_invoices';
 
+    public const string PAYMENT_BATCHES = 'payment_batches';
+
     protected $table = 'number_series';
 
     /** @var list<string> */

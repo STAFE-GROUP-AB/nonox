@@ -161,6 +161,12 @@ class SupplierInvoice extends Model
         return $this->hasMany(SupplierPayment::class)->orderBy('paid_on');
     }
 
+    /** @return HasMany<SupplierPaymentBatchItem, $this> */
+    public function batchItems(): HasMany
+    {
+        return $this->hasMany(SupplierPaymentBatchItem::class);
+    }
+
     /** @return BelongsTo<Voucher, $this> */
     public function voucher(): BelongsTo
     {

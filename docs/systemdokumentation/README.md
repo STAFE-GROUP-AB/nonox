@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.10
+- Version: 0.11
 - Datum: 2026-10-30
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -245,6 +245,12 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   till behandlingshistoriken.
 - Varje sparat utkast, registrering, attest och betalning skrivs till
   behandlingshistoriken. Betalningar kan bara läggas till, aldrig ändras.
+- Betalfiler: attesterade fakturor kan betalas med en fil till banken (ISO
+  20022 pain.001.001.03, [ADR-014](../adr/ADR-014-payment-files.md)). Filen
+  sparas som den skapades, med kontrollsumma, och kan inte ändras. Betalningen
+  bokförs först när användaren bekräftar att banken har betalat, på
+  betaldagen i serie E. Betalningsuppgifterna tas från leverantörens uppgifter
+  när fakturan registrerades.
 
 ## 6. Belopp
 
@@ -303,3 +309,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.8 | 2026-10-29 | Kunder, artiklar, kundfakturor med OCR och PDF, betalningar och kreditfakturor. |
 | 0.9 | 2026-10-29 | Offerter och order som blir fakturor. |
 | 0.10 | 2026-10-30 | Leverantörer och leverantörsfakturor med underlag, attest och betalningar (serie D och E). |
+| 0.11 | 2026-10-30 | Betalfiler till banken (pain.001) för attesterade leverantörsfakturor. |

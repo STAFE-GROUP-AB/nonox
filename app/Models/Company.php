@@ -8,6 +8,7 @@ use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
+use App\Domain\Payables\PaymentBank;
 use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,8 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property int $fiscal_year_start_month
  * @property ?CarbonImmutable $locked_until_date
  * @property bool $separate_supplier_approval
+ * @property ?PaymentBank $payment_bank
+ * @property ?string $bank_agreement_id
  */
 class Company extends JetstreamTeam
 {
@@ -85,6 +88,7 @@ class Company extends JetstreamTeam
             'f_skatt' => 'boolean',
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',
+            'payment_bank' => PaymentBank::class,
             'fiscal_year_start_month' => 'integer',
             'locked_until_date' => 'immutable_date',
             'archived_at' => 'immutable_datetime',

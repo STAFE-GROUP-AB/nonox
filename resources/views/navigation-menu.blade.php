@@ -18,7 +18,7 @@
                     <x-nav-link href="{{ route('invoicing.invoices.index') }}" :active="request()->routeIs('invoicing.invoices.*', 'invoicing.quotes*', 'invoicing.orders*')">
                         {{ __('Försäljning') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('payables.invoices.index') }}" :active="request()->routeIs('payables.invoices.*')">
+                    <x-nav-link href="{{ route('payables.invoices.index') }}" :active="request()->routeIs('payables.invoices.*', 'payables.batches.*')">
                         {{ __('Inköp') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('invoicing.customers') }}" :active="request()->routeIs('invoicing.customers', 'invoicing.articles', 'payables.suppliers')">
@@ -169,7 +169,7 @@
             <x-responsive-nav-link href="{{ route('invoicing.invoices.index') }}" :active="request()->routeIs('invoicing.invoices.*', 'invoicing.quotes*', 'invoicing.orders*')">
                 {{ __('Försäljning') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('payables.invoices.index') }}" :active="request()->routeIs('payables.invoices.*')">
+            <x-responsive-nav-link href="{{ route('payables.invoices.index') }}" :active="request()->routeIs('payables.invoices.*', 'payables.batches.*')">
                 {{ __('Inköp') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('invoicing.customers') }}" :active="request()->routeIs('invoicing.customers', 'invoicing.articles', 'payables.suppliers')">

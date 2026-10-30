@@ -1,0 +1,135 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Payables;
+
+use App\Actions\Payables\CreatePaymentBatch;
+use App\Actions\Payables\SavePaymentBankSettings;
+use App\Actions\Payables\SettlePaymentBatch;
+use App\Domain\Payables\PaymentBatchStatus;
+use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Livewire\Concerns\ShowsToasts;
+use App\Models\Company;
+use App\Models\SupplierInvoice;
+use App\Models\SupplierPaymentBatch;
+use App\Models\User;
+use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+use Livewire\Component;
+
+/**
+ * Payment files: choose the approved invoices to pay, make the file for the
+ * bank, and confirm or cancel it when the bank has answered.
+ */
+class PaymentBatches extends Component
+{
+    use ShowsToasts;
+
+    /** @var list<string> */
+    public array $selected = [];
+
+    public string $executionDate = '';
+
+    /** @var array{payment_bank: string, iban: string, bank_agreement_id: string} */
+    public array $bank = ['payment_bank' => '', 'iban' => '', 'bank_agreement_id' => ''];
+
+    public bool $editingBank = false;
+
+    public function mount(): void
+    {
+        abort_unless($this->user()->can('viewAny', [SupplierPaymentBatch::class, $this->company()]), 403);
+
+        $company = $this->company();
+        $this->executionDate = CarbonImmutable::today()->toDateString();
+        $this->bank = [
+            'payment_bank' => (string) $company->payment_bank?->value,
+            'iban' => (string) $company->iban,
+            'bank_agreement_id' => (string) $company->bank_agreement_id,
+        ];
+        $this->editingBank = $company->payment_bank === null;
+        $this->selected = array_values(array_map(
+            fn (mixed $id): string => (string) $id,
+            $this->payable()->where('due_date', '<=', CarbonImmutable::today()->addDays(7)->toDateString())->pluck('id')->all(),
+        ));
+    }
+
+    public function saveBank(SavePaymentBankSettings $save): void
+    {
+        $save($this->user(), $this->company(), $this->bank);
+
+        $this->editingBank = false;
+        $this->toast(__('Bankuppgifterna för betalfiler är sparade.'));
+    }
+
+    public function create(CreatePaymentBatch $create): void
+    {
+        $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->executionDate)
+            ?: throw ValidationException::withMessages(['execution_date' => __('Välj betaldag.')]);
+
+        $batch = $create($this->user(), $this->company(), $this->selected, $date);
+
+        $this->selected = [];
+        $this->toast(__(':title är skapad med :count betalningar. Ladda ned den och läs in den i internetbanken.', ['title' => $batch->title(), 'count' => $batch->payment_count]));
+    }
+
+    public function confirm(string $batchId, SettlePaymentBatch $settle): void
+    {
+        $batch = $settle->confirm($this->user(), SupplierPaymentBatch::query()->findOrFail($batchId));
+
+        $this->toast(__(':title är markerad som betald. Betalningarna är bokförda.', ['title' => $batch->title()]));
+    }
+
+    public function cancel(string $batchId, SettlePaymentBatch $settle): void
+    {
+        $batch = $settle->cancel($this->user(), SupplierPaymentBatch::query()->findOrFail($batchId));
+
+        $this->toast(__(':title är makulerad. Fakturorna kan betalas igen.', ['title' => $batch->title()]));
+    }
+
+    public function render(): View
+    {
+        $payable = $this->payable()->with('supplier:id,name')->orderBy('due_date')->orderBy('number')->get();
+        $selectedTotal = $payable->whereIn('id', $this->selected)->sum(fn (SupplierInvoice $invoice): int => $invoice->remaining()->ore);
+
+        return view('livewire.payables.payment-batches', [
+            'company' => $this->company(),
+            'payable' => $payable,
+            'selectedTotal' => $selectedTotal,
+            'batches' => SupplierPaymentBatch::query()->with('creator:id,name')->orderByDesc('number')->limit(50)->get(),
+            'canCreate' => $this->user()->can('create', [SupplierPaymentBatch::class, $this->company()]),
+            'canChangeBank' => $this->user()->can('update', $this->company()),
+        ]);
+    }
+
+    /**
+     * Approved invoices that are not already in a file waiting for the bank.
+     *
+     * @return Builder<SupplierInvoice>
+     */
+    private function payable(): Builder
+    {
+        return SupplierInvoice::query()
+            ->where('status', SupplierInvoiceStatus::Approved->value)
+            ->whereDoesntHave('batchItems', fn (Builder $query) => $query->whereHas('batch', fn (Builder $batch) => $batch->where('status', PaymentBatchStatus::Created->value)));
+    }
+
+    private function user(): User
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user;
+    }
+
+    private function company(): Company
+    {
+        /** @var Company $company */
+        $company = $this->user()->currentCompany();
+
+        return $company;
+    }
+}
