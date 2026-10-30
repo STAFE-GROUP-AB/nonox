@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Domain\Company\CompanyOverview;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Toast;
@@ -43,7 +44,10 @@ class CompanyController
 
         Toast::flash(__('Du arbetar nu i :company.', ['company' => $company->name]));
 
-        return redirect()->route('dashboard', status: 303);
+        // From Mina företag a row opens a page in that company; only known pages.
+        $destination = CompanyOverview::DESTINATIONS[(string) $request->input('till')] ?? 'dashboard';
+
+        return redirect()->route($destination, status: 303);
     }
 
     private function findForMember(User $user, int $companyId): Company

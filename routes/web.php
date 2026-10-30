@@ -53,6 +53,7 @@ Route::middleware([
     Route::get('/foretag/{company}', [CompanyController::class, 'show'])->whereNumber('company')->name('teams.show');
     Route::get('/foretag/{company}/logotyp', CompanyLogoController::class)->whereNumber('company')->name('teams.logo');
     Route::put('/aktuellt-foretag', [CompanyController::class, 'switch'])->name('current-team.update');
+    Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
 
     Route::get('/foretagsinbjudningar/{invitation}', [CompanyInvitationController::class, 'accept'])
         ->whereNumber('invitation')

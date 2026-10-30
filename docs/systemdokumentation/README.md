@@ -19,6 +19,24 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Användare loggar in med en engångskod via e-post. Behörigheten styrs av roller
   per företag ([ADR-003](../adr/ADR-003-company-roles.md)).
 
+## 1a. Mina företag (översikt för byråer)
+
+- Sidan Mina företag (`/mina-foretag`) visar alla företag användaren är medlem
+  i och vad som väntar i vart och ett: momsperioder som har slutat utan
+  momsdeklaration i ett öppet räkenskapsår, månader med attesterad lön utan
+  inlämnad arbetsgivardeklaration, räkenskapsår som har slutat men inte är
+  stängda, förfallna kundfakturor, leverantörsfakturor att attestera eller
+  betala inom en vecka, verifikationer i utkast, lönekörningar att attestera
+  och ansökningar och utlägg att besvara.
+- En uppgift visas bara om användarens roll i just det företaget har
+  behörighet att utföra den, och lönens uppgifter bara när lönemodulen är
+  påslagen. Översikten läser och ändrar ingenting.
+- En uppgift öppnar rätt sida i rätt företag: företaget byts som med
+  företagsväljaren (bytet loggas i behandlingshistoriken) och bara sidor i en
+  fast lista kan öppnas.
+- Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
+  så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
+
 ## 2. Kontoplan
 
 - Ett nytt företag får en förifylld kontoplan med vanliga konton enligt BAS 2026,
@@ -605,3 +623,4 @@ lönebeskeden låsta i databasen.
 | 0.16 | 2026-10-31 | Lönemodulen: lönebesked och Min sida, semester, förmåner, traktamente och pension, utlägg, lönefil och skattekontot, arbetsgivardeklaration (AGI), lönerevision och retroaktiv lön, slutlön, rapporter, löneårsskifte, lönearkiv och flytt av lönedata. |
 | 0.17 | 2026-10-31 | Utlägg med bara kvittot: NONOX AI läser uppgifterna, den som godkänner kontrollerar och rättar. |
 | 0.18 | 2026-10-31 | Arkivpaket per räkenskapsår med SIE, rapporter, underlag, fakturor, moms, lön, behandlingshistorik och systemdokumentation, med SHA-256 för varje fil. |
+| 0.19 | 2026-10-31 | Mina företag: översikt över alla företag och vad som väntar i vart och ett, för byråer och ägare med flera företag. |

@@ -96,6 +96,10 @@
                                     @if ($companies->count() > 1)
                                         <div class="border-t border-gray-200"></div>
 
+                                        <x-dropdown-link href="{{ route('companies.overview') }}">
+                                            {{ __('Mina företag – vad som väntar') }}
+                                        </x-dropdown-link>
+
                                         <div class="block px-4 py-2 text-xs text-gray-400">
                                             {{ __('Byt företag') }}
                                         </div>
@@ -267,6 +271,10 @@
 
                     @if ($companies->count() > 1)
                         <div class="border-t border-gray-200"></div>
+
+                        <x-responsive-nav-link href="{{ route('companies.overview') }}" :active="request()->routeIs('companies.overview')">
+                            {{ __('Mina företag – vad som väntar') }}
+                        </x-responsive-nav-link>
 
                         <div class="block px-4 py-2 text-xs text-gray-400">
                             {{ __('Byt företag') }}

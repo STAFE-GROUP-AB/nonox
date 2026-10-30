@@ -32,6 +32,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 
 **Bokföring**
 - ✅ Företag med organisationsnummer, momsuppgifter och bankgiro. Flera företag per användare, med roller (ägare, administratör, redovisningskonsult, bokförare, attestant, revisor).
+- ✅ Mina företag: för redovisningsbyråer och ägare med flera företag. Alla klienter på en sida med vad som väntar i varje (moms att redovisa, AGI, bokslut, förfallna fakturor, attester, utkast och lön), och ett klick öppnar uppgiften i rätt företag.
 - ✅ Kontoplan enligt BAS 2026 (K1, K2/K3), räkenskapsår och verifikationsserier.
 - ✅ Verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag (kvitton som PDF eller bild).
 - ✅ Kostnadsställen och projekt per rad, till exempel en per restaurang.
