@@ -26,6 +26,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ?string $brand_accent_color
  * @property AccountingMethod $accounting_method
  * @property VatPeriod $vat_period
+ * @property bool $turnover_over_40_msek
  * @property ReportingFramework $reporting_framework
  * @property int $fiscal_year_start_month
  * @property ?CarbonImmutable $locked_until_date
@@ -60,6 +61,7 @@ class Company extends JetstreamTeam
         'accounting_method',
         'vat_period',
         'vat_registered',
+        'turnover_over_40_msek',
         'reporting_framework',
         'bas_version',
         'f_skatt',
@@ -91,6 +93,7 @@ class Company extends JetstreamTeam
             'vat_period' => VatPeriod::class,
             'reporting_framework' => ReportingFramework::class,
             'vat_registered' => 'boolean',
+            'turnover_over_40_msek' => 'boolean',
             'f_skatt' => 'boolean',
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',

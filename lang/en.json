@@ -2123,7 +2123,6 @@
     "Skapa arkivpaket": "Create archive package",
     "Arkivpaketet är en ZIP-fil med allt som räknas som räkenskapsinformation för året, i format som går att läsa utan NONOX. Bokföringslagen kräver att den sparas i sju år efter utgången av det kalenderår då räkenskapsåret avslutades. Ladda ner paketet efter bokslutet och spara det på ett säkert ställe.": "The archive package is a ZIP file with everything that counts as accounting records for the year, in formats that can be read without NONOX. The Swedish Bookkeeping Act requires it to be kept for seven years after the end of the calendar year in which the fiscal year ended. Download the package after the year-end closing and keep it somewhere safe.",
     "Ägare": "Owner",
-    "AGI att lämna": "Employer declarations to submit",
     "Räkenskapsår att stänga": "Fiscal years to close",
     "Förfallna kundfakturor": "Overdue customer invoices",
     "Leverantörsfakturor att attestera": "Supplier invoices to approve",
@@ -2144,5 +2143,9 @@
     "Öppna företaget": "Open the company",
     "Mina företag – vad som väntar": "My companies – what is waiting",
     "Mina företag": "My companies",
-    "Alla företag du arbetar i och vad som väntar i vart och ett. Klicka på en uppgift för att öppna den i rätt företag.": "Every company you work in and what is waiting in each. Click a task to open it in the right company."
+    "Alla företag du arbetar i och vad som väntar i vart och ett. Klicka på en uppgift för att öppna den i rätt företag.": "Every company you work in and what is waiting in each. Click a task to open it in the right company.",
+    "AGI att lämna, äldsta :month": "Employer declarations to submit, oldest :month",
+    "försenad, sista dag var :date": "late, the last day was :date",
+    "sista dag :date": "last day :date",
+    "Omsättningen är över 40 miljoner kronor om året (andra deklarationsdagar för moms)": "Turnover is above 40 million kronor a year (other VAT declaration days)"
 }

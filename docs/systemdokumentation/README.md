@@ -34,6 +34,16 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - En uppgift öppnar rätt sida i rätt företag: företaget byts som med
   företagsväljaren (bytet loggas i behandlingshistoriken) och bara sidor i en
   fast lista kan öppnas.
+- Moms och AGI visar sista dag för den äldsta perioden som återstår, och
+  markeras som brådskande när det är högst sju dagar kvar och som försenade
+  när dagen har passerat. Momsens dag räknas enligt Skatteverket: månadsmoms
+  den 12:e i andra månaden efter perioden (den 17:e i januari och augusti),
+  eller den 26:e i månaden efter (den 27:e i december) för företag med
+  omsättning över 40 miljoner kronor, vilket anges i företagets inställningar;
+  kvartalsmoms den 12:e i andra månaden efter kvartalet (den 17:e i augusti).
+  En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
+  kommer från den kontrollerade regeln `agi.deadlines`; utan kontrollerad
+  regel visas ingen dag.
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 
@@ -595,6 +605,10 @@ lönebeskeden låsta i databasen.
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt
   BFNAR 2013:2?
+- Momsdagar: sista dag för helårsmoms beror på bolagsform, EU-handel och hur
+  inkomstdeklarationen lämnas och visas därför inte. Momsdagarna för månads-
+  och kvartalsmoms är hämtade från Skatteverkets sida och broschyr SKV 408
+  (2026) och ska kontrolleras av en behörig person.
 - Arkivpaket: räcker det att paketet innehåller underlag, fakturor och
   lönebesked per räkenskapsår, eller ska även räkenskapsinformation som hör
   till året men daterats utanför det (till exempel en faktura daterad efter

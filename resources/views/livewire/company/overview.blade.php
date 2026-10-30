@@ -65,6 +65,9 @@
                                             ])>
                                                 <span class="font-semibold tabular-nums">{{ $task['count'] }}</span>
                                                 <span>{{ $task['label'] }}</span>
+                                                @if($task['due'])
+                                                    <span @class(['tabular-nums', 'font-semibold text-accent-800' => $task['overdue'], 'text-gray-600' => ! $task['overdue']])>· {{ $task['overdue'] ? __('försenad, sista dag var :date', ['date' => $task['due']]) : __('sista dag :date', ['date' => $task['due']]) }}</span>
+                                                @endif
                                             </button>
                                         </form>
                                     </li>

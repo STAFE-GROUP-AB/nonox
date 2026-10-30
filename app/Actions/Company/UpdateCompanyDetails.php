@@ -49,6 +49,7 @@ class UpdateCompanyDetails
             'reporting_framework' => ['required', Rule::enum(ReportingFramework::class)],
             'f_skatt' => ['required', 'boolean'],
             'employer_registered' => ['required', 'boolean'],
+            'turnover_over_40_msek' => ['sometimes', 'boolean'],
         ], attributes: [
             'name' => __('företagsnamn'),
             'website' => __('webbplats'),
@@ -80,7 +81,7 @@ class UpdateCompanyDetails
             'name', 'address_line1', 'postal_code', 'city', 'email', 'phone', 'website',
             'bankgiro', 'plusgiro', 'vat_registered', 'vat_number', 'vat_period',
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
-            'f_skatt', 'employer_registered',
+            'f_skatt', 'employer_registered', 'turnover_over_40_msek',
         ]))->map(fn (mixed $value) => $value instanceof \BackedEnum ? $value->value : $value)->all();
     }
 

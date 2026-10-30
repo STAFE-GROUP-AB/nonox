@@ -46,6 +46,7 @@ class CompanyDetailsForm extends Component
             'reporting_framework' => $company->reporting_framework->value,
             'f_skatt' => $company->f_skatt,
             'employer_registered' => $company->employer_registered,
+            'turnover_over_40_msek' => $company->turnover_over_40_msek,
         ];
     }
 

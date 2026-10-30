@@ -8,6 +8,7 @@ use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Vat\VatDeadlines;
 use App\Domain\Vat\VatPeriods;
 use App\Models\Company;
 use App\Models\CompanyModule;
@@ -21,8 +22,11 @@ use App\Modules\ModuleRegistry;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Expense;
+use App\Modules\Payroll\Models\PayrollRuleVerification;
+use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\PayrollModule;
+use App\Modules\Payroll\Support\Agi\AgiDeadlines;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -54,8 +58,22 @@ final class CompanyOverview
         'payroll-requests' => 'payroll.requests',
     ];
 
+    /** A deadline this close counts as urgent. */
+    private const int URGENT_DAYS = 7;
+
     /** @var array<int, array<int, string>> enabled module keys per company */
     private array $modules = [];
+
+    /** @var array<int, array<string, mixed>> payroll settings per company */
+    private array $payrollSettings = [];
+
+    /** @var Collection<int, PayrollRuleVersion> */
+    private Collection $agiRules;
+
+    /** @var array<int, array<int, int>> rule versions each company verified itself */
+    private array $agiVerified = [];
+
+    private CarbonImmutable $today;
 
     /** @var array<int, ?string> the user's role per company, null for the owner */
     private array $roles = [];
@@ -64,7 +82,7 @@ final class CompanyOverview
      * @return list<array{
      *     company: Company,
      *     role: string,
-     *     tasks: list<array{key: string, label: string, count: int, destination: string, urgent: bool}>,
+     *     tasks: list<array{key: string, label: string, count: int, destination: string, urgent: bool, due: ?string, overdue: bool}>,
      *     last_posted: ?string,
      *     attention: int
      * }>
@@ -72,6 +90,8 @@ final class CompanyOverview
     public function for(User $user, ?CarbonImmutable $today = null): array
     {
         $today ??= CarbonImmutable::today();
+        $this->today = $today;
+        $this->agiRules = collect();
         $companies = $user->companies();
         $ids = $companies->pluck('id')->all();
 
@@ -85,8 +105,9 @@ final class CompanyOverview
 
         // Read across the user's own companies at once; each id comes from their memberships.
         return CompanyScope::bypass(function () use ($companies, $ids, $today): array {
-            $this->modules = CompanyModule::query()->whereIn('company_id', $ids)->where('enabled', true)->get(['company_id', 'module_key'])
-                ->groupBy('company_id')->map(fn (Collection $rows): array => $rows->pluck('module_key')->all())->all();
+            $modules = CompanyModule::query()->whereIn('company_id', $ids)->where('enabled', true)->get(['company_id', 'module_key', 'settings']);
+            $this->modules = $modules->groupBy('company_id')->map(fn (Collection $rows): array => $rows->pluck('module_key')->all())->all();
+            $this->payrollSettings = $modules->where('module_key', PayrollModule::KEY)->mapWithKeys(fn (CompanyModule $module): array => [$module->company_id => (array) $module->settings])->all();
 
             $drafts = $this->countBy(Voucher::query()->whereIn('company_id', $ids)->where('status', VoucherStatus::Draft->value));
             $toApprove = $this->countBy(SupplierInvoice::query()->whereIn('company_id', $ids)->where('status', SupplierInvoiceStatus::Registered->value));
@@ -105,7 +126,7 @@ final class CompanyOverview
                 $companyYears = $years->get($id, collect());
                 $tasks = array_values(array_filter([
                     $this->task($id, 'vat:prepare', 'vat', ...$this->vat($company, $companyYears, $reported[$id] ?? [], $today)),
-                    $this->task($id, 'payroll:agi-submit', 'agi', $payroll['agi'][$id] ?? 0, __('AGI att lämna'), true),
+                    $this->task($id, 'payroll:agi-submit', 'agi', count($payroll['agi'][$id] ?? []), __('AGI att lämna, äldsta :month', ['month' => $payroll['agi'][$id][0] ?? '']), true, $this->agiDeadline($id, $payroll['agi'][$id][0] ?? null)),
                     $this->task($id, 'fiscal-years:manage', 'fiscal-years', $companyYears->filter(fn (FiscalYear $year): bool => $year->status === FiscalYearStatus::Open && $year->end_date->lessThan($today))->count(), __('Räkenskapsår att stänga'), false),
                     $this->task($id, 'invoices:view', 'invoices', $overdue[$id] ?? 0, __('Förfallna kundfakturor'), true),
                     $this->task($id, 'supplier-invoices:approve', 'supplier-invoices', $toApprove[$id] ?? 0, __('Leverantörsfakturor att attestera'), false),
@@ -124,8 +145,11 @@ final class CompanyOverview
                 ];
             });
 
+            $firstDue = fn (array $row): string => (string) (min(array_filter(array_column($row['tasks'], 'due')) ?: ['9999-12-31']));
+
             return array_values($rows->sortBy([
                 fn (array $a, array $b): int => (int) collect($b['tasks'])->contains('urgent', true) <=> (int) collect($a['tasks'])->contains('urgent', true),
+                fn (array $a, array $b): int => $firstDue($a) <=> $firstDue($b),
                 fn (array $a, array $b): int => $b['attention'] <=> $a['attention'],
                 fn (array $a, array $b): int => strnatcasecmp($a['company']->name, $b['company']->name),
             ])->all());
@@ -138,12 +162,12 @@ final class CompanyOverview
      *
      * @param  Collection<int, FiscalYear>  $years
      * @param  array<int, string>  $reported  period start dates
-     * @return array{0: int, 1: string, 2: bool}
+     * @return array{0: int, 1: string, 2: bool, 3: ?CarbonImmutable}
      */
     private function vat(Company $company, Collection $years, array $reported, CarbonImmutable $today): array
     {
         if (! $company->vat_registered) {
-            return [0, '', false];
+            return [0, '', false, null];
         }
 
         $missing = [];
@@ -157,10 +181,15 @@ final class CompanyOverview
         }
 
         if ($missing === []) {
-            return [0, '', false];
+            return [0, '', false, null];
         }
 
-        return [count($missing), __('Moms att redovisa, äldsta :from – :to', ['from' => $missing[0]['start']->toDateString(), 'to' => $missing[0]['end']->toDateString()]), true];
+        return [
+            count($missing),
+            __('Moms att redovisa, äldsta :from – :to', ['from' => $missing[0]['start']->toDateString(), 'to' => $missing[0]['end']->toDateString()]),
+            true,
+            VatDeadlines::for($company->vat_period, $missing[0]['end'], $company->turnover_over_40_msek),
+        ];
     }
 
     /**
@@ -169,7 +198,7 @@ final class CompanyOverview
      * waiting for an answer, per company.
      *
      * @param  list<int>  $ids  companies with payroll turned on
-     * @return array{agi: array<int, int>, runs: array<int, int>, requests: array<int, int>}
+     * @return array{agi: array<int, list<string>>, runs: array<int, int>, requests: array<int, int>}
      */
     private function payroll(array $ids): array
     {
@@ -183,13 +212,18 @@ final class CompanyOverview
             ->select('company_id', 'period')->distinct()->get()->map(fn (AgiSubmission $submission): string => "{$submission->company_id}:{$submission->period}")->all();
         $agi = [];
 
-        foreach ($paid as $run) {
-            $key = "{$run->company_id}:{$run->getAttribute('month')}";
+        foreach ($paid->sortBy(fn (PayrollRun $run): string => (string) $run->getAttribute('month')) as $run) {
+            $month = (string) $run->getAttribute('month');
 
-            if (! in_array($key, $declared, true)) {
-                $agi[$run->company_id] = ($agi[$run->company_id] ?? 0) + 1;
+            if (! in_array("{$run->company_id}:{$month}", $declared, true)) {
+                $agi[$run->company_id][] = $month;
             }
         }
+
+        $this->agiRules = PayrollRuleVersion::query()->where('key', 'agi.deadlines')->orderBy('valid_from')->get();
+        $this->agiVerified = PayrollRuleVerification::query()->whereIn('company_id', $ids)->whereIn('payroll_rule_version_id', $this->agiRules->modelKeys())
+            ->get(['company_id', 'payroll_rule_version_id'])->groupBy('company_id')
+            ->map(fn (Collection $rows): array => $rows->pluck('payroll_rule_version_id')->map(fn (mixed $id): int => (int) $id)->values()->all())->all();
 
         $requests = $this->countBy(Absence::query()->whereIn('company_id', $ids)->where('status', 'REQUESTED'));
 
@@ -205,15 +239,48 @@ final class CompanyOverview
     }
 
     /**
-     * @return array{key: string, label: string, count: int, destination: string, urgent: bool}|null
+     * The last day to declare a payment month, from the agi.deadlines rule
+     * verified for the installation or by the company itself (as RuleSet
+     * reads it), without a query per company. Null without a checked rule.
      */
-    private function task(int $companyId, string $permission, string $destination, int $count, string $label, bool $urgent): ?array
+    private function agiDeadline(int $companyId, ?string $month): ?CarbonImmutable
+    {
+        if ($month === null) {
+            return null;
+        }
+
+        $declared = AgiDeadlines::declarationMonth($month);
+        $rule = $this->agiRules
+            ->filter(fn (PayrollRuleVersion $version): bool => $version->valid_from->lessThanOrEqualTo($declared)
+                && ($version->valid_to === null || $version->valid_to->greaterThanOrEqualTo($declared))
+                && ($version->isVerified() || in_array($version->id, $this->agiVerified[$companyId] ?? [], true)))
+            ->last();
+
+        if (! $rule instanceof PayrollRuleVersion) {
+            return null;
+        }
+
+        return AgiDeadlines::fromRule((array) $rule->value, $month, (string) ($this->payrollSettings[$companyId]['agi_deadline_group'] ?? AgiDeadlines::SMALL));
+    }
+
+    /**
+     * @return array{key: string, label: string, count: int, destination: string, urgent: bool, due: ?string, overdue: bool}|null
+     */
+    private function task(int $companyId, string $permission, string $destination, int $count, string $label, bool $urgent, ?CarbonImmutable $due = null): ?array
     {
         if ($count === 0 || ! $this->may($companyId, $permission)) {
             return null;
         }
 
-        return ['key' => "{$destination}:{$label}", 'label' => $label, 'count' => $count, 'destination' => $destination, 'urgent' => $urgent];
+        return [
+            'key' => "{$destination}:{$label}",
+            'label' => $label,
+            'count' => $count,
+            'destination' => $destination,
+            'urgent' => $urgent || ($due !== null && $due->lessThanOrEqualTo($this->today->addDays(self::URGENT_DAYS))),
+            'due' => $due?->toDateString(),
+            'overdue' => $due !== null && $due->lessThan($this->today),
+        ];
     }
 
     /**

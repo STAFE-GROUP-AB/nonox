@@ -26,13 +26,30 @@ final class AgiDeadlines
 
     public static function for(string $period, string $group): ?CarbonImmutable
     {
-        $next = CarbonImmutable::parse("{$period}-01")->addMonthNoOverflow();
-
         try {
-            $rule = (array) RuleSet::for($next)->get('agi.deadlines');
+            $rule = (array) RuleSet::for(self::declarationMonth($period))->get('agi.deadlines');
         } catch (MissingPayrollRuleException) {
             return null;
         }
+
+        return self::fromRule($rule, $period, $group);
+    }
+
+    /** The month the payment month is declared in; its rule decides the day. */
+    public static function declarationMonth(string $period): CarbonImmutable
+    {
+        return CarbonImmutable::parse("{$period}-01")->addMonthNoOverflow();
+    }
+
+    /**
+     * The deadline from an agi.deadlines rule value already loaded, for
+     * pages that look at many companies at once.
+     *
+     * @param  array<mixed>  $rule
+     */
+    public static function fromRule(array $rule, string $period, string $group): ?CarbonImmutable
+    {
+        $next = self::declarationMonth($period);
 
         if ($group === self::LARGE && isset($rule['turnover_over_40_msek_declare_day'])) {
             $day = $next->setDay((int) $rule['turnover_over_40_msek_declare_day']);

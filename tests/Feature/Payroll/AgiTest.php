@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CreateArchivePackage;
+use App\Domain\Company\CompanyOverview;
 use App\Models\FiscalYear;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
@@ -188,4 +189,18 @@ it('puts the year\'s payslips and employer declarations in the archive package',
     expect($package->status)->toBe('DONE')
         ->and($names)->toContain('lon/lonebesked/Lonebesked-2026-04-'.$this->anna->id.'.pdf')
         ->and($agi)->toBe((string) Storage::disk('local')->get($submission->xml_path));
+});
+
+it('shows the employer declaration due on Mina företag with the day from the rules', function () {
+    $this->runs->approve($this->admin, $this->run->fresh());
+
+    $task = collect(app(CompanyOverview::class)->for($this->owner->fresh())[0]['tasks'])->firstWhere('destination', 'agi');
+
+    expect($task['label'])->toBe('AGI att lämna, äldsta 2026-04')
+        ->and($task['due'])->toBe('2026-05-12')
+        ->and($task['overdue'])->toBeFalse();
+
+    $this->agi->submitted($this->owner, $this->agi->generate($this->owner, $this->company, '2026-04'), 'KV-1');
+
+    expect(collect(app(CompanyOverview::class)->for($this->owner->fresh())[0]['tasks'])->firstWhere('destination', 'agi'))->toBeNull();
 });

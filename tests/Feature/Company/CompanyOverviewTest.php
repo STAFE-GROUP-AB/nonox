@@ -50,6 +50,7 @@ it('shows each client with what waits there and opens the task in the right comp
     Livewire::test(CompanyOverviewPage::class)
         ->assertSee('Bistro Hamnen AB')
         ->assertSee('Moms att redovisa, äldsta 2026-01-01 – 2026-01-31')
+        ->assertSee('försenad, sista dag var 2026-03-12')
         ->assertSee('Verifikationer i utkast')
         ->assertSee('Redovisningskonsult')
         ->assertDontSee('Lugna Bygg AB')

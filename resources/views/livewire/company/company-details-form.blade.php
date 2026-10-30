@@ -139,6 +139,10 @@
                 <x-checkbox wire:model="state.employer_registered" :disabled="! $canUpdate" />
                 <span class="text-sm text-gray-700">{{ __('Företaget är registrerat som arbetsgivare') }}</span>
             </label>
+            <label class="flex items-center gap-3">
+                <x-checkbox wire:model="state.turnover_over_40_msek" :disabled="! $canUpdate" />
+                <span class="text-sm text-gray-700">{{ __('Omsättningen är över 40 miljoner kronor om året (andra deklarationsdagar för moms)') }}</span>
+            </label>
         </div>
     </section>
 
