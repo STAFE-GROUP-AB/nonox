@@ -969,5 +969,9 @@
     "Obetalt": "Unpaid",
     "Sålt :year": "Sold :year",
     ":count faktura har förfallit, :amount": ":count invoice is overdue, :amount",
-    ":count fakturor har förfallit, :amount": ":count invoices are overdue, :amount"
+    ":count fakturor har förfallit, :amount": ":count invoices are overdue, :amount",
+    "Dölj": "Hide",
+    "Visa Kom igång igen": "Show Getting started again",
+    "Kom igång är dold. Du kan visa den igen längst ner på översikten.": "Getting started is hidden. You can show it again at the bottom of the overview.",
+    "Kom igång visas igen.": "Getting started is shown again."
 }

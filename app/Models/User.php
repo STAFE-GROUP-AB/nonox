@@ -16,6 +16,9 @@ use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Jetstream\HasTeams;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * @property ?list<string> $hidden_panels
+ */
 class User extends Authenticatable
 {
     use HasApiTokens;
@@ -65,6 +68,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'hidden_panels' => 'array',
         ];
     }
 
@@ -103,5 +107,22 @@ class User extends Authenticatable
         }
 
         return $switched;
+    }
+
+    public function hidesPanel(string $panel, Company $company): bool
+    {
+        return in_array("{$panel}:{$company->id}", (array) $this->hidden_panels, true);
+    }
+
+    public function setPanelHidden(string $panel, Company $company, bool $hidden): void
+    {
+        $key = "{$panel}:{$company->id}";
+        $panels = array_values(array_diff((array) $this->hidden_panels, [$key]));
+
+        if ($hidden) {
+            $panels[] = $key;
+        }
+
+        $this->forceFill(['hidden_panels' => $panels])->save();
     }
 }

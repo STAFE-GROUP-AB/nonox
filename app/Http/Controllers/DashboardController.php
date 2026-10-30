@@ -41,6 +41,7 @@ class DashboardController
             'user' => $user,
             'company' => $company,
             'canManage' => $user->can('update', $company),
+            'hideGettingStarted' => $user->hidesPanel(GettingStartedController::PANEL, $company),
             'steps' => [
                 [
                     'done' => true,

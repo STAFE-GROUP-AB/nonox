@@ -79,3 +79,19 @@ it('uses a fixed number of queries', function () {
 
     expect($queries)->toBeLessThan(15);
 });
+
+it('hides the getting started panel per user and company, and shows it again', function () {
+    [$owner, $company] = Bookkeeping::company();
+    [, $other] = Bookkeeping::company();
+    $this->actingAs($owner);
+
+    $this->put(route('dashboard.gettingStarted'), ['visible' => '0'])->assertRedirect(route('dashboard'));
+    expect(session('toasts')[0]['message'])->toBe('Kom igång är dold. Du kan visa den igen längst ner på översikten.')
+        ->and($owner->fresh()->hidesPanel('getting-started', $company))->toBeTrue()
+        ->and($owner->fresh()->hidesPanel('getting-started', $other))->toBeFalse();
+
+    $this->get(route('dashboard'))->assertOk()->assertDontSee('Ta det i den här ordningen')->assertSee('Visa Kom igång igen');
+
+    $this->put(route('dashboard.gettingStarted'), ['visible' => '1']);
+    $this->get(route('dashboard'))->assertOk()->assertSee('Ta det i den här ordningen')->assertSee('Kom igång visas igen.');
+});

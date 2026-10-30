@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\Invoicing\SalesDocumentController;
 use App\Http\Controllers\OnboardingController;
@@ -57,6 +58,7 @@ Route::middleware([
 
     Route::middleware(EnsureUserHasCompany::class)->group(function () {
         Route::get('/oversikt', DashboardController::class)->name('dashboard');
+        Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
 
         Route::get('/verifikationer', [VoucherController::class, 'index'])->name('accounting.vouchers.index');
         Route::get('/verifikationer/ny', [VoucherController::class, 'create'])->name('accounting.vouchers.create');
