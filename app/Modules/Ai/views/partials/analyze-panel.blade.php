@@ -6,12 +6,16 @@
                 <p class="text-sm font-semibold text-gray-900">{{ __('NONOX AI') }}</p>
                 <p class="text-xs text-gray-600">{{ __('Läser underlaget och fyller i ett förslag. Inget sparas förrän du gör det.') }}</p>
             </div>
-            <button type="button" wire:click="analyze" wire:loading.attr="disabled" wire:target="analyze,file" @disabled(! $canAnalyze)
-                class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-40">
+            <button type="button" wire:click="analyze" wire:loading.attr="disabled" wire:target="analyze"
+                class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60">
                 <span wire:loading.remove wire:target="analyze">{{ __('Analysera') }}</span>
                 <span wire:loading wire:target="analyze">{{ __('Analyserar…') }}</span>
             </button>
         </div>
+
+        @unless($canAnalyze)
+            <p class="mt-2 text-xs text-gray-600">{{ __('Dra in underlaget som PDF eller bild ovanför, och klicka sedan Analysera.') }}</p>
+        @endunless
 
         @if($aiResult)
             <div class="mt-3 space-y-1 border-t border-gray-200 pt-3 text-sm" role="status">

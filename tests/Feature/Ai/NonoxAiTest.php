@@ -156,6 +156,31 @@ it('explains a missing or refused key in Swedish and keeps the form as it was', 
         ->assertSet('invoiceNumber', '');
 });
 
+it('says when Core\'s content gate refuses a document and what to change', function () {
+    withCoreKey();
+    Http::fake(['api.gozerocore.com/v1/analyze' => Http::response(['error' => ['type' => 'gate_rejected', 'code' => 'gate.irrelevant', 'message' => 'Not relevant.', 'details' => ['reason_code' => 'document_only', 'retryable' => false]]], 422)]);
+
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->set('file', invoicePdf())
+        ->call('analyze')
+        ->assertDispatched('toast', message: 'GoZero Core:s innehållsfilter avvisade underlaget (document_only). Tenantens domänbeskrivning i GoZero Core behöver omfatta ekonomiska underlag som fakturor och kvitton.', type: 'error');
+});
+
+it('explains a job Core rejects in the background the same way', function () {
+    withCoreKey();
+    Sleep::fake();
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['quality' => 'high']);
+    Http::fake([
+        'api.gozerocore.com/v1/analyze' => Http::response(['id' => 'job-4', 'status' => 'queued'], 202),
+        'api.gozerocore.com/v1/jobs/job-4' => Http::response(['id' => 'job-4', 'status' => 'rejected', 'error' => ['type' => 'gate_rejected', 'code' => 'gate.irrelevant', 'details' => ['reason_code' => 'document_only']]]),
+    ]);
+
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->set('file', invoicePdf())
+        ->call('analyze')
+        ->assertDispatched('toast', message: 'GoZero Core:s innehållsfilter avvisade underlaget (document_only). Tenantens domänbeskrivning i GoZero Core behöver omfatta ekonomiska underlag som fakturor och kvitton.', type: 'error');
+});
+
 it('shows the analyse button only where NONOX AI is on and the user may use it', function () {
     $this->get(route('payables.invoices.create'))->assertSee('Analysera');
 

@@ -75,7 +75,10 @@ final class GozeroCoreGateway implements StepTextGateway
         }
 
         if (($data['status'] ?? null) !== 'succeeded') {
-            throw new GozeroCoreException(__('Analysen kunde inte göras (:status). Fyll i uppgifterna själv.', ['status' => $data['status'] ?? '?']), (string) ($data['status'] ?? ''), $data['id'] ?? null);
+            // A failed or rejected job carries the same error object as an error response.
+            $error = (array) ($data['error'] ?? []);
+
+            throw new GozeroCoreException($this->message($error, 0), (string) ($error['code'] ?? $data['status'] ?? ''), $data['id'] ?? null);
         }
 
         $receipt = app(AnalysisReceipt::class);
@@ -166,16 +169,29 @@ final class GozeroCoreGateway implements StepTextGateway
         $error = (array) $response->json('error', []);
         $code = (string) ($error['code'] ?? $error['type'] ?? $response->status());
         $requestId = $response->header('X-Request-Id') ?: null;
+        $message = $this->message($error, $response->status());
 
-        $message = match (true) {
-            in_array($response->status(), [401, 403], true) => __('GoZero Core godtog inte API-nyckeln. Kontrollera nyckeln under Moduler → NONOX AI.'),
-            $response->status() === 402 => __('Saldot hos GoZero Core är slut. Fyll på innan du analyserar fler underlag.'),
-            $response->status() === 422 && $code === 'gate_rejected' => __('GoZero Core avböjde underlaget: :reason', ['reason' => (string) ($error['message'] ?? '')]),
-            $response->status() === 429 => __('För många analyser just nu. Försök igen om en stund.'),
+        throw new GozeroCoreException($message, $code, $requestId);
+    }
+
+    /**
+     * Core's error, said in Swedish for the person in front of the screen.
+     *
+     * @param  array<string, mixed>  $error
+     */
+    private function message(array $error, int $status): string
+    {
+        $type = (string) ($error['type'] ?? '');
+        $code = (string) ($error['code'] ?? $type ?: $status);
+
+        return match (true) {
+            in_array($status, [401, 403], true) || in_array($type, ['authentication_error', 'permission_error'], true) => __('GoZero Core godtog inte API-nyckeln. Kontrollera nyckeln under Moduler → NONOX AI.'),
+            $status === 402 || $code === 'wallet.exhausted' => __('Saldot hos GoZero Core är slut. Fyll på innan du analyserar fler underlag.'),
+            $type === 'gate_rejected' && $code === 'gate.irrelevant' => __('GoZero Core:s innehållsfilter avvisade underlaget (:reason). Tenantens domänbeskrivning i GoZero Core behöver omfatta ekonomiska underlag som fakturor och kvitton.', ['reason' => (string) (((array) ($error['details'] ?? []))['reason_code'] ?? 'irrelevant')]),
+            $type === 'gate_rejected' => __('GoZero Core:s innehållsfilter avvisade underlaget. Det går inte att analysera.'),
+            $status === 429 || $type === 'rate_limit_error' => __('För många analyser just nu. Försök igen om en stund.'),
             str_starts_with($code, 'documents.') || str_starts_with($code, 'images.') => __('Filen går inte att analysera: :reason', ['reason' => (string) ($error['message'] ?? $code)]),
             default => __('Analysen misslyckades hos GoZero Core (:code). Fyll i uppgifterna själv eller försök igen.', ['code' => $code]),
         };
-
-        throw new GozeroCoreException($message, $code, $requestId);
     }
 }

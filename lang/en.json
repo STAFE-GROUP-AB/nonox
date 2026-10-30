@@ -1732,11 +1732,9 @@
     "Nyckeln ska börja med gzc_live_ eller gzc_test_.": "The key must start with gzc_live_ or gzc_test_.",
     "Inställningarna för NONOX AI är sparade.": "The NONOX AI settings are saved.",
     "Analysen tog för lång tid. Försök igen om en stund.": "The analysis took too long. Try again in a while.",
-    "Analysen kunde inte göras (:status). Fyll i uppgifterna själv.": "The analysis could not be done (:status). Fill in the details yourself.",
     "Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG eller WebP.": "The file cannot be analysed. Use a PDF or a JPEG, PNG or WebP picture.",
     "GoZero Core godtog inte API-nyckeln. Kontrollera nyckeln under Moduler → NONOX AI.": "GoZero Core did not accept the API key. Check the key under Modules → NONOX AI.",
     "Saldot hos GoZero Core är slut. Fyll på innan du analyserar fler underlag.": "The balance at GoZero Core is used up. Top up before analysing more documents.",
-    "GoZero Core avböjde underlaget: :reason": "GoZero Core refused the document: :reason",
     "För många analyser just nu. Försök igen om en stund.": "Too many analyses right now. Try again in a while.",
     "Filen går inte att analysera: :reason": "The file cannot be analysed: :reason",
     "Analysen misslyckades hos GoZero Core (:code). Fyll i uppgifterna själv eller försök igen.": "The analysis failed at GoZero Core (:code). Fill in the details yourself or try again.",
@@ -1757,5 +1755,8 @@
     "Säkerhet: :percent %": "Confidence: :percent %",
     "Leverantören finns inte i registret: :supplier. Lägg till den under Leverantörer och välj den sedan.": "The supplier is not in the register: :supplier. Add it under Suppliers and then choose it.",
     "Läser leverantörsfakturor, kvitton och andra underlag och fyller i ett förslag med konton och belopp. Du kontrollerar och sparar; AI:n sparar aldrig något själv.": "Reads supplier invoices, receipts and other documents and fills in a proposal with accounts and amounts. You check and save; the AI never saves anything itself.",
-    "API-nyckeln till AI-leverantören finns kvar krypterad om modulen slås på igen.": "The API key for the AI provider stays encrypted in case the module is turned on again."
+    "API-nyckeln till AI-leverantören finns kvar krypterad om modulen slås på igen.": "The API key for the AI provider stays encrypted in case the module is turned on again.",
+    "Dra in underlaget som PDF eller bild ovanför, och klicka sedan Analysera.": "Drop the document in above as a PDF or picture, then click Analyse.",
+    "GoZero Core:s innehållsfilter avvisade underlaget (:reason). Tenantens domänbeskrivning i GoZero Core behöver omfatta ekonomiska underlag som fakturor och kvitton.": "GoZero Core's content gate refused the document (:reason). The tenant's domain description in GoZero Core needs to cover financial documents such as invoices and receipts.",
+    "GoZero Core:s innehållsfilter avvisade underlaget. Det går inte att analysera.": "GoZero Core's content gate refused the document. It cannot be analysed."
 }
