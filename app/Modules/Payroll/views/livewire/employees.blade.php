@@ -52,6 +52,20 @@
                     <x-ui.field for="employee_rate" :label="__('Sysselsättningsgrad, %')" error="employment_rate"><input id="employee_rate" type="number" class="{{ $input }} mt-1" wire:model="form.employment_rate"></x-ui.field>
                     <x-ui.field for="employee_weekly_hours" :label="__('Arbetstid, timmar per vecka')" error="weekly_hours" :hint="__('Behövs för frånvaro och sjuklön.')"><input id="employee_weekly_hours" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.weekly_hours"></x-ui.field>
                     <x-ui.field for="employee_cost_center" :label="__('Kostnadsställe (frivilligt)')" error="cost_center"><input id="employee_cost_center" type="text" class="{{ $input }} mt-1" wire:model="form.cost_center"></x-ui.field>
+                    <x-ui.field for="employee_vacation_rule" :label="__('Semesterregel')" error="vacation_rule">
+                        <select id="employee_vacation_rule" class="{{ $input }} mt-1" wire:model="form.vacation_rule">
+                            <option value="">{{ __('Som i löneinställningarna') }}</option>
+                            <option value="SAMMALONEREGELN">{{ __('Sammalöneregeln') }}</option>
+                            <option value="PROCENTREGELN">{{ __('Procentregeln') }}</option>
+                        </select>
+                    </x-ui.field>
+                    <x-ui.field for="employee_vacation_days" :label="__('Semesterdagar per år')" error="vacation_days_per_year" :hint="__('Minst 25 enligt semesterlagen. Fler om avtalet ger det.')"><input id="employee_vacation_days" type="number" min="25" max="40" class="{{ $input }} mt-1" wire:model="form.vacation_days_per_year"></x-ui.field>
+                    <label class="flex items-start gap-2 text-sm sm:col-span-3">
+                        <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="form.vacation_payout_with_salary">
+                        <span>{{ __('Betala semesterersättning med varje lön i stället för betalda semesterdagar') }}
+                            <span class="block text-xs text-gray-500">{{ __('Bara när anställningen är högst tre månader (semesterlagen 5 §) eller kollektivavtalet tillåter det, vanligt för timanställda.') }}</span>
+                        </span>
+                    </label>
                     <x-ui.field for="employee_user" :label="__('Inloggning (frivilligt)')" error="user_id" :hint="__('Den anställde ser sina egna lönebesked under Mina lönebesked.')" class="sm:col-span-2">
                         <select id="employee_user" class="{{ $input }} mt-1" wire:model="form.user_id">
                             <option value="">{{ __('Ingen inloggning') }}</option>
@@ -94,6 +108,17 @@
                                 <span class="block text-xs text-gray-500">{{ $employment->salary_form === 'HOURLY' ? __('per timme') : __('per månad') }}</span>
                             </span>
                         @endif
+                        @isset($vacation[$employee->id])
+                            @php($balance = $vacation[$employee->id])
+                            <span class="w-32 text-right text-xs">
+                                @if($balance['payout_with_salary'])
+                                    <span class="text-gray-600">{{ __('Semesterersättning med lönen') }}</span>
+                                @else
+                                    <span class="block font-medium text-gray-900 tabular-nums">{{ __(':left av :earned semesterdagar', ['left' => $balance['left'], 'earned' => $balance['earned']]) }}</span>
+                                    <span class="block text-gray-500">{{ __('kvar t.o.m. :date', ['date' => $balance['year_end']->toDateString()]) }}</span>
+                                @endif
+                            </span>
+                        @endisset
                         <span class="w-40 text-right text-xs">
                             @if($employee->user_id)
                                 <span class="text-gray-600">{{ __('Har inloggning till Min sida') }}</span>

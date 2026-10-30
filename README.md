@@ -57,7 +57,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - 🚧 Automatisk avstämning mot bankens svar, import av varor från länder utanför EU och fakturor i utländsk valuta.
 - ✅ Moduler: tillägg som varje företag slår på och av under Företagsinställningar → Moduler, utan att något raderas.
 - ✅ Lön som modul (påbörjad), enligt [PAYROLL_MODULE.md](PAYROLL_MODULE.md): anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag, arbetsgivaravgifter med sänkningen för unga, lönekörning med attest, lönebokföring i serie L, lönebesked som PDF och en egen portal för anställda (Min sida, `/anstalld`) med inbjudan via e-post. Alla satser är data med källa som måste kontrolleras av en behörig person innan de används.
-- 🚧 Lön: semester, förmåner, utlägg, utbetalningsfil och arbetsgivardeklaration (AGI).
+- ✅ Lön: semester enligt semesterlagen (sammalöneregeln, procentregeln, semesterersättning med lönen) med saldo på lönebeskedet och Min sida.
+- 🚧 Lön: semesterlöneskuld, sparad semester, förmåner, utlägg, utbetalningsfil och arbetsgivardeklaration (AGI).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).

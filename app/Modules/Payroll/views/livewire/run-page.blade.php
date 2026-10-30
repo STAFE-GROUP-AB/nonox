@@ -2,7 +2,7 @@
     use App\Support\Money\Money;
 
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
-    $absenceTypes = ['SICK' => __('Sjuk'), 'VAB' => __('Vård av barn'), 'PARENTAL' => __('Föräldraledig'), 'LEAVE_UNPAID' => __('Tjänstledig utan lön'), 'LEAVE_PAID' => __('Ledig med lön'), 'OTHER' => __('Annan frånvaro')];
+    $absenceTypes = ['SICK' => __('Sjuk'), 'VACATION' => __('Semester'), 'VAB' => __('Vård av barn'), 'PARENTAL' => __('Föräldraledig'), 'LEAVE_UNPAID' => __('Tjänstledig utan lön'), 'LEAVE_PAID' => __('Ledig med lön'), 'OTHER' => __('Annan frånvaro')];
 @endphp
 
 <div class="space-y-6">

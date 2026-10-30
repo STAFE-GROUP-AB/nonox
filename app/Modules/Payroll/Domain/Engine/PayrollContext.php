@@ -45,5 +45,6 @@ final readonly class PayrollContext
         public array $absences = [],
         public array $sickHistory = [],
         public ?array $weekPattern = null,
+        public ?VacationInput $vacation = null,
     ) {}
 }

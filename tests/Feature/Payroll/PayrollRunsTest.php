@@ -80,7 +80,7 @@ it('blocks the whole run and lists why, changing nothing: no tables or rules for
         $this->runs->calculate($this->owner, $run);
         $this->fail('The run should be blocked.');
     } catch (ValidationException $exception) {
-        expect(implode(' ', $exception->errors()['run']))->toContain('Anna Kock:');
+        expect(implode(' ', $exception->errors()['run']))->toContain('regler är inte kontrollerade för utbetalningsdagen 2025-12-');
     }
 
     expect($run->fresh()->status)->toBe(PayrollRun::DRAFT)

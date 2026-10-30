@@ -201,6 +201,27 @@
             </tr>
         </table>
 
+        @if($vacation)
+            <table style="margin-top: 4mm">
+                <tr>
+                    <td class="card">
+                        <table>
+                            <tr>
+                                <td style="width: 30%"><div class="label">{{ __('Semester') }}</div><div class="muted" style="font-size: 7pt">{{ $vacation['year_start']->toDateString() }} – {{ $vacation['year_end']->toDateString() }}</div></td>
+                                @if($vacation['payout_with_salary'])
+                                    <td>{{ __('Semesterersättning betalas med varje lön.') }}</td>
+                                @else
+                                    <td class="num"><div class="muted">{{ __('Betalda dagar') }}</div><strong>{{ $vacation['earned'] }}</strong></td>
+                                    <td class="num"><div class="muted">{{ __('Uttagna') }}</div><strong>{{ $vacation['taken'] }}</strong></td>
+                                    <td class="num"><div class="muted">{{ __('Kvar') }}</div><strong style="font-size: 11pt">{{ $vacation['left'] }}</strong></td>
+                                @endif
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        @endif
+
         @foreach($payslip->warnings as $warning)
             <div class="notice">{{ $warning }}</div>
         @endforeach

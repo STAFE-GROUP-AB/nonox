@@ -1,3 +1,16 @@
+<div class="space-y-6">
+    @if($vacation)
+        <x-ui.card>
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ __('Semester') }}</p>
+            @if($vacation['payout_with_salary'])
+                <p class="mt-1 text-sm text-gray-700">{{ __('Du får semesterersättning med varje lön i stället för betalda semesterdagar.') }}</p>
+            @else
+                <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-900">{{ __(':count dagar', ['count' => $vacation['left']]) }}</p>
+                <p class="text-sm text-gray-600">{{ __('betald semester kvar till och med :date. Du har tagit ut :taken av :earned dagar.', ['date' => $vacation['year_end']->toDateString(), 'taken' => $vacation['taken'], 'earned' => $vacation['earned']]) }}</p>
+            @endif
+        </x-ui.card>
+    @endif
+
 <x-ui.card>
     @if($employee === null)
         <x-ui.empty-state :title="__('Ditt konto är inte kopplat till någon anställd')">{{ __('Be din arbetsgivare koppla din inloggning till dig under Lön → Anställda. Sedan visas dina lönebesked här.') }}</x-ui.empty-state>
@@ -21,3 +34,4 @@
         </ul>
     @endif
 </x-ui.card>
+</div>

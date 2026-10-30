@@ -17,6 +17,8 @@ use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\WorkSchedule;
+use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
+use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -26,6 +28,8 @@ use Illuminate\Support\Collection;
  */
 final class ContextBuilder
 {
+    public function __construct(private readonly VacationLedger $vacation) {}
+
     /**
      * @param  Collection<int, PayrollInput>  $inputs  the employee's inputs in the run
      * @param  Collection<int, PayCode>  $payCodes  by id
@@ -35,6 +39,7 @@ final class ContextBuilder
     {
         $periodStart = $run->periodStart();
         $periodEnd = $run->periodEnd();
+        $weekPattern = $this->weekPattern($employment);
 
         return new PayrollContext(
             birthDate: $employee->birth_date,
@@ -67,18 +72,23 @@ final class ContextBuilder
             settings: $settings,
             rules: $rules,
             weeklyHours: $employment->weekly_hours === null ? null : (string) $employment->weekly_hours,
-            absences: $this->absenceDays($employee, $periodStart, $periodEnd),
+            absences: $this->absenceDays($employee, $periodStart, $periodEnd, $weekPattern),
             sickHistory: $this->sickHistory($employee, $periodStart),
-            weekPattern: $this->weekPattern($employment),
+            weekPattern: $weekPattern,
+            vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern),
         );
     }
 
     /**
-     * Approved absence in the period, one entry per day.
+     * Approved absence in the period, one entry per calendar day. The hours
+     * entered per day count only on days the employee is scheduled to work
+     * and that are not public holidays; other days carry 0 hours, so a sick
+     * spell still counts its calendar days.
      *
+     * @param  ?list<string>  $weekPattern
      * @return list<AbsenceInput>
      */
-    private function absenceDays(Employee $employee, CarbonImmutable $from, CarbonImmutable $to): array
+    private function absenceDays(Employee $employee, CarbonImmutable $from, CarbonImmutable $to, ?array $weekPattern): array
     {
         $days = [];
 
@@ -88,7 +98,7 @@ final class ContextBuilder
             }
 
             for ($day = $absence->date_from->max($from); $day->lessThanOrEqualTo($absence->date_to->min($to)); $day = $day->addDay()) {
-                $days[] = new AbsenceInput($absence->type, $day, (string) $absence->hours);
+                $days[] = new AbsenceInput($absence->type, $day, self::scheduled($day, $weekPattern) ? (string) $absence->hours : '0');
             }
         }
 
@@ -140,6 +150,23 @@ final class ContextBuilder
         $week = $schedule?->pattern['weeks'][0] ?? null;
 
         return is_array($week) ? array_map('strval', $week) : null;
+    }
+
+    /**
+     * A working day by the schedule, or Monday to Friday when there is none,
+     * and never a public holiday.
+     *
+     * @param  ?list<string>  $weekPattern
+     */
+    public static function scheduled(CarbonImmutable $day, ?array $weekPattern): bool
+    {
+        if (SwedishHolidays::isHoliday($day)) {
+            return false;
+        }
+
+        return $weekPattern === null
+            ? ! $day->isWeekend()
+            : (float) ($weekPattern[$day->dayOfWeekIso - 1] ?? '0') > 0;
     }
 
     /** @return Collection<int, Absence> */

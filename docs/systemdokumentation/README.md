@@ -288,8 +288,25 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   anställningens kostnadsställe), personalskatt på 2710, arbetsgivaravgifter
   på 7510 mot 2730 och nettolönerna mot 1930. Verifikationen balanserar alltid:
   brutto − skatt ± nettoposter = netto.
-- Utbetalningsfil, semesterlöneskuld och arbetsgivardeklaration är inte
-  byggda ännu.
+- Frånvaro räknas med de timmar som anges per dag, men bara på dagar då den
+  anställde ska arbeta enligt schemat och som inte är helgdagar. Övriga dagar
+  i perioden räknas med noll timmar (en sjukperiod räknar ändå sina
+  kalenderdagar). Frånvaro registreras i lönekörningen för den månad den
+  inträffar.
+- Semester (semesterlagen): semesteråret börjar den månad företaget valt
+  (1 april enligt lagen) och intjänandeåret är året före. Betalda dagar =
+  semesterdagar per år × (anställningsdagar − dagar med frånvaro som inte är
+  semesterlönegrundande) ÷ dagar i intjänandeåret, avrundat uppåt (7 §).
+  Semesterdagar är vardagar utom helgdagar, midsommar-, jul- och nyårsafton
+  (3 a §). Sammalöneregeln ger semestertillägg 0,43 % av månadslönen per
+  betald dag; procentregeln ger 12 % av intjänandeårets semesterlönegrundande
+  lön delat med antalet betalda dagar. Dagar utöver saldot blir obetald
+  semester. En anställning kan i stället få semesterersättning 12 % med varje
+  lön. Saldot räknas fram ur anställningar, frånvaro och attesterade
+  lönebesked; inget saldo lagras som kan glida isär från underlaget.
+  Semesterlöner bokförs på 7082.
+- Utbetalningsfil, semesterlöneskuld, sparade semesterdagar och
+  arbetsgivardeklaration är inte byggda ännu.
 
 ## 6. Belopp
 
@@ -308,6 +325,12 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   borttagningar.
 
 ## 8. Öppna frågor (TODO legal-verify)
+
+- Semester: lördagar och söndagar som semesterdagar för den som arbetar helger
+  (3 a § och 9 § tredje stycket); rörlig lön under sammalöneregeln (16 a §);
+  inräknad inkomst för semesterlönegrundande frånvaro under procentregeln
+  (16 b §); löneavdraget för semesterdagar under procentregeln för
+  månadsavlönade; skatt på semesterersättning som betalas med varje lön.
 
 - Minsta längd för ett första räkenskapsår: `AGENTS.md` anger 6 månader;
   bokföringslagen 3 kap anger högst 18.

@@ -5,14 +5,20 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Support;
 
 use App\Models\Company;
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayslipLineResult;
 use App\Modules\Payroll\Domain\PersonalNumber;
+use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
+use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
+use App\Modules\Payroll\PayrollModule;
+use App\Modules\Payroll\Support\Vacation\VacationLedger;
+use Carbon\CarbonImmutable;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
@@ -66,6 +72,7 @@ final class PayslipPdf
             ->first();
 
         $contribution = $payslip->contribution_explanation ?? [];
+        $vacation = self::vacation($payslip, $employee, $run, $company);
 
         return view('payroll::payslip-pdf', [
             'payslip' => $payslip,
@@ -81,6 +88,7 @@ final class PayslipPdf
             'ytd' => ['gross' => (int) ($earlier->gross ?? 0), 'tax' => (int) ($earlier->tax ?? 0), 'net' => (int) ($earlier->net ?? 0)],
             'contributionRates' => array_values(array_unique(array_map(fn (mixed $part): int => (int) ((array) $part)['rate_bp'], (array) ($contribution['parts'] ?? [])))),
             'account' => self::maskedAccount($employee),
+            'vacation' => $vacation,
         ])->render();
     }
 
@@ -109,6 +117,34 @@ final class PayslipPdf
             'rate' => $rate,
             'amount' => $line->amount_ore->ore,
         ];
+    }
+
+    /**
+     * The vacation balance after this payslip's period, or null while the
+     * vacation rules for the date are not checked.
+     *
+     * @return ?array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, left: int, basis_ore: int, payout_with_salary: bool}
+     */
+    private static function vacation(Payslip $payslip, Employee $employee, PayrollRun $run, Company $company): ?array
+    {
+        $employment = $payslip->employment;
+
+        if ($employment === null) {
+            return null;
+        }
+
+        try {
+            return app(VacationLedger::class)->overview(
+                collect([$employee]),
+                collect([$employee->id => $employment]),
+                $run->periodStart(),
+                app(ModuleManager::class)->settings(PayrollModule::KEY, $company),
+                RuleSet::for($run->payment_date),
+                $run->periodEnd(),
+            )[$employee->id];
+        } catch (MissingPayrollRuleException) {
+            return null;
+        }
     }
 
     private static function salary(?Employment $employment): ?string

@@ -34,6 +34,10 @@ final class Payroll
         'sick_pay.reinfection_window_days' => ['days' => 5],
         'a_sink.rate' => ['bp' => 1500],
         'tax.one_off_without_regular_salary' => ['bp' => 3000],
+        'vacation.minimum_days' => ['days' => 25],
+        'vacation.supplement_sammaloneregeln' => ['bp_of_monthly_salary_per_day' => 43, 'weekly_bp' => 182, 'variable_pay_bp' => 1200],
+        'vacation.percent_rule' => ['bp' => 1200],
+        'vacation.qualifying_absence_days' => ['SICK' => 180, 'PARENTAL' => 120, 'VAB' => 120, 'MILITARY' => 60],
     ];
 
     public static function setUp(Company $company, User $owner): void

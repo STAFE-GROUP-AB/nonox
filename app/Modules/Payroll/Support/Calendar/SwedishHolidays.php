@@ -30,6 +30,29 @@ final class SwedishHolidays
         return $date->isSunday() || in_array($date->toDateString(), self::forYear($date->year), true);
     }
 
+    /**
+     * Whether a day can be a semesterdag (semesterlagen 3 a §): not Saturday
+     * or Sunday, and not a day treated like Sunday, that is a public holiday,
+     * midsommarafton, julafton or nyårsafton.
+     *
+     * TODO(legal-verify): 3 a § allows Saturdays and Sundays as semesterdagar
+     * in the cases of 9 § tredje stycket (schedules with weekend work).
+     */
+    public static function isVacationDay(CarbonImmutable $date): bool
+    {
+        if ($date->isWeekend() || self::isHoliday($date)) {
+            return false;
+        }
+
+        $eves = [
+            CarbonImmutable::parse(self::forYear($date->year)[9])->subDay()->toDateString(),
+            sprintf('%d-12-24', $date->year),
+            sprintf('%d-12-31', $date->year),
+        ];
+
+        return ! in_array($date->toDateString(), $eves, true);
+    }
+
     /** @return list<string> */
     public static function forYear(int $year): array
     {

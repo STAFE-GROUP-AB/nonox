@@ -68,6 +68,10 @@ class SaveEmployee
             'weekly_hours' => ['nullable', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
             'position_title' => ['nullable', 'string', 'max:255'],
             'cost_center' => ['nullable', 'string', 'max:20'],
+            'vacation_rule' => ['nullable', Rule::in(['SAMMALONEREGELN', 'PROCENTREGELN'])],
+            // Semesterlagen 4 § gives at least 25 days; an agreement may give more.
+            'vacation_days_per_year' => ['nullable', 'integer', 'between:25,40'],
+            'vacation_payout_with_salary' => ['nullable', 'boolean'],
             'user_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($company): void {
                 if (! $company->hasUser(User::query()->find((int) $value) ?? new User)) {
                     $fail(__('Användaren är inte medlem i företaget.'));
@@ -80,6 +84,7 @@ class SaveEmployee
             'first_name' => __('förnamn'),
             'last_name' => __('efternamn'),
             'start_date' => __('anställningens startdag'),
+            'vacation_days_per_year' => __('semesterdagar per år'),
         ])->validate();
 
         if ($validated['tax_residence'] === 'SE' && (blank($validated['tax_table'] ?? null) || blank($validated['tax_column'] ?? null))) {
@@ -143,6 +148,9 @@ class SaveEmployee
                 'weekly_hours' => blank($validated['weekly_hours'] ?? null) ? null : str_replace(',', '.', (string) $validated['weekly_hours']),
                 'position_title' => $validated['position_title'] ?? null,
                 'cost_center_id' => $costCenterId,
+                'vacation_rule' => blank($validated['vacation_rule'] ?? null) ? null : $validated['vacation_rule'],
+                'vacation_days_per_year' => blank($validated['vacation_days_per_year'] ?? null) ? null : (int) $validated['vacation_days_per_year'],
+                'vacation_payout_with_salary' => (bool) ($validated['vacation_payout_with_salary'] ?? false),
             ])->save();
 
             // Only which fields changed is recorded; personal numbers and bank details never reach the log.

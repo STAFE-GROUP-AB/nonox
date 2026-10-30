@@ -52,6 +52,7 @@ final class RuleSet
         'vacation.percent_rule',
         'vacation.max_saved_days',
         'vacation.save_years',
+        'vacation.qualifying_absence_days',
         'gift.tax_free_limits',
         'wellness.tax_free_limit',
         'agi.field_codes',

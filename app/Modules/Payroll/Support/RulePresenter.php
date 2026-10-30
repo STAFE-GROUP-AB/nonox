@@ -47,6 +47,7 @@ final class RulePresenter
         'vacation.percent_rule' => 'Semesterlön (procentregeln)',
         'vacation.max_saved_days' => 'Spara semester',
         'vacation.save_years' => 'Sparad semester, tid',
+        'vacation.qualifying_absence_days' => 'Semesterlönegrundande frånvaro',
         'gift.tax_free_limits' => 'Skattefria gåvor',
         'wellness.tax_free_limit' => 'Friskvårdsbidrag',
         'agi.field_codes' => 'Fältkoder i arbetsgivardeklarationen',
@@ -80,6 +81,9 @@ final class RulePresenter
         'breakfast_lunch_dinner' => 'frukost, lunch och middag :v', 'lunch_and_dinner' => 'lunch och middag :v', 'lunch_or_dinner' => 'lunch eller middag :v', 'breakfast' => 'frukost :v',
         'components' => '', 'reductions' => '',
     ];
+
+    /** @var array<string, string> */
+    private const array ABSENCE_TYPES = ['SICK' => 'Sjukdom', 'PARENTAL' => 'Föräldraledighet', 'VAB' => 'Vård av barn', 'MILITARY' => 'Grundutbildning inom totalförsvaret'];
 
     /** @var array<string, string> */
     private const array AGI_FIELDS = [
@@ -126,6 +130,11 @@ final class RulePresenter
                 self::say('Omsättning över 40 miljoner kr: den :day:e i månaden', ['day' => $value['turnover_over_40_msek_declare_day'] ?? '']),
             ],
             'agi.field_codes' => array_map(fn (mixed $code, int|string $name): string => "{$code} ".self::say(self::AGI_FIELDS[$name] ?? (string) $name), array_values($value), array_keys($value)),
+            'vacation.qualifying_absence_days' => array_map(
+                fn (string $type, mixed $days): string => self::say(':type högst :days dagar per intjänandeår', ['type' => self::say(self::ABSENCE_TYPES[$type] ?? $type), 'days' => $days]),
+                array_map('strval', array_keys($value)),
+                array_values($value),
+            ),
             'agi.schema_version' => [self::say('XML-schema version :version', ['version' => $value['version'] ?? ''])],
             default => self::generic($value),
         });

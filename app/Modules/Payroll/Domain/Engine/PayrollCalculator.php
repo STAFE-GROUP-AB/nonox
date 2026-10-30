@@ -12,12 +12,14 @@ use App\Modules\Payroll\Domain\Engine\Steps\EmployerContributions;
 use App\Modules\Payroll\Domain\Engine\Steps\NetItems;
 use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Domain\Engine\Steps\SickPay;
+use App\Modules\Payroll\Domain\Engine\Steps\Vacation;
 use App\Modules\Payroll\Domain\Engine\Steps\WithholdingTaxStep;
 
 /**
  * Calculates one payslip from a context (PAYROLL_MODULE.md B.9). No side
- * effects: storing the result is CalculatePayrollRun's job. Vacation, benefits, allowances, gross deductions and pension (steps
- * 4, 6–8 and 12) are added in later tasks.
+ * effects: storing the result is CalculatePayrollRun's job. Benefits,
+ * allowances, gross deductions and pension (steps 6–8 and 12) are added in
+ * later tasks.
  */
 final class PayrollCalculator
 {
@@ -29,13 +31,14 @@ final class PayrollCalculator
         AbsenceDeductions $absences,
         SickPay $sickPay,
         Additions $additions,
+        Vacation $vacation,
         WithholdingTaxStep $tax,
         NetItems $netItems,
         EmployerContributions $contributions,
         NetPay $netPay,
         Accumulators $accumulators,
     ) {
-        $this->steps = [$baseSalary, $absences, $sickPay, $additions, $tax, $netItems, $contributions, $netPay, $accumulators];
+        $this->steps = [$baseSalary, $absences, $sickPay, $additions, $vacation, $tax, $netItems, $contributions, $netPay, $accumulators];
     }
 
     /**

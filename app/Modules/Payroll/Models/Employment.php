@@ -27,6 +27,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $cost_center_id
  * @property ?string $weekly_hours
  * @property ?int $work_schedule_id
+ * @property ?string $vacation_rule
+ * @property ?int $vacation_days_per_year
+ * @property bool $vacation_payout_with_salary
  */
 class Employment extends Model
 {
@@ -54,6 +57,7 @@ class Employment extends Model
         'pension_plan_id',
         'vacation_rule',
         'vacation_days_per_year',
+        'vacation_payout_with_salary',
         'payment_day',
     ];
 
@@ -67,6 +71,7 @@ class Employment extends Model
             'hourly_rate_ore' => MoneyCast::class,
             'employment_rate_bp' => 'integer',
             'vacation_days_per_year' => 'integer',
+            'vacation_payout_with_salary' => 'boolean',
             'payment_day' => 'integer',
         ];
     }

@@ -1,666 +1,679 @@
 {
-  "year": 2026,
-  "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; each company checks them against the sources in Lön → Regler (or an installation verifies them with payroll:verify-rule) before use. Missing until researched: per_diem.foreign.by_country (Skatteverket publishes it as CSV/API, see rättslig vägledning), and how a salary with öre is placed in a table interval.",
-  "rules": [
-    {
-      "key": "employer_contribution.full",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "bp": 3142,
-        "components_bp": {
-          "sjukforsakringsavgift": 355,
-          "foraldraforsakringsavgift": 200,
-          "alderspensionsavgift": 1021,
-          "efterlevandepensionsavgift": 30,
-          "arbetsmarknadsavgift": 264,
-          "arbetsskadeavgift": 10,
-          "allman_loneavgift": 1262
+    "year": 2026,
+    "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; each company checks them against the sources in Lön → Regler (or an installation verifies them with payroll:verify-rule) before use. Missing until researched: per_diem.foreign.by_country (Skatteverket publishes it as CSV/API, see rättslig vägledning), and how a salary with öre is placed in a table interval.",
+    "rules": [
+        {
+            "key": "employer_contribution.full",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "bp": 3142,
+                "components_bp": {
+                    "sjukforsakringsavgift": 355,
+                    "foraldraforsakringsavgift": 200,
+                    "alderspensionsavgift": 1021,
+                    "efterlevandepensionsavgift": 30,
+                    "arbetsmarknadsavgift": 264,
+                    "arbetsskadeavgift": 10,
+                    "allman_loneavgift": 1262
+                }
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Summa 31,42 procent"
+        },
+        {
+            "key": "employer_contribution.reduced_by_birthyear",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "bands": [
+                    {
+                        "born_to": 1937,
+                        "bp": 0
+                    },
+                    {
+                        "born_from": 1938,
+                        "born_to": 1958,
+                        "bp": 1021
+                    }
+                ]
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
+            "source_quote": "födda 1937 eller tidigare ska du inte betala några arbetsgivaravgifter; Arbetsgivaren betalar ålderspensionsavgift med 10,21 procent."
+        },
+        {
+            "key": "employer_contribution.youth_reduction",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-03-31",
+            "value": {
+                "applies": false
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
+            "source_quote": "Nedsättningen gäller ersättning som betalas ut från och med den 1 april 2026."
+        },
+        {
+            "key": "employer_contribution.youth_reduction",
+            "valid_from": "2026-04-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "applies": true,
+                "born_from": 2003,
+                "born_to": 2007,
+                "bp": 2081,
+                "monthly_cap_ore": 2500000
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
+            "source_quote": "Under perioden 1 april 2026 till 30 september 2027 är arbetsgivaravgifterna tillfälligt sänkta ... Under 2026 omfattar nedsättningen anställda födda 2003–2007 ... på ersättning upp till 25 000 kronor per kalendermånad"
+        },
+        {
+            "key": "employer_contribution.min_annual_basis",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 100000
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
+            "source_quote": "ersättning för arbete på totalt 1 000 kronor eller mer under ett år till en person som har A-skatt"
+        },
+        {
+            "key": "employer_contribution.regional_support",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "deduction_bp": 1000,
+                "monthly_cap_ore": 710000,
+                "not_from_age": 67,
+                "floor_bp": 1021
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/regionaltstod.4.6491ed82199c4722dae19af.html",
+            "source_quote": "Du får dra av 10 procent av avgiftsunderlaget ... Avdraget får vara högst 7 100 kronor per månad"
+        },
+        {
+            "key": "special_payroll_tax.pension",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "bp": 2426
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Särskild löneskatt: 24,26 procent."
+        },
+        {
+            "key": "sink.rate",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "bp": 2250,
+                "seafarers_bp": 1500
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "för inkomståret 2026 särskild inkomstskatt med 22,5 procent"
+        },
+        {
+            "key": "prisbasbelopp",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 5920000
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Prisbasbeloppet inkomstår 2026: 59 200 kronor"
+        },
+        {
+            "key": "inkomstbasbelopp",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 8340000
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Inkomstbasbeloppet för år 2026 har fastställts till 83 400 kronor."
+        },
+        {
+            "key": "benefit.meal.free_day",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 31000
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "310 kronor per dag (minst tre mål per dag)"
+        },
+        {
+            "key": "benefit.meal.breakfast",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 6200
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Frukost 62 kronor"
+        },
+        {
+            "key": "benefit.meal.lunch_or_dinner",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 12400
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Lunch eller middag 124 kronor"
+        },
+        {
+            "key": "per_diem.domestic.full",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 30000,
+                "after_three_months_ore": 21000,
+                "after_two_years_ore": 15000
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "300 kronor per dag (Resdag: resan påbörjats före 12.00 eller avslutats efter 19.00)"
+        },
+        {
+            "key": "per_diem.domestic.half",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 15000
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Halvdag 150 kronor"
+        },
+        {
+            "key": "per_diem.domestic.night",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 15000
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Nattraktamente 150 kronor"
+        },
+        {
+            "key": "per_diem.domestic.meal_reductions",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "full_day_300": {
+                    "breakfast_lunch_dinner_ore": 27000,
+                    "lunch_and_dinner_ore": 21000,
+                    "lunch_or_dinner_ore": 10500,
+                    "breakfast_ore": 6000
+                }
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Måltidsreduktion vid heldag 300 kronor"
+        },
+        {
+            "key": "mileage.own_car_tax_free_per_mil",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 2500
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Egen bil: 25 kronor per mil."
+        },
+        {
+            "key": "mileage.company_car_fossil",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 1200
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "12 kronor per mil förutom förmånsbilar som drivs helt med el"
+        },
+        {
+            "key": "mileage.company_car_electric",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 950
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "9,50 kronor per mil"
+        },
+        {
+            "key": "sick_pay.percentage",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "bp": 8000
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
+            "source_quote": "6 §: 80 procent av anställningsförmånerna före avdrag enligt andra stycket"
+        },
+        {
+            "key": "sick_pay.karensavdrag_percent_of_weekly",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "bp": 2000,
+                "max_occasions_per_12_months": 10
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
+            "source_quote": "6 §: Avdraget ska motsvara 20 procent av den sjuklön som belöper på summan av de anställningsförmåner ... ; tio tillfällen"
+        },
+        {
+            "key": "sick_pay.employer_period_days",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "days": 14
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
+            "source_quote": "7 §: sjukdagen och de därpå följande 13 kalenderdagarna"
+        },
+        {
+            "key": "sick_pay.reinfection_window_days",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "days": 5
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
+            "source_quote": "7 §: inom fem dagar"
+        },
+        {
+            "key": "sick_pay.certificate_from_day",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "calendar_days_after_report": 7
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
+            "source_quote": "8 §: från och med den sjunde kalenderdagen efter sjukanmälningsdagen"
+        },
+        {
+            "key": "vacation.minimum_days",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "days": 25
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+            "source_quote": "4 §: tjugofem semesterdagar"
+        },
+        {
+            "key": "vacation.supplement_sammaloneregeln",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "bp_of_monthly_salary_per_day": 43,
+                "weekly_bp": 182,
+                "variable_pay_bp": 1200
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+            "source_quote": "16 a §: 0,43 procent av månadslönen"
+        },
+        {
+            "key": "vacation.percent_rule",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "bp": 1200
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+            "source_quote": "16 b §: tolv procent av arbetstagarens förfallna lön"
+        },
+        {
+            "key": "vacation.max_saved_days",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "days_that_must_be_taken": 20
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+            "source_quote": "18 §: betalda semesterdagar som överstiger 20 får sparas"
+        },
+        {
+            "key": "vacation.save_years",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "years": 5
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+            "source_quote": "18 §: inom fem år efter utgången av det semesterår"
+        },
+        {
+            "key": "gift.tax_free_limits",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "christmas_ore": 60000,
+                "anniversary_ore": 180000,
+                "memorial_ore": 1500000,
+                "including_vat": true
+            },
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "source_quote": "Julgåva 600 kronor, jubileumsgåva 1 800 kronor, minnesgåva 15 000 kronor (inklusive moms)"
+        },
+        {
+            "key": "wellness.tax_free_limit",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "ore": 500000
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/personalvardsformanmotionochfriskvard.4.3016b5d91791bf546791431.html",
+            "source_quote": "Arbetsgivaren får betala ut friskvårdsbidrag med maximalt 5 000 kronor per år till en anställd"
+        },
+        {
+            "key": "agi.deadlines",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "turnover_up_to_40_msek": [
+                    "2026-01-19",
+                    "2026-02-12",
+                    "2026-03-12",
+                    "2026-04-13",
+                    "2026-05-12",
+                    "2026-06-12",
+                    "2026-07-13",
+                    "2026-08-17",
+                    "2026-09-14",
+                    "2026-10-12",
+                    "2026-11-12",
+                    "2026-12-14",
+                    "2027-01-18"
+                ],
+                "turnover_over_40_msek_declare_day": 26
+            },
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lamnaarbetsgivardeklaration/narskajaglamnaarbetsgivardeklaration.4.361dc8c15312eff6fd13c11.html",
+            "source_quote": "De allra flesta ska deklarera den 12:e varje månad"
+        },
+        {
+            "key": "agi.schema_version",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "version": "1.1",
+                "instance": "http://xmls.skatteverket.se/se/skatteverket/da/arbetsgivardeklaration/arbetsgivardeklaration_1.1.xsd",
+                "component": "http://xmls.skatteverket.se/se/skatteverket/da/arbetsgivardeklaration/arbetsgivardeklaration_component_1.1.xsd"
+            },
+            "source_url": "https://www.skatteverket.se/foretag/etjansterochblanketter/allaetjanster/schemalagerxml.4.dfe345a107ebcc9baf80006452.html",
+            "source_quote": "Arbetsgivardeklaration – XML-schema version 1.1"
+        },
+        {
+            "key": "tax.rounding",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "mode": "DOWN_TO_KRONA"
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandeforordning-20111261_sfs-2011-1261/",
+            "source_quote": "22 kap. 1 §: Belopp som avser skatt eller avgift enligt skatteförfarandelagen (2011:1244) ska anges i hela krontal så att öretal faller bort."
+        },
+        {
+            "key": "tax.one_off",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "columns": {
+                    "1": [
+                        [
+                            0,
+                            25041,
+                            0
+                        ],
+                        [
+                            25042,
+                            82800,
+                            1000
+                        ],
+                        [
+                            82801,
+                            192000,
+                            2100
+                        ],
+                        [
+                            192001,
+                            477600,
+                            2600
+                        ],
+                        [
+                            477601,
+                            660000,
+                            3400
+                        ],
+                        [
+                            660001,
+                            null,
+                            5400
+                        ]
+                    ],
+                    "2": [
+                        [
+                            0,
+                            65800,
+                            0
+                        ],
+                        [
+                            65801,
+                            477600,
+                            2600
+                        ],
+                        [
+                            477601,
+                            660000,
+                            3400
+                        ],
+                        [
+                            660001,
+                            null,
+                            5500
+                        ]
+                    ],
+                    "3": [
+                        [
+                            0,
+                            25041,
+                            0
+                        ],
+                        [
+                            25042,
+                            331200,
+                            1000
+                        ],
+                        [
+                            331201,
+                            477600,
+                            2600
+                        ],
+                        [
+                            477601,
+                            660000,
+                            3400
+                        ],
+                        [
+                            660001,
+                            null,
+                            5500
+                        ]
+                    ],
+                    "4": [
+                        [
+                            0,
+                            25041,
+                            0
+                        ],
+                        [
+                            25042,
+                            54000,
+                            300
+                        ],
+                        [
+                            54001,
+                            192000,
+                            2200
+                        ],
+                        [
+                            192001,
+                            660000,
+                            2600
+                        ],
+                        [
+                            660001,
+                            null,
+                            4600
+                        ]
+                    ],
+                    "5": [
+                        [
+                            0,
+                            25041,
+                            0
+                        ],
+                        [
+                            25042,
+                            32400,
+                            1000
+                        ],
+                        [
+                            32401,
+                            160800,
+                            2900
+                        ],
+                        [
+                            160801,
+                            184800,
+                            3400
+                        ],
+                        [
+                            184801,
+                            660000,
+                            3800
+                        ],
+                        [
+                            660001,
+                            null,
+                            5400
+                        ]
+                    ],
+                    "6": [
+                        [
+                            0,
+                            25041,
+                            0
+                        ],
+                        [
+                            25042,
+                            160800,
+                            2900
+                        ],
+                        [
+                            160801,
+                            184800,
+                            3400
+                        ],
+                        [
+                            184801,
+                            660000,
+                            3800
+                        ],
+                        [
+                            660001,
+                            null,
+                            5400
+                        ]
+                    ]
+                },
+                "note": "[from, to, rate bp] on the expected annual income in whole kronor (SKV 433 avsnitt 10)."
+            },
+            "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
+            "source_quote": "Med årslön … menas totala bruttoinkomsten (inkl. förmåner och aktuellt engångsbelopp samt eventuellt tidigare under året utbetalda engångsbelopp) som du kan beräknas få hos din huvudarbetsgivare under hela året."
+        },
+        {
+            "key": "tax.one_off_without_regular_salary",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "bp": 3000
+            },
+            "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
+            "source_quote": "Om du inte har tidsbestämd lön ska arbetsgivaren dra av 30 procent i skatt på engångsbeloppet."
+        },
+        {
+            "key": "a_sink.rate",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "bp": 1500
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1991-591.text",
+            "source_quote": "9 §: Särskild inkomstskatt tas ut med 15 procent av den skattepliktiga inkomsten. Öretal som uppkommer vid beräkning av skatten bortfaller."
+        },
+        {
+            "key": "benefit.car.formula",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "prisbasbelopp_share_bp": 2900,
+                "interest": {
+                    "state_rate_share_bp": 7000,
+                    "plus_bp": 100,
+                    "min_bp": 50,
+                    "state_rate_bp": 255
+                },
+                "price_share_bp": 1300,
+                "reductions_ore": {
+                    "electric": 35000000,
+                    "hydrogen": 35000000,
+                    "plug_in_hybrid": 14000000,
+                    "gas": 10000000
+                },
+                "reduction_max_bp": 5000,
+                "long_service_mil": 3000,
+                "long_service_share_bp": 7500
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "61 kap. 5 §: summan av 0,29 prisbasbelopp, ett ränterelaterat belopp (nybilspris × (70 procent av statslåneräntan + 0,01), lägst 0,5 procent), ett prisrelaterat belopp (13 procent av nybilspriset) och bilens fordonsskatt; 8 a §; 9 §. Statslåneränta 30 november 2025: 2,55 procent (https://skatteverket.se/download/18.1522bf3f19aea8075ba3285/1767885159120/belopp-och-procentsatser-for-inkomstaret-2026.pdf)."
+        },
+        {
+            "key": "agi.field_codes",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "tax": "001",
+                "cash_salary": "011",
+                "other_benefits": "012",
+                "car_benefit": "013",
+                "fuel_benefit": "018",
+                "expense_allowance_other": "020",
+                "mileage_flag": "050",
+                "per_diem_flag": "051",
+                "occupational_pension": "030",
+                "no_work_tax_credit": "032",
+                "sink_tax": "274",
+                "a_sink_tax": "275",
+                "activity_type": "112",
+                "personal_number": "215",
+                "specification_number": "570",
+                "workplace_number": "060",
+                "rut": "021",
+                "rot": "022",
+                "cash_no_contributions": "131"
+            },
+            "source_url": "https://www.skatteverket.se/agbeskrivning",
+            "source_quote": "Fältkoder i arbetsgivardeklarationen på individnivå: 001 Avdragen preliminärskatt, 011 Kontant bruttolön med mera, 012 Övriga skattepliktiga förmåner, 013 Skattepliktig bilförmån, 274 Avdragen skatt SINK, 275 Avdragen skatt A-SINK, 215 Person-, samordnings- eller organisationsnummer, 570 Specifikationsnummer."
+        },
+        {
+            "key": "vacation.qualifying_absence_days",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "SICK": 180,
+                "PARENTAL": 120,
+                "VAB": 120,
+                "MILITARY": 60
+            },
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
+            "source_quote": "17 § sjukdom högst 180 dagar under intjänandeåret; 17 a § ledighet enligt 8 § första stycket föräldraledighetslagen och föräldrapenning högst 120 dagar (180 för ensamstående); 17 b § grundutbildning högst 60 dagar. Antalet dagar per frånvarotyp och intjänandeår som är semesterlönegrundande."
         }
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Summa 31,42 procent"
-    },
-    {
-      "key": "employer_contribution.reduced_by_birthyear",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "bands": [
-          {
-            "born_to": 1937,
-            "bp": 0
-          },
-          {
-            "born_from": 1938,
-            "born_to": 1958,
-            "bp": 1021
-          }
-        ]
-      },
-      "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
-      "source_quote": "födda 1937 eller tidigare ska du inte betala några arbetsgivaravgifter; Arbetsgivaren betalar ålderspensionsavgift med 10,21 procent."
-    },
-    {
-      "key": "employer_contribution.youth_reduction",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-03-31",
-      "value": {
-        "applies": false
-      },
-      "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
-      "source_quote": "Nedsättningen gäller ersättning som betalas ut från och med den 1 april 2026."
-    },
-    {
-      "key": "employer_contribution.youth_reduction",
-      "valid_from": "2026-04-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "applies": true,
-        "born_from": 2003,
-        "born_to": 2007,
-        "bp": 2081,
-        "monthly_cap_ore": 2500000
-      },
-      "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
-      "source_quote": "Under perioden 1 april 2026 till 30 september 2027 är arbetsgivaravgifterna tillfälligt sänkta ... Under 2026 omfattar nedsättningen anställda födda 2003–2007 ... på ersättning upp till 25 000 kronor per kalendermånad"
-    },
-    {
-      "key": "employer_contribution.min_annual_basis",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 100000
-      },
-      "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/arbetsgivaravgifter.4.233f91f71260075abe8800020817.html",
-      "source_quote": "ersättning för arbete på totalt 1 000 kronor eller mer under ett år till en person som har A-skatt"
-    },
-    {
-      "key": "employer_contribution.regional_support",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "deduction_bp": 1000,
-        "monthly_cap_ore": 710000,
-        "not_from_age": 67,
-        "floor_bp": 1021
-      },
-      "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/regionaltstod.4.6491ed82199c4722dae19af.html",
-      "source_quote": "Du får dra av 10 procent av avgiftsunderlaget ... Avdraget får vara högst 7 100 kronor per månad"
-    },
-    {
-      "key": "special_payroll_tax.pension",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "bp": 2426
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Särskild löneskatt: 24,26 procent."
-    },
-    {
-      "key": "sink.rate",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "bp": 2250,
-        "seafarers_bp": 1500
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "för inkomståret 2026 särskild inkomstskatt med 22,5 procent"
-    },
-    {
-      "key": "prisbasbelopp",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 5920000
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Prisbasbeloppet inkomstår 2026: 59 200 kronor"
-    },
-    {
-      "key": "inkomstbasbelopp",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 8340000
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Inkomstbasbeloppet för år 2026 har fastställts till 83 400 kronor."
-    },
-    {
-      "key": "benefit.meal.free_day",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 31000
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "310 kronor per dag (minst tre mål per dag)"
-    },
-    {
-      "key": "benefit.meal.breakfast",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 6200
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Frukost 62 kronor"
-    },
-    {
-      "key": "benefit.meal.lunch_or_dinner",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 12400
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Lunch eller middag 124 kronor"
-    },
-    {
-      "key": "per_diem.domestic.full",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 30000,
-        "after_three_months_ore": 21000,
-        "after_two_years_ore": 15000
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "300 kronor per dag (Resdag: resan påbörjats före 12.00 eller avslutats efter 19.00)"
-    },
-    {
-      "key": "per_diem.domestic.half",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 15000
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Halvdag 150 kronor"
-    },
-    {
-      "key": "per_diem.domestic.night",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 15000
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Nattraktamente 150 kronor"
-    },
-    {
-      "key": "per_diem.domestic.meal_reductions",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "full_day_300": {
-          "breakfast_lunch_dinner_ore": 27000,
-          "lunch_and_dinner_ore": 21000,
-          "lunch_or_dinner_ore": 10500,
-          "breakfast_ore": 6000
-        }
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Måltidsreduktion vid heldag 300 kronor"
-    },
-    {
-      "key": "mileage.own_car_tax_free_per_mil",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 2500
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Egen bil: 25 kronor per mil."
-    },
-    {
-      "key": "mileage.company_car_fossil",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 1200
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "12 kronor per mil förutom förmånsbilar som drivs helt med el"
-    },
-    {
-      "key": "mileage.company_car_electric",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 950
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "9,50 kronor per mil"
-    },
-    {
-      "key": "sick_pay.percentage",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "bp": 8000
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
-      "source_quote": "6 §: 80 procent av anställningsförmånerna före avdrag enligt andra stycket"
-    },
-    {
-      "key": "sick_pay.karensavdrag_percent_of_weekly",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "bp": 2000,
-        "max_occasions_per_12_months": 10
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
-      "source_quote": "6 §: Avdraget ska motsvara 20 procent av den sjuklön som belöper på summan av de anställningsförmåner ... ; tio tillfällen"
-    },
-    {
-      "key": "sick_pay.employer_period_days",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "days": 14
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
-      "source_quote": "7 §: sjukdagen och de därpå följande 13 kalenderdagarna"
-    },
-    {
-      "key": "sick_pay.reinfection_window_days",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "days": 5
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
-      "source_quote": "7 §: inom fem dagar"
-    },
-    {
-      "key": "sick_pay.certificate_from_day",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "calendar_days_after_report": 7
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19911047-om-sjuklon_sfs-1991-1047/",
-      "source_quote": "8 §: från och med den sjunde kalenderdagen efter sjukanmälningsdagen"
-    },
-    {
-      "key": "vacation.minimum_days",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "days": 25
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
-      "source_quote": "4 §: tjugofem semesterdagar"
-    },
-    {
-      "key": "vacation.supplement_sammaloneregeln",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "bp_of_monthly_salary_per_day": 43,
-        "weekly_bp": 182,
-        "variable_pay_bp": 1200
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
-      "source_quote": "16 a §: 0,43 procent av månadslönen"
-    },
-    {
-      "key": "vacation.percent_rule",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "bp": 1200
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
-      "source_quote": "16 b §: tolv procent av arbetstagarens förfallna lön"
-    },
-    {
-      "key": "vacation.max_saved_days",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "days_that_must_be_taken": 20
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
-      "source_quote": "18 §: betalda semesterdagar som överstiger 20 får sparas"
-    },
-    {
-      "key": "vacation.save_years",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "years": 5
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
-      "source_quote": "18 §: inom fem år efter utgången av det semesterår"
-    },
-    {
-      "key": "gift.tax_free_limits",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "christmas_ore": 60000,
-        "anniversary_ore": 180000,
-        "memorial_ore": 1500000,
-        "including_vat": true
-      },
-      "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
-      "source_quote": "Julgåva 600 kronor, jubileumsgåva 1 800 kronor, minnesgåva 15 000 kronor (inklusive moms)"
-    },
-    {
-      "key": "wellness.tax_free_limit",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "ore": 500000
-      },
-      "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/personalvardsformanmotionochfriskvard.4.3016b5d91791bf546791431.html",
-      "source_quote": "Arbetsgivaren får betala ut friskvårdsbidrag med maximalt 5 000 kronor per år till en anställd"
-    },
-    {
-      "key": "agi.deadlines",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "turnover_up_to_40_msek": [
-          "2026-01-19",
-          "2026-02-12",
-          "2026-03-12",
-          "2026-04-13",
-          "2026-05-12",
-          "2026-06-12",
-          "2026-07-13",
-          "2026-08-17",
-          "2026-09-14",
-          "2026-10-12",
-          "2026-11-12",
-          "2026-12-14",
-          "2027-01-18"
-        ],
-        "turnover_over_40_msek_declare_day": 26
-      },
-      "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lamnaarbetsgivardeklaration/narskajaglamnaarbetsgivardeklaration.4.361dc8c15312eff6fd13c11.html",
-      "source_quote": "De allra flesta ska deklarera den 12:e varje månad"
-    },
-    {
-      "key": "agi.schema_version",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "version": "1.1",
-        "instance": "http://xmls.skatteverket.se/se/skatteverket/da/arbetsgivardeklaration/arbetsgivardeklaration_1.1.xsd",
-        "component": "http://xmls.skatteverket.se/se/skatteverket/da/arbetsgivardeklaration/arbetsgivardeklaration_component_1.1.xsd"
-      },
-      "source_url": "https://www.skatteverket.se/foretag/etjansterochblanketter/allaetjanster/schemalagerxml.4.dfe345a107ebcc9baf80006452.html",
-      "source_quote": "Arbetsgivardeklaration – XML-schema version 1.1"
-    },
-    {
-      "key": "tax.rounding",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "mode": "DOWN_TO_KRONA"
-      },
-      "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandeforordning-20111261_sfs-2011-1261/",
-      "source_quote": "22 kap. 1 §: Belopp som avser skatt eller avgift enligt skatteförfarandelagen (2011:1244) ska anges i hela krontal så att öretal faller bort."
-    },
-    {
-      "key": "tax.one_off",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "columns": {
-          "1": [
-            [
-              0,
-              25041,
-              0
-            ],
-            [
-              25042,
-              82800,
-              1000
-            ],
-            [
-              82801,
-              192000,
-              2100
-            ],
-            [
-              192001,
-              477600,
-              2600
-            ],
-            [
-              477601,
-              660000,
-              3400
-            ],
-            [
-              660001,
-              null,
-              5400
-            ]
-          ],
-          "2": [
-            [
-              0,
-              65800,
-              0
-            ],
-            [
-              65801,
-              477600,
-              2600
-            ],
-            [
-              477601,
-              660000,
-              3400
-            ],
-            [
-              660001,
-              null,
-              5500
-            ]
-          ],
-          "3": [
-            [
-              0,
-              25041,
-              0
-            ],
-            [
-              25042,
-              331200,
-              1000
-            ],
-            [
-              331201,
-              477600,
-              2600
-            ],
-            [
-              477601,
-              660000,
-              3400
-            ],
-            [
-              660001,
-              null,
-              5500
-            ]
-          ],
-          "4": [
-            [
-              0,
-              25041,
-              0
-            ],
-            [
-              25042,
-              54000,
-              300
-            ],
-            [
-              54001,
-              192000,
-              2200
-            ],
-            [
-              192001,
-              660000,
-              2600
-            ],
-            [
-              660001,
-              null,
-              4600
-            ]
-          ],
-          "5": [
-            [
-              0,
-              25041,
-              0
-            ],
-            [
-              25042,
-              32400,
-              1000
-            ],
-            [
-              32401,
-              160800,
-              2900
-            ],
-            [
-              160801,
-              184800,
-              3400
-            ],
-            [
-              184801,
-              660000,
-              3800
-            ],
-            [
-              660001,
-              null,
-              5400
-            ]
-          ],
-          "6": [
-            [
-              0,
-              25041,
-              0
-            ],
-            [
-              25042,
-              160800,
-              2900
-            ],
-            [
-              160801,
-              184800,
-              3400
-            ],
-            [
-              184801,
-              660000,
-              3800
-            ],
-            [
-              660001,
-              null,
-              5400
-            ]
-          ]
-        },
-        "note": "[from, to, rate bp] on the expected annual income in whole kronor (SKV 433 avsnitt 10)."
-      },
-      "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
-      "source_quote": "Med årslön … menas totala bruttoinkomsten (inkl. förmåner och aktuellt engångsbelopp samt eventuellt tidigare under året utbetalda engångsbelopp) som du kan beräknas få hos din huvudarbetsgivare under hela året."
-    },
-    {
-      "key": "tax.one_off_without_regular_salary",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "bp": 3000
-      },
-      "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
-      "source_quote": "Om du inte har tidsbestämd lön ska arbetsgivaren dra av 30 procent i skatt på engångsbeloppet."
-    },
-    {
-      "key": "a_sink.rate",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "bp": 1500
-      },
-      "source_url": "https://data.riksdagen.se/dokument/sfs-1991-591.text",
-      "source_quote": "9 §: Särskild inkomstskatt tas ut med 15 procent av den skattepliktiga inkomsten. Öretal som uppkommer vid beräkning av skatten bortfaller."
-    },
-    {
-      "key": "benefit.car.formula",
-      "valid_from": "2026-01-01",
-      "valid_to": "2026-12-31",
-      "value": {
-        "prisbasbelopp_share_bp": 2900,
-        "interest": {
-          "state_rate_share_bp": 7000,
-          "plus_bp": 100,
-          "min_bp": 50,
-          "state_rate_bp": 255
-        },
-        "price_share_bp": 1300,
-        "reductions_ore": {
-          "electric": 35000000,
-          "hydrogen": 35000000,
-          "plug_in_hybrid": 14000000,
-          "gas": 10000000
-        },
-        "reduction_max_bp": 5000,
-        "long_service_mil": 3000,
-        "long_service_share_bp": 7500
-      },
-      "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
-      "source_quote": "61 kap. 5 §: summan av 0,29 prisbasbelopp, ett ränterelaterat belopp (nybilspris × (70 procent av statslåneräntan + 0,01), lägst 0,5 procent), ett prisrelaterat belopp (13 procent av nybilspriset) och bilens fordonsskatt; 8 a §; 9 §. Statslåneränta 30 november 2025: 2,55 procent (https://skatteverket.se/download/18.1522bf3f19aea8075ba3285/1767885159120/belopp-och-procentsatser-for-inkomstaret-2026.pdf)."
-    },
-    {
-      "key": "agi.field_codes",
-      "valid_from": "2026-01-01",
-      "valid_to": null,
-      "value": {
-        "tax": "001",
-        "cash_salary": "011",
-        "other_benefits": "012",
-        "car_benefit": "013",
-        "fuel_benefit": "018",
-        "expense_allowance_other": "020",
-        "mileage_flag": "050",
-        "per_diem_flag": "051",
-        "occupational_pension": "030",
-        "no_work_tax_credit": "032",
-        "sink_tax": "274",
-        "a_sink_tax": "275",
-        "activity_type": "112",
-        "personal_number": "215",
-        "specification_number": "570",
-        "workplace_number": "060",
-        "rut": "021",
-        "rot": "022",
-        "cash_no_contributions": "131"
-      },
-      "source_url": "https://www.skatteverket.se/agbeskrivning",
-      "source_quote": "Fältkoder i arbetsgivardeklarationen på individnivå: 001 Avdragen preliminärskatt, 011 Kontant bruttolön med mera, 012 Övriga skattepliktiga förmåner, 013 Skattepliktig bilförmån, 274 Avdragen skatt SINK, 275 Avdragen skatt A-SINK, 215 Person-, samordnings- eller organisationsnummer, 570 Specifikationsnummer."
-    }
-  ]
+    ]
 }

@@ -151,7 +151,7 @@ class PayrollRuns
 
         $validated = Validator::make($input, [
             'employee_id' => ['required', 'integer'],
-            'type' => ['required', Rule::in(['SICK', 'VAB', 'PARENTAL', 'LEAVE_UNPAID', 'LEAVE_PAID', 'STUDY', 'MILITARY', 'OTHER'])],
+            'type' => ['required', Rule::in(['SICK', 'VAB', 'PARENTAL', 'VACATION', 'LEAVE_UNPAID', 'LEAVE_PAID', 'STUDY', 'MILITARY', 'OTHER'])],
             'date_from' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$first, 'before_or_equal:'.$last],
             'date_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:date_from', 'before_or_equal:'.$last],
             'hours' => ['required', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
@@ -198,6 +198,7 @@ class PayrollRuns
             $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
             $rules = RuleSet::for($run->payment_date);
             $settings = $this->modules->settings(PayrollModule::KEY, $company);
+            app(SeedPayCodes::class)($company);
             $payCodes = PayCode::query()->get()->keyBy('id');
             $codeIds = $payCodes->pluck('id', 'code');
             $employments = Employment::query()

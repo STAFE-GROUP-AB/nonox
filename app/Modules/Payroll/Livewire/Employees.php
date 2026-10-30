@@ -7,10 +7,17 @@ namespace App\Modules\Payroll\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\SaveEmployee;
+use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
+use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
+use App\Modules\Payroll\PayrollModule;
+use App\Modules\Payroll\Support\Vacation\VacationLedger;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -29,7 +36,7 @@ class Employees extends Component
 
     public ?int $editingId = null;
 
-    /** @var array<string, string> */
+    /** @var array<string, string|bool> */
     public array $form = [];
 
     public function mount(): void
@@ -48,6 +55,7 @@ class Employees extends Component
             'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1',
             'start_date' => now()->toDateString(), 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY',
             'salary' => '', 'employment_rate' => '100', 'weekly_hours' => '40', 'position_title' => '', 'cost_center' => '', 'user_id' => '',
+            'vacation_rule' => '', 'vacation_days_per_year' => '25', 'vacation_payout_with_salary' => false,
         ];
         $this->showForm = true;
         $this->resetErrorBag();
@@ -71,7 +79,10 @@ class Employees extends Component
             'weekly_hours' => $employment?->weekly_hours,
             'position_title' => $employment?->position_title,
             'cost_center' => $employment?->costCenter?->code,
+            'vacation_rule' => $employment?->vacation_rule,
+            'vacation_days_per_year' => $employment === null ? 25 : ($employment->vacation_days_per_year ?? 25),
         ]);
+        $this->form['vacation_payout_with_salary'] = (bool) $employment?->vacation_payout_with_salary;
         $this->showForm = true;
         $this->resetErrorBag();
     }
@@ -111,14 +122,41 @@ class Employees extends Component
 
     public function render(): View
     {
+        $employees = Employee::query()
+            ->with(['employments' => fn ($query) => $query->whereNull('end_date')->latest('start_date')])
+            ->orderBy('employee_number')
+            ->get();
+
         return view('payroll::livewire.employees', [
-            'employees' => Employee::query()
-                ->with(['employments' => fn ($query) => $query->whereNull('end_date')->latest('start_date')])
-                ->orderBy('employee_number')
-                ->get(),
+            'employees' => $employees,
+            'vacation' => $this->vacation($employees),
             'canManage' => Gate::allows('manage', [Employee::class, $this->company()]),
             'members' => $this->showForm ? $this->company()->allUsers()->sortBy('name') : collect(),
         ]);
+    }
+
+    /**
+     * Vacation balances today, or none while the vacation rules are not checked.
+     *
+     * @param  Collection<int, Employee>  $employees
+     * @return array<int, array{year_start: CarbonImmutable, year_end: CarbonImmutable, earned: int, taken: int, left: int, basis_ore: int, payout_with_salary: bool}>
+     */
+    private function vacation(Collection $employees): array
+    {
+        $today = CarbonImmutable::today();
+
+        try {
+            return app(VacationLedger::class)->overview(
+                $employees,
+                $employees->mapWithKeys(fn (Employee $employee): array => [$employee->id => $employee->employments->first()])->filter(),
+                $today,
+                app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company()),
+                RuleSet::for($today),
+                $today,
+            );
+        } catch (MissingPayrollRuleException) {
+            return [];
+        }
     }
 
     private function company(): Company
