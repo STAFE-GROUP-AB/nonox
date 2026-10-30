@@ -72,6 +72,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Lön: Lönearkiv som finns kvar när lönemodulen stängs av, och spärrar mot att stänga av med obokförd lön, odeklarerade månader eller obetalda utlägg.
 - ✅ Lön: flytt av lönedata från ett tidigare lönesystem (anställda, belopp hittills i år, semestersaldon och gamla lönebesked) med avstämning mot bokföringen. Se [guiden för att flytta](docs/migration/leaving-fortnox.md).
 - ✅ Anläggningsregister: inventarier, datorer, maskiner och bilar med linjära avskrivningar som bokförs varje månad, och försäljning eller utrangering.
+- ✅ Periodiseringar: förutbetalda kostnader och intäkter som fördelas över månader, och upplupna poster som bokförs vid månadens slut och återförs nästa månad.
 - 🚧 Bokslut och årsredovisning.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
@@ -89,7 +90,7 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 Var medveten om var projektet står innan du installerar:
 
 - ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering, leverantörsfakturor, lön (modul) och NONOX AI (modul). Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** bokslut, anläggningsregister och årsredovisning, EU- och exportfakturor samt utländsk valuta.
+- 🚧 **Inte byggt ännu:** bankavstämning, bokslut och årsredovisning, EU- och exportfakturor samt utländsk valuta.
 
 ### 1. Installera verktygen (en gång per dator)
 

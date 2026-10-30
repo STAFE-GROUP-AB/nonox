@@ -336,6 +336,32 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - När en månad har bokförts kan bara benämning och anteckning ändras.
 - Registret kräver behörigheten att hantera räkenskapsår (bokslut).
 
+## 5a3. Periodiseringar
+
+- Under Bokföring → Periodiseringar registreras belopp som hör till andra
+  månader än de bokförs i. Det finns fyra slag:
+  - **Förutbetald kostnad** (till exempel en årsförsäkring) och
+    **förutbetald intäkt** (till exempel ett årsabonnemang) ligger på ett
+    balanskonto (förslag 1790 respektive 2990) och fördelas jämnt över ett
+    antal månader till ett resultatkonto.
+  - **Upplupen kostnad** (förslag 2990) och **upplupen intäkt** (förslag 1790)
+    hör till en månad men faktureras senare. De bokförs den sista dagen i
+    månaden och återförs den första dagen i nästa månad.
+- Om fakturan för en förutbetald post redan är bokförd på resultatkontot kan
+  periodiseringen först flytta hela beloppet till balanskontot.
+- Fördelningen räknas som för avskrivningar: för varje månad räknas hur mycket
+  som ska vara fördelat vid månadens slut, och skillnaden mot det redan
+  bokförda bokförs. Avrundningen blir exakt och en missad månad tas igen.
+- En månads körning bokför högst två verifikationer i serie A: återföringarna
+  den första dagen i månaden och resten den sista dagen. Varje steg sparas i
+  `accrual_postings` (OPENING, RELEASE, ACCRUAL, REVERSAL), som databasen inte
+  låter ändra eller ta bort; samma steg kan därför inte bokföras två gånger.
+- En upplupen post bokförs bara i sin egen månad. Återföringen görs i den
+  första körningen för en senare månad.
+- När något har bokförts kan bara benämning och anteckning ändras, och
+  periodiseringen kan inte tas bort.
+- Periodiseringarna kräver behörigheten att hantera räkenskapsår (bokslut).
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -665,6 +691,10 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   följer planen. Moms vid försäljning av inventarier och om avyttringsmånaden
   ska skrivas av lämnas till användaren. Kontot 7835 för avskrivningar på
   datorer ska kontrolleras mot gällande BAS.
+- Periodiseringar: systemet varken kräver eller hindrar en periodisering;
+  användaren avgör vad som är väsentligt. Ska systemet påminna om en
+  beloppsgräns under vilken K2-företag får avstå från att periodisera, och i
+  så fall vilken (kontrollera BFNAR 2016:10)?
 - Arkivpaket: räcker det att paketet innehåller underlag, fakturor och
   lönebesked per räkenskapsår, eller ska även räkenskapsinformation som hör
   till året men daterats utanför det (till exempel en faktura daterad efter
@@ -698,3 +728,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.21 | 2026-10-31 | Mina företag: ansvarig konsult och byråns anteckningar, Byråvy per månad, och kundens panel Din redovisningsbyrå. |
 | 0.22 | 2026-10-31 | Nytt utseende (ADR-019): mörk sidomeny, nya färger, och appen följer företagets egen färg under Varumärke. |
 | 0.23 | 2026-11-01 | Anläggningsregister med linjära avskrivningar enligt plan, avyttring och utrangering. |
+| 0.24 | 2026-11-01 | Periodiseringar: förutbetalda och upplupna kostnader och intäkter, med månadsvis fördelning och återföring. |

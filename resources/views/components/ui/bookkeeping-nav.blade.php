@@ -10,6 +10,7 @@
         'accounting.accounts' => __('Kontoplan'),
         'accounting.fiscalYears' => __('Räkenskapsår'),
         'accounting.fixedAssets' => $can('fiscal-years:manage') ? __('Anläggningar') : null,
+        'accounting.accruals' => $can('fiscal-years:manage') ? __('Periodiseringar') : null,
         'accounting.voucherSeries' => __('Verifikationsserier'),
         'accounting.costCenters' => __('Kostnadsställen'),
         'accounting.projects' => __('Projekt'),

@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\Account;
+use App\Models\Accrual;
+use App\Models\AccrualPosting;
 use App\Models\ArchivePackage;
 use App\Models\Article;
 use App\Models\BankFileImport;
@@ -104,6 +106,8 @@ const COMPANY_SCOPED_MODELS = [
     ArchivePackage::class => 'archivePackageAttributes',
     ClientProfile::class => 'clientProfileAttributes',
     FixedAsset::class => 'fixedAssetAttributes',
+    Accrual::class => 'accrualAttributes',
+    AccrualPosting::class => 'accrualPostingAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
@@ -241,6 +245,32 @@ function fixedAssetDepreciationAttributes(): array
         'fixed_asset_id' => FixedAsset::create(fixedAssetAttributes())->id,
         'period' => '2026-0'.random_int(1, 9),
         'amount_ore' => 66_667,
+        'voucher_id' => Voucher::create(voucherAttributes())->id,
+    ];
+}
+
+function accrualAttributes(): array
+{
+    return [
+        'number' => random_int(1, 1_000_000),
+        'name' => 'Hemlig försäkring',
+        'kind' => 'PREPAID_EXPENSE',
+        'total_ore' => 1_200_000,
+        'balance_account' => 1790,
+        'result_account' => 6310,
+        'start_month' => '2026-01',
+        'months' => 12,
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function accrualPostingAttributes(): array
+{
+    return [
+        'accrual_id' => Accrual::create(accrualAttributes())->id,
+        'period' => '2026-0'.random_int(1, 9),
+        'type' => 'RELEASE',
+        'amount_ore' => 100_000,
         'voucher_id' => Voucher::create(voucherAttributes())->id,
     ];
 }
@@ -638,7 +668,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
+const APPEND_ONLY = [AccrualPosting::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];
