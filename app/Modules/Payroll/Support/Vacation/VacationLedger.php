@@ -89,6 +89,8 @@ final class VacationLedger
             payoutWithSalary: (bool) $employment->vacation_payout_with_salary,
             savedDays: $balance['saved'],
             yearEndPayouts: $payouts,
+            countMethod: self::method($settings),
+            payoutTax: ($settings['vacation_payout_tax'] ?? 'TABLE') === 'ONE_OFF' ? 'ONE_OFF' : 'TABLE',
         );
     }
 
@@ -124,13 +126,14 @@ final class VacationLedger
         $saved = $this->savedDays($ids, $yearFrom);
 
         $limits = array_map('intval', (array) $rules->get('vacation.qualifying_absence_days'));
+        $method = self::method($settings);
         $result = [];
 
         foreach ($employees as $employee) {
             $employment = $employments->get($employee->id);
             $own = $absences->get($employee->id, collect());
-            $earned = $employment === null ? 0 : $this->earned($employment, $own, $earningFrom, $earningTo, $limits, $rules);
-            $taken = $this->taken($own, $yearFrom, $through, $weekPatterns[$employee->id] ?? null);
+            $earned = $employment === null ? 0 : $this->earned($employment, $own, $earningFrom, $earningTo, $limits, $rules, self::scale($method, $weekPatterns[$employee->id] ?? null));
+            $taken = $this->taken($own, $yearFrom, $through, $weekPatterns[$employee->id] ?? null, $method);
             $payout = (bool) $employment?->vacation_payout_with_salary;
             $pool = $saved[$employee->id] ?? 0;
             $imputed = $employment === null ? 0 : $this->imputedIncome($employment, $own, $earningFrom, $earningTo, $limits, $weekPatterns[$employee->id] ?? null);
@@ -259,6 +262,7 @@ final class VacationLedger
     public function liability(Collection $employees, Collection $employments, CarbonImmutable $day, array $settings, RuleSet $rules): array
     {
         $balances = $this->overview($employees, $employments, $day, $settings, $rules, $day);
+        $patterns = $this->patterns($employments);
         $years = self::years($day, (int) ($settings['vacation_year_start_month'] ?? 4));
         [$yearFrom, $yearTo] = $years['year'];
         $ids = array_values($employees->map(fn (Employee $employee): int => $employee->id)->all());
@@ -279,7 +283,7 @@ final class VacationLedger
                 continue;
             }
 
-            $earning = $this->earnedExact($employment, $absences->get($employee->id, collect()), $yearFrom, $yearTo, $day, $limits, $rules);
+            $earning = $this->earnedExact($employment, $absences->get($employee->id, collect()), $yearFrom, $yearTo, $day, $limits, $rules)->multipliedBy(self::scale(self::method($settings), $patterns[$employee->id] ?? null));
             $monthly = $employment->salary_form === 'MONTHLY';
             $rule = $monthly ? ($employment->vacation_rule ?? (string) ($settings['vacation_rule_default'] ?? 'SAMMALONEREGELN')) : 'PROCENTREGELN';
 
@@ -344,25 +348,63 @@ final class VacationLedger
      */
     public function overview(Collection $employees, Collection $employments, CarbonImmutable $day, array $settings, RuleSet $rules, ?CarbonImmutable $takenThrough = null): array
     {
+        $patterns = $this->patterns($employments);
+
+        return $this->balances($employees, $employments, $day, $settings, $rules, $patterns, $takenThrough);
+    }
+
+    /**
+     * Each employment's week pattern, by employee id, with one query.
+     *
+     * @param  Collection<int, Employment>  $employments  by employee id
+     * @return array<int, ?list<string>>
+     */
+    private function patterns(Collection $employments): array
+    {
         $schedules = WorkSchedule::query()->orderBy('id')->get()->keyBy('id');
         $patterns = [];
 
         foreach ($employments as $employeeId => $employment) {
             $schedule = $employment->work_schedule_id === null ? $schedules->first() : $schedules->get($employment->work_schedule_id);
             $week = $schedule?->pattern['weeks'][0] ?? null;
-            $patterns[$employeeId] = is_array($week) ? array_map('strval', $week) : null;
+            $patterns[(int) $employeeId] = is_array($week) ? array_map('strval', $week) : null;
         }
 
-        return $this->balances($employees, $employments, $day, $settings, $rules, $patterns, $takenThrough);
+        return $patterns;
     }
 
     /**
      * @param  Collection<int, Absence>  $absences
      * @param  array<string, int>  $limits
      */
-    private function earned(Employment $employment, Collection $absences, CarbonImmutable $from, CarbonImmutable $to, array $limits, RuleSet $rules): int
+    private function earned(Employment $employment, Collection $absences, CarbonImmutable $from, CarbonImmutable $to, array $limits, RuleSet $rules, BigDecimal $scale): int
     {
-        return $this->earnedExact($employment, $absences, $from, $to, $to, $limits, $rules)->toScale(0, RoundingMode::Up)->toInt();
+        return $this->earnedExact($employment, $absences, $from, $to, $to, $limits, $rules)->multipliedBy($scale)->toScale(0, RoundingMode::Up)->toInt();
+    }
+
+    /**
+     * The company's way of counting semesterdagar (VacationDays).
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public static function method(array $settings): string
+    {
+        return ($settings['vacation_day_method'] ?? VacationDays::NET) === VacationDays::GROSS ? VacationDays::GROSS : VacationDays::NET;
+    }
+
+    /**
+     * The share of the year's days someone earns under the net method: their
+     * working days a week over five; everyone earns the full days otherwise.
+     *
+     * @param  ?list<string>  $weekPattern
+     */
+    public static function scale(string $method, ?array $weekPattern): BigDecimal
+    {
+        $days = min(VacationDays::FULL_WEEK_DAYS, VacationDays::daysPerWeek($weekPattern));
+
+        return $method === VacationDays::NET && $days < VacationDays::FULL_WEEK_DAYS
+            ? BigDecimal::of($days)->dividedBy(VacationDays::FULL_WEEK_DAYS, 10, RoundingMode::HalfUp)
+            : BigDecimal::one();
     }
 
     /**
@@ -414,7 +456,7 @@ final class VacationLedger
      * @param  Collection<int, Absence>  $absences
      * @param  ?list<string>  $weekPattern
      */
-    private function taken(Collection $absences, CarbonImmutable $from, CarbonImmutable $to, ?array $weekPattern): int
+    private function taken(Collection $absences, CarbonImmutable $from, CarbonImmutable $to, ?array $weekPattern, string $method): int
     {
         $days = 0;
         $scheduled = fn (CarbonImmutable $day): bool => ContextBuilder::scheduled($day, $weekPattern);
@@ -426,8 +468,8 @@ final class VacationLedger
                 $spell[] = $day;
             }
 
-            foreach (VacationDays::counted($spell, $scheduled) as $day) {
-                if ($day->betweenIncluded($from, $to) && $scheduled($day)) {
+            foreach (VacationDays::counted($spell, $scheduled, $method) as $day) {
+                if ($day->betweenIncluded($from, $to)) {
                     $days++;
                 }
             }

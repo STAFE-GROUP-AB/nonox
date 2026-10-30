@@ -19,6 +19,8 @@ final class PayrollSettings
         'vacation_rule_default' => ['SAMMALONEREGELN', 'PROCENTREGELN'],
         'vacation_liability_booking' => ['MONTHLY', 'YEAR_END'],
         'vacation_day_value_percent' => null,
+        'vacation_day_method' => ['NET', 'GROSS'],
+        'vacation_payout_tax' => ['TABLE', 'ONE_OFF'],
         'net_pay_rounding' => ['ORE', 'WHOLE_KRONOR'],
         'segregation_of_duties' => null,
         'use_employment_dimensions' => null,
@@ -40,6 +42,10 @@ final class PayrollSettings
         'vacation_liability_booking' => 'MONTHLY',
         // The value of one vacation day under sammalöneregeln for the liability; semesterlagen sets none, 4.6 % is common in collective agreements.
         'vacation_day_value_percent' => '4.6',
+        // Part-time on fewer than five days a week: count scheduled days and scale the days earned (begränsad nettometod).
+        'vacation_day_method' => 'NET',
+        // Semesterersättning paid with every salary is regular pay, so taxed by the table; ONE_OFF taxes it as an engångsbelopp.
+        'vacation_payout_tax' => 'TABLE',
         'net_pay_rounding' => 'ORE',
         'segregation_of_duties' => true,
         'use_employment_dimensions' => true,

@@ -152,6 +152,7 @@ it('shows the vacation liability per employee', function () {
 });
 
 it('counts a scheduled weekend as semesterdagar only in a vacation shorter than five days (9 §)', function () {
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['vacation_day_method' => 'GROSS']);
     $schedule = WorkSchedule::create(['name' => 'Helgpersonal', 'pattern' => ['weeks' => [['8', '8', '8', '8', '0', '8', '8']]]]);
     $anna = Payroll::employee($this->owner, $this->company);
     Employment::query()->where('employee_id', $anna->id)->update(['work_schedule_id' => $schedule->id]);
@@ -161,9 +162,9 @@ it('counts a scheduled weekend as semesterdagar only in a vacation shorter than 
 
     [, $lines] = vacationPayslip($run, $anna->id);
 
-    // 6 June is nationaldagen and never counts; Sunday 7 June does in a short vacation.
-    // 22–28 June: five weekdays, so the weekend does not count, and Friday is not a working day: 4 days.
-    expect((string) $lines['SEMESTERTILLAGG']->quantity)->toStartWith('5');
+    // Semesterlagen as written: 6 June is nationaldagen and never counts; Sunday 7 June, a working day,
+    // does in a short vacation. 22–28 June: all five weekdays count, Friday too, and the weekend does not.
+    expect((string) $lines['SEMESTERTILLAGG']->quantity)->toStartWith('6');
 });
 
 it('closes the semesterår: saves days beyond 20, pays the rest and vacation pay on variable pay once', function () {
@@ -239,4 +240,22 @@ it('counts qualifying absence at the pay the employee would have had, not the si
 
     // 300 hours worked plus the 16 sick hours she would have worked, at 180 kr; the sick pay itself is left out.
     expect($balance['basis_ore'])->toBe(316 * 18_000);
+});
+
+it('gives a part-timer on three days a week proportionally fewer days and counts only scheduled days (begränsad nettometod)', function () {
+    $schedule = WorkSchedule::create(['name' => 'Tre dagar', 'pattern' => ['weeks' => [['8', '8', '8', '0', '0', '0', '0']]]]);
+    $anna = Payroll::employee($this->owner, $this->company);
+    Employment::query()->where('employee_id', $anna->id)->update(['work_schedule_id' => $schedule->id]);
+    $ledger = app(VacationLedger::class);
+    $balance = $ledger->overview(collect([$anna]), Employment::query()->get()->keyBy('employee_id'), CarbonImmutable::parse('2026-06-01'), ['vacation_year_start_month' => 4], RuleSet::for(CarbonImmutable::parse('2026-06-01')))[$anna->id];
+
+    // 25 × 3 ÷ 5 = 15 days a year.
+    expect($balance['earned'])->toBe(15);
+
+    $run = $this->runs->create($this->owner, $this->company, '2026-06');
+    $this->runs->recordAbsence($this->owner, $run, ['employee_id' => $anna->id, 'type' => 'VACATION', 'date_from' => '2026-06-08', 'date_to' => '2026-06-14', 'hours' => '8']);
+    [, $lines] = vacationPayslip($run, $anna->id);
+
+    // A whole week off costs her three days: Monday to Wednesday.
+    expect((string) $lines['SEMESTERTILLAGG']->quantity)->toStartWith('3');
 });

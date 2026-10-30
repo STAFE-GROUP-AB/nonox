@@ -24,6 +24,8 @@ final readonly class VacationInput
         public bool $payoutWithSalary,
         public int $savedDays = 0,
         public array $yearEndPayouts = [],
+        public string $countMethod = 'NET',
+        public string $payoutTax = 'TABLE',
     ) {}
 
     /** Paid days left: this year's earned days, then days saved from earlier years (18 §). */

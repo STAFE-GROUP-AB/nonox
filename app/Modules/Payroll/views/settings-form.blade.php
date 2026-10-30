@@ -8,6 +8,8 @@
         'vacation_rule_default' => __('Semesterregel'),
         'vacation_liability_booking' => __('Semesterlöneskuld bokförs'),
         'vacation_day_value_percent' => __('Dagsvärde i semesterlöneskulden, % av månadslönen'),
+        'vacation_day_method' => __('Semesterdagar för deltid'),
+        'vacation_payout_tax' => __('Skatt på semesterersättning med varje lön'),
         'net_pay_rounding' => __('Avrundning av nettolön'),
         'segregation_of_duties' => __('Den som beräknar får inte attestera'),
         'use_employment_dimensions' => __('Kostnadsställe och projekt från anställningen'),
@@ -27,6 +29,10 @@
         'PORTAL' => __('I portalen'), 'PORTAL_AND_EMAIL_NOTICE' => __('I portalen, med avisering via e-post'),
         'FILE' => __('Fil till Skatteverket'), 'API' => __('Direkt till Skatteverket'),
         'SE' => __('Sverige'),
+        'NET' => __('Bara schemalagda arbetsdagar, färre dagar för färre arbetsdagar i veckan'),
+        'GROSS' => __('Alla vardagar, 25 dagar för alla'),
+        'TABLE' => __('Enligt skattetabell, som lönen'),
+        'ONE_OFF' => __('Som engångsbelopp'),
     ];
 @endphp
 

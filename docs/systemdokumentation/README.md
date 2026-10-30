@@ -320,7 +320,14 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   skulden på periodens sista dag (motkonton 7090 och 7519), mätt mot saldot i
   huvudboken på utbetalningsdagen, så att ingående balanser räknas. Varje
   bokförd skuld sparas per anställd i en tabell som bara går att lägga till i.
-- Semesterdagar för den som arbetar helger (9 §): vid ledighet kortare än fem
+- Semesterdagar räknas som företaget valt. Förval är den begränsade
+  nettometoden: bara schemalagda arbetsdagar räknas, och den som arbetar färre
+  än fem dagar i veckan tjänar in 25 × arbetsdagar ÷ 5 dagar. Alternativet är
+  semesterlagen som den är skriven: alla vardagar räknas och alla tjänar in 25.
+  Midsommar-, jul- och nyårsafton räknas aldrig. Semesterersättning som betalas
+  med varje lön beskattas enligt tabell, eller som engångsbelopp om företaget
+  valt det.
+- Semesterdagar för den som arbetar helger (9 §), med lagens metod: vid ledighet kortare än fem
   vardagar räknas en lördag eller söndag som annars hade varit arbetsdag som
   semesterdag. En vanlig söndag i schemat är en arbetsdag; röda dagar är det
   aldrig.
@@ -371,11 +378,12 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
 ## 8. Öppna frågor (TODO legal-verify)
 
-- Semester: dagar för deltidsanställda som inte arbetar alla vardagar; om en
-  semester som delas på två månader ska bedömas som en ledighet (9 §);
+- Semester: vilken metod ett kollektivavtal föreskriver för deltidsanställdas
+  semesterdagar; om en semester som delas på två månader ska bedömas som en
+  ledighet (9 §);
   löneavdraget för semesterdagar under procentregeln för månadsavlönade;
-  skatt på semesterersättning som betalas med varje lön (räknas nu enligt
-  tabell); begränsningen i 26 a § till dagar som tillsammans med intjänade
+  skatt på semesterersättning som betalas med varje lön (förval tabell,
+  inställning för engångsbelopp); begränsningen i 26 a § till dagar som tillsammans med intjänade
   dagar överstiger 25; vilken lön som är rörlig lön (nu: tillägg som är
   semesterlönegrundande, t.ex. OB); värdet av sparade dagar under
   procentregeln; sparade dagar som inte tas ut inom fem år; värdering av

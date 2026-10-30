@@ -141,9 +141,11 @@ final class Vacation implements Step
 
         $percentBp = (int) ((array) $context->rules->get('vacation.percent_rule'))['bp'];
 
-        // TODO(legal-verify): semesterersättning paid with every salary is taxed by the table like the salary it follows.
+        // TODO(legal-verify): semesterersättning paid with every salary; Skatteverket calls semesterersättning an
+        // engångsbelopp but taxes regular payments by the table. The company chooses (setting vacation_payout_tax).
+        $tax = $context->vacation?->payoutTax === 'ONE_OFF' ? PayslipLineResult::TAX_ONE_OFF : PayslipLineResult::TAX_TABLE;
         $draft->add(new PayslipLineResult('SEMESTERERSATTNING', __('Semesterersättning :percent %', ['percent' => $percentBp / Units::ORE]),
-            BigDecimal::of($basis)->multipliedBy($percentBp)->dividedBy(Units::BASIS_POINTS, 0, RoundingMode::HalfUp)->toInt(), PayslipLineResult::TAX_TABLE, true, false,
+            BigDecimal::of($basis)->multipliedBy($percentBp)->dividedBy(Units::BASIS_POINTS, 0, RoundingMode::HalfUp)->toInt(), $tax, true, false,
             ruleVersionId: $context->rules->version('vacation.percent_rule')->id,
             explanation: ['basis_ore' => $basis, 'bp' => $percentBp]));
     }
@@ -169,10 +171,8 @@ final class Vacation implements Step
         $counted = [];
 
         foreach (VacationDays::spells(array_values(array_map(fn (AbsenceInput $day): CarbonImmutable => $day->date, $byDate))) as $spell) {
-            foreach (VacationDays::counted($spell, $scheduled) as $date) {
-                if ($scheduled($date)) {
-                    $counted[] = $byDate[$date->toDateString()];
-                }
+            foreach (VacationDays::counted($spell, $scheduled, $context->vacation->countMethod ?? VacationDays::NET) as $date) {
+                $counted[] = $byDate[$date->toDateString()];
             }
         }
 

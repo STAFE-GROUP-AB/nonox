@@ -1786,5 +1786,11 @@
     "Den bästa modellen": "The best model",
     "För svårlästa underlag. Kostar mer per analys. Just nu :model.": "For hard-to-read documents. Costs more per analysis. Currently :model.",
     "En modell jag väljer själv": "A model I choose myself",
-    "Modellens namn": "The model's name"
+    "Modellens namn": "The model's name",
+    "Semesterdagar för deltid": "Vacation days for part-time",
+    "Skatt på semesterersättning med varje lön": "Tax on vacation compensation with every salary",
+    "Bara schemalagda arbetsdagar, färre dagar för färre arbetsdagar i veckan": "Only scheduled working days, fewer days for fewer working days a week",
+    "Alla vardagar, 25 dagar för alla": "All weekdays, 25 days for everyone",
+    "Enligt skattetabell, som lönen": "By the tax table, like the salary",
+    "Som engångsbelopp": "As a one-off amount"
 }
