@@ -26,6 +26,7 @@ use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
+use App\Modules\Payroll\Support\RulePresenter;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
 use App\Modules\Payroll\Support\Tax\MissingTaxTableException;
 use App\Support\Audit\Audit;
@@ -198,6 +199,7 @@ class PayrollRuns
             $inputs = PayrollInput::query()->where('payroll_run_id', $run->id)->get()->groupBy('employee_id');
             $results = [];
             $blockers = [];
+            $rulesMissing = false;
 
             if ($employments->isEmpty()) {
                 throw ValidationException::withMessages(['run' => [__('Ingen är anställd under perioden.')]]);
@@ -212,8 +214,8 @@ class PayrollRuns
                     $results[] = [$employment, $this->calculator->calculate($context)];
                 } catch (PayrollBlockedException|MissingTaxTableException $exception) {
                     $blockers[] = "{$name}: {$exception->getMessage()}";
-                } catch (MissingPayrollRuleException $exception) {
-                    $blockers[] = __(':name: regeln :key saknas eller är inte kontrollerad för :date. Se Lön → Regler.', ['name' => $name, 'key' => $exception->key, 'date' => $exception->date->toDateString()]);
+                } catch (MissingPayrollRuleException) {
+                    $rulesMissing = true;
                 }
             }
 
@@ -225,8 +227,20 @@ class PayrollRuns
                 }
             }
 
+            if ($rulesMissing) {
+                $missing = $rules->missing();
+                array_unshift($blockers, __(':count regler är inte kontrollerade för utbetalningsdagen :date: :rules. Öppna Lön → Regler, jämför varje värde med källan och markera det som kontrollerat.', [
+                    'count' => count($missing),
+                    'date' => $run->payment_date->toDateString(),
+                    'rules' => implode(', ', array_map(RulePresenter::name(...), $missing)),
+                ]));
+            }
+
             if ($blockers !== []) {
-                throw ValidationException::withMessages(['run' => array_values(array_unique($blockers))]);
+                throw ValidationException::withMessages(array_filter([
+                    'run' => array_values(array_unique($blockers)),
+                    'rules' => $rulesMissing ? [$run->payment_date->toDateString()] : [],
+                ]));
             }
 
             $this->deletePayslips($run);

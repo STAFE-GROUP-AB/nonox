@@ -43,6 +43,9 @@ class PayrollRunPage extends Component
     /** @var list<string> */
     public array $blockers = [];
 
+    /** The payment date whose rules are not checked, to link to them. */
+    public ?string $rulesDate = null;
+
     public function mount(PayrollRun $run): void
     {
         abort_unless(Gate::allows('view', $run), 403);
@@ -76,11 +79,13 @@ class PayrollRunPage extends Component
     public function calculate(PayrollRuns $runs): void
     {
         $this->blockers = [];
+        $this->rulesDate = null;
 
         try {
             $runs->calculate($this->user(), $this->run());
         } catch (ValidationException $exception) {
             $this->blockers = array_values(array_map('strval', $exception->errors()['run'] ?? [__('Lönekörningen kunde inte beräknas.')]));
+            $this->rulesDate = isset($exception->errors()['rules'][0]) ? (string) $exception->errors()['rules'][0] : null;
             $this->toast(__('Lönekörningen kunde inte beräknas. Se vad som saknas.'), 'error');
 
             return;

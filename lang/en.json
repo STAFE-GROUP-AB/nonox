@@ -1530,5 +1530,7 @@
     "Lönebesked som PDF": "Payslip as PDF",
     "Inloggning (frivilligt)": "Login (optional)",
     "Den anställde ser sina egna lönebesked under Mina lönebesked.": "The employee sees their own payslips under My payslips.",
-    "Ingen inloggning": "No login"
+    "Ingen inloggning": "No login",
+    ":count regler är inte kontrollerade för utbetalningsdagen :date: :rules. Öppna Lön → Regler, jämför varje värde med källan och markera det som kontrollerat.": ":count rules are not checked for the payment date :date: :rules. Open Payroll → Rules, compare each value with its source and mark it as checked.",
+    "Kontrollera reglerna": "Check the rules"
 }

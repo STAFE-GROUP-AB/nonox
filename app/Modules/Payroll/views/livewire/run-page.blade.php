@@ -51,6 +51,9 @@
                 <ul class="mt-2 list-disc space-y-1 pl-5">
                     @foreach($blockers as $blocker)<li>{{ $blocker }}</li>@endforeach
                 </ul>
+                @if($rulesDate)
+                    <a href="{{ route('payroll.rules', ['datum' => $rulesDate]) }}" class="mt-3 inline-block font-medium text-accent-700 underline hover:text-accent-900">{{ __('Kontrollera reglerna') }}</a>
+                @endif
             </div>
         @endif
     </x-ui.card>

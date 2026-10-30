@@ -8,6 +8,7 @@ use App\Modules\Payroll\Livewire\PayrollRunList;
 use App\Modules\Payroll\Livewire\PayrollRunPage;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Support\Tenancy\CurrentCompany;
@@ -83,6 +84,18 @@ it('blocks the whole run and lists why, changing nothing: no tables or rules for
 
     expect($run->fresh()->status)->toBe(PayrollRun::DRAFT)
         ->and(Payslip::query()->count())->toBe(0);
+});
+
+it('lists every unchecked rule by its Swedish name in one go, and links to them', function () {
+    PayrollRuleVersion::query()->where('key', 'employer_contribution.reduced_by_birthyear')->first()?->forceFill(['valid_to' => '2026-03-31'])->save();
+    $run = $this->runs->create($this->owner, $this->company, '2026-04');
+
+    Livewire\Livewire::test(PayrollRunPage::class, ['run' => $run])
+        ->call('calculate')
+        ->assertSee('regler är inte kontrollerade för utbetalningsdagen 2026-04-24')
+        ->assertSee('Arbetsgivaravgift för äldre')
+        ->assertSee('Kontrollera reglerna')
+        ->assertDontSee('employer_contribution.reduced_by_birthyear');
 });
 
 it('makes a calculated run a draft again when inputs change', function () {
