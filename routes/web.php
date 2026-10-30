@@ -89,6 +89,7 @@ Route::middleware([
             Route::get("/{$path}/{document}/pdf", [SalesDocumentController::class, 'pdf'])->whereUuid('document')->name("{$name}.pdf");
         }
 
+        Route::view('/inbetalningar', 'invoicing.incoming-payments')->name('invoicing.incomingPayments');
         Route::view('/kunder', 'invoicing.customers')->name('invoicing.customers');
         Route::view('/leverantorer', 'payables.suppliers')->name('payables.suppliers');
         Route::view('/leverantorsfakturor', 'payables.invoices.index')->name('payables.invoices.index');

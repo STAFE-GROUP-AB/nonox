@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Models\Account;
 use App\Models\Article;
+use App\Models\BankFileImport;
+use App\Models\BankTransaction;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\Customer;
@@ -81,6 +83,8 @@ const COMPANY_SCOPED_MODELS = [
     SupplierPayment::class => 'supplierPaymentAttributes',
     SupplierPaymentBatch::class => 'paymentBatchAttributes',
     SupplierPaymentBatchItem::class => 'paymentBatchItemAttributes',
+    BankFileImport::class => 'bankFileImportAttributes',
+    BankTransaction::class => 'bankTransactionAttributes',
 ];
 
 /** Runs inside the company's context. */
@@ -264,6 +268,28 @@ function paymentBatchItemAttributes(): array
     ];
 }
 
+function bankFileImportAttributes(): array
+{
+    return [
+        'file_name' => 'hemlig.xml',
+        'file_path' => 'bankfiler/hemlig.xml',
+        'file_sha256' => str_repeat('0', 64),
+        'credit_count' => 1,
+        'credit_total_ore' => 100,
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function bankTransactionAttributes(): array
+{
+    return [
+        'bank_file_import_id' => BankFileImport::create(bankFileImportAttributes())->id,
+        'reference' => 'REF-'.random_int(1, 1_000_000),
+        'booking_date' => '2026-03-20',
+        'amount_ore' => 100,
+    ];
+}
+
 function salesDocumentAttributes(): array
 {
     return [
@@ -323,7 +349,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class];
+const APPEND_ONLY = [ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

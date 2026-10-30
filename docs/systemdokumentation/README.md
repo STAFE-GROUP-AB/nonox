@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.11
+- Version: 0.12
 - Datum: 2026-10-30
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -218,6 +218,11 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   betalning.
 - En kreditfaktura tar ut hela den obetalda fakturan och vänder dess
   verifikation.
+- Inbetalningar kan läsas in från bankens fil (ISO 20022 camt.054,
+  [ADR-015](../adr/ADR-015-incoming-payment-files.md)). Systemet föreslår
+  faktura efter OCR-numret; användaren kontrollerar och bokför. En inbetalning
+  bokförs högst en gång, även om den finns i flera filer. Filen sparas som den
+  kom, med kontrollsumma.
 - Offerter och order kan bli order respektive fakturautkast med samma rader.
   De bokförs inte; det gör först fakturan.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
@@ -310,3 +315,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.9 | 2026-10-29 | Offerter och order som blir fakturor. |
 | 0.10 | 2026-10-30 | Leverantörer och leverantörsfakturor med underlag, attest och betalningar (serie D och E). |
 | 0.11 | 2026-10-30 | Betalfiler till banken (pain.001) för attesterade leverantörsfakturor. |
+| 0.12 | 2026-10-30 | Inläsning av inbetalningar från bankens fil (camt.054) med förslag på faktura efter OCR. |

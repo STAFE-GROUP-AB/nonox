@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic camt.054.001.02 credit notification for tests. Made-up companies and numbers. -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.02">
+  <BkToCstmrDbtCdtNtfctn>
+    <GrpHdr>
+      <MsgId>TEST-20260320-1</MsgId>
+      <CreDtTm>2026-03-20T21:45:11</CreDtTm>
+    </GrpHdr>
+    <Ntfctn>
+      <Id>TEST-NTF-1</Id>
+      <CreDtTm>2026-03-20T21:45:11</CreDtTm>
+      <Acct>
+        <Id><IBAN>SE4550000000058398257466</IBAN></Id>
+        <Ccy>SEK</Ccy>
+      </Acct>
+      <Ntry>
+        <Amt Ccy="SEK">2049.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-03-20</Dt></BookgDt>
+        <ValDt><Dt>2026-03-20</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>RCDT</Cd><SubFmlyCd>DMCT</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><AcctSvcrRef>BG-TX-0001</AcctSvcrRef></Refs>
+            <AmtDtls><TxAmt><Amt Ccy="SEK">1549.00</Amt></TxAmt></AmtDtls>
+            <RltdPties><Dbtr><Nm>Kontorshuset AB</Nm></Dbtr></RltdPties>
+            <RmtInf>
+              <Strd>
+                <CdtrRefInf>
+                  <Tp><CdOrPrtry><Cd>SCOR</Cd></CdOrPrtry></Tp>
+                  <Ref>__OCR_FULL__</Ref>
+                </CdtrRefInf>
+              </Strd>
+            </RmtInf>
+          </TxDtls>
+          <TxDtls>
+            <Refs><AcctSvcrRef>BG-TX-0002</AcctSvcrRef></Refs>
+            <AmtDtls><TxAmt><Amt Ccy="SEK">500.00</Amt></TxAmt></AmtDtls>
+            <RltdPties><Dbtr><Nm>Bröllopsfirman</Nm></Dbtr></RltdPties>
+            <RmtInf><Ustrd>Faktura __NUMBER_PART__ delbetalning</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="SEK">300.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-03-21</Dt></BookgDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>RCDT</Cd><SubFmlyCd>DMCT</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><AcctSvcrRef>BG-TX-0003</AcctSvcrRef></Refs>
+            <RltdPties><Dbtr><Nm>Okänd Betalare</Nm></Dbtr></RltdPties>
+            <RmtInf><Ustrd>Tack för maten</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="SEK">99.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-03-21</Dt></BookgDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>ICDT</Cd><SubFmlyCd>DMCT</SubFmlyCd></Fmly></Domn></BkTxCd>
+      </Ntry>
+    </Ntfctn>
+  </BkToCstmrDbtCdtNtfctn>
+</Document>

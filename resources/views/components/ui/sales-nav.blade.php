@@ -3,6 +3,7 @@
         'invoicing.quotes' => __('Offerter'),
         'invoicing.orders' => __('Order'),
         'invoicing.invoices.index' => __('Fakturor'),
+        'invoicing.incomingPayments' => __('Inbetalningar'),
     ];
 @endphp
 
