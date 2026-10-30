@@ -11,9 +11,9 @@
     @endif
 
     <section class="grid gap-3 sm:grid-cols-3">
-        <div class="rounded-3xl bg-ink px-5 py-4 text-white shadow-sm">
-            <p class="text-sm text-stone-300">{{ __('Bokfört värde') }}</p>
-            <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums">{{ $kr($totals['book_value']) }}</p>
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+            <p class="text-sm text-gray-500">{{ __('Bokfört värde') }}</p>
+            <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ $kr($totals['book_value']) }}</p>
         </div>
         <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
             <p class="text-sm text-gray-500">{{ __('Anskaffningsvärde') }}</p>

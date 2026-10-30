@@ -530,6 +530,14 @@ lönebeskeden låsta i databasen.
   (lön och frånvarodagar per månad, de sista tretton månaderna) kan hämtas
   som CSV; uttaget loggas.
 
+Nyckeltal för lön visas överst på alla lönesidor för den som får se lönen:
+månadens lönekostnad (bruttolön och arbetsgivaravgifter för attesterade
+körningar med utbetalning i månaden, jämfört med förra månaden), nästa
+löneutbetalning med nettobelopp och status, avdragen skatt och
+arbetsgivaravgifter som ännu inte är bokförda mot skattekontot, utbetalda
+månader utan inlämnad arbetsgivardeklaration, senast beräknade
+semesterlöneskuld och antal anställda. Varje siffra är en fråga.
+
 ## 5c. NONOX AI (modul)
 
 - NONOX AI läser en leverantörsfaktura, ett kvitto eller annat underlag och

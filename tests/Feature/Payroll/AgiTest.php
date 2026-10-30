@@ -14,6 +14,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\Agi\AgiDeadlines;
 use App\Modules\Payroll\Support\Agi\AgiXml;
+use App\Modules\Payroll\Support\Insights\PayrollKpis;
 use App\Support\Archive\ArchivePackageBuilder;
 use App\Support\Luhn;
 use App\Support\Tenancy\CurrentCompany;
@@ -205,4 +206,22 @@ it('shows the employer declaration due on Mina företag with the day from the ru
     $this->agi->submitted($this->owner, $this->agi->generate($this->owner, $this->company, '2026-04'), 'KV-1');
 
     expect(collect(app(CompanyOverview::class)->for($this->owner->fresh())[0]['tasks'])->firstWhere('destination', 'agi'))->toBeNull();
+});
+
+it('shows the payroll key figures on the payroll pages', function () {
+    $this->runs->approve($this->admin, $this->run->fresh());
+    $payslip = Payslip::query()->sole();
+    $kpis = collect(app(PayrollKpis::class)->for($this->owner->fresh(), $this->company, CarbonImmutable::parse($this->run->payment_date)))->keyBy('label');
+    $paymentMonth = $this->run->payment_date->translatedFormat('F');
+
+    expect($kpis["Lönekostnad {$paymentMonth}"]['value']->ore)->toBe($payslip->gross_ore->ore + $payslip->employer_contribution_ore->ore)
+        ->and($kpis['Skatt och avgifter att betala']['value']->ore)->toBe($payslip->tax_ore->ore + $payslip->employer_contribution_ore->ore)
+        ->and($kpis['Arbetsgivardeklarationer att lämna']['value'])->toBe('1')
+        ->and($kpis['Arbetsgivardeklarationer att lämna']['warn'])->toBeTrue()
+        ->and($kpis['Anställda']['value'])->toBe('1');
+
+    $this->get(route('payroll.runs.index'))->assertOk()->assertSee('Skatt och avgifter att betala')->assertSee('Anställda');
+
+    $bookkeeper = Bookkeeping::member($this->company, 'bookkeeper');
+    expect(app(PayrollKpis::class)->for($bookkeeper, $this->company))->toBe([]);
 });

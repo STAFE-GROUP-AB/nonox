@@ -9,3 +9,5 @@
         ]) @if($active) aria-current="page" @endif>{{ $label }}</a>
     @endforeach
 </nav>
+
+@include('payroll::partials.kpis')
