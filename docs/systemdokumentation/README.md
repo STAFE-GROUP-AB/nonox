@@ -60,6 +60,10 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   rollen Redovisningskonsult ser (tabellen `client_profiles`).
   Behandlingshistoriken visar att anteckningen ändrats och hur lång den är,
   inte vad den säger.
+- Kunden ser på översikten panelen Din redovisningsbyrå: ansvarig konsult och
+  vad företagets redovisningskonsulter har gjort de senaste 60 dagarna, dag för
+  dag och per typ av åtgärd, räknat ur behandlingshistoriken. Panelen visas för
+  den som får läsa behandlingshistoriken men inte själv är konsult i företaget.
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 
@@ -655,3 +659,4 @@ lönebeskeden låsta i databasen.
 | 0.18 | 2026-10-31 | Arkivpaket per räkenskapsår med SIE, rapporter, underlag, fakturor, moms, lön, behandlingshistorik och systemdokumentation, med SHA-256 för varje fil. |
 | 0.19 | 2026-10-31 | Mina företag: översikt över alla företag och vad som väntar i vart och ett, för byråer och ägare med flera företag. |
 | 0.20 | 2026-10-31 | Mina företag: sista dag för moms och AGI, och månadsstatus per företag. |
+| 0.21 | 2026-10-31 | Mina företag: ansvarig konsult och byråns anteckningar, Byråvy per månad, och kundens panel Din redovisningsbyrå. |

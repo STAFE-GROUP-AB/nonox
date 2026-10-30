@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Domain\Accounting\SieImport\SieImportStatus;
+use App\Domain\Company\FirmActivity;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
@@ -41,6 +42,7 @@ class DashboardController
             'user' => $user,
             'company' => $company,
             'canManage' => $user->can('update', $company),
+            'firm' => FirmActivity::visibleTo($user, $company) ? FirmActivity::for($company) : null,
             'hideGettingStarted' => $user->hidesPanel(GettingStartedController::PANEL, $company),
             'steps' => [
                 [

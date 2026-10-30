@@ -6,6 +6,10 @@
 
         <x-ui.kpis />
 
+        @if($firm)
+            @include('partials.firm-activity', ['firm' => $firm])
+        @endif
+
         @unless($hideGettingStarted)
             <x-ui.card :title="__('Kom igång')" :description="__('Ta det i den här ordningen. Du behöver inte göra allt i dag.')">
                 <x-slot:action>
