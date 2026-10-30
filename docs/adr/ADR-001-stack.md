@@ -40,7 +40,7 @@ Exact versions in use at the end of T-0.1 (verified with `composer show`,
 |---|---|
 | tailwindcss | 3.4.19 |
 | alpinejs | 3.15.3 |
-| vite | 5.4.21 |
+| vite | 6.4.5 |
 | laravel-vite-plugin | 1.3.0 |
 | axios | 1.21.0 |
 
@@ -71,7 +71,7 @@ Exact versions in use at the end of T-0.1 (verified with `composer show`,
 | Gap | Planned in |
 |---|---|
 | Tailwind 3 (Jetstream default) instead of Tailwind 4 | T-0.3 |
-| Vite 5 has moderate advisories that only affect the dev server and build (fix requires Vite 8) | T-0.3, together with Tailwind 4 |
+| Vite 5 advisories (dev server and build only) | Resolved 2026-10-31: Vite 6.4.5 (esbuild 0.25), and an npm override lifts postcss-selector-parser to 6.1.5 under @tailwindcss/typography. Vite 7/8 waits for laravel-vite-plugin 2+ with Tailwind 4 (T-0.3). |
 | Redis + Horizon not installed (queue is `sync`) | First task that needs background jobs (SIE import, T-1.4) |
 | S3-compatible storage not configured (local disk) | Attachments (T-1.2/T-1.3) |
 | PDF engine not chosen | ADR-002 |
