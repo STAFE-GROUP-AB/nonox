@@ -104,8 +104,8 @@
                             @foreach($absenceTypes as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach
                         </select>
                     </x-ui.field>
-                    <x-ui.field for="absence_from" :label="__('Från')" error="date_from"><input id="absence_from" type="date" class="{{ $input }} mt-1" wire:model="absence.date_from"></x-ui.field>
-                    <x-ui.field for="absence_to" :label="__('Till och med')" error="date_to"><input id="absence_to" type="date" class="{{ $input }} mt-1" wire:model="absence.date_to"></x-ui.field>
+                    <x-ui.field for="absence_from" :label="__('Från')" error="date_from"><input id="absence_from" type="date" min="{{ $run->periodStart()->toDateString() }}" max="{{ $run->periodEnd()->toDateString() }}" class="{{ $input }} mt-1" wire:model="absence.date_from"></x-ui.field>
+                    <x-ui.field for="absence_to" :label="__('Till och med')" error="date_to"><input id="absence_to" type="date" min="{{ $run->periodStart()->toDateString() }}" max="{{ $run->periodEnd()->toDateString() }}" class="{{ $input }} mt-1" wire:model="absence.date_to"></x-ui.field>
                     <x-ui.field for="absence_hours" :label="__('Timmar per dag')" error="hours"><input id="absence_hours" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="absence.hours"></x-ui.field>
                     <div class="self-end"><x-button wire:loading.attr="disabled">{{ __('Registrera') }}</x-button></div>
                 </form>

@@ -6,6 +6,7 @@ use App\Modules\Payroll\Actions\AddPayrollAccounts;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\PayrollRunList;
 use App\Modules\Payroll\Livewire\PayrollRunPage;
+use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
@@ -96,6 +97,16 @@ it('lists every unchecked rule by its Swedish name in one go, and links to them'
         ->assertSee('Arbetsgivaravgift för äldre')
         ->assertSee('Kontrollera reglerna')
         ->assertDontSee('employer_contribution.reduced_by_birthyear');
+});
+
+it('only takes absence inside the run\'s month', function () {
+    $run = $this->runs->create($this->owner, $this->company, '2026-04');
+    $absence = fn (string $from, string $to) => fn () => $this->runs->recordAbsence($this->owner, $run, ['employee_id' => $this->anna->id, 'type' => 'SICK', 'date_from' => $from, 'date_to' => $to, 'hours' => '8']);
+
+    expect($absence('2026-03-30', '2026-04-02'))->toThrow(ValidationException::class, 'lönekörningens månad, 2026-04-01–2026-04-30')
+        ->and($absence('2026-04-29', '2026-05-04'))->toThrow(ValidationException::class, 'varje månads lönekörning')
+        ->and($absence('2026-05-04', '2026-05-05'))->toThrow(ValidationException::class)
+        ->and($absence('2026-04-01', '2026-04-30')())->toBeInstanceOf(Absence::class);
 });
 
 it('makes a calculated run a draft again when inputs change', function () {

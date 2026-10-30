@@ -1558,5 +1558,6 @@
     "Skicka inbjudan igen": "Send the invitation again",
     "Bjud in till Min sida": "Invite to My page",
     "Inbjuden :date": "Invited :date",
-    "Välkommen, :name!": "Welcome, :name!"
+    "Välkommen, :name!": "Welcome, :name!",
+    "Frånvaron måste ligga i lönekörningens månad, :from–:to. Frånvaro över ett månadsskifte registreras i varje månads lönekörning.": "The absence must fall within the payroll run's month, :from–:to. Absence across a month end is entered in each month's payroll run."
 }

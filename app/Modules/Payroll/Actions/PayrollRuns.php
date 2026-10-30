@@ -144,14 +144,23 @@ class PayrollRuns
     public function recordAbsence(User $user, PayrollRun $run, array $input): Absence
     {
         $company = $this->open($user, $run);
+        $first = $run->periodStart()->toDateString();
+        $last = $run->periodEnd()->toDateString();
+        // Absence belongs to the run for the month it happened in; a period over a month end is entered in each month's run.
+        $outside = __('Frånvaron måste ligga i lönekörningens månad, :from–:to. Frånvaro över ett månadsskifte registreras i varje månads lönekörning.', ['from' => $first, 'to' => $last]);
 
         $validated = Validator::make($input, [
             'employee_id' => ['required', 'integer'],
             'type' => ['required', Rule::in(['SICK', 'VAB', 'PARENTAL', 'LEAVE_UNPAID', 'LEAVE_PAID', 'STUDY', 'MILITARY', 'OTHER'])],
-            'date_from' => ['required', 'date_format:Y-m-d'],
-            'date_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:date_from'],
+            'date_from' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$first, 'before_or_equal:'.$last],
+            'date_to' => ['required', 'date_format:Y-m-d', 'after_or_equal:date_from', 'before_or_equal:'.$last],
             'hours' => ['required', 'regex:/^\d{1,2}([.,]\d{1,2})?$/'],
-        ], ['hours.regex' => __('Skriv timmar per dag, till exempel 8 eller 7,5.')], ['date_from' => __('första dagen'), 'date_to' => __('sista dagen')])->validate();
+        ], [
+            'hours.regex' => __('Skriv timmar per dag, till exempel 8 eller 7,5.'),
+            'date_from.after_or_equal' => $outside,
+            'date_from.before_or_equal' => $outside,
+            'date_to.before_or_equal' => $outside,
+        ], ['date_from' => __('första dagen'), 'date_to' => __('sista dagen')])->validate();
 
         return CurrentCompany::run($company, fn (): Absence => DB::transaction(function () use ($user, $company, $run, $validated): Absence {
             Employee::query()->findOrFail((int) $validated['employee_id']);
