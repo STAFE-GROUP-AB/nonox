@@ -8,14 +8,37 @@
 import { formatOre, parseOre } from './money.js';
 
 function blankRow() {
-    return { account: '', amount: '', description: '', cost_center: '', project: '' };
+    return { account: '', amount: '', description: '', cost_center: '', project: '', vat_rate: '2500' };
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('supplierRows', (rows, total, vat) => ({
+    window.Alpine.data('supplierRows', (rows, total, vat, treatment) => ({
         rows,
         total,
         vat,
+        treatment,
+
+        /** Whether the buyer accounts for the VAT, so the invoice itself carries none. */
+        get buyerLiable() {
+            return this.treatment !== 'DOMESTIC';
+        },
+
+        /** The VAT the buyer accounts for: each rate on the sum of its rows. */
+        get buyerVat() {
+            const sums = {};
+
+            for (const row of this.rows) {
+                const amount = parseOre(row.amount);
+
+                if (amount === null) {
+                    return null;
+                }
+
+                sums[row.vat_rate] = (sums[row.vat_rate] ?? 0) + amount;
+            }
+
+            return Object.entries(sums).reduce((vat, [rate, sum]) => vat + Math.sign(sum) * Math.round(Math.abs(sum) * Number(rate) / 10000), 0);
+        },
 
         init() {
             if (this.rows.length === 0) {
@@ -26,7 +49,7 @@ document.addEventListener('alpine:init', () => {
         /** The total minus the VAT minus the rows, in öre; null while something cannot be read. */
         get remaining() {
             const total = parseOre(this.total);
-            const vat = parseOre(this.vat);
+            const vat = this.buyerLiable ? 0 : parseOre(this.vat);
             const amounts = this.rows.map((row) => parseOre(row.amount));
 
             if (total === null || vat === null || amounts.includes(null)) {

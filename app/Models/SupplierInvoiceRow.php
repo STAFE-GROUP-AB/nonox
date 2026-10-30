@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $cost_center_id
  * @property ?int $project_id
  * @property int $position
+ * @property ?int $vat_rate
  */
 class SupplierInvoiceRow extends Model
 {
@@ -36,6 +37,7 @@ class SupplierInvoiceRow extends Model
         'cost_center_id',
         'project_id',
         'position',
+        'vat_rate',
     ];
 
     /** @return array<string, string> */
@@ -44,6 +46,7 @@ class SupplierInvoiceRow extends Model
         return [
             'amount_ore' => MoneyCast::class,
             'position' => 'integer',
+            'vat_rate' => 'integer',
         ];
     }
 

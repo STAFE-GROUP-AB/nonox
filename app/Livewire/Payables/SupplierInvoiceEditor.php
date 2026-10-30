@@ -7,6 +7,7 @@ namespace App\Livewire\Payables;
 use App\Actions\Payables\DeleteSupplierInvoiceDraft;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplierInvoice;
+use App\Domain\Payables\VatTreatment;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Company;
@@ -16,6 +17,7 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\User;
+use App\Support\Money\Money;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -54,7 +56,11 @@ class SupplierInvoiceEditor extends Component
 
     public string $vat = '';
 
-    /** @var list<array{account: string, amount: string, description: string, cost_center: string, project: string}> */
+    public bool $credit = false;
+
+    public string $vatTreatment = 'DOMESTIC';
+
+    /** @var list<array{account: string, amount: string, description: string, cost_center: string, project: string, vat_rate: string}> */
     public array $rows = [];
 
     public ?TemporaryUploadedFile $file = null;
@@ -72,11 +78,16 @@ class SupplierInvoiceEditor extends Component
             $this->invoiceDate = $invoice->invoice_date->toDateString();
             $this->dueDate = $invoice->due_date->toDateString();
             $this->description = (string) $invoice->description;
-            $this->total = $invoice->total_ore->format(withCurrency: false);
-            $this->vat = $invoice->vat_ore->format(withCurrency: false);
+            // A credit note is stored negative and shown as the positive amounts printed on it.
+            $sign = $invoice->isCredit() ? -1 : 1;
+            $this->credit = $invoice->isCredit();
+            $this->vatTreatment = $invoice->vat_treatment->value;
+            $this->total = Money::ofOre($invoice->total_ore->ore * $sign)->format(withCurrency: false);
+            $this->vat = Money::ofOre($invoice->vat_ore->ore * $sign)->format(withCurrency: false);
             $this->rows = array_values($invoice->rows->map(fn (SupplierInvoiceRow $row): array => [
                 'account' => (string) $row->account?->number,
-                'amount' => $row->amount_ore->format(withCurrency: false),
+                'amount' => Money::ofOre($row->amount_ore->ore * $sign)->format(withCurrency: false),
+                'vat_rate' => (string) ($row->vat_rate ?? 2500),
                 'description' => (string) $row->description,
                 'cost_center' => (string) $row->costCenter?->code,
                 'project' => (string) $row->project?->code,
@@ -110,7 +121,7 @@ class SupplierInvoiceEditor extends Component
         $invoice = $register($this->user(), $this->persist($save));
 
         Toast::flash($invoice->voucher_id === null
-            ? __(':title är registrerad och väntar på attest. Den bokförs när den betalas (kontantmetoden).', ['title' => $invoice->title()])
+            ? __(':title är registrerad och väntar på attest. Den bokförs när den regleras (kontantmetoden).', ['title' => $invoice->title()])
             : __(':title är registrerad och bokförd. Den väntar nu på attest.', ['title' => $invoice->title()]));
         $this->redirectRoute('payables.invoices.show', ['supplierInvoice' => $invoice->id]);
     }
@@ -133,6 +144,7 @@ class SupplierInvoiceEditor extends Component
             'accounts' => Account::query()->where('is_active', true)->whereBetween('number', [1000, 8999])->orderBy('number')->get(['number', 'name']),
             'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
             'projects' => Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
+            'treatments' => VatTreatment::cases(),
             'canRegister' => $invoice === null
                 ? $this->user()->can('create', [SupplierInvoice::class, $this->company()])
                 : $this->user()->can('register', $invoice),
@@ -153,6 +165,8 @@ class SupplierInvoiceEditor extends Component
             'description' => $this->description,
             'total' => $this->total,
             'vat' => $this->vat,
+            'credit' => $this->credit,
+            'vat_treatment' => $this->vatTreatment,
             'rows' => $this->rows,
         ], $this->invoiceId === null ? null : SupplierInvoice::query()->findOrFail($this->invoiceId), $this->file);
     }

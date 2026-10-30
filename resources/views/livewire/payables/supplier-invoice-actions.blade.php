@@ -6,7 +6,10 @@
     <x-ui.card>
         <dl class="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <div><dt class="text-gray-500">{{ __('Status') }}</dt><dd @class(['font-medium', 'text-accent-700' => $invoice->isOverdue()])>{{ $invoice->isOverdue() ? __('Förfallen') : $invoice->status->label() }}</dd></div>
-            <div><dt class="text-gray-500">{{ __('Att betala') }}</dt><dd class="font-medium"><x-ui.amount :money="$invoice->total_ore" /></dd></div>
+            <div><dt class="text-gray-500">{{ $invoice->isCredit() ? __('Kreditbelopp') : __('Att betala') }}</dt><dd class="font-medium"><x-ui.amount :money="$invoice->total_ore" /></dd></div>
+            @if($invoice->vat_treatment->buyerIsLiable())
+                <div class="sm:col-span-2"><dt class="text-gray-500">{{ __('Moms') }}</dt><dd class="font-medium">{{ $invoice->vat_treatment->label() }}</dd></div>
+            @endif
             <div><dt class="text-gray-500">{{ __('Förfallodag') }}</dt><dd class="font-medium tabular-nums">{{ $invoice->due_date->toDateString() }}</dd></div>
             <div><dt class="text-gray-500">{{ __('Kvar att betala') }}</dt><dd class="font-medium"><x-ui.amount :money="$invoice->remaining()" /></dd></div>
             <div class="sm:col-span-2"><dt class="text-gray-500">{{ __('Betala till') }}</dt><dd class="font-medium tabular-nums">
@@ -44,6 +47,12 @@
             @unless($invoice->vat_ore->isZero())
                 <li class="flex justify-between gap-4 py-2"><span><span class="tabular-nums font-medium">2641</span> {{ __('Ingående moms') }}</span><x-ui.amount :money="$invoice->vat_ore" /></li>
             @endunless
+            @foreach($buyerVat as $rate => $vat)
+                <li class="flex justify-between gap-4 py-2 text-gray-600">
+                    <span>{{ __('Moms :rate % som du redovisar själv, utgående :output och ingående :input', ['rate' => $rate / 100, 'output' => $invoice->vat_treatment->outputVatAccount($rate), 'input' => $invoice->vat_treatment->inputVatAccount()]) }}</span>
+                    <x-ui.amount :money="App\Support\Money\Money::ofOre($vat)" />
+                </li>
+            @endforeach
         </ul>
     </x-ui.card>
 
@@ -59,8 +68,29 @@
         </x-ui.card>
     @endif
 
+    @if($canPay && $invoice->isCredit())
+        <x-ui.card :title="__('Kvitta mot en faktura')">
+            @if($offsetInvoices->isEmpty())
+                <p class="text-sm text-gray-600">{{ __('Det finns ingen attesterad, obetald faktura från samma leverantör att kvitta mot.') }}</p>
+            @else
+                <form wire:submit="offset" class="grid gap-4">
+                    <x-ui.field for="offset_invoice" :label="__('Faktura')" error="offset">
+                        <select id="offset_invoice" class="{{ $input }} mt-1" wire:model="offsetInvoiceId">
+                            <option value="">{{ __('Välj faktura…') }}</option>
+                            @foreach($offsetInvoices as $candidate)
+                                <option value="{{ $candidate->id }}">{{ $candidate->title() }} · {{ $candidate->invoice_number }} · {{ $candidate->remaining()->format() }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                    <div><x-button wire:loading.attr="disabled">{{ __('Kvitta') }}</x-button></div>
+                </form>
+                <p class="mt-2 text-sm text-gray-500">{{ __('Kreditnotan dras av från fakturan. Inga pengar flyttas; kvittningen bokförs i serie E.') }}</p>
+            @endif
+        </x-ui.card>
+    @endif
+
     @if($canPay)
-        <x-ui.card :title="__('Registrera betalning')">
+        <x-ui.card :title="$invoice->isCredit() ? __('Registrera återbetalning') : __('Registrera betalning')">
             <form wire:submit="pay" class="grid grid-cols-2 gap-4">
                 <x-ui.field for="supplier_paid_on" :label="__('Betaldag')" error="paid_on">
                     <input id="supplier_paid_on" type="date" class="{{ $input }} mt-1" wire:model="paidOn">
@@ -70,7 +100,7 @@
                 </x-ui.field>
                 <div class="col-span-2"><x-button wire:loading.attr="disabled">{{ __('Registrera betalningen') }}</x-button></div>
             </form>
-            <p class="mt-2 text-sm text-gray-500">{{ __('Betalningen bokförs från 1930 Företagskonto i serie E.') }}</p>
+            <p class="mt-2 text-sm text-gray-500">{{ $invoice->isCredit() ? __('Pengarna från leverantören bokförs på 1930 Företagskonto i serie E.') : __('Betalningen bokförs från 1930 Företagskonto i serie E.') }}</p>
         </x-ui.card>
     @endif
 

@@ -53,7 +53,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 **På väg** (i den här ordningen)
 - 🚧 EU- och exportfakturor.
 - ✅ Betalfiler till banken (ISO 20022 pain.001) för attesterade leverantörsfakturor, i dag för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea och SEB (Swedbank och sparbankerna kommer). Betalningarna bokförs när banken har betalat.
-- 🚧 Fler banker, automatisk avstämning mot bankens svar, leverantörsfakturor från utlandet och kreditnotor.
+- ✅ Kreditnotor från leverantörer (kvittas mot en faktura eller betalas tillbaka) och inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet i Sverige, med momsen i rätt rutor.
+- 🚧 Swedbank i betalfilerna, automatisk avstämning mot bankens svar, import av varor från länder utanför EU och fakturor i utländsk valuta.
 - 🚧 Lön, med timlöner, OB och personalliggare för restauranger. Förslaget och frågorna som först måste granskas juridiskt finns i [ADR-012](docs/adr/ADR-012-payroll.md).
 - 🚧 Bokslut, anläggningsregister och årsredovisning.
 

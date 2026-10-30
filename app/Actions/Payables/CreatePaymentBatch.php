@@ -143,6 +143,10 @@ class CreatePaymentBatch
         $title = $invoice->title();
         $supplier = $invoice->supplier_snapshot ?? [];
 
+        if ($invoice->isCredit()) {
+            return __(':title är en kreditnota. Kvitta den mot en faktura i stället.', ['title' => $title]);
+        }
+
         if ($invoice->status !== SupplierInvoiceStatus::Approved) {
             return __(':title är inte attesterad och obetald.', ['title' => $title]);
         }

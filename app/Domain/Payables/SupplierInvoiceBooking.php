@@ -9,6 +9,7 @@ use App\Models\CostCenter;
 use App\Models\Project;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
+use App\Support\Money\Money;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Collection;
@@ -21,6 +22,10 @@ use Illuminate\Support\Collection;
  *   cost centre or project, input VAT on 2641 debit, 2440 Leverantörsskulder
  *   credit with the total. A payment (series E) then moves the amount from
  *   2440 to the bank account.
+ * - When the buyer accounts for the VAT (purchases from abroad, Swedish
+ *   reverse charge), the VAT is calculated from the rows and booked both as
+ *   output VAT (2614/2624/2634) and input VAT (2645/2647), ADR-016.
+ * - A credit note has negative amounts, so the same rules reverse it.
  * - Kontantmetoden: nothing when registered. A payment books its share of the
  *   costs and the VAT directly against the bank account.
  *
@@ -85,7 +90,31 @@ final class SupplierInvoiceBooking
     }
 
     /**
-     * The costs and the input VAT, debit.
+     * The VAT the buyer accounts for, per rate in basis points: the rate on
+     * the sum of that rate's rows, rounded to öre. Empty for a domestic invoice.
+     *
+     * @param  Collection<int, SupplierInvoiceRow>  $rows
+     * @return array<int, int>
+     */
+    public static function buyerVat(SupplierInvoice $invoice, Collection $rows): array
+    {
+        if (! $invoice->vat_treatment->buyerIsLiable()) {
+            return [];
+        }
+
+        $vat = [];
+
+        foreach ($rows->groupBy(fn (SupplierInvoiceRow $row): int => (int) $row->vat_rate) as $rate => $group) {
+            $sum = Money::ofOre((int) $group->sum(fn (SupplierInvoiceRow $row): int => $row->amount_ore->ore));
+            $vat[(int) $rate] = $sum->percent((int) $rate)->ore;
+        }
+
+        return array_filter($vat);
+    }
+
+    /**
+     * The costs and the input VAT, debit; with the buyer liable, also the
+     * output VAT, credit.
      *
      * @param  Collection<int, SupplierInvoiceRow>  $rows
      * @return list<array{account: int, amount: int, description?: ?string, cost_center?: ?string, project?: ?string}>
@@ -100,8 +129,13 @@ final class SupplierInvoiceBooking
             'project' => $row->project instanceof Project ? $row->project->code : null,
         ])->all());
 
-        if (! $invoice->vat_ore->isZero()) {
+        if (! $invoice->vat_treatment->buyerIsLiable() && ! $invoice->vat_ore->isZero()) {
             $lines[] = ['account' => self::INPUT_VAT, 'amount' => $invoice->vat_ore->ore, 'description' => null, 'cost_center' => null, 'project' => null];
+        }
+
+        foreach (self::buyerVat($invoice, $rows) as $rate => $vat) {
+            $lines[] = ['account' => $invoice->vat_treatment->inputVatAccount(), 'amount' => $vat, 'description' => null, 'cost_center' => null, 'project' => null];
+            $lines[] = ['account' => $invoice->vat_treatment->outputVatAccount($rate), 'amount' => -$vat, 'description' => null, 'cost_center' => null, 'project' => null];
         }
 
         return $lines;

@@ -114,6 +114,7 @@ class PaymentBatches extends Component
     {
         return SupplierInvoice::query()
             ->where('status', SupplierInvoiceStatus::Approved->value)
+            ->where('kind', SupplierInvoice::INVOICE)
             ->whereDoesntHave('batchItems', fn (Builder $query) => $query->whereHas('batch', fn (Builder $batch) => $batch->where('status', PaymentBatchStatus::Created->value)));
     }
 

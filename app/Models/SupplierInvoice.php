@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Payables\VatTreatment;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -46,11 +47,17 @@ use LogicException;
  * @property ?CarbonImmutable $approved_at
  * @property ?int $approved_by
  * @property ?int $created_by
+ * @property string $kind
+ * @property VatTreatment $vat_treatment
  */
 class SupplierInvoice extends Model
 {
     use BelongsToCompany;
     use HasUuids;
+
+    public const string INVOICE = 'INVOICE';
+
+    public const string CREDIT = 'CREDIT';
 
     /** Columns that may change after the invoice is registered. */
     private const array MUTABLE_WHEN_REGISTERED = ['status', 'paid_ore', 'approved_at', 'approved_by', 'updated_at'];
@@ -64,12 +71,16 @@ class SupplierInvoice extends Model
         'invoice_date',
         'due_date',
         'description',
+        'kind',
+        'vat_treatment',
         'created_by',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
         'status' => 'DRAFT',
+        'kind' => 'INVOICE',
+        'vat_treatment' => 'DOMESTIC',
         'total_ore' => 0,
         'vat_ore' => 0,
         'paid_ore' => 0,
@@ -81,6 +92,7 @@ class SupplierInvoice extends Model
         return [
             'number' => 'integer',
             'status' => SupplierInvoiceStatus::class,
+            'vat_treatment' => VatTreatment::class,
             'invoice_date' => 'immutable_date',
             'due_date' => 'immutable_date',
             'supplier_snapshot' => 'array',
@@ -117,6 +129,11 @@ class SupplierInvoice extends Model
         return $this->status === SupplierInvoiceStatus::Draft;
     }
 
+    public function isCredit(): bool
+    {
+        return $this->kind === self::CREDIT;
+    }
+
     public function remaining(): Money
     {
         return $this->total_ore->minus($this->paid_ore);
@@ -124,7 +141,7 @@ class SupplierInvoice extends Model
 
     public function isOverdue(?CarbonImmutable $today = null): bool
     {
-        return in_array($this->status, [SupplierInvoiceStatus::Registered, SupplierInvoiceStatus::Approved], true)
+        return ! $this->isCredit() && in_array($this->status, [SupplierInvoiceStatus::Registered, SupplierInvoiceStatus::Approved], true)
             && $this->due_date->lessThan($today ?? CarbonImmutable::today());
     }
 
@@ -133,8 +150,12 @@ class SupplierInvoice extends Model
      */
     public function title(): string
     {
-        return $this->number === null
-            ? __('Utkast till leverantörsfaktura')
+        if ($this->number === null) {
+            return $this->isCredit() ? __('Utkast till kreditnota') : __('Utkast till leverantörsfaktura');
+        }
+
+        return $this->isCredit()
+            ? __('Kreditnota :number', ['number' => $this->number])
             : __('Leverantörsfaktura :number', ['number' => $this->number]);
     }
 

@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.13
+- Version: 0.14
 - Datum: 2026-10-30
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -252,6 +252,12 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   till behandlingshistoriken.
 - Varje sparat utkast, registrering, attest och betalning skrivs till
   behandlingshistoriken. Betalningar kan bara läggas till, aldrig ändras.
+- Leverantörsfakturor där köparen redovisar momsen (inköp från andra EU-länder,
+  tjänster från länder utanför EU och omvänd betalningsskyldighet i Sverige)
+  bokförs på de BAS-konton som ger rätt rutor i momsdeklarationen, med
+  utgående och ingående moms. Kreditnotor från leverantörer bokförs med
+  omvända belopp och kvittas mot en faktura eller betalas tillbaka
+  ([ADR-016](../adr/ADR-016-supplier-credit-and-foreign-purchases.md)).
 - Betalfiler: attesterade fakturor kan betalas med en fil till banken (ISO
   20022 pain.001.001.03, [ADR-014](../adr/ADR-014-payment-files.md)). Filen
   sparas som den skapades, med kontrollsumma, och kan inte ändras. Betalningen
@@ -295,8 +301,9 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   skattskyldighet, EU- och exportfakturor är inte byggda ännu.
 - Kontantmetoden: obetalda kundfakturor vid räkenskapsårets slut ska bokföras
   som fordringar, och obetalda leverantörsfakturor som skulder, vid bokslutet.
-- Leverantörsfakturor med omvänd skattskyldighet och inköp från andra länder
-  (konton och momsrutor) är inte byggda ännu.
+- Import av varor från länder utanför EU (ruta 50, 60–62) och fakturor i
+  utländsk valuta är inte byggda ännu; vilket datum som styr växelkursen för
+  varor från andra EU-länder ska bekräftas.
 - Inlästa verifikationer bokförs med en behandlingshistorikpost per inläsning,
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt
@@ -319,3 +326,4 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 | 0.11 | 2026-10-30 | Betalfiler till banken (pain.001) för attesterade leverantörsfakturor. |
 | 0.12 | 2026-10-30 | Inläsning av inbetalningar från bankens fil (camt.054) med förslag på faktura efter OCR. |
 | 0.13 | 2026-10-30 | Avtalsfakturering. |
+| 0.14 | 2026-10-30 | Kreditnotor från leverantörer och inköp där köparen redovisar momsen. |

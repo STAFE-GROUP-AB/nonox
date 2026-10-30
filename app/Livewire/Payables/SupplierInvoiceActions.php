@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Payables;
 
 use App\Actions\Payables\ApproveSupplierInvoice;
+use App\Actions\Payables\OffsetSupplierCredit;
 use App\Actions\Payables\PaySupplierInvoice;
+use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\SupplierInvoice;
@@ -35,11 +37,13 @@ class SupplierInvoiceActions extends Component
 
     public string $amount = '';
 
+    public string $offsetInvoiceId = '';
+
     public function mount(SupplierInvoice $invoice): void
     {
         $this->invoiceId = $invoice->id;
         $this->paidOn = now()->toDateString();
-        $this->amount = $invoice->remaining()->format(withCurrency: false);
+        $this->amount = Money::ofOre(abs($invoice->remaining()->ore))->format(withCurrency: false);
     }
 
     public function approve(ApproveSupplierInvoice $approve): void
@@ -58,13 +62,25 @@ class SupplierInvoiceActions extends Component
             throw ValidationException::withMessages(['amount' => __('Skriv datum och belopp, till exempel 1 250,00.')]);
         }
 
-        $payment = $pay($this->user(), $this->invoice(), $date, $amount);
+        $payment = $pay($this->user(), $this->invoice(), $date, $this->invoice()->isCredit() ? $amount->negated() : $amount);
         $invoice = $this->invoice();
 
-        $this->amount = $invoice->remaining()->format(withCurrency: false);
+        $this->amount = Money::ofOre(abs($invoice->remaining()->ore))->format(withCurrency: false);
         $this->toast($invoice->status === SupplierInvoiceStatus::Paid
             ? __(':title är betald.', ['title' => $invoice->title()])
-            : __(':amount är registrerat. Kvar att betala: :remaining.', ['amount' => $payment->amount_ore->format(), 'remaining' => $invoice->remaining()->format()]));
+            : __(':amount är registrerat. Kvar: :remaining.', ['amount' => Money::ofOre(abs($payment->amount_ore->ore))->format(), 'remaining' => Money::ofOre(abs($invoice->remaining()->ore))->format()]));
+    }
+
+    public function offset(OffsetSupplierCredit $offset): void
+    {
+        $invoice = SupplierInvoice::query()->find($this->offsetInvoiceId)
+            ?? throw ValidationException::withMessages(['offset' => __('Välj en faktura att kvitta mot.')]);
+
+        $amount = $offset($this->user(), $this->invoice(), $invoice, CarbonImmutable::today());
+
+        $this->offsetInvoiceId = '';
+        $this->amount = Money::ofOre(abs($this->invoice()->remaining()->ore))->format(withCurrency: false);
+        $this->toast(__(':amount av :credit är kvittat mot :invoice.', ['amount' => Money::ofOre($amount)->format(), 'credit' => $this->invoice()->title(), 'invoice' => $invoice->title()]));
     }
 
     public function render(): View
@@ -78,6 +94,15 @@ class SupplierInvoiceActions extends Component
                 && $this->user()->can('approveAny', [SupplierInvoice::class, $invoice])
                 && (new SupplierInvoicePolicy)->blockedBySegregation($this->user(), $invoice),
             'canPay' => $this->user()->can('pay', $invoice),
+            'buyerVat' => SupplierInvoiceBooking::buyerVat($invoice, $invoice->rows),
+            'offsetInvoices' => $invoice->isCredit()
+                ? SupplierInvoice::query()
+                    ->where('supplier_id', $invoice->supplier_id)
+                    ->where('kind', SupplierInvoice::INVOICE)
+                    ->where('status', SupplierInvoiceStatus::Approved->value)
+                    ->orderBy('due_date')
+                    ->get()
+                : collect(),
         ]);
     }
 

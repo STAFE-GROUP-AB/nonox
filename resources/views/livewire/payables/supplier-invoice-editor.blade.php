@@ -36,7 +36,7 @@
         @error('file') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
     </x-ui.card>
 
-    <div class="space-y-6" x-data="supplierRows($wire.entangle('rows'), $wire.entangle('total'), $wire.entangle('vat'))">
+    <div class="space-y-6" x-data="supplierRows($wire.entangle('rows'), $wire.entangle('total'), $wire.entangle('vat'), $wire.entangle('vatTreatment'))">
         @if($errors->has('invoice'))
             <div class="rounded-xl border border-accent-200 bg-accent-50 px-5 py-4 text-sm text-accent-800" role="alert">{{ $errors->first('invoice') }}</div>
         @endif
@@ -55,6 +55,21 @@
                         </select>
                     @endif
                 </x-ui.field>
+                <x-ui.field for="supplier_invoice_treatment" :label="__('Vem redovisar momsen?')" error="vat_treatment" class="sm:col-span-2">
+                    <select id="supplier_invoice_treatment" class="{{ $input }} mt-1" x-model="treatment">
+                        @foreach($treatments as $treatment)
+                            <option value="{{ $treatment->value }}">{{ $treatment->label() }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-sm text-gray-500" x-show="buyerLiable" x-cloak>{{ __('Fakturan har ingen svensk moms. Du redovisar momsen själv och drar av den samtidigt. Kontot väljs efter momssatsen så att beloppen hamnar i rätt ruta i momsdeklarationen.') }}</p>
+                </x-ui.field>
+                <label class="flex items-start gap-3 text-sm sm:col-span-2">
+                    <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="credit">
+                    <span>
+                        <span class="font-medium text-gray-900">{{ __('Det här är en kreditnota') }}</span>
+                        <span class="block text-gray-600">{{ __('Skriv beloppen som de står på kreditnotan. Den minskar skulden till leverantören och kvittas mot en faktura eller betalas tillbaka.') }}</span>
+                    </span>
+                </label>
                 <x-ui.field for="supplier_invoice_number" :label="__('Leverantörens fakturanummer')" error="invoice_number">
                     <input id="supplier_invoice_number" type="text" class="{{ $input }} mt-1" wire:model="invoiceNumber" maxlength="50">
                 </x-ui.field>
@@ -70,9 +85,16 @@
                 <x-ui.field for="supplier_invoice_total" :label="__('Att betala, inkl. moms')" error="total">
                     <input id="supplier_invoice_total" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" x-model="total" x-on:blur="fillSingleRow()" placeholder="0,00">
                 </x-ui.field>
-                <x-ui.field for="supplier_invoice_vat" :label="__('Varav moms')" error="vat" :hint="__('Summan av momsen på fakturan, alla momssatser.')">
-                    <input id="supplier_invoice_vat" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" x-model="vat" x-on:blur="fillSingleRow()" placeholder="0,00">
-                </x-ui.field>
+                <div x-show="! buyerLiable">
+                    <x-ui.field for="supplier_invoice_vat" :label="__('Varav moms')" error="vat" :hint="__('Summan av momsen på fakturan, alla momssatser.')">
+                        <input id="supplier_invoice_vat" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" x-model="vat" x-on:blur="fillSingleRow()" placeholder="0,00">
+                    </x-ui.field>
+                </div>
+                <div x-show="buyerLiable" x-cloak class="text-sm">
+                    <p class="font-medium text-gray-700">{{ __('Moms du redovisar själv') }}</p>
+                    <p class="mt-2 tabular-nums" x-text="buyerVat === null ? '–' : format(buyerVat) + ' kr'"></p>
+                    <p class="mt-1 text-gray-500">{{ __('Bokförs som både utgående och ingående moms, så den kostar inget om du har full avdragsrätt.') }}</p>
+                </div>
                 <x-ui.field for="supplier_invoice_description" :label="__('Vad gäller fakturan? (frivilligt)')" error="description" class="sm:col-span-2">
                     <input id="supplier_invoice_description" type="text" class="{{ $input }} mt-1" wire:model="description" maxlength="255">
                 </x-ui.field>
@@ -90,7 +112,8 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="text-left text-gray-500">
-                            <th class="pb-2 pr-2 font-medium w-24">{{ __('Konto') }}</th>
+                            <th class="pb-2 pr-2 font-medium w-24" x-show="! buyerLiable">{{ __('Konto') }}</th>
+                            <th class="pb-2 pr-2 font-medium w-24" x-show="buyerLiable" x-cloak>{{ __('Momssats') }}</th>
                             <th class="pb-2 pr-2 font-medium">{{ __('Text') }}</th>
                             @if($costCenters->isNotEmpty())
                                 <th class="pb-2 pr-2 font-medium w-32">{{ __('Kostnadsställe') }}</th>
@@ -105,7 +128,14 @@
                     <tbody>
                         <template x-for="(row, index) in rows" :key="index">
                             <tr>
-                                <td class="py-1 pr-2"><input type="text" list="supplier-accounts" inputmode="numeric" class="{{ $cell }} tabular-nums" x-model="row.account" data-row-account :placeholder="'{{ $selectedSupplier?->defaultAccount?->number }}'" :aria-label="'{{ __('Konto, rad') }} ' + (index + 1)" autocomplete="off"></td>
+                                <td class="py-1 pr-2" x-show="! buyerLiable"><input type="text" list="supplier-accounts" inputmode="numeric" class="{{ $cell }} tabular-nums" x-model="row.account" data-row-account :placeholder="'{{ $selectedSupplier?->defaultAccount?->number }}'" :aria-label="'{{ __('Konto, rad') }} ' + (index + 1)" autocomplete="off"></td>
+                                <td class="py-1 pr-2" x-show="buyerLiable" x-cloak>
+                                    <select class="{{ $cell }}" x-model="row.vat_rate" :aria-label="'{{ __('Momssats, rad') }} ' + (index + 1)">
+                                        <option value="2500">25 %</option>
+                                        <option value="1200">12 %</option>
+                                        <option value="600">6 %</option>
+                                    </select>
+                                </td>
                                 <td class="py-1 pr-2 min-w-[10rem]"><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Text, rad') }} ' + (index + 1)"></td>
                                 @if($costCenters->isNotEmpty())
                                     <td class="py-1 pr-2">

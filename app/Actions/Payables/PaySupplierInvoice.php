@@ -51,12 +51,15 @@ class PaySupplierInvoice
                 throw ValidationException::withMessages(['amount' => __('Fakturan är inte attesterad och obetald.')]);
             }
 
-            if ($amount->ore <= 0) {
+            // A credit note is settled by money coming back, a negative payment.
+            $sign = $invoice->isCredit() ? -1 : 1;
+
+            if ($amount->ore * $sign <= 0) {
                 throw ValidationException::withMessages(['amount' => __('Skriv ett belopp större än noll.')]);
             }
 
-            if ($amount->ore > $invoice->remaining()->ore) {
-                throw ValidationException::withMessages(['amount' => __('Beloppet är större än det som återstår, :remaining.', ['remaining' => $invoice->remaining()->format()])]);
+            if ($amount->ore * $sign > $invoice->remaining()->ore * $sign) {
+                throw ValidationException::withMessages(['amount' => __('Beloppet är större än det som återstår, :remaining.', ['remaining' => Money::ofOre(abs($invoice->remaining()->ore))->format()])]);
             }
 
             $account = Account::query()->where('number', $bankAccount)->first()
@@ -66,7 +69,9 @@ class PaySupplierInvoice
                 $user,
                 $company,
                 $paidOn,
-                __('Betalning :title, :supplier', ['title' => $invoice->title(), 'supplier' => $invoice->supplierName()]),
+                $invoice->isCredit()
+                    ? __('Återbetalning :title, :supplier', ['title' => $invoice->title(), 'supplier' => $invoice->supplierName()])
+                    : __('Betalning :title, :supplier', ['title' => $invoice->title(), 'supplier' => $invoice->supplierName()]),
                 'E',
                 SupplierInvoiceBooking::payment($invoice, $invoice->rows, $amount->ore, $bankAccount, $cashMethod),
                 VoucherSource::Payment,
@@ -89,7 +94,7 @@ class PaySupplierInvoice
             $paid = $invoice->paid_ore->plus($amount);
             $invoice->forceFill([
                 'paid_ore' => $paid->ore,
-                'status' => $paid->ore >= $invoice->total_ore->ore ? SupplierInvoiceStatus::Paid : SupplierInvoiceStatus::Approved,
+                'status' => abs($paid->ore) >= abs($invoice->total_ore->ore) ? SupplierInvoiceStatus::Paid : SupplierInvoiceStatus::Approved,
             ])->save();
 
             Audit::record('supplier_invoice.paid', $invoice, [
