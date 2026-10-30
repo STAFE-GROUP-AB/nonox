@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Voucher;
 use App\Modules\Ai\Agents\ExpenseReceiptAgent;
 use App\Modules\Ai\AiModule;
+use App\Modules\Ai\Support\HeicImage;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\ExpenseClaims;
 use App\Modules\Payroll\Livewire\AbsenceRequestList;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Laravel\Ai\Files\Base64Image;
+use Laravel\Ai\Prompts\AgentPrompt;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Payroll;
@@ -42,10 +45,10 @@ function receiptAiKey(): void
 /** @return array<string, mixed> what the agent reads from the lemon receipt */
 function lemonReading(array $overrides = []): array
 {
-    return ['is_receipt' => true, 'date' => '2026-04-08', 'description' => 'Citroner från ICA till baren', 'total' => 250.0, 'vat_total' => 26.79, 'account' => 4010, 'notes' => '', ...$overrides];
+    return ['document_kind' => 'RECEIPT', 'date' => '2026-04-08', 'description' => 'Citroner från ICA till baren', 'total' => 250.0, 'vat_total' => 26.79, 'account' => 4010, 'notes' => '', ...$overrides];
 }
 
-function sendReceipt(): Expense
+function sendReceipt(?UploadedFile $receipt = null): Expense
 {
     test()->actingAs(test()->worker);
 
@@ -53,7 +56,7 @@ function sendReceipt(): Expense
         ->call('start')
         ->assertDontSee('Vad köpte du?')
         ->assertSee('NONOX AI läser datum')
-        ->set('receipt', UploadedFile::fake()->image('kvitto.jpg', 400, 600))
+        ->set('receipt', $receipt ?? UploadedFile::fake()->image('kvitto.jpg', 400, 600))
         ->call('send')
         ->assertDispatched('toast');
 
@@ -125,15 +128,11 @@ it('leaves an unreadable receipt for the approver to fill in, and never approves
 });
 
 it('reads a receipt again on request and drops what cannot be trusted', function () {
-    receiptAiKey();
-    ExpenseReceiptAgent::fake([
-        lemonReading(['is_receipt' => false, 'notes' => 'Bilden är suddig.']),
-        lemonReading(['account' => 9999, 'date' => '2027-01-01', 'vat_total' => 300.0]),
-    ]);
-
     $expense = sendReceipt();
-    expect($expense->ai_status)->toBe('FAILED')
-        ->and($expense->ai_notes)->toBe('Filen ser inte ut som ett kvitto. Bilden är suddig.');
+    expect($expense->ai_status)->toBe('FAILED');
+
+    receiptAiKey();
+    ExpenseReceiptAgent::fake([lemonReading(['account' => 9999, 'date' => '2027-01-01', 'vat_total' => 300.0])]);
 
     $this->actingAs($this->owner);
     Livewire::test(AbsenceRequestList::class)
@@ -148,6 +147,64 @@ it('reads a receipt again on request and drops what cannot be trusted', function
         ->and($expense->vat_ore->ore)->toBe(0)
         ->and($expense->ai_notes)->toContain('Datumet gick inte att läsa')
         ->and($expense->ai_notes)->toContain('Momsen gick inte att läsa');
+});
+
+it('refuses an unpaid invoice, a non-purchase and an unreadable photo the moment they are sent', function (string $kind, string $message) {
+    receiptAiKey();
+    ExpenseReceiptAgent::fake([lemonReading(['document_kind' => $kind, 'notes' => 'Förfaller 2026-05-01.'])]);
+    $this->actingAs($this->worker);
+
+    Livewire::test(MyExpenses::class)
+        ->call('start')
+        ->set('receipt', UploadedFile::fake()->createWithContent('faktura.pdf', "%PDF-1.4\n1 0 obj << /Type /Page >> endobj\n%%EOF"))
+        ->call('send')
+        ->assertHasErrors('receipt')
+        ->assertSee($message)
+        ->assertNotDispatched('toast');
+
+    expect(Expense::query()->count())->toBe(0)
+        ->and(Storage::disk('local')->allFiles('expense-receipts'))->toBe([])
+        ->and(AuditLog::query()->where('action', 'payroll.expense_refused_by_ai')->exists())->toBeTrue();
+})->with([
+    'unpaid invoice' => ['UNPAID_INVOICE', 'Det här är en faktura som inte är betald'],
+    'not a purchase' => ['NOT_A_PURCHASE', 'Filen visar inget köp'],
+    'unreadable' => ['UNREADABLE', 'Kvittot gick inte att läsa'],
+]);
+
+it('turns an iPhone HEIC photo into JPEG for the analysis and keeps the original as the receipt', function () {
+    if (! HeicImage::supported()) {
+        $this->markTestSkipped('Imagick without HEIC support on this machine.');
+    }
+
+    receiptAiKey();
+    ExpenseReceiptAgent::fake([lemonReading()]);
+    $heic = (string) file_get_contents(base_path('tests/Fixtures/receipts/kvitto.heic'));
+
+    $expense = sendReceipt(UploadedFile::fake()->createWithContent('IMG_0042.HEIC', $heic));
+
+    expect($expense->ai_status)->toBe('DONE')
+        ->and($expense->amount_ore->ore)->toBe(25_000)
+        ->and($expense->receipt_mime)->toBe('image/heic')
+        ->and(Storage::disk('local')->get((string) $expense->receipt_path))->toBe($heic);
+    ExpenseReceiptAgent::assertPrompted(function (AgentPrompt $prompt): bool {
+        $image = $prompt->attachments->first();
+
+        return $image instanceof Base64Image
+            && $image->mimeType() === 'image/jpeg'
+            && str_starts_with((string) base64_decode($image->base64), "\xFF\xD8\xFF");
+    });
+});
+
+it('accepts an invoice the employee has already paid as an outlay', function () {
+    receiptAiKey();
+    ExpenseReceiptAgent::fake([lemonReading(['document_kind' => 'PAID_INVOICE', 'description' => 'Abonnemang på bokningssystem', 'total' => 1695.0, 'vat_total' => 339.0, 'notes' => 'Betald med kort.'])]);
+
+    $expense = sendReceipt(UploadedFile::fake()->createWithContent('faktura.pdf', "%PDF-1.4\n1 0 obj << /Type /Page >> endobj\n%%EOF"));
+
+    expect($expense->ai_status)->toBe('DONE')
+        ->and($expense->amount_ore->ore)->toBe(169_500)
+        ->and($expense->vat_ore->ore)->toBe(33_900)
+        ->and($expense->ai_notes)->toBe('Betald med kort.');
 });
 
 it('asks for the details as before when NONOX AI is off', function () {

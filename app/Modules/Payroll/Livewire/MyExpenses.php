@@ -50,12 +50,17 @@ class MyExpenses extends Component
             return;
         }
 
+        // NONOX AI reads the receipt while the employee waits; the provider may take up to two minutes.
+        set_time_limit(150);
+
         $expense = $claims->submit($this->user(), $this->company(), $this->expense, $this->receipt);
 
         $this->reset('open', 'receipt');
-        $this->toast($expense->ai_status === null
-            ? __('Utlägget är skickat. Det betalas tillbaka med lönen när det är godkänt.')
-            : __('Kvittot är skickat. NONOX AI läser datum, belopp och moms, och utlägget betalas tillbaka med lönen när det är godkänt.'));
+        $this->toast(match ($expense->ai_status) {
+            ExpenseClaims::AI_DONE => __('Utlägget är skickat: :what, :amount. Det betalas tillbaka med lönen när det är godkänt.', ['what' => (string) $expense->description, 'amount' => $expense->amount_ore->format()]),
+            null => __('Utlägget är skickat. Det betalas tillbaka med lönen när det är godkänt.'),
+            default => __('Kvittot är skickat. Den som godkänner fyller i uppgifterna, och utlägget betalas tillbaka med lönen när det är godkänt.'),
+        });
     }
 
     public function render(): View

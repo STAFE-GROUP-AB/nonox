@@ -24,6 +24,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -104,9 +105,12 @@ class ExpenseClaims
     }
 
     /**
-     * Stores an outlay sent with only the receipt and has NONOX AI read it.
-     * Until then the date is the day it was sent and the amount zero; an
-     * outlay without an amount cannot be approved.
+     * An outlay sent with only the receipt. NONOX AI reads the file while the
+     * employee waits, and a document that is no outlay (an invoice still to
+     * be paid, something that is no purchase, a photo that cannot be read)
+     * is refused at once with the reason, so nothing reaches the approver.
+     * When the AI itself cannot be reached the outlay is stored anyway, and
+     * the person who approves fills in the details.
      */
     private function submitReceipt(User $user, Company $company, UploadedFile $receipt): Expense
     {
@@ -117,6 +121,14 @@ class ExpenseClaims
             'receipt.mimes' => __('Kvittot ska vara en bild eller en PDF.'),
         ])->validate();
 
+        $reading = $this->read($user, $company, (string) $receipt->getRealPath(), (string) $receipt->getMimeType());
+
+        if (is_array($reading) && ($refusal = self::refusal($reading)) !== null) {
+            Audit::record('payroll.expense_refused_by_ai', null, ['kind' => $reading['document_kind'] ?? null], $company, $user);
+
+            throw ValidationException::withMessages(['receipt' => $refusal]);
+        }
+
         $expense = $this->store($user, $company, $receipt, [
             'date' => CarbonImmutable::today()->toDateString(),
             'description' => null,
@@ -125,9 +137,45 @@ class ExpenseClaims
             'ai_status' => self::AI_PENDING,
         ]);
 
-        AnalyzeExpenseReceipt::dispatch($company->id, $expense->id);
+        return CurrentCompany::run($company, fn (): Expense => is_array($reading)
+            ? $this->applyReading($company, $expense, $reading)
+            : $this->readingFailed($expense, $reading));
+    }
 
-        return $expense->refresh();
+    /**
+     * What NONOX AI read from the file, or why it could not read it.
+     *
+     * @return array<string, mixed>|string
+     */
+    private function read(User $user, Company $company, string $path, string $mime): array|string
+    {
+        try {
+            return $this->analyze->expenseReceipt($user, $company, $path, $mime);
+        } catch (AiAnalysisException $exception) {
+            return $exception->getMessage();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return __('NONOX AI kunde inte läsa kvittot. Fyll i uppgifterna själv eller låt NONOX AI läsa det igen.');
+        }
+    }
+
+    /**
+     * Why the document is no outlay, said to the employee; null when it is.
+     *
+     * @param  array<string, mixed>  $reading
+     */
+    private static function refusal(array $reading): ?string
+    {
+        $notes = trim((string) ($reading['notes'] ?? ''));
+        $reason = match ($reading['document_kind'] ?? null) {
+            'UNPAID_INVOICE' => __('Det här är en faktura som inte är betald, inte ett utlägg. Lämna den till den som sköter företagets fakturor. Har du betalat den själv, skicka kvittot eller betalningsbekräftelsen i stället.'),
+            'NOT_A_PURCHASE' => __('Filen visar inget köp. Skicka kvittot för det du har betalat.'),
+            'UNREADABLE' => __('Kvittot gick inte att läsa. Ta en ny bild där hela kvittot syns skarpt.'),
+            default => null,
+        };
+
+        return $reason === null ? null : trim("{$reason} {$notes}");
     }
 
     /**
@@ -180,17 +228,17 @@ class ExpenseClaims
                 return $this->readingFailed($expense, __('Kvittot finns inte kvar att läsa. Fyll i uppgifterna själv.'));
             }
 
-            try {
-                $answer = $this->analyze->expenseReceipt($user, $company, $disk->path($expense->receipt_path), (string) $expense->receipt_mime);
-            } catch (AiAnalysisException $exception) {
-                return $this->readingFailed($expense, $exception->getMessage());
-            } catch (Throwable $exception) {
-                report($exception);
+            $reading = $this->read($user, $company, $disk->path($expense->receipt_path), (string) $expense->receipt_mime);
 
-                return $this->readingFailed($expense, __('NONOX AI kunde inte läsa kvittot. Fyll i uppgifterna själv eller låt NONOX AI läsa det igen.'));
+            if (is_string($reading)) {
+                return $this->readingFailed($expense, $reading);
             }
 
-            return $this->applyReading($company, $expense, $answer);
+            $refusal = self::refusal($reading);
+
+            return $refusal === null
+                ? $this->applyReading($company, $expense, $reading)
+                : $this->readingFailed($expense, $refusal);
         });
     }
 
@@ -201,12 +249,9 @@ class ExpenseClaims
     {
         $notes = array_filter([trim((string) ($answer['notes'] ?? ''))]);
 
-        if (($answer['is_receipt'] ?? true) === false) {
-            return $this->readingFailed($expense, implode(' ', [__('Filen ser inte ut som ett kvitto.'), ...$notes]));
-        }
-
         $total = (int) round(((float) ($answer['total'] ?? 0)) * 100);
         $vat = (int) round(((float) ($answer['vat_total'] ?? 0)) * 100);
+
         $date = (string) ($answer['date'] ?? '');
         $readDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1 && CarbonImmutable::parse($date)->lessThanOrEqualTo(CarbonImmutable::today()) ? $date : null;
 
@@ -235,6 +280,7 @@ class ExpenseClaims
 
     private function readingFailed(Expense $expense, string $reason): Expense
     {
+        Log::warning('NONOX AI could not read an outlay receipt.', ['company_id' => $expense->company_id, 'expense_id' => $expense->id, 'mime' => $expense->receipt_mime, 'reason' => $reason]);
         $expense->forceFill(['ai_status' => self::AI_FAILED, 'ai_notes' => $reason])->save();
 
         return $expense;

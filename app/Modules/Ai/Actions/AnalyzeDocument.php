@@ -14,6 +14,7 @@ use App\Modules\Ai\Agents\VoucherAgent;
 use App\Modules\Ai\AiModule;
 use App\Modules\Ai\Support\AiAnalysisException;
 use App\Modules\Ai\Support\AiProvider;
+use App\Modules\Ai\Support\HeicImage;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
@@ -127,9 +128,12 @@ class AnalyzeDocument
 
         [$provider, $choice, $custom, $key] = self::providerFor($company);
 
-        $file = $mime === 'application/pdf'
-            ? Document::fromPath($path)
-            : (in_array($mime, self::IMAGE_TYPES, true) ? Image::fromPath($path, $mime) : throw new AiAnalysisException(__('Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG eller WebP.')));
+        $file = match (true) {
+            $mime === 'application/pdf' => Document::fromPath($path),
+            in_array($mime, self::IMAGE_TYPES, true) => Image::fromPath($path, $mime),
+            HeicImage::is($mime) => Image::fromBase64(HeicImage::toJpegBase64($path), 'image/jpeg'),
+            default => throw new AiAnalysisException(__('Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG, WebP eller HEIC.')),
+        };
 
         $built = Ai::build(['name' => "nonox_ai_company_{$company->id}", 'driver' => $provider->driver(), 'key' => $key]);
         $model = $built instanceof TextProvider ? self::modelFor($built, $choice, $custom) : $custom;

@@ -28,7 +28,7 @@
                     </x-ui.field>
                     <div class="flex items-center gap-4">
                         <x-button wire:loading.attr="disabled" wire:target="send,receipt">{{ $aiReads ? __('Skicka kvittot') : __('Skicka utlägget') }}</x-button>
-                        <span wire:loading wire:target="send" class="text-sm text-gray-600">{{ __('Skickar…') }}</span>
+                        <span wire:loading wire:target="send" class="text-sm text-gray-600">{{ $aiReads ? __('NONOX AI kontrollerar kvittot…') : __('Skickar…') }}</span>
                         <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('open', false)">{{ __('Avbryt') }}</button>
                     </div>
                 </form>

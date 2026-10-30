@@ -336,13 +336,21 @@ lönebeskeden låsta i databasen.
   nästa lönekörning betalar tillbaka beloppet via 2890. Ett utlägg knyts till
   den körning som betalar det och betalas aldrig två gånger.
 - Utlägg med NONOX AI påslaget: den anställde skickar bara kvittot. NONOX AI
-  läser datum, vad som köptes, belopp och moms och föreslår ett kostnadskonto
-  (4000–7999) ur kontoplanen. Förslaget lagras på utlägget, som väntar på
-  godkännande; ingenting bokförs av AI:n. Den som godkänner ser kvittot och
+  läser filen direkt när den skickas och avgör först om den är ett utlägg: ett
+  kvitto eller en faktura märkt som betald. En obetald faktura, något som inte
+  är ett köp eller en oläslig bild nekas på en gång med skälet till den
+  anställde, och ingenting sparas. Är det ett utlägg läser AI:n datum, vad som
+  köptes, belopp och moms och föreslår ett kostnadskonto (4000–7999) ur
+  kontoplanen. Förslaget lagras på utlägget, som väntar på godkännande;
+  ingenting bokförs av AI:n. Går AI-leverantören inte att nå sparas utlägget
+  ändå och den som godkänner fyller i uppgifterna. Den som godkänner ser kvittot och
   AI:ns anteckningar, kan rätta datum, text, belopp, moms och konto, eller låta
   AI:n läsa kvittot igen. Kunde AI:n inte läsa beloppet fyller den som godkänner
   i det; ett utlägg utan belopp kan inte godkännas. Vilka fält som rättades vid
-  godkännandet står i behandlingshistoriken.
+  godkännandet står i behandlingshistoriken. En HEIC-bild
+  från iPhone görs om till JPEG enbart för analysen (Imagick med libheif krävs
+  på servern); originalet sparas oförändrat som underlag. En läsning som
+  misslyckas skrivs med skälet i applikationsloggen.
 - Semesterlöneskuld: kvarvarande betalda dagar plus dagarna som tjänas in i
   innevarande intjänandeår, värderade under sammalöneregeln till företagets
   dagsvärde (löneinställning, % av månadslönen) plus semestertillägg, och under
@@ -458,7 +466,7 @@ lönebeskeden låsta i databasen.
   eller en hel verifikation. Förslaget sparas och bokförs aldrig av AI:n; det
   gör en person efter kontroll, på samma sätt som när uppgifterna skrivs in för
   hand. Därför ändrar modulen ingenting i verifikationsflödet.
-- Ett utlägg från Min sida läses av NONOX AI i bakgrunden när modulen är
+- Ett utlägg från Min sida läses av NONOX AI när det skickas, när modulen är
   påslagen, utan att den anställde själv behöver behörigheten att använda AI.
   Läsningen är ett förslag som lagras på utlägget tills någon med ansvar för
   lönerna godkänner eller avslår det (avsnitt 5b).
