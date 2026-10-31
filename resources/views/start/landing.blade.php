@@ -79,6 +79,37 @@ input[type=range]{accent-color:#FF5A36}
 .lp37:hover{color:#FF8A6D !important}
 .lp38:hover{color:#FF8A6D !important}
 .lp39:hover{color:#FF8A6D !important}
+.mm-nav{display:flex;align-items:center;gap:4px;margin-left:28px}
+.mm-trigger{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:500 14.5px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;transition:background .15s,color .15s}
+.mm-trigger:hover,.mm-trigger[aria-expanded=true]{color:var(--ink);background:var(--soft)}
+.mm-chevron{transition:transform .2s ease}
+[aria-expanded=true] > .mm-chevron,details[open] > summary > .mm-chevron{transform:rotate(180deg)}
+.mm-login{display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:999px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:600}
+.mm-login:hover{background:var(--soft);color:var(--ink)}
+.mm-panel{position:absolute;left:0;right:0;top:100%;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 30px 60px -30px rgba(21,23,28,.35);animation:mm-in .18s ease}
+@keyframes mm-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mm-panel{animation:none}}
+.mm-inner{max-width:1240px;margin:0 auto;padding:22px clamp(20px,4vw,40px) 26px;display:grid;grid-template-columns:1fr 300px;gap:28px}
+.mm-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
+.mm-item{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start;padding:14px;border-radius:16px;text-decoration:none;color:var(--ink);transition:background .15s}
+.mm-item:hover,.mm-item:focus-visible{background:var(--bg);color:var(--ink)}
+.mm-icon{width:40px;height:40px;border-radius:12px;background:var(--accl);display:grid;place-items:center}
+.mm-title{display:block;font-weight:700;font-size:15px;letter-spacing:-0.01em}
+.mm-text{display:block;margin-top:3px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.mm-promo{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:24px;border-radius:20px;background:#15171C;color:#F7F5F0;text-decoration:none}
+.mm-promo:hover{color:#F7F5F0}
+.mm-eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#FF8A6D}
+.mm-promo-title{font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:22px;line-height:1.15;letter-spacing:-0.025em;max-width:220px}
+.mm-promo-cta{margin-top:auto;font-size:14px;font-weight:700}
+.mm-promo:hover .mm-promo-cta{color:#FF8A6D}
+.mm-promo-ring{position:absolute;right:-34px;bottom:-34px;width:120px;height:120px;opacity:.9}
+.mm-mobile-group{border-bottom:1px solid var(--line)}
+.mm-mobile-group summary,.mm-mobile-link{display:flex;align-items:center;justify-content:space-between;padding:16px 0;font-size:18px;font-weight:600;cursor:pointer;text-decoration:none}
+.mm-mobile-link{border-bottom:1px solid var(--line)}
+.mm-mobile-group ul{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:2px}
+.mm-mobile-group li a{display:block;padding:10px 12px;border-radius:12px;text-decoration:none}
+.mm-mobile-group li a:hover{background:var(--soft);color:var(--ink)}
+@media (max-width:959px){.lp-desktop-block{display:none!important}}
 [hidden]{display:none!important}
 .lp-mobile{display:none}
 .lp-desktop{display:contents}
@@ -91,47 +122,96 @@ input[type=range]{accent-color:#FF5A36}
 
 <a class="lp0" href="#main" style="position:absolute;left:-9999px;top:8px;background:#FF5A36;color:#15171C;padding:10px 14px;border-radius:8px;z-index:100">Hoppa till innehållet</a>
 
-<header style="position:sticky;top:0;z-index:50;background:var(--hdr);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)">
+@php
+    $menus = [
+        'produkt' => [
+            'label' => 'Produkt',
+            'items' => [
+                ['href' => '#funktioner', 'title' => 'Funktioner', 'text' => 'Bokföring, fakturor, moms, bokslut och lön i ett system.', 'icon' => 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z'],
+                ['href' => '#byraer', 'title' => 'För redovisningsbyråer', 'text' => 'Alla klienter under en inloggning, månad för månad.', 'icon' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
+                ['href' => '#byt-system', 'title' => 'Byt system', 'text' => 'Flytta hit med SIE4 och importverktyget utan att tappa något.', 'icon' => 'M4 7h13l-3-3M20 17H7l3 3'],
+                ['href' => '#oppen-kallkod', 'title' => 'Öppen källkod', 'text' => 'AGPL-3.0. Läs koden och se exakt hur siffrorna hanteras.', 'icon' => 'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16'],
+                ['href' => '#fragor', 'title' => 'Vanliga frågor', 'text' => 'Ansvar, lagkrav, data och vad det kostar.', 'icon' => 'M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z'],
+            ],
+            'promo' => ['eyebrow' => 'Din data. Alltid.', 'title' => 'Bokförda verifikationer kan aldrig ändras i efterhand.', 'link' => $ph['github'], 'cta' => 'Se koden på GitHub'],
+        ],
+        'kom-igang' => [
+            'label' => 'Kom igång',
+            'items' => [
+                ['href' => '#kor-sjalv', 'title' => 'Webbhotell', 'text' => 'Ladda upp och följ installationsguiden i webbläsaren.', 'icon' => 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z'],
+                ['href' => '#kor-sjalv', 'title' => 'Egen server', 'text' => 'Kör med Docker hos valfri molnleverantör.', 'icon' => 'M3 4h18v7H3zM3 13h18v7H3zM7 7.5h.01M7 16.5h.01'],
+                ['href' => '#kor-sjalv', 'title' => 'Lokalt på datorn', 'text' => 'Som ett program på Mac eller Windows.', 'icon' => 'M4 5h16v11H4zM2 19h20M10 16v3M14 16v3'],
+                ['href' => '#priser', 'title' => 'Vi sköter driften', 'text' => 'Servrar i Sverige/EU, backup och uppdateringar. Från 99 kr/mån.', 'icon' => 'M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z'],
+            ],
+            'promo' => ['eyebrow' => 'Byt system på en eftermiddag', 'title' => 'Flytta hit utan att tappa något.', 'link' => $ph['flytt'], 'cta' => 'Läs flyttguiden'],
+        ],
+    ];
+    $chevron = '<svg class="mm-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>';
+@endphp
+<header id="lp-header" style="position:sticky;top:0;z-index:50;background:var(--hdr);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)">
   <div style="max-width:1240px;margin:0 auto;padding:0 clamp(20px,4vw,40px);height:68px;display:flex;align-items:center;gap:24px">
     <a href="#" aria-label="NONOX by Stafe, till startsidan" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)">
       <svg height="26" viewBox="150 195 2295 505" role="img" aria-label="NONOX" style="display:block;width:auto;height:26px"><path data-ring="mark" fill="#FF5A36" d="M653.28 428 A250 250 0 1 0 653.28 466 L569.92 466 A167 167 0 1 1 569.92 428 Z"></path><g fill="currentColor"><path d="M755 292H833L961 463V292H1040V602H961L833 431V602H755Z"></path><path d="M1399.89 441 A163 163 0 1 0 1399.89 453 L1334.82 453 A98 98 0 1 1 1334.82 441 Z"></path><path d="M1442 292H1520L1648 463V292H1727V602H1648L1520 431V602H1442Z"></path><path d="M2086.89 441 A163 163 0 1 0 2086.89 453 L2021.82 453 A98 98 0 1 1 2021.82 441 Z"></path><path d="M2129 292H2222L2284 383L2346 292H2439L2332 447L2439 602H2346L2284 511L2222 602H2129L2236 447Z"></path></g></svg>
-      <span style="display:flex;align-items:baseline;gap:7px">
-        <span style="font-size:13px;font-weight:400;color:var(--muted)">by Stafe</span>
-      </span>
+      <span style="font-size:13px;font-weight:400;color:var(--muted)">by Stafe</span>
     </a>
     <div class="lp-desktop">
-      <nav aria-label="Huvudmeny" style="display:flex;gap:26px;margin-left:auto;font-size:14.5px;font-weight:500">
-        <a class="lp1" href="#funktioner" style="text-decoration:none;color:var(--muted)">Funktioner</a>
-        <a class="lp2" href="#kor-sjalv" style="text-decoration:none;color:var(--muted)">Kör själv</a>
-        <a class="lp3" href="#priser" style="text-decoration:none;color:var(--muted)">Priser</a>
-        <a class="lp4" href="#byraer" style="text-decoration:none;color:var(--muted)">Byråer</a>
-        <a class="lp5" href="#byt-system" style="text-decoration:none;color:var(--muted)">Byt system</a>
-        <a class="lp6" href="#oppen-kallkod" style="text-decoration:none;color:var(--muted)">Öppen källkod</a>
+      <nav aria-label="Huvudmeny" class="mm-nav">
+        @foreach($menus as $key => $menu)
+          <button type="button" class="mm-trigger" data-mm="{{ $key }}" aria-expanded="false" aria-controls="mm-{{ $key }}">{{ $menu['label'] }}{!! $chevron !!}</button>
+        @endforeach
+        <a href="#priser" class="mm-trigger">Priser</a>
       </nav>
-      <div style="display:flex;gap:10px;margin-left:8px">
-        <a href="{{ route('login') }}" style="display:inline-flex;align-items:center;height:40px;padding:0 16px;border-radius:999px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:600">Logga in</a>
-        <a class="lp7" href="{{ $ph['github'] }}" style="display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;font-size:14px;font-weight:600"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.39-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"></path></svg>GitHub</a>
-        <a class="lp8" href="#kor-sjalv" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ladda ner</a>
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
+        <a href="{{ route('login') }}" class="mm-login">Logga in</a>
+        <a class="lp8" href="#kor-sjalv" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ladda ner gratis</a>
       </div>
     </div>
-    <div class="lp-mobile">
-      <button type="button" aria-expanded="false" data-lp-menu aria-controls="mobilmeny" aria-label="Öppna meny" style="margin-left:auto;width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer">
+    <div class="lp-mobile" style="margin-left:auto">
+      <button type="button" aria-expanded="false" data-lp-menu aria-controls="mobilmeny" aria-label="Öppna meny" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
       </button>
     </div>
   </div>
+
+  @foreach($menus as $key => $menu)
+    <div id="mm-{{ $key }}" class="mm-panel lp-desktop-block" data-mm-panel="{{ $key }}" hidden>
+      <div class="mm-inner">
+        <ul class="mm-grid">
+          @foreach($menu['items'] as $item)
+            <li>
+              <a href="{{ $item['href'] }}" class="mm-item" data-mm-close>
+                <span class="mm-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $item['icon'] }}"></path></svg></span>
+                <span><span class="mm-title">{{ $item['title'] }}</span><span class="mm-text">{{ $item['text'] }}</span></span>
+              </a>
+            </li>
+          @endforeach
+        </ul>
+        <a href="{{ $menu['promo']['link'] }}" class="mm-promo" data-mm-close>
+          <span class="mm-eyebrow">{{ $menu['promo']['eyebrow'] }}</span>
+          <span class="mm-promo-title">{{ $menu['promo']['title'] }}</span>
+          <span class="mm-promo-cta">{{ $menu['promo']['cta'] }} →</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true" class="mm-promo-ring"><path fill="#FF5A36" d="M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z"></path></svg>
+        </a>
+      </div>
+    </div>
+  @endforeach
+
   <div id="lp-mobilmeny" class="lp-mobile" hidden>
-    <nav id="mobilmeny" aria-label="Huvudmeny" style="border-top:1px solid var(--line);padding:12px clamp(20px,4vw,40px) 24px;display:flex;flex-direction:column;background:var(--bg)">
-      <a href="#funktioner" data-lp-close style="padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:18px;font-weight:600">Funktioner</a>
-      <a href="#kor-sjalv" data-lp-close style="padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:18px;font-weight:600">Kör själv</a>
-      <a href="#priser" data-lp-close style="padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:18px;font-weight:600">Priser</a>
-      <a href="#byraer" data-lp-close style="padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:18px;font-weight:600">Byråer</a>
-      <a href="#byt-system" data-lp-close style="padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:18px;font-weight:600">Byt system</a>
-      <a href="#oppen-kallkod" data-lp-close style="padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:18px;font-weight:600">Öppen källkod</a>
-      <a href="{{ route('login') }}" style="padding:14px 0;border-bottom:1px solid var(--line);text-decoration:none;font-size:18px;font-weight:600">Logga in</a>
+    <nav id="mobilmeny" aria-label="Huvudmeny" style="border-top:1px solid var(--line);padding:8px clamp(20px,4vw,40px) 24px;display:flex;flex-direction:column;background:var(--bg);max-height:calc(100vh - 68px);overflow-y:auto">
+      @foreach($menus as $key => $menu)
+        <details class="mm-mobile-group">
+          <summary>{{ $menu['label'] }}{!! $chevron !!}</summary>
+          <ul>
+            @foreach($menu['items'] as $item)
+              <li><a href="{{ $item['href'] }}" data-lp-close><span class="mm-title">{{ $item['title'] }}</span><span class="mm-text">{{ $item['text'] }}</span></a></li>
+            @endforeach
+          </ul>
+        </details>
+      @endforeach
+      <a href="#priser" data-lp-close class="mm-mobile-link">Priser</a>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
-        <a href="{{ $ph['github'] }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">GitHub</a>
-        <a href="#kor-sjalv" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ladda ner</a>
+        <a href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Logga in</a>
+        <a href="#kor-sjalv" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ladda ner gratis</a>
       </div>
     </nav>
   </div>
@@ -611,6 +691,39 @@ bokslut    lon          rotrut        sie4
     };
     menuButton?.addEventListener('click', () => setMenu(menu.hidden));
     document.querySelectorAll('[data-lp-close]').forEach((link) => link.addEventListener('click', () => setMenu(false)));
+
+    // Mega menu: opens on click or hover, closes on Esc, outside click, leaving the header or choosing a link.
+    const header = document.getElementById('lp-header');
+    const triggers = [...document.querySelectorAll('[data-mm]')];
+    let closeTimer;
+    const openMenu = (key) => {
+        clearTimeout(closeTimer);
+        triggers.forEach((trigger) => {
+            const open = trigger.dataset.mm === key;
+            trigger.setAttribute('aria-expanded', String(open));
+            document.getElementById('mm-' + trigger.dataset.mm).hidden = !open;
+        });
+    };
+    const closeMenus = () => openMenu(null);
+    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    triggers.forEach((trigger) => {
+        trigger.addEventListener('click', () => trigger.getAttribute('aria-expanded') === 'true' ? closeMenus() : openMenu(trigger.dataset.mm));
+        if (canHover) {
+            trigger.addEventListener('mouseenter', () => { closeTimer = setTimeout(() => openMenu(trigger.dataset.mm), 80); });
+            trigger.addEventListener('mouseleave', () => clearTimeout(closeTimer));
+        }
+    });
+    if (canHover) {
+        header.addEventListener('mouseleave', () => { closeTimer = setTimeout(closeMenus, 180); });
+        header.addEventListener('mouseenter', () => clearTimeout(closeTimer));
+    }
+    document.querySelectorAll('[data-mm-close]').forEach((link) => link.addEventListener('click', closeMenus));
+    document.addEventListener('click', (event) => { if (!header.contains(event.target)) { closeMenus(); } });
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape') { return; }
+        const open = triggers.find((trigger) => trigger.getAttribute('aria-expanded') === 'true');
+        if (open) { closeMenus(); open.focus(); }
+    });
 
     document.querySelectorAll('[data-lp-copy]').forEach((button) => button.addEventListener('click', () => {
         const label = button.querySelector('[data-lp-copy-label]');
