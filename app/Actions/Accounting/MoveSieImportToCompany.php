@@ -8,10 +8,10 @@ use App\Domain\Company\OrganisationNumber;
 use App\Models\Company;
 use App\Models\SieImport;
 use App\Models\User;
+use App\Support\Files\PrivateFile;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * A SIE file uploaded in the wrong company: the user switches to the
@@ -53,12 +53,6 @@ class MoveSieImportToCompany
 
         $user->switchCompany($target);
 
-        return ($this->analyseSieFile)($user, $target, new UploadedFile(
-            Storage::disk(ImportSie::DISK)->path($import->file_path),
-            $import->original_name,
-            'text/plain',
-            null,
-            true,
-        ));
+        return PrivateFile::withLocalCopy(ImportSie::DISK, $import->file_path, fn (string $path): SieImport => ($this->analyseSieFile)($user, $target, new UploadedFile($path, $import->original_name, 'text/plain', null, true)));
     }
 }

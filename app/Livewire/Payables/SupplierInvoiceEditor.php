@@ -21,6 +21,7 @@ use App\Models\SupplierInvoiceRow;
 use App\Models\User;
 use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Support\AiAnalysisException;
+use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
 use App\Support\Toast;
 use Brick\Math\BigDecimal;
@@ -28,7 +29,6 @@ use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -192,7 +192,7 @@ class SupplierInvoiceEditor extends Component
         $invoice = $this->invoiceId === null ? null : SupplierInvoice::query()->findOrFail($this->invoiceId);
         [$path, $mime] = match (true) {
             $this->file !== null => [(string) $this->file->getRealPath(), (string) $this->file->getMimeType()],
-            $invoice instanceof SupplierInvoice && $invoice->file_path !== null => [Storage::disk(AttachToVoucher::DISK)->path($invoice->file_path), (string) $invoice->file_mime],
+            $invoice instanceof SupplierInvoice && $invoice->file_path !== null => [PrivateFile::temporaryCopy(AttachToVoucher::DISK, $invoice->file_path), (string) $invoice->file_mime],
             default => [null, null],
         };
 

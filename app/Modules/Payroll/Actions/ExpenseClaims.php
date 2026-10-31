@@ -18,6 +18,7 @@ use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
+use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -228,7 +229,7 @@ class ExpenseClaims
                 return $this->readingFailed($expense, __('Kvittot finns inte kvar att läsa. Fyll i uppgifterna själv.'));
             }
 
-            $reading = $this->read($user, $company, $disk->path($expense->receipt_path), (string) $expense->receipt_mime);
+            $reading = PrivateFile::withLocalCopy(AttachToVoucher::DISK, $expense->receipt_path, fn (string $path) => $this->read($user, $company, $path, (string) $expense->receipt_mime));
 
             if (is_string($reading)) {
                 return $this->readingFailed($expense, $reading);

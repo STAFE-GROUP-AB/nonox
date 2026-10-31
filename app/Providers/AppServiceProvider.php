@@ -7,14 +7,21 @@ namespace App\Providers;
 use App\Livewire\Company\MemberManager;
 use App\Livewire\Profile\ProfileInformationForm;
 use App\Support\Audit\AuditSubscriber;
+use App\Support\Files\EncryptedAdapter;
 use App\Support\Tenancy\CompanyContext;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\LivewireCompanyGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
+use League\Flysystem\Filesystem;
+use League\Flysystem\Local\LocalFilesystemAdapter;
+use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
+use League\Flysystem\Visibility;
 use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +43,13 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::preventLazyLoading(! $this->app->isProduction());
+
+        // Private files are encrypted at rest (config/filesystems.php).
+        Storage::extend('encrypted', function ($app, array $config): FilesystemAdapter {
+            $adapter = new EncryptedAdapter(new LocalFilesystemAdapter((string) $config['root'], PortableVisibilityConverter::fromArray([], Visibility::PRIVATE)), $app['encrypter']);
+
+            return new FilesystemAdapter(new Filesystem($adapter, $config), $adapter, $config);
+        });
 
         Event::listen([Login::class, Logout::class], fn () => CurrentCompany::forget());
         Event::subscribe(AuditSubscriber::class);

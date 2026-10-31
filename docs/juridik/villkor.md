@@ -40,6 +40,6 @@ Avtalet löper ett år i taget och förlängs automatiskt. Det kan sägas upp n�
 
 Vi kan ändra villkoren med 60 dagars varsel. Svensk lag gäller. Tvist avgörs av svensk allmän domstol.
 
-Kontakt: {epost}.
+Kontakt: {foretag}, {adress}, {epost}.
 
 <!-- TODO(legal-verify): texten är ett utkast och ska granskas av jurist innan den används mot betalande kunder. -->

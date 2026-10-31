@@ -51,7 +51,7 @@ Personnummer, bankuppgifter och andra känsliga uppgifter krypteras i databasen.
 
 ## 7. Kontakt
 
-{foretag}, {orgnr}. E-post: {epost}.
+{foretag}, {orgnr}, {adress}. E-post: {epost}.
 
 Vi uppdaterar policyn när tjänsten ändras. Den senaste versionen finns alltid på {webbplats}.
 

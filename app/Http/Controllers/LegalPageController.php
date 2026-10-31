@@ -55,11 +55,13 @@ class LegalPageController
         $company = (string) (config('app.landing.company_name') ?: 'Stafe Development AB');
         $orgnr = (string) config('app.landing.org_number');
         $email = (string) config('app.landing.privacy_email');
+        $address = (string) config('app.landing.company_address');
 
         return [
             '{foretag}' => $company,
             '{orgnr}' => $orgnr !== '' ? "org.nr {$orgnr}" : 'del av Stafe Group AB',
             '{epost}' => $email !== '' ? $email : 'kontaktuppgifterna på webbplatsen',
+            '{adress}' => $address !== '' ? $address : '',
             '{webbplats}' => url('/'),
             '{version}' => self::VERSION,
             '{datum}' => self::EFFECTIVE,

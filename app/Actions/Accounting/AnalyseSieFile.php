@@ -44,7 +44,8 @@ class AnalyseSieFile
         /** @var UploadedFile $file */
         $directory = "sie-import/{$company->id}";
         $path = Storage::disk(ImportSie::DISK)->putFileAs($directory, $file, Str::uuid()->toString().'.se');
-        $absolute = Storage::disk(ImportSie::DISK)->path((string) $path);
+        // The stored copy is encrypted; the uploaded file itself is read for the checksum and the analysis.
+        $absolute = (string) $file->getRealPath();
         $sha256 = (string) hash_file('sha256', $absolute);
 
         $plan = $this->analyser->analyse($company, $absolute, $sha256);

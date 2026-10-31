@@ -28,13 +28,13 @@ use App\Models\VoucherRow;
 use App\Models\VoucherRowHistory;
 use App\Models\VoucherSeries;
 use App\Support\Audit\Audit;
+use App\Support\Files\PrivateFile;
 use App\Support\Sie\SieReader;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Reads a confirmed SIE file into the bookkeeping (AGENTS.md §9.2), all or
@@ -80,10 +80,18 @@ class ImportSie
             throw new SieImportRefused([__('Du har inte längre behörighet att läsa in SIE-filer i företaget.')]);
         }
 
-        CurrentCompany::run($company, fn () => DB::transaction(function () use ($import, $company, $user): void {
+        // The stored file is encrypted; the parser reads a decrypted temporary copy, removed afterwards.
+        PrivateFile::withLocalCopy(self::DISK, $import->file_path, fn (string $path) => $this->import($import, $company, $user, $path));
+    }
+
+    /**
+     * @throws SieImportRefused
+     */
+    private function import(SieImport $import, Company $company, User $user, string $path): void
+    {
+        CurrentCompany::run($company, fn () => DB::transaction(function () use ($import, $company, $user, $path): void {
             Company::query()->whereKey($company->id)->lockForUpdate()->firstOrFail();
 
-            $path = Storage::disk(self::DISK)->path($import->file_path);
             $plan = $this->analyser->analyse($company, $path, $import->sha256, $import->id);
 
             if ($plan->blockers !== []) {

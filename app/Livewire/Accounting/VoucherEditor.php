@@ -23,13 +23,13 @@ use App\Models\VoucherRow;
 use App\Models\VoucherSeries;
 use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Support\AiAnalysisException;
+use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
 use App\Support\Toast;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use InvalidArgumentException;
@@ -190,7 +190,7 @@ class VoucherEditor extends Component
             : null;
         [$path, $mime] = match (true) {
             $upload instanceof TemporaryUploadedFile => [(string) $upload->getRealPath(), (string) $upload->getMimeType()],
-            $attachment instanceof VoucherAttachment => [Storage::disk(AttachToVoucher::DISK)->path($attachment->file_path), $attachment->mime],
+            $attachment instanceof VoucherAttachment => [PrivateFile::temporaryCopy(AttachToVoucher::DISK, $attachment->file_path), $attachment->mime],
             default => [null, null],
         };
 
