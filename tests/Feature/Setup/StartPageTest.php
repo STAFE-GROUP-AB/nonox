@@ -22,6 +22,7 @@ it('opens the first-run guide on a new local installation', function () {
 
 it('never offers the first-run guide outside a local installation', function (string $environment) {
     pretendEnvironment($environment);
+    config(['app.landing.enabled' => false]);
 
     $this->get('/')
         ->assertOk()
@@ -29,8 +30,18 @@ it('never offers the first-run guide outside a local installation', function (st
         ->assertDontSee('Steg 1 av 3');
 })->with(['production', 'staging', 'testing']);
 
+it('shows the landing page on a public installation before the first user', function () {
+    pretendEnvironment('production');
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Bokföring som ägs av')
+        ->assertDontSee('Systemet är inte färdiginstallerat');
+});
+
 it('shows the sign-in page once there is a user', function () {
     pretendEnvironment('local');
+    config(['app.landing.enabled' => false]);
     User::factory()->withCompany()->create();
 
     $this->get('/')

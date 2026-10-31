@@ -37,12 +37,13 @@ class StartController
             return view('start.setup');
         }
 
-        if (User::query()->doesntExist()) {
-            return view('start.not-set-up');
-        }
-
+        // A public installation shows its landing page from the start: signing in with a new address creates an account.
         if (config('app.landing.enabled')) {
             return view('start.landing', LandingPage::data());
+        }
+
+        if (User::query()->doesntExist()) {
+            return view('start.not-set-up');
         }
 
         return view('start.welcome');
