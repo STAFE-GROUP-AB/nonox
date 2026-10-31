@@ -90,9 +90,17 @@ class AnalyzeDocument
     }
 
     /** Whether an outlay sent with only the receipt is read by NONOX AI. */
+    /**
+     * Employees' receipts are sent to the AI provider only when the company
+     * has chosen it explicitly in the AI settings (GDPR: the employees' data
+     * leaves NONOX, possibly outside the EU), not merely by turning AI on.
+     */
     public static function readsReceiptsFor(Company $company): bool
     {
-        return app(ModuleManager::class)->isEnabled(AiModule::KEY, $company);
+        $modules = app(ModuleManager::class);
+
+        return $modules->isEnabled(AiModule::KEY, $company)
+            && (bool) ($modules->settings(AiModule::KEY, $company)['read_employee_receipts'] ?? false);
     }
 
     /**

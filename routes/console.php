@@ -7,3 +7,5 @@ use Illuminate\Support\Facades\Schedule;
 // Nightly integrity check of every company's ledger (AGENTS.md §6.4).
 Schedule::command('ledger:verify --all')->dailyAt('03:15')->withoutOverlapping();
 Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlapping();
+// Personal data without a remaining purpose (GDPR art. 5.1 e), see docs/gdpr/lagringstider.md.
+Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();

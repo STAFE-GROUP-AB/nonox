@@ -9,6 +9,9 @@
 <div class="space-y-6">
     @if($showForm)
         <x-ui.card :title="$editingId ? __('Ändra anställd') : __('Ny anställd')">
+            @if($editingId && auth()->user()->hasTeamPermission(auth()->user()->currentCompany(), 'payroll:view-sensitive'))
+                <p class="mb-4 text-sm"><a href="{{ route('privacy.export.employee', $editingId) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ner registerutdrag (JSON)') }}</a> <span class="text-gray-500">· {{ __('när personen begär ut sina uppgifter enligt GDPR') }}</span></p>
+            @endif
             <form wire:submit="save" class="space-y-6">
                 <div class="grid gap-4 sm:grid-cols-2">
                     <x-ui.field for="employee_first_name" :label="__('Förnamn')" error="first_name"><input id="employee_first_name" type="text" class="{{ $input }} mt-1" wire:model="form.first_name"></x-ui.field>

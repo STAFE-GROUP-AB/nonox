@@ -58,5 +58,11 @@
     </fieldset>
 
     <p class="text-xs text-gray-500">{{ __('Underlagen skickas till den valda leverantören för analys. NONOX AI fyller i ett förslag; inget sparas eller bokförs förrän du själv gör det.') }}</p>
+    <label class="flex items-start gap-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-800">
+        <x-checkbox wire:model="readEmployeeReceipts" class="mt-0.5" />
+        <span>{{ __('Låt AI läsa de anställdas kvitton för utlägg') }}
+            <span class="mt-1 block text-gray-600">{{ __('Kvittona skickas då till AI-leverantören, som kan finnas utanför EU. Företaget ansvarar för att informera de anställda; det står också på deras Min sida. Utan det här valet granskar ni kvittona själva.') }}</span></span>
+    </label>
+
     <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
 </form>

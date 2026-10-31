@@ -6,6 +6,7 @@ namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\CheckVatNumber;
 use App\Actions\Invoicing\SaveCustomer;
+use App\Actions\Privacy\EraseRegisterEntry;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
@@ -18,6 +19,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -80,6 +82,27 @@ class Customers extends Component
         $this->foreignSale = (string) $customer->foreign_sale?->value;
         $this->showForm = true;
         $this->resetErrorBag();
+    }
+
+    /** Erasure on request (GDPR art. 17): deleted if never booked, otherwise anonymised. */
+    public function erase(EraseRegisterEntry $erase): void
+    {
+        if ($this->editingId === null) {
+            return;
+        }
+
+        try {
+            $mode = $erase->customer($this->user(), $this->company(), Customer::query()->findOrFail($this->editingId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->cancel();
+        $this->toast($mode === 'deleted'
+            ? __('Kunden är raderad.')
+            : __('Kunden är anonymiserad. Fakturorna behåller sina uppgifter, eftersom de är räkenskapsinformation som sparas i sju år.'));
     }
 
     public function cancel(): void

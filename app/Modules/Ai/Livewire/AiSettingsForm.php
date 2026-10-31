@@ -41,6 +41,9 @@ class AiSettingsForm extends Component
 
     public string $apiKey = '';
 
+    /** Whether employees' receipts on Min sida are read by AI too (personal data of employees, sent to the provider). */
+    public bool $readEmployeeReceipts = false;
+
     public function mount(Company $company): void
     {
         abort_unless($this->user()->hasTeamPermission($company, 'ai:settings'), 403);
@@ -50,6 +53,7 @@ class AiSettingsForm extends Component
         $this->provider = (AiProvider::tryFrom((string) ($settings['provider'] ?? '')) ?? AiProvider::OpenAi)->value;
         $this->modelChoice = in_array($settings['model_choice'] ?? null, AiModule::MODEL_CHOICES, true) ? (string) $settings['model_choice'] : 'CHEAPEST';
         $this->model = (string) ($settings['model'] ?? '');
+        $this->readEmployeeReceipts = (bool) ($settings['read_employee_receipts'] ?? false);
     }
 
     public function save(ModuleManager $modules): void
@@ -88,6 +92,7 @@ class AiSettingsForm extends Component
             'model_choice' => $this->modelChoice,
             'model' => trim($this->model) === '' ? null : trim($this->model),
             'api_keys' => $keys,
+            'read_employee_receipts' => $this->readEmployeeReceipts,
         ]);
         $this->apiKey = '';
         $this->toast(__('NONOX AI använder nu :provider.', ['provider' => $provider->label()]));

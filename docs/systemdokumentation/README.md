@@ -554,6 +554,40 @@ direkt från Fortnox. Koden ligger i `app/Migration/Fortnox`.
 - **Avstämning:** obetalda kund- och leverantörsfakturor i Fortnox jämförs
   med saldot på 1510 och 2440 i det senaste året.
 
+## 5a9. Dataskydd och säkerhet
+
+Se `docs/gdpr/` (registerförteckning, konsekvensbedömning för lön,
+incidentrutin, lagringstider) och `docs/juridik/` (integritetspolicy,
+villkor, personuppgiftsbiträdesavtal, underbiträden).
+
+- **Företagsbindning:** varje Livewire-sida är låst till företaget den
+  visades i (LivewireCompanyGuard). Byter användaren företag i en annan flik
+  svarar den gamla sidan 404.
+- **Inloggning:** engångskod med tak per e-postadress (10 felaktiga koder i
+  timmen). Koden fylls bara i automatiskt på en lokal adress och står inte i
+  ämnesraden. Sessioner upphör efter 12 timmar, och användaren kan logga ut
+  från alla andra enheter.
+- **Säkerhetsrubriker:** begränsad CSP, X-Frame-Options, Referrer-Policy,
+  Permissions-Policy och HSTS.
+- **Lön:**
+  - Frånvaroorsaker och anteckningar kräver payroll:view-sensitive, och
+    läsningen loggas.
+  - Byte av bankkonto kräver en andra persons bekräftelse innan en lönefil
+    kan skapas.
+  - Personnummer och bankkonton skickas inte till sidans tillstånd.
+  - Skäl och anteckningar krypteras, och lönebelopp skrivs inte i
+    behandlingshistoriken.
+- **Registerutdrag** (art. 15/20) för konto, kund, leverantör och anställd,
+  loggade. **Radering** (art. 17): kund och leverantör raderas om de aldrig
+  bokförts, annars anonymiseras de. Fakturorna behåller sina uppgifter.
+- **Gallring:** `privacy:prune` körs varje natt.
+- **Avtal:** på den driftade tjänsten godkänns villkor och
+  personuppgiftsbiträdesavtal när ett företag skapas. Vem, när och vilken
+  version sparas.
+- **Cookies:** bara nödvändiga, samtyckesruta och /cookies. Typsnitten
+  hämtas från den egna servern.
+- **E-post:** tak per företag och timme, 300 dokument och 30 inbjudningar.
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -976,6 +1010,7 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |
 | 0.30 | 2026-11-01 | ROT- och RUT-avdrag på kundfakturor, delad fordran på 1513 och Skatteverkets betalning. |
 | 0.31 | 2026-11-01 | Resultat per projekt och kostnadsställe i registren. |
+| 0.35 | 2026-11-01 | Säkerhetsgranskning och GDPR: företagsbindning av sidor, härdad inloggning och sessioner, säkerhetsrubriker, skydd av hälsouppgifter och bankkonton i lönen, registerutdrag, radering och anonymisering, gallring, cookies, integritetspolicy, villkor och personuppgiftsbiträdesavtal. |
 | 0.34 | 2026-11-01 | Flytt från Fortnox via API: anslutning med OAuth2 och PKCE, bokföring per år som SIE4 genom den vanliga granskningen, register, underlag och avstämning av obetalda fakturor. |
 | 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |

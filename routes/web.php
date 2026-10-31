@@ -16,6 +16,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\CompanyLogoController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataSubjectExportController;
 use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Invoicing\AgreementController;
 use App\Http\Controllers\Invoicing\InvoiceController;
@@ -79,8 +80,13 @@ Route::middleware([
         ->whereNumber('invitation')
         ->name('team-invitations.accept-from-onboarding');
 
+    Route::get('/profil/mina-uppgifter', [DataSubjectExportController::class, 'me'])->name('privacy.export.me');
+
     Route::middleware(EnsureUserHasCompany::class)->group(function () {
         Route::get('/oversikt', DashboardController::class)->name('dashboard');
+        Route::get('/registerutdrag/kund/{customer}', [DataSubjectExportController::class, 'customer'])->whereNumber('customer')->name('privacy.export.customer');
+        Route::get('/registerutdrag/leverantor/{supplier}', [DataSubjectExportController::class, 'supplier'])->whereNumber('supplier')->name('privacy.export.supplier');
+        Route::get('/registerutdrag/anstalld/{employee}', [DataSubjectExportController::class, 'employee'])->whereNumber('employee')->name('privacy.export.employee');
         Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
 
         Route::get('/verifikationer', [VoucherController::class, 'index'])->name('accounting.vouchers.index');

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\AuditLog;
 use App\Models\Voucher;
+use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Agents\ExpenseReceiptAgent;
 use App\Modules\Ai\AiModule;
 use App\Modules\Ai\Support\HeicImage;
@@ -35,11 +36,12 @@ beforeEach(function () {
     CurrentCompany::set($this->company);
     $this->anna = Payroll::employee($this->owner, $this->company, ['user_id' => $this->worker->id]);
     app(ModuleManager::class)->enable(AiModule::KEY, $this->company, $this->owner);
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, $this->company, $this->owner, ['read_employee_receipts' => true]);
 });
 
 function receiptAiKey(): void
 {
-    app(ModuleManager::class)->updateSettings(AiModule::KEY, test()->company, test()->owner, ['provider' => 'OPENAI', 'api_keys' => ['OPENAI' => Crypt::encryptString('sk-test-abcdefghijklmnopqrstuvwxyz0123456789ABCD')]]);
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, test()->company, test()->owner, ['provider' => 'OPENAI', 'read_employee_receipts' => true, 'api_keys' => ['OPENAI' => Crypt::encryptString('sk-test-abcdefghijklmnopqrstuvwxyz0123456789ABCD')]]);
 }
 
 /** @return array<string, mixed> what the agent reads from the lemon receipt */
@@ -55,7 +57,7 @@ function sendReceipt(?UploadedFile $receipt = null): Expense
     Livewire::test(MyExpenses::class)
         ->call('start')
         ->assertDontSee('Vad köpte du?')
-        ->assertSee('NONOX AI läser datum')
+        ->assertSee('låta AI läsa datum')
         ->set('receipt', $receipt ?? UploadedFile::fake()->image('kvitto.jpg', 400, 600))
         ->call('send')
         ->assertDispatched('toast');
@@ -216,4 +218,10 @@ it('asks for the details as before when NONOX AI is off', function () {
     $this->actingAs($this->worker);
     Livewire::test(MyExpenses::class)->call('start')->assertSee('Vad köpte du?');
     expect(Expense::query()->count())->toBe(0);
+});
+
+it('does not send employees\' receipts to AI unless the company has chosen it', function () {
+    app(ModuleManager::class)->updateSettings(AiModule::KEY, test()->company, test()->owner, ['read_employee_receipts' => false]);
+
+    expect(AnalyzeDocument::readsReceiptsFor(test()->company))->toBeFalse();
 });

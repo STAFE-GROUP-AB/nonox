@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Payables;
 
 use App\Actions\Payables\SaveSupplier;
+use App\Actions\Privacy\EraseRegisterEntry;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
@@ -16,6 +17,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -69,6 +71,27 @@ class Suppliers extends Component
         $this->form['default_account'] = (string) $supplier->defaultAccount?->number;
         $this->showForm = true;
         $this->resetErrorBag();
+    }
+
+    /** Erasure on request (GDPR art. 17): deleted if never booked, otherwise anonymised. */
+    public function erase(EraseRegisterEntry $erase): void
+    {
+        if ($this->editingId === null) {
+            return;
+        }
+
+        try {
+            $mode = $erase->supplier($this->user(), $this->company(), Supplier::query()->findOrFail($this->editingId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->cancel();
+        $this->toast($mode === 'deleted'
+            ? __('Leverantören är raderad.')
+            : __('Leverantören är anonymiserad. Fakturorna behåller sina uppgifter, eftersom de är räkenskapsinformation som sparas i sju år.'));
     }
 
     public function cancel(): void

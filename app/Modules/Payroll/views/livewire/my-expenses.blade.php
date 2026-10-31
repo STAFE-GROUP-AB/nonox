@@ -14,7 +14,7 @@
             @if($open)
                 <form wire:submit="send" class="mt-3 space-y-4">
                     @if($aiReads)
-                        <p class="text-sm text-gray-600">{{ __('Ta en bild av kvittot och skicka den. NONOX AI läser datum, vad du köpte, belopp och moms, och den som godkänner kontrollerar uppgifterna.') }}</p>
+                        <p class="text-sm text-gray-600">{{ __('Ta en bild av kvittot och skicka den. Företaget har valt att låta AI läsa datum, vad du köpte, belopp och moms; kvittot skickas då till företagets AI-leverantör, och den som godkänner kontrollerar uppgifterna.') }} <a href="{{ route('legal.privacy') }}" class="underline">{{ __('Om personuppgifter') }}</a></p>
                     @else
                         <div class="grid gap-4 sm:grid-cols-2">
                             <x-ui.field for="expense_date" :label="__('Datum på kvittot')" error="date"><input id="expense_date" type="date" class="{{ $input }} mt-1" wire:model="expense.date"></x-ui.field>

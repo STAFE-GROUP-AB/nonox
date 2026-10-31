@@ -23,6 +23,9 @@
 <div class="space-y-6">
     @if($showForm)
         <x-ui.card :title="$editingId ? __('Ändra leverantör') : __('Ny leverantör :number', ['number' => $nextNumber])">
+            @if($editingId)
+                <p class="mb-4 text-sm"><a href="{{ route('privacy.export.supplier', $editingId) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ner registerutdrag (JSON)') }}</a> <span class="text-gray-500">· {{ __('när personen begär ut sina uppgifter enligt GDPR') }}</span></p>
+            @endif
             <datalist id="supplier-default-accounts">
                 @foreach($accounts as $account)
                     <option value="{{ $account->number }}">{{ $account->name }}</option>
@@ -39,6 +42,10 @@
                 <div class="flex items-center gap-4 sm:col-span-2">
                     <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
                     <button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>
+                    @if($editingId)
+                        <button type="button" class="ms-auto text-sm text-accent-700 underline" wire:click="erase" wire:confirm="{{ __('Radera uppgifterna enligt GDPR? Finns de i bokföringen anonymiseras de i registret i stället; fakturorna behåller sina uppgifter.') }}">{{ __('Radera enligt GDPR') }}</button>
+                    @endif
+
                 </div>
             </form>
         </x-ui.card>
