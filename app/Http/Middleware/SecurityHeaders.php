@@ -24,7 +24,10 @@ class SecurityHeaders
         $headers->set('X-Content-Type-Options', 'nosniff');
         // Framing is refused by frame-ancestors in the CSP; X-Frame-Options is left to the web server, which already sends it.
         $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
-        $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+        // A page that needs a device feature (the staff ledger kiosk's camera, mobile check-in's location) sets its own, narrower policy.
+        if (! $headers->has('Permissions-Policy')) {
+            $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+        }
         $headers->set('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'");
 
         if ($request->isSecure()) {

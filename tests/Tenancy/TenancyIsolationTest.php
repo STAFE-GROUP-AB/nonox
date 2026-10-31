@@ -78,6 +78,11 @@ use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationOpeningBalance;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
+use App\Modules\StaffLedger\Models\Device as StaffLedgerDevice;
+use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
+use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
+use App\Modules\StaffLedger\Models\Person as StaffLedgerPerson;
+use App\Modules\StaffLedger\Models\TimeProposal as StaffLedgerTimeProposal;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\MissingCompanyContext;
@@ -86,6 +91,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Str;
 use Tests\Tenancy\Fixtures\ListNotesForCompany;
 use Tests\Tenancy\Fixtures\TenantNote;
 
@@ -170,7 +176,54 @@ const COMPANY_SCOPED_MODELS = [
     VacationOpeningBalance::class => 'payrollVacationOpeningAttributes',
     ImportedPayslip::class => 'payrollImportedPayslipAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
+    StaffLedgerLocation::class => 'staffLedgerLocationAttributes',
+    StaffLedgerPerson::class => 'staffLedgerPersonAttributes',
+    StaffLedgerDevice::class => 'staffLedgerDeviceAttributes',
+    StaffLedgerEntry::class => 'staffLedgerEntryAttributes',
+    StaffLedgerTimeProposal::class => 'staffLedgerTimeProposalAttributes',
 ];
+
+function staffLedgerLocationAttributes(): array
+{
+    return ['name' => 'Hemlig lokal', 'address_line1' => 'Gatan 1', 'postal_code' => '11122', 'city' => 'Staden', 'business_type' => 'RESTAURANT'];
+}
+
+function staffLedgerPersonAttributes(): array
+{
+    return ['first_name' => 'Hemlig', 'last_name' => 'Person', 'personal_number' => '199001011239', 'personal_number_index' => bin2hex(random_bytes(32))];
+}
+
+function staffLedgerDeviceAttributes(): array
+{
+    return ['location_id' => StaffLedgerLocation::create(staffLedgerLocationAttributes())->id, 'name' => 'Hemlig kiosk', 'created_by' => User::factory()->create()->id];
+}
+
+function staffLedgerEntryAttributes(): array
+{
+    return [
+        'uuid' => (string) Str::uuid(),
+        'location_id' => StaffLedgerLocation::create(staffLedgerLocationAttributes())->id,
+        'type' => 'CHECK_IN',
+        'method' => 'KIOSK_PIN',
+        'person_name' => 'Hemlig Person',
+        'personal_number' => '199001011239',
+        'occurred_at' => '2026-11-02 08:00:00',
+        'received_at' => '2026-11-02 08:00:01',
+        'flags' => [],
+        'hash' => str_repeat('a', 64),
+    ];
+}
+
+function staffLedgerTimeProposalAttributes(): array
+{
+    return [
+        'employee_id' => Employee::create(payrollEmployeeAttributes())->id,
+        'period_start' => '2026-10-01',
+        'period_end' => '2026-10-31',
+        'days' => ['2026-10-05' => 8.0],
+        'proposed_by' => User::factory()->create()->id,
+    ];
+}
 
 /** Runs inside the company's context. */
 function voucherAttributes(): array
@@ -756,7 +809,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
+const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

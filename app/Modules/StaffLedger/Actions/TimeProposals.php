@@ -1,0 +1,137 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\StaffLedger\Actions;
+
+use App\Models\Company;
+use App\Models\User;
+use App\Modules\ModuleManager;
+use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\TimeReport;
+use App\Modules\Payroll\PayrollModule;
+use App\Modules\StaffLedger\Domain\LedgerQuery;
+use App\Modules\StaffLedger\Domain\Shift;
+use App\Modules\StaffLedger\Models\Person;
+use App\Modules\StaffLedger\Models\TimeProposal;
+use App\Modules\StaffLedger\StaffLedgerModule;
+use App\Support\Audit\Audit;
+use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * "Föreslå tidrapport": hours per day from the ledger's closed shifts, for
+ * people linked to a payroll employee. A manager approves the proposal,
+ * which writes approved time reports with the hourly pay code; or rejects
+ * it. The ledger itself is never touched and stays separate from payroll.
+ * Shifts without a check-out are left out and must be corrected first.
+ */
+final class TimeProposals
+{
+    /**
+     * @return list<TimeProposal> the proposals created, one per linked person with hours
+     */
+    public function propose(User $user, Company $company, CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $this->authorize($user, $company);
+
+        if ($to < $from || $from->diffInDays($to) > 62) {
+            throw ValidationException::withMessages(['period' => __('Välj en period på högst två månader.')]);
+        }
+
+        $people = Person::query()->whereNotNull('employee_id')->get()->keyBy('id');
+        $hours = [];
+
+        foreach (LedgerQuery::shifts(null, $from->startOfDay(), $to->endOfDay()) as $shift) {
+            /** @var Shift $shift */
+            $person = $shift->personId === null ? null : $people->get($shift->personId);
+
+            if ($person === null || $shift->start === null || $shift->end === null || $shift->start < $from->startOfDay() || $shift->start > $to->endOfDay()) {
+                continue;
+            }
+
+            $day = $shift->start->toDateString();
+            $hours[(int) $person->employee_id][$day] = round(($hours[(int) $person->employee_id][$day] ?? 0) + (float) $shift->hours(), 2);
+        }
+
+        return DB::transaction(function () use ($user, $company, $from, $to, $hours): array {
+            $created = [];
+
+            foreach ($hours as $employeeId => $days) {
+                ksort($days);
+                $proposal = TimeProposal::create([
+                    'employee_id' => $employeeId,
+                    'period_start' => $from->toDateString(),
+                    'period_end' => $to->toDateString(),
+                    'days' => $days,
+                    'status' => TimeProposal::PROPOSED,
+                    'proposed_by' => $user->id,
+                ]);
+                $created[] = $proposal;
+            }
+
+            Audit::record('staff_ledger.time_proposed', null, ['from' => $from->toDateString(), 'to' => $to->toDateString(), 'proposals' => count($created)], $company, $user);
+
+            return $created;
+        });
+    }
+
+    public function approve(User $user, Company $company, TimeProposal $proposal): int
+    {
+        $this->authorize($user, $company);
+        // Approving writes time reports for payroll, so it takes the payroll approver's permission too.
+        abort_unless($user->hasTeamPermission($company, 'payroll:approve'), 403);
+        $this->ensurePending($proposal);
+
+        $payCode = PayCode::query()->where('code', 'TIMLON')->first();
+
+        if (! $payCode instanceof PayCode) {
+            throw ValidationException::withMessages(['proposal' => __('Lönearten Timlön saknas i lönen.')]);
+        }
+
+        return DB::transaction(function () use ($user, $company, $proposal, $payCode): int {
+            foreach ($proposal->days as $date => $hours) {
+                TimeReport::create([
+                    'employee_id' => $proposal->employee_id,
+                    'date' => $date,
+                    'hours' => $hours,
+                    'pay_code_id' => $payCode->id,
+                    'status' => 'APPROVED',
+                ]);
+            }
+
+            $proposal->forceFill(['status' => TimeProposal::APPROVED, 'decided_by' => $user->id, 'decided_at' => CarbonImmutable::now()])->save();
+            Audit::record('staff_ledger.time_approved', $proposal, ['days' => count($proposal->days), 'hours' => $proposal->totalHours()], $company, $user);
+
+            return count($proposal->days);
+        });
+    }
+
+    public function reject(User $user, Company $company, TimeProposal $proposal): void
+    {
+        $this->authorize($user, $company);
+        $this->ensurePending($proposal);
+
+        $proposal->forceFill(['status' => TimeProposal::REJECTED, 'decided_by' => $user->id, 'decided_at' => CarbonImmutable::now()])->save();
+        Audit::record('staff_ledger.time_rejected', $proposal, [], $company, $user);
+    }
+
+    private function ensurePending(TimeProposal $proposal): void
+    {
+        if ($proposal->status !== TimeProposal::PROPOSED) {
+            throw ValidationException::withMessages(['proposal' => __('Förslaget är redan behandlat.')]);
+        }
+    }
+
+    private function authorize(User $user, Company $company): void
+    {
+        $modules = app(ModuleManager::class);
+        $modules->ensureEnabled(StaffLedgerModule::KEY, $company);
+        $modules->ensureEnabled(PayrollModule::KEY, $company);
+
+        if (! $user->hasTeamPermission($company, 'staff-ledger:manage')) {
+            abort(403);
+        }
+    }
+}

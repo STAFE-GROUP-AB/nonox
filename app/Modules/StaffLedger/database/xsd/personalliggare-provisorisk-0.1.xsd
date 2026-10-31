@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  NONOX Ekonomisystem: provisional XML schema for an electronic staff ledger
+  (personalliggare). Our own format, NOT Skatteverket's.
+  TODO(SPEC): replace with Skatteverket's schema for the 2027 rules
+  (prop. 2025/26:282) when it is published in Skatteverkets schemalager.
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           xmlns="urn:nonox:personalliggare:provisorisk:0.1"
+           targetNamespace="urn:nonox:personalliggare:provisorisk:0.1"
+           elementFormDefault="qualified">
+
+    <xs:simpleType name="Text">
+        <xs:restriction base="xs:string">
+            <xs:minLength value="1"/>
+            <xs:maxLength value="1000"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Organisationsnummer">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\d{10}|\d{6}-\d{4}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Identitet">
+        <xs:annotation><xs:documentation>Personnummer eller samordningsnummer, tolv siffror.</xs:documentation></xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="\d{12}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Hash">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[0-9a-f]{64}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Typ">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="CHECK_IN"/>
+            <xs:enumeration value="CHECK_OUT"/>
+            <xs:enumeration value="MANUAL"/>
+            <xs:enumeration value="CORRECTION"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Riktning">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="IN"/>
+            <xs:enumeration value="OUT"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Satt">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="KIOSK_PIN"/>
+            <xs:enumeration value="KIOSK_QR"/>
+            <xs:enumeration value="MOBILE"/>
+            <xs:enumeration value="MANUAL"/>
+            <xs:enumeration value="CORRECTION"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="Verksamhet">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="RESTAURANT"/>
+            <xs:enumeration value="VEHICLE_SERVICE"/>
+            <xs:enumeration value="FOOD_TOBACCO_WHOLESALE"/>
+            <xs:enumeration value="BEAUTY_CARE"/>
+            <xs:enumeration value="LAUNDRY"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:element name="Personalliggare">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="Metadata">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Skapad" type="xs:dateTime"/>
+                            <xs:element name="Program" type="Text"/>
+                            <xs:element name="PeriodFran" type="xs:dateTime"/>
+                            <xs:element name="PeriodTill" type="xs:dateTime"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Foretag">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Organisationsnummer" type="Organisationsnummer"/>
+                            <xs:element name="Namn" type="Text"/>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+                <xs:element name="Lokal" minOccurs="0" maxOccurs="unbounded">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="Namn" type="Text"/>
+                            <xs:element name="Adress" type="Text"/>
+                            <xs:element name="Postnummer">
+                                <xs:simpleType>
+                                    <xs:restriction base="xs:string"><xs:pattern value="\d{5}"/></xs:restriction>
+                                </xs:simpleType>
+                            </xs:element>
+                            <xs:element name="Ort" type="Text"/>
+                            <xs:element name="Verksamhet" type="Verksamhet"/>
+                            <xs:element name="Registrering" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element name="Typ" type="Typ"/>
+                                        <xs:element name="Riktning" type="Riktning" minOccurs="0"/>
+                                        <xs:element name="Tid" type="xs:dateTime"/>
+                                        <xs:element name="Mottagen" type="xs:dateTime"/>
+                                        <xs:element name="Satt" type="Satt"/>
+                                        <xs:element name="Person">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="Namn" type="Text"/>
+                                                    <xs:element name="Identitet" type="Identitet"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Arbetsgivare" minOccurs="0">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="Namn" type="Text"/>
+                                                    <xs:element name="Organisationsnummer" type="Organisationsnummer"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Rattelse" minOccurs="0">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element name="RattarRegistrering" type="xs:positiveInteger"/>
+                                                    <xs:element name="Slag">
+                                                        <xs:simpleType>
+                                                            <xs:restriction base="xs:string">
+                                                                <xs:enumeration value="VOID"/>
+                                                                <xs:enumeration value="TIME"/>
+                                                            </xs:restriction>
+                                                        </xs:simpleType>
+                                                    </xs:element>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="Orsak" type="Text" minOccurs="0"/>
+                                        <xs:element name="RegistreradAv" type="Text" minOccurs="0"/>
+                                        <xs:element name="Anmarkning" type="Text" minOccurs="0" maxOccurs="unbounded"/>
+                                        <xs:element name="ForegaendeHash" type="Hash" minOccurs="0"/>
+                                        <xs:element name="Hash" type="Hash"/>
+                                    </xs:sequence>
+                                    <xs:attribute name="id" type="xs:positiveInteger" use="required"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                        <xs:attribute name="id" type="xs:positiveInteger" use="required"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+            <xs:attribute name="formatversion" type="xs:string" use="required"/>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

@@ -4,7 +4,8 @@ import laravel from 'laravel-vite-plugin';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.js'],
+            // The staff ledger kiosk is its own entry: an offline page with its own CSS (ADR-022).
+            input: ['resources/css/app.css', 'resources/js/app.js', 'app/Modules/StaffLedger/resources/js/kiosk.js'],
             refresh: true,
         }),
     ],

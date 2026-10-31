@@ -15,9 +15,9 @@ function memberWithRole(Company $company, CompanyRole $role): User
     return $user->fresh();
 }
 
-it('registers the five member roles from AGENTS.md §4 and the payroll module\'s two', function () {
+it('registers the five member roles from AGENTS.md §4 and the payroll and staff ledger modules\' two each', function () {
     expect(collect(Jetstream::$roles)->keys()->sort()->values()->all())
-        ->toBe(['accountant', 'admin', 'approver', 'auditor', 'bookkeeper', 'employee', 'payroll_admin']);
+        ->toBe(['accountant', 'admin', 'approver', 'auditor', 'bookkeeper', 'employee', 'payroll_admin', 'staff_ledger_manager', 'staff_ledger_staff']);
 });
 
 it('uses only permission keys from AGENTS.md §4', function (CompanyRole $role) {

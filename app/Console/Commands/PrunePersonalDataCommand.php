@@ -10,6 +10,7 @@ use App\Models\LoginCode;
 use App\Models\TeamInvitation;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Expense;
+use App\Modules\StaffLedger\Actions\PruneStaffLedger;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
@@ -20,7 +21,9 @@ use Illuminate\Support\Facades\Storage;
  * Removes personal data that no longer has a purpose (GDPR art. 5.1 c and e).
  * Nothing that is räkenskapsinformation is touched: only sign-in codes,
  * stale invitations, tokens of moves that were abandoned, and rejected
- * absence and outlay requests that never reached the payroll or the books.
+ * absence and outlay requests that never reached the payroll or the books,
+ * and staff ledger entries and people whose retention period is over
+ * (PruneStaffLedger).
  *
  * TODO(legal-verify): the periods in RETENTION (see docs/gdpr/lagringstider.md).
  */
@@ -70,6 +73,10 @@ class PrunePersonalDataCommand extends Command
 
             return ['login_codes' => $codes, 'invitations' => $invitations, 'fortnox_tokens' => $tokens, 'absences' => $absences, 'expenses' => $expenses];
         });
+
+        $staffLedger = app(PruneStaffLedger::class)();
+        $counts['staff_ledger_entries'] = $staffLedger['entries'];
+        $counts['staff_ledger_people'] = $staffLedger['people'];
 
         Audit::record('privacy.pruned', null, $counts);
 
