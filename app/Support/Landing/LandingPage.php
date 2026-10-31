@@ -105,9 +105,9 @@ final class LandingPage
             'docs' => $config['docs_url'] ?? "{$github}/tree/main/docs",
             'api' => $config['api_url'] ?? null,
             'contact' => $config['contact_url'] ?? route('login'),
-            'terms' => $config['terms_url'] ?? null,
-            'privacy' => $config['privacy_url'] ?? null,
-            'company' => $config['company_name'] ?? null,
+            'terms' => $config['terms_url'] ?? route('legal.terms'),
+            'privacy' => $config['privacy_url'] ?? route('legal.privacy'),
+            'company' => $config['company_name'] ?? 'Stafe Development AB',
             'orgnr' => $config['org_number'] ?? null,
             'host' => (string) parse_url(url('/'), PHP_URL_HOST),
         ];

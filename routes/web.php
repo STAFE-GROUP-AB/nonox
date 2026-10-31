@@ -20,6 +20,7 @@ use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Invoicing\AgreementController;
 use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\Invoicing\SalesDocumentController;
+use App\Http\Controllers\LegalPageController;
 use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
@@ -40,6 +41,10 @@ use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
 
 Route::get('/', StartController::class)->name('start');
 Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide');
+Route::get('/integritetspolicy', LegalPageController::class)->defaults('document', 'privacy')->name('legal.privacy');
+Route::get('/villkor', LegalPageController::class)->defaults('document', 'terms')->name('legal.terms');
+Route::get('/personuppgiftsbitradesavtal', LegalPageController::class)->defaults('document', 'dpa')->name('legal.dpa');
+Route::get('/underbitraden', LegalPageController::class)->defaults('document', 'subprocessors')->name('legal.subprocessors');
 Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->name('cookies');
 Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');

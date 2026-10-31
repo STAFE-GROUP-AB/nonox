@@ -128,6 +128,20 @@
         </div>
     </section>
 
+    @if(config('app.landing.hosted'))
+        <div>
+            <label class="flex items-start gap-3">
+                <x-checkbox wire:model="accept_agreement" class="mt-0.5" />
+                <span class="text-sm text-gray-700">{!! __('Jag godkänner :terms och :dpa för företaget, och har läst :privacy.', [
+                    'terms' => '<a href="'.e(route('legal.terms')).'" target="_blank" class="font-medium text-accent-600 underline">'.e(__('villkoren')).'</a>',
+                    'dpa' => '<a href="'.e(route('legal.dpa')).'" target="_blank" class="font-medium text-accent-600 underline">'.e(__('personuppgiftsbiträdesavtalet')).'</a>',
+                    'privacy' => '<a href="'.e(route('legal.privacy')).'" target="_blank" class="font-medium text-accent-600 underline">'.e(__('integritetspolicyn')).'</a>',
+                ]) !!}</span>
+            </label>
+            <x-input-error for="accept_agreement" class="mt-2" />
+        </div>
+    @endif
+
     <div class="flex justify-end">
         <x-button wire:loading.attr="disabled">
             {{ __('Skapa företaget') }}

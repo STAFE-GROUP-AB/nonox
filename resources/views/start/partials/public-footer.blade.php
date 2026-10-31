@@ -37,6 +37,8 @@
         <a class="lp37" href="{{ $ph['contact'] }}" style="text-decoration:none;color:#D9D7D1">Kontakt</a>
         @if($ph['terms'])<a class="lp38" href="{{ $ph['terms'] }}" style="text-decoration:none;color:#D9D7D1">Villkor</a>@endif
         @if($ph['privacy'])<a class="lp39" href="{{ $ph['privacy'] }}" style="text-decoration:none;color:#D9D7D1">Integritetspolicy</a>@endif
+        <a href="{{ route('legal.dpa') }}" style="text-decoration:none;color:#D9D7D1">Personuppgiftsbiträdesavtal</a>
+        <a href="{{ route('legal.subprocessors') }}" style="text-decoration:none;color:#D9D7D1">Underbiträden</a>
         <a href="{{ route('cookies') }}" style="text-decoration:none;color:#D9D7D1">Cookies</a>
         <a href="{{ route('cookies') }}" data-cookie-settings style="text-decoration:none;color:#D9D7D1">Cookie-inställningar</a>
       </nav>

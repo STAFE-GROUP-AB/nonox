@@ -20,6 +20,8 @@ return [
 
     'landing' => [
         'enabled' => (bool) env('NONOX_LANDING_PAGE', true),
+        // The installation is the service hosted by the company above: new companies accept its terms and data processing agreement.
+        'hosted' => (bool) env('NONOX_HOSTED', false),
         'github_url' => env('NONOX_GITHUB_URL'),
         'migration_guide_url' => env('NONOX_MIGRATION_GUIDE_URL'),
         'docs_url' => env('NONOX_DOCS_URL'),
@@ -29,6 +31,7 @@ return [
         'privacy_url' => env('NONOX_PRIVACY_URL'),
         'company_name' => env('NONOX_COMPANY_NAME'),
         'org_number' => env('NONOX_COMPANY_ORG_NUMBER'),
+        'privacy_email' => env('NONOX_PRIVACY_EMAIL'),
     ],
 
     'env' => env('APP_ENV', 'production'),

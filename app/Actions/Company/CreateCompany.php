@@ -10,6 +10,7 @@ use App\Domain\Company\LegalForm;
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
+use App\Http\Controllers\LegalPageController;
 use App\Models\Company;
 use App\Models\User;
 use App\Rules\SwedishOrganisationNumber;
@@ -55,10 +56,19 @@ class CreateCompany implements CreatesTeams
             // TODO(T-1.5): default VAT codes (§3.4 step 6).
             // TODO(Phase 2): number series for invoices and customers (§3.4 step 7).
 
+            if (config('app.landing.hosted')) {
+                $company->forceFill([
+                    'agreement_accepted_at' => now(),
+                    'agreement_version' => LegalPageController::VERSION,
+                    'agreement_accepted_by' => $user->id,
+                ])->save();
+            }
+
             Audit::record('company.created', $company, [
                 'name' => $company->name,
                 'org_number' => $company->org_number,
                 'legal_form' => $company->legal_form->value,
+                'agreement_version' => $company->agreement_version,
             ], $company, $user);
 
             $user->switchCompany($company);
@@ -108,8 +118,10 @@ class CreateCompany implements CreatesTeams
             'reporting_framework' => ['required', Rule::enum(ReportingFramework::class)],
             'f_skatt' => ['required', 'boolean'],
             'employer_registered' => ['required', 'boolean'],
+            'accept_agreement' => config('app.landing.hosted') ? ['accepted'] : ['nullable'],
         ], [
             'org_number.unique' => __('Det finns redan ett företag med det här organisationsnumret.'),
+            'accept_agreement.accepted' => __('Godkänn villkoren och personuppgiftsbiträdesavtalet för att skapa företaget.'),
         ], [
             'name' => __('företagsnamn'),
             'org_number' => __('organisationsnummer'),

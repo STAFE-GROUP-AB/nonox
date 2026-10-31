@@ -2892,5 +2892,12 @@
     "Byt till :company och granska filen där": "Switch to :company and review the file there",
     "Filen gäller :company (:number), som inte finns bland dina företag ännu.": "The file belongs to :company (:number), which is not among your companies yet.",
     "Skapa företaget med uppgifterna från filen": "Create the company with the details from the file",
-    "När företaget är skapat läser du in filen där.": "Once the company is created, read the file in there."
+    "När företaget är skapat läser du in filen där.": "Once the company is created, read the file in there.",
+    "Godkänn villkoren och personuppgiftsbiträdesavtalet för att skapa företaget.": "Accept the terms and the data processing agreement to create the company.",
+    "Har du inget konto skapas ett när du loggar in.": "If you have no account, one is created when you sign in.",
+    "Så behandlar vi dina personuppgifter": "How we process your personal data",
+    "Jag godkänner :terms och :dpa för företaget, och har läst :privacy.": "I accept :terms and :dpa for the company, and have read :privacy.",
+    "villkoren": "the terms",
+    "personuppgiftsbiträdesavtalet": "the data processing agreement",
+    "integritetspolicyn": "the privacy policy"
 }

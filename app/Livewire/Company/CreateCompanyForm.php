@@ -45,6 +45,8 @@ class CreateCompanyForm extends Component
 
     public bool $employer_registered = false;
 
+    public bool $accept_agreement = false;
+
     /** Name and organisation number from a SIE file uploaded in the wrong company, if any. */
     public function mount(): void
     {
@@ -74,6 +76,7 @@ class CreateCompanyForm extends Component
             'vat_period' => $this->vat_registered ? $this->vat_period : VatPeriod::None->value,
             'reporting_framework' => $this->reporting_framework,
             'f_skatt' => $this->f_skatt,
+            'accept_agreement' => $this->accept_agreement,
             'employer_registered' => $this->employer_registered,
         ]);
 

@@ -114,8 +114,7 @@ it('shows the public landing page to visitors once the system is set up', functi
         ->assertSee("995\u{a0}kr")
         ->assertSee('https://github.com/STAFE-GROUP-AB/OSS')
         ->assertSee('Vanliga frågor')
-        ->assertDontSee('{{', escape: false)
-        ->assertDontSee('Villkor');
+        ->assertDontSee('{{', escape: false);
 });
 
 it('links the legal pages and names the company when they are configured', function () {
@@ -248,4 +247,12 @@ it('asks for cookie consent with equal choices and lists every cookie on the coo
         ->assertSee('nonox-consent');
 
     $this->get(route('login'))->assertSee('Endast nödvändiga');
+});
+
+it('publishes the privacy policy, terms, data processing agreement and sub-processors', function () {
+    foreach (['legal.privacy' => 'Integritetspolicy', 'legal.terms' => 'Allmänna villkor', 'legal.dpa' => 'Personuppgiftsbiträdesavtal', 'legal.subprocessors' => 'Underbiträden'] as $route => $title) {
+        $this->get(route($route))->assertOk()->assertSee($title)->assertDontSee('{foretag}')->assertDontSee('legal-verify');
+    }
+
+    $this->get('/')->assertSee(route('legal.privacy'))->assertSee(route('legal.dpa'));
 });

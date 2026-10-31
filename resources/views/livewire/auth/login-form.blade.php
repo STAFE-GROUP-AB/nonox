@@ -21,6 +21,9 @@
                 </button>
             </div>
         </form>
+        @if(config('app.landing.hosted'))
+            <p class="muted small" style="margin-top:14px">{{ __('Har du inget konto skapas ett när du loggar in.') }} <a href="{{ route('legal.privacy') }}">{{ __('Så behandlar vi dina personuppgifter') }}</a></p>
+        @endif
     @elseif($step === 'code')
         <h1>Kolla din e-post</h1>
         <p class="lead">Vi har skickat en kod med sex siffror till <strong>{{ $email }}</strong>. Skriv in den här.</p>

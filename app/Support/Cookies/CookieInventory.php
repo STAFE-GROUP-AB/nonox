@@ -30,9 +30,8 @@ final class CookieInventory
                 'description' => 'Krävs för att sidan, inloggningen och säkerheten ska fungera. De kan inte väljas bort.',
                 'required' => true,
                 'items' => [
-                    ['name' => $session, 'purpose' => 'Håller dig inloggad och kopplar ihop dina sidvisningar under besöket.', 'duration' => 'Tills webbläsaren stängs, högst '.(int) config('session.lifetime').' minuter utan aktivitet', 'type' => 'Cookie (förstapart)'],
+                    ['name' => $session, 'purpose' => 'Håller dig inloggad och kopplar ihop dina sidvisningar under besöket.', 'duration' => (int) config('session.lifetime').' minuter efter senaste aktivitet', 'type' => 'Cookie (förstapart)'],
                     ['name' => 'XSRF-TOKEN', 'purpose' => 'Skyddar formulär mot förfalskade anrop (CSRF).', 'duration' => 'Samma som sessionen', 'type' => 'Cookie (förstapart)'],
-                    ['name' => 'remember_web_*', 'purpose' => 'Kommer ihåg inloggningen om du väljer det.', 'duration' => 'Upp till 400 dagar, bara om du väljer det', 'type' => 'Cookie (förstapart)'],
                     ['name' => 'nonox-consent', 'purpose' => 'Sparar ditt val i den här rutan.', 'duration' => '12 månader', 'type' => 'Lokal lagring i webbläsaren'],
                     ['name' => 'nonox-flyttguide', 'purpose' => 'Kommer ihåg vilka steg i flyttguiden du har bockat av.', 'duration' => 'Tills du rensar webbläsaren', 'type' => 'Lokal lagring i webbläsaren'],
                 ],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Company\CreateCompany;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\VatPeriod;
+use App\Http\Controllers\LegalPageController;
 use App\Livewire\Company\CreateCompanyForm;
 use App\Models\Company;
 use App\Models\User;
@@ -114,4 +115,18 @@ it('shows a Swedish error for an invalid organisation number in the form', funct
         ->call('create')
         ->assertHasErrors('org_number')
         ->assertSee('Organisationsnumret stämmer inte');
+});
+
+it('requires the terms and data processing agreement on the hosted service and records who accepted which version', function () {
+    config(['app.landing.hosted' => true]);
+    $user = User::factory()->create();
+    $input = ['name' => 'Värdbolaget AB', 'org_number' => '556334-3689', 'legal_form' => 'AB', 'fiscal_year_start_month' => 1, 'accounting_method' => 'FAKTURAMETODEN', 'vat_registered' => true, 'vat_period' => 'QUARTERLY', 'reporting_framework' => 'K2', 'f_skatt' => true, 'employer_registered' => false];
+
+    expect(fn () => app(CreateCompany::class)->create($user, $input))->toThrow(ValidationException::class);
+
+    $company = app(CreateCompany::class)->create($user, [...$input, 'accept_agreement' => true]);
+
+    expect($company->agreement_version)->toBe(LegalPageController::VERSION)
+        ->and($company->agreement_accepted_by)->toBe($user->id)
+        ->and($company->agreement_accepted_at)->not->toBeNull();
 });
