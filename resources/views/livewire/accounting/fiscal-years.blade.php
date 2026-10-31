@@ -80,7 +80,7 @@
     </x-ui.card>
 
     <x-input-error for="fiscal_year" />
-    <p class="text-sm text-gray-500">{{ __('Vid årsskiftet förs utgående balanser över som ingående balanser till nästa år. Ett resultat som inte är bokfört förs till Årets resultat. Har du bokfört något i det gamla året efteråt, för över igen. Ett räkenskapsår stängs vid bokslutet, som kommer i en senare version.') }}</p>
+    <p class="text-sm text-gray-500">{{ __('Vid årsskiftet förs utgående balanser över som ingående balanser till nästa år. Ett resultat som inte är bokfört förs till Årets resultat. Har du bokfört något i det gamla året efteråt, för över igen. Ett räkenskapsår stängs under Bokslut.') }}</p>
     @if($canArchive)
         <p class="text-sm text-gray-500">{{ __('Arkivpaketet är en ZIP-fil med allt som räknas som räkenskapsinformation för året, i format som går att läsa utan NONOX. Bokföringslagen kräver att den sparas i sju år efter utgången av det kalenderår då räkenskapsåret avslutades. Ladda ner paketet efter bokslutet och spara det på ett säkert ställe.') }}</p>
     @endif

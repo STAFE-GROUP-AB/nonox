@@ -1,0 +1,127 @@
+@php
+    $input = 'block w-full rounded-xl border-stone-300 shadow-sm focus:border-accent-500 focus:ring-accent-500';
+    $kr = fn (int $ore): string => \App\Support\Money\Money::ofOre($ore)->format();
+    $done = collect($items)->where('status', '!=', 'todo')->count();
+    $profit = -$result->beforeTaxOre;
+@endphp
+<div class="space-y-6">
+    <nav class="flex flex-wrap gap-2" aria-label="{{ __('Välj räkenskapsår') }}">
+        @foreach($years as $option)
+            <button type="button" wire:key="year-{{ $option->id }}" wire:click="$set('year', {{ $option->id }})" @class([
+                'rounded-full px-4 py-2 text-sm font-semibold transition',
+                'bg-ink text-white' => $option->id === $fiscalYear->id,
+                'bg-stone-200/60 text-gray-800 hover:bg-stone-200' => $option->id !== $fiscalYear->id,
+            ]) @if($option->id === $fiscalYear->id) aria-current="true" @endif>{{ $option->label() }} @if(! $option->isOpen())<span class="font-normal opacity-70">· {{ __('Stängt') }}</span>@endif</button>
+        @endforeach
+    </nav>
+
+    <section class="grid gap-3 sm:grid-cols-3">
+        <div class="rounded-3xl bg-ink px-5 py-4 text-white shadow-sm">
+            <p class="text-sm text-stone-300">{{ $profit >= 0 ? __('Resultat före skatt') : __('Förlust före skatt') }}</p>
+            <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums">{{ $kr(abs($profit)) }}</p>
+        </div>
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+            <p class="text-sm text-gray-500">{{ __('Checklistan') }}</p>
+            <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ __(':done av :total klara', ['done' => $done, 'total' => count($items)]) }}</p>
+        </div>
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+            <p class="text-sm text-gray-500">{{ __('Status') }}</p>
+            <p class="mt-1 text-2xl font-bold tracking-tight text-ink">{{ $fiscalYear->isOpen() ? __('Öppet') : __('Stängt :date', ['date' => $fiscalYear->closed_at?->toDateString()]) }}</p>
+        </div>
+    </section>
+
+    <x-ui.card :title="__('1. Checklista')" :description="__('Punkterna som systemet kan se i bokföringen bockas av av sig själva. De andra bekräftar du när de är gjorda eller inte gäller företaget.')">
+        <ul class="divide-y divide-stone-200">
+            @foreach($items as $item)
+                <li wire:key="item-{{ $item['key'] }}" class="flex flex-wrap items-start gap-4 py-3">
+                    <span @class([
+                        'mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                        'bg-ink text-white' => $item['status'] === 'ok',
+                        'bg-stone-200 text-gray-600' => $item['status'] === 'na',
+                        'bg-accent-100 text-accent-800' => $item['status'] === 'todo',
+                    ]) aria-hidden="true">{{ match ($item['status']) { 'ok' => '✓', 'na' => '–', default => '!' } }}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-semibold text-ink">{{ $item['label'] }} <span class="sr-only">{{ match ($item['status']) { 'ok' => __('Klar'), 'na' => __('Gäller inte'), default => __('Att göra') } }}</span></p>
+                        <p class="text-sm text-gray-600">{{ $item['detail'] }}</p>
+                    </div>
+                    @if($item['manual'] && $fiscalYear->isOpen())
+                        <label class="flex items-center gap-2 text-sm text-gray-800">
+                            <input type="checkbox" class="rounded border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
+                            {{ __('Klart eller gäller inte') }}
+                        </label>
+                    @elseif($item['route'] !== null && $item['status'] === 'todo')
+                        <a href="{{ route($item['route']) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Gå dit') }}</a>
+                    @endif
+                </li>
+            @endforeach
+        </ul>
+    </x-ui.card>
+
+    <x-ui.card :title="__('2. Bokslutsverifikationer')" :description="__('Bokförs den sista dagen i räkenskapsåret. Bokför först allt annat, sedan skatten och sist årets resultat.')">
+        <div class="space-y-6">
+            @unless($ownerTaxed)
+                <div>
+                    <p class="font-semibold text-ink">{{ __('Årets skatt') }}</p>
+                    @if($taxEntry !== null)
+                        <p class="mt-1 text-sm text-gray-700">{{ $taxEntry->amount_ore->ore === 0 ? __('Ingen skatt för året.') : __(':amount bokfört på 8910 mot 2512.', ['amount' => $taxEntry->amount_ore->format()]) }}</p>
+                    @elseif($fiscalYear->isOpen())
+                        <form wire:submit="bookTax" class="mt-2 flex flex-wrap items-end gap-4">
+                            <x-ui.field for="closing_tax" class="w-full max-w-md" :label="__('Inkomstskatt, kr')" :hint="$profit > 0 ? __('Räkna fram skatten på det skattemässiga resultatet. Som jämförelse är 20,6 % av resultatet före skatt :amount.', ['amount' => $kr(intdiv($profit * 206 + 500, 1000))]) : __('Ingen vinst, så oftast ingen skatt. Skriv 0.')">
+                                <input id="closing_tax" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="tax">
+                            </x-ui.field>
+                            <x-button>{{ __('Bokför skatten') }}</x-button>
+                        </form>
+                    @endif
+                </div>
+            @endunless
+
+            <div>
+                <p class="font-semibold text-ink">{{ __('Årets resultat') }}</p>
+                @if(! $result->hasActivity())
+                    <p class="mt-1 text-sm text-gray-700">{{ __('Inget resultat i året.') }}</p>
+                @elseif($result->isBooked())
+                    <p class="mt-1 text-sm text-gray-700">{{ __('Resultatet efter skatt, :amount, är bokat på 8999 mot :account.', ['amount' => $kr(-$result->afterTaxOre()), 'account' => $resultAccount]) }}</p>
+                @elseif($fiscalYear->isOpen())
+                    <p class="mt-1 text-sm text-gray-700">{{ __('Kvar att boka: :amount, på 8999 mot :account.', ['amount' => $kr(-$result->unbookedOre()), 'account' => $resultAccount]) }}</p>
+                    @if(! $ownerTaxed && $taxEntry === null)
+                        <p class="mt-1 text-sm text-gray-500">{{ __('Bokför skatten först.') }}</p>
+                    @else
+                    <x-button type="button" class="mt-3" wire:click="bookResult" wire:confirm="{{ __('Boka årets resultat? Bokför allt annat i året först.') }}">{{ __('Boka årets resultat') }}</x-button>
+                    @endif
+                @endif
+            </div>
+        </div>
+    </x-ui.card>
+
+    <x-ui.card :title="__('3. Stäng året')">
+        @if(! $fiscalYear->isOpen())
+            <p class="text-sm text-gray-700">{{ __('Året är stängt. Inget kan bokföras i det, och de utgående balanserna är ingående balanser i nästa år.') }}</p>
+        @else
+            <p class="text-sm text-gray-700">{{ __('När året stängs går det inte längre att bokföra i det, bokföringen låses till och med :date och balanserna förs över till nästa år. Det går inte att ångra.', ['date' => $fiscalYear->end_date->toDateString()]) }}</p>
+            @if(! $complete)
+                <p class="mt-3 text-sm font-medium text-accent-800">{{ __('Bocka av hela checklistan först.') }}</p>
+            @elseif(! $canClose)
+                <p class="mt-3 text-sm text-gray-600">{{ __('Bara den som får låsa perioder kan stänga året.') }}</p>
+            @endif
+            <x-danger-button class="mt-4" wire:click="close" wire:confirm="{{ __('Stänga räkenskapsåret :year för gott? Det går inte att ångra.', ['year' => $fiscalYear->label()]) }}" :disabled="! $complete || ! $canClose">{{ __('Stäng räkenskapsåret') }}</x-danger-button>
+        @endif
+    </x-ui.card>
+
+    <x-ui.card :title="__('4. Resultatdisposition')" :description="$ownerTaxed ? __('Årets resultat förs till eget kapital i början av nästa år.') : __('Efter årsstämman: resultatet förs till balanserat resultat, med den utdelning stämman beslutat.')">
+        @if($disposition !== null)
+            <p class="text-sm text-gray-700">{{ __('Resultatet :amount är disponerat.', ['amount' => $disposition->amount_ore->format()]) }}@if($disposition->dividend_ore->ore > 0) {{ __('Utdelning :amount på 2898.', ['amount' => $disposition->dividend_ore->format()]) }}@endif</p>
+        @elseif($fiscalYear->isOpen())
+            <p class="text-sm text-gray-600">{{ __('Stäng året först.') }}</p>
+        @elseif($next === null)
+            <p class="text-sm text-gray-600">{{ __('Nästa räkenskapsår finns inte.') }}</p>
+        @else
+            <form wire:submit="dispose" class="flex flex-wrap items-end gap-4">
+                <x-ui.field for="disposition_date" :label="$ownerTaxed ? __('Datum') : __('Datum för årsstämman')"><input id="disposition_date" type="date" class="{{ $input }} mt-1" wire:model="dispositionDate"></x-ui.field>
+                @unless($ownerTaxed)
+                    <x-ui.field for="disposition_dividend" :label="__('Utdelning, kr')" :hint="__('0 om ingen utdelning.')"><input id="disposition_dividend" type="text" inputmode="decimal" class="{{ $input }} mt-1 w-48" wire:model="dividend"></x-ui.field>
+                @endunless
+                <x-button>{{ __('Bokför resultatdispositionen') }}</x-button>
+            </form>
+        @endif
+    </x-ui.card>
+</div>

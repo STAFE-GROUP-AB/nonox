@@ -11,6 +11,7 @@ use App\Models\BankFileImport;
 use App\Models\BankReconciliation;
 use App\Models\BankTransaction;
 use App\Models\ClientProfile;
+use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\CompanyModule;
 use App\Models\CostCenter;
@@ -45,6 +46,7 @@ use App\Models\VoucherNumberCounter;
 use App\Models\VoucherRow;
 use App\Models\VoucherRowHistory;
 use App\Models\VoucherSeries;
+use App\Models\YearEndEntry;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -108,6 +110,8 @@ const COMPANY_SCOPED_MODELS = [
     ClientProfile::class => 'clientProfileAttributes',
     FixedAsset::class => 'fixedAssetAttributes',
     Accrual::class => 'accrualAttributes',
+    ClosingCheck::class => 'closingCheckAttributes',
+    YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
     AccrualPosting::class => 'accrualPostingAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
@@ -263,6 +267,25 @@ function bankReconciliationAttributes(): array
         'difference_ore' => 0,
         'outstanding_row_ids' => [],
         'reconciled_by' => User::factory()->create()->id,
+    ];
+}
+
+function closingCheckAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'key' => 'cash_count_'.random_int(1, 1_000_000),
+        'checked_by' => User::factory()->create()->id,
+    ];
+}
+
+function yearEndEntryAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'type' => 'TAX',
+        'amount_ore' => 1_648_000,
+        'created_by' => User::factory()->create()->id,
     ];
 }
 
@@ -685,7 +708,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [AccrualPosting::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
+const APPEND_ONLY = [AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

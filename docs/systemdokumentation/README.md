@@ -381,6 +381,37 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   låter ändra eller ta bort, och skrivs i behandlingshistoriken.
 - Avstämning kräver behörigheten att bokföra verifikationer.
 
+## 5a5. Bokslut
+
+- Under Bokföring → Bokslut görs bokslutet per räkenskapsår i fyra steg.
+- **Checklista.** Systemet kontrollerar själv i bokföringen att det inte finns
+  utkast i året, att alla momsperioder är bokförda, att varje bank- och
+  kassakonto med saldo eller rörelse är avstämt utan skillnad den sista dagen,
+  att avskrivningar och periodiseringar är bokförda till och med årets sista
+  månad, att årets skatt är bokförd (inte för enskild firma, handelsbolag och
+  kommanditbolag) och att årets resultat är bokat. Användaren bekräftar själv
+  kassainventering, kundfordringar mot 1510, leverantörsskulder mot 2440,
+  skattekontot mot 1630, löner och semesterskuld samt varulager; en punkt som
+  inte gäller företaget bockas också av. Bockarna sparas i `closing_checks`
+  och kan tas bort så länge året är öppet.
+- **Bokslutsverifikationer** bokförs den sista dagen i året i serie A.
+  Skatten (8910 mot 2512) anges av användaren; noll sparas utan verifikation.
+  Därefter bokas årets resultat efter skatt på 8999 mot 2099 (2019 för
+  enskild firma, handelsbolag och kommanditbolag), så att resultaträkningen
+  går jämnt ut. Bokförs något i året efteråt bokas mellanskillnaden på samma
+  sätt. Saknade konton läggs till med BAS-namn.
+- **Stäng året.** Kräver att hela checklistan är klar, att tidigare år är
+  stängda och behörigheten att låsa perioder. Utgående balanser förs till
+  nästa år (som skapas vid behov), året får status stängt med tid och person,
+  och bokföringen låses till och med årets sista dag. Det går inte att ångra;
+  inget kan bokföras i ett stängt år.
+- **Resultatdisposition** bokförs i nästa år på datum för årsstämman: årets
+  resultat flyttas från 2099 till 2098, med beslutad utdelning på 2898. För
+  enskild firma, handelsbolag och kommanditbolag flyttas resultatet från 2019
+  till 2010. Varje skatt-, resultat- och dispositionspost sparas i
+  `year_end_entries`, som databasen inte låter ändra eller ta bort.
+- Bokslutet kräver behörigheten att hantera räkenskapsår.
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -710,6 +741,13 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   följer planen. Moms vid försäljning av inventarier och om avyttringsmånaden
   ska skrivas av lämnas till användaren. Kontot 7835 för avskrivningar på
   datorer ska kontrolleras mot gällande BAS.
+- Bokslut: skatten räknas inte fram av systemet. Sidan visar 20,6 % av
+  resultatet före skatt som jämförelse; skattesatsen och skillnaden mellan
+  bokfört och skattemässigt resultat (INK2) ska kontrolleras. Kontona 2512
+  och 2898 ska kontrolleras mot gällande BAS. Utdelningen prövas inte mot fritt
+  eget kapital eller försiktighetsregeln (ABL 17 kap). Eget kapital för
+  handelsbolag och kommanditbolag hålls inte per delägare. Ideella föreningar
+  och stiftelser behandlas som aktiebolag vad gäller skatt och konton.
 - Periodiseringar: systemet varken kräver eller hindrar en periodisering;
   användaren avgör vad som är väsentligt. Ska systemet påminna om en
   beloppsgräns under vilken K2-företag får avstå från att periodisera, och i
@@ -749,3 +787,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.23 | 2026-11-01 | Anläggningsregister med linjära avskrivningar enligt plan, avyttring och utrangering. |
 | 0.24 | 2026-11-01 | Periodiseringar: förutbetalda och upplupna kostnader och intäkter, med månadsvis fördelning och återföring. |
 | 0.25 | 2026-11-01 | Bankavstämning per konto mot kontoutdraget, med poster som förs vidare tills de når banken. |
+| 0.26 | 2026-11-01 | Bokslut: checklista, skatt och årets resultat, stängning av året och resultatdisposition. |

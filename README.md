@@ -74,7 +74,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Anläggningsregister: inventarier, datorer, maskiner och bilar med linjära avskrivningar som bokförs varje månad, och försäljning eller utrangering.
 - ✅ Bankavstämning: bank- och kassakonton stäms av mot kontoutdraget, med poster som förs vidare tills banken har dragit dem.
 - ✅ Periodiseringar: förutbetalda kostnader och intäkter som fördelas över månader, och upplupna poster som bokförs vid månadens slut och återförs nästa månad.
-- 🚧 Bokslut och årsredovisning.
+- ✅ Bokslut: checklista som kontrollerar bokföringen själv, skatt och årets resultat, stängning av året med låsning och resultatdisposition efter årsstämman.
+- 🚧 Årsredovisning (K2, iXBRL) och SRU-filer.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 
@@ -91,7 +92,7 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 Var medveten om var projektet står innan du installerar:
 
 - ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering, leverantörsfakturor, lön (modul) och NONOX AI (modul). Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** bokslut och årsredovisning, EU- och exportfakturor samt utländsk valuta.
+- 🚧 **Inte byggt ännu:** årsredovisning, EU- och exportfakturor samt utländsk valuta.
 
 ### 1. Installera verktygen (en gång per dator)
 
