@@ -55,7 +55,6 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Leverantörsfakturor: ladda upp fakturan som PDF eller bild, kontera per kostnadsställe (till exempel per restaurang), registrera, attestera och registrera betalningen. Fakturan blir underlag till verifikationen. Den som registrerar får inte attestera själv, om inte företaget bara är en person.
 
 **På väg** (i den här ordningen)
-- 🚧 EU- och exportfakturor.
 - ✅ Betalfiler till banken (ISO 20022 pain.001) för attesterade leverantörsfakturor, för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. Betalningarna bokförs när banken har betalat.
 - ✅ Kreditnotor från leverantörer (kvittas mot en faktura eller betalas tillbaka) och inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet i Sverige, med momsen i rätt rutor.
 - 🚧 Automatisk avstämning mot bankens svar, import av varor från länder utanför EU och fakturor i utländsk valuta.

@@ -190,15 +190,17 @@
       <p style="margin:0 0 16px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acct)">Funktioner</p>
       <h2 id="funk-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(36px,5.6vw,72px);line-height:1;letter-spacing:-0.04em;text-wrap:balance">Allt ett svenskt företag behöver. Inget du inte bett om.</h2>
     </div>
-    <ul style="list-style:none;margin:clamp(40px,5vw,64px) 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:24px;overflow:hidden">
+    <div style="margin:clamp(40px,5vw,64px) 0 0;background:var(--card);border:1px solid var(--line);border-radius:24px;overflow:hidden">
+    <ul style="list-style:none;margin:0 -1px -1px 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr));gap:0">
       @foreach($features as $f)
-        <li class="lp18" data-reveal="" style="background:var(--card);padding:30px 28px 34px;display:flex;flex-direction:column;gap:12px;transition:background .2s">
+        <li class="lp18" data-reveal="" style="border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--card);padding:30px 28px 34px;display:flex;flex-direction:column;gap:12px;transition:background .2s">
           <span style="width:48px;height:48px;border-radius:14px;background:var(--accl);display:grid;place-items:center;margin-bottom:8px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $f['d'] }}"></path></svg></span>
-          <h3 style="margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:21px;letter-spacing:-0.02em">{{ $f['t'] }}@if($f['mod'] ?? false)<span style="padding:3px 9px;border-radius:999px;border:1px solid var(--line);font-family:Inter,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:0;color:var(--muted)">Modul</span>@endif</h3>
+          <h3 style="margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:21px;letter-spacing:-0.02em">{{ $f['t'] }}@if($f['mod'] ?? false)<span style="padding:3px 9px;border-radius:999px;border:1px solid var(--line);font-family:Inter,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:0;color:var(--muted)">Modul</span>@endif@if($f['soon'] ?? false)<span style="padding:3px 9px;border-radius:999px;background:var(--accl);font-family:Inter,sans-serif;font-size:11.5px;font-weight:700;letter-spacing:0;color:var(--acct)">Kommer snart</span>@endif</h3>
           <p style="margin:0;font-size:15.5px;line-height:1.55;color:var(--muted);text-wrap:pretty">{{ $f['b'] }}</p>
         </li>
       @endforeach
     </ul>
+    </div>
     <p style="margin:20px 0 0;font-size:14.5px;color:var(--muted)">Moduler slås på och av per företag under <strong style="color:var(--ink);font-weight:600">Inställningar → Moduler</strong>.</p>
   </div>
 </section>

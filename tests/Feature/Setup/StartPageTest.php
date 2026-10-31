@@ -224,3 +224,11 @@ it('lists the public pages in the sitemap and points robots to it', function () 
 
     $this->get('/robots.txt')->assertSee('Disallow: /', false);
 });
+
+it('lists the features that exist and marks the staff ledger and AI inbox as coming soon', function () {
+    $this->get('/')
+        ->assertSee('Moms och EU')
+        ->assertSee('Min sida för anställda')
+        ->assertSee('Personalliggare')
+        ->assertSee('NONOX Inbox med AI');
+});
