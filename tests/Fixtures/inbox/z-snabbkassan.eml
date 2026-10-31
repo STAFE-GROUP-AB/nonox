@@ -1,0 +1,31 @@
+Authentication-Results: mx.in.nonox.example; spf=pass
+ smtp.mailfrom=snabbkassan.example; dkim=pass header.d=snabbkassan.example;
+ dmarc=pass header.from=snabbkassan.example
+From: Snabbkassan <dagsrapport@snabbkassan.example>
+To: exempelbolaget-ab-k3x9p2qa@in.nonox.app
+Subject: Dagsrapport
+Date: Sat, 31 Oct 2026 06:15:00 +0000
+Message-ID: <sk-1@snabbkassan.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============2321071102859008479=="
+
+--===============2321071102859008479==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Se bifogad fil.
+
+--===============2321071102859008479==
+Content-Type: text/plain
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="snabbkassan-dag.txt"
+MIME-Version: 1.0
+
+RGFnc3JhcHBvcnQgU25hYmJrYXNzYW4JMjAyNi0xMC0zMA0KTW9tc3NhdHMJTmV0dG8JTW9tcwlC
+cnV0dG8NCjI1ICUJODAwMCwwMAkyMDAwLDAwCTEwMDAwLDAwDQoxMiAlCTUwMDAsMDAJNjAwLDAw
+CTU2MDAsMDANCjYgJQkxMDAwLDAwCTYwLDAwCTEwNjAsMDANCjAgJQk0OTksNjAJMCwwMAk0OTks
+NjANCkJldGFsc+R0dAlCZWxvcHANCktvcnQJMTI0MDAsMDANClN3aXNoCTMwMDAsMDANCktvbnRh
+bnQJMTkwMCwwMA0KUHJlc2VudGtvcnQJNjAsMDANCkRyaWNrcwkyMDAsMDANCkF2cnVuZG5pbmcJ
+MCw0MA0K
+
+--===============2321071102859008479==--

@@ -1,0 +1,32 @@
+Authentication-Results: mx.in.nonox.example; spf=pass
+ smtp.mailfrom=kassanova.example; dkim=pass header.d=kassanova.example;
+ dmarc=pass header.from=kassanova.example
+From: KassaNova <rapport@kassanova.example>
+To: exempelbolaget-ab-k3x9p2qa@in.nonox.app
+Subject: Z-rapport 2026-10-30
+Date: Sat, 31 Oct 2026 06:15:00 +0000
+Message-ID: <kn-1@kassanova.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============2063720312565245602=="
+
+--===============2063720312565245602==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Dagens Z-rapport bifogas.
+
+--===============2063720312565245602==
+Content-Type: text/csv
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="kassanova-z.csv"
+MIME-Version: 1.0
+
+77u/Wi1yYXBwb3J0O0thc3NhTm92YQpEYXR1bTsyMDI2LTEwLTMwClJ1YnJpaztCZWxvcHAKRsO2
+cnPDpGxqbmluZyAyNSUgbmV0dG87ODAwMCwwMApNb21zIDI1JTsyMDAwLDAwCkbDtnJzw6Rsam5p
+bmcgMTIlIG5ldHRvOzUwMDAsMDAKTW9tcyAxMiU7NjAwLDAwCkbDtnJzw6Rsam5pbmcgNiUgbmV0
+dG87MTAwMCwwMApNb21zIDYlOzYwLDAwCk1vbXNmcmkgZsO2cnPDpGxqbmluZzs0OTksNjAKU3Vt
+bWEgYnJ1dHRvOzE3MTU5LDYwCktvcnQ7MTI0MDAsMDAKU3dpc2g7MzAwMCwwMApLb250YW50OzE5
+MDAsMDAKUHJlc2VudGtvcnQ7NjAsMDAKRHJpY2tzOzIwMCwwMArDlnJlc2F2cnVuZG5pbmc7MCw0
+MApBbnRhbCBrdml0dG9uOzE0Mwo=
+
+--===============2063720312565245602==--

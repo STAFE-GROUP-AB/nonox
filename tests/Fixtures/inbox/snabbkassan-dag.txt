@@ -1,0 +1,13 @@
+Dagsrapport Snabbkassan	2026-10-30
+Momssats	Netto	Moms	Brutto
+25 %	8000,00	2000,00	10000,00
+12 %	5000,00	600,00	5600,00
+6 %	1000,00	60,00	1060,00
+0 %	499,60	0,00	499,60
+Betalsätt	Belopp
+Kort	12400,00
+Swish	3000,00
+Kontant	1900,00
+Presentkort	60,00
+Dricks	200,00
+Avrundning	0,40

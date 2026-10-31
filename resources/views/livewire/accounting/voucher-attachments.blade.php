@@ -20,8 +20,10 @@
             <div class="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                 @if($selected->isImage())
                     <img src="{{ $url }}" alt="{{ $selected->original_name }}" class="w-full object-contain">
-                @else
+                @elseif($selected->mime === 'application/pdf')
                     <iframe src="{{ $url }}" title="{{ $selected->original_name }}" class="h-[32rem] w-full"></iframe>
+                @else
+                    <p class="p-4 text-sm text-gray-700">{{ __('Filen kan inte visas här. Ladda ner den för att öppna den.') }} <a href="{{ $url }}" class="font-medium text-accent-700 underline">{{ __('Ladda ner') }}</a></p>
                 @endif
             </div>
             <div class="mt-2 flex items-center justify-between text-sm">

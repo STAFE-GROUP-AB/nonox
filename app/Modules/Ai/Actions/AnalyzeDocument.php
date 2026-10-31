@@ -25,6 +25,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Crypt;
 use Laravel\Ai\Ai;
+use Laravel\Ai\Contracts\Agent;
 use Laravel\Ai\Contracts\Providers\TextProvider;
 use Laravel\Ai\Exceptions\InsufficientCreditsException;
 use Laravel\Ai\Exceptions\ProviderConnectionException;
@@ -32,6 +33,7 @@ use Laravel\Ai\Exceptions\ProviderOverloadedException;
 use Laravel\Ai\Exceptions\RateLimitedException;
 use Laravel\Ai\Files\Document;
 use Laravel\Ai\Files\Image;
+use Laravel\Ai\Responses\StructuredAgentResponse;
 use Throwable;
 
 /**
@@ -60,7 +62,7 @@ class AnalyzeDocument
     /**
      * @return array<string, mixed> the agent's answer, with supplier_id and only accounts in the chart
      */
-    public function supplierInvoice(User $user, Company $company, string $path, string $mime): array
+    public function supplierInvoice(?User $user, Company $company, string $path, string $mime): array
     {
         $answer = $this->ask($user, $company, new SupplierInvoiceAgent, $path, $mime, 'supplier_invoice');
 
@@ -77,7 +79,7 @@ class AnalyzeDocument
     /**
      * @return array<string, mixed>
      */
-    public function voucher(User $user, Company $company, string $path, string $mime): array
+    public function voucher(?User $user, Company $company, string $path, string $mime): array
     {
         $answer = $this->ask($user, $company, new VoucherAgent, $path, $mime, 'voucher');
 
@@ -124,30 +126,45 @@ class AnalyzeDocument
     }
 
     /**
+     * Asks one of the inbox's agents (NONOX Inbox, ADR-023) about a document
+     * that arrived by e-mail: a file, or text only when $path is null. No
+     * person is behind the call: the company turned NONOX AI on and chose
+     * in the inbox's settings that received documents are read by it.
+     *
      * @return array<string, mixed>
      */
-    private function ask(User $user, Company $company, SupplierInvoiceAgent|VoucherAgent|ExpenseReceiptAgent $agent, string $path, string $mime, string $kind, string $permission = 'ai:use'): array
+    public function inboxDocument(Company $company, Agent $agent, string $kind, ?string $path, ?string $mime, string $text = ''): array
+    {
+        return $this->ask(null, $company, $agent, $path, $mime, $kind, 'ai:use', $text);
+    }
+
+    /**
+     * @param  ?User  $user  null when the company's inbox asks (see inboxDocument)
+     * @return array<string, mixed>
+     */
+    private function ask(?User $user, Company $company, Agent $agent, ?string $path, ?string $mime, string $kind, string $permission = 'ai:use', string $text = ''): array
     {
         $this->modules->ensureEnabled(AiModule::KEY, $company);
 
-        if (! $user->hasTeamPermission($company, $permission)) {
+        if ($user !== null && ! $user->hasTeamPermission($company, $permission)) {
             throw new AuthorizationException;
         }
 
         [$provider, $choice, $custom, $key] = self::providerFor($company);
 
-        $file = match (true) {
+        $files = $path === null ? [] : [match (true) {
             $mime === 'application/pdf' => Document::fromPath($path),
-            in_array($mime, self::IMAGE_TYPES, true) => Image::fromPath($path, $mime),
-            HeicImage::is($mime) => Image::fromBase64(HeicImage::toJpegBase64($path), 'image/jpeg'),
+            in_array($mime, self::IMAGE_TYPES, true) => Image::fromPath($path, (string) $mime),
+            HeicImage::is((string) $mime) => Image::fromBase64(HeicImage::toJpegBase64($path), 'image/jpeg'),
             default => throw new AiAnalysisException(__('Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG, WebP eller HEIC.')),
-        };
+        }];
 
         $built = Ai::build(['name' => "nonox_ai_company_{$company->id}", 'driver' => $provider->driver(), 'key' => $key]);
         $model = $built instanceof TextProvider ? self::modelFor($built, $choice, $custom) : $custom;
+        $prompt = $this->context($company).($text === '' ? '' : "\n\n{$text}");
 
         try {
-            $response = $agent->prompt($this->context($company), attachments: [$file], provider: $built->name(), model: $model, timeout: self::TIMEOUT);
+            $response = $agent->prompt($prompt, attachments: $files, provider: $built->name(), model: $model, timeout: self::TIMEOUT);
         } catch (Throwable $exception) {
             throw new AiAnalysisException(self::message($provider, $exception), previous: $exception);
         }
@@ -160,7 +177,7 @@ class AnalyzeDocument
             'output_tokens' => $response->usage->outputTokens,
         ], $company, $user);
 
-        return (array) $response->toArray();
+        return $response instanceof StructuredAgentResponse ? $response->toArray() : [];
     }
 
     /**

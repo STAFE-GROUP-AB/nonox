@@ -1,0 +1,288 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Actions\Payables\SaveSupplier;
+use App\Models\AuditLog;
+use App\Models\Supplier;
+use App\Models\Voucher;
+use App\Modules\Ai\Agents\SupplierInvoiceAgent;
+use App\Modules\Ai\Agents\VoucherAgent;
+use App\Modules\Inbox\Actions\ApproveInboxMessage;
+use App\Modules\Inbox\Actions\InboxReview;
+use App\Modules\Inbox\Actions\ManageInbox;
+use App\Modules\Inbox\Actions\ReplyToSender;
+use App\Modules\Inbox\Agents\DailyReportAgent;
+use App\Modules\Inbox\Agents\InboxClassifierAgent;
+use App\Modules\Inbox\Domain\DocumentType;
+use App\Modules\Inbox\Domain\Interpreter;
+use App\Modules\Inbox\Domain\MessageStatus;
+use App\Modules\Inbox\InboxModule;
+use App\Modules\Inbox\Livewire\InboxSettingsForm;
+use App\Modules\Inbox\Livewire\InboxWorkspace;
+use App\Modules\Inbox\Mail\InboxActionNeededMail;
+use App\Modules\Inbox\Mail\InboxReplyMail;
+use App\Modules\Inbox\Mail\InboxSummaryMail;
+use App\Modules\Inbox\Models\InboxMessage;
+use App\Modules\Inbox\Policies\InboxMessagePolicy;
+use App\Modules\ModuleManager;
+use App\Support\MailQuota;
+use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Laravel\Ai\Files\Document;
+use Laravel\Ai\Prompts\AgentPrompt;
+use Livewire\Livewire;
+use Tests\Support\Bookkeeping;
+use Tests\Support\Inbox;
+
+/*
+ * The inbox page: tabs, the proposal beside the attachment, approving with
+ * a confirmation, rejecting, replying, claiming, and the notifications.
+ */
+
+beforeEach(function () {
+    Storage::fake('local');
+    Http::preventStrayRequests();
+    Mail::fake();
+    $this->travelTo(CarbonImmutable::parse('2026-10-31 07:00:00'));
+    [$this->owner, $this->company] = Inbox::company();
+    CurrentCompany::set($this->company);
+    $this->actingAs($this->owner);
+    InboxClassifierAgent::fake();
+    DailyReportAgent::fake();
+});
+
+it('shows the tabs, opens a message from the query string and posts it after a confirmation', function () {
+    Inbox::allow($this->company, 'export@kassaexport.example');
+    $message = Inbox::receive($this->company, Inbox::fixture('sie.eml'));
+
+    $component = Livewire::withQueryParams(['flik' => 'utkast-klara', 'id' => $message?->id])
+        ->test(InboxWorkspace::class)
+        ->assertSee('Utkast klara')
+        ->assertSet('form.vouchers.0.description', 'Dagskassa 30 oktober (SIE A1)')
+        ->call('approve', 'post')
+        ->assertSet('confirmingApproval', true)
+        ->assertSee('En bokförd verifikation kan aldrig ändras, bara rättas.');
+
+    expect(Voucher::query()->count())->toBe(0);
+
+    $component->call('approve', 'post')->assertDispatched('toast', message: '2 verifikationer är bokförda med e-posten som underlag.');
+
+    expect(Voucher::query()->where('status', 'POSTED')->count())->toBe(2)
+        ->and(Inbox::fresh($message)->status)->toBe(MessageStatus::Booked);
+
+    Livewire::withQueryParams(['flik' => 'bokfort'])->test(InboxWorkspace::class)->assertSee('export@kassaexport.example');
+});
+
+it('lets a person write a voucher by hand next to an attachment in the manual queue', function () {
+    Inbox::allow($this->company, '@exempelbolaget.example');
+    $message = Inbox::receive($this->company, Inbox::fixture('kvitto.eml'));
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message?->id)
+        ->assertSee('Ingen tolkning finns.')
+        ->assertSee('kvitto.pdf')
+        ->call('startAs', 'vouchers')
+        ->set('form.vouchers.0.rows.0.account', '5800')
+        ->set('form.vouchers.0.rows.0.debit', '200,00')
+        ->set('form.vouchers.0.rows.1.account', '1930')
+        ->set('form.vouchers.0.rows.1.credit', '200,00')
+        ->call('approve', 'draft')
+        ->assertHasNoErrors()
+        ->assertDispatched('toast', message: 'Utkastet är skapat. Du hittar det bland verifikationerna eller leverantörsfakturorna.');
+
+    expect(Inbox::fresh($message)->status)->toBe(MessageStatus::DraftCreated)
+        ->and(Voucher::query()->sole()->isPosted())->toBeFalse();
+});
+
+it('creates the supplier of an invoice from the invoice and registers it', function () {
+    Inbox::allow($this->company, 'faktura@grossisten.example');
+    $message = Inbox::receive($this->company, Inbox::fixture('peppol.eml'));
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message?->id)
+        ->assertSee('Grossisten Exempel AB finns inte i leverantörsregistret.')
+        ->call('createSupplier')
+        ->assertDispatched('toast', message: 'Grossisten Exempel AB är tillagd i leverantörsregistret.')
+        ->set('form.invoice.rows.0.account', '4010')
+        ->set('form.invoice.rows.1.account', '4010')
+        ->set('warningsConfirmed', true)
+        ->call('approve', 'post')
+        ->call('approve', 'post')
+        ->assertHasNoErrors()
+        ->assertDispatched('toast', message: 'Leverantörsfakturan är registrerad med e-posten som underlag.');
+
+    expect(Supplier::query()->sole()->bankgiro)->not->toBeNull()
+        ->and(Inbox::fresh($message)->supplier_invoice_id)->not->toBeNull();
+});
+
+it('rejects a message after a confirmation and lists it under Avvisat', function () {
+    Inbox::allow($this->company, 'export@kassaexport.example');
+    $message = Inbox::receive($this->company, Inbox::fixture('sie.eml'));
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message?->id)
+        ->call('reject')
+        ->set('rejectionReason', 'Fel företag')
+        ->call('reject')
+        ->assertDispatched('toast', message: 'Underlaget är avvisat. Det bokförs inte.');
+
+    expect(Inbox::fresh($message)->status)->toBe(MessageStatus::Rejected)
+        ->and(Inbox::fresh($message)->rejection_reason)->toBe('Fel företag');
+    Livewire::withQueryParams(['flik' => 'avvisat'])->test(InboxWorkspace::class)->assertSee('export@kassaexport.example');
+});
+
+it('allows a quarantined sender from the page', function () {
+    $message = Inbox::receive($this->company, Inbox::fixture('sie.eml'));
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message?->id)
+        ->assertSee('finns inte på listan över godkända avsändare')
+        ->call('allowSender')
+        ->assertDispatched('toast', message: 'export@kassaexport.example är godkänd. 1 meddelanden tolkas nu.');
+
+    expect(Inbox::fresh($message)->status)->toBe(MessageStatus::DraftReady);
+});
+
+it('answers the sender through the mailer, within the mail quota, and logs it', function () {
+    Inbox::allow($this->company, 'export@kassaexport.example');
+    $message = Inbox::receive($this->company, Inbox::fixture('sie.eml'));
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message?->id)
+        ->set('replyText', 'Kvittot saknas, kan du skicka det?')
+        ->call('reply')
+        ->assertDispatched('toast', message: 'Svaret är skickat till export@kassaexport.example.');
+
+    Mail::assertSent(InboxReplyMail::class, fn (InboxReplyMail $mail): bool => $mail->hasTo('export@kassaexport.example') && $mail->text === 'Kvittot saknas, kan du skicka det?');
+    expect(AuditLog::query()->where('action', 'inbox.replied')->sole()->payload['to'])->toBe('export@kassaexport.example');
+
+    foreach (range(1, MailQuota::LIMITS['documents']) as $ignored) {
+        RateLimiter::hit("mail-quota:documents:{$this->company->id}", 3600);
+    }
+
+    expect(fn () => app(ReplyToSender::class)($this->owner, Inbox::fresh($message), 'Igen'))->toThrow(ValidationException::class);
+});
+
+it('never answers a sender who is not allowed or whose mail failed authentication', function () {
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('sie.eml')));
+
+    expect(fn () => app(ReplyToSender::class)($this->owner, $message, 'Hej'))->toThrow(ValidationException::class);
+    Mail::assertNothingSent();
+});
+
+it('reads a PDF invoice and a receipt with NONOX AI when it is on, without anyone behind the call', function () {
+    Inbox::enableAi($this->company, $this->owner);
+    app(SaveSupplier::class)($this->owner, $this->company, ['name' => 'Grossisten Exempel AB', 'org_number' => '559900-1236', 'bankgiro' => '765-4320', 'payment_terms_days' => 30, 'default_account' => 4010]);
+    Inbox::allow($this->company, '@exempelbolaget.example');
+    InboxClassifierAgent::fake([['document_type' => 'SUPPLIER_INVOICE', 'reason' => 'Har förfallodag och bankgiro.', 'confidence' => 0.95]]);
+    SupplierInvoiceAgent::fake([[
+        'supplier_name' => 'Grossisten Exempel AB', 'supplier_org_number' => '559900-1236', 'supplier_vat_number' => '', 'supplier_bankgiro' => '123-4566', 'supplier_plusgiro' => '', 'supplier_iban' => '',
+        'supplier_address' => '', 'supplier_postal_code' => '', 'supplier_city' => '', 'supplier_email' => '', 'supplier_phone' => '',
+        'invoice_number' => '7001', 'ocr' => '7001234', 'invoice_date' => '2026-10-20', 'due_date' => '2026-11-19', 'currency' => 'SEK',
+        'total' => 1250.0, 'vat_total' => 250.0, 'is_credit_note' => false, 'vat_treatment' => 'DOMESTIC', 'description' => 'Kaffe',
+        'rows' => [['account' => 4010, 'amount_excl_vat' => 1000.0, 'vat_rate_percent' => 25, 'description' => 'Kaffe']], 'notes' => '',
+    ]]);
+    VoucherAgent::fake([['document_type' => 'RECEIPT', 'date' => '2026-10-29', 'description' => 'Taxi', 'counterparty' => 'Taxi', 'total' => 200.0, 'vat_total' => 10.71,
+        'rows' => [['account' => 5800, 'debit' => 200.0, 'credit' => 0, 'description' => ''], ['account' => 1930, 'debit' => 0, 'credit' => 200.0, 'description' => '']], 'notes' => '']]);
+
+    $invoice = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('kvitto.eml')));
+    $receipt = Inbox::fresh(Inbox::receive($this->company, str_replace('kv-1@', 'kv-2@', Inbox::fixture('kvitto.eml')), 'kvitto'));
+
+    expect($invoice->document_type)->toBe(DocumentType::SupplierInvoice)
+        ->and($invoice->interpreted_by)->toBe(Interpreter::Ai)
+        ->and($invoice->proposal['invoice']['invoice_number'])->toBe('7001')
+        ->and(array_column($invoice->warnings, 'code'))->toContain('BANK_DETAILS_CHANGED')
+        ->and($receipt->document_type)->toBe(DocumentType::Receipt)
+        ->and($receipt->proposal['vouchers'][0]['rows'][0])->toBe(['account' => 5800, 'debit_ore' => 20_000, 'credit_ore' => 0, 'description' => '']);
+
+    InboxClassifierAgent::assertPrompted(fn (AgentPrompt $prompt): bool => $prompt->attachments->first() instanceof Document);
+    // The +kvitto alias is a hint enough: the receipt was not classified again.
+    InboxClassifierAgent::assertPromptedTimes(1);
+    expect(AuditLog::query()->where('action', 'ai.document_analyzed')->count())->toBe(3);
+});
+
+it('tells the inbox handlers by e-mail at most once an hour, and sends the daily summary once a day', function () {
+    $modules = app(ModuleManager::class);
+    $modules->updateSettings(InboxModule::KEY, $this->company, $this->owner, ['notify_on_action' => true, 'daily_summary' => true]);
+    $auditor = Bookkeeping::member($this->company, 'auditor');
+
+    Inbox::receive($this->company, Inbox::fixture('sie.eml'));
+    Inbox::receive($this->company, Inbox::fixture('kvitto.eml'));
+
+    Mail::assertSent(InboxActionNeededMail::class, 1);
+    Mail::assertSent(InboxActionNeededMail::class, fn (InboxActionNeededMail $mail): bool => $mail->hasTo($this->owner->email));
+    Mail::assertNotSent(InboxActionNeededMail::class, fn (InboxActionNeededMail $mail): bool => $mail->hasTo($auditor->email));
+
+    $this->artisan('inbox:daily-summary')->assertSuccessful();
+    $this->artisan('inbox:daily-summary')->assertSuccessful();
+
+    Mail::assertSent(InboxSummaryMail::class, 1);
+    Mail::assertSent(InboxSummaryMail::class, fn (InboxSummaryMail $mail): bool => $mail->counts['review'] === 2 && $mail->counts['received'] === 2);
+});
+
+it('removes rejected mail after 90 days but never mail that led to bookkeeping', function () {
+    Inbox::allow($this->company, 'export@kassaexport.example');
+    $rejected = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('sie.eml')));
+    app(InboxReview::class)->reject($this->owner, $rejected);
+    $booked = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('peppol.eml')));
+    $booked->forceFill(['status' => MessageStatus::Rejected, 'handled_at' => now(), 'voucher_ids' => ['00000000-0000-0000-0000-000000000000']])->save();
+
+    $this->travel(91)->days();
+    $this->artisan('inbox:prune')->assertSuccessful();
+
+    expect(InboxMessage::query()->pluck('id')->all())->toBe([$booked->id])
+        ->and(Storage::disk('local')->exists($rejected->eml_path))->toBeFalse();
+});
+
+describe('permissions', function () {
+    it('gives each role what the role table says', function (string $role, bool $view, bool $manage, bool $settings) {
+        $user = Bookkeeping::member($this->company, $role);
+
+        expect($user->hasTeamPermission($this->company, 'inbox:view'))->toBe($view)
+            ->and($user->hasTeamPermission($this->company, 'inbox:manage'))->toBe($manage)
+            ->and($user->hasTeamPermission($this->company, 'inbox:settings'))->toBe($settings);
+    })->with([
+        'admin' => ['admin', true, true, true],
+        'accountant' => ['accountant', true, true, true],
+        'bookkeeper' => ['bookkeeper', true, true, false],
+        'approver' => ['approver', false, false, false],
+        'auditor' => ['auditor', true, false, false],
+    ]);
+
+    it('lets an auditor see the inbox but not act in it', function () {
+        Inbox::allow($this->company, 'export@kassaexport.example');
+        $message = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('sie.eml')));
+        $auditor = Bookkeeping::member($this->company, 'auditor');
+        $policy = new InboxMessagePolicy;
+
+        expect($policy->view($auditor, $message))->toBeTrue()
+            ->and($policy->manage($auditor, $message))->toBeFalse()
+            ->and(fn () => app(ApproveInboxMessage::class)($auditor, $message, $message->proposal))->toThrow(AuthorizationException::class)
+            ->and(fn () => app(InboxReview::class)->reject($auditor, $message))->toThrow(AuthorizationException::class);
+
+        $this->actingAs($auditor)->get(route('inbox.index'))->assertOk();
+        $this->actingAs($auditor)->get(route('inbox.original', ['message' => $message->id]))->assertOk();
+    });
+
+    it('lets a bookkeeper approve but not change the settings', function () {
+        $bookkeeper = Bookkeeping::member($this->company, 'bookkeeper');
+        $this->actingAs($bookkeeper);
+
+        Livewire::test(InboxSettingsForm::class, ['company' => $this->company])->assertForbidden();
+
+        expect(fn () => app(ManageInbox::class)->allow($bookkeeper, $this->company, '@exempel.example'))->toThrow(AuthorizationException::class);
+    });
+
+    it('answers 404 for the inbox pages while the module is off', function () {
+        app(ModuleManager::class)->disable(InboxModule::KEY, $this->company, $this->owner, true);
+
+        $this->get('/inkorg')->assertNotFound();
+    });
+});

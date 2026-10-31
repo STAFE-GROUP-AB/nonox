@@ -52,6 +52,11 @@ use App\Models\VoucherRow;
 use App\Models\VoucherRowHistory;
 use App\Models\VoucherSeries;
 use App\Models\YearEndEntry;
+use App\Modules\Inbox\Models\AllowedSender;
+use App\Modules\Inbox\Models\InboxAttachment;
+use App\Modules\Inbox\Models\InboxMailbox;
+use App\Modules\Inbox\Models\InboxMessage;
+use App\Modules\Inbox\Models\InboxTemplate;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -170,7 +175,38 @@ const COMPANY_SCOPED_MODELS = [
     VacationOpeningBalance::class => 'payrollVacationOpeningAttributes',
     ImportedPayslip::class => 'payrollImportedPayslipAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
+    InboxMailbox::class => 'inboxMailboxAttributes',
+    AllowedSender::class => ['pattern' => '@hemlig-leverantor.example'],
+    InboxTemplate::class => 'inboxTemplateAttributes',
+    InboxMessage::class => 'inboxMessageAttributes',
+    InboxAttachment::class => 'inboxAttachmentAttributes',
 ];
+
+function inboxMailboxAttributes(): array
+{
+    return ['slug' => 'hemligt-'.bin2hex(random_bytes(6))];
+}
+
+function inboxTemplateAttributes(): array
+{
+    return ['sender' => 'kassa@hemlig.example', 'kind' => 'DAILY_REPORT', 'format' => 'csv', 'fingerprint' => hash('sha256', (string) random_int(1, PHP_INT_MAX)), 'name' => 'Hemlig mall', 'mapping' => []];
+}
+
+function inboxMessageAttributes(): array
+{
+    return [
+        'channel' => 'MAILGUN', 'recipient' => 'hemligt@in.nonox.app', 'from_email' => 'kassa@hemlig.example', 'received_at' => '2026-10-31 07:00:00',
+        'eml_path' => 'inkorg/test/original.eml', 'eml_sha256' => hash('sha256', (string) random_int(1, PHP_INT_MAX)), 'eml_size' => 100, 'status' => 'NEEDS_REVIEW',
+    ];
+}
+
+function inboxAttachmentAttributes(): array
+{
+    return [
+        'inbox_message_id' => InboxMessage::create(inboxMessageAttributes())->id,
+        'position' => 1, 'filename' => 'hemlig.pdf', 'mime' => 'application/pdf', 'size' => 100, 'sha256' => str_repeat('0', 64), 'path' => 'inkorg/test/1.pdf',
+    ];
+}
 
 /** Runs inside the company's context. */
 function voucherAttributes(): array

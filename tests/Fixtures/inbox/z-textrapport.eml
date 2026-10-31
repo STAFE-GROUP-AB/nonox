@@ -1,0 +1,32 @@
+Authentication-Results: mx.in.nonox.example; spf=pass
+ smtp.mailfrom=cafe-exempel.example; dkim=pass header.d=cafe-exempel.example;
+ dmarc=pass header.from=cafe-exempel.example
+From: Kassaregistret <kassa@cafe-exempel.example>
+To: exempelbolaget-ab-k3x9p2qa@in.nonox.app
+Subject: Z-rapport 0412
+Date: Sat, 31 Oct 2026 06:15:00 +0000
+Message-ID: <tr-1@cafe-exempel.example>
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0
+
+KASSAREGISTER Z-RAPPORT
+Z-nummer: 0412
+Datum: 30.10.2026
+
+Försäljning 25%            10 000,00
+  varav moms 25%            2 000,00
+Försäljning 12%             5 600,00
+  varav moms 12%              600,00
+Försäljning 6%              1 060,00
+  varav moms 6%                60,00
+Försäljning 0%                499,60
+TOTALT                     17 159,60
+
+Kort                       12 400,00
+Swish                       3 000,00
+Kontant                     1 900,00
+Presentkort                    60,00
+Dricks                        200,00
+Öresavrundning                  0,40
+Antal kunder: 143

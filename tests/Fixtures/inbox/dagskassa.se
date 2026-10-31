@@ -1,0 +1,22 @@
+#FLAGGA 0
+#FORMAT PC8
+#SIETYP 4
+#PROGRAM "Kassaexport" 1.0
+#GEN 20261031
+#FNAMN "Exempelbolaget AB"
+#RAR 0 20260101 20261231
+#KONTO 1910 "Kassa"
+#KONTO 3001 "F”rs„ljning 25 %"
+#KONTO 2611 "Utg†ende moms 25 %"
+#VER A 1 20261030 "Dagskassa 30 oktober"
+{
+#TRANS 1910 {} 1250.00
+#TRANS 3001 {} -1000.00
+#TRANS 2611 {} -250.00
+}
+#VER A 2 20261031 "Dagskassa 31 oktober"
+{
+#TRANS 1910 {} 625.00
+#TRANS 3001 {} -500.00
+#TRANS 2611 {} -125.00
+}
