@@ -1,0 +1,29 @@
+Authentication-Results: mx.in.nonox.example; spf=pass
+ smtp.mailfrom=bongia.example; dkim=pass header.d=bongia.example; dmarc=pass
+ header.from=bongia.example
+From: Bongia <export@bongia.example>
+To: exempelbolaget-ab-k3x9p2qa@in.nonox.app
+Subject: Daily export
+Date: Sat, 31 Oct 2026 06:15:00 +0000
+Message-ID: <bg-1@bongia.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============0528662114836490445=="
+
+--===============0528662114836490445==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Automatic export.
+
+--===============0528662114836490445==
+Content-Type: text/csv
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="bongia-export.csv"
+MIME-Version: 1.0
+
+ZGF0ZSxyZWdpc3RlcixuZXRfMjUsdmF0XzI1LG5ldF8xMix2YXRfMTIsbmV0XzYsdmF0XzYsc2Fs
+ZXNfMCxjYXJkLHN3aXNoLGNhc2gsZ2lmdGNhcmQsdGlwcyxyb3VuZGluZyxyZWNlaXB0cwoyMDI2
+LTEwLTMwLEsxLDgwMDAuMDAsMjAwMC4wMCw1MDAwLjAwLDYwMC4wMCwxMDAwLjAwLDYwLjAwLDQ5
+OS42MCwxMjQwMC4wMCwzMDAwLjAwLDE5MDAuMDAsNjAuMDAsMjAwLjAwLDAuNDAsMTQzCg==
+
+--===============0528662114836490445==--

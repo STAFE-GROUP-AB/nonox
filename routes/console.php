@@ -9,3 +9,7 @@ Schedule::command('ledger:verify --all')->dailyAt('03:15')->withoutOverlapping()
 Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlapping();
 // Personal data without a remaining purpose (GDPR art. 5.1 e), see docs/gdpr/lagringstider.md.
 Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();
+// NONOX Inbox (ADR-023): IMAP mailboxes of self-hosted inboxes, the daily summary and retention.
+Schedule::command('inbox:fetch')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('inbox:daily-summary')->dailyAt('07:00')->withoutOverlapping();
+Schedule::command('inbox:prune')->dailyAt('04:25')->withoutOverlapping();

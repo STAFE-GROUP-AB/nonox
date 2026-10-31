@@ -27,6 +27,35 @@ return [
         'client_secret' => env('FORTNOX_CLIENT_SECRET'),
     ],
 
+    /*
+     * Mailgun: sending, and for NONOX Inbox the signing key that proves an
+     * inbound request comes from Mailgun (Sending → Webhooks → HTTP webhook
+     * signing key).
+     */
+    'mailgun' => [
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        'endpoint' => env('MAILGUN_ENDPOINT', 'api.eu.mailgun.net'),
+        'scheme' => 'https',
+        'webhook_signing_key' => env('MAILGUN_WEBHOOK_SIGNING_KEY'),
+    ],
+
+    /*
+     * NONOX Inbox (ADR-023). The receiving domain, the local part of the
+     * shared address (mejl@in.nonox.app), the largest message taken, an
+     * optional clamd socket for virus scanning ("/var/run/clamav/clamd.ctl"
+     * or "tcp://127.0.0.1:3310"), and for IMAP the authserv-id of the
+     * company's own mail server, whose Authentication-Results header is
+     * the one trusted.
+     */
+    'inbox' => [
+        'domain' => env('NONOX_INBOX_DOMAIN', 'in.nonox.app'),
+        'shared_local' => env('NONOX_INBOX_SHARED_LOCAL', 'mejl'),
+        'max_message_kb' => (int) env('NONOX_INBOX_MAX_MESSAGE_KB', 25600),
+        'clamd_socket' => env('NONOX_INBOX_CLAMD_SOCKET'),
+        'imap_authserv_id' => env('NONOX_INBOX_IMAP_AUTHSERV_ID'),
+    ],
+
     'vies' => [
         'url' => env('VIES_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api/'),
     ],

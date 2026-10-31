@@ -863,6 +863,67 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 - **Lön:** när lönemodulen är på kan liggaren föreslå tidrapporter. Förslaget
   skrivs till lönens tidrapporter först när det godkänts, och liggaren ändras
   aldrig.
+## 5e. Inkorg (modul)
+
+Inkorgen tar emot underlag med e-post och gör förslag som en person
+godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
+
+- **Adresser.** Varje företag har en egen adress, `{namn-slumpdel}@in.nonox.app`,
+  med tilläggen `+kvitto`, `+faktura` och `+kassa` som ledtråd om vad som
+  skickas. Ägaren kan byta adressen; den gamla slutar då genast ta emot.
+  Det finns också en gemensam adress, `mejl@in.nonox.app`, där avsändarens
+  adress avgör företaget. Finns avsändaren på flera företags listor läggs
+  meddelandet åt sidan utan företag tills en medlem i ett av dem hämtar det;
+  det fördelas aldrig av systemet självt. Den som kör NONOX själv kan i
+  stället låta systemet hämta e-post från en egen brevlåda (IMAP).
+- **Godkända avsändare.** Varje företag har en lista med adresser och hela
+  domäner. Bara e-post från någon på listan tolkas; annat hamnar i karantän
+  tills en person godkänner avsändaren.
+- **Kontroller före all tolkning.** SPF, DKIM och DMARC och mottagande servers
+  skräppostmärkning läses. Ett meddelande som underkänns hamnar i karantän
+  även från en godkänd avsändare. Bilagor som kan innehålla program, skript
+  eller makron spärras, och med virussökning (ClamAV) söks varje bilaga
+  igenom. En spärrad bilaga sparas men lämnas aldrig ut. Inget i ett
+  meddelande visas som en webbsida i systemet; PDF och bilder visas i en
+  sandlåda, allt annat laddas ner.
+- **Arkiv.** Originalmeddelandet sparas byte för byte som `.eml`, och varje
+  bilaga oförändrad, krypterade på den privata disken med kontrollsumma
+  (SHA-256). Samma meddelande två gånger sparas en gång.
+- **Tolkning.** SIE4-filer blir förslag till verifikationer, Peppol-fakturor
+  (BIS Billing 3.0) förslag till leverantörsfakturor, och dagsrapporter från
+  kassasystem (CSV, XLSX eller text) läses med en mall som sparats för
+  avsändaren. Annars läser NONOX AI underlaget om företaget slagit på det.
+  För en dagsrapport säger AI:n bara vad varje belopp är och vilket konto det
+  hör till; verifikationen byggs av systemet ur beloppen, och debet och
+  kredit samt momsen per momssats kontrolleras innan förslaget räknas som
+  klart. Allt annat hamnar i en kö där en person fyller i verifikationen
+  eller fakturan bredvid bilagan.
+- **Varningar.** Ett bankgiro, plusgiro eller IBAN som skiljer sig från
+  leverantörsregistret, en avsändardomän som liknar en känd, en bilaga som
+  kommit förut och en faktura med samma nummer, belopp och leverantör ger en
+  varning. Den som godkänner måste bekräfta att varningen är kontrollerad.
+- **Bokföring och koppling.** När en person godkänner bokförs förslaget med
+  systemets vanliga funktioner (utkast, bokföring, registrering av
+  leverantörsfaktura), så numrering, kontrollkedja och oföränderlighet är
+  desamma som annars. Originalmeddelandet och alla bilagor kopplas som
+  underlag till varje verifikation det leder till. Ett meddelande som lett
+  till bokföring sparas lika länge som bokföringen.
+- **Mallar och automatisk bokföring.** När ett förslag godkänns sparas hur
+  det tolkades som en mall för avsändaren och formatet. Nästa underlag i
+  samma format tolkas med mallen utan AI. Per mall kan en person slå på
+  automatisk bokföring. Den bokför bara när underlaget stämmer exakt med
+  mallen, verifikationen balanserar, inga varningar finns och avsändaren är
+  godkänd och kontrollerad, och bara så länge den personen själv får
+  bokföra. Den bokför i den personens namn, och behandlingshistoriken visar
+  att det skett automatiskt (`inbox.auto_booked`). AI bokför aldrig själv.
+- **Behandlingshistorik.** Mottagande, karantän, godkända avsändare,
+  tolkning, godkännande, avvisning, svar till avsändaren, mallar, automatisk
+  bokföring, adressbyte och hämtning från den gemensamma adressen skrivs
+  till behandlingshistoriken. Lösenordet till en egen brevlåda lagras
+  krypterat och skrivs aldrig dit.
+- **Gallring.** Avvisade meddelanden tas bort efter 90 dagar och meddelanden
+  till den gemensamma adressen som inget företag hämtat efter 30 dagar
+  (`inbox:prune`). Meddelanden som lett till bokföring tas aldrig bort här.
 
 ## 6. Belopp
 
@@ -1037,6 +1098,15 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   årsskiftet för en kostnad som periodiserats) följa med? Och ska paketet
   signeras eller tidsstämplas utöver kontrollsummorna?
 
+- Inkorg: hur dricks som betalats med kort, presentkort (enfunktions- eller
+  flerfunktionsvoucher, ML 2023:200 3 kap.) och öresavrundning ska bokföras
+  från en dagsrapport; systemet föreslår bara och en person godkänner.
+  Gällande momssatser på rapportens datum (25, 12, 6 och 0 %). Om ett
+  avvisat underlag kan vara räkenskapsinformation, och därmed om gallringen
+  efter 90 dagar är rätt. Om ett underlag som tas emot med e-post och sparas
+  som `.eml` uppfyller kraven på hur räkenskapsinformation ska bevaras (BFL 7
+  kap.). SFTI:s konvention för bankgiro och plusgiro i Peppol-fakturor.
+
 ## 9. Ändringshistorik
 
 | Version | Datum | Ändring |
@@ -1074,6 +1144,7 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.31 | 2026-11-01 | Resultat per projekt och kostnadsställe i registren. |
 | 0.35 | 2026-11-01 | Säkerhetsgranskning och GDPR: företagsbindning av sidor, härdad inloggning och sessioner, säkerhetsrubriker, skydd av hälsouppgifter och bankkonton i lönen, registerutdrag, radering och anonymisering, gallring, cookies, integritetspolicy, villkor och personuppgiftsbiträdesavtal. |
 | 0.36 | 2026-11-01 | Begränsad behandling (GDPR art. 18) för kunder och leverantörer: inga nya fakturor, offerter, avtal eller leverantörsfakturor medan begränsningen gäller. Radering av anställda inom lagringstiden för lönebesked. Samma organisationsnummer kan finnas i flera konton i den driftade tjänsten. Inbjudningar gäller 14 dagar. Tak per timme för SIE-uppladdning, VIES, arkivpaket och bankfiler. Säkerhetskopior krypteras och lagras bara i Sverige i 7 dagar. |
+| 0.38 | 2026-11-02 | Inkorg (modul): egen e-postadress per företag och en gemensam adress, lista över godkända avsändare, SPF/DKIM/DMARC och spärr av farliga bilagor före all tolkning, originalet som `.eml` kopplat som underlag, SIE4, Peppol och dagsrapporter från kassasystem med mallar, NONOX AI, varningar för bedrägeri och dubbletter, och automatisk bokföring bara med en mall som en person godkänt. |
 | 0.34 | 2026-11-01 | Flytt från Fortnox via API: anslutning med OAuth2 och PKCE, bokföring per år som SIE4 genom den vanliga granskningen, register, underlag och avstämning av obetalda fakturor. |
 | 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |

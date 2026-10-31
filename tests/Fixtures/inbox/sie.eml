@@ -1,0 +1,34 @@
+Authentication-Results: mx.in.nonox.example; spf=pass
+ smtp.mailfrom=kassaexport.example; dkim=pass header.d=kassaexport.example;
+ dmarc=pass header.from=kassaexport.example
+From: Kassaexport <export@kassaexport.example>
+To: exempelbolaget-ab-k3x9p2qa@in.nonox.app
+Subject: SIE-fil oktober
+Date: Sat, 31 Oct 2026 06:15:00 +0000
+Message-ID: <sie-1@kassaexport.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============2290485318550029649=="
+
+--===============2290485318550029649==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+SIE-fil bifogas.
+
+--===============2290485318550029649==
+Content-Type: application/octet-stream
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="dagskassa.se"
+MIME-Version: 1.0
+
+I0ZMQUdHQSAwDQojRk9STUFUIFBDOA0KI1NJRVRZUCA0DQojUFJPR1JBTSAiS2Fzc2FleHBvcnQi
+IDEuMA0KI0dFTiAyMDI2MTAzMQ0KI0ZOQU1OICJFeGVtcGVsYm9sYWdldCBBQiINCiNSQVIgMCAy
+MDI2MDEwMSAyMDI2MTIzMQ0KI0tPTlRPIDE5MTAgIkthc3NhIg0KI0tPTlRPIDMwMDEgIkaUcnOE
+bGpuaW5nIDI1ICUiDQojS09OVE8gMjYxMSAiVXRnhmVuZGUgbW9tcyAyNSAlIg0KI1ZFUiBBIDEg
+MjAyNjEwMzAgIkRhZ3NrYXNzYSAzMCBva3RvYmVyIg0Kew0KI1RSQU5TIDE5MTAge30gMTI1MC4w
+MA0KI1RSQU5TIDMwMDEge30gLTEwMDAuMDANCiNUUkFOUyAyNjExIHt9IC0yNTAuMDANCn0NCiNW
+RVIgQSAyIDIwMjYxMDMxICJEYWdza2Fzc2EgMzEgb2t0b2JlciINCnsNCiNUUkFOUyAxOTEwIHt9
+IDYyNS4wMA0KI1RSQU5TIDMwMDEge30gLTUwMC4wMA0KI1RSQU5TIDI2MTEge30gLTEyNS4wMA0K
+fQ0K
+
+--===============2290485318550029649==--

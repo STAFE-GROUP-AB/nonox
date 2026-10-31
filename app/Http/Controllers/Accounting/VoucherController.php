@@ -54,7 +54,9 @@ class VoucherController
 
     /**
      * Shows an attachment inline. The type is the stored, validated MIME type,
-     * and nosniff stops the browser from guessing another one.
+     * and nosniff stops the browser from guessing another one. Underlag of
+     * another type, such as the original e-mail (.eml) and attachments the
+     * inbox linked, is only ever a download.
      */
     public function attachment(Voucher $voucher, int $attachment): StreamedResponse
     {
@@ -62,7 +64,13 @@ class VoucherController
 
         $file = VoucherAttachment::query()->where('voucher_id', $voucher->id)->findOrFail($attachment);
 
-        abort_unless(array_key_exists($file->mime, AttachToVoucher::ALLOWED), 404);
+        if (! array_key_exists($file->mime, AttachToVoucher::ALLOWED)) {
+            return Storage::disk(AttachToVoucher::DISK)->download($file->file_path, $file->original_name, [
+                'Content-Type' => 'application/octet-stream',
+                'X-Content-Type-Options' => 'nosniff',
+                'Cache-Control' => 'private, max-age=0',
+            ]);
+        }
 
         return Storage::disk(AttachToVoucher::DISK)->response($file->file_path, $file->original_name, [
             'Content-Type' => $file->mime,

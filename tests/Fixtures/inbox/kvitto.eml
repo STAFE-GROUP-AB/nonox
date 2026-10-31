@@ -1,0 +1,29 @@
+Authentication-Results: mx.in.nonox.example; spf=pass
+ smtp.mailfrom=exempelbolaget.example; dkim=pass
+ header.d=exempelbolaget.example; dmarc=pass
+ header.from=exempelbolaget.example
+From: Anna Exempel <anna@exempelbolaget.example>
+To: exempelbolaget-ab-k3x9p2qa@in.nonox.app
+Subject: Kvitto taxi
+Date: Sat, 31 Oct 2026 06:15:00 +0000
+Message-ID: <kv-1@exempelbolaget.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="===============0766755899518343638=="
+
+--===============0766755899518343638==
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Kvitto från taxiresan.
+
+--===============0766755899518343638==
+Content-Type: application/pdf
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="kvitto.pdf"
+MIME-Version: 1.0
+
+JVBERi0xLjQKMSAwIG9iaiA8PCAvVHlwZSAvQ2F0YWxvZyAvTGFuZyAoc3YpIC9QYWdlcyAyIDAg
+UiA+PiBlbmRvYmoKMiAwIG9iaiA8PCAvVHlwZSAvUGFnZXMgL0tpZHMgW10gL0NvdW50IDAgPj4g
+ZW5kb2JqCnRyYWlsZXIgPDwgL1Jvb3QgMSAwIFIgPj4KJSVFT0YK
+
+--===============0766755899518343638==--
