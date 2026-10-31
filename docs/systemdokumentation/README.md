@@ -362,6 +362,25 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   periodiseringen kan inte tas bort.
 - Periodiseringarna kräver behörigheten att hantera räkenskapsår (bokslut).
 
+## 5a4. Bankavstämning
+
+- Under Bokföring → Bankavstämning stäms bank- och kassakonton (1900–1999) av
+  mot kontoutdraget per datum. Systemet visar kontots saldo i bokföringen den
+  dagen (ingående balans plus bokförda verifikationer t.o.m. datumet).
+- Användaren anger saldot på kontoutdraget och markerar de bokförda rader som
+  ännu inte syns hos banken. Det som ska stå på kontoutdraget är saldot i
+  bokföringen minus dessa rader; skillnaden mot kontoutdraget visas direkt.
+- Raderna att gå igenom är de som bokförts sedan föregående avstämning av
+  kontot (eller sedan räkenskapsårets början), plus de rader som föregående
+  avstämning lämnade som ej hos banken. De är förmarkerade tills användaren
+  tar bort markeringen.
+- En avstämning med skillnad kräver en förklaring. Avstämningen bokför
+  ingenting; en bankavgift eller ränta som saknas bokförs som vanligt.
+- Varje sparad avstämning (datum, saldon, rader ej hos banken, skillnad,
+  förklaring, vem och när) sparas i `bank_reconciliations`, som databasen inte
+  låter ändra eller ta bort, och skrivs i behandlingshistoriken.
+- Avstämning kräver behörigheten att bokföra verifikationer.
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -729,3 +748,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.22 | 2026-10-31 | Nytt utseende (ADR-019): mörk sidomeny, nya färger, och appen följer företagets egen färg under Varumärke. |
 | 0.23 | 2026-11-01 | Anläggningsregister med linjära avskrivningar enligt plan, avyttring och utrangering. |
 | 0.24 | 2026-11-01 | Periodiseringar: förutbetalda och upplupna kostnader och intäkter, med månadsvis fördelning och återföring. |
+| 0.25 | 2026-11-01 | Bankavstämning per konto mot kontoutdraget, med poster som förs vidare tills de når banken. |

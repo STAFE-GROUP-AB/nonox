@@ -121,6 +121,7 @@ Route::middleware([
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');
         Route::view('/anlaggningar', 'accounting.fixed-assets')->name('accounting.fixedAssets');
         Route::view('/periodiseringar', 'accounting.accruals')->name('accounting.accruals');
+        Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');
         Route::get('/importera-sie', [SieImportController::class, 'index'])->name('accounting.sieImports.index');
         Route::post('/importera-sie', [SieImportController::class, 'store'])->name('accounting.sieImports.store');
         Route::get('/importera-sie/{sieImport}', [SieImportController::class, 'show'])

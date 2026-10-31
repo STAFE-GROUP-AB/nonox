@@ -8,6 +8,7 @@ use App\Models\AccrualPosting;
 use App\Models\ArchivePackage;
 use App\Models\Article;
 use App\Models\BankFileImport;
+use App\Models\BankReconciliation;
 use App\Models\BankTransaction;
 use App\Models\ClientProfile;
 use App\Models\Company;
@@ -107,6 +108,7 @@ const COMPANY_SCOPED_MODELS = [
     ClientProfile::class => 'clientProfileAttributes',
     FixedAsset::class => 'fixedAssetAttributes',
     Accrual::class => 'accrualAttributes',
+    BankReconciliation::class => 'bankReconciliationAttributes',
     AccrualPosting::class => 'accrualPostingAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
@@ -246,6 +248,21 @@ function fixedAssetDepreciationAttributes(): array
         'period' => '2026-0'.random_int(1, 9),
         'amount_ore' => 66_667,
         'voucher_id' => Voucher::create(voucherAttributes())->id,
+    ];
+}
+
+function bankReconciliationAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'account_id' => Account::query()->firstOrCreate(['number' => 1930], ['name' => 'Bank', 'type' => 'ASSET'])->id,
+        'statement_date' => '2026-03-31',
+        'statement_balance_ore' => 100_000,
+        'ledger_balance_ore' => 100_000,
+        'outstanding_ore' => 0,
+        'difference_ore' => 0,
+        'outstanding_row_ids' => [],
+        'reconciled_by' => User::factory()->create()->id,
     ];
 }
 
@@ -668,7 +685,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [AccrualPosting::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
+const APPEND_ONLY = [AccrualPosting::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];
