@@ -81,6 +81,18 @@
                     <li>{{ $blocker }}</li>
                 @endforeach
             </ul>
+            @if($wrongCompany)
+                <div class="mt-5 rounded-2xl bg-gray-50 p-4">
+                    @forelse($otherCompanies as $other)
+                        <p class="text-sm text-gray-800">{{ __('Filen gäller :company, som du också har tillgång till.', ['company' => $other->name]) }}</p>
+                        <x-button type="button" class="mt-3" wire:click="moveTo({{ $other->id }})" wire:loading.attr="disabled">{{ __('Byt till :company och granska filen där', ['company' => $other->name]) }}</x-button>
+                    @empty
+                        <p class="text-sm text-gray-800">{{ __('Filen gäller :company (:number), som inte finns bland dina företag ännu.', ['company' => $report['company_name'] ?? '?', 'number' => $report['organisation_number'] ?? '?']) }}</p>
+                        <x-button type="button" class="mt-3" wire:click="createCompanyFromFile">{{ __('Skapa företaget med uppgifterna från filen') }}</x-button>
+                        <p class="mt-2 text-xs text-gray-500">{{ __('När företaget är skapat läser du in filen där.') }}</p>
+                    @endforelse
+                </div>
+            @endif
         </x-ui.card>
     @endif
 

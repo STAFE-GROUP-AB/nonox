@@ -40,7 +40,7 @@
         <div style="position:absolute;left:0;top:0;width:900px;height:580px;background:#FFFFFF;border-radius:16px;border:1px solid rgba(21,23,28,.12);box-shadow:0 40px 80px -30px rgba(21,23,28,.35),0 2px 6px rgba(21,23,28,.06);overflow:hidden;color:#15171C;font-family:Inter,sans-serif;display:flex;flex-direction:column">
           <div style="height:40px;flex:none;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #ECE9E2;background:#FAF9F6">
             <span style="width:11px;height:11px;border-radius:50%;background:#E4E1DA"></span><span style="width:11px;height:11px;border-radius:50%;background:#E4E1DA"></span><span style="width:11px;height:11px;border-radius:50%;background:#E4E1DA"></span>
-            <span style="margin:0 auto;padding:4px 14px;border-radius:7px;background:#F0EEE8;font-size:11.5px;color:#6A6E77">nonox.stafe.se/app/bokforing</span>
+            <span style="margin:0 auto;padding:4px 14px;border-radius:7px;background:#F0EEE8;font-size:11.5px;color:#6A6E77">nonox.app/bokforing</span>
           </div>
           <div style="flex:1;display:flex;min-height:0">
             <div style="width:186px;flex:none;background:#15171C;color:#F3F1EC;padding:16px 12px;display:flex;flex-direction:column;gap:2px;font-size:12.5px">

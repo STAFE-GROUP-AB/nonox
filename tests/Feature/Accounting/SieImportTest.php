@@ -6,12 +6,15 @@ use App\Actions\Accounting\AnalyseSieFile;
 use App\Actions\Accounting\ConfirmSieImport;
 use App\Actions\Accounting\CorrectVoucher;
 use App\Actions\Accounting\ExportSie;
+use App\Actions\Accounting\InitialiseBookkeeping;
+use App\Actions\Accounting\MoveSieImportToCompany;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Domain\Accounting\LedgerVerifier;
 use App\Domain\Accounting\SieImport\SieImportStatus;
 use App\Domain\Accounting\VoucherSource;
 use App\Livewire\Accounting\SieImportReport;
+use App\Livewire\Company\CreateCompanyForm;
 use App\Models\Account;
 use App\Models\AuditLog;
 use App\Models\Company;
@@ -446,4 +449,41 @@ describe('in the browser', function () {
 
         $this->get(route('accounting.sieImports.show', $import))->assertNotFound();
     });
+});
+
+it('offers to move a file uploaded in the wrong company to the user\'s company with that organisation number', function () {
+    $this->company->forceFill(['org_number' => '556123-4567'])->save();
+    $other = Company::factory()->create(['org_number' => '556334-3689', 'name' => 'Rätt Bolag AB', 'user_id' => $this->owner->id, 'personal_team' => false]);
+    $other->users()->attach($this->owner, ['role' => 'owner']);
+    app(InitialiseBookkeeping::class)($other, $this->owner, CarbonImmutable::parse('2026-06-15'));
+
+    $import = analyseSie($this->owner, $this->company, (string) file_get_contents(SIE_IMPORT_FIXTURE));
+
+    expect($import->blockers())->not->toBe([])
+        ->and(array_map(fn ($company) => $company->id, MoveSieImportToCompany::candidates($this->owner, $import)))->toBe([$other->id]);
+
+    Livewire::test(SieImportReport::class, ['sieImport' => $import])
+        ->assertSee('Byt till Rätt Bolag AB och granska filen där')
+        ->call('moveTo', $other->id)
+        ->assertRedirect();
+
+    $moved = SieImport::query()->withoutGlobalScopes()->where('company_id', $other->id)->latest('id')->firstOrFail();
+
+    expect($this->owner->fresh()->current_team_id)->toBe($other->id)
+        ->and($moved->blockers())->toBe([])
+        ->and($moved->status)->toBe(SieImportStatus::Analysed);
+});
+
+it('offers to create the company named in the file when the user has none with that number', function () {
+    $this->company->forceFill(['org_number' => '556123-4567'])->save();
+    $import = analyseSie($this->owner, $this->company, (string) file_get_contents(SIE_IMPORT_FIXTURE));
+
+    Livewire::test(SieImportReport::class, ['sieImport' => $import])
+        ->assertSee('Skapa företaget med uppgifterna från filen')
+        ->call('createCompanyFromFile')
+        ->assertRedirect(route('teams.create'));
+
+    Livewire::test(CreateCompanyForm::class)
+        ->assertSet('org_number', '556334-3689')
+        ->assertSet('name', 'Exempelbolaget i Malmö AB');
 });

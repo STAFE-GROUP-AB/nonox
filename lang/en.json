@@ -2885,5 +2885,12 @@
     "6. Klart": "6. Done",
     "När allt stämmer avslutar du flytten. Anslutningen till Fortnox tas bort och nycklarna raderas. Spara ditt Fortnox-arkiv i sju år, som Bokföringslagen kräver.": "When everything matches, finish the move. The connection to Fortnox is removed and the keys are deleted. Keep your Fortnox archive for seven years, as the Bookkeeping Act requires.",
     "Avsluta flytten och ta bort anslutningen till Fortnox? Nycklarna raderas och inget mer kan hämtas utan att du ansluter igen.": "Finish the move and remove the connection to Fortnox? The keys are deleted and nothing more can be fetched unless you connect again.",
-    "Avsluta flytten": "Finish the move"
+    "Avsluta flytten": "Finish the move",
+    "Du arbetar nu i :company. Filen är granskad där; läs igenom rapporten och läs in den.": "You are now working in :company. The file has been reviewed there; read the report and read it in.",
+    "Filen läses in i :company (:number). Har du flera företag, byt först till det som filen gäller.": "The file is read into :company (:number). If you have several companies, switch to the one the file belongs to first.",
+    "Filen gäller :company, som du också har tillgång till.": "The file belongs to :company, which you also have access to.",
+    "Byt till :company och granska filen där": "Switch to :company and review the file there",
+    "Filen gäller :company (:number), som inte finns bland dina företag ännu.": "The file belongs to :company (:number), which is not among your companies yet.",
+    "Skapa företaget med uppgifterna från filen": "Create the company with the details from the file",
+    "När företaget är skapat läser du in filen där.": "Once the company is created, read the file in there."
 }

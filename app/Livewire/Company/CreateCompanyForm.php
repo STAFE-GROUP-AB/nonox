@@ -45,6 +45,14 @@ class CreateCompanyForm extends Component
 
     public bool $employer_registered = false;
 
+    /** Name and organisation number from a SIE file uploaded in the wrong company, if any. */
+    public function mount(): void
+    {
+        $prefill = (array) session()->pull('company.prefill', []);
+        $this->name = (string) ($prefill['name'] ?? $this->name);
+        $this->org_number = (string) ($prefill['org_number'] ?? $this->org_number);
+    }
+
     public function create(CreateCompany $createCompany): void
     {
         /** @var User $user */

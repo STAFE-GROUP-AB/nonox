@@ -16,6 +16,8 @@
         </x-ui.card>
 
         <x-ui.card :title="__('Ladda upp en fil')">
+            @php($current = auth()->user()->currentCompany())
+            <p class="mb-4 rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-800">{{ __('Filen läses in i :company (:number). Har du flera företag, byt först till det som filen gäller.', ['company' => $current->name, 'number' => $current->org_number]) }}</p>
             <form method="POST" action="{{ route('accounting.sieImports.store') }}" enctype="multipart/form-data" class="space-y-4" x-data="{ sending: false }" x-on:submit="sending = true">
                 @csrf
                 <x-ui.field for="file" :label="__('SIE-fil')" :hint="__('Högst :size MB.', ['size' => $maxMegabytes])">
