@@ -23,6 +23,7 @@ class OnboardingController
 
         return view('onboarding', [
             'invitations' => TeamInvitation::with('team')
+                ->stillValid()
                 ->whereRaw('lower(email) = ?', [mb_strtolower($user->email)])
                 ->latest()
                 ->get(),

@@ -6,10 +6,12 @@ namespace App\Actions\Accounting;
 
 use App\Jobs\BuildArchivePackage;
 use App\Models\ArchivePackage;
+use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\WorkQuota;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -24,6 +26,8 @@ class CreateArchivePackage
     public function __invoke(User $user, FiscalYear $fiscalYear): ArchivePackage
     {
         Gate::forUser($user)->authorize('exportArchive', $fiscalYear);
+
+        WorkQuota::take(Company::query()->findOrFail($fiscalYear->company_id), 'archive', 'archive');
 
         $package = CurrentCompany::run($fiscalYear->company_id, fn (): ArchivePackage => DB::transaction(function () use ($user, $fiscalYear): ArchivePackage {
             FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();

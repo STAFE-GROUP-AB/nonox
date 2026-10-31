@@ -15,10 +15,12 @@ use App\Models\Company;
 use App\Models\User;
 use App\Rules\SwedishOrganisationNumber;
 use App\Support\Audit\Audit;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Unique;
 use Illuminate\Validation\ValidationException;
 use Laravel\Jetstream\Contracts\CreatesTeams;
 use Laravel\Jetstream\Events\AddingTeam;
@@ -41,7 +43,7 @@ class CreateCompany implements CreatesTeams
     {
         Gate::forUser($user)->authorize('create', Company::class);
 
-        $validated = $this->validate($input);
+        $validated = $this->validate($input, $user);
 
         AddingTeam::dispatch($user);
 
@@ -83,7 +85,7 @@ class CreateCompany implements CreatesTeams
      *
      * @throws ValidationException
      */
-    private function validate(array $input): array
+    private function validate(array $input, User $user): array
     {
         $number = is_string($input['org_number'] ?? null)
             ? OrganisationNumber::tryFrom($input['org_number'])
@@ -100,7 +102,7 @@ class CreateCompany implements CreatesTeams
                 'required',
                 'string',
                 new SwedishOrganisationNumber,
-                Rule::unique('teams', 'org_number'),
+                $this->uniqueOrgNumber($user),
             ],
             'legal_form' => ['required', Rule::enum(LegalForm::class)],
             'address_line1' => ['nullable', 'string', 'max:255'],
@@ -131,6 +133,24 @@ class CreateCompany implements CreatesTeams
             'vat_period' => __('momsperiod'),
             'reporting_framework' => __('regelverk'),
         ])->validateWithBag('createTeam');
+    }
+
+    /**
+     * Self-hosted: one organisation number per installation. Hosted: only
+     * within the companies this user already belongs to, so nobody can lock
+     * a real company out by registering its number first.
+     */
+    private function uniqueOrgNumber(User $user): Unique
+    {
+        $rule = Rule::unique('teams', 'org_number');
+
+        if (! config('app.landing.hosted')) {
+            return $rule;
+        }
+
+        return $rule->where(fn (Builder $query) => $query->where(fn (Builder $mine) => $mine
+            ->where('user_id', $user->id)
+            ->orWhereIn('id', DB::table('team_user')->where('user_id', $user->id)->select('team_id'))));
     }
 
     /**

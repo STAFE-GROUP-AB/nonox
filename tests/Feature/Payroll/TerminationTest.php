@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Payroll\Actions\EndEmployment;
+use App\Modules\Payroll\Actions\EraseEmployee;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Models\Employee;
@@ -98,4 +99,38 @@ it('ends the employment from the employee page after a confirmation', function (
         ->assertHasNoErrors()
         ->assertDispatched('toast')
         ->assertSee('Anställningen slutade 2026-06-30.');
+});
+
+it('erases an employee: everything when never paid, contact and bank details while payslips must be kept, the rest after that', function () {
+    $erase = app(EraseEmployee::class);
+    $hr = Bookkeeping::member($this->company, 'payroll_admin');
+    $never = Payroll::employee($this->owner, $this->company, ['first_name' => 'Aldrig', 'email' => 'aldrig@example.test']);
+
+    expect(fn () => $erase($hr, $this->company, $never))->toThrow(ValidationException::class, 'Avsluta anställningen');
+
+    $this->end->__invoke($this->owner, $this->company, $never, '2026-06-15', '');
+    expect($erase($hr, $this->company, $never)['mode'])->toBe('deleted')
+        ->and(Employee::query()->find($never->id))->toBeNull();
+
+    $this->end->__invoke($this->owner, $this->company, $this->anna, '2026-06-15', '');
+    $june = $this->runs->create($this->owner, $this->company, '2026-06');
+    $this->runs->calculate($this->owner, $june);
+
+    expect(fn () => $erase($hr, $this->company, $this->anna))->toThrow(ValidationException::class, 'lönekörning som inte är klar');
+
+    $this->runs->approve($this->admin, $june->fresh());
+    $result = $erase($hr, $this->company, $this->anna);
+    $anna = Employee::query()->findOrFail($this->anna->id);
+
+    expect($result['mode'])->toBe('contact_removed')
+        ->and($result['kept_until']->toDateString())->toBe('2033-12-31')
+        ->and($anna->email)->toBeNull()
+        ->and($anna->bank_account)->toBeNull()
+        ->and($anna->personal_number)->not->toBeNull();
+
+    $this->travelTo(CarbonImmutable::parse('2034-01-02 10:00:00'));
+
+    expect($erase($hr, $this->company, $anna)['mode'])->toBe('anonymised')
+        ->and($anna->fresh()->personal_number)->toBe('')
+        ->and($anna->fresh()->first_name)->toBe('Anonymiserad');
 });

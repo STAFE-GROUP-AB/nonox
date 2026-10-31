@@ -73,6 +73,8 @@ class SaveDraftInvoice
             $customer = Customer::query()->find((int) $validated['customer_id'])
                 ?? throw ValidationException::withMessages(['customer_id' => __('Välj en kund.')]);
 
+            $customer->ensureNotRestricted('customer_id');
+
             $invoiceDate = CarbonImmutable::createFromFormat('!Y-m-d', (string) $validated['invoice_date']) ?: CarbonImmutable::today();
             $dueDate = isset($validated['due_date'])
                 ? (CarbonImmutable::createFromFormat('!Y-m-d', (string) $validated['due_date']) ?: $invoiceDate)

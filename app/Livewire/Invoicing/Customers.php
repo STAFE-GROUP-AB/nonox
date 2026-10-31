@@ -7,6 +7,7 @@ namespace App\Livewire\Invoicing;
 use App\Actions\Invoicing\CheckVatNumber;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Privacy\EraseRegisterEntry;
+use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
@@ -103,6 +104,26 @@ class Customers extends Component
         $this->toast($mode === 'deleted'
             ? __('Kunden är raderad.')
             : __('Kunden är anonymiserad. Fakturorna behåller sina uppgifter, eftersom de är räkenskapsinformation som sparas i sju år.'));
+    }
+
+    /** Restriction of processing (GDPR art. 18) on request, and lifting it again. */
+    public function restrict(RestrictProcessing $restriction, bool $restrict = true): void
+    {
+        if ($this->editingId === null) {
+            return;
+        }
+
+        try {
+            $restriction->customer($this->user(), $this->company(), Customer::query()->findOrFail($this->editingId), $restrict);
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast($restrict
+            ? __('Kunden har nu begränsad behandling. Uppgifterna sparas men kan inte användas för nya dokument.')
+            : __('Begränsningen är hävd.'));
     }
 
     public function cancel(): void

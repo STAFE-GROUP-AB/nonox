@@ -120,7 +120,7 @@ class InvoiceEditor extends Component
     public function render(): View
     {
         return view('livewire.invoicing.invoice-editor', [
-            'customers' => Customer::query()->where('is_active', true)->orderBy('name')->get(['id', 'number', 'name']),
+            'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
             'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
             'canIssue' => $this->invoiceId === null
                 ? $this->user()->hasTeamPermission($this->company(), 'invoices:send')

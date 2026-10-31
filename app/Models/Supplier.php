@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 /**
  * A supplier (leverantörsregister, AGENTS.md §7 Phase 2).
@@ -30,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $payment_terms_days
  * @property ?int $default_account_id
  * @property bool $is_active
+ * @property ?CarbonImmutable $processing_restricted_at
  */
 class Supplier extends Model
 {
@@ -62,6 +65,7 @@ class Supplier extends Model
     {
         return [
             'number' => 'integer',
+            'processing_restricted_at' => 'immutable_datetime',
             'payment_terms_days' => 'integer',
             'is_active' => 'boolean',
         ];
@@ -106,5 +110,19 @@ class Supplier extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(SupplierInvoice::class);
+    }
+
+    /** Restriction of processing (GDPR art. 18): stored, but not used for new documents. */
+    public function isRestricted(): bool
+    {
+        return $this->processing_restricted_at !== null;
+    }
+
+    /** @throws ValidationException */
+    public function ensureNotRestricted(string $field): void
+    {
+        if ($this->isRestricted()) {
+            throw ValidationException::withMessages([$field => __('Leverantören har begärt begränsad behandling (GDPR). Uppgifterna får sparas men inte användas för nya dokument.')]);
+        }
     }
 }

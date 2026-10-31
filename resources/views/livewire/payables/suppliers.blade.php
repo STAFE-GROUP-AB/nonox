@@ -43,7 +43,12 @@
                     <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
                     <button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>
                     @if($editingId)
-                        <button type="button" class="ms-auto text-sm text-accent-700 underline" wire:click="erase" wire:confirm="{{ __('Radera uppgifterna enligt GDPR? Finns de i bokföringen anonymiseras de i registret i stället; fakturorna behåller sina uppgifter.') }}">{{ __('Radera enligt GDPR') }}</button>
+                        @if(App\Models\Supplier::query()->whereKey($editingId)->whereNotNull('processing_restricted_at')->exists())
+                            <button type="button" class="ms-auto text-sm text-accent-700 underline" wire:click="restrict(false)" wire:confirm="{{ __('Häva begränsningen? Uppgifterna kan då användas för nya dokument igen.') }}">{{ __('Häv begränsad behandling') }}</button>
+                        @else
+                            <button type="button" class="ms-auto text-sm text-accent-700 underline" wire:click="restrict" wire:confirm="{{ __('Begränsa behandlingen enligt GDPR? Uppgifterna sparas men kan inte användas för nya dokument förrän begränsningen hävs.') }}">{{ __('Begränsa behandling') }}</button>
+                        @endif
+                        <button type="button" class="text-sm text-accent-700 underline" wire:click="erase" wire:confirm="{{ __('Radera uppgifterna enligt GDPR? Finns de i bokföringen anonymiseras de i registret i stället; fakturorna behåller sina uppgifter.') }}">{{ __('Radera enligt GDPR') }}</button>
                     @endif
 
                 </div>
@@ -69,7 +74,7 @@
                     <li wire:key="supplier-{{ $supplier->id }}" class="flex flex-wrap items-center gap-4 py-3">
                         <span class="w-14 flex-none font-semibold tabular-nums text-gray-900">{{ $supplier->number }}</span>
                         <span class="min-w-0 flex-1">
-                            <span class="block font-medium text-gray-900">{{ $supplier->name }}</span>
+                            <span class="block font-medium text-gray-900">{{ $supplier->name }}@if($supplier->processing_restricted_at) <span class="ms-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">{{ __('Begränsad behandling') }}</span>@endif</span>
                             <span class="block text-sm text-gray-600">{{ collect([$supplier->paymentDetails(), $supplier->defaultAccount ? $supplier->defaultAccount->number.' '.$supplier->defaultAccount->name : null])->filter()->implode(' · ') }}</span>
                         </span>
                         <span class="w-36 flex-none text-right text-sm">

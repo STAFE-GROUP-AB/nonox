@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Actions\Jetstream\InviteTeamMember;
+use App\Mail\CompanyInvitationMail;
 use App\Models\Company;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
 it('sends users without a company to /kom-igang', function () {
@@ -98,4 +101,31 @@ it('refuses to let someone else accept an invitation', function () {
 
     expect($intruder->fresh()->belongsToTeam($company))->toBeFalse()
         ->and(TeamInvitation::find($invitation->id))->not->toBeNull();
+});
+
+it('sends the invitation with a Swedish subject and lets it expire after 14 days', function () {
+    Mail::fake();
+    $owner = User::factory()->withCompany()->create();
+    $company = $owner->currentCompany();
+
+    app(InviteTeamMember::class)->invite($owner, $company, 'ny@example.test', 'bookkeeper');
+
+    Mail::assertSent(CompanyInvitationMail::class, fn (CompanyInvitationMail $mail): bool => $mail->build()->subject === "Inbjudan till {$company->name} i NONOX");
+
+    $invited = User::factory()->create(['email' => 'ny@example.test']);
+    $invitation = TeamInvitation::query()->sole();
+
+    $this->travel(TeamInvitation::VALID_DAYS + 1)->days();
+
+    $this->actingAs($invited)
+        ->post(route('team-invitations.accept-from-onboarding', $invitation->id))
+        ->assertRedirect(route('onboarding'));
+
+    expect($invited->fresh()->belongsToTeam($company))->toBeFalse();
+
+    $this->get(route('onboarding'))->assertDontSee($company->name);
+
+    app(InviteTeamMember::class)->invite($owner, $company, 'ny@example.test', 'bookkeeper');
+
+    expect(TeamInvitation::query()->count())->toBe(1);
 });

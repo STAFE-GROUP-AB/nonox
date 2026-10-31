@@ -6,8 +6,10 @@ namespace App\Models;
 
 use App\Domain\Invoicing\ForeignSale;
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 /**
  * A customer (kundregister, AGENTS.md §7 Phase 2).
@@ -29,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $country
  * @property int $payment_terms_days
  * @property bool $is_active
+ * @property ?CarbonImmutable $processing_restricted_at
  */
 class Customer extends Model
 {
@@ -63,6 +66,7 @@ class Customer extends Model
     {
         return [
             'number' => 'integer',
+            'processing_restricted_at' => 'immutable_datetime',
             'personal_number' => 'encrypted',
             'payment_terms_days' => 'integer',
             'is_active' => 'boolean',
@@ -96,5 +100,19 @@ class Customer extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /** Restriction of processing (GDPR art. 18): stored, but not used for new documents. */
+    public function isRestricted(): bool
+    {
+        return $this->processing_restricted_at !== null;
+    }
+
+    /** @throws ValidationException */
+    public function ensureNotRestricted(string $field): void
+    {
+        if ($this->isRestricted()) {
+            throw ValidationException::withMessages([$field => __('Kunden har begärt begränsad behandling (GDPR). Uppgifterna får sparas men inte användas för nya dokument.')]);
+        }
     }
 }

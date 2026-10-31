@@ -31,6 +31,12 @@ class CompanyInvitationController
             404,
         );
 
+        if ($invitation->hasExpired()) {
+            Toast::flash(__('Inbjudan har gått ut. Be den som bjöd in dig att skicka en ny.'), 'error');
+
+            return redirect()->route('onboarding');
+        }
+
         $company = $invitation->team;
         $owner = $company?->owner;
 

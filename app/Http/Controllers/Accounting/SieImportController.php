@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\SieImport;
 use App\Models\User;
 use App\Support\Toast;
+use App\Support\WorkQuota;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -37,7 +38,12 @@ class SieImportController
         /** @var User $user */
         $user = $request->user();
 
-        $import = $analyseSieFile($user, $this->company($request), $request->file('file'));
+        $company = $this->company($request);
+
+        // Uploads only: a move from another program analyses its own files.
+        WorkQuota::take($company, 'sie_upload', 'file');
+
+        $import = $analyseSieFile($user, $company, $request->file('file'));
 
         Toast::flash($import->blockers() === []
             ? __('Filen är granskad. Läs igenom rapporten och läs sedan in den.')

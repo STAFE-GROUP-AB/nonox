@@ -56,6 +56,10 @@ class IssueInvoice
                 throw ValidationException::withMessages(['invoice' => __('Fakturan är redan skickad.')]);
             }
 
+            if (! $invoice->isCredit()) {
+                $customer->ensureNotRestricted('invoice');
+            }
+
             if ($invoice->rows->isEmpty() || $invoice->total_ore->isZero()) {
                 throw ValidationException::withMessages(['invoice' => __('Fakturan saknar belopp.')]);
             }

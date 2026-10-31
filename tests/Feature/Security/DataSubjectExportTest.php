@@ -6,6 +6,7 @@ use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Privacy\EraseRegisterEntry;
+use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Models\AuditLog;
 use App\Models\Customer;
@@ -75,6 +76,24 @@ it('deletes a customer that never reached the books and anonymises one that did'
         ->and($used->fresh()->email)->toBeNull()
         ->and($used->fresh()->name)->toStartWith('Anonymiserad kund')
         ->and($invoice->fresh()->customer_snapshot['name'])->toBe('Fakturerad Person');
+});
+
+it('restricts processing of a customer: stored and collectable, but no new invoices until lifted', function () {
+    $customer = app(SaveCustomer::class)($this->owner, $this->company, ['name' => 'Begränsad Person', 'payment_terms_days' => 30]);
+    $invoice = ['customer_id' => $customer->id, 'invoice_date' => now()->toDateString(), 'rows' => [['description' => 'Tjänst', 'quantity' => '1', 'price' => '100', 'vat_rate' => 2500]]];
+    $draft = app(SaveDraftInvoice::class)($this->owner, $this->company, $invoice);
+
+    app(RestrictProcessing::class)->customer($this->owner, $this->company, $customer, true);
+
+    expect(fn () => app(SaveDraftInvoice::class)($this->owner, $this->company, $invoice))->toThrow(ValidationException::class, 'begränsad behandling')
+        ->and(fn () => app(IssueInvoice::class)($this->owner, $draft))->toThrow(ValidationException::class, 'begränsad behandling')
+        ->and(AuditLog::query()->where('action', 'privacy.restricted')->exists())->toBeTrue();
+
+    $this->get(route('invoicing.customers'))->assertSee('Begränsad behandling');
+
+    app(RestrictProcessing::class)->customer($this->owner, $this->company, $customer->fresh(), false);
+
+    expect(app(IssueInvoice::class)($this->owner, $draft)->status)->toBe(InvoiceStatus::Issued);
 });
 
 it('prunes personal data that has no purpose left', function () {

@@ -6,6 +6,7 @@ namespace App\Livewire\Payables;
 
 use App\Actions\Payables\SaveSupplier;
 use App\Actions\Privacy\EraseRegisterEntry;
+use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
@@ -92,6 +93,26 @@ class Suppliers extends Component
         $this->toast($mode === 'deleted'
             ? __('Leverantören är raderad.')
             : __('Leverantören är anonymiserad. Fakturorna behåller sina uppgifter, eftersom de är räkenskapsinformation som sparas i sju år.'));
+    }
+
+    /** Restriction of processing (GDPR art. 18) on request, and lifting it again. */
+    public function restrict(RestrictProcessing $restriction, bool $restrict = true): void
+    {
+        if ($this->editingId === null) {
+            return;
+        }
+
+        try {
+            $restriction->supplier($this->user(), $this->company(), Supplier::query()->findOrFail($this->editingId), $restrict);
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast($restrict
+            ? __('Leverantören har nu begränsad behandling. Uppgifterna sparas men kan inte användas för nya dokument.')
+            : __('Begränsningen är hävd.'));
     }
 
     public function cancel(): void

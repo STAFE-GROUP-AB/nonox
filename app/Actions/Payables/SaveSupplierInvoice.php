@@ -72,6 +72,8 @@ class SaveSupplierInvoice
             $supplier = Supplier::query()->find((int) $validated['supplier_id'])
                 ?? throw ValidationException::withMessages(['supplier_id' => __('Välj en leverantör.')]);
 
+            $supplier->ensureNotRestricted('supplier_id');
+
             $treatment = VatTreatment::tryFrom((string) ($validated['vat_treatment'] ?? '')) ?? VatTreatment::Domestic;
             $credit = (bool) ($validated['credit'] ?? false);
             $total = $this->amount((string) $validated['total'], 'total', __('Beloppet att betala går inte att läsa. Skriv till exempel 1 249,00.'));

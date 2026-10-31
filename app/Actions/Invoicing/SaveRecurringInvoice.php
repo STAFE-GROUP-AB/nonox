@@ -67,6 +67,8 @@ class SaveRecurringInvoice
             $customer = Customer::query()->find((int) $validated['customer_id'])
                 ?? throw ValidationException::withMessages(['customer_id' => __('Välj en kund.')]);
 
+            $customer->ensureNotRestricted('customer_id');
+
             if ((bool) ($validated['send_automatically'] ?? false) && blank($customer->email)) {
                 throw ValidationException::withMessages(['send_automatically' => __(':name har ingen e-postadress, så fakturorna kan inte skickas automatiskt.', ['name' => $customer->name])]);
             }

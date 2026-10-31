@@ -78,9 +78,12 @@ class VerifyLedgerCommand extends Command
 
         $orgNumber = OrganisationNumber::tryFrom($identifier);
 
-        $company = $orgNumber !== null
-            ? Company::query()->where('org_number', $orgNumber->formatted())->first()
-            : (ctype_digit($identifier) ? Company::query()->find((int) $identifier) : null);
+        if ($orgNumber !== null) {
+            // A hosted installation may hold the same number in several accounts.
+            return array_values(Company::query()->where('org_number', $orgNumber->formatted())->orderBy('id')->get()->all());
+        }
+
+        $company = ctype_digit($identifier) ? Company::query()->find((int) $identifier) : null;
 
         return $company instanceof Company ? [$company] : [];
     }

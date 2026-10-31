@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Jetstream;
 
+use App\Mail\CompanyInvitationMail;
 use App\Models\Company;
 use App\Models\TeamInvitation as TeamInvitationModel;
 use App\Models\User;
@@ -18,7 +19,6 @@ use Illuminate\Validation\Rule;
 use Laravel\Jetstream\Contracts\InvitesTeamMembers;
 use Laravel\Jetstream\Events\InvitingTeamMember;
 use Laravel\Jetstream\Jetstream;
-use Laravel\Jetstream\Mail\TeamInvitation;
 use Laravel\Jetstream\Rules\Role;
 
 class InviteTeamMember implements InvitesTeamMembers
@@ -29,6 +29,12 @@ class InviteTeamMember implements InvitesTeamMembers
     public function invite(User $user, Company $team, string $email, ?string $role = null): void
     {
         Gate::forUser($user)->authorize('addTeamMember', $team);
+
+        // An expired invitation must not block a new one to the same address.
+        $team->teamInvitations()
+            ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
+            ->where('created_at', '<=', now()->subDays(TeamInvitationModel::VALID_DAYS))
+            ->delete();
 
         $this->validate($team, $email, $role);
 
@@ -42,7 +48,7 @@ class InviteTeamMember implements InvitesTeamMembers
 
         MailQuota::take($team, 'invitations');
 
-        Mail::to($email)->send(new TeamInvitation($invitation));
+        Mail::to($email)->send(new CompanyInvitationMail($invitation));
     }
 
     /**

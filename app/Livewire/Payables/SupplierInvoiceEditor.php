@@ -255,7 +255,7 @@ class SupplierInvoiceEditor extends Component
 
         return view('livewire.payables.supplier-invoice-editor', [
             'invoice' => $invoice,
-            'suppliers' => Supplier::query()->where('is_active', true)->with('defaultAccount:id,number,name')->orderBy('name')->get(['id', 'number', 'name', 'payment_terms_days', 'default_account_id']),
+            'suppliers' => Supplier::query()->where('is_active', true)->whereNull('processing_restricted_at')->with('defaultAccount:id,number,name')->orderBy('name')->get(['id', 'number', 'name', 'payment_terms_days', 'default_account_id']),
             'accounts' => Account::query()->where('is_active', true)->whereBetween('number', [1000, 8999])->orderBy('number')->get(['number', 'name']),
             'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
             'projects' => Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),

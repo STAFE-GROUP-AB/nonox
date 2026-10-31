@@ -60,6 +60,8 @@ class SaveSalesDocument
             $customer = Customer::query()->find((int) $validated['customer_id'])
                 ?? throw ValidationException::withMessages(['customer_id' => __('Välj en kund.')]);
 
+            $customer->ensureNotRestricted('customer_id');
+
             // validate() keeps only fields with rules, so the rows are read from the input itself.
             $rows = SalesRowInput::parse(array_values(array_filter((array) $input['rows'], is_array(...))));
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));

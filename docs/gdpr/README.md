@@ -29,4 +29,4 @@ Se avsnitt 4 i [personuppgiftsbiträdesavtalet](../juridik/personuppgiftsbitrade
 - **Åtkomst:** behörigheter per roll. Känsliga löneuppgifter kräver en egen behörighet och läsning loggas. Ett bankbyte kräver en andra persons bekräftelse.
 - **Spårbarhet:** behandlingshistorik som inte kan ändras.
 - **Gränssnitt:** säkerhetsrubriker på varje svar, och varje sida är låst till sitt företag.
-- **Säkerhetskopior:** varje natt.
+- **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar.

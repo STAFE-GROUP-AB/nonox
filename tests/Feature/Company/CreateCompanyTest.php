@@ -75,6 +75,20 @@ it('rejects an organisation number that is already registered', function () {
     ]));
 })->throws(ValidationException::class, 'Det finns redan ett företag med det här organisationsnumret.');
 
+it('lets another account register the same organisation number on a hosted installation, but not the same user twice', function () {
+    config(['app.landing.hosted' => true]);
+    $owner = User::factory()->create();
+    $first = app(CreateCompany::class)->create($owner, validCompanyInput(['accept_agreement' => true]));
+    $digits = str_replace('-', '', $first->org_number);
+
+    $other = app(CreateCompany::class)->create(User::factory()->create(), validCompanyInput(['org_number' => $digits, 'accept_agreement' => true]));
+
+    expect($other->org_number)->toBe($first->org_number)
+        ->and($other->id)->not->toBe($first->id)
+        ->and(fn () => app(CreateCompany::class)->create($owner, validCompanyInput(['org_number' => $digits, 'accept_agreement' => true])))
+        ->toThrow(ValidationException::class, 'Det finns redan ett företag med det här organisationsnumret.');
+});
+
 it('stores no VAT number or VAT period when the company is not VAT registered', function () {
     $company = app(CreateCompany::class)->create(User::factory()->create(), validCompanyInput([
         'vat_registered' => false,

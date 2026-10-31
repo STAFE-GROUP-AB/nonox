@@ -15,6 +15,7 @@ use App\Support\Camt054\BankCredit;
 use App\Support\Camt054\CreditNotification;
 use App\Support\FileName;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\WorkQuota;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -38,6 +39,8 @@ class ImportBankFile
     public function __invoke(User $user, Company $company, UploadedFile $file): array
     {
         Gate::forUser($user)->authorize('create', [BankFileImport::class, $company]);
+
+        WorkQuota::take($company, 'bank_file', 'file');
 
         if ($file->getSize() > self::MAX_KILOBYTES * 1024) {
             throw ValidationException::withMessages(['file' => __('Filen är för stor. Den får vara högst 10 MB.')]);

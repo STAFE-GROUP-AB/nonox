@@ -20,4 +20,5 @@
         </form>
     @endif
     <p class="mt-4 text-sm"><x-ui.link :href="route('payroll.employees.certificate', $editingId)">{{ __('Hämta underlag för arbetsgivarintyg (CSV)') }}</x-ui.link></p>
+    <p class="mt-2 text-sm"><button type="button" class="text-accent-700 underline" wire:click="erase" wire:confirm="{{ __('Radera uppgifterna enligt GDPR? Har personen aldrig fått lön raderas allt. Annars tas kontakt- och bankuppgifter bort nu, och namn och personnummer finns kvar för lönebesked och AGI tills lagringstiden enligt bokföringslagen har gått ut.') }}">{{ __('Radera enligt GDPR') }}</button></p>
 </x-ui.card>

@@ -11,6 +11,7 @@ use App\Models\VatNumberCheck;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Vies\Vies;
+use App\Support\WorkQuota;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -37,6 +38,8 @@ class CheckVatNumber
         if ($vatNumber === '') {
             throw ValidationException::withMessages(['vat_number' => __('Kunden saknar momsregistreringsnummer.')]);
         }
+
+        WorkQuota::take($company, 'vies', 'vat_number');
 
         try {
             $answer = $this->vies->check($vatNumber, $company->vat_number);

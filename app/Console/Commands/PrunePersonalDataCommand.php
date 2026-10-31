@@ -29,7 +29,7 @@ class PrunePersonalDataCommand extends Command
     /** Days to keep each kind of data. */
     public const array RETENTION = [
         'login_codes' => 1,
-        'invitations' => 30,
+        'invitations' => TeamInvitation::VALID_DAYS,
         'abandoned_fortnox_tokens' => 30,
         'rejected_requests' => 365,
     ];

@@ -11,6 +11,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\ChangeSalary;
 use App\Modules\Payroll\Actions\ConfirmBankChange;
 use App\Modules\Payroll\Actions\EndEmployment;
+use App\Modules\Payroll\Actions\EraseEmployee;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\SaveEmployee;
 use App\Modules\Payroll\Actions\SavePensionPlan;
@@ -134,6 +135,25 @@ class Employees extends Component
         }
 
         $this->toast(__('Ny lön för :name från :date är sparad. Månader som redan är utbetalda rättas med retroaktiv lön i nästa lönekörning.', ['name' => $employee->first_name, 'date' => $salary->valid_from->toDateString()]));
+    }
+
+    /** Erasure on request (GDPR art. 17), within the retention of payslips. */
+    public function erase(EraseEmployee $erase): void
+    {
+        try {
+            ['mode' => $mode, 'kept_until' => $keptUntil] = $erase($this->user(), $this->company(), Employee::query()->findOrFail((int) $this->editingId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->cancel();
+        $this->toast(match ($mode) {
+            'deleted' => __('Den anställda är raderad.'),
+            'anonymised' => __('Den anställda är anonymiserad. Lagringstiden för lönebeskeden har gått ut.'),
+            'contact_removed' => __('Kontakt- och bankuppgifter är borttagna. Namn och personnummer finns kvar till och med :date för lönebesked och AGI, enligt bokföringslagen. Radera igen efter det datumet.', ['date' => $keptUntil?->toDateString()]),
+        });
     }
 
     public function confirmBank(int $employeeId, ConfirmBankChange $confirm): void
