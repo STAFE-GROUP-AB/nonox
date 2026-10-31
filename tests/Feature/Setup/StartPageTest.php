@@ -232,3 +232,20 @@ it('lists the features that exist and marks the staff ledger and AI inbox as com
         ->assertSee('Personalliggare')
         ->assertSee('dagskassans alla rapporter');
 });
+
+it('asks for cookie consent with equal choices and lists every cookie on the cookie page', function () {
+    $this->get('/')
+        ->assertSee('Endast nödvändiga')
+        ->assertSee('Tillåt alla')
+        ->assertSee('Cookie-inställningar')
+        ->assertDontSee('rsms.me', false);
+
+    $this->get(route('cookies'))
+        ->assertOk()
+        ->assertSee('Så använder vi cookies.')
+        ->assertSee(config('session.cookie'))
+        ->assertSee('XSRF-TOKEN')
+        ->assertSee('nonox-consent');
+
+    $this->get(route('login'))->assertSee('Endast nödvändiga');
+});

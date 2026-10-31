@@ -37,6 +37,8 @@
         <a class="lp37" href="{{ $ph['contact'] }}" style="text-decoration:none;color:#D9D7D1">Kontakt</a>
         @if($ph['terms'])<a class="lp38" href="{{ $ph['terms'] }}" style="text-decoration:none;color:#D9D7D1">Villkor</a>@endif
         @if($ph['privacy'])<a class="lp39" href="{{ $ph['privacy'] }}" style="text-decoration:none;color:#D9D7D1">Integritetspolicy</a>@endif
+        <a href="{{ route('cookies') }}" style="text-decoration:none;color:#D9D7D1">Cookies</a>
+        <a href="{{ route('cookies') }}" data-cookie-settings style="text-decoration:none;color:#D9D7D1">Cookie-inställningar</a>
       </nav>
     </div>
     <div style="margin-top:56px;padding-top:24px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px;font-size:13px;color:#A6AAB3">
@@ -45,3 +47,4 @@
     </div>
   </div>
 </footer>
+@include('start.partials.cookie-banner')

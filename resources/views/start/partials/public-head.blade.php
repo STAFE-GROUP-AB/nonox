@@ -45,9 +45,13 @@
 <script type="application/ld+json">{!! json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
 @endforeach
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF5A36' d='M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://rsms.me/">
-<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<link rel="preload" href="/fonts/inter/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/fonts/inter/InterDisplay-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* Inter (SIL Open Font License, public/fonts/inter/LICENSE.txt), served from this site so no visitor data goes to a third party. */
+@font-face{font-family:InterVariable;font-style:normal;font-weight:100 900;font-display:swap;src:url('/fonts/inter/InterVariable.woff2') format('woff2')}
+@font-face{font-family:Inter;font-style:normal;font-weight:100 900;font-display:swap;src:url('/fonts/inter/InterVariable.woff2') format('woff2')}
+@font-face{font-family:InterDisplay;font-style:normal;font-weight:800;font-display:swap;src:url('/fonts/inter/InterDisplay-ExtraBold.woff2') format('woff2')}
 
 :root{--bg:#F7F5F0;--card:#FFFFFF;--ink:#15171C;--muted:#5A5E68;--line:rgba(21,23,28,.10);--soft:#EEEBE4;--acc:#FF5A36;--accl:#FFE6DF;--acct:#B8381A;--accb:#E0461F;--dark:#15171C;--hdr:rgba(247,245,240,.82)}
 @media (prefers-color-scheme:dark){:root{--bg:#15171C;--card:#1D2027;--ink:#F3F1EC;--muted:#A6AAB3;--line:rgba(255,255,255,.10);--soft:#23262E;--accl:#3A231D;--acct:#FF8A6D;--accb:#FF6A48;--dark:#0C0D10;--hdr:rgba(21,23,28,.82)}}

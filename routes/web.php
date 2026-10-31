@@ -29,6 +29,7 @@ use App\Http\Controllers\StartController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\SalesDocument;
+use App\Support\Landing\LandingPage;
 use Illuminate\Support\Facades\Route;
 use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
 
@@ -39,6 +40,7 @@ use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
 
 Route::get('/', StartController::class)->name('start');
 Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide');
+Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->name('cookies');
 Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');

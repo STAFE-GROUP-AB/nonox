@@ -122,5 +122,6 @@
 
     <x-ui.toaster />
     @livewireScripts
+    @include('start.partials.cookie-banner')
 </body>
 </html>

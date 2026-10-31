@@ -21,5 +21,6 @@
         </div>
 
         @livewireScripts
-    </body>
+        @include('start.partials.cookie-banner')
+</body>
 </html>
