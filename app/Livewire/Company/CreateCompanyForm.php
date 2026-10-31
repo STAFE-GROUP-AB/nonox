@@ -10,12 +10,13 @@ use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
 use App\Models\User;
+use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
 
-class CreateCompanyForm extends Component
+class CreateCompanyForm extends Component implements SpansCompanies
 {
     public string $name = '';
 

@@ -9,6 +9,7 @@ use App\Livewire\Profile\ProfileInformationForm;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Tenancy\CompanyContext;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Tenancy\LivewireCompanyGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +24,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Registered before Livewire boots, which binds its hooks at boot time.
+        Livewire::componentHook(LivewireCompanyGuard::class);
+
         $this->app->scoped(CompanyContext::class);
     }
 

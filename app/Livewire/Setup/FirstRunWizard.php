@@ -13,6 +13,7 @@ use App\Domain\Company\VatPeriod;
 use App\Rules\SwedishOrganisationNumber;
 use App\Support\FirstRun;
 use App\Support\LoginCodeAutofill;
+use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
@@ -24,7 +25,7 @@ use Livewire\Component;
  * The first-run guide: company, the person, then a one-time code to confirm
  * the email address, which becomes the sign-in address.
  */
-class FirstRunWizard extends Component
+class FirstRunWizard extends Component implements SpansCompanies
 {
     private const string VERIFIED_EMAIL = 'setup.email';
 

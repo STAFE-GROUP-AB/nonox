@@ -9,6 +9,7 @@ use App\Actions\Auth\VerifyLoginCode;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Support\LoginCodeAutofill;
+use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,7 +23,7 @@ use Livewire\Component;
  * address already carries the name. The verified address is kept in the session,
  * never trusted from the browser.
  */
-class LoginForm extends Component
+class LoginForm extends Component implements SpansCompanies
 {
     private const string PENDING_EMAIL = 'login.pending_email';
 

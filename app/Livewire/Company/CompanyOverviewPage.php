@@ -9,6 +9,7 @@ use App\Domain\Company\CompanyOverview;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Tenancy\SpansCompanies;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -21,7 +22,7 @@ use Livewire\Component;
  * an accounting firm's clients or an owner's several companies. A task opens
  * the right page in its company.
  */
-class CompanyOverviewPage extends Component
+class CompanyOverviewPage extends Component implements SpansCompanies
 {
     use ShowsToasts;
 
