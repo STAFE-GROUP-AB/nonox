@@ -17,6 +17,13 @@ av systemen.
 
 ## 2. Bokföringen
 
+**Snabbast:** under Bokföring → Läs in SIE-fil → Flytta från Fortnox loggar du
+in på ditt Fortnox-konto. NONOX hämtar då varje räkenskapsår som SIE4 (som du
+granskar innan det läses in), kunder, leverantörer, artiklar och underlagen,
+och jämför obetalda fakturor. Ingenting ändras i Fortnox. Vill du hellre göra
+det för hand, följ stegen nedan.
+
+
 1. Exportera en SIE4-fil för **varje** räkenskapsår från Fortnox.
 2. Läs in filerna i NONOX under Bokföring → Läs in SIE-fil. Inläsningen visar en
    avstämning innan något sparas.

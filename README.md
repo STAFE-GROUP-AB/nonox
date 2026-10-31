@@ -76,6 +76,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Bokslut: checklista som kontrollerar bokföringen själv, skatt och årets resultat, stängning av året med låsning och resultatdisposition efter årsstämman.
 - ✅ Årsredovisning enligt K2 som PDF: förvaltningsberättelse med flerårsöversikt, resultat- och balansräkning med föregående år, noter och underskrifter.
 - ✅ ROT- och RUT-avdrag på kundfakturor, med arbetskostnad per rad, delad fordran mot Skatteverket och registrering av deras betalning.
+- ✅ Flytt från Fortnox via deras API: logga in på Fortnox-kontot, och bokföringen år för år, register och underlag hämtas med avstämning. Kräver att installationen har `FORTNOX_CLIENT_ID` och `FORTNOX_CLIENT_SECRET`.
 - ✅ Flyttguide på /flytta-hit: steg för steg från andra svenska bokföringsprogram, med exportråd per program i `docs/migration/kallor`.
 - ✅ EU-rapporter: periodisk sammanställning som fil till Skatteverket, underlag för OSS-deklarationen, VIES-kontroll av kunders momsregistreringsnummer och trepartshandel.
 - ✅ EU och export: fakturor utan svensk moms till företag i andra EU-länder och kunder utanför EU, med rätt konto, momsruta och fakturatext.

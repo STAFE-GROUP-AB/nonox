@@ -1,6 +1,9 @@
 <x-app-layout>
     <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-8">
         <x-ui.page-heading :title="__('Läs in SIE-fil')" :lead="__('Flytta in bokföringen från ett annat program. Ett räkenskapsår per fil.')" />
+        @can('importFortnox', auth()->user()->currentCompany())
+            @includeIf('fortnox::sie-hint')
+        @endcan
         <x-ui.bookkeeping-nav />
 
         <x-ui.card :title="__('Så går det till')">

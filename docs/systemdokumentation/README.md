@@ -529,6 +529,31 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   kontrollerats laddas inga filer ner, och sidan visar bara siffrorna.
 - Varje nedladdning skrivs i behandlingshistoriken.
 
+## 5a8. Flytt från Fortnox via API
+
+Under Bokföring → Läs in SIE-fil → Flytta från Fortnox (`/flytt/fortnox`)
+kan den som har behörigheten `import:fortnox` hämta ett företags uppgifter
+direkt från Fortnox. Koden ligger i `app/Migration/Fortnox`.
+
+- **Anslutning:** OAuth2 med PKCE mot Fortnox. Kopplingen sparas bara om
+  Fortnox-kontots organisationsnummer är detsamma som företagets. Nycklarna
+  lagras krypterade per företag och raderas när flytten avslutas.
+- **Endast läsning:** NONOX skriver aldrig till Fortnox. Anropen hålls inom
+  Fortnox gräns (25 per 5 sekunder), väntar vid 429 och förnyar nyckeln när
+  den löper ut.
+- **Bokföringen:** varje räkenskapsår hämtas som SIE4 och går genom den
+  vanliga inläsningen i två steg (4.11): rapport först, inget bokförs innan
+  användaren godkänner. Verifikationerna behåller serier och nummer.
+- **Register:** kunder, leverantörer och artiklar läggs till om de inte redan
+  finns (samma namn eller organisationsnummer, eller samma artikelnummer).
+  Det som inte går att läsa sparas utan det fältet, eller listas.
+- **Underlag:** filer kopplade till verifikationer i Fortnox hämtas i
+  omgångar om 15 och kopplas till samma verifikation i NONOX (via
+  ursprunglig serie och nummer). Varje fil hämtas en gång
+  (`fortnox_imported_files`).
+- **Avstämning:** obetalda kund- och leverantörsfakturor i Fortnox jämförs
+  med saldot på 1510 och 2440 i det senaste året.
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -906,6 +931,10 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   användaren avgör vad som är väsentligt. Ska systemet påminna om en
   beloppsgräns under vilken K2-företag får avstå från att periodisera, och i
   så fall vilken (kontrollera BFNAR 2016:10)?
+- Flytt från Fortnox via API: Fortnox villkor för integrationer som läser
+  andra företags uppgifter, och om NONOX behöver vara registrerad
+  integrationspartner. Hur `/3/archive/{id}` lämnar ut filer ska prövas mot
+  ett riktigt konto.
 - Arkivpaket: räcker det att paketet innehåller underlag, fakturor och
   lönebesked per räkenskapsår, eller ska även räkenskapsinformation som hör
   till året men daterats utanför det (till exempel en faktura daterad efter
@@ -947,5 +976,6 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |
 | 0.30 | 2026-11-01 | ROT- och RUT-avdrag på kundfakturor, delad fordran på 1513 och Skatteverkets betalning. |
 | 0.31 | 2026-11-01 | Resultat per projekt och kostnadsställe i registren. |
+| 0.34 | 2026-11-01 | Flytt från Fortnox via API: anslutning med OAuth2 och PKCE, bokföring per år som SIE4 genom den vanliga granskningen, register, underlag och avstämning av obetalda fakturor. |
 | 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |

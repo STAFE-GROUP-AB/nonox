@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Migration\Fortnox\FortnoxConnection;
+use App\Migration\Fortnox\FortnoxImportedFile;
 use App\Models\Account;
 use App\Models\Accrual;
 use App\Models\AccrualPosting;
@@ -119,6 +121,8 @@ const COMPANY_SCOPED_MODELS = [
     YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
     VatNumberCheck::class => 'vatNumberCheckAttributes',
+    FortnoxConnection::class => 'fortnoxConnectionAttributes',
+    FortnoxImportedFile::class => ['file_id' => 'f-1', 'fortnox_year' => 1, 'voucher_series' => 'A', 'voucher_number' => 1],
     AccrualPosting::class => 'accrualPostingAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
@@ -273,6 +277,15 @@ function bankReconciliationAttributes(): array
         'difference_ore' => 0,
         'outstanding_row_ids' => [],
         'reconciled_by' => User::factory()->create()->id,
+    ];
+}
+
+function fortnoxConnectionAttributes(): array
+{
+    return [
+        'refresh_token' => 'secret',
+        'progress' => [],
+        'connected_by' => User::factory()->create()->id,
     ];
 }
 

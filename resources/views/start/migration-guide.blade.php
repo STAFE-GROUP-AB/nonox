@@ -111,7 +111,8 @@
         ['Gamla lönebesked', 'PDF till lönearkivet', true],
         ['Kund-, leverantörs- och artikelregister', 'För hand i dag, import kommer snart', false],
         ['Underlag och kvitton', 'Sparas i ditt arkiv, inläsning kommer snart', false],
-        ['Automatisk hämtning direkt från ditt gamla program', 'Kommer snart', false],
+        ['Automatisk hämtning direkt från Fortnox', $directFetch ? 'Logga in på Fortnox-kontot, NONOX hämtar resten' : 'Kommer snart', $directFetch],
+        ['Automatisk hämtning från andra program', 'Kommer snart', false],
     ];
     $faqs = [
         ['Hur lång tid tar det?', 'För de flesta småföretag en eftermiddag. Själva inläsningen tar minuter; det mesta av tiden går åt till att exportera ur det gamla programmet.'],

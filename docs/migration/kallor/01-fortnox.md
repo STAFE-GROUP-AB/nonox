@@ -10,4 +10,4 @@ Fortnox delar upp bokföring, fakturering och lön i separata delar. Exportera f
 
 Hittar du inte en export, sök på "SIE" eller "export" i Fortnox egen hjälp. Menyerna ändras ibland, så vi beskriver inte exakta klick här.
 
-**Kommer snart:** automatisk hämtning direkt från Fortnox, där du loggar in på ditt Fortnox-konto och NONOX hämtar bokföring, underlag och register åt dig.
+**Direkt från Fortnox:** i NONOX finns Bokföring → Läs in SIE-fil → Flytta från Fortnox. Där loggar du in på ditt Fortnox-konto och NONOX hämtar varje räkenskapsår, kunder, leverantörer, artiklar och underlagen åt dig, och jämför obetalda fakturor. Ingenting ändras i Fortnox. Funktionen kräver att installationen är registrerad hos Fortnox; annars gör du stegen ovan med SIE-filer.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Migration\Fortnox\FortnoxOAuth;
 use App\Support\Landing\LandingPage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -21,6 +22,7 @@ class MigrationGuideController
         return view('start.migration-guide', [
             ...LandingPage::data(),
             'sources' => self::sources(),
+            'directFetch' => FortnoxOAuth::isConfigured(),
             'pageTitle' => 'Flytta till NONOX – steg för steg',
             'pageDescription' => 'Så flyttar du bokföring, fakturor och lön från ditt gamla bokföringsprogram till NONOX, steg för steg och utan att något går förlorat.',
         ]);
