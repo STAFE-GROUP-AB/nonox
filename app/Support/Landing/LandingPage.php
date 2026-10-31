@@ -159,8 +159,8 @@ final class LandingPage
             ['t' => 'AI', 'mod' => true, 'b' => 'Läser kvitton och leverantörsfakturor och föreslår kontering, med företagets egen AI-nyckel.', 'd' => 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z'],
             ['t' => 'Flera bolag', 'b' => 'Alla bolag under en inloggning, för byråer, koncerner och dig som driver flera företag.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
             ['t' => 'Arkiv och export', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
-            ['t' => 'Personalliggare', 'soon' => true, 'b' => 'Elektronisk personalliggare för bygg, restaurang och andra branscher som kräver det.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
-            ['t' => 'Inbox', 'soon' => true, 'b' => 'Mejla in fakturor, kvitton och dagskassans alla rapporter. Koppla in AI som sorterar och tolkar åt dig, eller sortera manuellt.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
+            ['t' => 'Personalliggare', 'mod' => true, 'b' => 'Gratis elektronisk personalliggare för restaurang, frisör och skönhetsvård, fordonsservice, tvätteri och grossister. Incheckning med PIN eller QR-kod på en vanlig surfplatta, fungerar även utan internet, och kontrollbesöket öppnas med ett tryck.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
+            ['t' => 'Inbox', 'mod' => true, 'b' => 'En egen e-postadress för fakturor, kvitton och dagskassans rapporter. Bara avsändare du godkänt släpps in. SIE och e-fakturor tolkas direkt, AI tolkar resten om du vill, och nästa rapport från samma kassa läses av en mall du godkänt.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
         ];
     }
 

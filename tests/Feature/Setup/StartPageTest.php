@@ -224,12 +224,14 @@ it('lists the public pages in the sitemap and points robots to it', function () 
     $this->get('/robots.txt')->assertSee('Disallow: /', false);
 });
 
-it('lists the features that exist and marks the staff ledger and AI inbox as coming soon', function () {
+it('lists the features that exist, including the staff ledger and inbox modules', function () {
     $this->get('/')
         ->assertSee('Moms och EU')
         ->assertSee('Min sida för anställda')
         ->assertSee('Personalliggare')
-        ->assertSee('dagskassans alla rapporter');
+        ->assertSee('fungerar även utan internet')
+        ->assertSee('Bara avsändare du godkänt släpps in')
+        ->assertSee('Inställningar → Moduler', false);
 });
 
 it('asks for cookie consent with equal choices and lists every cookie on the cookie page', function () {
