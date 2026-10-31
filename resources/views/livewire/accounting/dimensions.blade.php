@@ -45,6 +45,14 @@
                             @unless($object->is_active)
                                 <x-ui.badge>{{ __('Inaktivt') }}</x-ui.badge>
                             @endunless
+                            @if($fiscalYear !== null)
+                                @php($result = $results->get($object->id, ['income' => 0, 'costs' => 0]))
+                                <span class="flex gap-6 text-sm tabular-nums" title="{{ __('Räkenskapsåret :year', ['year' => $fiscalYear->label()]) }}">
+                                    <span><span class="block text-xs text-gray-500">{{ __('Intäkter') }}</span>{{ App\Support\Money\Money::ofOre($result['income'])->format() }}</span>
+                                    <span><span class="block text-xs text-gray-500">{{ __('Kostnader') }}</span>{{ App\Support\Money\Money::ofOre($result['costs'])->format() }}</span>
+                                    <span class="font-semibold text-ink"><span class="block text-xs font-normal text-gray-500">{{ __('Resultat') }}</span>{{ App\Support\Money\Money::ofOre($result['income'] - $result['costs'])->format() }}</span>
+                                </span>
+                            @endif
                             @if($canManage)
                                 <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startEditing({{ $object->id }})">{{ __('Byt namn') }}</button>
                                 <button type="button" class="text-sm text-gray-600 underline" wire:click="toggleActive({{ $object->id }})">{{ $object->is_active ? __('Inaktivera') : __('Aktivera') }}</button>
@@ -56,5 +64,8 @@
         @endif
     </x-ui.card>
 
+    @if($fiscalYear !== null && $objects->isNotEmpty())
+        <p class="text-sm text-gray-500">{{ __('Intäkter, kostnader och resultat gäller räkenskapsåret :year och bygger på bokförda rader med :dimension. Rapporterna kan filtreras på samma sätt.', ['year' => $fiscalYear->label(), 'dimension' => mb_strtolower($kind->label())]) }}</p>
+    @endif
     <p class="text-sm text-gray-500">{{ __('Du väljer kostnadsställe och projekt per rad när du bokför. Koden ändras aldrig, eftersom gamla verifikationer pekar på den; ett namn kan du byta när du vill.') }}</p>
 </div>

@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Livewire\Accounting;
 
 use App\Actions\Accounting\SaveDimensionObject;
+use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\Dimension;
+use App\Domain\Accounting\VoucherStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\CostCenter;
+use App\Models\FiscalYear;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\VoucherRow;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -87,11 +92,41 @@ class Dimensions extends Component
     {
         $model = $this->kind()->model();
 
+        $fiscalYear = FiscalYear::query()->whereDate('start_date', '<=', now()->toDateString())->whereDate('end_date', '>=', now()->toDateString())->first()
+            ?? FiscalYear::query()->orderByDesc('start_date')->first();
+        $canSeeResult = $fiscalYear !== null && $this->user()->hasTeamPermission($this->company(), 'reports:view');
+
         return view('livewire.accounting.dimensions', [
             'kind' => $this->kind(),
             'objects' => $model::query()->orderBy('code')->get(),
             'canManage' => $this->user()->can('create', [$model, $this->company()]),
+            'fiscalYear' => $canSeeResult ? $fiscalYear : null,
+            'results' => $canSeeResult ? $this->results($fiscalYear) : collect(),
         ]);
+    }
+
+    /**
+     * Income and costs per object for the fiscal year, from the posted rows
+     * of income statement accounts; one query.
+     *
+     * @return Collection<int, array{income: int, costs: int}>
+     */
+    private function results(FiscalYear $fiscalYear): Collection
+    {
+        $column = 'voucher_rows.'.$this->kind()->column();
+
+        return VoucherRow::query()
+            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+            ->where('vouchers.fiscal_year_id', $fiscalYear->id)
+            ->where('vouchers.status', VoucherStatus::Posted->value)
+            ->whereNotNull($column)
+            ->whereIn('accounts.type', [AccountType::Revenue->value, AccountType::Expense->value])
+            ->groupBy($column)
+            ->select("{$column} as object_id")
+            ->selectRaw('SUM(CASE WHEN accounts.type = ? THEN voucher_rows.credit_ore - voucher_rows.debit_ore ELSE 0 END) AS income, SUM(CASE WHEN accounts.type = ? THEN voucher_rows.debit_ore - voucher_rows.credit_ore ELSE 0 END) AS costs', [AccountType::Revenue->value, AccountType::Expense->value])
+            ->get()
+            ->mapWithKeys(fn (VoucherRow $row): array => [(int) $row->getAttribute('object_id') => ['income' => (int) $row->getAttribute('income'), 'costs' => (int) $row->getAttribute('costs')]]);
     }
 
     private function kind(): Dimension

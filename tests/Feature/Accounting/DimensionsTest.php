@@ -184,3 +184,13 @@ describe('in the voucher editor', function () {
             ->assertSee('Rad 2: kostnadsstället 77 finns inte.');
     });
 });
+
+it('shows income, costs and result per project for the year', function () {
+    app(SaveDimensionObject::class)($this->owner, $this->company, Dimension::Project, ['code' => 'P1', 'name' => 'Villa Ek']);
+    app(SaveDimensionObject::class)($this->owner, $this->company, Dimension::Project, ['code' => 'P2', 'name' => 'Kök Lind']);
+    app(PostVoucher::class)($this->owner, draftWithRows([['account' => 1930, 'debit_ore' => 100_000], ['account' => 3001, 'credit_ore' => 100_000, 'project' => 'P1']]));
+    app(PostVoucher::class)($this->owner, draftWithRows([['account' => 5010, 'debit_ore' => 30_000, 'project' => 'P1'], ['account' => 1930, 'credit_ore' => 30_000]]));
+
+    Livewire::test(Dimensions::class, ['dimension' => 'projekt'])
+        ->assertSeeInOrder(['Villa Ek', "1\u{a0}000,00", '300,00', '700,00', 'Kök Lind']);
+});

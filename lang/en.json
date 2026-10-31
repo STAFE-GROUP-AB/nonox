@@ -2759,5 +2759,9 @@
     "Summa inkl. moms": "Total incl. VAT",
     "Avgår :type": "Less :type",
     "Arbetskostnad inklusive moms :labour. Avdraget förutsätter att Skatteverket godkänner det; annars betalar köparen resten.": "Labour cost including VAT :labour. The deduction requires Skatteverket's approval; otherwise the buyer pays the rest.",
-    "Fastighet eller bostadsrätt: :property": "Property or apartment: :property"
+    "Fastighet eller bostadsrätt: :property": "Property or apartment: :property",
+    "Intäkter, kostnader och resultat gäller räkenskapsåret :year och bygger på bokförda rader med :dimension. Rapporterna kan filtreras på samma sätt.": "Income, costs and result are for the fiscal year :year and are based on posted rows with :dimension. The reports can be filtered the same way.",
+    "Räkenskapsåret :year": "Fiscal year :year",
+    "Intäkter": "Income",
+    "Kostnader": "Costs"
 }

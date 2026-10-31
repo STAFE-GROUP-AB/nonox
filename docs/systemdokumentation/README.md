@@ -193,6 +193,9 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Kostnadsställen och projekt följer med i SIE-export och SIE-import
   (dimension 1 och 6).
 - Varje ändring skrivs till behandlingshistoriken.
+- Listorna över kostnadsställen och projekt visar intäkter, kostnader och
+  resultat per objekt för innevarande räkenskapsår (bokförda rader på
+  resultatkonton med objektet), för den som får se rapporter.
 
 ### 4.11 Inläsning av SIE4-filer
 
@@ -889,3 +892,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.28 | 2026-11-01 | Inkomstdeklaration 2 (INK2, INK2R, INK2S) ur bokföringen som SRU-filer. |
 | 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |
 | 0.30 | 2026-11-01 | ROT- och RUT-avdrag på kundfakturor, delad fordran på 1513 och Skatteverkets betalning. |
+| 0.31 | 2026-11-01 | Resultat per projekt och kostnadsställe i registren. |
