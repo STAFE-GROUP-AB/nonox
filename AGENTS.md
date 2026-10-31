@@ -28,6 +28,7 @@ Build a complete, open-source, self-hostable bookkeeping and finance system for 
 - **NEVER** copy Fortnox's (or any competitor's) name, logo, UI layout pixel-for-pixel, icons, colours, help texts, error messages, marketing copy or source code.
 - **NEVER** scrape competitor UIs for design reference. Specs are written from accounting law, BAS, SIE and Skatteverket documentation — not from screenshots.
 - The word "Fortnox" may appear **only** in the migration module (`app/Migration/Fortnox`, docs/migration) as a descriptive reference to the data source.
+  Exception (ADR-020): the public pages (landing page, moving guide, comparison, "alternativ till" pages) may name other programs as plain-text, verifiable comparisons, with data kept in `docs/migration`.
 - Our UI must have its **own** visual identity (see §11).
 
 ### 1.2 Accounting integrity

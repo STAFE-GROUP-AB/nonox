@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route;
  * hyphens. Technical endpoints users never see are exempt.
  */
 
-const TECHNICAL_PREFIXES = ['up', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio'];
+const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio'];
 
 const ENGLISH_WORDS = [
     'login', 'logout', 'register', 'user', 'profile', 'team', 'teams', 'dashboard', 'password',

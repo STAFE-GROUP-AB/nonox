@@ -197,6 +197,8 @@ final class LandingPage
     private static function faqs(): array
     {
         return [
+            ['q' => 'Är NONOX ett alternativ till Fortnox?', 'a' => 'Ja. NONOX har bokföring, fakturering, lön, moms, bokslut och årsredovisning, och du flyttar hela historiken från Fortnox med SIE4-filer. Skillnaden är att NONOX är öppen källkod, att alla delar ingår och att du kan köra det själv gratis.'],
+            ['q' => 'Vad skiljer NONOX från Fortnox, Visma och Bokio?', 'a' => 'Funktionerna för ett svenskt småföretag är i stort sett desamma. NONOX är öppen källkod, kostar 0 kr att köra själv eller 995 kr om året med drift, och alla delar ingår utan tillval. Jämförelsen på sidan visar funktion för funktion.'],
             ['q' => 'Är NONOX verkligen gratis?', 'a' => 'Ja. Programmet är öppen källkod och gratis att ladda ner och köra själv. Du betalar bara om du vill att vi sköter driften.'],
             ['q' => 'Kan jag köra det på mitt webbhotell?', 'a' => 'Ja, på ett webbhotell med PHP och PostgreSQL. Installationsguiden tar dig igenom stegen.'],
             ['q' => 'Vem ansvarar för vad?', 'a' => 'Kör du själv ansvarar du för installation, drift och säkerhetskopior. Väljer du ett driftpaket sköter vi driften. Programmet tillhandahålls i befintligt skick enligt licensen, och ansvaret för bokföringen ligger alltid hos företaget, precis som i alla bokföringsprogram.'],

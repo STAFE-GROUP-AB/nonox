@@ -10,6 +10,7 @@ use App\Http\Controllers\Accounting\SieExportController;
 use App\Http\Controllers\Accounting\SieImportController;
 use App\Http\Controllers\Accounting\VoucherController;
 use App\Http\Controllers\Accounting\VoucherSeriesController;
+use App\Http\Controllers\AlternativeController;
 use App\Http\Controllers\Auth\LogoutController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
+use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Middleware\EnsureUserHasCompany;
@@ -37,6 +39,9 @@ use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
 
 Route::get('/', StartController::class)->name('start');
 Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide');
+Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');
+Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 Route::middleware('guest')->group(function () {
     Route::view('/logga-in', 'auth.login')->name('login');

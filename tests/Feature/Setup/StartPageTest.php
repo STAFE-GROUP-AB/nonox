@@ -183,3 +183,44 @@ it('shows the moving guide with the programs from docs/migration and the steps',
 
     $this->get('/')->assertSee(route('migrationGuide'));
 });
+
+it('compares NONOX with the other programs, with sources and the time the prices were fetched', function () {
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Ett gratis alternativ till Fortnox, Visma och Bokio.')
+        ->assertSee("10\u{a0}596\u{a0}kr")
+        ->assertSee('2026-10-31 kl. 11:47')
+        ->assertSee('https://www.fortnox.se/prislista')
+        ->assertSee('application/ld+json', false)
+        ->assertSee('"@type":"FAQPage"', false)
+        ->assertSee('Alla dina bolag. En skärm.')
+        ->assertSee(route('alternative', 'fortnox'));
+})->skip(fn () => ! str_contains((string) file_get_contents(base_path('docs/migration/jamforelse.json')), '10596'), 'prices updated');
+
+it('has an alternative page per program and 404 for an unknown one', function () {
+    $this->get(route('alternative', 'fortnox'))
+        ->assertOk()
+        ->assertSee('<title>Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod</title>', false)
+        ->assertSee('Ett gratis alternativ till')
+        ->assertSee('Du sparar')
+        ->assertSee('Så flyttar du från Fortnox.')
+        ->assertSee('<link rel="canonical" href="'.route('alternative', 'fortnox').'">', false);
+
+    $this->get(route('alternative', 'bjorn-lunden'))->assertOk()->assertSee('ej verifierat');
+    $this->get(route('alternative', 'nonox'))->assertNotFound();
+    $this->get('/alternativ-till-okant')->assertNotFound();
+});
+
+it('lists the public pages in the sitemap and points robots to it', function () {
+    $this->get('/sitemap.xml')
+        ->assertOk()
+        ->assertHeader('Content-Type', 'application/xml; charset=UTF-8')
+        ->assertSee(route('migrationGuide'), false)
+        ->assertSee(route('alternative', 'visma'), false);
+
+    $this->get('/robots.txt')->assertOk()->assertSee('Sitemap: '.url('/sitemap.xml'), false);
+
+    config(['app.landing.enabled' => false]);
+
+    $this->get('/robots.txt')->assertSee('Disallow: /', false);
+});

@@ -10,9 +10,10 @@
             'label' => 'Produkt',
             'items' => [
                 ['href' => $home.'#funktioner', 'title' => 'Funktioner', 'text' => 'Bokföring, fakturor, moms, bokslut och lön i ett system.', 'icon' => 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z'],
-                ['href' => $home.'#byraer', 'title' => 'För redovisningsbyråer', 'text' => 'Alla klienter under en inloggning, månad för månad.', 'icon' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
+                ['href' => $home.'#byraer', 'title' => 'Flera bolag, koncerner och byråer', 'text' => 'Alla bolag under en inloggning, månad för månad.', 'icon' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
                 ['href' => route('migrationGuide'), 'title' => 'Byt system', 'text' => 'Flytta hit med SIE4 och importverktyget utan att tappa något.', 'icon' => 'M4 7h13l-3-3M20 17H7l3 3'],
                 ['href' => $home.'#oppen-kallkod', 'title' => 'Öppen källkod', 'text' => 'AGPL-3.0. Läs koden och se exakt hur siffrorna hanteras.', 'icon' => 'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16'],
+                ['href' => $home.'#jamfor', 'title' => 'Jämför', 'text' => 'NONOX mot Fortnox, Visma, Bokio med flera, funktion för funktion.', 'icon' => 'M4 20V10M10 20V4M16 20v-7M22 20H2'],
                 ['href' => $home.'#fragor', 'title' => 'Vanliga frågor', 'text' => 'Ansvar, lagkrav, data och vad det kostar.', 'icon' => 'M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z'],
             ],
             'promo' => ['eyebrow' => 'Din data. Alltid.', 'title' => 'Bokförda verifikationer kan aldrig ändras i efterhand.', 'link' => $ph['github'], 'cta' => 'Se koden på GitHub'],

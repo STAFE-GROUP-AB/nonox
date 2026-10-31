@@ -21,7 +21,7 @@
     <div data-reveal="" style="max-width:980px">
       <p style="margin:0 0 28px;display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;padding:7px 14px 7px 10px;border-radius:999px;background:var(--accl);color:var(--ink);font-size:13.5px;font-weight:600">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF5A36" d="M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z"></path></svg>
-        <span>Nytt · Öppen källkod · Byggd i Sverige · Version {{ $ph['version'] }}</span>
+        <span>Gratis alternativ till Fortnox, Visma och Bokio · Öppen källkod · Byggd i Sverige</span>
       </p>
       <h1 id="hero-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(44px,8.4vw,112px);line-height:0.95;letter-spacing:-0.045em;text-wrap:balance">Bokföring som ägs av <span style="color:var(--accb)">företagaren.</span></h1>
       <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell eller din egen server, och snart som program på din dator. Eller låt oss sköta driften från 995 kr om året.</p>
@@ -207,19 +207,19 @@
   <div style="max-width:1240px;margin:0 auto">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:clamp(32px,5vw,72px);align-items:end">
       <div data-reveal="">
-        <p style="margin:0 0 16px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acct)">För redovisningsbyråer</p>
-        <h2 id="byra-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(36px,5.6vw,72px);line-height:1;letter-spacing:-0.04em;text-wrap:balance">Alla dina klienter. En skärm.</h2>
+        <p style="margin:0 0 16px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acct)">För byråer, koncerner och dig med flera bolag</p>
+        <h2 id="byra-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(36px,5.6vw,72px);line-height:1;letter-spacing:-0.04em;text-wrap:balance">Alla dina bolag. En skärm.</h2>
       </div>
       <div data-reveal="">
-        <p style="margin:0;font-size:18px;line-height:1.55;color:var(--muted);text-wrap:pretty">Se allt som är viktigt för varje klient, månad för månad, och arbeta med alla klienter i ett och samma system.</p>
-        <p style="margin:18px 0 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px"><span style="font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(32px,3.6vw,44px);letter-spacing:-0.035em;color:var(--accb);font-variant-numeric:tabular-nums">0 kr</span><span style="font-size:16px;font-weight:600">för byrån som kör NONOX i egen drift, oavsett antal klienter.</span></p>
+        <p style="margin:0;font-size:18px;line-height:1.55;color:var(--muted);text-wrap:pretty">Driver du flera bolag, har en koncern eller är redovisningsbyrå: se bokföring, bankavstämning, moms, arbetsgivardeklaration och obetalda fakturor för varje bolag, månad för månad, och byt mellan dem med ett klick.</p>
+        <p style="margin:18px 0 0;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px"><span style="font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(32px,3.6vw,44px);letter-spacing:-0.035em;color:var(--accb);font-variant-numeric:tabular-nums">0 kr</span><span style="font-size:16px;font-weight:600">i egen drift, oavsett hur många bolag du har.</span></p>
       </div>
     </div>
     <div data-reveal="" aria-hidden="true" style="margin-top:clamp(40px,5vw,64px);border-radius:20px;border:1px solid rgba(21,23,28,.12);background:#FFFFFF;color:#15171C;box-shadow:0 40px 80px -40px rgba(21,23,28,.35);overflow:hidden">
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:18px 22px;border-bottom:1px solid #ECE9E2;background:#FAF9F6">
         <div>
-          <div style="font-size:11px;color:#6A6E77;font-weight:500">Byråvy · Exempelbyrån Redovisning AB</div>
-          <div style="font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.02em">Klienter, oktober 2026</div>
+          <div style="font-size:11px;color:#6A6E77;font-weight:500">Alla bolag · Exempelgruppen AB</div>
+          <div style="font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.02em">Bolag, oktober 2026</div>
         </div>
         <div style="margin-left:auto;display:flex;gap:6px;font-size:12px;font-weight:600">
           <span style="padding:6px 11px;border-radius:999px;background:#F0EEE8">Aug</span>
@@ -230,7 +230,7 @@
       </div>
       <div style="overflow-x:auto">
         <div style="min-width:820px;font-size:13px;font-variant-numeric:tabular-nums">
-          <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr 1fr 1fr 1fr;gap:12px;padding:11px 22px;color:#6A6E77;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em"><span>Klient</span><span>Bokfört t.o.m.</span><span>Bankavstämning</span><span>Moms</span><span>AGI</span><span style="text-align:right">Obetalda kundfakt.</span></div>
+          <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr 1fr 1fr 1fr;gap:12px;padding:11px 22px;color:#6A6E77;font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em"><span>Bolag</span><span>Bokfört t.o.m.</span><span>Bankavstämning</span><span>Moms</span><span>AGI</span><span style="text-align:right">Obetalda kundfakt.</span></div>
           @foreach($clients as $c)
             <div style="display:grid;grid-template-columns:2fr 1.1fr 1fr 1fr 1fr 1fr;gap:12px;align-items:center;padding:13px 22px;border-top:1px solid #EFECE6">
               <span style="display:flex;align-items:center;gap:10px;font-weight:600"><span style="width:28px;height:28px;border-radius:8px;background:#F0EEE8;display:grid;place-items:center;font-size:11px;font-weight:800">{{ $c['ini'] }}</span>{{ $c['name'] }}</span>
@@ -245,9 +245,9 @@
       </div>
     </div>
     <ul style="list-style:none;margin:28px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:12px 32px;font-size:16px;line-height:1.5">
-      <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Alla klienter under en inloggning</li>
-      <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Status för varje klient, månad för månad</li>
-      <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Inga licenskostnader per klient i egen drift</li>
+      <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Alla bolag under en inloggning</li>
+      <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Status för varje bolag, månad för månad</li>
+      <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Inga licenskostnader per bolag i egen drift</li>
     </ul>
   </div>
 </section>
@@ -351,6 +351,24 @@
         <p style="margin:4px 0 0;font-size:13px;line-height:1.5;color:var(--muted);text-wrap:pretty">Uppskattning baserad på offentliga listpriser för bokföring, fakturering och lön i oktober 2026, exkl. moms, utan tillägg. Ditt faktiska pris kan skilja sig.</p>
       </div>
     </div>
+  </div>
+</section>
+
+<section id="jamfor" aria-labelledby="jamfor-rubrik" style="scroll-margin-top:68px;padding:clamp(80px,11vw,150px) clamp(20px,4vw,40px)">
+  <div style="max-width:1240px;margin:0 auto">
+    <div data-reveal="" style="max-width:900px">
+      <p style="margin:0 0 16px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acct)">Jämför</p>
+      <h2 id="jamfor-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(36px,5.6vw,72px);line-height:1;letter-spacing:-0.04em;text-wrap:balance">Ett gratis alternativ till Fortnox, Visma och Bokio.</h2>
+      <p style="margin:24px 0 0;max-width:720px;font-size:18px;line-height:1.55;color:var(--muted);text-wrap:pretty">Samma grund som de stora ekonomisystemen: bokföring, fakturering, lön, moms och bokslut. Skillnaden är att NONOX är öppen källkod, att alla delar ingår och att du kan köra det själv utan kostnad.</p>
+    </div>
+    <div data-reveal="" style="margin-top:clamp(36px,5vw,56px)">
+      @include('start.partials.comparison', ['highlight' => null])
+    </div>
+    <nav aria-label="Alternativ till" style="margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;font-size:14.5px;font-weight:600">
+      @foreach(App\Support\Landing\Comparison::others() as $slug)
+        <a href="{{ route('alternative', $slug) }}" class="cmp-link">Alternativ till {{ App\Support\Landing\Comparison::program($slug)['name'] ?? $slug }} →</a>
+      @endforeach
+    </nav>
   </div>
 </section>
 

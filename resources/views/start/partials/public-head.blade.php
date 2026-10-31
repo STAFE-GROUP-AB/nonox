@@ -1,14 +1,49 @@
 {{-- Meta tags and styles shared by the public pages. --}}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ $pageTitle ?? 'NONOX by Stafe – Bokföring med öppen källkod' }}</title>
-<meta name="description" content="{{ $pageDescription ?? 'NONOX är ett komplett svenskt bokföringsprogram med öppen källkod. Ladda ner gratis och kör var du vill, eller låt oss sköta driften från 995 kr om året.' }}">
-<meta property="og:title" content="{{ $pageTitle ?? 'NONOX by Stafe – Bokföring med öppen källkod' }}">
+<title>{{ $pageTitle ?? 'Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod' }}</title>
+<meta name="description" content="{{ $pageDescription ?? 'NONOX är ett gratis alternativ till Fortnox, Visma och Bokio: ett komplett svenskt bokföringsprogram med öppen källkod för bokföring, fakturering, lön och bokslut. Kör själv gratis, eller låt oss sköta driften för 995 kr om året.' }}">
+<meta property="og:title" content="{{ $pageTitle ?? 'Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod' }}">
 <meta property="og:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
 <meta property="og:url" content="{{ url()->current() }}">
 <meta property="og:type" content="website">
 <meta property="og:locale" content="sv_SE">
 <meta name="theme-color" content="#15171C">
+<link rel="canonical" href="{{ url()->current() }}">
+<meta name="robots" content="index,follow">
+@php
+    $structured = [
+        [
+            '@context' => 'https://schema.org',
+            '@type' => 'SoftwareApplication',
+            'name' => 'NONOX',
+            'alternateName' => 'NONOX Ekonomisystem',
+            'applicationCategory' => 'BusinessApplication',
+            'applicationSubCategory' => 'Bokföringsprogram',
+            'operatingSystem' => 'Webb',
+            'inLanguage' => 'sv-SE',
+            'url' => url('/'),
+            'description' => 'Komplett svenskt bokföringsprogram med öppen källkod: bokföring, fakturering, lön, moms, bokslut och årsredovisning. Ett gratis alternativ till Fortnox, Visma och Bokio.',
+            'license' => 'https://www.gnu.org/licenses/agpl-3.0.html',
+            'isAccessibleForFree' => true,
+            'offers' => [
+                ['@type' => 'Offer', 'name' => 'Kör själv', 'price' => '0', 'priceCurrency' => 'SEK'],
+                ['@type' => 'Offer', 'name' => 'Vi sköter driften, upp till 10 anställda', 'price' => '995', 'priceCurrency' => 'SEK', 'priceSpecification' => ['@type' => 'UnitPriceSpecification', 'price' => '995', 'priceCurrency' => 'SEK', 'unitText' => 'år', 'valueAddedTaxIncluded' => false]],
+                ['@type' => 'Offer', 'name' => 'Vi sköter driften, 11–25 anställda', 'price' => '1995', 'priceCurrency' => 'SEK', 'priceSpecification' => ['@type' => 'UnitPriceSpecification', 'price' => '1995', 'priceCurrency' => 'SEK', 'unitText' => 'år', 'valueAddedTaxIncluded' => false]],
+            ],
+        ],
+    ];
+    if (! empty($faqSchema ?? $faqs ?? [])) {
+        $structured[] = [
+            '@context' => 'https://schema.org',
+            '@type' => 'FAQPage',
+            'mainEntity' => array_map(fn (array $faq): array => ['@type' => 'Question', 'name' => $faq['q'] ?? $faq[0], 'acceptedAnswer' => ['@type' => 'Answer', 'text' => $faq['a'] ?? $faq[1]]], $faqSchema ?? $faqs),
+        ];
+    }
+@endphp
+@foreach($structured as $item)
+<script type="application/ld+json">{!! json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
+@endforeach
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF5A36' d='M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://rsms.me/">
 <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
@@ -107,4 +142,28 @@ input[type=range]{accent-color:#FF5A36}
 .lp-desktop{display:contents}
 @media (max-width:959px){.lp-desktop{display:none}.lp-mobile{display:block}}
 @media (min-width:960px){#lp-mobilmeny{display:none!important}}
+.cmp-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:24px;background:var(--card)}
+.cmp-table{width:100%;min-width:860px;border-collapse:separate;border-spacing:0;font-size:15px}
+.cmp-table th,.cmp-table td{padding:14px 12px;text-align:center;border-bottom:1px solid var(--line);vertical-align:middle}
+.cmp-table thead th{position:sticky;top:0;background:var(--card);font-size:13.5px;font-weight:700;line-height:1.25}
+.cmp-table tbody tr:last-child th,.cmp-table tbody tr:last-child td{border-bottom:0}
+.cmp-feature-col{text-align:left!important;font-weight:600;min-width:220px;position:sticky;left:0;background:var(--card);z-index:1}
+.cmp-nonox{background:var(--accl)!important}
+.cmp-table thead th.cmp-nonox{color:var(--acct);font-size:15px}
+.cmp-cell{display:inline-flex;flex-direction:column;align-items:center;gap:2px}
+.cmp-note{display:block;font-size:11px;font-weight:600;color:var(--muted)}
+.cmp-pill{display:inline-block;padding:3px 9px;border-radius:999px;border:1px solid var(--line);font-size:12px;font-weight:700;color:var(--muted)}
+.cmp-unknown{font-size:12px;color:var(--muted)}
+.cmp-price-row th,.cmp-price-row td{background:var(--bg)}
+.cmp-price{font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:18px;letter-spacing:-0.02em;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cmp-nonox .cmp-price{color:var(--acct);font-size:21px}
+.cmp-legend{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:16px;font-size:13.5px;color:var(--muted)}
+.cmp-legend > span{display:inline-flex;align-items:center;gap:7px}
+.cmp-sources{margin-top:16px;font-size:14px;color:var(--muted)}
+.cmp-sources summary{cursor:pointer;font-weight:600;color:var(--ink)}
+.cmp-sources li{margin:6px 0;line-height:1.5}
+.cmp-sources a{color:var(--acct)}
+.cmp-link{display:inline-flex;align-items:center;min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none}
+.cmp-link:hover{border-color:var(--ink);color:var(--ink)}
+.cmp-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 </style>

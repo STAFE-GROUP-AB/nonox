@@ -1,0 +1,87 @@
+{
+    "fetched_at": "2026-10-31 11:47–11:50",
+    "timezone": "Europe/Stockholm",
+    "scenario": "Ett aktiebolag med fem anställda som behöver bokföring, fakturering och lön. Listpriser exklusive moms vid tolv månaders avtal där det anges, utan tillval, avgifter per faktura eller tolkning.",
+    "programs": [
+        {
+            "slug": "nonox",
+            "name": "NONOX",
+            "plan": "Vi sköter driften, 0–10 anställda (gratis att köra själv)",
+            "per_year": 995,
+            "price_note": "995 kr/år med drift. 0 kr om du kör själv.",
+            "source": null,
+            "verified": true
+        },
+        {
+            "slug": "fortnox",
+            "name": "Fortnox",
+            "plan": "Mellan+ med Fortnox Access (100–999 verifikationer) och Lön 25 kr per anställd",
+            "per_month": 883,
+            "per_year": 10596,
+            "price_note": "659 + 99 + 5 × 25 kr/mån. 12 månaders avtal; 3 månader kostar 15 % mer.",
+            "source": "https://www.fortnox.se/prislista",
+            "verified": true
+        },
+        {
+            "slug": "visma",
+            "name": "Visma Spiris",
+            "plan": "Växa (bokföring, fakturering och lön)",
+            "per_month": 749,
+            "per_year": 8988,
+            "price_note": "749 kr/mån. Sidan anger inte om priset är exklusive moms.",
+            "source": "https://www.spiris.se/priser",
+            "verified": true
+        },
+        {
+            "slug": "bokio",
+            "name": "Bokio",
+            "plan": "Business med årsbetalning, en anställd ingår och 29 kr per extra anställd",
+            "per_month": 575,
+            "per_year": 6900,
+            "price_note": "459 + 4 × 29 kr/mån vid årsbetalning.",
+            "source": "https://www.bokio.se/priser/",
+            "verified": true
+        },
+        {
+            "slug": "bjorn-lunden",
+            "name": "Björn Lundén (Lundify)",
+            "plan": "Total och lön 39 kr per lönebesked",
+            "per_month": 544,
+            "per_year": 6528,
+            "price_note": "349 + 5 × 39 kr/mån enligt jämförelsesajt. Leverantörens prissida kunde inte läsas automatiskt.",
+            "source": "https://jamforbokforingsprogram.se/bokforingsprogram/bjorn-lunden/",
+            "verified": false
+        },
+        {
+            "slug": "kleer",
+            "name": "Kleer",
+            "plan": "Mindre företag (inklusive redovisningskonsult) och Payroll Standard",
+            "per_month": 6125,
+            "per_year": 73500,
+            "price_note": "Från 5 000 kr/mån inklusive konsulttjänst, plus 5 × 225 kr/mån för lön. Inte direkt jämförbart: konsulten ingår.",
+            "source": "https://www.kleer.se/pris-ekonomisystem/",
+            "verified": true
+        }
+    ],
+    "legend": {
+        "yes": "Ingår",
+        "addon": "Tillval, kostar extra",
+        "per": "Ingår, med avgift per anställd eller lönebesked",
+        "no": "Finns inte",
+        "unknown": "Anges inte på prissidan"
+    },
+    "features": [
+        {"name": "Bokföring", "values": {"nonox": "yes", "fortnox": "yes", "visma": "yes", "bokio": "yes", "bjorn-lunden": "yes", "kleer": "yes"}},
+        {"name": "Fakturering", "values": {"nonox": "yes", "fortnox": "yes", "visma": "yes", "bokio": "yes", "bjorn-lunden": "yes", "kleer": "yes"}},
+        {"name": "Lön för fem anställda", "values": {"nonox": "yes", "fortnox": "per", "visma": "yes", "bokio": "per", "bjorn-lunden": "per", "kleer": "per"}},
+        {"name": "Leverantörsfakturor med attest", "values": {"nonox": "yes", "fortnox": "yes", "visma": "yes", "bokio": "unknown", "bjorn-lunden": "unknown", "kleer": "yes"}},
+        {"name": "ROT- och RUT-avdrag", "values": {"nonox": "yes", "fortnox": "unknown", "visma": "yes", "bokio": "yes", "bjorn-lunden": "unknown", "kleer": "unknown"}},
+        {"name": "Bokslut och årsredovisning", "values": {"nonox": "yes", "fortnox": "addon", "visma": "addon", "bokio": "addon", "bjorn-lunden": "unknown", "kleer": "addon"}},
+        {"name": "Inkomstdeklaration (SRU)", "values": {"nonox": "yes", "fortnox": "addon", "visma": "addon", "bokio": "unknown", "bjorn-lunden": "unknown", "kleer": "addon"}},
+        {"name": "Flera bolag under en inloggning", "values": {"nonox": "yes", "fortnox": "unknown", "visma": "unknown", "bokio": "unknown", "bjorn-lunden": "unknown", "kleer": "unknown"}},
+        {"name": "Mobilapp", "values": {"nonox": "no", "fortnox": "yes", "visma": "yes", "bokio": "yes", "bjorn-lunden": "unknown", "kleer": "yes"}},
+        {"name": "Alla moduler ingår i priset", "values": {"nonox": "yes", "fortnox": "no", "visma": "no", "bokio": "no", "bjorn-lunden": "no", "kleer": "no"}},
+        {"name": "Öppen källkod", "values": {"nonox": "yes", "fortnox": "no", "visma": "no", "bokio": "no", "bjorn-lunden": "no", "kleer": "no"}},
+        {"name": "Kör på egen server", "values": {"nonox": "yes", "fortnox": "no", "visma": "no", "bokio": "no", "bjorn-lunden": "no", "kleer": "no"}}
+    ]
+}
