@@ -1,0 +1,110 @@
+{{-- Meta tags and styles shared by the public pages. --}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ $pageTitle ?? 'NONOX by Stafe – Bokföring med öppen källkod' }}</title>
+<meta name="description" content="{{ $pageDescription ?? 'NONOX är ett komplett svenskt bokföringsprogram med öppen källkod. Ladda ner gratis och kör var du vill, eller låt oss sköta driften från 995 kr om året.' }}">
+<meta property="og:title" content="{{ $pageTitle ?? 'NONOX by Stafe – Bokföring med öppen källkod' }}">
+<meta property="og:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
+<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="sv_SE">
+<meta name="theme-color" content="#15171C">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF5A36' d='M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://rsms.me/">
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+<style>
+
+:root{--bg:#F7F5F0;--card:#FFFFFF;--ink:#15171C;--muted:#5A5E68;--line:rgba(21,23,28,.10);--soft:#EEEBE4;--acc:#FF5A36;--accl:#FFE6DF;--acct:#B8381A;--accb:#E0461F;--dark:#15171C;--hdr:rgba(247,245,240,.82)}
+@media (prefers-color-scheme:dark){:root{--bg:#15171C;--card:#1D2027;--ink:#F3F1EC;--muted:#A6AAB3;--line:rgba(255,255,255,.10);--soft:#23262E;--accl:#3A231D;--acct:#FF8A6D;--accb:#FF6A48;--dark:#0C0D10;--hdr:rgba(21,23,28,.82)}}
+[data-theme=light]{--bg:#F7F5F0;--card:#FFFFFF;--ink:#15171C;--muted:#5A5E68;--line:rgba(21,23,28,.10);--soft:#EEEBE4;--accl:#FFE6DF;--acct:#B8381A;--accb:#E0461F;--dark:#15171C;--hdr:rgba(247,245,240,.82)}
+[data-theme=dark]{--bg:#15171C;--card:#1D2027;--ink:#F3F1EC;--muted:#A6AAB3;--line:rgba(255,255,255,.10);--soft:#23262E;--accl:#3A231D;--acct:#FF8A6D;--accb:#FF6A48;--dark:#0C0D10;--hdr:rgba(21,23,28,.82)}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
+@supports (font-variation-settings:normal){body{font-family:InterVariable,Inter,system-ui,sans-serif}}
+*{box-sizing:border-box}
+a{color:inherit}
+a:hover{color:var(--acct)}
+:focus-visible{outline:3px solid #FF5A36;outline-offset:3px;border-radius:6px}
+summary{list-style:none}
+summary::-webkit-details-marker{display:none}
+details[open] .faq-plus{transform:rotate(45deg)}
+input[type=range]{accent-color:#FF5A36}
+
+.lp0:focus{left:8px !important}
+.lp1:hover{color:var(--ink) !important}
+.lp2:hover{color:var(--ink) !important}
+.lp3:hover{color:var(--ink) !important}
+.lp4:hover{color:var(--ink) !important}
+.lp5:hover{color:var(--ink) !important}
+.lp6:hover{color:var(--ink) !important}
+.lp7:hover{border-color:var(--ink) !important}
+.lp8:hover{background:#FF7454 !important;color:#15171C !important}
+.lp9:hover{background:#FF7454 !important;color:#15171C !important}
+.lp10:hover{background:var(--ink) !important;color:var(--bg) !important}
+.lp11:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
+.lp12:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
+.lp13:hover{background:rgba(255,255,255,.08) !important}
+.lp14:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
+.lp15:hover{color:var(--bg) !important;background:var(--muted) !important}
+.lp16:hover{color:var(--ink) !important;background:var(--soft) !important}
+.lp17:hover{background:#FF5A36 !important;color:#15171C !important}
+.lp18:hover{background:var(--bg) !important}
+.lp19:hover{background:#FF7454 !important;color:#15171C !important}
+.lp20:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
+.lp21:hover{background:#FF5A36 !important;border-color:#FF5A36 !important;color:#15171C !important}
+.lp22:hover{color:var(--bg) !important}
+.lp23:hover{background:var(--ink) !important;color:var(--bg) !important}
+.lp24:hover{color:var(--bg) !important;opacity:.88 !important}
+.lp25:hover{background:var(--ink) !important;color:var(--bg) !important}
+.lp26:hover{background:#2A2D35 !important;color:#F7F5F0 !important}
+.lp27:hover{background:#15171C !important;color:#F7F5F0 !important}
+.lp28:hover{color:#FF8A6D !important}
+.lp29:hover{color:#FF8A6D !important}
+.lp30:hover{color:#FF8A6D !important}
+.lp31:hover{color:#FF8A6D !important}
+.lp32:hover{color:#FF8A6D !important}
+.lp33:hover{color:#FF8A6D !important}
+.lp34:hover{color:#FF8A6D !important}
+.lp35:hover{color:#FF8A6D !important}
+.lp36:hover{color:#FF8A6D !important}
+.lp37:hover{color:#FF8A6D !important}
+.lp38:hover{color:#FF8A6D !important}
+.lp39:hover{color:#FF8A6D !important}
+.mm-nav{display:flex;align-items:center;gap:4px;margin-left:28px}
+.mm-trigger{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:500 14.5px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;transition:background .15s,color .15s}
+.mm-trigger:hover,.mm-trigger[aria-expanded=true]{color:var(--ink);background:var(--soft)}
+.mm-chevron{transition:transform .2s ease}
+[aria-expanded=true] > .mm-chevron,details[open] > summary > .mm-chevron{transform:rotate(180deg)}
+.mm-login{display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:999px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:600}
+.mm-login:hover{background:var(--soft);color:var(--ink)}
+.mm-panel{position:absolute;left:0;right:0;top:100%;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 30px 60px -30px rgba(21,23,28,.35);animation:mm-in .18s ease}
+@keyframes mm-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.mm-panel{animation:none}}
+.mm-inner{max-width:1240px;margin:0 auto;padding:22px clamp(20px,4vw,40px) 26px;display:grid;grid-template-columns:1fr 300px;gap:28px}
+.mm-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
+.mm-item{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start;padding:14px;border-radius:16px;text-decoration:none;color:var(--ink);transition:background .15s}
+.mm-item:hover,.mm-item:focus-visible{background:var(--bg);color:var(--ink)}
+.mm-icon{width:40px;height:40px;border-radius:12px;background:var(--accl);display:grid;place-items:center}
+.mm-title{display:block;font-weight:700;font-size:15px;letter-spacing:-0.01em}
+.mm-text{display:block;margin-top:3px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.mm-promo{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:24px;border-radius:20px;background:#15171C;color:#F7F5F0;text-decoration:none}
+.mm-promo:hover{color:#F7F5F0}
+.mm-eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#FF8A6D}
+.mm-promo-title{font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:22px;line-height:1.15;letter-spacing:-0.025em;max-width:220px}
+.mm-promo-cta{margin-top:auto;font-size:14px;font-weight:700}
+.mm-promo:hover .mm-promo-cta{color:#FF8A6D}
+.mm-promo-ring{position:absolute;right:-34px;bottom:-34px;width:120px;height:120px;opacity:.9}
+.mm-mobile-group{border-bottom:1px solid var(--line)}
+.mm-mobile-group summary,.mm-mobile-link{display:flex;align-items:center;justify-content:space-between;padding:16px 0;font-size:18px;font-weight:600;cursor:pointer;text-decoration:none}
+.mm-mobile-link{border-bottom:1px solid var(--line)}
+.mm-mobile-group ul{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:2px}
+.mm-mobile-group li a{display:block;padding:10px 12px;border-radius:12px;text-decoration:none}
+.mm-mobile-group li a:hover{background:var(--soft);color:var(--ink)}
+@media (max-width:959px){.lp-desktop-block{display:none!important}}
+[hidden]{display:none!important}
+.lp-mobile{display:none}
+.lp-desktop{display:contents}
+@media (max-width:959px){.lp-desktop{display:none}.lp-mobile{display:block}}
+@media (min-width:960px){#lp-mobilmeny{display:none!important}}
+</style>

@@ -7,223 +7,12 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>NONOX by Stafe – Bokföring med öppen källkod</title>
-<meta name="description" content="NONOX är ett komplett svenskt bokföringsprogram med öppen källkod. Ladda ner gratis och kör var du vill, eller låt oss sköta driften från 99 kr i månaden.">
-<meta property="og:title" content="NONOX by Stafe – Bokföring med öppen källkod">
-<meta property="og:description" content="Bokföring som ägs av företagaren. Gratis att köra själv, från 99 kr/mån med drift.">
-<meta property="og:url" content="{{ url('/') }}">
-<meta property="og:type" content="website">
-<meta property="og:locale" content="sv_SE">
-<meta name="theme-color" content="#15171C">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF5A36' d='M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z'/%3E%3C/svg%3E">
-<link rel="preconnect" href="https://rsms.me/">
-<link rel="stylesheet" href="https://rsms.me/inter/inter.css">
-<style>
-
-:root{--bg:#F7F5F0;--card:#FFFFFF;--ink:#15171C;--muted:#5A5E68;--line:rgba(21,23,28,.10);--soft:#EEEBE4;--acc:#FF5A36;--accl:#FFE6DF;--acct:#B8381A;--accb:#E0461F;--dark:#15171C;--hdr:rgba(247,245,240,.82)}
-@media (prefers-color-scheme:dark){:root{--bg:#15171C;--card:#1D2027;--ink:#F3F1EC;--muted:#A6AAB3;--line:rgba(255,255,255,.10);--soft:#23262E;--accl:#3A231D;--acct:#FF8A6D;--accb:#FF6A48;--dark:#0C0D10;--hdr:rgba(21,23,28,.82)}}
-[data-theme=light]{--bg:#F7F5F0;--card:#FFFFFF;--ink:#15171C;--muted:#5A5E68;--line:rgba(21,23,28,.10);--soft:#EEEBE4;--accl:#FFE6DF;--acct:#B8381A;--accb:#E0461F;--dark:#15171C;--hdr:rgba(247,245,240,.82)}
-[data-theme=dark]{--bg:#15171C;--card:#1D2027;--ink:#F3F1EC;--muted:#A6AAB3;--line:rgba(255,255,255,.10);--soft:#23262E;--accl:#3A231D;--acct:#FF8A6D;--accb:#FF6A48;--dark:#0C0D10;--hdr:rgba(21,23,28,.82)}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
-@supports (font-variation-settings:normal){body{font-family:InterVariable,Inter,system-ui,sans-serif}}
-*{box-sizing:border-box}
-a{color:inherit}
-a:hover{color:var(--acct)}
-:focus-visible{outline:3px solid #FF5A36;outline-offset:3px;border-radius:6px}
-summary{list-style:none}
-summary::-webkit-details-marker{display:none}
-details[open] .faq-plus{transform:rotate(45deg)}
-input[type=range]{accent-color:#FF5A36}
-
-.lp0:focus{left:8px !important}
-.lp1:hover{color:var(--ink) !important}
-.lp2:hover{color:var(--ink) !important}
-.lp3:hover{color:var(--ink) !important}
-.lp4:hover{color:var(--ink) !important}
-.lp5:hover{color:var(--ink) !important}
-.lp6:hover{color:var(--ink) !important}
-.lp7:hover{border-color:var(--ink) !important}
-.lp8:hover{background:#FF7454 !important;color:#15171C !important}
-.lp9:hover{background:#FF7454 !important;color:#15171C !important}
-.lp10:hover{background:var(--ink) !important;color:var(--bg) !important}
-.lp11:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
-.lp12:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
-.lp13:hover{background:rgba(255,255,255,.08) !important}
-.lp14:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
-.lp15:hover{color:var(--bg) !important;background:var(--muted) !important}
-.lp16:hover{color:var(--ink) !important;background:var(--soft) !important}
-.lp17:hover{background:#FF5A36 !important;color:#15171C !important}
-.lp18:hover{background:var(--bg) !important}
-.lp19:hover{background:#FF7454 !important;color:#15171C !important}
-.lp20:hover{transform:translateY(-4px) !important;box-shadow:0 24px 48px -24px rgba(21,23,28,.25) !important}
-.lp21:hover{background:#FF5A36 !important;border-color:#FF5A36 !important;color:#15171C !important}
-.lp22:hover{color:var(--bg) !important}
-.lp23:hover{background:var(--ink) !important;color:var(--bg) !important}
-.lp24:hover{color:var(--bg) !important;opacity:.88 !important}
-.lp25:hover{background:var(--ink) !important;color:var(--bg) !important}
-.lp26:hover{background:#2A2D35 !important;color:#F7F5F0 !important}
-.lp27:hover{background:#15171C !important;color:#F7F5F0 !important}
-.lp28:hover{color:#FF8A6D !important}
-.lp29:hover{color:#FF8A6D !important}
-.lp30:hover{color:#FF8A6D !important}
-.lp31:hover{color:#FF8A6D !important}
-.lp32:hover{color:#FF8A6D !important}
-.lp33:hover{color:#FF8A6D !important}
-.lp34:hover{color:#FF8A6D !important}
-.lp35:hover{color:#FF8A6D !important}
-.lp36:hover{color:#FF8A6D !important}
-.lp37:hover{color:#FF8A6D !important}
-.lp38:hover{color:#FF8A6D !important}
-.lp39:hover{color:#FF8A6D !important}
-.mm-nav{display:flex;align-items:center;gap:4px;margin-left:28px}
-.mm-trigger{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border:0;border-radius:999px;background:transparent;color:var(--muted);font:500 14.5px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;transition:background .15s,color .15s}
-.mm-trigger:hover,.mm-trigger[aria-expanded=true]{color:var(--ink);background:var(--soft)}
-.mm-chevron{transition:transform .2s ease}
-[aria-expanded=true] > .mm-chevron,details[open] > summary > .mm-chevron{transform:rotate(180deg)}
-.mm-login{display:inline-flex;align-items:center;height:40px;padding:0 14px;border-radius:999px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:600}
-.mm-login:hover{background:var(--soft);color:var(--ink)}
-.mm-panel{position:absolute;left:0;right:0;top:100%;background:var(--card);border-bottom:1px solid var(--line);box-shadow:0 30px 60px -30px rgba(21,23,28,.35);animation:mm-in .18s ease}
-@keyframes mm-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
-@media (prefers-reduced-motion:reduce){.mm-panel{animation:none}}
-.mm-inner{max-width:1240px;margin:0 auto;padding:22px clamp(20px,4vw,40px) 26px;display:grid;grid-template-columns:1fr 300px;gap:28px}
-.mm-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 12px}
-.mm-item{display:grid;grid-template-columns:40px 1fr;gap:14px;align-items:start;padding:14px;border-radius:16px;text-decoration:none;color:var(--ink);transition:background .15s}
-.mm-item:hover,.mm-item:focus-visible{background:var(--bg);color:var(--ink)}
-.mm-icon{width:40px;height:40px;border-radius:12px;background:var(--accl);display:grid;place-items:center}
-.mm-title{display:block;font-weight:700;font-size:15px;letter-spacing:-0.01em}
-.mm-text{display:block;margin-top:3px;font-size:13.5px;line-height:1.45;color:var(--muted)}
-.mm-promo{position:relative;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:24px;border-radius:20px;background:#15171C;color:#F7F5F0;text-decoration:none}
-.mm-promo:hover{color:#F7F5F0}
-.mm-eyebrow{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#FF8A6D}
-.mm-promo-title{font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:22px;line-height:1.15;letter-spacing:-0.025em;max-width:220px}
-.mm-promo-cta{margin-top:auto;font-size:14px;font-weight:700}
-.mm-promo:hover .mm-promo-cta{color:#FF8A6D}
-.mm-promo-ring{position:absolute;right:-34px;bottom:-34px;width:120px;height:120px;opacity:.9}
-.mm-mobile-group{border-bottom:1px solid var(--line)}
-.mm-mobile-group summary,.mm-mobile-link{display:flex;align-items:center;justify-content:space-between;padding:16px 0;font-size:18px;font-weight:600;cursor:pointer;text-decoration:none}
-.mm-mobile-link{border-bottom:1px solid var(--line)}
-.mm-mobile-group ul{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:2px}
-.mm-mobile-group li a{display:block;padding:10px 12px;border-radius:12px;text-decoration:none}
-.mm-mobile-group li a:hover{background:var(--soft);color:var(--ink)}
-@media (max-width:959px){.lp-desktop-block{display:none!important}}
-[hidden]{display:none!important}
-.lp-mobile{display:none}
-.lp-desktop{display:contents}
-@media (max-width:959px){.lp-desktop{display:none}.lp-mobile{display:block}}
-@media (min-width:960px){#lp-mobilmeny{display:none!important}}
-</style>
+@include('start.partials.public-head')
 </head>
 <body>
 <div style="background:var(--bg);color:var(--ink);min-height:100vh;overflow-x:clip">
 
-<a class="lp0" href="#main" style="position:absolute;left:-9999px;top:8px;background:#FF5A36;color:#15171C;padding:10px 14px;border-radius:8px;z-index:100">Hoppa till innehållet</a>
-
-@php
-    $menus = [
-        'produkt' => [
-            'label' => 'Produkt',
-            'items' => [
-                ['href' => '#funktioner', 'title' => 'Funktioner', 'text' => 'Bokföring, fakturor, moms, bokslut och lön i ett system.', 'icon' => 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z'],
-                ['href' => '#byraer', 'title' => 'För redovisningsbyråer', 'text' => 'Alla klienter under en inloggning, månad för månad.', 'icon' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
-                ['href' => '#byt-system', 'title' => 'Byt system', 'text' => 'Flytta hit med SIE4 och importverktyget utan att tappa något.', 'icon' => 'M4 7h13l-3-3M20 17H7l3 3'],
-                ['href' => '#oppen-kallkod', 'title' => 'Öppen källkod', 'text' => 'AGPL-3.0. Läs koden och se exakt hur siffrorna hanteras.', 'icon' => 'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16'],
-                ['href' => '#fragor', 'title' => 'Vanliga frågor', 'text' => 'Ansvar, lagkrav, data och vad det kostar.', 'icon' => 'M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.5V14M12 17.5h.01M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z'],
-            ],
-            'promo' => ['eyebrow' => 'Din data. Alltid.', 'title' => 'Bokförda verifikationer kan aldrig ändras i efterhand.', 'link' => $ph['github'], 'cta' => 'Se koden på GitHub'],
-        ],
-        'kom-igang' => [
-            'label' => 'Kom igång',
-            'items' => [
-                ['href' => '#kor-sjalv', 'title' => 'Webbhotell', 'text' => 'Ladda upp och följ installationsguiden i webbläsaren.', 'icon' => 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z'],
-                ['href' => '#kor-sjalv', 'title' => 'Egen server', 'text' => 'Med PHP och PostgreSQL. Färdigt Docker-paket kommer snart.', 'icon' => 'M3 4h18v7H3zM3 13h18v7H3zM7 7.5h.01M7 16.5h.01'],
-                ['href' => '#kor-sjalv', 'title' => 'Lokalt på datorn', 'text' => 'Program för Windows, Mac och Linux. Kommer snart.', 'icon' => 'M4 5h16v11H4zM2 19h20M10 16v3M14 16v3'],
-                ['href' => '#priser', 'title' => 'Vi sköter driften', 'text' => 'Servrar i Sverige/EU, backup och uppdateringar. Från 99 kr/mån.', 'icon' => 'M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z'],
-            ],
-            'promo' => ['eyebrow' => 'Byt system på en eftermiddag', 'title' => 'Flytta hit utan att tappa något.', 'link' => $ph['flytt'], 'cta' => 'Läs flyttguiden'],
-        ],
-    ];
-    $chevron = '<svg class="mm-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg>';
-@endphp
-<header id="lp-header" style="position:sticky;top:0;z-index:50;background:var(--hdr);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);border-bottom:1px solid var(--line)">
-  <div style="max-width:1240px;margin:0 auto;padding:0 clamp(20px,4vw,40px);height:68px;display:flex;align-items:center;gap:24px">
-    <a href="#" aria-label="NONOX by Stafe, till startsidan" style="display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)">
-      <svg height="26" viewBox="150 195 2295 505" role="img" aria-label="NONOX" style="display:block;width:auto;height:26px"><path data-ring="mark" fill="#FF5A36" d="M653.28 428 A250 250 0 1 0 653.28 466 L569.92 466 A167 167 0 1 1 569.92 428 Z"></path><g fill="currentColor"><path d="M755 292H833L961 463V292H1040V602H961L833 431V602H755Z"></path><path d="M1399.89 441 A163 163 0 1 0 1399.89 453 L1334.82 453 A98 98 0 1 1 1334.82 441 Z"></path><path d="M1442 292H1520L1648 463V292H1727V602H1648L1520 431V602H1442Z"></path><path d="M2086.89 441 A163 163 0 1 0 2086.89 453 L2021.82 453 A98 98 0 1 1 2021.82 441 Z"></path><path d="M2129 292H2222L2284 383L2346 292H2439L2332 447L2439 602H2346L2284 511L2222 602H2129L2236 447Z"></path></g></svg>
-      <span style="font-size:13px;font-weight:400;color:var(--muted)">by Stafe</span>
-    </a>
-    <div class="lp-desktop">
-      <nav aria-label="Huvudmeny" class="mm-nav">
-        @foreach($menus as $key => $menu)
-          <button type="button" class="mm-trigger" data-mm="{{ $key }}" aria-expanded="false" aria-controls="mm-{{ $key }}">{{ $menu['label'] }}{!! $chevron !!}</button>
-        @endforeach
-        <a href="#priser" class="mm-trigger">Priser</a>
-      </nav>
-      <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-        @auth
-          <a href="{{ route('dashboard') }}" class="mm-login">Till översikten</a>
-        @else
-          <a href="{{ route('login') }}" class="mm-login">Logga in</a>
-        @endauth
-        <a class="lp8" href="#kor-sjalv" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ladda ner gratis</a>
-      </div>
-    </div>
-    <div class="lp-mobile" style="margin-left:auto">
-      <button type="button" aria-expanded="false" data-lp-menu aria-controls="mobilmeny" aria-label="Öppna meny" style="width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
-      </button>
-    </div>
-  </div>
-
-  @foreach($menus as $key => $menu)
-    <div id="mm-{{ $key }}" class="mm-panel lp-desktop-block" data-mm-panel="{{ $key }}" hidden>
-      <div class="mm-inner">
-        <ul class="mm-grid">
-          @foreach($menu['items'] as $item)
-            <li>
-              <a href="{{ $item['href'] }}" class="mm-item" data-mm-close>
-                <span class="mm-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $item['icon'] }}"></path></svg></span>
-                <span><span class="mm-title">{{ $item['title'] }}</span><span class="mm-text">{{ $item['text'] }}</span></span>
-              </a>
-            </li>
-          @endforeach
-        </ul>
-        <a href="{{ $menu['promo']['link'] }}" class="mm-promo" data-mm-close>
-          <span class="mm-eyebrow">{{ $menu['promo']['eyebrow'] }}</span>
-          <span class="mm-promo-title">{{ $menu['promo']['title'] }}</span>
-          <span class="mm-promo-cta">{{ $menu['promo']['cta'] }} →</span>
-          <svg viewBox="0 0 24 24" aria-hidden="true" class="mm-promo-ring"><path fill="#FF5A36" d="M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z"></path></svg>
-        </a>
-      </div>
-    </div>
-  @endforeach
-
-  <div id="lp-mobilmeny" class="lp-mobile" hidden>
-    <nav id="mobilmeny" aria-label="Huvudmeny" style="border-top:1px solid var(--line);padding:8px clamp(20px,4vw,40px) 24px;display:flex;flex-direction:column;background:var(--bg);max-height:calc(100vh - 68px);overflow-y:auto">
-      @foreach($menus as $key => $menu)
-        <details class="mm-mobile-group">
-          <summary>{{ $menu['label'] }}{!! $chevron !!}</summary>
-          <ul>
-            @foreach($menu['items'] as $item)
-              <li><a href="{{ $item['href'] }}" data-lp-close><span class="mm-title">{{ $item['title'] }}</span><span class="mm-text">{{ $item['text'] }}</span></a></li>
-            @endforeach
-          </ul>
-        </details>
-      @endforeach
-      <a href="#priser" data-lp-close class="mm-mobile-link">Priser</a>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
-        @auth
-          <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Till översikten</a>
-        @else
-          <a href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Logga in</a>
-        @endauth
-        <a href="#kor-sjalv" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ladda ner gratis</a>
-      </div>
-    </nav>
-  </div>
-</header>
+@include('start.partials.public-header')
 
 <main id="main">
 
@@ -235,7 +24,7 @@ input[type=range]{accent-color:#FF5A36}
         <span>Nytt · Öppen källkod · Byggd i Sverige · Version {{ $ph['version'] }}</span>
       </p>
       <h1 id="hero-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(44px,8.4vw,112px);line-height:0.95;letter-spacing:-0.045em;text-wrap:balance">Bokföring som ägs av <span style="color:var(--accb)">företagaren.</span></h1>
-      <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell eller din egen server, och snart som program på din dator. Eller låt oss sköta driften från 99 kr i månaden.</p>
+      <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell eller din egen server, och snart som program på din dator. Eller låt oss sköta driften från 995 kr om året.</p>
       <p style="margin:16px 0 0;max-width:680px;font-size:clamp(17px,1.8vw,19px);line-height:1.5;font-weight:600;color:var(--ink);text-wrap:pretty">Ett komplett alternativ till de stora molntjänsterna för bokföring, utan licensavgifter och utan inlåsning.</p>
       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:36px">
         <a class="lp9" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:16.5px;font-weight:700">
@@ -390,7 +179,7 @@ input[type=range]{accent-color:#FF5A36}
     </div>
     <a class="lp17" data-reveal="" href="#priser" style="margin-top:20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:28px 32px;border-radius:24px;background:var(--accl);color:var(--ink);text-decoration:none;transition:background .2s">
       <span style="font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(22px,2.6vw,30px);letter-spacing:-0.025em">Vill du slippa allt det här? Låt oss sköta driften →</span>
-      <span style="font-size:15px;font-weight:600">Från 99 kr/mån</span>
+      <span style="font-size:15px;font-weight:600">Från 995 kr/år</span>
     </a>
   </div>
 </section>
@@ -496,7 +285,7 @@ input[type=range]{accent-color:#FF5A36}
     </div>
     <div style="display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 24px;margin:56px 0 20px">
       <h3 style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(24px,2.6vw,30px);letter-spacing:-0.025em">Vi sköter driften</h3>
-      <p style="margin:0;font-size:14.5px;color:var(--muted)">Pris per företag och månad, exkl. moms. Alla moduler ingår i alla paket.</p>
+      <p style="margin:0;font-size:14.5px;color:var(--muted)">Pris per företag och år, exkl. moms. Alla moduler ingår.</p>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px">
       @foreach($plans as $p)
@@ -643,148 +432,9 @@ Insights    Invoicing    Payables      Vat
 
 </main>
 
-<footer style="background:var(--dark);color:#F7F5F0;padding:clamp(56px,7vw,88px) clamp(20px,4vw,40px) 32px">
-  <div style="max-width:1240px;margin:0 auto">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr));gap:40px">
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <svg height="30" viewBox="150 195 2295 505" role="img" aria-label="NONOX" style="display:block;width:auto;height:30px"><path fill="#FF5A36" d="M653.28 428 A250 250 0 1 0 653.28 466 L569.92 466 A167 167 0 1 1 569.92 428 Z"></path><g fill="currentColor"><path d="M755 292H833L961 463V292H1040V602H961L833 431V602H755Z"></path><path d="M1399.89 441 A163 163 0 1 0 1399.89 453 L1334.82 453 A98 98 0 1 1 1334.82 441 Z"></path><path d="M1442 292H1520L1648 463V292H1727V602H1648L1520 431V602H1442Z"></path><path d="M2086.89 441 A163 163 0 1 0 2086.89 453 L2021.82 453 A98 98 0 1 1 2021.82 441 Z"></path><path d="M2129 292H2222L2284 383L2346 292H2439L2332 447L2439 602H2346L2284 511L2222 602H2129L2236 447Z"></path></g></svg>
-        </div>
-        <span style="font-size:14px;color:#A6AAB3">NONOX by Stafe</span>
-      </div>
-      <nav aria-label="Produkt" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
-        <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Produkt</span>
-        <a class="lp28" href="#funktioner" style="text-decoration:none;color:#D9D7D1">Funktioner</a>
-        <a class="lp29" href="#priser" style="text-decoration:none;color:#D9D7D1">Priser</a>
-        <a class="lp30" href="{{ $ph['flytt'] }}" style="text-decoration:none;color:#D9D7D1">Flyttguide</a>
-        <a class="lp31" href="#kor-sjalv" style="text-decoration:none;color:#D9D7D1">Nedladdning</a>
-      </nav>
-      <nav aria-label="Utvecklare" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
-        <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Utvecklare</span>
-        <a class="lp32" href="{{ $ph['github'] }}" style="text-decoration:none;color:#D9D7D1">GitHub</a>
-        <a class="lp33" href="{{ $ph['docs'] }}" style="text-decoration:none;color:#D9D7D1">Dokumentation</a>
-        @if($ph['api'])<a class="lp34" href="{{ $ph['api'] }}" style="text-decoration:none;color:#D9D7D1">API</a>@endif
-        <a class="lp35" href="https://www.gnu.org/licenses/agpl-3.0.html" style="text-decoration:none;color:#D9D7D1">Licens AGPL-3.0</a>
-      </nav>
-      <nav aria-label="Företag" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
-        <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Företag</span>
-        <a class="lp36" href="https://stafe.se" style="text-decoration:none;color:#D9D7D1">Om Stafe</a>
-        <a class="lp37" href="{{ $ph['contact'] }}" style="text-decoration:none;color:#D9D7D1">Kontakt</a>
-        @if($ph['terms'])<a class="lp38" href="{{ $ph['terms'] }}" style="text-decoration:none;color:#D9D7D1">Villkor</a>@endif
-        @if($ph['privacy'])<a class="lp39" href="{{ $ph['privacy'] }}" style="text-decoration:none;color:#D9D7D1">Integritetspolicy</a>@endif
-      </nav>
-    </div>
-    <div style="margin-top:56px;padding-top:24px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px;font-size:13px;color:#A6AAB3">
-      <span>© {{ now()->year }}{{ $ph['company'] ? ' '.$ph['company'] : '' }}{{ $ph['orgnr'] ? ' · Org.nr '.$ph['orgnr'] : '' }} · {{ $ph['host'] }}</span>
-      <span style="color:#8E929B">Övriga varumärken som nämns tillhör respektive ägare.</span>
-    </div>
-  </div>
-</footer>
+@include('start.partials.public-footer')
 </div>
 
-<script>
-(() => {
-    const plans = @json($calculatorPlans);
-    const kr = (n) => n.toLocaleString('sv-SE').replace(/\s/g, ' ') + ' kr';
-
-    const menuButton = document.querySelector('[data-lp-menu]');
-    const menu = document.getElementById('lp-mobilmeny');
-    const setMenu = (open) => {
-        menu.hidden = !open;
-        menuButton.setAttribute('aria-expanded', String(open));
-        menuButton.setAttribute('aria-label', open ? 'Stäng meny' : 'Öppna meny');
-        menuButton.querySelector('path').setAttribute('d', open ? 'M6 6l12 12M18 6L6 18' : 'M4 7h16M4 12h16M4 17h16');
-    };
-    menuButton?.addEventListener('click', () => setMenu(menu.hidden));
-    document.querySelectorAll('[data-lp-close]').forEach((link) => link.addEventListener('click', () => setMenu(false)));
-
-    // Mega menu: opens on click or hover, closes on Esc, outside click, leaving the header or choosing a link.
-    const header = document.getElementById('lp-header');
-    const triggers = [...document.querySelectorAll('[data-mm]')];
-    let closeTimer;
-    const openMenu = (key) => {
-        clearTimeout(closeTimer);
-        triggers.forEach((trigger) => {
-            const open = trigger.dataset.mm === key;
-            trigger.setAttribute('aria-expanded', String(open));
-            document.getElementById('mm-' + trigger.dataset.mm).hidden = !open;
-        });
-    };
-    const closeMenus = () => openMenu(null);
-    const canHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-    triggers.forEach((trigger) => {
-        trigger.addEventListener('click', () => trigger.getAttribute('aria-expanded') === 'true' ? closeMenus() : openMenu(trigger.dataset.mm));
-        if (canHover) {
-            trigger.addEventListener('mouseenter', () => { closeTimer = setTimeout(() => openMenu(trigger.dataset.mm), 80); });
-            trigger.addEventListener('mouseleave', () => clearTimeout(closeTimer));
-        }
-    });
-    if (canHover) {
-        header.addEventListener('mouseleave', () => { closeTimer = setTimeout(closeMenus, 180); });
-        header.addEventListener('mouseenter', () => clearTimeout(closeTimer));
-    }
-    document.querySelectorAll('[data-mm-close]').forEach((link) => link.addEventListener('click', closeMenus));
-    document.addEventListener('click', (event) => { if (!header.contains(event.target)) { closeMenus(); } });
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape') { return; }
-        const open = triggers.find((trigger) => trigger.getAttribute('aria-expanded') === 'true');
-        if (open) { closeMenus(); open.focus(); }
-    });
-
-    document.querySelectorAll('[data-lp-copy]').forEach((button) => button.addEventListener('click', () => {
-        const label = button.querySelector('[data-lp-copy-label]');
-        const done = () => { label.textContent = 'Kopierat'; setTimeout(() => { label.textContent = 'Kopiera'; }, 2000); };
-        navigator.clipboard ? navigator.clipboard.writeText(button.dataset.lpCopy).then(done, done) : done();
-    }));
-
-    const range = document.querySelector('[data-lp-employees]');
-    const show = (name, value) => { const el = document.querySelector('[data-lp-' + name + ']'); if (el) { el.textContent = value; } };
-    range?.addEventListener('input', () => {
-        const employees = Number(range.value);
-        const plan = plans.find((candidate) => employees <= candidate.max);
-        range.setAttribute('aria-valuetext', employees > 25 ? '26 eller fler anställda' : employees + ' anställda');
-        show('label', employees > 25 ? '26+' : String(employees));
-        document.querySelector('[data-lp-ok]').hidden = !plan;
-        document.querySelector('[data-lp-contact]').hidden = !!plan;
-        if (!plan) { return; }
-        const compare = plan.compareBase + plan.comparePerEmployee * employees;
-        show('plan', plan.name);
-        show('price', kr(plan.price) + '/mån');
-        show('compare', kr(compare) + '/mån');
-        show('saving', kr(Math.round((compare - plan.price) * 12 / 100) * 100));
-    });
-
-    const mock = document.getElementById('lp-mock');
-    const inner = document.getElementById('lp-mock-inner');
-    const scale = () => { const s = Math.min(1, mock.clientWidth / 1000); inner.style.transform = 'scale(' + s + ')'; mock.style.height = Math.round(650 * s) + 'px'; };
-    if (mock && inner) { scale(); window.ResizeObserver ? new ResizeObserver(scale).observe(mock) : window.addEventListener('resize', scale); }
-
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { return; }
-
-    // The ring of the logo opens once.
-    document.querySelectorAll('[data-ring]').forEach((path) => {
-        const d = (h) => { const o = Math.sqrt(62500 - h * h), i = Math.sqrt(27889 - h * h);
-            return `M${404 + o} ${447 - h} A250 250 0 1 0 ${404 + o} ${447 + h} L${404 + i} ${447 + h} A167 167 0 1 1 ${404 + i} ${447 - h} Z`; };
-        const start = performance.now() + 250;
-        path.setAttribute('d', d(0.5));
-        const step = (now) => { const t = Math.min(1, Math.max(0, (now - start) / 900));
-            path.setAttribute('d', d(Math.max(0.5, 19 * (1 - Math.pow(1 - t, 3))))); if (t < 1) { requestAnimationFrame(step); } };
-        requestAnimationFrame(step);
-    });
-
-    // Sections below the fold fade in as they are scrolled to.
-    if (!window.IntersectionObserver) { return; }
-    const observer = new IntersectionObserver((entries) => entries.forEach((entry) => {
-        if (entry.isIntersecting) { entry.target.style.opacity = '1'; entry.target.style.translate = '0 0'; observer.unobserve(entry.target); }
-    }), { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
-    document.querySelectorAll('[data-reveal]').forEach((el) => {
-        if (el.getBoundingClientRect().top < window.innerHeight) { return; }
-        el.style.opacity = '0';
-        el.style.translate = '0 24px';
-        el.style.transition = (el.style.transition ? el.style.transition + ',' : '') + 'opacity .7s ease, translate .7s cubic-bezier(.2,.7,.2,1)';
-        observer.observe(el);
-    });
-})();
-</script>
+@include('start.partials.public-script')
 </body>
 </html>

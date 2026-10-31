@@ -111,7 +111,7 @@ it('shows the public landing page to visitors once the system is set up', functi
         ->assertOk()
         ->assertSee('Bokföring som ägs av')
         ->assertSee(route('login'))
-        ->assertSee("99\u{a0}kr")
+        ->assertSee("995\u{a0}kr")
         ->assertSee('https://github.com/STAFE-GROUP-AB/OSS')
         ->assertSee('Vanliga frågor')
         ->assertDontSee('{{', escape: false)
@@ -144,11 +144,12 @@ it('shows the sign-in page instead when the landing page is turned off', functio
 
 it('calculates the saving like the page script', function () {
     expect(LandingPage::calculator(3))->toMatchArray([
-        'plan' => 'Liten',
-        'price' => "299\u{a0}kr/mån",
-        'compare' => "848\u{a0}kr/mån",
-        'saving' => "6\u{a0}600\u{a0}kr",
-    ])->and(LandingPage::calculator(26)['plan'])->toBe('');
+        'plan' => 'Företag',
+        'price' => "995\u{a0}kr/år",
+        'compare' => "6\u{a0}144\u{a0}kr/år",
+        'saving' => "5\u{a0}100\u{a0}kr",
+    ])->and(LandingPage::calculator(20)['price'])->toBe("1\u{a0}995\u{a0}kr/år")
+        ->and(LandingPage::calculator(26)['plan'])->toBe('');
 });
 
 it('says that the desktop program for Windows, Mac and Linux is coming', function () {
@@ -166,4 +167,19 @@ it('says that the Docker package is coming', function () {
     $this->get('/')
         ->assertSee('Docker kommer snart')
         ->assertDontSee('Container nonox-app');
+});
+
+it('shows the moving guide with the programs from docs/migration and the steps', function () {
+    $this->get(route('migrationGuide'))
+        ->assertOk()
+        ->assertSee('Från inlåst till')
+        ->assertSee('Fortnox')
+        ->assertSee('Bokio')
+        ->assertSee('Spiris')
+        ->assertSee('Annat program')
+        ->assertSee('Steg 8 av 8')
+        ->assertSee('Kommer snart')
+        ->assertSee(route('migrationGuide'));
+
+    $this->get('/')->assertSee(route('migrationGuide'));
 });

@@ -13,18 +13,17 @@ final class LandingPage
 {
     /**
      * The hosted plans: the highest number of employees each covers and the
-     * price per company and month excluding VAT, in kronor (null: on request).
+     * price per company and year excluding VAT, in kronor (null: on request).
      *
      * The comparison is the design's estimate of the largest cloud service's
      * public list prices for bookkeeping, invoicing and payroll in October
-     * 2026: a base price plus a price per employee.
+     * 2026, per month: a base price plus a price per employee (none for a
+     * company without employees).
      */
     public const array PLANS = [
-        ['name' => 'Solo', 'employees' => '0–1', 'max' => 1, 'price' => 99, 'popular' => false, 'compare_base' => 422, 'compare_per_employee' => 0],
-        ['name' => 'Liten', 'employees' => '2–5', 'max' => 5, 'price' => 299, 'popular' => false, 'compare_base' => 758, 'compare_per_employee' => 30],
-        ['name' => 'Mellan', 'employees' => '6–10', 'max' => 10, 'price' => 499, 'popular' => true, 'compare_base' => 858, 'compare_per_employee' => 30],
-        ['name' => 'Stor', 'employees' => '11–25', 'max' => 25, 'price' => 999, 'popular' => false, 'compare_base' => 858, 'compare_per_employee' => 30],
-        ['name' => 'Större', 'employees' => '26+', 'max' => null, 'price' => null, 'popular' => false, 'compare_base' => 0, 'compare_per_employee' => 0],
+        ['name' => 'Företag', 'employees' => '0–10', 'max' => 10, 'price' => 995, 'popular' => true, 'compare_base' => 422, 'compare_per_employee' => 30],
+        ['name' => 'Större företag', 'employees' => '11–25', 'max' => 25, 'price' => 1995, 'popular' => false, 'compare_base' => 858, 'compare_per_employee' => 30],
+        ['name' => 'Offert', 'employees' => '26+', 'max' => null, 'price' => null, 'popular' => false, 'compare_base' => 0, 'compare_per_employee' => 0],
     ];
 
     public const int DEFAULT_EMPLOYEES = 3;
@@ -67,18 +66,24 @@ final class LandingPage
             return ['label' => $label, 'aria' => $aria, 'employees' => $employees, 'plan' => '', 'price' => '', 'compare' => '', 'saving' => ''];
         }
 
-        $compare = $plan['compare_base'] + $plan['compare_per_employee'] * $employees;
-        $saving = (int) round(($compare - (int) $plan['price']) * 12 / 100) * 100;
+        $compare = self::comparePerYear($plan['compare_base'], $plan['compare_per_employee'], $employees);
+        $saving = (int) round(($compare - (int) $plan['price']) / 100) * 100;
 
         return [
             'label' => $label,
             'aria' => $aria,
             'employees' => $employees,
             'plan' => $plan['name'],
-            'price' => self::kronor((int) $plan['price']).'/mån',
-            'compare' => self::kronor($compare).'/mån',
+            'price' => self::kronor((int) $plan['price']).'/år',
+            'compare' => self::kronor($compare).'/år',
             'saving' => self::kronor($saving),
         ];
+    }
+
+    /** The comparison's yearly price: the monthly base, plus a price per employee when there are any. */
+    public static function comparePerYear(int $base, int $perEmployee, int $employees): int
+    {
+        return 12 * ($base + ($employees > 1 ? $perEmployee * $employees : 0));
     }
 
     public static function kronor(int $kronor): string
@@ -96,7 +101,7 @@ final class LandingPage
         return [
             'version' => (string) config('app.version'),
             'github' => $github,
-            'flytt' => $config['migration_guide_url'] ?? "{$github}/tree/main/docs/migration",
+            'flytt' => $config['migration_guide_url'] ?? route('migrationGuide'),
             'docs' => $config['docs_url'] ?? "{$github}/tree/main/docs",
             'api' => $config['api_url'] ?? null,
             'contact' => $config['contact_url'] ?? route('login'),
@@ -122,7 +127,7 @@ final class LandingPage
             'emp' => "{$plan['employees']} anställda",
             'popular' => $plan['popular'],
             'price' => $priced ? self::kronor((int) $plan['price']) : 'Pris på förfrågan',
-            'unit' => $priced ? '/mån' : '',
+            'unit' => $priced ? '/år' : '',
             'priceSize' => $priced ? '40px' : '26px',
             'cta' => $priced ? 'Kom igång' : 'Kontakta oss',
             'href' => $ph['contact'],

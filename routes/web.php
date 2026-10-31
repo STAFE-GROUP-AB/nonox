@@ -19,6 +19,7 @@ use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\Invoicing\AgreementController;
 use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\Invoicing\SalesDocumentController;
+use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
@@ -35,6 +36,7 @@ use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
  */
 
 Route::get('/', StartController::class)->name('start');
+Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide');
 
 Route::middleware('guest')->group(function () {
     Route::view('/logga-in', 'auth.login')->name('login');
