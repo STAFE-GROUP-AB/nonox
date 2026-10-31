@@ -18,7 +18,8 @@ class LoginCodeMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: __('Din inloggningskod: :code', ['code' => $this->code]),
+            // The code is not in the subject, where it would show on a locked screen.
+            subject: __('Din inloggningskod'),
         );
     }
 

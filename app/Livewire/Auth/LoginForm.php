@@ -89,6 +89,13 @@ class LoginForm extends Component implements SpansCompanies
             ['code' => __('kod')],
         );
 
+        // Wrong codes are counted per address across codes and IP addresses, so the code cannot be guessed from many machines.
+        if (RateLimiter::tooManyAttempts(self::failedKey($email), self::MAX_FAILED_PER_HOUR)) {
+            $this->addError('code', __('För många felaktiga koder för den här adressen. Vänta en timme och försök igen.'));
+
+            return;
+        }
+
         if ($this->tooManyAttempts('verify:'.request()->ip(), 20)) {
             $this->addError('code', __('För många försök. Vänta en stund och försök igen.'));
 
@@ -96,6 +103,7 @@ class LoginForm extends Component implements SpansCompanies
         }
 
         if (! $verifyLoginCode($email, $this->code)) {
+            RateLimiter::hit(self::failedKey($email), 3600);
             $this->addError('code', __('Koden stämmer inte eller har slutat gälla. Kontrollera mejlet eller skicka en ny kod.'));
 
             return;
@@ -177,6 +185,13 @@ class LoginForm extends Component implements SpansCompanies
         Toast::flash($message ?? __('Du är inloggad. Välkommen tillbaka, :name!', ['name' => $user->name]));
 
         $this->redirectIntended(route('dashboard'));
+    }
+
+    public const int MAX_FAILED_PER_HOUR = 10;
+
+    public static function failedKey(string $email): string
+    {
+        return 'login-code:failed:'.mb_strtolower(trim($email));
     }
 
     private function tooManyAttempts(string $key, int $maxAttempts): bool

@@ -30,7 +30,7 @@
             @endif
 
             <div class="mt-10 sm:mt-0">
-                @livewire('profile.logout-other-browser-sessions-form')
+                <livewire:profile.sign-out-everywhere />
             </div>
 
             @if (Laravel\Jetstream\Jetstream::hasAccountDeletionFeatures())

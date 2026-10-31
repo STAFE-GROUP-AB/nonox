@@ -2899,5 +2899,12 @@
     "Jag godkänner :terms och :dpa för företaget, och har läst :privacy.": "I accept :terms and :dpa for the company, and have read :privacy.",
     "villkoren": "the terms",
     "personuppgiftsbiträdesavtalet": "the data processing agreement",
-    "integritetspolicyn": "the privacy policy"
+    "integritetspolicyn": "the privacy policy",
+    "För många felaktiga koder för den här adressen. Vänta en timme och försök igen.": "Too many wrong codes for this address. Wait an hour and try again.",
+    "Du är utloggad från alla andra enheter.": "You are signed out of all other devices.",
+    "Inloggningar": "Sign-ins",
+    "Logga ut från alla andra enheter, till exempel en borttappad telefon.": "Sign out of all other devices, for example a lost phone.",
+    "En inloggning slutar gälla efter :hours timmar, och tidigare om den inte används på en stund. Den här enheten fortsätter vara inloggad.": "A sign-in expires after :hours hours, and earlier if it is not used for a while. This device stays signed in.",
+    "Logga ut från alla andra enheter?": "Sign out of all other devices?",
+    "Logga ut från andra enheter": "Sign out of other devices"
 }

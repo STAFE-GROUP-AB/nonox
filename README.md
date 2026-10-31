@@ -206,7 +206,7 @@ Det finns inga lösenord. Du skriver din e-postadress, får en kod med sex siffr
 Vill du logga in med en annan adress lokalt hamnar koden i loggfilen, eftersom `MAIL_MAILER=log`:
 
 ```bash
-grep "Subject: Din inloggningskod" storage/logs/laravel.log | tail -1
+grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[0-9]{6}\b" | tail -1
 ```
 
 > ⚠️ Sätt aldrig `APP_ENV=local` på en server som nås från internet. På en server behöver du riktig e-post (`MAIL_MAILER=smtp` med uppgifter från din e-postleverantör), annars kommer koderna aldrig fram.

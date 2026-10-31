@@ -9,6 +9,7 @@ use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,6 +21,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 /**
  * @property ?list<string> $hidden_panels
+ * @property ?CarbonImmutable $sessions_valid_from
  */
 class User extends Authenticatable
 {
@@ -72,6 +74,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'sessions_valid_from' => 'immutable_datetime',
             'hidden_panels' => 'array',
         ];
     }

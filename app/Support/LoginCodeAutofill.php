@@ -16,7 +16,11 @@ final class LoginCodeAutofill
 {
     public static function enabled(): bool
     {
-        return app()->environment('local') && config('auth.login_codes.autofill') === true;
+        // Also requires a local address, so a server deployed with the example .env never fills in codes for anyone.
+        $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
+        $local = in_array($host, ['localhost', '127.0.0.1', '::1'], true) || str_ends_with($host, '.test') || str_ends_with($host, '.localhost');
+
+        return app()->environment('local') && config('auth.login_codes.autofill') === true && $local;
     }
 
     public static function remember(string $email, string $code): void

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\EndExpiredSessions;
+use App\Http\Middleware\SecurityHeaders;
 use App\Modules\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -17,6 +19,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'module' => EnsureModuleEnabled::class,
+        ]);
+
+        $middleware->web(append: [
+            SecurityHeaders::class,
+            EndExpiredSessions::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

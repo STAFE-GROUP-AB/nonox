@@ -8,7 +8,9 @@ use App\Livewire\Auth\LoginForm;
 use App\Mail\LoginCodeMail;
 use App\Models\LoginCode;
 use App\Models\User;
+use App\Support\LoginCodeAutofill;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -44,7 +46,7 @@ it('emails a six-digit code and stores only its hash', function () {
         ->and($stored->code_hash)->toBe(LoginCode::hash($code));
 
     Mail::assertSent(LoginCodeMail::class, fn (LoginCodeMail $mail) => $mail->hasTo('anna@example.com')
-        && $mail->envelope()->subject === "Din inloggningskod: {$code}");
+        && $mail->envelope()->subject === 'Din inloggningskod' && ! str_contains($mail->envelope()->subject, $code));
 });
 
 it('sends at most one email when the code is requested twice within the cooldown', function () {
@@ -274,4 +276,25 @@ it('sends guests to /logga-in', function () {
 
     $this->get('/logga-in')->assertOk()->assertSee('Skicka kod');
     $this->get('/registrera')->assertRedirect('/logga-in');
+});
+
+it('stops verifying an address after too many wrong codes, from any IP', function () {
+    RateLimiter::increment(LoginForm::failedKey('offer@example.test'), 3600, LoginForm::MAX_FAILED_PER_HOUR);
+    session()->put('login.pending_email', 'offer@example.test');
+
+    Livewire::test(LoginForm::class)
+        ->set('code', '123456')
+        ->call('verify')
+        ->assertHasErrors(['code' => 'För många felaktiga koder för den här adressen. Vänta en timme och försök igen.']);
+});
+
+it('never fills in codes on a server address, even with the local settings', function () {
+    app()->detectEnvironment(fn () => 'local');
+    config(['auth.login_codes.autofill' => true, 'app.url' => 'https://nonox.app']);
+
+    expect(LoginCodeAutofill::enabled())->toBeFalse();
+
+    config(['app.url' => 'http://oss.test']);
+
+    expect(LoginCodeAutofill::enabled())->toBeTrue();
 });
