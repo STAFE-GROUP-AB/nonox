@@ -138,3 +138,20 @@ it('calculates the saving like the page script', function () {
         'saving' => "6\u{a0}600\u{a0}kr",
     ])->and(LandingPage::calculator(26)['plan'])->toBe('');
 });
+
+it('says that the desktop program for Windows, Mac and Linux is coming', function () {
+    pretendEnvironment('production');
+
+    $this->get('/')
+        ->assertSee('Windows, Mac och Linux')
+        ->assertSee('Kommer snart')
+        ->assertDontSee('Ladda ner för Mac');
+});
+
+it('says that the Docker package is coming', function () {
+    pretendEnvironment('production');
+
+    $this->get('/')
+        ->assertSee('Docker kommer snart')
+        ->assertDontSee('Container nonox-app');
+});

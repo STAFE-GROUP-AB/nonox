@@ -36,7 +36,7 @@ final class LandingPage
 
         return [
             'ph' => $ph,
-            'dockerCommands' => "git clone {$ph['github']}\ncd nonox && docker compose up -d",
+            'dockerCommands' => "git clone {$ph['github']}",
             'trust' => ['Följer Bokföringslagen', 'BAS-kontoplan', 'SIE4 in och ut', 'Peppol e-faktura', 'Arbetsgivardeklaration (AGI)', 'Data i Sverige/EU'],
             'features' => self::features(),
             'clients' => self::clients(),
@@ -86,13 +86,12 @@ final class LandingPage
         return number_format($kronor, 0, ',', "\u{a0}")."\u{a0}kr";
     }
 
-    /** @return array{version: string, github: string, flytt: string, docs: string, api: ?string, mac: string, win: string, contact: string, terms: ?string, privacy: ?string, company: ?string, orgnr: ?string, host: string} */
+    /** @return array{version: string, github: string, flytt: string, docs: string, api: ?string, contact: string, terms: ?string, privacy: ?string, company: ?string, orgnr: ?string, host: string} */
     private static function links(): array
     {
         /** @var array<string, ?string> $config */
         $config = (array) config('app.landing', []);
         $github = $config['github_url'] ?? 'https://github.com/STAFE-GROUP-AB/OSS';
-        $releases = "{$github}/releases";
 
         return [
             'version' => (string) config('app.version'),
@@ -100,8 +99,6 @@ final class LandingPage
             'flytt' => $config['migration_guide_url'] ?? "{$github}/tree/main/docs/migration",
             'docs' => $config['docs_url'] ?? "{$github}/tree/main/docs",
             'api' => $config['api_url'] ?? null,
-            'mac' => $config['mac_download_url'] ?? $releases,
-            'win' => $config['windows_download_url'] ?? $releases,
             'contact' => $config['contact_url'] ?? route('login'),
             'terms' => $config['terms_url'] ?? null,
             'privacy' => $config['privacy_url'] ?? null,

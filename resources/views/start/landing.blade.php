@@ -139,8 +139,8 @@ input[type=range]{accent-color:#FF5A36}
             'label' => 'Kom igång',
             'items' => [
                 ['href' => '#kor-sjalv', 'title' => 'Webbhotell', 'text' => 'Ladda upp och följ installationsguiden i webbläsaren.', 'icon' => 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z'],
-                ['href' => '#kor-sjalv', 'title' => 'Egen server', 'text' => 'Kör med Docker hos valfri molnleverantör.', 'icon' => 'M3 4h18v7H3zM3 13h18v7H3zM7 7.5h.01M7 16.5h.01'],
-                ['href' => '#kor-sjalv', 'title' => 'Lokalt på datorn', 'text' => 'Som ett program på Mac eller Windows.', 'icon' => 'M4 5h16v11H4zM2 19h20M10 16v3M14 16v3'],
+                ['href' => '#kor-sjalv', 'title' => 'Egen server', 'text' => 'Med PHP och PostgreSQL. Färdigt Docker-paket kommer snart.', 'icon' => 'M3 4h18v7H3zM3 13h18v7H3zM7 7.5h.01M7 16.5h.01'],
+                ['href' => '#kor-sjalv', 'title' => 'Lokalt på datorn', 'text' => 'Program för Windows, Mac och Linux. Kommer snart.', 'icon' => 'M4 5h16v11H4zM2 19h20M10 16v3M14 16v3'],
                 ['href' => '#priser', 'title' => 'Vi sköter driften', 'text' => 'Servrar i Sverige/EU, backup och uppdateringar. Från 99 kr/mån.', 'icon' => 'M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z'],
             ],
             'promo' => ['eyebrow' => 'Byt system på en eftermiddag', 'title' => 'Flytta hit utan att tappa något.', 'link' => $ph['flytt'], 'cta' => 'Läs flyttguiden'],
@@ -227,7 +227,7 @@ input[type=range]{accent-color:#FF5A36}
         <span>Nytt · Öppen källkod · Byggd i Sverige · Version {{ $ph['version'] }}</span>
       </p>
       <h1 id="hero-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(44px,8.4vw,112px);line-height:0.95;letter-spacing:-0.045em;text-wrap:balance">Bokföring som ägs av <span style="color:var(--accb)">företagaren.</span></h1>
-      <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell, din server eller din dator. Eller låt oss sköta driften från 99 kr i månaden.</p>
+      <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell eller din egen server, och snart som program på din dator. Eller låt oss sköta driften från 99 kr i månaden.</p>
       <p style="margin:16px 0 0;max-width:680px;font-size:clamp(17px,1.8vw,19px);line-height:1.5;font-weight:600;color:var(--ink);text-wrap:pretty">Ett komplett alternativ till de stora molntjänsterna för bokföring, utan licensavgifter och utan inlåsning.</p>
       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:36px">
         <a class="lp9" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:16.5px;font-weight:700">
@@ -358,24 +358,25 @@ input[type=range]{accent-color:#FF5A36}
       </article>
       <article class="lp12" data-reveal="" style="background:var(--card);border:1px solid var(--line);border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:18px;transition:transform .25s ease,box-shadow .25s ease">
         <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums">02</span><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accb)" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h18v7H3zM3 13h18v7H3zM7 7.5h.01M7 16.5h.01M11 7.5h6M11 16.5h6" stroke-linecap="round"></path></svg></div>
-        <h3 style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:30px;letter-spacing:-0.03em">Egen server.</h3>
-        <p style="margin:0;font-size:16.5px;line-height:1.55;color:var(--muted);text-wrap:pretty">Kör NONOX med Docker på din egen server eller hos valfri molnleverantör.</p>
+        <h3 style="margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:30px;letter-spacing:-0.03em">Egen server.<span style="padding:4px 11px;border-radius:999px;background:var(--accl);color:var(--acct);font-family:Inter,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:0">Docker kommer snart</span></h3>
+        <p style="margin:0;font-size:16.5px;line-height:1.55;color:var(--muted);text-wrap:pretty">Kör NONOX på din egen server eller hos valfri molnleverantör, med PHP och PostgreSQL. Ett färdigt Docker-paket kommer snart.</p>
         <div style="margin-top:auto;border-radius:14px;background:#15171C;color:#F3F1EC;overflow:hidden">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 8px 8px 14px;border-bottom:1px solid rgba(255,255,255,.08)">
             <span style="font-size:12px;color:#A6AAB3;font-family:ui-monospace,Menlo,monospace">terminal</span>
             <button class="lp13" type="button" data-lp-copy="{{ $dockerCommands }}" aria-label="Kopiera kommandon" style="display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;border:1px solid rgba(255,255,255,.14);background:transparent;color:#F3F1EC;font:600 12.5px Inter,sans-serif;cursor:pointer"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"></path></svg><span aria-live="polite" data-lp-copy-label>Kopiera</span></button>
           </div>
           <pre style="margin:0;padding:16px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;line-height:1.75;white-space:pre-wrap;word-break:break-all"><code><span style="color:#FF8A6D">$</span> git clone {{ $ph['github'] }}
-<span style="color:#FF8A6D">$</span> cd nonox &amp;&amp; docker compose up -d</code></pre>
+<span style="color:#8E929B"># Docker-paket: kommer snart</span></code></pre>
         </div>
       </article>
       <article class="lp14" data-reveal="" style="background:var(--card);border:1px solid var(--line);border-radius:24px;padding:32px;display:flex;flex-direction:column;gap:18px;transition:transform .25s ease,box-shadow .25s ease">
         <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:15px;color:var(--muted);font-variant-numeric:tabular-nums">03</span><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--accb)" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M4 5h16v11H4zM2 19h20M10 16v3M14 16v3"></path></svg></div>
-        <h3 style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:30px;letter-spacing:-0.03em">Lokalt på datorn.</h3>
-        <p style="margin:0;font-size:16.5px;line-height:1.55;color:var(--muted);text-wrap:pretty">Installera NONOX som ett program på Mac eller Windows. Din bokföring ligger på din egen dator.</p>
+        <h3 style="margin:0;display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:30px;letter-spacing:-0.03em">Lokalt på datorn.<span style="padding:4px 11px;border-radius:999px;background:var(--accl);color:var(--acct);font-family:Inter,sans-serif;font-size:12.5px;font-weight:700;letter-spacing:0">Kommer snart</span></h3>
+        <p style="margin:0;font-size:16.5px;line-height:1.55;color:var(--muted);text-wrap:pretty">Snart kan du installera NONOX som ett program på Windows, Mac och Linux. Din bokföring ligger då på din egen dator.</p>
         <div style="margin-top:auto;display:flex;flex-direction:column;gap:10px">
-          <a class="lp15" href="{{ $ph['mac'] }}" style="display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 18px;border-radius:14px;background:var(--ink);color:var(--bg);text-decoration:none;font-size:15.5px;font-weight:600">Ladda ner för Mac<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg></a>
-          <a class="lp16" href="{{ $ph['win'] }}" style="display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 18px;border-radius:14px;border:1.5px solid var(--ink);color:var(--ink);text-decoration:none;font-size:15.5px;font-weight:600">Ladda ner för Windows<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg></a>
+          <span style="display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 18px;border-radius:14px;border:1.5px dashed var(--line);color:var(--muted);font-size:15.5px;font-weight:600">Windows<span style="font-size:12.5px;font-weight:600">Kommer snart</span></span>
+          <span style="display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 18px;border-radius:14px;border:1.5px dashed var(--line);color:var(--muted);font-size:15.5px;font-weight:600">Mac<span style="font-size:12.5px;font-weight:600">Kommer snart</span></span>
+          <span style="display:flex;align-items:center;justify-content:space-between;min-height:52px;padding:0 18px;border-radius:14px;border:1.5px dashed var(--line);color:var(--muted);font-size:15.5px;font-weight:600">Linux<span style="font-size:12.5px;font-weight:600">Kommer snart</span></span>
         </div>
       </article>
     </div>
@@ -595,14 +596,11 @@ input[type=range]{accent-color:#FF5A36}
         <span style="width:10px;height:10px;border-radius:50%;background:#3A3D45"></span><span style="width:10px;height:10px;border-radius:50%;background:#3A3D45"></span><span style="width:10px;height:10px;border-radius:50%;background:#3A3D45"></span>
         <span style="margin-left:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#8E929B">nonox — zsh</span>
       </div>
-      <pre style="margin:0;padding:22px 20px 26px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(12px,1.3vw,14px);line-height:1.85;white-space:pre-wrap;word-break:break-word"><code><span style="color:#FF8A6D">~/nonox $</span> docker compose up -d
-<span style="color:#8E929B">[+] Running 3/3</span>
- <span style="color:#FF8A6D">●</span> Container nonox-db      <span style="color:#8E929B">Started</span>
- <span style="color:#FF8A6D">●</span> Container nonox-app     <span style="color:#8E929B">Started</span>
- <span style="color:#FF8A6D">●</span> Container nonox-worker  <span style="color:#8E929B">Started</span>
-<span style="color:#FF8A6D">~/nonox $</span> ls modules/
-bokforing  fakturering  leverantorer  moms
-bokslut    lon          rotrut        sie4
+      <pre style="margin:0;padding:22px 20px 26px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(12px,1.3vw,14px);line-height:1.85;white-space:pre-wrap;word-break:break-word"><code><span style="color:#FF8A6D">~ $</span> git clone {{ $ph['github'] }} nonox
+<span style="color:#FF8A6D">~ $</span> cd nonox &amp;&amp; ls app/Domain
+Accounting  Accruals     AnnualReport  Assets
+Banking     Closing      Company       IncomeTax
+Insights    Invoicing    Payables      Vat
 <span style="color:#FF8A6D">~/nonox $</span> cat LICENSE | head -1
 <span style="color:#8E929B">GNU AFFERO GENERAL PUBLIC LICENSE</span>
 <span style="color:#FF8A6D">~/nonox $</span> <span style="display:inline-block;width:9px;height:1.1em;vertical-align:-3px;background:#FF5A36"></span></code></pre>

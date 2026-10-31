@@ -24,8 +24,6 @@ return [
         'migration_guide_url' => env('NONOX_MIGRATION_GUIDE_URL'),
         'docs_url' => env('NONOX_DOCS_URL'),
         'api_url' => env('NONOX_API_DOCS_URL'),
-        'mac_download_url' => env('NONOX_MAC_DOWNLOAD_URL'),
-        'windows_download_url' => env('NONOX_WINDOWS_DOWNLOAD_URL'),
         'contact_url' => env('NONOX_CONTACT_URL'),
         'terms_url' => env('NONOX_TERMS_URL'),
         'privacy_url' => env('NONOX_PRIVACY_URL'),
