@@ -230,5 +230,5 @@ it('lists the features that exist and marks the staff ledger and AI inbox as com
         ->assertSee('Moms och EU')
         ->assertSee('Min sida för anställda')
         ->assertSee('Personalliggare')
-        ->assertSee('NONOX Inbox med AI');
+        ->assertSee('dagskassans alla rapporter');
 });

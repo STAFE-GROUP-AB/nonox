@@ -154,11 +154,11 @@ final class LandingPage
             ['t' => 'Lön', 'mod' => true, 'b' => 'Skattetabeller, semester, sjuklön, förmåner, lönefil till banken och arbetsgivardeklaration.', 'd' => 'M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H3zM3 7l12-3v3M16 13.5h2'],
             ['t' => 'Min sida för anställda', 'b' => 'Lönebesked, utlägg med kvitto, sjukanmälan och semesteransökan direkt i mobilen.', 'd' => 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'],
             ['t' => 'ROT, RUT och byggmoms', 'b' => 'Avdrag direkt på fakturan och omvänd betalningsskyldighet för byggtjänster.', 'd' => 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5'],
-            ['t' => 'NONOX AI', 'mod' => true, 'b' => 'Läser kvitton och leverantörsfakturor och föreslår kontering, med företagets egen AI-nyckel.', 'd' => 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z'],
+            ['t' => 'AI', 'mod' => true, 'b' => 'Läser kvitton och leverantörsfakturor och föreslår kontering, med företagets egen AI-nyckel.', 'd' => 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z'],
             ['t' => 'Flera bolag', 'b' => 'Alla bolag under en inloggning, för byråer, koncerner och dig som driver flera företag.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
             ['t' => 'Arkiv och export', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
             ['t' => 'Personalliggare', 'soon' => true, 'b' => 'Elektronisk personalliggare för bygg, restaurang och andra branscher som kräver det.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
-            ['t' => 'NONOX Inbox med AI', 'soon' => true, 'b' => 'Mejla in fakturor och kvitton. AI sorterar, tolkar och lägger fram ett färdigt förslag.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
+            ['t' => 'Inbox', 'soon' => true, 'b' => 'Mejla in fakturor, kvitton och dagskassans alla rapporter. Koppla in AI som sorterar och tolkar åt dig, eller sortera manuellt.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
         ];
     }
 
