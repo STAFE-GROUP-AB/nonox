@@ -290,6 +290,25 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   stället för radernas intäktskonton, och redovisas i momsdeklarationens
   ruta 41.
 
+### 5.2 ROT- och RUT-avdrag
+
+- En faktura till en privatperson (kunden har personnummer) kan ha ROT- eller
+  RUT-avdrag. Rader markeras som arbetskostnad; avdraget är en andel av
+  arbetskostnaden inklusive moms, avrundat nedåt till hela kronor och inom
+  det som återstår av köparens tak för året på företagets egna fakturor.
+  Andelar och tak finns i `TaxReduction` och gäller från ett datum.
+- Kunden betalar fakturan minus avdraget. Vid utfärdandet bokförs kundens
+  del på 1510 och avdraget på 1513 Kundfordringar – delad faktura (läggs
+  till vid behov); intäkter och moms bokförs på hela beloppet. För ROT krävs
+  fastighetsbeteckning eller bostadsrättsförening. Avdrag fungerar än så
+  länge bara med fakturametoden, och inte tillsammans med omvänd
+  betalningsskyldighet.
+- Utbetalningen begärs i Skatteverkets e-tjänst. När Skatteverket betalar
+  registreras det på fakturan: bankkontot mot 1513 i serie C. Det mottagna
+  beloppet är det enda på en utfärdad faktura som får ändras utöver status,
+  betalningar och utskick (modell och databastrigger).
+- En kreditfaktura krediterar även avdraget.
+
 ## 5a. Leverantörsfakturor
 
 - Leverantörer finns i ett eget register med löpnummer. Bankgiro och plusgiro
@@ -796,6 +815,12 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   följer planen. Moms vid försäljning av inventarier och om avyttringsmånaden
   ska skrivas av lämnas till användaren. Kontot 7835 för avskrivningar på
   datorer ska kontrolleras mot gällande BAS.
+- ROT och RUT: andelarna (30 % ROT, 50 % RUT från 2026-01-01), taken
+  (50 000 kr ROT, 75 000 kr totalt per person och år), avrundningen, vad som
+  räknas som arbetskostnad och vilka uppgifter fakturan ska ha ska
+  kontrolleras. Taket prövas bara mot företagets egna fakturor. Begäran om
+  utbetalning som fil, kontantmetoden och avslag från Skatteverket (där
+  köparen ska betala resten) hanteras inte ännu.
 - Omvänd byggmoms: fakturatexten, kravet på båda momsregistreringsnumren,
   kontot 3231 och ruta 41 ska kontrolleras mot mervärdesskattelagen och
   Skatteverkets vägledning. Systemet avgör inte om en tjänst är en byggtjänst
@@ -863,3 +888,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.27 | 2026-11-01 | Årsredovisning enligt K2 som sida och PDF, med siffror ur bokföringen. |
 | 0.28 | 2026-11-01 | Inkomstdeklaration 2 (INK2, INK2R, INK2S) ur bokföringen som SRU-filer. |
 | 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |
+| 0.30 | 2026-11-01 | ROT- och RUT-avdrag på kundfakturor, delad fordran på 1513 och Skatteverkets betalning. |

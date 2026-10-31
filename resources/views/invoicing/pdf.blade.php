@@ -110,11 +110,22 @@
                     @if($invoice->rounding_ore->ore !== 0)
                         <tr><td class="muted">{{ __('Öresavrundning') }}</td><td class="right">{{ $kr($invoice->rounding_ore->ore) }}</td></tr>
                     @endif
+                    @if($invoice->tax_reduction !== null)
+                        <tr><td class="muted">{{ __('Summa inkl. moms') }}</td><td class="right">{{ $kr($invoice->total_ore->ore + $invoice->tax_reduction_ore->ore) }}</td></tr>
+                        <tr><td class="muted">{{ __('Avgår :type', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)]) }}</td><td class="right">{{ $kr(-$invoice->tax_reduction_ore->ore) }}</td></tr>
+                    @endif
                     <tr class="total"><td>{{ $invoice->isCredit() ? __('Att kreditera') : __('Att betala') }}</td><td class="right">{{ $invoice->total_ore->format() }}</td></tr>
                 </table>
             </td>
         </tr>
     </table>
+
+    @if($invoice->tax_reduction !== null)
+        @php($labour = $invoice->rows->where('is_labour', true))
+        <p style="margin-top: 8mm"><strong>{{ App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction) }}.</strong>
+            {{ __('Arbetskostnad inklusive moms :labour. Avdraget förutsätter att Skatteverket godkänner det; annars betalar köparen resten.', ['labour' => $kr((int) round($labour->sum(fn ($row) => $row->net_ore->ore * (10000 + $row->vat_rate) / 10000)))]) }}
+            @if($invoice->property_designation)<br><span class="muted">{{ __('Fastighet eller bostadsrätt: :property', ['property' => $invoice->property_designation]) }}</span>@endif</p>
+    @endif
 
     @if($invoice->reverse_charge)
         <p style="margin-top: 8mm"><strong>{{ __('Omvänd betalningsskyldighet för byggtjänster.') }}</strong> {{ __('Köparen är skyldig att redovisa och betala momsen.') }}<br>

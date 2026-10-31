@@ -33,6 +33,21 @@
                         <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-ink focus:ring-accent-500" wire:model.live="reverseCharge" @disabled($credit)>
                         <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}@if($reverseCharge)<span class="block text-xs text-gray-500">{{ __('Fakturan blir utan moms och försäljningen bokförs på 3231. Köparens och ert momsregistreringsnummer skrivs ut på fakturan.') }}</span>@endif</span>
                     </label>
+                    <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                        <x-ui.field for="invoice_tax_reduction" :label="__('ROT- eller RUT-avdrag')" error="tax_reduction">
+                            <select id="invoice_tax_reduction" class="{{ $input }} mt-1" wire:model.live="taxReduction" @disabled($credit)>
+                                <option value="">{{ __('Inget avdrag') }}</option>
+                                <option value="ROT">{{ __('ROT-avdrag') }}</option>
+                                <option value="RUT">{{ __('RUT-avdrag') }}</option>
+                            </select>
+                        </x-ui.field>
+                        @if($taxReduction === 'ROT')
+                            <x-ui.field for="invoice_property" :label="__('Fastighetsbeteckning eller BRF')" error="property_designation"><input id="invoice_property" type="text" class="{{ $input }} mt-1" wire:model="propertyDesignation" placeholder="{{ __('Till exempel Uppsala Kåbo 1:23') }}"></x-ui.field>
+                        @endif
+                    </div>
+                    @if($taxReduction !== '')
+                        <p class="mt-2 text-xs text-gray-500">{{ __('Bocka i Arbete på raderna som är arbetskostnad. Avdraget räknas på arbetskostnaden inklusive moms när du sparar, och kunden betalar resten.') }}</p>
+                    @endif
                 @endif
             </x-ui.field>
             <x-ui.field for="invoice_date" :label="__('Fakturadatum')" error="invoice_date">
@@ -55,7 +70,7 @@
         </div>
     </x-ui.card>
 
-    @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true])
+    @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true, 'labour' => $taxReduction !== ''])
 
     <x-ui.card>
         <x-ui.field for="invoice_notes" :label="__('Meddelande på fakturan (frivilligt)')" error="notes">

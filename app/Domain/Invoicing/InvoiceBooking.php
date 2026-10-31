@@ -85,7 +85,8 @@ final class InvoiceBooking
      */
     public static function issue(Invoice $invoice, Collection $rows): array
     {
-        return [self::RECEIVABLES => $invoice->total_ore->ore] + self::revenue($invoice, $rows);
+        // A ROT or RUT deduction is a receivable on Skatteverket, not on the customer.
+        return array_filter([self::RECEIVABLES => $invoice->total_ore->ore, TaxReduction::RECEIVABLE => $invoice->tax_reduction_ore->ore]) + self::revenue($invoice, $rows);
     }
 
     /**

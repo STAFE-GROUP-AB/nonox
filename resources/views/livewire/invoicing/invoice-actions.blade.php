@@ -75,6 +75,20 @@
         </x-ui.card>
     @endif
 
+    @if($invoice->tax_reduction !== null && ! $invoice->isCredit())
+        <x-ui.card :title="__(':type hos Skatteverket', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)])">
+            <p class="text-sm text-gray-700">{{ __('Begärt :claimed, mottaget :paid.', ['claimed' => $invoice->tax_reduction_ore->format(), 'paid' => $invoice->tax_reduction_paid_ore->format()]) }}</p>
+            <p class="mt-1 text-xs text-gray-500">{{ __('Begär utbetalningen i Skatteverkets e-tjänst Rot och rut när kunden har betalat sin del. Registrera Skatteverkets betalning här när den kommer.') }}</p>
+            @if($canTaxPay)
+                <form wire:submit="registerTaxReductionPayment" class="mt-4 grid grid-cols-2 gap-4">
+                    <x-ui.field for="tax_paid_on" :label="__('Betaldag')"><input id="tax_paid_on" type="date" class="{{ $input }} mt-1" wire:model="taxPaidOn"></x-ui.field>
+                    <x-ui.field for="tax_amount" :label="__('Belopp')" error="tax_amount"><input id="tax_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="taxAmount"></x-ui.field>
+                    <div class="col-span-2"><x-button wire:loading.attr="disabled">{{ __('Registrera Skatteverkets betalning') }}</x-button></div>
+                </form>
+            @endif
+        </x-ui.card>
+    @endif
+
     @if($invoice->payments->isNotEmpty())
         <x-ui.card :title="__('Betalningar')">
             <ul class="divide-y divide-gray-100 text-sm">

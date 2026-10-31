@@ -21,6 +21,10 @@ use LogicException;
  * payments and sending are updated. A database trigger backs this up.
  *
  * @property bool $reverse_charge
+ * @property ?string $tax_reduction ROT or RUT
+ * @property Money $tax_reduction_ore
+ * @property Money $tax_reduction_paid_ore
+ * @property ?string $property_designation
  * @property string $id
  * @property int $company_id
  * @property int $customer_id
@@ -59,7 +63,7 @@ class Invoice extends Model
     public const string CREDIT = 'CREDIT';
 
     /** Columns that may change after the invoice is issued. */
-    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'sent_at', 'sent_to', 'updated_at'];
+    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'tax_reduction_paid_ore', 'sent_at', 'sent_to', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -74,6 +78,8 @@ class Invoice extends Model
         'our_reference',
         'notes',
         'reverse_charge',
+        'tax_reduction',
+        'property_designation',
         'created_by',
     ];
 
@@ -93,6 +99,8 @@ class Invoice extends Model
     {
         return [
             'reverse_charge' => 'boolean',
+            'tax_reduction_ore' => MoneyCast::class,
+            'tax_reduction_paid_ore' => MoneyCast::class,
             'number' => 'integer',
             'status' => InvoiceStatus::class,
             'invoice_date' => 'immutable_date',

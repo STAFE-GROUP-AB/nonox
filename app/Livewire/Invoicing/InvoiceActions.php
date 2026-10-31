@@ -6,6 +6,7 @@ namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\RegisterPayment;
+use App\Actions\Invoicing\RegisterTaxReductionPayment;
 use App\Actions\Invoicing\SendInvoice;
 use App\Actions\Invoicing\SendReminder;
 use App\Livewire\Concerns\ShowsToasts;
@@ -44,6 +45,8 @@ class InvoiceActions extends Component
         $this->email = (string) ($invoice->sent_to ?? $invoice->customer_snapshot['email'] ?? '');
         $this->paidOn = now()->toDateString();
         $this->amount = $invoice->remaining()->format(withCurrency: false);
+        $this->taxPaidOn = now()->toDateString();
+        $this->taxAmount = Money::ofOre($invoice->tax_reduction_ore->ore - $invoice->tax_reduction_paid_ore->ore)->format(withCurrency: false);
     }
 
     public function send(SendInvoice $send): void
@@ -82,6 +85,25 @@ class InvoiceActions extends Component
             : __(':amount är registrerat. Kvar att betala: :remaining.', ['amount' => $payment->amount_ore->format(), 'remaining' => $invoice->remaining()->format()]));
     }
 
+    public string $taxPaidOn = '';
+
+    public string $taxAmount = '';
+
+    public function registerTaxReductionPayment(RegisterTaxReductionPayment $register): void
+    {
+        try {
+            $amount = Money::parse($this->taxAmount);
+            $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->taxPaidOn) ?: throw new InvalidArgumentException;
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['tax_amount' => __('Skriv datum och belopp, till exempel 1 250,00.')]);
+        }
+
+        $invoice = $register($this->user(), $this->invoice(), $date, $amount);
+        $left = Money::ofOre($invoice->tax_reduction_ore->ore - $invoice->tax_reduction_paid_ore->ore);
+        $this->taxAmount = $left->isZero() ? '' : $left->format(withCurrency: false);
+        $this->toast(__('Skatteverkets betalning på :amount är registrerad.', ['amount' => $amount->format()]));
+    }
+
     public function credit(CreditInvoice $credit): void
     {
         $draft = $credit($this->user(), $this->invoice());
@@ -98,6 +120,7 @@ class InvoiceActions extends Component
             'invoice' => $invoice,
             'canSend' => $this->user()->can('send', $invoice),
             'canPay' => $this->user()->can('registerPayment', $invoice),
+            'canTaxPay' => $this->user()->can('registerTaxReductionPayment', $invoice),
             'canRemind' => $this->user()->can('remind', $invoice),
             'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->isEmpty(),
         ]);

@@ -11,6 +11,7 @@ use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
+use App\Domain\Invoicing\TaxReduction;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Customer;
@@ -64,6 +65,10 @@ class IssueInvoice
 
             if ($invoice->reverse_charge) {
                 $this->ensureReverseCharge($company, $customer);
+            }
+
+            if ($invoice->tax_reduction !== null) {
+                $this->ensureTaxReduction($company, $invoice);
             }
 
             $number = NumberSeries::take(NumberSeries::INVOICES);
@@ -129,6 +134,29 @@ class IssueInvoice
         Account::query()->firstOrCreate(['number' => InvoiceBooking::REVERSE_CHARGE_CONSTRUCTION], [
             'name' => __('Försäljning inom byggtjänster, omvänd skattskyldighet'),
             'type' => AccountType::Revenue,
+        ]);
+    }
+
+    /**
+     * ROT and RUT need fakturametoden here, and ROT the property the work
+     * was done on; the part Skatteverket pays is booked on 1513.
+     *
+     * TODO(legal-verify): ROT and RUT under kontantmetoden, and the details
+     * the invoice and the claim must carry.
+     */
+    private function ensureTaxReduction(Company $company, Invoice $invoice): void
+    {
+        if ($company->accounting_method !== AccountingMethod::Fakturametoden) {
+            throw ValidationException::withMessages(['invoice' => __('ROT- och RUT-avdrag fungerar än så länge bara med fakturametoden.')]);
+        }
+
+        if ($invoice->tax_reduction === TaxReduction::ROT && blank($invoice->property_designation)) {
+            throw ValidationException::withMessages(['invoice' => __('Fyll i fastighetsbeteckningen, eller bostadsrättsföreningens organisationsnummer och lägenhetsnummer, för ROT-avdraget.')]);
+        }
+
+        Account::query()->firstOrCreate(['number' => TaxReduction::RECEIVABLE], [
+            'name' => __('Kundfordringar – delad faktura'),
+            'type' => AccountType::Asset,
         ]);
     }
 }

@@ -51,6 +51,10 @@ class InvoiceEditor extends Component
 
     public bool $reverseCharge = false;
 
+    public string $taxReduction = '';
+
+    public string $propertyDesignation = '';
+
     public function mount(?Invoice $invoice = null): void
     {
         if ($invoice instanceof Invoice) {
@@ -67,6 +71,8 @@ class InvoiceEditor extends Component
             $this->ourReference = (string) $invoice->our_reference;
             $this->notes = (string) $invoice->notes;
             $this->reverseCharge = $invoice->reverse_charge;
+            $this->taxReduction = (string) $invoice->tax_reduction;
+            $this->propertyDesignation = (string) $invoice->property_designation;
             $this->rows = $this->rowsFrom($invoice->rows);
 
             return;
@@ -131,6 +137,8 @@ class InvoiceEditor extends Component
             'our_reference' => $this->ourReference,
             'notes' => $this->notes,
             'reverse_charge' => $this->reverseCharge,
+            'tax_reduction' => $this->taxReduction === '' ? null : $this->taxReduction,
+            'property_designation' => $this->propertyDesignation,
             'rows' => $this->rowInput(),
         ], $this->invoiceId === null ? null : Invoice::query()->findOrFail($this->invoiceId));
     }

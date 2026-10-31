@@ -6,6 +6,7 @@ namespace App\Actions\Invoicing;
 
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
+use App\Domain\Invoicing\TaxReduction;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -48,6 +49,8 @@ class SaveDraftInvoice
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'reverse_charge' => ['nullable', 'boolean'],
+            'tax_reduction' => ['nullable', Rule::in([TaxReduction::ROT, TaxReduction::RUT])],
+            'property_designation' => ['nullable', 'string', 'max:255'],
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.description' => ['required', 'string', 'max:255'],
             'rows.*.vat_rate' => ['required', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
@@ -86,7 +89,15 @@ class SaveDraftInvoice
                 }
             }
 
+            $taxReduction = $validated['tax_reduction'] ?? null;
+
+            foreach ($rows as $index => $row) {
+                $rows[$index]['is_labour'] = $taxReduction !== null && (bool) ($rowInput[$index]['labour'] ?? false);
+            }
+
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
+
+            $deduction = $taxReduction === null ? 0 : $this->deduction($taxReduction, $rows, $customer, $invoiceDate, $reverseCharge, $draft);
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
             $invoice->fill([
@@ -98,12 +109,15 @@ class SaveDraftInvoice
                 'our_reference' => $validated['our_reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'reverse_charge' => $reverseCharge,
+                'tax_reduction' => $taxReduction,
+                'property_designation' => $taxReduction === TaxReduction::ROT ? ($validated['property_designation'] ?? null) : null,
             ]);
             $invoice->forceFill([
                 'net_ore' => $totals['net'],
                 'vat_ore' => $totals['vat'],
                 'rounding_ore' => $totals['rounding'],
-                'total_ore' => $totals['total'],
+                'total_ore' => $totals['total'] - $deduction,
+                'tax_reduction_ore' => $deduction,
             ])->save();
 
             InvoiceRow::query()->where('invoice_id', $invoice->id)->delete();
@@ -114,5 +128,46 @@ class SaveDraftInvoice
 
             return $invoice->load('rows');
         }));
+    }
+
+    /**
+     * The ROT or RUT deduction: the share of the labour rows including VAT,
+     * within what is left of the buyer's ceilings this calendar year on the
+     * company's other invoices.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function deduction(string $type, array $rows, Customer $customer, CarbonImmutable $date, bool $reverseCharge, ?Invoice $draft): int
+    {
+        if ($reverseCharge) {
+            throw ValidationException::withMessages(['tax_reduction' => __('En faktura med omvänd betalningsskyldighet kan inte ha ROT- eller RUT-avdrag.')]);
+        }
+
+        if (blank($customer->personal_number)) {
+            throw ValidationException::withMessages(['tax_reduction' => __('ROT och RUT gäller privatpersoner. Fyll i kundens personnummer.')]);
+        }
+
+        $rate = TaxReduction::rate($type, $date)
+            ?? throw ValidationException::withMessages(['tax_reduction' => __('Det finns ingen regel för :type på fakturadatumet.', ['type' => TaxReduction::label($type)])]);
+
+        $labour = array_values(array_filter($rows, fn (array $row): bool => (bool) $row['is_labour']));
+
+        if ($labour === []) {
+            throw ValidationException::withMessages(['tax_reduction' => __('Markera vilka rader som är arbetskostnad.')]);
+        }
+
+        $labourTotals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => (int) $row['net_ore'], 'vat_rate' => (int) $row['vat_rate']], $labour));
+        $used = Invoice::query()->where('customer_id', $customer->id)->whereNotNull('tax_reduction')
+            ->whereYear('invoice_date', $date->year)->where('status', '<>', 'DRAFT')
+            ->when($draft !== null && $draft->exists, fn ($query) => $query->whereKeyNot($draft?->id))
+            ->selectRaw('tax_reduction, SUM(tax_reduction_ore) AS used')->groupBy('tax_reduction')->pluck('used', 'tax_reduction')
+            ->map(fn (mixed $used): int => (int) $used);
+        $room = TaxReduction::CEILINGS['TOTAL'] - $used->sum();
+
+        if ($type === TaxReduction::ROT) {
+            $room = min($room, TaxReduction::CEILINGS[TaxReduction::ROT] - (int) ($used[TaxReduction::ROT] ?? 0));
+        }
+
+        return TaxReduction::amount($labourTotals['net'] + $labourTotals['vat'], $rate, $room);
     }
 }

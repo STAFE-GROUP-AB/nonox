@@ -43,7 +43,7 @@ trait EditsSalesRows
 
         foreach ($rows as $row) {
             $input = method_exists($row, 'asInput') ? $row->asInput() : [];
-            $result[] = array_map(fn (mixed $value): string => (string) $value, ['article' => '', ...$input]);
+            $result[] = array_map(fn (mixed $value): string => is_bool($value) ? ($value ? '1' : '') : (string) $value, ['article' => '', ...$input]);
         }
 
         return $result;

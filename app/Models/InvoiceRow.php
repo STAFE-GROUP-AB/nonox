@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * One row of an invoice: quantity × price, less any discount, at a VAT rate,
  * booked on a revenue account.
  *
+ * @property bool $is_labour
  * @property string $invoice_id
  * @property ?int $article_id
  * @property string $description
@@ -46,12 +47,14 @@ class InvoiceRow extends Model
         'account_id',
         'net_ore',
         'position',
+        'is_labour',
     ];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
+            'is_labour' => 'boolean',
             'unit_price_ore' => MoneyCast::class,
             'net_ore' => MoneyCast::class,
             'discount_bp' => 'integer',

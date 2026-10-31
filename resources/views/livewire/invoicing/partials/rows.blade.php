@@ -35,6 +35,9 @@
                         <th class="pb-2 pr-2 font-medium w-20 text-right">{{ __('Rabatt %') }}</th>
                         <th class="pb-2 pr-2 font-medium w-24">{{ __('Moms') }}</th>
                         <th class="pb-2 pr-2 font-medium w-28 text-right">{{ __('Belopp') }}</th>
+                        @if($labour ?? false)
+                            <th class="pb-2 pr-2 font-medium w-16 text-center">{{ __('Arbete') }}</th>
+                        @endif
                         <th class="pb-2 w-8"><span class="sr-only">{{ __('Ta bort') }}</span></th>
                     </tr>
                 </thead>
@@ -55,6 +58,9 @@
                                 </select>
                             </td>
                             <td class="py-1 pr-2 text-right whitespace-nowrap tabular-nums" x-text="net(row)"></td>
+                            @if($labour ?? false)
+                                <td class="py-1 pr-2 text-center"><input type="checkbox" class="rounded border-gray-300 text-ink focus:ring-accent-500" x-model="row.labour" :aria-label="'{{ __('Arbetskostnad, rad') }} ' + (index + 1)"></td>
+                            @endif
                             <td class="py-1 text-center"><button type="button" class="text-gray-400 hover:text-accent-600" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button></td>
                         </tr>
                     </template>

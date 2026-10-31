@@ -67,6 +67,15 @@ class InvoicePolicy
         return $invoice->status === InvoiceStatus::Issued && $this->can($user, $invoice, 'payments:create');
     }
 
+    /** Skatteverket's ROT or RUT payment can come before or after the customer has paid. */
+    public function registerTaxReductionPayment(User $user, Invoice $invoice): bool
+    {
+        return in_array($invoice->status, [InvoiceStatus::Issued, InvoiceStatus::Paid], true)
+            && $invoice->tax_reduction !== null
+            && $invoice->tax_reduction_paid_ore->ore < $invoice->tax_reduction_ore->ore
+            && $this->can($user, $invoice, 'payments:create');
+    }
+
     private function can(User $user, Invoice $invoice, string $permission): bool
     {
         $company = Company::query()->find($invoice->company_id);

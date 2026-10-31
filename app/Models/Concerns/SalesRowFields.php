@@ -22,7 +22,7 @@ use App\Support\Money\Money;
 trait SalesRowFields
 {
     /**
-     * @return array{description: string, quantity: string, unit: string, price: string, discount: string, vat_rate: int, account: ?int}
+     * @return array{description: string, quantity: string, unit: string, price: string, discount: string, vat_rate: int, account: ?int, labour: bool}
      */
     public function asInput(): array
     {
@@ -36,6 +36,8 @@ trait SalesRowFields
             'discount' => $this->discount_bp === 0 ? '' : sprintf('%d,%02d', intdiv($this->discount_bp, 100), $this->discount_bp % 100),
             'vat_rate' => $this->vat_rate,
             'account' => $account instanceof Account ? $account->number : null,
+            // Only invoice rows have the flag; ROT and RUT apply to invoices.
+            'labour' => (bool) $this->getAttribute('is_labour'),
         ];
     }
 }
