@@ -189,7 +189,19 @@ final class ModuleManager
             $before = (array) $row->settings;
             $row->forceFill(['settings' => [...$before, ...$settings]])->save();
 
-            Audit::record('module.settings_updated', $row, Audit::changes($before, (array) $row->settings), $company, $by);
+            // Secrets (such as encrypted API keys) never reach the permanent audit log: only that they changed.
+            $changes = Audit::changes($before, (array) $row->settings);
+            $secret = fn (int|string $field): bool => str_contains((string) $field, 'key') || str_contains((string) $field, 'secret') || str_contains((string) $field, 'token');
+
+            foreach (['before', 'after'] as $side) {
+                foreach (array_keys($changes[$side]) as $field) {
+                    if ($secret($field)) {
+                        $changes[$side][$field] = '[ändrad]';
+                    }
+                }
+            }
+
+            Audit::record('module.settings_updated', $row, $changes, $company, $by);
         });
     }
 

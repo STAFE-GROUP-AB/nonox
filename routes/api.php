@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+/*
+ * The API (AGENTS.md §12) is not built yet; no routes until it is.
+ */

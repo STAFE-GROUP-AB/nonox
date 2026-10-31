@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Camt054\BankCredit;
 use App\Support\Camt054\CreditNotification;
+use App\Support\FileName;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ class ImportBankFile
             Storage::disk(AttachToVoucher::DISK)->put($path, $contents);
 
             $import = BankFileImport::create([
-                'file_name' => mb_substr(basename($file->getClientOriginalName()), 0, 255),
+                'file_name' => FileName::clean($file->getClientOriginalName()),
                 'file_path' => $path,
                 'file_sha256' => hash('sha256', $contents),
                 'message_id' => $notification->messageId === null ? null : mb_substr($notification->messageId, 0, 35),

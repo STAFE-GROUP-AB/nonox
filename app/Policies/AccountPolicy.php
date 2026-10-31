@@ -7,15 +7,16 @@ namespace App\Policies;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Tenancy\StaffAccess;
 
 class AccountPolicy
 {
     /**
-     * Every member may see the chart of accounts.
+     * Every member who works in the bookkeeping may see the chart of accounts.
      */
     public function viewAny(User $user, Company $company): bool
     {
-        return $user->belongsToTeam($company);
+        return StaffAccess::allows($user, $company);
     }
 
     public function create(User $user, Company $company): bool

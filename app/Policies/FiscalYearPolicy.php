@@ -7,12 +7,13 @@ namespace App\Policies;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Support\Tenancy\StaffAccess;
 
 class FiscalYearPolicy
 {
     public function viewAny(User $user, Company $company): bool
     {
-        return $user->belongsToTeam($company);
+        return StaffAccess::allows($user, $company);
     }
 
     public function create(User $user, Company $company): bool

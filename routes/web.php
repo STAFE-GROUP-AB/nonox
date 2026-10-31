@@ -141,10 +141,10 @@ Route::middleware([
         Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');
         Route::view('/bokslut', 'accounting.closing')->name('accounting.closing');
         Route::view('/arsredovisning', 'accounting.annual-report')->name('accounting.annualReport');
-        Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->name('accounting.annualReport.show');
-        Route::get('/arsredovisning/{fiscalYear}/pdf', [AnnualReportController::class, 'pdf'])->name('accounting.annualReport.pdf');
+        Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->whereNumber('fiscalYear')->name('accounting.annualReport.show');
+        Route::get('/arsredovisning/{fiscalYear}/pdf', [AnnualReportController::class, 'pdf'])->whereNumber('fiscalYear')->name('accounting.annualReport.pdf');
         Route::view('/inkomstdeklaration', 'accounting.income-tax')->name('accounting.incomeTax');
-        Route::get('/inkomstdeklaration/{fiscalYear}/sru', IncomeTaxSruController::class)->name('accounting.incomeTax.sru');
+        Route::get('/inkomstdeklaration/{fiscalYear}/sru', IncomeTaxSruController::class)->whereNumber('fiscalYear')->name('accounting.incomeTax.sru');
         Route::get('/importera-sie', [SieImportController::class, 'index'])->name('accounting.sieImports.index');
         Route::post('/importera-sie', [SieImportController::class, 'store'])->name('accounting.sieImports.store');
         Route::get('/importera-sie/{sieImport}', [SieImportController::class, 'show'])

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\TeamInvitation as TeamInvitationModel;
 use App\Models\User;
 use App\Modules\Rules\AvailableRole;
+use App\Support\MailQuota;
 use Closure;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Gate;
@@ -38,6 +39,8 @@ class InviteTeamMember implements InvitesTeamMembers
             'email' => $email,
             'role' => $role,
         ]);
+
+        MailQuota::take($team, 'invitations');
 
         Mail::to($email)->send(new TeamInvitation($invitation));
     }

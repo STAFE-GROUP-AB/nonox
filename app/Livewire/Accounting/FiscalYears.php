@@ -88,6 +88,12 @@ class FiscalYears extends Component
         ]));
     }
 
+    public function mount(): void
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->can('viewAny', [FiscalYear::class, $user->currentCompany()]), 403);
+    }
+
     public function render(): View
     {
         $fiscalYears = FiscalYear::query()->orderByDesc('start_date')->get();

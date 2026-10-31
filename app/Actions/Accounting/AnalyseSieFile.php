@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\SieImport;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\FileName;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
@@ -51,7 +52,7 @@ class AnalyseSieFile
         return CurrentCompany::run($company, function () use ($company, $user, $file, $path, $sha256, $plan): SieImport {
             $import = SieImport::create([
                 'user_id' => $user->id,
-                'original_name' => mb_substr(basename($file->getClientOriginalName()), 0, 255),
+                'original_name' => FileName::clean($file->getClientOriginalName()),
                 'file_path' => (string) $path,
                 'size' => (int) $file->getSize(),
                 'sha256' => $sha256,

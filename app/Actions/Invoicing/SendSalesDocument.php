@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\SalesDocument;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\MailQuota;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
@@ -26,6 +27,8 @@ class SendSalesDocument
         Validator::make(['email' => $email], ['email' => ['required', 'email', 'max:255']], [], ['email' => __('e-post')])->validate();
 
         $company = Company::query()->findOrFail($document->company_id);
+
+        MailQuota::take($company, 'documents');
 
         Mail::to($email)->send(new SalesDocumentMail($document, $company));
 

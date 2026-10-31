@@ -96,6 +96,12 @@ class ChartOfAccounts extends Component
             : __('Konto :number är inaktiverat. Det syns inte längre när du bokför.', ['number' => $account->number]));
     }
 
+    public function mount(): void
+    {
+        $user = Auth::user();
+        abort_unless($user instanceof User && $user->can('viewAny', [Account::class, $user->currentCompany()]), 403);
+    }
+
     public function render(): View
     {
         $company = $this->company();

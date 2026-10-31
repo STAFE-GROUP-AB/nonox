@@ -2917,5 +2917,7 @@
     "tomt behåller": "empty keeps",
     "Nytt bankkonto ****:last väntar på bekräftelse. Ingen lönefil kan skapas förrän någon annan som hanterar personal har bekräftat det.": "New bank account ****:last is waiting for confirmation. No salary payment file can be made until someone else who manages staff has confirmed it.",
     "Bekräfta det nya bankkontot för lön?": "Confirm the new salary bank account?",
-    "Ta bort ändringen": "Withdraw the change"
+    "Ta bort ändringen": "Withdraw the change",
+    "Kontrollen kördes nyss. Vänta en minut och försök igen.": "The check just ran. Wait a minute and try again.",
+    "Företaget har skickat många e-postmeddelanden den senaste timmen. Vänta en stund och försök igen.": "The company has sent a lot of e-mail in the last hour. Wait a while and try again."
 }

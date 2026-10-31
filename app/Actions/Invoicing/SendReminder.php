@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceReminder;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\MailQuota;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -52,6 +53,8 @@ class SendReminder
                 'sent_to' => $email,
                 'created_by' => $user->id,
             ]);
+
+            MailQuota::take($company, 'documents');
 
             Mail::to($email)->send(new ReminderMail($invoice, $reminder, $company));
 

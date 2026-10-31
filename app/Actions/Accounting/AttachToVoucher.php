@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Support\Audit\Audit;
+use App\Support\FileName;
 use App\Support\Tenancy\CurrentCompany;
 use finfo;
 use Illuminate\Http\UploadedFile;
@@ -77,7 +78,7 @@ class AttachToVoucher
             $attachment = VoucherAttachment::create([
                 'voucher_id' => $voucher->id,
                 'file_path' => $path,
-                'original_name' => mb_substr(basename($file->getClientOriginalName()), 0, 255),
+                'original_name' => FileName::clean($file->getClientOriginalName()),
                 'mime' => $mime,
                 'size' => strlen($contents),
                 'sha256' => hash('sha256', $contents),

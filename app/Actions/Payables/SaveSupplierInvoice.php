@@ -16,6 +16,7 @@ use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\FileName;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -263,7 +264,7 @@ class SaveSupplierInvoice
 
         return [
             'file_path' => $path,
-            'file_name' => mb_substr(basename($file->getClientOriginalName()), 0, 255),
+            'file_name' => FileName::clean($file->getClientOriginalName()),
             'file_mime' => $mime,
             'file_size' => strlen($contents),
             'file_sha256' => hash('sha256', $contents),

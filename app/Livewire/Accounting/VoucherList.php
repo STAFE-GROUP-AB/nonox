@@ -15,6 +15,7 @@ use App\Models\Voucher;
 use App\Support\Audit\Audit;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -52,6 +53,17 @@ class VoucherList extends Component
     public function checkLedger(LedgerVerifier $verifier): void
     {
         $company = $this->company();
+
+        // A full hash-chain check is heavy: only for those who see the vouchers, a few times a minute.
+        abort_unless((bool) Auth::user()?->hasTeamPermission($company, 'vouchers:view'), 403);
+
+        if (RateLimiter::tooManyAttempts("ledger-check:{$company->id}", 3)) {
+            $this->toast(__('Kontrollen kördes nyss. Vänta en minut och försök igen.'), 'error');
+
+            return;
+        }
+
+        RateLimiter::hit("ledger-check:{$company->id}", 60);
         $result = $verifier->verify($company);
 
         Audit::record('ledger.verified', $company, [

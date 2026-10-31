@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Domain\Company\CompanyOverview;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Tenancy\StaffAccess;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,8 @@ class CompanyController
         // The company comes from the user's list of companies, where Laravel forbids lazy loading
         // when there are several; load what the settings page reads.
         $team = $this->findForMember($user, $company)->loadMissing(['owner', 'users', 'teamInvitations']);
+        // Settings, members and bank details are not for employees who only use Min sida.
+        abort_unless(StaffAccess::allows($user, $team), 404);
 
         return view('teams.show', [
             'user' => $user,

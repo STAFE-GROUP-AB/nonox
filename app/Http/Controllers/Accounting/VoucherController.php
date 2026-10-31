@@ -11,6 +11,7 @@ use App\Models\VoucherAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -32,7 +33,7 @@ class VoucherController
 
     public function create(Request $request): View
     {
-        $copyOf = $request->filled('kopia')
+        $copyOf = $request->filled('kopia') && Str::isUuid((string) $request->query('kopia'))
             ? Voucher::query()->findOrFail((string) $request->query('kopia'))
             : null;
 
