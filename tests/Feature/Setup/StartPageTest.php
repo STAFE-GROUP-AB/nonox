@@ -51,7 +51,19 @@ it('shows the sign-in page once there is a user', function () {
         ->assertDontSee('Steg 1 av 3');
 });
 
-it('sends signed-in users to the overview', function () {
+it('shows signed-in users the landing page with a link to the overview instead of sign-in', function () {
+    $this->actingAs(User::factory()->withCompany()->create())
+        ->get('/')
+        ->assertOk()
+        ->assertSee('Bokföring som ägs av')
+        ->assertSee('Till översikten')
+        ->assertSee(route('dashboard'))
+        ->assertDontSee('>Logga in<', escape: false);
+});
+
+it('sends signed-in users to the overview when the landing page is turned off', function () {
+    config(['app.landing.enabled' => false]);
+
     $this->actingAs(User::factory()->withCompany()->create())
         ->get('/')
         ->assertRedirect(route('dashboard'));

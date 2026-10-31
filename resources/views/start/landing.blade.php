@@ -162,7 +162,11 @@ input[type=range]{accent-color:#FF5A36}
         <a href="#priser" class="mm-trigger">Priser</a>
       </nav>
       <div style="display:flex;align-items:center;gap:6px;margin-left:auto">
-        <a href="{{ route('login') }}" class="mm-login">Logga in</a>
+        @auth
+          <a href="{{ route('dashboard') }}" class="mm-login">Till översikten</a>
+        @else
+          <a href="{{ route('login') }}" class="mm-login">Logga in</a>
+        @endauth
         <a class="lp8" href="#kor-sjalv" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ladda ner gratis</a>
       </div>
     </div>
@@ -210,7 +214,11 @@ input[type=range]{accent-color:#FF5A36}
       @endforeach
       <a href="#priser" data-lp-close class="mm-mobile-link">Priser</a>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
-        <a href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Logga in</a>
+        @auth
+          <a href="{{ route('dashboard') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Till översikten</a>
+        @else
+          <a href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Logga in</a>
+        @endauth
         <a href="#kor-sjalv" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ladda ner gratis</a>
       </div>
     </nav>

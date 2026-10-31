@@ -21,8 +21,11 @@ class StartController
 {
     public function __invoke(Request $request, SetupStatus $setup): View|RedirectResponse
     {
+        // Signed-in users see the landing page too, with a way into the system instead of the sign-in link.
         if ($request->user() !== null) {
-            return redirect()->route('dashboard');
+            return config('app.landing.enabled')
+                ? view('start.landing', LandingPage::data())
+                : redirect()->route('dashboard');
         }
 
         $problem = $setup->problem();
