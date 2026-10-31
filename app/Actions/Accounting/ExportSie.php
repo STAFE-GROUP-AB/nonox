@@ -19,6 +19,7 @@ use App\Models\VoucherRow;
 use App\Models\VoucherRowHistory;
 use App\Models\VoucherSeries;
 use App\Support\Audit\Audit;
+use App\Support\Build\BuildInfo;
 use App\Support\Sie\SieAmount;
 use App\Support\Sie\SieDate;
 use App\Support\Sie\SieText;
@@ -82,7 +83,7 @@ class ExportSie
     {
         $writer->record('#FORMAT', ['PC8']);
         $writer->record('#SIETYP', [4]);
-        $writer->record('#PROGRAM', [new SieText((string) config('app.name')), (string) config('app.version')]);
+        $writer->record('#PROGRAM', [new SieText((string) config('app.name')), BuildInfo::version()]);
         $writer->record('#GEN', [SieDate::format(CarbonImmutable::now()), new SieText($user->name)]);
 
         $organisationNumber = OrganisationNumber::tryFrom((string) $company->org_number);

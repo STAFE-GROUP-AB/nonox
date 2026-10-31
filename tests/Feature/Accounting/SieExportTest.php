@@ -10,6 +10,7 @@ use App\Models\AuditLog;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
 use App\Models\User;
+use App\Support\Build\BuildInfo;
 use App\Support\Sie\SieAmount;
 use App\Support\Sie\SieChecksum;
 use App\Support\Sie\SieReader;
@@ -92,6 +93,10 @@ function exportSie(User $user, FiscalYear $year): string
 }
 
 it('writes the fiscal year exactly as the golden file', function () {
+    // The golden file is written by version 0.1.0 without a build number.
+    config(['app.version' => '0.1.0']);
+    BuildInfo::fake(['build' => null, 'sha' => null, 'built_at' => null]);
+
     $file = exportSie($this->owner, bookkeepingToExport($this->owner, $this->company));
 
     if (getenv('UPDATE_SIE_FIXTURES')) {
@@ -99,6 +104,8 @@ it('writes the fiscal year exactly as the golden file', function () {
     }
 
     expect($file)->toBe(file_get_contents(SIE_EXPORT_FIXTURE));
+
+    BuildInfo::fake(null);
 });
 
 it('writes a file that reads back with a valid control sum and the same ledger', function () {

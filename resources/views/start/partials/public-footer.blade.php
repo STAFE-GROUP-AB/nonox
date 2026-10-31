@@ -46,6 +46,7 @@
     <div style="margin-top:56px;padding-top:24px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:8px;font-size:13px;color:#A6AAB3">
       <span>© {{ now()->year }}{{ $ph['company'] ? ' '.$ph['company'] : '' }}{{ $ph['orgnr'] ? ' · Org.nr '.$ph['orgnr'] : '' }} · {{ $ph['host'] }}</span>
       <span style="color:#8E929B">Övriga varumärken som nämns tillhör respektive ägare.</span>
+      <span style="color:#8E929B;font-variant-numeric:tabular-nums" title="{{ App\Support\Build\BuildInfo::builtAt() }}">NONOX {{ App\Support\Build\BuildInfo::line() }}</span>
     </div>
   </div>
 </footer>

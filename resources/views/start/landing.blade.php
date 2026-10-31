@@ -21,7 +21,7 @@
     <div data-reveal="" style="max-width:980px">
       <p style="margin:0 0 28px;display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;padding:7px 14px 7px 10px;border-radius:999px;background:var(--accl);color:var(--ink);font-size:13.5px;font-weight:600">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF5A36" d="M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z"></path></svg>
-        <span>Gratis alternativ till Fortnox, Visma och Bokio · Öppen källkod · Byggd i Sverige</span>
+        <span><strong style="font-weight:800">{{ App\Support\Build\BuildInfo::stage() ?: 'Version' }}</strong> · Version {{ App\Support\Build\BuildInfo::version() }} · Öppen källkod · Byggd i Sverige</span>
       </p>
       <h1 id="hero-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(44px,8.4vw,112px);line-height:0.95;letter-spacing:-0.045em;text-wrap:balance">Bokföring som ägs av <span style="color:var(--accb)">företagaren.</span></h1>
       <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell eller din egen server, och snart som program på din dator. Eller låt oss sköta driften från 995 kr om året.</p>
@@ -32,6 +32,9 @@
         <a class="lp10" href="#priser" style="display:inline-flex;align-items:center;min-height:54px;padding:0 26px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);text-decoration:none;font-size:16.5px;font-weight:600">Låt oss sköta driften</a>
       </div>
       <p style="margin:18px 0 0;font-size:14px;color:var(--muted)">Ingen bindningstid. Exportera all data när du vill.</p>
+      @if(App\Support\Build\BuildInfo::stage() !== '')
+        <p id="oppen-beta" style="margin:24px 0 0;max-width:680px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:15.5px;line-height:1.55;color:var(--ink);text-wrap:pretty"><strong>NONOX är i öppen beta.</strong> Alla kan registrera sig och börja bokföra redan i dag. Det du lägger in ligger kvar, vi rensar ingenting när betan är över. Fler funktioner kommer löpande.</p>
+      @endif
     </div>
 
     <div id="lp-mock" data-reveal="" aria-hidden="true" style="position:relative;margin-top:clamp(48px,7vw,88px);height:650px">

@@ -20,6 +20,8 @@
             {{ $slot }}
         </div>
 
+        <p class="pb-6 text-center text-xs tabular-nums text-gray-500">NONOX {{ App\Support\Build\BuildInfo::line() }}</p>
+
         @livewireScripts
         @include('start.partials.cookie-banner')
 </body>

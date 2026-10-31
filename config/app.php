@@ -6,10 +6,14 @@ return [
     'name' => env('APP_NAME', 'NONOX Ekonomisystem'),
 
     /*
-    | The version written into exported files, such as SIE #PROGRAM.
+    | Major and minor version. The build number from nonox:build-info is
+    | appended (0.9.117) and written into exported files, such as SIE #PROGRAM.
+    | The stage is shown next to it while it is set.
     */
 
-    'version' => '0.1.0',
+    'version' => '0.9',
+
+    'stage' => env('NONOX_STAGE', 'Öppen beta'),
 
     /*
     | The public landing page at "/" for visitors who are not signed in. Turn
@@ -23,6 +27,7 @@ return [
         // The installation is the service hosted by the company above: new companies accept its terms and data processing agreement.
         'hosted' => (bool) env('NONOX_HOSTED', false),
         'github_url' => env('NONOX_GITHUB_URL'),
+        'github_repository' => env('NONOX_GITHUB_REPOSITORY', 'STAFE-GROUP-AB/OSS'),
         'migration_guide_url' => env('NONOX_MIGRATION_GUIDE_URL'),
         'docs_url' => env('NONOX_DOCS_URL'),
         'api_url' => env('NONOX_API_DOCS_URL'),

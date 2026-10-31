@@ -117,7 +117,7 @@
 
         {{ $slot }}
 
-        <footer>Fri programvara under AGPL-3.0. Din data stannar hos dig.</footer>
+        <footer>Fri programvara under AGPL-3.0. Din data stannar hos dig.<br><span style="font-variant-numeric:tabular-nums">NONOX {{ App\Support\Build\BuildInfo::line() }}</span></footer>
     </div>
 
     <x-ui.toaster />

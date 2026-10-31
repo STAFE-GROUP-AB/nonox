@@ -39,6 +39,9 @@
             <main>
                 {{ $slot }}
             </main>
+
+            {{-- For support: which version and build the user is on. --}}
+            <footer class="px-4 py-8 text-xs tabular-nums text-gray-500 sm:px-6 lg:px-10">NONOX {{ App\Support\Build\BuildInfo::line() }}</footer>
         </div>
 
         @stack('modals')

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support\Landing;
 
+use App\Support\Build\BuildInfo;
+
 /**
  * The content of the public landing page (resources/views/start/landing).
  * Links that differ between installations come from config('app.landing');
@@ -99,7 +101,7 @@ final class LandingPage
         $github = $config['github_url'] ?? 'https://github.com/STAFE-GROUP-AB/OSS';
 
         return [
-            'version' => (string) config('app.version'),
+            'version' => BuildInfo::version(),
             'github' => $github,
             'flytt' => $config['migration_guide_url'] ?? route('migrationGuide'),
             'docs' => $config['docs_url'] ?? "{$github}/tree/main/docs",
