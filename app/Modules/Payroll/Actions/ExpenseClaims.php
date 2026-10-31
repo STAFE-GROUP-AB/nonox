@@ -188,6 +188,10 @@ class ExpenseClaims
             $employee = Employee::query()->where('user_id', $user->id)->first()
                 ?? throw ValidationException::withMessages(['amount' => __('Ditt konto är inte kopplat till någon anställd. Be din arbetsgivare koppla det.')]);
 
+            if (! $employee->isEmployedToday()) {
+                throw ValidationException::withMessages(['amount' => __('Din anställning har upphört, så du kan inte skicka in något här längre. Kontakta din tidigare arbetsgivare.')]);
+            }
+
             $extension = strtolower($receipt->getClientOriginalExtension());
             $extension = in_array($extension, self::RECEIPT_TYPES, true) ? $extension : 'jpg';
             $path = (string) $receipt->storeAs("expense-receipts/{$company->id}", basename('kvitto-'.time().'-'.uniqid().'.'.$extension), AttachToVoucher::DISK);

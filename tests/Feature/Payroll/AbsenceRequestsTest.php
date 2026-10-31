@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Payroll\Actions\AbsenceRequests;
+use App\Modules\Payroll\Actions\EndEmployment;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\AbsenceRequestList;
 use App\Modules\Payroll\Livewire\MyAbsence;
@@ -119,4 +120,15 @@ it('shows the number of open requests in the payroll menu', function () {
     $this->requests->request($this->worker, $this->company, ['type' => 'VAB', 'date_from' => '2026-06-02', 'date_to' => '2026-06-02']);
 
     $this->actingAs($this->owner)->get(route('payroll.requests'))->assertOk()->assertSee('Ansökningar (1)');
+});
+
+it('stops an employee whose employment has ended from applying', function () {
+    app(EndEmployment::class)($this->owner, $this->company, $this->anna, '2026-06-30', '');
+
+    expect($this->requests->request($this->worker, $this->company, ['type' => 'VACATION', 'date_from' => '2026-06-15', 'date_to' => '2026-06-16']))->toBeInstanceOf(Absence::class);
+
+    $this->travelTo(CarbonImmutable::parse('2026-07-02 10:00:00'));
+
+    expect(fn () => $this->requests->request($this->worker, $this->company, ['type' => 'VACATION', 'date_from' => '2026-07-15', 'date_to' => '2026-07-16']))
+        ->toThrow(ValidationException::class, 'Din anställning har upphört');
 });

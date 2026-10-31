@@ -8,6 +8,7 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Models\ArchivePackage;
 use App\Models\FiscalYear;
 use App\Support\Audit\Audit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -18,12 +19,16 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ArchivePackageController
 {
-    public function show(FiscalYear $fiscalYear, ArchivePackage $archivePackage): StreamedResponse
+    public function show(Request $request, FiscalYear $fiscalYear, ArchivePackage $archivePackage): StreamedResponse
     {
         Gate::authorize('exportArchive', $fiscalYear);
 
         abort_unless($archivePackage->fiscal_year_id === $fiscalYear->id && $archivePackage->status === ArchivePackage::DONE && $archivePackage->file_path !== null, 404);
         abort_unless(Storage::disk(AttachToVoucher::DISK)->exists($archivePackage->file_path), 404);
+
+        // A package with payslips (salaries, sick pay) only for those who may read the payroll archive.
+        $company = $fiscalYear->company;
+        abort_if(($archivePackage->contents['lon'] ?? 0) > 0 && ! ($company !== null && $request->user()?->hasTeamPermission($company, 'payroll:archive-view')), 404);
 
         Audit::record('archive.package_downloaded', $archivePackage, ['sha256' => $archivePackage->sha256]);
 

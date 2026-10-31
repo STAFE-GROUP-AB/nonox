@@ -69,6 +69,10 @@ class AbsenceRequests
             $employee = Employee::query()->where('user_id', $user->id)->first()
                 ?? throw ValidationException::withMessages(['type' => __('Ditt konto är inte kopplat till någon anställd. Be din arbetsgivare koppla det.')]);
 
+            if (! $employee->isEmployedToday()) {
+                throw ValidationException::withMessages(['type' => __('Din anställning har upphört, så du kan inte skicka in något här längre. Kontakta din tidigare arbetsgivare.')]);
+            }
+
             $absence = Absence::create([
                 'employee_id' => $employee->id,
                 'type' => $validated['type'],

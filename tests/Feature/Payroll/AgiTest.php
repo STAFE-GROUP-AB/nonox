@@ -225,3 +225,9 @@ it('shows the payroll key figures on the payroll pages', function () {
     $bookkeeper = Bookkeeping::member($this->company, 'bookkeeper');
     expect(app(PayrollKpis::class)->for($bookkeeper, $this->company))->toBe([]);
 });
+
+it('shows schema errors without the values, so no personal number reaches the screen or the log', function () {
+    $message = AgiXml::withoutValues("Element '{http://xmls.skatteverket.se/se/skatteverket/da/komponent/schema/1.1}BetalningsmottagarId': [facet 'pattern'] The value '198001011234' is not accepted by the pattern '[0-9]{12}'.");
+
+    expect($message)->toContain('BetalningsmottagarId')->not->toContain('198001011234');
+});

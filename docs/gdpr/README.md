@@ -30,3 +30,16 @@ Se avsnitt 4 i [personuppgiftsbiträdesavtalet](../juridik/personuppgiftsbitrade
 - **Spårbarhet:** behandlingshistorik som inte kan ändras.
 - **Gränssnitt:** säkerhetsrubriker på varje svar, och varje sida är låst till sitt företag.
 - **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar.
+
+## Egen drift
+
+Kör ett företag NONOX på en egen server är företaget självt personuppgiftsansvarigt för allt i systemet, och Stafe Development AB är inte personuppgiftsbiträde. Då gäller inte personuppgiftsbiträdesavtalet eller listan över underbiträden på nonox.app. Det här behöver den som driftar själv ta hand om:
+
+- **Server och plats:** välj en server inom EU/EES och teckna personuppgiftsbiträdesavtal med leverantören.
+- **E-post:** inloggningskoder och fakturor skickas via den e-posttjänst som anges i `.env`. Leverantören blir ett underbiträde.
+- **Säkerhetskopior:** kryptera dem, lagra dem inom EU/EES, och bestäm hur länge de sparas. Se lagringstiderna i [lagringstider.md](lagringstider.md).
+- **Krypteringsnyckeln** (`APP_KEY`) skyddar personnummer, bankuppgifter och sparade filer. Förvara en kopia säkert. Utan den går uppgifterna inte att läsa, inte heller i en säkerhetskopia.
+- **AI-modulen** är avstängd tills företaget slår på den med en egen nyckel. Leverantören kan finnas utanför EU/EES.
+- **Gallring:** schemalägg `php artisan schedule:run` så att `privacy:prune` körs varje natt.
+- **Uppdateringar:** installera nya versioner, eftersom de kan innehålla säkerhetsrättningar.
+

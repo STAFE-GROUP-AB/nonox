@@ -119,4 +119,12 @@ class Employee extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /** Whether an employment is still running today (none ended, or the last day not yet passed). */
+    public function isEmployedToday(): bool
+    {
+        return $this->employments()
+            ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', now()->toDateString()))
+            ->exists();
+    }
 }

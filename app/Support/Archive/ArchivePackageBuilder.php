@@ -82,7 +82,7 @@ final class ArchivePackageBuilder
                     'kundfakturor' => $this->customerInvoices($fiscalYear),
                     'leverantorsfakturor' => $this->supplierInvoices($fiscalYear),
                     'moms' => $this->vatReturns($company, $fiscalYear),
-                    'lon' => $this->payroll($fiscalYear),
+                    'lon' => $user->hasTeamPermission($company, 'payroll:archive-view') ? $this->payroll($fiscalYear) : 0,
                     'behandlingshistorik' => $this->auditLog($company, $fiscalYear),
                     'systemdokumentation' => $this->systemDocumentation(),
                 ];

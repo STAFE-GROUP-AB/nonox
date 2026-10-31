@@ -145,7 +145,7 @@ final class AgiXml
             // The schema's own metadata gives a warning about a relative namespace; only errors count.
             $errors = array_filter(libxml_get_errors(), fn (LibXMLError $error): bool => $error->level >= LIBXML_ERR_ERROR);
 
-            return array_values(array_map(fn (LibXMLError $error): string => trim($error->message)." (rad {$error->line})", $errors));
+            return array_values(array_map(fn (LibXMLError $error): string => self::withoutValues(trim($error->message))." (rad {$error->line})", $errors));
         } finally {
             libxml_clear_errors();
             libxml_use_internal_errors($previous);
@@ -204,5 +204,19 @@ final class AgiXml
         $parent->appendChild($element);
 
         return $element;
+    }
+
+    /**
+     * libxml quotes the offending value (a personal number, an amount):
+     * keep the element names and hide the values, so the message can be
+     * shown and logged without personal data.
+     */
+    public static function withoutValues(string $message): string
+    {
+        return (string) preg_replace_callback(
+            "/(Element\\s+)?'([^']*)'/",
+            fn (array $match): string => $match[1] !== '' ? $match[0] : "'…'",
+            $message,
+        );
     }
 }
