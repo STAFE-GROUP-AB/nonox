@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Accounting\AnnualReportController;
 use App\Http\Controllers\Accounting\ArchivePackageController;
 use App\Http\Controllers\Accounting\ReportCsvController;
 use App\Http\Controllers\Accounting\SieExportController;
@@ -123,6 +124,9 @@ Route::middleware([
         Route::view('/periodiseringar', 'accounting.accruals')->name('accounting.accruals');
         Route::view('/bankavstamning', 'accounting.bank-reconciliation')->name('accounting.bankReconciliation');
         Route::view('/bokslut', 'accounting.closing')->name('accounting.closing');
+        Route::view('/arsredovisning', 'accounting.annual-report')->name('accounting.annualReport');
+        Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->name('accounting.annualReport.show');
+        Route::get('/arsredovisning/{fiscalYear}/pdf', [AnnualReportController::class, 'pdf'])->name('accounting.annualReport.pdf');
         Route::get('/importera-sie', [SieImportController::class, 'index'])->name('accounting.sieImports.index');
         Route::post('/importera-sie', [SieImportController::class, 'store'])->name('accounting.sieImports.store');
         Route::get('/importera-sie/{sieImport}', [SieImportController::class, 'show'])

@@ -412,6 +412,30 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   `year_end_entries`, som databasen inte låter ändra eller ta bort.
 - Bokslutet kräver behörigheten att hantera räkenskapsår.
 
+## 5a6. Årsredovisning (K2)
+
+- Under Bokföring → Årsredovisning upprättas årsredovisningen för aktiebolag
+  och ekonomiska föreningar enligt K2 (BFNAR 2016:10). Siffrorna läses ur
+  bokföringen varje gång rapporten visas; det som sparas
+  (`annual_reports`) är texterna: allmänt om verksamheten, väsentliga
+  händelser, föreslagen utdelning, medelantal anställda, ort, datum och
+  vilka som skriver under.
+- Rapporten innehåller förvaltningsberättelse med flerårsöversikt
+  (nettoomsättning, resultat efter finansiella poster och soliditet för upp
+  till fyra år), förändringar i eget kapital och förslag till
+  resultatdisposition; resultaträkning (kostnadsslagsindelad) och
+  balansräkning med föregående år; noter om redovisningsprinciper,
+  medelantal anställda och anläggningstillgångar; samt underskrifter.
+- Raderna bildas av BAS-kontointervall (`K2Schedule`). Årets resultat i
+  balansräkningen är resultaträkningens resultat oavsett om det är bokat på
+  2099; ett tidigare resultat som inte disponerats visas som balanserat
+  resultat. Saknas föregående år i systemet används årets ingående balanser
+  som jämförelse för balansräkningen.
+- Rapporten visas som sida och laddas ner som PDF. Revisionsberättelse och
+  fastställelseintyg läggs till utanför systemet. Digital inlämning till
+  Bolagsverket (iXBRL) finns ännu inte.
+- Kräver behörigheten att hantera räkenskapsår.
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -741,6 +765,12 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   följer planen. Moms vid försäljning av inventarier och om avyttringsmånaden
   ska skrivas av lämnas till användaren. Kontot 7835 för avskrivningar på
   datorer ska kontrolleras mot gällande BAS.
+- Årsredovisning: radindelningen och BAS-intervallen (särskilt 4000–4999 och
+  8000–8799) ska kontrolleras mot ÅRL bilaga 2–3, BFNAR 2016:10 och den
+  officiella BAS–K2-kopplingen. Notuppsättningen (bara redovisningsprinciper,
+  anställda och anläggningstillgångar), standardtexterna, antal år i
+  flerårsöversikten och skattesatsen 20,6 % i soliditetsberäkningen ska
+  kontrolleras. Ekonomiska föreningar får samma uppställning som aktiebolag.
 - Bokslut: skatten räknas inte fram av systemet. Sidan visar 20,6 % av
   resultatet före skatt som jämförelse; skattesatsen och skillnaden mellan
   bokfört och skattemässigt resultat (INK2) ska kontrolleras. Kontona 2512
@@ -788,3 +818,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.24 | 2026-11-01 | Periodiseringar: förutbetalda och upplupna kostnader och intäkter, med månadsvis fördelning och återföring. |
 | 0.25 | 2026-11-01 | Bankavstämning per konto mot kontoutdraget, med poster som förs vidare tills de når banken. |
 | 0.26 | 2026-11-01 | Bokslut: checklista, skatt och årets resultat, stängning av året och resultatdisposition. |
+| 0.27 | 2026-11-01 | Årsredovisning enligt K2 som sida och PDF, med siffror ur bokföringen. |

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Account;
 use App\Models\Accrual;
 use App\Models\AccrualPosting;
+use App\Models\AnnualReport;
 use App\Models\ArchivePackage;
 use App\Models\Article;
 use App\Models\BankFileImport;
@@ -110,6 +111,7 @@ const COMPANY_SCOPED_MODELS = [
     ClientProfile::class => 'clientProfileAttributes',
     FixedAsset::class => 'fixedAssetAttributes',
     Accrual::class => 'accrualAttributes',
+    AnnualReport::class => 'annualReportAttributes',
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
@@ -286,6 +288,16 @@ function yearEndEntryAttributes(): array
         'type' => 'TAX',
         'amount_ore' => 1_648_000,
         'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function annualReportAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'business_description' => 'Hemlig verksamhet',
+        'signatories' => [],
+        'updated_by' => User::factory()->create()->id,
     ];
 }
 
