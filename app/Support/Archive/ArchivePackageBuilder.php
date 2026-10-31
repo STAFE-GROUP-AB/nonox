@@ -27,6 +27,7 @@ use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\PayslipPdf;
+use App\Support\Csv;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Dompdf\Dompdf;
@@ -340,7 +341,7 @@ final class ArchivePackageBuilder
                 $payload = (string) json_encode($entry->payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
                 $created = $entry->created_at->setTimezone('Europe/Stockholm')->format('Y-m-d H:i:s');
 
-                fputcsv($csv, [$created, (string) $user?->name, (string) $user?->email, $entry->action, class_basename((string) $entry->subject_type), (string) $entry->subject_id, $payload, (string) $entry->getAttribute('ip_address')], ';', '"', '');
+                fputcsv($csv, Csv::row([$created, (string) $user?->name, (string) $user?->email, $entry->action, class_basename((string) $entry->subject_type), (string) $entry->subject_id, $payload, (string) $entry->getAttribute('ip_address')]), ';', '"', '');
                 fwrite($json, ($first ? '' : ',')."\n".json_encode([
                     'id' => $entry->id,
                     'created_at' => $created,
@@ -448,7 +449,7 @@ final class ArchivePackageBuilder
         fwrite($out, "\xEF\xBB\xBF");
 
         foreach ($rows as $row) {
-            fputcsv($out, $row, ';', '"', '');
+            fputcsv($out, Csv::row($row), ';', '"', '');
         }
 
         fclose($out);

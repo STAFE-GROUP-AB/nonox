@@ -52,6 +52,15 @@ class SalaryPaymentFile
             $transfers = [];
             $missing = [];
 
+            // A changed salary account must be confirmed by a second person before any money is sent.
+            $unconfirmed = $payslips->filter(fn (Payslip $payslip): bool => (bool) $payslip->employee?->hasPendingBankChange());
+
+            if ($unconfirmed->isNotEmpty()) {
+                throw ValidationException::withMessages(['run' => [__('Bankkontot för :names är ändrat men inte bekräftat. Låt någon annan bekräfta det under Lön → Anställda först.', [
+                    'names' => $unconfirmed->map(fn (Payslip $payslip): string => trim("{$payslip->employee?->first_name} {$payslip->employee?->last_name}"))->implode(', '),
+                ])]]);
+            }
+
             foreach ($payslips as $payslip) {
                 /** @var Employee $employee */
                 $employee = $payslip->employee;

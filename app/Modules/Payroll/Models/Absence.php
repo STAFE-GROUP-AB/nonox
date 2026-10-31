@@ -54,6 +54,7 @@ class Absence extends Model
     protected function casts(): array
     {
         return [
+            'rejection_reason' => 'encrypted',
             'date_from' => 'immutable_date',
             'date_to' => 'immutable_date',
             'extent_bp' => 'integer',

@@ -2906,5 +2906,16 @@
     "Logga ut från alla andra enheter, till exempel en borttappad telefon.": "Sign out of all other devices, for example a lost phone.",
     "En inloggning slutar gälla efter :hours timmar, och tidigare om den inte används på en stund. Den här enheten fortsätter vara inloggad.": "A sign-in expires after :hours hours, and earlier if it is not used for a while. This device stays signed in.",
     "Logga ut från alla andra enheter?": "Sign out of all other devices?",
-    "Logga ut från andra enheter": "Sign out of other devices"
+    "Logga ut från andra enheter": "Sign out of other devices",
+    "Ny ansökan från :name": "New request from :name",
+    "Det nya bankkontot för :name är bekräftat.": "The new bank account for :name is confirmed.",
+    "Ändringen av bankkontot är borttagen.": "The bank account change has been withdrawn.",
+    "Det finns inget nytt bankkonto att bekräfta.": "There is no new bank account to confirm.",
+    "Någon annan som hanterar personal måste bekräfta det nya kontot.": "Someone else who manages staff must confirm the new account.",
+    "Bankkontot för :names är ändrat men inte bekräftat. Låt någon annan bekräfta det under Lön → Anställda först.": "The bank account for :names has changed but is not confirmed. Have someone else confirm it under Payroll → Employees first.",
+    "Svara under Lön → Ansökningar i :company. Vad ansökan gäller ser du där.": "Answer under Payroll → Requests in :company. You see there what the request is about.",
+    "tomt behåller": "empty keeps",
+    "Nytt bankkonto ****:last väntar på bekräftelse. Ingen lönefil kan skapas förrän någon annan som hanterar personal har bekräftat det.": "New bank account ****:last is waiting for confirmation. No salary payment file can be made until someone else who manages staff has confirmed it.",
+    "Bekräfta det nya bankkontot för lön?": "Confirm the new salary bank account?",
+    "Ta bort ändringen": "Withdraw the change"
 }

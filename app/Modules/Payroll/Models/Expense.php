@@ -72,6 +72,7 @@ class Expense extends Model
     protected function casts(): array
     {
         return [
+            'rejection_reason' => 'encrypted',
             'date' => 'immutable_date',
             'amount_ore' => MoneyCast::class,
             'vat_ore' => MoneyCast::class,

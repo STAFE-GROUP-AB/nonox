@@ -13,13 +13,22 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     <x-ui.field for="employee_first_name" :label="__('Förnamn')" error="first_name"><input id="employee_first_name" type="text" class="{{ $input }} mt-1" wire:model="form.first_name"></x-ui.field>
                     <x-ui.field for="employee_last_name" :label="__('Efternamn')" error="last_name"><input id="employee_last_name" type="text" class="{{ $input }} mt-1" wire:model="form.last_name"></x-ui.field>
-                    <x-ui.field for="employee_personal_number" :label="__('Personnummer')" error="personal_number" :hint="__('Tolv siffror, ÅÅÅÅMMDD-NNNN. Sparas krypterat.')"><input id="employee_personal_number" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.personal_number" autocomplete="off"></x-ui.field>
+                    <x-ui.field for="employee_personal_number" :label="__('Personnummer')" error="personal_number" :hint="__('Tolv siffror, ÅÅÅÅMMDD-NNNN. Sparas krypterat.')"><input id="employee_personal_number" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.personal_number" autocomplete="off" @if($editing) placeholder="{{ PersonalNumber::masked($editing->personal_number) }} ({{ __('tomt behåller') }})" @endif></x-ui.field>
                     <x-ui.field for="employee_email" :label="__('E-post')" error="email"><input id="employee_email" type="email" class="{{ $input }} mt-1" wire:model="form.email"></x-ui.field>
                     <x-ui.field for="employee_address" :label="__('Adress')" error="address" class="sm:col-span-2"><input id="employee_address" type="text" class="{{ $input }} mt-1" wire:model="form.address"></x-ui.field>
                     <x-ui.field for="employee_postal_code" :label="__('Postnummer')" error="postal_code"><input id="employee_postal_code" type="text" class="{{ $input }} mt-1" wire:model="form.postal_code"></x-ui.field>
                     <x-ui.field for="employee_city" :label="__('Ort')" error="city"><input id="employee_city" type="text" class="{{ $input }} mt-1" wire:model="form.city"></x-ui.field>
-                    <x-ui.field for="employee_bank_clearing" :label="__('Clearingnummer')" error="bank_clearing"><input id="employee_bank_clearing" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.bank_clearing" autocomplete="off"></x-ui.field>
-                    <x-ui.field for="employee_bank_account" :label="__('Kontonummer för lön')" error="bank_account" :hint="__('Sparas krypterat.')"><input id="employee_bank_account" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.bank_account" autocomplete="off"></x-ui.field>
+                    <x-ui.field for="employee_bank_clearing" :label="__('Clearingnummer')" error="bank_clearing"><input id="employee_bank_clearing" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.bank_clearing" autocomplete="off" @if($editing?->bank_clearing) placeholder="{{ __('tomt behåller') }}" @endif></x-ui.field>
+                    <x-ui.field for="employee_bank_account" :label="__('Kontonummer för lön')" error="bank_account" :hint="__('Sparas krypterat.')"><input id="employee_bank_account" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.bank_account" autocomplete="off" @if($editing?->bank_account) placeholder="****{{ substr($editing->bank_account, -4) }} ({{ __('tomt behåller') }})" @endif></x-ui.field>
+                    @if($editing?->hasPendingBankChange())
+                        <div class="rounded-xl bg-amber-50 p-4 text-sm text-amber-900 sm:col-span-2">
+                            {{ __('Nytt bankkonto ****:last väntar på bekräftelse. Ingen lönefil kan skapas förrän någon annan som hanterar personal har bekräftat det.', ['last' => substr((string) ($editing->pending_bank['bank_account'] ?? ''), -4)]) }}
+                            <div class="mt-3 flex gap-4">
+                                <button type="button" class="font-semibold underline" wire:click="confirmBank({{ $editing->id }})" wire:confirm="{{ __('Bekräfta det nya bankkontot för lön?') }}">{{ __('Bekräfta') }}</button>
+                                <button type="button" class="underline" wire:click="withdrawBank({{ $editing->id }})">{{ __('Ta bort ändringen') }}</button>
+                            </div>
+                        </div>
+                    @endif
                 </div>
 
                 <div class="grid gap-4 sm:grid-cols-3">

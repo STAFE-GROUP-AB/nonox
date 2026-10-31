@@ -1,7 +1,7 @@
 @component('mail::message')
-# {{ __(':name: :what', ['name' => $employeeName, 'what' => $what]) }}
+# {{ __('Ny ansökan från :name', ['name' => $employeeName]) }}
 
-{{ __(':dates. Svara under Lön → Ansökningar i :company; frånvaron kommer med i lönen först när den är godkänd.', ['dates' => $dates, 'company' => $company]) }}
+{{ __('Svara under Lön → Ansökningar i :company. Vad ansökan gäller ser du där.', ['company' => $company]) }}
 
 @component('mail::button', ['url' => $url])
 {{ __('Öppna ansökningarna') }}

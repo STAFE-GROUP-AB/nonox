@@ -20,7 +20,8 @@ class AbsenceRequestedMail extends Mailable
 
     public function envelope(): Envelope
     {
-        return new Envelope(subject: __(':name: :what', ['name' => $this->employeeName, 'what' => $this->what]));
+        // Neutral on purpose: the kind of absence can be health data and is shown only inside NONOX.
+        return new Envelope(subject: __('Ny ansökan från :name', ['name' => $this->employeeName]));
     }
 
     public function content(): Content

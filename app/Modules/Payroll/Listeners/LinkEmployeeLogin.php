@@ -11,6 +11,7 @@ use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Support\Facades\DB;
 use Laravel\Jetstream\Events\TeamMemberAdded;
 
 /**
@@ -28,6 +29,12 @@ class LinkEmployeeLogin
         $user = $event->user;
 
         if (! $company instanceof Company || ! $user instanceof User || ! $this->modules->isEnabled(PayrollModule::KEY, $company)) {
+            return;
+        }
+
+        // Only a member added as an employee is linked by e-mail: a staff member whose address happens
+        // to match an employee card would otherwise get that employee's payslips.
+        if (DB::table('team_user')->where('team_id', $company->id)->where('user_id', $user->id)->value('role') !== 'employee') {
             return;
         }
 

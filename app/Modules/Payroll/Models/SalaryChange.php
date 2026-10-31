@@ -43,6 +43,7 @@ class SalaryChange extends Model
     protected function casts(): array
     {
         return [
+            'reason' => 'encrypted',
             'valid_from' => 'immutable_date',
             'monthly_salary_ore' => MoneyCast::class,
             'hourly_rate_ore' => MoneyCast::class,

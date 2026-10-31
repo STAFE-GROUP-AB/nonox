@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\ChangeSalary;
+use App\Modules\Payroll\Actions\ConfirmBankChange;
 use App\Modules\Payroll\Actions\EndEmployment;
 use App\Modules\Payroll\Actions\InviteEmployeeToPortal;
 use App\Modules\Payroll\Actions\SaveEmployee;
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
@@ -39,6 +41,7 @@ class Employees extends Component
 
     public bool $showForm = false;
 
+    #[Locked]
     public ?int $editingId = null;
 
     /** @var array<string, string|bool> */
@@ -76,7 +79,9 @@ class Employees extends Component
 
         $this->editingId = $employee->id;
         $this->form = array_map(fn (mixed $value): string => (string) $value, [
-            ...$employee->only(['first_name', 'last_name', 'personal_number', 'email', 'phone', 'address', 'postal_code', 'city', 'bank_clearing', 'bank_account', 'tax_residence', 'tax_table', 'tax_column', 'user_id']),
+            // Personal number and bank details never go into the page state; empty means "keep".
+            ...$employee->only(['first_name', 'last_name', 'email', 'phone', 'address', 'postal_code', 'city', 'tax_residence', 'tax_table', 'tax_column', 'user_id']),
+            'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '',
             'start_date' => $employment?->start_date->toDateString(),
             'employment_type' => $employment === null ? 'TILLSVIDARE' : $employment->employment_type,
             'salary_form' => $employment === null ? 'MONTHLY' : $employment->salary_form,
@@ -129,6 +134,22 @@ class Employees extends Component
         }
 
         $this->toast(__('Ny lön för :name från :date är sparad. Månader som redan är utbetalda rättas med retroaktiv lön i nästa lönekörning.', ['name' => $employee->first_name, 'date' => $salary->valid_from->toDateString()]));
+    }
+
+    public function confirmBank(int $employeeId, ConfirmBankChange $confirm): void
+    {
+        try {
+            $employee = $confirm->confirm($this->user(), $this->company(), Employee::query()->findOrFail($employeeId));
+            $this->toast(__('Det nya bankkontot för :name är bekräftat.', ['name' => $employee->first_name]));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+        }
+    }
+
+    public function withdrawBank(int $employeeId, ConfirmBankChange $confirm): void
+    {
+        $confirm->withdraw($this->user(), $this->company(), Employee::query()->findOrFail($employeeId));
+        $this->toast(__('Ändringen av bankkontot är borttagen.'));
     }
 
     public function save(SaveEmployee $save): void
@@ -190,6 +211,7 @@ class Employees extends Component
             'employees' => $employees,
             'vacation' => $this->vacation($employees),
             'canManage' => Gate::allows('manage', [Employee::class, $this->company()]),
+            'editing' => $this->editingId === null ? null : Employee::query()->find($this->editingId),
             'members' => $this->showForm ? $this->company()->allUsers()->sortBy('name') : collect(),
             'pensionPlans' => PensionPlan::query()->orderBy('name')->get(),
             'endedOn' => $this->endedOn(),

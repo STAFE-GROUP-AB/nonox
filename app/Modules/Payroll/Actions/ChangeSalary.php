@@ -85,7 +85,8 @@ class ChangeSalary
 
             $employment->forceFill(['monthly_salary_ore' => ContextBuilder::salaryAt($employment, CarbonImmutable::today()->startOfMonth())])->save();
 
-            Audit::record('payroll.salary_changed', $employee, ['valid_from' => $date->toDateString(), 'monthly_salary_ore' => $amount->ore], $company, $user);
+            // The amount stays in the salary history; the permanent audit log only records that it changed.
+            Audit::record('payroll.salary_changed', $employee, ['valid_from' => $date->toDateString()], $company, $user);
 
             return $change;
         }));

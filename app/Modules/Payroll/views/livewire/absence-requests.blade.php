@@ -12,9 +12,9 @@
                     <li class="space-y-3 py-4" wire:key="pending-{{ $absence->id }}">
                         <div class="flex flex-wrap items-center gap-4">
                             <span class="min-w-0 flex-1">
-                                <span class="block font-medium text-gray-900">{{ $absence->employee?->first_name }} {{ $absence->employee?->last_name }} · {{ $labels[$absence->type] ?? $absence->type }}</span>
+                                <span class="block font-medium text-gray-900">{{ $absence->employee?->first_name }} {{ $absence->employee?->last_name }} · {{ $sensitive ? ($labels[$absence->type] ?? $absence->type) : __('Frånvaro') }}</span>
                                 <span class="block text-sm text-gray-600 tabular-nums">{{ $absence->date_from->toDateString() }} – {{ $absence->date_to->toDateString() }}</span>
-                                @if($absence->note)<span class="block text-sm text-gray-700">”{{ $absence->note }}”</span>@endif
+                                @if($sensitive && $absence->note)<span class="block text-sm text-gray-700">”{{ $absence->note }}”</span>@endif
                             </span>
                             <label class="text-sm text-gray-600">{{ __('Timmar per dag') }}
                                 <input type="text" inputmode="decimal" class="{{ $input }} mt-1 w-24" wire:model="hours.{{ $absence->id }}">
@@ -106,7 +106,7 @@
             <ul class="divide-y divide-gray-100 text-sm">
                 @foreach($decided as $absence)
                     <li class="flex flex-wrap items-center gap-4 py-2">
-                        <span class="flex-1">{{ $absence->employee?->first_name }} {{ $absence->employee?->last_name }} · {{ $labels[$absence->type] ?? $absence->type }} · <span class="tabular-nums">{{ $absence->date_from->toDateString() }} – {{ $absence->date_to->toDateString() }}</span></span>
+                        <span class="flex-1">{{ $absence->employee?->first_name }} {{ $absence->employee?->last_name }} · {{ $sensitive ? ($labels[$absence->type] ?? $absence->type) : __('Frånvaro') }} · <span class="tabular-nums">{{ $absence->date_from->toDateString() }} – {{ $absence->date_to->toDateString() }}</span></span>
                         <span class="text-gray-600">{{ $absence->status === 'APPROVED' ? __('Godkänd') : __('Avslagen') }}</span>
                     </li>
                 @endforeach

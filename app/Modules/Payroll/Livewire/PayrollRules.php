@@ -14,6 +14,7 @@ use App\Modules\Payroll\Models\PayrollRuleVersion;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -25,6 +26,7 @@ class PayrollRules extends Component
 {
     use ShowsToasts;
 
+    #[Locked]
     public ?int $checking = null;
 
     public bool $confirmed = false;

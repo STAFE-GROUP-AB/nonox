@@ -14,6 +14,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Support\Audit\Audit;
+use App\Support\Csv;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -41,6 +42,8 @@ class EmployerCertificateController
         $company = Company::query()->findOrFail($employee->company_id);
 
         abort_unless(Gate::forUser($user)->allows('manage', [Employee::class, $company]), 404);
+        // Absence days by type include sick leave and parental leave (health and family data).
+        abort_unless(Gate::forUser($user)->allows('viewSensitive', $employee), 403);
 
         $employment = Employment::query()->where('employee_id', $employee->id)->latest('start_date')->firstOrFail();
         $last = ($employment->end_date ?? CarbonImmutable::today())->startOfMonth();
@@ -67,15 +70,15 @@ class EmployerCertificateController
             }
 
             fwrite($out, "\u{FEFF}");
-            fputcsv($out, [__('Anställd'), "{$employee->first_name} {$employee->last_name}"], ';');
-            fputcsv($out, [__('Anställd från'), $employment->start_date->toDateString()], ';');
-            fputcsv($out, [__('Anställd till'), $employment->end_date?->toDateString() ?? ''], ';');
-            fputcsv($out, [__('Befattning'), (string) $employment->position_title], ';');
-            fputcsv($out, [__('Anställningsform'), $employment->employment_type], ';');
-            fputcsv($out, [__('Sysselsättningsgrad, %'), (string) intdiv($employment->employment_rate_bp, 100)], ';');
-            fputcsv($out, [__('Timmar per vecka'), (string) $employment->weekly_hours], ';');
-            fputcsv($out, [], ';');
-            fputcsv($out, [__('Månad'), __('Bruttolön, kr'), __('Varav semesterersättning, kr'), ...array_map(fn (string $type): string => __('Frånvarodagar :type', ['type' => $type]), self::ABSENCE_TYPES)], ';');
+            fputcsv($out, Csv::row([__('Anställd'), "{$employee->first_name} {$employee->last_name}"]), ';');
+            fputcsv($out, Csv::row([__('Anställd från'), $employment->start_date->toDateString()]), ';');
+            fputcsv($out, Csv::row([__('Anställd till'), $employment->end_date?->toDateString() ?? '']), ';');
+            fputcsv($out, Csv::row([__('Befattning'), (string) $employment->position_title]), ';');
+            fputcsv($out, Csv::row([__('Anställningsform'), $employment->employment_type]), ';');
+            fputcsv($out, Csv::row([__('Sysselsättningsgrad, %'), (string) intdiv($employment->employment_rate_bp, 100)]), ';');
+            fputcsv($out, Csv::row([__('Timmar per vecka'), (string) $employment->weekly_hours]), ';');
+            fputcsv($out, Csv::row([]), ';');
+            fputcsv($out, Csv::row([__('Månad'), __('Bruttolön, kr'), __('Varav semesterersättning, kr'), ...array_map(fn (string $type): string => __('Frånvarodagar :type', ['type' => $type]), self::ABSENCE_TYPES)]), ';');
 
             for ($month = $first; $month->lessThanOrEqualTo($last); $month = $month->addMonth()) {
                 $period = $month->format('Y-m');
@@ -94,7 +97,7 @@ class EmployerCertificateController
                     return $count;
                 }, self::ABSENCE_TYPES);
 
-                fputcsv($out, [$period, number_format($gross / 100, 2, ',', ''), number_format($payout / 100, 2, ',', ''), ...$days], ';');
+                fputcsv($out, Csv::row([$period, number_format($gross / 100, 2, ',', ''), number_format($payout / 100, 2, ',', ''), ...$days]), ';');
             }
 
             fclose($out);

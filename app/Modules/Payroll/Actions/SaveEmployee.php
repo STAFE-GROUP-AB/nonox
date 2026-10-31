@@ -45,6 +45,16 @@ class SaveEmployee
         app(ModuleManager::class)->ensureEnabled(PayrollModule::KEY, $company);
         Gate::forUser($user)->authorize('manage', [Employee::class, $company]);
 
+        // The form never receives the stored personal number or bank details (they stay out of the
+        // browser); an empty field when editing means "keep what is saved".
+        if ($employee !== null) {
+            foreach (['personal_number', 'bank_clearing', 'bank_account'] as $field) {
+                if (blank($input[$field] ?? null)) {
+                    $input[$field] = (string) $employee->{$field};
+                }
+            }
+        }
+
         $validated = Validator::make($input, [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -129,13 +139,12 @@ class SaveEmployee
                 'address' => $validated['address'] ?? null,
                 'postal_code' => $validated['postal_code'] ?? null,
                 'city' => $validated['city'] ?? null,
-                'bank_clearing' => $validated['bank_clearing'] ?? null,
-                'bank_account' => $validated['bank_account'] ?? null,
                 'tax_residence' => $validated['tax_residence'],
                 'tax_table' => $validated['tax_table'] ?? null,
                 'tax_column' => $validated['tax_column'] ?? null,
                 'user_id' => $linkedUserId,
             ]);
+            $bankRequested = $this->setBankAccount($user, $employee, $isNew, $validated['bank_clearing'] ?? null, $validated['bank_account'] ?? null);
             $changed = array_keys(array_diff_key($employee->getDirty(), array_flip(self::SENSITIVE)));
             $sensitiveChanged = array_values(array_intersect(array_keys($employee->getDirty()), self::SENSITIVE));
             $employee->save();
@@ -175,7 +184,49 @@ class SaveEmployee
                 'sensitive_changed' => $sensitiveChanged,
             ], $company, $user);
 
+            if ($bankRequested !== null) {
+                Audit::record('payroll.bank_change_requested', $employee, $bankRequested, $company, $user);
+            }
+
             return $employee;
         }));
+    }
+
+    /**
+     * A new employee's salary account is saved at once. A changed account
+     * on an existing employee waits for a second person to confirm it
+     * (ConfirmBankChange), so nobody alone can redirect a salary; the
+     * payment file is refused meanwhile. Returns the masked change for the
+     * audit log, or null.
+     *
+     * @return array{old: string, new: string}|null
+     */
+    private function setBankAccount(User $user, Employee $employee, bool $isNew, ?string $clearing, ?string $account): ?array
+    {
+        $clearing = blank($clearing) ? null : (string) $clearing;
+        $account = blank($account) ? null : (string) $account;
+
+        if ($isNew || $employee->bank_account === null) {
+            $employee->fill(['bank_clearing' => $clearing, 'bank_account' => $account]);
+
+            return null;
+        }
+
+        if ($clearing === $employee->bank_clearing && $account === $employee->bank_account) {
+            return null;
+        }
+
+        $employee->forceFill([
+            'pending_bank' => ['bank_clearing' => $clearing, 'bank_account' => $account],
+            'pending_bank_by' => $user->id,
+            'pending_bank_at' => CarbonImmutable::now(),
+        ]);
+
+        return ['old' => self::mask($employee->bank_account), 'new' => self::mask($account)];
+    }
+
+    public static function mask(?string $account): string
+    {
+        return $account === null ? '–' : '****'.substr($account, -4);
     }
 }

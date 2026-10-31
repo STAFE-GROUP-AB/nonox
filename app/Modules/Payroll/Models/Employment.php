@@ -40,6 +40,7 @@ class Employment extends Model
 
     /** @var list<string> */
     protected $fillable = [
+        'end_reason',
         'company_id',
         'employee_id',
         'start_date',
@@ -66,6 +67,7 @@ class Employment extends Model
     protected function casts(): array
     {
         return [
+            'end_reason' => 'encrypted',
             'start_date' => 'immutable_date',
             'end_date' => 'immutable_date',
             'monthly_salary_ore' => MoneyCast::class,

@@ -16,6 +16,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 /**
@@ -82,6 +83,13 @@ class PayrollMigrationPage extends Component
     {
         $this->validate(['payslipFiles' => ['required', 'array'], 'payslipFiles.*' => ['file', 'mimes:pdf', 'max:'.self::MAX_KILOBYTES]], attributes: ['payslipFiles' => __('lönebesked')]);
         $count = $move->payslips($this->user(), $this->company(), $this->payslipFiles);
+
+        foreach ($this->payslipFiles as $file) {
+            if ($file instanceof TemporaryUploadedFile) {
+                $file->delete();
+            }
+        }
+
         $this->reset('payslipFiles');
         $this->toast(__(':count lönebesked är sparade.', ['count' => $count]));
     }
@@ -110,8 +118,14 @@ class PayrollMigrationPage extends Component
 
         /** @var UploadedFile $file */
         $file = $this->{$property};
+        $contents = (string) file_get_contents($file->getRealPath());
 
-        return (string) file_get_contents($file->getRealPath());
+        // The CSV holds personal numbers and bank accounts: nothing is left in Livewire's temporary storage.
+        if ($file instanceof TemporaryUploadedFile) {
+            $file->delete();
+        }
+
+        return $contents;
     }
 
     private function user(): User

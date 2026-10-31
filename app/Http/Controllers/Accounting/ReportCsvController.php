@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Domain\Accounting\Reports\ReportFilters;
 use App\Domain\Accounting\Reports\ReportTable;
 use App\Models\User;
+use App\Support\Csv;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -39,7 +40,7 @@ class ReportCsvController
             fwrite($out, "\xEF\xBB\xBF");
 
             foreach ($rows as $row) {
-                fputcsv($out, $row, ';', '"', '');
+                fputcsv($out, Csv::row($row), ';', '"', '');
             }
 
             fclose($out);

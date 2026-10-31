@@ -30,12 +30,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $tax_table
  * @property ?int $tax_column
  * @property string $status
+ * @property ?array{bank_clearing: ?string, bank_account: ?string} $pending_bank
+ * @property ?int $pending_bank_by
+ * @property ?CarbonImmutable $pending_bank_at
  */
 class Employee extends Model
 {
     use BelongsToCompany;
 
     protected $table = 'employees';
+
+    /** Never serialised: personal number, bank details and private notes. */
+    /** @var list<string> */
+    protected $hidden = ['personal_number', 'bank_clearing', 'bank_account', 'iban', 'bic', 'emergency_contact', 'notes', 'pending_bank'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -91,7 +98,14 @@ class Employee extends Model
             'emergency_contact' => 'encrypted',
             'notes' => 'encrypted',
             'portal_invited_at' => 'immutable_datetime',
+            'pending_bank' => 'encrypted:array',
+            'pending_bank_at' => 'immutable_datetime',
         ];
+    }
+
+    public function hasPendingBankChange(): bool
+    {
+        return $this->pending_bank !== null;
     }
 
     /** @return HasMany<Employment, $this> */

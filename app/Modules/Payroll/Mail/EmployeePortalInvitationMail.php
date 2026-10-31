@@ -32,7 +32,7 @@ class EmployeePortalInvitationMail extends Mailable
             'company' => $this->invitation->team?->name,
             'firstName' => $this->firstName,
             'email' => $this->invitation->email,
-            'acceptUrl' => URL::signedRoute('team-invitations.accept', ['invitation' => $this->invitation->id]),
+            'acceptUrl' => URL::temporarySignedRoute('team-invitations.accept', now()->addDays(14), ['invitation' => $this->invitation->id]),
             'portalUrl' => route('payroll.portal.home'),
             'minutes' => (int) config('auth.login_codes.ttl_minutes'),
         ]);

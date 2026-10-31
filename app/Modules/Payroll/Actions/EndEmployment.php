@@ -59,10 +59,10 @@ class EndEmployment
                 throw ValidationException::withMessages(['end_date' => [__('Lönen för :period är redan attesterad. Den sista dagen kan inte ligga i eller före en attesterad månad.', ['period' => $fixed->period])]]);
             }
 
-            $employment->forceFill(['end_date' => $day])->save();
+            $employment->forceFill(['end_date' => $day, 'end_reason' => blank($reason) ? null : mb_substr(trim((string) $reason), 0, 2000)])->save();
             $employee->forceFill(['status' => 'TERMINATED'])->save();
 
-            Audit::record('payroll.employment_ended', $employee, ['end_date' => $day->toDateString(), 'reason' => blank($reason) ? null : mb_substr(trim((string) $reason), 0, 255)], $company, $user);
+            Audit::record('payroll.employment_ended', $employee, ['end_date' => $day->toDateString(), 'reason_given' => filled($reason)], $company, $user);
 
             return $employment;
         }));

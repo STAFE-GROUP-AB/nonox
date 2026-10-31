@@ -13,6 +13,7 @@ use App\Modules\Payroll\Actions\AbsenceRequests;
 use App\Modules\Payroll\Actions\ExpenseClaims;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Expense;
+use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -53,6 +54,21 @@ class AbsenceRequestList extends Component
     public function mount(): void
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'payroll:run'), 403);
+
+        // Reading absence causes (health data, GDPR art. 9) is logged, as PAYROLL_MODULE.md B.15 requires.
+        if ($this->seesSensitive()) {
+            $ids = Absence::query()->whereNotNull('requested_by')->whereIn('status', ['REQUESTED', 'APPROVED', 'REJECTED'])->latest('id')->limit(50)->pluck('id')->all();
+
+            if ($ids !== []) {
+                Audit::record('payroll.absences_viewed', null, ['absences' => $ids], $this->company(), $this->user());
+            }
+        }
+    }
+
+    /** Whether the user may see absence causes and notes, which can be health data. */
+    private function seesSensitive(): bool
+    {
+        return $this->user()->hasTeamPermission($this->company(), 'payroll:view-sensitive');
     }
 
     public function approve(int $absenceId, AbsenceRequests $requests): void
@@ -148,6 +164,7 @@ class AbsenceRequestList extends Component
             'aiReads' => AnalyzeDocument::readsReceiptsFor($this->company()),
             'accounts' => Account::query()->where('is_active', true)->whereBetween('number', [4000, 7999])->orderBy('number')->get(['number', 'name']),
             'pending' => $pending,
+            'sensitive' => $this->seesSensitive(),
             'decided' => Absence::query()->with('employee:id,first_name,last_name')->whereNotNull('requested_by')->whereIn('status', ['APPROVED', 'REJECTED'])->latest('decided_at')->limit(10)->get(),
         ]);
     }

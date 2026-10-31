@@ -74,7 +74,10 @@ it('exports the data for an arbetsgivarintyg', function () {
     $this->runs->calculate($this->owner, $june);
     $this->runs->approve($this->admin, $june->fresh());
 
-    $csv = $this->get(route('payroll.employees.certificate', $this->anna))->assertOk()->streamedContent();
+    // Absence days by type are sensitive: the owner without payroll:view-sensitive is refused.
+    $this->get(route('payroll.employees.certificate', $this->anna))->assertForbidden();
+
+    $csv = $this->actingAs(Bookkeeping::member($this->company, 'payroll_admin'))->get(route('payroll.employees.certificate', $this->anna))->assertOk()->streamedContent();
 
     expect($csv)->toContain('Anna Kock')
         ->and($csv)->toContain('Bruttolön')
