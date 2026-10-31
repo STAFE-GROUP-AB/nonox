@@ -1,6 +1,6 @@
 # Registerförteckning (artikel 30)
 
-Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app. Senast uppdaterad 2026-11-01.
+Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app. Senast uppdaterad 2026-11-02.
 
 ## A. Som personuppgiftsansvarig (art. 30.1)
 
@@ -15,6 +15,6 @@ Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app.
 
 | Personuppgiftsansvarig | Kategorier av behandling | Underbiträden | Tredje land | Säkerhet |
 |---|---|---|---|---|
-| Varje företag som använder NONOX | Bokföring, fakturering, leverantörsreskontra, moms, lön (inklusive frånvaro, som kan vara hälsouppgifter), arkivering | Se [underbiträden](../juridik/underbitraden.md) | Laravel Forge (serveradministration, USA, DPF); AI-leverantör endast om företaget väljer det | Se [README](README.md) |
+| Varje företag som använder NONOX | Bokföring, fakturering, leverantörsreskontra, moms, lön (inklusive frånvaro, som kan vara hälsouppgifter), personalliggare (namn, person- eller samordningsnummer, arbetsgivare för inhyrd personal, in- och utcheckningstider per lokal, frivilligt foto med samtycke, avstånd till lokalen vid mobil incheckning; rättslig förpliktelse enligt 39 kap. skatteförfarandelagen, foto på samtycke), arkivering | Se [underbiträden](../juridik/underbitraden.md) | Laravel Forge (serveradministration, USA, DPF); AI-leverantör endast om företaget väljer det | Se [README](README.md) |
 
 TODO(legal-verify): granskas av jurist; kompletteras med kategorierna per kund om förteckningen ska lämnas till IMY.

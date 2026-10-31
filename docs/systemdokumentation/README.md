@@ -809,6 +809,61 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   gjorts, med leverantör, modell och antal token, men aldrig underlagets
   innehåll ([ADR-018](../adr/ADR-018-nonox-ai.md)).
 
+## 5d. Personalliggare (modul)
+
+- Modulen `staff_ledger` slås på och av per företag under Moduler
+  ([ADR-022](../adr/ADR-022-staff-ledger.md)). Den för en elektronisk
+  personalliggare per lokal för restaurang, fordonsservice, livsmedels- och
+  tobaksgrossister, kropps- och skönhetsvård (även frisörer) och tvätterier.
+  Personalliggaren är inte räkenskapsinformation enligt bokföringslagen, men
+  den hanteras med samma skydd.
+- **Uppgifter per post:** namn, person- eller samordningsnummer (krypterat),
+  arbetsgivarens namn och organisationsnummer för inhyrd personal, lokal,
+  händelse (in eller ut), tid enligt enheten, tid då servern tog emot posten,
+  sätt (kiosk med kod, kiosk med QR-kod, mobil, manuellt, rättelse), enhet och
+  löpnummer, vem som registrerade (manuellt och rättelse) och orsak.
+  Personens uppgifter kopieras till posten, så liggaren visar vad som gällde
+  när den skrevs även om registret ändras.
+- **Oändringsbarhet:** posterna går bara att lägga till. Modellen vägrar
+  ändring och borttagning, och en trigger i databasen vägrar UPDATE, DELETE
+  och TRUNCATE. Varje post har en hashkedja per företag och lokal:
+  hash = sha256(föregående hash || postens innehåll som kanonisk JSON). Posten
+  får sitt id innan den skrivs, och lokalens rad låses under tiden, så kedjan
+  följer id-ordningen. Kedjans senaste hash sparas på lokalen.
+- **Rättelser:** ett fel rättas med en ny post som pekar på den ursprungliga:
+  "felaktig registrering" (fel person, dubbeltryck) eller "ändrad tid", alltid
+  med orsak, vem och när. En glömd utcheckning registreras manuellt av en chef
+  med orsak. Den ursprungliga posten visas alltid. Ingen checkas ut
+  automatiskt; efter ett antal timmar (förval 12) får personen och cheferna en
+  påminnelse.
+- **Kontroll:** `php artisan personalliggare:verify {företag?}` räknar om
+  varje lokals kedja och rapporterar ändrade poster, borttagna poster och en
+  kedja vars början inte stämmer med den senaste gallringen. Den körs varje
+  natt kl. 03.30 och resultatet skrivs till behandlingshistoriken och visas i
+  översikten.
+- **Kiosk utan internet:** kiosken är en installerbar webbsida. Varje in- och
+  utcheckning sparas först på enheten med enhetens tid, ett löpnummer och en
+  egen hashkedja, och skickas sedan i ordning. Servern sparar både enhetens
+  tid och mottagningstiden, tar emot sena poster, tar aldrig bort eller
+  skriver om en händelse och tar emot samma händelse bara en gång. Stor
+  skillnad i enhetens klocka, poster som skickats i efterhand, saknade
+  löpnummer och bruten kedja på enheten markeras på posten.
+- **Kod (PIN):** koden sparas aldrig, bara ett kontrollvärde (PBKDF2) som
+  kiosken kan pröva mot utan nät. Fem fel låser personen på kiosken i fem
+  minuter.
+- **Kontrollbesök:** "Skatteverket är här" visar vem som är incheckad nu och
+  liggaren för vald period med fullständiga personnummer, i appen för den som
+  har behörigheten och på kiosken med en chefs kod. Varje öppning och export
+  loggas. Export som PDF, CSV och XML (NONOX:s eget preliminära format med
+  schema, tills Skatteverket publicerat sitt), och från kiosken en ZIP-fil till
+  USB-minne byggd ur enhetens egen kopia.
+- **Gallring:** poster äldre än lagringstiden tas bort från kedjans äldsta
+  ände av `privacy:prune`. Kedjans nya början sparas på lokalen och i
+  behandlingshistoriken, så resten av kedjan kan fortfarande kontrolleras.
+- **Lön:** när lönemodulen är på kan liggaren föreslå tidrapporter. Förslaget
+  skrivs till lönens tidrapporter först när det godkänts, och liggaren ändras
+  aldrig.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -860,6 +915,13 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   skapas, och varje nedladdning loggas. Filerna går att läsa utan NONOX.
 
 ## 8. Öppna frågor (TODO legal-verify)
+
+- Personalliggare: exakt vilka uppgifter som ska registreras och hur länge
+  liggaren ska bevaras enligt 39 kap. skatteförfarandelagen och Skatteverkets
+  föreskrifter från 2027 (antaget: två år efter utgången av det kalenderår då
+  liggaren fördes); branschernas avgränsning; om en manuell registrering eller
+  rättelse behöver fler uppgifter; Skatteverkets XML-schema och API för
+  elektronisk överföring från 1 juli 2027 (TODO SPEC).
 
 - Semester: vilken metod ett kollektivavtal föreskriver för deltidsanställdas
   semesterdagar; om en semester som delas på två månader ska bedömas som en
@@ -1015,3 +1077,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.34 | 2026-11-01 | Flytt från Fortnox via API: anslutning med OAuth2 och PKCE, bokföring per år som SIE4 genom den vanliga granskningen, register, underlag och avstämning av obetalda fakturor. |
 | 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |
+| 0.37 | 2026-11-02 | Personalliggare (modul): lokaler, personal, kiosk som fungerar utan internet, personlig QR-kod, mobil incheckning med platskontroll, liggare med hashkedja och rättelser, kontrollbesök med export och förslag till tidrapport i lönen. |
