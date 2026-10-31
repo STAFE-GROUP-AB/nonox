@@ -41,6 +41,7 @@ use App\Models\SupplierPayment;
 use App\Models\SupplierPaymentBatch;
 use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
+use App\Models\VatNumberCheck;
 use App\Models\VatReport;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
@@ -117,6 +118,7 @@ const COMPANY_SCOPED_MODELS = [
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
+    VatNumberCheck::class => 'vatNumberCheckAttributes',
     AccrualPosting::class => 'accrualPostingAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
@@ -271,6 +273,16 @@ function bankReconciliationAttributes(): array
         'difference_ore' => 0,
         'outstanding_row_ids' => [],
         'reconciled_by' => User::factory()->create()->id,
+    ];
+}
+
+function vatNumberCheckAttributes(): array
+{
+    return [
+        'vat_number' => 'DE123456789',
+        'valid' => true,
+        'checked_at' => '2026-03-02 10:00:00',
+        'checked_by' => User::factory()->create()->id,
     ];
 }
 
@@ -731,7 +743,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
+const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

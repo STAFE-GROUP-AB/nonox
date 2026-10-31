@@ -53,7 +53,9 @@
                             <x-ui.field for="invoice_property" :label="__('Fastighetsbeteckning eller BRF')" error="property_designation"><input id="invoice_property" type="text" class="{{ $input }} mt-1" wire:model="propertyDesignation" placeholder="{{ __('Till exempel Uppsala Kåbo 1:23') }}"></x-ui.field>
                         @endif
                     </div>
-                    @if($foreignSale !== '')
+                    @if($foreignSale === 'EU_CONSUMER_OSS')
+                        <p class="mt-2 text-xs text-gray-500">{{ __('Raderna får momssatsen i kundens land när du sparar, och momsen bokförs på 2619 för OSS-deklarationen i stället för den svenska momsdeklarationen.') }}</p>
+                    @elseif($foreignSale !== '')
                         <p class="mt-2 text-xs text-gray-500">{{ __('Fakturan blir utan svensk moms och försäljningen bokförs på :account. Texten :text skrivs ut på fakturan.', ['account' => App\Domain\Invoicing\ForeignSale::from($foreignSale)->account(), 'text' => App\Domain\Invoicing\ForeignSale::from($foreignSale)->invoiceText()]) }}</p>
                     @endif
                     @if($taxReduction !== '')

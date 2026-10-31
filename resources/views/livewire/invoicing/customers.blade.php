@@ -25,6 +25,20 @@
                         <input id="customer_{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="{{ $input }} mt-1" wire:model="form.{{ $field }}" @if($field === 'payment_terms_days') inputmode="numeric" @endif>
                     </x-ui.field>
                 @endforeach
+                @if($editingId && filled($form['vat_number'] ?? '') && ! str_starts_with(strtoupper($form['vat_number']), 'SE'))
+                    <div class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm sm:col-span-2">
+                        @if($vatCheck)
+                            <span @class(['font-medium', 'text-gray-900' => $vatCheck->valid, 'text-accent-700' => ! $vatCheck->valid])>
+                                {{ $vatCheck->valid ? __('Giltigt i VIES') : __('Ogiltigt i VIES') }} {{ $vatCheck->vat_number }}
+                            </span>
+                            <span class="text-gray-600">{{ __('Kontrollerat :date', ['date' => $vatCheck->checked_at->setTimezone('Europe/Stockholm')->format('Y-m-d H:i')]) }}@if($vatCheck->request_identifier) · {{ __('Konsultationsnummer :id', ['id' => $vatCheck->request_identifier]) }}@endif</span>
+                            @if($vatCheck->name)<span class="w-full text-gray-600">{{ $vatCheck->name }}</span>@endif
+                        @else
+                            <span class="text-gray-600">{{ __('Numret är inte kontrollerat i EU:s register VIES.') }}</span>
+                        @endif
+                        <button type="button" class="ml-auto font-medium text-accent-600 hover:text-accent-700" wire:click="checkVatNumber" wire:loading.attr="disabled">{{ __('Kontrollera i VIES') }}</button>
+                    </div>
+                @endif
                 <x-ui.field for="customer_foreign_sale" :label="__('Försäljning utomlands')" error="foreign_sale" :hint="__('Nya fakturor till kunden blir utan svensk moms och bokförs på rätt konto.')">
                     <select id="customer_foreign_sale" class="{{ $input }} mt-1" wire:model="foreignSale">
                         <option value="">{{ __('Nej, försäljning i Sverige') }}</option>

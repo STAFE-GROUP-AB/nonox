@@ -52,6 +52,11 @@ final class VatReturn
 
             $change = $movement['debit'] - $movement['credit'];
 
+            // OSS VAT is declared in the OSS return, so it is neither in a box nor settled on 2650.
+            if ($account->number === OssRates::VAT_ACCOUNT) {
+                continue;
+            }
+
             if ($account->number >= VatBoxes::VAT_ACCOUNTS[0] && $account->number <= VatBoxes::VAT_ACCOUNTS[1] && $change !== 0) {
                 $vatAccounts[$account->number] = $change;
             }

@@ -13,4 +13,12 @@ return [
         'agi_schema_dir' => env('SKATTEVERKET_AGI_SCHEMA_DIR'),
     ],
 
+    /*
+     * The European Commission's VIES service for checking buyers' VAT
+     * numbers before a VAT-free sale within the EU.
+     */
+    'vies' => [
+        'url' => env('VIES_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api/'),
+    ],
+
 ];

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Invoicing;
 
+use App\Actions\Invoicing\CheckVatNumber;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Livewire\Concerns\ShowsToasts;
@@ -12,6 +13,7 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\NumberSeries;
 use App\Models\User;
+use App\Models\VatNumberCheck;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -96,6 +98,27 @@ class Customers extends Component
         $this->cancel();
     }
 
+    public function checkVatNumber(CheckVatNumber $check): void
+    {
+        if ($this->editingId === null) {
+            return;
+        }
+
+        $customer = Customer::query()->findOrFail($this->editingId);
+
+        if (strtoupper(trim($this->form['vat_number'] ?? '')) !== strtoupper((string) $customer->vat_number)) {
+            $this->addError('vat_number', __('Spara kunden först, så kontrolleras det sparade numret.'));
+
+            return;
+        }
+
+        $result = $check($this->user(), $this->company(), $customer);
+
+        $this->toast($result->valid
+            ? __('Momsregistreringsnumret är giltigt enligt VIES.')
+            : __('VIES känner inte igen momsregistreringsnumret.'));
+    }
+
     public function render(): View
     {
         $search = trim($this->search);
@@ -119,6 +142,8 @@ class Customers extends Component
             'year' => $year->year,
             'canManage' => $this->user()->can('create', [Customer::class, $this->company()]),
             'nextNumber' => NumberSeries::peek(NumberSeries::CUSTOMERS),
+            'vatCheck' => $this->editingId === null ? null : VatNumberCheck::query()
+                ->where('customer_id', $this->editingId)->latest('checked_at')->latest('id')->first(),
         ]);
     }
 

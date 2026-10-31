@@ -312,6 +312,23 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   momsregistreringsnummer från det landet (EL för Grekland), och företaget
   ett eget. Vid export måste kunden ha ett land utanför EU. Fakturan visar en
   text på svenska och engelska och båda momsregistreringsnumren.
+- **Trepartshandel som mellanman:** konto 3107, ruta 38, ingen moms; kräver
+  köparens momsregistreringsnummer som övrig EU-försäljning.
+- **Privatperson i annat EU-land (OSS):** fakturan får köparlandets
+  normalskattesats (`OssRates`, per land och från-datum), försäljningen
+  bokförs på 3106 och momsen på 2619. Konto 2619 räknas inte in i någon ruta
+  och flyttas inte till 2650 vid momsavräkningen, eftersom momsen redovisas i
+  OSS-deklarationen. Kräver inget momsregistreringsnummer men ett EU-land.
+- **VIES:** ett kundnummer kan kontrolleras mot EU:s register VIES från
+  kundformuläret. Svaret, namnet och konsultationsnumret sparas i
+  `vat_number_checks` (append-only, modell och databastrigger). Var senaste
+  kontrollen av numret ogiltig går en momsfri EU-faktura inte att utfärda.
+- **EU-rapporter** (`/eu-rapporter`): periodisk sammanställning per månad
+  eller kvartal, per köpares momsregistreringsnummer i kolumnerna varor,
+  trepartshandel och tjänster (hela kronor), med fil i Skatteverkets format
+  SKV574008 för Filöverföring; samt underlag för OSS-deklarationen per
+  kvartal, land och momssats i kronor. Endast utfärdade fakturor räknas;
+  krediteringar minskar beloppen.
 - Kan inte kombineras med omvänd byggmoms eller ROT/RUT.
 - Ruta 35 matades tidigare av 3106 (momspliktig EU-försäljning); den matas nu
   av 3108, momsfri försäljning av varor till annat EU-land.
@@ -854,9 +871,17 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 - EU och export: kontona 3108/3308/3105/3305, rutorna 35/39/36/40 och
   fakturatexterna ska kontrolleras mot mervärdesskattelagen (17 kap.) och
   BAS. Momsregistreringsnumret kontrolleras inte mot VIES, och systemet
-  hanterar inte bevis för att varor lämnat Sverige, trepartshandel,
-  distansförsäljning till privatpersoner (OSS) eller periodisk sammanställning
-  ännu.
+  hanterar inte bevis för att varor lämnat Sverige.
+- Trepartshandel: konto 3107 och fakturatexten är inte bekräftade mot BAS och
+  ML; ruta 37 (mellanmans inköp) bokförs inte automatiskt.
+- OSS: konto 3106/2619 är inte bekräftade mot BAS. Momssatserna i `OssRates`
+  ska kontrolleras mot EU-kommissionens databas (TEDB); reducerade satser och
+  tröskeln 10 000 euro hanteras inte, och omräkningen till euro görs av
+  användaren.
+- VIES: om kontroll krävs före varje försäljning och hur gammal den får vara.
+- Periodisk sammanställning: vilken period en försäljning hör till
+  (fakturadatum används), avrundning till hela kronor och filens
+  teckenkodning (ISO-8859-1).
 - Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
   mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
   och bokslutsdispositioner). Identiteten skrivs som 16 följt av
@@ -922,4 +947,5 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |
 | 0.30 | 2026-11-01 | ROT- och RUT-avdrag på kundfakturor, delad fordran på 1513 och Skatteverkets betalning. |
 | 0.31 | 2026-11-01 | Resultat per projekt och kostnadsställe i registren. |
+| 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |

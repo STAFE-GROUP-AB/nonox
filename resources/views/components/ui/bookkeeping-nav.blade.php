@@ -7,6 +7,7 @@
         'accounting.vouchers.index' => __('Verifikationer'),
         'accounting.reports' => $can('reports:view') ? __('Rapporter') : null,
         'vat.index' => $can('vat:prepare') ? __('Moms') : null,
+        'vat.euReports' => $can('vat:prepare') ? __('EU-rapporter') : null,
         'accounting.accounts' => __('Kontoplan'),
         'accounting.fiscalYears' => __('Räkenskapsår'),
         'accounting.closing' => $can('fiscal-years:manage') ? __('Bokslut') : null,

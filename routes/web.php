@@ -118,6 +118,7 @@ Route::middleware([
         Route::view('/rapporter', 'accounting.reports')->name('accounting.reports');
         Route::view('/moms', 'vat.index')->name('vat.index');
         Route::get('/moms/{fiscalYear}/fil', VatFileController::class)->whereNumber('fiscalYear')->name('vat.file');
+        Route::view('/eu-rapporter', 'vat.eu-reports')->name('vat.euReports');
         Route::get('/rapporter/csv', ReportCsvController::class)->name('accounting.reports.csv');
         Route::view('/kostnadsstallen', 'accounting.dimensions', ['dimension' => 'kostnadsstallen'])->name('accounting.costCenters');
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');

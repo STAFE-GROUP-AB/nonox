@@ -8,6 +8,7 @@ use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
+use App\Domain\Vat\OssRates;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -93,8 +94,18 @@ class SaveDraftInvoice
                 throw ValidationException::withMessages(['foreign_sale' => __('Välj antingen omvänd betalningsskyldighet för byggtjänster eller försäljning utomlands, inte båda.')]);
             }
 
+            // A sale to a consumer elsewhere in the EU carries that country's VAT (OSS).
+            if ($foreignSale === ForeignSale::EuConsumerOss) {
+                $rate = OssRates::standard($customer->country, $invoiceDate)
+                    ?? throw ValidationException::withMessages(['foreign_sale' => __('Det finns ingen momssats för OSS i kundens land (:country) på fakturadatumet.', ['country' => $customer->country])]);
+
+                foreach ($rows as $index => $row) {
+                    $rows[$index]['vat_rate'] = $rate;
+                }
+            }
+
             // The buyer accounts for the VAT, or none is due in Sweden, so the invoice carries none.
-            if ($reverseCharge || $foreignSale !== null) {
+            if ($reverseCharge || ($foreignSale !== null && $foreignSale->isVatFree())) {
                 foreach ($rows as $index => $row) {
                     $rows[$index]['vat_rate'] = 0;
                 }

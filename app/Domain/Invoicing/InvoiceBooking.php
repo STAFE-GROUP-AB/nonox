@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Invoicing;
 
+use App\Domain\Vat\OssRates;
 use App\Models\Account;
 use App\Models\Invoice;
 use App\Models\InvoiceRow;
@@ -70,7 +71,7 @@ final class InvoiceBooking
 
         foreach ($totals['vat_by_rate'] as $rate => $group) {
             if ($group['vat'] !== 0) {
-                $account = self::OUTPUT_VAT[$rate];
+                $account = $invoice->foreign_sale === ForeignSale::EuConsumerOss ? OssRates::VAT_ACCOUNT : self::OUTPUT_VAT[$rate];
                 $lines[$account] = ($lines[$account] ?? 0) - $group['vat'];
             }
         }

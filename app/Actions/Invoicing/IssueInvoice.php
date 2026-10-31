@@ -13,12 +13,14 @@ use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
 use App\Domain\Invoicing\TaxReduction;
+use App\Domain\Vat\OssRates;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\NumberSeries;
 use App\Models\User;
+use App\Models\VatNumberCheck;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -154,10 +156,18 @@ class IssueInvoice
     {
         $country = strtoupper($customer->country);
 
-        if ($sale->isEu()) {
-            if (! ForeignSale::isEuCountry($country)) {
-                throw ValidationException::withMessages(['invoice' => __('Kunden ska ha ett annat EU-land än Sverige som land för försäljning inom EU.')]);
-            }
+        if ($sale->isEu() && ! ForeignSale::isEuCountry($country)) {
+            throw ValidationException::withMessages(['invoice' => __('Kunden ska ha ett annat EU-land än Sverige som land för försäljning inom EU.')]);
+        }
+
+        if ($sale === ForeignSale::EuConsumerOss) {
+            Account::query()->firstOrCreate(['number' => OssRates::VAT_ACCOUNT], [
+                'name' => __('Utgående moms, OSS'),
+                'type' => AccountType::LiabilityEquity,
+            ]);
+        }
+
+        if ($sale->requiresBuyerVatNumber()) {
 
             if (blank($company->vat_number)) {
                 throw ValidationException::withMessages(['invoice' => __('Fyll i företagets momsregistreringsnummer under Företagsuppgifter. Det ska stå på fakturor till andra EU-länder.')]);
@@ -167,6 +177,12 @@ class IssueInvoice
 
             if (! str_starts_with(strtoupper((string) $customer->vat_number), $prefix)) {
                 throw ValidationException::withMessages(['invoice' => __('Kunden behöver ett momsregistreringsnummer från :country för försäljning utan moms inom EU.', ['country' => $country])]);
+            }
+
+            $check = VatNumberCheck::query()->where('vat_number', strtoupper((string) $customer->vat_number))->latest('checked_at')->latest('id')->first();
+
+            if ($check !== null && ! $check->valid) {
+                throw ValidationException::withMessages(['invoice' => __('Kundens momsregistreringsnummer var ogiltigt vid senaste kontrollen i VIES. Kontrollera numret igen under Kunder.')]);
             }
         }
 
