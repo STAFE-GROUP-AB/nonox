@@ -278,6 +278,18 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Varje skapad, skickad och betald faktura, offert och order skrivs till
   behandlingshistoriken.
 
+### 5.1 Omvänd betalningsskyldighet för byggtjänster
+
+- En kund kan markeras som byggföretag med omvänd betalningsskyldighet. Nya
+  fakturor till kunden blir då utan moms; det går att ändra per faktura, och
+  en kreditfaktura behåller originalets behandling.
+- Fakturan visar texten "Omvänd betalningsskyldighet för byggtjänster" och
+  både säljarens och köparens momsregistreringsnummer. Fakturan kan inte
+  utfärdas om något av numren saknas.
+- Försäljningen bokförs på 3231 (läggs till i kontoplanen vid behov) i
+  stället för radernas intäktskonton, och redovisas i momsdeklarationens
+  ruta 41.
+
 ## 5a. Leverantörsfakturor
 
 - Leverantörer finns i ett eget register med löpnummer. Bankgiro och plusgiro
@@ -784,6 +796,10 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   följer planen. Moms vid försäljning av inventarier och om avyttringsmånaden
   ska skrivas av lämnas till användaren. Kontot 7835 för avskrivningar på
   datorer ska kontrolleras mot gällande BAS.
+- Omvänd byggmoms: fakturatexten, kravet på båda momsregistreringsnumren,
+  kontot 3231 och ruta 41 ska kontrolleras mot mervärdesskattelagen och
+  Skatteverkets vägledning. Systemet avgör inte om en tjänst är en byggtjänst
+  eller om köparen är ett byggföretag; det gör användaren.
 - Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
   mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
   och bokslutsdispositioner). Identiteten skrivs som 16 följt av
@@ -846,3 +862,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.26 | 2026-11-01 | Bokslut: checklista, skatt och årets resultat, stängning av året och resultatdisposition. |
 | 0.27 | 2026-11-01 | Årsredovisning enligt K2 som sida och PDF, med siffror ur bokföringen. |
 | 0.28 | 2026-11-01 | Inkomstdeklaration 2 (INK2, INK2R, INK2S) ur bokföringen som SRU-filer. |
+| 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |

@@ -76,6 +76,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Periodiseringar: förutbetalda kostnader och intäkter som fördelas över månader, och upplupna poster som bokförs vid månadens slut och återförs nästa månad.
 - ✅ Bokslut: checklista som kontrollerar bokföringen själv, skatt och årets resultat, stängning av året med låsning och resultatdisposition efter årsstämman.
 - ✅ Årsredovisning enligt K2 som PDF: förvaltningsberättelse med flerårsöversikt, resultat- och balansräkning med föregående år, noter och underskrifter.
+- ✅ Byggföretag: omvänd betalningsskyldighet för byggtjänster på kundfakturor, med rätt fakturatext, konto 3231 och momsruta 41.
 - ✅ Inkomstdeklaration 2 för aktiebolag: räkenskapsschema och skattemässiga justeringar ur bokföringen, som SRU-filer till Skatteverkets filöverföring.
 - 🚧 Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 

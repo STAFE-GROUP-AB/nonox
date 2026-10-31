@@ -41,6 +41,8 @@ class Customers extends Component
     /** @var array<string, string> */
     public array $form = [];
 
+    public bool $reverseCharge = false;
+
     public function mount(): void
     {
         abort_unless($this->user()->can('viewAny', [Customer::class, $this->company()]), 403);
@@ -56,6 +58,7 @@ class Customers extends Component
         $this->editingId = null;
         $this->form = array_fill_keys(self::FIELDS, '');
         $this->form['payment_terms_days'] = '30';
+        $this->reverseCharge = false;
         $this->showForm = true;
         $this->resetErrorBag();
     }
@@ -67,18 +70,19 @@ class Customers extends Component
         $this->editingId = $customer->id;
         $this->form = array_map(fn (mixed $value): string => (string) $value, $customer->only(self::FIELDS));
         $this->form['personal_number'] = (string) $customer->personal_number;
+        $this->reverseCharge = $customer->reverse_charge_construction;
         $this->showForm = true;
         $this->resetErrorBag();
     }
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form');
+        $this->reset('showForm', 'editingId', 'form', 'reverseCharge');
     }
 
     public function save(SaveCustomer $save): void
     {
-        $customer = $save($this->user(), $this->company(), $this->form, $this->editingId === null ? null : Customer::query()->findOrFail($this->editingId));
+        $customer = $save($this->user(), $this->company(), [...$this->form, 'reverse_charge_construction' => $this->reverseCharge], $this->editingId === null ? null : Customer::query()->findOrFail($this->editingId));
 
         $this->toast($this->editingId === null
             ? __('Kund :number :name är tillagd.', ['number' => $customer->number, 'name' => $customer->name])

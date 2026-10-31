@@ -53,6 +53,7 @@ class SaveCustomer
             'city' => ['nullable', 'string', 'max:255'],
             'payment_terms_days' => ['required', 'integer', 'between:0,365'],
             'is_active' => ['sometimes', 'boolean'],
+            'reverse_charge_construction' => ['sometimes', 'boolean'],
         ], [
             'vat_number.regex' => __('Momsregistreringsnumret ska börja med landskoden, till exempel SE556677889901.'),
         ], [
@@ -62,6 +63,10 @@ class SaveCustomer
         ])->validate();
 
         $attributes = array_map(fn (mixed $value): mixed => is_string($value) ? (trim($value) === '' ? null : trim($value)) : $value, $validated);
+
+        if (array_key_exists('reverse_charge_construction', $attributes)) {
+            $attributes['reverse_charge_construction'] = (bool) $attributes['reverse_charge_construction'];
+        }
 
         if (isset($attributes['org_number'])) {
             $attributes['org_number'] = OrganisationNumber::tryFrom((string) $attributes['org_number'])?->formatted();

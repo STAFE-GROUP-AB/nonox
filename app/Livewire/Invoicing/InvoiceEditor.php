@@ -49,6 +49,8 @@ class InvoiceEditor extends Component
 
     public string $notes = '';
 
+    public bool $reverseCharge = false;
+
     public function mount(?Invoice $invoice = null): void
     {
         if ($invoice instanceof Invoice) {
@@ -64,6 +66,7 @@ class InvoiceEditor extends Component
             $this->yourReference = (string) $invoice->your_reference;
             $this->ourReference = (string) $invoice->our_reference;
             $this->notes = (string) $invoice->notes;
+            $this->reverseCharge = $invoice->reverse_charge;
             $this->rows = $this->rowsFrom($invoice->rows);
 
             return;
@@ -73,6 +76,13 @@ class InvoiceEditor extends Component
 
         $this->invoiceDate = now()->toDateString();
         $this->rows = [$this->blankRow()];
+    }
+
+    /** A new choice of customer brings that customer's VAT treatment. */
+    public function updatedCustomerId(): void
+    {
+        $customer = $this->customerId === '' ? null : Customer::query()->find((int) $this->customerId);
+        $this->reverseCharge = $customer->reverse_charge_construction ?? false;
     }
 
     public function save(SaveDraftInvoice $save): void
@@ -120,6 +130,7 @@ class InvoiceEditor extends Component
             'your_reference' => $this->yourReference,
             'our_reference' => $this->ourReference,
             'notes' => $this->notes,
+            'reverse_charge' => $this->reverseCharge,
             'rows' => $this->rowInput(),
         ], $this->invoiceId === null ? null : Invoice::query()->findOrFail($this->invoiceId));
     }

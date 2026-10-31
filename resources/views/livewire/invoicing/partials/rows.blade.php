@@ -15,7 +15,7 @@
     ]]);
 @endphp
 
-<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative))">
+<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "\$wire.entangle('reverseCharge')" : 'false' }})">
     <datalist id="article-options">
         @foreach($articles as $article)
             <option value="{{ $article->number }}">{{ $article->name }}</option>

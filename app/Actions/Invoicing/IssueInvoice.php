@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Actions\Invoicing;
 
 use App\Actions\Accounting\BookVoucher;
+use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
+use App\Models\Account;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -60,6 +62,10 @@ class IssueInvoice
                 throw ValidationException::withMessages(['invoice' => __('Bara en obetald faktura kan krediteras.')]);
             }
 
+            if ($invoice->reverse_charge) {
+                $this->ensureReverseCharge($company, $customer);
+            }
+
             $number = NumberSeries::take(NumberSeries::INVOICES);
 
             $invoice->forceFill([
@@ -101,5 +107,28 @@ class IssueInvoice
 
             return $invoice;
         }));
+    }
+
+    /**
+     * An invoice under omvänd betalningsskyldighet must show both parties'
+     * VAT numbers; the sale is booked on 3231, which is added if missing.
+     *
+     * TODO(legal-verify): the invoice requirements for reverse charge in
+     * construction (ML 17 kap.) and the wording on the invoice.
+     */
+    private function ensureReverseCharge(Company $company, Customer $customer): void
+    {
+        if (blank($company->vat_number)) {
+            throw ValidationException::withMessages(['invoice' => __('Fyll i företagets momsregistreringsnummer under Företagsuppgifter. Det ska stå på fakturor med omvänd betalningsskyldighet.')]);
+        }
+
+        if (blank($customer->vat_number)) {
+            throw ValidationException::withMessages(['invoice' => __('Kunden saknar momsregistreringsnummer. Det ska stå på fakturor med omvänd betalningsskyldighet.')]);
+        }
+
+        Account::query()->firstOrCreate(['number' => InvoiceBooking::REVERSE_CHARGE_CONSTRUCTION], [
+            'name' => __('Försäljning inom byggtjänster, omvänd skattskyldighet'),
+            'type' => AccountType::Revenue,
+        ]);
     }
 }

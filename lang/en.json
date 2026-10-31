@@ -2721,5 +2721,15 @@
     "Årsredovisningen har reviderats: nej": "The annual report was audited: no",
     "Nedskrivning av finansiella tillgångar som inte ska dras av": "Impairment of financial assets that is not deductible",
     "Andra ej bokförda intäkter som ska tas upp": "Other income not booked that is taxable",
-    "Andra ej bokförda kostnader som ska dras av": "Other costs not booked that are deductible"
+    "Andra ej bokförda kostnader som ska dras av": "Other costs not booked that are deductible",
+    "Omvänd betalningsskyldighet för byggtjänster": "Reverse charge for construction services",
+    "Kunden är ett byggföretag som själv redovisar momsen på byggtjänster ni säljer. Nya fakturor till kunden blir utan moms.": "The customer is a construction company that accounts for the VAT on construction services you sell. New invoices to the customer carry no VAT.",
+    "Fakturan blir utan moms och försäljningen bokförs på 3231. Köparens och ert momsregistreringsnummer skrivs ut på fakturan.": "The invoice carries no VAT and the sale is booked on 3231. The buyer's and your VAT numbers are printed on the invoice.",
+    "Omvänd betalningsskyldighet för byggtjänster.": "Reverse charge for construction services.",
+    "Köparen är skyldig att redovisa och betala momsen.": "The buyer is liable to account for and pay the VAT.",
+    "Säljarens momsreg.nr :seller · Köparens momsreg.nr :buyer": "Seller's VAT no. :seller · Buyer's VAT no. :buyer",
+    "Fyll i företagets momsregistreringsnummer under Företagsuppgifter. Det ska stå på fakturor med omvänd betalningsskyldighet.": "Fill in the company's VAT number under Company details. It must be on invoices with reverse charge.",
+    "Kunden saknar momsregistreringsnummer. Det ska stå på fakturor med omvänd betalningsskyldighet.": "The customer has no VAT number. It must be on invoices with reverse charge.",
+    "Försäljning inom byggtjänster, omvänd skattskyldighet": "Sales of construction services, reverse charge",
+    "Försäljning när köparen är betalningsskyldig i Sverige": "Sales where the buyer is liable for VAT in Sweden"
 }

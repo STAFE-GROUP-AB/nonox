@@ -41,6 +41,7 @@ class CreditInvoice
                 'your_reference' => $original->your_reference,
                 'our_reference' => $original->our_reference,
                 'notes' => __('Kreditering av faktura :number.', ['number' => $original->number]),
+                'reverse_charge' => $original->reverse_charge,
                 'rows' => $original->rows->map(fn (InvoiceRow $row): array => $row->asInput())->all(),
             ], $draft);
         });

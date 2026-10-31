@@ -34,6 +34,13 @@ final class InvoiceBooking
 
     public const int BANK = 1930;
 
+    /**
+     * Sales of construction services under omvänd betalningsskyldighet.
+     *
+     * TODO(legal-verify): BAS 3231 and momsdeklaration box 41.
+     */
+    public const int REVERSE_CHARGE_CONSTRUCTION = 3231;
+
     /** Output VAT account per rate in basis points. */
     public const array OUTPUT_VAT = [2500 => 2611, 1200 => 2621, 600 => 2631];
 
@@ -48,7 +55,9 @@ final class InvoiceBooking
         $lines = [];
 
         foreach ($rows as $row) {
-            $number = $row->account instanceof Account ? $row->account->number : 0;
+            $number = $invoice->reverse_charge
+                ? self::REVERSE_CHARGE_CONSTRUCTION
+                : ($row->account instanceof Account ? $row->account->number : 0);
             $lines[$number] = ($lines[$number] ?? 0) - $row->net_ore->ore;
         }
 

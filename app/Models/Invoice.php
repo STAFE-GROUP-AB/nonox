@@ -20,6 +20,7 @@ use LogicException;
  * issued it has a number and its contents never change. Only its status,
  * payments and sending are updated. A database trigger backs this up.
  *
+ * @property bool $reverse_charge
  * @property string $id
  * @property int $company_id
  * @property int $customer_id
@@ -72,6 +73,7 @@ class Invoice extends Model
         'your_reference',
         'our_reference',
         'notes',
+        'reverse_charge',
         'created_by',
     ];
 
@@ -90,6 +92,7 @@ class Invoice extends Model
     protected function casts(): array
     {
         return [
+            'reverse_charge' => 'boolean',
             'number' => 'integer',
             'status' => InvoiceStatus::class,
             'invoice_date' => 'immutable_date',

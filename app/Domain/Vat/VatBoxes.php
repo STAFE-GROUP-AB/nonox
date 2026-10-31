@@ -14,7 +14,7 @@ namespace App\Domain\Vat;
  *
  * TODO(legal-verify): the account-to-box mapping follows the BAS chart's
  * VAT accounts. Confirm it against the current BAS momsrapport and
- * Skatteverket's box definitions, and decide boxes 06, 07, 08, 37, 38 and 41,
+ * Skatteverket's box definitions, and decide boxes 06, 07, 08, 37 and 38,
  * which have no account here yet.
  */
 final class VatBoxes
@@ -51,6 +51,7 @@ final class VatBoxes
         36 => ['label' => 'Försäljning av varor utanför EU', 'element' => 'ForsVaruUtomEg', 'side' => self::CREDIT, 'accounts' => [[3105, 3105]]],
         39 => ['label' => 'Försäljning av tjänster till näringsidkare i ett annat EU-land', 'element' => 'ForsTjSkskAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3308, 3308]]],
         40 => ['label' => 'Övrig försäljning av tjänster omsatta utanför Sverige', 'element' => 'ForsTjOvrUtomEg', 'side' => self::CREDIT, 'accounts' => [[3305, 3305]]],
+        41 => ['label' => 'Försäljning när köparen är betalningsskyldig i Sverige', 'element' => 'ForsKopareSkskSverige', 'side' => self::CREDIT, 'accounts' => [[3231, 3231]]],
         42 => ['label' => 'Övrig försäljning m.m.', 'element' => 'ForsOvrigt', 'side' => self::CREDIT, 'accounts' => [[3004, 3004]]],
         48 => ['label' => 'Ingående moms att dra av', 'element' => 'MomsIngAvdr', 'side' => self::DEBIT, 'accounts' => [[2640, 2649]]],
     ];

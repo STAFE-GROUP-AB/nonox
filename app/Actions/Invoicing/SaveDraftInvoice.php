@@ -27,7 +27,8 @@ class SaveDraftInvoice
 {
     /**
      * @param  array<string, mixed>  $input  customer_id, invoice_date, due_date (optional), delivery_date,
-     *                                       your_reference, our_reference, notes,
+     *                                       your_reference, our_reference, notes, reverse_charge (optional,
+     *                                       otherwise the draft's or the customer's setting),
      *                                       rows (list of article (number, optional), description,
      *                                       quantity, unit, price (kronor), discount (percent),
      *                                       vat_rate, account (number, optional))
@@ -46,6 +47,7 @@ class SaveDraftInvoice
             'your_reference' => ['nullable', 'string', 'max:255'],
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'reverse_charge' => ['nullable', 'boolean'],
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.description' => ['required', 'string', 'max:255'],
             'rows.*.vat_rate' => ['required', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
@@ -73,6 +75,17 @@ class SaveDraftInvoice
             /** @var list<array<string, mixed>> $rowInput */
             $rowInput = array_values(array_filter((array) $input['rows'], is_array(...)));
             $rows = SalesRowInput::parse($rowInput, $draft?->isCredit() ?? false);
+            $reverseCharge = isset($validated['reverse_charge'])
+                ? (bool) $validated['reverse_charge']
+                : ($draft !== null && $draft->exists ? $draft->reverse_charge : $customer->reverse_charge_construction);
+
+            // Under omvänd betalningsskyldighet the buyer accounts for the VAT, so the invoice carries none.
+            if ($reverseCharge) {
+                foreach ($rows as $index => $row) {
+                    $rows[$index]['vat_rate'] = 0;
+                }
+            }
+
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
@@ -84,6 +97,7 @@ class SaveDraftInvoice
                 'your_reference' => $validated['your_reference'] ?? null,
                 'our_reference' => $validated['our_reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'reverse_charge' => $reverseCharge,
             ]);
             $invoice->forceFill([
                 'net_ore' => $totals['net'],

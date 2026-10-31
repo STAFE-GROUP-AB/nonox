@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A customer (kundregister, AGENTS.md §7 Phase 2).
  *
+ * @property bool $reverse_charge_construction
  * @property int $company_id
  * @property int $number
  * @property string $name
@@ -48,6 +49,7 @@ class Customer extends Model
         'country',
         'payment_terms_days',
         'is_active',
+        'reverse_charge_construction',
     ];
 
     /** @var list<string> */
@@ -61,6 +63,7 @@ class Customer extends Model
             'personal_number' => 'encrypted',
             'payment_terms_days' => 'integer',
             'is_active' => 'boolean',
+            'reverse_charge_construction' => 'boolean',
         ];
     }
 

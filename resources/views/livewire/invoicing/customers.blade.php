@@ -24,6 +24,10 @@
                         <input id="customer_{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="{{ $input }} mt-1" wire:model="form.{{ $field }}" @if($field === 'payment_terms_days') inputmode="numeric" @endif>
                     </x-ui.field>
                 @endforeach
+                <label class="flex items-start gap-3 text-sm text-gray-800 sm:col-span-2">
+                    <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-ink focus:ring-accent-500" wire:model="reverseCharge">
+                    <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}<span class="block text-xs text-gray-500">{{ __('Kunden är ett byggföretag som själv redovisar momsen på byggtjänster ni säljer. Nya fakturor till kunden blir utan moms.') }}</span></span>
+                </label>
                 <div class="flex items-center gap-4 sm:col-span-2">
                     <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
                     <button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>

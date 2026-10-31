@@ -116,6 +116,11 @@
         </tr>
     </table>
 
+    @if($invoice->reverse_charge)
+        <p style="margin-top: 8mm"><strong>{{ __('Omvänd betalningsskyldighet för byggtjänster.') }}</strong> {{ __('Köparen är skyldig att redovisa och betala momsen.') }}<br>
+            <span class="muted">{{ __('Säljarens momsreg.nr :seller · Köparens momsreg.nr :buyer', ['seller' => $company->vat_number, 'buyer' => $customer['vat_number'] ?? '']) }}</span></p>
+    @endif
+
     @if($invoice->notes)
         <p style="margin-top: 8mm">{!! nl2br(e($invoice->notes)) !!}</p>
     @endif

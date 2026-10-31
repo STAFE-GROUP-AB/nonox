@@ -29,6 +29,10 @@
                             <option value="{{ $customer->id }}">{{ $customer->number }} {{ $customer->name }}</option>
                         @endforeach
                     </select>
+                    <label class="mt-2 flex items-start gap-2 text-sm text-gray-800">
+                        <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-ink focus:ring-accent-500" wire:model.live="reverseCharge" @disabled($credit)>
+                        <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}@if($reverseCharge)<span class="block text-xs text-gray-500">{{ __('Fakturan blir utan moms och försäljningen bokförs på 3231. Köparens och ert momsregistreringsnummer skrivs ut på fakturan.') }}</span>@endif</span>
+                    </label>
                 @endif
             </x-ui.field>
             <x-ui.field for="invoice_date" :label="__('Fakturadatum')" error="invoice_date">
@@ -51,7 +55,7 @@
         </div>
     </x-ui.card>
 
-    @include('livewire.invoicing.partials.rows', ['negative' => $credit])
+    @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true])
 
     <x-ui.card>
         <x-ui.field for="invoice_notes" :label="__('Meddelande på fakturan (frivilligt)')" error="notes">
