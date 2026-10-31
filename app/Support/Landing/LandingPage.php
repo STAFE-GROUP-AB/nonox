@@ -1,0 +1,207 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Support\Landing;
+
+/**
+ * The content of the public landing page (resources/views/start/landing).
+ * Links that differ between installations come from config('app.landing');
+ * a link that is not configured is left out of the page.
+ */
+final class LandingPage
+{
+    /**
+     * The hosted plans: the highest number of employees each covers and the
+     * price per company and month excluding VAT, in kronor (null: on request).
+     *
+     * The comparison is the design's estimate of the largest cloud service's
+     * public list prices for bookkeeping, invoicing and payroll in October
+     * 2026: a base price plus a price per employee.
+     */
+    public const array PLANS = [
+        ['name' => 'Solo', 'employees' => '0–1', 'max' => 1, 'price' => 99, 'popular' => false, 'compare_base' => 422, 'compare_per_employee' => 0],
+        ['name' => 'Liten', 'employees' => '2–5', 'max' => 5, 'price' => 299, 'popular' => false, 'compare_base' => 758, 'compare_per_employee' => 30],
+        ['name' => 'Mellan', 'employees' => '6–10', 'max' => 10, 'price' => 499, 'popular' => true, 'compare_base' => 858, 'compare_per_employee' => 30],
+        ['name' => 'Stor', 'employees' => '11–25', 'max' => 25, 'price' => 999, 'popular' => false, 'compare_base' => 858, 'compare_per_employee' => 30],
+        ['name' => 'Större', 'employees' => '26+', 'max' => null, 'price' => null, 'popular' => false, 'compare_base' => 0, 'compare_per_employee' => 0],
+    ];
+
+    public const int DEFAULT_EMPLOYEES = 3;
+
+    /** @return array<string, mixed> */
+    public static function data(): array
+    {
+        $ph = self::links();
+
+        return [
+            'ph' => $ph,
+            'dockerCommands' => "git clone {$ph['github']}\ncd nonox && docker compose up -d",
+            'trust' => ['Följer Bokföringslagen', 'BAS-kontoplan', 'SIE4 in och ut', 'Peppol e-faktura', 'Arbetsgivardeklaration (AGI)', 'Data i Sverige/EU'],
+            'features' => self::features(),
+            'clients' => self::clients(),
+            'plans' => array_map(fn (array $plan): array => self::plan($plan, $ph), self::PLANS),
+            'includes' => ['Drift på servrar i Sverige/EU', 'Daglig backup', 'Uppdateringar och säkerhet', 'Support för driften', 'Fri export av all data'],
+            'calculator' => self::calculator(self::DEFAULT_EMPLOYEES),
+            // Every plan but the last has a price; the last means "contact us".
+            'calculatorPlans' => array_map(fn (array $plan): array => [
+                'name' => $plan['name'],
+                'max' => $plan['max'],
+                'price' => $plan['price'],
+                'compareBase' => $plan['compare_base'],
+                'comparePerEmployee' => $plan['compare_per_employee'],
+            ], array_slice(self::PLANS, 0, -1)),
+            'steps' => self::steps(),
+            'faqs' => self::faqs(),
+        ];
+    }
+
+    /** @return array{label: string, aria: string, employees: int, plan: string, price: string, compare: string, saving: string} */
+    public static function calculator(int $employees): array
+    {
+        $plan = collect(self::PLANS)->first(fn (array $plan): bool => $plan['max'] !== null && $employees <= $plan['max']);
+        $label = $employees > 25 ? '26+' : (string) $employees;
+        $aria = $employees > 25 ? '26 eller fler anställda' : "{$employees} anställda";
+
+        if ($plan === null) {
+            return ['label' => $label, 'aria' => $aria, 'employees' => $employees, 'plan' => '', 'price' => '', 'compare' => '', 'saving' => ''];
+        }
+
+        $compare = $plan['compare_base'] + $plan['compare_per_employee'] * $employees;
+        $saving = (int) round(($compare - (int) $plan['price']) * 12 / 100) * 100;
+
+        return [
+            'label' => $label,
+            'aria' => $aria,
+            'employees' => $employees,
+            'plan' => $plan['name'],
+            'price' => self::kronor((int) $plan['price']).'/mån',
+            'compare' => self::kronor($compare).'/mån',
+            'saving' => self::kronor($saving),
+        ];
+    }
+
+    public static function kronor(int $kronor): string
+    {
+        return number_format($kronor, 0, ',', "\u{a0}")."\u{a0}kr";
+    }
+
+    /** @return array{version: string, github: string, flytt: string, docs: string, api: ?string, mac: string, win: string, contact: string, terms: ?string, privacy: ?string, company: ?string, orgnr: ?string, host: string} */
+    private static function links(): array
+    {
+        /** @var array<string, ?string> $config */
+        $config = (array) config('app.landing', []);
+        $github = $config['github_url'] ?? 'https://github.com/STAFE-GROUP-AB/OSS';
+        $releases = "{$github}/releases";
+
+        return [
+            'version' => (string) config('app.version'),
+            'github' => $github,
+            'flytt' => $config['migration_guide_url'] ?? "{$github}/tree/main/docs/migration",
+            'docs' => $config['docs_url'] ?? "{$github}/tree/main/docs",
+            'api' => $config['api_url'] ?? null,
+            'mac' => $config['mac_download_url'] ?? $releases,
+            'win' => $config['windows_download_url'] ?? $releases,
+            'contact' => $config['contact_url'] ?? route('login'),
+            'terms' => $config['terms_url'] ?? null,
+            'privacy' => $config['privacy_url'] ?? null,
+            'company' => $config['company_name'] ?? null,
+            'orgnr' => $config['org_number'] ?? null,
+            'host' => (string) parse_url(url('/'), PHP_URL_HOST),
+        ];
+    }
+
+    /**
+     * @param  array{name: string, employees: string, max: ?int, price: ?int, popular: bool, compare_base: int, compare_per_employee: int}  $plan
+     * @param  array<string, ?string>  $ph
+     * @return array<string, mixed>
+     */
+    private static function plan(array $plan, array $ph): array
+    {
+        $priced = $plan['price'] !== null;
+
+        return [
+            'name' => $plan['name'],
+            'emp' => "{$plan['employees']} anställda",
+            'popular' => $plan['popular'],
+            'price' => $priced ? self::kronor((int) $plan['price']) : 'Pris på förfrågan',
+            'unit' => $priced ? '/mån' : '',
+            'priceSize' => $priced ? '40px' : '26px',
+            'cta' => $priced ? 'Kom igång' : 'Kontakta oss',
+            'href' => $ph['contact'],
+            'border' => $plan['popular'] ? '2px solid #FF5A36' : '1px solid var(--line)',
+            'btnBg' => $plan['popular'] ? 'var(--ink)' : 'transparent',
+            'btnFg' => $plan['popular'] ? 'var(--bg)' : 'var(--ink)',
+        ];
+    }
+
+    /** @return list<array{t: string, b: string, d: string, mod?: bool}> */
+    private static function features(): array
+    {
+        return [
+            ['t' => 'Bokföring', 'b' => 'Verifikationer, huvudbok, balans- och resultatrapport.', 'd' => 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z'],
+            ['t' => 'Fakturering', 'b' => 'Kundfakturor, OCR, påminnelser, offerter och återkommande fakturor.', 'd' => 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5'],
+            ['t' => 'Leverantörsfakturor', 'b' => 'Tolkning, attest och betalfiler till banken.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5'],
+            ['t' => 'Moms', 'b' => 'Momsrapport färdig att lämna till Skatteverket.', 'd' => 'M19 5L5 19M7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'],
+            ['t' => 'Bokslut och årsredovisning', 'b' => 'Avskrivningar, periodiseringar och K2.', 'd' => 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M9 15l2 2 4-4'],
+            ['t' => 'Flera företag', 'b' => 'Alla dina bolag under en inloggning, perfekt för byråer och koncerner.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
+            ['t' => 'Lön', 'mod' => true, 'b' => 'Lönebesked, semester, sjuklön och arbetsgivardeklaration.', 'd' => 'M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H3zM3 7l12-3v3M16 13.5h2'],
+            ['t' => 'ROT och RUT', 'mod' => true, 'b' => 'Avdrag direkt på fakturan och underlag till Skatteverket.', 'd' => 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5'],
+        ];
+    }
+
+    /** @return array<int, array<string, string>> */
+    private static function clients(): array
+    {
+        $background = fn (string $value): string => match (true) {
+            $value === 'Försenad' => '#FF5A36',
+            $value === 'Att göra', str_ends_with($value, 'poster') => '#FFE6DF',
+            default => '#F0EEE8',
+        };
+
+        return array_map(fn (array $row): array => [
+            'ini' => $row[0], 'name' => $row[1], 'booked' => $row[2], 'bank' => $row[3], 'moms' => $row[4], 'agi' => $row[5], 'open' => $row[6],
+            'bankBg' => $background($row[3]), 'momsBg' => $background($row[4]), 'agiBg' => $background($row[5]),
+        ], [
+            ['EX', 'Exempelbolaget AB', '2026-10-31', 'Klar', 'Lämnad', 'Lämnad', '0 kr'],
+            ['BB', 'Bageriet i Byn AB', '2026-10-24', '3 poster', 'Att göra', 'Lämnad', '14 200 kr'],
+            ['NK', 'Nordljus Konsult HB', '2026-09-30', '12 poster', 'Försenad', 'Ej aktuell', '38 750 kr'],
+            ['SG', 'Snickarglädje AB', '2026-10-31', 'Klar', 'Lämnad', 'Att göra', '6 900 kr'],
+            ['CH', 'Café Hörnet i Exempelstad', '2026-10-17', '5 poster', 'Att göra', 'Lämnad', '0 kr'],
+            ['FF', 'Fjällvind Fastigheter AB', '2026-10-31', 'Klar', 'Kvartal', 'Lämnad', '22 000 kr'],
+        ]);
+    }
+
+    /** @return list<array{t: string, n: int, bg: string, fg: string, lineOp: float|int}> */
+    private static function steps(): array
+    {
+        $steps = [
+            'Exportera SIE4-filer och underlag från ditt nuvarande program.',
+            'Läs in allt i NONOX, eller låt importverktyget hämta det åt dig.',
+            'Stäm av: saldon, kundfordringar och leverantörsskulder kontrolleras automatiskt.',
+            'Kör vidare. Spara arkivet från ditt gamla system i sju år, som lagen kräver.',
+        ];
+
+        return array_map(fn (string $text, int $index): array => [
+            't' => $text,
+            'n' => $index + 1,
+            'bg' => $index === 3 ? '#FF5A36' : 'transparent',
+            'fg' => $index === 3 ? '#15171C' : 'var(--ink)',
+            'lineOp' => $index === 3 ? 0 : 0.35,
+        ], $steps, array_keys($steps));
+    }
+
+    /** @return list<array{q: string, a: string}> */
+    private static function faqs(): array
+    {
+        return [
+            ['q' => 'Är NONOX verkligen gratis?', 'a' => 'Ja. Programmet är öppen källkod och gratis att ladda ner och köra själv. Du betalar bara om du vill att vi sköter driften.'],
+            ['q' => 'Kan jag köra det på mitt webbhotell?', 'a' => 'Ja, på ett webbhotell med PHP och PostgreSQL. Installationsguiden tar dig igenom stegen.'],
+            ['q' => 'Vem ansvarar för vad?', 'a' => 'Kör du själv ansvarar du för installation, drift och säkerhetskopior. Väljer du ett driftpaket sköter vi driften. Programmet tillhandahålls i befintligt skick enligt licensen, och ansvaret för bokföringen ligger alltid hos företaget, precis som i alla bokföringsprogram.'],
+            ['q' => 'Följer NONOX Bokföringslagen?', 'a' => 'NONOX är byggt efter Bokföringslagen och Bokföringsnämndens regler, med oföränderliga verifikationer, behandlingshistorik och arkivering.'],
+            ['q' => 'Kan jag flytta från mitt nuvarande program?', 'a' => 'Ja, via SIE4 och vårt importverktyg. Se flyttguiden.'],
+            ['q' => 'Kan jag sluta när jag vill?', 'a' => 'Ja. Ingen bindningstid, och du exporterar all data med ett klick.'],
+            ['q' => 'Var lagras min data?', 'a' => 'Kör du själv: där du väljer. I våra driftpaket: på servrar i Sverige/EU.'],
+        ];
+    }
+}

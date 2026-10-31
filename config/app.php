@@ -10,6 +10,29 @@ return [
     */
 
     'version' => '0.1.0',
+
+    /*
+    | The public landing page at "/" for visitors who are not signed in. Turn
+    | it off on an installation that only its own users visit; they then see
+    | the sign-in page. Links left empty fall back to the GitHub repository,
+    | or are left out of the page.
+    */
+
+    'landing' => [
+        'enabled' => (bool) env('NONOX_LANDING_PAGE', true),
+        'github_url' => env('NONOX_GITHUB_URL'),
+        'migration_guide_url' => env('NONOX_MIGRATION_GUIDE_URL'),
+        'docs_url' => env('NONOX_DOCS_URL'),
+        'api_url' => env('NONOX_API_DOCS_URL'),
+        'mac_download_url' => env('NONOX_MAC_DOWNLOAD_URL'),
+        'windows_download_url' => env('NONOX_WINDOWS_DOWNLOAD_URL'),
+        'contact_url' => env('NONOX_CONTACT_URL'),
+        'terms_url' => env('NONOX_TERMS_URL'),
+        'privacy_url' => env('NONOX_PRIVACY_URL'),
+        'company_name' => env('NONOX_COMPANY_NAME'),
+        'org_number' => env('NONOX_COMPANY_ORG_NUMBER'),
+    ],
+
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),

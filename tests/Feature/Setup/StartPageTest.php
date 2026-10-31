@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Support\Landing\LandingPage;
 use App\Support\SetupStatus;
 
 function pretendEnvironment(string $environment): void
@@ -77,4 +78,52 @@ it('hides technical details from the public in production', function () {
         ->assertSee('Systemet är inte igång just nu')
         ->assertDontSee('10.0.0.5')
         ->assertDontSee('secretuser');
+});
+
+it('shows the public landing page to visitors once the system is set up', function () {
+    pretendEnvironment('production');
+    User::factory()->withCompany()->create();
+
+    $this->get('/')
+        ->assertOk()
+        ->assertSee('Bokföring som ägs av')
+        ->assertSee(route('login'))
+        ->assertSee("99\u{a0}kr")
+        ->assertSee('https://github.com/STAFE-GROUP-AB/OSS')
+        ->assertSee('Vanliga frågor')
+        ->assertDontSee('{{', escape: false)
+        ->assertDontSee('Villkor');
+});
+
+it('links the legal pages and names the company when they are configured', function () {
+    pretendEnvironment('production');
+    User::factory()->withCompany()->create();
+    config([
+        'app.landing.terms_url' => 'https://example.test/villkor',
+        'app.landing.company_name' => 'Exempelbolaget AB',
+    ]);
+
+    $this->get('/')
+        ->assertSee('https://example.test/villkor')
+        ->assertSee('Exempelbolaget AB');
+});
+
+it('shows the sign-in page instead when the landing page is turned off', function () {
+    pretendEnvironment('production');
+    User::factory()->withCompany()->create();
+    config(['app.landing.enabled' => false]);
+
+    $this->get('/')
+        ->assertOk()
+        ->assertDontSee('Bokföring som ägs av')
+        ->assertSee(route('login'));
+});
+
+it('calculates the saving like the page script', function () {
+    expect(LandingPage::calculator(3))->toMatchArray([
+        'plan' => 'Liten',
+        'price' => "299\u{a0}kr/mån",
+        'compare' => "848\u{a0}kr/mån",
+        'saving' => "6\u{a0}600\u{a0}kr",
+    ])->and(LandingPage::calculator(26)['plan'])->toBe('');
 });

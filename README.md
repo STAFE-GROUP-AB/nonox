@@ -191,6 +191,8 @@ Första gången möts du av en **guide i tre steg**:
 
 Sedan är du inne i ditt företag. Saknas något tekniskt (till exempel databasen) förklarar startsidan i stället vad som är fel och visar exakt en rad att klistra in i Terminalen.
 
+När systemet är installerat visar `/` en **publik startsida** om NONOX för den som inte är inloggad, med länken *Logga in* uppe till höger. Vill du att besökare hamnar direkt på inloggningen, till exempel på en byrås egen installation, sätter du `NONOX_LANDING_PAGE=false` i `.env`. Kontaktlänk, villkor, integritetspolicy och företagsnamn i sidfoten ställs in med `NONOX_CONTACT_URL`, `NONOX_TERMS_URL`, `NONOX_PRIVACY_URL`, `NONOX_COMPANY_NAME` och `NONOX_COMPANY_ORG_NUMBER`. Länkar som saknas visas inte.
+
 > Guiden går bara att använda på en lokal installation (`APP_ENV=local`) som inte har några användare ännu. På en server kan ingen utomstående alltså ta över en nyinstallerad version.
 
 ### Så loggar du in
