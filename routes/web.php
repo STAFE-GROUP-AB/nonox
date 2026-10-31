@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Accounting\AnnualReportController;
 use App\Http\Controllers\Accounting\ArchivePackageController;
+use App\Http\Controllers\Accounting\IncomeTaxSruController;
 use App\Http\Controllers\Accounting\ReportCsvController;
 use App\Http\Controllers\Accounting\SieExportController;
 use App\Http\Controllers\Accounting\SieImportController;
@@ -127,6 +128,8 @@ Route::middleware([
         Route::view('/arsredovisning', 'accounting.annual-report')->name('accounting.annualReport');
         Route::get('/arsredovisning/{fiscalYear}', [AnnualReportController::class, 'show'])->name('accounting.annualReport.show');
         Route::get('/arsredovisning/{fiscalYear}/pdf', [AnnualReportController::class, 'pdf'])->name('accounting.annualReport.pdf');
+        Route::view('/inkomstdeklaration', 'accounting.income-tax')->name('accounting.incomeTax');
+        Route::get('/inkomstdeklaration/{fiscalYear}/sru', IncomeTaxSruController::class)->name('accounting.incomeTax.sru');
         Route::get('/importera-sie', [SieImportController::class, 'index'])->name('accounting.sieImports.index');
         Route::post('/importera-sie', [SieImportController::class, 'store'])->name('accounting.sieImports.store');
         Route::get('/importera-sie/{sieImport}', [SieImportController::class, 'show'])

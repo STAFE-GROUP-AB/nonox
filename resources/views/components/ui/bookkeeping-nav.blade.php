@@ -11,6 +11,7 @@
         'accounting.fiscalYears' => __('Räkenskapsår'),
         'accounting.closing' => $can('fiscal-years:manage') ? __('Bokslut') : null,
         'accounting.annualReport' => $can('fiscal-years:manage') ? __('Årsredovisning') : null,
+        'accounting.incomeTax' => $can('fiscal-years:manage') ? __('Inkomstdeklaration') : null,
         'accounting.fixedAssets' => $can('fiscal-years:manage') ? __('Anläggningar') : null,
         'accounting.bankReconciliation' => $can('vouchers:post') ? __('Bankavstämning') : null,
         'accounting.accruals' => $can('fiscal-years:manage') ? __('Periodiseringar') : null,

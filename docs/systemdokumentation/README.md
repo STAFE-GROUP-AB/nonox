@@ -436,6 +436,25 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   Bolagsverket (iXBRL) finns ännu inte.
 - Kräver behörigheten att hantera räkenskapsår.
 
+## 5a7. Inkomstdeklaration 2 (SRU)
+
+- Under Bokföring → Inkomstdeklaration tas INK2 med INK2R och INK2S fram ur
+  bokföringen för aktiebolag och ekonomiska föreningar. INK2R fylls fält för
+  fält från BAS-kontointervall (`Ink2Codes`) i hela kronor; årets resultat
+  är resultaträkningens, oavsett om det är bokat på 2099.
+- INK2S: bokfört resultat, bokförd skatt (läggs tillbaka), de justeringar
+  användaren anger (ej avdragsgilla kostnader, ej skattepliktiga intäkter,
+  ej bokförda intäkter och kostnader, outnyttjat underskott) samt om en
+  konsult biträtt och om årsredovisningen reviderats. Överskott eller
+  underskott förs till INK2 punkt 1.1 eller 1.2. Justeringarna sparas i
+  `income_tax_returns`.
+- SRU-filerna (INFO.SRU och BLANKETTER.SRU, ISO 8859-1, en post per rad)
+  laddas ner som ZIP och lämnas i Skatteverkets e-tjänst Filöverföring.
+  Fältkoderna är hämtade ur Skatteverkets fältnamnstabeller för
+  beskattningsperiod 2026P4; för en period vars tabeller inte har
+  kontrollerats laddas inga filer ner, och sidan visar bara siffrorna.
+- Varje nedladdning skrivs i behandlingshistoriken.
+
 ## 5b. Lön (modul)
 
 Kapitlet beskriver lönemodulen som helhet: regler och skattetabeller,
@@ -765,6 +784,13 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   följer planen. Moms vid försäljning av inventarier och om avyttringsmånaden
   ska skrivas av lämnas till användaren. Kontot 7835 för avskrivningar på
   datorer ska kontrolleras mot gällande BAS.
+- Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
+  mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
+  och bokslutsdispositioner). Identiteten skrivs som 16 följt av
+  organisationsnumret. Övriga INK2S-punkter (schablonintäkt på
+  periodiseringsfond, delägarrätter, handelsbolag, fastigheter m.m.) fylls i
+  för hand i Skatteverkets tjänst. Fältkoderna ska kontrolleras på nytt för
+  varje ny beskattningsperiod innan den läggs till i `VERIFIED_PERIODS`.
 - Årsredovisning: radindelningen och BAS-intervallen (särskilt 4000–4999 och
   8000–8799) ska kontrolleras mot ÅRL bilaga 2–3, BFNAR 2016:10 och den
   officiella BAS–K2-kopplingen. Notuppsättningen (bara redovisningsprinciper,
@@ -819,3 +845,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.25 | 2026-11-01 | Bankavstämning per konto mot kontoutdraget, med poster som förs vidare tills de når banken. |
 | 0.26 | 2026-11-01 | Bokslut: checklista, skatt och årets resultat, stängning av året och resultatdisposition. |
 | 0.27 | 2026-11-01 | Årsredovisning enligt K2 som sida och PDF, med siffror ur bokföringen. |
+| 0.28 | 2026-11-01 | Inkomstdeklaration 2 (INK2, INK2R, INK2S) ur bokföringen som SRU-filer. |

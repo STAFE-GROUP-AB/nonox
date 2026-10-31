@@ -298,6 +298,18 @@ final class AnnualAccounts
         }
     }
 
+    /** Debit minus credit for the year on the accounts in the range. */
+    public function movementOf(int $from, int $to): int
+    {
+        return $this->movement($this->current, $from, $to);
+    }
+
+    /** The balance at the end of the year on the accounts in the range, debit positive. */
+    public function closingOf(int $from, int $to): int
+    {
+        return $this->closing($this->current, $from, $to);
+    }
+
     /** @param  array<int, array{opening: int, debit: int, credit: int}>  $ledger */
     private function movement(array $ledger, int $from, int $to): int
     {

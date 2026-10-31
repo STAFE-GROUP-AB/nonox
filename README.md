@@ -76,7 +76,8 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Periodiseringar: förutbetalda kostnader och intäkter som fördelas över månader, och upplupna poster som bokförs vid månadens slut och återförs nästa månad.
 - ✅ Bokslut: checklista som kontrollerar bokföringen själv, skatt och årets resultat, stängning av året med låsning och resultatdisposition efter årsstämman.
 - ✅ Årsredovisning enligt K2 som PDF: förvaltningsberättelse med flerårsöversikt, resultat- och balansräkning med föregående år, noter och underskrifter.
-- 🚧 Digital inlämning av årsredovisningen (iXBRL) och SRU-filer till inkomstdeklarationen.
+- ✅ Inkomstdeklaration 2 för aktiebolag: räkenskapsschema och skattemässiga justeringar ur bokföringen, som SRU-filer till Skatteverkets filöverföring.
+- 🚧 Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 
@@ -93,7 +94,7 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 Var medveten om var projektet står innan du installerar:
 
 - ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering, leverantörsfakturor, lön (modul) och NONOX AI (modul). Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** digital inlämning av årsredovisningen, SRU-filer, EU- och exportfakturor samt utländsk valuta.
+- 🚧 **Inte byggt ännu:** digital inlämning av årsredovisningen, EU- och exportfakturor samt utländsk valuta.
 
 ### 1. Installera verktygen (en gång per dator)
 

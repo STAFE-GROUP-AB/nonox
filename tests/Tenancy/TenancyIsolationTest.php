@@ -21,6 +21,7 @@ use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
 use App\Models\ImportedVoucher;
+use App\Models\IncomeTaxReturn;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\InvoiceReminder;
@@ -112,6 +113,7 @@ const COMPANY_SCOPED_MODELS = [
     FixedAsset::class => 'fixedAssetAttributes',
     Accrual::class => 'accrualAttributes',
     AnnualReport::class => 'annualReportAttributes',
+    IncomeTaxReturn::class => 'incomeTaxReturnAttributes',
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
@@ -288,6 +290,15 @@ function yearEndEntryAttributes(): array
         'type' => 'TAX',
         'amount_ore' => 1_648_000,
         'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function incomeTaxReturnAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'adjustments' => ['7653' => 1000],
+        'updated_by' => User::factory()->create()->id,
     ];
 }
 
