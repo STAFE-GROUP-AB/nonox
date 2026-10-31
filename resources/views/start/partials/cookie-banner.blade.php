@@ -5,6 +5,8 @@
     scripts what they may load. Any [data-cookie-settings] link reopens it.
 --}}
 @php($categories = App\Support\Cookies\CookieInventory::categories())
+{{-- hidden must win over the inline display on every page, also those without the public stylesheet. --}}
+<style>#nx-consent[hidden],#nx-consent [hidden]{display:none!important}</style>
 <div id="nx-consent" role="dialog" aria-modal="false" aria-labelledby="nx-consent-title" hidden style="position:fixed;left:16px;right:16px;bottom:16px;z-index:200;display:flex;justify-content:center;pointer-events:none;font-family:Inter,system-ui,sans-serif">
   <div style="pointer-events:auto;width:100%;max-width:760px;max-height:calc(100vh - 32px);overflow-y:auto;background:#15171C;color:#F7F5F0;border-radius:22px;padding:22px 24px;box-shadow:0 30px 60px -20px rgba(0,0,0,.45)">
     <p id="nx-consent-title" style="margin:0;font-weight:700;font-size:16px">Cookies på NONOX</p>

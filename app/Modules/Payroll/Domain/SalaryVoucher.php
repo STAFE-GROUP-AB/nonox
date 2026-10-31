@@ -112,12 +112,34 @@ final class SalaryVoucher
         }
 
         return [
-            ...$rows,
+            ...self::summarise($rows),
             ['account' => self::CONTRIBUTIONS_COST, 'amount' => $contributions, 'description' => __('Arbetsgivaravgifter')],
             ['account' => self::TAX, 'amount' => -$tax, 'description' => __('Personalskatt')],
             ['account' => self::CONTRIBUTIONS_LIABILITY, 'amount' => -$contributions, 'description' => __('Arbetsgivaravgifter att betala')],
             ['account' => self::BANK, 'amount' => -$net, 'description' => __('Utbetalda nettolöner')],
         ];
+    }
+
+    /**
+     * One row per account and cost centre: the voucher is räkenskapsinformation
+     * that bookkeepers and auditors read, so it shows totals, not what each
+     * employee earned or was paid in sick pay (GDPR art. 5.1 c). The
+     * payslips themselves keep the detail.
+     *
+     * @param  list<array{account: int, amount: int, description: string, cost_center: mixed}>  $rows
+     * @return list<array{account: int, amount: int, description: string, cost_center: mixed}>
+     */
+    private static function summarise(array $rows): array
+    {
+        $totals = [];
+
+        foreach ($rows as $row) {
+            $key = $row['account'].'|'.(is_object($row['cost_center']) ? spl_object_id($row['cost_center']) : (string) $row['cost_center']);
+            $totals[$key] ??= ['account' => $row['account'], 'amount' => 0, 'description' => __('Löner enligt lönekörningen'), 'cost_center' => $row['cost_center']];
+            $totals[$key]['amount'] += $row['amount'];
+        }
+
+        return array_values(array_filter($totals, fn (array $row): bool => $row['amount'] !== 0));
     }
 
     /**
