@@ -293,6 +293,29 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   stället för radernas intäktskonton, och redovisas i momsdeklarationens
   ruta 41.
 
+### 5.1a Försäljning till andra EU-länder och export
+
+- En kund har ett land (landskod, standard SE) och kan ha en vanlig typ av
+  försäljning utomlands, som nya fakturor får; det går att ändra per faktura
+  och en kreditfaktura behåller originalets val.
+- Fakturan blir utan svensk moms och bokförs på kontot för typen i stället
+  för radernas intäktskonton (läggs till i kontoplanen vid behov):
+
+  | Typ | Konto | Momsruta |
+  |---|---|---|
+  | Varor till företag i annat EU-land | 3108 | 35 |
+  | Tjänster till företag i annat EU-land | 3308 | 39 |
+  | Export av varor utanför EU | 3105 | 36 |
+  | Tjänster till kund utanför EU | 3305 | 40 |
+
+- Vid EU-försäljning måste kunden ha ett annat EU-land än Sverige och ett
+  momsregistreringsnummer från det landet (EL för Grekland), och företaget
+  ett eget. Vid export måste kunden ha ett land utanför EU. Fakturan visar en
+  text på svenska och engelska och båda momsregistreringsnumren.
+- Kan inte kombineras med omvänd byggmoms eller ROT/RUT.
+- Ruta 35 matades tidigare av 3106 (momspliktig EU-försäljning); den matas nu
+  av 3108, momsfri försäljning av varor till annat EU-land.
+
 ### 5.2 ROT- och RUT-avdrag
 
 - En faktura till en privatperson (kunden har personnummer) kan ha ROT- eller
@@ -828,6 +851,12 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   kontot 3231 och ruta 41 ska kontrolleras mot mervärdesskattelagen och
   Skatteverkets vägledning. Systemet avgör inte om en tjänst är en byggtjänst
   eller om köparen är ett byggföretag; det gör användaren.
+- EU och export: kontona 3108/3308/3105/3305, rutorna 35/39/36/40 och
+  fakturatexterna ska kontrolleras mot mervärdesskattelagen (17 kap.) och
+  BAS. Momsregistreringsnumret kontrolleras inte mot VIES, och systemet
+  hanterar inte bevis för att varor lämnat Sverige, trepartshandel,
+  distansförsäljning till privatpersoner (OSS) eller periodisk sammanställning
+  ännu.
 - Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
   mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
   och bokslutsdispositioner). Identiteten skrivs som 16 följt av
@@ -893,3 +922,4 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 | 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |
 | 0.30 | 2026-11-01 | ROT- och RUT-avdrag på kundfakturor, delad fordran på 1513 och Skatteverkets betalning. |
 | 0.31 | 2026-11-01 | Resultat per projekt och kostnadsställe i registren. |
+| 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |

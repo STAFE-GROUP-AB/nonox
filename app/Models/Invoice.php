@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
@@ -21,6 +22,7 @@ use LogicException;
  * payments and sending are updated. A database trigger backs this up.
  *
  * @property bool $reverse_charge
+ * @property ?ForeignSale $foreign_sale
  * @property ?string $tax_reduction ROT or RUT
  * @property Money $tax_reduction_ore
  * @property Money $tax_reduction_paid_ore
@@ -78,6 +80,7 @@ class Invoice extends Model
         'our_reference',
         'notes',
         'reverse_charge',
+        'foreign_sale',
         'tax_reduction',
         'property_designation',
         'created_by',
@@ -99,6 +102,7 @@ class Invoice extends Model
     {
         return [
             'reverse_charge' => 'boolean',
+            'foreign_sale' => ForeignSale::class,
             'tax_reduction_ore' => MoneyCast::class,
             'tax_reduction_paid_ore' => MoneyCast::class,
             'number' => 'integer',

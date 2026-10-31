@@ -77,6 +77,7 @@ Systemet byggs en del i taget. Det här finns i dag:
 - ✅ Bokslut: checklista som kontrollerar bokföringen själv, skatt och årets resultat, stängning av året med låsning och resultatdisposition efter årsstämman.
 - ✅ Årsredovisning enligt K2 som PDF: förvaltningsberättelse med flerårsöversikt, resultat- och balansräkning med föregående år, noter och underskrifter.
 - ✅ ROT- och RUT-avdrag på kundfakturor, med arbetskostnad per rad, delad fordran mot Skatteverket och registrering av deras betalning.
+- ✅ EU och export: fakturor utan svensk moms till företag i andra EU-länder och kunder utanför EU, med rätt konto, momsruta och fakturatext.
 - ✅ Byggföretag: omvänd betalningsskyldighet för byggtjänster på kundfakturor, med rätt fakturatext, konto 3231 och momsruta 41.
 - ✅ Inkomstdeklaration 2 för aktiebolag: räkenskapsschema och skattemässiga justeringar ur bokföringen, som SRU-filer till Skatteverkets filöverföring.
 - 🚧 Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).

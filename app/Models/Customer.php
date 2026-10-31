@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Domain\Invoicing\ForeignSale;
 use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * A customer (kundregister, AGENTS.md §7 Phase 2).
  *
  * @property bool $reverse_charge_construction
+ * @property ?ForeignSale $foreign_sale
  * @property int $company_id
  * @property int $number
  * @property string $name
@@ -50,6 +52,7 @@ class Customer extends Model
         'payment_terms_days',
         'is_active',
         'reverse_charge_construction',
+        'foreign_sale',
     ];
 
     /** @var list<string> */
@@ -64,6 +67,7 @@ class Customer extends Model
             'payment_terms_days' => 'integer',
             'is_active' => 'boolean',
             'reverse_charge_construction' => 'boolean',
+            'foreign_sale' => ForeignSale::class,
         ];
     }
 

@@ -29,7 +29,7 @@ class Customers extends Component
     use ShowsToasts;
     use WithPagination;
 
-    public const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'payment_terms_days'];
+    public const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'payment_terms_days'];
 
     #[Url(as: 'sok', except: '')]
     public string $search = '';
@@ -42,6 +42,8 @@ class Customers extends Component
     public array $form = [];
 
     public bool $reverseCharge = false;
+
+    public string $foreignSale = '';
 
     public function mount(): void
     {
@@ -58,7 +60,9 @@ class Customers extends Component
         $this->editingId = null;
         $this->form = array_fill_keys(self::FIELDS, '');
         $this->form['payment_terms_days'] = '30';
+        $this->form['country'] = 'SE';
         $this->reverseCharge = false;
+        $this->foreignSale = '';
         $this->showForm = true;
         $this->resetErrorBag();
     }
@@ -71,18 +75,19 @@ class Customers extends Component
         $this->form = array_map(fn (mixed $value): string => (string) $value, $customer->only(self::FIELDS));
         $this->form['personal_number'] = (string) $customer->personal_number;
         $this->reverseCharge = $customer->reverse_charge_construction;
+        $this->foreignSale = (string) $customer->foreign_sale?->value;
         $this->showForm = true;
         $this->resetErrorBag();
     }
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form', 'reverseCharge');
+        $this->reset('showForm', 'editingId', 'form', 'reverseCharge', 'foreignSale');
     }
 
     public function save(SaveCustomer $save): void
     {
-        $customer = $save($this->user(), $this->company(), [...$this->form, 'reverse_charge_construction' => $this->reverseCharge], $this->editingId === null ? null : Customer::query()->findOrFail($this->editingId));
+        $customer = $save($this->user(), $this->company(), [...$this->form, 'reverse_charge_construction' => $this->reverseCharge, 'foreign_sale' => $this->foreignSale], $this->editingId === null ? null : Customer::query()->findOrFail($this->editingId));
 
         $this->toast($this->editingId === null
             ? __('Kund :number :name är tillagd.', ['number' => $customer->number, 'name' => $customer->name])

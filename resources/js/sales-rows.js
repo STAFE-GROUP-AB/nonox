@@ -13,12 +13,12 @@ function blankRow() {
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('salesRows', (rows, articles, negative, reverseCharge = false) => ({
+    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false) => ({
         rows,
         articles,
         negative,
-        // Omvänd betalningsskyldighet: the invoice carries no VAT, whatever the rows say.
-        reverseCharge,
+        // Omvänd betalningsskyldighet or a sale abroad: the invoice carries no VAT, whatever the rows say.
+        vatFree,
 
         init() {
             if (this.rows.length === 0) {
@@ -27,7 +27,8 @@ document.addEventListener('alpine:init', () => {
         },
 
         get totals() {
-            const rows = this.reverseCharge ? this.rows.map((row) => ({ ...row, vat_rate: '0' })) : this.rows;
+            const vatFree = typeof this.vatFree === 'function' ? this.vatFree() : this.vatFree;
+            const rows = vatFree ? this.rows.map((row) => ({ ...row, vat_rate: '0' })) : this.rows;
 
             return totals(rows, this.negative);
         },

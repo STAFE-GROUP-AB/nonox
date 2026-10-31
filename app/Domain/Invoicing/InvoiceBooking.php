@@ -21,6 +21,9 @@ use Illuminate\Support\Collection;
  * - Kontantmetoden: nothing when issued. A payment books its share of the
  *   revenue, VAT and rounding directly against the bank account.
  *
+ * A sale abroad (ForeignSale) is booked on the account for that kind of
+ * sale instead of the rows' accounts, without VAT.
+ *
  * A credit invoice has negative amounts, so the same rules reverse it.
  *
  * TODO(legal-verify): under kontantmetoden, invoices still unpaid at the end
@@ -55,9 +58,11 @@ final class InvoiceBooking
         $lines = [];
 
         foreach ($rows as $row) {
-            $number = $invoice->reverse_charge
-                ? self::REVERSE_CHARGE_CONSTRUCTION
-                : ($row->account instanceof Account ? $row->account->number : 0);
+            $number = match (true) {
+                $invoice->reverse_charge => self::REVERSE_CHARGE_CONSTRUCTION,
+                $invoice->foreign_sale !== null => $invoice->foreign_sale->account(),
+                default => $row->account instanceof Account ? $row->account->number : 0,
+            };
             $lines[$number] = ($lines[$number] ?? 0) - $row->net_ore->ore;
         }
 

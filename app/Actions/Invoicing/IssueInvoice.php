@@ -8,6 +8,7 @@ use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Company\AccountingMethod;
+use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
@@ -69,6 +70,10 @@ class IssueInvoice
 
             if ($invoice->tax_reduction !== null) {
                 $this->ensureTaxReduction($company, $invoice);
+            }
+
+            if ($invoice->foreign_sale !== null) {
+                $this->ensureForeignSale($company, $customer, $invoice->foreign_sale);
             }
 
             $number = NumberSeries::take(NumberSeries::INVOICES);
@@ -133,6 +138,44 @@ class IssueInvoice
 
         Account::query()->firstOrCreate(['number' => InvoiceBooking::REVERSE_CHARGE_CONSTRUCTION], [
             'name' => __('Försäljning inom byggtjänster, omvänd skattskyldighet'),
+            'type' => AccountType::Revenue,
+        ]);
+    }
+
+    /**
+     * A sale to a business in another EU country needs both parties' VAT
+     * numbers, the buyer's from that country; an export needs a buyer
+     * outside the EU. The revenue account is added if missing.
+     *
+     * TODO(legal-verify): whether a valid VAT number must be checked in VIES
+     * before issuing, and the evidence required that goods left Sweden.
+     */
+    private function ensureForeignSale(Company $company, Customer $customer, ForeignSale $sale): void
+    {
+        $country = strtoupper($customer->country);
+
+        if ($sale->isEu()) {
+            if (! ForeignSale::isEuCountry($country)) {
+                throw ValidationException::withMessages(['invoice' => __('Kunden ska ha ett annat EU-land än Sverige som land för försäljning inom EU.')]);
+            }
+
+            if (blank($company->vat_number)) {
+                throw ValidationException::withMessages(['invoice' => __('Fyll i företagets momsregistreringsnummer under Företagsuppgifter. Det ska stå på fakturor till andra EU-länder.')]);
+            }
+
+            $prefix = $country === 'GR' ? 'EL' : $country;
+
+            if (! str_starts_with(strtoupper((string) $customer->vat_number), $prefix)) {
+                throw ValidationException::withMessages(['invoice' => __('Kunden behöver ett momsregistreringsnummer från :country för försäljning utan moms inom EU.', ['country' => $country])]);
+            }
+        }
+
+        if (! $sale->isEu() && ($country === 'SE' || ForeignSale::isEuCountry($country))) {
+            throw ValidationException::withMessages(['invoice' => __('Kunden ska ha ett land utanför EU för export.')]);
+        }
+
+        Account::query()->firstOrCreate(['number' => $sale->account()], [
+            'name' => __($sale->accountName()),
             'type' => AccountType::Revenue,
         ]);
     }

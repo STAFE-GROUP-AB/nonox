@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoicing;
 
+use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
@@ -28,8 +29,9 @@ class SaveDraftInvoice
 {
     /**
      * @param  array<string, mixed>  $input  customer_id, invoice_date, due_date (optional), delivery_date,
-     *                                       your_reference, our_reference, notes, reverse_charge (optional,
-     *                                       otherwise the draft's or the customer's setting),
+     *                                       your_reference, our_reference, notes, reverse_charge and
+     *                                       foreign_sale (optional, otherwise the draft's or the customer's
+     *                                       setting; an empty foreign_sale means a domestic sale),
      *                                       rows (list of article (number, optional), description,
      *                                       quantity, unit, price (kronor), discount (percent),
      *                                       vat_rate, account (number, optional))
@@ -49,6 +51,7 @@ class SaveDraftInvoice
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'reverse_charge' => ['nullable', 'boolean'],
+            'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
             'tax_reduction' => ['nullable', Rule::in([TaxReduction::ROT, TaxReduction::RUT])],
             'property_designation' => ['nullable', 'string', 'max:255'],
             'rows' => ['required', 'array', 'min:1'],
@@ -82,8 +85,16 @@ class SaveDraftInvoice
                 ? (bool) $validated['reverse_charge']
                 : ($draft !== null && $draft->exists ? $draft->reverse_charge : $customer->reverse_charge_construction);
 
-            // Under omvänd betalningsskyldighet the buyer accounts for the VAT, so the invoice carries none.
-            if ($reverseCharge) {
+            $foreignSale = array_key_exists('foreign_sale', $input)
+                ? ForeignSale::tryFrom((string) ($validated['foreign_sale'] ?? ''))
+                : ($draft !== null && $draft->exists ? $draft->foreign_sale : $customer->foreign_sale);
+
+            if ($foreignSale !== null && $reverseCharge) {
+                throw ValidationException::withMessages(['foreign_sale' => __('Välj antingen omvänd betalningsskyldighet för byggtjänster eller försäljning utomlands, inte båda.')]);
+            }
+
+            // The buyer accounts for the VAT, or none is due in Sweden, so the invoice carries none.
+            if ($reverseCharge || $foreignSale !== null) {
                 foreach ($rows as $index => $row) {
                     $rows[$index]['vat_rate'] = 0;
                 }
@@ -97,6 +108,10 @@ class SaveDraftInvoice
 
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
 
+            if ($taxReduction !== null && $foreignSale !== null) {
+                throw ValidationException::withMessages(['tax_reduction' => __('ROT- och RUT-avdrag gäller arbete i Sverige och kan inte kombineras med försäljning utomlands.')]);
+            }
+
             $deduction = $taxReduction === null ? 0 : $this->deduction($taxReduction, $rows, $customer, $invoiceDate, $reverseCharge, $draft);
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
@@ -109,6 +124,7 @@ class SaveDraftInvoice
                 'our_reference' => $validated['our_reference'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'reverse_charge' => $reverseCharge,
+                'foreign_sale' => $foreignSale,
                 'tax_reduction' => $taxReduction,
                 'property_designation' => $taxReduction === TaxReduction::ROT ? ($validated['property_designation'] ?? null) : null,
             ]);

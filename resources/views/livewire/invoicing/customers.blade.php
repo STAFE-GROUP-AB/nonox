@@ -12,6 +12,7 @@
         'address_line2' => [__('Adress, rad 2'), 'sm:col-span-2'],
         'postal_code' => [__('Postnummer'), ''],
         'city' => [__('Ort'), ''],
+        'country' => [__('Land (landskod, t.ex. SE, DE, US)'), ''],
     ];
 @endphp
 
@@ -24,6 +25,14 @@
                         <input id="customer_{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="{{ $input }} mt-1" wire:model="form.{{ $field }}" @if($field === 'payment_terms_days') inputmode="numeric" @endif>
                     </x-ui.field>
                 @endforeach
+                <x-ui.field for="customer_foreign_sale" :label="__('Försäljning utomlands')" error="foreign_sale" :hint="__('Nya fakturor till kunden blir utan svensk moms och bokförs på rätt konto.')">
+                    <select id="customer_foreign_sale" class="{{ $input }} mt-1" wire:model="foreignSale">
+                        <option value="">{{ __('Nej, försäljning i Sverige') }}</option>
+                        @foreach(App\Domain\Invoicing\ForeignSale::cases() as $sale)
+                            <option value="{{ $sale->value }}">{{ __($sale->label()) }}</option>
+                        @endforeach
+                    </select>
+                </x-ui.field>
                 <label class="flex items-start gap-3 text-sm text-gray-800 sm:col-span-2">
                     <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-ink focus:ring-accent-500" wire:model="reverseCharge">
                     <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}<span class="block text-xs text-gray-500">{{ __('Kunden är ett byggföretag som själv redovisar momsen på byggtjänster ni säljer. Nya fakturor till kunden blir utan moms.') }}</span></span>

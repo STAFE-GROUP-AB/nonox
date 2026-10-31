@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Invoicing;
 
 use App\Domain\Company\OrganisationNumber;
+use App\Domain\Invoicing\ForeignSale;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\NumberSeries;
@@ -15,6 +16,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 
 /**
  * Creates a customer with the next customer number, or updates one.
@@ -54,7 +56,10 @@ class SaveCustomer
             'payment_terms_days' => ['required', 'integer', 'between:0,365'],
             'is_active' => ['sometimes', 'boolean'],
             'reverse_charge_construction' => ['sometimes', 'boolean'],
+            'country' => ['nullable', 'string', 'regex:/^[A-Za-z]{2}$/'],
+            'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
         ], [
+            'country.regex' => __('Ange landet som en landskod med två bokstäver, till exempel SE, DE eller US.'),
             'vat_number.regex' => __('Momsregistreringsnumret ska börja med landskoden, till exempel SE556677889901.'),
         ], [
             'name' => __('namn'),
@@ -66,6 +71,10 @@ class SaveCustomer
 
         if (array_key_exists('reverse_charge_construction', $attributes)) {
             $attributes['reverse_charge_construction'] = (bool) $attributes['reverse_charge_construction'];
+        }
+
+        if (array_key_exists('country', $attributes)) {
+            $attributes['country'] = strtoupper((string) ($attributes['country'] ?? 'SE'));
         }
 
         if (isset($attributes['org_number'])) {

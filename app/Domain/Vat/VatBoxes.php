@@ -47,7 +47,7 @@ final class VatBoxes
         60 => ['label' => 'Utgående moms 25 % på import', 'element' => 'MomsImportUtgHog', 'side' => self::CREDIT, 'accounts' => [[2615, 2615]]],
         61 => ['label' => 'Utgående moms 12 % på import', 'element' => 'MomsImportUtgMedel', 'side' => self::CREDIT, 'accounts' => [[2625, 2625]]],
         62 => ['label' => 'Utgående moms 6 % på import', 'element' => 'MomsImportUtgLag', 'side' => self::CREDIT, 'accounts' => [[2635, 2635]]],
-        35 => ['label' => 'Försäljning av varor till ett annat EU-land', 'element' => 'ForsVaruAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3106, 3106]]],
+        35 => ['label' => 'Försäljning av varor till ett annat EU-land', 'element' => 'ForsVaruAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3108, 3108]]],
         36 => ['label' => 'Försäljning av varor utanför EU', 'element' => 'ForsVaruUtomEg', 'side' => self::CREDIT, 'accounts' => [[3105, 3105]]],
         39 => ['label' => 'Försäljning av tjänster till näringsidkare i ett annat EU-land', 'element' => 'ForsTjSkskAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3308, 3308]]],
         40 => ['label' => 'Övrig försäljning av tjänster omsatta utanför Sverige', 'element' => 'ForsTjOvrUtomEg', 'side' => self::CREDIT, 'accounts' => [[3305, 3305]]],

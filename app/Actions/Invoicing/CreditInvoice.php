@@ -42,6 +42,7 @@ class CreditInvoice
                 'our_reference' => $original->our_reference,
                 'notes' => __('Kreditering av faktura :number.', ['number' => $original->number]),
                 'reverse_charge' => $original->reverse_charge,
+                'foreign_sale' => $original->foreign_sale->value ?? '',
                 'tax_reduction' => $original->tax_reduction,
                 'property_designation' => $original->property_designation,
                 'rows' => $original->rows->map(fn (InvoiceRow $row): array => $row->asInput())->all(),

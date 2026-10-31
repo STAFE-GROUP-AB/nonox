@@ -34,6 +34,14 @@
                         <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}@if($reverseCharge)<span class="block text-xs text-gray-500">{{ __('Fakturan blir utan moms och försäljningen bokförs på 3231. Köparens och ert momsregistreringsnummer skrivs ut på fakturan.') }}</span>@endif</span>
                     </label>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                        <x-ui.field for="invoice_foreign_sale" :label="__('Försäljning utomlands')" error="foreign_sale">
+                            <select id="invoice_foreign_sale" class="{{ $input }} mt-1" wire:model.live="foreignSale" @disabled($credit)>
+                                <option value="">{{ __('Nej, försäljning i Sverige') }}</option>
+                                @foreach(App\Domain\Invoicing\ForeignSale::cases() as $sale)
+                                    <option value="{{ $sale->value }}">{{ __($sale->label()) }}</option>
+                                @endforeach
+                            </select>
+                        </x-ui.field>
                         <x-ui.field for="invoice_tax_reduction" :label="__('ROT- eller RUT-avdrag')" error="tax_reduction">
                             <select id="invoice_tax_reduction" class="{{ $input }} mt-1" wire:model.live="taxReduction" @disabled($credit)>
                                 <option value="">{{ __('Inget avdrag') }}</option>
@@ -45,6 +53,9 @@
                             <x-ui.field for="invoice_property" :label="__('Fastighetsbeteckning eller BRF')" error="property_designation"><input id="invoice_property" type="text" class="{{ $input }} mt-1" wire:model="propertyDesignation" placeholder="{{ __('Till exempel Uppsala Kåbo 1:23') }}"></x-ui.field>
                         @endif
                     </div>
+                    @if($foreignSale !== '')
+                        <p class="mt-2 text-xs text-gray-500">{{ __('Fakturan blir utan svensk moms och försäljningen bokförs på :account. Texten :text skrivs ut på fakturan.', ['account' => App\Domain\Invoicing\ForeignSale::from($foreignSale)->account(), 'text' => App\Domain\Invoicing\ForeignSale::from($foreignSale)->invoiceText()]) }}</p>
+                    @endif
                     @if($taxReduction !== '')
                         <p class="mt-2 text-xs text-gray-500">{{ __('Bocka i Arbete på raderna som är arbetskostnad. Avdraget räknas på arbetskostnaden inklusive moms när du sparar, och kunden betalar resten.') }}</p>
                     @endif

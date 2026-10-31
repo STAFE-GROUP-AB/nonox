@@ -51,6 +51,8 @@ class InvoiceEditor extends Component
 
     public bool $reverseCharge = false;
 
+    public string $foreignSale = '';
+
     public string $taxReduction = '';
 
     public string $propertyDesignation = '';
@@ -71,6 +73,7 @@ class InvoiceEditor extends Component
             $this->ourReference = (string) $invoice->our_reference;
             $this->notes = (string) $invoice->notes;
             $this->reverseCharge = $invoice->reverse_charge;
+            $this->foreignSale = (string) $invoice->foreign_sale?->value;
             $this->taxReduction = (string) $invoice->tax_reduction;
             $this->propertyDesignation = (string) $invoice->property_designation;
             $this->rows = $this->rowsFrom($invoice->rows);
@@ -89,6 +92,7 @@ class InvoiceEditor extends Component
     {
         $customer = $this->customerId === '' ? null : Customer::query()->find((int) $this->customerId);
         $this->reverseCharge = $customer->reverse_charge_construction ?? false;
+        $this->foreignSale = (string) $customer?->foreign_sale?->value;
     }
 
     public function save(SaveDraftInvoice $save): void
@@ -137,6 +141,7 @@ class InvoiceEditor extends Component
             'our_reference' => $this->ourReference,
             'notes' => $this->notes,
             'reverse_charge' => $this->reverseCharge,
+            'foreign_sale' => $this->foreignSale === '' ? null : $this->foreignSale,
             'tax_reduction' => $this->taxReduction === '' ? null : $this->taxReduction,
             'property_designation' => $this->propertyDesignation,
             'rows' => $this->rowInput(),
