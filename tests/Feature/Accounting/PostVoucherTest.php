@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CreateNextFiscalYear;
+use App\Actions\Accounting\LockPeriod;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Accounting\UpdateAccount;
@@ -15,7 +16,9 @@ use App\Models\AuditLog;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 
@@ -176,4 +179,38 @@ it('always posts random balanced vouchers and never unbalanced ones', function (
     }
 
     expect(app(LedgerVerifier::class)->verify($this->company)['ok'])->toBeTrue();
+});
+
+it('checks the period lock under a key-share lock on the company, taken after the fiscal year and before the counter', function () {
+    $draft = Bookkeeping::draft($this->owner, $this->company);
+
+    DB::enableQueryLog();
+    app(PostVoucher::class)($this->owner, $draft);
+    $queries = array_column(DB::getQueryLog(), 'query');
+    DB::disableQueryLog();
+
+    $position = fn (string $pattern): ?int => array_key_first(array_filter($queries, fn (string $sql): bool => (bool) preg_match($pattern, $sql)));
+    $fiscalYear = $position('/from "fiscal_years".*for update$/');
+    $company = $position('/from "teams".*for key share$/');
+    $counter = $position('/from "voucher_number_counters".*for update$/');
+
+    expect($fiscalYear)->toBeInt()
+        ->and($company)->toBeInt()
+        ->and($counter)->toBeInt()
+        ->and($fiscalYear < $company && $company < $counter)->toBeTrue();
+});
+
+it('locks a period against the stored lock, under an update lock on the company', function () {
+    $stale = $this->company->fresh();
+    app(LockPeriod::class)($this->owner, $this->company, CarbonImmutable::parse('2026-03-31'));
+
+    DB::enableQueryLog();
+    expect(fn () => app(LockPeriod::class)($this->owner, $stale, CarbonImmutable::parse('2026-02-28')))
+        ->toThrow(ValidationException::class, 'Bokföringen är redan låst till och med 2026-03-31.');
+    $queries = array_column(DB::getQueryLog(), 'query');
+    DB::disableQueryLog();
+
+    expect(collect($queries)->contains(fn (string $sql): bool => (bool) preg_match('/from "teams".*for update$/', $sql)))->toBeTrue()
+        ->and($this->company->fresh()->locked_until_date->toDateString())->toBe('2026-03-31')
+        ->and(fn () => Bookkeeping::post($this->owner, $this->company, date: '2026-03-15'))->toThrow(ValidationException::class, 'Perioden till och med 2026-03-31 är låst');
 });

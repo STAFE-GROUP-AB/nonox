@@ -112,6 +112,12 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   och kredit är lika stora och större än noll, att datumet ligger i ett öppet
   räkenskapsår, att perioden inte är låst och att alla konton är aktiva.
   Databasen kontrollerar balansen en gång till.
+- Periodlåset kontrolleras medan bokföringen håller ett delat lås (FOR KEY
+  SHARE) på företagets rad. Den som låser en period (periodlås, stängning av
+  räkenskapsår) tar ett uppdateringslås (FOR UPDATE) på samma rad. Därför
+  väntar de in varandra: en bokföring som pågår blir klar innan låset flyttas,
+  och en bokföring som börjar efteråt ser det nya låset. Låsen tas alltid i
+  ordningen verifikation, räkenskapsår, företag, nummerräknare.
 - Varje rad har antingen ett debet- eller ett kreditbelopp i hela ören, aldrig
   båda och aldrig negativt.
 
@@ -848,15 +854,23 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   skriver om en händelse och tar emot samma händelse bara en gång. Stor
   skillnad i enhetens klocka, poster som skickats i efterhand, saknade
   löpnummer och bruten kedja på enheten markeras på posten.
+- **Mobil incheckning:** positionen kommer från personens egen telefon och
+  kan inte kontrolleras av servern. Varje sådan post markeras därför
+  "Position uppgiven av telefonen, ej verifierad" i liggaren och i
+  kontrollbesökets export, och försöken begränsas till tio per person och
+  tio minuter.
 - **Kod (PIN):** koden sparas aldrig, bara ett kontrollvärde (PBKDF2) som
   kiosken kan pröva mot utan nät. Fem fel låser personen på kiosken i fem
   minuter.
 - **Kontrollbesök:** "Skatteverket är här" visar vem som är incheckad nu och
   liggaren för vald period med fullständiga personnummer, i appen för den som
   har behörigheten och på kiosken med en chefs kod. Varje öppning och export
-  loggas. Export som PDF, CSV och XML (NONOX:s eget preliminära format med
-  schema, tills Skatteverket publicerat sitt), och från kiosken en ZIP-fil till
-  USB-minne byggd ur enhetens egen kopia.
+  loggas. En öppning som kiosken gjort utan nät loggas när den synkar, som
+  rapporterad av enheten och ej verifierad av servern, bara för en aktiv chef
+  med kod, en gång per öppning och högst fem per synkning. Export som PDF, CSV
+  och XML (NONOX:s eget preliminära format med schema, tills Skatteverket
+  publicerat sitt) för högst 13 månader åt gången, och från kiosken en
+  ZIP-fil till USB-minne byggd ur enhetens egen kopia.
 - **Gallring:** poster äldre än lagringstiden tas bort från kedjans äldsta
   ände av `privacy:prune`. Kedjans nya början sparas på lokalen och i
   behandlingshistoriken, så resten av kedjan kan fortfarande kontrolleras.
@@ -1152,3 +1166,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |
 | 0.37 | 2026-11-02 | Personalliggare (modul): lokaler, personal, kiosk som fungerar utan internet, personlig QR-kod, mobil incheckning med platskontroll, liggare med hashkedja och rättelser, kontrollbesök med export och förslag till tidrapport i lönen. |
+| 0.40 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |

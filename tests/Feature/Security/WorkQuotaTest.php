@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Invoicing\ImportBankFile;
+use App\Support\Toast;
 use App\Support\WorkQuota;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\RateLimiter;
@@ -24,4 +25,22 @@ it('stops a company that repeats heavy work too often within an hour, without to
 
     RateLimiter::clear("work-quota:bank_file:{$company->id}");
     RateLimiter::clear("work-quota:bank_file:{$other->id}");
+});
+
+it('caps generated PDFs and report files per company and hour, with a Swedish message', function () {
+    [$owner, $company] = Bookkeeping::company();
+    $this->actingAs($owner);
+
+    $this->get(route('accounting.reports.csv', ['rapport' => 'saldobalans']))->assertOk();
+
+    foreach (range(2, WorkQuota::LIMITS['pdf']) as $ignored) {
+        WorkQuota::take($company, 'pdf', 'file');
+    }
+
+    $this->from(route('accounting.reports'))
+        ->get(route('accounting.reports.csv', ['rapport' => 'saldobalans']))
+        ->assertRedirect(route('accounting.reports'))
+        ->assertSessionHas(Toast::SESSION_KEY, [['message' => 'Det här har gjorts många gånger den senaste timmen. Vänta en stund och försök igen.', 'type' => 'error']]);
+
+    RateLimiter::clear("work-quota:pdf:{$company->id}");
 });

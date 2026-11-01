@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support\Currency;
 
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
@@ -75,7 +77,7 @@ class RiksbankRates
             return null;
         }
 
-        $micros = (int) round((float) $latest['value'] * ExchangeRate::SCALE);
+        $micros = BigDecimal::of(is_float($latest['value']) ? (string) json_encode($latest['value']) : trim((string) $latest['value']))->multipliedBy(ExchangeRate::SCALE)->toScale(0, RoundingMode::HalfUp)->toInt();
 
         return $micros > 0 ? new ExchangeRate($currency, $latest['date'], $micros, 'riksbank') : null;
     }

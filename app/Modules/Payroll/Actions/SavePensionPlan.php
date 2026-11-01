@@ -12,6 +12,8 @@ use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -46,7 +48,7 @@ class SavePensionPlan
         ], ['below_percent.regex' => __('Skriv procenten som ett tal, till exempel 4,5.'), 'above_percent.regex' => __('Skriv procenten som ett tal, till exempel 30.')],
             ['name' => __('namn'), 'below_percent' => __('procent under taket'), 'above_percent' => __('procent över taket')])->validate();
 
-        $bp = fn (string $percent): int => (int) round((float) str_replace(',', '.', $percent) * 100);
+        $bp = fn (string $percent): int => BigDecimal::of(str_replace(',', '.', $percent))->multipliedBy(100)->toScale(0, RoundingMode::HalfUp)->toInt();
 
         return CurrentCompany::run($company, function () use ($user, $company, $validated, $plan, $bp): PensionPlan {
             $plan ??= new PensionPlan;

@@ -63,7 +63,12 @@
                     <td>{{ $entry->type->label() }}{{ $entry->effectiveDirection() ? ' ('.$entry->effectiveDirection()->label().')' : '' }}</td>
                     <td>{{ $entry->person_name }}</td>
                     <td>{{ App\Modules\StaffLedger\Support\Export\ControlVisitReport::formatNumber($entry->personal_number) }}</td>
-                    <td>{{ $entry->method->label() }}</td>
+                    <td>
+                        {{ $entry->method->label() }}
+                        @foreach($entry->flags as $flag)
+                            <br>{{ App\Modules\StaffLedger\Domain\EntryFlag::tryFrom($flag)?->label() ?? $flag }}
+                        @endforeach
+                    </td>
                     <td>
                         @if($entry->corrects_entry_id)
                             {{ __('Rättar post :id: :kind.', ['id' => $entry->corrects_entry_id, 'kind' => $entry->correction?->label()]) }}

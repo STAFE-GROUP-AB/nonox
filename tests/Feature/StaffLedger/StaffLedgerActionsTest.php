@@ -16,6 +16,7 @@ use App\Modules\StaffLedger\Actions\TimeProposals;
 use App\Modules\StaffLedger\Domain\CheckInMethod;
 use App\Modules\StaffLedger\Domain\CorrectionKind;
 use App\Modules\StaffLedger\Domain\Direction;
+use App\Modules\StaffLedger\Domain\EntryFlag;
 use App\Modules\StaffLedger\Domain\EntryType;
 use App\Modules\StaffLedger\Domain\LedgerQuery;
 use App\Modules\StaffLedger\Domain\Pin;
@@ -187,6 +188,7 @@ it('checks in on the phone only inside the geofence and where it is turned on', 
     expect($in->type)->toBe(EntryType::CheckIn)
         ->and($in->method)->toBe(CheckInMethod::Mobile)
         ->and($in->geo_distance_meters)->toBe(44)
+        ->and($in->flags)->toBe([EntryFlag::SelfReportedPosition->value])
         ->and($out->type)->toBe(EntryType::CheckOut);
 
     $this->actingAs($staff);
@@ -194,6 +196,26 @@ it('checks in on the phone only inside the geofence and where it is turned on', 
         ->assertSee('Checka in här')
         ->call('checkIn', $this->location->id, 59.3293, 18.0686, 15.0)
         ->assertDispatched('toast');
+});
+
+it('rate-limits check-in attempts on the phone per person', function () {
+    $staff = Bookkeeping::member($this->company, 'staff_ledger_staff');
+    CurrentCompany::set($this->company);
+    app(SavePerson::class)($this->owner, $this->company, [...$this->person->only(['first_name', 'last_name', 'language']), 'user_id' => $staff->id], $this->person);
+    $person = $this->person->fresh();
+    $this->location->forceFill(['mobile_enabled' => true])->save();
+    $checkIn = app(CheckInFromPhone::class);
+
+    foreach (range(1, CheckInFromPhone::MAX_ATTEMPTS) as $attempt) {
+        try {
+            $checkIn($staff, $person, $this->location, 59.3393, 18.0686, 10);
+        } catch (ValidationException) {
+            // Outside the geofence: refused, but it counts as an attempt.
+        }
+    }
+
+    expect(fn () => $checkIn($staff, $person, $this->location, 59.3293, 18.0686, 10))
+        ->toThrow(ValidationException::class, 'För många försök att checka in. Vänta några minuter och försök igen.');
 });
 
 it('reminds about forgotten check-outs once and never checks anyone out', function () {

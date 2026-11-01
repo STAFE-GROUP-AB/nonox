@@ -39,6 +39,9 @@ final class RecordKioskEvents
     /** An event this much older than its sending counts as sent afterwards. */
     public const int LATE_AFTER_SECONDS = 900;
 
+    /** At most this many offline control visit openings are written per sync. */
+    public const int MAX_OFFLINE_OPENINGS_PER_SYNC = 5;
+
     public function __construct(private readonly AppendEntry $append, private readonly ModuleManager $modules) {}
 
     /**
@@ -75,20 +78,72 @@ final class RecordKioskEvents
             };
         }
 
-        foreach ($logs as $log) {
-            if (($log['type'] ?? null) === 'control_visit_opened') {
-                Audit::record('staff_ledger.control_visit_opened', $device, [
-                    'where' => 'kiosk_offline',
-                    'manager_person_id' => is_numeric($log['person_id'] ?? null) ? (int) $log['person_id'] : null,
-                    'at' => is_string($log['at'] ?? null) ? mb_substr($log['at'], 0, 40) : null,
-                ], $device->company_id);
-            }
-        }
+        $this->recordOfflineOpenings($device, $logs);
 
         $device->forceFill(['last_seen_at' => $now])->save();
         $result['last_sequence'] = $device->last_sequence;
 
         return $result;
+    }
+
+    /**
+     * Control visit openings the kiosk reports from offline use. The server
+     * cannot verify them (the PIN was checked on the device), so each is
+     * written as reported by the device, and only when it names an active
+     * manager of the device's company who has a PIN. Identical reports are
+     * written once, and at most MAX_OFFLINE_OPENINGS_PER_SYNC per sync, so a
+     * device token can neither flood the audit log nor name anybody it likes.
+     *
+     * @param  list<array<string, mixed>>  $logs
+     */
+    private function recordOfflineOpenings(Device $device, array $logs): void
+    {
+        $reported = [];
+
+        foreach ($logs as $log) {
+            if (($log['type'] ?? null) !== 'control_visit_opened' || ! is_numeric($log['person_id'] ?? null)) {
+                continue;
+            }
+
+            $personId = (int) $log['person_id'];
+            $at = is_string($log['at'] ?? null) ? mb_substr($log['at'], 0, 40) : null;
+            $reported["{$personId}|{$at}"] = ['person_id' => $personId, 'at' => $at];
+        }
+
+        if ($reported === []) {
+            return;
+        }
+
+        $managers = Person::query()
+            ->where('company_id', $device->company_id)
+            ->whereIn('id', array_values(array_unique(array_column($reported, 'person_id'))))
+            ->where('is_manager', true)
+            ->whereNull('archived_at')
+            ->whereNotNull('pin_verifier')
+            ->pluck('id')
+            ->map(fn (mixed $id): int => (int) $id)
+            ->all();
+
+        $written = 0;
+
+        foreach ($reported as $opening) {
+            if ($written >= self::MAX_OFFLINE_OPENINGS_PER_SYNC) {
+                return;
+            }
+
+            if (! in_array($opening['person_id'], $managers, true)) {
+                continue;
+            }
+
+            Audit::record('staff_ledger.control_visit_opened', $device, [
+                'where' => 'kiosk_offline',
+                'verified' => false,
+                'reported_by' => 'device',
+                'manager_person_id' => $opening['person_id'],
+                'at' => $opening['at'],
+            ], $device->company_id);
+            $written++;
+        }
     }
 
     /**
