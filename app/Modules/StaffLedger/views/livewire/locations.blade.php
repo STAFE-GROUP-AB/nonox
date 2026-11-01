@@ -95,9 +95,11 @@
                         </span>
                         @if($canManage && ! $device->revoked_at)
                             <span class="flex gap-3 font-semibold">
-                                @unless($device->paired_at)
+                                @if($device->paired_at)
+                                    <button type="button" wire:click="replace({{ $device->id }})" wire:confirm="{{ __('Koppla kiosken igen? Den gamla kopplingen spärras och du får en ny kod. Incheckningar som inte hunnit skickas från surfplattan tas inte emot.') }}" class="text-accent-700 underline">{{ __('Koppla igen') }}</button>
+                                @else
                                     <button type="button" wire:click="renewCode({{ $device->id }})" class="text-accent-700 underline">{{ __('Ny kopplingskod') }}</button>
-                                @endunless
+                                @endif
                                 <button type="button" wire:click="revoke({{ $device->id }})" wire:confirm="{{ __('Spärra kiosken? Den kan inte längre checka in någon. Händelser som inte hunnit skickas från den tas inte emot.') }}" class="text-red-800 underline">{{ __('Spärra') }}</button>
                             </span>
                         @endif

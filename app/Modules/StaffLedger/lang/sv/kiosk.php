@@ -36,6 +36,8 @@ return [
     'pair_button' => 'Koppla',
     'pair_failed' => 'Koden stämmer inte eller har gått ut.',
     'not_paired' => 'Skriv koden som chefen fick när kiosken lades till i NONOX.',
+    'install_first' => 'På iPad och iPhone: lägg först till sidan på hemskärmen (Dela → Lägg till på hemskärmen), öppna kiosken därifrån och skriv koden där.',
+    'connecting' => 'Kiosken är kopplad. Hämtar personalen…',
     'revoked' => 'Kiosken är spärrad. Be en chef lägga till den igen.',
     'cached_ledger' => 'Visar liggaren som finns sparad här (de senaste :days dagarna).',
     'start' => 'Början',

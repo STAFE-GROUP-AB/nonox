@@ -36,6 +36,8 @@ return [
     'pair_button' => 'Ku xir',
     'pair_failed' => 'Koodhku waa khaldan yahay ama wuu dhacay.',
     'not_paired' => 'Geli koodhka maareeyuhu helay markii kiyoosku lagu daray NONOX.',
+    'install_first' => 'iPad iyo iPhone: marka hore bogga ku dar shaashadda hore (La wadaag → Ku dar shaashadda hore), halkaas ka fur kiyooska oo halkaas ku geli koodhka.',
+    'connecting' => 'Kiyoosku waa ku xiran yahay. Shaqaalaha ayaa la soo dejinayaa…',
     'revoked' => 'Kiyooskan waa la xiray. Weydii maareeyaha inuu mar kale ku daro.',
     'cached_ledger' => 'Waxaa la muujinayaa diiwaanka halkan ku kaydsan (:days maalmood ee ugu dambeeyay).',
     'start' => 'Bilow',

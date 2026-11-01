@@ -3501,5 +3501,9 @@
     "Underlaget läses igen. Ladda om om en liten stund.": "The document is being read again. Reload in a moment.",
     "Mejlet och dess bilagor är raderade.": "The email and its attachments are deleted.",
     "Bara underlag som väntar på granskning kan läsas igen.": "Only documents waiting for review can be read again.",
-    "Underlaget är bokfört och sparas i sju år enligt bokföringslagen. Det går inte att radera.": "The document is booked and is kept for seven years under the Bookkeeping Act. It cannot be deleted."
+    "Underlaget är bokfört och sparas i sju år enligt bokföringslagen. Det går inte att radera.": "The document is booked and is kept for seven years under the Bookkeeping Act. It cannot be deleted.",
+    "Enheten är spärrad. Lägg till en ny enhet i stället.": "The device is blocked. Add a new device instead.",
+    "En ny kopplingskod är skapad. Den gamla kopplingen är spärrad.": "A new pairing code is created. The old connection is blocked.",
+    "Koppla kiosken igen? Den gamla kopplingen spärras och du får en ny kod. Incheckningar som inte hunnit skickas från surfplattan tas inte emot.": "Connect the kiosk again? The old connection is blocked and you get a new code. Check-ins not yet sent from the tablet are not received.",
+    "Koppla igen": "Connect again"
 }

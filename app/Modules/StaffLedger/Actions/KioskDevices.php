@@ -103,6 +103,31 @@ final class KioskDevices
         return [$device, $token];
     }
 
+    /**
+     * Connects a paired kiosk again, for instance after the tablet lost its
+     * storage: the old device is revoked and a new one with the same name and
+     * location gets a pairing code. A new device starts its own sequence and
+     * hash chain, so nothing it sends can be mistaken for the old one's.
+     *
+     * @return array{0: Device, 1: string} the new device and its pairing code
+     */
+    public function replace(User $user, Company $company, Device $device): array
+    {
+        $this->authorize($user, $company);
+
+        if ($device->revoked_at !== null) {
+            throw ValidationException::withMessages(['device' => __('Enheten är spärrad. Lägg till en ny enhet i stället.')]);
+        }
+
+        $location = Location::query()->findOrFail($device->location_id);
+
+        return DB::transaction(function () use ($user, $company, $device, $location): array {
+            $this->revoke($user, $company, $device);
+
+            return $this->register($user, $company, $location, $device->name);
+        });
+    }
+
     public function revoke(User $user, Company $company, Device $device): void
     {
         $this->authorize($user, $company);

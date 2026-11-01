@@ -175,7 +175,8 @@ async function refreshRoster() {
         state.roster = open;
         state.online = true;
         state.revoked = false;
-    } catch {
+    } catch (error) {
+        console.warn('NONOX kiosk: the roster could not be refreshed.', error);
         state.online = false;
     }
 
@@ -623,12 +624,24 @@ function controlScreen() {
         el('button', { type: 'button', class: 'k-big', onclick: usbExport }, t('export_usb')));
 }
 
+function isAppleTouch() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function connectingScreen() {
+    return el('main', { class: 'k-main k-center' },
+        el('h1', {}, t('title')),
+        el('p', { class: 'k-sub' }, state.online ? t('connecting') : t('offline')));
+}
+
 function pairScreen() {
     const code = new URLSearchParams(location.search).get('kod') ?? '';
 
     return el('main', { class: 'k-main k-center' },
         el('h1', {}, t('pair_title')),
         el('p', { class: 'k-sub' }, t('not_paired')),
+        // A Home Screen web app on iOS has its own storage: pairing in a Safari tab does not carry over.
+        isAppleTouch() && !navigator.standalone ? el('p', { class: 'k-sub' }, t('install_first')) : null,
         el('form', { class: 'k-pair', onsubmit: (event) => { event.preventDefault(); pair(event.target.code.value); } },
             el('label', {}, t('pair_code'), el('input', { name: 'code', value: code, autocomplete: 'off', autocapitalize: 'characters', required: true, inputmode: 'text' })),
             el('button', { type: 'submit', class: 'k-big' }, t('pair_button'))),
@@ -643,8 +656,11 @@ function render() {
 
     let screen;
 
-    if (!state.token || !state.roster) {
+    if (!state.token) {
         screen = pairScreen();
+    } else if (!state.roster) {
+        // Paired, but the staff has not been fetched yet: never ask for a new code then.
+        screen = connectingScreen();
     } else if (state.revoked) {
         screen = el('main', { class: 'k-main k-center' }, el('h2', {}, t('revoked')));
     } else {

@@ -95,6 +95,21 @@ it('pairs a kiosk once with a code that expires', function () {
     $this->postJson(route('staff-ledger.kiosk.pair'), ['code' => $late])->assertStatus(422);
 });
 
+it('connects a paired kiosk again as a new device and blocks the old token', function () {
+    $devices = app(KioskDevices::class);
+    [$device, $code] = CurrentCompany::run($this->company, fn () => $devices->register($this->owner, $this->company, $this->location, 'Entrén'));
+    $old = $this->postJson(route('staff-ledger.kiosk.pair'), ['code' => $code])->json('token');
+
+    [$new, $again] = CurrentCompany::run($this->company, fn () => $devices->replace($this->owner, $this->company, $device->fresh()));
+    $token = $this->postJson(route('staff-ledger.kiosk.pair'), ['code' => $again])->assertOk()->json('token');
+
+    expect($new->id)->not->toBe($device->id)
+        ->and($new->name)->toBe('Entrén')
+        ->and(CurrentCompany::run($this->company, fn () => $device->fresh()->revoked_at))->not->toBeNull();
+    $this->withToken($old)->getJson(route('staff-ledger.kiosk.roster'))->assertStatus(401);
+    $this->withToken($token)->getJson(route('staff-ledger.kiosk.roster'))->assertOk();
+});
+
 it('gives the kiosk its roster without PINs, and refuses unknown or revoked devices', function () {
     $roster = $this->withToken($this->token)->getJson(route('staff-ledger.kiosk.roster'))->assertOk()->json();
 

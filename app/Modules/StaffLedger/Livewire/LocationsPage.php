@@ -131,6 +131,20 @@ class LocationsPage extends Component
         $this->toast(__('En ny kopplingskod är skapad.'));
     }
 
+    public function replace(int $deviceId, KioskDevices $devices): void
+    {
+        try {
+            [$device, $code] = $devices->replace($this->user(), $this->company(), Device::query()->findOrFail($deviceId));
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
+        $this->showPairing($device, $code);
+        $this->toast(__('En ny kopplingskod är skapad. Den gamla kopplingen är spärrad.'));
+    }
+
     public function revoke(int $deviceId, KioskDevices $devices): void
     {
         $devices->revoke($this->user(), $this->company(), Device::query()->findOrFail($deviceId));

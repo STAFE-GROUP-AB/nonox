@@ -36,6 +36,8 @@ return [
     'pair_button' => 'Conectar',
     'pair_failed' => 'El código no es correcto o ha caducado.',
     'not_paired' => 'Introduce el código que recibió el responsable al añadir el quiosco en NONOX.',
+    'install_first' => 'En iPad y iPhone: primero añade la página a la pantalla de inicio (Compartir → Añadir a pantalla de inicio), abre el quiosco desde allí e introduce el código allí.',
+    'connecting' => 'El quiosco está conectado. Cargando el personal…',
     'revoked' => 'Este quiosco está bloqueado. Pide a un responsable que lo añada de nuevo.',
     'cached_ledger' => 'Se muestra el registro guardado aquí (los últimos :days días).',
     'start' => 'Inicio',
