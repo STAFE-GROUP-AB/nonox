@@ -177,7 +177,8 @@ async function refreshRoster() {
         state.revoked = false;
     } catch (error) {
         console.warn('NONOX kiosk: the roster could not be refreshed.', error);
-        state.online = false;
+        // A blocked kiosk is online; it only needs a new code.
+        state.online = error.status === 401 ? true : error.status === undefined ? false : state.online;
     }
 
     if (state.screen === 'home') {
@@ -497,6 +498,9 @@ async function pair(code) {
         await kv.delete('last_sequence');
         await kv.delete('last_hash');
         state.token = token;
+        state.revoked = false;
+        state.message = null;
+        tabs?.postMessage('paired');
         history.replaceState(null, '', config.urls.shell);
         await refreshRoster();
         show('home');
@@ -634,11 +638,12 @@ function connectingScreen() {
         el('p', { class: 'k-sub' }, state.online ? t('connecting') : t('offline')));
 }
 
-function pairScreen() {
+function pairScreen(reason = null) {
     const code = new URLSearchParams(location.search).get('kod') ?? '';
 
     return el('main', { class: 'k-main k-center' },
         el('h1', {}, t('pair_title')),
+        reason ? el('p', { class: 'k-error', role: 'alert' }, reason) : null,
         el('p', { class: 'k-sub' }, t('not_paired')),
         // A Home Screen web app on iOS has its own storage: pairing in a Safari tab does not carry over.
         isAppleTouch() && !navigator.standalone ? el('p', { class: 'k-sub' }, t('install_first')) : null,
@@ -662,7 +667,7 @@ function render() {
         // Paired, but the staff has not been fetched yet: never ask for a new code then.
         screen = connectingScreen();
     } else if (state.revoked) {
-        screen = el('main', { class: 'k-main k-center' }, el('h2', {}, t('revoked')));
+        screen = pairScreen(t('revoked'));
     } else {
         screen = {
             home: homeScreen,
@@ -679,6 +684,17 @@ function render() {
 }
 
 // ---------- start ----------
+
+// Kiosk tabs share one IndexedDB: when one is paired, the others start over with its token.
+const tabs = 'BroadcastChannel' in window ? new BroadcastChannel('nonox-personalliggare') : null;
+
+if (tabs) {
+    tabs.onmessage = (event) => {
+        if (event.data === 'paired') {
+            location.replace(config.urls.shell);
+        }
+    };
+}
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register(config.urls.serviceWorker, { scope: config.urls.scope }).catch(() => {});

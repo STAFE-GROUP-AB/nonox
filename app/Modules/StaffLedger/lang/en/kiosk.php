@@ -38,7 +38,7 @@ return [
     'not_paired' => 'Enter the code the manager got when the kiosk was added in NONOX.',
     'install_first' => 'On iPad and iPhone: first add the page to the Home Screen (Share → Add to Home Screen), open the kiosk from there and enter the code there.',
     'connecting' => 'The kiosk is connected. Fetching the staff…',
-    'revoked' => 'This kiosk is blocked. Ask a manager to add it again.',
+    'revoked' => 'This kiosk is blocked. Enter the new pairing code the manager got from Connect again.',
     'cached_ledger' => 'Showing the register saved here (the last :days days).',
     'start' => 'Start',
     'end' => 'End',
