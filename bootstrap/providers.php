@@ -11,6 +11,7 @@ use App\Modules\StaffLedger\StaffLedgerServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\JetstreamServiceProvider;
+use App\Providers\OverviewServiceProvider;
 
 return [
     ModuleServiceProvider::class,
@@ -22,4 +23,5 @@ return [
     AppServiceProvider::class,
     FortifyServiceProvider::class,
     JetstreamServiceProvider::class,
+    OverviewServiceProvider::class,
 ];

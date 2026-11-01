@@ -84,7 +84,7 @@ final class CompanyOverview
      * @return list<array{
      *     company: Company,
      *     role: string,
-     *     tasks: list<array{key: string, label: string, count: int, destination: string, urgent: bool, due: ?string, overdue: bool}>,
+     *     tasks: list<array{key: string, permission: string, label: string, count: int, destination: string, urgent: bool, due: ?string, overdue: bool}>,
      *     last_posted: ?string,
      *     attention: int,
      *     responsible: ?array{id: int, name: string},
@@ -94,10 +94,16 @@ final class CompanyOverview
      *     can_note: bool
      * }>
      */
-    public function for(User $user, ?CarbonImmutable $today = null): array
+    public function for(User $user, ?CarbonImmutable $today = null, ?Company $only = null): array
     {
         $today ??= CarbonImmutable::today();
         $companies = $this->prepare($user, $today);
+
+        // Översikt asks for one company only (App\Domain\Overview\Todos\CompanyTasks).
+        if ($only !== null) {
+            $companies = $companies->where('id', $only->id)->values();
+        }
+
         $ids = array_values($companies->pluck('id')->all());
 
         if ($ids === []) {
@@ -458,7 +464,7 @@ final class CompanyOverview
     }
 
     /**
-     * @return array{key: string, label: string, count: int, destination: string, urgent: bool, due: ?string, overdue: bool}|null
+     * @return array{key: string, permission: string, label: string, count: int, destination: string, urgent: bool, due: ?string, overdue: bool}|null
      */
     private function task(int $companyId, string $permission, string $destination, int $count, string $label, bool $urgent, ?CarbonImmutable $due = null): ?array
     {
@@ -468,6 +474,7 @@ final class CompanyOverview
 
         return [
             'key' => "{$destination}:{$label}",
+            'permission' => $permission,
             'label' => $label,
             'count' => $count,
             'destination' => $destination,

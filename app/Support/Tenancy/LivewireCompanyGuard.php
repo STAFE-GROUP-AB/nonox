@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Tenancy;
 
 use App\Models\User;
-use App\Modules\ModuleManager;
-use App\Modules\ModuleRegistry;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Livewire\ComponentHook;
 use Livewire\Mechanisms\HandleComponents\ComponentContext;
 
@@ -66,18 +63,7 @@ class LivewireCompanyGuard extends ComponentHook
             return null;
         }
 
-        $companyId = (int) $user->current_team_id;
-        $row = DB::table('teams')
-            ->leftJoin('team_user', fn ($join) => $join->on('team_user.team_id', '=', 'teams.id')->where('team_user.user_id', $user->id))
-            ->where('teams.id', $companyId)
-            ->first(['teams.user_id', 'teams.archived_at', 'team_user.role']);
-        $role = $row === null ? '' : ((int) $row->user_id === $user->id ? 'owner' : (string) $row->role);
-        $modules = app(ModuleManager::class);
-        $enabled = array_filter(array_keys(app(ModuleRegistry::class)->all()), fn (string $key): bool => $modules->isEnabled($key, $companyId));
-
-        $archived = $row !== null && $row->archived_at !== null ? 'archived' : '';
-
-        return hash('sha256', $role.'|'.implode(',', $enabled).'|'.$archived);
+        return AccessFingerprint::for($user, (int) $user->current_team_id);
     }
 
     private function currentCompanyId(): ?int

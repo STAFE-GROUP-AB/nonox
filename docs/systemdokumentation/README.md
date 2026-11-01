@@ -96,6 +96,34 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 
+## 1b. Översikt (startsidan)
+
+- Översikt (`/oversikt`) visar för det valda företaget fyra nyckeltal
+  (saldot på företagskontot 1930 enligt bokföringen och hur långt det är
+  avstämt, obetalda kundfakturor, obetalda leverantörsfakturor och nästa
+  momsdeklaration med sista dag), "Att göra" och de fem senast bokförda
+  verifikationerna. Fliken Statistik och prognos visar diagram med samma
+  siffror som tabeller ([ADR-027](../adr/ADR-027-overview.md)).
+- Översikten läser bara. Den bokför, ändrar och loggar ingenting.
+- "Att göra" bygger på samma regler som Mina företag (1a) för det valda
+  företaget, plus bankposter som inte är kopplade till en faktura, företags-
+  kontot som inte är avstämt till och med förra månadens slut, underlag i
+  inkorgen och glömda utcheckningar i personalliggaren när de modulerna är
+  påslagna. Varje rad visas bara för en roll som får utföra den.
+- Belopp på senaste verifikationer: rör verifikationen bank och kassa (konto
+  1900–1999) visas nettoförändringen där med tecken, plus för pengar in och
+  minus för pengar ut. Andra verifikationer visar summan av debet utan tecken.
+- Siffrorna sparas i en cache per företag, roll och dag i högst tio minuter.
+  Cachen töms när en transaktion som skriver i behandlingshistoriken eller
+  ändrar verifikationer, fakturor, bankposter med mera har sparats, och när
+  användaren trycker på pilen för att ladda om. Tidpunkten för uträkningen
+  visas ("Uppdaterad 14:32").
+- Prognosen för likviditeten är en enkel räkning som förklaras under
+  diagrammet: dagens saldo på bank och kassa, plus obetalda kundfakturor och
+  minus obetalda leverantörsfakturor den månad de förfaller, plus det
+  genomsnittliga resultatet för de tre senaste hela månaderna. Den märks
+  "Prognos" och är ingen AI.
+
 ## 2. Kontoplan
 
 - Ett nytt företag får en förifylld kontoplan med vanliga konton enligt BAS 2026,
@@ -1328,3 +1356,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.46 | 2026-11-01 | Företag: ägaren kan överlåta företaget till en annan medlem (blir själv administratör) och arkivera det. Före arkiveringen visas arkivpaketen per räkenskapsår; saknas ett aktuellt paket krävs en bekräftelse. Ett arkiverat företag kan bara läsas: bara läsande behörigheter gäller, och företagsdata kan inte skapas eller ändras ens av schemalagda körningar. Inkommande post till ett arkiverat företag loggas och tas inte emot. Ägaren kan ta företaget ur arkivet. |
 | 0.47 | 2026-11-01 | Leverantörsfakturor i utländsk valuta: valuta, valutabelopp och bokföringskurs sparas på fakturan (från inkorgen och i formuläret, med Riksbankens kurs förifylld). Betalning i valutan med kronorna banken drog; skillnaden mot de bokförda kronorna bokförs på 3960 eller 7960 i betalningens verifikation. Delbetalningar i valutan, och återstående valutabelopp visas. Sådana fakturor tas inte med i betalfiler eller kvittningar. |
 | 0.48 | 2026-11-01 | Passkeys (ADR-029): andra steg efter e-postkoden för den som kan se hälsouppgifter eller fullständiga personnummer, och för alla i ett företag som kräver det. Passkeys under Profil, återställning av ägare eller administratör, loggat och mejlat. |
+| 0.49 | 2026-11-01 | Översikt: nyckeltal, "Att göra" från bokföringen och modulerna, senaste verifikationer med belopp ur bankens synvinkel, cache per företag och roll med omladdning, och fliken Statistik och prognos med diagram, tabeller och en förklarad likviditetsprognos. Översikten läser bara. |
