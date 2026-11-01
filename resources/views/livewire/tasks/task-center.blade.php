@@ -37,10 +37,11 @@
             @endif
         </div>
         <label class="flex items-center gap-2 text-sm text-gray-600">
-            <span>{{ __('E-post om mina uppgifter') }}</span>
+            <span class="hidden sm:inline">{{ __('E-post om mina uppgifter') }}</span>
+            <span class="sr-only sm:hidden">{{ __('E-post om mina uppgifter') }}</span>
             <select class="rounded-xl border-gray-300 py-1.5 text-sm shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model.live="digest">
-                <option value="NONE">{{ __('Av') }}</option>
-                <option value="DAILY">{{ __('Varje vardag kl. 06.45') }}</option>
+                <option value="NONE">{{ __('Ingen e-post') }}</option>
+                <option value="DAILY">{{ __('E-post varje vardag 06.45') }}</option>
             </select>
         </label>
     </div>
@@ -61,8 +62,8 @@
     </nav>
 
     <section class="overflow-hidden rounded-3xl bg-white shadow-xs ring-1 ring-stone-200">
-        <div class="grid gap-3 border-b border-stone-200 p-4 sm:grid-cols-2 sm:px-5 lg:grid-cols-6">
-            <div class="lg:col-span-2">
+        <div class="grid grid-cols-2 gap-2 border-b border-stone-200 p-3 sm:gap-3 sm:p-4 sm:px-5 lg:grid-cols-6">
+            <div class="col-span-2">
                 <label for="task_search" class="sr-only">{{ __('Sök uppgift') }}</label>
                 <input id="task_search" type="search" class="{{ $select }}" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök uppgift') }}">
             </div>

@@ -4025,5 +4025,7 @@
     "I morgon": "Tomorrow",
     "Om :count dagar": "In :count days",
     "{1} :count dag sen|[2,*] :count dagar sen": "{1} :count day late|[2,*] :count days late",
-    "{1} :count försenad|[2,*] :count försenade": "{1} :count overdue|[2,*] :count overdue"
+    "{1} :count försenad|[2,*] :count försenade": "{1} :count overdue|[2,*] :count overdue",
+    "Ingen e-post": "No email",
+    "E-post varje vardag 06.45": "Email every weekday 06:45"
 }
