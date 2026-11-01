@@ -1,0 +1,61 @@
+{
+    "slug": "bokforing-for-konsulter",
+    "order": 4,
+    "group": "foretag",
+    "name": "Konsulter",
+    "menu_text": "Avtalsfakturor, EU-kunder, lön till dig och bokslut.",
+    "icon": "M3 8h18v11H3zM8 8V5h8v3M3 13h18",
+    "title": "Bokföring för konsulter – faktura, lön och bokslut",
+    "description": "Bokföring för konsultbolag: avtalsfakturor varje månad, EU-kunder, lön till dig själv och årsredovisning enligt K2. Öppen källkod, {pris}/år med drift.",
+    "eyebrow": "Bokföring för konsulter",
+    "h1": "Bokföring för konsulter",
+    "h1_accent": "som hellre fakturerar än bokför.",
+    "lead": "Ett konsultbolag har få kunder, få leverantörer och samma rutin varje månad. Det borde ta minuter, inte en kväll. NONOX skickar avtalsfakturorna själv, betalar ut din lön och tar fram årsredovisningen och inkomstdeklarationen när året är slut.",
+    "month": {
+        "heading": "Så ser en månad ut i ett konsultbolag.",
+        "intro": "Det är inte mycket som händer, men det som händer måste bli rätt: fakturan, lönen, momsen och till sist bokslutet.",
+        "items": [
+            {"title": "Fakturan till kunden", "text": "Samma kund, ofta samma belopp eller samma timpris, varje månad. Fakturan ska ut i tid och betalningen ska hittas på banken."},
+            {"title": "Kunder i andra EU-länder", "text": "Säljer du tjänster till ett företag i ett annat EU-land ska fakturan ofta vara utan svensk moms, med köparens momsregistreringsnummer, och försäljningen ska med i den periodiska sammanställningen."},
+            {"title": "Lön till dig själv", "text": "I ett aktiebolag tar du ofta ut lön. Det betyder skatteavdrag, arbetsgivaravgifter och en arbetsgivardeklaration varje månad, även när du är den enda anställda."},
+            {"title": "Utlägg, resor och bil", "text": "Tågbiljetter, hotell, en lunch med kund och körningar med egen bil. Kvittona ska bokföras och ersättningen bli rätt."},
+            {"title": "Momsen", "text": "Momsdeklarationen kommer per månad, kvartal eller år beroende på hur företaget är registrerat."},
+            {"title": "Bokslutet", "text": "När året är slut ska bokslutet göras, årsredovisningen tas fram och inkomstdeklarationen lämnas. Det är där många betalar en byrå eller ett tillval."}
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt ditt konsultbolag.",
+        "intro": "Allt nedan finns i NONOX i dag, och allt ingår i priset. Lön är en modul som du slår på under Inställningar → Moduler.",
+        "items": [
+            {"title": "Avtalsfakturor som skickas själva", "text": "Lägg upp ett avtal med kunden, så skapas fakturan varje månad, kvartal, halvår eller år. Den får OCR-nummer, går ut som PDF med e-post och betalningen matchas på OCR-numret när du läser in bankens fil.", "features": ["recurring_invoices", "invoices", "incoming_payments"]},
+            {"title": "EU-kunder med rätt text och rapport", "text": "Fakturor till företag i andra EU-länder får rätt konto, momsruta och fakturatext. Kundens momsregistreringsnummer kan kontrolleras mot EU:s register, och den periodiska sammanställningen blir en fil till Skatteverket.", "features": ["eu_invoices", "eu_reports"]},
+            {"title": "Lön till dig, även om du är ensam", "text": "Månadslön med Skatteverkets skattetabeller, arbetsgivaravgifter, lönebesked som PDF, lönefil till banken och arbetsgivardeklarationen som fil.", "features": ["payroll", "agi", "payment_files"]},
+            {"title": "Utlägg, milersättning och traktamente", "text": "Skicka utlägget med kvitto från Min sida i mobilen. Milersättning och traktamente räknas i lönen. Med NONOX AI påslagen föreslås konto och belopp från kvittot.", "features": ["travel_expenses", "employee_portal", "ai"]},
+            {"title": "Moms med ett klick", "text": "Momsdeklarationen räknas fram ur rörelserna på momskontona och laddas ner som fil till Skatteverket.", "features": ["vat_return"]},
+            {"title": "Bokslut, årsredovisning och INK2", "text": "En checklista tar dig genom bokslutet. Årsredovisningen enligt K2 blir en PDF och inkomstdeklaration 2 blir SRU-filer. Det ingår, utan tillval.", "features": ["year_end", "accruals_assets"]}
+        ]
+    },
+    "limits": [
+        {"text": "Kundfakturor i utländsk valuta finns inte ännu. Fakturor till EU-kunder skrivs i kronor.", "feature": "foreign_currency_sales"},
+        {"text": "Årsredovisningen blir en PDF. Digital inlämning till Bolagsverket är inte byggd ännu.", "feature": "ixbrl"},
+        {"text": "NONOX har ingen tidrapportering mot kund, och bokslutet räknar inte fram skatten åt dig."}
+    ],
+    "pricing": {
+        "employees": 1,
+        "label": "Ett konsultbolag där du är enda anställd",
+        "text": "Bokföring, fakturering och lön för en anställd, med samma paket och listpriser som i vår jämförelse av bokföringsprogram."
+    },
+    "comparison_features": ["Bokslut och årsredovisning", "Inkomstdeklaration (SRU)", "Alla moduler ingår i priset"],
+    "faqs": [
+        {"q": "Kan jag fakturera samma kund automatiskt varje månad?", "a": "Ja. Med avtalsfakturering skapas fakturan varje månad, kvartal, halvår eller år från samma avtal. Fakturan kan skapas som utkast eller skickas direkt."},
+        {"q": "Klarar NONOX fakturor till kunder i andra EU-länder?", "a": "Ja, i kronor. Fakturan får rätt konto, momsruta och text, kundens momsregistreringsnummer kan kontrolleras mot EU:s register och den periodiska sammanställningen blir en fil. Kundfakturor i utländsk valuta finns inte ännu."},
+        {"q": "Ingår bokslut och årsredovisning?", "a": "Ja. Bokslut med checklista, årsredovisning enligt K2 som PDF och inkomstdeklaration 2 som SRU-filer ingår i priset. Digital inlämning av årsredovisningen till Bolagsverket finns inte ännu."},
+        {"q": "Kan jag betala ut lön till mig själv?", "a": "Ja. Lönemodulen fungerar lika bra för en anställd som för många, med skattetabeller, arbetsgivaravgifter, lönefil och arbetsgivardeklaration."},
+        {"q": "Kan min redovisningskonsult arbeta i samma system?", "a": "Ja. Bjud in konsulten med rollen redovisningskonsult, så arbetar ni i samma bokföring, utan filer fram och tillbaka."},
+        {"q": "Vad kostar NONOX för ett konsultbolag?", "a": "{pris} per år med drift, med lön, bokslut och årsredovisning inräknade. Kör du NONOX själv kostar det ingenting."}
+    ],
+    "related": ["for-ekonomikonsulter", "bokforing-for-hantverkare", "for-redovisningsbyraer"],
+    "legal_verify": [
+        "Omvänd skattskyldighet vid tjänsteförsäljning till EU-företag: sidan säger 'ofta' och nämner inga undantag."
+    ]
+}

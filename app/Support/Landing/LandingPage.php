@@ -84,6 +84,14 @@ final class LandingPage
         ];
     }
 
+    /** The hosted price per company and year for this many employees, or null when it is on request. */
+    public static function hostedPerYear(int $employees): ?int
+    {
+        $plan = collect(self::PLANS)->first(fn (array $plan): bool => $plan['max'] !== null && $employees <= $plan['max']);
+
+        return $plan === null ? null : (int) $plan['price'];
+    }
+
     /** The comparison's yearly price: the monthly base, plus a price per employee when there are any. */
     public static function comparePerYear(int $base, int $perEmployee, int $employees): int
     {
@@ -142,27 +150,28 @@ final class LandingPage
     }
 
     /**
-     * What NONOX does today, and what is coming soon (soon: true).
+     * What NONOX does today, and what is coming soon (soon: true). Each card
+     * names its entry in Features, the single list of what is built.
      *
-     * @return list<array{t: string, b: string, d: string, mod?: bool, soon?: bool}>
+     * @return list<array{t: string, key: string, b: string, d: string, mod?: bool, soon?: bool}>
      */
     private static function features(): array
     {
         return [
-            ['t' => 'Bokföring', 'b' => 'Verifikationer som aldrig kan ändras, konteringsmallar, underlag och alla rapporter. SIE4 in och ut.', 'd' => 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z'],
-            ['t' => 'Fakturering', 'b' => 'Fakturor med OCR, offerter, order, avtalsfakturor och påminnelser, med din egen logga och färg.', 'd' => 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5'],
-            ['t' => 'Leverantörsfakturor', 'b' => 'Attest, kreditnotor, utländsk valuta med kursdifferenser och betalfiler till alla stora svenska banker.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5'],
-            ['t' => 'Bank', 'b' => 'Inbetalningar läses in från bankens fil och matchas mot OCR. Bankavstämning per konto.', 'd' => 'M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18'],
-            ['t' => 'Moms och EU', 'b' => 'Momsdeklaration som fil, EU- och exportfakturor, periodisk sammanställning, OSS och VIES-kontroll.', 'd' => 'M19 5L5 19M7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'],
-            ['t' => 'Bokslut och årsredovisning', 'b' => 'Checklista, periodiseringar, anläggningsregister, årsredovisning enligt K2 och inkomstdeklaration (INK2).', 'd' => 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M9 15l2 2 4-4'],
-            ['t' => 'Lön', 'mod' => true, 'b' => 'Skattetabeller, semester, sjuklön, förmåner, lönefil till banken och arbetsgivardeklaration.', 'd' => 'M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H3zM3 7l12-3v3M16 13.5h2'],
-            ['t' => 'Min sida för anställda', 'b' => 'Lönebesked, utlägg med kvitto, sjukanmälan och semesteransökan direkt i mobilen.', 'd' => 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'],
-            ['t' => 'ROT, RUT och byggmoms', 'b' => 'Avdrag direkt på fakturan och omvänd betalningsskyldighet för byggtjänster.', 'd' => 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5'],
-            ['t' => 'AI', 'mod' => true, 'b' => 'Läser kvitton och leverantörsfakturor och föreslår kontering, med företagets egen AI-nyckel.', 'd' => 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z'],
-            ['t' => 'Flera bolag', 'b' => 'Alla bolag under en inloggning, för byråer, koncerner och dig som driver flera företag.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
-            ['t' => 'Arkiv och export', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
-            ['t' => 'Personalliggare', 'mod' => true, 'b' => 'Elektronisk personalliggare med incheckning via PIN eller QR-kod på en surfplatta, även utan internet.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
-            ['t' => 'Inbox', 'mod' => true, 'b' => 'En egen e-postadress för fakturor, kvitton och kassarapporter. Bara avsändare du godkänt släpps in.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
+            ['t' => 'Bokföring', 'key' => 'vouchers', 'b' => 'Verifikationer som aldrig kan ändras, konteringsmallar, underlag och alla rapporter. SIE4 in och ut.', 'd' => 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z'],
+            ['t' => 'Fakturering', 'key' => 'invoices', 'b' => 'Fakturor med OCR, offerter, order, avtalsfakturor och påminnelser, med din egen logga och färg.', 'd' => 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5'],
+            ['t' => 'Leverantörsfakturor', 'key' => 'supplier_invoices', 'b' => 'Attest, kreditnotor, utländsk valuta med kursdifferenser och betalfiler till alla stora svenska banker.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5'],
+            ['t' => 'Bank', 'key' => 'bank_reconciliation', 'b' => 'Inbetalningar läses in från bankens fil och matchas mot OCR. Bankavstämning per konto.', 'd' => 'M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18'],
+            ['t' => 'Moms och EU', 'key' => 'vat_return', 'b' => 'Momsdeklaration som fil, EU- och exportfakturor, periodisk sammanställning, OSS och VIES-kontroll.', 'd' => 'M19 5L5 19M7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'],
+            ['t' => 'Bokslut och årsredovisning', 'key' => 'year_end', 'b' => 'Checklista, periodiseringar, anläggningsregister, årsredovisning enligt K2 och inkomstdeklaration (INK2).', 'd' => 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4M9 15l2 2 4-4'],
+            ['t' => 'Lön', 'key' => 'payroll', 'mod' => true, 'b' => 'Skattetabeller, semester, sjuklön, förmåner, lönefil till banken och arbetsgivardeklaration.', 'd' => 'M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H3zM3 7l12-3v3M16 13.5h2'],
+            ['t' => 'Min sida för anställda', 'key' => 'employee_portal', 'b' => 'Lönebesked, utlägg med kvitto, sjukanmälan och semesteransökan direkt i mobilen.', 'd' => 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'],
+            ['t' => 'ROT, RUT och byggmoms', 'key' => 'rot_rut', 'b' => 'Avdrag direkt på fakturan och omvänd betalningsskyldighet för byggtjänster.', 'd' => 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5'],
+            ['t' => 'AI', 'key' => 'ai', 'mod' => true, 'b' => 'Läser kvitton och leverantörsfakturor och föreslår kontering, med företagets egen AI-nyckel.', 'd' => 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z'],
+            ['t' => 'Flera bolag', 'key' => 'multi_company', 'b' => 'Alla bolag under en inloggning, för byråer, koncerner och dig som driver flera företag.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
+            ['t' => 'Arkiv och export', 'key' => 'archive', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
+            ['t' => 'Personalliggare', 'key' => 'staff_ledger', 'mod' => true, 'b' => 'Elektronisk personalliggare med incheckning via PIN eller QR-kod på en surfplatta, även utan internet.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
+            ['t' => 'Inbox', 'key' => 'inbox', 'mod' => true, 'b' => 'En egen e-postadress för fakturor, kvitton och kassarapporter. Bara avsändare du godkänt släpps in.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
         ];
     }
 

@@ -205,6 +205,14 @@
     </ul>
     </div>
     <p style="margin:20px 0 0;font-size:14.5px;color:var(--muted)">Moduler slås på och av per företag under <strong style="color:var(--ink);font-weight:600">Inställningar → Moduler</strong>.</p>
+    <nav aria-label="Branscher" style="margin-top:28px;display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:14.5px;font-weight:600">
+      <span style="margin-right:4px;color:var(--muted);font-weight:500">Se hur NONOX passar din bransch:</span>
+      @foreach(App\Support\Landing\Industries::all() as $branch)
+        @continue($branch['group'] !== 'foretag')
+        <a href="{{ route('industry', $branch['slug']) }}" class="cmp-link">{{ $branch['name'] }}</a>
+      @endforeach
+      <a href="{{ route('industries') }}" class="cmp-link">Alla branscher →</a>
+    </nav>
   </div>
 </section>
 
@@ -254,6 +262,10 @@
       <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Status för varje bolag, månad för månad</li>
       <li data-reveal="" style="display:flex;gap:10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M5 12.5l4.5 4.5L19 7"></path></svg>Inga licenskostnader per bolag i egen drift</li>
     </ul>
+    <nav aria-label="För byråer och konsulter" style="margin-top:28px;display:flex;flex-wrap:wrap;gap:10px;font-size:14.5px;font-weight:600">
+      <a href="{{ route('industry', 'for-redovisningsbyraer') }}" class="cmp-link">För redovisningsbyråer →</a>
+      <a href="{{ route('industry', 'for-ekonomikonsulter') }}" class="cmp-link">För ekonomikonsulter →</a>
+    </nav>
   </div>
 </section>
 

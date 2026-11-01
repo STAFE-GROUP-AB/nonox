@@ -1,0 +1,63 @@
+{
+    "slug": "bokforing-for-cafeer",
+    "order": 1,
+    "group": "foretag",
+    "name": "Caféer",
+    "menu_text": "Dagskassa, Swish, timanställda och personalliggare.",
+    "icon": "M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 3c-.6 1 .6 2 0 3M12 3c-.6 1 .6 2 0 3",
+    "title": "Bokföring för caféer – dagskassa, lön och liggare",
+    "description": "Bokföring för caféer: dagsrapporten från kassan bokförs med en mall och timlönen räknas från personalliggaren. Öppen källkod, {pris}/år med drift.",
+    "eyebrow": "Bokföring för caféer",
+    "h1": "Bokföring för caféer",
+    "h1_accent": "som börjar i dagskassan.",
+    "lead": "Ett café lever på många små köp, få marginaler och personal som jobbar olika mycket varje vecka. NONOX tar emot dagsrapporten från kassan, låter personalen checka in på en surfplatta och räknar timlönen från de timmar som faktiskt jobbats.",
+    "month": {
+        "heading": "Så ser en månad ut på ett café.",
+        "intro": "Det mesta av ekonomiarbetet är litet men kommer varje dag. Det som gör det tungt är att samma siffror ska stämma på tre ställen: i kassan, på banken och i bokföringen.",
+        "items": [
+            {"title": "Dagskassan, varje dag", "text": "Kassan stängs och skriver ut en dagsrapport: försäljning per momssats, kort, Swish, kontant och ibland presentkort. Den ska bokföras dag för dag och stämma mot det som kommer in på banken."},
+            {"title": "Kort och Swish med avgifter", "text": "Kortinlösaren betalar ut med avgiften dragen, och Swish kommer in post för post. Avgifterna är en kostnad, och kontot på banken ska gå att stämma av mot kassan."},
+            {"title": "Fakturor från många leverantörer", "text": "Bröd, mejeri, kaffe och förbrukningsvaror. Fakturorna kommer med e-post, på papper och ibland bara som ett kvitto från en snabb tur till grossisten."},
+            {"title": "Timmar som ändras varje vecka", "text": "Många jobbar extra, deltid eller timmar som varierar. Lönen ska stämma med de pass som faktiskt jobbats, och unga anställda kan ge lägre arbetsgivaravgifter."},
+            {"title": "Personalliggaren vid dörren", "text": "Många caféer omfattas av kravet på personalliggare för restaurangbranschen. Den som jobbar ska checka in och ut, och liggaren ska kunna visas när Skatteverket kommer på kontrollbesök."},
+            {"title": "Moms på flera satser", "text": "Det du säljer kan ha olika momssatser. Dagsrapporten delar upp försäljningen per sats, och bokföringen och momsdeklarationen måste följa samma uppdelning."}
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt ditt café.",
+        "intro": "Allt nedan finns i NONOX i dag. Det som är en modul slår du på under Inställningar → Moduler.",
+        "items": [
+            {"title": "Dagsrapporten bokförs från inkorgen", "text": "Låt kassasystemet mejla dagsrapporten till företagets egen adress i NONOX. Första gången kopplar du varje rad, till exempel försäljning per momssats, kort, Swish, kontant och presentkort, till ett konto och godkänner. Nästa rapport i samma format tolkas med samma mall, och du kan välja att den bokförs automatiskt när den stämmer exakt.", "features": ["inbox", "daily_reports"]},
+            {"title": "Leverantörsfakturor och kvitton på ett ställe", "text": "Leverantörerna skickar fakturorna till samma inkorg, och kvitton skickar du dit med mobilen. Fakturan attesteras, betalas med en betalfil till banken och bokförs.", "features": ["inbox", "supplier_invoices", "payment_files"]},
+            {"title": "Personalliggare på en surfplatta", "text": "Personalen checkar in med kod eller QR-kod i en kiosk vid dörren, som fungerar även när internet ligger nere. Liggaren kan inte ändras i efterhand, rättelser syns bredvid originalet och kontrollbesöket öppnas med ett tryck.", "features": ["staff_ledger", "control_visit"]},
+            {"title": "Timlön från passen i liggaren", "text": "Med lönemodulen påslagen blir passen i personalliggaren ett förslag till tidrapport. När du godkänt den räknas timlönen fram med Skatteverkets skattetabeller, semester och arbetsgivaravgifter, och arbetsgivardeklarationen blir en fil.", "features": ["hourly_pay", "payroll", "young_employer_contributions", "agi"]},
+            {"title": "Bank och moms som stämmer", "text": "Bankavstämningen visar vad som skiljer mellan kontot och bokföringen, till exempel en kortutbetalning som inte kommit. Momsdeklarationen räknas fram ur bokföringen och laddas ner som fil till Skatteverket.", "features": ["bank_reconciliation", "vat_return", "templates"]},
+            {"title": "Min sida för personalen", "text": "De anställda ser sina lönebesked, sjukanmäler sig och ansöker om semester i mobilen, så att du slipper lappar och sms.", "features": ["employee_portal"]}
+        ]
+    },
+    "limits": [
+        {"text": "NONOX är inget kassasystem. Du behåller din kassa; NONOX tar emot dagsrapporten och bokför den."},
+        {"text": "NONOX har inget schema för personalen. Timmarna kommer från personalliggaren eller från tidrapporter."},
+        {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."}
+    ],
+    "pricing": {
+        "employees": 4,
+        "label": "Ett café med fyra anställda",
+        "text": "Bokföring, fakturering och lön för fyra anställda, med samma paket och listpriser som i vår jämförelse av bokföringsprogram."
+    },
+    "comparison_features": ["Personalliggare", "Alla moduler ingår i priset", "Öppen källkod"],
+    "faqs": [
+        {"q": "Kan NONOX läsa dagsrapporten från mitt kassasystem?", "a": "Ja, om kassasystemet kan mejla dagsrapporten som CSV, Excel (XLSX), text eller PDF med text i. Första rapporten kopplar du till konton själv, eller låter NONOX AI föreslå kopplingen om du slagit på den modulen. Därefter tolkas varje rapport i samma format med samma mall, utan AI."},
+        {"q": "Är NONOX ett kassasystem?", "a": "Nej. NONOX är ett bokförings-, löne- och faktureringsprogram. Du behåller ditt kassasystem och låter det mejla dagsrapporten till NONOX."},
+        {"q": "Måste mitt café ha personalliggare?", "a": "Det beror på verksamheten. Många caféer räknas till restaurangbranschen, som ska föra personalliggare. Det är Skatteverkets regler som avgör, så kontrollera där om du är osäker. Behöver du en liggare finns den i NONOX som en modul."},
+        {"q": "Fungerar personalliggaren om internet går ner?", "a": "Ja. Kiosken sparar varje in- och utcheckning på surfplattan direkt och skickar dem när nätet är tillbaka. Personen ser att incheckningen gått igenom med en gång."},
+        {"q": "Hur bokförs Swish och kortbetalningar?", "a": "Som betalsätt på dagsrapporten: kort, Swish och kontant bokförs på de konton du valt i mallen. När pengarna kommer in på banken stämmer du av dem i bankavstämningen. Avgifterna kan du bokföra med en konteringsmall."},
+        {"q": "Vad kostar NONOX för ett café?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, personalliggare och inkorg inräknade. Kör du NONOX själv kostar det ingenting."},
+        {"q": "Hur flyttar jag från mitt nuvarande program?", "a": "Exportera en SIE4-fil för varje räkenskapsår och läs in dem i NONOX, eller hämta allt direkt om du kommer från Fortnox. Flyttguiden visar varje steg."}
+    ],
+    "related": ["bokforing-for-restauranger", "bokforing-for-butiker", "bokforing-for-frisorer"],
+    "legal_verify": [
+        "Om caféer med servering generellt räknas till restaurangbranschen enligt 39 kap. skatteförfarandelagen. Sidan säger bara att många caféer omfattas och hänvisar till Skatteverket.",
+        "Momssatser på mat och varor, inklusive den tillfälligt sänkta momsen på livsmedel 2026–2027: sidan nämner medvetet inga satser per vara."
+    ]
+}

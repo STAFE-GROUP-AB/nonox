@@ -1,0 +1,63 @@
+{
+    "slug": "bokforing-for-hantverkare",
+    "order": 3,
+    "group": "foretag",
+    "name": "Hantverkare",
+    "menu_text": "Bygg, el och VVS: ROT, RUT, byggmoms och projekt.",
+    "icon": "M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z",
+    "title": "Bokföring för hantverkare – ROT, RUT och byggmoms",
+    "description": "Bokföring för bygg, el och VVS: offert till faktura, ROT- och RUT-avdrag, omvänd byggmoms och projekt. Öppen källkod, {pris}/år med drift.",
+    "eyebrow": "Bokföring för hantverkare",
+    "h1": "Bokföring för hantverkare",
+    "h1_accent": "inom bygg, el och VVS.",
+    "lead": "Du vill vara ute på jobbet, inte vid datorn. NONOX gör offerten till en order och ordern till en faktura utan att något skrivs två gånger, räknar ROT- och RUT-avdraget på fakturan och sätter rätt text och konto när du fakturerar en byggtjänst till ett annat byggföretag.",
+    "month": {
+        "heading": "Så ser en månad ut för en hantverkare.",
+        "intro": "Jobben flyter in i varandra, och ekonomin hamnar ofta på kvällen. Det är där de dyra misstagen sker: en glömd faktura, fel moms eller ett avdrag som inte stämmer.",
+        "items": [
+            {"title": "Offert, jobb och faktura", "text": "Kunden vill ha en offert, jobbet blir lite större än tänkt och fakturan ska skrivas när du kommer hem. Samma uppgifter skrivs ofta in tre gånger."},
+            {"title": "ROT och RUT för privatkunder", "text": "Privatkunden betalar arbetet minus avdraget, och resten begär du från Skatteverket. Arbetskostnaden ska skiljas från material, och kundens tak för året spelar in."},
+            {"title": "Omvänd byggmoms", "text": "När du som underentreprenör säljer en byggtjänst till ett byggföretag ska fakturan ofta ha omvänd betalningsskyldighet: ingen moms på fakturan, rätt text och rätt ruta i momsdeklarationen."},
+            {"title": "Material och grossistfakturor", "text": "Fakturor från bygg-, el- och VVS-grossister kommer löpande. De ska attesteras, betalas i tid och helst knytas till rätt jobb."},
+            {"title": "Bil, resor och personal", "text": "Körningar med egen bil, traktamente på jobb långt hemifrån och anställda som jobbar olika mycket. Allt ska in i lönen."},
+            {"title": "Vad tjänade jobbet?", "text": "När flera jobb pågår samtidigt är det svårt att se vilket som gick med vinst och vilket som slukade timmar och material."}
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt ditt hantverksföretag.",
+        "intro": "Allt nedan finns i NONOX i dag. Lön är en modul som du slår på under Inställningar → Moduler.",
+        "items": [
+            {"title": "Från offert till faktura i ett svep", "text": "Skriv offerten, gör den till en order när kunden säger ja och till en faktura när jobbet är klart. Fakturan får OCR-nummer, går ut som PDF med e-post och bokförs direkt. Inbetalningar från bankens fil matchas på OCR-numret.", "features": ["quotes_orders", "invoices", "incoming_payments", "registers"]},
+            {"title": "ROT- och RUT-avdrag på fakturan", "text": "Markera raderna som är arbetskostnad. NONOX räknar avdraget, kunden betalar resten och avdraget bokförs som en egen fordran. När Skatteverket betalat registrerar du det på fakturan.", "features": ["rot_rut"]},
+            {"title": "Omvänd betalningsskyldighet för byggtjänster", "text": "Välj omvänd byggmoms på fakturan, så får den rätt text, rätt konto och rätt ruta i momsdeklarationen. Du avgör själv om tjänsten är en byggtjänst; NONOX sköter resten.", "features": ["construction_reverse_charge", "vat_return"]},
+            {"title": "Projekt för varje jobb", "text": "Märk leverantörsfakturor och verifikationsrader med projekt eller kostnadsställe, så ser du vart materialet tog vägen. Leverantörsfakturorna attesteras och betalas med en betalfil till banken.", "features": ["cost_centres", "supplier_invoices", "payment_files", "reports"]},
+            {"title": "Lön med milersättning och traktamente", "text": "Månads- eller timlön med Skatteverkets skattetabeller, milersättning, traktamente och utlägg med kvitto, semester och arbetsgivardeklaration.", "features": ["payroll", "travel_expenses", "vacation_sick_pay", "agi"]},
+            {"title": "Kvitton från bilen", "text": "Skicka kvitton och fakturor till företagets inkorg i NONOX direkt från mobilen. Med NONOX AI påslagen föreslås konto och belopp; du kontrollerar och sparar.", "features": ["inbox", "ai"]}
+        ]
+    },
+    "limits": [
+        {"text": "Personalliggaren i NONOX är byggd för restaurang, frisör och skönhet, fordonsservice, tvätterier och grossister. Byggbranschens personalliggare med ID06 och byggarbetsplatsanmälan finns inte ännu."},
+        {"text": "ROT och RUT fungerar med fakturametoden. Utbetalningen begär du i Skatteverkets e-tjänst; NONOX gör ingen fil för begäran."},
+        {"text": "NONOX har ingen tidrapportering mot kund. Timmarna skriver du på fakturaraden."}
+    ],
+    "pricing": {
+        "employees": 3,
+        "label": "Ett hantverksföretag med tre anställda",
+        "text": "Bokföring, fakturering och lön för tre anställda, med samma paket och listpriser som i vår jämförelse av bokföringsprogram."
+    },
+    "comparison_features": ["ROT- och RUT-avdrag", "Leverantörsfakturor med attest", "Alla moduler ingår i priset"],
+    "faqs": [
+        {"q": "Klarar NONOX ROT- och RUT-avdrag?", "a": "Ja. Du markerar arbetskostnaden på fakturan, NONOX räknar avdraget och kunden betalar resten. Avdraget bokförs som en fordran tills Skatteverket betalar. Utbetalningen begär du i Skatteverkets e-tjänst, och avdrag fungerar i dag med fakturametoden."},
+        {"q": "Hur fakturerar jag med omvänd byggmoms?", "a": "Välj omvänd betalningsskyldighet för byggtjänster på fakturan. Den får då rätt text och konto, och beloppet hamnar i rätt ruta i momsdeklarationen. Om tjänsten räknas som en byggtjänst avgör du, precis som i alla program."},
+        {"q": "Har NONOX personalliggare för byggarbetsplatser?", "a": "Nej, inte ännu. Personalliggaren i NONOX är byggd för restaurang, frisör och skönhet, fordonsservice, tvätterier och grossister. Byggbranschens liggare med ID06 och byggarbetsplatsanmälan kommer i en senare version."},
+        {"q": "Kan jag följa upp vad varje jobb kostat?", "a": "Ja. Lägg upp ett projekt per jobb och märk leverantörsfakturor och verifikationsrader med det. Rapporterna kan tas fram per kostnadsställe, och projektet följer med raderna."},
+        {"q": "Kan jag skicka fakturan direkt från mobilen?", "a": "NONOX är en webbapp som fungerar i mobilens webbläsare, men det finns ingen app att ladda ner. Fakturor skapar och skickar du i webbläsaren."},
+        {"q": "Vad kostar NONOX för ett hantverksföretag?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, ROT och RUT inräknade. Kör du NONOX själv kostar det ingenting."},
+        {"q": "Hur flyttar jag mina obetalda fakturor?", "a": "Bokföringen flyttar du med SIE4. Obetalda kundfakturor tar du med som en lista på flyttdagen, och kommer du från Fortnox jämför NONOX dem åt dig. Flyttguiden visar alla steg."}
+    ],
+    "related": ["bokforing-for-konsulter", "bokforing-for-butiker", "for-ekonomikonsulter"],
+    "legal_verify": [
+        "ROT och RUT: andelar och tak nämns medvetet inte på sidan (de står i systemdokumentationen som legal-verify).",
+        "Omvänd byggmoms: sidan säger 'ofta' om underentreprenörer, och att användaren avgör om tjänsten är en byggtjänst."
+    ]
+}

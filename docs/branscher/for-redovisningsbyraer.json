@@ -1,0 +1,60 @@
+{
+    "slug": "for-redovisningsbyraer",
+    "order": 7,
+    "group": "byra",
+    "name": "Redovisningsbyråer",
+    "menu_text": "Alla klienter på en sida, roller och 0 kr i egen drift.",
+    "icon": "M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18",
+    "title": "Bokföringsprogram för redovisningsbyråer – NONOX",
+    "description": "Bokföringsprogram för redovisningsbyråer: alla klienter på en sida med moms, AGI och bokslut, roller per klient och 0 kr i egen drift. Öppen källkod.",
+    "eyebrow": "För redovisningsbyråer",
+    "h1": "Bokföringsprogram för redovisningsbyråer",
+    "h1_accent": "med alla klienter på en sida.",
+    "lead": "En byrå arbetar i många företag samtidigt, med olika deadlines, olika underlag och olika kunniga klienter. NONOX visar alla klienter på en sida med vad som väntar i varje, ger varje person rätt roll i varje företag och kostar ingenting i licens när ni kör det själva.",
+    "month": {
+        "heading": "Så ser en månad ut på en byrå.",
+        "intro": "Det svåra är sällan själva konteringen. Det är att hålla ordning på vad som är klart, vad som väntar och vad som snart är försenat, i trettio eller trehundra företag.",
+        "items": [
+            {"title": "Deadlines i varje klient", "text": "Moms per månad, kvartal eller år, arbetsgivardeklaration varje månad, bokslut efter räkenskapsåret. Varje klient har sin egen kalender."},
+            {"title": "Underlag som ska jagas in", "text": "Kvitton, leverantörsfakturor och kassarapporter kommer med e-post, i molnmappar och på papper, och en del kommer inte alls förrän du frågar."},
+            {"title": "Rätt person, rätt behörighet", "text": "Konsulten ska kunna bokföra, klienten attestera sina fakturor och revisorn läsa, men ingen ska se mer än den behöver."},
+            {"title": "Klienter som byter in", "text": "En ny klient kommer med sin historik i ett annat program, och den ska in utan att något tappas."},
+            {"title": "Licenser per klient", "text": "Varje klient har ofta ett eget abonnemang, med egna tillval för lön, bokslut och årsredovisning. Kostnaden växer med varje företag."},
+            {"title": "Spårbarhet", "text": "När något ifrågasätts vill du kunna visa vem som gjorde vad och när, utan att leta i mejl."}
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt din byrå.",
+        "intro": "Allt nedan finns i NONOX i dag.",
+        "items": [
+            {"title": "Mina företag: alla klienter på en sida", "text": "Se vad som väntar i varje klient: moms, arbetsgivardeklaration, bokslut, förfallna fakturor, attester, utkast och lön, med sista dag för moms och AGI. Varje klient har en ansvarig konsult och byråns egna anteckningar.", "features": ["firm_overview", "multi_company"]},
+            {"title": "Roller per klient", "text": "Ägare, administratör, redovisningskonsult, bokförare, attestant och revisor. Klienten kan attestera sina egna leverantörsfakturor, och revisorn läser och exporterar utan att kunna bokföra.", "features": ["roles", "supplier_invoices"]},
+            {"title": "En inkorg per klient", "text": "Varje klientföretag får en egen e-postadress för leverantörsfakturor, kvitton och dagsrapporter. Bara godkända avsändare släpps in, och en dagsrapport med godkänd mall kan bokföras automatiskt.", "features": ["inbox", "daily_reports"]},
+            {"title": "Nya klienter flyttar in med SIE4", "text": "Läs in SIE4-filer i två steg med avstämning, eller hämta en klient direkt från Fortnox med deras API. Varje år stäms av innan något sparas, och från Fortnox jämförs även obetalda fakturor.", "features": ["sie", "fortnox_import"]},
+            {"title": "Bokslut, årsredovisning och INK2 i varje klient", "text": "Bokslut med checklista och låsning, periodiseringar och anläggningsregister, årsredovisning enligt K2 som PDF och inkomstdeklaration 2 som SRU-filer. Inga tillval per klient.", "features": ["year_end", "accruals_assets"]},
+            {"title": "Spårbart och exporterbart", "text": "Varje åtgärd skrivs till behandlingshistoriken, bokförda verifikationer kan aldrig ändras och arkivpaketet per räkenskapsår går att läsa utan NONOX.", "features": ["audit_log", "vouchers", "archive"]}
+        ]
+    },
+    "limits": [
+        {"text": "Med drift hos oss kostar varje klientföretag {pris} per år upp till {max} anställda. I egen drift kostar programmet ingenting, oavsett antal företag."},
+        {"text": "NONOX har ingen tidrapportering eller fakturering av byråns egna arvoden mot klienterna i dag."},
+        {"text": "Årsredovisningen blir en PDF. Digital inlämning till Bolagsverket är inte byggd ännu, och bokslutet räknar inte fram skatten.", "feature": "ixbrl"}
+    ],
+    "pricing": {
+        "employees": 1,
+        "label": "Per klientföretag med en anställd",
+        "text": "Vår jämförelse omfattar inte byråavtal, eftersom de inte står på de prissidor vi hämtat. Här är listpriset för ett klientföretag med eget abonnemang, med samma paket som i jämförelsen."
+    },
+    "comparison_features": ["Flera bolag under en inloggning", "Bokslut och årsredovisning", "Inkomstdeklaration (SRU)", "Kör på egen server"],
+    "faqs": [
+        {"q": "Kan vi som byrå se alla klienter på en gång?", "a": "Ja. Mina företag visar alla företag du har tillgång till, med vad som väntar i varje: moms, arbetsgivardeklaration, bokslut, förfallna fakturor, attester, utkast och lön, och sista dag för moms och AGI."},
+        {"q": "Vad kostar NONOX för en byrå?", "a": "I egen drift ingenting, oavsett hur många klientföretag ni har. Med drift hos oss kostar varje företag {pris} per år upp till {max} anställda, med alla delar inräknade."},
+        {"q": "Kan klienten och revisorn vara med i samma system?", "a": "Ja. Bjud in klienten som ägare eller attestant och revisorn med rollen revisor, som bara kan läsa och exportera. Varje roll gäller i ett företag i taget."},
+        {"q": "Hur får vi in klienternas underlag?", "a": "Varje klientföretag har en egen inkorg. Leverantörer, kassasystem och klienten själv skickar dit, och bara godkända avsändare släpps in."},
+        {"q": "Hur flyttar vi en klient från ett annat program?", "a": "Med SIE4-filer för varje räkenskapsår, eller direkt från Fortnox via deras API. NONOX stämmer av varje år innan något sparas. Flyttguiden visar stegen."},
+        {"q": "Kan vi köra NONOX på byråns egen server?", "a": "Ja. NONOX är öppen källkod under AGPL-3.0 och kräver PHP och PostgreSQL. Ni ansvarar då själva för drift, säkerhetskopior och personuppgifter; skillnaden mot vår drift beskrivs på sidan om egen drift."},
+        {"q": "Kan vi ändra i koden?", "a": "Ja, licensen tillåter det. Kör ni en ändrad version som en tjänst åt andra ska ni göra er källkod tillgänglig för dem på samma villkor."}
+    ],
+    "related": ["for-ekonomikonsulter", "bokforing-for-konsulter", "bokforing-for-restauranger"],
+    "legal_verify": []
+}

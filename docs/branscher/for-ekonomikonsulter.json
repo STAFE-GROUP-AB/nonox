@@ -1,0 +1,59 @@
+{
+    "slug": "for-ekonomikonsulter",
+    "order": 8,
+    "group": "byra",
+    "name": "Ekonomikonsulter",
+    "menu_text": "Ditt eget bolag och dina kunders under en inloggning.",
+    "icon": "M6 3h12v18H6zM9 7h6M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01",
+    "title": "Bokföringsprogram för ekonomikonsulter – NONOX",
+    "description": "För dig som sköter bokföringen åt andra: ditt eget bolag och dina kunders under en inloggning, roller per kund och 0 kr i egen drift. Öppen källkod.",
+    "eyebrow": "För ekonomikonsulter och egna redovisare",
+    "h1": "Bokföringsprogram för ekonomikonsulter",
+    "h1_accent": "som arbetar på egen hand.",
+    "lead": "Du sköter bokföringen, lönen och momsen åt ett antal småföretag, och ditt eget bolag vid sidan av. NONOX samlar dem under en inloggning, låter kunden attestera sina egna fakturor och tar fram bokslut och årsredovisning utan tillval per kund.",
+    "month": {
+        "heading": "Så ser en månad ut för en ekonomikonsult.",
+        "intro": "Du är ofta ensam om allt: att jaga underlag, bokföra, betala, deklarera och svara på kundens frågor.",
+        "items": [
+            {"title": "Flera kunder, flera inloggningar", "text": "Varje kund har ofta sitt eget program och sitt eget abonnemang. Du loggar in och ut hela dagen."},
+            {"title": "Underlag i olika kanaler", "text": "Kvitton i sms, fakturor i mejl och en dagsrapport som någon glömt att skicka."},
+            {"title": "Kunden ska godkänna", "text": "Du registrerar leverantörsfakturan, men kunden ska attestera innan något betalas."},
+            {"title": "Deadlines som krockar", "text": "Moms och arbetsgivardeklaration för flera kunder samma vecka."},
+            {"title": "Ditt eget bolag", "text": "Ditt eget företag ska också faktureras, bokföras och bokslutas, helst i samma system."},
+            {"title": "Kostnaden per kund", "text": "När varje kund har eget abonnemang med tillval för lön och bokslut blir det dyrt för dem, och svårt för dig att hålla ordning på."}
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt dig som ekonomikonsult.",
+        "intro": "Allt nedan finns i NONOX i dag.",
+        "items": [
+            {"title": "Alla företag under en inloggning", "text": "Ditt eget bolag och dina kunders. Mina företag visar vad som väntar i varje, med sista dag för moms och AGI, och du byter företag med ett klick.", "features": ["multi_company", "firm_overview"]},
+            {"title": "Kunden attesterar, du bokför", "text": "Ge dig själv rollen redovisningskonsult och kunden rollen ägare eller attestant. En leverantörsfaktura attesteras av en annan person än den som registrerade den, och betalfilen godkänns innan den laddas ner.", "features": ["roles", "supplier_invoices", "payment_files"]},
+            {"title": "Underlagen kommer till rätt kund", "text": "Varje kundföretag får en egen inkorg för fakturor, kvitton och dagsrapporter. Bara avsändare som godkänts släpps in.", "features": ["inbox", "daily_reports"]},
+            {"title": "Lön och AGI för kunderna", "text": "Skattetabeller, semester, sjuklön, lönefil och arbetsgivardeklaration som fil. De anställda får lönebesked och sjukanmäler sig på Min sida.", "features": ["payroll", "agi", "employee_portal"]},
+            {"title": "Bokslut och årsredovisning utan tillval", "text": "Bokslut med checklista, årsredovisning enligt K2 som PDF och inkomstdeklaration 2 som SRU-filer, i varje företag.", "features": ["year_end"]},
+            {"title": "Nya kunder flyttar in med SIE4", "text": "Läs in kundens historik med SIE4 i två steg med avstämning, eller hämta den direkt från Fortnox.", "features": ["sie", "fortnox_import"]}
+        ]
+    },
+    "limits": [
+        {"text": "Med drift hos oss kostar varje kundföretag {pris} per år upp till {max} anställda. I egen drift kostar programmet ingenting."},
+        {"text": "NONOX har ingen tidrapportering för dina arvoden. Dina egna fakturor till kunderna skriver du i ditt eget bolag i NONOX."},
+        {"text": "Digital inlämning av årsredovisningen till Bolagsverket är inte byggd ännu.", "feature": "ixbrl"}
+    ],
+    "pricing": {
+        "employees": 1,
+        "label": "Per kundföretag med en anställd",
+        "text": "Vår jämförelse omfattar inte konsult- eller byråavtal, eftersom de inte står på de prissidor vi hämtat. Här är listpriset för ett kundföretag med eget abonnemang, med samma paket som i jämförelsen."
+    },
+    "comparison_features": ["Flera bolag under en inloggning", "Leverantörsfakturor med attest", "Bokslut och årsredovisning"],
+    "faqs": [
+        {"q": "Kan jag ha mitt eget bolag och mina kunders i samma inloggning?", "a": "Ja. En användare kan vara med i många företag, med olika roller i varje. Du byter företag med ett klick och ser alla på sidan Mina företag."},
+        {"q": "Kan kunden attestera sina fakturor själv?", "a": "Ja. Ge kunden rollen ägare eller attestant. En leverantörsfaktura attesteras av en annan person än den som registrerade den."},
+        {"q": "Vad kostar det för mina kunder?", "a": "Med drift hos oss {pris} per år och företag upp till {max} anställda, med alla delar inräknade. I egen drift kostar programmet ingenting."},
+        {"q": "Måste mina kunder byta program för att jag ska använda NONOX?", "a": "Ja, bokföringen för ett företag förs i ett system. Flytten görs med SIE4 för varje räkenskapsår, eller direkt från Fortnox."},
+        {"q": "Kan en revisor få läsbehörighet?", "a": "Ja. Rollen revisor kan läsa och exportera allt i företaget men inte bokföra."},
+        {"q": "Var lagras kundernas data?", "a": "I vår drift på servrar i Sverige eller EU, med personuppgiftsbiträdesavtal. I egen drift där du väljer."}
+    ],
+    "related": ["for-redovisningsbyraer", "bokforing-for-konsulter", "bokforing-for-cafeer"],
+    "legal_verify": []
+}

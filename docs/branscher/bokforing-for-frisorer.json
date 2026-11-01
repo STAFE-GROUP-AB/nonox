@@ -1,0 +1,60 @@
+{
+    "slug": "bokforing-for-frisorer",
+    "order": 6,
+    "group": "foretag",
+    "name": "Frisörer och skönhet",
+    "menu_text": "Personalliggare, stolshyra, dagskassa och lön.",
+    "icon": "M8.5 7a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM8.5 17a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM8 8.5l12 8M8 15.5l12-8",
+    "title": "Bokföring för frisörer och skönhetssalonger",
+    "description": "Bokföring för frisörer, hudvård, naglar och massage: personalliggare på en surfplatta, stolshyra som avtalsfaktura och dagskassa från inkorgen. {pris}/år.",
+    "eyebrow": "Bokföring för frisörer och skönhetssalonger",
+    "h1": "Bokföring för frisörer",
+    "h1_accent": "och skönhetssalonger.",
+    "lead": "Frisörer och annan kropps- och skönhetsvård hör till branscherna som NONOX personalliggare är byggd för. Personalen checkar in på en surfplatta i salongen, stolshyran faktureras automatiskt varje månad och dagsrapporten från kassan bokförs med en mall.",
+    "month": {
+        "heading": "Så ser en månad ut i en salong.",
+        "intro": "En salong är ofta liten, men ekonomin har lika många delar som i ett större företag: kassa, varor, personal, hyresgäster och en personalliggare.",
+        "items": [
+            {"title": "Behandlingar och produkter i kassan", "text": "Klippningar, behandlingar och försäljning av produkter går genom kassan. Dagsrapporten visar försäljningen per momssats och om kunden betalat med kort, Swish, kontant eller presentkort."},
+            {"title": "Personalliggaren", "text": "Den som arbetar i salongen ska checka in och ut, och liggaren ska kunna visas när Skatteverket kommer på kontrollbesök. Vem som ska stå i liggaren avgör Skatteverkets regler."},
+            {"title": "Stolshyra", "text": "Hyr du ut stolar eller rum till andra frisörer eller terapeuter är det en faktura i månaden till var och en, som ska skickas och följas upp."},
+            {"title": "Produkter från leverantörer", "text": "Hårvård, hudvård och förbrukning beställs löpande. Fakturorna ska betalas och bokföras."},
+            {"title": "Få anställda, varierande timmar", "text": "En eller ett par anställda, ibland med timlön. Lön, skatt och arbetsgivardeklaration varje månad."},
+            {"title": "Moms och bank", "text": "Momsen ska stämma med kassan och kortinlösarens utbetalningar med banken."}
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt din salong.",
+        "intro": "Allt nedan finns i NONOX i dag. Det som är en modul slår du på under Inställningar → Moduler.",
+        "items": [
+            {"title": "Personalliggare för kropps- och skönhetsvård", "text": "Välj verksamheten kropps- och skönhetsvård för lokalen och ställ en surfplatta vid entrén. Personalen checkar in med kod eller QR-kod, även utan internet. Den som har en annan arbetsgivare eller ett eget företag registreras med arbetsgivarens namn och organisationsnummer.", "features": ["staff_ledger"]},
+            {"title": "Kontrollbesöket med ett tryck", "text": "När Skatteverket kommer visar du vem som är incheckad nu och liggaren för en vald period. Den kan exporteras som PDF, CSV och XML, och varje öppning skrivs till behandlingshistoriken.", "features": ["control_visit", "audit_log"]},
+            {"title": "Stolshyra som avtalsfaktura", "text": "Lägg upp ett avtal per hyresgäst, så skapas fakturan varje månad med OCR-nummer och skickas med e-post. Inbetalningarna matchas på OCR-numret när du läser in bankens fil, och påminnelser skickar du därifrån.", "features": ["recurring_invoices", "invoices", "incoming_payments", "reminders_credit"]},
+            {"title": "Dagskassan från inkorgen", "text": "Kassan mejlar dagsrapporten till salongens adress i NONOX och bokförs med en mall som du godkänt en gång.", "features": ["inbox", "daily_reports"]},
+            {"title": "Lön, även timlön", "text": "Månads- eller timlön med Skatteverkets skattetabeller. Med personalliggaren påslagen blir passen förslag till tidrapporter. Lönebesked, lönefil och arbetsgivardeklaration ingår.", "features": ["payroll", "hourly_pay", "agi", "employee_portal"]}
+        ]
+    },
+    "limits": [
+        {"text": "NONOX är inget kassa- eller bokningssystem och har ingen lagerhantering för produkter."},
+        {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."}
+    ],
+    "pricing": {
+        "employees": 2,
+        "label": "En salong med två anställda",
+        "text": "Bokföring, fakturering och lön för två anställda, med samma paket och listpriser som i vår jämförelse av bokföringsprogram."
+    },
+    "comparison_features": ["Personalliggare", "Alla moduler ingår i priset", "Öppen källkod"],
+    "faqs": [
+        {"q": "Måste en frisörsalong ha personalliggare?", "a": "Frisörer och kropps- och skönhetsvård hör till de branscher som ska föra personalliggare. Vem som ska stå i liggaren och vad som ändras 2027 står i Skatteverkets regler; läs där eller fråga din redovisningskonsult. I NONOX är personalliggaren en modul."},
+        {"q": "Ska den som hyr en stol stå i min liggare?", "a": "Det avgör Skatteverkets regler, inte NONOX. Liggaren i NONOX kan registrera personer med en annan arbetsgivare eller ett eget företag, med namn och organisationsnummer."},
+        {"q": "Kan jag fakturera stolshyran automatiskt?", "a": "Ja. Med avtalsfakturering skapas en faktura per hyresgäst varje månad, som utkast eller skickad direkt med e-post."},
+        {"q": "Fungerar incheckningen utan internet?", "a": "Ja. Kiosken på surfplattan sparar varje incheckning direkt och skickar dem när nätet är tillbaka."},
+        {"q": "Kan NONOX läsa dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton en gång och godkänner."},
+        {"q": "Vad kostar NONOX för en salong?", "a": "{pris} per år med drift för upp till {max} anställda, med personalliggare och lön inräknade. Kör du NONOX själv kostar det ingenting."}
+    ],
+    "related": ["bokforing-for-cafeer", "bokforing-for-butiker", "bokforing-for-restauranger"],
+    "legal_verify": [
+        "Vilka delar av kropps- och skönhetsvården som omfattas av kravet på personalliggare, och om stolshyrare ska stå i salongens liggare (BusinessType har samma TODO).",
+        "Frisörer i restaurang- och frisörbranschens krav sedan tidigare: sidan säger att branschen ska föra liggare och hänvisar detaljerna och 2027 års ändringar till Skatteverket."
+    ]
+}

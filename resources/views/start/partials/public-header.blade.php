@@ -19,6 +19,16 @@
             ],
             'promo' => ['eyebrow' => 'Din data. Alltid.', 'title' => 'Bokförda verifikationer kan aldrig ändras i efterhand.', 'link' => $ph['github'], 'cta' => 'Se koden på GitHub'],
         ],
+        'branscher' => [
+            'label' => 'Branscher',
+            'items' => array_values(array_map(fn (array $industry): array => [
+                'href' => route('industry', $industry['slug']),
+                'title' => $industry['name'],
+                'text' => $industry['menu_text'],
+                'icon' => $industry['icon'],
+            ], App\Support\Landing\Industries::all())),
+            'promo' => ['eyebrow' => 'Bokföring för din bransch', 'title' => 'Se hur NONOX passar just ditt företag.', 'link' => route('industries'), 'cta' => 'Alla branscher'],
+        ],
         'kom-igang' => [
             'label' => 'Kom igång',
             'items' => [

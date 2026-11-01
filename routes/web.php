@@ -18,6 +18,7 @@ use App\Http\Controllers\CompanyLogoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataSubjectExportController;
 use App\Http\Controllers\GettingStartedController;
+use App\Http\Controllers\IndustryController;
 use App\Http\Controllers\Invoicing\AgreementController;
 use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\Invoicing\SalesDocumentController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\SalesDocument;
+use App\Support\Landing\Industries;
 use App\Support\Landing\LandingPage;
 use Illuminate\Support\Facades\Route;
 use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
@@ -54,6 +56,8 @@ Route::get('/egen-drift', LegalPageController::class)->defaults('document', 'sel
 Route::get('/sakerhet', SecurityPageController::class)->name('security');
 Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->name('cookies');
 Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');
+Route::get('/branscher', [IndustryController::class, 'index'])->name('industries');
+Route::get('/{industry}', [IndustryController::class, 'show'])->where('industry', implode('|', array_map(fn (string $slug): string => preg_quote($slug, '#'), Industries::slugs())))->name('industry');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 

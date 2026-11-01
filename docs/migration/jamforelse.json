@@ -1,6 +1,7 @@
 {
     "fetched_at": "2026-10-31 11:47–11:50",
     "timezone": "Europe/Stockholm",
+    "scenario_employees": 5,
     "scenario": "Ett aktiebolag med fem anställda som behöver bokföring, fakturering och lön. Listpriser exklusive moms vid tolv månaders avtal där det anges, utan tillval, avgifter per faktura eller tolkning.",
     "programs": [
         {
@@ -20,6 +21,7 @@
             "per_year": 10596,
             "price_note": "659 + 99 + 5 × 25 kr/mån. 12 månaders avtal; 3 månader kostar 15 % mer.",
             "source": "https://www.fortnox.se/prislista",
+            "price_model": {"base_per_month": 758, "per_employee_per_month": 25, "included_employees": 0},
             "verified": true
         },
         {
@@ -30,6 +32,7 @@
             "per_year": 8988,
             "price_note": "749 kr/mån. Sidan anger inte om priset är exklusive moms.",
             "source": "https://www.spiris.se/priser",
+            "price_model": {"base_per_month": 749, "per_employee_per_month": null, "included_employees": 0},
             "verified": true
         },
         {
@@ -40,6 +43,7 @@
             "per_year": 6900,
             "price_note": "459 + 4 × 29 kr/mån vid årsbetalning.",
             "source": "https://www.bokio.se/priser/",
+            "price_model": {"base_per_month": 459, "per_employee_per_month": 29, "included_employees": 1},
             "verified": true
         },
         {
@@ -50,6 +54,7 @@
             "per_year": 6528,
             "price_note": "349 + 5 × 39 kr/mån enligt jämförelsesajt. Leverantörens prissida kunde inte läsas automatiskt.",
             "source": "https://jamforbokforingsprogram.se/bokforingsprogram/bjorn-lunden/",
+            "price_model": {"base_per_month": 349, "per_employee_per_month": 39, "included_employees": 0},
             "verified": false
         },
         {
@@ -60,9 +65,11 @@
             "per_year": 73500,
             "price_note": "Från 5 000 kr/mån inklusive konsulttjänst, plus 5 × 225 kr/mån för lön. Inte direkt jämförbart: konsulten ingår.",
             "source": "https://www.kleer.se/pris-ekonomisystem/",
+            "price_model": {"base_per_month": 5000, "per_employee_per_month": 225, "included_employees": 0, "comparable": false},
             "verified": true
         }
     ],
+    "price_model_note": "price_model delar upp listpriset i en grundavgift per månad och en avgift per anställd (per lönebesked hos Björn Lundén) enligt samma källor och samma hämtning. per_employee_per_month null betyder att källan bara anger ett fast pris för paketet, så priset för ett annat antal anställda räknas inte fram. included_employees är antalet anställda som ingår i grundavgiften, och comparable false att priset inte är direkt jämförbart (till exempel när en konsult ingår) och därför inte räknas in i besparingen. Branschsidorna (docs/branscher) räknar med dessa delar.",
     "legend": {
         "yes": "Ingår",
         "addon": "Tillval, kostar extra",

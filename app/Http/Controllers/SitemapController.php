@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Support\Landing\Comparison;
+use App\Support\Landing\Industries;
 use Illuminate\Http\Response;
 
 /**
@@ -17,7 +18,7 @@ class SitemapController
     public function sitemap(): Response
     {
         $urls = config('app.landing.enabled')
-            ? [url('/'), route('migrationGuide'), route('security'), route('legal.selfHosting'), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others())]
+            ? [url('/'), route('migrationGuide'), route('security'), route('legal.selfHosting'), route('industries'), ...array_map(fn (string $slug): string => route('industry', $slug), Industries::slugs()), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others())]
             : [];
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";

@@ -7,6 +7,7 @@
 <meta property="og:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
 <meta property="og:url" content="{{ url()->current() }}">
 <meta property="og:type" content="website">
+<meta property="og:site_name" content="NONOX">
 <meta property="og:locale" content="sv_SE">
 <meta name="theme-color" content="#15171C">
 <link rel="canonical" href="{{ url()->current() }}">
@@ -28,11 +29,24 @@
             'isAccessibleForFree' => true,
             'offers' => [
                 ['@type' => 'Offer', 'name' => 'Kör själv', 'price' => '0', 'priceCurrency' => 'SEK'],
-                ['@type' => 'Offer', 'name' => 'Vi sköter driften, upp till 10 anställda', 'price' => '995', 'priceCurrency' => 'SEK', 'priceSpecification' => ['@type' => 'UnitPriceSpecification', 'price' => '995', 'priceCurrency' => 'SEK', 'unitText' => 'år', 'valueAddedTaxIncluded' => false]],
-                ['@type' => 'Offer', 'name' => 'Vi sköter driften, 11–25 anställda', 'price' => '1995', 'priceCurrency' => 'SEK', 'priceSpecification' => ['@type' => 'UnitPriceSpecification', 'price' => '1995', 'priceCurrency' => 'SEK', 'unitText' => 'år', 'valueAddedTaxIncluded' => false]],
+                // The hosted plans with a price, from LandingPage::PLANS.
+                ...array_map(fn (array $plan): array => [
+                    '@type' => 'Offer',
+                    'name' => $plan['employees'] === '0–10' ? "Vi sköter driften, upp till {$plan['max']} anställda" : "Vi sköter driften, {$plan['employees']} anställda",
+                    'price' => (string) $plan['price'],
+                    'priceCurrency' => 'SEK',
+                    'priceSpecification' => ['@type' => 'UnitPriceSpecification', 'price' => (string) $plan['price'], 'priceCurrency' => 'SEK', 'unitText' => 'år', 'valueAddedTaxIncluded' => false],
+                ], array_values(array_filter(App\Support\Landing\LandingPage::PLANS, fn (array $plan): bool => $plan['price'] !== null))),
             ],
         ],
     ];
+    if (! empty($breadcrumbs ?? [])) {
+        $structured[] = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => array_map(fn (array $crumb, int $index): array => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb['name'], 'item' => $crumb['url']], $breadcrumbs, array_keys($breadcrumbs)),
+        ];
+    }
     if (! empty($faqSchema ?? $faqs ?? [])) {
         $structured[] = [
             '@context' => 'https://schema.org',

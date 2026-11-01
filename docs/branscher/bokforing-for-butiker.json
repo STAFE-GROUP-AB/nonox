@@ -1,0 +1,62 @@
+{
+    "slug": "bokforing-for-butiker",
+    "order": 5,
+    "group": "foretag",
+    "name": "Butiker och handel",
+    "menu_text": "Dagskassa, presentkort, inköp från EU och personal.",
+    "icon": "M5 8h14l-1 13H6zM9 8V6a3 3 0 0 1 6 0v2",
+    "title": "Bokföring för butiker – dagskassa, inköp och moms",
+    "description": "Bokföring för butiker: dagsrapporten från kassan bokförs med en mall, leverantörsfakturor attesteras och EU-inköp hamnar i rätt ruta. {pris}/år med drift.",
+    "eyebrow": "Bokföring för butiker och handel",
+    "h1": "Bokföring för butiker",
+    "h1_accent": "från kassan till momsen.",
+    "lead": "I en butik går pengarna åt två håll varje dag: försäljning genom kassan och inköp av varor från leverantörer. NONOX bokför dagsrapporten från kassan med en mall, tar emot leverantörsfakturorna i en egen inkorg och lägger inköp från andra EU-länder i rätt rutor i momsdeklarationen.",
+    "month": {
+        "heading": "Så ser en månad ut i en butik.",
+        "intro": "Kassan, banken och leverantörerna är tre källor till samma sanning. Månaden går ihop först när de stämmer.",
+        "items": [
+            {"title": "Dagsrapporten från kassan", "text": "Varje kväll: försäljning per momssats och betalsätt, kort, Swish, kontant och presentkort. Ibland en retur eller öresavrundning som ska med."},
+            {"title": "Presentkort", "text": "Ett sålt presentkort är en skuld tills det används, och ett inlöst presentkort är ett betalsätt. Det ska hållas isär i bokföringen."},
+            {"title": "Varuinköp från många leverantörer", "text": "Fakturor från grossister och tillverkare, med olika förfallodagar och ibland kreditnotor för returer."},
+            {"title": "Inköp från andra EU-länder", "text": "Varor från en leverantör i ett annat EU-land faktureras ofta utan svensk moms. Momsen ska då redovisas av dig, i rätt rutor."},
+            {"title": "Personal i butiken", "text": "Deltid, timmar och helgpersonal. Lönen ska stämma med de timmar som jobbats."},
+            {"title": "Moms och bank", "text": "Momsdeklarationen ska stämma med kassan, och kortinlösarens utbetalningar ska gå att hitta på banken."}
+        ]
+    },
+    "solutions": {
+        "heading": "Det här gör NONOX åt din butik.",
+        "intro": "Allt nedan finns i NONOX i dag. Det som är en modul slår du på under Inställningar → Moduler.",
+        "items": [
+            {"title": "Dagsrapporten bokförs med en mall", "text": "Kassasystemet mejlar dagsrapporten till butikens egen adress i NONOX. Du kopplar raderna till konton en gång, till exempel försäljning per momssats, kort, Swish, kontant, presentkort och öresavrundning. Nästa rapport i samma format tolkas med mallen och kan bokföras automatiskt när den stämmer exakt.", "features": ["inbox", "daily_reports"]},
+            {"title": "Leverantörsfakturor med attest", "text": "Fakturorna kommer till inkorgen, attesteras av en annan person än den som registrerade och betalas med en betalfil till din bank. Kreditnotor från leverantörer hanteras också.", "features": ["supplier_invoices", "payment_files", "inbox"]},
+            {"title": "EU-inköp i rätt rutor", "text": "Inköp från andra EU-länder bokförs med momsen i rätt rutor i momsdeklarationen, som du laddar ner som fil till Skatteverket.", "features": ["eu_purchases", "vat_return"]},
+            {"title": "Timmar till lönen", "text": "Personalliggaren kan också användas bara för tidsredovisning: personalen checkar in och ut på en surfplatta, passen blir tidrapporter och timlönen räknas i lönekörningen.", "features": ["staff_ledger", "hourly_pay", "payroll", "agi"]},
+            {"title": "Bankavstämning", "text": "Stäm av bankkontot mot bokföringen och se vilka kortutbetalningar som ännu inte kommit in.", "features": ["bank_reconciliation", "templates"]},
+            {"title": "Säljer du till privatpersoner i andra EU-länder", "text": "Fakturor till privatpersoner i andra EU-länder får köparlandets momssats, och NONOX tar fram underlaget för OSS-deklarationen per kvartal.", "features": ["eu_invoices", "eu_reports"]}
+        ]
+    },
+    "limits": [
+        {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Inventering och lagervärde sköter du utanför NONOX."},
+        {"text": "Import av varor från länder utanför EU är inte byggd ännu.", "feature": "non_eu_goods_import"},
+        {"text": "NONOX har inget personalschema. Timmarna kommer från personalliggaren eller från tidrapporter."}
+    ],
+    "pricing": {
+        "employees": 3,
+        "label": "En butik med tre anställda",
+        "text": "Bokföring, fakturering och lön för tre anställda, med samma paket och listpriser som i vår jämförelse av bokföringsprogram."
+    },
+    "comparison_features": ["Leverantörsfakturor med attest", "Alla moduler ingår i priset", "Öppen källkod"],
+    "faqs": [
+        {"q": "Kan NONOX bokföra dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton första gången, och sedan tolkas rapporter i samma format med samma mall."},
+        {"q": "Hur hanteras presentkort?", "a": "I dagsrapporten är ett inlöst presentkort ett eget betalsätt som du kopplar till ett konto i mallen. Vilket konto du använder för sålda presentkort bestämmer du i kontoplanen."},
+        {"q": "Har NONOX lagerhantering?", "a": "Nej. NONOX är ett bokförings-, faktura- och lönesystem. Lager och inventering sköts i kassasystemet eller ett lagerprogram."},
+        {"q": "Kan jag bokföra inköp från leverantörer i andra EU-länder?", "a": "Ja. Inköp från andra EU-länder bokförs med momsen i rätt rutor. Import av varor från länder utanför EU är inte byggd ännu."},
+        {"q": "Måste en butik ha personalliggare?", "a": "Personalliggaren i NONOX är byggd för de branscher som har krav på liggare. En butik kan använda den bara för att stämpla in och ut och få timmarna till lönen. Om din verksamhet har krav på liggare avgör Skatteverkets regler."},
+        {"q": "Vad kostar NONOX för en butik?", "a": "{pris} per år med drift för upp till {max} anställda, med lön och inkorg inräknade. Kör du NONOX själv kostar det ingenting."}
+    ],
+    "related": ["bokforing-for-cafeer", "bokforing-for-restauranger", "bokforing-for-frisorer"],
+    "legal_verify": [
+        "Bokföring av sålda och inlösta presentkort (flerfunktionsvoucher och moms): sidan säger bara att det ska hållas isär och att kontot väljs av användaren.",
+        "Personalliggare i handeln: sidan påstår inget krav och hänvisar till Skatteverket."
+    ]
+}

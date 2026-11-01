@@ -25,7 +25,14 @@
         @if($ph['api'])<a class="lp34" href="{{ $ph['api'] }}" style="text-decoration:none;color:#D9D7D1">API</a>@endif
         <a class="lp35" href="https://www.gnu.org/licenses/agpl-3.0.html" style="text-decoration:none;color:#D9D7D1">Licens AGPL-3.0</a>
       </nav>
-      <nav aria-label="Alternativ till" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
+      <nav aria-label="Branscher" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
+        <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Branscher</span>
+        @foreach(App\Support\Landing\Industries::all() as $footerIndustry)
+          <a href="{{ route('industry', $footerIndustry['slug']) }}" style="text-decoration:none;color:#D9D7D1">{{ $footerIndustry['name'] }}</a>
+        @endforeach
+        <a href="{{ route('industries') }}" style="text-decoration:none;color:#D9D7D1">Alla branscher</a>
+      </nav>
+      <nav aria-label="Alternativ till"style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
         <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Alternativ till</span>
         @foreach(App\Support\Landing\Comparison::others() as $slug)
           <a href="{{ route('alternative', $slug) }}" style="text-decoration:none;color:#D9D7D1">{{ App\Support\Landing\Comparison::program($slug)['name'] ?? $slug }}</a>
