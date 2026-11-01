@@ -13,9 +13,18 @@
         "E": "Saknas eller inte bedömt."
     },
     "findings": {
-        "high": {"found": 3, "fixed": 3},
-        "medium": {"found": 6, "fixed": 3},
-        "low": {"found": 18, "fixed": 4}
+        "high": {
+            "found": 3,
+            "fixed": 3
+        },
+        "medium": {
+            "found": 7,
+            "fixed": 7
+        },
+        "low": {
+            "found": 17,
+            "fixed": 16
+        }
     },
     "areas": [
         {
@@ -26,7 +35,9 @@
             "done": [
                 "Engångskoder med åtta siffror, fem försök per kod och tak per adress, dag och för hela tjänsten.",
                 "Felaktiga koder spärrar bara den webbläsare som skrev dem, så ingen kan låsa ute någon annan.",
-                "Sessionen byts vid inloggning, har en absolut gräns på tolv timmar och kan avslutas överallt."
+                "Sessionen byts vid inloggning, har en absolut gräns på tolv timmar och kan avslutas överallt.",
+                "E-postadresser jämförs utan hänsyn till versaler, och en borttagen administratörs inbjudningar återkallas.",
+                "API-nycklar kan inte öppna sidor, de gäller bara API:t och slutar gälla efter 30 dagar."
             ],
             "open": [
                 "Ingen andra faktor (till exempel passkey) för roller som ser hälsouppgifter och personnummer."
@@ -49,31 +60,31 @@
         {
             "group": "sakerhet",
             "name": "Behörigheter och roller",
-            "grade": "C",
-            "summary": "Sex roller med behörigheter per handling, och en öppen sida slutar fungera när rollen ändras.",
+            "grade": "B",
+            "summary": "Sex roller med behörigheter per handling. Attest och betalning kräver två personer, och en öppen sida slutar fungera när rollen ändras.",
             "done": [
-                "Attest av leverantörsfakturor kräver en annan person än den som registrerade dem.",
+                "Attest av leverantörsfakturor och godkännande av betalfiler kräver en annan person än den som skapade dem.",
+                "En betalfil kan varken laddas ner eller markeras som betald innan den är godkänd, och databasen spärrar ändringar efter godkännandet.",
                 "Behörigheten prövas igen när rollen eller modulerna ändras, även på en sida som redan är öppen."
             ],
             "open": [
-                "Betalningar saknar ett eget godkännandesteg av en andra person."
+                "Ett arkiverat företag är ännu inte helt skrivskyddat."
             ],
             "law": []
         },
         {
             "group": "sakerhet",
             "name": "Filer, e-post och tolkning",
-            "grade": "B",
+            "grade": "A",
             "summary": "Filer krypteras på disk, och typen avgörs av innehållet. Farliga bilagor spärras och virussöks innan något läses.",
             "done": [
                 "XML läses utan externa entiteter, PDF och SIE med storleks- och sidgränser.",
                 "E-post räknas som äkta bara när avsändardomänen bekräftas av mottagande server.",
-                "NONOX AI har inga verktyg och kan inte bokföra själv. En person godkänner alltid."
+                "NONOX AI har inga verktyg och kan inte bokföra själv. En person godkänner alltid.",
+                "Inkorgens IMAP-anslutning når bara publika adresser på port 143 eller 993 med giltigt certifikat.",
+                "Bilagor i Peppol-fakturor virussöks, och filer visas i en sandlåda."
             ],
-            "open": [
-                "Inkorgens IMAP-inställning kan peka på interna adresser.",
-                "PDF i Peppol-fakturor virussöks inte."
-            ],
+            "open": [],
             "law": []
         },
         {
@@ -84,11 +95,12 @@
             "done": [
                 "Kopplingskoder gäller i 15 minuter och en gång, kiosknyckeln sparas bara som kontrollvärde.",
                 "Varje händelse ingår i en hashkedja per enhet, och luckor och tidsavvikelser flaggas.",
-                "Personnummer lämnas ut i klartext först när servern prövat chefens kod."
+                "Personnummer lämnas ut i klartext först när servern prövat chefens kod.",
+                "Mobil incheckning märks som självrapporterad position i liggaren och exporten, och antalet försök är begränsat."
             ],
             "open": [
                 "En kod med fyra siffror kan provas fram av den som kopierar surfplattans lagring.",
-                "Mobil incheckning litar på telefonens position."
+                "Positionen vid mobil incheckning kommer från telefonen och kan inte bevisas."
             ],
             "law": []
         },
@@ -100,11 +112,10 @@
             "done": [
                 "Spärrar på tre nivåer: behörighet, modell och databasutlösare.",
                 "Obrutna nummerserier och en hashkedja som kontrolleras varje natt.",
-                "Behandlingshistoriken kan bara skrivas till, aldrig ändras."
+                "Behandlingshistoriken kan bara skrivas till, aldrig ändras.",
+                "Belopp räknas i hela ören utan flyttal, och bokföring och periodlås väntar in varandra."
             ],
-            "open": [
-                "Bokslutsspärren läses utan lås, en mycket smal lucka vid samtidig låsning."
-            ],
+            "open": [],
             "law": []
         },
         {
@@ -135,7 +146,9 @@
                 "Ingen dokumenterad återläsningsövning.",
                 "Tjänsten delar server med andra webbplatser."
             ],
-            "law": ["GDPR art. 32"]
+            "law": [
+                "GDPR art. 32"
+            ]
         },
         {
             "group": "regelverk",
@@ -148,51 +161,65 @@
                 "Radering spärras under lagringstiden på sju år."
             ],
             "open": [],
-            "law": ["Bokföringslagen (1999:1078)", "BFNAR 2013:2"]
+            "law": [
+                "Bokföringslagen (1999:1078)",
+                "BFNAR 2013:2"
+            ]
         },
         {
             "group": "regelverk",
             "name": "GDPR",
-            "grade": "C",
-            "summary": "Kryptering, registerutdrag, begränsning och gallring finns. Några rättigheter och dokument saknas.",
+            "grade": "B",
+            "summary": "Kryptering, registerutdrag, radering, begränsning och gallring finns, med konsekvensbedömningar som kunden kan använda.",
             "done": [
                 "Personnummer och filer krypteras, och visning av hela personnummer loggas.",
-                "Registerutdrag för konton, kunder, leverantörer och anställda.",
-                "Registerförteckning, incidentrutin och konsekvensbedömning för lön."
+                "Registerutdrag för konton, kunder, leverantörer, anställda, personalliggarens personal och inkorgens avsändare.",
+                "Den som vill kan radera sitt konto. Det som Bokföringslagen kräver behålls pseudonymiserat.",
+                "Konsekvensbedömningar för lön, personalliggare, inkorg och AI, och ett uppdaterat personuppgiftsbiträdesavtal."
             ],
             "open": [
-                "Det går inte att radera sitt eget konto.",
-                "Registerutdrag saknas för personalliggarens personal och inkorgens avsändare.",
-                "Konsekvensbedömning saknas för personalliggaren, inkorgen och AI.",
-                "Personuppgiftsbiträdesavtalet nämner inte de nyaste modulerna."
+                "Ingen andra faktor vid inloggning för roller som ser hälsouppgifter.",
+                "Säkerhetskopior saknar kopia på annan plats.",
+                "Frågor om dataskyddsombud och AI-leverantörernas roll väntar på jurist."
             ],
-            "law": ["Förordning (EU) 2016/679", "Dataskyddslagen (2018:218)"]
+            "law": [
+                "Förordning (EU) 2016/679",
+                "Dataskyddslagen (2018:218)"
+            ]
         },
         {
             "group": "regelverk",
             "name": "AI-förordningen",
-            "grade": "D",
-            "summary": "AI är avstängt som standard, kan inte agera själv och allt godkänns av en person. Klassningen är inte nedskriven.",
+            "grade": "C",
+            "summary": "AI är avstängt som standard, kan inte agera själv och allt godkänns av en person. Varje AI-funktion är klassad och dokumenterad.",
             "done": [
                 "Vad som skickas till AI-leverantören loggas, aldrig innehållet.",
-                "Allt AI föreslår märks som förslag och kräver ett mänskligt godkännande."
+                "Allt AI föreslår märks som förslag och kräver ett mänskligt godkännande.",
+                "Riskklassning per AI-funktion och en kundsida om vad AI gör och inte gör."
             ],
             "open": [
-                "Riskklassning per AI-funktion är inte dokumenterad.",
-                "Kvittoläsaren bedömer om ett kvitto ser privat ut, vilket kan räknas som bedömning av anställda."
+                "Kvittoläsaren bedömer om ett kvitto ser privat ut, vilket kan räknas som bedömning av anställda. Beslut om att ta bort bedömningen återstår.",
+                "Rollen som leverantör eller tillhandahållare väntar på jurist."
             ],
-            "law": ["Förordning (EU) 2024/1689"]
+            "law": [
+                "Förordning (EU) 2024/1689"
+            ]
         },
         {
             "group": "regelverk",
             "name": "NIS2 och cybersäkerhetslagen",
-            "grade": "E",
-            "summary": "Gäller sannolikt inte ett företag av vår storlek, men bedömningen är inte nedskriven.",
-            "done": [],
-            "open": [
-                "Bedömning av storlek på koncernnivå och om tjänsten räknas som molntjänst."
+            "grade": "D",
+            "summary": "Gäller sannolikt inte ett företag av vår storlek. Bedömningen är nedskriven och väntar på jurist.",
+            "done": [
+                "Bedömning av omfattning finns i regelverksregistret."
             ],
-            "law": ["Direktiv (EU) 2022/2555", "Cybersäkerhetslag (2025:1506)"]
+            "open": [
+                "Bekräftelse av storleken på koncernnivå."
+            ],
+            "law": [
+                "Direktiv (EU) 2022/2555",
+                "Cybersäkerhetslag (2025:1506)"
+            ]
         },
         {
             "group": "regelverk",
@@ -200,25 +227,31 @@
             "grade": "D",
             "summary": "Målet är WCAG 2.2 AA, men ingen granskning är gjord och det finns ingen tillgänglighetsredogörelse.",
             "done": [
-                "Tangentbordsnavigering, synligt fokus och kontrast enligt designsystemet."
+                "Tangentbordsnavigering, synligt fokus och kontrast enligt designsystemet.",
+                "En ärlig tillgänglighetsredogörelse är publicerad i dokumentationen."
             ],
             "open": [
-                "Ingen granskning mot WCAG 2.2 AA.",
-                "Ingen tillgänglighetsredogörelse."
+                "Ingen granskning mot WCAG 2.2 AA."
             ],
-            "law": ["Lag (2023:254) om vissa produkters och tjänsters tillgänglighet"]
+            "law": [
+                "Lag (2023:254) om vissa produkters och tjänsters tillgänglighet"
+            ]
         },
         {
             "group": "regelverk",
             "name": "Cyberresiliensförordningen",
-            "grade": "E",
-            "summary": "Rollen som tillverkare eller förvaltare av öppen källkod är inte bedömd, och det finns ingen väg att rapportera sårbarheter.",
-            "done": [],
-            "open": [
-                "SECURITY.md med kontaktväg för sårbarheter.",
-                "Förteckning över programvarukomponenter (SBOM)."
+            "grade": "D",
+            "summary": "Det finns en väg att rapportera sårbarheter. Rollen som tillverkare eller förvaltare av öppen källkod väntar på jurist.",
+            "done": [
+                "SECURITY.md med kontaktväg, svarstider och skydd för den som granskar i god tro."
             ],
-            "law": ["Förordning (EU) 2024/2847"]
+            "open": [
+                "Förteckning över programvarukomponenter (SBOM).",
+                "Beslut om rollen enligt förordningen."
+            ],
+            "law": [
+                "Förordning (EU) 2024/2847"
+            ]
         }
     ]
 }
