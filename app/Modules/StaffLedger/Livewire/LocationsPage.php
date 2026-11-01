@@ -151,10 +151,16 @@ class LocationsPage extends Component
         $this->toast(__('Kiosken är spärrad och kan inte längre checka in någon.'));
     }
 
+    public function remove(int $deviceId, KioskDevices $devices): void
+    {
+        $devices->remove($this->user(), $this->company(), Device::query()->findOrFail($deviceId));
+        $this->toast(__('Kiosken är borttagen.'));
+    }
+
     public function render(): View
     {
         return view('staff-ledger::livewire.locations', [
-            'locations' => Location::query()->with(['devices' => fn ($query) => $query->orderBy('id')])->orderByRaw('archived_at is not null')->orderBy('name')->get(),
+            'locations' => Location::query()->with(['devices' => fn ($query) => $query->whereNull('removed_at')->orderBy('id')])->orderByRaw('archived_at is not null')->orderBy('name')->get(),
             'types' => BusinessType::cases(),
             'canManage' => $this->allowed('staff-ledger:manage'),
             'pairingQr' => $this->pairing === null ? null : QrSvg::render($this->pairing['url'], 200),

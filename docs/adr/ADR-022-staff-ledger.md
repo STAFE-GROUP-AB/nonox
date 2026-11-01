@@ -31,6 +31,10 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   and the control visit view stay reachable for the retention period through
   archive permissions (`staff-ledger:view`, `:control-visit`,
   `:view-sensitive`), like payroll's archive.
+- Personal numbers are masked in every list (people, ledger). A user with
+  `:view-sensitive` shows them in full on purpose, and each showing is
+  written to the audit log. The control visit view shows them in full,
+  since that is what it is for.
 
 ### Kiosk: a PWA, not NativePHP
 
@@ -45,6 +49,9 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   random device token; the server keeps only its SHA-256. The token is sent as
   a bearer token; there is no session, no login and no CSRF on the kiosk's
   endpoints, which are throttled (120 requests per minute per IP, pairing 10).
+  A manager (`staff-ledger:manage`) can also remove a kiosk: one that never
+  sent an entry is deleted, one that did is revoked and hidden, since each
+  entry keeps the device that sent it.
   A device can be revoked at any time; a kiosk that is set up again gets a
   new device, so sequence numbers never collide.
 - Several companies at the same address each keep their own locations and

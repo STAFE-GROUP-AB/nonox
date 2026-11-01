@@ -14,6 +14,7 @@ use App\Modules\StaffLedger\Domain\EntryType;
 use App\Modules\StaffLedger\Domain\LedgerQuery;
 use App\Modules\StaffLedger\Domain\ShiftBuilder;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
+use App\Modules\StaffLedger\Livewire\Concerns\RevealsPersonalNumbers;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\Models\Person;
@@ -32,6 +33,7 @@ use Livewire\Component;
 class LedgerPage extends Component
 {
     use InCurrentCompany;
+    use RevealsPersonalNumbers;
     use ShowsToasts;
 
     #[Url(as: 'fran')]
@@ -146,7 +148,8 @@ class LedgerPage extends Component
             'locations' => Location::query()->orderBy('name')->get(['id', 'name']),
             'people' => $writable ? Person::query()->whereNull('archived_at')->orderBy('first_name')->get(['id', 'first_name', 'last_name']) : collect(),
             'canManage' => $writable,
-            'sensitive' => $this->allowed('staff-ledger:view-sensitive'),
+            'sensitive' => $this->showsFullNumbers(),
+            'canReveal' => $this->allowed('staff-ledger:view-sensitive'),
         ]);
     }
 

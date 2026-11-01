@@ -99,7 +99,12 @@
                     <thead>
                         <tr class="border-b border-stone-200 text-start text-gray-600">
                             <th class="py-2 pe-4 text-start font-medium">{{ __('Namn') }}</th>
-                            <th class="py-2 pe-4 text-start font-medium">{{ __('Person- eller samordningsnummer') }}</th>
+                            <th class="py-2 pe-4 text-start font-medium">
+                                {{ __('Person- eller samordningsnummer') }}
+                                @if($canReveal)
+                                    <button type="button" wire:click="{{ $sensitive ? 'hidePersonalNumbers' : 'revealPersonalNumbers' }}" class="ms-2 text-accent-700 underline">{{ $sensitive ? __('Dölj') : __('Visa') }}</button>
+                                @endif
+                            </th>
                             <th class="py-2 pe-4 text-start font-medium">{{ __('Arbetsgivare') }}</th>
                             <th class="py-2 pe-4 text-start font-medium">{{ __('Kiosk') }}</th>
                             <th class="py-2 text-start font-medium"><span class="sr-only">{{ __('Åtgärder') }}</span></th>

@@ -12,9 +12,9 @@ use App\Modules\Payroll\PayrollModule;
 use App\Modules\StaffLedger\Actions\PersonCredentials;
 use App\Modules\StaffLedger\Actions\SavePerson;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
+use App\Modules\StaffLedger\Livewire\Concerns\RevealsPersonalNumbers;
 use App\Modules\StaffLedger\Models\Person;
 use App\Modules\StaffLedger\Support\KioskStrings;
-use App\Support\Audit\Audit;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -23,13 +23,14 @@ use Livewire\WithFileUploads;
 
 /**
  * Personalliggare → Personal: the people, their kiosk PIN, QR card and
- * optional photo. Personal numbers are masked unless the user has
- * staff-ledger:view-sensitive, and are never sent to the browser when a
- * person is edited.
+ * optional photo. Personal numbers are masked until a user with
+ * staff-ledger:view-sensitive shows them, and are never sent to the browser
+ * when a person is edited.
  */
 class PeoplePage extends Component
 {
     use InCurrentCompany;
+    use RevealsPersonalNumbers;
     use ShowsToasts;
     use WithFileUploads;
 
@@ -54,11 +55,6 @@ class PeoplePage extends Component
     public function mount(): void
     {
         abort_unless($this->allowed('staff-ledger:view'), 403);
-
-        // Seeing personal numbers in full is logged once per opening of the page.
-        if ($this->allowed('staff-ledger:view-sensitive')) {
-            Audit::record('staff_ledger.personal_numbers_viewed', null, [], $this->company(), $this->user());
-        }
     }
 
     public function create(): void
@@ -162,7 +158,7 @@ class PeoplePage extends Component
 
     public function render(ModuleManager $modules): View
     {
-        $sensitive = $this->allowed('staff-ledger:view-sensitive');
+        $sensitive = $this->showsFullNumbers();
         $people = Person::query()->when(! $this->showArchived, fn ($query) => $query->whereNull('archived_at'))->orderBy('first_name')->orderBy('last_name')->get();
 
         $payroll = $modules->isEnabled(PayrollModule::KEY, $this->company());
@@ -170,6 +166,7 @@ class PeoplePage extends Component
         return view('staff-ledger::livewire.people', [
             'people' => $people,
             'sensitive' => $sensitive,
+            'canReveal' => $this->allowed('staff-ledger:view-sensitive'),
             'canManage' => $this->allowed('staff-ledger:manage'),
             'languages' => KioskStrings::LANGUAGES,
             'employees' => $payroll ? Employee::query()->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'employee_number']) : collect(),

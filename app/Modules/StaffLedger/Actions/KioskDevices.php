@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\StaffLedger\Models\Device;
+use App\Modules\StaffLedger\Models\Entry;
 use App\Modules\StaffLedger\Models\Location;
 use App\Modules\StaffLedger\StaffLedgerModule;
 use App\Support\Audit\Audit;
@@ -125,6 +126,37 @@ final class KioskDevices
             $this->revoke($user, $company, $device);
 
             return $this->register($user, $company, $location, $device->name);
+        });
+    }
+
+    /**
+     * Removes a kiosk from the lists. One that never registered an entry is
+     * deleted; one that did is revoked and hidden, since the ledger keeps
+     * which device sent each entry.
+     */
+    public function remove(User $user, Company $company, Device $device): void
+    {
+        $this->authorize($user, $company);
+
+        DB::transaction(function () use ($user, $company, $device): void {
+            $hasEntries = Entry::query()->where('device_id', $device->id)->exists();
+
+            Audit::record('staff_ledger.device_removed', $device, ['name' => $device->name, 'kept' => $hasEntries], $company, $user);
+
+            if (! $hasEntries) {
+                $device->delete();
+
+                return;
+            }
+
+            $device->forceFill([
+                'revoked_at' => $device->revoked_at ?? CarbonImmutable::now(),
+                'revoked_by' => $device->revoked_by ?? $user->id,
+                'token_hash' => null,
+                'pairing_code_hash' => null,
+                'removed_at' => CarbonImmutable::now(),
+                'removed_by' => $user->id,
+            ])->save();
         });
     }
 

@@ -93,14 +93,17 @@
                                 {{ __('Väntar på koppling') }}
                             @endif
                         </span>
-                        @if($canManage && ! $device->revoked_at)
+                        @if($canManage)
                             <span class="flex gap-3 font-semibold">
-                                @if($device->paired_at)
+                                @if(! $device->revoked_at && $device->paired_at)
                                     <button type="button" wire:click="replace({{ $device->id }})" wire:confirm="{{ __('Koppla kiosken igen? Den gamla kopplingen spärras och du får en ny kod. Incheckningar som inte hunnit skickas från surfplattan tas inte emot.') }}" class="text-accent-700 underline">{{ __('Koppla igen') }}</button>
-                                @else
+                                @elseif(! $device->revoked_at)
                                     <button type="button" wire:click="renewCode({{ $device->id }})" class="text-accent-700 underline">{{ __('Ny kopplingskod') }}</button>
                                 @endif
-                                <button type="button" wire:click="revoke({{ $device->id }})" wire:confirm="{{ __('Spärra kiosken? Den kan inte längre checka in någon. Händelser som inte hunnit skickas från den tas inte emot.') }}" class="text-red-800 underline">{{ __('Spärra') }}</button>
+                                @unless($device->revoked_at)
+                                    <button type="button" wire:click="revoke({{ $device->id }})" wire:confirm="{{ __('Spärra kiosken? Den kan inte längre checka in någon. Händelser som inte hunnit skickas från den tas inte emot.') }}" class="text-red-800 underline">{{ __('Spärra') }}</button>
+                                @endunless
+                                <button type="button" wire:click="remove({{ $device->id }})" wire:confirm="{{ __('Ta bort kiosken? Den spärras och försvinner ur listan. Incheckningar den redan skickat finns kvar i liggaren.') }}" class="text-red-800 underline">{{ __('Ta bort') }}</button>
                             </span>
                         @endif
                     </li>

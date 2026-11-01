@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $last_client_hash
  * @property ?CarbonImmutable $revoked_at
  * @property ?int $revoked_by
+ * @property ?CarbonImmutable $removed_at
+ * @property ?int $removed_by
  * @property int $created_by
  */
 class Device extends Model
@@ -55,6 +57,7 @@ class Device extends Model
             'last_seen_at' => 'immutable_datetime',
             'last_sequence' => 'integer',
             'revoked_at' => 'immutable_datetime',
+            'removed_at' => 'immutable_datetime',
         ];
     }
 

@@ -291,5 +291,24 @@ it('masks personal numbers without the sensitive permission', function () {
         ->assertSee('19900101-XXXX')
         ->assertDontSee(StaffLedger::personalNumber('19900101123'));
 
-    $this->actingAs($this->owner)->get(route('staff-ledger.people'))->assertOk()->assertSee(substr(StaffLedger::personalNumber('19900101123'), 0, 8).'-'.substr(StaffLedger::personalNumber('19900101123'), 8));
+    $full = substr(StaffLedger::personalNumber('19900101123'), 0, 8).'-'.substr(StaffLedger::personalNumber('19900101123'), 8);
+
+    // The owner sees them masked too, until showing them on purpose.
+    $this->actingAs($this->owner)->get(route('staff-ledger.people'))->assertOk()->assertSee('19900101-XXXX')->assertDontSee($full);
+});
+
+it('shows personal numbers in full only on request, and logs it', function () {
+    $full = substr(StaffLedger::personalNumber('19900101123'), 0, 8).'-'.substr(StaffLedger::personalNumber('19900101123'), 8);
+    $this->actingAs($this->owner);
+
+    Livewire::test(PeoplePage::class)->assertDontSee($full)
+        ->call('revealPersonalNumbers')->assertSee($full)
+        ->call('hidePersonalNumbers')->assertDontSee($full);
+
+    expect(AuditLog::query()->where('action', 'staff_ledger.personal_numbers_viewed')->count())->toBe(1);
+
+    $accountant = Bookkeeping::member($this->company, 'accountant');
+    CurrentCompany::forget();
+    $this->actingAs($accountant);
+    Livewire::test(PeoplePage::class)->call('revealPersonalNumbers')->assertForbidden();
 });

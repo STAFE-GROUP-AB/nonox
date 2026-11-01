@@ -12,13 +12,16 @@ use App\Modules\StaffLedger\Domain\EntryType;
 use App\Modules\StaffLedger\Domain\LedgerQuery;
 use App\Modules\StaffLedger\Domain\Pin;
 use App\Modules\StaffLedger\Domain\QrToken;
+use App\Modules\StaffLedger\Livewire\LocationsPage;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Modules\StaffLedger\StaffLedgerModule;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
+use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\StaffLedger;
 
@@ -288,4 +291,31 @@ it('serves an installable, cacheable kiosk page with the camera allowed only the
         ->assertSee('/personalliggare/kiosk/start', false);
 
     $this->actingAs($this->owner)->get(route('staff-ledger.overview'))->assertOk()->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
+});
+
+it('removes kiosks: one without entries is deleted, one with entries is blocked and hidden', function () {
+    $devices = app(KioskDevices::class);
+    [$unused] = CurrentCompany::run($this->company, fn () => $devices->register($this->owner, $this->company, $this->location, 'Lagret'));
+    sendEvents($this, [kioskEvent($this, $this->anna->id, 'IN', 1, CarbonImmutable::now()->subMinute()->toIso8601String())])->assertOk();
+
+    CurrentCompany::run($this->company, function () use ($devices, $unused): void {
+        $devices->remove($this->owner, $this->company, $unused);
+        $devices->remove($this->owner, $this->company, $this->device->fresh());
+    });
+
+    $kept = CurrentCompany::run($this->company, fn () => $this->device->fresh());
+    expect(CurrentCompany::run($this->company, fn () => $unused->fresh()))->toBeNull()
+        ->and($kept->removed_at)->not->toBeNull()
+        ->and($kept->revoked_at)->not->toBeNull()
+        ->and(CurrentCompany::run($this->company, fn () => Entry::query()->where('device_id', $kept->id)->count()))->toBe(1)
+        ->and(AuditLog::query()->where('action', 'staff_ledger.device_removed')->count())->toBe(2);
+    $this->withToken($this->token)->getJson(route('staff-ledger.kiosk.roster'))->assertUnauthorized();
+
+    $this->actingAs($this->owner);
+    CurrentCompany::set($this->company);
+    Livewire::test(LocationsPage::class)->assertDontSee('Lagret')->assertDontSee($kept->name);
+
+    $accountant = Bookkeeping::member($this->company, 'accountant');
+    CurrentCompany::forget();
+    expect(fn () => CurrentCompany::run($this->company, fn () => $devices->remove($accountant, $this->company, $kept)))->toThrow(AuthorizationException::class);
 });
