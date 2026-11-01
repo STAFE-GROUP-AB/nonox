@@ -19,8 +19,8 @@
         </x-ui.card>
     @endif
 
-    @if($import)
-        <x-ui.card :title="__('Inbetalningar i :name', ['name' => $import->file_name])" :description="__('Inläst :date av :name. Förslagen bygger på OCR-numret; kontrollera dem innan du bokför.', ['date' => $import->created_at->setTimezone(config('app.timezone'))->format('Y-m-d H:i'), 'name' => $import->creator?->name])">
+    @if($import || $feed)
+        <x-ui.card :title="$feed ? __('Inbetalningar från banken') : __('Inbetalningar i :name', ['name' => $import->file_name])" :description="$feed ? __('Hämtade automatiskt med NONOX Bank. Förslagen bygger på OCR-numret; kontrollera dem innan du bokför.') : __('Inläst :date av :name. Förslagen bygger på OCR-numret; kontrollera dem innan du bokför.', ['date' => $import->created_at->setTimezone(config('app.timezone'))->format('Y-m-d H:i'), 'name' => $import->creator?->name])">
             @if($transactions->isEmpty())
                 <p class="text-sm text-gray-600">{{ __('Filen innehöll inga nya inbetalningar.') }}</p>
             @else
@@ -81,9 +81,15 @@
         </x-ui.card>
     @endif
 
-    @if($imports->count() > 1)
+    @if($imports->count() > 1 || ($hasFeed && $imports->isNotEmpty()))
         <x-ui.card :title="__('Tidigare filer')">
             <ul class="divide-y divide-gray-100 text-sm">
+                @if($hasFeed)
+                    <li class="flex justify-between gap-4 py-2">
+                        <button type="button" class="text-left text-accent-600 hover:text-accent-700" wire:click="$set('importId', 'bank')">{{ __('Från banken (NONOX Bank)') }}</button>
+                        <span class="text-gray-500">{{ __('Hämtas automatiskt') }}</span>
+                    </li>
+                @endif
                 @foreach($imports as $previous)
                     <li class="flex justify-between gap-4 py-2">
                         <button type="button" class="text-left text-accent-600 hover:text-accent-700" wire:click="$set('importId', '{{ $previous->id }}')">{{ $previous->file_name }}</button>

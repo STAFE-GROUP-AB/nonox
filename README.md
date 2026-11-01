@@ -104,6 +104,11 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Appar ansluts med OAuth 2.0 (med PKCE) och godkänns av en ägare eller administratör med passkey, ett företag i taget. API-nycklar för egna skript har alltid ett slutdatum och visas bara en gång.
 - En anslutning får aldrig mer än personen som gav den får göra just då. Varje skrivning kräver en Idempotency-Key och loggas.
 
+### Bank (modul)
+- Företagets bankkonton kopplas med BankID genom öppen bankdata (PSD2), och transaktioner och saldon hämtas automatiskt en till fyra gånger per dygn i stället för att filer laddas upp. NONOX kan bara läsa, aldrig betala; betalfiler signeras fortfarande i banken.
+- Varje bankkonto kopplas till ett konto i bokföringen (till exempel 1930). Transaktionerna föreslås mot bokförda rader och inbetalningar mot obetalda fakturor, och bankens saldo fylls i bankavstämningen. En person bekräftar alltid; modulen bokför aldrig själv.
+- Påminnelse med e-post och under Att göra innan medgivandet går ut (högst 180 dagar), och bortkoppling när som helst. Kräver att den som driftar NONOX har avtal med Enable Banking; i den driftade tjänsten slås modulen på när de juridiska frågorna är besvarade.
+
 ### NONOX AI (modul)
 - Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
 

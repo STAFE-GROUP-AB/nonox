@@ -61,6 +61,10 @@ use App\Models\YearEndEntry;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\ConnectGrant;
 use App\Modules\Connect\Models\IdempotencyRecord;
+use App\Modules\Banking\Models\BankConnection;
+use App\Modules\Banking\Models\BankFeedAccount;
+use App\Modules\Banking\Models\BankFeedBalance;
+use App\Modules\Banking\Models\BankFeedTransaction;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMailbox;
@@ -209,6 +213,10 @@ const COMPANY_SCOPED_MODELS = [
     InboxTemplate::class => 'inboxTemplateAttributes',
     InboxMessage::class => 'inboxMessageAttributes',
     InboxAttachment::class => 'inboxAttachmentAttributes',
+    BankConnection::class => 'bankConnectionAttributes',
+    BankFeedAccount::class => 'bankFeedAccountAttributes',
+    BankFeedTransaction::class => 'bankFeedTransactionAttributes',
+    BankFeedBalance::class => 'bankFeedBalanceAttributes',
     Task::class => 'taskAttributes',
     TaskComment::class => 'taskCommentAttributes',
     TaskChecklistItem::class => 'taskChecklistItemAttributes',
@@ -309,6 +317,29 @@ function connectApiKeyAttributes(): array
 function connectIdempotencyAttributes(): array
 {
     return ['credential' => 'key:'.random_int(1, 999999), 'idempotency_key' => 'hemlig', 'request_hash' => str_repeat('a', 64), 'status' => 'done', 'expires_at' => now()->addDay()];
+}
+
+function bankConnectionAttributes(): array
+{
+    return [
+        'provider' => 'fake', 'institution_name' => 'Hemliga banken', 'institution_country' => 'SE', 'psu_type' => 'business',
+        'session_id' => 'hemlig-session', 'status' => 'ACTIVE', 'valid_until' => '2026-09-30 00:00:00', 'connected_by' => User::factory()->create()->id, 'connected_at' => now(),
+    ];
+}
+
+function bankFeedAccountAttributes(): array
+{
+    return ['bank_connection_id' => BankConnection::create(bankConnectionAttributes())->id, 'provider_account_id' => 'hemligt-konto', 'identification_hash' => 'hemlig-hash', 'currency' => 'SEK'];
+}
+
+function bankFeedTransactionAttributes(): array
+{
+    return ['bank_feed_account_id' => BankFeedAccount::create(bankFeedAccountAttributes())->id, 'fingerprint' => hash('sha256', (string) random_int(1, PHP_INT_MAX)), 'booking_date' => '2026-03-20', 'amount_ore' => 100, 'currency' => 'SEK'];
+}
+
+function bankFeedBalanceAttributes(): array
+{
+    return ['bank_feed_account_id' => BankFeedAccount::create(bankFeedAccountAttributes())->id, 'balance_date' => '2026-03-20', 'balance_type' => 'CLBD', 'amount_ore' => 100, 'currency' => 'SEK', 'fetched_at' => now()];
 }
 
 function inboxMailboxAttributes(): array
@@ -946,7 +977,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class];
+const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

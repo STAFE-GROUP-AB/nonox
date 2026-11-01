@@ -659,6 +659,11 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   förklaring, vem och när) sparas i `bank_reconciliations`, som databasen inte
   låter ändra eller ta bort, och skrivs i behandlingshistoriken.
 - Avstämning kräver behörigheten att bokföra verifikationer.
+- Med modulen Bank (avsnitt 5g) och kontot kopplat till ett bankkonto visar
+  sidan bankens saldo för datumet. "Använd bankens saldo" fyller i saldot och
+  markerar som ej hos banken de rader (från den dag banken började hämtas)
+  som ingen banktransaktion bokförd senast datumet är matchad mot. Personen
+  kontrollerar och sparar som vanligt; inget sparas automatiskt.
 
 ## 5a5. Bokslut
 
@@ -1307,6 +1312,55 @@ företaget.
 - **Personuppgifter.** Personnummer lämnas aldrig ut via API:t; för en kund
   syns bara om ett personnummer finns.
 
+## 5g. Bank (modul)
+
+Bankens egna uppgifter hämtas med öppen bankdata (PSD2,
+kontoinformation) i stället för att filer laddas upp
+([ADR-034](../adr/ADR-034-nonox-banking.md)). NONOX kan bara läsa;
+betalningar görs fortfarande med betalfiler som signeras i banken.
+
+- **Leverantör.** Installationen väljer leverantör (`services.banking.driver`):
+  Enable Banking, eller en låtsasbank för test och demo som inte går att
+  använda i produktion. Enable Banking autentiseras med en JWT som signeras
+  med installationens privata RSA-nyckel; nyckeln ligger utanför koden.
+- **Koppling.** En person med `banking:manage` väljer bank och kontotyp och
+  godkänner medgivandet i banken med BankID. Svaret från banken tas bara
+  emot för det flöde som samma webbläsare startade, för samma företag och
+  användare, en gång och inom 15 minuter. Medgivandet gäller den tid banken
+  tillåter, högst 180 dagar.
+- **Konton.** Varje bankkonto kopplas till ett konto i kontoplanen
+  (1900–1999), ett bankkonto per konto, i företagets valuta. Konton som inte
+  kopplas hämtas inte.
+- **Hämtning.** Bokförda transaktioner och saldon hämtas 1–4 gånger per dygn
+  (inställning, standard 2) och med "Hämta nu". Första hämtningen går 90
+  dagar bakåt, senare hämtningar fem dagar före den förra. Varje transaktion
+  sparas en gång per konto, identifierad med bankens id eller, utan id, med
+  en kontrollsumma av datum, belopp, motpart, meddelande, referens och
+  ordningen bland lika transaktioner samma dag. En hämtad transaktion kan
+  inte ändras eller tas bort (modell och databastrigger); den får bara sin
+  matchning och sin inbetalning.
+- **Inbetalningar.** En insättning som betalar en obetald faktura eller har
+  ett OCR-nummer blir en inbetalning under Inbetalningar → Från banken, med
+  fakturan föreslagen på samma sätt som från bankens fil (avsnitt 5, camt.054).
+  Samma bankreferens kan inte bli två inbetalningar. En person bokför.
+- **Matchning.** För varje transaktion föreslås den bokförda raden på
+  kontot med samma belopp och närmast datum inom sju dagar, varje rad en
+  gång. En person med `banking:view` och rätt att bokföra bekräftar eller tar
+  bort matchningen. Modulen skapar eller bokför aldrig verifikationer själv.
+- **Medgivandets slut.** Den som får hantera Bank får e-post en gång före
+  slutdatumet (standard 14 dagar) och ser det under Att göra. När banken
+  inte längre godtar medgivandet markeras kopplingen som utgången utan att
+  något annat påverkas. Bortkoppling ber leverantören avsluta medgivandet;
+  sessionen glöms även om leverantören inte svarar.
+- **Säkerhet.** Session, leverantörens kontoid och IBAN lagras krypterade
+  och skrivs aldrig i loggar eller behandlingshistorik. Svaret från banken
+  är begränsat till tio försök per minut och användare.
+- **Behandlingshistorik.** Påbörjad och slutförd koppling, kontokoppling,
+  hämtning (antal), misslyckad hämtning, utgånget medgivande, bortkoppling,
+  matchning och påminnelser.
+- **Bevarande.** Hämtade transaktioner och saldon tas inte bort när
+  kopplingen tas bort eller modulen stängs av.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -1500,6 +1554,11 @@ företaget.
   som `.eml` uppfyller kraven på hur räkenskapsinformation ska bevaras (BFL 7
   kap.). SFTI:s konvention för bankgiro och plusgiro i Peppol-fakturor.
 
+- Bank: om Stafe måste registreras hos Finansinspektionen som ombud för
+  leverantören av kontoinformation; Enable Banking som underbiträde; om
+  transaktioner som hämtats från banken är räkenskapsinformation i sig och
+  ska ingå i arkivpaketet (ADR-034).
+
 ## 9. Ändringshistorik
 
 | Version | Datum | Ändring |
@@ -1559,3 +1618,4 @@ företaget.
 | 0.53 | 2026-11-01 | NONOX går att installera som app på hemskärmen (PWA, ADR-031): manifest för appen och för Min sida, och en service worker som bara visar en offlinesida och inte sparar några uppgifter i enheten. Bokföringen påverkas inte. |
 | 0.54 | 2026-11-01 | Lön: löneunderlag från schemasystem som PAXml (1.0, 2.0–2.3) eller CSV läses in i en öppen lönekörning som förslag. Koderna kopplas till lönearter en gång per källsystem, frånvaro och saldon läses aldrig in som lön, och en person godkänner raderna innan de blir rader i lönekörningen. Samma fil läses en gång per period; originalet sparas krypterat och varje steg loggas. |
 | 0.55 | 2026-11-01 | NONOX Connect (modul, ADR-032): öppet API under `/api/v1` för företaget, kontoplan, momskoder, räkenskapsår, verifikationsserier, verifikationer (utkast, bokföring, rättelse, underlag), kunder och leverantörer. Appar ansluts med OAuth 2.0 och PKCE efter godkännande med passkey av ägare eller administratör, API-nycklar har slutdatum och skapas med passkey. Bokförda verifikationer kan fortfarande bara rättas, och varje skrivande anrop loggas. |
+| 0.56 | 2026-11-01 | Bank (modul, ADR-034): koppling av bankkonton med BankID genom Enable Banking (öppen bankdata, bara läsning), hämtning av transaktioner och saldon 1–4 gånger per dygn som sparas en gång och inte kan ändras, inbetalningar med förslag på faktura, förslag på matchning mot bokförda rader som en person bekräftar, bankens saldo i bankavstämningen, påminnelse före medgivandets slut och bortkoppling. Inga verifikationer skapas av modulen. |

@@ -11,6 +11,7 @@ use App\Models\BankReconciliation;
 use App\Models\Company;
 use App\Models\User;
 use App\Models\VoucherRow;
+use App\Modules\Banking\Support\BankFeedReconciliation;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -91,6 +92,41 @@ class BankReconciliationPage extends Component
             : __('Avstämningen av konto :account är sparad med en skillnad på :amount.', ['account' => $account->number, 'amount' => $reconciliation->difference_ore->format()]));
     }
 
+    /**
+     * Fills in the balance NONOX Banking fetched (ADR-034) and proposes as
+     * outstanding the rows no bank transaction is matched to. The person
+     * checks and saves as usual.
+     */
+    public function useBankFeed(BankReconciliations $reconciliations): void
+    {
+        $account = $this->selectedAccount();
+
+        if ($account === null || preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->date) !== 1) {
+            return;
+        }
+
+        $date = CarbonImmutable::parse($this->date);
+        $feed = BankFeedReconciliation::balance($this->company(), $account, $date);
+
+        if ($feed === null) {
+            $this->toast(__('Det finns inget saldo från banken för datumet.'), 'error');
+
+            return;
+        }
+
+        try {
+            $prepared = $reconciliations->prepare($this->company(), $account, $date);
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->statement = ($feed['balance_ore'] < 0 ? '-' : '').intdiv(abs($feed['balance_ore']), 100).','.str_pad((string) (abs($feed['balance_ore']) % 100), 2, '0', STR_PAD_LEFT);
+        $this->outstanding = BankFeedReconciliation::outstanding($this->company(), $account, $date, $prepared['rows'], array_map('intval', $this->outstanding));
+        $this->toast(__('Bankens saldo är ifyllt, och det som inte syns hos banken är markerat. Kontrollera och spara.'));
+    }
+
     public function render(BankReconciliations $reconciliations): View
     {
         $accounts = BankReconciliations::accounts($this->company());
@@ -124,6 +160,7 @@ class BankReconciliationPage extends Component
             'expected' => $prepared === null ? null : $prepared['ledger'] - $outstandingOre,
             'statementOre' => $statement,
             'difference' => $prepared === null || $statement === null ? null : $statement - ($prepared['ledger'] - $outstandingOre),
+            'feed' => $account === null || $prepared === null ? null : BankFeedReconciliation::balance($this->company(), $account, CarbonImmutable::parse($this->date)),
             'history' => $account === null ? collect() : BankReconciliation::query()->where('account_id', $account->id)->with('reconciler')
                 ->orderByDesc('statement_date')->orderByDesc('id')->limit(12)->get(),
         ]);

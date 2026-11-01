@@ -29,6 +29,9 @@ class IncomingPayments extends Component
     use ShowsToasts;
     use WithFileUploads;
 
+    /** importId for the payments NONOX Banking fetched from the bank (ADR-034) rather than read from a file. */
+    public const string FEED = 'bank';
+
     public ?TemporaryUploadedFile $file = null;
 
     #[Url(as: 'fil', except: '')]
@@ -43,6 +46,10 @@ class IncomingPayments extends Component
 
         if ($this->importId === '') {
             $this->importId = (string) BankFileImport::query()->latest('created_at')->value('id');
+        }
+
+        if ($this->importId === '' && BankTransaction::query()->whereNull('bank_file_import_id')->exists()) {
+            $this->importId = self::FEED;
         }
 
         $this->selectMatched();
@@ -84,11 +91,17 @@ class IncomingPayments extends Component
 
     public function render(): View
     {
-        $import = $this->importId === '' ? null : BankFileImport::query()->find($this->importId);
+        $feed = $this->importId === self::FEED;
+        $import = $this->importId === '' || $feed ? null : BankFileImport::query()->find($this->importId);
+        $with = ['invoice:id,number,ocr,total_ore,paid_ore,customer_snapshot,status,kind,due_date', 'payment.voucher.series'];
 
         return view('livewire.invoicing.incoming-payments', [
             'import' => $import,
-            'transactions' => $import?->transactions()->with(['invoice:id,number,ocr,total_ore,paid_ore,customer_snapshot,status,kind,due_date', 'payment.voucher.series'])->get() ?? collect(),
+            'feed' => $feed,
+            'hasFeed' => $feed || BankTransaction::query()->whereNull('bank_file_import_id')->exists(),
+            'transactions' => $feed
+                ? BankTransaction::query()->whereNull('bank_file_import_id')->with($with)->orderByDesc('booking_date')->orderByDesc('id')->limit(200)->get()
+                : ($import?->transactions()->with($with)->get() ?? collect()),
             'imports' => BankFileImport::query()->with('creator:id,name')->latest('created_at')->limit(10)->get(),
             'openInvoices' => Invoice::query()->where('status', InvoiceStatus::Issued->value)->where('kind', Invoice::INVOICE)->orderBy('number')->get(['id', 'number', 'total_ore', 'paid_ore', 'customer_snapshot']),
             'canBook' => $this->user()->can('create', [BankFileImport::class, $this->company()]),
@@ -100,7 +113,7 @@ class IncomingPayments extends Component
         $this->selected = $this->importId === ''
             ? []
             : array_values(array_map('intval', BankTransaction::query()
-                ->where('bank_file_import_id', $this->importId)
+                ->when($this->importId === self::FEED, fn ($query) => $query->whereNull('bank_file_import_id'), fn ($query) => $query->where('bank_file_import_id', $this->importId))
                 ->whereNotNull('invoice_id')
                 ->whereNull('invoice_payment_id')
                 ->pluck('id')

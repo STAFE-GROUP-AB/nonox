@@ -80,6 +80,23 @@ return [
         'step_up_seconds' => 300,
     ],
 
+    /*
+     * NONOX Banking (ADR-034): reading bank accounts through an open-banking
+     * provider. driver: 'enable_banking' or 'fake' (local and tests only;
+     * empty means fake locally and Enable Banking elsewhere). Enable
+     * Banking authenticates the installation with a JWT signed by the
+     * application's RSA private key: keep the .pem file outside the
+     * repository, readable only by the web server user.
+     */
+    'banking' => [
+        'driver' => env('NONOX_BANKING_DRIVER'),
+        'enable_banking' => [
+            'application_id' => env('ENABLE_BANKING_APPLICATION_ID'),
+            'private_key_path' => env('ENABLE_BANKING_PRIVATE_KEY_PATH'),
+            'url' => env('ENABLE_BANKING_URL', 'https://api.enablebanking.com'),
+        ],
+    ],
+
     'riksbank' => [
         'url' => env('RIKSBANK_URL', 'https://api.riksbank.se/swea/v1/'),
     ],
