@@ -98,6 +98,11 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Peppol-fakturor, SIE-filer och dagsrapporter läses utan AI, med mallar som en person godkänt.
 - Gallring: avvisad post tas bort efter 7 dagar, och karantän som ingen hanterat efter 90 dagar.
 
+### NONOX Connect – öppet API (modul)
+- Ett API för andra program: kontoplan, momskoder, räkenskapsår, verifikationer (utkast, bokföring, rättelse och underlag), kunder och leverantörer. Beskrivet i OpenAPI med exempel, se [docs/api](docs/api/README.md).
+- Appar ansluts med OAuth 2.0 (med PKCE) och godkänns av en ägare eller administratör med passkey, ett företag i taget. API-nycklar för egna skript har alltid ett slutdatum och visas bara en gång.
+- En anslutning får aldrig mer än personen som gav den får göra just då. Varje skrivning kräver en Idempotency-Key och loggas.
+
 ### NONOX AI (modul)
 - Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
 
@@ -260,7 +265,7 @@ grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[
 - `APP_URL` med serverns riktiga adress (`https://…`).
 - Riktig e-post, till exempel `MAIL_MAILER=smtp` eller `mailgun`. Med `log` kommer inga inloggningskoder fram.
 - **Bakom en proxy eller CDN** (till exempel Cloudflare med orange moln, eller en lastbalanserare): skriv proxyns adressintervall, kommaseparerade, i `TRUSTED_PROXIES`. Annars ser NONOX proxyns adress i stället för besökarens, och spärrarna mot för många inloggningsförsök slår mot alla besökare samtidigt. För Cloudflare finns intervallen på https://www.cloudflare.com/ips/. Lämnas raden tom litar NONOX inte på någon proxy, vilket är rätt när ingen proxy används. Skriv aldrig `*` om servern också går att nå utan proxyn, för då kan vem som helst ange sin egen adress.
-- `SANCTUM_TOKEN_EXPIRATION` och `SANCTUM_TOKEN_PREFIX` gäller API-nycklar (minuter tills en nyckel slutar gälla, och prefixet som gör en läckt nyckel igenkännbar). Standardvärdena räcker. API-nycklar fungerar bara mot `/api/v1`, aldrig mot vanliga sidor.
+- För det öppna API:t (modulen NONOX Connect): kör `php artisan passport:keys` en gång, eller sätt `PASSPORT_PRIVATE_KEY` och `PASSPORT_PUBLIC_KEY`. Utan nycklar går modulen inte att slå på. Appar registreras med `php artisan connect:app "Namn" https://app.example/callback`. Gränserna för antal anrop och tokens livslängd ställs in med `NONOX_CONNECT_*`, se `.env.example` och [docs/api](docs/api/README.md). API-nycklar och tokens fungerar bara mot `/api/v1`, aldrig mot vanliga sidor.
 
 Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 

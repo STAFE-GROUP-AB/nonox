@@ -37,7 +37,7 @@ This policy covers the NONOX source code in this repository and the hosted servi
 In scope:
 - the code in this repository,
 - the hosted service at https://nonox.app and its subdomains operated by Stafe Development AB,
-- in particular: cross-company data access (tenant isolation), authentication and sessions (including the passkey second step), authorisation and roles, the search (⌘K) and the firm workspace across companies, changes to posted vouchers, the audit log or the staff ledger, file access, the inbox's mail handling, the staff ledger kiosk, and the API.
+- in particular: cross-company data access (tenant isolation), authentication and sessions (including the passkey second step), authorisation and roles, the search (⌘K) and the firm workspace across companies, changes to posted vouchers, the audit log or the staff ledger, file access, the inbox's mail handling, the staff ledger kiosk, and the public API (NONOX Connect: `/api/v1`, the OAuth endpoints `/anslut` and `/oauth/token`, API keys, scopes, idempotency and rate limits).
 
 Out of scope:
 - installations of NONOX run by someone else (report to their operator; report the underlying code issue to us),

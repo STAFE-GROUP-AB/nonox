@@ -1247,6 +1247,39 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   avsändares meddelanden sparas alltid, i karantän om de flaggats.
   Meddelanden som lett till bokföring tas aldrig bort här.
 
+## 5f. NONOX Connect – öppet API (modul)
+
+Ett API för andra program ([ADR-032](../adr/ADR-032-public-api-and-nonox-connect.md),
+beskrivning av varje anrop i [docs/api/openapi.yaml](../api/openapi.yaml)).
+Modulen är avstängd från början; när den är av svarar API:t 404 för
+företaget.
+
+- **Vem som ansluter.** En app som den som driftar NONOX har registrerat
+  (`php artisan connect:app`) ber om åtkomst med OAuth 2.0 (auktoriseringskod
+  med PKCE S256). Bara en ägare eller administratör kan godkänna, för ett
+  företag i taget, och bara efter en färsk bekräftelse med passkey. API-nycklar
+  för egna skript skapas under Anslutningar på samma villkor, har alltid ett
+  slutdatum, visas en gång och sparas bara som SHA-256. Ägaren får ett mejl
+  om varje ny nyckel.
+- **Vad en anslutning får göra.** Behörigheterna (scopes) är samma nycklar
+  som rollernas behörigheter. Vid varje anrop gäller bara de behörigheter som
+  både anslutningen har och personen som gav den har just då. Tas personen
+  bort ur företaget slutar anslutningen fungera direkt. Ett arkiverat företag
+  kan bara läsas.
+- **Bokföringen.** API:t använder samma funktioner som appen: utkast sparas
+  med samma kontroller, bokföring ger nästa nummer i serien och hashkedjan
+  som vanligt, och en bokförd verifikation kan bara rättas med en
+  rättelseverifikation. Underlag kontrolleras på samma sätt som i appen.
+- **Upprepade anrop.** Varje POST kräver en `Idempotency-Key`. Samma nyckel
+  med samma innehåll inom 24 timmar ger samma svar igen utan att något
+  bokförs en gång till.
+- **Behandlingshistorik.** Varje skrivande anrop loggas med app eller nyckel,
+  person, adress, svarskod och Idempotency-Key, utöver det som funktionen
+  själv loggar. Godkända och återkallade appar, återanvända tokens och nya
+  eller återkallade nycklar loggas också.
+- **Personuppgifter.** Personnummer lämnas aldrig ut via API:t; för en kund
+  syns bara om ett personnummer finns.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -1492,3 +1525,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.51 | 2026-11-01 | Redovisningsbyråns varumärke (ADR-030): ett företag kan markeras som byrå, kundföretagets ägare väljer sin byrå bland dem som en gemensam redovisningskonsult är med i, och kundsidan ser byråns logga och färger i appen, på Min sida och i mejl om inloggning och uppgifter. Kundens egna fakturor, offerter, order och lönebesked behåller kundens varumärke. Kopplingen ger ingen behörighet och loggas i båda företagen. |
 | 0.52 | 2026-11-01 | Återställningstest av säkerhetskopior (`scripts/restore-test.sh`, `backup:verify-restore`): kopian återställs i en tillfällig databas, och bokföringens hashkedja, underlagens kontrollsummor, personalliggaren och leverantörsfakturornas filer kontrolleras. Körs varje vecka i den driftade tjänsten. SBOM (CycloneDX) som bilaga till varje release. |
 | 0.53 | 2026-11-01 | NONOX går att installera som app på hemskärmen (PWA, ADR-031): manifest för appen och för Min sida, och en service worker som bara visar en offlinesida och inte sparar några uppgifter i enheten. Bokföringen påverkas inte. |
+| 0.54 | 2026-11-01 | NONOX Connect (modul, ADR-032): öppet API under `/api/v1` för företaget, kontoplan, momskoder, räkenskapsår, verifikationsserier, verifikationer (utkast, bokföring, rättelse, underlag), kunder och leverantörer. Appar ansluts med OAuth 2.0 och PKCE efter godkännande med passkey av ägare eller administratör, API-nycklar har slutdatum och skapas med passkey. Bokförda verifikationer kan fortfarande bara rättas, och varje skrivande anrop loggas. |
