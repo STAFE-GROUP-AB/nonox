@@ -1,0 +1,304 @@
+# NONOX Avtal — dataformat för avtalsregler
+
+Status: förslag (ADR-033). Bygger vidare på `collective_agreements.rules`
+(PAYROLL_MODULE.md B.8) och den versionerade regelmodellen i B.6
+(`payroll_rule_versions`).
+
+Målet är att ett kollektivavtal blir **data som motorn läser**, aldrig kod och
+aldrig avtalstext. Varje värde har en källa, varje version har giltighetstid
+och en namngiven verifiering, och en lönekörning stoppas när versionen som
+gäller inte är verifierad.
+
+## 1. Tabeller
+
+```
+agreement_rule_versions            (global, inte per företag — som payroll_rule_versions)
+  id
+  agreement_key     string(60)    t.ex. "hrf-visita-grona-riks"
+  variant           string(20)    MEMBER | HANGAVTAL
+  valid_from        date
+  valid_to          date null
+  rules             jsonb         formatet nedan (schema "nonox.agreement/1")
+  sources           jsonb         lista av källor, se §3
+  checksum          char(64)      sha256 av kanonisk JSON av rules + sources
+  verified_by       string null
+  verified_at       timestamp null
+  unique(agreement_key, variant, valid_from)
+  trigger: verifierad version får inte ändras eller tas bort (samma funktion
+           som payroll_rule_versions_protect_verified)
+
+agreement_rule_verifications       (per företag, append-only — som payroll_rule_verifications)
+  id, company_id, agreement_rule_version_id, verified_by (user), verifier_name, verified_at
+
+collective_agreements              (finns, per företag — blir företagets bindning)
+  + agreement_key, variant, bound_from, bound_to null
+  + overrides jsonb               endast nycklar markerade local_override
+  + local_agreement_path null     uppladdat lokalt avtal (privat lagring)
+  name, rules (behålls för egna, helt företagsdefinierade avtal: agreement_key = "custom")
+
+employments                        (finns)
+  collective_agreement_id          finns
+  + agreement_group                avtalets lönegrupp/befattningsgrupp, t.ex. "B"
+  + industry_experience_from date  driver erfarenhetsbaserade minimilöner
+  + overtime_compensation          PAY | COMP_TIME | INCLUDED_IN_SALARY
+  + ob_compensation                PAY | INCLUDED
+
+work_shifts                        (nytt, per företag)
+  id, company_id, employee_id, employment_id, date (arbetsdag enligt avtalets dygnsbrytning),
+  start_at timestamptz, end_at timestamptz, break_minutes, scheduled bool,
+  source enum(MANUAL, STAFF_LEDGER, SCHEDULE, IMPORT_PAXML), source_ref,
+  status enum(SUBMITTED, APPROVED, REJECTED), payroll_run_id null
+```
+
+Premier som ändras varje 1 januari och delas av många avtal (SAF-LO, ITP1,
+AGS, TFA, TGL, omställning) ligger **inte** i avtalsfilen utan som vanliga
+`payroll_rule_versions` med egna nycklar, och avtalsfilen pekar på dem:
+
+```
+pension.saf_lo                 { "below_bp": .., "above_bp": .., "threshold_ibb": "7.5", "from_age": .. }
+pension.itp1                   { ... }
+pension.itp2                   { ... }
+insurance.fora.arbetare        { "components": { "ags": bp, "tfa": bp, "tgl": bp, "omstallning": bp, ... }, "basis": "LONESUMMA" }
+insurance.fora.tjansteman      { ... }
+```
+
+## 2. Format för `rules` (schema `nonox.agreement/1`)
+
+Konventioner (samma som resten av lönen):
+
+- Belopp i **öre** (heltal), procentsatser i **baspunkter** (10000 = 100 %).
+- Timmar och kvantiteter som **decimalsträngar** (`"0.5"`), aldrig flyttal.
+- Klockslag `"HH:MM"`, där `"24:00"` betyder dygnets slut. Ett fönster som
+  passerar midnatt skrivs som två fönster.
+- Veckodagar `MON`…`SUN`. Dagtyper (se §2.2) i versaler.
+- Varje regelobjekt har `source` (en referens `"<källid>#<sida/§>"`, se §3).
+  Ett värde utan källa avvisas av importen. Ett värde som inte är
+  kontrollerat mot avtalstexten har `"unverified": true` och gör hela
+  versionen overifierbar.
+- `local_override: true` på ett objekt betyder att företaget får ändra det i
+  sin bindning (lokalt avtal). Allt annat är låst.
+
+Alla siffror i exemplet nedan är **platshållare** (0 eller lagens värden där
+lagen anges, t.ex. semesterlagens 25 dagar, 12 % och 0,43 %). Avtalens
+verkliga värden finns i respektive avtalsfil i den här mappen.
+
+```jsonc
+{
+  "schema": "nonox.agreement/1",
+  "agreement": {
+    "key": "hrf-visita-grona-riks",
+    "name": "Gröna Riks (Hotell- och restaurangavtalet)",
+    "parties": ["Visita", "Hotell- och restaurangfacket"],
+    "collective": "ARBETARE",                    // ARBETARE | TJANSTEMAN
+    "variant": "MEMBER",                         // MEMBER | HANGAVTAL
+    "base_agreement": null                       // för HANGAVTAL: nyckel+variant det följer
+  },
+  "valid_from": "2025-04-01",
+  "valid_to": "2027-03-31",
+
+  "working_time": {
+    "full_time_hours_per_week": "40",
+    "calculation_period": { "max_weeks": 0, "local_override": true, "source": "s1#§3" },
+    "day_break": "00:00",                        // när ett arbetsdygn börjar (betydelse för nattpass)
+    "hourly_divisor": { "monthly_to_hourly": "0", "source": "s1#§4" },
+    "reduction": null                            // arbetstidsförkortning, om avtalet har sådan
+  },
+
+  "minimum_wages": {
+    "basis": "MONTHLY",                          // MONTHLY | HOURLY | BOTH
+    "steps": [
+      {
+        "valid_from": "2025-04-01",
+        "rows": [
+          { "group": "A", "age_min": 18, "age_max": null,
+            "experience_months_min": 0, "experience_months_max": 12,
+            "monthly_ore": 0, "hourly_ore": 0, "source": "s1#bilaga 1" }
+        ]
+      }
+    ],
+    "age_reference": "PAYMENT_DATE",            // vilken dag åldern räknas: PAYMENT_DATE | WORK_DATE | BIRTH_MONTH
+    "experience_reference": "industry_experience_from",
+    "check": "WARN"                              // WARN | BLOCK om lönen understiger minimilönen
+  },
+
+  "day_types": {
+    "STORHELG": [
+      { "day": "LANGFREDAG", "from": "00:00", "to": "24:00" },
+      { "day": "MIDSOMMARAFTON", "from": "00:00", "to": "24:00" }
+    ],
+    "HELGDAG": ["PUBLIC_HOLIDAY"],
+    "source": "s1#§5"
+  },
+
+  "ob": {
+    "windows": [
+      { "code": "OB_KVALL", "days": ["MON","TUE","WED","THU","FRI"], "from": "00:00", "to": "24:00",
+        "rate": { "type": "ORE_PER_HOUR", "ore": 0 }, "source": "s1#§5 mom 1" },
+      { "code": "OB_STORHELG", "day_type": "STORHELG",
+        "rate": { "type": "PERCENT_OF_HOURLY", "bp": 0, "hourly_basis": "OWN_WAGE" }, "source": "s1#§5 mom 3" }
+    ],
+    "rate_steps": [ { "valid_from": "2026-04-01", "codes": { "OB_KVALL": { "ore": 0 } } } ],
+    "overlap": "HIGHEST_ONLY",                   // HIGHEST_ONLY | CUMULATIVE
+    "rounding": { "unit_minutes": 0, "method": "PER_SHIFT_NEAREST", "source": "s1#§5 mom 6" },
+    "minimum_minutes": null,
+    "in_sick_pay": true,                         // ingår i sjuklönens underlag (sjuklönelagen 6 §: "anställningsförmåner")
+    "in_vacation_basis": true,                   // semesterlönegrundande
+    "compensation_alternatives": ["PAY", "COMP_TIME"],
+    "pay_code": "OBTILLAGG"
+  },
+
+  "overtime": {
+    "threshold": { "type": "BEYOND_SCHEDULE_FULL_TIME", "per": "DAY_AND_WEEK" },
+    "ladder": [
+      { "code": "OVERTID_ENKEL", "when": { "day_type": "WEEKDAY", "from": "00:00", "to": "24:00" },
+        "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "0" }, "source": "s1#§6" },
+      { "code": "OVERTID_KVAL", "when": { "otherwise": true },
+        "rate": { "type": "PERCENT_OF_HOURLY", "bp": 0, "hourly_basis": "OWN_WAGE" }, "source": "s1#§6" }
+    ],
+    "comp_time": { "hours_per_overtime_hour": { "OVERTID_ENKEL": "0", "OVERTID_KVAL": "0" }, "local_override": true },
+    "limits": { "general_hours_per_year": "200", "source": "arbetstidslagen 8 §" },
+    "ob_on_overtime": false,
+    "exempt_groups": []
+  },
+
+  "mertid": {
+    "applies_to": "PART_TIME",
+    "rate": { "type": "PERCENT_OF_HOURLY", "bp": 0 },
+    "becomes_overtime_beyond": "FULL_TIME",
+    "source": "s1#§6 mom 4"
+  },
+
+  "supplements": [
+    // fasta tillägg som inte är tidsfönster: delade turer, beredskap, förskjuten tid, ansvar
+    { "code": "DELAD_TUR", "unit": "OCCASION", "rate": { "type": "ORE", "ore": 0 }, "trigger": "SPLIT_SHIFT_GAP_MINUTES>=0", "source": "s1#§.." }
+  ],
+
+  "vacation": {
+    "days": 25,
+    "extra_days": [ { "age_min": 0, "days": 0 } ],
+    "rule_monthly": "SAMMALONEREGELN",
+    "rule_hourly": "PROCENTREGELN",
+    "percent_bp": 1200,
+    "supplement_bp_per_day": 43,
+    "variable_pay_percent_bp": 1200,
+    "minimum_daily_ore": null,
+    "payout_with_salary_allowed": true,
+    "source": "s1#§10"
+  },
+
+  "sick_pay": {
+    "basis_includes": ["OB", "SUPPLEMENTS"],
+    "karens": "LAW",                              // LAW = sjuklönelagen 6 §, eller avtalets egen beräkning
+    "top_up": [
+      { "from_day": 15, "to_day": 90, "below_ibb_bp": 0, "above_ibb_bp": 0, "threshold_ibb": "7.5", "requires_employment_months": 0 }
+    ],
+    "source": "s2#§.."
+  },
+
+  "commission": {
+    // frisör/försäljning: provision på omsättning med garanti
+    "basis": "NET_TURNOVER_EX_VAT",
+    "rate_bp": 0,
+    "guarantee": { "type": "MONTHLY", "ore": 0, "or": "MINIMUM_WAGE" },
+    "settlement_period": "MONTH",
+    "vacation": "PERCENT_OF_COMMISSION",
+    "source": "s1#§.."
+  },
+
+  "meal_deduction": {
+    // avtalat avdrag för personalmåltid (påverkar netto/brutto och kostförmån)
+    "ore_per_meal": 0, "gross_or_net": "GROSS", "benefit_valuation": "AGREEMENT", "source": "s1#§.."
+  },
+
+  "pension": { "plan": "pension.saf_lo", "from_age": null, "source": "s1#§.." },
+  "insurances": { "rule_key": "insurance.fora.arbetare", "admin_fee_rule_key": null },
+
+  "pay_codes": {
+    // avtalets koder → motorns lönearter (skatt, avgifter, semestergrund, AGI följer löneartens inställningar)
+    "OB_KVALL": "OBTILLAGG", "OVERTID_ENKEL": "OVERTID", "OVERTID_KVAL": "OVERTID_KVAL"
+  }
+}
+```
+
+### 2.1 Rate-typer
+
+| type | Betydelse | Fält |
+|---|---|---|
+| `ORE_PER_HOUR` | fast krontal per timme | `ore` |
+| `ORE` | fast belopp per tillfälle/dag | `ore` |
+| `PERCENT_OF_HOURLY` | procent av timlönen | `bp`, `hourly_basis`: `OWN_WAGE` \| `MINIMUM_WAGE_OF_GROUP` |
+| `DIVISOR_OF_MONTHLY` | månadslön / tal per timme (t.ex. /94) | `divisor` (decimalsträng) |
+| `PERCENT_OF_MONTHLY` | procent av månadslönen | `bp` |
+
+Timlön för en månadsavlönad = månadslön / `working_time.hourly_divisor`
+(om avtalet anger en delare), annars motorns `HourlyValue`.
+
+### 2.2 Dagtyper och kalender
+
+Motorns `SwedishHolidays` kan allmänna helgdagar enligt lag (1989:253).
+Avtalen behöver fler namngivna dagar: `PASKAFTON`, `MIDSOMMARAFTON`,
+`JULAFTON`, `NYARSAFTON`, `TRETTONDEDAGSAFTON`, `VALBORGSMASSOAFTON`,
+`DAGEN_FORE_KRISTI_HIMMELSFARD`, samt "dagen före storhelg" och "kvällen
+före". `day_types` binder ett avtals begrepp (STORHELG, HELGDAG, HELGAFTON)
+till dessa namn med klockslag. Kalendern räknas fram (påsk via
+`easter_days`), aldrig hårdkodad per år.
+
+### 2.3 Rate-steg
+
+Avtal har ofta flera lönerevisioner inom samma avtalsperiod (t.ex. nya
+minimilöner och OB-belopp 1 april varje år). De ligger som `steps` /
+`rate_steps` med `valid_from` **inom** versionen, så att en avtalsperiod är
+en version och verifieras en gång. Motorn väljer steg efter **arbetsdagen**
+för OB/övertid och efter **löneperiodens slut** för minimilön
+(`TODO(legal-verify)` per avtal: vilken dag som avgör).
+
+## 3. Källor
+
+```jsonc
+"sources": [
+  { "id": "s1", "title": "Gröna Riks 2025–2027", "publisher": "Visita/HRF",
+    "url": "https://…/avtal.pdf", "edition": "2025-04-01", "retrieved_at": "2026-11-01",
+    "sha256": "…" }                                // hash av den hämtade PDF:en, om publik
+]
+```
+
+Varje värde har `"source": "s1#s. 14 § 5 mom 2"`. Citat sparas inte i
+avtalsfilen (upphovsrätt, ADR-033 fråga 1); granskaren slår upp sidan.
+
+## 4. Verifiering
+
+1. En PR lägger till eller ändrar en fil under
+   `app/Modules/Agreements/database/data/agreements/<key>/<variant>-<valid_from>.json`.
+2. CI validerar filen mot JSON-schemat, kontrollerar att varje värde har
+   `source`, att `rate_steps` ligger inom versionens giltighet, och kör
+   avtalets gyllene lönespecar.
+3. `agreements:import` lägger in versionen **overifierad**.
+4. En namngiven person (installationen med `agreements:verify`, eller
+   företagets egen kontroll i Lön → Avtal) jämför mot källan och verifierar.
+   Verifierad version kan inte ändras (trigger); rättelse = ny version.
+5. En lönekörning där en anställning är bunden till ett avtal utan
+   verifierad version för betalningsdagen och periodens arbetsdagar stoppas
+   i checklistan, precis som `MissingPayrollRuleException` (B.6). Ingen
+   reserv till föregående version.
+6. Varje lönerad som påverkats av avtalet sparar `agreement_rule_version_id`
+   och avtalskoden i `explanation`, så att "Varför blev OB 1 234 kr?" kan
+   besvaras med fönster, timmar, sats och källa.
+
+## 5. Hur motorn läser formatet
+
+- `ContextBuilder` laddar företagets bindning för anställningen, väljer
+  verifierad version och lägger ett `AgreementRuleSet` (värdeobjekt, rent) i
+  `PayrollContext`.
+- `ShiftSplitter` delar periodens godkända `work_shifts` i delar per
+  dagtyp och OB-fönster, efter avtalets dygnsbrytning, och avrundar enligt
+  `ob.rounding`. Utdata: `PayInput`-rader med kvantitet (timmar) och sats per
+  avtalskod, mappade till lönearter via `pay_codes`.
+- Inputs som redan är delade (PAXml-import, manuellt OB) går förbi
+  splittern men prissätts av samma satser om de saknar belopp.
+- Övertid och mertid räknas från samma pass mot schemat
+  (`work_schedules`) och avtalets tröskel, och blir rader eller
+  komptidssaldo (ny ackumulator `comp_time_hours`).
+- Sjuklönesteget får `sick_pay.basis_includes`: OB och tillägg som den
+  sjuke skulle ha fått enligt schemat ingår i underlaget.
+- Minimilönekontrollen jämför anställningens lön med raden för grupp,
+  ålder och erfarenhet och ger varning eller stopp enligt `check`.
