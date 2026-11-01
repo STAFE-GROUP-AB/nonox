@@ -28,6 +28,7 @@ use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\InvoiceReminder;
 use App\Models\InvoiceRow;
+use App\Models\MonthCloseCheck;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\Project;
@@ -42,6 +43,10 @@ use App\Models\SupplierInvoiceRow;
 use App\Models\SupplierPayment;
 use App\Models\SupplierPaymentBatch;
 use App\Models\SupplierPaymentBatchItem;
+use App\Models\Task;
+use App\Models\TaskChecklistItem;
+use App\Models\TaskComment;
+use App\Models\TaskRecurrence;
 use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Models\VatReport;
@@ -191,7 +196,39 @@ const COMPANY_SCOPED_MODELS = [
     InboxTemplate::class => 'inboxTemplateAttributes',
     InboxMessage::class => 'inboxMessageAttributes',
     InboxAttachment::class => 'inboxAttachmentAttributes',
+    Task::class => 'taskAttributes',
+    TaskComment::class => 'taskCommentAttributes',
+    TaskChecklistItem::class => 'taskChecklistItemAttributes',
+    TaskRecurrence::class => 'taskRecurrenceAttributes',
+    MonthCloseCheck::class => 'monthCloseCheckAttributes',
 ];
+
+function taskAttributes(): array
+{
+    return ['title' => 'Hemlig uppgift', 'type' => 'VAT', 'created_by' => User::factory()->create()->id];
+}
+
+function taskCommentAttributes(): array
+{
+    $user = User::factory()->create();
+
+    return ['task_id' => Task::create(taskAttributes())->id, 'user_id' => $user->id, 'body' => 'Hemlig kommentar'];
+}
+
+function taskChecklistItemAttributes(): array
+{
+    return ['task_id' => Task::create(taskAttributes())->id, 'label' => 'Hemlig punkt'];
+}
+
+function taskRecurrenceAttributes(): array
+{
+    return ['title' => 'Hemlig moms', 'type' => 'VAT', 'frequency' => 'MONTHLY', 'due_day' => 12, 'created_by' => User::factory()->create()->id];
+}
+
+function monthCloseCheckAttributes(): array
+{
+    return ['month' => '2026-10', 'step' => 'REPORT', 'checked_by' => User::factory()->create()->id, 'checked_at' => now()];
+}
 
 function staffLedgerLocationAttributes(): array
 {

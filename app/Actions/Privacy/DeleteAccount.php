@@ -71,6 +71,9 @@ class DeleteAccount
 
             LoginCode::query()->whereRaw('lower(email) = ?', [$email])->delete();
             TeamInvitation::query()->whereRaw('lower(email) = ?', [$email])->delete();
+            // The user's own filters and notices on Mina företag (ADR-028) are nobody else's.
+            DB::table('saved_views')->where('user_id', $user->id)->delete();
+            $user->notifications()->delete();
 
             if ($user->profile_photo_path !== null) {
                 Storage::disk((string) config('jetstream.profile_photo_disk', 'public'))->delete($user->profile_photo_path);

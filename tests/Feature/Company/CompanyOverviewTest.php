@@ -127,7 +127,8 @@ it('is reached from the company menu at a Swedish address', function () {
     $this->consultant->switchCompany($company);
     $this->actingAs($this->consultant->fresh());
 
-    $this->get('/mina-foretag')->assertOk()->assertSee('Byråvy')->assertSee('Pågår');
+    $this->get('/mina-foretag')->assertOk()->assertSee('Att göra')->assertSee('Moms att redovisa');
+    $this->get('/mina-foretag?vy=manad')->assertOk()->assertSee('Byråvy')->assertSee('Pågår');
     $this->get('/mina-foretag?vy=uppgifter')->assertOk()->assertSee('Moms att redovisa');
     $this->get(route('dashboard'))->assertOk()->assertSee(route('companies.overview'));
 });
@@ -167,6 +168,7 @@ it('shows each client month by month: posted up to, bank, VAT, AGI and receivabl
         ->and($cells['2026-03']['receivables'])->toBe(0);
 
     Livewire::test(CompanyOverviewPage::class)
+        ->set('tab', 'manad')
         ->assertSee('Klienter, april 2026')
         ->assertSee('Bistro Hamnen AB')
         ->assertSee('BH')

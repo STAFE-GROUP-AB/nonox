@@ -6,6 +6,9 @@
 
         <x-ui.kpis />
 
+        {{-- Tasks handed to the user in this company (ADR-028, App\Support\Overview\TodoProvider). --}}
+        @include('tasks.dashboard-panel', ['company' => $company, 'user' => $user])
+
         @if($firm)
             @include('partials.firm-activity', ['firm' => $firm])
         @endif

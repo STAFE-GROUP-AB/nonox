@@ -32,9 +32,9 @@ class CompanyOverviewPage extends Component implements SpansCompanies
     #[Url(as: 'alla', except: false)]
     public bool $showAll = false;
 
-    /** manad: the clients month by month; uppgifter: what waits. */
-    #[Url(as: 'vy', except: 'manad')]
-    public string $tab = 'manad';
+    /** oversikt: totals and Att göra (ADR-028); stangning: month close; manad: the clients month by month; uppgifter: what waits. */
+    #[Url(as: 'vy', except: 'oversikt')]
+    public string $tab = 'oversikt';
 
     /** The month shown in the month view, YYYY-MM; empty is this month. */
     #[Url(as: 'manad', except: '')]
@@ -81,6 +81,11 @@ class CompanyOverviewPage extends Component implements SpansCompanies
 
     public function render(CompanyOverview $overview): View
     {
+        // The firm workspace (ADR-028) lives in its own components.
+        if (in_array($this->tab, ['oversikt', 'stangning'], true)) {
+            return view('livewire.company.overview-firm');
+        }
+
         $user = $this->user();
         $needle = mb_strtolower(trim($this->search));
         $digits = (string) preg_replace('/\D/', '', $needle);

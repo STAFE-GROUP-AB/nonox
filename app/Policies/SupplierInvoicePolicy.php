@@ -17,7 +17,7 @@ use App\Models\User;
  */
 class SupplierInvoicePolicy
 {
-    private const array VIEW_PERMISSIONS = [
+    public const array VIEW_PERMISSIONS = [
         'supplier-invoices:create', 'supplier-invoices:approve', 'payments:create', 'payments:approve', 'vouchers:view',
     ];
 

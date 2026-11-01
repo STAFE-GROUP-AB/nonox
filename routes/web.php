@@ -29,6 +29,7 @@ use App\Http\Controllers\Payables\SupplierInvoiceController;
 use App\Http\Controllers\SecurityPageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StartController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\SalesDocument;
@@ -74,6 +75,9 @@ Route::middleware([
     Route::get('/foretag/{company}/logotyp', CompanyLogoController::class)->whereNumber('company')->name('teams.logo');
     Route::put('/aktuellt-foretag', [CompanyController::class, 'switch'])->name('current-team.update');
     Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
+    // Across every company the user belongs to (ADR-028).
+    Route::view('/mina-uppgifter', 'tasks.mine')->name('tasks.mine');
+    Route::view('/notiser', 'notifications.index')->name('notifications.index');
 
     Route::get('/foretagsinbjudningar/{invitation}', [CompanyInvitationController::class, 'accept'])
         ->whereNumber('invitation')
@@ -93,6 +97,11 @@ Route::middleware([
         Route::get('/registerutdrag/personal/{person}', [DataSubjectExportController::class, 'staffLedgerPerson'])->whereNumber('person')->name('privacy.export.staffLedgerPerson');
         Route::get('/registerutdrag/inkorg', [DataSubjectExportController::class, 'inboxSender'])->name('privacy.export.inboxSender');
         Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
+
+        // Tasks in the current company (ADR-028).
+        Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
+        Route::view('/uppgifter/aterkommande', 'tasks.recurring')->name('tasks.recurring');
+        Route::get('/uppgifter/{task}', TaskController::class)->whereNumber('task')->name('tasks.show');
 
         Route::get('/verifikationer', [VoucherController::class, 'index'])->name('accounting.vouchers.index');
         Route::get('/verifikationer/ny', [VoucherController::class, 'create'])->name('accounting.vouchers.create');

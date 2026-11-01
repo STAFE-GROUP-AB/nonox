@@ -13,3 +13,6 @@ Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();
 Schedule::command('inbox:fetch')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('inbox:daily-summary')->dailyAt('07:00')->withoutOverlapping();
 Schedule::command('inbox:prune')->dailyAt('04:25')->withoutOverlapping();
+// Tasks (ADR-028): this period's recurring tasks, and the morning digest for those who asked for it.
+Schedule::command('tasks:generate-recurring')->dailyAt('05:10')->withoutOverlapping();
+Schedule::command('tasks:send-digest')->weekdays()->at('06:45')->withoutOverlapping();

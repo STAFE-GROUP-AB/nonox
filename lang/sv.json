@@ -99,5 +99,10 @@
     "You have not enabled two factor authentication.": "Tvåstegsverifiering är inte på.",
     "You may accept this invitation by clicking the button below:": "Acceptera inbjudan med knappen nedan:",
     "You may not leave a team that you created.": "Du kan inte lämna ett företag som du äger.",
-    "Your email address is unverified.": "Din e-postadress är inte verifierad."
+    "Your email address is unverified.": "Din e-postadress är inte verifierad.",
+    "Tasks": "Uppgifter",
+    "My tasks": "Mina uppgifter",
+    ":count kommentar|:count kommentarer": ":count kommentar|:count kommentarer",
+    "{0} Inga olästa notiser.|{1} :count oläst notis.|[2,*] :count olästa notiser.": "{0} Inga olästa notiser.|{1} :count oläst notis.|[2,*] :count olästa notiser.",
+    "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa": "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa"
 }

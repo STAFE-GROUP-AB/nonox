@@ -76,6 +76,18 @@ final class Navigation
             ],
         ];
 
+        // Tasks (ADR-028): the company's, the user's own in every company, and recurring ones.
+        $sections[] = [
+            'label' => __('Tasks'),
+            'route' => 'tasks.index',
+            'patterns' => ['tasks.*'],
+            'children' => fn (User $user, Company $company): array => [
+                ['label' => __('Företagets uppgifter'), 'route' => 'tasks.index', 'active' => ['tasks.index', 'tasks.show']],
+                ['label' => __('My tasks'), 'route' => 'tasks.mine'],
+                ...($can('tasks:manage') ? [['label' => __('Återkommande'), 'route' => 'tasks.recurring']] : []),
+            ],
+        ];
+
         foreach ($this->moduleItems($user, $company) as $item) {
             $sections[] = $item;
         }

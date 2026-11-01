@@ -86,10 +86,11 @@
     <div class="space-y-4 border-t border-white/10 pt-4">
         <div class="flex items-center gap-3 px-2">
             <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white" aria-hidden="true">{{ $initial(Auth::user()->name) }}</span>
-            <span class="min-w-0">
+            <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-medium text-white">{{ Auth::user()->name }}</span>
                 <span class="block truncate text-xs text-stone-400">{{ Auth::user()->email }}</span>
             </span>
+            @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
         </div>
         <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm">
             <a href="{{ route('profile.show') }}" class="text-stone-300 hover:text-white">{{ __('Profile') }}</a>

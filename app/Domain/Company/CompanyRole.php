@@ -25,6 +25,7 @@ enum CompanyRole: string
         'vat:prepare', 'vat:submit',
         'reports:view', 'export:sie', 'export:archive', 'import:sie', 'import:fortnox',
         'api-tokens:manage', 'settings:manage', 'audit-log:view', 'modules:manage',
+        'tasks:manage', 'tasks:view',
     ];
 
     public function label(): string
@@ -62,20 +63,24 @@ enum CompanyRole: string
                 'vat:prepare', 'vat:submit',
                 'reports:view', 'export:sie', 'export:archive', 'import:sie', 'import:fortnox',
                 'audit-log:view',
+                'tasks:manage', 'tasks:view',
             ],
             self::Bookkeeper => [
                 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'vouchers:view',
                 'invoices:create', 'invoices:send', 'invoices:credit', 'invoices:view',
                 'supplier-invoices:create', 'payments:create',
                 'reports:view',
+                'tasks:manage', 'tasks:view',
             ],
             self::Approver => [
                 'supplier-invoices:approve', 'payments:approve',
                 'invoices:view', 'vouchers:view',
+                'tasks:view',
             ],
             self::Auditor => [
                 'vouchers:view', 'invoices:view', 'reports:view',
                 'export:sie', 'export:archive', 'audit-log:view',
+                'tasks:view',
             ],
         };
     }

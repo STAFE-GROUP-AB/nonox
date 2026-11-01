@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Domain\Company\CompanyOverview;
 use App\Models\Company;
+use App\Models\Task;
 use App\Models\User;
 use App\Support\Tenancy\StaffAccess;
 use App\Support\Toast;
@@ -50,6 +51,20 @@ class CompanyController
         $user->switchCompany($company);
 
         Toast::flash(__('Du arbetar nu i :company.', ['company' => $company->name]));
+
+        // Opening a notice marks it read; only the user's own notices.
+        if ($request->filled('notis')) {
+            $user->unreadNotifications()->whereKey((string) $request->input('notis'))->update(['read_at' => now()]);
+        }
+
+        // A task opens in its own company; the id is looked up after the switch, so another company's task is not found.
+        if ($request->filled('uppgift')) {
+            $task = Task::query()->whereKey($request->integer('uppgift'))->first();
+
+            return $task instanceof Task
+                ? redirect()->route('tasks.show', $task, status: 303)
+                : redirect()->route('tasks.index', status: 303);
+        }
 
         // From Mina företag a row opens a page in that company; only known pages.
         $destination = CompanyOverview::DESTINATIONS[(string) $request->input('till')] ?? 'dashboard';

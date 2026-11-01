@@ -67,6 +67,54 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 
+## 1b. Byråns arbetsyta och uppgifter (ADR-028)
+
+- Fliken Översikt på Mina företag summerar alla användarens företag: pengar
+  på bank och kassa (konto 1900–1999) och saldot på momskontona (2600–2699)
+  enligt det bokförda i räkenskapsåret som omfattar dagens datum, med dess
+  ingående balanser, samt obetalda kundfakturor och leverantörsfakturor. Ett
+  företags siffra räknas bara in om användarens roll där får se den.
+  Sidan läser och ändrar ingen bokföring.
+- Att göra på samma flik är en lista för alla företag: systemets egna
+  påminnelser (moms, AGI, bokslut, årsredovisning för aktiebolag, förfallna
+  kundfakturor, attester och betalningar, verifikationer i utkast, inkorgen,
+  bankposter att stämma av, lön) och öppna uppgifter. Försenat först, sedan
+  efter sista dag och prioritet. Varje rad öppnas i sitt eget företag genom
+  företagsbytet. Filter (ansvarig konsult, sista dag, typ, status, bara mina)
+  ligger i adressen och kan sparas som vyer per användare (`saved_views`).
+- Resultatet sparas i cache per användare i tio minuter. En ändrad uppgift
+  eller avbockning i ett företag gör cachen ogiltig för alla som ser företaget;
+  knappen Läs in på nytt läser om allt.
+- Uppgifter (`tasks`, `task_comments`, `task_checklist_items`,
+  `task_recurrences`) hör till ett företag. Den som tilldelas en uppgift måste
+  vara ägare eller medlem i företaget. Med `tasks:manage` (ägare,
+  administratör, redovisningskonsult, bokförare) skapar, ändrar och tar man bort
+  uppgifter; med `tasks:view` (alla roller) ser man företagets uppgifter. Den
+  som har tilldelats en uppgift ser den, kommenterar, bockar av checklistan och
+  ändrar status, oavsett roll, så länge personen är kvar i företaget.
+- En uppgift kan kopplas till en verifikation, kundfaktura,
+  leverantörsfaktura, lönekörning, post i inkorgen eller momsdeklaration i
+  samma företag.
+- Återkommande uppgifter skapas av `tasks:generate-recurring` (varje dag
+  05.10) en gång per period; perioden ingår i en unik nyckel. Sista dag är den
+  valda dagen i månaden efter perioden. NONOX beräknar inte myndigheternas
+  datum för uppgifterna; användaren väljer dagen.
+- Notiser lagras i tabellen `notifications` (tilldelad, kommenterad, klar).
+  Den som valt det får en sammanfattning med e-post varje vardag 06.45
+  (`tasks:send-digest`) med titel, företag och sista dag för sina öppna
+  uppgifter, aldrig beskrivningar eller kommentarer.
+- Månadsstängning visar per klient och månad stegen bank avstämd,
+  leverantörsfakturor, kundfakturor, moms, lön och AGI, periodiseringar och
+  rapport skickad. Steg som kan läsas ur bokföringen fylls i av sig själva;
+  övriga bockas av för hand (`month_close_checks`, vem och när) och kan
+  ångras. Avbockningar sparas per månad.
+- Behandlingshistoriken visar `task.created`, `task.assigned`,
+  `task.updated`, `task.status_changed`, `task.completed`, `task.commented`,
+  `task.deleted`, `task.recurrence_created`, `task.recurrence_stopped`,
+  `month_close.checked` och `month_close.unchecked`, med typ, status,
+  tilldelad och datum men aldrig uppgiftens eller kommentarens text.
+- Uppgifter är inte räkenskapsinformation och tas bort med företaget.
+
 ## 2. Kontoplan
 
 - Ett nytt företag får en förifylld kontoplan med vanliga konton enligt BAS 2026,
@@ -1224,4 +1272,5 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.41 | 2026-11-01 | Dataskydd: "Radera mitt konto" på profilen (art. 17). Nekas så länge användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner, API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas bort; kontot raderas om inget längre hänvisar till det, annars pseudonymiseras det ("Raderad användare", en adress på .invalid, ingen inloggning) så att verifikationer och behandlingshistorik fortfarande visar vem som gjorde vad. Registerutdrag för en person i personalliggaren och för en avsändare till inkorgen (JSON, för inkorgen även CSV), loggade. |
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
+| 0.45 | 2026-11-01 | Byråns arbetsyta på Mina företag: summor och en gemensam Att göra-lista för alla företag med filter och sparade vyer, månadsstängning per klient, uppgifter med tilldelning, kommentarer, checklistor och återkommande uppgifter, notiser och daglig sammanfattning med e-post (ADR-028). |
 | 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
