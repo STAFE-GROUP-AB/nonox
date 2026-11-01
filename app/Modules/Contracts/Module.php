@@ -7,6 +7,7 @@ namespace App\Modules\Contracts;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleCheck;
+use Closure;
 
 /**
  * An optional feature area a company can turn on or off under Moduler
@@ -42,10 +43,17 @@ interface Module
     /** @return list<string> permissions that still work while the module is off (archive access) */
     public function archivePermissions(): array;
 
-    /** @return list<array{label: string, route: string, permission: string, active: string}> */
+    /**
+     * The module's sections in the sidebar. `active` names the routes that
+     * belong to the section; `children` returns its pages for the member,
+     * and is only called for the section the user is in
+     * (App\Support\Navigation).
+     *
+     * @return list<array{label: string, route: string, permission: string, active: string|list<string>, children?: Closure(User, Company): list<array{label: string, route: string, active?: list<string>, group?: string}>}>
+     */
     public function navigation(): array;
 
-    /** @return list<array{label: string, route: string, permission: string, active: string}> navigation while the module is off, for its archive */
+    /** @return list<array{label: string, route: string, permission: string, active: string|list<string>, children?: Closure(User, Company): list<array{label: string, route: string, active?: list<string>, group?: string}>}> navigation while the module is off, for its archive */
     public function archiveNavigation(Company $company): array;
 
     /** Livewire component name for the module's settings, shown when it is on. */

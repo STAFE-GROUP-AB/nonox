@@ -30,7 +30,7 @@
 
             <!-- Page Heading -->
             @if (isset($header))
-                <header class="px-4 pt-10 sm:px-6 lg:px-10 [&_h2]:text-3xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-ink sm:[&_h2]:text-4xl">
+                <header class="px-4 pt-6 sm:px-6 lg:px-10 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-ink">
                     {{ $header }}
                 </header>
             @endif

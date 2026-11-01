@@ -12,6 +12,7 @@ use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\SeedPayCodes;
 use App\Modules\Payroll\Livewire\PayrollSettingsForm;
+use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -104,14 +105,48 @@ final class PayrollModule implements Module
         }
 
         return [
-            ['label' => __('Lönearkiv'), 'route' => 'payroll.archive', 'permission' => 'payroll:archive-view', 'active' => 'payroll.archive*'],
+            [
+                'label' => __('Lönearkiv'),
+                'route' => 'payroll.archive',
+                'permission' => 'payroll:archive-view',
+                'active' => 'payroll.archive*',
+                'children' => fn (User $user, Company $company): array => [
+                    ['label' => __('Körningar och deklarationer'), 'route' => 'payroll.archive', 'active' => ['payroll.archive', 'payroll.archive.payslip', 'payroll.archive.agi*']],
+                    ['label' => __('Rapporter'), 'route' => 'payroll.archive.reports'],
+                ],
+            ],
         ];
     }
 
     public function navigation(): array
     {
         return [
-            ['label' => __('Lön'), 'route' => 'payroll.runs.index', 'permission' => 'payroll:view', 'active' => 'payroll.runs.*'],
+            [
+                'label' => __('Lön'),
+                'route' => 'payroll.runs.index',
+                'permission' => 'payroll:view',
+                'active' => ['payroll.index', 'payroll.runs.*', 'payroll.requests', 'payroll.employees*', 'payroll.agi*', 'payroll.reports', 'payroll.vacationYear', 'payroll.vacationLiability', 'payroll.rules', 'payroll.migration*'],
+                'children' => fn (User $user, Company $company): array => $this->pages(),
+            ],
+        ];
+    }
+
+    /** @return list<array{label: string, route: string, active?: list<string>}> the pages of Lön, for the section in the sidebar */
+    private function pages(): array
+    {
+        $pendingRequests = Absence::query()->where('status', 'REQUESTED')->count() + Expense::query()->where('status', 'SUBMITTED')->count();
+
+        return [
+            ['label' => __('Lönekörningar'), 'route' => 'payroll.runs.index'],
+            ['label' => $pendingRequests > 0 ? __('Ansökningar (:count)', ['count' => $pendingRequests]) : __('Ansökningar'), 'route' => 'payroll.requests'],
+            ['label' => __('Anställda'), 'route' => 'payroll.employees'],
+            ['label' => __('Arbetsgivardeklaration'), 'route' => 'payroll.agi'],
+            ['label' => __('Rapporter'), 'route' => 'payroll.reports'],
+            ['label' => __('Semesterår'), 'route' => 'payroll.vacationYear'],
+            ['label' => __('Semesterskuld'), 'route' => 'payroll.vacationLiability'],
+            ['label' => __('Regler'), 'route' => 'payroll.rules'],
+            ['label' => __('Flytt av lönedata'), 'route' => 'payroll.migration'],
+            ['label' => __('Kom igång'), 'route' => 'payroll.index', 'active' => ['payroll.index']],
         ];
     }
 

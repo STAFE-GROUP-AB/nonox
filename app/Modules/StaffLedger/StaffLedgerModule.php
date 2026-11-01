@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Contracts\Module;
 use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\StaffLedger\Livewire\StaffLedgerSettingsForm;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Support\Tenancy\CurrentCompany;
@@ -106,9 +107,28 @@ final class StaffLedgerModule implements Module
     public function navigation(): array
     {
         return [
-            ['label' => __('Personalliggare'), 'route' => 'staff-ledger.overview', 'permission' => 'staff-ledger:view', 'active' => 'staff-ledger.*'],
+            ['label' => __('Personalliggare'), 'route' => 'staff-ledger.overview', 'permission' => 'staff-ledger:view', 'active' => 'staff-ledger.*', 'children' => fn (User $user, Company $company): array => $this->pages($user, $company)],
             ['label' => __('Min incheckning'), 'route' => 'staff-ledger.mine', 'permission' => 'staff-ledger:self', 'active' => 'staff-ledger.mine'],
         ];
+    }
+
+    /** @return list<array{label: string, route: string, active?: list<string>}> the pages of Personalliggare, for the section in the sidebar */
+    private function pages(User $user, Company $company): array
+    {
+        $pages = [['label' => __('Översikt'), 'route' => 'staff-ledger.overview', 'active' => ['staff-ledger.overview']]];
+        $pages[] = ['label' => __('Liggaren'), 'route' => 'staff-ledger.ledger', 'active' => ['staff-ledger.ledger']];
+        $pages[] = ['label' => __('Personal'), 'route' => 'staff-ledger.people', 'active' => ['staff-ledger.people', 'staff-ledger.people.*']];
+        $pages[] = ['label' => __('Lokaler och kiosker'), 'route' => 'staff-ledger.locations', 'active' => ['staff-ledger.locations']];
+
+        if ($user->hasTeamPermission($company, 'staff-ledger:manage') && app(ModuleManager::class)->isEnabled(PayrollModule::KEY, $company)) {
+            $pages[] = ['label' => __('Tidrapporter'), 'route' => 'staff-ledger.proposals', 'active' => ['staff-ledger.proposals']];
+        }
+
+        if ($user->hasTeamPermission($company, 'staff-ledger:control-visit')) {
+            $pages[] = ['label' => __('Kontrollbesök'), 'route' => 'staff-ledger.control-visit', 'active' => ['staff-ledger.control-visit', 'staff-ledger.control-visit.*']];
+        }
+
+        return $pages;
     }
 
     public function settingsComponent(): string

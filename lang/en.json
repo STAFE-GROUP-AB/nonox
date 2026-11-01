@@ -3515,5 +3515,8 @@
     "Kiosken är borttagen.": "The kiosk is removed.",
     "Det finns också en gemensam adress, :shared, för det du vidarebefordrar från din egen e-post. Den tar bara emot post från adressen du loggar in med, och den måste stå på listan nedanför. Leverantörer och kassasystem skickar till företagets egen adress ovanför.": "There is also a shared address, :shared, for what you forward from your own email. It only takes mail from the address you sign in with, and that address must be on the list below. Suppliers and cash registers send to the company's own address above.",
     "E-post till den gemensamma adressen från någon som är med i flera av dina företag. Hämta det som gäller det här företaget.": "Email to the shared address from someone who belongs to several of your companies. Take what concerns this company.",
-    "Koden består av :count siffror.": "The code has :count digits."
+    "Koden består av :count siffror.": "The code has :count digits.",
+    "Löpande": "Day to day",
+    "Rapporter och moms": "Reports and VAT",
+    "Kontrollbesök": "Control visit"
 }
