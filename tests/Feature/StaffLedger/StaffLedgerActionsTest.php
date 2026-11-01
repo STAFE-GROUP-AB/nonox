@@ -106,7 +106,10 @@ it('stores a PIN only as a PBKDF2 verifier and refuses easy ones', function () {
     expect($person->pin_verifier)->toBe(Pin::verifier('4826', (string) $person->pin_salt))
         ->and(Pin::matches('4826', $person->pin_salt, $person->pin_verifier))->toBeTrue()
         ->and(Pin::matches('4827', $person->pin_salt, $person->pin_verifier))->toBeFalse()
-        ->and(json_encode($person->getAttributes()))->not->toContain('4826');
+        // No column holds the PIN itself. Ids, the salt and the hex verifier may contain the
+        // same four digits by chance, so the check is on whole values, not on substrings.
+        ->and(collect($person->getAttributes())->contains(fn (mixed $value): bool => (string) $value === '4826'))->toBeFalse()
+        ->and(array_keys($person->getAttributes()))->not->toContain('pin');
 });
 
 it('keeps a photo only with consent and removes it again', function () {
