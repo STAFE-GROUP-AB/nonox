@@ -484,6 +484,21 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   kundformuläret. Svaret, namnet och konsultationsnumret sparas i
   `vat_number_checks` (append-only, modell och databastrigger). Var senaste
   kontrollen av numret ogiltig går en momsfri EU-faktura inte att utfärda.
+  Ett leverantörsnummer kan kontrolleras på samma sätt från
+  leverantörsformuläret; svaret visas och loggas i behandlingshistoriken med
+  konsultationsnumret (`supplier.vat_number_checked`) men stoppar ingenting.
+- **Företagsuppgifter från register (ADR-035):** i formulären för nytt
+  företag, företagsinställningar, kunder och leverantörer kan namn, adress,
+  postnummer, ort och (för nytt företag) företagsform hämtas från
+  Bolagsverkets API för värdefulla datamängder med organisationsnumret.
+  Numret kontrolleras med Luhn innan något skickas, och en enskild firmas
+  personnummer skickas med århundrade. Svaret fyller bara tomma fält (eller
+  fält som en tidigare hämtning fyllt i); fält som användaren skrivit något
+  annat i ändras först när användaren väljer registrets uppgifter. Inget
+  sparas förrän formuläret sparas, och hämtningen påverkar ingen bokföring.
+  Svaren cachas en kort stund (10 minuter) under en hash av numret, och
+  antalet hämtningar begränsas per företag, användare och installation.
+  Funktionen syns bara när installationen har uppgifter från Bolagsverket.
 - **EU-rapporter** (`/eu-rapporter`): periodisk sammanställning per månad
   eller kvartal, per köpares momsregistreringsnummer i kolumnerna varor,
   trepartshandel och tjänster (hela kronor), med fil i Skatteverkets format
@@ -1638,6 +1653,10 @@ förslag från NONOX AI (ADR-033 §6).
   tröskeln 10 000 euro hanteras inte, och omräkningen till euro görs av
   användaren.
 - VIES: om kontroll krävs före varje försäljning och hur gammal den får vara.
+- Företagsuppgifter från Bolagsverket (ADR-035): rättslig grund för att
+  skicka en enskild firmas personnummer till Bolagsverket och visa svaret,
+  villkoren för vidareanvändning och källangivelse, samt Bolagsverkets
+  fullständiga lista över koder för organisationsform.
 - Periodisk sammanställning: vilken period en försäljning hör till
   (fakturadatum används), avrundning till hela kronor och filens
   teckenkodning (ISO-8859-1).
@@ -1752,3 +1771,4 @@ förslag från NONOX AI (ADR-033 §6).
 | 0.57 | 2026-11-01 | Utvecklarwebben för NONOX Connect under `/utvecklare` (svenska, engelska med `?lang=en`): guider från `docs/api/guider`, en referens som genereras på servern från `docs/api/openapi.yaml`, kodexempel, ändringslogg (`docs/api/CHANGELOG.md`) och specifikationen som YAML och JSON. Ändrar ingen bokföring: sidorna läser bara specifikationen och inställningarna för gränser. |
 | 0.58 | 2026-11-01 | Avtal (modul, ADR-033): kollektivavtalens värden som versionerad data med källa, inläst okontrollerad och använd först efter en namngiven kontroll (installationen eller företaget), skyddad mot ändring när den är kontrollerad. Företagets bindning (medlem eller hängavtal) och anställningens avtal, lönegrupp och branschvana. Lönekörningen stoppas utan kontrollerad version; redan uppdelade OB- och övertidstimmar prissätts med avtalets sats med version och källa på raden; avtalskalender med aftnar och storhelger; minimilönekontroll med varning. NONOX AI föreslår avtal och anställningsuppgifter ur maskerad text, med citat och sida, och inget förs in utan en person. |
 | 0.59 | 2026-11-01 | NONOX Connect: kundfakturor, leverantörsfakturor med attest av någon annan, betalningar, artiklar, kostnadsställen och projekt, rapporter, momsdeklaration per period, periodernas låsning och SIE-export i API:t, med samma funktioner som appen; ett anrop som bokför kräver behörighet att bokföra. Signerade webhooks som skickas efter att bokföringen sparats, med skydd mot anrop till interna nät och avstängning efter ett dygns fel. Appar kan återkalla sin egen anslutning. Testföretag med exempeldata, tydligt märkta och utan utskick. |
+| 0.63 | 2026-11-01 | Företagsuppgifter från Bolagsverket (ADR-035): namn, adress, postnummer, ort och företagsform hämtas med organisationsnumret i formulären för nytt företag, företagsinställningar, kunder och leverantörer. Numret kontrolleras med Luhn först, svaret är ett förslag som bara fyller tomma fält och ändrar inget användaren skrivit utan att fråga, och inget sparas förrän formuläret sparas. VIES-kontroll av leverantörens momsregistreringsnummer, loggad i behandlingshistoriken. Ändrar ingen bokföring. |

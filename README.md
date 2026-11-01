@@ -72,6 +72,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 
 ### Register
 - Kunder, artiklar och leverantörer med pris, moms och konto. Per kund syns vad den fakturerats i år och vad som är obetalt.
+- **Hämta uppgifter med organisationsnumret:** namn, adress och företagsform hämtas från Bolagsverket när du lägger till ett företag, en kund eller en leverantör, och i företagsinställningarna. Numret kontrolleras först, svaret är ett förslag, och det du redan skrivit ändras bara om du väljer det. Avregistrerade företag och pågående konkurs eller likvidation visas. Leverantörens momsregistreringsnummer kan kontrolleras i VIES. Kräver API-uppgifter från Bolagsverket (gratis); utan dem syns knappen inte.
 
 ### Bokföring
 - **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar, och inläsning av SIE4 i två steg med avstämning.
@@ -282,6 +283,7 @@ grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[
 - Riktig e-post, till exempel `MAIL_MAILER=smtp` eller `mailgun`. Med `log` kommer inga inloggningskoder fram.
 - **Bakom en proxy eller CDN** (till exempel Cloudflare med orange moln, eller en lastbalanserare): skriv proxyns adressintervall, kommaseparerade, i `TRUSTED_PROXIES`. Annars ser NONOX proxyns adress i stället för besökarens, och spärrarna mot för många inloggningsförsök slår mot alla besökare samtidigt. För Cloudflare finns intervallen på https://www.cloudflare.com/ips/. Lämnas raden tom litar NONOX inte på någon proxy, vilket är rätt när ingen proxy används. Skriv aldrig `*` om servern också går att nå utan proxyn, för då kan vem som helst ange sin egen adress.
 - För det öppna API:t (modulen NONOX Connect): kör `php artisan passport:keys` en gång, eller sätt `PASSPORT_PRIVATE_KEY` och `PASSPORT_PUBLIC_KEY`. Utan nycklar går modulen inte att slå på. Appar registreras med `php artisan connect:app "Namn" https://app.example/callback`. Gränserna för antal anrop och tokens livslängd ställs in med `NONOX_CONNECT_*`, se `.env.example` och [docs/api](docs/api/README.md). API-nycklar och tokens fungerar bara mot `/api/v1`, aldrig mot vanliga sidor.
+- För att hämta företagsuppgifter med organisationsnumret (frivilligt): anmäl dig som API-kund hos Bolagsverket för *API för värdefulla datamängder* (gratis), och sätt `COMPANY_REGISTRY_DRIVER=bolagsverket`, `BOLAGSVERKET_CLIENT_ID`, `BOLAGSVERKET_CLIENT_SECRET` och `BOLAGSVERKET_ENVIRONMENT` (`test` eller `prod`). Utan dem syns inte knappen *Hämta uppgifter*. Se [ADR-035](docs/adr/ADR-035-company-lookup.md).
 
 Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 
