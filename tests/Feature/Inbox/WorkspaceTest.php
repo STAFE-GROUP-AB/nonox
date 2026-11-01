@@ -286,3 +286,39 @@ describe('permissions', function () {
         $this->get('/inkorg')->assertNotFound();
     });
 });
+
+it('deletes a message that was not booked, with its files, and keeps one that was', function () {
+    Inbox::allow($this->company, 'leverantor@exempel.example');
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::mail('leverantor@exempel.example', 'Faktura', 'Se bilagan.', [['faktura.pdf', Inbox::fixture('faktura.pdf'), 'application/pdf']])));
+    $files = [$message->eml_path, ...$message->attachments->pluck('path')->all()];
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message->id)
+        ->assertSee('Radera')
+        ->call('delete')
+        ->assertDispatched('toast', message: 'Mejlet och dess bilagor är raderade.');
+
+    expect(InboxMessage::query()->find($message->id))->toBeNull()
+        ->and(collect($files)->filter(fn (string $path): bool => Storage::disk('local')->exists($path)))->toBeEmpty()
+        ->and(AuditLog::query()->where('action', 'inbox.deleted')->sole()->payload['message'])->toBe($message->id);
+
+    Inbox::allow($this->company, 'export@kassaexport.example');
+    $booked = Inbox::receive($this->company, Inbox::fixture('sie.eml'));
+    $booked = app(ApproveInboxMessage::class)($this->owner, $booked, $booked->proposal);
+
+    expect(fn () => app(InboxReview::class)->delete($this->owner, $booked))->toThrow(ValidationException::class, 'Underlaget är bokfört');
+    expect(InboxMessage::query()->find($booked->id))->not->toBeNull();
+});
+
+it('reads a message again on request', function () {
+    Inbox::allow($this->company, 'leverantor@exempel.example');
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::mail('leverantor@exempel.example', 'Faktura', 'Se bilagan.', [['faktura.pdf', Inbox::fixture('faktura.pdf'), 'application/pdf']])));
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message->id)
+        ->call('interpretAgain')
+        ->assertDispatched('toast');
+
+    expect(AuditLog::query()->where('action', 'inbox.interpret_again')->count())->toBe(1)
+        ->and(AuditLog::query()->where('action', 'inbox.interpreted')->where('subject_id', $message->id)->count())->toBe(2);
+});

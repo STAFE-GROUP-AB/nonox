@@ -9,18 +9,21 @@ use App\Models\User;
 use App\Modules\Inbox\Domain\MessageStatus;
 use App\Modules\Inbox\Jobs\InterpretInboxMessageJob;
 use App\Modules\Inbox\Models\AllowedSender;
+use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Support\InboxChecks;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
  * A person's decisions on messages in quarantine or review: allow the
  * sender (adds them to the allowlist and releases their waiting mail),
- * release a message after looking at it, or reject it.
+ * release a message after looking at it, reject it, read it again or
+ * delete it.
  */
 class InboxReview
 {
@@ -103,6 +106,51 @@ class InboxReview
 
                 Audit::record('inbox.rejected', $locked, ['reason' => $locked->rejection_reason, 'from' => $locked->from_email], $company, $user);
             });
+        });
+    }
+
+    /**
+     * Reads a message in review again, for instance after NONOX AI failed or
+     * a template was saved for the sender.
+     */
+    public function interpretAgain(User $user, InboxMessage $message): void
+    {
+        $company = $this->authorize($user, $message);
+
+        if (! in_array($message->status, [MessageStatus::NeedsReview, MessageStatus::DraftReady], true)) {
+            throw ValidationException::withMessages(['message' => __('Bara underlag som väntar på granskning kan läsas igen.')]);
+        }
+
+        Audit::record('inbox.interpret_again', $message, [], $company, $user);
+        InterpretInboxMessageJob::dispatch($company->id, $message->id);
+    }
+
+    /**
+     * Deletes a message and its files. A message that became a voucher or a
+     * supplier invoice, or a draft of one, is underlag (räkenskapsinformation,
+     * Bokföringslagen 7 kap.) and is kept.
+     */
+    public function delete(User $user, InboxMessage $message): void
+    {
+        $company = $this->authorize($user, $message);
+
+        CurrentCompany::run($company, function () use ($user, $company, $message): void {
+            $paths = DB::transaction(function () use ($user, $company, $message): array {
+                /** @var InboxMessage $locked */
+                $locked = InboxMessage::query()->with('attachments')->whereKey($message->id)->lockForUpdate()->firstOrFail();
+
+                if (in_array($locked->status, [MessageStatus::Booked, MessageStatus::DraftCreated], true) || $locked->voucher_ids !== [] || $locked->supplier_invoice_id !== null) {
+                    throw ValidationException::withMessages(['message' => __('Underlaget är bokfört och sparas i sju år enligt bokföringslagen. Det går inte att radera.')]);
+                }
+
+                $paths = [$locked->eml_path, ...$locked->attachments->map(fn (InboxAttachment $attachment): string => $attachment->path)->all()];
+                Audit::record('inbox.deleted', null, ['message' => $locked->id, 'from' => $locked->from_email, 'subject' => $locked->subject, 'status' => $locked->status->value], $company, $user);
+                $locked->delete();
+
+                return $paths;
+            });
+
+            Storage::disk(AcceptInboundMail::DISK)->delete($paths);
         });
     }
 

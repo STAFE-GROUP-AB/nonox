@@ -212,8 +212,19 @@
                                 <button type="button" wire:click="$set('confirmingRejection', false)" class="rounded-lg px-3 py-1.5 text-sm text-gray-700 hover:underline">{{ __('Avbryt') }}</button>
                             </div>
                         @else
-                            <button type="button" wire:click="reject" class="text-sm font-medium text-red-700 hover:underline">{{ __('Avvisa (x)') }}</button>
+                            <div class="flex flex-wrap gap-4">
+                                <button type="button" wire:click="reject" class="text-sm font-medium text-red-700 hover:underline">{{ __('Avvisa (x)') }}</button>
+                                @if($message->status !== App\Modules\Inbox\Domain\MessageStatus::Quarantine)
+                                    <button type="button" wire:click="interpretAgain" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Läs igen') }}</button>
+                                @endif
+                            </div>
                         @endif
+                    </div>
+                @endif
+
+                @if($canManage && ! in_array($message->status, [App\Modules\Inbox\Domain\MessageStatus::Booked, App\Modules\Inbox\Domain\MessageStatus::DraftCreated], true))
+                    <div class="mt-4 border-t border-gray-100 pt-4">
+                        <button type="button" wire:click="delete" wire:confirm="{{ __('Radera mejlet och dess bilagor för gott? Det går inte att ångra.') }}" class="text-sm font-medium text-red-700 hover:underline">{{ __('Radera') }}</button>
                     </div>
                 @endif
 

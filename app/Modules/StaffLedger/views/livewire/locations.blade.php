@@ -7,7 +7,7 @@
                 <div class="space-y-2">
                     <p class="text-sm text-gray-600">{{ __('Kopplingskod') }}</p>
                     <p class="text-3xl font-bold tracking-widest tabular-nums text-ink">{{ $pairing['code'] }}</p>
-                    <p class="break-all text-sm"><a href="{{ $pairing['url'] }}" class="font-semibold text-accent-700 underline">{{ $pairing['url'] }}</a></p>
+                    <p class="break-all text-sm"><a href="{{ $pairing['url'] }}" target="_blank" rel="noopener" class="font-semibold text-accent-700 underline">{{ $pairing['url'] }}</a></p>
                     <p class="text-sm text-gray-600">{{ __('Lägg sedan till sidan på hemskärmen, så öppnas kiosken i helskärm och fungerar utan internet.') }}</p>
                 </div>
             </div>

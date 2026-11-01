@@ -3494,5 +3494,12 @@
     "Övrig verksamhet (bara tidsredovisning)": "Other business (time reporting only)",
     "Har lokalen inget krav på personalliggare kan du välja Övrig verksamhet och använda in- och utcheckningen som tidsredovisning.": "If the location has no staff register requirement, choose Other business and use check-in and check-out for time reporting.",
     "Som dagsrapport": "As a daily report",
-    "Mejlet nämner :names men filen följde inte med. Skicka mejlet igen med bilagan. På iPhone och iPad: öppna bilagan först så att den laddas ner, eller välj att ta med bilagor när du vidarebefordrar.": "The email mentions :names but the file did not come with it. Send the email again with the attachment. On iPhone and iPad: open the attachment first so it is downloaded, or choose to include attachments when you forward."
+    "Mejlet nämner :names men filen följde inte med. Skicka mejlet igen med bilagan. På iPhone och iPad: öppna bilagan först så att den laddas ner, eller välj att ta med bilagor när du vidarebefordrar.": "The email mentions :names but the file did not come with it. Send the email again with the attachment. On iPhone and iPad: open the attachment first so it is downloaded, or choose to include attachments when you forward.",
+    "Läs igen": "Read again",
+    "Radera": "Delete",
+    "Radera mejlet och dess bilagor för gott? Det går inte att ångra.": "Delete the email and its attachments for good? This cannot be undone.",
+    "Underlaget läses igen. Ladda om om en liten stund.": "The document is being read again. Reload in a moment.",
+    "Mejlet och dess bilagor är raderade.": "The email and its attachments are deleted.",
+    "Bara underlag som väntar på granskning kan läsas igen.": "Only documents waiting for review can be read again.",
+    "Underlaget är bokfört och sparas i sju år enligt bokföringslagen. Det går inte att radera.": "The document is booked and is kept for seven years under the Bookkeeping Act. It cannot be deleted."
 }

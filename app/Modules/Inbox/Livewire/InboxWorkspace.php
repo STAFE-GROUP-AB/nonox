@@ -214,6 +214,19 @@ class InboxWorkspace extends Component
         $this->close();
     }
 
+    public function interpretAgain(InboxReview $review): void
+    {
+        $review->interpretAgain($this->user(), $this->message());
+        $this->toast(__('Underlaget läses igen. Ladda om om en liten stund.'));
+    }
+
+    public function delete(InboxReview $review): void
+    {
+        $review->delete($this->user(), $this->message());
+        $this->toast(__('Mejlet och dess bilagor är raderade.'));
+        $this->close();
+    }
+
     public function allowSender(InboxReview $review): void
     {
         $message = $this->message();
