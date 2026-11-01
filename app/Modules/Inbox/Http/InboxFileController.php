@@ -43,7 +43,7 @@ class InboxFileController
         $headers = [
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, max-age=0',
-            'Content-Security-Policy' => "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; object-src 'self'",
+            'Content-Security-Policy' => "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'self'",
         ];
 
         if ($file->isPreviewable()) {

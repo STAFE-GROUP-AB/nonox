@@ -21,7 +21,10 @@ class AnnualReportController
     {
         [$company, $report] = $this->resolve($request, $fiscalYear);
 
-        return response(AnnualReportDocument::html($company, $fiscalYear, $report));
+        // Shown in a frame on the annual report page, so NONOX's own pages may frame it.
+        return response(AnnualReportDocument::html($company, $fiscalYear, $report), 200, [
+            'Content-Security-Policy' => "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+        ]);
     }
 
     public function pdf(Request $request, FiscalYear $fiscalYear): Response

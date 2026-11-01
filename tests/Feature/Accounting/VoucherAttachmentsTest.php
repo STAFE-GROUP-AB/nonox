@@ -131,7 +131,9 @@ it('shows underlag inline with a safe content type', function () {
 
     expect($response->headers->get('Content-Type'))->toBe('application/pdf')
         ->and($response->headers->get('X-Content-Type-Options'))->toBe('nosniff')
-        ->and($response->headers->get('Content-Disposition'))->toStartWith('inline');
+        ->and($response->headers->get('Content-Disposition'))->toStartWith('inline')
+        // Shown in a frame on the voucher page: NONOX's own pages may frame it, no other site may.
+        ->and($response->headers->get('Content-Security-Policy'))->toStartWith("frame-ancestors 'self';");
 });
 
 it('answers 404 for another company\'s underlag or a mismatched voucher', function () {
