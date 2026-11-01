@@ -11,10 +11,11 @@
                      $wire.call(method).finally(() => { clearInterval(this.timer); this.running = false; });
                  },
              }"
-             x-init="@js($analyzeOnLoad ?? false) && run('analyzeHandoff')">
+             x-init="@js($analyzeOnLoad ?? false) && run('analyzeHandoff')"
+             x-on:{{ App\Modules\Ai\Actions\AnalyzeDocument::AUTO_EVENT }}.window="running || run('analyze')">
             <div class="min-w-0">
                 <p class="text-sm font-semibold text-gray-900">{{ __('NONOX AI') }}</p>
-                <p class="text-xs text-gray-600" x-show="! running">{{ __('Läser underlaget och fyller i ett förslag. Inget sparas förrän du gör det.') }}</p>
+                <p class="text-xs text-gray-600" x-show="! running">{{ __('Läser underlaget så fort det är uppladdat och fyller i ett förslag. Inget sparas förrän du gör det.') }}</p>
                 <p class="text-xs text-gray-700" x-show="running" x-cloak aria-live="polite">
                     <span x-show="left > 0">{{ __('Analyserar underlaget, brukar ta högst 20 sekunder:') }} <span class="font-semibold tabular-nums" x-text="left + ' s'"></span></span>
                     <span x-show="left === 0">{{ __('Det tar längre tid än vanligt, vänta lite till…') }}</span>

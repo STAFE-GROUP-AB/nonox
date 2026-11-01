@@ -46,6 +46,9 @@ use Throwable;
  */
 class AnalyzeDocument
 {
+    /** The browser event that starts the analysis right after a document is uploaded (the analyse panel listens for it). */
+    public const string AUTO_EVENT = 'nonox-ai-analyze';
+
     private const array IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
     /** Seconds to wait for the provider. */

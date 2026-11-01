@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
+use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Agents\SupplierInvoiceAgent;
 use App\Modules\Ai\Agents\VoucherAgent;
 use App\Modules\Ai\AiModule;
@@ -283,3 +284,65 @@ it('does not take over another person\'s document', function () {
     Livewire::test(SupplierInvoiceEditor::class)->assertSet('file', null)->assertSet('analyzeOnLoad', false);
     SupplierInvoiceAgent::assertNeverPrompted();
 });
+
+it('reads a document as soon as it is uploaded, when NONOX AI is on, and posts nothing', function () {
+    VoucherAgent::fake();
+    SupplierInvoiceAgent::fake();
+
+    Livewire::test(VoucherEditor::class)
+        ->set('uploads', [UploadedFile::fake()->image('kvitto.jpg', 400, 600)])
+        ->assertDispatched(AnalyzeDocument::AUTO_EVENT)
+        ->assertSee('Analysera');
+
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->set('file', invoicePdf())
+        ->assertDispatched(AnalyzeDocument::AUTO_EVENT);
+
+    // The browser then calls analyze(), which only fills in the form.
+    VoucherAgent::assertNeverPrompted();
+    expect(Voucher::query()->count())->toBe(0)
+        ->and(SupplierInvoice::query()->count())->toBe(0);
+});
+
+it('reads an uploaded document on a saved draft too, after it is attached', function () {
+    $draft = Bookkeeping::draft($this->owner, $this->company);
+
+    Livewire::test(VoucherEditor::class, ['voucher' => $draft])
+        ->set('uploads', [UploadedFile::fake()->image('kvitto.jpg', 400, 600)])
+        ->assertHasNoErrors()
+        ->assertDispatched(AnalyzeDocument::AUTO_EVENT);
+
+    expect($draft->attachments()->count())->toBe(1)
+        ->and($draft->fresh()->isPosted())->toBeFalse();
+});
+
+it('does not read a document by itself when NONOX AI is off', function () {
+    app(ModuleManager::class)->disable(AiModule::KEY, $this->company, $this->owner, true);
+
+    Livewire::test(VoucherEditor::class)
+        ->set('uploads', [UploadedFile::fake()->image('kvitto.jpg', 400, 600)])
+        ->assertNotDispatched(AnalyzeDocument::AUTO_EVENT);
+
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->set('file', invoicePdf())
+        ->assertNotDispatched(AnalyzeDocument::AUTO_EVENT);
+});
+
+it('does not read a file that was refused', function () {
+    Livewire::test(SupplierInvoiceEditor::class)
+        ->set('file', UploadedFile::fake()->create('stor.pdf', 11_000, 'application/pdf'))
+        ->assertHasErrors('file')
+        ->assertNotDispatched(AnalyzeDocument::AUTO_EVENT);
+});
+
+it('offers the camera beside drag and drop, for vouchers and supplier invoices', function (string $route, string $text) {
+    $this->get(route($route))
+        ->assertOk()
+        ->assertSee($text)
+        ->assertSee('capture="environment"', false)
+        ->assertSee('accept="image/*"', false)
+        ->assertSee('Dra hit');
+})->with([
+    'verifikation' => ['accounting.vouchers.create', 'Fota underlaget'],
+    'leverantörsfaktura' => ['payables.invoices.create', 'Fota fakturan'],
+]);
