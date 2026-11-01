@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Migration\Fortnox\FortnoxServiceProvider;
 use App\Modules\Ai\AiServiceProvider;
+use App\Modules\Connect\ConnectServiceProvider;
 use App\Modules\Inbox\InboxServiceProvider;
 use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
@@ -21,6 +22,7 @@ return [
     AiServiceProvider::class,
     StaffLedgerServiceProvider::class,
     InboxServiceProvider::class,
+    ConnectServiceProvider::class,
     FortnoxServiceProvider::class,
     AppServiceProvider::class,
     FortifyServiceProvider::class,

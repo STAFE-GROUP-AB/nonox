@@ -6,10 +6,12 @@ use App\Http\Middleware\EndExpiredSessions;
 use App\Http\Middleware\RemembersRecentItems;
 use App\Http\Middleware\RequirePasskey;
 use App\Http\Middleware\SecurityHeaders;
+use App\Modules\Connect\Support\Problem;
 use App\Modules\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -36,5 +38,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // The public API answers every error as RFC 9457 problem+json (ADR-032).
+        $exceptions->render(fn (Throwable $exception, Request $request) => Problem::fromException($exception, $request));
     })->create();
