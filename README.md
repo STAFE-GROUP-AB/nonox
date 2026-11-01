@@ -58,7 +58,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - ROT- och RUT-avdrag, omvänd betalningsskyldighet för byggtjänster, och fakturor till andra EU-länder och export med rätt konto, momsruta och fakturatext.
 
 ### Inköp
-- Leverantörsfakturor som PDF eller bild, kontering per kostnadsställe, attest av en annan person än den som registrerade, och fakturor i utländsk valuta omräknade med Riksbankens kurs.
+- Leverantörsfakturor som PDF eller bild, kontering per kostnadsställe och attest av en annan person än den som registrerade. Fakturor i utländsk valuta räknas om med Riksbankens kurs, och kursvinst eller kursförlust bokförs när fakturan betalas.
 - Betalfiler till banken (ISO 20022 pain.001) för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. En betalfil godkänns av en annan person innan den kan laddas ner, och bokförs när banken har betalat.
 - Kreditnotor från leverantörer, inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet, med momsen i rätt rutor.
 
@@ -73,7 +73,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 
 ### Lön (modul)
-- Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag och arbetsgivaravgifter med sänkningen för unga.
+- Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag och arbetsgivaravgifter med sänkningen för unga. Timlön räknas från godkända tidrapporter, även från personalliggaren.
 - Lönekörning med attest, lönebesked som PDF, lönefil till banken och bokföring i serie L.
 - Semester enligt semesterlagen, förmåner, traktamente och milersättning, tjänstepension, utlägg med kvitto, lönerevision och slutlön.
 - Arbetsgivardeklaration (AGI) som XML enligt Skatteverkets schema, och ett lönearkiv som finns kvar när modulen stängs av.
@@ -84,21 +84,21 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Liggaren skrivs bara till, med en kedja av kontrollsummor och rättelser som syns bredvid originalet. Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren.
 
 ### Inkorg (modul)
-- En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och virussöks innan något läses.
+- En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
 - Peppol-fakturor, SIE-filer och dagsrapporter läses utan AI, med mallar som en person godkänt.
 
 ### NONOX AI (modul)
 - Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv.
 
 ### Företaget och din data
-- Flera företag per användare med roller: ägare, administratör, redovisningskonsult, bokförare, attestant och revisor.
+- Flera företag per användare med roller: ägare, administratör, redovisningskonsult, bokförare, attestant och revisor. Ägarskap kan föras över, och ett företag kan arkiveras så att det bara kan läsas.
 - Export av allt när som helst. Arkivpaket per räkenskapsår med SIE-fil, rapporter, underlag, fakturor och behandlingshistorik, med kontrollsumma för varje fil, som går att läsa utan NONOX.
 - Behandlingshistorik över allt som görs, och dataskydd: registerutdrag, radering av eget konto, gallring och personuppgiftsbiträdesavtal.
 - Eget varumärke: logga och färger på fakturor, lönebesked och Min sida.
 - Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
 
 ### På väg
-- Automatisk avstämning av betalfiler mot bankens svar, och kursdifferenser när en faktura i utländsk valuta betalas.
+- Automatisk avstämning av betalfiler mot bankens svar, och betalfiler och kundfakturor i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 
