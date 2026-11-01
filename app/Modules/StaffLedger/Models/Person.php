@@ -35,6 +35,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?CarbonImmutable $photo_consent_at
  * @property ?string $pin_salt
  * @property ?string $pin_verifier
+ * @property ?string $control_salt
+ * @property ?string $control_key
  * @property ?string $qr_secret_hash
  * @property ?string $qr_nonce
  * @property bool $is_manager
@@ -47,7 +49,7 @@ class Person extends Model
     protected $table = 'staff_ledger_people';
 
     /** @var list<string> */
-    protected $hidden = ['personal_number', 'personal_number_index', 'pin_salt', 'pin_verifier', 'qr_secret_hash', 'qr_nonce'];
+    protected $hidden = ['personal_number', 'personal_number_index', 'pin_salt', 'pin_verifier', 'control_salt', 'control_key', 'qr_secret_hash', 'qr_nonce'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -71,6 +73,7 @@ class Person extends Model
     {
         return [
             'personal_number' => 'encrypted',
+            'control_key' => 'encrypted',
             'photo_consent_at' => 'immutable_datetime',
             'is_manager' => 'boolean',
             'archived_at' => 'immutable_datetime',

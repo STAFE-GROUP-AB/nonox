@@ -82,6 +82,32 @@ export async function pinVerifier(pin, saltHex, iterations) {
     return toHex(bits);
 }
 
+const fromBase64 = (text) => Uint8Array.from(atob(text), (char) => char.charCodeAt(0));
+
+/**
+ * Opens the control visit data the server sealed (KioskRoster::seal) with a
+ * manager's PIN: the PIN gives the control key (PBKDF2, like Pin::controlKey),
+ * which opens the data key, which opens the data. Null for a wrong PIN.
+ */
+export async function openSealed(sealed, personId, pin, iterations) {
+    const entry = sealed?.keys?.find((candidate) => candidate.person_id === personId);
+
+    if (!entry) {
+        return null;
+    }
+
+    try {
+        const control = await globalThis.crypto.subtle.importKey('raw', fromHex(await pinVerifier(pin, entry.salt, iterations)), 'AES-GCM', false, ['decrypt']);
+        const dataKey = await globalThis.crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64(entry.iv) }, control, fromBase64(entry.key));
+        const key = await globalThis.crypto.subtle.importKey('raw', dataKey, 'AES-GCM', false, ['decrypt']);
+        const plain = await globalThis.crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromBase64(sealed.iv) }, key, fromBase64(sealed.data));
+
+        return JSON.parse(new TextDecoder().decode(plain));
+    } catch {
+        return null;
+    }
+}
+
 export async function pinMatches(pin, person, iterations) {
     if (!/^\d{4}$/.test(pin) || !person.pin_salt || !person.pin_verifier) {
         return false;

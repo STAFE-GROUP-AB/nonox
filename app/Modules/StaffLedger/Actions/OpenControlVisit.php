@@ -55,6 +55,13 @@ final class OpenControlVisit
         }
 
         RateLimiter::clear($key);
+
+        // A PIN set before sealing existed gets its key now, the one time the server sees the PIN.
+        if ($manager->control_key === null) {
+            $salt = Pin::newSalt();
+            $manager->forceFill(['control_salt' => $salt, 'control_key' => Pin::controlKey($pin, $salt)])->save();
+        }
+
         Audit::record('staff_ledger.control_visit_opened', $device, ['where' => 'kiosk', 'manager_person_id' => $manager->id], $device->company_id);
 
         return $manager;

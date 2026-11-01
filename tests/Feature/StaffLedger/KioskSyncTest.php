@@ -120,7 +120,10 @@ it('gives the kiosk its roster without PINs, and refuses unknown or revoked devi
         ->and(collect($roster['people'])->pluck('name')->all())->toContain('Testa Person123', 'Testa Person456')
         ->and($roster['people'][0])->toHaveKeys(['pin_salt', 'pin_verifier', 'qr_hash'])->not->toHaveKey('pin')
         ->and(json_encode($roster))->not->toContain('2580')
-        ->and($roster['sensitive']['people'][0]['personal_number'])->toMatch('/^\d{8}-\d{4}$/')
+        ->and($roster)->not->toHaveKey('sensitive')
+        ->and(json_encode($roster))->not->toContain(substr(StaffLedger::personalNumber('19900101123'), 8))
+        ->and($roster['sealed']['keys'])->toHaveCount(1)
+        ->and($roster['sealed']['keys'][0]['person_id'])->toBe($this->bo->id)
         ->and($roster['iterations'])->toBe(Pin::ITERATIONS);
 
     $this->withToken('fel')->getJson(route('staff-ledger.kiosk.roster'))->assertUnauthorized();
@@ -239,7 +242,7 @@ it('opens the control visit at the kiosk with a manager PIN and locks out after 
     $this->withToken($this->token)->postJson(route('staff-ledger.kiosk.control-visit'), ['pin' => '2580'])->assertOk()->assertJson(['ok' => false]);
 
     $answer = $this->withToken($this->token)->postJson(route('staff-ledger.kiosk.control-visit'), ['pin' => '1397'])->assertOk()->json();
-    expect($answer['ok'])->toBeTrue()->and($answer['roster']['sensitive']['people'])->not->toBeEmpty();
+    expect($answer['ok'])->toBeTrue()->and($answer['sensitive']['people'][0]['personal_number'])->toMatch('/^\d{8}-\d{4}$/');
 
     expect(CurrentCompany::run($this->company, fn () => AuditLog::forCompany($this->company)->where('action', 'staff_ledger.control_visit_opened')->latest('id')->first()->payload))
         ->toMatchArray(['where' => 'kiosk', 'manager_person_id' => $this->bo->id]);
@@ -318,4 +321,21 @@ it('removes kiosks: one without entries is deleted, one with entries is blocked 
     $accountant = Bookkeeping::member($this->company, 'accountant');
     CurrentCompany::forget();
     expect(fn () => CurrentCompany::run($this->company, fn () => $devices->remove($accountant, $this->company, $kept)))->toThrow(AuthorizationException::class);
+});
+
+it('seals the offline control visit data so only a manager PIN opens it', function () {
+    $sealed = $this->withToken($this->token)->getJson(route('staff-ledger.kiosk.roster'))->json('sealed');
+    $entry = $sealed['keys'][0];
+    $open = function (string $cipher, string $iv, string $key): string|false {
+        $raw = (string) base64_decode($cipher);
+
+        return openssl_decrypt(substr($raw, 0, -16), 'aes-256-gcm', $key, OPENSSL_RAW_DATA, (string) base64_decode($iv), substr($raw, -16));
+    };
+
+    $dataKey = $open($entry['key'], $entry['iv'], (string) hex2bin(Pin::controlKey('1397', $entry['salt'])));
+    $data = json_decode((string) $open($sealed['data'], $sealed['iv'], (string) $dataKey), true);
+
+    expect($data['people'])->toHaveCount(2)
+        ->and(collect($data['people'])->pluck('personal_number')->all())->toContain(substr(StaffLedger::personalNumber('19851212456'), 0, 8).'-'.substr(StaffLedger::personalNumber('19851212456'), 8))
+        ->and($open($entry['key'], $entry['iv'], (string) hex2bin(Pin::controlKey('2580', $entry['salt']))))->toBeFalse();
 });

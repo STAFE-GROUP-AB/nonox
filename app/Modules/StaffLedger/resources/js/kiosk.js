@@ -4,7 +4,7 @@
 // a sequence number and the device's hash chain) and shown as done at once,
 // and a background loop sends the queue to the server in order.
 import {
-    applyAck, applyToPeople, createEvent, csv, MAX_PIN_ATTEMPTS, nextDirection, pinLockState, pinMatches,
+    applyAck, applyToPeople, createEvent, openSealed, csv, MAX_PIN_ATTEMPTS, nextDirection, pinLockState, pinMatches,
     presentSince, registerPinFailure, sendOrder, sha256, zip,
 } from './kiosk-core.js';
 import '../css/kiosk.css';
@@ -48,36 +48,6 @@ const kv = {
     delete: (key) => tx('kv', 'readwrite', (store) => store.delete(key)),
 };
 const all = (store) => tx(store, 'readonly', (s) => s.getAll());
-
-// Personal numbers are kept encrypted with a key the page can use but never read out.
-async function sensitiveKey() {
-    let key = await kv.get('sensitive_key');
-
-    if (!key) {
-        key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-        await kv.set('sensitive_key', key);
-    }
-
-    return key;
-}
-
-async function saveSensitive(data) {
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await sensitiveKey(), new TextEncoder().encode(JSON.stringify(data)));
-    await kv.set('sensitive', { iv, cipher });
-}
-
-async function loadSensitive() {
-    const stored = await kv.get('sensitive');
-
-    if (!stored) {
-        return { people: [], shifts: [] };
-    }
-
-    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: stored.iv }, await sensitiveKey(), stored.cipher);
-
-    return JSON.parse(new TextDecoder().decode(plain));
-}
 
 // ---------- state ----------
 
@@ -173,10 +143,8 @@ async function refreshRoster() {
 
     try {
         const roster = await api('roster');
-        const { sensitive, ...open } = roster;
-        await saveSensitive(sensitive);
-        await kv.set('roster', open);
-        state.roster = open;
+        await kv.set('roster', roster);
+        state.roster = roster;
         state.online = true;
         state.revoked = false;
     } catch (error) {
@@ -358,12 +326,10 @@ async function checkManagerPin() {
         const answer = await api('controlVisit', { pin });
 
         if (answer.ok) {
-            const { sensitive, ...open } = answer.roster;
-            await saveSensitive(sensitive);
-            await kv.set('roster', open);
-            state.roster = open;
+            await kv.set('roster', answer.roster);
+            state.roster = answer.roster;
 
-            return openControl(true);
+            return openControl(answer.sensitive, true);
         }
 
         state.pin = '';
@@ -391,13 +357,15 @@ async function checkManagerPin() {
     }
 
     for (const manager of managers) {
-        if (await pinMatches(pin, manager, state.roster.iterations)) {
+        const sensitive = await openSealed(state.roster.sealed, manager.id, pin, state.roster.iterations);
+
+        if (sensitive) {
             await kv.delete('attempts:manager');
             const logs = (await kv.get('logs')) ?? [];
             logs.push({ type: 'control_visit_opened', person_id: manager.id, at: new Date().toISOString() });
             await kv.set('logs', logs);
 
-            return openControl(false);
+            return openControl(sensitive, false);
         }
     }
 
@@ -407,12 +375,13 @@ async function checkManagerPin() {
     render();
 }
 
-async function openControl(fresh) {
-    show('control', { sensitive: await loadSensitive(), fresh, search: '' });
+// The personal numbers live only in memory while the view is open.
+function openControl(sensitive, fresh) {
+    show('control', { sensitive, fresh, search: '' });
 }
 
 async function usbExport() {
-    const sensitive = state.sensitive ?? (await loadSensitive());
+    const sensitive = state.sensitive ?? { people: [], shifts: [] };
     const numbers = new Map(sensitive.people.map((person) => [person.id, person]));
     const names = new Map(state.roster.people.map((person) => [person.id, person.name]));
     const rejected = await all('rejected');
@@ -765,6 +734,9 @@ document.addEventListener('keydown', (event) => {
 
 async function start() {
     db = await openDb();
+    // Earlier versions kept personal numbers here; they now come sealed in the roster.
+    await kv.delete('sensitive');
+    await kv.delete('sensitive_key');
     state.token = (await kv.get('token')) ?? null;
     state.roster = (await kv.get('roster')) ?? null;
     state.lastSync = (await kv.get('last_sync')) ?? null;

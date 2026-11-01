@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    applyAck, applyToPeople, canonicalEvent, chainHash, createEvent, crc32, csv, MAX_PIN_ATTEMPTS, nextDirection,
+    applyAck, applyToPeople, canonicalEvent, openSealed, chainHash, createEvent, crc32, csv, MAX_PIN_ATTEMPTS, nextDirection,
     pinLockState, pinMatches, pinVerifier, presentSince, registerPinFailure, sendOrder, zip,
 } from '../../app/Modules/StaffLedger/resources/js/kiosk-core.js';
 
@@ -103,4 +103,26 @@ test('events the server accepted update the roster, so a sent check-out stays ou
     assert.equal(nextDirection(after[0], []), 'IN');
     assert.equal(presentSince(after[1], []), 'z');
     assert.equal(applyToPeople(people, [])[0], people[0]);
+});
+
+test('sealed control visit data opens only with a manager PIN', async () => {
+    const subtle = globalThis.crypto.subtle;
+    const b64 = (bytes) => Buffer.from(bytes).toString('base64');
+    const encrypt = async (raw, plain) => {
+        const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
+        const key = await subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt']);
+
+        return [b64(iv), b64(new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv }, key, plain)))];
+    };
+    const salt = '00112233445566778899aabbccddeeff';
+    const control = Buffer.from(await pinVerifier('2580', salt, 1000), 'hex');
+    const dataKey = globalThis.crypto.getRandomValues(new Uint8Array(32));
+    const [iv, data] = await encrypt(dataKey, new TextEncoder().encode(JSON.stringify({ people: [{ id: 7, personal_number: '19900101-1234' }], shifts: [] })));
+    const [keyIv, key] = await encrypt(control, dataKey);
+    const sealed = { iv, data, keys: [{ person_id: 3, salt, iv: keyIv, key }] };
+
+    assert.equal((await openSealed(sealed, 3, '2580', 1000)).people[0].personal_number, '19900101-1234');
+    assert.equal(await openSealed(sealed, 3, '1111', 1000), null);
+    assert.equal(await openSealed(sealed, 9, '2580', 1000), null);
+    assert.equal(await openSealed(undefined, 3, '2580', 1000), null);
 });

@@ -43,7 +43,13 @@ final class PersonCredentials
         }
 
         $salt = Pin::newSalt();
-        $person->forceFill(['pin_salt' => $salt, 'pin_verifier' => Pin::verifier($pin, $salt)])->save();
+        $controlSalt = Pin::newSalt();
+        $person->forceFill([
+            'pin_salt' => $salt,
+            'pin_verifier' => Pin::verifier($pin, $salt),
+            'control_salt' => $controlSalt,
+            'control_key' => Pin::controlKey($pin, $controlSalt),
+        ])->save();
 
         Audit::record('staff_ledger.pin_set', $person, [], $company, $user);
     }

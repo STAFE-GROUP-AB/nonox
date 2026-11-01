@@ -102,11 +102,18 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   Offline it is checked against the managers' verifiers, with the same local
   lockout, and the opening is queued and written to the audit log at the next
   sync.
-- The roster's sensitive part (personal numbers, employers, 31 days of
-  shifts), needed for the control visit view and the USB export without
-  network, is encrypted in IndexedDB with a non-extractable AES-GCM key. It
-  protects against copying the storage files, not against someone running
-  code in the kiosk page.
+- The control visit data (personal numbers, employers, 31 days of shifts)
+  is never handed to a device token alone (security review 2026-11-01: the
+  token sits in the kiosk's storage, so anyone copying it could fetch every
+  personal number). Online, the server returns it in plain text only after
+  checking a manager's PIN, and the kiosk keeps it in memory while the view
+  is open. For working offline the roster carries it sealed: AES-256-GCM
+  under a random data key, which is in turn sealed for each manager with a
+  key derived from the manager's PIN (PBKDF2, its own salt, stored encrypted
+  on the server and set when the PIN is set or first used online). Four
+  digits are few, so someone with a copy of the kiosk's storage can still
+  try all of them; sealing makes that brute force the only way in, instead
+  of one request.
 
 ### QR codes
 

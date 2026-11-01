@@ -148,7 +148,7 @@ class KioskController
             return response()->json(['ok' => false, 'locked' => OpenControlVisit::lockedOut($device)]);
         }
 
-        return response()->json(['ok' => true, 'roster' => KioskRoster::for($device)], 200, ['Cache-Control' => 'no-store']);
+        return response()->json(['ok' => true, 'roster' => KioskRoster::for($device), 'sensitive' => KioskRoster::sensitive($device)], 200, ['Cache-Control' => 'no-store']);
     }
 
     private static function device(Request $request): Device

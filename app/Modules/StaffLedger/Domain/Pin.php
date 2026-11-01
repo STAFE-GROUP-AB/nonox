@@ -43,6 +43,16 @@ final class Pin
         return hash_pbkdf2('sha256', $pin, (string) hex2bin($salt), self::ITERATIONS, 64);
     }
 
+    /**
+     * The key that seals a kiosk's offline control visit data, as hex: the
+     * same PBKDF2 as the verifier but with a salt of its own, so the verifier
+     * the kiosk holds does not give the key.
+     */
+    public static function controlKey(string $pin, string $salt): string
+    {
+        return hash_pbkdf2('sha256', $pin, (string) hex2bin($salt), self::ITERATIONS, 64);
+    }
+
     public static function matches(string $pin, ?string $salt, ?string $verifier): bool
     {
         if ($salt === null || $verifier === null || ! self::isValidFormat($pin)) {
