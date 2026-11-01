@@ -67,6 +67,34 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 
+## 1b. Översikt (startsidan)
+
+- Översikt (`/oversikt`) visar för det valda företaget fyra nyckeltal
+  (saldot på företagskontot 1930 enligt bokföringen och hur långt det är
+  avstämt, obetalda kundfakturor, obetalda leverantörsfakturor och nästa
+  momsdeklaration med sista dag), "Att göra" och de fem senast bokförda
+  verifikationerna. Fliken Statistik och prognos visar diagram med samma
+  siffror som tabeller ([ADR-027](../adr/ADR-027-overview.md)).
+- Översikten läser bara. Den bokför, ändrar och loggar ingenting.
+- "Att göra" bygger på samma regler som Mina företag (1a) för det valda
+  företaget, plus bankposter som inte är kopplade till en faktura, företags-
+  kontot som inte är avstämt till och med förra månadens slut, underlag i
+  inkorgen och glömda utcheckningar i personalliggaren när de modulerna är
+  påslagna. Varje rad visas bara för en roll som får utföra den.
+- Belopp på senaste verifikationer: rör verifikationen bank och kassa (konto
+  1900–1999) visas nettoförändringen där med tecken, plus för pengar in och
+  minus för pengar ut. Andra verifikationer visar summan av debet utan tecken.
+- Siffrorna sparas i en cache per företag, roll och dag i högst tio minuter.
+  Cachen töms när en transaktion som skriver i behandlingshistoriken eller
+  ändrar verifikationer, fakturor, bankposter med mera har sparats, och när
+  användaren trycker på pilen för att ladda om. Tidpunkten för uträkningen
+  visas ("Uppdaterad 14:32").
+- Prognosen för likviditeten är en enkel räkning som förklaras under
+  diagrammet: dagens saldo på bank och kassa, plus obetalda kundfakturor och
+  minus obetalda leverantörsfakturor den månad de förfaller, plus det
+  genomsnittliga resultatet för de tre senaste hela månaderna. Den märks
+  "Prognos" och är ingen AI.
+
 ## 2. Kontoplan
 
 - Ett nytt företag får en förifylld kontoplan med vanliga konton enligt BAS 2026,
@@ -1225,3 +1253,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
 | 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
+| 0.45 | 2026-11-01 | Översikt: nyckeltal, "Att göra" från bokföringen och modulerna, senaste verifikationer med belopp ur bankens synvinkel, cache per företag och roll med omladdning, och fliken Statistik och prognos med diagram, tabeller och en förklarad likviditetsprognos. Översikten läser bara. |

@@ -44,6 +44,28 @@ dark mode. Dark mode for the signed-in app comes with the Tailwind 4 upgrade
 
 `resources/views/dashboard.blade.php` is the reference page.
 
+## Översikt (ADR-027)
+
+- Four key figures in a row (two on tablets, one on phones): the company
+  account is the dark card; a figure that needs attention soon (VAT due
+  within 14 days) uses the accent tint with its hint as a badge.
+- "Att göra" rows: an icon in a 40 px rounded square (accent tint when due
+  within a week), a bold title, one grey line of context and "Gör det nu →"
+  on the right (only the arrow on phones; the screen reader hears the title).
+  Icons are `<x-overview.icon name>`, our own simple strokes.
+- Signed amounts: money in is green with "+", money out is the accent colour
+  with "−", an amount that moves no money is grey without a sign. A short
+  note under the list says so.
+- The reload arrow sits at the right of the page heading with "Uppdaterad
+  HH:MM" (an `aria-live` status) and spins while it works. The top bar's
+  search goes to its left.
+- Charts (`<x-overview.chart>`): Chart.js bundled by Vite, loaded only with
+  the statistics tab. One fixed palette checked for colour blindness:
+  `#d4330b`, `#1f6fb8`, `#a67800`, in that order; last year and forecasts
+  are dashed in the same colour. One value axis, short ticks ("800 tkr"),
+  full amounts in tooltips. Every chart has a one-sentence summary (also its
+  accessible name) and "Visa som tabell" with the same figures.
+
 ## Navigation
 
 One tree, `App\Support\Navigation\Navigation`, holds the sections of the

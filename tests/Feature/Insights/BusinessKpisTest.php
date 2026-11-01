@@ -76,11 +76,11 @@ it('shows a role only the figures it may read', function () {
     expect($labels)->toBe(['Fakturerat i mars', 'Obetalt hos kunder', 'Order att fakturera', 'Inköpt i mars', 'Att betala till leverantörer', 'Väntar på attest']);
 });
 
-it('shows each tab its own figures, all of them on the overview, and per customer and article in the registers', function () {
+it('shows each tab its own figures, the overview its own four, and per customer and article in the registers', function () {
     $this->get(route('invoicing.invoices.index'))->assertOk()->assertSee('Obetalt hos kunder')->assertDontSee('Pengar på bank och kassa')->assertDontSee('Att betala till leverantörer');
     $this->get(route('payables.invoices.index'))->assertOk()->assertSee('Väntar på attest')->assertDontSee('Obetalt hos kunder');
     $this->get(route('accounting.vouchers.index'))->assertOk()->assertSee('Resultat hittills 2026')->assertDontSee('Order att fakturera');
-    $this->get(route('dashboard'))->assertOk()->assertSee('Order att fakturera')->assertSee('Att betala till leverantörer')->assertSee('Resultat hittills 2026');
+    $this->get(route('dashboard'))->assertOk()->assertSee('Företagskonto 1930')->assertSee('Obetalda kundfakturor')->assertSee('Att betala')->assertDontSee('Order att fakturera');
     $this->get(route('invoicing.customers'))->assertOk()->assertDontSee('Obetalt hos kunder');
 
     $this->get(route('invoicing.customers'))->assertOk()

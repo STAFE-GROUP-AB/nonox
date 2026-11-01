@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace App\Modules\Inbox;
 
+use App\Domain\Overview\Contracts\TodoProvider;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Contracts\Module;
+use App\Modules\Contracts\ProvidesTodos;
 use App\Modules\Inbox\Domain\MessageStatus;
 use App\Modules\Inbox\Livewire\InboxSettingsForm;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Support\InboxAddress;
+use App\Modules\Inbox\Support\InboxTodos;
 use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
@@ -20,7 +23,7 @@ use App\Support\Tenancy\CurrentCompany;
  * daily reports, invoices and receipts, keeps the original and turns it
  * into a proposal for a person to approve.
  */
-final class InboxModule implements Module
+final class InboxModule implements Module, ProvidesTodos
 {
     public const string KEY = 'inbox';
 
@@ -123,4 +126,10 @@ final class InboxModule implements Module
     }
 
     public function onDisable(Company $company, User $by): void {}
+
+    /** Översikt's "Att göra" (ADR-027). */
+    public function todoProvider(): TodoProvider
+    {
+        return app(InboxTodos::class);
+    }
 }
