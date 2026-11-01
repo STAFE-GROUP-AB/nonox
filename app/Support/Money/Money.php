@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Money;
 
 use Brick\Math\BigDecimal;
+use Brick\Math\Exception\MathException;
 use Brick\Math\RoundingMode;
 use InvalidArgumentException;
 use JsonSerializable;
@@ -51,6 +52,77 @@ final readonly class Money implements JsonSerializable, Stringable
             ->toInt();
 
         return self::ofOre($parts[1] === '-' ? -$ore : $ore, $currency);
+    }
+
+    /**
+     * Reads an amount in kronor from another system (an API, a file, an AI
+     * answer) exactly, with any number of decimals, rounded to whole öre:
+     * 8.155 is 816 öre, never the 815 that float arithmetic gives. Accepts
+     * integers, JSON numbers, and strings such as "1 234,56", "1.234,56",
+     * "1,234.56", "-8.155" and "12 kr". When both "." and "," occur, the last
+     * one is the decimal separator; one of them repeated is a thousands
+     * separator. Null when the value is not an amount.
+     */
+    public static function fromDecimal(mixed $value, string $currency = 'SEK', RoundingMode $rounding = RoundingMode::HalfUp): ?self
+    {
+        $decimal = self::decimalString($value);
+
+        if ($decimal === null) {
+            return null;
+        }
+
+        try {
+            return self::ofOre(BigDecimal::of($decimal)->multipliedBy(100)->toScale(0, $rounding)->toInt(), $currency);
+        } catch (MathException) {
+            return null;
+        }
+    }
+
+    private static function decimalString(mixed $value): ?string
+    {
+        if (is_int($value)) {
+            return (string) $value;
+        }
+
+        if (is_float($value)) {
+            // The shortest text that reads back as the same float: 8.155, not 8.1549999…
+            return is_finite($value) ? (string) json_encode($value) : null;
+        }
+
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $text = str_replace([self::NBSP, "\u{202F}", ' ', "\u{2212}"], ['', '', '', '-'], trim($value));
+        $text = (string) preg_replace('/(kr\.?|sek)$/i', '', $text);
+
+        if (! preg_match('/^([+-]?)([\d.,]*\d[\d.,]*)$/', $text, $parts) || preg_match('/^[.,]|[.,]$/', $parts[2])) {
+            return null;
+        }
+
+        $digits = $parts[2];
+        $lastDot = strrpos($digits, '.');
+        $lastComma = strrpos($digits, ',');
+
+        if ($lastDot !== false && $lastComma !== false) {
+            $decimalSeparator = $lastDot > $lastComma ? '.' : ',';
+            $thousands = $decimalSeparator === '.' ? ',' : '.';
+
+            if (substr_count($digits, $decimalSeparator) > 1) {
+                return null;
+            }
+
+            $digits = str_replace([$thousands, $decimalSeparator], ['', '.'], $digits);
+        } elseif ($lastDot !== false || $lastComma !== false) {
+            $separator = $lastDot !== false ? '.' : ',';
+            $digits = substr_count($digits, $separator) > 1 ? str_replace($separator, '', $digits) : str_replace($separator, '.', $digits);
+        }
+
+        if (! preg_match('/^\d+(\.\d+)?$/', $digits)) {
+            return null;
+        }
+
+        return ($parts[1] === '-' ? '-' : '').$digits;
     }
 
     public function plus(self $other): self

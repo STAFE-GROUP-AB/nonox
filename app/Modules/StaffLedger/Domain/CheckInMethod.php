@@ -18,7 +18,7 @@ enum CheckInMethod: string
         return match ($this) {
             self::KioskPin => __('Kiosk med kod'),
             self::KioskQr => __('Kiosk med QR-kod'),
-            self::Mobile => __('Mobil med platskontroll'),
+            self::Mobile => __('Mobil, självrapporterad position'),
             self::Manual => __('Manuellt av chef'),
             self::Correction => __('Rättelse av chef'),
         };

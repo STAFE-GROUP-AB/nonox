@@ -101,7 +101,13 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   checked on the server, five tries per device per 15 minutes, then 429.
   Offline it is checked against the managers' verifiers, with the same local
   lockout, and the opening is queued and written to the audit log at the next
-  sync.
+  sync. The server cannot check such a report (the PIN was checked on the
+  device), so it treats it as a claim by the device token (security review
+  2026-11-01: a token could otherwise write any number of openings naming
+  anybody): it is written only when it names an active manager of the
+  device's company who has a PIN, identical reports are written once, at
+  most five per sync, and each carries `where: kiosk_offline`,
+  `reported_by: device` and `verified: false`.
 - The control visit data (personal numbers, employers, 31 days of shifts)
   is never handed to a device token alone (security review 2026-11-01: the
   token sits in the kiosk's storage, so anyone copying it could fetch every
@@ -142,6 +148,21 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   accuracy worse than 200 m. Only the distance is stored, never the position.
   The page alone allows `geolocation=(self)` in its Permissions-Policy, as the
   kiosk alone allows `camera=(self)`.
+- **Trust boundary (security review 2026-11-01).** The position is sent by the
+  person's own browser; the server cannot tell a real fix from coordinates
+  typed in at home. The geofence stops honest mistakes, not a person who
+  wants to cheat. We therefore do not present a mobile entry as verified
+  presence: the method is labelled "Mobil, självrapporterad position", and
+  every such entry carries the flag `SELF_REPORTED_POSITION` ("Position
+  uppgiven av telefonen, ej verifierad"), which is part of the hashed entry
+  and shown in the ledger, the control visit PDF and the CSV and XML exports.
+  Attempts are rate-limited to ten per person and ten minutes, so the
+  geofence cannot be probed. Employers who need verified presence use the
+  kiosk (the device sits on the premises) and leave mobile check-in off.
+  TODO(legal-verify): whether Skatteverket accepts self-reported positions
+  as a check-in method for the 2027 industries, and whether such entries
+  must be marked in the transfer format, is not known; ask before the
+  electronic transfer is built.
 
 ### The ledger
 
@@ -187,6 +208,11 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   the XML is NONOX's own provisional format with its own XSD
   (`app/Modules/StaffLedger/database/xsd/personalliggare-provisorisk-0.1.xsd`),
   behind the `LedgerXmlFormat` interface. TODO(SPEC).
+- A view or export covers at most 13 months (`ControlVisitReport::MAX_MONTHS`;
+  the view shortens a longer period, the export refuses it with a Swedish
+  message), and exports count against the company's hourly `pdf` work quota
+  (300, shared with invoice and annual report PDFs and report CSVs), so one
+  account cannot tie up the server with repeated year-long exports.
 - Electronic transfer goes through the `SkatteverketTransfer` interface; the
   container binds `MockSkatteverketTransfer`, which sends nothing and says
   so. TODO(SPEC).

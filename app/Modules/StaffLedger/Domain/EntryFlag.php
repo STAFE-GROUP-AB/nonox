@@ -18,6 +18,8 @@ enum EntryFlag: string
     case SequenceGap = 'SEQUENCE_GAP';
     /** The device's own hash chain did not continue from the last accepted event. */
     case ClientChainBreak = 'CLIENT_CHAIN_BREAK';
+    /** Checked in on the phone: the position came from the person's own browser and is not verified. */
+    case SelfReportedPosition = 'SELF_REPORTED_POSITION';
 
     public function label(): string
     {
@@ -26,6 +28,7 @@ enum EntryFlag: string
             self::Late => __('Skickad i efterhand'),
             self::SequenceGap => __('En händelse från enheten kan saknas'),
             self::ClientChainBreak => __('Enhetens kedja bröts'),
+            self::SelfReportedPosition => __('Position uppgiven av telefonen, ej verifierad'),
         };
     }
 }

@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Invoicing;
 
 use App\Domain\Invoicing\InvoicePdf;
+use App\Models\Company;
 use App\Models\Invoice;
+use App\Support\Toast;
+use App\Support\WorkQuota;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
@@ -39,9 +42,15 @@ class InvoiceController
         return view('invoicing.invoices.edit', ['invoice' => $invoice]);
     }
 
-    public function pdf(Invoice $invoice): Response
+    public function pdf(Invoice $invoice): Response|RedirectResponse
     {
         Gate::authorize('view', $invoice);
+
+        if (! WorkQuota::attempt(Company::query()->findOrFail($invoice->company_id), 'pdf')) {
+            Toast::flash(WorkQuota::message(), 'error');
+
+            return back();
+        }
 
         return response(InvoicePdf::render($invoice), 200, [
             'Content-Type' => 'application/pdf',

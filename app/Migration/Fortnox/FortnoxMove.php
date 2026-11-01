@@ -22,6 +22,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Support\Audit\Audit;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
@@ -232,7 +233,7 @@ class FortnoxMove
 
             foreach ($client->each($path, $key, ['filter' => 'unpaid']) as $invoice) {
                 $count++;
-                $ore += (int) round(((float) ($invoice['Balance'] ?? 0)) * 100);
+                $ore += Money::fromDecimal($invoice['Balance'] ?? 0)->ore ?? 0;
             }
 
             return [$count, $ore];

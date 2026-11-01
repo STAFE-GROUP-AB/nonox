@@ -11,7 +11,10 @@ use App\Modules\StaffLedger\Support\Export\ControlVisitReport;
 use App\Modules\StaffLedger\Support\Export\CsvExport;
 use App\Modules\StaffLedger\Support\Export\LedgerXmlFormat;
 use App\Modules\StaffLedger\Support\Export\PdfExport;
+use App\Support\Toast;
+use App\Support\WorkQuota;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -19,11 +22,13 @@ use Illuminate\Support\Facades\Auth;
 /**
  * The control visit exports: PDF, CSV and XML for the chosen period,
  * location and search. Each export is written to the audit log, since it
- * carries personal numbers in full.
+ * carries personal numbers in full. A period is at most
+ * ControlVisitReport::MAX_MONTHS long, and exports count against the
+ * company's hourly 'pdf' work quota.
  */
 class ControlVisitExportController
 {
-    public function __invoke(Request $request, string $format, OpenControlVisit $open, LedgerXmlFormat $xml): Response
+    public function __invoke(Request $request, string $format, OpenControlVisit $open, LedgerXmlFormat $xml): Response|RedirectResponse
     {
         /** @var User $user */
         $user = Auth::user();
@@ -33,6 +38,18 @@ class ControlVisitExportController
         $open->inApp($user, $company, $format);
 
         [$from, $to] = self::period($request);
+        $refusal = match (true) {
+            ControlVisitReport::tooLong($from, $to) => ControlVisitReport::tooLongMessage(),
+            ! WorkQuota::attempt($company, 'pdf') => WorkQuota::message(),
+            default => null,
+        };
+
+        if ($refusal !== null) {
+            Toast::flash($refusal, 'error');
+
+            return redirect()->route('staff-ledger.control-visit', $request->only(['fran', 'till', 'lokal', 'sok']));
+        }
+
         $location = $request->integer('lokal') ?: null;
         $report = ControlVisitReport::build($company, $location, $from, $to, (string) $request->query('sok', ''));
 

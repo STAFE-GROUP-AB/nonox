@@ -20,6 +20,19 @@ use Illuminate\Support\Collection;
  */
 final readonly class ControlVisitReport
 {
+    /** The longest period one view or export covers, so a request cannot ask for years at once. */
+    public const int MAX_MONTHS = 13;
+
+    public static function tooLong(CarbonImmutable $from, CarbonImmutable $to): bool
+    {
+        return $from->startOfDay()->addMonthsNoOverflow(self::MAX_MONTHS) < $to->startOfDay();
+    }
+
+    public static function tooLongMessage(): string
+    {
+        return __('Välj en period på högst :months månader.', ['months' => self::MAX_MONTHS]);
+    }
+
     /**
      * @param  Collection<int, Location>  $locations
      * @param  list<Shift>  $present

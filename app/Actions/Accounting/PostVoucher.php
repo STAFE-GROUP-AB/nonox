@@ -25,12 +25,26 @@ use Illuminate\Validation\ValidationException;
  * (AGENTS.md §6.4). All or nothing:
  *
  * 1. Lock the fiscal year row: serialises numbering and the hash chain.
+ *    Then take a key-share lock on the company row, so a period lock
+ *    (LockPeriod, closing a year), which locks the same row for update,
+ *    cannot change locked_until_date between our check and our commit.
  * 2. Validate: at least two rows, balance, an open fiscal year, not a locked
  *    period, active accounts, required dimensions.
  * 3. Take the next gapless number in the series for the fiscal year.
  * 4. Chain the hash to the previous posted voucher in the fiscal year.
  * 5. Mark as posted (a database trigger checks the balance again).
  * 6. Write the audit log.
+ *
+ * Lock order, always the same to avoid deadlocks: voucher → fiscal year →
+ * company (FOR KEY SHARE) → number counter. YearEndClosing (bookTax,
+ * bookResult, close) also locks the fiscal year before the company.
+ * FOR KEY SHARE is the weakest row lock that conflicts with FOR UPDATE, and
+ * the same lock PostgreSQL already takes on the company row for the foreign
+ * key of every row this transaction inserts (the audit log, for one), so it
+ * adds no new kind of wait: it does not block other postings, ordinary
+ * updates of the company row or other inserts; only actions that lock the
+ * company row for update (LockPeriod, closing a year, SIE import, numbering
+ * new accruals and assets) wait for it.
  */
 class PostVoucher
 {
@@ -50,9 +64,10 @@ class PostVoucher
             }
 
             $fiscalYear = $this->lockFiscalYear($voucher->voucher_date);
+            $company = $this->lockCompany($voucher->company_id);
 
             $voucher->load(['rows.account', 'series']);
-            $this->validate($voucher, $fiscalYear);
+            $this->validate($voucher, $company);
 
             $counter = $this->lockCounter($fiscalYear->id, $voucher->series_id);
             $number = $counter->next_number;
@@ -106,7 +121,18 @@ class PostVoucher
         return $fiscalYear;
     }
 
-    private function validate(Voucher $voucher, FiscalYear $fiscalYear): void
+    /**
+     * The company row with a key-share lock held until commit: a period lock
+     * waits for this posting, and this posting sees a period lock that was
+     * committed before it.
+     */
+    private function lockCompany(int $companyId): Company
+    {
+        /** @var Company */
+        return Company::query()->whereKey($companyId)->lock('for key share')->firstOrFail();
+    }
+
+    private function validate(Voucher $voucher, Company $company): void
     {
         $rows = $voucher->rows;
 
@@ -126,8 +152,6 @@ class PostVoucher
         if ($debit === 0) {
             throw ValidationException::withMessages(['rows' => __('Verifikationen saknar belopp.')]);
         }
-
-        $company = Company::query()->findOrFail($voucher->company_id);
 
         if ($company->locked_until_date !== null && $voucher->voucher_date->lessThanOrEqualTo($company->locked_until_date)) {
             throw ValidationException::withMessages(['voucher_date' => __('Perioden till och med :date är låst. Välj ett senare datum.', [

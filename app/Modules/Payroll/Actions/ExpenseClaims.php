@@ -254,8 +254,8 @@ class ExpenseClaims
     {
         $notes = array_filter([trim((string) ($answer['notes'] ?? ''))]);
 
-        $total = (int) round(((float) ($answer['total'] ?? 0)) * 100);
-        $vat = (int) round(((float) ($answer['vat_total'] ?? 0)) * 100);
+        $total = Money::fromDecimal($answer['total'] ?? 0)->ore ?? 0;
+        $vat = Money::fromDecimal($answer['vat_total'] ?? 0)->ore ?? 0;
 
         $date = (string) ($answer['date'] ?? '');
         $readDate = preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) === 1 && CarbonImmutable::parse($date)->lessThanOrEqualTo(CarbonImmutable::today()) ? $date : null;

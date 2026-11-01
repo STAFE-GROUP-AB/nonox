@@ -9,6 +9,44 @@ use Illuminate\Database\Eloquent\Model;
 
 const NBSP = "\u{00A0}";
 
+it('reads amounts from other systems exactly, never through a float', function (mixed $input, ?int $ore) {
+    expect(Money::fromDecimal($input)?->ore)->toBe($ore);
+})->with([
+    'string 8.155' => ['8.155', 816],
+    'float 8.155' => [8.155, 816],
+    'string 1.005' => ['1.005', 101],
+    'float 1.005' => [1.005, 101],
+    'negative string' => ['-8.155', -816],
+    'negative float' => [-1.005, -101],
+    'unicode minus' => ["\u{2212}12,50", -1250],
+    'comma decimal' => ['12,5', 1250],
+    'space thousands' => ['1 234 567,891', 123456789],
+    'nbsp thousands' => ['1'.NBSP.'234,50', 123450],
+    'dot thousands, comma decimal' => ['1.234,56', 123456],
+    'comma thousands, dot decimal' => ['1,234.56', 123456],
+    'repeated dot thousands' => ['1.234.567', 123456700],
+    'kronor suffix' => ['99,90 kr', 9990],
+    'integer' => [42, 4200],
+    'float integer' => [42.0, 4200],
+    'many decimals' => ['0.004999', 0],
+    'tiny float' => [1.0E-5, 0],
+    'zero' => ['0', 0],
+    'text' => ['abc', null],
+    'empty' => ['', null],
+    'null' => [null, null],
+    'two decimal commas' => ['1,234,56.7,8', null],
+    'trailing separator' => ['12,', null],
+    'not finite' => [INF, null],
+    'array' => [[1], null],
+]);
+
+it('rounds öre half up away from zero, or as asked', function () {
+    expect(Money::fromDecimal('0.125')?->ore)->toBe(13)
+        ->and(Money::fromDecimal('-0.125')?->ore)->toBe(-13)
+        ->and(Money::fromDecimal('0.125', rounding: RoundingMode::HalfEven)?->ore)->toBe(12)
+        ->and(round((float) '8.155' * 100))->toBe(815.0);
+});
+
 it('parses amounts the way people type them in Sweden', function (string $input, int $ore) {
     expect(Money::parse($input)->ore)->toBe($ore);
 })->with([

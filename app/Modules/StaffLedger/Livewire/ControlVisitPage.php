@@ -72,11 +72,40 @@ class ControlVisitPage extends Component
         ]);
     }
 
+    public function updated(string $property): void
+    {
+        if (! in_array($property, ['from', 'to'], true)) {
+            return;
+        }
+
+        [$from, $to] = $this->period();
+
+        if (! ControlVisitReport::tooLong($from, $to)) {
+            return;
+        }
+
+        $this->from = $to->subMonthsNoOverflow(ControlVisitReport::MAX_MONTHS)->toDateString();
+        $this->to = $to->toDateString();
+        $this->toast(ControlVisitReport::tooLongMessage(), 'error');
+    }
+
     private function report(): ControlVisitReport
+    {
+        [$from, $to] = $this->period();
+
+        if (ControlVisitReport::tooLong($from, $to)) {
+            $from = $to->subMonthsNoOverflow(ControlVisitReport::MAX_MONTHS)->startOfDay();
+        }
+
+        return ControlVisitReport::build($this->company(), $this->location === '' ? null : (int) $this->location, $from, $to, $this->search);
+    }
+
+    /** @return array{0: CarbonImmutable, 1: CarbonImmutable} */
+    private function period(): array
     {
         $from = (CarbonImmutable::createFromFormat('Y-m-d', $this->from) ?: CarbonImmutable::today())->startOfDay();
         $to = (CarbonImmutable::createFromFormat('Y-m-d', $this->to) ?: CarbonImmutable::today())->endOfDay();
 
-        return ControlVisitReport::build($this->company(), $this->location === '' ? null : (int) $this->location, min($from, $to->startOfDay()), max($to, $from->endOfDay()), $this->search);
+        return [min($from, $to->startOfDay()), max($to, $from->endOfDay())];
     }
 }

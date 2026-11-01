@@ -262,7 +262,32 @@ it('records a control visit opened offline when the kiosk syncs', function () {
     ])->assertOk();
 
     expect(CurrentCompany::run($this->company, fn () => AuditLog::forCompany($this->company)->where('action', 'staff_ledger.control_visit_opened')->sole()->payload))
-        ->toMatchArray(['where' => 'kiosk_offline', 'manager_person_id' => $this->bo->id]);
+        ->toMatchArray(['where' => 'kiosk_offline', 'verified' => false, 'reported_by' => 'device', 'manager_person_id' => $this->bo->id]);
+});
+
+it('writes offline openings only for active managers with a PIN, once each and at most five per sync', function () {
+    $logs = [
+        ['type' => 'control_visit_opened', 'person_id' => $this->anna->id, 'at' => '2026-11-02T09:00:00+01:00'],
+        ['type' => 'control_visit_opened', 'person_id' => 999999, 'at' => '2026-11-02T09:00:00+01:00'],
+        ['type' => 'control_visit_opened', 'person_id' => $this->bo->id, 'at' => '2026-11-02T10:00:00+01:00'],
+        ['type' => 'control_visit_opened', 'person_id' => $this->bo->id, 'at' => '2026-11-02T10:00:00+01:00'],
+    ];
+
+    foreach (range(11, 30) as $minute) {
+        $logs[] = ['type' => 'control_visit_opened', 'person_id' => $this->bo->id, 'at' => "2026-11-02T10:{$minute}:00+01:00"];
+    }
+
+    $this->withToken($this->token)->postJson(route('staff-ledger.kiosk.events'), [
+        'sent_at' => CarbonImmutable::now()->toIso8601String(),
+        'events' => [],
+        'logs' => $logs,
+    ])->assertOk();
+
+    $written = CurrentCompany::run($this->company, fn () => AuditLog::forCompany($this->company)->where('action', 'staff_ledger.control_visit_opened')->orderBy('id')->get());
+
+    expect($written)->toHaveCount(RecordKioskEvents::MAX_OFFLINE_OPENINGS_PER_SYNC)
+        ->and($written->pluck('payload.manager_person_id')->unique()->all())->toBe([$this->bo->id])
+        ->and($written->pluck('payload.at')->unique())->toHaveCount(RecordKioskEvents::MAX_OFFLINE_OPENINGS_PER_SYNC);
 });
 
 it('recognises a personal QR code only for its own company, and a new code replaces the old', function () {

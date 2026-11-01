@@ -12,7 +12,10 @@ use App\Modules\StaffLedger\Livewire\ControlVisitPage;
 use App\Modules\StaffLedger\Support\Export\ControlVisitReport;
 use App\Modules\StaffLedger\Support\Export\LedgerXmlFormat;
 use App\Support\Tenancy\CurrentCompany;
+use App\Support\Toast;
+use App\Support\WorkQuota;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\StaffLedger;
@@ -94,6 +97,32 @@ it('exports a PDF', function () {
 
     expect($response->headers->get('Content-Type'))->toBe('application/pdf')
         ->and(substr((string) $response->getContent(), 0, 5))->toBe('%PDF-');
+});
+
+it('refuses an export longer than thirteen months, and the view shortens such a period', function () {
+    $this->get(route('staff-ledger.control-visit.export', ['format' => 'csv', 'fran' => '2024-01-01', 'till' => '2026-11-02']))
+        ->assertRedirect(route('staff-ledger.control-visit', ['fran' => '2024-01-01', 'till' => '2026-11-02']))
+        ->assertSessionHas(Toast::SESSION_KEY, [['message' => 'Välj en period på högst 13 månader.', 'type' => 'error']]);
+
+    $this->get(route('staff-ledger.control-visit.export', ['format' => 'csv', 'fran' => '2025-10-02', 'till' => '2026-11-02']))->assertOk();
+
+    Livewire::test(ControlVisitPage::class)
+        ->set('to', '2026-11-02')
+        ->set('from', '2020-01-01')
+        ->assertSet('from', '2025-10-02')
+        ->assertDispatched('toast');
+});
+
+it('counts exports against the company\'s hourly work quota', function () {
+    foreach (range(1, WorkQuota::LIMITS['pdf']) as $ignored) {
+        WorkQuota::take($this->company, 'pdf', 'file');
+    }
+
+    $this->get(route('staff-ledger.control-visit.export', ['format' => 'pdf', 'fran' => '2026-11-02', 'till' => '2026-11-02']))
+        ->assertRedirect()
+        ->assertSessionHas(Toast::SESSION_KEY, [['message' => WorkQuota::message(), 'type' => 'error']]);
+
+    RateLimiter::clear("work-quota:pdf:{$this->company->id}");
 });
 
 it('exports XML that validates against its schema', function () {

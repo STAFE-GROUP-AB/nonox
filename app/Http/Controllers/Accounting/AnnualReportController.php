@@ -9,6 +9,9 @@ use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Support\Toast;
+use App\Support\WorkQuota;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
@@ -27,9 +30,15 @@ class AnnualReportController
         ]);
     }
 
-    public function pdf(Request $request, FiscalYear $fiscalYear): Response
+    public function pdf(Request $request, FiscalYear $fiscalYear): Response|RedirectResponse
     {
         [$company, $report] = $this->resolve($request, $fiscalYear);
+
+        if (! WorkQuota::attempt($company, 'pdf')) {
+            Toast::flash(WorkQuota::message(), 'error');
+
+            return back();
+        }
 
         return response(AnnualReportDocument::pdf($company, $fiscalYear, $report), 200, [
             'Content-Type' => 'application/pdf',

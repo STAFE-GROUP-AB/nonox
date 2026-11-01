@@ -425,7 +425,7 @@ class InterpretInboxMessage
     {
         $answer = $this->ai->supplierInvoice(null, $company, $path, $document->mime);
         $supplier = isset($answer['supplier_id']) ? Supplier::query()->find((int) $answer['supplier_id']) : null;
-        $ore = fn (mixed $value): int => (int) round((float) $value * 100);
+        $ore = fn (mixed $value): int => Money::fromDecimal($value)->ore ?? 0;
         $total = $ore($answer['total'] ?? 0);
         $warnings = [];
 
@@ -482,7 +482,7 @@ class InterpretInboxMessage
     private function aiReceipt(Company $company, InboxAttachment $document, string $path): array
     {
         $answer = $this->ai->voucher(null, $company, $path, $document->mime);
-        $ore = fn (mixed $value): int => (int) round((float) $value * 100);
+        $ore = fn (mixed $value): int => Money::fromDecimal($value)->ore ?? 0;
         $vouchers = [[
             'date' => self::isoDate((string) ($answer['date'] ?? '')) ?? '',
             'description' => mb_substr((string) ($answer['description'] ?? __('Kvitto')), 0, 255),
@@ -521,7 +521,7 @@ class InterpretInboxMessage
             $label = trim((string) ($field['key'] ?? ''));
 
             if ($label !== '') {
-                $fields[ReportFields::key($label)] = ['label' => $label, 'amount_ore' => (int) round((float) ($field['value'] ?? 0) * 100)];
+                $fields[ReportFields::key($label)] = ['label' => $label, 'amount_ore' => Money::fromDecimal($field['value'] ?? 0)->ore ?? 0];
             }
         }
 
