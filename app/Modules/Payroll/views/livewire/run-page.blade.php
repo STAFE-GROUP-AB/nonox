@@ -224,6 +224,9 @@
                                             @if($line->quantity !== null && $line->rate_ore !== null && ($units[$line->pay_code_id] ?? null) === 'HOURS')
                                                 <span class="block text-xs text-gray-500 tabular-nums">{{ __(':hours tim × :rate kr', ['hours' => PayrollRunPage::hours((string) $line->quantity), 'rate' => $line->rate_ore->format(withCurrency: false)]) }}</span>
                                             @endif
+                                            @if(is_array($line->explanation['agreement'] ?? null))
+                                                <span class="block text-xs text-gray-500">{{ __('Sats enligt :agreement, version från :version, steg från :step. Källa: :source', ['agreement' => $line->explanation['agreement']['name'] ?? '', 'version' => $line->explanation['agreement']['version_valid_from'] ?? '', 'step' => $line->explanation['agreement']['rate_from'] ?? '', 'source' => trim(($line->explanation['agreement']['source_title'] ?? '').' '.($line->explanation['agreement']['source'] ?? ''))]) }}</span>
+                                            @endif
                                         </td>
                                         <td class="py-1 text-right"><x-ui.amount :money="$line->amount_ore" /></td>
                                     </tr>

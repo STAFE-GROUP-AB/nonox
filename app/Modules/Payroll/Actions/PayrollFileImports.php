@@ -476,8 +476,9 @@ class PayrollFileImports
             $problems[] = 'negative';
         } elseif (($amount === null || $amount === 0) && ($quantity === null || BigDecimal::of($quantity)->isZero())) {
             $skip ??= 'zero';
-        } elseif ($payCode !== null && $amount === null && $rate === null && $payCode->code !== TimeReportPay::PAY_CODE) {
+        } elseif ($payCode !== null && $amount === null && $rate === null && $payCode->code !== TimeReportPay::PAY_CODE && ! $payCode->isAgreementPriced()) {
             // Only hourly pay may take the employment's hourly rate; OB or overtime at that rate would be wrong.
+            // A pay code of the collective agreement is priced with the agreement's rate in the run (NONOX Avtal).
             $problems[] = 'rate_required';
         }
 

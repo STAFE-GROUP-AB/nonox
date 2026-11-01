@@ -1,0 +1,175 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "visita-hrf-grona-riks",
+        "name": "Gröna Riks (Visita – HRF)",
+        "short_name": "Gröna Riks",
+        "parties": ["Visita", "Hotell- och restaurangfacket (HRF)"],
+        "collective": "ARBETARE",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": ["café", "restaurang", "bar", "hotell"],
+        "source": "GR#§ 1 s. 7"
+    },
+    "valid_from": "2025-04-01",
+    "valid_to": "2027-03-31",
+    "validity_source": "GR#§ 30 s. 36",
+    "sources": [
+        { "id": "GR", "title": "Gröna Riksavtalet 2025–2027", "publisher": "Visita/HRF", "url": "https://www.hrf.net/app/uploads/2025/05/Grona-riksen-2025-2027-1.pdf", "edition": "2025-04-01", "retrieved_at": "2026-11-01" },
+        { "id": "HRF25", "title": "HRF-folder 2025 (kontroll av OB)", "publisher": "HRF", "url": "https://www.hrf.net/app/uploads/2025/05/HRF-folder20250430_himmel_uppslagsvis.pdf", "edition": "2025-04-30", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "source": "GR#§ 9 s. 13",
+        "hourly_divisor": {
+            "monthly_to_hourly": "173",
+            "part_time": { "type": "WEEKLY_HOURS_TIMES", "factor": "4.3" },
+            "source": "GR#löneavtal § 3 s. 56; § 19 p. 1 s. 28"
+        }
+    },
+    "groups": [
+        { "code": "1", "name": "Lönegrupp 1", "description": "Kvalificerat yrkesarbete", "source": "GR#löneavtal § 5 s. 59" },
+        { "code": "2", "name": "Lönegrupp 2", "description": "Yrkesarbete", "source": "GR#löneavtal § 5 s. 59" },
+        { "code": "2U", "name": "Lönegrupp 2, ungdomslön", "description": "Ungdomslön i grupp 2, högst tre år eller till 20 år", "max_age_exclusive": 20, "source": "GR#löneavtal § 5 s. 60" }
+    ],
+    "minimum_wages": {
+        "age_reference": "MONTH_AFTER_BIRTHDAY",
+        "check": "WARN",
+        "source": "GR#löneavtal § 5 s. 59–60",
+        "steps": [
+            {
+                "valid_from": "2025-04-01",
+                "rows": [
+                    { "group": "1", "monthly_ore": 2727900, "hourly_ore": 15768, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "1", "experience_months_min": 72, "monthly_ore": 2920100, "hourly_ore": 16879, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2", "monthly_ore": 2585600, "hourly_ore": 14946, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2", "experience_months_min": 72, "monthly_ore": 2777700, "hourly_ore": 16056, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_min": 19, "monthly_ore": 2102200, "hourly_ore": 12151, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_min": 18, "age_max": 18, "monthly_ore": 1944800, "hourly_ore": 11242, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_min": 17, "age_max": 17, "monthly_ore": 1865800, "hourly_ore": 10785, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_max": 16, "monthly_ore": 1710500, "hourly_ore": 9887, "source": "GR#löneavtal § 5 s. 59" }
+                ]
+            },
+            {
+                "valid_from": "2026-04-01",
+                "rows": [
+                    { "group": "1", "monthly_ore": 2842500, "hourly_ore": 16430, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "1", "experience_months_min": 72, "monthly_ore": 3042800, "hourly_ore": 17588, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2", "monthly_ore": 2658000, "hourly_ore": 15364, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2", "experience_months_min": 72, "monthly_ore": 2894400, "hourly_ore": 16731, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_min": 19, "monthly_ore": 2161000, "hourly_ore": 12492, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_min": 18, "age_max": 18, "monthly_ore": 1999200, "hourly_ore": 11556, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_min": 17, "age_max": 17, "monthly_ore": 1918100, "hourly_ore": 11087, "source": "GR#löneavtal § 5 s. 59" },
+                    { "group": "2U", "age_max": 16, "monthly_ore": 1758400, "hourly_ore": 10164, "source": "GR#löneavtal § 5 s. 59" }
+                ]
+            }
+        ]
+    },
+    "day_types": {
+        "LORDAG_LIK": {
+            "name": "Midsommar-, jul- och nyårsafton (OB från 16.00 som lördag)",
+            "days": [
+                { "day": "MIDSOMMARAFTON", "from": "16:00", "to_next_day": "06:00" },
+                { "day": "JULAFTON", "from": "16:00", "to_next_day": "06:00" },
+                { "day": "NYARSAFTON", "from": "16:00", "to_next_day": "06:00" }
+            ],
+            "source": "GR#§ 13 s. 21"
+        },
+        "HELGDAG": {
+            "name": "Sön- och helgdag (06.00 till 06.00 nästa dag)",
+            "days": [
+                { "day": "SUNDAY", "from": "06:00", "to_next_day": "06:00" },
+                { "day": "PUBLIC_HOLIDAY", "from": "06:00", "to_next_day": "06:00" }
+            ],
+            "source": "GR#§ 13 s. 21"
+        },
+        "STORHELG": {
+            "name": "Storhelg: jul- och nyårsafton som infaller på lördag eller söndag",
+            "days": [
+                { "day": "JULAFTON", "weekdays": ["SAT", "SUN"], "from": "06:00", "to_next_day": "06:00" },
+                { "day": "NYARSAFTON", "weekdays": ["SAT", "SUN"], "from": "06:00", "to_next_day": "06:00" }
+            ],
+            "source": "GR#§ 14 s. 21"
+        }
+    },
+    "ob_windows": [
+        { "code": "GR_OB", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "20:00", "to_next_day": "06:00", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB", "days": ["SAT"], "from": "16:00", "to_next_day": "06:00", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB", "day_type": "LORDAG_LIK", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB", "day_type": "HELGDAG", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB_NATT", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], "from": "01:00", "to": "06:00", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_STORHELG", "day_type": "STORHELG", "source": "GR#§ 14 s. 21" }
+    ],
+    "codes": {
+        "GR_OB": {
+            "name": "OB-tillägg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–fre 20.00–06.00, lördag och midsommar-, jul- och nyårsafton 16.00–06.00, sön- och helgdag 06.00–06.00",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2679 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2759 } }
+            ],
+            "source": "GR#§ 13 s. 21; HRF25"
+        },
+        "GR_OB_NATT": {
+            "name": "Natt-OB",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Alla dagar 01.00–06.00, utöver ordinarie OB. Inte för fast nattpersonal i hotellreception 00–07",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2361 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2431 } }
+            ],
+            "source": "GR#§ 13 s. 21; HRF25"
+        },
+        "GR_STORHELG": {
+            "name": "Storhelgsersättning",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "100 % av ordinarie timlön 06.00–06.00 på jul- och nyårsafton som infaller på lördag eller söndag",
+            "day_type": "STORHELG",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000 } }
+            ],
+            "source": "GR#§ 14 s. 21"
+        },
+        "GR_OT_A": {
+            "name": "Övertid, två första timmarna i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid i anslutning till ordinarie tid, de två första timmarna: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 4500, "plus_hourly_wage": true } },
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500, "plus_hourly_wage": true } }
+            ],
+            "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_OT_B": {
+            "name": "Övertid i anslutning, därutöver",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid i anslutning till ordinarie tid efter de två första timmarna: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000, "plus_hourly_wage": true } }
+            ],
+            "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_OT_C": {
+            "name": "Övertid, inte i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid som inte ansluter till ordinarie tid: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 9000, "plus_hourly_wage": true } }
+            ],
+            "source": "GR#§§ 11–12 s. 18–20"
+        }
+    },
+    "notes": [
+        "Avrundning av OB och övertid till påbörjad halvtimme tillämpas när pass delas upp (A6), inte på redan uppdelade timmar. TODO(legal-verify): per pass eller per period.",
+        "Mertid, röda dagar, kostavdrag, semester 12,72 %, sjuklön med OB och avtalsförsäkringar är inte data i den här versionen ännu (A7–A11).",
+        "Viss nattpersonal har minimitimlön × 1,055 (GR § 9 p. 1 st. 2); ingen egen lönegrupp här ännu.",
+        "Ett erfarenhetsår räknas om man arbetat minst 75 % eller 1 300 timmar (GR s. 60). NONOX räknar från datumet för branschvana som anges på anställningen."
+    ]
+}

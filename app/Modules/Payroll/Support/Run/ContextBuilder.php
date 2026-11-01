@@ -9,6 +9,7 @@ use App\Modules\Payroll\Domain\Engine\AbsenceInput;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
+use App\Modules\Payroll\Domain\Engine\Steps\Additions;
 use App\Modules\Payroll\Domain\Engine\Steps\BaseSalary;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Absence;
@@ -40,7 +41,7 @@ final class ContextBuilder
 {
     public const string RETRO_CODE = 'RETROLON';
 
-    public function __construct(private readonly VacationLedger $vacation) {}
+    public function __construct(private readonly VacationLedger $vacation, private readonly PayrollExtensions $extensions) {}
 
     /**
      * @param  Collection<int, PayrollInput>  $inputs  the employee's inputs in the run
@@ -55,7 +56,7 @@ final class ContextBuilder
         $periodEnd = $run->periodEnd();
         $weekPattern = $this->weekPattern($employment);
 
-        return new PayrollContext(
+        $context = new PayrollContext(
             birthDate: $employee->birth_date,
             taxResidence: $employee->tax_residence,
             taxTable: $employee->tax_table,
@@ -74,7 +75,8 @@ final class ContextBuilder
                 $code = $payCodes->get($input->pay_code_id) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
 
                 return new PayInput($code->code, $input->note ?: $code->name_sv, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
-                    $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore);
+                    $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore,
+                    $code->isAgreementPriced() ? array_filter([Additions::AGREEMENT_PRICED => true, 'date_from' => $input->date_from?->toDateString(), 'date_to' => $input->date_to?->toDateString()]) : []);
             })->all()), ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
@@ -92,6 +94,9 @@ final class ContextBuilder
             pension: $this->pension($employment),
             vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern, $run->id),
         );
+
+        // Other modules that are on add their part, such as the collective agreement (ADR-033).
+        return $this->extensions->extend($context, $run, $employment);
     }
 
     /**

@@ -37,6 +37,7 @@ use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Policies\PayslipPolicy;
 use App\Modules\Payroll\Search\EmployeesSearchProvider;
 use App\Modules\Payroll\Search\PayslipsSearchProvider;
+use App\Modules\Payroll\Support\Run\PayrollExtensions;
 use App\Modules\Payroll\Support\Run\TimeReportPay;
 use App\Support\Search\SearchAction;
 use App\Support\Search\SearchActions;
@@ -73,6 +74,8 @@ class PayrollServiceProvider extends ServiceProvider
         });
         // One instance, so other modules can add the hours they hold for approval.
         $this->app->singleton(TimeReportPay::class);
+        // One instance, so other modules can add their part of a run (NONOX Avtal, ADR-033).
+        $this->app->singleton(PayrollExtensions::class);
     }
 
     public function boot(): void

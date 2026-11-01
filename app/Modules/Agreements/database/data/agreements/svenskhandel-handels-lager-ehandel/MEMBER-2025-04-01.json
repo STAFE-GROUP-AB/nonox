@@ -1,0 +1,152 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "svenskhandel-handels-lager-ehandel",
+        "name": "Lager- och E-handelsavtalet (Svensk Handel – Handels)",
+        "short_name": "Lager och E-handel",
+        "parties": ["Svensk Handel", "Handelsanställdas förbund"],
+        "collective": "ARBETARE",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": ["e-handel", "lager", "centrallager"],
+        "source": "L1#s. 1; § 1.1 s. 6"
+    },
+    "valid_from": "2025-04-01",
+    "valid_to": "2027-03-31",
+    "validity_source": "L1#§ 20.1 s. 58",
+    "sources": [
+        { "id": "L1", "title": "Kollektivavtal Lager och E-handel 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/le130.pdf", "edition": "HA2025-112, 2025-05", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "source": "L1#§ 12.1.1 s. 33",
+        "hourly_divisor": {
+            "monthly_to_hourly": "174",
+            "source": "L1#§ 6.3 A.2 s. 22; § 14.2"
+        }
+    },
+    "groups": [
+        { "code": "LAGER", "name": "Lagerpersonal", "description": "Lager- och e-handelspersonal", "source": "L1#§ 6.2 E s. 19–21" },
+        { "code": "CHAUFFOR_I", "name": "Chaufför I", "description": "Chaufför med körkort C, D eller E", "source": "L1#§ 6.2 B s. 18" },
+        { "code": "CHAUFFOR_II", "name": "Chaufför II", "description": "Övriga chaufförer, även truck på allmän väg", "source": "L1#§ 6.2 B s. 18" }
+    ],
+    "minimum_wages": {
+        "age_reference": "PERIOD_END",
+        "check": "WARN",
+        "source": "L1#§ 6.2 E s. 19–21",
+        "steps": [
+            {
+                "valid_from": "2025-04-01",
+                "rows": [
+                    { "group": "LAGER", "age_min": 16, "age_max": 16, "monthly_ore": 1813400, "hourly_ore": 10422, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 17, "age_max": 17, "monthly_ore": 1917800, "hourly_ore": 11022, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 18, "monthly_ore": 2825800, "hourly_ore": 16240, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 19, "monthly_ore": 2856900, "hourly_ore": 16419, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 20, "monthly_ore": 2872600, "hourly_ore": 16509, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 20, "tenure_months_min": 6, "monthly_ore": 2908200, "hourly_ore": 16714, "source": "L1#§ 6.2 D–E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 18, "monthly_ore": 2847500, "hourly_ore": 16365, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 19, "monthly_ore": 2878700, "hourly_ore": 16544, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 20, "monthly_ore": 2894300, "hourly_ore": 16634, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 20, "tenure_months_min": 6, "monthly_ore": 2930000, "hourly_ore": 16839, "source": "L1#§ 6.2 D–E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 18, "monthly_ore": 2838800, "hourly_ore": 16315, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 19, "monthly_ore": 2870000, "hourly_ore": 16494, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 20, "monthly_ore": 2885600, "hourly_ore": 16584, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 20, "tenure_months_min": 6, "monthly_ore": 2921300, "hourly_ore": 16789, "source": "L1#§ 6.2 D–E s. 19–21" }
+                ]
+            },
+            {
+                "valid_from": "2026-04-01",
+                "rows": [
+                    { "group": "LAGER", "age_min": 16, "age_max": 16, "monthly_ore": 1836600, "hourly_ore": 10555, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 17, "age_max": 17, "monthly_ore": 1941000, "hourly_ore": 11155, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 18, "monthly_ore": 2848900, "hourly_ore": 16373, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 19, "monthly_ore": 2903200, "hourly_ore": 16685, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 20, "monthly_ore": 2918900, "hourly_ore": 16775, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "LAGER", "age_min": 20, "tenure_months_min": 6, "monthly_ore": 2973000, "hourly_ore": 17086, "source": "L1#§ 6.2 D–E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 18, "monthly_ore": 2870700, "hourly_ore": 16498, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 19, "monthly_ore": 2924900, "hourly_ore": 16810, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 20, "monthly_ore": 2940600, "hourly_ore": 16900, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_I", "age_min": 20, "tenure_months_min": 6, "monthly_ore": 2994700, "hourly_ore": 17211, "source": "L1#§ 6.2 D–E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 18, "monthly_ore": 2862000, "hourly_ore": 16448, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 19, "monthly_ore": 2916200, "hourly_ore": 16760, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 20, "monthly_ore": 2931900, "hourly_ore": 16850, "source": "L1#§ 6.2 E s. 19–21" },
+                    { "group": "CHAUFFOR_II", "age_min": 20, "tenure_months_min": 6, "monthly_ore": 2986000, "hourly_ore": 17161, "source": "L1#§ 6.2 D–E s. 19–21" }
+                ]
+            }
+        ]
+    },
+    "day_types": {
+        "HELGDAG": {
+            "name": "Sön- och helgdag (hela dygnet)",
+            "days": [
+                { "day": "SUNDAY", "from": "00:00", "to": "24:00" },
+                { "day": "PUBLIC_HOLIDAY", "from": "00:00", "to": "24:00" }
+            ],
+            "source": "L1#§ 14.1 s. 46–47"
+        },
+        "AFTON": {
+            "name": "Jul-, nyårs- och midsommarafton (hela dygnet)",
+            "days": [
+                { "day": "JULAFTON", "from": "00:00", "to": "24:00" },
+                { "day": "NYARSAFTON", "from": "00:00", "to": "24:00" },
+                { "day": "MIDSOMMARAFTON", "from": "00:00", "to": "24:00" }
+            ],
+            "source": "L1#§ 14.1 s. 46–47"
+        }
+    },
+    "ob_windows": [
+        { "code": "LE_OB_40", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "06:00", "to": "07:00", "source": "L1#§ 14.1 s. 46–47" },
+        { "code": "LE_OB_40", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "18:00", "to": "23:00", "source": "L1#§ 14.1 s. 46–47" },
+        { "code": "LE_OB_40", "days": ["SAT"], "from": "06:00", "to": "23:00", "source": "L1#§ 14.1 s. 46–47" },
+        { "code": "LE_OB_70", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT"], "from": "00:00", "to": "06:00", "source": "L1#§ 14.1 s. 46–47" },
+        { "code": "LE_OB_70", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT"], "from": "23:00", "to": "24:00", "source": "L1#§ 14.1 s. 46–47" },
+        { "code": "LE_OB_100", "day_type": "HELGDAG", "source": "L1#§ 14.1 s. 46–47" },
+        { "code": "LE_OB_100", "day_type": "AFTON", "source": "L1#§ 14.1 s. 46–47" }
+    ],
+    "codes": {
+        "LE_OB_40": {
+            "name": "OB-tillägg 40 %",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–fre 06–07 och 18–23, lördag 06–23: 40 % av timlönen (månadslön / 174)",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 4000 } }
+            ],
+            "source": "L1#§ 14.1 s. 46–47"
+        },
+        "LE_OB_70": {
+            "name": "OB-tillägg 70 %",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Måndag 00–06, mån–fre 23–06 och lördag 00–06 samt 23–24: 70 % av timlönen",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000 } }
+            ],
+            "source": "L1#§ 14.1 s. 46–47"
+        },
+        "LE_OB_100": {
+            "name": "OB-tillägg 100 %",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Sön- och helgdag samt jul-, nyårs- och midsommarafton hela dygnet: 100 % av timlönen",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000 } }
+            ],
+            "source": "L1#§ 14.1 s. 46–47"
+        }
+    },
+    "notes": [
+        "Fönstret mån–fre 23.00–06.00 är uppdelat i 23.00–24.00 samma dag och 00.00–06.00 nästa dag, så att det inte dubbelräknas mot avtalets egna rader för måndag och lördag 00.00–06.00.",
+        "En helgdag eller afton som infaller mån–lör träffar också vardagsfönstren; avsikten enligt § 14.1 är 100 % hela dygnet. Motorn måste låta högsta sats gälla.",
+        "OB och övertids- eller mertidsersättning betalas inte samtidigt (L1 § 14).",
+        "Avtalet har ingen avrundningsregel för OB-tid.",
+        "Äldre lokala OB-tabeller får gälla längst till 2030 (L1 bilaga 4 s. 70); det är inte data ännu.",
+        "Inga övertidskoder: övertidssatserna (50 %, 70 %, 100 %, § 13 s. 43–45) finns i faktabladet, men det anges inte om procenten betalas utöver timlönen. TODO(legal-verify).",
+        "TODO(legal-verify): avtalet anger inte från vilken dag ett nytt ålderssteg gäller; PERIOD_END är ett antagande.",
+        "Raden '20 år + 6 mån' bygger på branschvana: fyllda 20 år efter 6 månaders anställning i företaget (L1 § 6.2 D s. 19). tenure_months_min räknar från anställningsdatum.",
+        "Anställningstidstillägg efter 5 år (162 kr/mån eller 0,93 kr/tim 2025, 167 kr eller 0,96 kr/tim 2026), släpvagnstillägg, frysrumstillägg och skiftformstillägg är inte data ännu.",
+        "Deltid med månadslön räknar timlön som 40 × (månadslön + fasta tillägg) / 174 / timmar per vecka (L1 § 7.2 B); den formeln är inte data ännu.",
+        "Mertid från 2026-04-01 ersätts som övertid (L1 § 13.4 s. 44). Tidbank, helglön, semester 13 % och sjuklön är inte data i den här versionen ännu.",
+        "TODO(legal-verify): hängavtalets namn och eventuell avgift har inte hittats; ingen HANGAVTAL-variant finns."
+    ]
+}

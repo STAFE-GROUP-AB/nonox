@@ -1274,6 +1274,98 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   avsändares meddelanden sparas alltid, i karantän om de flaggats.
   Meddelanden som lett till bokföring tas aldrig bort här.
 
+## 5f. Avtal (modul)
+
+Kollektivavtalet i lönen ([ADR-033](../adr/ADR-033-nonox-avtal.md),
+`docs/avtal/`). Modulen `agreements` kräver Lön och är avslagen från början.
+Byggt i den här versionen: steg A1–A4 i `docs/avtal/gap-analys.md` och
+förslag från NONOX AI (ADR-033 §6).
+
+- **Avtalsdata.** Avtalens fakta (minimilöner, OB- och övertidssatser,
+  lönegrupper, dagtyper, delare) ligger som versionerade filer i formatet
+  `nonox.agreement/1` under
+  `app/Modules/Agreements/database/data/agreements/<nyckel>/<variant>-<giltig_från>.json`,
+  aldrig som kod eller avtalstext. Varje värde har en källa (dokument och
+  sida i parternas publicerade text). Filerna kontrolleras mot formatet
+  innan de läses in (källa för varje värde, satssteg inom versionens
+  giltighet, dagtyper och koder som finns). Ett värde som bara finns i en
+  sekundär källa är märkt `unverified`, och då kan versionen aldrig
+  kontrolleras (Frisöravtalet 2025–2027, vars text inte är publik).
+- **Versioner och kontroll.** Versionerna ligger i den gemensamma tabellen
+  `agreement_rule_versions` med kontrollsumma (SHA-256 av reglerna och
+  källorna). De läses in som **okontrollerade** (`agreements:import`, och
+  när modulen slås på läggs de som saknas till). En version används i lönen
+  först när en namngiven person har jämfört den med källorna: för hela
+  installationen med `agreements:verify {nyckel} {giltig_från} --by=Namn`,
+  eller för företaget av en användare med `agreements:verify` under Lön →
+  Avtal → Versioner (`agreement_rule_verifications`, kan bara läggas till).
+  En kontrollerad version kan inte ändras eller tas bort (Postgres-trigger);
+  bara `valid_to` kan förlängas när ett avtal löper vidare. En rättelse blir
+  en ny version.
+- **Bindning och anställning.** Företaget väljer avtal och om det är bundet
+  som medlem i arbetsgivarorganisationen eller genom hängavtal, med datum
+  (`collective_agreements`). Varje anställning får avtal, lönegrupp,
+  branschvana från ett datum och om övertid och OB betalas, tas ut som
+  komptid eller ingår i lönen. En anställd som inte omfattas lämnas utan
+  avtal och får varken avtalsregler eller varningar. När ett avtal binds
+  läggs avtalets lönearter till (till exempel `GR_OB`), med samma skatt,
+  avgifter, semestergrund och konton som OB-tillägg eller Övertid.
+- **Stopp i lönekörningen.** För varje anställning som är knuten till ett
+  avtal måste en kontrollerad version gälla för periodens första och sista
+  dag och utbetalningsdagen, och företaget måste vara bundet under perioden.
+  Annars stoppas lönekörningen med en förklaring i checklistan. Det finns
+  ingen reserv till en äldre version eller till allmänna regler.
+- **Prissättning (A3).** En rad med en avtalsart och timmar men utan
+  à-pris och belopp, inmatad eller från ett löneunderlag (PAXml eller CSV),
+  prissätts med avtalets sats för arbetsdagen (radens datum, annars
+  periodens första dag): kronor per timme, procent av timlönen (månadslönen
+  delad med avtalets delare, eller avtalets formel för deltid) eller
+  månadslönen delad med ett tal. Övertid där avtalet säger att tillägget
+  betalas utöver timlönen räknas som timlön plus tillägg. Raden får avtalets
+  version, steg, sats, underlag och källa i sin förklaring, och lönekörningen
+  visar dem. Utan modulen prissätts en avtalsart aldrig med timlönen; raden
+  stoppar lönekörningen. Står det på anställningen att OB eller övertid
+  ingår i lönen stoppas en sådan rad.
+- **Avtalskalender (A2).** Helgdagarna enligt lag och aftnarna (påsk-,
+  midsommar-, jul-, nyårs-, trettondedags- och valborgsmässoafton,
+  skärtorsdagen, dagen före Kristi himmelsfärd, pingstafton) räknas fram för
+  varje år, och avtalets dagtyper (storhelg, helgdag och liknande) blir
+  tidsperioder med klockslag. En rad för en dagtyp på en dag som inte är en
+  sådan dag ger en varning.
+- **Minimilön (A4).** Varje lönebesked jämförs med avtalets minimilön för
+  lönegruppen, åldern (från födelsedatumet, enligt avtalets regel för när en
+  ny ålder börjar gälla), branschvanan och tiden i företaget, i det steg som
+  gäller vid periodens slut. Den högsta raden personen uppfyller gäller.
+  Lägre lön, saknad lönegrupp och ungdomslön efter den ålder den gäller till
+  ger en varning på lönekörningen med källan; lönen ändras aldrig. Varningen
+  kan stängas av under Moduler → Avtal.
+- **NONOX AI (ADR-033 §6).** När både NONOX AI och Avtal är på kan en
+  användare med `ai:use` och `agreements:manage` ladda upp företagets
+  dokument (hängavtal, medlemsbekräftelse, lönebesked) och anställdas
+  anställningsavtal (PDF med text eller textfil, högst 5 MB, krypterat på
+  den privata disken). Bara texten skickas, sida för sida, och personnummer,
+  bankuppgifter, adresser, e-postadresser och telefonnummer döljs först.
+  `AgreementIdentificationAgent` föreslår avtal och variant för företaget,
+  `EmploymentTermsAgent` avtal, lönegrupp, befattning, anställningsform,
+  veckoarbetstid, branschvana och avvikelser per anställd; lön och
+  startdatum visas bara för jämförelse. Varje förslag sparas med citat och
+  sida och om citatet finns ordagrant i dokumentet. Inget förs in förrän en
+  person godkänner, ändrar eller avvisar förslaget; "Godkänn alla som
+  stämmer med dokumentet" gäller bara förslag vars citat hittades. Avtalets
+  belopp och satser kommer aldrig från AI:n. `LocalAgreementAgent` (lokala
+  avtal) är inte byggd.
+- **Behandlingshistorik.** Inläsning, kontroll, bindning, anställningens
+  avtalsuppgifter, uppladdning och borttagning av dokument, varje analys
+  (agent, antal förslag, antal dolda uppgifter) och varje beslut om ett
+  förslag skrivs till behandlingshistoriken, utan dokumentets innehåll.
+  AI-anropet loggas som `ai.document_analyzed` med leverantör, modell och
+  antal tokens.
+- **Inte byggt ännu (A5–A12).** Pass med klockslag, OB räknad ur passen
+  med avrundning, övertid och mertid mot schemat, komptidssaldo, sjuklön med
+  OB och dag 15–90, avtalets semesterregler, pension och avtalsförsäkringar
+  per avtal med Fora-rapport, provision med garanti, fasta tillägg,
+  kostavdrag och gyllene lönespecar per avtal.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -1325,6 +1417,17 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   skapas, och varje nedladdning loggas. Filerna går att läsa utan NONOX.
 
 ## 8. Öppna frågor (TODO legal-verify)
+
+- Avtal (ADR-033): upphovsrätt till en sammanställning av ett avtals
+  värden och korta citat i källhänvisningar; ansvar för levererade
+  avtalsvärden och ansvarsfriskrivningens lydelse; om hängavtalet binder
+  företaget till samma version och försäkringar som medlemsvarianten;
+  värden som bara finns i medlemsutgåvor; vilken dag som avgör minimilönens
+  steg och ålder i avtal som inte säger det (Lager och E-handel, bageri,
+  Handelns tjänstemannaavtal, Frisör); om övertidsprocenten i Lager och
+  E-handel och bageriavtalet betalas utöver timlönen; om förslagen om
+  lönegrupp från NONOX AI är högrisk enligt AI-förordningens bilaga III
+  punkt 4 b.
 
 - Personalliggare: exakt vilka uppgifter som ska registreras och hur länge
   liggaren ska bevaras enligt 39 kap. skatteförfarandelagen och Skatteverkets
@@ -1525,3 +1628,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.52 | 2026-11-01 | Återställningstest av säkerhetskopior (`scripts/restore-test.sh`, `backup:verify-restore`): kopian återställs i en tillfällig databas, och bokföringens hashkedja, underlagens kontrollsummor, personalliggaren och leverantörsfakturornas filer kontrolleras. Körs varje vecka i den driftade tjänsten. SBOM (CycloneDX) som bilaga till varje release. |
 | 0.53 | 2026-11-01 | NONOX går att installera som app på hemskärmen (PWA, ADR-031): manifest för appen och för Min sida, och en service worker som bara visar en offlinesida och inte sparar några uppgifter i enheten. Bokföringen påverkas inte. |
 | 0.54 | 2026-11-01 | Lön: löneunderlag från schemasystem som PAXml (1.0, 2.0–2.3) eller CSV läses in i en öppen lönekörning som förslag. Koderna kopplas till lönearter en gång per källsystem, frånvaro och saldon läses aldrig in som lön, och en person godkänner raderna innan de blir rader i lönekörningen. Samma fil läses en gång per period; originalet sparas krypterat och varje steg loggas. |
+| 0.55 | 2026-11-01 | Avtal (modul, ADR-033): kollektivavtalens värden som versionerad data med källa, inläst okontrollerad och använd först efter en namngiven kontroll (installationen eller företaget), skyddad mot ändring när den är kontrollerad. Företagets bindning (medlem eller hängavtal) och anställningens avtal, lönegrupp och branschvana. Lönekörningen stoppas utan kontrollerad version; redan uppdelade OB- och övertidstimmar prissätts med avtalets sats med version och källa på raden; avtalskalender med aftnar och storhelger; minimilönekontroll med varning. NONOX AI föreslår avtal och anställningsuppgifter ur maskerad text, med citat och sida, och inget förs in utan en person. |

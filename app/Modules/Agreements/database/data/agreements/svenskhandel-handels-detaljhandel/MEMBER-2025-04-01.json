@@ -1,0 +1,167 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "svenskhandel-handels-detaljhandel",
+        "name": "Detaljhandelsavtalet (Svensk Handel – Handels)",
+        "short_name": "Detaljhandeln",
+        "parties": ["Svensk Handel", "Handelsanställdas förbund"],
+        "collective": "ARBETARE",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": ["butik", "detaljhandel", "lager i butik"],
+        "source": "D1#s. 1; § 1.1 s. 5"
+    },
+    "valid_from": "2025-04-01",
+    "valid_to": "2027-03-31",
+    "validity_source": "D1#§ 18.1 s. 54",
+    "sources": [
+        { "id": "D1", "title": "Kollektivavtal Detaljhandeln 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf", "edition": "HA2025-110, 2025-05", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "38.25",
+        "source": "D1#§ 6.1 s. 17",
+        "hourly_divisor": {
+            "monthly_to_hourly": "166",
+            "source": "D1#§ 7.3 B.4–5 och Anm. s. 28"
+        }
+    },
+    "groups": [
+        { "code": "ALLA", "name": "Butiks-, lager- och kontorspersonal", "description": "Minimilön efter ålder och branschvana", "source": "D1#§ 7.2 C s. 24–25" }
+    ],
+    "minimum_wages": {
+        "age_reference": "MONTH_OF_BIRTHDAY",
+        "experience_counts_from_age": 18,
+        "check": "WARN",
+        "source": "D1#§ 7.2 C s. 24–25",
+        "steps": [
+            {
+                "valid_from": "2025-04-01",
+                "rows": [
+                    { "group": "ALLA", "age_min": 16, "age_max": 16, "monthly_ore": 1684600, "hourly_ore": 10148, "source": "D1#§ 7.2 C s. 24" },
+                    { "group": "ALLA", "age_min": 17, "age_max": 17, "monthly_ore": 1725600, "hourly_ore": 10395, "source": "D1#§ 7.2 C s. 24" },
+                    { "group": "ALLA", "age_min": 18, "monthly_ore": 2581400, "hourly_ore": 15551, "source": "D1#§ 7.2 C s. 24" },
+                    { "group": "ALLA", "age_min": 19, "monthly_ore": 2613400, "hourly_ore": 15743, "source": "D1#§ 7.2 C s. 24" },
+                    { "group": "ALLA", "age_min": 18, "experience_months_min": 12, "monthly_ore": 2671800, "hourly_ore": 16095, "source": "D1#§ 7.2 C s. 24" },
+                    { "group": "ALLA", "age_min": 18, "experience_months_min": 24, "monthly_ore": 2705400, "hourly_ore": 16298, "source": "D1#§ 7.2 C s. 24" },
+                    { "group": "ALLA", "age_min": 18, "experience_months_min": 36, "monthly_ore": 2834400, "hourly_ore": 17075, "source": "D1#§ 7.2 C s. 24" }
+                ]
+            },
+            {
+                "valid_from": "2026-04-01",
+                "rows": [
+                    { "group": "ALLA", "age_min": 16, "age_max": 16, "monthly_ore": 1732400, "hourly_ore": 10436, "source": "D1#§ 7.2 C s. 25" },
+                    { "group": "ALLA", "age_min": 17, "age_max": 17, "monthly_ore": 1773400, "hourly_ore": 10683, "source": "D1#§ 7.2 C s. 25" },
+                    { "group": "ALLA", "age_min": 18, "monthly_ore": 2662600, "hourly_ore": 16040, "source": "D1#§ 7.2 C s. 25" },
+                    { "group": "ALLA", "age_min": 19, "monthly_ore": 2694600, "hourly_ore": 16233, "source": "D1#§ 7.2 C s. 25" },
+                    { "group": "ALLA", "age_min": 18, "experience_months_min": 12, "monthly_ore": 2753000, "hourly_ore": 16584, "source": "D1#§ 7.2 C s. 25" },
+                    { "group": "ALLA", "age_min": 18, "experience_months_min": 24, "monthly_ore": 2786600, "hourly_ore": 16787, "source": "D1#§ 7.2 C s. 25" },
+                    { "group": "ALLA", "age_min": 18, "experience_months_min": 36, "monthly_ore": 2915600, "hourly_ore": 17564, "source": "D1#§ 7.2 C s. 25" }
+                ]
+            }
+        ]
+    },
+    "day_types": {
+        "LORDAG_LIK": {
+            "name": "Jul-, nyårs- och midsommarafton (som lördag, 100 % efter 12.00)",
+            "days": [
+                { "day": "JULAFTON", "from": "12:00", "to": "24:00" },
+                { "day": "NYARSAFTON", "from": "12:00", "to": "24:00" },
+                { "day": "MIDSOMMARAFTON", "from": "12:00", "to": "24:00" }
+            ],
+            "source": "D1#§ 8 s. 33"
+        },
+        "HELGDAG": {
+            "name": "Sön- och helgdag (hela dygnet)",
+            "days": [
+                { "day": "SUNDAY", "from": "00:00", "to": "24:00" },
+                { "day": "PUBLIC_HOLIDAY", "from": "00:00", "to": "24:00" }
+            ],
+            "source": "D1#§ 8 s. 33"
+        }
+    },
+    "ob_windows": [
+        { "code": "DH_OB_50", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "18:15", "to": "20:00", "source": "D1#§ 8 s. 33" },
+        { "code": "DH_OB_70", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "20:00", "to": "24:00", "source": "D1#§ 8 s. 33" },
+        { "code": "DH_OB_100", "days": ["SAT"], "from": "12:00", "to": "24:00", "source": "D1#§ 8 s. 33" },
+        { "code": "DH_OB_100", "day_type": "LORDAG_LIK", "source": "D1#§ 8 s. 33" },
+        { "code": "DH_OB_100", "day_type": "HELGDAG", "source": "D1#§ 8 s. 33" }
+    ],
+    "codes": {
+        "DH_OB_50": {
+            "name": "OB-tillägg 50 %",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–fre 18.15–20.00, 50 % av timlönen (1/166 av månadslön och fasta tillägg), endast ordinarie tid",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 5000 } }
+            ],
+            "source": "D1#§ 8 s. 33"
+        },
+        "DH_OB_70": {
+            "name": "OB-tillägg 70 %",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–fre efter 20.00, 70 % av timlönen, endast ordinarie tid",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000 } }
+            ],
+            "source": "D1#§ 8 s. 33"
+        },
+        "DH_OB_100": {
+            "name": "OB-tillägg 100 %",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Lördag och jul-, nyårs- och midsommarafton efter 12.00 samt sön- och helgdag, 100 % av timlönen, endast ordinarie tid",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000 } }
+            ],
+            "source": "D1#§ 8 s. 33"
+        },
+        "DH_OT_A": {
+            "name": "Övertid, två första timmarna",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "De två första övertidstimmarna per dag före eller efter ordinarie tid: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 5000, "plus_hourly_wage": true } },
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500, "plus_hourly_wage": true } }
+            ],
+            "source": "D1#§ 9 s. 34–38"
+        },
+        "DH_OT_70": {
+            "name": "Övertid 70 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övrig övertid på vardag, efter 20.00 mån–fre och på vardag som är fridag: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000, "plus_hourly_wage": true } }
+            ],
+            "source": "D1#§ 9 s. 34–38"
+        },
+        "DH_OT_100": {
+            "name": "Övertid 100 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid lördag efter 12.00, jul-, nyårs- och midsommarafton, sön- och helgdag samt fridag som infaller lördag eller afton: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000, "plus_hourly_wage": true } }
+            ],
+            "source": "D1#§ 9 s. 34–38"
+        }
+    },
+    "notes": [
+        "OB-fönstret 70 % är lagt 20.00–24.00 mån–fre. Avtalet säger 'efter kl. 20.00' och har ingen särskild natt-OB. TODO(legal-verify): om ordinarie tid 00.00–06.00 en vardagsmorgon ska ha 70 %.",
+        "En helgdag eller afton som infaller på en vardag träffar också vardagsfönstren; avsikten enligt § 8 är 100 %. Motorn måste låta högsta sats gälla.",
+        "När övertid eller mertid sammanfaller med OB betalas bara det procentuellt högsta tillägget (D1 § 8 Anm. s. 33).",
+        "Avtalet har ingen avrundningsregel för OB-tid.",
+        "Uppflyttning till nytt minimilönesteg sker från den 1:a i månaden då förändringen sker (D1 § 7.2 C Anm. 2 s. 25). TODO(legal-verify): att 'förändring' vid ålder betyder födelsemånaden.",
+        "Branschvana räknas från 18 år; en månad räknas om minst 44 timmar arbetats eller vid minst 10 tim/vecka hela månaden; annan detaljhandel räknas till hälften (D1 § 7.2 B.1–B.3 s. 22–23). NONOX räknar från datumet för branschvana på anställningen.",
+        "Minimilön för 15 år (minst 80 %) och 14 år (minst 70 %) av 16-åringens nivå är inte data (D1 Anm. 3 s. 25).",
+        "Urmakarnas egna minimilöner per anställningsår (D1 bilaga 3 s. 62–63) är inte med; ingen egen grupp här ännu.",
+        "Anställningstidstillägg efter 5 år i företaget (155 kr/mån eller 0,93 kr/tim 2025, 160 kr eller 0,96 kr/tim 2026, D1 § 7.2 E s. 26) utges utöver minimilönen och är inte data ännu.",
+        "Deltid med månadslön räknas som timmar/vecka × timlön × 166 / 38,25 (D1 § 7.3 B.4 s. 28); den formeln är inte data ännu.",
+        "Mertid från 2026-04-01 ersätts som övertid (D1 § 9.5 s. 37) och övertid på fridag ger minst 3 timmar (§ 9.1); inte data ännu.",
+        "Frånvaroavdrag 4,6 % per dag, semester 13 % med garantibelopp, sjuklön och restid är inte data i den här versionen ännu.",
+        "TODO(legal-verify): hängavtalets namn och eventuell avgift har inte hittats; ingen HANGAVTAL-variant finns."
+    ]
+}

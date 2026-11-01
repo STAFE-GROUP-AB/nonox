@@ -139,10 +139,23 @@ class AnalyzeDocument
     }
 
     /**
-     * @param  ?User  $user  null when the company's inbox asks (see inboxDocument)
+     * Asks an agent about text only, already stripped of personal data by
+     * the caller (NONOX Avtal, ADR-033 §6): no file and no chart of
+     * accounts is sent, only the given context and text.
+     *
      * @return array<string, mixed>
      */
-    private function ask(?User $user, Company $company, Agent $agent, ?string $path, ?string $mime, string $kind, string $permission = 'ai:use', string $text = ''): array
+    public function text(User $user, Company $company, Agent $agent, string $kind, string $context, string $text): array
+    {
+        return $this->ask($user, $company, $agent, null, null, $kind, 'ai:use', $text, $context);
+    }
+
+    /**
+     * @param  ?User  $user  null when the company's inbox asks (see inboxDocument)
+     * @param  ?string  $context  what the agent is told before the text; the company's chart of accounts when null
+     * @return array<string, mixed>
+     */
+    private function ask(?User $user, Company $company, Agent $agent, ?string $path, ?string $mime, string $kind, string $permission = 'ai:use', string $text = '', ?string $context = null): array
     {
         $this->modules->ensureEnabled(AiModule::KEY, $company);
 
@@ -161,7 +174,7 @@ class AnalyzeDocument
 
         $built = Ai::build(['name' => "nonox_ai_company_{$company->id}", 'driver' => $provider->driver(), 'key' => $key]);
         $model = $built instanceof TextProvider ? self::modelFor($built, $choice, $custom) : $custom;
-        $prompt = $this->context($company).($text === '' ? '' : "\n\n{$text}");
+        $prompt = ($context ?? $this->context($company)).($text === '' ? '' : "\n\n{$text}");
 
         try {
             $response = $agent->prompt($prompt, attachments: $files, provider: $built->name(), model: $model, timeout: self::TIMEOUT);

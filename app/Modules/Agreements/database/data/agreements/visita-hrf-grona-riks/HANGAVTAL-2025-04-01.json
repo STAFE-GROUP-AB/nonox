@@ -1,0 +1,184 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "visita-hrf-grona-riks",
+        "name": "Gröna Riks hängavtal (Visita – HRF)",
+        "short_name": "Gröna Riks hängavtal",
+        "parties": ["Visita", "Hotell- och restaurangfacket (HRF)"],
+        "collective": "ARBETARE",
+        "variant": "HANGAVTAL",
+        "base_agreement": { "key": "visita-hrf-grona-riks", "variant": "MEMBER" },
+        "segments": ["café", "restaurang", "bar", "hotell"],
+        "source": "GH#löneavtal § 1–2 s. 52–53; GR#§ 1 s. 7"
+    },
+    "valid_from": "2025-04-01",
+    "valid_to": "2027-03-31",
+    "validity_source": "GR#§ 30 s. 36",
+    "sources": [
+        { "id": "GH", "title": "Visita Gröna Riks Hängavtal 2025–2027", "publisher": "HRF", "url": "https://www.hrf.net/app/uploads/2026/03/Visita-Grona-riks-Hangavtal-2025-2027.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
+        { "id": "GR", "title": "Gröna Riksavtalet 2025–2027", "publisher": "Visita/HRF", "url": "https://www.hrf.net/app/uploads/2025/05/Grona-riksen-2025-2027-1.pdf", "edition": "2025-04-01", "retrieved_at": "2026-11-01" },
+        { "id": "HRF25", "title": "HRF-folder 2025 (kontroll av OB)", "publisher": "HRF", "url": "https://www.hrf.net/app/uploads/2025/05/HRF-folder20250430_himmel_uppslagsvis.pdf", "edition": "2025-04-30", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "source": "GR#§ 9 s. 13",
+        "hourly_divisor": {
+            "monthly_to_hourly": "173",
+            "part_time": { "type": "WEEKLY_HOURS_TIMES", "factor": "4.3" },
+            "source": "GR#löneavtal § 3 s. 56; § 19 p. 1 s. 28"
+        }
+    },
+    "groups": [
+        { "code": "1", "name": "Lönegrupp 1", "description": "Kvalificerat yrkesarbete", "source": "GH#löneavtal § 2 s. 53" },
+        { "code": "1N", "name": "Lönegrupp 1, nattreceptionist", "description": "Nattreceptionist i lönegrupp 1, endast timlön angiven", "source": "GH#löneavtal § 2 s. 53" },
+        { "code": "2", "name": "Lönegrupp 2", "description": "Yrkesarbete", "source": "GH#löneavtal § 2 s. 53" },
+        { "code": "2U", "name": "Lönegrupp 2, ungdomslön", "description": "Ungdomslön i grupp 2, högst tre år eller till 20 år", "max_age_exclusive": 20, "source": "GH#löneavtal § 2 s. 53; GR#löneavtal § 5 s. 60" }
+    ],
+    "minimum_wages": {
+        "age_reference": "MONTH_AFTER_BIRTHDAY",
+        "check": "WARN",
+        "source": "GH#löneavtal § 2 s. 53; GR#löneavtal § 5 s. 60",
+        "steps": [
+            {
+                "valid_from": "2025-04-01",
+                "rows": [
+                    { "group": "1", "monthly_ore": 2786400, "hourly_ore": 16107, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "1", "experience_months_min": 72, "monthly_ore": 2978500, "hourly_ore": 17217, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "1N", "hourly_ore": 16991, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "1N", "experience_months_min": 72, "hourly_ore": 18162, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2", "monthly_ore": 2644000, "hourly_ore": 15284, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2", "experience_months_min": 72, "monthly_ore": 2836200, "hourly_ore": 16394, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_min": 19, "monthly_ore": 2155700, "hourly_ore": 12461, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_min": 18, "age_max": 18, "monthly_ore": 1994200, "hourly_ore": 11527, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_min": 17, "age_max": 17, "monthly_ore": 1912600, "hourly_ore": 11055, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_max": 16, "monthly_ore": 1751100, "hourly_ore": 10122, "source": "GH#löneavtal § 2 s. 53" }
+                ]
+            },
+            {
+                "valid_from": "2026-04-01",
+                "rows": [
+                    { "group": "1", "monthly_ore": 2903500, "hourly_ore": 16783, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "1", "experience_months_min": 72, "monthly_ore": 3103600, "hourly_ore": 17940, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "1N", "hourly_ore": 17704, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "1N", "experience_months_min": 72, "hourly_ore": 18925, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2", "monthly_ore": 2755100, "hourly_ore": 15925, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2", "experience_months_min": 72, "monthly_ore": 2955300, "hourly_ore": 17083, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_min": 19, "monthly_ore": 2216100, "hourly_ore": 12810, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_min": 18, "age_max": 18, "monthly_ore": 2050100, "hourly_ore": 11850, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_min": 17, "age_max": 17, "monthly_ore": 1966200, "hourly_ore": 11365, "source": "GH#löneavtal § 2 s. 53" },
+                    { "group": "2U", "age_max": 16, "monthly_ore": 1800200, "hourly_ore": 10406, "source": "GH#löneavtal § 2 s. 53" }
+                ]
+            }
+        ]
+    },
+    "day_types": {
+        "LORDAG_LIK": {
+            "name": "Midsommar-, jul- och nyårsafton (OB från 16.00 som lördag)",
+            "days": [
+                { "day": "MIDSOMMARAFTON", "from": "16:00", "to_next_day": "06:00" },
+                { "day": "JULAFTON", "from": "16:00", "to_next_day": "06:00" },
+                { "day": "NYARSAFTON", "from": "16:00", "to_next_day": "06:00" }
+            ],
+            "source": "GR#§ 13 s. 21"
+        },
+        "HELGDAG": {
+            "name": "Sön- och helgdag (06.00 till 06.00 nästa dag)",
+            "days": [
+                { "day": "SUNDAY", "from": "06:00", "to_next_day": "06:00" },
+                { "day": "PUBLIC_HOLIDAY", "from": "06:00", "to_next_day": "06:00" }
+            ],
+            "source": "GR#§ 13 s. 21"
+        },
+        "STORHELG": {
+            "name": "Storhelg: jul- och nyårsafton som infaller på lördag eller söndag",
+            "days": [
+                { "day": "JULAFTON", "weekdays": ["SAT", "SUN"], "from": "06:00", "to_next_day": "06:00" },
+                { "day": "NYARSAFTON", "weekdays": ["SAT", "SUN"], "from": "06:00", "to_next_day": "06:00" }
+            ],
+            "source": "GR#§ 14 s. 21"
+        }
+    },
+    "ob_windows": [
+        { "code": "GR_OB", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "20:00", "to_next_day": "06:00", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB", "days": ["SAT"], "from": "16:00", "to_next_day": "06:00", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB", "day_type": "LORDAG_LIK", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB", "day_type": "HELGDAG", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_OB_NATT", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], "from": "01:00", "to": "06:00", "source": "GR#§ 13 s. 21" },
+        { "code": "GR_STORHELG", "day_type": "STORHELG", "source": "GR#§ 14 s. 21" }
+    ],
+    "codes": {
+        "GR_OB": {
+            "name": "OB-tillägg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–fre 20.00–06.00, lördag och midsommar-, jul- och nyårsafton 16.00–06.00, sön- och helgdag 06.00–06.00",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2679 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2759 } }
+            ],
+            "source": "GR#§ 13 s. 21; HRF25"
+        },
+        "GR_OB_NATT": {
+            "name": "Natt-OB",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Alla dagar 01.00–06.00, utöver ordinarie OB. Inte för fast nattpersonal i hotellreception 00–07",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2361 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2431 } }
+            ],
+            "source": "GR#§ 13 s. 21; HRF25"
+        },
+        "GR_STORHELG": {
+            "name": "Storhelgsersättning",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "100 % av ordinarie timlön 06.00–06.00 på jul- och nyårsafton som infaller på lördag eller söndag",
+            "day_type": "STORHELG",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000 } }
+            ],
+            "source": "GR#§ 14 s. 21"
+        },
+        "GR_OT_A": {
+            "name": "Övertid, två första timmarna i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid i anslutning till ordinarie tid, de två första timmarna: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 4500, "plus_hourly_wage": true } },
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500, "plus_hourly_wage": true } }
+            ],
+            "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_OT_B": {
+            "name": "Övertid i anslutning, därutöver",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid i anslutning till ordinarie tid efter de två första timmarna: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000, "plus_hourly_wage": true } }
+            ],
+            "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_OT_C": {
+            "name": "Övertid, inte i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid som inte ansluter till ordinarie tid: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 9000, "plus_hourly_wage": true } }
+            ],
+            "source": "GR#§§ 11–12 s. 18–20"
+        }
+    },
+    "notes": [
+        "Hängavtalet har samma allmänna villkor som Gröna Riks för Visitas medlemmar (GH löneavtal § 1–2 s. 52–53). OB, storhelg, övertid, dagtyper och arbetstid är därför desamma som i MEMBER-versionen och hänvisar till GR.",
+        "Skillnader mot MEMBER: högre minimilöner, endast generell lönehöjning (1 030 kr 2025, 935 kr 2026, minimilönerna höjs lika mycket) och ingen bilaga om årsarbetstid (GH s. 52; GR löneavtal § 7 s. 61).",
+        "Administrationsavgift 0,51 % av premieunderlaget för hängavtalsföretag (GH/GR § 28 s. 35) är inte data i den här versionen ännu.",
+        "Grupp 1N (nattreceptionist i lönegrupp 1) har bara timlön i tabellen; ingen månadslön anges. TODO(legal-verify): exakt vilka anställningar som räknas som nattreceptionist i hängavtalets tabell, och hur den förhåller sig till regeln om minimitimlön × 1,055 för viss nattpersonal (GR § 9 p. 1 st. 2).",
+        "Avrundning av OB och övertid till påbörjad halvtimme tillämpas när pass delas upp (A6), inte på redan uppdelade timmar. TODO(legal-verify): per pass eller per period.",
+        "Mertid, röda dagar, kostavdrag, semester 12,72 %, sjuklön med OB och avtalsförsäkringar är inte data i den här versionen ännu (A7–A11).",
+        "Ett erfarenhetsår räknas om man arbetat minst 75 % eller 1 300 timmar (GR s. 60). NONOX räknar från datumet för branschvana som anges på anställningen."
+    ]
+}

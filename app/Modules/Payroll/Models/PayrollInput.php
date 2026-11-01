@@ -7,6 +7,7 @@ namespace App\Modules\Payroll\Models;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -20,6 +21,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?Money $rate_ore
  * @property ?Money $amount_ore
  * @property ?string $note
+ * @property ?CarbonImmutable $date_from
+ * @property ?CarbonImmutable $date_to
  */
 class PayrollInput extends Model
 {

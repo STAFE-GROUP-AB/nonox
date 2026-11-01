@@ -1,0 +1,131 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "visita-unionen",
+        "name": "Besöksnäringens tjänstemannaavtal (Visita – Unionen)",
+        "short_name": "Visita–Unionen",
+        "parties": ["Visita", "Unionen"],
+        "collective": "TJANSTEMAN",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": ["hotell", "restaurang", "café"],
+        "source": "VU#§ 1 s. 5"
+    },
+    "valid_from": "2025-06-01",
+    "valid_to": "2027-05-31",
+    "validity_source": "VU#§ 30 s. 55",
+    "sources": [
+        { "id": "VU", "title": "Besöksnäringens tjänstemannaavtal Visita–Unionen 2025–2027", "publisher": "Visita/Unionen", "url": "https://visita.se/app/uploads/2025/07/Visita-Unionen-2025-2027.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "source": "VU#§ 10 s. 20",
+        "hourly_divisor": {
+            "monthly_to_hourly": "173",
+            "source": "VU#§ 20 s. 40"
+        }
+    },
+    "groups": [
+        { "code": "ALLA", "name": "Alla tjänstemän", "description": "En gemensam minimilön för alla tjänstemän som fyllt 20 år", "source": "VU#löneavtal § 2 p. 4 s. 59" }
+    ],
+    "minimum_wages": {
+        "age_reference": "MONTH_OF_BIRTHDAY",
+        "check": "WARN",
+        "source": "VU#löneavtal § 2 p. 4 s. 59",
+        "steps": [
+            {
+                "valid_from": "2025-06-01",
+                "rows": [
+                    { "group": "ALLA", "age_min": 20, "monthly_ore": 2365700, "source": "VU#löneavtal § 2 p. 4 s. 59" }
+                ]
+            },
+            {
+                "valid_from": "2026-06-01",
+                "rows": [
+                    { "group": "ALLA", "age_min": 20, "monthly_ore": 2429600, "source": "VU#löneavtal § 2 p. 4 s. 59" }
+                ]
+            }
+        ]
+    },
+    "day_types": {
+        "LORDAG_LIK": {
+            "name": "Midsommar-, jul- och nyårsafton (OB från 16.00 som lördag)",
+            "days": [
+                { "day": "MIDSOMMARAFTON", "from": "16:00", "to_next_day": "06:00" },
+                { "day": "JULAFTON", "from": "16:00", "to_next_day": "06:00" },
+                { "day": "NYARSAFTON", "from": "16:00", "to_next_day": "06:00" }
+            ],
+            "source": "VU#§ 21 s. 41"
+        },
+        "HELGDAG": {
+            "name": "Sön- och helgdag (06.00 till 06.00 nästa dag)",
+            "days": [
+                { "day": "SUNDAY", "from": "06:00", "to_next_day": "06:00" },
+                { "day": "PUBLIC_HOLIDAY", "from": "06:00", "to_next_day": "06:00" }
+            ],
+            "source": "VU#§ 21 s. 41"
+        }
+    },
+    "ob_windows": [
+        { "code": "VU_OB", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "20:00", "to_next_day": "06:00", "source": "VU#§ 21 s. 41" },
+        { "code": "VU_OB", "days": ["SAT"], "from": "16:00", "to_next_day": "06:00", "source": "VU#§ 21 s. 41" },
+        { "code": "VU_OB", "day_type": "LORDAG_LIK", "source": "VU#§ 21 s. 41" },
+        { "code": "VU_OB", "day_type": "HELGDAG", "source": "VU#§ 21 s. 41" },
+        { "code": "VU_OB_NATT", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], "from": "01:00", "to": "06:00", "source": "VU#§ 21 s. 41" }
+    ],
+    "codes": {
+        "VU_OB": {
+            "name": "OB-tillägg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–fre 20.00–06.00, lördag och midsommar-, jul- och nyårsafton 16.00–06.00, sön- och helgdag 06.00–06.00",
+            "rates": [
+                { "valid_from": "2025-06-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2668 } },
+                { "valid_from": "2026-06-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2748 } }
+            ],
+            "source": "VU#§ 21 s. 41"
+        },
+        "VU_OB_NATT": {
+            "name": "Natt-OB",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Alla dagar 01.00–06.00, utöver ordinarie OB. Inte för fast nattpersonal i hotellreception 01–06",
+            "rates": [
+                { "valid_from": "2025-06-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2350 } },
+                { "valid_from": "2026-06-01", "rate": { "type": "ORE_PER_HOUR", "ore": 2421 } }
+            ],
+            "source": "VU#§ 21 s. 41"
+        },
+        "VU_OT_94": {
+            "name": "Övertid i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid i anslutning till ordinarie tid, upp till tre timmar: månadslön / 94 per timme",
+            "rates": [
+                { "valid_from": "2025-06-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "94" } }
+            ],
+            "source": "VU#§ 11 s. 24–27"
+        },
+        "VU_OT_72": {
+            "name": "Övertid, annan tid",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid på annan tid: månadslön / 72 per timme",
+            "rates": [
+                { "valid_from": "2025-06-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "72" } }
+            ],
+            "source": "VU#§ 11 s. 24–27"
+        }
+    },
+    "notes": [
+        "Viss nattpersonal har timlön och timavdrag 1/164 av månadslönen i stället för 1/173 (VU § 20 s. 40); ingen egen grupp här ännu.",
+        "Ingen minimilön anges för tjänstemän under 20 år (VU löneavtal § 2 p. 4 s. 59). Minimilönen gäller heltid.",
+        "Varje påbörjad halvtimme OB betalas som full halvtimme (VU § 21). TODO(legal-verify): per pass eller per period.",
+        "OB kan ersättas med ett fast lönetillägg genom skriftlig överenskommelse (VU § 21.3); det styrs på anställningen, inte här.",
+        "Avtalet har ingen storhelgsregel motsvarande Gröna Riks § 14.",
+        "Övertid: månadslönen är aktuell fast månadslön, deltid räknas upp till heltidslön; varje påbörjad halvtimme tas med; övertid som inte ansluter ger minst 3 timmar (VU § 11). Avrundning och minimitid är inte data ännu.",
+        "Mertid har ingen avtalsregel; arbetstidslagens regler gäller.",
+        "Kost, restid, jour, beredskap, arbetstidsförkortning, semester (sammalöneregeln 0,8 % och 12,72 %) och sjuklön är inte data i den här versionen ännu.",
+        "TODO(legal-verify): Unionens hängavtalsinformation för 2025 har inte hittats; ingen HANGAVTAL-variant finns."
+    ]
+}

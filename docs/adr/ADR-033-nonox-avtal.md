@@ -192,6 +192,19 @@ despite that, and what that requires from 2 December 2027 (ADR-018 AI Act
 section); the impact assessment `docs/gdpr/konsekvensbedomning-ai.md` gets
 a section before the agents ship.
 
+## Implementation status (2026-11-01)
+
+Built on branch `feat/agreements` (systemdokumentation §5f, version 0.55):
+A1 (module, versioned data with verification and the run block, company
+binding, employment facts, `agreements:import` and `agreements:verify`),
+A2 (agreement calendar), A3 (pricing of already split OB and overtime
+lines, explanation per line), A4 (minimum wage warnings) and the AI setup
+of §6 with `AgreementIdentificationAgent` and `EmploymentTermsAgent`. As
+built, the payroll engine gains `PayrollExtensions` (context extensions
+and steps registered by other modules) and an agreement code is its own
+pay code with `formula_ref = agreement:<code>`. Remaining: A5–A12 and
+`LocalAgreementAgent`.
+
 ## Legal questions (all `TODO(legal-verify)`)
 
 1. **Copyright in agreement texts.** A collective agreement is a private

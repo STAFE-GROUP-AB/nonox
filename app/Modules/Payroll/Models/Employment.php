@@ -31,6 +31,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $vacation_rule
  * @property ?int $vacation_days_per_year
  * @property bool $vacation_payout_with_salary
+ * @property ?int $collective_agreement_id
+ * @property ?string $agreement_group
+ * @property ?CarbonImmutable $industry_experience_from
+ * @property ?string $overtime_compensation
+ * @property ?string $ob_compensation
  */
 class Employment extends Model
 {
@@ -61,6 +66,10 @@ class Employment extends Model
         'vacation_days_per_year',
         'vacation_payout_with_salary',
         'payment_day',
+        'agreement_group',
+        'industry_experience_from',
+        'overtime_compensation',
+        'ob_compensation',
     ];
 
     /** @return array<string, string> */
@@ -76,6 +85,8 @@ class Employment extends Model
             'vacation_days_per_year' => 'integer',
             'vacation_payout_with_salary' => 'boolean',
             'payment_day' => 'integer',
+            'collective_agreement_id' => 'integer',
+            'industry_experience_from' => 'immutable_date',
         ];
     }
 
@@ -83,6 +94,12 @@ class Employment extends Model
     public function costCenter(): BelongsTo
     {
         return $this->belongsTo(CostCenter::class);
+    }
+
+    /** @return BelongsTo<CollectiveAgreement, $this> */
+    public function collectiveAgreement(): BelongsTo
+    {
+        return $this->belongsTo(CollectiveAgreement::class);
     }
 
     /** @return BelongsTo<Employee, $this> */

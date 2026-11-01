@@ -21,10 +21,14 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?int $debit_account_id
  * @property ?int $credit_account_id
  * @property bool $is_system
+ * @property ?string $formula_ref
  */
 class PayCode extends Model
 {
     use BelongsToCompany;
+
+    /** formula_ref of a pay code the collective agreement prices (NONOX Avtal, ADR-033): "agreement:<code>". */
+    public const string AGREEMENT_PREFIX = 'agreement:';
 
     protected $table = 'pay_codes';
 
@@ -49,6 +53,12 @@ class PayCode extends Model
         'is_system',
         'is_active',
     ];
+
+    /** Whether the collective agreement prices this pay code (NONOX Avtal). */
+    public function isAgreementPriced(): bool
+    {
+        return str_starts_with((string) $this->formula_ref, self::AGREEMENT_PREFIX);
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

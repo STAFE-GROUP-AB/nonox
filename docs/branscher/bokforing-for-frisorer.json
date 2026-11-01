@@ -46,6 +46,7 @@
         "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
     },
     "limits": [
+        {"text": "Frisöravtalets text för 2025–2027 är inte publik, så avtalets värden i modulen Avtal kan inte kontrolleras ännu och används inte i lönen. Provision med garantilön räknas inte automatiskt."},
         {"text": "NONOX är inget kassa- eller bokningssystem och har ingen lagerhantering för produkter."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
         {"text": "Det finns ännu inget öppet API, så kassasystem kan inte kopplas direkt till NONOX. Det byggs, även för de integrationsplattformar som kassasystemen redan använder. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "public_api"}

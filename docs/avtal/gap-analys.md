@@ -120,6 +120,12 @@ A1, A7 (övertid med delare och "övertid ingår"), A8 (dag 15–90) och A10
 traktamente enligt avtal och arbetstidsförkortning — egen gapanalys när
 vågen startar.
 
+Status 2026-11-01: A1–A4 är byggda (systemdokumentation §5f). A1 utan
+JSON-schema i CI utöver valideringen vid inläsning och testerna, och utan
+lokala avvikelser (`overrides` finns som kolumn men används inte ännu, G21).
+A3 prissätter redan uppdelade OB- och övertidsrader; mertid är inte data
+ännu. Kvar: A5–A12.
+
 ## 6. Risker
 
 - **Fel avtal på anställningen** är det vanligaste felet i praktiken.

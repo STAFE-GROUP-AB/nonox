@@ -76,7 +76,10 @@ class JetstreamServiceProvider extends ServiceProvider
 
         foreach ($modules as $module) {
             foreach ($module->roles() as $key => $label) {
-                Jetstream::role($key, $label, $module->rolePermissions()[$key] ?? [])
+                // A module may give permissions to another module's role (NONOX Avtal to the payroll administrator).
+                $permissions = array_merge([], ...array_values(array_map(fn ($each): array => $each->rolePermissions()[$key] ?? [], $modules)));
+
+                Jetstream::role($key, $label, array_values(array_unique($permissions)))
                     ->description(__('Roll i modulen :module.', ['module' => $module->name()]));
             }
         }
