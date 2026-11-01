@@ -35,10 +35,10 @@ function sendCodeTo(string $email): string
     return (string) $code;
 }
 
-it('emails a six-digit code and stores only its hash', function () {
+it('emails an eight-digit code and stores only its hash', function () {
     $code = sendCodeTo('anna@example.com');
 
-    expect($code)->toMatch('/^\d{6}$/');
+    expect($code)->toMatch('/^\d{8}$/');
 
     $stored = LoginCode::where('email', 'anna@example.com')->sole();
 
@@ -140,7 +140,7 @@ it('shows a Swedish error for a wrong code and stays signed out', function () {
         return true;
     });
 
-    $component->set('code', $code === '123456' ? '654321' : '123456')
+    $component->set('code', $code === '12345678' ? '87654321' : '12345678')
         ->call('verify')
         ->assertHasErrors('code')
         ->assertSee('Koden stämmer inte');
@@ -278,14 +278,32 @@ it('sends guests to /logga-in', function () {
     $this->get('/registrera')->assertRedirect('/logga-in');
 });
 
-it('stops verifying an address after too many wrong codes, from any IP', function () {
+it('stops a session after too many wrong codes, without locking the owner out', function () {
+    session()->put('login.pending_email', 'offer@example.test');
     RateLimiter::increment(LoginForm::failedKey('offer@example.test'), 3600, LoginForm::MAX_FAILED_PER_HOUR);
+
+    Livewire::test(LoginForm::class)
+        ->set('code', '12345678')
+        ->call('verify')
+        ->assertHasErrors(['code' => 'För många felaktiga koder för den här adressen. Vänta en timme och försök igen.']);
+
+    // The owner signs in from their own browser: someone else's wrong guesses do not count there.
+    session()->invalidate();
     session()->put('login.pending_email', 'offer@example.test');
 
     Livewire::test(LoginForm::class)
-        ->set('code', '123456')
+        ->set('code', '12345678')
         ->call('verify')
-        ->assertHasErrors(['code' => 'För många felaktiga koder för den här adressen. Vänta en timme och försök igen.']);
+        ->assertHasErrors(['code' => 'Koden stämmer inte eller har slutat gälla. Kontrollera mejlet eller skicka en ny kod.']);
+});
+
+it('caps the codes sent to one address per day', function () {
+    User::factory()->create(['email' => 'daglig@example.test']);
+    RateLimiter::increment('login-code:day:daglig@example.test', 86400, LoginForm::MAX_SENDS_PER_DAY);
+
+    Livewire::test(LoginForm::class)->set('email', 'daglig@example.test')->call('sendCode')
+        ->assertHasErrors(['email' => 'För många försök. Vänta en stund och försök igen.']);
+    Mail::assertNothingSent();
 });
 
 it('never fills in codes on a server address, even with the local settings', function () {

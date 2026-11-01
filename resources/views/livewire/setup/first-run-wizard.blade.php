@@ -88,7 +88,7 @@
     @else
         <div class="step">Steg 3 av 3</div>
         <h1>Kolla din e-post</h1>
-        <p class="lead">Vi har skickat en kod med sex siffror till <strong>{{ $email }}</strong>. Skriv in den här.</p>
+        <p class="lead">Vi har skickat en kod med åtta siffror till <strong>{{ $email }}</strong>. Skriv in den här.</p>
 
         @if($autofill)
             <div class="notice">Systemet körs på din egen dator, så koden fylls i åt dig.</div>
@@ -97,7 +97,7 @@
         <form wire:submit="finish" novalidate>
             <div class="field">
                 <label for="code">Kod</label>
-                <input id="code" class="code-input" type="text" wire:model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" autofocus>
+                <input id="code" class="code-input" type="text" wire:model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="9" autofocus>
                 @error('code') <div class="error">{{ $message }}</div> @enderror
             </div>
 

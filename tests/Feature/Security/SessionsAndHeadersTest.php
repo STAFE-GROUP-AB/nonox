@@ -21,7 +21,7 @@ it('sends security headers on every page', function () {
     $this->get('/')
         ->assertHeader('X-Content-Type-Options', 'nosniff')
         ->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin')
-        ->assertHeader('Content-Security-Policy', "frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'");
+        ->assertHeader('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'self' blob:; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'");
 });
 
 it('ends a session after the absolute limit', function () {

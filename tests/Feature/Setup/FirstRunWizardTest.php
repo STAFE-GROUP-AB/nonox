@@ -112,7 +112,7 @@ it('does not finish with a wrong code', function () {
 
     $code = sentCode();
 
-    $component->set('code', $code === '123456' ? '654321' : '123456')
+    $component->set('code', $code === '12345678' ? '87654321' : '12345678')
         ->call('finish')
         ->assertHasErrors('code');
 

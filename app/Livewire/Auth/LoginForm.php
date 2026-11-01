@@ -12,6 +12,7 @@ use App\Support\LoginCodeAutofill;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -52,7 +53,7 @@ class LoginForm extends Component implements SpansCompanies
 
         $email = SendLoginCode::normalise($this->email);
 
-        if ($this->tooManyAttempts('send:'.request()->ip(), 10) || $this->tooManyAttempts('send:'.$email, 5)) {
+        if ($this->tooManyAttempts('send:'.request()->ip(), 10) || $this->tooManyAttempts('send:'.$email, 5) || self::tooManyToday($email)) {
             $this->addError('email', __('För många försök. Vänta en stund och försök igen.'));
 
             return;
@@ -84,12 +85,17 @@ class LoginForm extends Component implements SpansCompanies
         }
 
         $this->validate(
-            ['code' => ['required', 'regex:/^\s*\d{6}\s*$/']],
-            ['code.regex' => __('Koden består av sex siffror.')],
+            ['code' => ['required', 'regex:/^\s*(\d\s*){'.config('auth.login_codes.length').'}$/']],
+            ['code.regex' => __('Koden består av :count siffror.', ['count' => config('auth.login_codes.length')])],
             ['code' => __('kod')],
         );
 
-        // Wrong codes are counted per address across codes and IP addresses, so the code cannot be guessed from many machines.
+        /*
+         * Wrong codes stop a session, not the address: counted per address
+         * across sessions, someone else could lock the owner out. Guessing
+         * across sessions is bounded by the code itself (eight digits, five
+         * tries, a few codes per hour and day).
+         */
         if (RateLimiter::tooManyAttempts(self::failedKey($email), self::MAX_FAILED_PER_HOUR)) {
             $this->addError('code', __('För många felaktiga koder för den här adressen. Vänta en timme och försök igen.'));
 
@@ -191,7 +197,30 @@ class LoginForm extends Component implements SpansCompanies
 
     public static function failedKey(string $email): string
     {
-        return 'login-code:failed:'.mb_strtolower(trim($email));
+        return 'login-code:failed:'.mb_strtolower(trim($email)).':'.session()->getId();
+    }
+
+    /** Codes per address and day, and for the whole service per hour, so the form cannot be used to flood inboxes. */
+    public const int MAX_SENDS_PER_DAY = 20;
+
+    public const int MAX_SENDS_PER_HOUR_GLOBAL = 500;
+
+    private static function tooManyToday(string $email): bool
+    {
+        if (RateLimiter::tooManyAttempts('login-code:global', self::MAX_SENDS_PER_HOUR_GLOBAL)) {
+            Log::warning('Login: the hourly cap on login code mails was reached.');
+
+            return true;
+        }
+
+        if (RateLimiter::tooManyAttempts('login-code:day:'.$email, self::MAX_SENDS_PER_DAY)) {
+            return true;
+        }
+
+        RateLimiter::hit('login-code:global', 3600);
+        RateLimiter::hit('login-code:day:'.$email, 86400);
+
+        return false;
     }
 
     private function tooManyAttempts(string $key, int $maxAttempts): bool

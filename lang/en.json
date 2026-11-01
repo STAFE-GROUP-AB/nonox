@@ -177,7 +177,6 @@
     "Kan läsa och exportera allt, men inte bokföra något.": "Can read and export everything, but cannot post anything.",
     "Klicka på knappen och logga in med den här e-postadressen. Har du inget konto skapas det när du loggar in första gången.": "Click the button and sign in with this email address. If you have no account, one is created the first time you sign in.",
     "Kod": "Code",
-    "Koden består av sex siffror.": "The code has six digits.",
     "Koden gäller i :minutes minuter och kan bara användas en gång.": "The code is valid for :minutes minutes and can only be used once.",
     "Koden stämmer inte eller har slutat gälla. Kontrollera mejlet eller skicka en ny kod.": "The code is wrong or has expired. Check the email or send a new code.",
     "Kolla din e-post": "Check your email",
@@ -3515,5 +3514,6 @@
     "Ta bort kiosken? Den spärras och försvinner ur listan. Incheckningar den redan skickat finns kvar i liggaren.": "Remove the kiosk? It is blocked and leaves the list. Check-ins it has already sent stay in the ledger.",
     "Kiosken är borttagen.": "The kiosk is removed.",
     "Det finns också en gemensam adress, :shared, för det du vidarebefordrar från din egen e-post. Den tar bara emot post från adressen du loggar in med, och den måste stå på listan nedanför. Leverantörer och kassasystem skickar till företagets egen adress ovanför.": "There is also a shared address, :shared, for what you forward from your own email. It only takes mail from the address you sign in with, and that address must be on the list below. Suppliers and cash registers send to the company's own address above.",
-    "E-post till den gemensamma adressen från någon som är med i flera av dina företag. Hämta det som gäller det här företaget.": "Email to the shared address from someone who belongs to several of your companies. Take what concerns this company."
+    "E-post till den gemensamma adressen från någon som är med i flera av dina företag. Hämta det som gäller det här företaget.": "Email to the shared address from someone who belongs to several of your companies. Take what concerns this company.",
+    "Koden består av :count siffror.": "The code has :count digits."
 }

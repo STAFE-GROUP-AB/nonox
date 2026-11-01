@@ -9,7 +9,8 @@ declare(strict_types=1);
 
 return [
     'login_codes' => [
-        'length' => 6,
+        // Eight digits: guessing stays hopeless without locking anyone out (security review 2026-11-01).
+        'length' => 8,
         'ttl_minutes' => 10,
         'cooldown_seconds' => 60,
         'max_attempts' => 5,

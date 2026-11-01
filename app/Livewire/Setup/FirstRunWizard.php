@@ -126,8 +126,8 @@ class FirstRunWizard extends Component implements SpansCompanies
         }
 
         $this->validate(
-            ['code' => ['required', 'regex:/^\s*\d{6}\s*$/']],
-            ['code.regex' => __('Koden består av sex siffror.')],
+            ['code' => ['required', 'regex:/^\s*(\d\s*){'.config('auth.login_codes.length').'}$/']],
+            ['code.regex' => __('Koden består av :count siffror.', ['count' => config('auth.login_codes.length')])],
             ['code' => __('kod')],
         );
 
