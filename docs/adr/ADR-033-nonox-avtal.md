@@ -138,6 +138,60 @@ day types. Sources:
   needs to report salaries to them (`gap-analys.md` §4).
 - No agreements outside the waves in `docs/avtal/README.md`.
 
+### 6. NONOX AI fills in the setup (added 2026-11-01)
+
+The owner (2026-11-01): "NONOX Avtal ska ju kunna analysera med NONOX AI och
+liksom fylla i alla regler som krävs per personal, annars har jag ju ingen
+glädje av den modulen." Setting up an agreement by hand (which agreement and
+variant, collective, lönegrupp, branschvana, working hours, local deviations)
+for every employee is the work that makes the module worth having or not.
+NONOX AI (ADR-018, module `ai`, optional) does that work as proposals.
+
+**The dividing line.** The *values* of an agreement (rates, OB windows,
+ladders, percentages, minimum wages) never come from the AI. They come only
+from the central, versioned and verified agreement data (§2). The AI decides
+nothing about pay either: it reads the company's own documents and proposes
+which *facts* about the company and each employment to record, each with the
+quote and page it read them from. A person with `agreements:manage` accepts,
+edits or rejects each proposal; nothing takes effect before that, and the
+payroll engine only ever reads accepted facts plus verified agreement data.
+
+**Agents** (in `app/Modules/Agreements/Agents`, used only when both `ai` and
+`agreements` are on and the user has `ai:use` and `agreements:manage`):
+
+| Agent | Reads | Proposes |
+|---|---|---|
+| `AgreementIdentificationAgent` | Documents the company uploads: a hängavtal, a membership confirmation from an employer organisation, a previous payslip or payroll report; plus the company's SNI code and business type | Which agreement(s) and variant (`MEMBER`/`HANGAVTAL`) apply, per collective, with the sentence that shows it |
+| `EmploymentTermsAgent` | One employee's employment contract (anställningsavtal) or a previous payslip | Agreement and collective for the employment, job title, the lönegrupp candidate(s) with the agreement's group description it matched, form of employment, weekly hours, monthly or hourly pay, start date, branschvana the document states, and any terms that differ from the agreement |
+| `LocalAgreementAgent` | A local agreement (lokalt avtal) | Deviations expressed in the `nonox.agreement/1` override schema (for example another OB window or a comp-time rule), flagged as company overrides that need `agreements:verify` before a run uses them |
+
+**"Analysera all personal".** One action runs `EmploymentTermsAgent` over
+every employee that has a document, and the result is a review list: one row
+per employee and field, the proposal, the source quote, and Godkänn /
+Ändra / Avvisa per row or for all rows that agree with the document. That is
+the "fill in everything" experience; the person still approves it.
+
+**Deterministic, not AI.** Age and age-based minimum wage (from the date of
+birth in the personal number), the branschvana step date, below-minimum
+warnings, missing OB on a shift, and the explanation of every payslip line
+are computed by code from accepted facts and verified data. The AI may phrase
+an explanation, never compute it.
+
+**Data minimisation.** Personal numbers, bank details and addresses are
+masked in the text before it is sent to the AI provider; the provider gets
+only what the proposal needs. Each run is logged (who, which document, which
+agent, tokens) without the content, as in ADR-018.
+
+**AI Act.** Proposing which pay group an employment belongs to is close to
+Annex III point 4(b) ("decisions affecting terms of work-related
+relationships"). The design keeps the AI to reading documents and proposing
+recorded facts, with a person deciding every field and the rule values out of
+the AI's reach, and it never evaluates a person's performance or behaviour.
+TODO(legal-verify): whether these agents are high-risk under Annex III 4(b)
+despite that, and what that requires from 2 December 2027 (ADR-018 AI Act
+section); the impact assessment `docs/gdpr/konsekvensbedomning-ai.md` gets
+a section before the agents ship.
+
 ## Legal questions (all `TODO(legal-verify)`)
 
 1. **Copyright in agreement texts.** A collective agreement is a private
