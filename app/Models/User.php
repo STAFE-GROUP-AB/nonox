@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Support\Audit\Audit;
@@ -160,6 +161,11 @@ class User extends Authenticatable implements PasskeyUser
      */
     public function hasTeamPermission($team, string $permission): bool
     {
+        // On an API request: only the credential's own company and scopes (ADR-032).
+        if (ConnectAccess::restricts($team, $permission)) {
+            return false;
+        }
+
         // An archived company can only be read (ADR-024).
         if ($team instanceof Company && $team->isArchived() && ! ArchivedCompany::allows($permission)) {
             return false;

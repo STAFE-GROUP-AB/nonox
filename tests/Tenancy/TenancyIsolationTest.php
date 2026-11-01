@@ -58,6 +58,9 @@ use App\Models\VoucherRow;
 use App\Models\VoucherRowHistory;
 use App\Models\VoucherSeries;
 use App\Models\YearEndEntry;
+use App\Modules\Connect\Models\ConnectApiKey;
+use App\Modules\Connect\Models\ConnectGrant;
+use App\Modules\Connect\Models\IdempotencyRecord;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMailbox;
@@ -107,6 +110,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Laravel\Passport\ClientRepository;
 use Tests\Tenancy\Fixtures\ListNotesForCompany;
 use Tests\Tenancy\Fixtures\TenantNote;
 
@@ -211,6 +215,9 @@ const COMPANY_SCOPED_MODELS = [
     TaskRecurrence::class => 'taskRecurrenceAttributes',
     MonthCloseCheck::class => 'monthCloseCheckAttributes',
     RecentItem::class => 'recentItemAttributes',
+    ConnectGrant::class => 'connectGrantAttributes',
+    ConnectApiKey::class => 'connectApiKeyAttributes',
+    IdempotencyRecord::class => 'connectIdempotencyAttributes',
 ];
 
 function taskAttributes(): array
@@ -285,6 +292,23 @@ function staffLedgerTimeProposalAttributes(): array
         'days' => ['2026-10-05' => 8.0],
         'proposed_by' => User::factory()->create()->id,
     ];
+}
+
+function connectGrantAttributes(): array
+{
+    $client = app(ClientRepository::class)->createAuthorizationCodeGrantClient('Hemlig app', ['https://app.example/cb']);
+
+    return ['user_id' => User::factory()->create()->id, 'client_id' => $client->getKey(), 'scopes' => ['vouchers:view']];
+}
+
+function connectApiKeyAttributes(): array
+{
+    return ['name' => 'Hemlig nyckel', 'prefix' => 'nnx_hemlig', 'token_hash' => hash('sha256', bin2hex(random_bytes(16))), 'scopes' => ['vouchers:view'], 'expires_at' => now()->addDay(), 'created_by' => User::factory()->create()->id];
+}
+
+function connectIdempotencyAttributes(): array
+{
+    return ['credential' => 'key:'.random_int(1, 999999), 'idempotency_key' => 'hemlig', 'request_hash' => str_repeat('a', 64), 'status' => 'done', 'expires_at' => now()->addDay()];
 }
 
 function inboxMailboxAttributes(): array

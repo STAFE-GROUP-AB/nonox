@@ -60,6 +60,26 @@ return [
         'mailgun_authserv_id' => env('NONOX_INBOX_MAILGUN_AUTHSERV_ID'),
     ],
 
+    /*
+     * NONOX Connect (ADR-032): the public API and OAuth 2.0. Access tokens
+     * live at most 15 minutes (a longer value is capped), refresh tokens are
+     * rotated on every use, and API keys must expire within max_key_days.
+     * Rate limits are per credential and per company, per minute.
+     */
+    'connect' => [
+        'access_token_minutes' => (int) env('NONOX_CONNECT_ACCESS_TOKEN_MINUTES', 15),
+        'refresh_token_days' => (int) env('NONOX_CONNECT_REFRESH_TOKEN_DAYS', 30),
+        'max_key_days' => (int) env('NONOX_CONNECT_MAX_KEY_DAYS', 365),
+        'rate_limit_per_credential' => (int) env('NONOX_CONNECT_RATE_LIMIT_PER_CREDENTIAL', 120),
+        'rate_limit_per_company' => (int) env('NONOX_CONNECT_RATE_LIMIT_PER_COMPANY', 600),
+        // Per IP address before a credential is checked, and for the token endpoint.
+        'rate_limit_per_ip' => (int) env('NONOX_CONNECT_RATE_LIMIT_PER_IP', 600),
+        'rate_limit_token_endpoint' => (int) env('NONOX_CONNECT_RATE_LIMIT_TOKEN_ENDPOINT', 30),
+        'idempotency_hours' => 24,
+        // Seconds a passkey confirmation counts as fresh for granting access or creating an API key.
+        'step_up_seconds' => 300,
+    ],
+
     'riksbank' => [
         'url' => env('RIKSBANK_URL', 'https://api.riksbank.se/swea/v1/'),
     ],

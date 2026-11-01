@@ -1,0 +1,3823 @@
+# NONOX Connect API v1 (ADR-032): the single source of truth for the API and
+# its developer site. tests/Feature/Connect/OpenApiSpecTest.php fails when a
+# route under /api/v1 is missing here. All example data is synthetic.
+openapi: 3.1.0
+info:
+  title: 'NONOX Connect API'
+  version: 1.0.0
+  description: |-
+    The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
+
+    **Authentication.** Apps use OAuth 2.0 authorization code with PKCE (S256 is required for every client; implicit, password, client credentials and device grants do not exist). An owner or administrator approves the app on the Swedish consent screen with a passkey and chooses one company. Access tokens live at most 15 minutes; refresh tokens rotate on every use, and a refresh token (or authorization code) used twice revokes the whole grant. Scripts use API keys (`nnx_…`) created under Anslutningar: one company, chosen scopes, mandatory expiry, optional IP allowlist, shown once and stored hashed. Send either as `Authorization: Bearer …`; cookies are never accepted.
+
+    **One company per credential.** Every token and key belongs to exactly one company. Another company's ids answer 404. While NONOX Connect is turned off for the company, every call answers 404. An archived company can only be read.
+
+    **Effective rights.** A request may do what its scopes allow AND what the person who granted the app or created the key may do in the company right now, evaluated on every request. A changed role reduces access at once; a person who leaves the company takes the credential's access with them.
+
+    **Rate limits.** Per credential 120 requests/minute, per company 600/minute, and 600/minute per IP address before authentication (operators can change these). Every response carries RateLimit-Limit, RateLimit-Remaining and RateLimit-Reset; 429 adds Retry-After.
+
+    **Idempotency.** Every POST requires an Idempotency-Key, kept 24 hours per credential.
+
+    **Errors** are RFC 9457 `application/problem+json` with a stable `code` and a Swedish `detail`.
+
+    **Money** is integer öre (1 SEK = 100 öre) in fields ending in `_ore`. Dates are ISO 8601.
+
+    **Versioning.** The version is in the path (`/v1`). Within v1 changes are additive only (new endpoints, new optional fields, new enum values in responses); anything breaking gets `/v2`, with v1 kept alongside.
+
+    **Webhooks** are described under `webhooks` but are not delivered yet (`x-nonox-status: planned`).
+  x-sv-description: 'Det öppna API:t för NONOX Ekonomisystem. Appar ansluts med OAuth 2.0 (auktoriseringskod med PKCE S256) och godkänns av en ägare eller administratör med passkey; skript använder API-nycklar som skapas under Anslutningar. Varje nyckel eller app gäller ett företag och får aldrig mer än sina behörigheter och vad personen som gav den får göra just nu. Fel kommer som problem+json med svensk förklaring. Varje POST kräver Idempotency-Key. Belopp anges i öre. Webhooks är beskrivna men skickas inte ännu.'
+  license:
+    name: AGPL-3.0-only
+    identifier: AGPL-3.0-only
+  contact:
+    name: NONOX
+    url: 'https://github.com/STAFE-GROUP-AB/nonox'
+servers:
+  - url: 'https://nonox.app/api/v1'
+    description: 'NONOX (hosted)'
+  - url: 'https://{host}/api/v1'
+    description: 'A self-hosted NONOX'
+    variables:
+      host:
+        default: nonox.example.se
+        description: "Your installation's host name."
+tags:
+  - name: Företaget
+    description: 'The company the credential belongs to.'
+    x-sv-description: 'Företaget som nyckeln eller appen gäller.'
+  - name: Bokföring
+    description: 'Reference data for bookkeeping: chart of accounts, VAT codes, fiscal years and voucher series.'
+    x-sv-description: 'Kontoplan, momskoder, räkenskapsår och verifikationsserier.'
+  - name: Verifikationer
+    description: 'Vouchers: drafts, posting, corrections and attachments (underlag). A posted voucher is immutable.'
+    x-sv-description: 'Verifikationer: utkast, bokföring, rättelser och underlag. En bokförd verifikation kan aldrig ändras.'
+  - name: Kunder
+    description: 'The customer register.'
+    x-sv-description: Kundregistret.
+  - name: Leverantörer
+    description: 'The supplier register.'
+    x-sv-description: Leverantörsregistret.
+security:
+  - oauth2: []
+  - apiKey: []
+paths:
+  /company:
+    get:
+      operationId: getCompany
+      tags:
+        - Företaget
+      summary: 'Get the company'
+      description: 'The company the credential is bound to, plus what the credential is (type, name, effective scopes on the credential). Needs no scope: every valid token or API key can read it. Use it to confirm which company a token belongs to.'
+      x-sv-summary: 'Hämta företaget'
+      x-sv-description: 'Företaget som nyckeln eller token är bunden till, och vilken nyckel eller app det är. Kräver ingen särskild behörighet.'
+      security:
+        - oauth2: []
+        - apiKey: []
+      x-required-scopes:
+        anyOf: []
+      responses:
+        200:
+          description: 'The company.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CompanyWithCredential'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 42
+                      name: 'Exempelbolaget AB'
+                      legal_name: 'Exempelbolaget AB'
+                      org_number: 556677-1233
+                      legal_form: AB
+                      vat_number: SE556677123301
+                      vat_registered: true
+                      vat_period: QUARTERLY
+                      accounting_method: FAKTURAMETODEN
+                      reporting_framework: K2
+                      fiscal_year_start_month: 1
+                      base_currency: SEK
+                      locked_until_date: '2026-06-30'
+                      archived: false
+                      address:
+                        line1: 'Exempelgatan 1'
+                        line2: null
+                        postal_code: '111 22'
+                        city: Exempelstad
+                        country: SE
+                      credential:
+                        type: oauth
+                        name: Exempelappen
+                        scopes:
+                          - 'vouchers:view'
+                          - 'vouchers:create'
+                          - 'vouchers:post'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /accounts:
+    get:
+      operationId: listAccounts
+      tags:
+        - Bokföring
+      summary: 'List the chart of accounts'
+      description: "The company's accounts (BAS numbering, 1000–9999), ordered by updated_at then number's row id. Filter on is_active. Supports updated_since for sync."
+      x-sv-summary: 'Lista kontoplanen'
+      x-sv-description: 'Företagets konton enligt BAS. Kan filtreras på aktiva konton och synkas med updated_since.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: is_active
+          in: query
+          required: false
+          description: 'Only active (true) or inactive (false) records.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'A page of accounts.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - number: 1930
+                        name: Företagskonto
+                        type: ASSET
+                        is_active: true
+                        sru_code: '7281'
+                        requires_cost_center: false
+                        requires_project: false
+                        updated_at: '2026-01-02T09:15:00+01:00'
+                      - number: 3001
+                        name: 'Försäljning varor 25 % moms'
+                        type: REVENUE
+                        is_active: true
+                        sru_code: '7410'
+                        requires_cost_center: false
+                        requires_project: false
+                        updated_at: '2026-01-02T09:15:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: eyJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wMiAxMDo0NToxMiIsImlkIjoiMGI5ZjNjMWUiLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9
+                      has_more: true
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/accounts/{number}':
+    get:
+      operationId: getAccount
+      tags:
+        - Bokföring
+      summary: 'Get an account'
+      description: 'One account by its account number.'
+      x-sv-summary: 'Hämta ett konto'
+      x-sv-description: 'Ett konto, utifrån kontonumret.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      parameters:
+        - name: number
+          in: path
+          required: true
+          description: 'Account number, 1000–9999.'
+          schema:
+            type: integer
+            minimum: 1000
+            maximum: 9999
+          example: 1930
+      responses:
+        200:
+          description: 'The account.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Account'
+              examples:
+                example:
+                  value:
+                    data:
+                      number: 1930
+                      name: Företagskonto
+                      type: ASSET
+                      is_active: true
+                      sru_code: '7281'
+                      requires_cost_center: false
+                      requires_project: false
+                      updated_at: '2026-01-02T09:15:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /vat-codes:
+    get:
+      operationId: listVatCodes
+      tags:
+        - Bokföring
+      summary: 'List VAT codes'
+      description: 'NONOX keeps VAT by account, not by a code table: a sale at 25 % books its VAT on 2611, which the VAT return reads into box 10. This list is derived from the same constants invoicing, supplier invoices and the VAT return use. Not paginated.'
+      x-sv-summary: 'Lista momskoder'
+      x-sv-description: 'NONOX håller moms per konto. Listan bygger på samma konton och rutor som fakturering och momsdeklarationen använder. Inte sidindelad.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      responses:
+        200:
+          description: 'All VAT codes.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VatCode'
+              examples:
+                example:
+                  value:
+                    data:
+                      - code: SALE_SE_25
+                        name: 'Försäljning i Sverige, 25 % moms'
+                        type: SALE_SE
+                        rate_basis_points: 2500
+                        vat_account: 2611
+                        report_box: 10
+                      - code: SALE_SE_12
+                        name: 'Försäljning i Sverige, 12 % moms'
+                        type: SALE_SE
+                        rate_basis_points: 1200
+                        vat_account: 2621
+                        report_box: 11
+                      - code: SALE_SE_6
+                        name: 'Försäljning i Sverige, 6 % moms'
+                        type: SALE_SE
+                        rate_basis_points: 600
+                        vat_account: 2631
+                        report_box: 12
+                      - code: PURCHASE_SE
+                        name: 'Inköp i Sverige, avdragsgill ingående moms'
+                        type: PURCHASE_SE
+                        rate_basis_points: null
+                        vat_account: 2641
+                        report_box: 48
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /fiscal-years:
+    get:
+      operationId: listFiscalYears
+      tags:
+        - Bokföring
+      summary: 'List fiscal years'
+      description: "The company's fiscal years (räkenskapsår), open and closed."
+      x-sv-summary: 'Lista räkenskapsår'
+      x-sv-description: 'Företagets räkenskapsår, öppna och stängda.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        200:
+          description: 'A page of fiscal years.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FiscalYear'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 7
+                        start_date: '2026-01-01'
+                        end_date: '2026-12-31'
+                        status: OPEN
+                        updated_at: '2026-01-02T09:15:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/fiscal-years/{fiscalYear}':
+    get:
+      operationId: getFiscalYear
+      tags:
+        - Bokföring
+      summary: 'Get a fiscal year'
+      description: 'One fiscal year by id.'
+      x-sv-summary: 'Hämta ett räkenskapsår'
+      x-sv-description: 'Ett räkenskapsår, utifrån id.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      parameters:
+        - name: fiscalYear
+          in: path
+          required: true
+          description: 'Fiscal year id.'
+          schema:
+            type: integer
+          example: 7
+      responses:
+        200:
+          description: 'The fiscal year.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FiscalYear'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      start_date: '2026-01-01'
+                      end_date: '2026-12-31'
+                      status: OPEN
+                      updated_at: '2026-01-02T09:15:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /voucher-series:
+    get:
+      operationId: listVoucherSeries
+      tags:
+        - Bokföring
+      summary: 'List voucher series'
+      description: 'The voucher series (A Manuell, B Kundfakturor, …). Numbers are gapless per series and fiscal year. Not paginated.'
+      x-sv-summary: 'Lista verifikationsserier'
+      x-sv-description: 'Verifikationsserierna. Numren är obrutna per serie och räkenskapsår. Inte sidindelad.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      responses:
+        200:
+          description: 'All series.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VoucherSeries'
+              examples:
+                example:
+                  value:
+                    data:
+                      - code: A
+                        name: Manuell
+                        is_default: true
+                      - code: B
+                        name: Kundfakturor
+                        is_default: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /vouchers:
+    get:
+      operationId: listVouchers
+      tags:
+        - Verifikationer
+      summary: 'List vouchers'
+      description: 'Vouchers with their rows and attachment metadata, filtered by status, series, fiscal year and voucher date. Use updated_since to sync: posting a draft changes its updated_at, a posted voucher never changes again except that corrected_by_voucher_id is set once when it is corrected.'
+      x-sv-summary: 'Lista verifikationer'
+      x-sv-description: 'Verifikationer med rader och underlag. Filtrera på status, serie, räkenskapsår och datum. Synka med updated_since.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: status
+          in: query
+          required: false
+          description: 'DRAFT or POSTED.'
+          schema:
+            type: string
+            enum:
+              - DRAFT
+              - POSTED
+        - name: series
+          in: query
+          required: false
+          description: 'Series code, for example A.'
+          schema:
+            type: string
+            maxLength: 3
+        - name: fiscal_year_id
+          in: query
+          required: false
+          description: 'Only vouchers in this fiscal year.'
+          schema:
+            type: integer
+        - name: date_from
+          in: query
+          required: false
+          description: 'Voucher date on or after (YYYY-MM-DD).'
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          required: false
+          description: 'Voucher date on or before (YYYY-MM-DD).'
+          schema:
+            type: string
+            format: date
+      responses:
+        200:
+          description: 'A page of vouchers.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Voucher'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+                        series: A
+                        number: 57
+                        reference: A57
+                        status: POSTED
+                        fiscal_year_id: 7
+                        voucher_date: '2026-03-02'
+                        description: Kontantförsäljning
+                        source: MANUAL
+                        corrects_voucher_id: null
+                        corrected_by_voucher_id: null
+                        posted_at: '2026-03-02T10:45:12+01:00'
+                        hash: 3c1f0e9d8b7a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d
+                        currency: SEK
+                        rows:
+                          - account: 1930
+                            debit_ore: 125000
+                            credit_ore: 0
+                            description: null
+                            cost_center: null
+                            project: null
+                          - account: 3001
+                            debit_ore: 0
+                            credit_ore: 100000
+                            description: null
+                            cost_center: null
+                            project: null
+                          - account: 2611
+                            debit_ore: 0
+                            credit_ore: 25000
+                            description: null
+                            cost_center: null
+                            project: null
+                        attachments:
+                          - id: 311
+                            name: kvitto-kontorsmaterial.pdf
+                            mime: application/pdf
+                            size: 48213
+                            sha256: 9f2b5c1d7e3a4b6c8d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e
+                            created_at: '2026-03-02T10:41:07+01:00'
+                        created_at: '2026-03-02T10:40:00+01:00'
+                        updated_at: '2026-03-02T10:45:12+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: eyJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wMiAxMDo0NToxMiIsImlkIjoiMGI5ZjNjMWUiLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9
+                      has_more: true
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createVoucher
+      tags:
+        - Verifikationer
+      summary: 'Create a voucher draft'
+      description: 'Creates a draft (status DRAFT, no number). Rows are validated as in the app: known active accounts, cost center/project when the account requires one, a row has either debit or credit. The fiscal year is chosen from voucher_date. Balance is checked when posting. Same Action as the app (SaveDraftVoucher).'
+      x-sv-summary: 'Skapa ett utkast'
+      x-sv-description: 'Skapar ett utkast till verifikation (utan nummer). Raderna kontrolleras som i appen. Balansen kontrolleras när utkastet bokförs.'
+      security:
+        - oauth2:
+            - 'vouchers:create'
+        - apiKey:
+            - 'vouchers:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:create'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        description: 'The voucher. Amounts in öre (1 krona = 100 öre).'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherInput'
+            examples:
+              example:
+                value:
+                  voucher_date: '2026-03-02'
+                  description: Kontantförsäljning
+                  series: A
+                  rows:
+                    - account: 1930
+                      debit_ore: 125000
+                    - account: 3001
+                      credit_ore: 100000
+                    - account: 2611
+                      credit_ore: 25000
+      responses:
+        201:
+          description: 'The draft.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Location:
+              $ref: '#/components/headers/Location'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+                      series: A
+                      number: null
+                      reference: null
+                      status: DRAFT
+                      fiscal_year_id: 7
+                      voucher_date: '2026-03-02'
+                      description: Kontantförsäljning
+                      source: MANUAL
+                      corrects_voucher_id: null
+                      corrected_by_voucher_id: null
+                      posted_at: null
+                      hash: null
+                      currency: SEK
+                      rows:
+                        - account: 1930
+                          debit_ore: 125000
+                          credit_ore: 0
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 3001
+                          debit_ore: 0
+                          credit_ore: 100000
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 2611
+                          debit_ore: 0
+                          credit_ore: 25000
+                          description: null
+                          cost_center: null
+                          project: null
+                      attachments: []
+                      created_at: '2026-03-02T10:40:00+01:00'
+                      updated_at: '2026-03-02T10:40:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/vouchers/{voucher}':
+    parameters:
+      - $ref: '#/components/parameters/VoucherId'
+    get:
+      operationId: getVoucher
+      tags:
+        - Verifikationer
+      summary: 'Get a voucher'
+      description: 'One voucher with rows and attachment metadata.'
+      x-sv-summary: 'Hämta en verifikation'
+      x-sv-description: 'En verifikation med rader och underlag.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      responses:
+        200:
+          description: 'The voucher.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+                      series: A
+                      number: 57
+                      reference: A57
+                      status: POSTED
+                      fiscal_year_id: 7
+                      voucher_date: '2026-03-02'
+                      description: Kontantförsäljning
+                      source: MANUAL
+                      corrects_voucher_id: null
+                      corrected_by_voucher_id: null
+                      posted_at: '2026-03-02T10:45:12+01:00'
+                      hash: 3c1f0e9d8b7a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d
+                      currency: SEK
+                      rows:
+                        - account: 1930
+                          debit_ore: 125000
+                          credit_ore: 0
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 3001
+                          debit_ore: 0
+                          credit_ore: 100000
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 2611
+                          debit_ore: 0
+                          credit_ore: 25000
+                          description: null
+                          cost_center: null
+                          project: null
+                      attachments:
+                        - id: 311
+                          name: kvitto-kontorsmaterial.pdf
+                          mime: application/pdf
+                          size: 48213
+                          sha256: 9f2b5c1d7e3a4b6c8d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e
+                          created_at: '2026-03-02T10:41:07+01:00'
+                      created_at: '2026-03-02T10:40:00+01:00'
+                      updated_at: '2026-03-02T10:45:12+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateVoucherDraft
+      tags:
+        - Verifikationer
+      summary: 'Change a voucher draft'
+      description: 'Changes a draft. Fields left out keep their values; `rows`, when sent, replaces all rows. A posted voucher can never be changed: the answer is 403 (correct it instead).'
+      x-sv-summary: 'Ändra ett utkast'
+      x-sv-description: 'Ändrar ett utkast. Fält som utelämnas behåller sina värden; rows ersätter alla rader. En bokförd verifikation kan aldrig ändras (403); rätta den i stället.'
+      security:
+        - oauth2:
+            - 'vouchers:create'
+        - apiKey:
+            - 'vouchers:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:create'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoucherPatch'
+            examples:
+              example:
+                value:
+                  description: 'Kontantförsäljning, kassa 2'
+      responses:
+        200:
+          description: 'The changed draft.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+                      series: A
+                      number: null
+                      reference: null
+                      status: DRAFT
+                      fiscal_year_id: 7
+                      voucher_date: '2026-03-02'
+                      description: 'Kontantförsäljning, kassa 2'
+                      source: MANUAL
+                      corrects_voucher_id: null
+                      corrected_by_voucher_id: null
+                      posted_at: null
+                      hash: null
+                      currency: SEK
+                      rows:
+                        - account: 1930
+                          debit_ore: 125000
+                          credit_ore: 0
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 3001
+                          debit_ore: 0
+                          credit_ore: 100000
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 2611
+                          debit_ore: 0
+                          credit_ore: 25000
+                          description: null
+                          cost_center: null
+                          project: null
+                      attachments: []
+                      created_at: '2026-03-02T10:40:00+01:00'
+                      updated_at: '2026-03-02T10:40:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    delete:
+      operationId: deleteVoucherDraft
+      tags:
+        - Verifikationer
+      summary: 'Delete a voucher draft'
+      description: 'Deletes a draft. A posted voucher can never be deleted (403).'
+      x-sv-summary: 'Ta bort ett utkast'
+      x-sv-description: 'Tar bort ett utkast. En bokförd verifikation kan aldrig tas bort (403).'
+      security:
+        - oauth2:
+            - 'vouchers:create'
+        - apiKey:
+            - 'vouchers:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:create'
+      responses:
+        204:
+          description: Deleted.
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/vouchers/{voucher}/post':
+    parameters:
+      - $ref: '#/components/parameters/VoucherId'
+    post:
+      operationId: postVoucher
+      tags:
+        - Verifikationer
+      summary: 'Post a voucher'
+      description: 'Posts a draft (bokför): checks that it balances, that the date is in an open fiscal year and not in a locked period, assigns the next gapless number in its series and fiscal year, extends the hash chain and writes the audit log. Irreversible: a posted voucher is only ever corrected. Same Action as the app (PostVoucher). No body.'
+      x-sv-summary: 'Bokför en verifikation'
+      x-sv-description: 'Bokför ett utkast: kontrollerar balans, räkenskapsår och låsta perioder, ger nästa nummer i serien utan luckor och skriver behandlingshistorik. Går inte att ångra, bara rätta.'
+      security:
+        - oauth2:
+            - 'vouchers:post'
+        - apiKey:
+            - 'vouchers:post'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:post'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        200:
+          description: 'The posted voucher.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+                      series: A
+                      number: 57
+                      reference: A57
+                      status: POSTED
+                      fiscal_year_id: 7
+                      voucher_date: '2026-03-02'
+                      description: Kontantförsäljning
+                      source: MANUAL
+                      corrects_voucher_id: null
+                      corrected_by_voucher_id: null
+                      posted_at: '2026-03-02T10:45:12+01:00'
+                      hash: 3c1f0e9d8b7a6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d
+                      currency: SEK
+                      rows:
+                        - account: 1930
+                          debit_ore: 125000
+                          credit_ore: 0
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 3001
+                          debit_ore: 0
+                          credit_ore: 100000
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 2611
+                          debit_ore: 0
+                          credit_ore: 25000
+                          description: null
+                          cost_center: null
+                          project: null
+                      attachments: []
+                      created_at: '2026-03-02T10:40:00+01:00'
+                      updated_at: '2026-03-02T10:45:12+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/vouchers/{voucher}/correct':
+    parameters:
+      - $ref: '#/components/parameters/VoucherId'
+    post:
+      operationId: correctVoucher
+      tags:
+        - Verifikationer
+      summary: 'Correct a posted voucher'
+      description: 'Creates and posts a correcting voucher (rättelseverifikation) that reverses the original and, if `rows` are given, books those instead. Both vouchers are linked. A voucher can be corrected once. Same Action as the app (CorrectVoucher).'
+      x-sv-summary: 'Rätta en bokförd verifikation'
+      x-sv-description: 'Skapar och bokför en rättelseverifikation som vänder originalet och, om rows skickas, bokför dem i stället. Båda länkas till varandra. En verifikation kan rättas en gång.'
+      security:
+        - oauth2:
+            - 'vouchers:correct'
+        - apiKey:
+            - 'vouchers:correct'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:correct'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        description: 'Why, when, and optionally the rows to book instead.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionInput'
+            examples:
+              example:
+                value:
+                  reason: 'Fel konto'
+                  date: '2026-03-05'
+      responses:
+        201:
+          description: 'The correcting voucher.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Location:
+              $ref: '#/components/headers/Location'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Voucher'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 4e8d2c1b-7f6a-4b3c-8d9e-0a1b2c3d4e5f
+                      series: A
+                      number: 58
+                      reference: A58
+                      status: POSTED
+                      fiscal_year_id: 7
+                      voucher_date: '2026-03-02'
+                      description: 'Rättelse av A57: fel konto'
+                      source: CORRECTION
+                      corrects_voucher_id: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+                      corrected_by_voucher_id: null
+                      posted_at: '2026-03-05T08:02:44+01:00'
+                      hash: 8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b
+                      currency: SEK
+                      rows:
+                        - account: 1930
+                          debit_ore: 0
+                          credit_ore: 125000
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 3001
+                          debit_ore: 100000
+                          credit_ore: 0
+                          description: null
+                          cost_center: null
+                          project: null
+                        - account: 2611
+                          debit_ore: 25000
+                          credit_ore: 0
+                          description: null
+                          cost_center: null
+                          project: null
+                      attachments: []
+                      created_at: '2026-03-05T08:02:44+01:00'
+                      updated_at: '2026-03-05T08:02:44+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/vouchers/{voucher}/attachments':
+    parameters:
+      - $ref: '#/components/parameters/VoucherId'
+    get:
+      operationId: listVoucherAttachments
+      tags:
+        - Verifikationer
+      summary: "List a voucher's attachments"
+      description: "Metadata of the voucher's underlag (not paginated)."
+      x-sv-summary: 'Lista underlag'
+      x-sv-description: 'Underlagen till en verifikation (inte sidindelad).'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      responses:
+        200:
+          description: 'The attachments.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attachment'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 311
+                        name: kvitto-kontorsmaterial.pdf
+                        mime: application/pdf
+                        size: 48213
+                        sha256: 9f2b5c1d7e3a4b6c8d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e
+                        created_at: '2026-03-02T10:41:07+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: addVoucherAttachment
+      tags:
+        - Verifikationer
+      summary: 'Add an attachment'
+      description: 'Uploads underlag as multipart/form-data in the field `file`: a PDF or an image (JPG, PNG, WebP), at most 10 MB; the type is detected from the content, not the name. Allowed on drafts and on posted vouchers; an attachment is never removed from a posted voucher.'
+      x-sv-summary: 'Lägg till underlag'
+      x-sv-description: 'Laddar upp underlag som multipart/form-data i fältet file: PDF eller bild (JPG, PNG, WebP), högst 10 MB. Går på utkast och bokförda verifikationer; underlag tas aldrig bort från en bokförd verifikation.'
+      security:
+        - oauth2:
+            - 'vouchers:create'
+        - apiKey:
+            - 'vouchers:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:create'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: 'PDF, JPG, PNG or WebP, max 10 MB.'
+            encoding:
+              file:
+                contentType: 'application/pdf, image/jpeg, image/png, image/webp'
+      responses:
+        201:
+          description: 'The attachment.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Attachment'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 311
+                      name: kvitto-kontorsmaterial.pdf
+                      mime: application/pdf
+                      size: 48213
+                      sha256: 9f2b5c1d7e3a4b6c8d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e
+                      created_at: '2026-03-02T10:41:07+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/vouchers/{voucher}/attachments/{attachment}/content':
+    parameters:
+      - $ref: '#/components/parameters/VoucherId'
+    get:
+      operationId: downloadVoucherAttachment
+      tags:
+        - Verifikationer
+      summary: 'Download an attachment'
+      description: 'The file itself, as stored. X-Content-SHA256 lets you verify it against the sha256 in the metadata.'
+      x-sv-summary: 'Hämta underlagets fil'
+      x-sv-description: 'Själva filen. X-Content-SHA256 låter dig kontrollera den mot sha256 i metadata.'
+      security:
+        - oauth2:
+            - 'vouchers:view'
+        - apiKey:
+            - 'vouchers:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'vouchers:view'
+      parameters:
+        - name: attachment
+          in: path
+          required: true
+          description: 'Attachment id.'
+          schema:
+            type: integer
+          example: 311
+      responses:
+        200:
+          description: 'The file.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            X-Content-SHA256:
+              $ref: '#/components/headers/ContentSha256'
+            Content-Disposition:
+              description: 'attachment; filename="…"'
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /customers:
+    get:
+      operationId: listCustomers
+      tags:
+        - Kunder
+      summary: 'List customers'
+      description: 'The customer register. Personal numbers are never returned, only has_personal_number.'
+      x-sv-summary: 'Lista kunder'
+      x-sv-description: 'Kundregistret. Personnummer lämnas aldrig ut, bara has_personal_number.'
+      security:
+        - oauth2:
+            - 'invoices:view'
+        - apiKey:
+            - 'invoices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'invoices:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: is_active
+          in: query
+          required: false
+          description: 'Only active (true) or inactive (false) records.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'A page of customers.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Customer'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 18
+                        number: 1004
+                        name: 'Kund Exempel AB'
+                        org_number: 559900-4560
+                        has_personal_number: false
+                        vat_number: SE559900456001
+                        email: faktura@kund.example.se
+                        phone: '08-000 00 00'
+                        address:
+                          line1: 'Kundvägen 5'
+                          line2: null
+                          postal_code: '222 33'
+                          city: Exempelby
+                          country: SE
+                        payment_terms_days: 30
+                        is_active: true
+                        reverse_charge_construction: false
+                        foreign_sale: null
+                        processing_restricted: false
+                        created_at: '2026-02-10T13:00:00+01:00'
+                        updated_at: '2026-02-10T13:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: eyJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wMiAxMDo0NToxMiIsImlkIjoiMGI5ZjNjMWUiLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9
+                      has_more: true
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createCustomer
+      tags:
+        - Kunder
+      summary: 'Create a customer'
+      description: "Adds a customer; the number comes from the company's customer number series. personal_number is write-only (for sole traders and private persons) and is stored encrypted. Same Action as the app (SaveCustomer)."
+      x-sv-summary: 'Lägg till en kund'
+      x-sv-description: 'Lägger till en kund; numret tas ur företagets nummerserie. personal_number kan skrivas men läses aldrig ut.'
+      security:
+        - oauth2:
+            - 'invoices:create'
+        - apiKey:
+            - 'invoices:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'invoices:create'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        description: 'The customer.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+            examples:
+              example:
+                value:
+                  name: 'Kund Exempel AB'
+                  org_number: 559900-4560
+                  vat_number: SE559900456001
+                  email: faktura@kund.example.se
+                  address_line1: 'Kundvägen 5'
+                  postal_code: '222 33'
+                  city: Exempelby
+                  country: SE
+                  payment_terms_days: 30
+      responses:
+        201:
+          description: 'The customer.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Location:
+              $ref: '#/components/headers/Location'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 18
+                      number: 1004
+                      name: 'Kund Exempel AB'
+                      org_number: 559900-4560
+                      has_personal_number: false
+                      vat_number: SE559900456001
+                      email: faktura@kund.example.se
+                      phone: '08-000 00 00'
+                      address:
+                        line1: 'Kundvägen 5'
+                        line2: null
+                        postal_code: '222 33'
+                        city: Exempelby
+                        country: SE
+                      payment_terms_days: 30
+                      is_active: true
+                      reverse_charge_construction: false
+                      foreign_sale: null
+                      processing_restricted: false
+                      created_at: '2026-02-10T13:00:00+01:00'
+                      updated_at: '2026-02-10T13:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/customers/{customer}':
+    parameters:
+      - name: customer
+        in: path
+        required: true
+        description: 'Customer id (not the customer number).'
+        schema:
+          type: integer
+        example: 18
+    get:
+      operationId: getCustomer
+      tags:
+        - Kunder
+      summary: 'Get a customer'
+      description: 'One customer by id.'
+      x-sv-summary: 'Hämta en kund'
+      x-sv-description: 'En kund, utifrån id.'
+      security:
+        - oauth2:
+            - 'invoices:view'
+        - apiKey:
+            - 'invoices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'invoices:view'
+      responses:
+        200:
+          description: 'The customer.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 18
+                      number: 1004
+                      name: 'Kund Exempel AB'
+                      org_number: 559900-4560
+                      has_personal_number: false
+                      vat_number: SE559900456001
+                      email: faktura@kund.example.se
+                      phone: '08-000 00 00'
+                      address:
+                        line1: 'Kundvägen 5'
+                        line2: null
+                        postal_code: '222 33'
+                        city: Exempelby
+                        country: SE
+                      payment_terms_days: 30
+                      is_active: true
+                      reverse_charge_construction: false
+                      foreign_sale: null
+                      processing_restricted: false
+                      created_at: '2026-02-10T13:00:00+01:00'
+                      updated_at: '2026-02-10T13:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateCustomer
+      tags:
+        - Kunder
+      summary: 'Change a customer'
+      description: 'Changes the fields sent; the others keep their values.'
+      x-sv-summary: 'Ändra en kund'
+      x-sv-description: 'Ändrar de fält som skickas; övriga behåller sina värden.'
+      security:
+        - oauth2:
+            - 'invoices:create'
+        - apiKey:
+            - 'invoices:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'invoices:create'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerPatch'
+            examples:
+              example:
+                value:
+                  payment_terms_days: 20
+      responses:
+        200:
+          description: 'The customer.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Customer'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 18
+                      number: 1004
+                      name: 'Kund Exempel AB'
+                      org_number: 559900-4560
+                      has_personal_number: false
+                      vat_number: SE559900456001
+                      email: faktura@kund.example.se
+                      phone: '08-000 00 00'
+                      address:
+                        line1: 'Kundvägen 5'
+                        line2: null
+                        postal_code: '222 33'
+                        city: Exempelby
+                        country: SE
+                      payment_terms_days: 20
+                      is_active: true
+                      reverse_charge_construction: false
+                      foreign_sale: null
+                      processing_restricted: false
+                      created_at: '2026-02-10T13:00:00+01:00'
+                      updated_at: '2026-02-10T13:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /suppliers:
+    get:
+      operationId: listSuppliers
+      tags:
+        - Leverantörer
+      summary: 'List suppliers'
+      description: 'The supplier register. Needs supplier-invoices:create or supplier-invoices:approve.'
+      x-sv-summary: 'Lista leverantörer'
+      x-sv-description: Leverantörsregistret.
+      security:
+        - oauth2:
+            - 'supplier-invoices:create'
+        - oauth2:
+            - 'supplier-invoices:approve'
+        - apiKey:
+            - 'supplier-invoices:create'
+        - apiKey:
+            - 'supplier-invoices:approve'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'supplier-invoices:create'
+          -
+            - 'supplier-invoices:approve'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: is_active
+          in: query
+          required: false
+          description: 'Only active (true) or inactive (false) records.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'A page of suppliers.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Supplier'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 9
+                        number: 2001
+                        name: 'Leverantör Exempel AB'
+                        org_number: 559911-2223
+                        vat_number: SE559911222301
+                        email: reskontra@leverantor.example.se
+                        phone: '031-000 00 00'
+                        address:
+                          line1: 'Leverantörsgatan 9'
+                          postal_code: '411 00'
+                          city: Exempelhamn
+                          country: SE
+                        bankgiro: 5550-1233
+                        plusgiro: null
+                        iban: null
+                        bic: null
+                        payment_terms_days: 30
+                        default_account: 4010
+                        is_active: true
+                        processing_restricted: false
+                        created_at: '2026-02-11T08:30:00+01:00'
+                        updated_at: '2026-02-11T08:30:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: eyJ1cGRhdGVkX2F0IjoiMjAyNi0wMy0wMiAxMDo0NToxMiIsImlkIjoiMGI5ZjNjMWUiLCJfcG9pbnRzVG9OZXh0SXRlbXMiOnRydWV9
+                      has_more: true
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createSupplier
+      tags:
+        - Leverantörer
+      summary: 'Create a supplier'
+      description: 'Adds a supplier; bankgiro and plusgiro are checked with their check digits. Same Action as the app (SaveSupplier).'
+      x-sv-summary: 'Lägg till en leverantör'
+      x-sv-description: 'Lägger till en leverantör; bankgiro och plusgiro kontrolleras med kontrollsiffran.'
+      security:
+        - oauth2:
+            - 'supplier-invoices:create'
+        - apiKey:
+            - 'supplier-invoices:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'supplier-invoices:create'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        description: 'The supplier.'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierInput'
+            examples:
+              example:
+                value:
+                  name: 'Leverantör Exempel AB'
+                  org_number: 559911-2223
+                  vat_number: SE559911222301
+                  email: reskontra@leverantor.example.se
+                  address_line1: 'Leverantörsgatan 9'
+                  postal_code: '411 00'
+                  city: Exempelhamn
+                  country: SE
+                  bankgiro: 5550-1233
+                  payment_terms_days: 30
+                  default_account: 4010
+      responses:
+        201:
+          description: 'The supplier.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Location:
+              $ref: '#/components/headers/Location'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Supplier'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 9
+                      number: 2001
+                      name: 'Leverantör Exempel AB'
+                      org_number: 559911-2223
+                      vat_number: SE559911222301
+                      email: reskontra@leverantor.example.se
+                      phone: '031-000 00 00'
+                      address:
+                        line1: 'Leverantörsgatan 9'
+                        postal_code: '411 00'
+                        city: Exempelhamn
+                        country: SE
+                      bankgiro: 5550-1233
+                      plusgiro: null
+                      iban: null
+                      bic: null
+                      payment_terms_days: 30
+                      default_account: 4010
+                      is_active: true
+                      processing_restricted: false
+                      created_at: '2026-02-11T08:30:00+01:00'
+                      updated_at: '2026-02-11T08:30:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/suppliers/{supplier}':
+    parameters:
+      - name: supplier
+        in: path
+        required: true
+        description: 'Supplier id (not the supplier number).'
+        schema:
+          type: integer
+        example: 9
+    get:
+      operationId: getSupplier
+      tags:
+        - Leverantörer
+      summary: 'Get a supplier'
+      description: 'One supplier by id.'
+      x-sv-summary: 'Hämta en leverantör'
+      x-sv-description: 'En leverantör, utifrån id.'
+      security:
+        - oauth2:
+            - 'supplier-invoices:create'
+        - oauth2:
+            - 'supplier-invoices:approve'
+        - apiKey:
+            - 'supplier-invoices:create'
+        - apiKey:
+            - 'supplier-invoices:approve'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'supplier-invoices:create'
+          -
+            - 'supplier-invoices:approve'
+      responses:
+        200:
+          description: 'The supplier.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Supplier'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 9
+                      number: 2001
+                      name: 'Leverantör Exempel AB'
+                      org_number: 559911-2223
+                      vat_number: SE559911222301
+                      email: reskontra@leverantor.example.se
+                      phone: '031-000 00 00'
+                      address:
+                        line1: 'Leverantörsgatan 9'
+                        postal_code: '411 00'
+                        city: Exempelhamn
+                        country: SE
+                      bankgiro: 5550-1233
+                      plusgiro: null
+                      iban: null
+                      bic: null
+                      payment_terms_days: 30
+                      default_account: 4010
+                      is_active: true
+                      processing_restricted: false
+                      created_at: '2026-02-11T08:30:00+01:00'
+                      updated_at: '2026-02-11T08:30:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateSupplier
+      tags:
+        - Leverantörer
+      summary: 'Change a supplier'
+      description: 'Changes the fields sent; the others keep their values.'
+      x-sv-summary: 'Ändra en leverantör'
+      x-sv-description: 'Ändrar de fält som skickas; övriga behåller sina värden.'
+      security:
+        - oauth2:
+            - 'supplier-invoices:create'
+        - apiKey:
+            - 'supplier-invoices:create'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'supplier-invoices:create'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupplierPatch'
+            examples:
+              example:
+                value:
+                  payment_terms_days: 10
+      responses:
+        200:
+          description: 'The supplier.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Supplier'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 9
+                      number: 2001
+                      name: 'Leverantör Exempel AB'
+                      org_number: 559911-2223
+                      vat_number: SE559911222301
+                      email: reskontra@leverantor.example.se
+                      phone: '031-000 00 00'
+                      address:
+                        line1: 'Leverantörsgatan 9'
+                        postal_code: '411 00'
+                        city: Exempelhamn
+                        country: SE
+                      bankgiro: 5550-1233
+                      plusgiro: null
+                      iban: null
+                      bic: null
+                      payment_terms_days: 10
+                      default_account: 4010
+                      is_active: true
+                      processing_restricted: false
+                      created_at: '2026-02-11T08:30:00+01:00'
+                      updated_at: '2026-02-11T08:30:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+webhooks:
+  voucher.posted:
+    post:
+      operationId: voucherPosted
+      summary: 'A voucher was posted'
+      x-sv-summary: 'En verifikation har bokförts'
+      x-nonox-status: planned
+      description: 'Sent as an HTTPS POST to each subscription for `voucher.posted`. Verify `Nonox-Signature` before trusting the body, reject timestamps older than five minutes, and answer 2xx quickly; failed deliveries are retried with backoff.'
+      x-sv-description: 'Skickas med HTTPS POST till varje prenumeration på `voucher.posted`. Kontrollera Nonox-Signature innan du litar på innehållet.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: c2d4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f
+                  type: voucher.posted
+                  created_at: '2026-03-02T10:45:13+01:00'
+                  company_id: 42
+                  data:
+                    voucher_id: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+                    series: A
+                    number: 57
+                    voucher_date: '2026-03-02'
+                    fiscal_year_id: 7
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds, is retried.'
+  invoice.sent:
+    post:
+      operationId: invoiceSent
+      summary: 'A customer invoice was sent'
+      x-sv-summary: 'En kundfaktura har skickats'
+      x-nonox-status: planned
+      description: 'Sent as an HTTPS POST to each subscription for `invoice.sent`. Verify `Nonox-Signature` before trusting the body, reject timestamps older than five minutes, and answer 2xx quickly; failed deliveries are retried with backoff.'
+      x-sv-description: 'Skickas med HTTPS POST till varje prenumeration på `invoice.sent`. Kontrollera Nonox-Signature innan du litar på innehållet.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: c2d4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f
+                  type: invoice.sent
+                  created_at: '2026-03-02T10:45:13+01:00'
+                  company_id: 42
+                  data:
+                    invoice_id: 1201
+                    invoice_number: 1042
+                    customer_id: 18
+                    total_ore: 125000
+                    currency: SEK
+                    due_date: '2026-04-01'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds, is retried.'
+  invoice.paid:
+    post:
+      operationId: invoicePaid
+      summary: 'A customer invoice was paid in full'
+      x-sv-summary: 'En kundfaktura har betalats'
+      x-nonox-status: planned
+      description: 'Sent as an HTTPS POST to each subscription for `invoice.paid`. Verify `Nonox-Signature` before trusting the body, reject timestamps older than five minutes, and answer 2xx quickly; failed deliveries are retried with backoff.'
+      x-sv-description: 'Skickas med HTTPS POST till varje prenumeration på `invoice.paid`. Kontrollera Nonox-Signature innan du litar på innehållet.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: c2d4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f
+                  type: invoice.paid
+                  created_at: '2026-03-02T10:45:13+01:00'
+                  company_id: 42
+                  data:
+                    invoice_id: 1201
+                    invoice_number: 1042
+                    paid_ore: 125000
+                    currency: SEK
+                    paid_on: '2026-03-28'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds, is retried.'
+  supplier_invoice.approved:
+    post:
+      operationId: supplierInvoiceApproved
+      summary: 'A supplier invoice was approved'
+      x-sv-summary: 'En leverantörsfaktura har attesterats'
+      x-nonox-status: planned
+      description: 'Sent as an HTTPS POST to each subscription for `supplier_invoice.approved`. Verify `Nonox-Signature` before trusting the body, reject timestamps older than five minutes, and answer 2xx quickly; failed deliveries are retried with backoff.'
+      x-sv-description: 'Skickas med HTTPS POST till varje prenumeration på `supplier_invoice.approved`. Kontrollera Nonox-Signature innan du litar på innehållet.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: c2d4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f
+                  type: supplier_invoice.approved
+                  created_at: '2026-03-02T10:45:13+01:00'
+                  company_id: 42
+                  data:
+                    supplier_invoice_id: 512
+                    supplier_id: 9
+                    total_ore: 62500
+                    currency: SEK
+                    due_date: '2026-03-31'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds, is retried.'
+components:
+  securitySchemes:
+    oauth2:
+      type: oauth2
+      description: 'Authorization code with PKCE (S256 required). Access tokens ≤ 15 minutes; refresh tokens rotate and reuse revokes the grant.'
+      flows:
+        authorizationCode:
+          authorizationUrl: 'https://nonox.app/anslut'
+          tokenUrl: 'https://nonox.app/oauth/token'
+          refreshUrl: 'https://nonox.app/oauth/token'
+          scopes:
+            'vouchers:view': 'Read vouchers, attachments, chart of accounts, fiscal years, voucher series and VAT codes'
+            'vouchers:create': 'Create and change voucher drafts and add attachments'
+            'vouchers:post': 'Post vouchers (irreversible; only a correction can undo the effect)'
+            'vouchers:correct': 'Correct posted vouchers with a correcting voucher'
+            'invoices:view': 'Read the customer register'
+            'invoices:create': 'Create and change customers'
+            'supplier-invoices:create': 'Read, create and change suppliers'
+            'supplier-invoices:approve': 'Read the supplier register'
+    apiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: nnx_…
+      description: 'An API key created under Anslutningar, sent as `Authorization: Bearer nnx_…`. Its scopes are chosen when it is created.'
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: 'Required on every POST. A unique value per intended operation (a UUID v4 is ideal), 1–255 visible ASCII characters. Kept 24 hours per credential: the same key with the same request returns the stored response (Idempotent-Replayed: true); with a different request 422 idempotency_key_reused; while the first is still running 409. Server errors (5xx) are not stored, so retry with the same key.'
+      x-sv-description: 'Krävs på varje POST. Ett unikt värde per avsedd åtgärd (helst ett UUID). Sparas i 24 timmar per nyckel eller app, så att ett nytt försök aldrig bokför två gånger.'
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+      example: 3f6c1b7e-2d4a-4e8b-9c0d-5a1b2c3d4e5f
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: 'Page size, 1–200.'
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: 'Opaque cursor from meta.next_cursor of the previous page.'
+      schema:
+        type: string
+        maxLength: 2000
+    UpdatedSince:
+      name: updated_since
+      in: query
+      required: false
+      description: 'Only records whose updated_at is strictly later than this ISO 8601 time. Lists are ordered by updated_at, then id, so a sync stores the updated_at of the last record it has seen and passes it next time, walking all pages with `cursor`.'
+      x-sv-description: 'Bara poster som ändrats efter den här tiden (ISO 8601). Listor sorteras på updated_at och id.'
+      schema:
+        type: string
+        format: date-time
+      example: '2026-03-01T00:00:00+01:00'
+    VoucherId:
+      name: voucher
+      in: path
+      required: true
+      description: 'Voucher id (UUID).'
+      schema:
+        type: string
+        format: uuid
+      example: 0b9f3c1e-6a2d-4f7b-9c8e-1d2a3b4c5d6e
+  headers:
+    XRequestId:
+      description: "Unique id of this request; also in a problem's `instance`."
+      schema:
+        type: string
+        format: uuid
+    RateLimitLimit:
+      description: 'Requests allowed per minute for this credential.'
+      schema:
+        type: integer
+      example: 120
+    RateLimitRemaining:
+      description: 'Requests left in the current minute for this credential.'
+      schema:
+        type: integer
+      example: 117
+    RateLimitReset:
+      description: 'Seconds until the window resets.'
+      schema:
+        type: integer
+      example: 42
+    RetryAfter:
+      description: 'Seconds to wait before retrying.'
+      schema:
+        type: integer
+      example: 23
+    IdempotentReplayed:
+      description: '`true` when this is the stored response of an earlier request with the same Idempotency-Key (nothing was done again).'
+      schema:
+        type: string
+        enum:
+          - 'true'
+    Location:
+      description: 'URL of the created resource.'
+      schema:
+        type: string
+        format: uri
+    ContentSha256:
+      description: 'SHA-256 of the file, hex.'
+      schema:
+        type: string
+    WwwAuthenticate:
+      description: 'Bearer realm="nonox", error="invalid_token"'
+      schema:
+        type: string
+  responses:
+    BadRequest:
+      description: 'Bad request: missing or invalid Idempotency-Key, or a body that is not a JSON object.'
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            idempotency_key_required:
+              summary: 'No Idempotency-Key on a POST'
+              value:
+                type: 'urn:nonox:problem:idempotency_key_required'
+                title: 'Bad Request'
+                status: 400
+                code: idempotency_key_required
+                detail: 'Skicka en unik Idempotency-Key (till exempel ett UUID) med varje POST, så att ett nytt försök aldrig bokför två gånger.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+            idempotency_key_invalid:
+              summary: 'Idempotency-Key too long or not visible ASCII'
+              value:
+                type: 'urn:nonox:problem:idempotency_key_invalid'
+                title: 'Bad Request'
+                status: 400
+                code: idempotency_key_invalid
+                detail: 'Idempotency-Key ska vara 1–255 synliga ASCII-tecken.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+            invalid_json:
+              summary: 'Malformed JSON'
+              value:
+                type: 'urn:nonox:problem:invalid_json'
+                title: 'Bad Request'
+                status: 400
+                code: invalid_json
+                detail: 'Kroppen är inte giltig JSON (ett objekt).'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+    Unauthorized:
+      description: 'Missing, invalid, expired or revoked token or API key. Also returned when the person behind the credential has left the company (an OAuth grant is then revoked for good).'
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+        WWW-Authenticate:
+          $ref: '#/components/headers/WwwAuthenticate'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            unauthenticated:
+              summary: 'No valid credential'
+              value:
+                type: 'urn:nonox:problem:unauthenticated'
+                title: Unauthorized
+                status: 401
+                code: unauthenticated
+                detail: 'Nyckeln eller token saknas, är ogiltig, har gått ut eller har återkallats.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+    Forbidden:
+      description: 'The credential may not do this: a scope is missing, the granting person no longer has the permission, the address is not allowed, the company is archived (read-only) or no longer allows the app.'
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            insufficient_scope:
+              summary: 'Scope missing or permission lost'
+              value:
+                type: 'urn:nonox:problem:insufficient_scope'
+                title: Forbidden
+                status: 403
+                code: insufficient_scope
+                detail: 'Nyckeln eller appen saknar behörigheten vouchers:post, eller så har personen som gav den inte längre den behörigheten i företaget.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+                required_scopes:
+                  - 'vouchers:post'
+            forbidden:
+              summary: 'The action refuses (for example changing a posted voucher)'
+              value:
+                type: 'urn:nonox:problem:forbidden'
+                title: Forbidden
+                status: 403
+                code: forbidden
+                detail: 'Behörighet saknas för det här.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+            ip_not_allowed:
+              summary: 'Outside the IP allowlist'
+              value:
+                type: 'urn:nonox:problem:ip_not_allowed'
+                title: Forbidden
+                status: 403
+                code: ip_not_allowed
+                detail: 'Företaget tillåter inte anrop från den här adressen.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+            company_archived:
+              summary: 'Write to an archived company'
+              value:
+                type: 'urn:nonox:problem:company_archived'
+                title: Forbidden
+                status: 403
+                code: company_archived
+                detail: 'Företaget är arkiverat och kan bara läsas.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+            app_not_allowed:
+              summary: 'The company no longer allows the app'
+              value:
+                type: 'urn:nonox:problem:app_not_allowed'
+                title: Forbidden
+                status: 403
+                code: app_not_allowed
+                detail: 'Företaget tillåter inte längre den här appen.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+    NotFound:
+      description: "Not found. Also the answer for another company's ids (existence is never revealed) and for every call while NONOX Connect is turned off for the company."
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            not_found:
+              summary: "Unknown id, other company's id, or module off"
+              value:
+                type: 'urn:nonox:problem:not_found'
+                title: 'Not Found'
+                status: 404
+                code: not_found
+                detail: 'Det du söker finns inte.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+    Conflict:
+      description: 'A request with the same Idempotency-Key is still running.'
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            idempotency_in_progress:
+              summary: 'Same key, first request not finished'
+              value:
+                type: 'urn:nonox:problem:idempotency_in_progress'
+                title: Conflict
+                status: 409
+                code: idempotency_in_progress
+                detail: 'En begäran med samma Idempotency-Key pågår. Vänta och försök igen.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+    UnsupportedMediaType:
+      description: 'The body is not application/json (or multipart/form-data where a file is accepted).'
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            unsupported_media_type:
+              summary: 'Wrong Content-Type'
+              value:
+                type: 'urn:nonox:problem:unsupported_media_type'
+                title: 'Unsupported Media Type'
+                status: 415
+                code: unsupported_media_type
+                detail: 'Skicka JSON (application/json).'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+    Unprocessable:
+      description: 'Validation failed, or the Idempotency-Key was already used for a different request.'
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            validation_failed:
+              summary: 'Field errors'
+              value:
+                type: 'urn:nonox:problem:validation_failed'
+                title: 'Unprocessable Content'
+                status: 422
+                code: validation_failed
+                detail: 'Uppgifterna kunde inte godtas. Se errors.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+                errors:
+                  rows:
+                    - 'Verifikationen balanserar inte: debet och kredit skiljer sig åt.'
+                  voucher_date:
+                    - 'Det finns inget räkenskapsår som omfattar 2031-01-01.'
+            idempotency_key_reused:
+              summary: 'Same key, different body'
+              value:
+                type: 'urn:nonox:problem:idempotency_key_reused'
+                title: 'Unprocessable Content'
+                status: 422
+                code: idempotency_key_reused
+                detail: 'Idempotency-Key har redan använts för en annan begäran. Använd en ny nyckel för en ny begäran.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+    TooManyRequests:
+      description: 'Rate limit exceeded (per credential, per company or per address). Wait Retry-After seconds.'
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/XRequestId'
+        RateLimit-Limit:
+          $ref: '#/components/headers/RateLimitLimit'
+        RateLimit-Remaining:
+          $ref: '#/components/headers/RateLimitRemaining'
+        RateLimit-Reset:
+          $ref: '#/components/headers/RateLimitReset'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+          examples:
+            rate_limited:
+              summary: 'Over the limit'
+              value:
+                type: 'urn:nonox:problem:rate_limited'
+                title: 'Too Many Requests'
+                status: 429
+                code: rate_limited
+                detail: 'För många anrop. Försök igen om 23 sekunder.'
+                instance: 'urn:nonox:request:7f3c2a9e-4b1d-4c8e-9a51-2d6f0e8b3c17'
+  schemas:
+    ProblemDetails:
+      type: object
+      description: 'RFC 9457 problem details. `detail` is Swedish, for people; branch on `code` (or `type`), never on `detail`.'
+      required:
+        - type
+        - title
+        - status
+        - code
+        - detail
+      properties:
+        type:
+          type: string
+          format: uri
+          description: 'urn:nonox:problem:<code>'
+          example: 'urn:nonox:problem:not_found'
+        title:
+          type: string
+          description: 'Short English HTTP title.'
+        status:
+          type: integer
+        code:
+          type: string
+          description: 'Stable machine-readable code.'
+        detail:
+          type: string
+          description: 'Swedish explanation.'
+        instance:
+          type: string
+          description: 'urn:nonox:request:<uuid>, the same id as X-Request-Id; quote it in support questions.'
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+          description: 'Validation errors per field (422 validation_failed).'
+        required_scopes:
+          type: array
+          items:
+            type: string
+          description: 'Scopes the route needs (403 insufficient_scope).'
+    ListMeta:
+      type: object
+      required:
+        - limit
+        - next_cursor
+        - has_more
+      properties:
+        limit:
+          type: integer
+        next_cursor:
+          type:
+            - string
+            - 'null'
+          description: 'Opaque; pass as `cursor` for the next page. null on the last page.'
+        has_more:
+          type: boolean
+    Credential:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - oauth
+            - api_key
+        name:
+          type: string
+          description: 'App name or API key name.'
+        scopes:
+          type: array
+          items:
+            type: string
+    Company:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        legal_name:
+          type:
+            - string
+            - 'null'
+        org_number:
+          type:
+            - string
+            - 'null'
+        legal_form:
+          type:
+            - string
+            - 'null'
+          enum:
+            - AB
+            - EF
+            - HB
+            - KB
+            - EK_FORENING
+            - IDEELL_FORENING
+            - STIFTELSE
+            - null
+        vat_number:
+          type:
+            - string
+            - 'null'
+        vat_registered:
+          type: boolean
+        vat_period:
+          type: string
+          enum:
+            - MONTHLY
+            - QUARTERLY
+            - YEARLY
+            - NONE
+        accounting_method:
+          type: string
+          enum:
+            - FAKTURAMETODEN
+            - KONTANTMETODEN
+        reporting_framework:
+          type: string
+          enum:
+            - K1
+            - K2
+            - K3
+        fiscal_year_start_month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        base_currency:
+          type: string
+          example: SEK
+        locked_until_date:
+          type:
+            - string
+            - 'null'
+          description: 'Postings on or before this date are refused.'
+          format: date
+        archived:
+          type: boolean
+          description: 'An archived company is read-only.'
+        address:
+          type: object
+          properties:
+            line1:
+              type:
+                - string
+                - 'null'
+            line2:
+              type:
+                - string
+                - 'null'
+            postal_code:
+              type:
+                - string
+                - 'null'
+            city:
+              type:
+                - string
+                - 'null'
+            country:
+              type:
+                - string
+                - 'null'
+              description: 'ISO 3166-1 alpha-2.'
+    CompanyWithCredential:
+      allOf:
+        - $ref: '#/components/schemas/Company'
+        - type: object
+          properties:
+            credential:
+              $ref: '#/components/schemas/Credential'
+    Account:
+      type: object
+      properties:
+        number:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - ASSET
+            - LIABILITY_EQUITY
+            - REVENUE
+            - EXPENSE
+        is_active:
+          type: boolean
+        sru_code:
+          type:
+            - string
+            - 'null'
+        requires_cost_center:
+          type: boolean
+        requires_project:
+          type: boolean
+        updated_at:
+          type: string
+          format: date-time
+    VatCode:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum:
+            - SALE_SE
+            - PURCHASE_SE
+        rate_basis_points:
+          type:
+            - integer
+            - 'null'
+          description: '2500 = 25 %. null where the rate varies.'
+        vat_account:
+          type: integer
+        report_box:
+          type: integer
+          description: 'Box on the VAT return (momsdeklaration).'
+    FiscalYear:
+      type: object
+      properties:
+        id:
+          type: integer
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        status:
+          type: string
+          enum:
+            - OPEN
+            - CLOSED
+        updated_at:
+          type: string
+          format: date-time
+    VoucherSeries:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        is_default:
+          type: boolean
+    VoucherRow:
+      type: object
+      required:
+        - account
+        - debit_ore
+        - credit_ore
+      properties:
+        account:
+          type: integer
+          description: 'Account number.'
+          example: 1930
+        debit_ore:
+          type: integer
+          minimum: 0
+          description: 'Debit in öre.'
+        credit_ore:
+          type: integer
+          minimum: 0
+          description: 'Credit in öre.'
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        cost_center:
+          type:
+            - string
+            - 'null'
+          description: 'Cost center code (kostnadsställe).'
+        project:
+          type:
+            - string
+            - 'null'
+          description: 'Project code.'
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        mime:
+          type: string
+          enum:
+            - application/pdf
+            - image/jpeg
+            - image/png
+            - image/webp
+        size:
+          type: integer
+          description: Bytes.
+        sha256:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    Voucher:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        series:
+          type: string
+        number:
+          type:
+            - integer
+            - 'null'
+          description: 'Assigned at posting; null for a draft.'
+        reference:
+          type:
+            - string
+            - 'null'
+          description: 'Series and number, e.g. A57; null for a draft.'
+        status:
+          type: string
+          enum:
+            - DRAFT
+            - POSTED
+        fiscal_year_id:
+          type: integer
+        voucher_date:
+          type: string
+          format: date
+        description:
+          type: string
+        source:
+          type: string
+          enum:
+            - MANUAL
+            - INVOICE
+            - PAYMENT
+            - SUPPLIER_INVOICE
+            - VAT
+            - PAYROLL
+            - IMPORT_SIE
+            - IMPORT_FORTNOX
+            - CLOSING
+            - CORRECTION
+        corrects_voucher_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        corrected_by_voucher_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        posted_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        hash:
+          type:
+            - string
+            - 'null'
+          description: "SHA-256 in the company's hash chain (ledger integrity)."
+        currency:
+          type: string
+          example: SEK
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoucherRow'
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Attachment'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    VoucherInput:
+      type: object
+      required:
+        - voucher_date
+        - description
+        - rows
+      properties:
+        voucher_date:
+          type: string
+          format: date
+        description:
+          type: string
+          maxLength: 255
+        series:
+          type: string
+          maxLength: 3
+          default: A
+        rows:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/VoucherRowInput'
+    VoucherPatch:
+      type: object
+      description: 'Any subset of VoucherInput. `rows` replaces all rows.'
+      properties:
+        voucher_date:
+          type: string
+          format: date
+        description:
+          type: string
+          maxLength: 255
+        series:
+          type: string
+          maxLength: 3
+        rows:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/VoucherRowInput'
+    VoucherRowInput:
+      type: object
+      required:
+        - account
+      description: 'A row has either debit_ore or credit_ore above zero, never both.'
+      properties:
+        account:
+          type: integer
+          description: 'Account number (must exist and be active).'
+        debit_ore:
+          type: integer
+          minimum: 0
+          default: 0
+        credit_ore:
+          type: integer
+          minimum: 0
+          default: 0
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        cost_center:
+          type:
+            - string
+            - 'null'
+          description: 'Code; required when the account requires a cost center.'
+        project:
+          type:
+            - string
+            - 'null'
+          description: 'Code; required when the account requires a project.'
+    CorrectionInput:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          maxLength: 255
+          description: 'Why the voucher is corrected (kept in the audit trail).'
+        date:
+          type: string
+          format: date
+          description: 'Date of the correcting voucher; defaults to today.'
+        rows:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoucherRowInput'
+          description: 'Rows to book instead, after the reversal.'
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        name:
+          type: string
+        org_number:
+          type:
+            - string
+            - 'null'
+        has_personal_number:
+          type: boolean
+          description: 'Whether a personal number is on file. The number itself is never returned.'
+        vat_number:
+          type:
+            - string
+            - 'null'
+        email:
+          type:
+            - string
+            - 'null'
+        phone:
+          type:
+            - string
+            - 'null'
+        address:
+          type: object
+          properties:
+            line1:
+              type:
+                - string
+                - 'null'
+            line2:
+              type:
+                - string
+                - 'null'
+            postal_code:
+              type:
+                - string
+                - 'null'
+            city:
+              type:
+                - string
+                - 'null'
+            country:
+              type:
+                - string
+                - 'null'
+              description: 'ISO 3166-1 alpha-2.'
+        payment_terms_days:
+          type: integer
+        is_active:
+          type: boolean
+        reverse_charge_construction:
+          type: boolean
+        foreign_sale:
+          type:
+            - string
+            - 'null'
+          enum:
+            - EU_GOODS
+            - EU_SERVICES
+            - EXPORT_GOODS
+            - EXPORT_SERVICES
+            - EU_TRIANGULAR
+            - EU_CONSUMER_OSS
+            - null
+        processing_restricted:
+          type: boolean
+          description: 'Processing restricted under GDPR art. 18.'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CustomerInput:
+      type: object
+      required:
+        - name
+        - payment_terms_days
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        org_number:
+          type:
+            - string
+            - 'null'
+          description: 'Swedish organisation number, checked with Luhn.'
+          example: 559900-4560
+        personal_number:
+          type:
+            - string
+            - 'null'
+          description: 'Write-only. Personnummer for sole traders and private persons, checked with Luhn, stored encrypted, never returned.'
+          writeOnly: true
+        vat_number:
+          type:
+            - string
+            - 'null'
+          description: 'Starts with the country code.'
+          maxLength: 20
+          pattern: '^[A-Z]{2}[0-9A-Z]{2,18}$'
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        phone:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        address_line1:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        address_line2:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+        city:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        country:
+          type:
+            - string
+            - 'null'
+          description: 'Two-letter country code.'
+          pattern: '^[A-Za-z]{2}$'
+        payment_terms_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+        is_active:
+          type: boolean
+        reverse_charge_construction:
+          type: boolean
+          description: 'Construction services under omvänd betalningsskyldighet.'
+        foreign_sale:
+          type:
+            - string
+            - 'null'
+          enum:
+            - EU_GOODS
+            - EU_SERVICES
+            - EXPORT_GOODS
+            - EXPORT_SERVICES
+            - EU_TRIANGULAR
+            - EU_CONSUMER_OSS
+            - null
+    CustomerPatch:
+      type: object
+      description: 'Any subset of CustomerInput.'
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        org_number:
+          type:
+            - string
+            - 'null'
+          description: 'Swedish organisation number, checked with Luhn.'
+          example: 559900-4560
+        personal_number:
+          type:
+            - string
+            - 'null'
+          description: 'Write-only. Personnummer for sole traders and private persons, checked with Luhn, stored encrypted, never returned.'
+          writeOnly: true
+        vat_number:
+          type:
+            - string
+            - 'null'
+          description: 'Starts with the country code.'
+          maxLength: 20
+          pattern: '^[A-Z]{2}[0-9A-Z]{2,18}$'
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        phone:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        address_line1:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        address_line2:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+        city:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        country:
+          type:
+            - string
+            - 'null'
+          description: 'Two-letter country code.'
+          pattern: '^[A-Za-z]{2}$'
+        payment_terms_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+        is_active:
+          type: boolean
+        reverse_charge_construction:
+          type: boolean
+          description: 'Construction services under omvänd betalningsskyldighet.'
+        foreign_sale:
+          type:
+            - string
+            - 'null'
+          enum:
+            - EU_GOODS
+            - EU_SERVICES
+            - EXPORT_GOODS
+            - EXPORT_SERVICES
+            - EU_TRIANGULAR
+            - EU_CONSUMER_OSS
+            - null
+    Supplier:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        name:
+          type: string
+        org_number:
+          type:
+            - string
+            - 'null'
+        vat_number:
+          type:
+            - string
+            - 'null'
+        email:
+          type:
+            - string
+            - 'null'
+        phone:
+          type:
+            - string
+            - 'null'
+        address:
+          type: object
+          properties:
+            line1:
+              type:
+                - string
+                - 'null'
+            postal_code:
+              type:
+                - string
+                - 'null'
+            city:
+              type:
+                - string
+                - 'null'
+            country:
+              type:
+                - string
+                - 'null'
+        bankgiro:
+          type:
+            - string
+            - 'null'
+        plusgiro:
+          type:
+            - string
+            - 'null'
+        iban:
+          type:
+            - string
+            - 'null'
+        bic:
+          type:
+            - string
+            - 'null'
+        payment_terms_days:
+          type: integer
+        default_account:
+          type:
+            - integer
+            - 'null'
+        is_active:
+          type: boolean
+        processing_restricted:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SupplierInput:
+      type: object
+      required:
+        - name
+        - payment_terms_days
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        org_number:
+          type:
+            - string
+            - 'null'
+          description: 'Swedish organisation number, checked with Luhn.'
+        vat_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+          pattern: '^[A-Z]{2}[0-9A-Z]{2,18}$'
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        phone:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        address_line1:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+        city:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        country:
+          type:
+            - string
+            - 'null'
+        bankgiro:
+          type:
+            - string
+            - 'null'
+          description: '7–8 digits with check digit, e.g. 5550-1233.'
+        plusgiro:
+          type:
+            - string
+            - 'null'
+          description: '2–8 digits with check digit.'
+        iban:
+          type:
+            - string
+            - 'null'
+          maxLength: 42
+        bic:
+          type:
+            - string
+            - 'null'
+          description: '8 or 11 characters.'
+        payment_terms_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+        default_account:
+          type:
+            - integer
+            - 'null'
+          minimum: 1000
+          maximum: 8999
+          description: 'Default expense account number.'
+        is_active:
+          type: boolean
+    SupplierPatch:
+      type: object
+      description: 'Any subset of SupplierInput.'
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        org_number:
+          type:
+            - string
+            - 'null'
+          description: 'Swedish organisation number, checked with Luhn.'
+        vat_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+          pattern: '^[A-Z]{2}[0-9A-Z]{2,18}$'
+        email:
+          type:
+            - string
+            - 'null'
+          format: email
+          maxLength: 255
+        phone:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        address_line1:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+        city:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        country:
+          type:
+            - string
+            - 'null'
+        bankgiro:
+          type:
+            - string
+            - 'null'
+          description: '7–8 digits with check digit, e.g. 5550-1233.'
+        plusgiro:
+          type:
+            - string
+            - 'null'
+          description: '2–8 digits with check digit.'
+        iban:
+          type:
+            - string
+            - 'null'
+          maxLength: 42
+        bic:
+          type:
+            - string
+            - 'null'
+          description: '8 or 11 characters.'
+        payment_terms_days:
+          type: integer
+          minimum: 0
+          maximum: 365
+        default_account:
+          type:
+            - integer
+            - 'null'
+          minimum: 1000
+          maximum: 8999
+          description: 'Default expense account number.'
+        is_active:
+          type: boolean
+    WebhookEvent:
+      type: object
+      required:
+        - id
+        - type
+        - created_at
+        - company_id
+        - data
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 'Same as the Nonox-Event-Id header; use it to ignore duplicates.'
+        type:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        company_id:
+          type: integer
+        data:
+          type: object
+x-oauth:
+  description: 'OAuth 2.0 endpoints, outside /api/v1. Documented here for reference; they are not part of `paths`.'
+  x-sv-description: 'OAuth-adresserna, utanför /api/v1.'
+  authorization_endpoint:
+    method: GET
+    url: 'https://nonox.app/anslut'
+    description: "Send the person's browser here. NONOX signs them in if needed, shows the Swedish consent screen, lets them choose a company where they are owner or administrator and approve with a passkey, then redirects to redirect_uri with `code` and `state` (or `error=access_denied`). Errors in client_id or redirect_uri are shown on the page, never redirected."
+    query:
+      response_type: 'Must be `code`.'
+      client_id: "The app's client id (UUID)."
+      redirect_uri: "Exactly one of the app's registered URIs."
+      scope: 'Space-separated scopes.'
+      state: 'Opaque value echoed back; use it against CSRF.'
+      code_challenge: BASE64URL(SHA-256(code_verifier)).
+      code_challenge_method: 'Must be `S256`.'
+  token_endpoint:
+    method: POST
+    url: 'https://nonox.app/oauth/token'
+    content_type: application/x-www-form-urlencoded
+    description: 'grant_type=authorization_code (code, redirect_uri, code_verifier, client_id, client_secret for confidential clients) or grant_type=refresh_token (refresh_token, client_id, client_secret). Client authentication by client_secret_post or client_secret_basic; public clients send only client_id. Any other grant_type answers unsupported_grant_type. Errors follow RFC 6749 §5.2 (`error`, `error_description`). 30 requests/minute per IP.'
+    response_example:
+      token_type: Bearer
+      expires_in: 900
+      access_token: eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.…
+      refresh_token: def50200…
+  metadata:
+    method: GET
+    url: 'https://nonox.app/.well-known/oauth-authorization-server'
+    description: 'RFC 8414 authorization server metadata.'
