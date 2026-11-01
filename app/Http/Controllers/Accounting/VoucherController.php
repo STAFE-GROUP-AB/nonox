@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Accounting;
 
 use App\Actions\Accounting\AttachToVoucher;
+use App\Domain\Accounting\AccountBalances;
+use App\Models\CostCenter;
+use App\Models\Project;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
+use App\Models\VoucherRow;
 use App\Support\Files\InlineFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -50,6 +54,11 @@ class VoucherController
         return view('accounting.vouchers.show', [
             'voucher' => $voucher,
             'postedBy' => $voucher->posted_by ? User::query()->find($voucher->posted_by) : null,
+            'balances' => $voucher->isPosted()
+                ? AccountBalances::afterRows($voucher->fiscal_year_id, $voucher->rows)
+                : AccountBalances::afterDraftRows($voucher->rows, AccountBalances::atDate($voucher->fiscal_year_id, $voucher->voucher_date)),
+            'showCostCenters' => $voucher->rows->contains(fn (VoucherRow $row): bool => $row->cost_center_id !== null) || CostCenter::query()->exists(),
+            'showProjects' => $voucher->rows->contains(fn (VoucherRow $row): bool => $row->project_id !== null) || Project::query()->exists(),
         ]);
     }
 

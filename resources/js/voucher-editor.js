@@ -3,6 +3,7 @@
  * the server checks every rule again when the voucher is saved or posted.
  */
 
+import { balanceBefore, balancesAfterRows } from './account-balance.js';
 import { formatOre, parseOre } from './money.js';
 
 function isBlank(row) {
@@ -10,9 +11,12 @@ function isBlank(row) {
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('voucherEditor', (rows, canPost) => ({
+    window.Alpine.data('voucherEditor', (rows, canPost, balances, signs) => ({
         rows,
         canPost,
+        // Posted balances at the voucher date (account number => öre, debit positive), from the server.
+        balances,
+        signs,
         showHelp: false,
         confirmingPost: false,
         confirmingLeave: false,
@@ -49,6 +53,15 @@ document.addEventListener('alpine:init', () => {
 
         get balanced() {
             return !this.hasInvalidAmount && !this.missingAccount && this.filledRows >= 2 && this.debit > 0 && this.difference === 0;
+        },
+
+        /** Kontosaldo after each row, in the order of the rows. */
+        get balancesAfter() {
+            return balancesAfterRows(this.rows, this.balances, this.signs);
+        },
+
+        balanceBefore(row) {
+            return balanceBefore(row, this.balances, this.signs);
         },
 
         format(ore) {

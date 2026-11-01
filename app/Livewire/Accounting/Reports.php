@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Accounting;
 
+use App\Domain\Accounting\AccountBalances;
 use App\Domain\Accounting\Reports\LedgerReports;
 use App\Domain\Accounting\Reports\ReportFilters;
 use App\Models\Company;
@@ -11,6 +12,8 @@ use App\Models\CostCenter;
 use App\Models\FiscalYear;
 use App\Models\Project;
 use App\Models\User;
+use App\Models\Voucher;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
@@ -70,19 +73,24 @@ class Reports extends Component
         }
 
         $query = $filters->query();
+        $data = match ($filters->report) {
+            'resultat' => $reports->incomeStatement($query, $filters->compare ? LedgerReports::previousPeriod($query) : null),
+            'balans' => $reports->balanceSheet($query),
+            'huvudbok' => $reports->generalLedger($query, $filters->account),
+            'verifikationer' => $reports->voucherList($query),
+            default => $reports->trialBalance($query),
+        };
 
         return view('livewire.accounting.reports', [
             'filters' => $filters,
             'fiscalYears' => FiscalYear::query()->orderByDesc('start_date')->get(),
             'costCenters' => CostCenter::query()->orderBy('code')->get(['id', 'code', 'name']),
             'projects' => Project::query()->orderBy('code')->get(['id', 'code', 'name']),
-            'data' => match ($filters->report) {
-                'resultat' => $reports->incomeStatement($query, $filters->compare ? LedgerReports::previousPeriod($query) : null),
-                'balans' => $reports->balanceSheet($query),
-                'huvudbok' => $reports->generalLedger($query, $filters->account),
-                'verifikationer' => $reports->voucherList($query),
-                default => $reports->trialBalance($query),
-            },
+            'data' => $data,
+            // The Verifikationslista shows each account's balance after the row, all rows in one query.
+            'balances' => $data instanceof Collection
+                ? AccountBalances::afterRows($filters->fiscalYear->id, $data->flatMap(fn (Voucher $voucher) => $voucher->rows))
+                : [],
         ]);
     }
 

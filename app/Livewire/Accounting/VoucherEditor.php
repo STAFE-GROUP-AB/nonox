@@ -8,12 +8,14 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\RemoveAttachment;
 use App\Actions\Accounting\SaveDraftVoucher;
+use App\Domain\Accounting\AccountBalances;
 use App\Domain\Accounting\VoucherTemplate;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Payables\SupplierInvoiceEditor;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\CostCenter;
+use App\Models\FiscalYear;
 use App\Models\Project;
 use App\Models\SupplierInvoice;
 use App\Models\User;
@@ -28,6 +30,7 @@ use App\Support\Money\Money;
 use App\Support\Toast;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -79,6 +82,16 @@ class VoucherEditor extends Component
 
     public string $templateAmount = '';
 
+    /**
+     * The posted balance of each account at the voucher date (account number
+     * => öre, debit positive), for Kontosaldo; null when the date is outside
+     * every fiscal year. Set by the server only.
+     *
+     * @var ?array<int, int>
+     */
+    #[Locked]
+    public ?array $balances = null;
+
     public function mount(?Voucher $voucher = null, ?Voucher $copyOf = null): void
     {
         if ($voucher instanceof Voucher) {
@@ -86,6 +99,7 @@ class VoucherEditor extends Component
 
             $this->voucherId = $voucher->id;
             $this->fillFrom($voucher);
+            $this->refreshBalances();
 
             return;
         }
@@ -101,11 +115,23 @@ class VoucherEditor extends Component
                 'reference' => $copyOf->reference(),
                 'description' => $copyOf->description,
             ]), 0, 255);
+            $this->refreshBalances();
 
             return;
         }
 
         $this->rows = [$this->blankRow(), $this->blankRow()];
+        $this->refreshBalances();
+    }
+
+    /**
+     * A new date gives other balances. Only the balances change, so nothing
+     * is rendered again.
+     */
+    public function updatedVoucherDate(): void
+    {
+        $this->refreshBalances();
+        $this->skipRender();
     }
 
     /**
@@ -171,11 +197,11 @@ class VoucherEditor extends Component
      */
     public function updatedUploads(AttachToVoucher $attach): void
     {
-        if ($this->voucherId === null) {
+        if ($this->voucherId !== null && ! $this->attachUploads($attach, Voucher::query()->findOrFail($this->voucherId))) {
             return;
         }
 
-        $this->attachUploads($attach, Voucher::query()->findOrFail($this->voucherId));
+        $this->analyzeAutomatically();
     }
 
     /**
@@ -211,6 +237,7 @@ class VoucherEditor extends Component
         $amount = fn (mixed $value): string => (float) $value === 0.0 ? '' : Money::parse((string) BigDecimal::of((string) $value)->toScale(2, RoundingMode::HalfUp))->format(withCurrency: false);
 
         $this->voucherDate = (string) ($answer['date'] ?: $this->voucherDate);
+        $this->refreshBalances();
         $this->description = (string) ($answer['description'] ?? $this->description);
         $this->rows = array_values([...array_map(fn (mixed $row): array => [
             ...$this->blankRow(),
@@ -305,6 +332,7 @@ class VoucherEditor extends Component
     public function render(): View
     {
         $costCenters = CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']);
+        $accounts = Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'type']);
         $projects = Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']);
 
         return view('livewire.accounting.voucher-editor', [
@@ -316,11 +344,43 @@ class VoucherEditor extends Component
             'attachments' => $this->voucherId === null
                 ? collect()
                 : VoucherAttachment::query()->where('voucher_id', $this->voucherId)->orderBy('id')->get(),
-            'accounts' => Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name']),
+            'accounts' => $accounts,
+            'accountSigns' => $accounts->mapWithKeys(fn (Account $account): array => [$account->number => AccountBalances::sign($account->type)])->all(),
             'seriesOptions' => VoucherSeries::query()->orderBy('code')->get(['code', 'name']),
             'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),
             'canPost' => $this->user()->hasTeamPermission($this->company(), 'vouchers:post'),
         ]);
+    }
+
+    /**
+     * Kontosaldo: the posted balances at the voucher date, in one query for
+     * every account, so choosing an account needs no request.
+     */
+    private function refreshBalances(): void
+    {
+        $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->voucherDate) === 1 && checkdate((int) substr($this->voucherDate, 5, 2), (int) substr($this->voucherDate, 8, 2), (int) substr($this->voucherDate, 0, 4))
+            ? CarbonImmutable::parse($this->voucherDate)
+            : null;
+        $fiscalYear = $date === null
+            ? null
+            : FiscalYear::query()->whereDate('start_date', '<=', $date)->whereDate('end_date', '>=', $date)->first();
+
+        $this->balances = $fiscalYear === null ? null : AccountBalances::atDate($fiscalYear->id, $date)->all();
+    }
+
+    /**
+     * When the company has NONOX AI and the person may use it, a new
+     * document is read at once (the browser runs analyze() with its
+     * countdown). The AI only fills in the form; nothing is saved or posted
+     * (ADR-018). The Analysera button stays for a second try.
+     */
+    private function analyzeAutomatically(): void
+    {
+        if ($this->getErrorBag()->has('uploads') || ! AnalyzeDocument::availableFor($this->user(), $this->company())) {
+            return;
+        }
+
+        $this->dispatch(AnalyzeDocument::AUTO_EVENT);
     }
 
     private function persist(SaveDraftVoucher $saveDraft): ?Voucher
