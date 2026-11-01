@@ -21,6 +21,10 @@ jobs:
       - uses: actions/checkout@v7
       - name: Software bill of materials
         uses: anchore/sbom-action@v0
+        env:
+          # Alpine, Chart.js and the rest are devDependencies because Vite
+          # bundles them into the build; they still ship to every browser.
+          SYFT_JAVASCRIPT_INCLUDE_DEV_DEPENDENCIES: "true"
         with:
           path: .
           format: cyclonedx-json
