@@ -13,6 +13,7 @@
     $icon = [
         'yes' => '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--accl)"></circle><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
         'per' => '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--soft)"></circle><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="var(--muted)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+        'web' => '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--accl)"></circle><path d="M7 12.5l3.2 3.2L17 9" fill="none" stroke="var(--acct)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
         'no' => '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8l8 8M16 8l-8 8" fill="none" stroke="var(--muted)" stroke-width="2.2" stroke-linecap="round"></path></svg>',
     ];
 @endphp
@@ -35,7 +36,7 @@
             @php($value = $feature['values'][$program['slug']] ?? 'unknown')
             <td @class(['cmp-nonox' => $program['slug'] === 'nonox'])>
               @if(isset($icon[$value]))
-                <span class="cmp-cell" title="{{ $comparison['legend'][$value] }}">{!! $icon[$value] !!}<span class="cmp-sr">{{ $comparison['legend'][$value] }}</span>@if($value === 'per')<span class="cmp-note">avgift</span>@endif</span>
+                <span class="cmp-cell" title="{{ $comparison['legend'][$value] }}">{!! $icon[$value] !!}<span class="cmp-sr">{{ $comparison['legend'][$value] }}</span>@if($value === 'per')<span class="cmp-note">avgift</span>@elseif($value === 'web')<span class="cmp-note">webbapp</span>@endif</span>
               @elseif($value === 'addon')
                 <span class="cmp-pill">Tillval</span>
               @else
@@ -61,6 +62,7 @@
   <span>{!! $icon['yes'] !!} Ingår</span>
   <span>{!! $icon['per'] !!} Ingår, med avgift per anställd eller lönebesked</span>
   <span><span class="cmp-pill">Tillval</span> Kostar extra</span>
+  <span>{!! $icon['web'] !!}<span class="cmp-note">webbapp</span> Installeras från webbläsaren (PWA), inte från App Store eller Google Play</span>
   <span>{!! $icon['no'] !!} Finns inte</span>
   <span><span class="cmp-unknown">Anges ej</span> Står inte på prissidan</span>
 </div>

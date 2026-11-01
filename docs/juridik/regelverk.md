@@ -89,10 +89,11 @@ Lönen berör också skatteförfarandelagen: arbetsgivardeklaration på individn
 - Kundinformation i [AI i NONOX](ai.md).
 - AI:n sparar och bokför aldrig något själv.
 - Anställda informeras innan deras kvitto skickas.
+- Kvittoläsaren bedömer inte längre anställdas inköp ("ser privat ut", alkohol, representation); den läser bara det kvittot visar (2026-11-01).
 - Behandlingshistoriken loggar varje analys.
 
 **Det här saknas:**
-- Beslut om att ta bort AI:ns bedömning av anställdas kvitton ("ser privat ut", alkohol, representation). Bedömningen kan göra kvittoläsaren till ett högrisksystem enligt bilaga III punkt 4. Enligt sekundära källor gäller fristående högrisksystem enligt bilaga III från den 2 december 2027. Datumet ska kontrolleras mot EUR-Lex.
+- Juristens bedömning av om kvittoläsaren faller utanför bilaga III punkt 4 nu när bedömningen av anställdas kvitton ("ser privat ut", alkohol, representation) är borttagen (2026-11-01). Enligt sekundära källor gäller fristående högrisksystem enligt bilaga III från den 2 december 2027. Datumet ska kontrolleras mot EUR-Lex. TODO(legal-verify).
 - Plan för AI-kunnighet (artikel 4).
 - Juristgranskning av roller och datum. TODO(legal-verify).
 

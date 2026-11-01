@@ -13,7 +13,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>{{ $title }} · {{ auth()->user()?->currentCompany()?->name }}</title>
-        @include('partials.favicon')
+        @include('partials.favicon', ['manifest' => 'anstalld.webmanifest'])
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
         @if($palette)

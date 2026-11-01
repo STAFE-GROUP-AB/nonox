@@ -231,7 +231,7 @@ it('lists the features that exist, including the staff ledger and inbox modules'
         ->assertSee('Min sida för anställda')
         ->assertSee('Personalliggare')
         ->assertSee('även utan internet')
-        ->assertSee('Bara avsändare du godkänt släpps in')
+        ->assertSee('Bara post från avsändare du godkänt tolkas')
         ->assertSee('Inställningar → Moduler', false);
 });
 

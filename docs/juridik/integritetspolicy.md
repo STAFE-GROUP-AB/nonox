@@ -15,6 +15,7 @@ Den här policyn beskriver hur {foretag} ({orgnr}) behandlar personuppgifter i t
 |---|---|---|---|
 | Namn och e-postadress för ditt konto | Ge dig tillgång till tjänsten | Avtal (art. 6.1 b) | Så länge kontot finns |
 | Engångskoder för inloggning, IP-adress | Säker inloggning, skydd mot missbruk | Avtal och berättigat intresse (art. 6.1 b och f) | Koder raderas efter ett dygn |
+| Passkeys: namn, publik nyckel och när den senast användes (aldrig fingeravtryck, ansikte eller den privata nyckeln, som stannar på din enhet) | Bekräfta inloggningen när du kan se känsliga uppgifter eller ditt företag kräver det | Berättigat intresse (art. 6.1 f), säkerhet | Tills du tar bort passkeyn eller raderar ditt konto |
 | Sessionsuppgifter (IP-adress, webbläsare) | Hålla dig inloggad, säkerhet | Avtal och berättigat intresse | {session} minuter efter senaste aktivitet |
 | Behandlingshistorik: vem som gjort vad, när, IP-adress och webbläsare | Bokföringslagens krav på behandlingshistorik, säkerhet | Rättslig förpliktelse och berättigat intresse (art. 6.1 c och f) | Lika länge som den räkenskapsinformation den gäller, minst sju år |
 | Uppgifter om företaget du företräder och fakturering av tjänsten | Avtal, bokföring | Avtal och rättslig förpliktelse | Sju år efter räkenskapsårets utgång enligt bokföringslagen |
@@ -47,7 +48,7 @@ Du har också rätt att klaga till Integritetsskyddsmyndigheten (IMY), www.imy.s
 
 ## 6. Säkerhet
 
-Personnummer, bankuppgifter och andra känsliga uppgifter krypteras i databasen. Bokförda verifikationer kan inte ändras, all behandling loggas, och åtkomst styrs per företag och roll. Inloggning sker med engångskod till e-post.
+Personnummer, bankuppgifter och andra känsliga uppgifter krypteras i databasen. Bokförda verifikationer kan inte ändras, all behandling loggas, och åtkomst styrs per företag och roll. Inloggning sker med engångskod till e-post, och den som kan se känsliga uppgifter bekräftar dessutom med en passkey.
 
 ## 7. Kontakt
 

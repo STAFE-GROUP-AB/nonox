@@ -32,7 +32,7 @@ AI:n kan läsa fel och ändå låta säker. Kontrollera alltid mot underlaget, s
 
 Ni ansvarar för er bokföring, oavsett om uppgifterna kommer från AI eller skrivs in för hand (bokföringslagen).
 
-**Utlägg:** AI:n skriver i dag anteckningar när ett kvitto kan se privat ut eller gäller alkohol eller representation. En sådan anteckning är en gissning från ett kvitto och säger ingenting om den anställda. Bedöm alltid utlägget utifrån kvittot och era egna regler. Vi ser över om anteckningen ska tas bort.
+**Utlägg:** AI:n läser bara det som står på kvittot och bedömer aldrig inköpet eller den anställda, till exempel om något ser privat ut. Den antecknar bara det den inte kunde läsa, som ett oläsligt belopp, en utländsk valuta eller moms som saknas. Det är ni som bedömer utlägget, utifrån kvittot och era egna regler.
 
 ## Vilka uppgifter som går vart
 

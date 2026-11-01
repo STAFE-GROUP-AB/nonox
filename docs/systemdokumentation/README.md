@@ -16,8 +16,9 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Varje företag är en egen enhet. All bokföringsdata hör till exakt ett företag
   (`company_id`) och filtreras automatiskt så att ett företags data aldrig visas
   för ett annat ([ADR-005](../adr/ADR-005-tenancy.md)).
-- Användare loggar in med en engångskod via e-post. Behörigheten styrs av roller
-  per företag ([ADR-003](../adr/ADR-003-company-roles.md)).
+- Användare loggar in med en engångskod via e-post, och vissa bekräftar
+  dessutom med en passkey (avsnitt 5a9). Behörigheten styrs av roller per
+  företag ([ADR-003](../adr/ADR-003-company-roles.md)).
 
 ### 1.1 Överlåtelse och arkivering
 
@@ -201,6 +202,25 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Kundföretagets egna dokument – fakturor, offerter, order, påminnelser och
   lönebesked – har alltid kundföretagets eget varumärke. Ingen
   räkenskapsinformation ändras av kopplingen.
+
+## 1e. Sökning (⌘K)
+
+- Fältet "Sök eller gå till" i toppraden (⌘K eller Ctrl+K) söker i sidor och
+  åtgärder, användarens andra företag, verifikationer, kund- och
+  leverantörsfakturor, offerter, order, konton, kunder, leverantörer,
+  artiklar, anläggningar, periodiseringar, projekt och kostnadsställen, och i
+  Lön, Personalliggare och Inkorg när modulen är påslagen
+  ([ADR-026](../adr/ADR-026-spotlight-search.md)).
+- Varje del av sökningen körs i det valda företaget och prövar användarens
+  behörighet på samma sätt som sidan den leder till. Sökningen läser bara;
+  den ändrar och loggar ingenting.
+- Personnummer söks, indexeras och visas aldrig. Den som får se fullständiga
+  personnummer kan skriva exakt fyra siffror och få de personer vars nummer
+  slutar på dem. Söktexten skickas i anropets kropp, inte i adressen, och
+  sparas inte. Inkorgens krypterade e-posttext söks inte.
+- "Senast öppnade" (`recent_items`) sparar typ, id, titel och adress per
+  användare och företag, högst 50 rader. Titeln slås upp på nytt genom
+  sökningen med samma behörighetskontroll innan den visas.
 
 ## 2. Kontoplan
 
@@ -497,6 +517,14 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 
 - Leverantörer finns i ett eget register med löpnummer. Bankgiro och plusgiro
   kontrolleras mot kontrollsiffran.
+- En faktura som tolkats (av NONOX AI eller i inkorgen) kopplas till en
+  leverantör som redan finns i registret (`SupplierMatcher`), i den här
+  ordningen: organisationsnummer, momsregistreringsnummer, bankgiro,
+  plusgiro, IBAN, e-postdomän (inte för gratistjänster som Gmail) och sist
+  namnet utan bolagsform och skiljetecken. Aktiva leverantörer går före
+  inaktiva. "Lägg till leverantör" väljer en befintlig träff i stället för
+  att skapa en kopia, och ett liknande namn föreslås som "Menade du …?" som
+  en person kan koppla.
 - En leverantörsfaktura är ett utkast tills den registreras. Fakturan sparas
   som PDF eller bild; filtypen läses från innehållet. Raderna (kostnad utan
   moms per konto, med kostnadsställe eller projekt) plus momsen måste vara
@@ -797,8 +825,9 @@ till jurist). Säkerhetsrapporter: `SECURITY.md`. Tillgänglighet:
   bokförts, annars anonymiseras de. Fakturorna behåller sina uppgifter.
 - **Radera mitt konto** (art. 17, `DeleteAccount`): nekas så länge
   användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner,
-  API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas
-  bort. Därefter läses alla främmande nycklar mot `users` ur databasens
+  API-nycklar, inloggningskoder, väntande inbjudningar, passkeys, senast
+  öppnade i sökningen (`recent_items`), sparade vyer, notiser och profilbild
+  tas bort. Därefter läses alla främmande nycklar mot `users` ur databasens
   katalog: hänvisar ingen rad längre till användaren raderas raden, annars
   pseudonymiseras den (namnet "Raderad användare", en slumpad adress på
   `konto.invalid`, `anonymised_at` satt, sessioner ogiltiga). Verifikationer,
@@ -1065,7 +1094,12 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   Läsningen är ett förslag som lagras på utlägget tills någon med ansvar för
   lönerna godkänner eller avslår det (avsnitt 5b).
 - Bara konton som finns aktiva i företagets kontoplan föreslås, och en
-  leverantör väljs bara när den redan finns i registret.
+  leverantör väljs bara när den redan finns i registret (avsnitt 5a).
+- Kvittoläsaren för utlägg läser bara det som står på kvittot. Den bedömer
+  aldrig inköpet eller den anställda (till exempel om något ser privat ut);
+  anteckningarna gäller bara det som inte gick att läsa, som ett oläsligt
+  belopp, en utländsk valuta eller moms som saknas. Den som godkänner
+  utlägget bedömer det.
 - Underlaget skickas till den AI-leverantör företaget valt (OpenAI, Anthropic
   eller Google) med företagets egen API-nyckel, som kontrolleras hos
   leverantören och lagras krypterad. Behandlingshistoriken visar att en analys
@@ -1119,6 +1153,16 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
 - **Kod (PIN):** koden sparas aldrig, bara ett kontrollvärde (PBKDF2) som
   kiosken kan pröva mot utan nät. Fem fel låser personen på kiosken i fem
   minuter.
+- **Kioskens kopia:** kiosken hämtar lokalen, personalen med kontrollvärden
+  för koderna (aldrig koderna), en hash av varje QR-kod och vem som är
+  incheckad. Personnummer, inhyrd personals arbetsgivare och de senaste 31
+  dagarnas pass för kontrollbesöket skickas aldrig öppet till en kiosk bara
+  för att den är kopplad. Öppet kommer de först när servern prövat en chefs
+  kod. För offlineläget kommer de förseglade: krypterade (AES-256-GCM) med en
+  slumpad nyckel, som i sin tur är krypterad med en nyckel som härleds ur
+  varje chefs kod. Fyra siffror är få, så den som kommer åt kioskens lagring
+  kan fortfarande pröva alla koder; förseglingen gör att det är den enda
+  vägen in.
 - **Kontrollbesök:** "Skatteverket är här" visar vem som är incheckad nu och
   liggaren för vald period med fullständiga personnummer, i appen för den som
   har behörigheten och på kiosken med en chefs kod. Varje öppning och export
@@ -1387,7 +1431,7 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   från en dagsrapport; systemet föreslår bara och en person godkänner.
   Gällande momssatser på rapportens datum (25, 12, 6 och 0 %). Om ett
   avvisat underlag kan vara räkenskapsinformation, och därmed om gallringen
-  efter 90 dagar är rätt. Om ett underlag som tas emot med e-post och sparas
+  efter 7 dagar är rätt. Om ett underlag som tas emot med e-post och sparas
   som `.eml` uppfyller kraven på hur räkenskapsinformation ska bevaras (BFL 7
   kap.). SFTI:s konvention för bankgiro och plusgiro i Peppol-fakturor.
 
@@ -1447,3 +1491,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.50 | 2026-11-01 | Byråns arbetsyta på Mina företag: summor och en gemensam Att göra-lista för alla företag med filter och sparade vyer, månadsstängning per klient, uppgifter med tilldelning, kommentarer, checklistor och återkommande uppgifter, notiser och daglig sammanfattning med e-post (ADR-028). |
 | 0.51 | 2026-11-01 | Redovisningsbyråns varumärke (ADR-030): ett företag kan markeras som byrå, kundföretagets ägare väljer sin byrå bland dem som en gemensam redovisningskonsult är med i, och kundsidan ser byråns logga och färger i appen, på Min sida och i mejl om inloggning och uppgifter. Kundens egna fakturor, offerter, order och lönebesked behåller kundens varumärke. Kopplingen ger ingen behörighet och loggas i båda företagen. |
 | 0.52 | 2026-11-01 | Återställningstest av säkerhetskopior (`scripts/restore-test.sh`, `backup:verify-restore`): kopian återställs i en tillfällig databas, och bokföringens hashkedja, underlagens kontrollsummor, personalliggaren och leverantörsfakturornas filer kontrolleras. Körs varje vecka i den driftade tjänsten. SBOM (CycloneDX) som bilaga till varje release. |
+| 0.53 | 2026-11-01 | NONOX går att installera som app på hemskärmen (PWA, ADR-031): manifest för appen och för Min sida, och en service worker som bara visar en offlinesida och inte sparar några uppgifter i enheten. Bokföringen påverkas inte. |

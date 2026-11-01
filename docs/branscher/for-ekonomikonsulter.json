@@ -71,7 +71,7 @@
             },
             {
                 "title": "Underlagen kommer till rätt kund",
-                "text": "Varje kundföretag får en egen inkorg för fakturor, kvitton och dagsrapporter. Bara avsändare som godkänts släpps in.",
+                "text": "Varje kundföretag får en egen inkorg för fakturor, kvitton och dagsrapporter. Bara post från avsändare som godkänts tolkas; annat väntar i karantän tills någon godkänner avsändaren.",
                 "features": [
                     "inbox",
                     "daily_reports"

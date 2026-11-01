@@ -1,0 +1,45 @@
+{
+    "name": "NONOX Min sida",
+    "short_name": "Min sida",
+    "description": "Lönebesked, frånvaro och utlägg hos din arbetsgivare.",
+    "lang": "sv",
+    "dir": "ltr",
+    "id": "/anstalld",
+    "start_url": "/anstalld",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#15171C",
+    "theme_color": "#15171C",
+    "categories": [
+        "business",
+        "finance",
+        "productivity"
+    ],
+    "icons": [
+        {
+            "src": "/brand/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/brand/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/brand/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/brand/nonox-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}

@@ -31,7 +31,7 @@
             "group": "sakerhet",
             "name": "Inloggning och sessioner",
             "grade": "B",
-            "summary": "Inloggning utan lösenord med engångskod på åtta siffror, som bara sparas som kontrollvärde och gäller en gång i tio minuter.",
+            "summary": "Inloggning utan lösenord med engångskod på åtta siffror, som bara sparas som kontrollvärde och gäller en gång i tio minuter. Den som kan se känsliga uppgifter bekräftar dessutom med en passkey.",
             "done": [
                 "Engångskoder med åtta siffror, fem försök per kod och tak per adress, dag och för hela tjänsten.",
                 "Felaktiga koder spärrar bara den webbläsare som skrev dem, så ingen kan låsa ute någon annan.",

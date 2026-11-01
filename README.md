@@ -50,6 +50,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Översikt
 - Nyckeltal för företagaren (företagskontot, obetalda kundfakturor, att betala och momsen med sista dag), "Att göra" i den ordning det brådskar med en länk direkt till uppgiften, och de senaste verifikationerna. Var och en visas bara för roller som får se underlaget. Översikten sparas i cache och laddas om med en knapp.
 - **Statistik och prognos:** intäkter och kostnader mot förra året, resultat per månad, likviditet med en tremånadersprognos som förklaras under diagrammet, största kunder och kostnader, och moms per månad. Varje diagram går att visa som tabell.
+- **App på hemskärmen:** NONOX installeras som app på hemskärmen i mobilen, på surfplattan och datorn direkt från webbläsaren (PWA), utan App Store eller Google Play. Anställda som bara har Min sida får en egen app som öppnar Min sida. Utan internet visas en sida som säger det; ingen bokföring eller personuppgift sparas i enheten. Personalliggarens kiosk är en egen app som fungerar utan internet.
 - **Sök med ⌘K:** en sökning över allt du har behörighet att se: sidor och åtgärder, verifikationer, fakturor (nummer, OCR, belopp), kunder, leverantörer, konton, lön, personalliggare och inkorg. Den förstår filter som "faktura 1029", "> 10000 kr", "obetald" och "oktober".
 
 ### Mina företag och uppgifter
@@ -66,6 +67,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Inköp
 - Leverantörsfakturor som PDF eller bild, kontering per kostnadsställe och attest av en annan person än den som registrerade. Fakturor i utländsk valuta räknas om med Riksbankens kurs, och kursvinst eller kursförlust bokförs när fakturan betalas.
 - Betalfiler till banken (ISO 20022 pain.001) för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. En betalfil godkänns av en annan person innan den kan laddas ner, och bokförs när banken har betalat.
+- En tolkad faktura kopplas till leverantören som redan finns i registret, även en utländsk utan organisationsnummer (momsnummer, IBAN, e-postdomän eller namn), och ett liknande namn föreslås i stället för att leverantören läggs till igen.
 - Kreditnotor från leverantörer, inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet, med momsen i rätt rutor.
 
 ### Register
@@ -79,7 +81,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 
 ### Lön (modul)
-- Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag och arbetsgivaravgifter med sänkningen för unga. Timlön räknas från godkända tidrapporter, även från personalliggaren.
+- Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag och arbetsgivaravgifter med sänkningen för unga. Timlön räknas från godkända tidrapporter, även från personalliggaren. Godkända timmar från tidigare månader som ingen lönekörning betalat blir en fråga i nästa lönekörning: ta med dem nu eller inte än.
 - Lönekörning med attest, lönebesked som PDF, lönefil till banken och bokföring i serie L.
 - Semester enligt semesterlagen, förmåner, traktamente och milersättning, tjänstepension, utlägg med kvitto, lönerevision och slutlön.
 - Arbetsgivardeklaration (AGI) som XML enligt Skatteverkets schema, och ett lönearkiv som finns kvar när modulen stängs av.
@@ -88,16 +90,20 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Personalliggare (modul)
 - Lokaler och personal med in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet, med kod, personlig QR-kod eller mobil incheckning.
 - Liggaren skrivs bara till, med en kedja av kontrollsummor och rättelser som syns bredvid originalet. Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren.
+- Kiosken sparar aldrig koderna. Personnummer för kontrollbesöket utan internet sparas bara krypterade och öppnas med en chefs kod.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
+- Bara post från godkända avsändare tolkas; annat väntar i karantän tills någon godkänner avsändaren.
 - Peppol-fakturor, SIE-filer och dagsrapporter läses utan AI, med mallar som en person godkänt.
+- Gallring: avvisad post tas bort efter 7 dagar, och karantän som ingen hanterat efter 90 dagar.
 
 ### NONOX AI (modul)
-- Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv.
+- Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
 
 ### Företaget och din data
 - Flera företag per användare med roller: ägare, administratör, redovisningskonsult, bokförare, attestant och revisor. Ägarskap kan föras över, och ett företag kan arkiveras så att det bara kan läsas.
+- Passkey som andra steg vid inloggning för den som kan se sjukfrånvaro, lönebesked eller fullständiga personnummer. Ägaren kan kräva passkey för alla i företaget.
 - Export av allt när som helst. Arkivpaket per räkenskapsår med SIE-fil, rapporter, underlag, fakturor och behandlingshistorik, med kontrollsumma för varje fil, som går att läsa utan NONOX.
 - Behandlingshistorik över allt som görs, och dataskydd: registerutdrag, radering av eget konto, gallring och personuppgiftsbiträdesavtal.
 - Eget varumärke: logga och färger på fakturor, lönebesked och Min sida.

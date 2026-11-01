@@ -1,12 +1,14 @@
 # Registerförteckning (artikel 30)
 
-Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app. Senast uppdaterad 2026-11-02.
+Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app. Senast uppdaterad 2026-11-01.
 
 ## A. Som personuppgiftsansvarig (art. 30.1)
 
 | Behandling | Ändamål | Registrerade | Uppgifter | Rättslig grund | Mottagare | Tredje land | Lagring |
 |---|---|---|---|---|---|---|---|
 | Användarkonton och inloggning | Ge tillgång till tjänsten | Användare | Namn, e-post, engångskoder (som hash), IP-adress, sessioner | Avtal, berättigat intresse | Mailgun (e-post) | Nej | Kontot tills användaren raderar det (Profil → Radera mitt konto); hänvisar bokföring eller behandlingshistorik till kontot pseudonymiseras det i stället och bara användar-id:t finns kvar; koder 1 dygn; sessioner 12 h |
+| Passkeys (ADR-029) | Bekräfta inloggningen för den som kan se känsliga uppgifter, eller när företaget kräver det | Användare | Passkeyns namn, id och publika nyckel med räknare och AAGUID, när den lades till och senast användes. Den privata nyckeln och fingeravtryck eller ansikte lämnar aldrig användarens enhet | Berättigat intresse (säkerhet, art. 32) | Mailgun (mejl när en passkey läggs till eller återställs) | Nej | Tills användaren tar bort passkeyn, en ägare eller administratör återställer den eller kontot raderas eller pseudonymiseras (Radera mitt konto tar bort alla passkeys) |
+| Sökning, senast öppnade (ADR-026) | Visa det användaren senast öppnat i sökningen | Användare, och personer vars namn står i en titel | Typ, id, titel (kan vara ett namn), adress och tid, per användare och företag, högst 50 rader. Söktexten sparas inte och loggas inte | Berättigat intresse | – | Nej | Högst 50 rader per användare och företag; tas bort med företaget och när användaren raderar sitt konto |
 | Behandlingshistorik | Bokföringslagens behandlingshistorik, säkerhet | Användare | Användar-id, åtgärd, tid, IP-adress, webbläsare | Rättslig förpliktelse, berättigat intresse | – | Nej | Som räkenskapsinformationen, minst 7 år |
 | Kundrelation och fakturering av tjänsten | Avtal och bokföring | Kontaktpersoner hos kunder | Namn, e-post, företagsuppgifter | Avtal, rättslig förpliktelse | – | Nej | 7 år enligt bokföringslagen |
 | Webbplatsen | Visa webbplatsen, säkerhet | Besökare | IP-adress i serverloggar, nödvändiga cookies | Berättigat intresse | Vultr (server) | Nej | Serverloggar enligt serverns rotation |
@@ -20,6 +22,8 @@ Stafe Development AB, del av Stafe Group AB, för tjänsten NONOX på nonox.app.
 Inkorgen (modul, ADR-023): e-post till företagets adress eller till den gemensamma adressen lagras krypterad. Mottagande sker via Mailgun (EU-region) i den driftade tjänsten, eller från företagets egen brevlåda (IMAP) när NONOX körs av företaget självt. Meddelanden till den gemensamma adressen som matchar flera företag lagras utan företag tills en medlem hämtar dem; bara avsändare, ämne och datum visas för de möjliga företagen. Med NONOX AI påslaget och valt i inkorgens inställningar skickas underlaget till företagets AI-leverantör.
 
 Uppgifter och notiser (ADR-028): uppgifter, kommentarer och checklistor hör till företaget och skrivs av dess användare. Kommentarer och beskrivningar är fritext och kan innehålla personuppgifter om användare, kunder eller anställda; de lagras så länge uppgiften finns och tas bort med uppgiften eller företaget. Notiser i appen (vem som tilldelade eller kommenterade, uppgiftens titel och företag) och användarens sparade vyer tas bort när användaren raderar sitt konto. Den dagliga sammanfattningen med e-post skickas bara till den som valt den och innehåller titel, företag och sista dag, aldrig beskrivning eller kommentarer.
+
+Redovisningsbyråns varumärke (ADR-030): kopplingen mellan ett kundföretag och en byrå sparas på företaget med vem som gjorde kopplingen (användar-id) och när, och loggas i båda företagens behandlingshistorik. Den ger byrån ingen tillgång till kundens uppgifter. Byråns logga och färger visas för kundföretagets användare och anställda.
 
 De registrerades rättigheter hos företagen stöds med registerutdrag per kund, leverantör, anställd, person i personalliggaren och avsändare till inkorgen, se [README](README.md).
 

@@ -52,7 +52,8 @@ om det är äkta. Ett sådant meddelande bokförs aldrig automatiskt.
 ## 4. Ställ in kassasystemet
 
 Be kassasystemet skicka dagsrapporten (Z-rapporten) med e-post till
-`…+kassa@in.nonox.app`. CSV, Excel (XLSX) och vanlig text fungerar.
+`…+kassa@in.nonox.app`. CSV, Excel (XLSX), vanlig text och PDF med text
+(inte en inskannad bild) fungerar.
 
 - Första rapporten tolkas av NONOX AI om modulen NONOX AI är påslagen, annars
   kopplar du varje belopp till ett konto själv.
@@ -81,6 +82,17 @@ Du kan svara avsändaren direkt, till exempel "Kvittot saknas, kan du skicka
 det?". Varningar om ändrat bankgiro, en avsändardomän som liknar en känd
 leverantörs eller en bilaga som kommit förut måste du bekräfta innan du
 godkänner.
+
+En leverantörsfaktura kopplas till leverantören som redan finns i registret,
+även en utländsk leverantör utan organisationsnummer (momsnummer, IBAN,
+e-postdomän eller namn). Liknar namnet bara en befintlig leverantör frågar
+NONOX **Menade du …?** och du väljer **Koppla** i stället för att lägga till
+leverantören en gång till.
+
+Gallring: avvisade meddelanden tas bort efter 7 dagar, och meddelanden i
+karantän som ingen hanterat efter 90 dagar. Skräppost från avsändare som
+inte är godkända sparas inte alls. Det som blivit bokföring sparas lika
+länge som bokföringen.
 
 ## 6. Egen brevlåda (när ni kör NONOX själva)
 

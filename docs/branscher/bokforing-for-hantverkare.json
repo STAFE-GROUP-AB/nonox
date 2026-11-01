@@ -51,7 +51,7 @@
         {"q": "Hur fakturerar jag med omvänd byggmoms?", "a": "Välj omvänd betalningsskyldighet för byggtjänster på fakturan. Den får då rätt text och konto, och beloppet hamnar i rätt ruta i momsdeklarationen. Om tjänsten räknas som en byggtjänst avgör du, precis som i alla program."},
         {"q": "Har NONOX personalliggare för byggarbetsplatser?", "a": "Nej, inte ännu. Personalliggaren i NONOX är byggd för restaurang, frisör och skönhet, fordonsservice, tvätterier och grossister. Byggbranschens liggare med ID06 och byggarbetsplatsanmälan kommer i en senare version."},
         {"q": "Kan jag följa upp vad varje jobb kostat?", "a": "Ja. Lägg upp ett projekt per jobb och märk leverantörsfakturor och verifikationsrader med det. Rapporterna kan tas fram per kostnadsställe, och projektet följer med raderna."},
-        {"q": "Kan jag skicka fakturan direkt från mobilen?", "a": "NONOX är en webbapp som fungerar i mobilens webbläsare, men det finns ingen app att ladda ner. Fakturor skapar och skickar du i webbläsaren."},
+        {"q": "Kan jag skicka fakturan direkt från mobilen?", "a": "Ja. NONOX installeras som app på hemskärmen direkt från mobilens webbläsare, utan App Store, och där skapar och skickar du fakturan. Appen behöver internet; ingen bokföring sparas i telefonen."},
         {"q": "Vad kostar NONOX för ett hantverksföretag?", "a": "{pris} per år med drift för upp till {max} anställda, med lön, ROT och RUT inräknade. Kör du NONOX själv kostar det ingenting."},
         {"q": "Hur flyttar jag mina obetalda fakturor?", "a": "Bokföringen flyttar du med SIE4. Obetalda kundfakturor tar du med som en lista på flyttdagen, och kommer du från Fortnox jämför NONOX dem åt dig. Flyttguiden visar alla steg."}
     ],

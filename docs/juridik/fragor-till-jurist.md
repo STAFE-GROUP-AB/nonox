@@ -37,10 +37,10 @@ Svaren förs in i respektive dokument eller ADR, och frågan stryks här. Öppna
 
 ### Autentisering och åtkomst
 
-**6. Engångskod via e-post som enda inloggning.**
-*Bakgrund:* Alla loggar in med en engångskod till e-post, utan lösenord eller annan faktor (ADR-000). Med behörighet når man lönebesked, sjukfrånvaro och personnummer.
-*Fråga:* Räcker det som lämplig säkerhet enligt artikel 32 för åtkomst till uppgifter om hälsa? Vad säger IMY:s praxis om stark autentisering för känsliga uppgifter, och krävs en andra faktor för vissa roller?
-*Varför:* Ett kapat e-postkonto ger då full åtkomst. Det är inte utrett om IMY i tillsynsbeslut har krävt stark autentisering för hälsouppgifter utanför vården, och i så fall vad det betyder här.
+**6. Engångskod via e-post, och passkey för känsliga uppgifter.**
+*Bakgrund:* Alla loggar in med en engångskod till e-post, utan lösenord (ADR-000). Sedan 2026-11-01 bekräftar den som kan se sjukfrånvaro, lönebesked eller fullständiga personnummer dessutom inloggningen med en passkey, och ägaren kan kräva passkey för alla i företaget (ADR-029). Övriga roller, till exempel bokförare och attestanter, loggar fortfarande in med bara koden. En helt ny användare som måste ha passkey lägger till den första med bara e-postkoden. API-nycklar kräver ingen passkey.
+*Fråga:* Räcker detta som lämplig säkerhet enligt artikel 32 för åtkomst till uppgifter om hälsa? Vad säger IMY:s praxis om stark autentisering för känsliga uppgifter? Räcker det att den första passkeyn läggs till efter enbart e-postkoden?
+*Varför:* För roller utan passkey ger ett kapat e-postkonto full åtkomst till det rollen får se. Det är inte utrett om IMY i tillsynsbeslut har krävt stark autentisering för hälsouppgifter utanför vården, och i så fall vad det betyder här.
 
 **7. Revisorns läsning av lönebesked.**
 *Bakgrund:* Revisorn kan läsa lönebesked, som kan avslöja sjukfrånvaro, och varje läsning loggas. ADR-021 godkändes av projektägaren 2026-11-01; den juridiska frågan står kvar.
@@ -93,8 +93,8 @@ Svaren förs in i respektive dokument eller ADR, och frågan stryks här. Öppna
 *Fråga:* Är Stafe leverantör (artikel 3.3) av NONOX AI, för den driftade tjänsten och för kopior som andra kör själva? Gäller undantaget för fri och öppen källkod (artikel 2.12) när samma företag tar betalt för den driftade tjänsten? Blir kunden leverantör enligt artikel 25 om den väljer en egen modell?
 
 **18. Datum efter förordning (EU) 2026/1744, och kvittoläsaren.**
-*Bakgrund:* Enligt sekundära källor flyttar ändringsförordningen tillämpningen för fristående högrisksystem enligt bilaga III till den 2 december 2027, medan artikel 50 gäller från den 2 augusti 2026. Kvittoläsaren för anställdas utlägg (`ExpenseReceiptAgent`) ber modellen anteckna kvitton som ser privata ut, alkohol och representation, och anteckningen visas för den som godkänner utlägget.
-*Fråga:* Stämmer datumen med texten i EUR-Lex? Faller kvittoläsaren inom bilaga III punkt 4 b (bedömning av beteende i ett anställningsförhållande) som den är? Faller den utanför om bedömningen tas bort ur instruktionen (artikel 6.3)? Rekommendationen är att ta bort bedömningen (ADR-018).
+*Bakgrund:* Enligt sekundära källor flyttar ändringsförordningen tillämpningen för fristående högrisksystem enligt bilaga III till den 2 december 2027, medan artikel 50 gäller från den 2 augusti 2026. Kvittoläsaren för anställdas utlägg (`ExpenseReceiptAgent`) bad tidigare modellen anteckna kvitton som ser privata ut, alkohol och representation. Sedan 2026-11-01 är den bedömningen borttagen: modellen läser bara det kvittot visar, antecknar bara det den inte kunde läsa och får aldrig bedöma inköpet eller personen (ADR-018).
+*Fråga:* Stämmer datumen med texten i EUR-Lex? Räcker ändringen för att kvittoläsaren ska falla utanför bilaga III punkt 4 b (bedömning av beteende i ett anställningsförhållande), eller behövs något mer (artikel 6.3)?
 
 **19. AI-kunnighet efter ändringen.**
 *Fråga:* Gäller artikel 4 om AI-kunnighet fortfarande för leverantörer och tillhandahållare efter förordning (EU) 2026/1744, eller har skyldigheten flyttats till kommissionen och medlemsstaterna? Vad behöver Stafe och kunderna göra?

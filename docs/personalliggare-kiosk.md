@@ -63,6 +63,13 @@ varje kiosk hör till ett enda företag.
 Tappar ni bort surfplattan: välj **Spärra** vid kiosken. Den kan då inte
 längre checka in någon. En ny surfplatta kopplas som en ny kiosk.
 
+Kiosken sparar en kopia av personalen för att fungera utan internet: namn,
+foto om personen samtyckt, och kontrollvärden för koderna, aldrig själva
+koderna. Personnummer och den senaste månadens pass för kontrollbesöket
+sparas bara krypterade och kan bara öppnas med en chefs kod. Spärra ändå en
+borttappad surfplatta direkt, och byt chefernas koder om ni misstänker att
+någon kommit åt den.
+
 ## 5. Så checkar personalen in
 
 - Tryck på ditt namn och skriv din kod. Klart – kiosken visar *Välkommen* och

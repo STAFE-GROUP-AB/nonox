@@ -21,6 +21,8 @@ Följ installationsguiden i [README.md](README.md#installation). Du behöver PHP
 - Varje ny modell med företagsdata använder `BelongsToCompany` och får ett test i `tests/Tenancy`.
 - Inga N+1-frågor: antalet databasfrågor på en sida får inte bero på hur många rader den visar.
 - Ändrar du hur bokföringen fungerar uppdaterar du [systemdokumentationen](docs/systemdokumentation/README.md) i samma pull request. Bokföringslagen kräver den.
+- En ny funktion som användaren ser skrivs in under Funktioner i [README.md](README.md#funktioner) och i `App\Support\Landing\Features`, som de publika sidorna använder. Ett test kontrollerar att de stämmer överens.
+- En ny modul med egna poster lägger till en sökleverantör, så att posterna hittas med ⌘K ([ADR-026](docs/adr/ADR-026-spotlight-search.md)).
 - Hitta aldrig på juridiska regler. Är du osäker, skriv `TODO(legal-verify): <frågan>` och nämn det i pull requesten.
 - Lägg aldrig riktiga företagsuppgifter, personnummer, nycklar eller `.env` i ett bidrag. Testdata ska vara påhittad.
 

@@ -1,0 +1,69 @@
+{
+    "name": "NONOX Ekonomisystem",
+    "short_name": "NONOX",
+    "description": "Bokföring, fakturering och lön för svenska företag.",
+    "lang": "sv",
+    "dir": "ltr",
+    "id": "/oversikt",
+    "start_url": "/oversikt",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#15171C",
+    "theme_color": "#15171C",
+    "categories": [
+        "business",
+        "finance",
+        "productivity"
+    ],
+    "icons": [
+        {
+            "src": "/brand/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/brand/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/brand/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/brand/nonox-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Inkorg",
+            "url": "/inkorg",
+            "icons": [
+                {
+                    "src": "/brand/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        },
+        {
+            "name": "Uppgifter",
+            "url": "/uppgifter",
+            "icons": [
+                {
+                    "src": "/brand/icon-192.png",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }
+            ]
+        }
+    ]
+}

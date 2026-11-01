@@ -173,7 +173,7 @@ final class LandingPage
             ['t' => 'Byrå och kund', 'key' => 'tasks', 'b' => 'Uppgifter som delegeras mellan byrån och kunden, månadsstängning per klient och alla klienter på en sida.', 'd' => 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9'],
             ['t' => 'Arkiv och export', 'key' => 'archive', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
             ['t' => 'Personalliggare', 'key' => 'staff_ledger', 'mod' => true, 'b' => 'Elektronisk personalliggare med incheckning via PIN eller QR-kod på en surfplatta, även utan internet.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
-            ['t' => 'Inbox', 'key' => 'inbox', 'mod' => true, 'b' => 'En egen e-postadress för fakturor, kvitton och kassarapporter. Bara avsändare du godkänt släpps in.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
+            ['t' => 'Inkorg', 'key' => 'inbox', 'mod' => true, 'b' => 'En egen e-postadress för fakturor, kvitton och kassarapporter. Bara post från avsändare du godkänt tolkas, resten väntar i karantän.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
         ];
     }
 
@@ -230,6 +230,7 @@ final class LandingPage
             ['q' => 'Följer NONOX Bokföringslagen?', 'a' => 'NONOX är byggt efter Bokföringslagen och Bokföringsnämndens regler, med oföränderliga verifikationer, behandlingshistorik och arkivering.'],
             ['q' => 'Kan jag flytta från mitt nuvarande program?', 'a' => 'Ja, via SIE4 och vårt importverktyg. Se flyttguiden.'],
             ['q' => 'Kan jag sluta när jag vill?', 'a' => 'Ja. Ingen bindningstid, och du exporterar all data med ett klick.'],
+            ['q' => 'Finns det en app till mobilen?', 'a' => 'Ja, som webbapp. Öppna NONOX i mobilens webbläsare och välj Lägg till på hemskärmen (Safari) eller Installera app (Chrome), så öppnas NONOX som en app. Den finns inte i App Store eller Google Play. Ingen bokföring sparas i telefonen. Personalliggarens kiosk installeras på samma sätt på en surfplatta och fungerar även utan internet.'],
             ['q' => 'Var lagras min data?', 'a' => 'Kör du själv: där du väljer. I våra driftpaket: på servrar i Sverige/EU.'],
         ];
     }

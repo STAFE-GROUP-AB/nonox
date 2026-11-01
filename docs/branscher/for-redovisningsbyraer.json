@@ -77,8 +77,15 @@
                 ]
             },
             {
+                "title": "Byråns logga hos kunderna",
+                "text": "Markera byråns företag som redovisningsbyrå, så kan kunden välja er som sin byrå. Kunden ser då byråns logga och färger i appen, på Min sida och i mejlen om inloggning och uppgifter. Kopplingen ger ingen behörighet, och kundens egna fakturor och lönebesked behåller kundens varumärke.",
+                "features": [
+                    "firm_branding"
+                ]
+            },
+            {
                 "title": "En inkorg per klient",
-                "text": "Varje klientföretag får en egen e-postadress för leverantörsfakturor, kvitton och dagsrapporter. Bara godkända avsändare släpps in, och en dagsrapport med godkänd mall kan bokföras automatiskt.",
+                "text": "Varje klientföretag får en egen e-postadress för leverantörsfakturor, kvitton och dagsrapporter. Bara post från godkända avsändare tolkas, annat väntar i karantän. En dagsrapport med godkänd mall kan bokföras automatiskt.",
                 "features": [
                     "inbox",
                     "daily_reports"
@@ -153,7 +160,7 @@
         },
         {
             "q": "Hur får vi in klienternas underlag?",
-            "a": "Varje klientföretag har en egen inkorg. Leverantörer, kassasystem och klienten själv skickar dit, och bara godkända avsändare släpps in."
+            "a": "Varje klientföretag har en egen inkorg. Leverantörer, kassasystem och klienten själv skickar dit, och bara post från godkända avsändare tolkas."
         },
         {
             "q": "Hur flyttar vi en klient från ett annat program?",
