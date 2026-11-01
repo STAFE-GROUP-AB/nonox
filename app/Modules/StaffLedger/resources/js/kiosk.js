@@ -162,9 +162,10 @@ async function api(path, body = null) {
     return response.json();
 }
 
+/** True when a fresh roster was downloaded. */
 async function refreshRoster() {
     if (!state.token) {
-        return;
+        return false;
     }
 
     try {
@@ -179,11 +180,15 @@ async function refreshRoster() {
         console.warn('NONOX kiosk: the roster could not be refreshed.', error);
         // A blocked kiosk is online; it only needs a new code.
         state.online = error.status === 401 ? true : error.status === undefined ? false : state.online;
+
+        return false;
+    } finally {
+        if (state.screen === 'home') {
+            render();
+        }
     }
 
-    if (state.screen === 'home') {
-        render();
-    }
+    return true;
 }
 
 let syncing = false;
@@ -299,6 +304,18 @@ async function checkPersonPin() {
         await kv.delete(`attempts:${person.id}`);
 
         return record(person, 'KIOSK_PIN');
+    }
+
+    // The code may have been changed since the roster was downloaded: check once more against a fresh one.
+    if (state.online && await refreshRoster()) {
+        const fresh = state.roster.people.find((candidate) => candidate.id === person.id);
+
+        if (fresh && await pinMatches(state.pin, fresh, state.roster.iterations)) {
+            await kv.delete(`attempts:${person.id}`);
+            state.person = fresh;
+
+            return record(fresh, 'KIOSK_PIN');
+        }
     }
 
     const next = registerPinFailure(attempts, Date.now());
@@ -702,6 +719,8 @@ if ('serviceWorker' in navigator) {
 
 window.addEventListener('online', () => { state.online = true; sync(); refreshRoster(); });
 window.addEventListener('offline', () => { state.online = false; render(); });
+// A tablet that slept may have missed several refreshes (new people, changed codes).
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { refreshRoster(); } });
 document.addEventListener('keydown', (event) => {
     if (/^\d$/.test(event.key) && (state.screen === 'pin' || state.screen === 'manager-pin')) {
         pressDigit(event.key);
