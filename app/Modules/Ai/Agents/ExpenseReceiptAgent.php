@@ -30,8 +30,9 @@ class ExpenseReceiptAgent implements Agent, HasStructuredOutput
         total paid including VAT and the Swedish VAT included in it (0 when none is shown). Amounts are numbers
         with a dot as decimal separator. Propose ONE cost account (4000-7999) for the purchase, chosen ONLY from
         the chart of accounts given in the text input. Write a short description of the purchase in Swedish, for
-        example the seller and what was bought. Put anything uncertain in notes: an unreadable amount, a receipt
-        that looks private, alcohol, entertainment (representation), a foreign currency or a missing VAT amount.
+        example the seller and what was bought. Put anything uncertain in notes: an unreadable amount, a foreign
+        currency or a missing VAT amount. Only read what the document shows. Never judge the purchase or the
+        person: do not say whether it looks private, allowed or appropriate; the approver decides that.
         LANGUAGE: every text value in the answer must be written in Swedish with the Swedish letters å, ä and ö.
         Never write English, and never replace å, ä or ö with aa, ae, oe or a, a, o. Keep names, numbers and
         codes exactly as printed.

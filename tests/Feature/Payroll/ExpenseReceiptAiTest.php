@@ -225,3 +225,13 @@ it('does not send employees\' receipts to AI unless the company has chosen it', 
 
     expect(AnalyzeDocument::readsReceiptsFor(test()->company))->toBeFalse();
 });
+
+it('never asks the model to judge the purchase or the employee', function () {
+    $instructions = (string) (new ExpenseReceiptAgent)->instructions();
+
+    // The list of things to note holds only what could not be read; judging is forbidden.
+    expect($instructions)->not->toContain('alcohol')
+        ->not->toContain('entertainment')
+        ->not->toContain('a receipt that looks private')
+        ->toContain('Never judge the purchase or the');
+});

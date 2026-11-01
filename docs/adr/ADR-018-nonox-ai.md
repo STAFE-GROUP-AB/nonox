@@ -124,13 +124,13 @@ persons. TODO(legal-verify): whether the expense-receipt reader is outside
 Annex III point 4 as it is, and whether it is outside once the judgement is
 removed.
 
-**Recommendation (not done):** remove the judgement from the prompt. The
-agent should read only what is printed (date, seller, items, totals, VAT,
-currency) and note only what it could not read. Whether a purchase is
-private, alcohol or representation is for the approver to decide from the
-receipt. The approver sees the receipt and the items anyway. Consider the
-same wording change in `VoucherAgent`, for consistency. This is a product
-decision for the owner. The prompts were not changed here.
+**Decision (2026-11-01, project owner):** the judgement is removed from the
+prompt, since a private-looking receipt can be a legitimate outlay. The
+agent reads only what is printed (date, seller, items, totals, VAT,
+currency), notes only what it could not read, and is told never to judge the
+purchase or the person; the approver decides. `VoucherAgent` keeps its note
+about a possibly private expense: it books the company's own documents and
+does not evaluate an employee.
 
 ### Human oversight
 
@@ -172,6 +172,5 @@ literacy, as the Omnibus proposal suggested.
 
 ### Follow-up
 
-1. Owner decision on removing the judgement from `ExpenseReceiptAgent`
-   (and `VoucherAgent`).
+1. Done: the judgement is removed from `ExpenseReceiptAgent` (2026-11-01).
 2. Legal review of roles, the Annex III question and the Omnibus dates.

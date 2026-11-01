@@ -195,10 +195,10 @@
             "done": [
                 "Vad som skickas till AI-leverantören loggas, aldrig innehållet.",
                 "Allt AI föreslår märks som förslag och kräver ett mänskligt godkännande.",
-                "Riskklassning per AI-funktion och en kundsida om vad AI gör och inte gör."
+                "Riskklassning per AI-funktion och en kundsida om vad AI gör och inte gör.",
+                "Kvittoläsaren för utlägg läser bara det som står på kvittot och bedömer aldrig köpet eller den anställde."
             ],
             "open": [
-                "Kvittoläsaren bedömer om ett kvitto ser privat ut, vilket kan räknas som bedömning av anställda. Beslut om att ta bort bedömningen återstår.",
                 "Rollen som leverantör eller tillhandahållare väntar på jurist."
             ],
             "law": [
