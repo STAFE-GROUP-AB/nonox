@@ -34,6 +34,9 @@ class AppServiceProvider extends ServiceProvider
         // Registered before Livewire boots, which binds its hooks at boot time.
         Livewire::componentHook(LivewireCompanyGuard::class);
 
+        // Uploads are read from their path, so they wait on a plain disk (config/filesystems.php).
+        config(['livewire.temporary_file_upload.disk' => 'uploads']);
+
         $this->app->scoped(CompanyContext::class);
     }
 

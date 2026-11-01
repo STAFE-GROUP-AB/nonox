@@ -64,3 +64,10 @@ it('hands out a decrypted temporary copy and removes it afterwards', function ()
     expect($contents)->toBe('#FLAGGA 0')
         ->and(file_exists((string) $seen))->toBeFalse();
 });
+
+it('keeps temporary uploads on a plain disk, since uploads are read from their path', function () {
+    // Livewire swaps the disk while tests run, so the setting is what can be checked here.
+    expect(config('livewire.temporary_file_upload.disk'))->toBe('uploads')
+        ->and(config('filesystems.disks.uploads.driver'))->toBe('local')
+        ->and(config('filesystems.disks.uploads.root'))->not->toBe(config('filesystems.disks.local.root'));
+});

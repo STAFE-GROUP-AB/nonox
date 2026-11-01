@@ -23,6 +23,21 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Livewire's temporary uploads (AppServiceProvider). Not encrypted:
+         * the code reads an upload from its path, and an encrypted one read
+         * that way is ciphertext. Livewire deletes them after 24 hours; the
+         * stored copy goes to the private disk above, encrypted.
+         */
+        'uploads' => [
+            'driver' => 'local',
+            'root' => storage_path('app/uploads'),
+            'visibility' => 'private',
+            'serve' => false,
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
