@@ -52,7 +52,8 @@ return [
     |
     */
 
-    'expiration' => null,
+    // API tokens expire: 30 days unless SANCTUM_TOKEN_EXPIRATION (minutes) says otherwise.
+    'expiration' => (int) env('SANCTUM_TOKEN_EXPIRATION', 60 * 24 * 30),
 
     /*
     |--------------------------------------------------------------------------
@@ -67,7 +68,7 @@ return [
     |
     */
 
-    'token_prefix' => env('SANCTUM_TOKEN_PREFIX', ''),
+    'token_prefix' => env('SANCTUM_TOKEN_PREFIX', 'nonox_'),
 
     /*
     |--------------------------------------------------------------------------

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Actions\Jetstream;
 
+use App\Actions\Company\WithdrawInvitationsSentBy;
 use App\Models\Company;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Laravel\Jetstream\Contracts\RemovesTeamMembers;
@@ -14,8 +16,11 @@ use Laravel\Jetstream\Events\TeamMemberRemoved;
 
 class RemoveTeamMember implements RemovesTeamMembers
 {
+    public function __construct(private readonly WithdrawInvitationsSentBy $withdrawInvitations) {}
+
     /**
-     * Remove the team member from the given team.
+     * Remove the team member from the given team, and withdraw the invitations
+     * they sent that nobody has accepted yet.
      */
     public function remove(User $user, Company $team, User $teamMember): void
     {
@@ -23,7 +28,11 @@ class RemoveTeamMember implements RemovesTeamMembers
 
         $this->ensureUserDoesNotOwnTeam($teamMember, $team);
 
-        $team->removeUser($teamMember);
+        DB::transaction(function () use ($team, $teamMember): void {
+            $team->removeUser($teamMember);
+
+            ($this->withdrawInvitations)($team, $teamMember, 'member_removed');
+        });
 
         TeamMemberRemoved::dispatch($team, $teamMember);
     }

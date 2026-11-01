@@ -78,19 +78,42 @@ class MemberManager extends TeamMemberManager
 
         $name = $this->managingRoleFor->name;
         $role = Jetstream::findRole($this->currentRole);
+        $memberId = (int) $this->managingRoleFor->id;
+        $pending = $this->invitationsSentBy($memberId);
 
         parent::updateRole($updater);
 
-        $this->toast(__(':name är nu :role.', ['name' => $name, 'role' => mb_strtolower((string) $role?->name)]));
+        $withdrawn = $pending - $this->invitationsSentBy($memberId);
+
+        $this->toast(trim(__(':name är nu :role.', ['name' => $name, 'role' => mb_strtolower((string) $role?->name)]).' '.$this->withdrawnMessage($name, $withdrawn)));
     }
 
     public function removeTeamMember(RemovesTeamMembers $remover): void
     {
-        $name = Jetstream::findUserByIdOrFail((int) $this->teamMemberIdBeingRemoved)->name;
+        $memberId = (int) $this->teamMemberIdBeingRemoved;
+        $name = Jetstream::findUserByIdOrFail($memberId)->name;
+        $pending = $this->invitationsSentBy($memberId);
 
         parent::removeTeamMember($remover);
 
-        $this->toast(__(':name har inte längre tillgång till företaget.', ['name' => $name]));
+        $withdrawn = $pending - $this->invitationsSentBy($memberId);
+
+        $this->toast(trim(__(':name har inte längre tillgång till företaget.', ['name' => $name]).' '.$this->withdrawnMessage($name, $withdrawn)));
+    }
+
+    private function invitationsSentBy(int $userId): int
+    {
+        return TeamInvitation::query()->where('team_id', $this->team->id)->where('invited_by', $userId)->count();
+    }
+
+    /** The toast's mention of invitations withdrawn with their sender (WithdrawInvitationsSentBy). */
+    private function withdrawnMessage(string $name, int $count): string
+    {
+        return match (true) {
+            $count <= 0 => '',
+            $count === 1 => __('En obesvarad inbjudan som :name skickat är återkallad.', ['name' => $name]),
+            default => __(':count obesvarade inbjudningar som :name skickat är återkallade.', ['name' => $name, 'count' => $count]),
+        };
     }
 
     public function leaveTeam(RemovesTeamMembers $remover)

@@ -162,7 +162,15 @@ composer install
 cp .env.example .env
 ```
 
-Öppna nu filen `.env` i en textredigerare och fyll i ditt användarnamn från steg 3 på raden `DB_USERNAME`:
+Öppna nu filen `.env` i en textredigerare. Den är inställd för en server, så ändra först tre rader för din egen dator:
+
+```dotenv
+APP_ENV=local        # guiden för första start och automatisk inloggningskod fungerar bara lokalt
+APP_DEBUG=true       # visar felets detaljer i webbläsaren, aldrig på en server
+OTP_AUTOFILL=true    # fyller i inloggningskoden åt dig
+```
+
+Fyll sedan i ditt användarnamn från steg 3 på raden `DB_USERNAME`:
 
 ```dotenv
 DB_CONNECTION=pgsql
@@ -200,17 +208,28 @@ När systemet är installerat visar `/` en **publik startsida** (även innan fö
 
 ### Så loggar du in
 
-Det finns inga lösenord. Du skriver din e-postadress, får en kod med sex siffror i mejlet och skriver in den. Är adressen ny skapas ett konto, och du får sedan skapa ditt företag på sidan *Kom igång*.
+Det finns inga lösenord. Du skriver din e-postadress, får en kod med åtta siffror i mejlet och skriver in den. Är adressen ny skapas ett konto, och du får sedan skapa ditt företag på sidan *Kom igång*.
 
-**Lokalt är det ett klick.** När `APP_ENV=local` och `OTP_AUTOFILL=true` (standard i `.env.example`) är e-postfältet redan ifyllt med din adress, och koden fylls i och kontrolleras automatiskt.
+**Lokalt är det ett klick.** När `APP_ENV=local` och `OTP_AUTOFILL=true` (de rader du ändrade i steg 4) och `APP_URL` pekar på `localhost` eller en `.test`-adress är e-postfältet redan ifyllt med din adress, och koden fylls i och kontrolleras automatiskt.
 
 Vill du logga in med en annan adress lokalt hamnar koden i loggfilen, eftersom `MAIL_MAILER=log`:
 
 ```bash
-grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[0-9]{6}\b" | tail -1
+grep -A30 "Subject: Din inloggningskod" storage/logs/laravel.log | grep -oE "\b[0-9]{8}\b" | tail -1
 ```
 
 > ⚠️ Sätt aldrig `APP_ENV=local` på en server som nås från internet. På en server behöver du riktig e-post (`MAIL_MAILER=smtp` med uppgifter från din e-postleverantör), annars kommer koderna aldrig fram.
+
+### Köra NONOX på en server
+
+`.env.example` är redan inställd för en server (`APP_ENV=production`, `APP_DEBUG=false`, `OTP_AUTOFILL=false`). Ändra inte de raderna där. Det du behöver fylla i:
+
+- `APP_URL` med serverns riktiga adress (`https://…`).
+- Riktig e-post, till exempel `MAIL_MAILER=smtp` eller `mailgun`. Med `log` kommer inga inloggningskoder fram.
+- **Bakom en proxy eller CDN** (till exempel Cloudflare med orange moln, eller en lastbalanserare): skriv proxyns adressintervall, kommaseparerade, i `TRUSTED_PROXIES`. Annars ser NONOX proxyns adress i stället för besökarens, och spärrarna mot för många inloggningsförsök slår mot alla besökare samtidigt. För Cloudflare finns intervallen på https://www.cloudflare.com/ips/. Lämnas raden tom litar NONOX inte på någon proxy, vilket är rätt när ingen proxy används. Skriv aldrig `*` om servern också går att nå utan proxyn, för då kan vem som helst ange sin egen adress.
+- `SANCTUM_TOKEN_EXPIRATION` och `SANCTUM_TOKEN_PREFIX` gäller API-nycklar (minuter tills en nyckel slutar gälla, och prefixet som gör en läckt nyckel igenkännbar). Standardvärdena räcker. API-nycklar fungerar bara mot `/api/v1`, aldrig mot vanliga sidor.
+
+Kör `php artisan config:cache` efter varje ändring i `.env` på servern.
 
 ### Uppdatera till senaste versionen
 

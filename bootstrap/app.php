@@ -21,6 +21,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'module' => EnsureModuleEnabled::class,
         ]);
 
+        // Trusted proxies are opt-in through TRUSTED_PROXIES, read on every request
+        // from config/trustedproxy.php. Not ->trustProxies(at: ...) here: this
+        // callback runs before .env is loaded, so env() would always be empty.
+
         $middleware->web(append: [
             SecurityHeaders::class,
             EndExpiredSessions::class,

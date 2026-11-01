@@ -11,6 +11,8 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -77,6 +79,31 @@ class User extends Authenticatable
             'sessions_valid_from' => 'immutable_datetime',
             'hidden_panels' => 'array',
         ];
+    }
+
+    /**
+     * Addresses are kept in lowercase, so that a user is found however the
+     * address is typed (security review 2026-11-01).
+     *
+     * @return Attribute<string, string>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(set: fn (string $value): string => self::normaliseEmail($value));
+    }
+
+    public static function normaliseEmail(string $email): string
+    {
+        return mb_strtolower(trim($email));
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeByEmail(Builder $query, string $email): Builder
+    {
+        return $query->whereRaw('lower(email) = ?', [self::normaliseEmail($email)]);
     }
 
     /**

@@ -3,6 +3,8 @@
     ":company finns nu i systemet.": ":company is now in the system.",
     ":company är skapat. Du arbetar nu i det företaget.": ":company has been created. You are now working in that company.",
     ":name har inte längre tillgång till företaget.": ":name no longer has access to the company.",
+    ":count obesvarade inbjudningar som :name skickat är återkallade.": ":count pending invitations sent by :name have been withdrawn.",
+    "En obesvarad inbjudan som :name skickat är återkallad.": "One pending invitation sent by :name has been withdrawn.",
     ":name är nu :role.": ":name is now :role.",
     ":name: :reason": ":name: :reason",
     ":original är rättad med :correction.": ":original has been corrected by :correction.",

@@ -30,9 +30,11 @@ class InviteTeamMember implements InvitesTeamMembers
     {
         Gate::forUser($user)->authorize('addTeamMember', $team);
 
+        $email = User::normaliseEmail($email);
+
         // An expired invitation must not block a new one to the same address.
         $team->teamInvitations()
-            ->whereRaw('lower(email) = ?', [mb_strtolower($email)])
+            ->whereRaw('lower(email) = ?', [$email])
             ->where('created_at', '<=', now()->subDays(TeamInvitationModel::VALID_DAYS))
             ->delete();
 
@@ -44,6 +46,7 @@ class InviteTeamMember implements InvitesTeamMembers
         $invitation = $team->teamInvitations()->create([
             'email' => $email,
             'role' => $role,
+            'invited_by' => $user->id,
         ]);
 
         MailQuota::take($team, 'invitations');

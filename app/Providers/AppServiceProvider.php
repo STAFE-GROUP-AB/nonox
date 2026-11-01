@@ -15,10 +15,12 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Sanctum\Sanctum;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 use League\Flysystem\UnixVisibility\PortableVisibilityConverter;
@@ -47,6 +49,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::preventLazyLoading(! $this->app->isProduction());
+
+        // A bearer token counts only on the API (/api/*). Every page, modules'
+        // included, needs a signed-in session, so a token can never stand in
+        // for one or outlive its 12-hour limit (security review 2026-11-01).
+        Sanctum::getAccessTokenFromRequestUsing(fn (Request $request): ?string => $request->is('api/*') ? $request->bearerToken() : null);
 
         // Company and person names reach mail texts; escape Markdown so a name cannot become a link.
         Markdown::withSecuredEncoding();

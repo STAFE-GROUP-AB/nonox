@@ -46,7 +46,9 @@ return [
     |
     */
 
-    'guard' => 'sanctum',
+    // The session guard: Jetstream's pages are for signed-in people only, never
+    // for API tokens (security review 2026-11-01).
+    'guard' => 'web',
 
     /*
     |--------------------------------------------------------------------------

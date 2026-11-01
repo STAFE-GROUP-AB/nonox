@@ -25,9 +25,11 @@ class AddTeamMember implements AddsTeamMembers
     {
         Gate::forUser($user)->authorize('addTeamMember', $team);
 
+        $email = User::normaliseEmail($email);
+
         $this->validate($team, $email, $role);
 
-        $newTeamMember = Jetstream::findUserByEmailOrFail($email);
+        $newTeamMember = User::query()->byEmail($email)->orderBy('id')->firstOrFail();
 
         AddingTeamMember::dispatch($team, $newTeamMember);
 
@@ -46,9 +48,9 @@ class AddTeamMember implements AddsTeamMembers
         Validator::make([
             'email' => $email,
             'role' => $role,
-        ], $this->rules($team), [
-            'email.exists' => __('We were unable to find a registered user with this email address.'),
-        ])->after(
+        ], $this->rules($team))->after(
+            $this->ensureUserExists($email)
+        )->after(
             $this->ensureUserIsNotAlreadyOnTeam($team, $email)
         )->validateWithBag('addTeamMember');
     }
@@ -61,11 +63,25 @@ class AddTeamMember implements AddsTeamMembers
     protected function rules(Company $team): array
     {
         return array_filter([
-            'email' => ['required', 'email', 'exists:users'],
+            'email' => ['required', 'email'],
             'role' => Jetstream::hasRoles()
                             ? ['required', 'string', new Role, new AvailableRole($team)]
                             : null,
         ]);
+    }
+
+    /**
+     * Ensure that a user has the address, whatever its case.
+     */
+    protected function ensureUserExists(string $email): Closure
+    {
+        return function ($validator) use ($email) {
+            $validator->errors()->addIf(
+                ! $validator->errors()->has('email') && ! User::query()->byEmail($email)->exists(),
+                'email',
+                __('We were unable to find a registered user with this email address.')
+            );
+        };
     }
 
     /**

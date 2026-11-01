@@ -116,6 +116,19 @@ class Company extends JetstreamTeam
     }
 
     /**
+     * Jetstream's check, without regard to case: Anna@Firma.se and
+     * anna@firma.se are the same person (security review 2026-11-01).
+     *
+     * @return bool
+     */
+    public function hasUserWithEmail(string $email)
+    {
+        $email = User::normaliseEmail($email);
+
+        return $this->allUsers()->contains(fn (User $user): bool => User::normaliseEmail($user->email) === $email);
+    }
+
+    /**
      * The first day of the fiscal year in words, e.g. "1 januari".
      */
     public function fiscalYearStartLabel(): string

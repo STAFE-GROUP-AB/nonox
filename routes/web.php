@@ -61,7 +61,7 @@ Route::middleware('guest')->group(function () {
 Route::post('/logga-ut', LogoutController::class)->middleware('auth')->name('logout');
 
 Route::middleware([
-    'auth:sanctum',
+    'auth:web',
     config('jetstream.auth_session'),
     'verified',
 ])->group(function () {

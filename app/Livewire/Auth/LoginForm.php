@@ -117,7 +117,7 @@ class LoginForm extends Component implements SpansCompanies
 
         session()->forget(self::PENDING_EMAIL);
 
-        $user = User::where('email', $email)->first();
+        $user = User::query()->byEmail($email)->orderBy('id')->first();
 
         if ($user instanceof User) {
             $this->signIn($user);
