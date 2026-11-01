@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Modules\Inbox\Actions\FetchImapMail;
 use App\Modules\Inbox\Agents\DailyReportAgent;
 use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\Domain\MessageStatus;
@@ -10,6 +11,7 @@ use App\Modules\Inbox\InboxModule;
 use App\Modules\Inbox\Livewire\InboxSettingsForm;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Support\Imap\FetchedMail;
+use App\Modules\Inbox\Support\Imap\HostResolver;
 use App\Modules\Inbox\Support\Imap\MailboxClient;
 use App\Modules\Inbox\Support\Imap\MailboxSettings;
 use App\Modules\Inbox\Support\Imap\MailboxUnavailable;
@@ -21,6 +23,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
@@ -39,6 +42,18 @@ beforeEach(function () {
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
     DailyReportAgent::fake();
+    // No test depends on DNS: names resolve from this table.
+    app()->instance(HostResolver::class, new class implements HostResolver
+    {
+        public function resolve(string $host): array
+        {
+            return [
+                'imap.exempel.example' => ['93.184.216.34'],
+                'intern.exempel.example' => ['10.0.0.8'],
+                'redis.exempel.example' => ['93.184.216.34', '127.0.0.1'],
+            ][$host] ?? [];
+        }
+    });
 });
 
 /** A mailbox that hands out the given messages and records what it was asked. */
@@ -182,12 +197,89 @@ it('reads the authentication results of the company\'s own mail server from IMAP
     expect(InboxMessage::query()->sole()->hasQuarantineReason('AUTH_FAILED'))->toBeTrue();
 });
 
-it('remembers why a fetch failed and shows it in the settings', function () {
+it('shows a general reason when a fetch failed and keeps the details in the server log', function () {
+    Log::spy();
     app(ModuleManager::class)->enable(InboxModule::KEY, $this->company, $this->owner);
     app(ModuleManager::class)->updateSettings(InboxModule::KEY, $this->company, $this->owner, ['imap_enabled' => true, 'imap_host' => 'imap.exempel.example', 'imap_username' => 'u', 'imap_secret' => Crypt::encryptString('p')]);
     fakeMailbox([], fails: true);
 
     $this->artisan('inbox:fetch')->assertSuccessful();
 
-    Livewire::test(InboxSettingsForm::class, ['company' => $this->company])->assertSee('Inloggningen misslyckades.');
+    // The text of a connection error tells what answers at an address, so it is never shown.
+    expect(InboxAddress::mailbox($this->company)->imap_last_error)->toBe(FetchImapMail::ERROR_FAILED);
+    Livewire::test(InboxSettingsForm::class, ['company' => $this->company])
+        ->assertSee('Senaste hämtningen misslyckades.')
+        ->assertSee('NONOX kunde inte ansluta eller logga in.')
+        ->assertDontSee('Inloggningen misslyckades.');
+    Log::shouldHaveReceived('warning')->withArgs(fn (string $message, array $context): bool => $context['error'] === 'Inloggningen misslyckades.' && $context['company_id'] === $this->company->id)->once();
+});
+
+it('does not show an error stored before the general reasons', function () {
+    app(ModuleManager::class)->enable(InboxModule::KEY, $this->company, $this->owner);
+    app(ModuleManager::class)->updateSettings(InboxModule::KEY, $this->company, $this->owner, ['imap_enabled' => true, 'imap_host' => 'imap.exempel.example', 'imap_username' => 'u', 'imap_secret' => Crypt::encryptString('p')]);
+    InboxAddress::mailbox($this->company)->forceFill(['imap_last_error' => 'Connection refused (10.0.0.8:6379)'])->save();
+
+    Livewire::test(InboxSettingsForm::class, ['company' => $this->company])
+        ->assertSee('NONOX kunde inte ansluta eller logga in.')
+        ->assertDontSee('10.0.0.8:6379');
+});
+
+it('accepts only a public IMAP server on port 143 or 993 with encryption', function (array $input, string $field, string $message) {
+    app(ModuleManager::class)->enable(InboxModule::KEY, $this->company, $this->owner);
+
+    Livewire::test(InboxSettingsForm::class, ['company' => $this->company])
+        ->set('imapEnabled', true)
+        ->set('imapHost', $input['host'] ?? 'imap.exempel.example')
+        ->set('imapPort', $input['port'] ?? '993')
+        ->set('imapEncryption', $input['encryption'] ?? 'ssl')
+        ->set('imapUsername', 'underlag@exempel.example')
+        ->set('imapPassword', 'hemligt-losenord')
+        ->call('saveImap')
+        ->assertHasErrors($field)
+        ->assertSee($message);
+
+    expect(app(ModuleManager::class)->settings(InboxModule::KEY, $this->company)['imap_enabled'] ?? false)->toBeFalse();
+})->with([
+    'a private address' => [['host' => 'intern.exempel.example'], 'imap_host', 'Servern har en intern adress.'],
+    'a name with a loopback address among its addresses' => [['host' => 'redis.exempel.example'], 'imap_host', 'Servern har en intern adress.'],
+    'the loopback address' => [['host' => '127.0.0.1'], 'imap_host', 'Servern har en intern adress.'],
+    'the loopback address as one number' => [['host' => '2130706433'], 'imap_host', 'Skriv serverns namn'],
+    'the loopback address in octal' => [['host' => '0177.0.0.1'], 'imap_host', 'Skriv serverns namn'],
+    'a name that does not resolve' => [['host' => 'finns-inte.exempel.example'], 'imap_host', 'Servern kunde inte hittas.'],
+    'another port' => [['port' => '6379'], 'imap_port', 'NONOX ansluter bara till port 993 (TLS) eller 143 (STARTTLS).'],
+    'no encryption' => [['encryption' => 'none'], 'imap_encryption', 'E-post hämtas aldrig okrypterat.'],
+]);
+
+it('lets a self-hoster fetch from a server on their own network when the installation allows it', function () {
+    config(['services.inbox.imap_allow_private' => true]);
+    app(ModuleManager::class)->enable(InboxModule::KEY, $this->company, $this->owner);
+
+    Livewire::test(InboxSettingsForm::class, ['company' => $this->company])
+        ->set('imapEnabled', true)
+        ->set('imapHost', 'intern.exempel.example')
+        ->set('imapPort', '143')
+        ->set('imapEncryption', 'starttls')
+        ->set('imapUsername', 'underlag@exempel.example')
+        ->set('imapPassword', 'hemligt-losenord')
+        ->call('saveImap')
+        ->assertHasNoErrors();
+
+    expect(MailboxSettings::fromModuleSettings(app(ModuleManager::class)->settings(InboxModule::KEY, $this->company)))
+        ->host->toBe('intern.exempel.example')
+        ->port->toBe(143)
+        ->encryption->toBe('starttls');
+});
+
+it('skips a message the server says is too large without taking it, and moves past it', function () {
+    app(ModuleManager::class)->enable(InboxModule::KEY, $this->company, $this->owner);
+    Inbox::allow($this->company, 'rapport@kassanova.example');
+    app(ModuleManager::class)->updateSettings(InboxModule::KEY, $this->company, $this->owner, ['imap_enabled' => true, 'imap_host' => 'imap.exempel.example', 'imap_username' => 'u', 'imap_secret' => Crypt::encryptString('p')]);
+    fakeMailbox([FetchedMail::tooLarge(7, 90_000_000), new FetchedMail(8, Inbox::fixture('z-kassanova.eml'))]);
+
+    $this->artisan('inbox:fetch', ['company' => $this->company->id])->assertSuccessful();
+
+    $dropped = AuditLog::query()->where('action', 'inbox.dropped')->sole();
+    expect(InboxMessage::query()->count())->toBe(1)
+        ->and(InboxAddress::mailbox($this->company)->imap_last_uid)->toBe(8)
+        ->and($dropped->payload)->toMatchArray(['reason' => 'too_large', 'size' => 90_000_000, 'channel' => Channel::Imap->value, 'uid' => 7]);
 });

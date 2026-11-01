@@ -16,6 +16,7 @@ use App\Modules\Inbox\Domain\Interpreter;
 use App\Modules\Inbox\Domain\MessageStatus;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\InboxTemplate;
+use App\Modules\Inbox\Support\VirusScanner;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
@@ -100,6 +101,51 @@ it('reads a Peppol invoice into a supplier invoice, matched on the organisation 
         ->and($approved->voucher_ids)->toBe([$registered->voucher_id])
         ->and(VoucherAttachment::query()->where('voucher_id', $registered->voucher_id)->where('sha256', $message->eml_sha256)->exists())->toBeTrue()
         ->and(InboxTemplate::query()->where('kind', InboxTemplate::SUPPLIER_INVOICE)->value('mapping'))->toEqual(['accounts_by_rate' => ['25' => 4010, '12' => 4010]]);
+});
+
+it('scans the invoice image embedded in a Peppol file like any attachment, and never shows a blocked one', function () {
+    $scanned = [];
+    app()->instance(VirusScanner::class, new class($scanned) implements VirusScanner
+    {
+        public function __construct(private array &$scanned) {}
+
+        public function enabled(): bool
+        {
+            return true;
+        }
+
+        public function scan(string $contents): ?string
+        {
+            $this->scanned[] = substr($contents, 0, 5);
+
+            return str_starts_with($contents, '%PDF') ? 'Viruskontrollen hittade Eicar-Test-Signature.' : null;
+        }
+    });
+    grossisten();
+    Inbox::allow($this->company, 'faktura@grossisten.example');
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('peppol.eml')));
+    $image = $message->attachments->firstWhere('mime', 'application/pdf');
+
+    expect($scanned)->toContain('%PDF-')
+        ->and($image?->blocked_reason)->toBe('Viruskontrollen hittade Eicar-Test-Signature.')
+        ->and($message->proposal['file_attachment_id'])->not->toBe($image?->id)
+        ->and(collect($message->warnings)->pluck('code')->all())->toContain('BLOCKED_ATTACHMENT');
+
+    $this->get(route('inbox.attachment', ['message' => $message->id, 'attachment' => $image?->id]))->assertNotFound();
+});
+
+it('blocks a dangerous file embedded in a Peppol file even without a virus scanner', function () {
+    grossisten();
+    Inbox::allow($this->company, 'faktura@grossisten.example');
+    $xml = str_replace('filename="F-10045.pdf"', 'filename="faktura.exe"', Inbox::fixture('faktura-peppol.xml'));
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::mail('faktura@grossisten.example', 'Faktura', 'Se bifogad faktura.', [['faktura.xml', $xml, 'application/xml']])));
+    $image = $message->attachments->firstWhere('mime', 'application/pdf');
+
+    expect($image?->filename)->toBe('faktura.exe')
+        ->and($image?->isBlocked())->toBeTrue()
+        ->and(collect($message->warnings)->pluck('code')->all())->toContain('BLOCKED_ATTACHMENT');
 });
 
 it('warns about a changed bankgiro at a known supplier and never books it automatically', function () {

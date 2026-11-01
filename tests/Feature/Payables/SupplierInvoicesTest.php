@@ -19,6 +19,7 @@ use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Support\Files\InlineFile;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -212,7 +213,8 @@ describe('in the browser', function () {
 
         $this->get(route('payables.invoices.show', $draft))->assertRedirect(route('payables.invoices.edit', $draft));
         $this->get(route('payables.invoices.edit', $draft))->assertOk()->assertSee('Registrera fakturan');
-        $this->get(route('payables.invoices.file', $draft))->assertOk()->assertHeader('Content-Type', 'application/pdf');
+        $this->get(route('payables.invoices.file', $draft))->assertOk()->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('Content-Security-Policy', InlineFile::CONTENT_SECURITY_POLICY)->assertHeader('X-Content-Type-Options', 'nosniff');
 
         Livewire::test(SupplierInvoiceEditor::class, ['invoice' => $draft])
             ->call('register')

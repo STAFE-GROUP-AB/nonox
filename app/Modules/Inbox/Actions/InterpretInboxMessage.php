@@ -21,6 +21,7 @@ use App\Modules\Inbox\Domain\MessageStatus;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\InboxTemplate;
+use App\Modules\Inbox\Support\AttachmentScreen;
 use App\Modules\Inbox\Support\AttachmentType;
 use App\Modules\Inbox\Support\DailyReportVoucher;
 use App\Modules\Inbox\Support\InboxChecks;
@@ -66,6 +67,7 @@ class InterpretInboxMessage
         private readonly ModuleManager $modules,
         private readonly ApproveInboxMessage $approve,
         private readonly RiksbankRates $rates,
+        private readonly AttachmentScreen $screen,
     ) {}
 
     public function __invoke(InboxMessage $message): InboxMessage
@@ -251,8 +253,8 @@ class InterpretInboxMessage
         $supplier = $this->matchSupplier($invoice);
         $fingerprint = hash('sha256', 'ubl:'.(preg_replace('/\D/', '', (string) ($invoice->supplierOrgNumber ?? '')) ?: strtoupper((string) $invoice->supplierVatNumber)));
         $template = InboxTemplate::query()->where('sender', $message->from_email)->where('fingerprint', $fingerprint)->where('kind', InboxTemplate::SUPPLIER_INVOICE)->first();
-        $fileId = $this->invoiceImage($message, $invoice) ?? $message->attachments->first(fn (InboxAttachment $attachment): bool => $attachment->isPreviewable())?->id;
-        $warnings = [];
+        [$imageId, $warnings] = $this->invoiceImage($message, $invoice);
+        $fileId = $imageId ?? $message->attachments->first(fn (InboxAttachment $attachment): bool => $attachment->isPreviewable())?->id;
         $byRate = [];
 
         foreach ($invoice->lines as $line) {
@@ -771,39 +773,48 @@ class InterpretInboxMessage
 
     /**
      * Stores the invoice image embedded in a Peppol file as an attachment of
-     * the message, so it can be shown and kept as underlag.
+     * the message, so it can be shown and kept as underlag. It goes through
+     * the same checks as a mail attachment (AttachmentScreen): a blocked
+     * file is kept as evidence, never shown, and gives a warning, which
+     * also stops automatic booking.
+     *
+     * @return array{0: ?int, 1: list<array{code: string, message: string}>}
      */
-    private function invoiceImage(InboxMessage $message, PeppolInvoice $invoice): ?int
+    private function invoiceImage(InboxMessage $message, PeppolInvoice $invoice): array
     {
         $embedded = $invoice->embeddedDocument;
 
         if ($embedded === null || AttachmentType::detect($embedded['contents']) !== 'application/pdf') {
-            return null;
+            return [null, []];
         }
 
         $sha256 = hash('sha256', $embedded['contents']);
-        $existing = $message->attachments->firstWhere('sha256', $sha256);
+        $attachment = $message->attachments->firstWhere('sha256', $sha256);
 
-        if ($existing instanceof InboxAttachment) {
-            return $existing->id;
+        if (! $attachment instanceof InboxAttachment) {
+            $filename = mb_substr(Str::of($embedded['filename'])->replaceMatches('/[^\pL\pN ._-]/u', '')->toString() ?: 'faktura.pdf', 0, 255);
+            $position = (int) $message->attachments->max('position') + 1;
+            $path = "inkorg/{$message->company_id}/{$message->id}/{$position}.pdf";
+            Storage::disk(AcceptInboundMail::DISK)->put($path, $embedded['contents']);
+
+            $attachment = InboxAttachment::create([
+                'inbox_message_id' => $message->id,
+                'position' => $position,
+                'filename' => $filename,
+                'mime' => 'application/pdf',
+                'size' => strlen($embedded['contents']),
+                'sha256' => $sha256,
+                'path' => $path,
+                'blocked_reason' => $this->screen->reason($filename, $embedded['contents']),
+            ]);
+            $message->setRelation('attachments', $message->attachments->push($attachment));
         }
 
-        $position = (int) $message->attachments->max('position') + 1;
-        $path = "inkorg/{$message->company_id}/{$message->id}/{$position}.pdf";
-        Storage::disk(AcceptInboundMail::DISK)->put($path, $embedded['contents']);
+        if ($attachment->isBlocked()) {
+            return [null, [['code' => 'BLOCKED_ATTACHMENT', 'message' => __(':name: :reason', ['name' => $attachment->filename, 'reason' => $attachment->blocked_reason])]]];
+        }
 
-        $attachment = InboxAttachment::create([
-            'inbox_message_id' => $message->id,
-            'position' => $position,
-            'filename' => mb_substr(Str::of($embedded['filename'])->replaceMatches('/[^\pL\pN ._-]/u', '')->toString() ?: 'faktura.pdf', 0, 255),
-            'mime' => 'application/pdf',
-            'size' => strlen($embedded['contents']),
-            'sha256' => $sha256,
-            'path' => $path,
-        ]);
-        $message->setRelation('attachments', $message->attachments->push($attachment));
-
-        return $attachment->id;
+        return [$attachment->id, []];
     }
 
     private function matchSupplier(PeppolInvoice $invoice): ?Supplier

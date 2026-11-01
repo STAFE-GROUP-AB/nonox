@@ -70,7 +70,35 @@ company has it and rule-based readers and a manual queue otherwise.
   The PHP imap extension is not part of PHP 8.4, so the pure-PHP
   **webklex/php-imap** (MIT) is used behind the `MailboxClient` interface;
   tests use a fake and never reach a server. Messages are read without being
-  marked as seen; the last UID taken is remembered.
+  marked as seen (the folder is opened with EXAMINE); the last UID taken is
+  remembered.
+- **IMAP hardening (security review 2026-11-01).** The fetch runs from inside
+  the hosting network, so the settings must not become a way to probe it:
+  - `ImapHost` refuses a server name that is malformed or a number in
+    disguise (`2130706433`, `0177.0.0.1`, `0x7f.1`), that does not resolve,
+    or where *any* address it resolves to is loopback, private, link-local,
+    shared (100.64/10), reserved, documentation, multicast, IPv4-mapped,
+    NAT64 or 6to4 (PHP's `FILTER_FLAG_GLOBAL_RANGE` plus multicast and the
+    IPv6 prefixes that carry an IPv4 address). It runs when the settings are
+    saved and again right before every connection, and the client connects
+    to the vetted IP with the name as TLS `peer_name`/SNI, so DNS rebinding
+    between check and connect does not work. A self-hoster with a mail
+    server on a private network sets `NONOX_INBOX_IMAP_ALLOW_PRIVATE=true`
+    (`services.inbox.imap_allow_private`, default off).
+  - Only ports 143 (STARTTLS) and 993 (TLS), always with a verified
+    certificate; plain IMAP is gone. Settings saved earlier with `tls` or
+    `none` are read as `ssl`.
+  - Why a fetch failed is logged on the server; the settings show only a
+    general reason (`refused` or `failed`), since the text of a connection
+    error tells what answers at an address.
+  - The size of each message (`RFC822.SIZE`) is asked before it is
+    downloaded; one larger than `NONOX_INBOX_MAX_MESSAGE_KB` is skipped, its
+    UID passed and `inbox.dropped` audited.
+  - Residual risk: the server the company chose can still lie about a
+    message's size and send more; the 25 MB check on the downloaded message
+    still applies, but the bytes are read first. With
+    `imap_allow_private` on, anyone with `inbox:settings` can make NONOX
+    connect to private addresses on ports 143/993 with TLS.
 - **MIME:** **zbateson/mail-mime-parser** (BSD-2-Clause) parses headers,
   multiparts and transfer encodings; symfony/mime, already installed, only
   builds messages. The `.eml` and every attachment are stored unaltered on
@@ -104,11 +132,16 @@ company has it and rule-based readers and a manual queue otherwise.
   message. Dangerous types are always blocked: programs, scripts, Office
   files with macros, HTML and SVG, and archives with such files or that
   cannot be looked into. A blocked attachment is kept as evidence and never
-  served. **TODO: enable ClamAV on nonox.app in production.**
+  served. The same checks (`AttachmentScreen`) apply to the invoice image
+  embedded in a Peppol file; a blocked one gives the warning
+  `BLOCKED_ATTACHMENT` and never becomes the invoice file. **TODO: enable ClamAV on nonox.app in production.**
 - **Serving:** PDFs and pictures inline with `Content-Security-Policy:
   sandbox` and `nosniff`; everything else, the `.eml` included, only as a
   download with a neutral type. The same applies to underlag the inbox
-  links to vouchers.
+  links to vouchers. Since 2026-11-01 every stored file NONOX serves
+  (voucher underlag, supplier invoice files, outlay receipts, imported
+  payslips) carries the same sandbox policy (`App\Support\Files\InlineFile`),
+  with `frame-ancestors 'self'` so NONOX's own pages can still frame it.
 - **Fraud warnings:** a bankgiro, plusgiro or IBAN on an invoice that differs
   from the supplier register for a known supplier, and a sender domain that
   looks like a known one (Levenshtein ≤ 2, homoglyphs and punycode, the same

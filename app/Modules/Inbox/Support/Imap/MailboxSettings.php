@@ -13,7 +13,13 @@ use Illuminate\Support\Facades\Crypt;
  */
 final readonly class MailboxSettings
 {
-    public const array ENCRYPTIONS = ['ssl', 'tls', 'none'];
+    /**
+     * IMAP over TLS (port 993) or STARTTLS (port 143). There is no plain
+     * connection: the password and the mail would cross the network in
+     * clear text. Settings saved before 2026-11-01 with "tls" (implicit TLS
+     * in webklex) or "none" are read as "ssl".
+     */
+    public const array ENCRYPTIONS = ['ssl', 'starttls'];
 
     public function __construct(
         public string $host,
@@ -36,7 +42,7 @@ final readonly class MailboxSettings
         return new self(
             host: (string) $settings['imap_host'],
             port: (int) ($settings['imap_port'] ?? 993),
-            encryption: in_array($settings['imap_encryption'] ?? null, self::ENCRYPTIONS, true) ? (string) $settings['imap_encryption'] : 'ssl',
+            encryption: ($settings['imap_encryption'] ?? null) === 'starttls' ? 'starttls' : 'ssl',
             username: (string) $settings['imap_username'],
             password: Crypt::decryptString((string) $settings['imap_secret']),
             folder: filled($settings['imap_folder'] ?? null) ? (string) $settings['imap_folder'] : 'INBOX',

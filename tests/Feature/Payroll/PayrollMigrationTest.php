@@ -15,6 +15,7 @@ use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayrollMigration;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
+use App\Support\Files\InlineFile;
 use App\Support\Luhn;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -90,7 +91,9 @@ it('keeps the old payslips for the archive and the employee', function () {
 
     $old = ImportedPayslip::query()->where('period', '2026-03')->firstOrFail();
 
-    $this->get(route('payroll.imported-payslip', $old))->assertOk();
+    $this->get(route('payroll.imported-payslip', $old))->assertOk()
+        ->assertHeader('Content-Type', 'application/pdf')
+        ->assertHeader('Content-Security-Policy', InlineFile::CONTENT_SECURITY_POLICY);
 });
 
 it('blocks payroll runs until the totals agree with the bookkeeping', function () {

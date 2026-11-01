@@ -8,6 +8,7 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Payroll\Models\Expense;
+use App\Support\Files\InlineFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -27,10 +28,6 @@ class ExpenseReceiptController
         abort_unless($user->hasTeamPermission($company, 'payroll:view') || $user->hasTeamPermission($company, 'payroll:run'), 404);
         abort_unless($expense->receipt_path !== null && Storage::disk(AttachToVoucher::DISK)->exists($expense->receipt_path), 404);
 
-        return Storage::disk(AttachToVoucher::DISK)->response($expense->receipt_path, $expense->receipt_name, [
-            'Content-Type' => (string) $expense->receipt_mime,
-            'X-Content-Type-Options' => 'nosniff',
-            'Cache-Control' => 'private, max-age=0',
-        ]);
+        return Storage::disk(AttachToVoucher::DISK)->response($expense->receipt_path, $expense->receipt_name, InlineFile::headers((string) $expense->receipt_mime));
     }
 }

@@ -10,7 +10,9 @@ use App\Modules\Inbox\InboxModule;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxMailbox;
 use App\Modules\Inbox\Models\InboxTemplate;
+use App\Modules\Inbox\Support\Imap\ImapHost;
 use App\Modules\Inbox\Support\Imap\MailboxSettings;
+use App\Modules\Inbox\Support\Imap\UnsafeImapHost;
 use App\Modules\Inbox\Support\InboxAddress;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
@@ -28,7 +30,10 @@ use Illuminate\Validation\ValidationException;
  */
 class ManageInbox
 {
-    public function __construct(private readonly ModuleManager $modules) {}
+    public function __construct(
+        private readonly ModuleManager $modules,
+        private readonly ImapHost $hosts,
+    ) {}
 
     public function allow(User $user, Company $company, string $input, string $note = ''): AllowedSender
     {
@@ -125,13 +130,15 @@ class ManageInbox
         $validated = Validator::make($input, [
             'imap_enabled' => ['boolean'],
             'imap_host' => ['required_if:imap_enabled,true', 'nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9.-]+$/'],
-            'imap_port' => ['required_if:imap_enabled,true', 'nullable', 'integer', 'between:1,65535'],
+            'imap_port' => ['required_if:imap_enabled,true', 'nullable', 'integer', Rule::in(ImapHost::PORTS)],
             'imap_encryption' => ['required', Rule::in(MailboxSettings::ENCRYPTIONS)],
             'imap_username' => ['required_if:imap_enabled,true', 'nullable', 'string', 'max:255'],
             'imap_password' => ['nullable', 'string', 'max:500'],
             'imap_folder' => ['nullable', 'string', 'max:255'],
         ], [
             'imap_host.regex' => __('Skriv serverns namn, till exempel imap.exempel.se.'),
+            'imap_port.in' => __('NONOX ansluter bara till port 993 (TLS) eller 143 (STARTTLS).'),
+            'imap_encryption.in' => __('Välj SSL/TLS eller STARTTLS. E-post hämtas aldrig okrypterat.'),
         ], [
             'imap_host' => __('server'),
             'imap_port' => __('port'),
@@ -143,6 +150,14 @@ class ManageInbox
 
         if ((bool) ($validated['imap_enabled'] ?? false) && blank($secret)) {
             throw ValidationException::withMessages(['imap_password' => __('Skriv lösenordet till brevlådan.')]);
+        }
+
+        if (filled($validated['imap_host'] ?? null)) {
+            try {
+                $this->hosts->vet((string) $validated['imap_host']);
+            } catch (UnsafeImapHost $exception) {
+                throw ValidationException::withMessages(['imap_host' => $exception->explain()]);
+            }
         }
 
         $this->modules->updateSettings(InboxModule::KEY, $company, $user, [

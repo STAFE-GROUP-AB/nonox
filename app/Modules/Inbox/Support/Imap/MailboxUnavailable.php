@@ -6,4 +6,4 @@ namespace App\Modules\Inbox\Support\Imap;
 
 use RuntimeException;
 
-final class MailboxUnavailable extends RuntimeException {}
+class MailboxUnavailable extends RuntimeException {}
