@@ -16,6 +16,7 @@ use App\Models\SupplierInvoice;
 use App\Models\SupplierInvoiceRow;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\Currency\ExchangeRate;
 use App\Support\FileName;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -35,6 +36,10 @@ use InvalidArgumentException;
  * printed on the invoice, the cost rows and the invoice itself as a PDF or
  * image. The cost rows and the VAT must add up to the total. Nothing is
  * booked until the invoice is registered (RegisterSupplierInvoice).
+ *
+ * The amounts are in kronor. An invoice in another currency also keeps its
+ * currency, its total as written and the rate it is booked at; the total in
+ * kronor must be that total at that rate, give or take a krona (ADR-025).
  */
 class SaveSupplierInvoice
 {
@@ -58,7 +63,11 @@ class SaveSupplierInvoice
             'vat' => ['nullable', 'string'],
             'credit' => ['boolean'],
             'vat_treatment' => ['nullable', Rule::enum(VatTreatment::class)],
+            'currency' => ['nullable', 'string', 'regex:/^[A-Za-z]{3}$/'],
+            'foreign_total' => ['nullable', 'string'],
+            'exchange_rate' => ['nullable', 'string'],
         ], [
+            'currency.regex' => __('Valutan skrivs med tre bokstäver, till exempel USD eller EUR.'),
             'supplier_id.required' => __('Välj en leverantör.'),
             'ocr.regex' => __('OCR-numret får bara innehålla siffror.'),
             'due_date.after_or_equal' => __('Förfallodagen kan inte vara före fakturadatum.'),
@@ -89,6 +98,7 @@ class SaveSupplierInvoice
                 throw ValidationException::withMessages(['vat' => __('Momsen kan inte vara negativ eller större än beloppet att betala.')]);
             }
 
+            [$currency, $foreignTotal, $rate] = $this->currency($validated, $total);
             $rows = $this->rows(is_array($input['rows'] ?? null) ? $input['rows'] : [], $supplier, $treatment, $user, $company);
             $sum = array_sum(array_column($rows, 'amount_ore'));
 
@@ -104,12 +114,13 @@ class SaveSupplierInvoice
                 $total = $total->negated();
                 $vat = $vat->negated();
                 $rows = array_map(fn (array $row): array => [...$row, 'amount_ore' => -$row['amount_ore']], $rows);
+                $foreignTotal = $foreignTotal === null ? null : -$foreignTotal;
             }
 
             $stored = $file === null ? null : $this->store($company, $file);
             $invoiceDate = CarbonImmutable::parse($validated['invoice_date']);
 
-            return DB::transaction(function () use ($user, $company, $validated, $invoice, $supplier, $total, $vat, $rows, $stored, $invoiceDate, $credit, $treatment): SupplierInvoice {
+            return DB::transaction(function () use ($user, $company, $validated, $invoice, $supplier, $total, $vat, $rows, $stored, $invoiceDate, $credit, $treatment, $currency, $foreignTotal, $rate): SupplierInvoice {
                 $invoice ??= new SupplierInvoice(['created_by' => $user->id]);
                 $isNew = ! $invoice->exists;
 
@@ -125,7 +136,13 @@ class SaveSupplierInvoice
                     'kind' => $credit ? SupplierInvoice::CREDIT : SupplierInvoice::INVOICE,
                     'vat_treatment' => $treatment,
                 ]);
-                $invoice->forceFill(['total_ore' => $total->ore, 'vat_ore' => $vat->ore]);
+                $invoice->forceFill([
+                    'total_ore' => $total->ore,
+                    'vat_ore' => $vat->ore,
+                    'invoice_currency' => $currency,
+                    'foreign_total_minor' => $foreignTotal,
+                    'exchange_rate_micros' => $rate?->micros,
+                ]);
 
                 if ($stored !== null) {
                     $invoice->forceFill($stored);
@@ -142,6 +159,7 @@ class SaveSupplierInvoice
                     'supplier' => $supplier->name,
                     'total_ore' => $total->ore,
                     'file' => $invoice->file_name,
+                    ...($rate === null ? [] : ['currency' => $currency, 'foreign_total_minor' => $foreignTotal, 'exchange_rate_micros' => $rate->micros]),
                 ], $company, $user);
 
                 return $invoice->load('rows.account', 'supplier');
@@ -300,6 +318,45 @@ class SaveSupplierInvoice
 
             Audit::record('account.created', $account, ['number' => $number, 'name' => $account->name, 'reason' => 'supplier_invoice_vat'], $company, $user);
         }
+    }
+
+    /**
+     * The invoice's currency, its total in hundredths of that currency and the
+     * booking rate; for kronor only the currency.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array{0: string, 1: ?int, 2: ?ExchangeRate}
+     */
+    private function currency(array $validated, Money $total): array
+    {
+        $currency = strtoupper(trim((string) ($validated['currency'] ?? '')));
+
+        if ($currency === '' || $currency === 'SEK') {
+            return ['SEK', null, null];
+        }
+
+        $foreign = $this->amount((string) ($validated['foreign_total'] ?? ''), 'foreign_total', __('Beloppet i :currency går inte att läsa. Skriv till exempel 1 517,50.', ['currency' => $currency]));
+
+        if ($foreign->ore <= 0) {
+            throw ValidationException::withMessages(['foreign_total' => __('Skriv fakturans belopp i :currency.', ['currency' => $currency])]);
+        }
+
+        $rate = ExchangeRate::parse($currency, (string) ($validated['exchange_rate'] ?? ''))
+            ?? throw ValidationException::withMessages(['exchange_rate' => __('Skriv kursen i kronor per :currency, till exempel 9,8264.', ['currency' => $currency])]);
+
+        $converted = $rate->toOre($foreign->ore);
+
+        if (abs($converted - $total->ore) > 100) {
+            throw ValidationException::withMessages(['total' => __(':foreign :currency till kursen :rate blir :converted, men beloppet i kronor är :total.', [
+                'foreign' => $foreign->format(withCurrency: false),
+                'currency' => $currency,
+                'rate' => $rate->format(),
+                'converted' => Money::ofOre($converted)->format(),
+                'total' => $total->format(),
+            ])]);
+        }
+
+        return [$currency, $foreign->ore, $rate];
     }
 
     private function amount(string $input, string $field, string $message): Money

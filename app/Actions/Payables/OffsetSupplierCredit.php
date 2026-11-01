@@ -55,6 +55,11 @@ class OffsetSupplierCredit
                 throw ValidationException::withMessages(['offset' => __('Både kreditnotan och fakturan måste vara attesterade och oreglerade.')]);
             }
 
+            // Offsetting in another currency would need the foreign amounts and an exchange difference too (ADR-025).
+            if ($credit->isForeign() || $invoice->isForeign()) {
+                throw ValidationException::withMessages(['offset' => __('Kreditnotor och fakturor i utländsk valuta kan inte kvittas ännu. Registrera betalningarna var för sig.')]);
+            }
+
             $amount = min(-$credit->remaining()->ore, $invoice->remaining()->ore);
             $cashMethod = $company->accounting_method === AccountingMethod::Kontantmetoden;
             $payables = Account::query()->where('number', SupplierInvoiceBooking::PAYABLES)->firstOrFail();

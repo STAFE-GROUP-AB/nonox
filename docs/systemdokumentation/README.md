@@ -415,6 +415,31 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   utgående och ingående moms. Kreditnotor från leverantörer bokförs med
   omvända belopp och kvittas mot en faktura eller betalas tillbaka
   ([ADR-016](../adr/ADR-016-supplier-credit-and-foreign-purchases.md)).
+- Leverantörsfakturor i utländsk valuta
+  ([ADR-025](../adr/ADR-025-exchange-differences.md)): fakturan sparar valuta
+  (ISO 4217), beloppet i valutan (i hundradelar) och kursen den bokförs till
+  (kronor per enhet, i miljondelar). Kursen fylls i med Riksbankens mittkurs
+  på fakturadatumet och kan ändras; beloppet i kronor måste vara valutabeloppet
+  gånger kursen, med högst en krona i avvikelse. Fakturan bokförs i kronor som
+  andra fakturor.
+- Betalning av en faktura i utländsk valuta: användaren anger hur mycket av
+  valutabeloppet som betalas (förifyllt med det som återstår) och hur många
+  kronor banken drog (förifyllt med Riksbankens kurs på betaldagen, ändras
+  till beloppet på kontoutdraget). Betalningen minskar skulden med sin andel
+  av de bokförda kronorna, avrundat till hela ören, och den sista betalningen
+  med allt som återstår, så att 2440 går jämnt ut. Verifikationen i serie E:
+  2440 debet med den bokförda andelen, 1930 kredit med kronorna som betalades
+  och skillnaden på 7960 Valutakursförluster (debet) eller 3960
+  Valutakursvinster (kredit) på fordringar och skulder av rörelsekaraktär.
+  Samma kurs ger ingen differensrad. Enligt kontantmetoden bokförs kostnader
+  och moms till den bokförda kursen och skillnaden på samma sätt. Saknas
+  kontot i kontoplanen läggs det till med BAS-namnet och det loggas.
+  Delbetalningar minskar valutabeloppet; det som återstår i valutan visas
+  bredvid kronorna. Betalningen sparar valutabeloppet och kursdifferensen och
+  skrivs till behandlingshistoriken. Fakturor i utländsk valuta kan inte tas
+  med i betalfiler (de betalar kronor till bankgiro och plusgiro) och kan
+  inte kvittas mot kreditnotor ännu. Orealiserade kursdifferenser på obetalda
+  fakturor vid bokslutet bokas inte automatiskt.
 - Betalfiler: attesterade fakturor kan betalas med en fil till banken (ISO
   20022 pain.001.001.03, [ADR-014](../adr/ADR-014-payment-files.md)). Filen
   sparas som den skapades, med kontrollsumma, och kan inte ändras. Betalningen
@@ -1144,9 +1169,15 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   skattskyldighet, EU- och exportfakturor är inte byggda ännu.
 - Kontantmetoden: obetalda kundfakturor vid räkenskapsårets slut ska bokföras
   som fordringar, och obetalda leverantörsfakturor som skulder, vid bokslutet.
-- Import av varor från länder utanför EU (ruta 50, 60–62) och fakturor i
-  utländsk valuta är inte byggda ännu; vilket datum som styr växelkursen för
-  varor från andra EU-länder ska bekräftas.
+- Import av varor från länder utanför EU (ruta 50, 60–62) är inte byggd ännu;
+  vilket datum som styr växelkursen för varor från andra EU-länder ska
+  bekräftas.
+- Leverantörsfakturor i utländsk valuta: att Riksbankens mittkurs på
+  fakturadatumet är rätt bokföringskurs (ML 8 kap. 21 § nämner ECB:s kurs
+  för momsens beskattningsunderlag); att realiserade kursdifferenser på
+  leverantörsskulder hör hemma på 3960/7960; hur orealiserade
+  kursdifferenser på obetalda skulder ska värderas vid bokslutet (K2 punkt
+  10.7, K3 kap. 30) och om det ska göras även enligt kontantmetoden.
 - Inlästa verifikationer bokförs med en behandlingshistorikpost per inläsning,
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt
@@ -1277,3 +1308,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
 | 0.45 | 2026-11-01 | Lön: godkända tidrapporter från tidigare månader som ingen lönekörning har betalat blir en fråga i nästa ordinarie lönekörning – "Ta med i den här lönekörningen" eller "Inte nu". Svaret sparas på körningen och i behandlingshistoriken, följs vid ny beräkning och låses när körningen attesteras. Medtagna timmar betalas som egna rader med den månad de hör till. |
 | 0.46 | 2026-11-01 | Företag: ägaren kan överlåta företaget till en annan medlem (blir själv administratör) och arkivera det. Före arkiveringen visas arkivpaketen per räkenskapsår; saknas ett aktuellt paket krävs en bekräftelse. Ett arkiverat företag kan bara läsas: bara läsande behörigheter gäller, och företagsdata kan inte skapas eller ändras ens av schemalagda körningar. Inkommande post till ett arkiverat företag loggas och tas inte emot. Ägaren kan ta företaget ur arkivet. |
+| 0.47 | 2026-11-01 | Leverantörsfakturor i utländsk valuta: valuta, valutabelopp och bokföringskurs sparas på fakturan (från inkorgen och i formuläret, med Riksbankens kurs förifylld). Betalning i valutan med kronorna banken drog; skillnaden mot de bokförda kronorna bokförs på 3960 eller 7960 i betalningens verifikation. Delbetalningar i valutan, och återstående valutabelopp visas. Sådana fakturor tas inte med i betalfiler eller kvittningar. |

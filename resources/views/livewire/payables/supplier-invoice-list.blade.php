@@ -48,8 +48,8 @@
                                 <td class="py-2 pr-4">{{ $invoice->supplier?->name }}</td>
                                 <td class="py-2 pr-4">{{ $invoice->invoice_number }}</td>
                                 <td class="py-2 pr-4 tabular-nums">{{ $invoice->due_date->toDateString() }}</td>
-                                <td class="py-2 pr-4 text-right"><x-ui.amount :money="$invoice->total_ore" /></td>
-                                <td class="py-2 pr-4 text-right">@unless($invoice->status === SupplierInvoiceStatus::Paid || $invoice->isDraft())<x-ui.amount :money="$invoice->remaining()" />@endunless</td>
+                                <td class="py-2 pr-4 text-right"><x-ui.amount :money="$invoice->total_ore" />@if($invoice->isForeign())<span class="block text-xs text-gray-500 tabular-nums">{{ $invoice->formatForeign((int) $invoice->foreign_total_minor) }}</span>@endif</td>
+                                <td class="py-2 pr-4 text-right">@unless($invoice->status === SupplierInvoiceStatus::Paid || $invoice->isDraft())<x-ui.amount :money="$invoice->remaining()" />@if($invoice->isForeign())<span class="block text-xs text-gray-500 tabular-nums">{{ $invoice->formatForeign((int) $invoice->foreignRemaining()) }}</span>@endif @endunless</td>
                                 <td class="py-2">
                                     @if($invoice->isOverdue($today))
                                         <span class="inline-flex rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">{{ __('Förfallen') }}</span>

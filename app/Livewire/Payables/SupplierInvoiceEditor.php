@@ -21,6 +21,8 @@ use App\Models\SupplierInvoiceRow;
 use App\Models\User;
 use App\Modules\Ai\Actions\AnalyzeDocument;
 use App\Modules\Ai\Support\AiAnalysisException;
+use App\Support\Currency\ExchangeRate;
+use App\Support\Currency\RiksbankRates;
 use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
 use App\Support\Toast;
@@ -31,6 +33,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use InvalidArgumentException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -48,6 +51,9 @@ class SupplierInvoiceEditor extends Component
 
     /** Session key for a document handed over from the voucher page by NONOX AI. */
     public const string HANDOFF = 'ai.supplier_invoice_handoff';
+
+    /** The currencies offered in the form; Riksbanken publishes rates for all of them. Another code can be typed. */
+    public const array CURRENCIES = ['SEK', 'EUR', 'USD', 'GBP', 'NOK', 'DKK', 'CHF'];
 
     #[Locked]
     public ?string $invoiceId = null;
@@ -71,6 +77,18 @@ class SupplierInvoiceEditor extends Component
     public bool $credit = false;
 
     public string $vatTreatment = 'DOMESTIC';
+
+    /** ISO 4217. In another currency than SEK the amounts below are still kronor, at $exchangeRate. */
+    public string $currency = 'SEK';
+
+    /** The total as written on the invoice, in its currency. */
+    public string $foreignTotal = '';
+
+    /** Kronor per unit, "9,826350"; prefilled with Riksbanken's rate on the invoice date. */
+    public string $exchangeRate = '';
+
+    /** Where the rate came from, for the hint under the field: the date of Riksbanken's rate, or empty. */
+    public string $rateDate = '';
 
     /** @var list<array{account: string, amount: string, description: string, cost_center: string, project: string, vat_rate: string}> */
     public array $rows = [];
@@ -103,6 +121,9 @@ class SupplierInvoiceEditor extends Component
             $sign = $invoice->isCredit() ? -1 : 1;
             $this->credit = $invoice->isCredit();
             $this->vatTreatment = $invoice->vat_treatment->value;
+            $this->currency = $invoice->invoice_currency;
+            $this->foreignTotal = $invoice->isForeign() ? Money::ofOre((int) $invoice->foreign_total_minor * $sign)->format(withCurrency: false) : '';
+            $this->exchangeRate = (string) $invoice->bookingRate()?->format();
             $this->total = Money::ofOre($invoice->total_ore->ore * $sign)->format(withCurrency: false);
             $this->vat = Money::ofOre($invoice->vat_ore->ore * $sign)->format(withCurrency: false);
             $this->rows = array_values($invoice->rows->map(fn (SupplierInvoiceRow $row): array => [
@@ -121,6 +142,72 @@ class SupplierInvoiceEditor extends Component
 
         $this->invoiceDate = now()->toDateString();
         $this->takeHandoff();
+    }
+
+    /** A new currency or invoice date: Riksbanken's rate for that day, and the total in kronor again. */
+    public function updatedCurrency(): void
+    {
+        $this->currency = strtoupper(trim($this->currency)) ?: 'SEK';
+        $this->fetchRate();
+    }
+
+    public function updatedInvoiceDate(): void
+    {
+        $this->fetchRate();
+    }
+
+    public function updatedForeignTotal(): void
+    {
+        $this->convertTotal();
+    }
+
+    public function updatedExchangeRate(): void
+    {
+        $this->rateDate = '';
+        $this->convertTotal();
+    }
+
+    private function fetchRate(): void
+    {
+        if ($this->currency === 'SEK' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->invoiceDate) !== 1) {
+            return;
+        }
+
+        $rate = app(RiksbankRates::class)->rate($this->currency, $this->invoiceDate);
+        $this->exchangeRate = (string) $rate?->format();
+        $this->rateDate = (string) $rate?->date;
+        $this->convertTotal();
+    }
+
+    /** The rate typed or fetched, or null. */
+    private function rate(): ?ExchangeRate
+    {
+        return $this->currency === 'SEK' ? null : ExchangeRate::parse($this->currency, $this->exchangeRate);
+    }
+
+    /** An amount in the invoice's currency in kronor at the rate, as typed in the form; empty when it cannot be read. */
+    private function inKronor(string $amount): string
+    {
+        $rate = $this->rate();
+
+        if (! $rate instanceof ExchangeRate || trim($amount) === '') {
+            return '';
+        }
+
+        try {
+            return Money::ofOre($rate->toOre(Money::parse($amount)->ore))->format(withCurrency: false);
+        } catch (InvalidArgumentException) {
+            return '';
+        }
+    }
+
+    private function convertTotal(): void
+    {
+        $total = $this->inKronor($this->foreignTotal);
+
+        if ($total !== '') {
+            $this->total = $total;
+        }
     }
 
     public function save(SaveSupplierInvoice $save): void
@@ -220,6 +307,17 @@ class SupplierInvoiceEditor extends Component
         $this->description = (string) ($answer['description'] ?? '');
         $this->credit = (bool) ($answer['is_credit_note'] ?? false);
         $this->vatTreatment = (string) ($answer['vat_treatment'] ?? 'DOMESTIC');
+        $this->currency = preg_match('/^[A-Z]{3}$/', strtoupper((string) ($answer['currency'] ?? ''))) === 1 ? strtoupper((string) $answer['currency']) : 'SEK';
+        $this->foreignTotal = '';
+
+        // An invoice in another currency: its amounts as written are kept for the total, and the form gets them in kronor at Riksbanken's rate.
+        if ($this->currency !== 'SEK') {
+            $this->foreignTotal = $amount($answer['total'] ?? 0);
+            $this->fetchRate();
+            $read = $amount;
+            $amount = fn (mixed $value): string => $this->inKronor($read($value));
+        }
+
         $this->total = $amount($answer['total'] ?? 0);
         $this->vat = $amount($answer['vat_total'] ?? 0);
         $this->rows = array_values(array_map(fn (mixed $row): array => [
@@ -260,6 +358,7 @@ class SupplierInvoiceEditor extends Component
             'costCenters' => CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
             'projects' => Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']),
             'treatments' => VatTreatment::cases(),
+            'currencies' => self::CURRENCIES,
             'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),
             'canRegister' => $invoice === null
                 ? $this->user()->can('create', [SupplierInvoice::class, $this->company()])
@@ -336,6 +435,9 @@ class SupplierInvoiceEditor extends Component
             'credit' => $this->credit,
             'vat_treatment' => $this->vatTreatment,
             'rows' => $this->rows,
+            'currency' => $this->currency,
+            'foreign_total' => $this->foreignTotal,
+            'exchange_rate' => $this->exchangeRate,
         ], $this->invoiceId === null ? null : SupplierInvoice::query()->findOrFail($this->invoiceId), $this->file);
     }
 

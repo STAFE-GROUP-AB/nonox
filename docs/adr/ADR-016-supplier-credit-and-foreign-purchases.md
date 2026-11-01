@@ -41,11 +41,13 @@
 - **Import of goods from outside the EU** (boxes 50, 60–62): the VAT base is
   the customs value on Tullverket's bill, not the supplier's invoice, so it
   needs its own entry. Until then it is booked by hand.
-- **Invoices in foreign currency.** Amounts are entered in kronor.
-  ML 8 kap. 21 § says to convert with the latest rate published by the ECB
-  (or the most representative Swedish market rate) when the taxable event
-  occurs. `TODO(legal-verify)`: which date is used for goods from another EU
-  country (delivery or invoice date, ML 13 kap. 12 §).
+- ~~**Invoices in foreign currency.**~~ Built in
+  [ADR-025](ADR-025-exchange-differences.md): currency, foreign amount and
+  booking rate on the invoice, and exchange differences at payment on
+  3960/7960. ML 8 kap. 21 § says to convert with the latest rate published by
+  the ECB (or the most representative Swedish market rate) when the taxable
+  event occurs. `TODO(legal-verify)`: which date is used for goods from
+  another EU country (delivery or invoice date, ML 13 kap. 12 §).
 - `TODO(legal-verify)`: whether every supplier from outside the EU must show
   a VAT number; the system does not require one.
 - Partial deduction (blandad verksamhet, 2649).

@@ -137,7 +137,8 @@ class PaymentBatches extends Component
     }
 
     /**
-     * Approved invoices that are not already in a file waiting for the bank.
+     * Approved invoices in kronor that are not already in a file waiting for
+     * the bank. One in another currency is paid in the internet bank.
      *
      * @return Builder<SupplierInvoice>
      */
@@ -146,6 +147,7 @@ class PaymentBatches extends Component
         return SupplierInvoice::query()
             ->where('status', SupplierInvoiceStatus::Approved->value)
             ->where('kind', SupplierInvoice::INVOICE)
+            ->where('invoice_currency', 'SEK')
             ->whereDoesntHave('batchItems', fn (Builder $query) => $query->whereHas('batch', fn (Builder $batch) => $batch->where('status', PaymentBatchStatus::Created->value)));
     }
 
