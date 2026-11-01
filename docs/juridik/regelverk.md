@@ -29,7 +29,7 @@ Rollerna: **Stafe Development AB** utvecklar NONOX och driftar tjänsten på non
 - Kryptering av personnummer, bankuppgifter, känsliga fritexter och filer i vila, behörighet per roll, behandlingshistorik och säkerhetsrubriker (artikel 32).
 
 **Det här saknas:**
-- Säkerhetskopior på annan plats och dokumenterade återställningstester ([säkerhetskopiering](../gdpr/sakerhetskopiering.md), artikel 32.1 c och d).
+- Dokumenterade återställningstester som regelbunden rutin; kopior på annan plats finns ([säkerhetskopiering](../gdpr/sakerhetskopiering.md), artikel 32.1 c och d).
 - Namngiven incidentansvarig.
 - Bedömning av dataskyddsombud (artikel 37.1 c), se [README](../gdpr/README.md#dataskyddsombud-artikel-37). TODO(legal-verify).
 - Bekräftade personuppgiftsbiträdesavtal och DPF-certifiering för varje underbiträde. TODO(legal-verify).

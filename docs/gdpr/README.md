@@ -60,7 +60,7 @@ Se avsnitt 4 i [personuppgiftsbiträdesavtalet](../juridik/personuppgiftsbitrade
 - **Spårbarhet:** behandlingshistorik som inte kan ändras.
 - **Gränssnitt:** säkerhetsrubriker på varje svar, och varje sida är låst till sitt företag.
 - **Filer:** krypteras i vila med applikationsnyckeln (`EncryptedAdapter`).
-- **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar. Kopiorna ligger i dag på samma server som tjänsten. En kopia på annan plats och återställningstester är planerade, se [säkerhetskopiering](sakerhetskopiering.md).
+- **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar. Två gånger per dygn förs dessutom en krypterad kopia till en annan plats i Sverige. Regelbundna återställningstester är planerade, se [säkerhetskopiering](sakerhetskopiering.md).
 
 ## Egen drift
 
