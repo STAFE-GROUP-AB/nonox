@@ -15,6 +15,7 @@ use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
+use App\Modules\Payroll\Support\Run\TimeReportPay;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -155,6 +156,7 @@ class PayrollRunPage extends Component
         $user = $this->user();
         $company = $user->currentCompany();
         $canSeeSensitive = $company !== null && $user->hasTeamPermission($company, 'payroll:view-sensitive');
+        $pendingHours = $run->isOpen() ? app(TimeReportPay::class)->pendingHours($run->periodStart(), $run->periodEnd()) : null;
 
         return view('payroll::livewire.run-page', [
             'run' => $run,
@@ -171,8 +173,16 @@ class PayrollRunPage extends Component
             'canPay' => Gate::allows('pay', $run),
             'canPost' => Gate::allows('post', $run),
             'canPostTax' => $company !== null && $user->hasTeamPermission($company, 'payroll:post'),
+            'units' => PayCode::query()->pluck('unit', 'id'),
+            'pendingHours' => $pendingHours !== null && $pendingHours->isPositive() ? self::hours((string) $pendingHours) : null,
             'missingAccounts' => $company === null ? [] : AddPayrollAccounts::missing($company),
         ]);
+    }
+
+    /** Hours as Swedish text: 12,5 and 8, not 12.50 and 8.00. */
+    public static function hours(string $hours): string
+    {
+        return str_contains($hours, '.') ? rtrim(rtrim(str_replace('.', ',', $hours), '0'), ',') : $hours;
     }
 
     private function run(): PayrollRun

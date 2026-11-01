@@ -33,6 +33,7 @@ use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Policies\EmployeePolicy;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Policies\PayslipPolicy;
+use App\Modules\Payroll\Support\Run\TimeReportPay;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
@@ -51,6 +52,8 @@ class PayrollServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->make(ModuleRegistry::class)->register(new PayrollModule);
+        // One instance, so other modules can add the hours they hold for approval.
+        $this->app->singleton(TimeReportPay::class);
     }
 
     public function boot(): void

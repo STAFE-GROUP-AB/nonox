@@ -696,6 +696,23 @@ lönebeskeden låsta i databasen.
   bokförs kostnaden och ingående moms mot 2890 med kvittot som underlag, och
   nästa lönekörning betalar tillbaka beloppet via 2890. Ett utlägg knyts till
   den körning som betalar det och betalas aldrig två gånger.
+- Tidrapporter (GitHub issue #15): lönekörningen betalar godkända
+  tidrapporter med lönearten Timlön som är daterade i körningens månad, för
+  anställningar med timlön som gäller den dagen. Timmarna läggs ihop till en
+  rad "Timlön enligt tidrapport" med antal timmar × anställningens timlön, och
+  beskattas, ger arbetsgivaravgift och semesterlönegrundande lön som
+  lönearten säger, med samma regler som timlön som skrivs in för hand.
+  Månadsavlönade påverkas inte; deras timmar ingår i månadslönen. Körningen
+  som betalar en tidrapport knyts till den (`time_reports.payroll_run_id`), så
+  ingen tidrapport betalas två gånger: en ny beräkning släpper körningens
+  tidrapporter och knyter dem på nytt, en körning som öppnas igen släpper dem,
+  och en annan körning för samma månad tar inte en tidrapport som redan är
+  knuten. När körningen är attesterad vägrar databasen att ändra eller ta bort
+  dess tidrapporter. Tidrapporter som inte är godkända räknas inte i lönen;
+  lönekörningens sida visar hur många timmar i perioden som väntar på
+  godkännande (inskickade tidrapporter och personalliggarens förslag). En
+  tidrapport för en månad vars lönekörning redan är attesterad betalas inte
+  automatiskt; den läggs in som timlön i en senare körning.
 - Utlägg med NONOX AI påslaget: den anställde skickar bara kvittot. NONOX AI
   läser filen direkt när den skickas och avgör först om den är ett utlägg: ett
   kvitto eller en faktura märkt som betald. En obetald faktura, något som inte
@@ -908,7 +925,9 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   behandlingshistoriken, så resten av kedjan kan fortfarande kontrolleras.
 - **Lön:** när lönemodulen är på kan liggaren föreslå tidrapporter. Förslaget
   skrivs till lönens tidrapporter först när det godkänts, och liggaren ändras
-  aldrig.
+  aldrig. Godkända tidrapporter betalas som timlön i lönekörningen för
+  månaden (5b); förslag som inte är behandlade visas där som timmar som
+  väntar på godkännande.
 ## 5e. Inkorg (modul)
 
 Inkorgen tar emot underlag med e-post och gör förslag som en person
@@ -1201,3 +1220,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.37 | 2026-11-02 | Personalliggare (modul): lokaler, personal, kiosk som fungerar utan internet, personlig QR-kod, mobil incheckning med platskontroll, liggare med hashkedja och rättelser, kontrollbesök med export och förslag till tidrapport i lönen. |
 | 0.41 | 2026-11-01 | Dataskydd: "Radera mitt konto" på profilen (art. 17). Nekas så länge användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner, API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas bort; kontot raderas om inget längre hänvisar till det, annars pseudonymiseras det ("Raderad användare", en adress på .invalid, ingen inloggning) så att verifikationer och behandlingshistorik fortfarande visar vem som gjorde vad. Registerutdrag för en person i personalliggaren och för en avsändare till inkorgen (JSON, för inkorgen även CSV), loggade. |
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
+| 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |

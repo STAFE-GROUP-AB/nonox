@@ -1,4 +1,5 @@
 @php
+    use App\Modules\Payroll\Livewire\PayrollRunPage;
     use App\Support\Money\Money;
 
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
@@ -60,6 +61,11 @@
                 {{ __('Kontoplanen saknar :accounts, som lönen bokförs på.', ['accounts' => implode(', ', $missingAccounts)]) }}
                 <button type="button" class="ml-2 font-medium text-accent-600 hover:text-accent-700" wire:click="addAccounts">{{ __('Lägg till kontona') }}</button>
             </div>
+        @endif
+        @if($pendingHours !== null)
+            <p class="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-700" role="status">
+                {{ __(':hours timmar i perioden väntar på godkännande och kommer inte med i lönen förrän de är godkända. Godkänn tidrapporterna och beräkna lönekörningen igen.', ['hours' => $pendingHours]) }}
+            </p>
         @endif
         @if($blockers !== [])
             <div class="mt-4 rounded-lg border border-accent-200 bg-accent-50 p-4 text-sm text-accent-800" role="alert">
@@ -155,7 +161,14 @@
                         <table class="mt-3 w-full text-sm">
                             <tbody class="divide-y divide-gray-50">
                                 @foreach($payslip->lines as $line)
-                                    <tr><td class="py-1 pr-4">{{ $line->description }}</td><td class="py-1 text-right"><x-ui.amount :money="$line->amount_ore" /></td></tr>
+                                    <tr>
+                                        <td class="py-1 pr-4">{{ $line->description }}
+                                            @if($line->quantity !== null && $line->rate_ore !== null && ($units[$line->pay_code_id] ?? null) === 'HOURS')
+                                                <span class="block text-xs text-gray-500 tabular-nums">{{ __(':hours tim × :rate kr', ['hours' => PayrollRunPage::hours((string) $line->quantity), 'rate' => $line->rate_ore->format(withCurrency: false)]) }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="py-1 text-right"><x-ui.amount :money="$line->amount_ore" /></td>
+                                    </tr>
                                 @endforeach
                                 <tr><td class="py-1 pr-4 text-gray-600">{{ __('Skatt') }}
                                     @if(($payslip->tax_explanation['method'] ?? null) === 'table')

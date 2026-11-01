@@ -16,6 +16,7 @@ use App\Modules\StaffLedger\Models\Person;
 use App\Modules\StaffLedger\Models\TimeProposal;
 use App\Modules\StaffLedger\StaffLedgerModule;
 use App\Support\Audit\Audit;
+use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -115,6 +116,30 @@ final class TimeProposals
 
         $proposal->forceFill(['status' => TimeProposal::REJECTED, 'decided_by' => $user->id, 'decided_at' => CarbonImmutable::now()])->save();
         Audit::record('staff_ledger.time_rejected', $proposal, [], $company, $user);
+    }
+
+    /**
+     * Hours in proposals not yet approved or rejected, on days between two
+     * dates. Payroll shows them as waiting for approval on the run page.
+     */
+    public static function pendingHours(CarbonImmutable $from, CarbonImmutable $to): string
+    {
+        $hours = BigDecimal::zero();
+        $proposals = TimeProposal::query()
+            ->where('status', TimeProposal::PROPOSED)
+            ->whereDate('period_start', '<=', $to->toDateString())
+            ->whereDate('period_end', '>=', $from->toDateString())
+            ->get(['id', 'days']);
+
+        foreach ($proposals as $proposal) {
+            foreach ($proposal->days as $date => $dayHours) {
+                if ($date >= $from->toDateString() && $date <= $to->toDateString()) {
+                    $hours = $hours->plus(BigDecimal::of((string) $dayHours));
+                }
+            }
+        }
+
+        return (string) $hours;
     }
 
     private function ensurePending(TimeProposal $proposal): void

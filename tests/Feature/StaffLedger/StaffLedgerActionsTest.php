@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Actions\SaveEmployee;
+use App\Modules\Payroll\Livewire\PayrollRunPage;
+use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\StaffLedger\Actions\AppendEntry;
 use App\Modules\StaffLedger\Actions\CheckInFromPhone;
@@ -24,6 +27,7 @@ use App\Modules\StaffLedger\Livewire\LedgerPage;
 use App\Modules\StaffLedger\Livewire\LocationsPage;
 use App\Modules\StaffLedger\Livewire\MyCheckIn;
 use App\Modules\StaffLedger\Livewire\PeoplePage;
+use App\Modules\StaffLedger\Livewire\TimeProposalsPage;
 use App\Modules\StaffLedger\Mail\ForgottenCheckOutMail;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Modules\StaffLedger\Models\Person;
@@ -258,6 +262,42 @@ it('proposes time reports from closed shifts and writes them only when approved'
         ->and(TimeReport::query()->sole()->only(['employee_id', 'status']))->toBe(['employee_id' => $employee->id, 'status' => 'APPROVED'])
         ->and($proposals[0]->fresh()->status)->toBe(TimeProposal::APPROVED)
         ->and(fn () => app(TimeProposals::class)->reject($this->owner, $this->company, $proposals[0]->fresh()))->toThrow(ValidationException::class);
+});
+
+it('pays an approved proposal as hourly pay on the payslip, and counts it as waiting until then', function () {
+    Payroll::setUp($this->company, $this->owner);
+    $this->actingAs($this->owner);
+    $employee = app(SaveEmployee::class)($this->owner, $this->company, [
+        'first_name' => 'Testa', 'last_name' => 'Person123', 'personal_number' => StaffLedger::personalNumber('19900101123'),
+        'tax_residence' => 'SE', 'tax_table' => 33, 'tax_column' => 1, 'start_date' => '2026-01-01',
+        'employment_type' => 'TIMANSTALLD', 'salary_form' => 'HOURLY', 'salary' => '180',
+    ]);
+    app(SavePerson::class)($this->owner, $this->company, [...$this->person->only(['first_name', 'last_name', 'language']), 'employee_id' => $employee->id], $this->person);
+    checkInAt($this, '2026-10-05 08:00');
+    checkInAt($this, '2026-10-05 16:30', EntryType::CheckOut);
+
+    [$proposal] = app(TimeProposals::class)->propose($this->owner, $this->company, CarbonImmutable::parse('2026-10-01'), CarbonImmutable::parse('2026-10-31'));
+    $run = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-10');
+
+    Livewire::test(PayrollRunPage::class, ['run' => $run])
+        ->assertSee('8,5 timmar i perioden väntar på godkännande');
+
+    Livewire::test(TimeProposalsPage::class)
+        ->call('approve', $proposal->id)
+        ->assertDispatched('toast', message: 'Godkänt. 1 dagar är tidrapporterade i lönen.');
+
+    app(PayrollRuns::class)->calculate($this->owner, $run->fresh());
+    $line = Payslip::query()->with('lines')->where('payroll_run_id', $run->id)->sole()->lines->sole();
+
+    expect($line->description)->toBe('Timlön enligt tidrapport')
+        ->and((float) $line->quantity)->toBe(8.5)
+        ->and($line->rate_ore->ore)->toBe(18_000)
+        ->and($line->amount_ore->ore)->toBe(153_000)
+        ->and(TimeReport::query()->sole()->payroll_run_id)->toBe($run->id);
+
+    Livewire::test(PayrollRunPage::class, ['run' => $run->fresh()])
+        ->assertDontSee('väntar på godkännande')
+        ->assertSee('8,5 tim × 180,00 kr');
 });
 
 it('shows toasts on the manager pages', function () {

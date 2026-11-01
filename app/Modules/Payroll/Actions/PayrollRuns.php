@@ -29,12 +29,14 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\PayrollYearClosing;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
+use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Support\RulePresenter;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
+use App\Modules\Payroll\Support\Run\TimeReportPay;
 use App\Modules\Payroll\Support\Tax\MissingTaxTableException;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use App\Support\Audit\Audit;
@@ -65,6 +67,7 @@ class PayrollRuns
         private readonly PayrollCalculator $calculator,
         private readonly ContextBuilder $contexts,
         private readonly ModuleManager $modules,
+        private readonly TimeReportPay $timeReports,
     ) {}
 
     public function create(User $user, Company $company, string $period, ?CarbonImmutable $paymentDate = null): PayrollRun
@@ -231,6 +234,8 @@ class PayrollRuns
                 ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $run->periodStart()->toDateString()))
                 ->get();
             $inputs = PayrollInput::query()->where('payroll_run_id', $run->id)->get()->groupBy('employee_id');
+            $timeReports = $this->timeReports->claimable($run, $employments->pluck('employee_id'));
+            $claimed = [];
             $results = [];
             $blockers = [];
             $rulesMissing = false;
@@ -243,8 +248,14 @@ class PayrollRuns
                 $employee = $employment->employee ?? throw new LogicException("Employment {$employment->id} has no employee.");
                 $name = "{$employee->first_name} {$employee->last_name}";
 
+                // One report is paid once, also when the employee has two employments in the month.
+                $reports = TimeReportPay::forEmployment($timeReports, $employment)
+                    ->reject(fn (TimeReport $report): bool => in_array($report->id, $claimed, true))
+                    ->values();
+                $claimed = [...$claimed, ...array_map(fn (TimeReport $report): int => $report->id, $reports->all())];
+
                 try {
-                    $context = $this->contexts->build($run, $employee, $employment, $inputs->get($employee->id, collect()), $payCodes, $settings, $rules);
+                    $context = $this->contexts->build($run, $employee, $employment, $inputs->get($employee->id, collect()), $payCodes, $settings, $rules, $reports);
                     $results[] = [$employment, $this->calculator->calculate($context)];
                 } catch (PayrollBlockedException|MissingTaxTableException $exception) {
                     $blockers[] = "{$name}: {$exception->getMessage()}";
@@ -278,6 +289,7 @@ class PayrollRuns
             }
 
             $this->deletePayslips($run);
+            $this->claimTimeReports($run, $claimed);
 
             foreach ($results as [$employment, $result]) {
                 $payslip = Payslip::create([
@@ -318,7 +330,7 @@ class PayrollRuns
                 'rule_snapshot_hash' => $rules->snapshotHash(),
             ])->save();
 
-            Audit::record('payroll.run_calculated', $run, ['period' => $run->period, 'payslips' => count($results), 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);
+            Audit::record('payroll.run_calculated', $run, ['period' => $run->period, 'payslips' => count($results), 'time_reports' => count($claimed), 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);
 
             return $run;
         }));
@@ -540,10 +552,35 @@ class PayrollRuns
         return $company;
     }
 
+    /**
+     * The run pays exactly these time reports: the ones it claimed before
+     * are released first, so a recalculation never pays a report twice and
+     * one that no longer belongs to the run is free for the next. The
+     * reports were locked when they were read; a report another run claimed
+     * in between stops the calculation.
+     *
+     * @param  list<int>  $ids
+     */
+    private function claimTimeReports(PayrollRun $run, array $ids): void
+    {
+        TimeReport::query()->where('payroll_run_id', $run->id)->update(['payroll_run_id' => null]);
+
+        $updated = TimeReport::query()
+            ->whereIn('id', $ids)
+            ->whereNull('payroll_run_id')
+            ->where('status', 'APPROVED')
+            ->update(['payroll_run_id' => $run->id]);
+
+        if ($updated !== count($ids)) {
+            throw ValidationException::withMessages(['run' => [__('Tidrapporterna ändrades medan lönen räknades. Beräkna lönekörningen igen.')]]);
+        }
+    }
+
     /** A change to inputs or absence makes the calculation out of date. */
     public function backToDraft(PayrollRun $run): void
     {
         $this->deletePayslips($run);
+        TimeReport::query()->where('payroll_run_id', $run->id)->update(['payroll_run_id' => null]);
         $run->forceFill(['status' => PayrollRun::DRAFT, 'calculated_by' => null, 'calculated_at' => null, 'rule_snapshot_hash' => null])->save();
     }
 

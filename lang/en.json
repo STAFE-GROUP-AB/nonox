@@ -3561,5 +3561,10 @@
     "Du tas bort ur alla företag du är medlem i, och dina väntande inbjudningar tas bort.": "You are removed from every company you are a member of, and your pending invitations are removed.",
     "Det du gjort i bokföringen finns kvar under namnet \"Raderad användare\".": "What you did in the books stays, under the name \"Raderad användare\" (deleted user).",
     "Det går inte att ångra.": "This cannot be undone.",
-    "Radera kontot": "Delete the account"
+    "Radera kontot": "Delete the account",
+    "Timlön enligt tidrapport": "Hourly pay from time reports",
+    "Lönearten Timlön saknas. Slå av och på lönemodulen för att lägga till systemets lönearter.": "The pay code Hourly pay is missing. Turn the payroll module off and on to add the system's pay codes.",
+    "Tidrapporterna ändrades medan lönen räknades. Beräkna lönekörningen igen.": "The time reports changed while the payroll was being calculated. Calculate the payroll run again.",
+    ":hours timmar i perioden väntar på godkännande och kommer inte med i lönen förrän de är godkända. Godkänn tidrapporterna och beräkna lönekörningen igen.": ":hours hours in the period are waiting for approval and are not included in the payroll until they are approved. Approve the time reports and calculate the payroll run again.",
+    ":hours tim × :rate kr": ":hours h × :rate kr"
 }

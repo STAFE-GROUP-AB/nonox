@@ -268,7 +268,7 @@ expenses   (utlägg, traktamente, milersättning)
        MILEAGE_COMPANY_CAR), date, amount_ore, vat_ore, account_id, receipt_path, trip_data jsonb,
   status enum(SUBMITTED, APPROVED, REJECTED, PAID), payroll_run_id null
 
-time_reports  employee_id, date, hours, pay_code_id, project_id null, status
+time_reports  employee_id, date, hours, pay_code_id, project_id null, status, payroll_run_id null (the run that pays it; frozen once that run is approved)
 
 collective_agreements, pension_plans   — configurable templates (B.8)
 payroll_rule_versions                  — B.6

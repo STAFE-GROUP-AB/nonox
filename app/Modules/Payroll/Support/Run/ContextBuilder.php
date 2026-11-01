@@ -23,6 +23,7 @@ use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
@@ -45,8 +46,9 @@ final class ContextBuilder
      * @param  Collection<int, PayrollInput>  $inputs  the employee's inputs in the run
      * @param  Collection<int, PayCode>  $payCodes  by id
      * @param  array<string, mixed>  $settings
+     * @param  ?Collection<int, TimeReport>  $timeReports  the employment's approved hourly reports the run pays
      */
-    public function build(PayrollRun $run, Employee $employee, Employment $employment, Collection $inputs, Collection $payCodes, array $settings, RuleSet $rules): PayrollContext
+    public function build(PayrollRun $run, Employee $employee, Employment $employment, Collection $inputs, Collection $payCodes, array $settings, RuleSet $rules, ?Collection $timeReports = null): PayrollContext
     {
         $periodStart = $run->periodStart();
         $periodEnd = $run->periodEnd();
@@ -72,7 +74,7 @@ final class ContextBuilder
 
                 return new PayInput($code->code, $input->note ?: $code->name_sv, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
                     $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore);
-            })->all()), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes)],
+            })->all()), ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
                 ->where('scope', 'CALENDAR_YEAR')
@@ -162,6 +164,37 @@ final class ContextBuilder
         $week = $schedule?->pattern['weeks'][0] ?? null;
 
         return is_array($week) ? array_map('strval', $week) : null;
+    }
+
+    /**
+     * Approved time reports as one hourly pay line: the hours of the period
+     * at the employment's hourly rate (the Additions step prices it), taxed
+     * and earning vacation pay as the pay code says.
+     *
+     * @param  Collection<int, TimeReport>  $reports
+     * @param  Collection<int, PayCode>  $payCodes  by id
+     * @return list<PayInput>
+     */
+    private function timeReports(Collection $reports, Collection $payCodes): array
+    {
+        if ($reports->isEmpty()) {
+            return [];
+        }
+
+        $code = $payCodes->first(fn (PayCode $code): bool => $code->code === TimeReportPay::PAY_CODE)
+            ?? throw new PayrollBlockedException(__('Lönearten Timlön saknas. Slå av och på lönemodulen för att lägga till systemets lönearter.'));
+
+        return [new PayInput(
+            $code->code,
+            __('Timlön enligt tidrapport'),
+            $code->category,
+            $code->is_taxable,
+            $code->tax_method,
+            $code->is_contribution_basis,
+            $code->is_vacation_basis,
+            quantity: (string) TimeReportPay::hours($reports),
+            explanation: ['source' => 'time_report', 'days' => $reports->count(), 'time_report_ids' => $reports->pluck('id')->values()->all()],
+        )];
     }
 
     /**

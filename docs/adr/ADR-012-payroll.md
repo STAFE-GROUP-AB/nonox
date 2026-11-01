@@ -150,3 +150,27 @@ HTML only) and the tax table file layout (SKV 433, edition 36).
   found; öre are dropped), and the mandatory withholding when tax
   information is missing (blocked).
 
+## Time reports in the payroll run (2026-11-01, GitHub issue #15)
+
+The owner decided that the payroll run uses approved time reports.
+
+- A run pays the approved time reports with the pay code TIMLON dated in its
+  month, for employments paid by the hour that are in force on the day. They
+  become one input "Timlön enligt tidrapport" with the summed hours; the
+  Additions step prices it at the employment's hourly rate, and the pay code
+  decides tax, employer contributions and vacation basis, exactly as for
+  hourly pay entered by hand. No new rule was added. Monthly-paid
+  employments are not affected.
+- The run that pays a report claims it (`time_reports.payroll_run_id`), read
+  for all employees in one locked query. A recalculation releases and claims
+  again, reopening releases, and a report claimed by another run is never
+  taken. A PostgreSQL trigger refuses changing or deleting a report claimed
+  by an approved run, and claiming one for such a run.
+- Reports not approved are not paid; the run page shows the hours waiting
+  (submitted reports, and the staff ledger's pending proposals through
+  `TimeReportPay::addPendingSource`).
+- Not built: a report approved after its month's run was attested is not
+  paid automatically in a later run; it must be entered by hand.
+  `TODO(legal-verify)`: whether hourly pay for an earlier month paid in a
+  later run is reported in AGI for the payment month (as assumed for other
+  late payments).

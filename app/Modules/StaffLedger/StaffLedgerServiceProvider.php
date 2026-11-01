@@ -7,6 +7,8 @@ namespace App\Modules\StaffLedger;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Http\Middleware\SecurityHeaders;
 use App\Modules\ModuleRegistry;
+use App\Modules\Payroll\Support\Run\TimeReportPay;
+use App\Modules\StaffLedger\Actions\TimeProposals;
 use App\Modules\StaffLedger\Console\RemindForgottenCheckOutsCommand;
 use App\Modules\StaffLedger\Console\VerifyStaffLedgerCommand;
 use App\Modules\StaffLedger\Livewire\ControlVisitPage;
@@ -64,6 +66,11 @@ class StaffLedgerServiceProvider extends ServiceProvider
             // Nightly, like ledger:verify; reminders every quarter of an hour.
             $schedule->command('personalliggare:verify')->dailyAt('03:30')->withoutOverlapping();
             $schedule->command('personalliggare:remind')->everyFifteenMinutes()->withoutOverlapping();
+        });
+
+        // Payroll's run page counts the hours still waiting in proposals.
+        $this->callAfterResolving(TimeReportPay::class, function (TimeReportPay $pay): void {
+            $pay->addPendingSource(TimeProposals::pendingHours(...));
         });
 
         Gate::policy(Location::class, LocationPolicy::class);

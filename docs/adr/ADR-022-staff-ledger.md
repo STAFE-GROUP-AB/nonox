@@ -227,7 +227,11 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   (`staff_ledger_time_proposals`). A user with `staff-ledger:manage` and
   `payroll:approve` approves it, which writes approved `time_reports` with
   the hourly pay code; or rejects it. Ledger and time reports stay separate
-  tables. Payroll runs do not yet read time reports (outside this module).
+  tables. Since 2026-11-01 (GitHub issue #15) payroll runs pay the approved
+  time reports as hourly pay (ADR-012, "Time reports in the payroll run");
+  pending proposals are shown on the run page as hours waiting for approval,
+  through a hook the payroll module offers (`TimeReportPay::addPendingSource`),
+  so payroll does not depend on this module.
 
 ### Not built
 
