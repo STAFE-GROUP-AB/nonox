@@ -8,6 +8,7 @@ use App\Actions\Company\UpdateCompanyDetails;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
+use App\Livewire\Concerns\LooksUpCompanies;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
@@ -18,6 +19,7 @@ use Livewire\Component;
 
 class CompanyDetailsForm extends Component
 {
+    use LooksUpCompanies;
     use ShowsToasts;
 
     #[Locked]
@@ -61,6 +63,29 @@ class CompanyDetailsForm extends Component
         $this->state['plusgiro'] = $company->plusgiro;
 
         $this->toast(__('Uppgifterna för :company är sparade.', ['company' => $company->name]));
+    }
+
+    /** Fetching only proposes values, but only someone who may change them is offered it. */
+    public function lookUpCompany(): void
+    {
+        abort_unless($this->user()->can('update', $this->company()), 403);
+
+        $this->runCompanyLookup(false);
+    }
+
+    protected function registryFields(): array
+    {
+        return ['name' => 'state.name', 'address_line1' => 'state.address_line1', 'postal_code' => 'state.postal_code', 'city' => 'state.city'];
+    }
+
+    protected function registryNumber(): string
+    {
+        return (string) $this->company()->org_number;
+    }
+
+    protected function registryQuotaCompany(): ?Company
+    {
+        return $this->company();
     }
 
     public function render(): View

@@ -9,6 +9,7 @@ use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Privacy\EraseRegisterEntry;
 use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Livewire\Concerns\LooksUpCompanies;
 use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
@@ -32,6 +33,7 @@ use Livewire\WithPagination;
  */
 class Customers extends Component
 {
+    use LooksUpCompanies;
     use OpensFormFromLink;
     use ShowsToasts;
     use WithPagination;
@@ -64,6 +66,13 @@ class Customers extends Component
         $this->resetPage();
     }
 
+    public function updatedForm(mixed $value, string $key): void
+    {
+        if ($key === 'org_number') {
+            $this->lookUpCompanyAutomatically();
+        }
+    }
+
     public function create(): void
     {
         $this->editingId = null;
@@ -74,6 +83,7 @@ class Customers extends Component
         $this->foreignSale = '';
         $this->showForm = true;
         $this->resetErrorBag();
+        $this->reset('registryResult', 'registryConflicts', 'registryFilled', 'registryNotice');
     }
 
     public function edit(int $customerId): void
@@ -87,6 +97,7 @@ class Customers extends Component
         $this->foreignSale = (string) $customer->foreign_sale?->value;
         $this->showForm = true;
         $this->resetErrorBag();
+        $this->reset('registryResult', 'registryConflicts', 'registryFilled', 'registryNotice');
     }
 
     /** Erasure on request (GDPR art. 17): deleted if never booked, otherwise anonymised. */
@@ -132,7 +143,7 @@ class Customers extends Component
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form', 'reverseCharge', 'foreignSale');
+        $this->reset('showForm', 'editingId', 'form', 'reverseCharge', 'foreignSale', 'registryResult', 'registryConflicts', 'registryFilled', 'registryNotice');
     }
 
     public function save(SaveCustomer $save): void
@@ -165,6 +176,21 @@ class Customers extends Component
         $this->toast($result->valid
             ? __('Momsregistreringsnumret är giltigt enligt VIES.')
             : __('VIES känner inte igen momsregistreringsnumret.'));
+    }
+
+    protected function registryFields(): array
+    {
+        return ['name' => 'form.name', 'address_line1' => 'form.address_line1', 'address_line2' => 'form.address_line2', 'postal_code' => 'form.postal_code', 'city' => 'form.city'];
+    }
+
+    protected function registryNumber(): string
+    {
+        return (string) ($this->form['org_number'] ?? '');
+    }
+
+    protected function registryQuotaCompany(): ?Company
+    {
+        return $this->company();
     }
 
     public function render(): View

@@ -10,14 +10,14 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * A cap per company and hour on work that is heavy for the server or calls
- * an outside service (SIE analysis, VIES, archive packages, bank files,
+ * an outside service (SIE analysis, VIES, company lookup, archive packages, bank files,
  * generated PDFs and report files), so one account cannot slow the service
  * down for everybody. Generous for normal use; see MailQuota for e-mail.
  */
 final class WorkQuota
 {
     /** Per company and hour. */
-    public const array LIMITS = ['sie_upload' => 30, 'vies' => 60, 'archive' => 10, 'bank_file' => 30, 'inbox_mail' => 500, 'pdf' => 300];
+    public const array LIMITS = ['sie_upload' => 30, 'vies' => 60, 'archive' => 10, 'bank_file' => 30, 'inbox_mail' => 500, 'pdf' => 300, 'company_lookup' => 300];
 
     /** @throws ValidationException */
     public static function take(Company $company, string $kind, string $field): void

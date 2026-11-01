@@ -9,16 +9,10 @@
             <p class="mt-1 text-sm text-gray-600">{{ __('Uppgifterna står på registreringsbeviset från Bolagsverket eller på verksamt.se.') }}</p>
         </div>
 
-        <div>
-            <x-label for="name" value="{{ __('Företagsnamn') }}" />
-            <x-input id="name" type="text" class="mt-1 block w-full" wire:model="name" autofocus autocomplete="organization" />
-            <x-input-error for="name" class="mt-2" />
-        </div>
-
         <div class="grid gap-6 sm:grid-cols-2">
             <div>
                 <x-label for="org_number" value="{{ __('Organisationsnummer') }}" />
-                <x-input id="org_number" type="text" class="mt-1 block w-full" wire:model="org_number" placeholder="556123-4567" inputmode="numeric" />
+                <x-input id="org_number" type="text" class="mt-1 block w-full" wire:model.blur="org_number" autofocus placeholder="556123-4567" inputmode="numeric" />
                 <x-input-error for="org_number" class="mt-2" />
             </div>
 
@@ -31,6 +25,14 @@
                 </select>
                 <x-input-error for="legal_form" class="mt-2" />
             </div>
+        </div>
+
+        @include('livewire.partials.company-lookup')
+
+        <div>
+            <x-label for="name" value="{{ __('Företagsnamn') }}" />
+            <x-input id="name" type="text" class="mt-1 block w-full" wire:model="name" autocomplete="organization" />
+            <x-input-error for="name" class="mt-2" />
         </div>
 
         <div>

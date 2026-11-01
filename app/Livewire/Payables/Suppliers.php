@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire\Payables;
 
+use App\Actions\Payables\CheckSupplierVatNumber;
 use App\Actions\Payables\SaveSupplier;
 use App\Actions\Privacy\EraseRegisterEntry;
 use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Livewire\Concerns\LooksUpCompanies;
 use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
@@ -30,6 +32,7 @@ use Livewire\WithPagination;
  */
 class Suppliers extends Component
 {
+    use LooksUpCompanies;
     use OpensFormFromLink;
     use ShowsToasts;
     use WithPagination;
@@ -46,6 +49,9 @@ class Suppliers extends Component
     /** @var array<string, string> */
     public array $form = [];
 
+    /** @var array{valid: bool, name: ?string, address: ?string, request_identifier: ?string, vat_number: string}|null */
+    public ?array $vatCheck = null;
+
     public function mount(): void
     {
         abort_unless($this->user()->can('viewAny', [Supplier::class, $this->company()]), 403);
@@ -58,6 +64,13 @@ class Suppliers extends Component
         $this->resetPage();
     }
 
+    public function updatedForm(mixed $value, string $key): void
+    {
+        if ($key === 'org_number') {
+            $this->lookUpCompanyAutomatically();
+        }
+    }
+
     public function create(): void
     {
         $this->editingId = null;
@@ -65,6 +78,7 @@ class Suppliers extends Component
         $this->form['payment_terms_days'] = '30';
         $this->showForm = true;
         $this->resetErrorBag();
+        $this->reset('registryResult', 'registryConflicts', 'registryFilled', 'registryNotice', 'vatCheck');
     }
 
     public function edit(int $supplierId): void
@@ -76,6 +90,7 @@ class Suppliers extends Component
         $this->form['default_account'] = (string) $supplier->defaultAccount?->number;
         $this->showForm = true;
         $this->resetErrorBag();
+        $this->reset('registryResult', 'registryConflicts', 'registryFilled', 'registryNotice', 'vatCheck');
     }
 
     /** Erasure on request (GDPR art. 17): deleted if never booked, otherwise anonymised. */
@@ -121,7 +136,7 @@ class Suppliers extends Component
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form');
+        $this->reset('showForm', 'editingId', 'form', 'registryResult', 'registryConflicts', 'registryFilled', 'registryNotice', 'vatCheck');
     }
 
     public function save(SaveSupplier $save): void
@@ -133,6 +148,34 @@ class Suppliers extends Component
             : __('Leverantören :name är sparad.', ['name' => $supplier->name]));
 
         $this->cancel();
+    }
+
+    protected function registryFields(): array
+    {
+        return ['name' => 'form.name', 'address_line1' => 'form.address_line1', 'postal_code' => 'form.postal_code', 'city' => 'form.city'];
+    }
+
+    protected function registryNumber(): string
+    {
+        return (string) ($this->form['org_number'] ?? '');
+    }
+
+    protected function registryQuotaCompany(): ?Company
+    {
+        return $this->company();
+    }
+
+    public function checkVatNumber(CheckSupplierVatNumber $check): void
+    {
+        if ($this->editingId === null) {
+            return;
+        }
+
+        $this->vatCheck = $check($this->user(), $this->company(), Supplier::query()->findOrFail($this->editingId), (string) ($this->form['vat_number'] ?? ''));
+
+        $this->toast($this->vatCheck['valid']
+            ? __('Momsregistreringsnumret är giltigt enligt VIES.')
+            : __('VIES känner inte igen momsregistreringsnumret.'), $this->vatCheck['valid'] ? 'success' : 'error');
     }
 
     public function render(): View
