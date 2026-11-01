@@ -14,7 +14,7 @@
         <ul class="list-disc space-y-1 pl-5 font-mono text-sm text-gray-700">
             @foreach($aliases as $alias)<li>{{ App\Modules\Inbox\Support\InboxAddress::forSlug($mailbox->slug, $alias) }}</li>@endforeach
         </ul>
-        <p class="text-sm text-gray-600">{{ __('Det finns också en gemensam adress, :shared. Där avgör avsändarens adress vilket företag det gäller, så avsändaren måste stå på listan nedanför.', ['shared' => $shared]) }}</p>
+        <p class="text-sm text-gray-600">{{ __('Det finns också en gemensam adress, :shared, för det du vidarebefordrar från din egen e-post. Den tar bara emot post från adressen du loggar in med, och den måste stå på listan nedanför. Leverantörer och kassasystem skickar till företagets egen adress ovanför.', ['shared' => $shared]) }}</p>
         @if($isOwner)
             <div class="flex flex-wrap items-center gap-3">
                 <button type="button" wire:click="regenerate" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">

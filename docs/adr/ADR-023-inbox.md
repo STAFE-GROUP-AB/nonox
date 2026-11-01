@@ -37,11 +37,16 @@ company has it and rule-based readers and a manual queue otherwise.
   `+faktura` and `+kassa` give a hint of the type. An accounting firm gets
   one address per client automatically, since every company is its own team.
 - **Shared:** `mejl@in.nonox.app` (`NONOX_INBOX_SHARED_LOCAL`, default
-  `mejl`). The sender's address decides the company through the companies'
-  allowlists:
-  - exactly one company has the sender on its allowlist: it goes there;
+  `mejl`), for what people forward from their own mailbox. A company is a
+  candidate only when its allowlist has the sender's exact address AND the
+  owner or a member signs in with that address. An allowlist entry alone
+  never routes it, and domains never do: any company can type any address
+  or domain, so that let one company take another's mail (security review
+  2026-11-01). Suppliers and cash registers use the company's own address.
+  - exactly one candidate: it goes there;
   - none: dropped and logged, no bounce, nothing that reveals anything;
-  - several (a cash register vendor used by several clients of a firm): held
+  - several (someone who is a member of several companies, such as a firm's
+    accountant): held
     as an `UnassignedMessage` that belongs to no company until a member with
     `inbox:manage` of one of the candidates claims it. It is never assigned
     by guess. Only sender, subject and date are shown before the claim.

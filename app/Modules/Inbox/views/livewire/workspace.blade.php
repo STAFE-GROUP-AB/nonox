@@ -30,7 +30,7 @@
 
     @if($unassigned->isNotEmpty() && $canManage)
         <x-ui.card :title="__('Väntar på att ett företag hämtar dem')">
-            <p class="text-sm text-gray-600">{{ __('E-post till den gemensamma adressen från en avsändare som flera av dina företag har godkänt. Hämta det som gäller det här företaget.') }}</p>
+            <p class="text-sm text-gray-600">{{ __('E-post till den gemensamma adressen från någon som är med i flera av dina företag. Hämta det som gäller det här företaget.') }}</p>
             <ul class="mt-3 divide-y divide-gray-100">
                 @foreach($unassigned as $waiting)
                     <li class="flex flex-wrap items-center justify-between gap-3 py-2 text-sm" wire:key="unassigned-{{ $waiting->id }}">

@@ -132,8 +132,25 @@ describe('mail security', function () {
         $mail = (new MailParser)->parse(Inbox::mail('a@exempel.example', 'Hej', 'Text', [], 'mx.in.nonox.example; spf=pass smtp.mailfrom=%1$s; dkim=fail; dmarc=fail'));
 
         expect(MailAuthentication::evaluate($mail, Channel::Imap))->toMatchArray(['spf' => 'pass', 'dkim' => 'fail', 'dmarc' => 'fail', 'failed' => true])
-            ->and(MailAuthentication::evaluate((new MailParser)->parse(Inbox::mail('a@exempel.example', 'Hej', 'Text', [], 'x; none')), Channel::Mailgun, ['X-Mailgun-Spf' => 'Pass', 'X-Mailgun-Dkim-Check-Result' => 'Fail']))
-            ->toMatchArray(['spf' => 'pass', 'dkim' => 'fail', 'failed' => false, 'spam' => false]);
+            ->and(MailAuthentication::evaluate((new MailParser)->parse(Inbox::mail('a@exempel.example', 'Hej', 'Text', [], 'x; none')), Channel::Mailgun, ['X-Mailgun-Spf' => 'Pass', 'X-Mailgun-Dkim-Check-Result' => 'Fail', 'sender' => 'bounce@mail.exempel.example']))
+            ->toMatchArray(['spf' => 'pass', 'dkim' => 'fail', 'dmarc' => 'pass', 'failed' => false, 'spam' => false]);
+    });
+
+    it('never believes authentication results the sender wrote into a Mailgun message', function () {
+        config(['services.inbox.mailgun_authserv_id' => null]);
+        $forged = (new MailParser)->parse(Inbox::mail('faktura@leverantor.example', 'Faktura', 'Text', [], 'x; spf=pass; dkim=pass; dmarc=pass'));
+
+        // Mailgun saw nothing pass: the forged header changes nothing.
+        expect(MailAuthentication::evaluate($forged, Channel::Mailgun, ['X-Mailgun-Spf' => 'Fail', 'X-Mailgun-Dkim-Check-Result' => 'Fail'])['failed'])->toBeTrue()
+            // SPF passed, but for the attacker's own domain, not the From domain.
+            ->and(MailAuthentication::evaluate($forged, Channel::Mailgun, ['X-Mailgun-Spf' => 'Pass', 'sender' => 'x@angripare.example'])['failed'])->toBeTrue()
+            ->and(MailAuthentication::evaluate($forged, Channel::Mailgun, ['X-Mailgun-Spf' => 'Pass', 'sender' => 'x@leverantor.example'])['failed'])->toBeFalse();
+
+        $signed = fn (string ...$domains) => (new MailParser)->parse(implode('', array_map(fn (string $d) => "DKIM-Signature: v=1; a=rsa-sha256; d={$d}; s=s1; b=abc\r\n", $domains))."From: faktura@leverantor.example\r\nSubject: x\r\n\r\nText\r\n");
+
+        expect(MailAuthentication::evaluate($signed('leverantor.example'), Channel::Mailgun, ['X-Mailgun-Dkim-Check-Result' => 'Pass'])['failed'])->toBeFalse()
+            ->and(MailAuthentication::evaluate($signed('angripare.example'), Channel::Mailgun, ['X-Mailgun-Dkim-Check-Result' => 'Pass'])['failed'])->toBeTrue()
+            ->and(MailAuthentication::evaluate($signed('leverantor.example', 'angripare.example'), Channel::Mailgun, ['X-Mailgun-Dkim-Check-Result' => 'Pass'])['failed'])->toBeTrue();
     });
 
     it('trusts only the configured server\'s Authentication-Results from an IMAP mailbox', function () {

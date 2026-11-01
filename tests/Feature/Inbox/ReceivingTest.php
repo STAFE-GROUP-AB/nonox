@@ -144,14 +144,38 @@ describe('the shared address', function () {
         $this->shared = InboxAddress::shared();
     });
 
-    it('routes to the one company whose allowlist has the sender', function () {
-        Inbox::allow($this->company, '@kassanova.example');
+    it('routes to the one company where the sender signs in and is allowed', function () {
+        signsInWith($this->company, 'rapport@kassanova.example');
+        Inbox::allow($this->company, 'rapport@kassanova.example');
 
         $this->post('/webhooks/inkorg/mailgun/mime', mailgun(Inbox::fixture('z-kassanova.eml'), $this->shared))->assertOk();
 
         expect($this->shared)->toBe('mejl@in.nonox.app')
             ->and(messagesOf($this->company))->toHaveCount(1)
             ->and(messagesOf($this->other))->toHaveCount(0);
+    });
+
+    it('never lets an allowlist entry alone take mail from the shared address', function () {
+        // The victim's member forwards from their own address; another company adds that address and the domain.
+        signsInWith($this->company, 'rapport@kassanova.example');
+        Inbox::allow($this->company, 'rapport@kassanova.example');
+        Inbox::allow($this->other, 'rapport@kassanova.example');
+        Inbox::allow($this->other, '@kassanova.example');
+
+        $this->post('/webhooks/inkorg/mailgun/mime', mailgun(Inbox::fixture('z-kassanova.eml'), $this->shared))->assertOk();
+
+        expect(messagesOf($this->company))->toHaveCount(1)
+            ->and(messagesOf($this->other))->toHaveCount(0)
+            ->and(UnassignedMessage::query()->count())->toBe(0);
+    });
+
+    it('does not route the shared address by domain', function () {
+        signsInWith($this->company, 'rapport@kassanova.example');
+        Inbox::allow($this->company, '@kassanova.example');
+
+        $this->post('/webhooks/inkorg/mailgun/mime', mailgun(Inbox::fixture('z-kassanova.eml'), $this->shared))->assertOk();
+
+        expect(messagesOf($this->company))->toHaveCount(0);
     });
 
     it('drops mail from a sender on no allowlist without a trace for the sender', function () {
@@ -161,9 +185,11 @@ describe('the shared address', function () {
             ->and(UnassignedMessage::query()->count())->toBe(0);
     });
 
-    it('holds mail from a sender on several allowlists until a member claims it, and never assigns it by itself', function () {
+    it('holds mail from someone who is a member of several companies until a member claims it, and never assigns it by itself', function () {
+        $user = signsInWith($this->company, 'rapport@kassanova.example');
+        $this->other->users()->attach($user, ['role' => 'bookkeeper']);
         Inbox::allow($this->company, 'rapport@kassanova.example');
-        Inbox::allow($this->other, '@kassanova.example');
+        Inbox::allow($this->other, 'rapport@kassanova.example');
 
         $this->post('/webhooks/inkorg/mailgun/mime', mailgun(Inbox::fixture('z-kassanova.eml'), $this->shared))->assertOk();
 
@@ -341,3 +367,11 @@ it('never lets a user without the inbox permission reach the inbox', function ()
 
     $this->actingAs($user->fresh())->get(route('inbox.index'))->assertForbidden();
 });
+
+function signsInWith(Company $company, string $email): User
+{
+    $user = User::factory()->create(['email' => $email]);
+    $company->users()->attach($user, ['role' => 'bookkeeper']);
+
+    return $user;
+}

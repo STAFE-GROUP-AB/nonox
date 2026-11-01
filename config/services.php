@@ -54,6 +54,8 @@ return [
         'max_message_kb' => (int) env('NONOX_INBOX_MAX_MESSAGE_KB', 25600),
         'clamd_socket' => env('NONOX_INBOX_CLAMD_SOCKET'),
         'imap_authserv_id' => env('NONOX_INBOX_IMAP_AUTHSERV_ID'),
+        // Read an Authentication-Results header in Mailgun mail only when it carries this authserv-id.
+        'mailgun_authserv_id' => env('NONOX_INBOX_MAILGUN_AUTHSERV_ID'),
     ],
 
     'riksbank' => [

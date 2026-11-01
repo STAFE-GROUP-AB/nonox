@@ -24,10 +24,16 @@ use Illuminate\Support\Str;
  * (ADR-023):
  *
  * - {slug}[+alias]@in.nonox.app: the company with that slug.
- * - mejl@in.nonox.app (shared): the company whose allowlist has the
- *   sender. No match: dropped and logged, without a bounce, so nobody
- *   learns anything. More than one: held as an UnassignedMessage until a
- *   member of one of those companies claims it; never assigned by guess.
+ * - mejl@in.nonox.app (shared): the companies that have the sender's exact
+ *   address on their allowlist AND a member who signs in with that address.
+ *   A member's login address is proven by the login code; an allowlist entry
+ *   alone proves nothing, since any company can add any address or domain
+ *   (security review 2026-11-01: that let one company take another's mail).
+ *   Suppliers and cash registers send to the company's own address instead.
+ *   No match: dropped and logged, without a bounce, so nobody learns
+ *   anything. More than one (someone who is a member of several companies):
+ *   held as an UnassignedMessage until a member of one of those companies
+ *   claims it; never assigned by guess.
  *
  * Unknown addresses and companies without the module are dropped the
  * same way, so the endpoint cannot be used to probe for addresses.
@@ -105,23 +111,37 @@ class RouteInboundMail
     }
 
     /**
-     * Companies with the inbox on whose allowlist has the sender's address
-     * or domain.
+     * Companies with the inbox on whose allowlist has the sender's exact
+     * address (never a domain), and where someone with that login address
+     * is the owner or a member.
      *
      * @return list<Company>
      */
     private function bySender(string $fromEmail): array
     {
-        if ($fromEmail === '') {
+        $email = mb_strtolower(trim($fromEmail));
+
+        if ($email === '') {
             return [];
         }
 
         // The shared address routes by the sender, which needs every company's allowlist.
-        $ids = CompanyScope::bypass(fn (): array => AllowedSender::query()->whereIn('pattern', AllowedSender::patternsFor($fromEmail))->distinct()->pluck('company_id')->all());
+        $ids = CompanyScope::bypass(fn (): array => AllowedSender::query()->where('pattern', $email)->distinct()->pluck('company_id')->all());
         $enabled = array_flip($this->modules->companiesWith(InboxModule::KEY));
         $ids = array_values(array_filter(array_map('intval', $ids), fn (int $id): bool => isset($enabled[$id])));
 
-        return $ids === [] ? [] : array_values(Company::query()->whereIn('id', $ids)->orderBy('id')->get()->all());
+        if ($ids === []) {
+            return [];
+        }
+
+        $signsIn = fn ($query) => $query->whereRaw('lower(email) = ?', [$email]);
+
+        return array_values(Company::query()
+            ->whereIn('id', $ids)
+            ->where(fn ($query) => $query->whereHas('owner', $signsIn)->orWhereHas('users', $signsIn))
+            ->orderBy('id')
+            ->get()
+            ->all());
     }
 
     /**

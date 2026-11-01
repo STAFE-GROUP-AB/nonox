@@ -77,8 +77,9 @@ it('uses a fixed number of queries', function () {
     $this->get(route('dashboard'))->assertOk();
     $queries = count(DB::getQueryLog());
 
-    // One query per installed module that keeps an archive (payroll, staff ledger) to decide whether its archive link shows.
-    expect($queries)->toBeLessThan(16);
+    // One query per installed module that keeps an archive (payroll, staff ledger) to decide whether its archive link shows,
+    // and one per Livewire component for the role fingerprint (LivewireCompanyGuard).
+    expect($queries)->toBeLessThan(17);
 });
 
 it('hides the getting started panel per user and company, and shows it again', function () {

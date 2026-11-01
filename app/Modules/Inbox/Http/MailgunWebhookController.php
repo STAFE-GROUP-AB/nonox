@@ -38,15 +38,14 @@ class MailgunWebhookController
             return response('', 406);
         }
 
-        if (Cache::has(self::tokenKey($token))) {
+        // Taken before anything is done, so the same signed request sent twice at once runs once.
+        if (! Cache::add(self::tokenKey($token), true, self::MAX_AGE_SECONDS * 2)) {
             return response('', 406);
         }
 
         $raw = (string) $request->input('body-mime', '');
 
         if ($raw === '') {
-            Cache::put(self::tokenKey($token), true, self::MAX_AGE_SECONDS * 2);
-
             return response('', 200);
         }
 
@@ -55,15 +54,15 @@ class MailgunWebhookController
             'X-Mailgun-Spf' => (string) $request->input('X-Mailgun-Spf', ''),
             'X-Mailgun-Dkim-Check-Result' => (string) $request->input('X-Mailgun-Dkim-Check-Result', ''),
             'X-Mailgun-Sflag' => (string) $request->input('X-Mailgun-Sflag', ''),
+            'sender' => (string) $request->input('sender', ''),
         ]);
 
         try {
             $route($raw, $recipients, $transport);
         } catch (InboxQuotaExceeded) {
+            // Mailgun retries later with a new token; this one is spent either way.
             return response('', 429);
         }
-
-        Cache::put(self::tokenKey($token), true, self::MAX_AGE_SECONDS * 2);
 
         return response('', 200);
     }

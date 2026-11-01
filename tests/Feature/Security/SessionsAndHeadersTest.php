@@ -11,6 +11,7 @@ use App\Support\MailQuota;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\StaffAccess;
 use Carbon\CarbonImmutable;
+use Illuminate\Mail\Markdown;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
@@ -70,4 +71,14 @@ it('caps the e-mail a company can send in an hour', function () {
     }
 
     expect(fn () => MailQuota::take($company, 'invitations'))->toThrow(ValidationException::class);
+});
+
+it('does not let a company name become a link in a mail', function () {
+    $name = 'Acme [Bekräfta här](https://evil.example)';
+    $rendered = (string) app(Markdown::class)->render('emails.team-invitation', [
+        'invitation' => (object) ['team' => (object) ['name' => $name]],
+        'acceptUrl' => 'https://nonox.test/inbjudan',
+    ]);
+
+    expect($rendered)->toContain('Acme')->not->toContain('href="https://evil.example"');
 });

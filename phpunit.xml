@@ -24,6 +24,7 @@
         <env name="APP_ENV" value="testing"/>
         <env name="DB_CONNECTION" value="pgsql"/>
         <env name="DB_DATABASE" value="nonox_test"/>
+        <env name="NONOX_INBOX_MAILGUN_AUTHSERV_ID" value="mx.in.nonox.example"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

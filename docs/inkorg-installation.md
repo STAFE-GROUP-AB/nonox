@@ -23,11 +23,13 @@ Modulen kan stängas av när som helst. Det som redan kommit in finns kvar.
   - `…+kassa@in.nonox.app` för dagsrapporter (Z-rapporter) från kassan,
   - `…+faktura@in.nonox.app` för leverantörsfakturor,
   - `…+kvitto@in.nonox.app` för kvitton.
-- **Den gemensamma adressen** `mejl@in.nonox.app` kan användas av alla
-  företag. Där avgör avsändarens adress vilket företag det gäller, så
-  avsändaren måste stå på företagets lista. Står avsändaren på flera
-  företags listor (till exempel ett kassasystem som en byrås alla kunder
-  använder) läggs meddelandet åt sidan tills någon hämtar det till rätt
+- **Den gemensamma adressen** `mejl@in.nonox.app` är till för det man
+  vidarebefordrar från sin egen e-post. Den tar bara emot post från en
+  adress som någon i företaget loggar in med och som står på företagets
+  lista. En domän (`@leverantor.se`) räcker inte där, eftersom vilket
+  företag som helst kan skriva in vilken domän som helst. Leverantörer och
+  kassasystem skickar till företagets egen adress. Är avsändaren med i
+  flera företag läggs meddelandet åt sidan tills någon hämtar det till rätt
   företag under **Inkorg → Väntar på att ett företag hämtar dem**.
 
 En byrå får en adress per kundföretag, eftersom varje företag har sin egen.

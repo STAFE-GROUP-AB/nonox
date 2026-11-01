@@ -30,6 +30,9 @@ final class PersonCredentials
 
     public const int PHOTO_SIZE = 256;
 
+    /** About a 48-megapixel phone photo; larger is refused before decoding. */
+    public const int MAX_PIXELS = 50_000_000;
+
     public function setPin(User $user, Company $company, Person $person, string $pin): void
     {
         $this->authorize($user, $company);
@@ -134,6 +137,13 @@ final class PersonCredentials
     /** A centred square crop, scaled to PHOTO_SIZE, as JPEG; null when the image cannot be read. */
     private static function square(string $contents): ?string
     {
+        $size = @getimagesizefromstring($contents);
+
+        // Read the size first: a small file can declare a huge picture and exhaust memory.
+        if ($size === false || $size[0] * $size[1] > self::MAX_PIXELS) {
+            return null;
+        }
+
         $image = @imagecreatefromstring($contents);
 
         if ($image === false) {

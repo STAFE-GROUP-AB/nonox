@@ -3361,7 +3361,6 @@
     "Företagets adress:": "The company's address:",
     "Kortkommandon (?)": "Keyboard shortcuts (?)",
     "Väntar på att ett företag hämtar dem": "Waiting for a company to take them",
-    "E-post till den gemensamma adressen från en avsändare som flera av dina företag har godkänt. Hämta det som gäller det här företaget.": "E-mail to the shared address from a sender that several of your companies have allowed. Take what concerns this company.",
     "(inget ämne)": "(no subject)",
     "Hämta till det här företaget": "Take to this company",
     "Flikar": "Tabs",
@@ -3408,7 +3407,6 @@
     "Kopiera": "Copy",
     "Kopierad": "Copied",
     "Med ett tillägg efter plustecknet berättar avsändaren vad som skickas:": "With an addition after the plus sign the sender says what is being sent:",
-    "Det finns också en gemensam adress, :shared. Där avgör avsändarens adress vilket företag det gäller, så avsändaren måste stå på listan nedanför.": "There is also a shared address, :shared. There the sender's address decides which company it concerns, so the sender must be on the list below.",
     "Ja, byt adress": "Yes, change the address",
     "Byt till en ny adress": "Change to a new address",
     "Den gamla adressen slutar ta emot e-post direkt. Alla som skickar dit måste få den nya.": "The old address stops receiving e-mail at once. Everyone who sends to it must get the new one.",
@@ -3515,5 +3513,7 @@
     "Riksbankens mittkurs :date.": "Riksbanken's mid rate :date.",
     "Beloppen nedan är i kronor och räknas om när du ändrar kursen.": "The amounts below are in kronor and are converted again when you change the rate.",
     "Ta bort kiosken? Den spärras och försvinner ur listan. Incheckningar den redan skickat finns kvar i liggaren.": "Remove the kiosk? It is blocked and leaves the list. Check-ins it has already sent stay in the ledger.",
-    "Kiosken är borttagen.": "The kiosk is removed."
+    "Kiosken är borttagen.": "The kiosk is removed.",
+    "Det finns också en gemensam adress, :shared, för det du vidarebefordrar från din egen e-post. Den tar bara emot post från adressen du loggar in med, och den måste stå på listan nedanför. Leverantörer och kassasystem skickar till företagets egen adress ovanför.": "There is also a shared address, :shared, for what you forward from your own email. It only takes mail from the address you sign in with, and that address must be on the list below. Suppliers and cash registers send to the company's own address above.",
+    "E-post till den gemensamma adressen från någon som är med i flera av dina företag. Hämta det som gäller det här företaget.": "Email to the shared address from someone who belongs to several of your companies. Take what concerns this company."
 }

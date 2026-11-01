@@ -15,6 +15,7 @@ use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
@@ -46,6 +47,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Model::preventLazyLoading(! $this->app->isProduction());
+
+        // Company and person names reach mail texts; escape Markdown so a name cannot become a link.
+        Markdown::withSecuredEncoding();
 
         // Private files are encrypted at rest (config/filesystems.php).
         Storage::extend('encrypted', function ($app, array $config): FilesystemAdapter {
