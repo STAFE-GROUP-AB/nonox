@@ -3505,5 +3505,13 @@
     "Enheten är spärrad. Lägg till en ny enhet i stället.": "The device is blocked. Add a new device instead.",
     "En ny kopplingskod är skapad. Den gamla kopplingen är spärrad.": "A new pairing code is created. The old connection is blocked.",
     "Koppla kiosken igen? Den gamla kopplingen spärras och du får en ny kod. Incheckningar som inte hunnit skickas från surfplattan tas inte emot.": "Connect the kiosk again? The old connection is blocked and you get a new code. Check-ins not yet sent from the tablet are not received.",
-    "Koppla igen": "Connect again"
+    "Koppla igen": "Connect again",
+    "Fakturan är i :currency (:total :currency). Riksbankens kurs gick inte att hämta. Skriv kursen i kronor per :currency, så räknas beloppen om.": "The invoice is in :currency (:total :currency). Riksbanken's rate could not be fetched. Enter the rate in kronor per :currency and the amounts are converted.",
+    "Fakturan är i :currency (:total :currency). Beloppen är omräknade till kronor med Riksbankens kurs :rate från :date. Kontrollera kursen och momsen: en utländsk leverantör tar oftast inte ut svensk moms.": "The invoice is in :currency (:total :currency). The amounts are converted to kronor at Riksbanken's rate :rate from :date. Check the rate and the VAT: a foreign supplier usually does not charge Swedish VAT.",
+    "Skriv kursen i kronor per :currency innan fakturan registreras.": "Enter the rate in kronor per :currency before the invoice is registered.",
+    "(:total :currency, kurs :rate)": "(:total :currency, rate :rate)",
+    "Fakturan är i :currency: :total :currency, varav moms :vat :currency.": "The invoice is in :currency: :total :currency, of which VAT :vat :currency.",
+    "Kurs, kronor per :currency": "Rate, kronor per :currency",
+    "Riksbankens mittkurs :date.": "Riksbanken's mid rate :date.",
+    "Beloppen nedan är i kronor och räknas om när du ändrar kursen.": "The amounts below are in kronor and are converted again when you change the rate."
 }

@@ -19,6 +19,23 @@
         <x-ui.field for="invoice_total" :label="__('Att betala')" error="total"><input id="invoice_total" type="text" inputmode="decimal" class="{{ $cell }} mt-1 text-right tabular-nums" wire:model.blur="form.invoice.total"></x-ui.field>
         <x-ui.field for="invoice_vat" :label="__('Varav moms')" error="vat"><input id="invoice_vat" type="text" inputmode="decimal" class="{{ $cell }} mt-1 text-right tabular-nums" wire:model.blur="form.invoice.vat"></x-ui.field>
     </div>
+    @if(($form['invoice']['currency'] ?? 'SEK') !== 'SEK')
+        @php($currency = $form['invoice']['currency'])
+        <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm">
+            <p class="font-medium text-gray-900">{{ __('Fakturan är i :currency: :total :currency, varav moms :vat :currency.', ['currency' => $currency, 'total' => $form['invoice']['foreign']['total'] ?? '', 'vat' => $form['invoice']['foreign']['vat'] ?? '']) }}</p>
+            <div class="mt-2 flex flex-wrap items-end gap-3">
+                <x-ui.field for="invoice_rate" :label="__('Kurs, kronor per :currency', ['currency' => $currency])" error="exchange_rate">
+                    <input id="invoice_rate" type="text" inputmode="decimal" class="{{ $cell }} mt-1 w-36 text-right tabular-nums" wire:model.blur="form.invoice.exchange_rate">
+                </x-ui.field>
+                <p class="pb-2 text-gray-600">
+                    @if(($form['invoice']['rate_date'] ?? '') !== '')
+                        {{ __('Riksbankens mittkurs :date.', ['date' => $form['invoice']['rate_date']]) }}
+                    @endif
+                    {{ __('Beloppen nedan är i kronor och räknas om när du ändrar kursen.') }}
+                </p>
+            </div>
+        </div>
+    @endif
     @if(($form['invoice']['bankgiro'] ?? '') !== '' || ($form['invoice']['plusgiro'] ?? '') !== '' || ($form['invoice']['iban'] ?? '') !== '')
         <p class="text-sm text-gray-600">{{ __('Betalningsuppgifter på fakturan: :details', ['details' => collect([($form['invoice']['bankgiro'] ?? '') !== '' ? 'Bankgiro '.$form['invoice']['bankgiro'] : null, ($form['invoice']['plusgiro'] ?? '') !== '' ? 'Plusgiro '.$form['invoice']['plusgiro'] : null, ($form['invoice']['iban'] ?? '') !== '' ? 'IBAN '.$form['invoice']['iban'] : null])->filter()->implode(', ')]) }}</p>
     @endif

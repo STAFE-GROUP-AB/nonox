@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Actions\Payables\SaveSupplier;
 use App\Models\AuditLog;
 use App\Models\Supplier;
+use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Modules\Ai\Agents\SupplierInvoiceAgent;
 use App\Modules\Ai\Agents\VoucherAgent;
@@ -26,7 +27,9 @@ use App\Modules\Inbox\Mail\InboxSummaryMail;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Policies\InboxMessagePolicy;
 use App\Modules\ModuleManager;
+use App\Support\Currency\RiksbankRates;
 use App\Support\MailQuota;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -321,4 +324,72 @@ it('reads a message again on request', function () {
 
     expect(AuditLog::query()->where('action', 'inbox.interpret_again')->count())->toBe(1)
         ->and(AuditLog::query()->where('action', 'inbox.interpreted')->where('subject_id', $message->id)->count())->toBe(2);
+});
+
+/** NONOX AI's reading of a supplier invoice in US dollars. */
+function dollarInvoice(): array
+{
+    return [
+        'supplier_name' => 'Molnet Exempel Inc.', 'supplier_org_number' => '', 'supplier_vat_number' => '', 'supplier_bankgiro' => '', 'supplier_plusgiro' => '', 'supplier_iban' => '',
+        'supplier_address' => '', 'supplier_postal_code' => '', 'supplier_city' => '', 'supplier_email' => '', 'supplier_phone' => '',
+        'invoice_number' => 'INV-42', 'ocr' => '', 'invoice_date' => '2026-10-30', 'due_date' => '2026-11-15', 'currency' => 'USD',
+        'total' => 1517.5, 'vat_total' => 0.0, 'is_credit_note' => false, 'vat_treatment' => 'REVERSE_CHARGE', 'description' => 'Servrar oktober',
+        'rows' => [['account' => 6540, 'amount_excl_vat' => 1517.5, 'vat_rate_percent' => 0, 'description' => 'Servrar']], 'notes' => '',
+    ];
+}
+
+it('converts an invoice in dollars to kronor with Riksbanken\'s rate and keeps the dollar amounts', function () {
+    Inbox::enableAi($this->company, $this->owner);
+    $supplier = app(SaveSupplier::class)($this->owner, $this->company, ['name' => 'Molnet Exempel Inc.', 'payment_terms_days' => 14, 'default_account' => 6540]);
+    Inbox::allow($this->company, '@exempelbolaget.example');
+    Http::fake(['api.riksbank.se/*' => Http::response([['date' => '2026-10-29', 'value' => 9.88275], ['date' => '2026-10-30', 'value' => 9.82635]])]);
+    SupplierInvoiceAgent::fake([[...dollarInvoice(), 'supplier_id' => $supplier->id]]);
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('kvitto.eml'), 'faktura'));
+    $invoice = $message->proposal['invoice'];
+
+    expect($invoice['currency'])->toBe('USD')
+        ->and($invoice['foreign']['total'])->toBe(Money::ofOre(151_750)->format(withCurrency: false))
+        ->and($invoice['exchange_rate'])->toBe('9,826350')
+        ->and($invoice['rate_date'])->toBe('2026-10-30')
+        ->and($invoice['total'])->toBe(Money::ofOre(1_491_149)->format(withCurrency: false))
+        ->and($invoice['rows'][0]['amount'])->toBe(Money::ofOre(1_491_149)->format(withCurrency: false))
+        ->and(array_column($message->warnings, 'code'))->toContain('CURRENCY');
+    Http::assertSent(fn ($request): bool => str_contains($request->url(), 'Observations/SEKUSDPMI/2026-10-20/2026-10-30'));
+
+    // The same day again: the rate is cached, Riksbanken is not asked twice.
+    expect(app(RiksbankRates::class)->rate('USD', '2026-10-30')?->micros)->toBe(9_826_350);
+    Http::assertSentCount(1);
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message->id)
+        ->assertSee('Fakturan är i USD')
+        ->set('form.invoice.exchange_rate', '10')
+        ->assertSet('form.invoice.total', Money::ofOre(1_517_500)->format(withCurrency: false))
+        ->assertSet('form.invoice.rows.0.amount', Money::ofOre(1_517_500)->format(withCurrency: false))
+        ->set('form.invoice.supplier_id', $supplier->id)
+        ->set('warningsConfirmed', true)
+        ->call('approve', 'draft')
+        ->assertHasNoErrors()
+        ->assertDispatched('toast');
+
+    $registered = SupplierInvoice::query()->findOrFail(Inbox::fresh($message)->supplier_invoice_id);
+    expect($registered->total_ore->ore)->toBe(1_517_500)
+        ->and($registered->description)->toContain('('.Money::ofOre(151_750)->format(withCurrency: false).' USD, kurs 10,000000)');
+});
+
+it('asks for the rate when Riksbanken has none, and refuses the invoice without it', function () {
+    Inbox::enableAi($this->company, $this->owner);
+    $supplier = app(SaveSupplier::class)($this->owner, $this->company, ['name' => 'Molnet Exempel Inc.', 'payment_terms_days' => 14, 'default_account' => 6540]);
+    Inbox::allow($this->company, '@exempelbolaget.example');
+    Http::fake(['api.riksbank.se/*' => Http::response(['statusCode' => 429], 429)]);
+    SupplierInvoiceAgent::fake([[...dollarInvoice(), 'supplier_id' => $supplier->id]]);
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('kvitto.eml'), 'faktura'));
+
+    expect($message->proposal['invoice']['total'])->toBe('')
+        ->and(array_column($message->warnings, 'code'))->toContain('CURRENCY_RATE');
+
+    expect(fn () => app(ApproveInboxMessage::class)($this->owner, $message, $message->proposal, ApproveInboxMessage::DRAFT, true))
+        ->toThrow(ValidationException::class, 'Skriv kursen i kronor per USD');
 });

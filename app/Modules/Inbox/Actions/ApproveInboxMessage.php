@@ -19,6 +19,7 @@ use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\InboxTemplate;
 use App\Modules\Inbox\Support\DailyReportVoucher;
 use App\Support\Audit\Audit;
+use App\Support\Currency\ExchangeRate;
 use App\Support\FileName;
 use App\Support\Files\PrivateFile;
 use App\Support\Tenancy\CurrentCompany;
@@ -201,6 +202,23 @@ class ApproveInboxMessage
     private function supplierInvoice(User $user, Company $company, InboxMessage $message, array $proposal, string $mode): array
     {
         $input = (array) ($proposal['invoice'] ?? []);
+        $currency = strtoupper((string) ($input['currency'] ?? 'SEK'));
+
+        // Supplier invoices are kept in kronor: one in another currency needs the rate it was converted at.
+        if ($currency !== 'SEK') {
+            $rate = ExchangeRate::parse($currency, (string) ($input['exchange_rate'] ?? ''));
+
+            if ($rate === null) {
+                throw ValidationException::withMessages(['exchange_rate' => __('Skriv kursen i kronor per :currency innan fakturan registreras.', ['currency' => $currency])]);
+            }
+
+            $input['description'] = mb_substr(trim((string) ($input['description'] ?? '')).' '.__('(:total :currency, kurs :rate)', [
+                'total' => (string) (((array) ($input['foreign'] ?? []))['total'] ?? ''),
+                'currency' => $currency,
+                'rate' => $rate->format(),
+            ]), 0, 255);
+        }
+
         $fileAttachment = $message->attachments->firstWhere('id', (int) ($proposal['file_attachment_id'] ?? 0));
         $fileAttachment = $fileAttachment instanceof InboxAttachment && in_array($fileAttachment->mime, array_keys(AttachToVoucher::ALLOWED), true) && ! $fileAttachment->isBlocked() ? $fileAttachment : null;
 

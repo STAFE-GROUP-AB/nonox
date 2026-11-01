@@ -28,6 +28,8 @@ use App\Modules\Inbox\Support\InboxSettings;
 use App\Modules\Inbox\Support\ReportFields;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
+use App\Support\Currency\ExchangeRate;
+use App\Support\Currency\RiksbankRates;
 use App\Support\Files\PrivateFile;
 use App\Support\Money\Money;
 use App\Support\Peppol\PeppolInvoice;
@@ -37,6 +39,7 @@ use App\Support\Sie\SieReader;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 /**
  * Reads a released message and makes a proposal (ADR-023). Deterministic
@@ -62,6 +65,7 @@ class InterpretInboxMessage
         private readonly UblInvoiceParser $ubl,
         private readonly ModuleManager $modules,
         private readonly ApproveInboxMessage $approve,
+        private readonly RiksbankRates $rates,
     ) {}
 
     public function __invoke(InboxMessage $message): InboxMessage
@@ -275,10 +279,6 @@ class InterpretInboxMessage
             $warnings = [...$warnings, ...InboxChecks::bankDetails($supplier, $invoice->bankgiro, $invoice->plusgiro, $invoice->iban), ...InboxChecks::duplicateInvoice($supplier->id, $invoice->invoiceNumber, $invoice->isCreditNote ? -$invoice->payableOre : $invoice->payableOre)];
         }
 
-        if ($invoice->currency !== 'SEK') {
-            $warnings[] = ['code' => 'CURRENCY', 'message' => __('Fakturan är i :currency. Kontrollera beloppen i kronor innan den registreras.', ['currency' => $invoice->currency])];
-        }
-
         if (array_sum($byRate) + $invoice->vatOre !== $invoice->payableOre) {
             $warnings[] = ['code' => 'PEPPOL_SUM', 'message' => __('Fakturaraderna och momsen blir inte fakturans belopp att betala. Kontrollera raderna.')];
         }
@@ -286,6 +286,27 @@ class InterpretInboxMessage
         if (in_array('', array_column($rows, 'account'), true)) {
             $warnings[] = ['code' => 'UNMAPPED', 'message' => __('Välj konto för fakturans rader.')];
         }
+
+        [$converted, $currencyWarnings] = $this->inKronor([
+            'supplier_id' => $supplier?->id,
+            'supplier_name' => $invoice->supplierName,
+            'supplier_org_number' => (string) $invoice->supplierOrgNumber,
+            'supplier_vat_number' => (string) $invoice->supplierVatNumber,
+            'supplier_email' => (string) $invoice->supplierEmail,
+            'bankgiro' => (string) $invoice->bankgiro,
+            'plusgiro' => (string) $invoice->plusgiro,
+            'iban' => (string) $invoice->iban,
+            'bic' => (string) $invoice->bic,
+            'invoice_number' => $invoice->invoiceNumber,
+            'ocr' => (string) $invoice->ocr,
+            'invoice_date' => $invoice->issueDate,
+            'due_date' => (string) $invoice->dueDate,
+            'description' => mb_substr(__('Faktura :number från :supplier', ['number' => $invoice->invoiceNumber, 'supplier' => $invoice->supplierName]), 0, 255),
+            'total' => Money::ofOre($invoice->payableOre)->format(withCurrency: false),
+            'vat' => Money::ofOre($invoice->vatOre)->format(withCurrency: false),
+            'credit' => $invoice->isCreditNote,
+            'rows' => $rows,
+        ], $invoice->currency, $message);
 
         return [
             'type' => DocumentType::PeppolInvoice,
@@ -296,28 +317,9 @@ class InterpretInboxMessage
                 'file_attachment_id' => $fileId,
                 'source_attachment_id' => $file->id,
                 'notes' => $invoice->buyerReference === null ? '' : __('Er referens: :reference', ['reference' => $invoice->buyerReference]),
-                'invoice' => [
-                    'supplier_id' => $supplier?->id,
-                    'supplier_name' => $invoice->supplierName,
-                    'supplier_org_number' => (string) $invoice->supplierOrgNumber,
-                    'supplier_vat_number' => (string) $invoice->supplierVatNumber,
-                    'supplier_email' => (string) $invoice->supplierEmail,
-                    'bankgiro' => (string) $invoice->bankgiro,
-                    'plusgiro' => (string) $invoice->plusgiro,
-                    'iban' => (string) $invoice->iban,
-                    'bic' => (string) $invoice->bic,
-                    'invoice_number' => $invoice->invoiceNumber,
-                    'ocr' => (string) $invoice->ocr,
-                    'invoice_date' => $invoice->issueDate,
-                    'due_date' => (string) $invoice->dueDate,
-                    'description' => mb_substr(__('Faktura :number från :supplier', ['number' => $invoice->invoiceNumber, 'supplier' => $invoice->supplierName]), 0, 255),
-                    'total' => Money::ofOre($invoice->payableOre)->format(withCurrency: false),
-                    'vat' => Money::ofOre($invoice->vatOre)->format(withCurrency: false),
-                    'credit' => $invoice->isCreditNote,
-                    'rows' => $rows,
-                ],
+                'invoice' => $converted,
             ],
-            'warnings' => $warnings,
+            'warnings' => [...$warnings, ...$currencyWarnings],
             'template' => $template,
         ];
     }
@@ -401,7 +403,7 @@ class InterpretInboxMessage
                 }
 
                 return match ($type) {
-                    DocumentType::SupplierInvoice => $this->aiSupplierInvoice($company, $document, $path),
+                    DocumentType::SupplierInvoice => $this->aiSupplierInvoice($message, $company, $document, $path),
                     DocumentType::Receipt => $this->aiReceipt($company, $document, $path),
                     // From the PDF's text the mapping can be saved as a template; from the picture it cannot.
                     DocumentType::DailyReport => $pdfReport instanceof ReportFields
@@ -418,7 +420,7 @@ class InterpretInboxMessage
     /**
      * @return array{type: DocumentType, by: Interpreter, proposal: ?array<string, mixed>, warnings: list<array{code: string, message: string}>, template: ?InboxTemplate}
      */
-    private function aiSupplierInvoice(Company $company, InboxAttachment $document, string $path): array
+    private function aiSupplierInvoice(InboxMessage $message, Company $company, InboxAttachment $document, string $path): array
     {
         $answer = $this->ai->supplierInvoice(null, $company, $path, $document->mime);
         $supplier = isset($answer['supplier_id']) ? Supplier::query()->find((int) $answer['supplier_id']) : null;
@@ -432,6 +434,32 @@ class InterpretInboxMessage
             $warnings[] = ['code' => 'NO_SUPPLIER', 'message' => __(':name finns inte i leverantörsregistret. Lägg till leverantören innan fakturan registreras.', ['name' => (string) ($answer['supplier_name'] ?? '')])];
         }
 
+        [$converted, $currencyWarnings] = $this->inKronor([
+            'supplier_id' => $supplier?->id,
+            'supplier_name' => (string) ($answer['supplier_name'] ?? ''),
+            'supplier_org_number' => (string) ($answer['supplier_org_number'] ?? ''),
+            'supplier_vat_number' => (string) ($answer['supplier_vat_number'] ?? ''),
+            'supplier_email' => (string) ($answer['supplier_email'] ?? ''),
+            'bankgiro' => (string) ($answer['supplier_bankgiro'] ?? ''),
+            'plusgiro' => (string) ($answer['supplier_plusgiro'] ?? ''),
+            'iban' => (string) ($answer['supplier_iban'] ?? ''),
+            'bic' => '',
+            'invoice_number' => (string) ($answer['invoice_number'] ?? ''),
+            'ocr' => (string) preg_replace('/\D/', '', (string) ($answer['ocr'] ?? '')),
+            'invoice_date' => self::isoDate((string) ($answer['invoice_date'] ?? '')) ?? '',
+            'due_date' => self::isoDate((string) ($answer['due_date'] ?? '')) ?? '',
+            'description' => mb_substr((string) ($answer['description'] ?? ''), 0, 255),
+            'total' => Money::ofOre($total)->format(withCurrency: false),
+            'vat' => Money::ofOre($ore($answer['vat_total'] ?? 0))->format(withCurrency: false),
+            'credit' => (bool) ($answer['is_credit_note'] ?? false),
+            'rows' => array_map(fn (mixed $row): array => [
+                'account' => (string) (((array) $row)['account'] ?? ''),
+                'amount' => Money::ofOre($ore(((array) $row)['amount_excl_vat'] ?? 0))->format(withCurrency: false),
+                'description' => (string) (((array) $row)['description'] ?? ''),
+                'vat_rate' => (int) (((array) $row)['vat_rate_percent'] ?? 25),
+            ], (array) ($answer['rows'] ?? [])),
+        ], (string) ($answer['currency'] ?? 'SEK'), $message);
+
         return [
             'type' => DocumentType::SupplierInvoice,
             'by' => Interpreter::Ai,
@@ -440,33 +468,9 @@ class InterpretInboxMessage
                 'fingerprint' => null,
                 'file_attachment_id' => $document->id,
                 'notes' => (string) ($answer['notes'] ?? ''),
-                'invoice' => [
-                    'supplier_id' => $supplier?->id,
-                    'supplier_name' => (string) ($answer['supplier_name'] ?? ''),
-                    'supplier_org_number' => (string) ($answer['supplier_org_number'] ?? ''),
-                    'supplier_vat_number' => (string) ($answer['supplier_vat_number'] ?? ''),
-                    'supplier_email' => (string) ($answer['supplier_email'] ?? ''),
-                    'bankgiro' => (string) ($answer['supplier_bankgiro'] ?? ''),
-                    'plusgiro' => (string) ($answer['supplier_plusgiro'] ?? ''),
-                    'iban' => (string) ($answer['supplier_iban'] ?? ''),
-                    'bic' => '',
-                    'invoice_number' => (string) ($answer['invoice_number'] ?? ''),
-                    'ocr' => (string) preg_replace('/\D/', '', (string) ($answer['ocr'] ?? '')),
-                    'invoice_date' => self::isoDate((string) ($answer['invoice_date'] ?? '')) ?? '',
-                    'due_date' => self::isoDate((string) ($answer['due_date'] ?? '')) ?? '',
-                    'description' => mb_substr((string) ($answer['description'] ?? ''), 0, 255),
-                    'total' => Money::ofOre($total)->format(withCurrency: false),
-                    'vat' => Money::ofOre($ore($answer['vat_total'] ?? 0))->format(withCurrency: false),
-                    'credit' => (bool) ($answer['is_credit_note'] ?? false),
-                    'rows' => array_map(fn (mixed $row): array => [
-                        'account' => (string) (((array) $row)['account'] ?? ''),
-                        'amount' => Money::ofOre($ore(((array) $row)['amount_excl_vat'] ?? 0))->format(withCurrency: false),
-                        'description' => (string) (((array) $row)['description'] ?? ''),
-                        'vat_rate' => (int) (((array) $row)['vat_rate_percent'] ?? 25),
-                    ], (array) ($answer['rows'] ?? [])),
-                ],
+                'invoice' => $converted,
             ],
-            'warnings' => $warnings,
+            'warnings' => [...$warnings, ...$currencyWarnings],
             'template' => null,
         ];
     }
@@ -538,6 +542,79 @@ class InterpretInboxMessage
             'warnings' => $built['warnings'],
             'template' => null,
         ];
+    }
+
+    /**
+     * An invoice in another currency: the amounts as written are kept under
+     * "foreign", and the amounts to book are converted to kronor with
+     * Riksbanken's rate on the invoice date. Without a rate the amounts in
+     * kronor are left empty and the person types the rate before approving.
+     *
+     * @param  array<string, mixed>  $invoice
+     * @return array{0: array<string, mixed>, 1: list<array{code: string, message: string}>}
+     */
+    private function inKronor(array $invoice, string $currency, InboxMessage $message): array
+    {
+        $currency = strtoupper(trim($currency));
+
+        if (preg_match('/^[A-Z]{3}$/', $currency) !== 1 || $currency === 'SEK') {
+            return [[...$invoice, 'currency' => 'SEK'], []];
+        }
+
+        $invoice = [
+            ...$invoice,
+            'currency' => $currency,
+            'foreign' => [
+                'total' => (string) $invoice['total'],
+                'vat' => (string) $invoice['vat'],
+                'rows' => array_map(fn (array $row): string => (string) $row['amount'], (array) $invoice['rows']),
+            ],
+        ];
+        $rate = $this->rates->rate($currency, (string) ($invoice['invoice_date'] ?: $message->received_at->toDateString()));
+        $replace = ['currency' => $currency, 'total' => $invoice['foreign']['total']];
+
+        if (! $rate instanceof ExchangeRate) {
+            return [
+                [...self::converted($invoice, null), 'exchange_rate' => '', 'rate_date' => ''],
+                [['code' => 'CURRENCY_RATE', 'message' => __('Fakturan är i :currency (:total :currency). Riksbankens kurs gick inte att hämta. Skriv kursen i kronor per :currency, så räknas beloppen om.', $replace)]],
+            ];
+        }
+
+        return [
+            [...self::converted($invoice, $rate), 'exchange_rate' => $rate->format(), 'rate_date' => $rate->date],
+            [['code' => 'CURRENCY', 'message' => __('Fakturan är i :currency (:total :currency). Beloppen är omräknade till kronor med Riksbankens kurs :rate från :date. Kontrollera kursen och momsen: en utländsk leverantör tar oftast inte ut svensk moms.', [...$replace, 'rate' => $rate->format(), 'date' => $rate->date])]],
+        ];
+    }
+
+    /**
+     * The invoice's kronor amounts from its foreign amounts at the rate;
+     * empty without a rate.
+     *
+     * @param  array<string, mixed>  $invoice
+     * @return array<string, mixed>
+     */
+    public static function converted(array $invoice, ?ExchangeRate $rate): array
+    {
+        $foreign = (array) ($invoice['foreign'] ?? []);
+        $sek = function (mixed $amount) use ($rate): string {
+            if (! $rate instanceof ExchangeRate || trim((string) $amount) === '') {
+                return '';
+            }
+
+            try {
+                return Money::ofOre($rate->toOre(Money::parse((string) $amount)->ore))->format(withCurrency: false);
+            } catch (InvalidArgumentException) {
+                return '';
+            }
+        };
+
+        $rows = (array) ($invoice['rows'] ?? []);
+
+        foreach ($rows as $index => $row) {
+            $rows[$index] = [...(array) $row, 'amount' => $sek(((array) ($foreign['rows'] ?? []))[$index] ?? '')];
+        }
+
+        return [...$invoice, 'total' => $sek($foreign['total'] ?? ''), 'vat' => $sek($foreign['vat'] ?? ''), 'rows' => $rows];
     }
 
     /**

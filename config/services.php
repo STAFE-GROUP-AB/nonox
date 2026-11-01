@@ -56,6 +56,10 @@ return [
         'imap_authserv_id' => env('NONOX_INBOX_IMAP_AUTHSERV_ID'),
     ],
 
+    'riksbank' => [
+        'url' => env('RIKSBANK_URL', 'https://api.riksbank.se/swea/v1/'),
+    ],
+
     'vies' => [
         'url' => env('VIES_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api/'),
     ],

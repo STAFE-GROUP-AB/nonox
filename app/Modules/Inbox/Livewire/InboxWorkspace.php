@@ -21,6 +21,7 @@ use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\UnassignedMessage;
 use App\Modules\Inbox\Support\DailyReportVoucher;
 use App\Modules\Inbox\Support\InboxAddress;
+use App\Support\Currency\ExchangeRate;
 use App\Support\Money\Money;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -85,6 +86,13 @@ class InboxWorkspace extends Component
     {
         if (in_array($property, ['tab', 'search'], true)) {
             $this->resetPage();
+        }
+
+        // A new rate converts the invoice's foreign amounts to kronor again.
+        if ($property === 'form.invoice.exchange_rate') {
+            $invoice = (array) ($this->form['invoice'] ?? []);
+            $rate = ExchangeRate::parse((string) ($invoice['currency'] ?? ''), (string) ($invoice['exchange_rate'] ?? ''));
+            $this->form['invoice'] = [...InterpretInboxMessage::converted($invoice, $rate), 'rate_date' => ''];
         }
     }
 
