@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Payables;
 
+use App\Actions\Payables\ApprovePaymentBatch;
 use App\Actions\Payables\CreatePaymentBatch;
 use App\Actions\Payables\SavePaymentBankSettings;
 use App\Actions\Payables\SettlePaymentBatch;
@@ -22,8 +23,9 @@ use Illuminate\View\View;
 use Livewire\Component;
 
 /**
- * Payment files: choose the approved invoices to pay, make the file for the
- * bank, and confirm or cancel it when the bank has answered.
+ * Payment files: choose the approved invoices to pay, make the file, have it
+ * approved before it goes to the bank, and confirm or cancel it when the
+ * bank has answered.
  */
 class PaymentBatches extends Component
 {
@@ -73,19 +75,44 @@ class PaymentBatches extends Component
         $batch = $create($this->user(), $this->company(), $this->selected, $date);
 
         $this->selected = [];
-        $this->toast(__(':title är skapad med :count betalningar. Ladda ned den och läs in den i internetbanken.', ['title' => $batch->title(), 'count' => $batch->payment_count]));
+        $this->toast(__(':title är skapad med :count betalningar. Den behöver godkännas innan den kan laddas ned och läsas in i internetbanken.', ['title' => $batch->title(), 'count' => $batch->payment_count]));
+    }
+
+    public function approve(string $batchId, ApprovePaymentBatch $approve): void
+    {
+        try {
+            $batch = $approve($this->user(), SupplierPaymentBatch::query()->findOrFail($batchId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast(__(':title är godkänd. Ladda ned den och läs in den i internetbanken.', ['title' => $batch->title()]));
     }
 
     public function confirm(string $batchId, SettlePaymentBatch $settle): void
     {
-        $batch = $settle->confirm($this->user(), SupplierPaymentBatch::query()->findOrFail($batchId));
+        try {
+            $batch = $settle->confirm($this->user(), SupplierPaymentBatch::query()->findOrFail($batchId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
 
         $this->toast(__(':title är markerad som betald. Betalningarna är bokförda.', ['title' => $batch->title()]));
     }
 
     public function cancel(string $batchId, SettlePaymentBatch $settle): void
     {
-        $batch = $settle->cancel($this->user(), SupplierPaymentBatch::query()->findOrFail($batchId));
+        try {
+            $batch = $settle->cancel($this->user(), SupplierPaymentBatch::query()->findOrFail($batchId));
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
 
         $this->toast(__(':title är makulerad. Fakturorna kan betalas igen.', ['title' => $batch->title()]));
     }
@@ -99,8 +126,12 @@ class PaymentBatches extends Component
             'company' => $this->company(),
             'payable' => $payable,
             'selectedTotal' => $selectedTotal,
-            'batches' => SupplierPaymentBatch::query()->with('creator:id,name')->orderByDesc('number')->limit(50)->get(),
+            'batches' => SupplierPaymentBatch::query()->with(['creator:id,name', 'approver:id,name'])->orderByDesc('number')->limit(50)->get(),
             'canCreate' => $this->user()->can('create', [SupplierPaymentBatch::class, $this->company()]),
+            // Checked once for the page rather than through the policy per batch, which would query the company each time.
+            'canApprove' => $this->user()->hasTeamPermission($this->company(), 'payments:approve'),
+            'separateApproval' => $this->company()->separate_supplier_approval,
+            'userId' => $this->user()->id,
             'canChangeBank' => $this->user()->can('update', $this->company()),
         ]);
     }

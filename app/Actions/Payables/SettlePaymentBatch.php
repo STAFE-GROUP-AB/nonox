@@ -17,7 +17,8 @@ use Illuminate\Validation\ValidationException;
  * Settles a payment file once the bank has answered: confirmed, every
  * invoice in it gets its payment on the execution date (series E);
  * cancelled, the invoices are free to pay again. Either way the file itself
- * stays as it was.
+ * stays as it was. Only an approved file can be confirmed (ApprovePaymentBatch);
+ * any open file can be cancelled.
  */
 class SettlePaymentBatch
 {
@@ -33,6 +34,10 @@ class SettlePaymentBatch
 
             if (! $batch->isOpen()) {
                 throw ValidationException::withMessages(['batch' => __('Betalfilen är redan hanterad.')]);
+            }
+
+            if (! $batch->isApproved()) {
+                throw ValidationException::withMessages(['batch' => __('Betalfilen är inte godkänd. Någon med rätt att godkänna betalningar behöver godkänna den innan den kan markeras som betald.')]);
             }
 
             foreach ($batch->items()->with('invoice')->get() as $item) {

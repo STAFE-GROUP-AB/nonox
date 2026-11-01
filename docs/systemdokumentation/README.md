@@ -386,6 +386,17 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   bokförs först när användaren bekräftar att banken har betalat, på
   betaldagen i serie E. Betalningsuppgifterna tas från leverantörens uppgifter
   när fakturan registrerades.
+- Godkännande av betalfiler: en ny betalfil måste godkännas av någon med
+  rätt att godkänna betalningar (`payments:approve`: ägare, administratör och
+  attestant) innan den kan laddas ned och läsas in i banken, och innan den kan
+  markeras som betald. Den som skapade filen får inte godkänna den, med samma
+  inställning som för attest av fakturor (krav på att någon annan attesterar,
+  på som standard). Godkännandet sparas en gång med tid och person, skrivs
+  till behandlingshistoriken (`payment_batch.approved`, med filens
+  kontrollsumma) och kan inte ändras eller tas bort; databasen vägrar också
+  att markera en fil som betald utan godkännande. En fil som inte är godkänd
+  kan makuleras. Betalfiler som bekräftades innan godkännandet infördes
+  saknar godkännande men kan laddas ned som historik.
 
 ## 5a2. Anläggningsregister
 
@@ -1148,6 +1159,7 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.36 | 2026-11-01 | Begränsad behandling (GDPR art. 18) för kunder och leverantörer: inga nya fakturor, offerter, avtal eller leverantörsfakturor medan begränsningen gäller. Radering av anställda inom lagringstiden för lönebesked. Samma organisationsnummer kan finnas i flera konton i den driftade tjänsten. Inbjudningar gäller 14 dagar. Tak per timme för SIE-uppladdning, VIES, arkivpaket och bankfiler. Säkerhetskopior krypteras och lagras bara i Sverige i 7 dagar. |
 | 0.38 | 2026-11-02 | Inkorg (modul): egen e-postadress per företag och en gemensam adress, lista över godkända avsändare, SPF/DKIM/DMARC och spärr av farliga bilagor före all tolkning, originalet som `.eml` kopplat som underlag, SIE4, Peppol och dagsrapporter från kassasystem med mallar, NONOX AI, varningar för bedrägeri och dubbletter, och automatisk bokföring bara med en mall som en person godkänt. |
 | 0.39 | 2026-11-01 | Inkorg: dagsrapporter som PDF läses ur PDF-filens text och kan få en mall, så nästa rapport tolkas utan AI. Varning när mejlet nämner en bilaga som saknas. Inkommande mejl kan läsas igen och raderas så länge de inte blivit bokföring eller utkast; raderingen loggas. Personalliggare: verksamheten Övrig för lokaler som bara använder tidsredovisning. Leverantörsfakturor i utländsk valuta från inkorgen räknas om till kronor med Riksbankens mittkurs på fakturadatumet (eller en kurs som personen skriver), och originalbeloppet och kursen skrivs i fakturans text. |
+| 0.40 | 2026-11-01 | Betalfiler godkänns av någon med rätt att godkänna betalningar innan de kan laddas ned eller markeras som betalda, och inte av den som skapade filen så länge företaget kräver att någon annan attesterar. |
 | 0.34 | 2026-11-01 | Flytt från Fortnox via API: anslutning med OAuth2 och PKCE, bokföring per år som SIE4 genom den vanliga granskningen, register, underlag och avstämning av obetalda fakturor. |
 | 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |

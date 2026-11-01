@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Payables\ApprovePaymentBatch;
 use App\Actions\Payables\ApproveSupplierInvoice;
 use App\Actions\Payables\CreatePaymentBatch;
 use App\Actions\Payables\RegisterSupplierInvoice;
@@ -200,6 +201,7 @@ it('books every payment when the bank has paid, and frees the invoices when canc
     app(SettlePaymentBatch::class)->cancel($this->owner, $first);
 
     $batch = app(CreatePaymentBatch::class)($this->owner, $this->company, [$food->id, $power->id], CarbonImmutable::parse('2026-03-12'));
+    app(ApprovePaymentBatch::class)($this->owner, $batch);
     app(SettlePaymentBatch::class)->confirm($this->owner, $batch);
 
     expect($first->fresh()->status)->toBe(PaymentBatchStatus::Cancelled)
@@ -214,7 +216,7 @@ it('books every payment when the bank has paid, and frees the invoices when canc
 });
 
 describe('in the browser', function () {
-    it('sets up the bank, makes a file, downloads it and confirms it, with toasts', function () {
+    it('sets up the bank, makes a file, approves, downloads and confirms it, with toasts', function () {
         $invoice = approvedSupplierInvoice($this->owner, $this->company, $this->wholesaler, '1620', '4455667');
 
         $component = Livewire::test(PaymentBatches::class)
@@ -228,9 +230,11 @@ describe('in the browser', function () {
             ->set('selected', [$invoice->id])
             ->set('executionDate', '2026-03-12')
             ->call('create')
-            ->assertDispatched('toast', message: 'Betalfil 1 är skapad med 1 betalningar. Ladda ned den och läs in den i internetbanken.');
+            ->assertDispatched('toast', message: 'Betalfil 1 är skapad med 1 betalningar. Den behöver godkännas innan den kan laddas ned och läsas in i internetbanken.');
 
         $batch = SupplierPaymentBatch::query()->sole();
+        $this->get(route('payables.batches.index'))->assertSee('Väntar på godkännande')->assertSee('Godkänn betalningen')->assertDontSee('Ladda ned fil');
+        $component->call('approve', $batch->id)->assertDispatched('toast', message: 'Betalfil 1 är godkänd. Ladda ned den och läs in den i internetbanken.');
         $this->get(route('payables.batches.file', $batch))->assertOk()->assertDownload('betalfil-1-2026-03-12.xml');
         expect(Storage::disk('local')->get($batch->file_path))->toContain('<Cd>CUST</Cd>')->toContain('<BIC>BGABSESS</BIC>');
 
