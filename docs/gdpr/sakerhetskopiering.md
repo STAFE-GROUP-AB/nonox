@@ -14,7 +14,7 @@ Krav: förmågan att återställa tillgängligheten och tillgången till personu
 | **Var** | På tjänstens server, och dessutom på en annan plats, se nedan. Båda i Sverige. |
 | **Hur länge** | 7 dagar. Äldre kopior raderas automatiskt varje natt. En uppgift som raderas i tjänsten finns alltså kvar i kopiorna i högst 7 dagar. |
 | **Kopia på annan plats** | Två gånger per dygn förs en kopia över till en krypterad dator som Stafe själv äger och sköter, på en annan ort i Sverige. Platsen anges inte offentligt. Ingen annan leverantör är inblandad. |
-| **Återställningstest** | **Inte dokumenterat ännu.** |
+| **Återställningstest** | Varje vecka (söndag 04:40) återställs den senaste kopian automatiskt i en tillfällig databas och kontrolleras, se nedan. Första testet gjordes 2026-11-01 och godkändes. |
 
 ### Vad det betyder
 
@@ -24,12 +24,48 @@ Krav: förmågan att återställa tillgängligheten och tillgången till personu
 - Utan applikationsnyckeln går krypterade fält och filer inte att läsa, inte heller efter en återställning. Nyckeln måste därför förvaras lika säkert som kopiorna, och på en annan plats än dem.
 - Kunden kan själv när som helst ladda ner SIE4 och ett arkivpaket per räkenskapsår. Vi rekommenderar att kunden gör det efter varje bokslut.
 
+## Återställningstest
+
+Ett återställningstest visar att kopian går att läsa tillbaka, inte bara att den finns. Skriptet `scripts/restore-test.sh` gör det så här:
+
+1. Den senaste kopian av databasen och filerna dekrypteras till en tillfällig katalog som bara tjänsten kan läsa.
+2. Databasen återställs med `pg_restore` i ett nytt, tillfälligt PostgreSQL-kluster. Klustret tar bara emot anslutningar via en lokal socket. Den riktiga databasen och de riktiga filerna rörs inte.
+3. `php artisan backup:verify-restore` kontrollerar kopian:
+   - hur många rader de viktigaste tabellerna har, och hur många migreringar kopian ligger efter koden;
+   - bokföringen i varje företag, på samma sätt som `ledger:verify`: hashkedjan, att varje verifikation balanserar och att numreringen saknar luckor;
+   - att varje underlag till en verifikation finns och har samma kontrollsumma (SHA-256) som när det laddades upp. Filen läses med applikationsnyckeln, så testet visar också att nyckeln fungerar;
+   - personalliggarens hashkedja per lokal, på samma sätt som `personalliggare:verify`;
+   - att filen till varje leverantörsfaktura finns.
+4. Klustret stoppas och allt tillfälligt raderas, också om testet avbryts.
+
+Testet är underkänt om något saknas, har ändrats eller inte går att läsa, och om kopian inte innehåller några företag. Resultatet skrivs som en rad i en logg på servern, med datum, resultat, vilka kopior som testades och hur lång tid det tog.
+
+### Utförda tester
+
+| Datum | Kopia | Resultat | Tid |
+|---|---|---|---|
+| 2026-11-01 | Nattens kopia 2026-11-01 03:20 | Godkänd: ett företag, kedjorna och filerna intakta | 2 sekunder |
+
+Testerna efter detta loggas automatiskt på servern. Den här tabellen uppdateras när något avviker, och minst en gång per kvartal.
+
+### Så testar du din egen installation
+
+Kör du NONOX själv fungerar samma skript på din server, med PostgreSQL och `gpg` installerade:
+
+```
+NONOX_BACKUP_PASSPHRASE_FILE=/sökväg/till/lösenfras \
+  scripts/restore-test.sh nonox-db.dump.gpg nonox-files.tar.gz.gpg
+```
+
+Kopian av databasen ska vara gjord med `pg_dump -Fc` och kopian av filerna ska vara ett tar.gz-arkiv av `storage/app/private`. Båda får vara okrypterade eller krypterade med `gpg`. Anger du en katalog i stället för två filer testas det senaste paret i den. Skriptet behöver köras med samma `APP_KEY` som installationen, annars går filerna inte att läsa.
+
 ## Förbättringar
 
 | Åtgärd | Status |
 |---|---|
 | En krypterad kopia på en annan plats i Sverige | **Genomförd**, två gånger per dygn till en dator i Stafes egen regi |
-| Återställningstest varje kvartal: en kopia återställs på en separat server, `ledger:verify` och `personalliggare:verify` körs, och resultat, tidsåtgång och avvikelser dokumenteras | Planerad |
+| Återställningstest: en kopia återställs i en tillfällig databas, bokföringen, personalliggaren och underlagen kontrolleras, och resultat och tidsåtgång loggas | **Genomförd**, varje vecka sedan 2026-11-01 |
+| Återställningstest på en helt separat server, så att också en förlorad server är prövad | Planerad |
 | Skriftlig rutin för återställning: vem som gör vad, i vilken ordning och hur kunderna informeras | Planerad |
 | Mål för hur mycket data som högst får gå förlorad (RPO) och hur snabbt tjänsten ska vara igång igen (RTO) | Inte beslutat |
 

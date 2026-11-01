@@ -16,7 +16,7 @@ NONOX finns på två sätt, och ansvaret skiljer sig åt.
 ## När du kör NONOX själv
 
 - **Programmet tillhandahålls i befintligt skick, utan garanti.** Det följer av licensen AGPL-3.0, punkt 15 och 16. Vi ansvarar inte för skador som uppstår när programmet körs i någon annans drift.
-- **Du ansvarar för driften.** Det gäller servern, säkerhetsuppdateringar av programmet och av allt det körs på, krypteringsnyckeln (`APP_KEY`), säkerhetskopior och att du kan läsa tillbaka dem. Förlorar du nyckeln går krypterade filer och personnummer inte att läsa.
+- **Du ansvarar för driften.** Det gäller servern, säkerhetsuppdateringar av programmet och av allt det körs på, krypteringsnyckeln (`APP_KEY`), säkerhetskopior och att du kan läsa tillbaka dem. Skriptet `scripts/restore-test.sh` återställer en kopia i en tillfällig databas och kontrollerar den, se [säkerhetskopiering](https://github.com/STAFE-GROUP-AB/nonox/blob/main/docs/gdpr/sakerhetskopiering.md#så-testar-du-din-egen-installation). Förlorar du nyckeln går krypterade filer och personnummer inte att läsa.
 - **Du ansvarar för personuppgifterna.** Ditt företag är personuppgiftsansvarigt och behöver själv till exempel registerförteckning, eventuella konsekvensbedömningar och avtal med de leverantörer du använder (webbhotell, e-post, AI-leverantör). Mallarna i [docs/gdpr](https://github.com/STAFE-GROUP-AB/nonox/tree/main/docs/gdpr) får användas fritt.
 - **Du ansvarar för bokföringen**, precis som i den driftade tjänsten och i alla bokföringsprogram. Räkenskapsinformationen ska sparas i sju år enligt bokföringslagen, även om du slutar använda NONOX. Arkivpaketet går att läsa utan NONOX.
 - **Ändrar du programmet och låter andra använda det över nätet** måste du göra din ändrade källkod tillgänglig för dem på samma villkor (AGPL-3.0, punkt 13).
@@ -24,7 +24,7 @@ NONOX finns på två sätt, och ansvaret skiljer sig åt.
 
 ## Säkerhet
 
-Vår [säkerhetsgranskning]({sakerhet}) gäller programmets källkod och, för området Drift och säkerhetskopior, den driftade tjänsten. Hur säker din egen installation är beror på hur du driftar den. Hittar du en säkerhetsbrist i programmet, rapportera den enligt [SECURITY.md](https://github.com/STAFE-GROUP-AB/nonox/blob/main/SECURITY.md). Säkerhetsrättelser publiceras som nya versioner under [Releaser](https://github.com/STAFE-GROUP-AB/nonox/releases); uppdatera när en ny version kommer.
+Vår [säkerhetsgranskning]({sakerhet}) gäller programmets källkod och, för området Drift och säkerhetskopior, den driftade tjänsten. Hur säker din egen installation är beror på hur du driftar den. Hittar du en säkerhetsbrist i programmet, rapportera den enligt [SECURITY.md](https://github.com/STAFE-GROUP-AB/nonox/blob/main/SECURITY.md). Säkerhetsrättelser publiceras som nya versioner under [Releaser](https://github.com/STAFE-GROUP-AB/nonox/releases); uppdatera när en ny version kommer. Varje release har en förteckning över programvarukomponenterna (SBOM) som bilaga, så att du kan se vilka paket som ingår och bevaka sårbarheter i dem.
 
 ## Hjälp
 

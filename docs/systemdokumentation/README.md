@@ -740,6 +740,15 @@ personuppgiftsbiträdesavtal, underbiträden, AI i NONOX, regelverk, frågor
 till jurist). Säkerhetsrapporter: `SECURITY.md`. Tillgänglighet:
 `docs/tillganglighet.md`.
 
+- **Återställningstest:** `scripts/restore-test.sh` återställer en
+  säkerhetskopia i ett tillfälligt PostgreSQL-kluster och kör
+  `backup:verify-restore`, som kontrollerar hashkedjan, balansen och
+  numreringen i varje företags bokföring, varje underlags kontrollsumma,
+  personalliggarens kedjor och leverantörsfakturornas filer. Den driftade
+  tjänsten kör testet varje vecka. Rutinen beskrivs i
+  `docs/gdpr/sakerhetskopiering.md`.
+- **Programvarukomponenter:** varje release har en förteckning (SBOM,
+  CycloneDX) över paketen i `composer.lock` och `package-lock.json`.
 - **Företagsbindning:** varje Livewire-sida är låst till företaget den
   visades i (LivewireCompanyGuard). Byter användaren företag i en annan flik
   svarar den gamla sidan 404.
@@ -1437,3 +1446,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.49 | 2026-11-01 | Översikt: nyckeltal, "Att göra" från bokföringen och modulerna, senaste verifikationer med belopp ur bankens synvinkel, cache per företag och roll med omladdning, och fliken Statistik och prognos med diagram, tabeller och en förklarad likviditetsprognos. Översikten läser bara. |
 | 0.50 | 2026-11-01 | Byråns arbetsyta på Mina företag: summor och en gemensam Att göra-lista för alla företag med filter och sparade vyer, månadsstängning per klient, uppgifter med tilldelning, kommentarer, checklistor och återkommande uppgifter, notiser och daglig sammanfattning med e-post (ADR-028). |
 | 0.51 | 2026-11-01 | Redovisningsbyråns varumärke (ADR-030): ett företag kan markeras som byrå, kundföretagets ägare väljer sin byrå bland dem som en gemensam redovisningskonsult är med i, och kundsidan ser byråns logga och färger i appen, på Min sida och i mejl om inloggning och uppgifter. Kundens egna fakturor, offerter, order och lönebesked behåller kundens varumärke. Kopplingen ger ingen behörighet och loggas i båda företagen. |
+| 0.52 | 2026-11-01 | Återställningstest av säkerhetskopior (`scripts/restore-test.sh`, `backup:verify-restore`): kopian återställs i en tillfällig databas, och bokföringens hashkedja, underlagens kontrollsummor, personalliggaren och leverantörsfakturornas filer kontrolleras. Körs varje vecka i den driftade tjänsten. SBOM (CycloneDX) som bilaga till varje release. |

@@ -137,14 +137,15 @@
         {
             "group": "sakerhet",
             "name": "Drift och säkerhetskopior",
-            "grade": "C",
-            "summary": "Krypterade säkerhetskopior varje natt på servern och två gånger per dygn på en annan plats i Sverige.",
+            "grade": "B",
+            "summary": "Krypterade säkerhetskopior varje natt på servern och två gånger per dygn på en annan plats i Sverige. Varje vecka återställs och kontrolleras den senaste kopian.",
             "done": [
                 "Databas och filer säkerhetskopieras krypterat varje natt och sparas i sju dagar, i Sverige.",
-                "Två gånger per dygn förs en krypterad kopia över till en annan plats i Sverige, i Stafes egen regi."
+                "Två gånger per dygn förs en krypterad kopia över till en annan plats i Sverige, i Stafes egen regi.",
+                "Varje vecka återställs den senaste kopian i en tillfällig databas, och bokföringens hashkedja, personalliggaren och varje underlag kontrolleras mot sina kontrollsummor. Resultatet loggas."
             ],
             "open": [
-                "Återställningstest är inte dokumenterade som en regelbunden rutin.",
+                "Återställningen är ännu inte prövad på en helt separat server.",
                 "Tjänsten delar server med andra webbplatser."
             ],
             "law": [
@@ -240,12 +241,12 @@
             "group": "regelverk",
             "name": "Cyberresiliensförordningen",
             "grade": "D",
-            "summary": "Det finns en väg att rapportera sårbarheter. Rollen som tillverkare eller förvaltare av öppen källkod väntar på jurist.",
+            "summary": "Det finns en väg att rapportera sårbarheter och en förteckning över komponenterna i varje release. Rollen som tillverkare eller förvaltare av öppen källkod väntar på jurist.",
             "done": [
-                "SECURITY.md med kontaktväg, svarstider och skydd för den som granskar i god tro."
+                "SECURITY.md med kontaktväg, svarstider och skydd för den som granskar i god tro.",
+                "Varje release har en förteckning över programvarukomponenter (SBOM, CycloneDX) som bilaga."
             ],
             "open": [
-                "Förteckning över programvarukomponenter (SBOM).",
                 "Beslut om rollen enligt förordningen."
             ],
             "law": [

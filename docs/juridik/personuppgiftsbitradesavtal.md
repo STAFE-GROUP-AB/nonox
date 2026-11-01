@@ -33,7 +33,7 @@ Biträdet vidtar bland annat dessa åtgärder:
 - **Kryptering:** personnummer, bankuppgifter och andra känsliga uppgifter krypteras i databasen.
 - **Inloggning och åtkomst:** inloggning sker med engångskod till e-post, och åtkomsten styrs per företag och roll. Rättigheten att se känsliga löneuppgifter är särskild.
 - **Spårbarhet:** behandlingshistorik som inte kan ändras.
-- **Säkerhetskopior:** varje natt säkerhetskopieras databasen och de uppladdade filerna. Kopiorna krypteras (AES-256), lagras bara i Sverige och sparas i 7 dagar.
+- **Säkerhetskopior:** varje natt säkerhetskopieras databasen och de uppladdade filerna. Kopiorna krypteras (AES-256), lagras bara i Sverige och sparas i 7 dagar. Varje vecka testas att den senaste kopian går att återställa.
 - **Överföring:** krypterade förbindelser (TLS).
 - **Uppdateringar:** regelbundna säkerhetsuppdateringar.
 

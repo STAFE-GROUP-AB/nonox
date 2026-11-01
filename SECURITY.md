@@ -71,3 +71,11 @@ NONOX is in public beta (version 0.9). Only the latest version is supported:
 | Earlier commits and forks | No. Update to the latest `main`. |
 
 If you run NONOX yourself, install updates promptly. They may contain security fixes.
+
+## Software bill of materials
+
+Every [release](https://github.com/STAFE-GROUP-AB/nonox/releases) carries a software bill of materials (`nonox-<version>-sbom.cdx.json`, CycloneDX JSON) listing the PHP and JavaScript packages in `composer.lock` and `package-lock.json`. Use it to check your installation against new vulnerability advisories. Dependabot and `composer audit` / `npm audit` watch the same packages in this repository.
+
+## Backups and restore tests
+
+The hosted service restores its latest backup into a throwaway database every week and checks it: the hash chain, balance and numbering of every ledger, every attachment against its checksum, and the staff ledger chains. If you run NONOX yourself, `scripts/restore-test.sh` does the same for your backups. See [docs/gdpr/sakerhetskopiering.md](docs/gdpr/sakerhetskopiering.md).

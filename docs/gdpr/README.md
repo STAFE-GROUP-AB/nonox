@@ -60,7 +60,7 @@ Se avsnitt 4 i [personuppgiftsbiträdesavtalet](../juridik/personuppgiftsbitrade
 - **Spårbarhet:** behandlingshistorik som inte kan ändras.
 - **Gränssnitt:** säkerhetsrubriker på varje svar, och varje sida är låst till sitt företag.
 - **Filer:** krypteras i vila med applikationsnyckeln (`EncryptedAdapter`).
-- **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar. Två gånger per dygn förs dessutom en krypterad kopia till en annan plats i Sverige. Regelbundna återställningstester är planerade, se [säkerhetskopiering](sakerhetskopiering.md).
+- **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar. Två gånger per dygn förs dessutom en krypterad kopia till en annan plats i Sverige. Varje vecka återställs den senaste kopian i en tillfällig databas och kontrolleras automatiskt, se [säkerhetskopiering](sakerhetskopiering.md#återställningstest).
 
 ## Egen drift
 
@@ -68,7 +68,7 @@ Kör ett företag NONOX på en egen server är företaget självt personuppgifts
 
 - **Server och plats:** välj en server inom EU/EES och teckna personuppgiftsbiträdesavtal med leverantören.
 - **E-post:** inloggningskoder och fakturor skickas via den e-posttjänst som anges i `.env`. Leverantören blir ett underbiträde.
-- **Säkerhetskopior:** kryptera dem, lagra dem inom EU/EES, och bestäm hur länge de sparas. Se lagringstiderna i [lagringstider.md](lagringstider.md).
+- **Säkerhetskopior:** kryptera dem, lagra dem inom EU/EES, och bestäm hur länge de sparas. Se lagringstiderna i [lagringstider.md](lagringstider.md). Testa att de går att återställa med `scripts/restore-test.sh`, se [säkerhetskopiering](sakerhetskopiering.md#så-testar-du-din-egen-installation).
 - **Krypteringsnyckeln** (`APP_KEY`) skyddar personnummer, bankuppgifter och sparade filer. Förvara en kopia säkert. Utan den går uppgifterna inte att läsa, inte heller i en säkerhetskopia.
 - **AI-modulen** är avstängd tills företaget slår på den med en egen nyckel. Leverantören kan finnas utanför EU/EES.
 - **Gallring:** schemalägg `php artisan schedule:run` så att `privacy:prune` körs varje natt.

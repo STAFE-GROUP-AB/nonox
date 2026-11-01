@@ -294,6 +294,8 @@ npm install && npm run build
 - Den som kan se sjukfrånvaro, lönebesked eller fullständiga personnummer bekräftar dessutom inloggningen med en passkey (fingeravtryck, ansiktsigenkänning eller skärmlås). Ägaren kan kräva passkey för alla i företaget. Se [ADR-029](docs/adr/ADR-029-passkeys.md).
 - Bokförda verifikationer och behandlingshistoriken kan inte ändras, och en kedja av kontrollsummor kontrolleras varje natt.
 - Filer och personnummer krypteras, och en strikt innehållspolicy stoppar skript från andra adresser.
+- Säkerhetskopiorna återställs och kontrolleras varje vecka. Kör du själv gör `scripts/restore-test.sh` samma sak för dina kopior, se [säkerhetskopiering](docs/gdpr/sakerhetskopiering.md#återställningstest).
+- Varje [release](https://github.com/STAFE-GROUP-AB/nonox/releases) har en förteckning över programvarukomponenterna (SBOM, CycloneDX) som bilaga.
 
 Den senaste granskningen, med betyg per område och det som återstår, finns på [nonox.app/sakerhet](https://nonox.app/sakerhet). Hittar du en säkerhetsbrist? Följ [SECURITY.md](SECURITY.md) och rapportera den där, inte i ett öppet ärende. Dataskydd och juridik: [docs/gdpr](docs/gdpr/README.md) och [docs/juridik](docs/juridik/regelverk.md).
 

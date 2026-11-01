@@ -29,7 +29,7 @@ Rollerna: **Stafe Development AB** utvecklar NONOX och driftar tjänsten på non
 - Kryptering av personnummer, bankuppgifter, känsliga fritexter och filer i vila, behörighet per roll, behandlingshistorik och säkerhetsrubriker (artikel 32).
 
 **Det här saknas:**
-- Dokumenterade återställningstester som regelbunden rutin; kopior på annan plats finns ([säkerhetskopiering](../gdpr/sakerhetskopiering.md), artikel 32.1 c och d).
+- Återställningstest på en helt separat server. Varje vecka återställs och kontrolleras kopian i en tillfällig databas, och kopior på annan plats finns ([säkerhetskopiering](../gdpr/sakerhetskopiering.md), artikel 32.1 c och d).
 - Namngiven incidentansvarig.
 - Bedömning av dataskyddsombud (artikel 37.1 c), se [README](../gdpr/README.md#dataskyddsombud-artikel-37). TODO(legal-verify).
 - Bekräftade personuppgiftsbiträdesavtal och DPF-certifiering för varje underbiträde. TODO(legal-verify).
@@ -120,11 +120,11 @@ Lönen berör också skatteförfarandelagen: arbetsgivardeklaration på individn
 
 **Gäller:** oklart. Förordningen gäller produkter med digitala element som släpps ut på marknaden. Skyldigheten att rapportera aktivt utnyttjade sårbarheter och allvarliga incidenter (artikel 14) gäller från den 11 september 2026. Övriga skyldigheter gäller i huvudsak från den 11 december 2027. Datumen kommer från sekundära källor och ska kontrolleras mot EUR-Lex. En ren SaaS-tjänst omfattas i regel inte. NONOX ges dock också ut som programvara att installera själv, och samma företag tar betalt för den driftade tjänsten. Det är oklart om Stafe då är tillverkare eller förvaltare av programvara med öppen källkod (artikel 24).
 
-**Det här gör NONOX:** [SECURITY.md](../../SECURITY.md) beskriver hur sårbarheter rapporteras.
+**Det här gör NONOX:** [SECURITY.md](../../SECURITY.md) beskriver hur sårbarheter rapporteras. Varje release har en förteckning över programvarukomponenter (SBOM, CycloneDX) som bilaga.
 
 **Det här saknas:**
 - Rollbedömning. TODO(legal-verify).
-- Om Stafe är tillverkare: en rutin för rapportering inom artikel 14:s tidsfrister, förteckning över programvarukomponenter (SBOM) och säkerhetsuppdateringar under supportperioden.
+- Om Stafe är tillverkare: en rutin för rapportering inom artikel 14:s tidsfrister och säkerhetsuppdateringar under supportperioden. Förteckningen över programvarukomponenter (SBOM) finns redan.
 
 ## 9. Lagen (2022:482) om elektronisk kommunikation, kakor
 
