@@ -1,0 +1,27 @@
+name: Release
+
+# A version tag (v1.2.3) becomes a GitHub release with notes generated from
+# the merged pull requests and commits since the previous tag. A tag with a
+# suffix (v0.10.0-beta.1) is published as a pre-release.
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          prerelease=""
+          if [[ "$TAG" == *-* || "$TAG" == v0.* ]]; then prerelease="--prerelease"; fi
+          gh release create "$TAG" --title "NONOX $TAG" --generate-notes --verify-tag $prerelease

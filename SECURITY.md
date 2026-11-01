@@ -6,7 +6,7 @@ NONOX is an open-source (AGPL-3.0) bookkeeping, invoicing and payroll system for
 
 **Do not open a public GitHub issue, pull request or discussion for a security problem.**
 
-Send an e-mail to **andreas@gozero.se** with "NONOX security" in the subject. If GitHub's private vulnerability reporting is enabled for this repository, you may use it instead.
+Send an e-mail to **andreas@gozero.se** with "NONOX security" in the subject. You can also report it privately through GitHub: [Report a vulnerability](https://github.com/STAFE-GROUP-AB/nonox/security/advisories/new).
 
 Please include:
 - what the problem is and where (URL, route, file or commit),

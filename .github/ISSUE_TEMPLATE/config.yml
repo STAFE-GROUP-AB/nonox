@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Rapportera en säkerhetsbrist
+    url: https://github.com/STAFE-GROUP-AB/nonox/security/advisories/new
+    about: Rapportera säkerhetsbrister privat, aldrig i ett öppet ärende.
+  - name: Frågor och diskussioner
+    url: https://github.com/STAFE-GROUP-AB/nonox/discussions
+    about: Fråga om installation, användning eller idéer.
+  - name: Säkerhet och regelverk
+    url: https://nonox.app/sakerhet
+    about: Senaste säkerhetsgranskningen och vad som återstår.

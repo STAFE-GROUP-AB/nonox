@@ -100,7 +100,7 @@ final class LandingPage
     {
         /** @var array<string, ?string> $config */
         $config = (array) config('app.landing', []);
-        $github = $config['github_url'] ?? 'https://github.com/STAFE-GROUP-AB/OSS';
+        $github = $config['github_url'] ?? 'https://github.com/STAFE-GROUP-AB/nonox';
 
         return [
             'version' => BuildInfo::version(),

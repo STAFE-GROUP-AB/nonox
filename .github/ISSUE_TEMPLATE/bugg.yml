@@ -1,0 +1,34 @@
+name: Rapportera en bugg
+description: Något fungerar inte som det ska.
+labels: ["bugg"]
+body:
+  - type: markdown
+    attributes:
+      value: "Säkerhetsbrister rapporteras **inte** här, utan enligt [SECURITY.md](https://github.com/STAFE-GROUP-AB/nonox/blob/main/SECURITY.md). Skriv aldrig in riktiga personnummer eller företagsuppgifter."
+  - type: textarea
+    id: what
+    attributes:
+      label: Vad hände?
+      description: Beskriv vad du gjorde, vad du förväntade dig och vad som hände i stället.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Så återskapar du felet
+      placeholder: "1. Gå till …\n2. Tryck på …\n3. Se felet"
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Står längst ner på varje sida, till exempel 0.9.140.
+  - type: dropdown
+    id: where
+    attributes:
+      label: Var kör du NONOX?
+      options:
+        - nonox.app
+        - Egen server
+        - Lokalt på datorn

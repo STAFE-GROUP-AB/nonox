@@ -112,7 +112,7 @@ it('shows the public landing page to visitors once the system is set up', functi
         ->assertSee('Bokföring som ägs av')
         ->assertSee(route('login'))
         ->assertSee("995\u{a0}kr")
-        ->assertSee('https://github.com/STAFE-GROUP-AB/OSS')
+        ->assertSee('https://github.com/STAFE-GROUP-AB/nonox')
         ->assertSee('Vanliga frågor')
         ->assertDontSee('{{', escape: false);
 });

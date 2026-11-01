@@ -1,0 +1,19 @@
+name: Föreslå en förbättring
+description: En ny funktion eller ett bättre sätt att göra något.
+labels: ["förslag"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Vilket problem vill du lösa?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Hur skulle det kunna fungera?
+  - type: textarea
+    id: law
+    attributes:
+      label: Finns det lagkrav eller regler som påverkar?
+      description: Till exempel Bokföringslagen, Skatteverkets regler eller GDPR. Länka gärna källan.

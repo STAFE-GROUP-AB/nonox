@@ -27,7 +27,7 @@ return [
         // The installation is the service hosted by the company above: new companies accept its terms and data processing agreement.
         'hosted' => (bool) env('NONOX_HOSTED', false),
         'github_url' => env('NONOX_GITHUB_URL'),
-        'github_repository' => env('NONOX_GITHUB_REPOSITORY', 'STAFE-GROUP-AB/OSS'),
+        'github_repository' => env('NONOX_GITHUB_REPOSITORY', 'STAFE-GROUP-AB/nonox'),
         'migration_guide_url' => env('NONOX_MIGRATION_GUIDE_URL'),
         'docs_url' => env('NONOX_DOCS_URL'),
         'api_url' => env('NONOX_API_DOCS_URL'),

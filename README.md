@@ -1,32 +1,49 @@
-<p><img src="docs/media/NONOX-transparent.svg" alt="NONOX" width="320"></p>
+<div align="center">
 
-# NONOX Ekonomisystem
+<a href="https://nonox.app">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/brand/nonox-light.svg">
+    <img src="public/brand/nonox.svg" alt="NONOX" width="300">
+  </picture>
+</a>
 
-**Open Source Svenskt Bokföringssystem**
+### Bokföring med öppen källkod för svenska företag
 
-Ett modernt, transparent och korrekt bokföringssystem byggt specifikt för svenska små och medelstora aktiebolag.
+Bokföring, fakturor, moms, bokslut, lön och personalliggare i ett system.<br>
+Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 
-## 🇸🇪 Om Projektet
+[![CI](https://github.com/STAFE-GROUP-AB/nonox/actions/workflows/ci.yml/badge.svg)](https://github.com/STAFE-GROUP-AB/nonox/actions/workflows/ci.yml)
+[![Senaste version](https://img.shields.io/github/v/release/STAFE-GROUP-AB/nonox?include_prereleases&label=version&color=FF5A36)](https://github.com/STAFE-GROUP-AB/nonox/releases)
+[![Licens: AGPL-3.0](https://img.shields.io/badge/licens-AGPL--3.0-15171C)](LICENSE)
+[![PHP 8.4](https://img.shields.io/badge/PHP-8.4-777BB4)](https://www.php.net)
+[![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20)](https://laravel.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-4169E1)](https://www.postgresql.org)
 
-NONOX Ekonomisystem är ett fristående open source-system för bokföring, fakturering, moms och bokslut. Du kör det själv, äger all data och kan alltid ta med dig allt ut igen (SIE4, CSV, PDF och API).
+**[nonox.app](https://nonox.app)** · [Säkerhet och regelverk](https://nonox.app/sakerhet) · [Flytta hit](https://nonox.app/flytta-hit) · [Systemdokumentation](docs/systemdokumentation/README.md) · [Bidra](CONTRIBUTING.md)
 
-### Målsättning
+</div>
 
-- **Transparent**: All affärslogik är öppen och granskningsbar
-- **Korrekt**: Uppfyller bokföringslagen (BFL) och god redovisningssed
-- **Spårbar**: Komplett audit trail för alla åtgärder
-- **Deterministisk**: Inga "magiska" automatiseringar
+---
 
-### Teknisk Stack (TALL)
+## Varför NONOX
 
-- **T**ailwindCSS - Modern CSS framework
-- **A**lpine.js - Lightweight JavaScript framework
-- **L**aravel 13 - PHP framework
-- **L**ivewire - Reactive Laravel components
+- **Öppet.** All affärslogik är öppen källkod under AGPL-3.0. Vem som helst kan granska exakt hur siffrorna hanteras.
+- **Korrekt.** Byggt efter Bokföringslagen, BFNAR 2013:2 och Skatteverkets regler. En bokförd verifikation kan aldrig ändras, varken i appen eller direkt i databasen.
+- **Ditt.** Exportera allt när som helst: SIE4, underlag, fakturor och lönehistorik. Kör det själv eller låt oss sköta driften i Sverige.
+- **Säkert och ärligt redovisat.** Vi granskar säkerheten och efterlevnaden av GDPR, AI-förordningen och andra regelverk och [publicerar resultatet](https://nonox.app/sakerhet), även det som återstår.
 
-Med **Laravel Jetstream** för användare och företag, och **PostgreSQL** som databas.
+## Teknik
 
-## 📋 Funktioner
+[Laravel 13](https://laravel.com), [Livewire 4](https://livewire.laravel.com), [Alpine.js](https://alpinejs.dev), [Tailwind CSS 4](https://tailwindcss.com) och [Laravel Jetstream](https://jetstream.laravel.com) för användare och företag, med **PostgreSQL** som databas. Testat med [Pest](https://pestphp.com), statisk analys med [Larastan](https://github.com/larastan/larastan) på nivå 8.
+
+<details>
+<summary><strong>In English</strong></summary>
+
+NONOX is an open-source (AGPL-3.0) bookkeeping, invoicing, VAT, year-end and payroll system for Swedish companies, built with Laravel and PostgreSQL. Posted vouchers are immutable at the database level, every action is written to an append-only audit log, and everything can be exported as SIE4, CSV and PDF. The user interface is in Swedish; code, comments and commits are in English. See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute and [SECURITY.md](SECURITY.md) to report a vulnerability.
+
+</details>
+
+## Funktioner
 
 Systemet byggs en del i taget. Det här finns i dag:
 
@@ -91,7 +108,7 @@ Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 
 Systemet byggs för att uppfylla bokföringslagen (BFL), BFNAR 2013:2 (systemdokumentation och behandlingshistorik), Skatteverkets momsregler och kravet att spara räkenskapsinformation i sju år. Hur systemet faktiskt fungerar beskrivs i [systemdokumentationen](docs/systemdokumentation/README.md). Frågor som ännu inte är juridiskt kontrollerade är markerade med `TODO(legal-verify)` och listade där.
 
-## 🚀 Installation
+## Installation
 
 Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned; varje steg säger vad du ska se när det har gått rätt.
 
@@ -130,7 +147,7 @@ Med Herd: lägg projektet i mappen `~/Herd` så får det automatiskt adressen `h
 
 ```bash
 cd ~/Herd                                   # utan Herd: valfri mapp
-git clone https://github.com/STAFE-GROUP-AB/OSS.git oss
+git clone https://github.com/STAFE-GROUP-AB/nonox.git oss
 cd oss
 ```
 
@@ -254,22 +271,22 @@ npm install && npm run build
 | Sidan visar bara ett fel utan detaljer | Läs `storage/logs/laravel.log`, där står det verkliga felet. |
 | Något är konstigt efter en uppdatering | Kör `php artisan optimize:clear`. |
 
-## 📚 Dokumentation
+## Dokumentation
 
 - [Systemdokumentation](docs/systemdokumentation/README.md) – hur bokföringen fungerar, som bokföringslagen kräver. Uppdateras med varje ändring.
 - [Beslut (ADR)](docs/adr/) – varför systemet är byggt som det är: verifikationer, SIE, kostnadsställen, rapporter och moms.
 - [AGENTS.md](AGENTS.md) – specifikationen och reglerna för alla som bidrar, människor som AI.
 
-## 🔒 Säkerhet
+## Säkerhet
 
-- Rollbaserad åtkomst per företag. Ett företag ser aldrig ett annat företags data; det testas för varje tabell
-- Inloggning med engångskod via e-post, inga lösenord. Koderna sparas bara som hashvärden, gäller i 10 minuter, kan användas en gång och spärras efter 5 felaktiga försök
-- Audit trail för alla kritiska operationer
-- Ingen hårdkodad affärslogik i frontend
+- Varje företag ser bara sina egna uppgifter. Det prövas för varje tabell i en egen testsvit.
+- Inloggning med engångskod via e-post, inga lösenord. Koderna har åtta siffror, sparas bara som kontrollvärden, gäller i 10 minuter och en gång.
+- Bokförda verifikationer och behandlingshistoriken kan inte ändras, och en kedja av kontrollsummor kontrolleras varje natt.
+- Filer och personnummer krypteras, och en strikt innehållspolicy stoppar skript från andra adresser.
 
-Hittar du en säkerhetsbrist? Läs [SECURITY.md](SECURITY.md) och rapportera den där, inte i ett öppet ärende. Dataskydd och juridik: [docs/gdpr](docs/gdpr/README.md) och [docs/juridik](docs/juridik/regelverk.md).
+Den senaste granskningen, med betyg per område och det som återstår, finns på [nonox.app/sakerhet](https://nonox.app/sakerhet). Hittar du en säkerhetsbrist? Följ [SECURITY.md](SECURITY.md) och rapportera den där, inte i ett öppet ärende. Dataskydd och juridik: [docs/gdpr](docs/gdpr/README.md) och [docs/juridik](docs/juridik/regelverk.md).
 
-## 🛠️ Utveckling
+## Utveckling
 
 ### Köra tester
 
@@ -308,7 +325,7 @@ npm run dev
 npm run build
 ```
 
-## 📖 Principer
+## Principer
 
 ### Grundprinciper
 
@@ -327,27 +344,22 @@ Medvetet utanför scope:
 - ❌ Kassasystem
 - ❌ Inkasso
 
-## 🤝 Bidra
+## Bidra
 
-Vi välkomnar bidrag! Läs [AGENTS.md](AGENTS.md) först: där står hur koden ska skrivas, vilka regler som aldrig får brytas (till exempel att en bokförd verifikation aldrig ändras) och vad som ska vara klart innan något slås ihop. Kör `composer check` innan du skickar en pull request.
+Alla är välkomna att skicka in pull requests. Läs [CONTRIBUTING.md](CONTRIBUTING.md) först: där står hur du sätter upp projektet, hur koden ska skrivas och vad som ska vara klart innan ett bidrag kan slås ihop. Reglerna som aldrig får brytas, till exempel att en bokförd verifikation aldrig ändras, finns i [AGENTS.md](AGENTS.md).
 
-Lägg aldrig riktiga företagsuppgifter, personnummer, nycklar eller `.env` i ett bidrag. Testfiler ska vara påhittade.
-
-### Utvecklingsfilosofi
+Pull requests granskas och slås ihop av projektets team. Varje version publiceras som en [release](https://github.com/STAFE-GROUP-AB/nonox/releases) med en tagg och en beskrivning av vad som ändrats.
 
 > **Bygg tråkigt. Bygg korrekt. Bygg transparent.**
 
-## 📄 Licens
+## Licens
 
-Detta projekt är licensierat under **GNU Affero General Public License v3.0 (AGPL-3.0)**, se filen [LICENSE](LICENSE).
-
-Kort sagt: du får använda, ändra och dela systemet fritt. Kör du en ändrad version som en tjänst åt andra måste du göra din källkod tillgänglig för dem på samma villkor.
-
-## 🙏 Tack
-
-Utvecklat med passion för öppen källkod och korrekt bokföring.
+NONOX är licensierat under **GNU Affero General Public License v3.0 (AGPL-3.0)**, se [LICENSE](LICENSE). Du får använda, ändra och dela systemet fritt. Kör du en ändrad version som en tjänst åt andra måste du göra din källkod tillgänglig för dem på samma villkor.
 
 ---
 
-**STAFE Group AB**  
-Bygger transparenta bokföringssystem för svenska företag.
+<div align="center">
+
+Utvecklat av [Stafe Development AB](https://stafe.se), en del av Stafe Group AB · [nonox.app](https://nonox.app)
+
+</div>
