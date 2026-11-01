@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EndExpiredSessions;
-use App\Http\Middleware\RequirePasskey;
 use App\Http\Middleware\RemembersRecentItems;
+use App\Http\Middleware\RequirePasskey;
 use App\Http\Middleware\SecurityHeaders;
 use App\Modules\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Foundation\Application;
