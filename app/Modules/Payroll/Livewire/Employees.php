@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Livewire;
 
+use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
@@ -38,6 +39,7 @@ use Livewire\Component;
  */
 class Employees extends Component
 {
+    use OpensFormFromLink;
     use ShowsToasts;
 
     public bool $showForm = false;
@@ -51,6 +53,8 @@ class Employees extends Component
     public function mount(): void
     {
         abort_unless(Gate::allows('viewAny', [Employee::class, $this->company()]), 403);
+
+        $this->openFormFromLink(Employee::class, 'manage');
     }
 
     public function create(): void

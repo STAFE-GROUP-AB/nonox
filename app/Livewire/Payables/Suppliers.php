@@ -8,6 +8,7 @@ use App\Actions\Payables\SaveSupplier;
 use App\Actions\Privacy\EraseRegisterEntry;
 use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Company;
@@ -29,6 +30,7 @@ use Livewire\WithPagination;
  */
 class Suppliers extends Component
 {
+    use OpensFormFromLink;
     use ShowsToasts;
     use WithPagination;
 
@@ -47,6 +49,8 @@ class Suppliers extends Component
     public function mount(): void
     {
         abort_unless($this->user()->can('viewAny', [Supplier::class, $this->company()]), 403);
+
+        $this->openFormFromLink(Supplier::class);
     }
 
     public function updatedSearch(): void

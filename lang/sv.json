@@ -106,5 +106,11 @@
     "{0} Inga olästa notiser.|{1} :count oläst notis.|[2,*] :count olästa notiser.": "{0} Inga olästa notiser.|{1} :count oläst notis.|[2,*] :count olästa notiser.",
     "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa": "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa",
     "{1} :count dag sen|[2,*] :count dagar sen": "{1} :count dag sen|[2,*] :count dagar sen",
-    "{1} :count försenad|[2,*] :count försenade": "{1} :count försenad|[2,*] :count försenade"
+    "{1} :count försenad|[2,*] :count försenade": "{1} :count försenad|[2,*] :count försenade",
+    ":count verifikationsutkast att bokföra|:count verifikationsutkast att bokföra": ":count verifikationsutkast att bokföra|:count verifikationsutkast att bokföra",
+    ":count förfallen kundfaktura|:count förfallna kundfakturor": ":count förfallen kundfaktura|:count förfallna kundfakturor",
+    ":count leverantörsfaktura att attestera|:count leverantörsfakturor att attestera": ":count leverantörsfaktura att attestera|:count leverantörsfakturor att attestera",
+    ":count leverantörsfaktura att betala|:count leverantörsfakturor att betala": ":count leverantörsfaktura att betala|:count leverantörsfakturor att betala",
+    ":count ansökan om ledighet eller utlägg att hantera|:count ansökningar om ledighet eller utlägg att hantera": ":count ansökan om ledighet eller utlägg att hantera|:count ansökningar om ledighet eller utlägg att hantera",
+    ":count underlag i inkorgen att granska|:count underlag i inkorgen att granska": ":count underlag i inkorgen att granska|:count underlag i inkorgen att granska"
 }

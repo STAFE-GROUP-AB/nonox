@@ -26,7 +26,17 @@
 
         @livewire('navigation-menu')
 
+        @if($layoutCompany)
+            <x-spotlight.dialog />
+        @endif
+
         <div class="min-h-screen bg-paper lg:pl-72">
+            @if($layoutCompany)
+                {{-- Desktop top bar: the spotlight search (ADR-026). On small screens it is an icon in the dark bar. --}}
+                <div class="sticky top-0 z-20 hidden items-center border-b border-stone-200/70 bg-paper/90 px-10 py-3 backdrop-blur lg:flex">
+                    <x-spotlight.trigger />
+                </div>
+            @endif
             <x-archived-company-banner :company="$layoutCompany" />
 
             <!-- Page Heading -->

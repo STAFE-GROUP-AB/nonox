@@ -9,6 +9,7 @@ use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Privacy\EraseRegisterEntry;
 use App\Actions\Privacy\RestrictProcessing;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\Customer;
@@ -31,6 +32,7 @@ use Livewire\WithPagination;
  */
 class Customers extends Component
 {
+    use OpensFormFromLink;
     use ShowsToasts;
     use WithPagination;
 
@@ -53,6 +55,8 @@ class Customers extends Component
     public function mount(): void
     {
         abort_unless($this->user()->can('viewAny', [Customer::class, $this->company()]), 403);
+
+        $this->openFormFromLink(Customer::class);
     }
 
     public function updatedSearch(): void

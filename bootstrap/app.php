@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\EndExpiredSessions;
 use App\Http\Middleware\RequirePasskey;
+use App\Http\Middleware\RemembersRecentItems;
 use App\Http\Middleware\SecurityHeaders;
 use App\Modules\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Foundation\Application;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
             EndExpiredSessions::class,
             // After EndExpiredSessions: a session that has ended needs no passkey step (ADR-029).
             RequirePasskey::class,
+            RemembersRecentItems::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

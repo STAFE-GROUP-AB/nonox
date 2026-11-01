@@ -32,6 +32,7 @@ use App\Models\MonthCloseCheck;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\Project;
+use App\Models\RecentItem;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
 use App\Models\SalesDocument;
@@ -201,6 +202,7 @@ const COMPANY_SCOPED_MODELS = [
     TaskChecklistItem::class => 'taskChecklistItemAttributes',
     TaskRecurrence::class => 'taskRecurrenceAttributes',
     MonthCloseCheck::class => 'monthCloseCheckAttributes',
+    RecentItem::class => 'recentItemAttributes',
 ];
 
 function taskAttributes(): array
@@ -228,6 +230,11 @@ function taskRecurrenceAttributes(): array
 function monthCloseCheckAttributes(): array
 {
     return ['month' => '2026-10', 'step' => 'REPORT', 'checked_by' => User::factory()->create()->id, 'checked_at' => now()];
+}
+
+function recentItemAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'type' => 'customers', 'record_id' => '1', 'title' => 'Hemlig kund AB', 'url' => '/kunder', 'icon' => 'customer', 'opened_at' => now()];
 }
 
 function staffLedgerLocationAttributes(): array

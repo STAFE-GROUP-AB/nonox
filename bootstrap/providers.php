@@ -12,9 +12,11 @@ use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use App\Providers\JetstreamServiceProvider;
 use App\Providers\OverviewServiceProvider;
+use App\Providers\SearchServiceProvider;
 
 return [
     ModuleServiceProvider::class,
+    SearchServiceProvider::class,
     PayrollServiceProvider::class,
     AiServiceProvider::class,
     StaffLedgerServiceProvider::class,

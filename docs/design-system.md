@@ -95,3 +95,36 @@ their pages.
 
 Always through `App\Support\Money\Money` and `<x-ui.amount>`: whole öre
 internally, `1 234,50 kr` on screen, right-aligned in tables.
+
+## Spotlight (search)
+
+One search for the whole system, `<x-spotlight.dialog>` with
+`<x-spotlight.trigger>` (ADR-026). It is the fastest way anywhere: to a
+record, a page or a new thing.
+
+- **Opening.** ⌘K (Mac) or Ctrl+K anywhere, "/" when the user is not typing,
+  the field "Sök eller gå till … ⌘K" in the top bar on desktop, or the
+  magnifier in the dark bar on a phone. On a phone it is a full-screen sheet.
+- **Keys.** ↑↓ choose, Enter opens, ⌘Enter / Ctrl+Enter opens in a new tab,
+  Tab and Shift+Tab jump between groups, Esc closes and gives focus back.
+  ← at the start of the field moves to the filter chips; Backspace removes
+  the chip in focus.
+- **Empty field.** "Senast öppnade" (the last eight records), "Att göra"
+  (things waiting, with counts) and "Snabbval" (the most used create
+  actions). Never an empty white box.
+- **Results.** Grouped, at most five per group, best first; a group with an
+  exact hit (a number, an OCR) moves to the top. A row is icon, title,
+  subtitle, and on the right the amount (tabular) and a status badge. The
+  typed words are marked in amber. A group with more hits ends with the
+  option "Visa alla N", which opens the filtered list page.
+- **Understood filters** are chips under the field ("Kundfakturor",
+  "Obetalda", "Belopp över 10 000,00 kr", "Oktober 2026"); removing a chip
+  removes its words from the field.
+- **The active row** has the accent background and the accent mark on the
+  left, like the current page in the sidebar.
+- **Accessibility.** `role="dialog"` with `aria-modal`; the field is a
+  `combobox` with `aria-activedescendant` into a `listbox` of `group`s and
+  `option`s; the number of results is announced in a polite live region;
+  focus stays in the dialog. Transitions only with `motion-safe`.
+- **Words.** Swedish throughout: "Sök eller gå till …", "Inget hittades"
+  with examples of what can be typed, "Visa alla 23".

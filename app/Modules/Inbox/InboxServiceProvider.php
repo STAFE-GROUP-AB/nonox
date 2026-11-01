@@ -13,6 +13,7 @@ use App\Modules\Inbox\Livewire\InboxSettingsForm;
 use App\Modules\Inbox\Livewire\InboxWorkspace;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Policies\InboxMessagePolicy;
+use App\Modules\Inbox\Search\InboxSearchProvider;
 use App\Modules\Inbox\Support\ClamdScanner;
 use App\Modules\Inbox\Support\Imap\HostResolver;
 use App\Modules\Inbox\Support\Imap\MailboxClient;
@@ -21,6 +22,7 @@ use App\Modules\Inbox\Support\Imap\WebklexMailboxClient;
 use App\Modules\Inbox\Support\NoVirusScanner;
 use App\Modules\Inbox\Support\VirusScanner;
 use App\Modules\ModuleRegistry;
+use App\Support\Search\SearchRegistry;
 use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
 use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use Illuminate\Http\Request;
@@ -40,6 +42,9 @@ class InboxServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->make(ModuleRegistry::class)->register(new InboxModule);
+
+        // Spotlight (ADR-026): found only while the inbox is on for the company.
+        $this->callAfterResolving(SearchRegistry::class, fn (SearchRegistry $search) => $search->register(new InboxSearchProvider));
 
         $this->app->bind(MailboxClient::class, WebklexMailboxClient::class);
         $this->app->bind(HostResolver::class, SystemHostResolver::class);

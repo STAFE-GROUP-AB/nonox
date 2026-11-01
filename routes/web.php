@@ -26,6 +26,8 @@ use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
+use App\Http\Controllers\Search\RecentItemController;
+use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\SecurityPageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StartController;
@@ -100,6 +102,8 @@ Route::middleware([
         Route::get('/registerutdrag/personal/{person}', [DataSubjectExportController::class, 'staffLedgerPerson'])->whereNumber('person')->name('privacy.export.staffLedgerPerson');
         Route::get('/registerutdrag/inkorg', [DataSubjectExportController::class, 'inboxSender'])->name('privacy.export.inboxSender');
         Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
+        Route::post('/sok', SearchController::class)->middleware('throttle:search')->name('search');
+        Route::post('/sok/senaste', RecentItemController::class)->middleware('throttle:search')->name('search.recent');
 
         // Tasks in the current company (ADR-028).
         Route::view('/uppgifter/aterkommande', 'tasks.recurring')->name('tasks.recurring');
