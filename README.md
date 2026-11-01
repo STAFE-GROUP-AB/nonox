@@ -48,8 +48,14 @@ NONOX is an open-source (AGPL-3.0) bookkeeping, invoicing, VAT, year-end and pay
 Grupperat som i menyn i appen. Moduler slår varje företag på och av under Företagsinställningar → Moduler, utan att något raderas.
 
 ### Översikt
-- Nyckeltal för företagaren: resultat hittills i år, pengar på bank och kassa, moms att betala, obetalda kundfakturor och vad som väntar på attest. Var och en visas bara för roller som får se underlaget.
-- **Mina företag** för redovisningsbyråer och ägare med flera bolag: alla klienter på en sida med vad som väntar i varje (moms, AGI, bokslut, förfallna fakturor, attester, utkast och lön), sista dag för moms och AGI, ansvarig konsult och byråns egna anteckningar.
+- Nyckeltal för företagaren (företagskontot, obetalda kundfakturor, att betala och momsen med sista dag), "Att göra" i den ordning det brådskar med en länk direkt till uppgiften, och de senaste verifikationerna. Var och en visas bara för roller som får se underlaget. Översikten sparas i cache och laddas om med en knapp.
+- **Statistik och prognos:** intäkter och kostnader mot förra året, resultat per månad, likviditet med en tremånadersprognos som förklaras under diagrammet, största kunder och kostnader, och moms per månad. Varje diagram går att visa som tabell.
+- **Sök med ⌘K:** en sökning över allt du har behörighet att se: sidor och åtgärder, verifikationer, fakturor (nummer, OCR, belopp), kunder, leverantörer, konton, lön, personalliggare och inkorg. Den förstår filter som "faktura 1029", "> 10000 kr", "obetald" och "oktober".
+
+### Mina företag och uppgifter
+- För redovisningsbyråer och ägare med flera bolag: summor och en gemensam "Att göra" för alla klienter, med filter per konsult, deadline och typ, och sparade vyer. Sista dag för moms och AGI, ansvarig konsult och byråns egna anteckningar.
+- **Månadsstängning:** en rad per klient med bankavstämning, leverantörs- och kundfakturor, moms, lön och AGI, periodiseringar och rapport, som fylls i från bokföringen där det går.
+- **Uppgifter** (`/uppgifter`): delegera mellan byrån och kundens användare åt båda hållen, med kommentarer, checklistor, återkommande uppgifter (till exempel moms varje månad), notiser och ett valfritt dagligt mejl.
 
 ### Försäljning
 - Fakturor med OCR-nummer, PDF och utskick via e-post, bokförda automatiskt enligt fakturametoden eller kontantmetoden.
