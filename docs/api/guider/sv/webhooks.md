@@ -1,16 +1,16 @@
-# Webhooks (kommer)
+# Webhooks
 
-> **Kommer, skickas inte ännu.** Webhooks är beskrivna i OpenAPI-filen (`webhooks`, märkta `x-nonox-status: planned`) så att du kan förbereda din mottagare, men NONOX skickar dem inte ännu. Hämta ändringar med [synk via updated_since](sidindelning.md) så länge. Den här sidan ändras när de skickas, och det står i [ändringarna](https://nonox.app/utvecklare/andringar).
+Med webhooks slipper ditt program fråga efter ändringar: NONOX skickar en `POST` till din server när något händer. De skickas sedan version 1.1.0 av API:t.
 
-Med webhooks slipper ditt program fråga efter ändringar: NONOX skickar en `POST` till din server när något händer.
+## Så fungerar de
 
-## Så kommer de att fungera
-
-- Ett företag prenumererar på händelser med en adress som måste vara `https`. Adressen kontrolleras: privata nät, loopback och link-local avvisas, liksom omdirigeringar.
-- Varje prenumeration får en egen hemlighet. Den används för att signera varje leverans.
-- Svara med `2xx` inom 10 sekunder. Allt annat, eller inget svar, försöks igen med växande väntetid.
-- Samma händelse kan komma mer än en gång. `Nonox-Event-Id` är samma vid varje nytt försök; spara de id:n du har behandlat och hoppa över dubbletter.
-- Innehållet är kort: händelsen och id:n. Hämta det fullständiga objektet från API:t om du behöver mer.
+- En ägare eller administratör lägger till webhooken under **Anslutningar** i NONOX och bekräftar med passkey: en `https`-adress och vilka händelser den ska få. Ägaren får ett mejl om varje ny webhook.
+- Adressen kontrolleras när den sparas och före varje försök: privata nät, loopback, link-local och andra interna adresser avvisas, anslutningen låses till den kontrollerade adressen och omdirigeringar följs aldrig.
+- Varje webhook får en egen hemlighet (`nnxwh_…`) som visas en gång. Den används för att signera varje leverans och kan bytas.
+- Händelsen skickas först när bokföringen är sparad. Svara med `2xx` inom 10 sekunder (5 för att ansluta). Allt annat försöks igen efter 1, 5 och 15 minuter och 1, 3, 6 och 13 timmar. Misslyckas även det åttonde försöket stängs webhooken av och ägaren får ett mejl.
+- Samma händelse kan komma mer än en gång. `Nonox-Event-Id` är samma vid varje nytt försök; spara de id:n du har behandlat och hoppa över dubbletter. `Nonox-Event-Type` säger vilken händelse det är.
+- Innehållet är kort: id, nummer, datum och belopp, aldrig personuppgifter. Hämta det fullständiga objektet från API:t om du behöver mer.
+- Vill du prova utan riktig bokföring? Skapa ett [testföretag](kom-igang.md) under Anslutningar.
 
 ## Händelserna
 

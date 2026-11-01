@@ -135,9 +135,21 @@ Local development skips the passkey exactly where ADR-029 does
 ### Effective rights: scopes ∩ the person's current permissions
 
 Scopes are permission keys from AGENTS.md §4 (`vouchers:view`,
-`vouchers:create`, `vouchers:post`, `vouchers:correct`, `invoices:view`,
-`invoices:create`, `supplier-invoices:create`,
-`supplier-invoices:approve`); only those an endpoint uses are offered.
+`vouchers:create`, `vouchers:post`, `vouchers:correct`, `accounts:manage`,
+`reports:view`, `vat:prepare`, `export:sie`, `invoices:view`,
+`invoices:create`, `invoices:send`, `invoices:credit`, `payments:create`,
+`supplier-invoices:create`, `supplier-invoices:approve`); only those an
+endpoint uses are offered.
+
+A route can need several scopes together: `connect.scope:a+b` (all of
+them), `a|b` (either). Issuing an invoice, registering a supplier invoice
+and registering a payment post a voucher as the person behind the
+credential, so those routes need `vouchers:create+vouchers:post` on top of
+their own scope. Without it the Action's own voucher policy would refuse
+with a generic 403; naming it on the route gives a predictable
+`insufficient_scope` with `required_scope_sets` (same shape as
+`x-required-scopes` in the OpenAPI file). It applies under kontantmetoden
+too, where issuing books nothing: one rule is easier to get right.
 
 On an API request the credential is held in `ConnectAccess` (a scoped
 binding), and `User::hasTeamPermission()` asks it first: a permission is
@@ -235,22 +247,101 @@ documented path does not exist.
 ### Same Actions as the UI
 
 Controllers are thin and call `SaveDraftVoucher`, `PostVoucher`,
-`CorrectVoucher`, `DeleteDraftVoucher`, `AttachToVoucher`, `SaveCustomer`
-and `SaveSupplier`. Posted vouchers stay immutable at all three levels
+`CorrectVoucher`, `DeleteDraftVoucher`, `AttachToVoucher`, `SaveCustomer`,
+`SaveSupplier`, `SaveArticle`, `SaveDimensionObject`, `SaveDraftInvoice`,
+`IssueInvoice`, `SendInvoice`, `CreditInvoice`, `RegisterPayment`,
+`SaveSupplierInvoice`, `DeleteSupplierInvoiceDraft`,
+`RegisterSupplierInvoice`, `ApproveSupplierInvoice`, `PaySupplierInvoice`
+and `ExportSie`; reports and the VAT return come from `LedgerReports` and
+`VatReturn`. The API converts its integer öre and basis points to the
+Actions' written amounts exactly (`ApiInput`); JSON numbers with decimals
+are refused for quantities and amounts. Segregation of duties on supplier
+invoices is the Action's, so it holds for every credential. Posted vouchers stay immutable at all three levels
 (ADR-007); the API can only post a draft or correct a posted voucher.
+
+### Webhooks
+
+Per-company subscriptions (`connect_webhooks`) under Anslutningar, added by
+an owner or administrator after a fresh passkey confirmation, at most ten
+per company, only for events whose data the person may see. The owner is
+e-mailed about every new webhook.
+
+- **Events** `voucher.posted`, `invoice.sent`, `invoice.paid`,
+  `supplier_invoice.approved` are core domain events
+  (`App\Events\*`, `ShouldDispatchAfterCommit`) dispatched by `PostVoucher`,
+  `SendInvoice`, `RegisterPayment` (when the invoice becomes paid) and
+  `ApproveSupplierInvoice`. Laravel runs their listeners only after the
+  outermost transaction commits (verified in
+  `Illuminate\Events\Dispatcher::dispatch`), so a rolled-back posting is
+  never announced. The Connect module listens; the core does not know about
+  webhooks.
+- **Thin payloads**: ids, references, dates and amounts, never personal data
+  or free text. A receiver fetches more through the API with its own scopes.
+- **Who still may receive**: at dispatch the webhook's creator must still be
+  a member with `connect:manage` and one of the event's permissions,
+  evaluated without the current request's API credential
+  (`ConnectAccess::without`). Turning the module off turns every webhook off.
+- **Signature**: `Nonox-Signature: t=<unix>,v1=<hex HMAC-SHA256 of
+  "t.body">` with a per-webhook secret (`nnxwh_` + 48 characters, shown once,
+  stored with Laravel's `encrypted` cast because it is needed to sign; a
+  hash would not do). `Nonox-Event-Id` is the same for every subscriber and
+  every retry; receivers dedupe on it and reject timestamps more than five
+  minutes off. The secret can be rotated (passkey).
+- **Delivery**: one row per event and webhook (`connect_webhook_deliveries`,
+  the exact body as text so retries send the same bytes). A queued job with
+  the company id explicitly claims the row with a conditional update (a
+  lease), so two workers never send the same attempt. Eight attempts: at
+  once, then after 1, 5, 15 minutes, 1, 3, 6 and 13 hours (about 23 hours).
+  Retries are scheduled in the table and queued by `connect:webhooks` every
+  minute, not by the queue's own backoff, so they survive lost jobs and work
+  with every driver. After the last failure the webhook is turned off, its
+  waiting deliveries are cancelled, the event is audited and the owner (and
+  creator) get a Swedish e-mail. The log keeps attempts, status code, a short
+  reason and duration, never the receiver's answer, and is pruned after 30
+  days.
+- **SSRF**: https only; no credentials or fragment in the URL; port 443 or
+  1024–65535; `localhost`, `.local`, `.internal` refused. The host is
+  resolved (A and AAAA) when saving and before every attempt, and every
+  address must be public unicast: Symfony's `IpUtils::PRIVATE_SUBNETS`
+  (loopback, RFC 1918, link-local, CGNAT 100.64/10, documentation,
+  benchmarking, IPv4-mapped, IPv4-compatible, 6to4, Teredo, NAT64, ULA) plus
+  multicast, broadcast, 192.0.0.0/24, 192.88.99.0/24, 100::/64, 2001::/23,
+  fec0::/10 and ff00::/8. The request is pinned to the checked address
+  (`CURLOPT_RESOLVE`, so TLS is still verified against the host name), never
+  follows redirects, ignores proxy settings, connects within 5 seconds,
+  finishes within 10 and stops reading after 64 kB.
+
+### Token revocation
+
+`POST /oauth/revoke` (RFC 7009) with client authentication as at the token
+endpoint. A valid access or refresh token of the app's own revokes the
+whole grant (§2.1 allows it, and an app that revokes is usually being
+disconnected); the app must ask again. Anything else answers 200 and
+changes nothing (§2.2), so the endpoint reveals nothing about other apps'
+tokens. Introspection (RFC 7662) is still not offered.
+
+### Test companies
+
+`is_test_company` on `teams`. `php artisan connect:test-company <email>`
+or an owner or administrator under Anslutningar (at most three active per
+person) creates a company through `CreateCompany`, turns Connect on when the
+server has signing keys and seeds invented data through the ordinary
+Actions. Its organisation number starts with `00`, a group number no Swedish
+organisation has, so it can never block a real company's number. Every page
+shows a banner; `SendInvoice`, `SendReminder` and `SendSalesDocument` do
+not e-mail for a test company (the invoice is still marked as sent and the
+event fires, so integrators can test webhooks); `Company::withoutTestCompanies()`
+is the scope for statistics and billing. Otherwise it is an ordinary tenant
+under every rule above.
 
 ## Deliberately excluded (for now)
 
-- Webhooks: designed (per-company subscriptions, HTTPS only, HMAC-SHA256
-  over `<timestamp>.<body>` with a per-subscription secret in
-  `Nonox-Signature: t=…,v1=…`, retries with backoff on the queue, delivery
-  log, SSRF protection by resolving the host and refusing private,
-  loopback and link-local ranges and redirects) and described in the
-  OpenAPI file as planned, not built.
-- Sandbox/test companies: not built. Until then, an integrator uses a
-  separate company of their own.
-- Token revocation (RFC 7009) and introspection (RFC 7662) endpoints: a
-  grant is revoked under Anslutningar.
+- Quotes and orders, recurring invoices, reminders, VAT settlement, period
+  locking and SIE import over the API. SIE import is a two-step flow
+  (analysis, then a confirmed background job) that also creates accounts;
+  exposing it safely needs its own design (upload size, the confirmation
+  step as two calls, progress) and is next.
+- Token introspection (RFC 7662).
 - Client registration by companies or dynamic registration (RFC 7591):
   apps are registered by the operator.
 - Client credentials and device grants: refused.

@@ -13,6 +13,56 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-01: v1.1.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-01: v1.1.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Webhooks** skickas nu: `voucher.posted`, `invoice.sent`, `invoice.paid`, `supplier_invoice.approved`. Signerade med `Nonox-Signature: t=<unix>,v1=<HMAC-SHA256 av "t.kropp">`, med `Nonox-Event-Id` och `Nonox-Event-Type`, skickade efter commit, åtta försök under ungefär ett dygn och sedan avstängning med mejl till ägaren. Hanteras under Anslutningar (ägare eller administratör, passkey).
+- **Återkallelse av token** (RFC 7009): `POST /oauth/revoke`, och `revocation_endpoint` i metadata.
+- **Artiklar**: `GET/POST /articles`, `GET/PATCH /articles/{id}`.
+- **Kostnadsställen och projekt**: `GET/POST /cost-centers`, `GET/PATCH /cost-centers/{id}`, samma för `/projects`.
+- **Kundfakturor**: `GET/POST /invoices`, `GET/PATCH /invoices/{id}`, `POST /invoices/{id}/issue`, `/send`, `/credit`, `/payments`, `GET /invoices/{id}/pdf`.
+- **Leverantörsfakturor**: `GET/POST /supplier-invoices`, `GET/PATCH/DELETE /supplier-invoices/{id}`, `POST /supplier-invoices/{id}/file`, `/register`, `/approve`, `/payments`.
+- **Betalningar**: `GET /payments`, `GET /supplier-payments`.
+- **Rapporter**: `GET /reports/trial-balance`, `/general-ledger`, `/balance-sheet`, `/income-statement`.
+- **Moms**: `GET /vat-periods`, `GET /vat-return`.
+- **Räkenskapsår**: `GET /fiscal-years/{id}/periods` (låsta månader), `GET /fiscal-years/{id}/sie` (SIE 4).
+- **Scopes**: `accounts:manage`, `reports:view`, `vat:prepare`, `export:sie`, `invoices:send`, `invoices:credit`, `payments:create`.
+- `required_scope_sets` i `403 insufficient_scope`: vilka kombinationer av scopes som räcker.
+- **Testföretag** med exempeldata för att prova API:t (`php artisan connect:test-company` eller under Anslutningar).
+
+### Ändrat
+
+- Beskrivningarna av `invoices:view`, `invoices:create`, `supplier-invoices:create` och `supplier-invoices:approve` täcker nu också de nya resurserna. En nyckel eller app som redan har dem får tillgång till de nya adresserna inom samma område; inget som fungerade tidigare slutar fungera.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Webhooks** are now delivered: `voucher.posted`, `invoice.sent`, `invoice.paid`, `supplier_invoice.approved`. Signed with `Nonox-Signature: t=<unix>,v1=<HMAC-SHA256 of "t.body">`, with `Nonox-Event-Id` and `Nonox-Event-Type`, sent after commit, eight attempts over about a day and then disabled with a mail to the owner. Managed under Anslutningar (owner or administrator, passkey).
+- **Token revocation** (RFC 7009): `POST /oauth/revoke`, and `revocation_endpoint` in the metadata.
+- **Articles**: `GET/POST /articles`, `GET/PATCH /articles/{id}`.
+- **Cost centres and projects**: `GET/POST /cost-centers`, `GET/PATCH /cost-centers/{id}`, the same for `/projects`.
+- **Customer invoices**: `GET/POST /invoices`, `GET/PATCH /invoices/{id}`, `POST /invoices/{id}/issue`, `/send`, `/credit`, `/payments`, `GET /invoices/{id}/pdf`.
+- **Supplier invoices**: `GET/POST /supplier-invoices`, `GET/PATCH/DELETE /supplier-invoices/{id}`, `POST /supplier-invoices/{id}/file`, `/register`, `/approve`, `/payments`.
+- **Payments**: `GET /payments`, `GET /supplier-payments`.
+- **Reports**: `GET /reports/trial-balance`, `/general-ledger`, `/balance-sheet`, `/income-statement`.
+- **VAT**: `GET /vat-periods`, `GET /vat-return`.
+- **Fiscal years**: `GET /fiscal-years/{id}/periods` (locked months), `GET /fiscal-years/{id}/sie` (SIE 4).
+- **Scopes**: `accounts:manage`, `reports:view`, `vat:prepare`, `export:sie`, `invoices:send`, `invoices:credit`, `payments:create`.
+- `required_scope_sets` in `403 insufficient_scope`: which combinations of scopes are enough.
+- **Test companies** with demo data for trying the API (`php artisan connect:test-company` or under Anslutningar).
+
+### Changed
+
+- The descriptions of `invoices:view`, `invoices:create`, `supplier-invoices:create` and `supplier-invoices:approve` now also cover the new resources. A key or app that already has them gets access to the new endpoints in the same area; nothing that worked before stops working.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-01: utvecklarwebben
 <!-- /lang -->
 <!-- lang:en -->

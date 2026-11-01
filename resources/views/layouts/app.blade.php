@@ -43,6 +43,7 @@
                 </div>
             @endif
             <x-archived-company-banner :company="$layoutCompany" />
+            <x-test-company-banner :company="$layoutCompany" />
 
             <!-- Page Heading -->
             @if (isset($header))

@@ -251,14 +251,16 @@ it('keeps the number of queries independent of the number of records', function 
         return $queries;
     };
 
-    foreach (range(1, 3) as $number) {
+    // More than one page of a group (five) already, so both searches take the same path and count the matches.
+    foreach (range(1, 6) as $number) {
         Spotlight::invoice($this->company, $customer, $number, 1000);
         Bookkeeping::post($this->owner, $this->company, 1000);
     }
 
+    $count();
     $few = $count();
 
-    foreach (range(4, 30) as $number) {
+    foreach (range(7, 30) as $number) {
         Spotlight::invoice($this->company, $customer, $number, 1000);
     }
 

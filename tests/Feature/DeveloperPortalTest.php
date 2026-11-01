@@ -110,18 +110,17 @@ it('shows every documented problem code and every scope', function () {
     }
 });
 
-it('marks the webhooks as coming while the spec says they are planned', function () {
+it('shows the delivered webhooks, each with its anchor, and no longer as coming', function () {
     $spec = ApiSpec::data();
 
     expect($spec['webhooks'])->not->toBeEmpty();
 
-    $this->get(route('developers.guide', ['guide' => 'webhooks']))->assertOk()
-        ->assertSee('Kommer')
-        ->assertSee('skickas inte ännu');
+    $guide = $this->get(route('developers.guide', ['guide' => 'webhooks']))->assertOk()
+        ->assertDontSee('skickas inte ännu');
 
     foreach ($spec['webhooks'] as $event => $webhook) {
-        expect($webhook['status'])->toBe('planned');
-        $this->get(route('developers.guide', ['guide' => 'webhooks']))->assertSee($event)->assertSee('id="'.$webhook['id'].'"', false);
+        expect($webhook['status'])->not->toBe('planned');
+        $guide->assertSee($event)->assertSee('id="'.$webhook['id'].'"', false);
     }
 });
 

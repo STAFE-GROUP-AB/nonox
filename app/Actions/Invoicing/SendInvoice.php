@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Invoicing;
 
+use App\Events\InvoiceSent;
 use App\Mail\InvoiceMail;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -30,10 +31,15 @@ class SendInvoice
 
         MailQuota::take($company, 'documents');
 
-        Mail::to($email)->send(new InvoiceMail($invoice, $company));
+        // A test company's invoices never leave NONOX (ADR-032): marked as sent, but not e-mailed.
+        if (! $company->isTestCompany()) {
+            Mail::to($email)->send(new InvoiceMail($invoice, $company));
+        }
 
         $invoice->forceFill(['sent_at' => CarbonImmutable::now(), 'sent_to' => $email])->save();
 
         Audit::record('invoice.sent', $invoice, ['number' => $invoice->number, 'to' => $email], $company, $user);
+
+        event(new InvoiceSent($company->id, $invoice->id));
     }
 }

@@ -30,7 +30,10 @@ class SendSalesDocument
 
         MailQuota::take($company, 'documents');
 
-        Mail::to($email)->send(new SalesDocumentMail($document, $company));
+        // A test company's documents never leave NONOX (ADR-032).
+        if (! $company->isTestCompany()) {
+            Mail::to($email)->send(new SalesDocumentMail($document, $company));
+        }
 
         $document->forceFill(['sent_at' => CarbonImmutable::now(), 'sent_to' => $email])->save();
 

@@ -1311,6 +1311,33 @@ företaget.
   eller återkallade nycklar loggas också.
 - **Personuppgifter.** Personnummer lämnas aldrig ut via API:t; för en kund
   syns bara om ett personnummer finns.
+- **Fakturor, leverantörsfakturor och betalningar.** Kundfakturor skapas som
+  utkast och blir fakturor (nummer, OCR, bokföring i serie B) med samma
+  funktion som i appen; leverantörsfakturor registreras (serie D), attesteras
+  och betalas (serie E), och inbetalningar bokförs i serie C. Ett anrop som
+  bokför kräver att anslutningen också har behörigheten att bokföra
+  verifikationer. Attest av en annan person än den som registrerade gäller
+  likadant i API:t som i appen. Rapporter, momsdeklarationen per period och
+  SIE-exporten räknas fram av samma kod som i appen; momsen bokförs och
+  perioder låses bara i appen.
+- **Webhooks.** En ägare eller administratör kan, med passkey, låta företaget
+  skicka händelser (bokförd verifikation, mejlad faktura, betald faktura,
+  attesterad leverantörsfaktura) till en https-adress på internet. Händelsen
+  skickas först när bokföringen är sparad och innehåller bara id, nummer,
+  datum och belopp. Den signeras med en hemlighet som visas en gång och
+  sparas krypterad. Adresser i interna nät vägras, före varje försök. Svarar
+  mottagaren inte försöker NONOX igen i ungefär ett dygn och stänger sedan av
+  webhooken och mejlar ägaren. Leveransloggen sparar tid, försök och
+  statuskod, aldrig mottagarens svar, och rensas efter 30 dagar. Att lägga
+  till, ändra hemlighet, stänga av och ta bort loggas.
+- **Återkallelse.** En app kan själv återkalla sin anslutning (RFC 7009);
+  det loggas som en återkallelse av appen.
+- **Testföretag.** Ett testföretag är ett eget företag med påhittade
+  uppgifter för att prova API:t. Det är märkt på varje sida, har ett
+  organisationsnummer som inget riktigt företag kan ha, mejlar aldrig
+  fakturor, påminnelser eller offerter och räknas inte med i statistik eller
+  debitering. Dess bokföring följer samma regler som allt annat men är inte
+  någons riktiga räkenskapsinformation.
 
 ## 5g. Bank (modul)
 
@@ -1724,3 +1751,4 @@ förslag från NONOX AI (ADR-033 §6).
 | 0.56 | 2026-11-01 | Bank (modul, ADR-034): koppling av bankkonton med BankID genom Enable Banking (öppen bankdata, bara läsning), hämtning av transaktioner och saldon 1–4 gånger per dygn som sparas en gång och inte kan ändras, inbetalningar med förslag på faktura, förslag på matchning mot bokförda rader som en person bekräftar, bankens saldo i bankavstämningen, påminnelse före medgivandets slut och bortkoppling. Inga verifikationer skapas av modulen. |
 | 0.57 | 2026-11-01 | Utvecklarwebben för NONOX Connect under `/utvecklare` (svenska, engelska med `?lang=en`): guider från `docs/api/guider`, en referens som genereras på servern från `docs/api/openapi.yaml`, kodexempel, ändringslogg (`docs/api/CHANGELOG.md`) och specifikationen som YAML och JSON. Ändrar ingen bokföring: sidorna läser bara specifikationen och inställningarna för gränser. |
 | 0.58 | 2026-11-01 | Avtal (modul, ADR-033): kollektivavtalens värden som versionerad data med källa, inläst okontrollerad och använd först efter en namngiven kontroll (installationen eller företaget), skyddad mot ändring när den är kontrollerad. Företagets bindning (medlem eller hängavtal) och anställningens avtal, lönegrupp och branschvana. Lönekörningen stoppas utan kontrollerad version; redan uppdelade OB- och övertidstimmar prissätts med avtalets sats med version och källa på raden; avtalskalender med aftnar och storhelger; minimilönekontroll med varning. NONOX AI föreslår avtal och anställningsuppgifter ur maskerad text, med citat och sida, och inget förs in utan en person. |
+| 0.59 | 2026-11-01 | NONOX Connect: kundfakturor, leverantörsfakturor med attest av någon annan, betalningar, artiklar, kostnadsställen och projekt, rapporter, momsdeklaration per period, periodernas låsning och SIE-export i API:t, med samma funktioner som appen; ett anrop som bokför kräver behörighet att bokföra. Signerade webhooks som skickas efter att bokföringen sparats, med skydd mot anrop till interna nät och avstängning efter ett dygns fel. Appar kan återkalla sin egen anslutning. Testföretag med exempeldata, tydligt märkta och utan utskick. |

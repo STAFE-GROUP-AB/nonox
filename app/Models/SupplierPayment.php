@@ -68,4 +68,16 @@ class SupplierPayment extends Model
     {
         return $this->belongsTo(Voucher::class);
     }
+
+    /** @return BelongsTo<Account, $this> */
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
+    }
+
+    /** @return BelongsTo<SupplierInvoice, $this> */
+    public function supplierInvoice(): BelongsTo
+    {
+        return $this->belongsTo(SupplierInvoice::class);
+    }
 }

@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace App\Modules\Connect;
 
+use App\Events\InvoicePaid;
+use App\Events\InvoiceSent;
+use App\Events\SupplierInvoiceApproved;
+use App\Events\VoucherPosted;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\Connect\Console\ConnectAppCommand;
+use App\Modules\Connect\Console\DeliverWebhooksCommand;
 use App\Modules\Connect\Console\PruneConnectCommand;
+use App\Modules\Connect\Console\TestCompanyCommand;
 use App\Modules\Connect\Http\Controllers\OAuth\AuthorizeController;
 use App\Modules\Connect\Http\Controllers\OAuth\MetadataController;
+use App\Modules\Connect\Http\Controllers\OAuth\RevokeController;
 use App\Modules\Connect\Http\Controllers\OAuth\TokenController;
 use App\Modules\Connect\Http\Middleware\AuditApiWrites;
 use App\Modules\Connect\Http\Middleware\AuthenticateConnect;
@@ -19,6 +26,8 @@ use App\Modules\Connect\Http\Middleware\RequireScope;
 use App\Modules\Connect\Livewire\ConnectionsManager;
 use App\Modules\Connect\Livewire\ConnectSettingsForm;
 use App\Modules\Connect\Livewire\ConsentScreen;
+use App\Modules\Connect\Livewire\TestCompanyPanel;
+use App\Modules\Connect\Livewire\WebhooksManager;
 use App\Modules\Connect\Models\ConnectApp;
 use App\Modules\Connect\OAuth\ConnectAccessTokenRepository;
 use App\Modules\Connect\OAuth\ConnectAuthCodeRepository;
@@ -26,12 +35,14 @@ use App\Modules\Connect\OAuth\ConnectRefreshTokenRepository;
 use App\Modules\Connect\OAuth\GrantContext;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Connect\Support\ConnectScopes;
+use App\Modules\Connect\Webhooks\WebhookDispatcher;
 use App\Modules\ModuleRegistry;
 use DateInterval;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -67,14 +78,22 @@ class ConnectServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ConnectAppCommand::class, PruneConnectCommand::class]);
+            $this->commands([ConnectAppCommand::class, PruneConnectCommand::class, DeliverWebhooksCommand::class, TestCompanyCommand::class]);
         }
+
+        // Webhooks (ADR-032): the domain events are dispatched after commit.
+        Event::listen(VoucherPosted::class, [WebhookDispatcher::class, 'voucherPosted']);
+        Event::listen(InvoiceSent::class, [WebhookDispatcher::class, 'invoiceSent']);
+        Event::listen(InvoicePaid::class, [WebhookDispatcher::class, 'invoicePaid']);
+        Event::listen(SupplierInvoiceApproved::class, [WebhookDispatcher::class, 'supplierInvoiceApproved']);
 
         $this->configurePassport();
 
         Livewire::component(ConsentScreen::NAME, ConsentScreen::class);
         Livewire::component(ConnectionsManager::NAME, ConnectionsManager::class);
         Livewire::component(ConnectSettingsForm::NAME, ConnectSettingsForm::class);
+        Livewire::component(WebhooksManager::NAME, WebhooksManager::class);
+        Livewire::component(TestCompanyPanel::NAME, TestCompanyPanel::class);
 
         $this->registerRateLimits();
         $this->registerRoutes();
@@ -119,6 +138,7 @@ class ConnectServiceProvider extends ServiceProvider
 
         // Called by apps, not people: no session, no cookies, no CSRF.
         Route::post('/oauth/token', TokenController::class)->middleware('throttle:connect-token')->name('connect.token');
+        Route::post('/oauth/revoke', RevokeController::class)->middleware('throttle:connect-token')->name('connect.revoke');
         Route::get('/.well-known/oauth-authorization-server', MetadataController::class)->name('connect.metadata');
 
         Route::prefix('api/v1')

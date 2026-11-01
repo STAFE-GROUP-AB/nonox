@@ -46,8 +46,8 @@ final class Guides
             'en' => ['Rate limits', 'How many calls per minute are allowed, the headers that show it and how to back off.'],
         ],
         'webhooks' => [
-            'sv' => ['Webhooks (kommer)', 'Händelser som skickas till din server, och hur signaturen kontrolleras i PHP, JavaScript och Python. Skickas inte ännu.'],
-            'en' => ['Webhooks (coming)', 'Events sent to your server, and how to verify the signature in PHP, JavaScript and Python. Not delivered yet.'],
+            'sv' => ['Webhooks', 'Händelser som skickas till din server när något bokförs, och hur signaturen kontrolleras i PHP, JavaScript och Python.'],
+            'en' => ['Webhooks', 'Events sent to your server when something is booked, and how to verify the signature in PHP, JavaScript and Python.'],
         ],
         'egen-drift' => [
             'sv' => ['Egen drift', 'API:t på en NONOX som du driftar själv: adresser, nycklar för signering, appar och gränser.'],

@@ -5,10 +5,19 @@ declare(strict_types=1);
 namespace App\Modules\Connect\Http\Resources;
 
 use App\Models\Account;
+use App\Models\Article;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Customer;
 use App\Models\FiscalYear;
+use App\Models\Invoice;
+use App\Models\InvoicePayment;
+use App\Models\InvoiceRow;
+use App\Models\Project;
 use App\Models\Supplier;
+use App\Models\SupplierInvoice;
+use App\Models\SupplierInvoiceRow;
+use App\Models\SupplierPayment;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherRow;
@@ -194,6 +203,209 @@ final class ApiPresenter
             'processing_restricted' => $supplier->processing_restricted_at !== null,
             'created_at' => self::time($supplier->created_at),
             'updated_at' => self::time($supplier->updated_at),
+        ];
+    }
+
+    /**
+     * Needs account loaded.
+     *
+     * @return array<string, mixed>
+     */
+    public static function article(Article $article): array
+    {
+        return [
+            'id' => $article->id,
+            'number' => $article->number,
+            'name' => $article->name,
+            'unit' => $article->unit,
+            'price_ore' => $article->price_ore->ore,
+            'currency' => 'SEK',
+            'vat_rate' => $article->vat_rate,
+            'account' => $article->account?->number,
+            'is_active' => $article->is_active,
+            'created_at' => self::time($article->created_at),
+            'updated_at' => self::time($article->updated_at),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function dimensionObject(CostCenter|Project $object): array
+    {
+        return [
+            'id' => $object->id,
+            'code' => $object->code,
+            'name' => $object->name,
+            'is_active' => $object->is_active,
+            'created_at' => self::time($object->created_at),
+            'updated_at' => self::time($object->updated_at),
+        ];
+    }
+
+    /**
+     * Needs rows.account, rows.article, payments.account and customer loaded.
+     * The customer is shown as it was when the invoice was issued; a
+     * personal number is never part of it.
+     *
+     * @return array<string, mixed>
+     */
+    public static function invoice(Invoice $invoice): array
+    {
+        $snapshot = $invoice->customer_snapshot ?? ($invoice->customer?->snapshot() ?? []);
+
+        return [
+            'id' => $invoice->id,
+            'number' => $invoice->number,
+            'kind' => $invoice->kind,
+            'status' => $invoice->status->value,
+            'credits_invoice_id' => $invoice->credits_invoice_id,
+            'customer_id' => $invoice->customer_id,
+            'customer' => [
+                'number' => $snapshot['number'] ?? null,
+                'name' => $snapshot['name'] ?? null,
+                'org_number' => $snapshot['org_number'] ?? null,
+                'vat_number' => $snapshot['vat_number'] ?? null,
+                'email' => $snapshot['email'] ?? null,
+                'address' => [
+                    'line1' => $snapshot['address_line1'] ?? null,
+                    'line2' => $snapshot['address_line2'] ?? null,
+                    'postal_code' => $snapshot['postal_code'] ?? null,
+                    'city' => $snapshot['city'] ?? null,
+                    'country' => $snapshot['country'] ?? null,
+                ],
+            ],
+            'invoice_date' => self::date($invoice->invoice_date),
+            'due_date' => self::date($invoice->due_date),
+            'delivery_date' => self::date($invoice->delivery_date),
+            'your_reference' => $invoice->your_reference,
+            'our_reference' => $invoice->our_reference,
+            'notes' => $invoice->notes,
+            'reverse_charge' => $invoice->reverse_charge,
+            'foreign_sale' => $invoice->foreign_sale?->value,
+            'tax_reduction' => $invoice->tax_reduction,
+            'tax_reduction_ore' => $invoice->tax_reduction_ore->ore,
+            'property_designation' => $invoice->property_designation,
+            'currency' => 'SEK',
+            'net_ore' => $invoice->net_ore->ore,
+            'vat_ore' => $invoice->vat_ore->ore,
+            'rounding_ore' => $invoice->rounding_ore->ore,
+            'total_ore' => $invoice->total_ore->ore,
+            'paid_ore' => $invoice->paid_ore->ore,
+            'remaining_ore' => $invoice->remaining()->ore,
+            'ocr' => $invoice->ocr,
+            'voucher_id' => $invoice->voucher_id,
+            'issued_at' => self::time($invoice->issued_at),
+            'sent_at' => self::time($invoice->sent_at),
+            'sent_to' => $invoice->sent_to,
+            'rows' => $invoice->rows->map(fn (InvoiceRow $row): array => [
+                'article' => $row->article?->number,
+                'description' => $row->description,
+                'quantity' => $row->quantity,
+                'unit' => $row->unit,
+                'unit_price_ore' => $row->unit_price_ore->ore,
+                'discount_bp' => $row->discount_bp,
+                'vat_rate' => $row->vat_rate,
+                'account' => $row->account?->number,
+                'net_ore' => $row->net_ore->ore,
+                'labour' => $row->is_labour,
+            ])->values()->all(),
+            'payments' => $invoice->payments->map(fn (InvoicePayment $payment): array => self::invoicePayment($payment))->values()->all(),
+            'created_at' => self::time($invoice->created_at),
+            'updated_at' => self::time($invoice->updated_at),
+        ];
+    }
+
+    /**
+     * Needs account loaded.
+     *
+     * @return array<string, mixed>
+     */
+    public static function invoicePayment(InvoicePayment $payment): array
+    {
+        return [
+            'id' => $payment->id,
+            'invoice_id' => $payment->invoice_id,
+            'paid_on' => self::date($payment->paid_on),
+            'amount_ore' => $payment->amount_ore->ore,
+            'currency' => 'SEK',
+            'account' => $payment->account?->number,
+            'voucher_id' => $payment->voucher_id,
+            'created_at' => self::time($payment->created_at),
+            'updated_at' => self::time($payment->updated_at),
+        ];
+    }
+
+    /**
+     * Needs rows.account, rows.costCenter, rows.project, payments.account and supplier loaded.
+     *
+     * @return array<string, mixed>
+     */
+    public static function supplierInvoice(SupplierInvoice $invoice): array
+    {
+        return [
+            'id' => $invoice->id,
+            'number' => $invoice->number,
+            'kind' => $invoice->kind,
+            'status' => $invoice->status->value,
+            'supplier_id' => $invoice->supplier_id,
+            'supplier_name' => $invoice->supplierName(),
+            'invoice_number' => $invoice->invoice_number,
+            'ocr' => $invoice->ocr,
+            'invoice_date' => self::date($invoice->invoice_date),
+            'due_date' => self::date($invoice->due_date),
+            'description' => $invoice->description,
+            'vat_treatment' => $invoice->vat_treatment->value,
+            'currency' => 'SEK',
+            'total_ore' => $invoice->total_ore->ore,
+            'vat_ore' => $invoice->vat_ore->ore,
+            'paid_ore' => $invoice->paid_ore->ore,
+            'remaining_ore' => $invoice->remaining()->ore,
+            'invoice_currency' => $invoice->invoice_currency,
+            'foreign_total_minor' => $invoice->foreign_total_minor,
+            'foreign_paid_minor' => $invoice->isForeign() ? $invoice->foreign_paid_minor : null,
+            // Kronor per unit of the invoice's currency, in millionths (9.8264 is 9826400).
+            'exchange_rate_micros' => $invoice->exchange_rate_micros,
+            'file' => $invoice->file_path === null ? null : [
+                'name' => $invoice->file_name,
+                'mime' => $invoice->file_mime,
+                'size' => $invoice->file_size,
+                'sha256' => $invoice->file_sha256,
+            ],
+            'voucher_id' => $invoice->voucher_id,
+            'registered_at' => self::time($invoice->registered_at),
+            'approved_at' => self::time($invoice->approved_at),
+            'rows' => $invoice->rows->map(fn (SupplierInvoiceRow $row): array => [
+                'account' => $row->account?->number,
+                'description' => $row->description,
+                'amount_ore' => $row->amount_ore->ore,
+                'vat_rate' => $row->vat_rate,
+                'cost_center' => $row->costCenter?->code,
+                'project' => $row->project?->code,
+            ])->values()->all(),
+            'payments' => $invoice->payments->map(fn (SupplierPayment $payment): array => self::supplierPayment($payment))->values()->all(),
+            'created_at' => self::time($invoice->created_at),
+            'updated_at' => self::time($invoice->updated_at),
+        ];
+    }
+
+    /**
+     * Needs account loaded.
+     *
+     * @return array<string, mixed>
+     */
+    public static function supplierPayment(SupplierPayment $payment): array
+    {
+        return [
+            'id' => $payment->id,
+            'supplier_invoice_id' => $payment->supplier_invoice_id,
+            'paid_on' => self::date($payment->paid_on),
+            'amount_ore' => $payment->amount_ore->ore,
+            'currency' => 'SEK',
+            'foreign_amount_minor' => $payment->foreign_amount_minor,
+            'exchange_difference_ore' => $payment->exchange_difference_ore,
+            'account' => $payment->account?->number,
+            'voucher_id' => $payment->voucher_id,
+            'created_at' => self::time($payment->created_at),
+            'updated_at' => self::time($payment->updated_at),
         ];
     }
 

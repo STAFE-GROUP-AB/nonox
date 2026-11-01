@@ -9,6 +9,7 @@ use App\Domain\Accounting\VoucherSource;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Events\InvoicePaid;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -87,6 +88,10 @@ class RegisterPayment
                 'paid_on' => $paidOn->toDateString(),
                 'voucher' => $voucher->reference(),
             ], $company, $user);
+
+            if ($invoice->status === InvoiceStatus::Paid) {
+                event(new InvoicePaid($company->id, $invoice->id, $payment->id));
+            }
 
             return $payment;
         }));

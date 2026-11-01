@@ -20,8 +20,15 @@ final class ConnectScopes
         'vouchers:create',
         'vouchers:post',
         'vouchers:correct',
+        'accounts:manage',
+        'reports:view',
+        'vat:prepare',
+        'export:sie',
         'invoices:view',
         'invoices:create',
+        'invoices:send',
+        'invoices:credit',
+        'payments:create',
         'supplier-invoices:create',
         'supplier-invoices:approve',
     ];
@@ -30,14 +37,21 @@ final class ConnectScopes
     public static function labels(): array
     {
         return [
-            'vouchers:view' => __('Läsa verifikationer, underlag, kontoplan, räkenskapsår, verifikationsserier och momskoder'),
+            'vouchers:view' => __('Läsa verifikationer, underlag, kontoplan, räkenskapsår, perioder, kostnadsställen, projekt, verifikationsserier och momskoder'),
             'vouchers:create' => __('Skapa och ändra utkast till verifikationer och lägga till underlag'),
             'vouchers:post' => __('Bokföra verifikationer (det går inte att ångra, bara rätta)'),
             'vouchers:correct' => __('Rätta bokförda verifikationer med en rättelseverifikation'),
-            'invoices:view' => __('Läsa kundregistret'),
-            'invoices:create' => __('Lägga till och ändra kunder'),
-            'supplier-invoices:create' => __('Läsa, lägga till och ändra leverantörer'),
-            'supplier-invoices:approve' => __('Läsa leverantörsregistret'),
+            'accounts:manage' => __('Lägga till och ändra kostnadsställen och projekt'),
+            'reports:view' => __('Läsa rapporter: saldobalans, huvudbok, balansrapport och resultatrapport'),
+            'vat:prepare' => __('Läsa momsdeklarationen per period'),
+            'export:sie' => __('Hämta bokföringen som SIE-fil'),
+            'invoices:view' => __('Läsa kunder, artiklar, kundfakturor och inbetalningar'),
+            'invoices:create' => __('Lägga till och ändra kunder, artiklar och utkast till kundfakturor'),
+            'invoices:send' => __('Skapa kundfakturor av utkast (bokförs, går inte att ändra efteråt) och mejla dem till kunden'),
+            'invoices:credit' => __('Kreditera obetalda kundfakturor'),
+            'payments:create' => __('Registrera inbetalningar på kundfakturor och betalningar av attesterade leverantörsfakturor'),
+            'supplier-invoices:create' => __('Läsa leverantörer och leverantörsfakturor, lägga till leverantörer och registrera leverantörsfakturor'),
+            'supplier-invoices:approve' => __('Läsa och attestera leverantörsfakturor (aldrig sådana som personen själv har registrerat, om företaget kräver attest av någon annan)'),
         ];
     }
 

@@ -52,7 +52,7 @@
         {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Du behåller kassan; NONOX bokför dagsrapporten."},
         {"text": "NONOX har inget personalschema. Timmarna kommer från personalliggaren eller från tidrapporter."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
-        {"text": "NONOX har ett öppet API, men inget kassasystem har ännu en färdig koppling till det, och webhooks som säger till när något bokförs skickas inte ännu. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "webhooks"}
+        {"text": "NONOX har ett öppet API med webhooks, men inget kassasystem har ännu byggt en färdig koppling till det, så kassan kan inte kopplas direkt till NONOX än. Kassasystemen och deras integrationsplattformar kan bygga kopplingen mot API:t. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "pos_integrations"}
     ],
     "pricing": {
         "employees": 8,
@@ -62,7 +62,7 @@
     "comparison_features": ["Personalliggare", "Leverantörsfakturor med attest", "Alla moduler ingår i priset", "Kör på egen server"],
     "faqs": [
         {"q": "Måste en restaurang ha personalliggare?", "a": "Ja, restaurangbranschen hör till de branscher som ska föra personalliggare. Vilka regler som gäller i detalj, och vad som ändras 2027, står hos Skatteverket. I NONOX är personalliggaren en modul som du slår på när du behöver den."},
-        {"q": "Vilka kassasystem fungerar med NONOX?", "a": "Alla kassasystem som kan mejla dagsrapporten som CSV, Excel, text eller PDF med text, eller ta fram försäljningen som en SIE-fil. Det öppna API:t finns, men inget kassasystem har ännu en färdig koppling till NONOX."},
+        {"q": "Vilka kassasystem fungerar med NONOX?", "a": "Alla kassasystem som kan mejla dagsrapporten som CSV, Excel, text eller PDF med text, eller ta fram försäljningen som en SIE-fil. NONOX har ett öppet API, men en färdig direktkoppling från kassasystemen finns inte ännu."},
         {"q": "Hur bokförs Z-rapporten från kassan?", "a": "Kassasystemet mejlar rapporten till restaurangens adress i NONOX. Första gången kopplar du varje rad till ett konto och godkänner, och då sparas en mall. Nästa rapport i samma format tolkas med mallen och kan bokföras automatiskt när den stämmer exakt."},
         {"q": "Kan personalen checka in när nätet ligger nere?", "a": "Ja. Kiosken sparar incheckningarna på surfplattan och skickar dem i ordning när nätet är tillbaka. Ingenting försvinner ur kön."},
         {"q": "Räknar NONOX lön från personalliggaren?", "a": "Ja, när lönemodulen är påslagen. Passen blir ett förslag till tidrapport som du godkänner, och sedan betalas timmarna ut som timlön i nästa lönekörning."},

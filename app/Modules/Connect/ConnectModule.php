@@ -8,6 +8,8 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Connect\Livewire\ConnectSettingsForm;
 use App\Modules\Connect\Models\ConnectGrant;
+use App\Modules\Connect\Models\ConnectWebhook;
+use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Connect\OAuth\GrantTokens;
 use App\Modules\Contracts\Module;
 use App\Modules\ModuleCheck;
@@ -47,7 +49,7 @@ final class ConnectModule implements Module
 
     public function description(): string
     {
-        return __('Ett öppet API för andra program: appar som du godkänner med passkey och API-nycklar för egna skript. Varje anslutning gäller ett företag och bara det du har gett den rätt till.');
+        return __('Ett öppet API för andra program: appar som du godkänner med passkey, API-nycklar för egna skript och webhooks som berättar när något händer. Varje anslutning gäller ett företag och bara det du har gett den rätt till.');
     }
 
     public function icon(): string
@@ -114,7 +116,7 @@ final class ConnectModule implements Module
     public function canDisable(Company $company): ModuleCheck
     {
         return new ModuleCheck(warnings: [
-            __('Alla anslutna appar kopplas bort och alla API-nycklar återkallas. Slår du på modulen igen måste apparna godkännas på nytt och nya nycklar skapas.'),
+            __('Alla anslutna appar kopplas bort, alla API-nycklar återkallas och alla webhooks stängs av. Slår du på modulen igen måste apparna godkännas på nytt och nya nycklar skapas.'),
         ]);
     }
 
@@ -123,7 +125,7 @@ final class ConnectModule implements Module
         app(ModuleManager::class)->seedSettings(self::KEY, $company, self::DEFAULTS);
     }
 
-    /** Ends every grant and key: a module that is off must not leave live credentials behind. */
+    /** Ends every grant and key and turns every webhook off: a module that is off must not leave live credentials or outgoing data behind. */
     public function onDisable(Company $company, User $by): void
     {
         CurrentCompany::run($company, function () use ($by): void {
@@ -135,6 +137,16 @@ final class ConnectModule implements Module
                 ->where('company_id', CurrentCompany::id())
                 ->whereNull('revoked_at')
                 ->update(['revoked_at' => now(), 'revoked_by' => $by->id, 'updated_at' => now()]);
+
+            DB::table('connect_webhooks')
+                ->where('company_id', CurrentCompany::id())
+                ->whereNull('disabled_at')
+                ->update(['disabled_at' => now(), 'disabled_reason' => ConnectWebhook::DISABLED_MODULE, 'updated_at' => now()]);
+
+            DB::table('connect_webhook_deliveries')
+                ->where('company_id', CurrentCompany::id())
+                ->where('status', ConnectWebhookDelivery::PENDING)
+                ->update(['status' => ConnectWebhookDelivery::CANCELLED, 'next_attempt_at' => null, 'updated_at' => now()]);
         });
     }
 

@@ -52,7 +52,7 @@
         {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Inventering och lagervärde sköter du utanför NONOX."},
         {"text": "Import av varor från länder utanför EU är inte byggd ännu.", "feature": "non_eu_goods_import"},
         {"text": "NONOX har inget personalschema. Timmarna kommer från personalliggaren eller från tidrapporter."},
-        {"text": "NONOX har ett öppet API, men inget kassasystem har ännu en färdig koppling till det, och webhooks som säger till när något bokförs skickas inte ännu. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "webhooks"}
+        {"text": "NONOX har ett öppet API med webhooks, men inget kassasystem har ännu byggt en färdig koppling till det, så kassan kan inte kopplas direkt till NONOX än. Kassasystemen och deras integrationsplattformar kan bygga kopplingen mot API:t. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "pos_integrations"}
     ],
     "pricing": {
         "employees": 3,
@@ -61,7 +61,7 @@
     },
     "comparison_features": ["Leverantörsfakturor med attest", "Alla moduler ingår i priset", "Öppen källkod"],
     "faqs": [
-        {"q": "Kan NONOX bokföra dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton första gången, och sedan tolkas rapporter i samma format med samma mall. Det går också med en SIE-fil från kassan. Det öppna API:t finns, men inget kassasystem har ännu en färdig koppling till NONOX."},
+        {"q": "Kan NONOX bokföra dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton första gången, och sedan tolkas rapporter i samma format med samma mall. Det går också med en SIE-fil från kassan. NONOX har ett öppet API, men en färdig direktkoppling från kassasystemen finns inte ännu."},
         {"q": "Hur hanteras presentkort?", "a": "I dagsrapporten är ett inlöst presentkort ett eget betalsätt som du kopplar till ett konto i mallen. Vilket konto du använder för sålda presentkort bestämmer du i kontoplanen."},
         {"q": "Har NONOX lagerhantering?", "a": "Nej. NONOX är ett bokförings-, faktura- och lönesystem. Lager och inventering sköts i kassasystemet eller ett lagerprogram."},
         {"q": "Kan jag bokföra inköp från leverantörer i andra EU-länder?", "a": "Ja. Inköp från andra EU-länder bokförs med momsen i rätt rutor. Import av varor från länder utanför EU är inte byggd ännu."},

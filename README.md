@@ -108,9 +108,11 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Gallring: avvisad post tas bort efter 7 dagar, och karantän som ingen hanterat efter 90 dagar.
 
 ### NONOX Connect – öppet API (modul)
-- Ett API för andra program: kontoplan, momskoder, räkenskapsår, verifikationer (utkast, bokföring, rättelse och underlag), kunder och leverantörer. Beskrivet i OpenAPI med exempel, och dokumenterat för utvecklare på [nonox.app/utvecklare](https://nonox.app/utvecklare) (guider, referens och kodexempel i curl, PHP, JavaScript och Python, på svenska och engelska). Gratis, utan tilläggsavgift. Webhooks är beskrivna men skickas inte ännu.
+- Ett API för andra program: kontoplan, momskoder, räkenskapsår och låsta perioder, verifikationer (utkast, bokföring, rättelse och underlag), kunder, artiklar, kostnadsställen och projekt, kundfakturor (utkast, skapa, mejla, kreditera, betalningar och PDF), leverantörsfakturor (registrering, attest av någon annan och betalning), in- och utbetalningar, rapporter, momsdeklaration per period och SIE-export. Beskrivet i OpenAPI med exempel och dokumenterat för utvecklare på [nonox.app/utvecklare](https://nonox.app/utvecklare) (guider, referens och kodexempel i curl, PHP, JavaScript och Python, på svenska och engelska) och i [docs/api](docs/api/README.md). Gratis, utan tilläggsavgift.
 - Appar ansluts med OAuth 2.0 (med PKCE) och godkänns av en ägare eller administratör med passkey, ett företag i taget. API-nycklar för egna skript har alltid ett slutdatum och visas bara en gång.
 - En anslutning får aldrig mer än personen som gav den får göra just då. Varje skrivning kräver en Idempotency-Key och loggas.
+- Öppet API med webhooks som signeras: bokförd verifikation, mejlad faktura, betald faktura och attesterad leverantörsfaktura skickas till en https-adress efter att bokföringen sparats, med skydd mot anrop till interna nät och nya försök i ett dygn.
+- Testföretag med påhittade uppgifter för den som vill prova API:t, tydligt märkta och utan utskick.
 
 ### Bank (modul)
 - Företagets bankkonton kopplas med BankID genom öppen bankdata (PSD2), och transaktioner och saldon hämtas automatiskt en till fyra gånger per dygn i stället för att filer laddas upp. NONOX kan bara läsa, aldrig betala; betalfiler signeras fortfarande i banken.
@@ -133,7 +135,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Automatisk avstämning av betalfiler mot bankens svar, och betalfiler och kundfakturor i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
-- Webhooks från det öppna API:t, så att kassasystem, e-handel och andra program får besked direkt när något bokförs, och färdiga kopplingar via de integrationsplattformar som programmen redan använder.
+- Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 

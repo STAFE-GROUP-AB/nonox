@@ -12,6 +12,8 @@ use App\Modules\Connect\ConnectModule;
 use App\Modules\Connect\Livewire\ConsentScreen;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\ConnectApp;
+use App\Modules\Connect\Models\ConnectWebhook;
+use App\Modules\Connect\Webhooks\HostResolver;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Str;
@@ -172,5 +174,41 @@ final class Connect
         $json['client_secret'] = $secret;
 
         return $json;
+    }
+
+    /**
+     * Answers DNS from a table instead of the network: host => addresses.
+     * Unknown hosts resolve to nothing.
+     *
+     * @param  array<string, list<string>>  $hosts
+     */
+    public static function fakeDns(array $hosts): void
+    {
+        app()->instance(HostResolver::class, new class($hosts) extends HostResolver
+        {
+            /** @param  array<string, list<string>>  $hosts */
+            public function __construct(public array $hosts) {}
+
+            public function resolve(string $host): array
+            {
+                return filter_var($host, FILTER_VALIDATE_IP) !== false ? [$host] : ($this->hosts[$host] ?? []);
+            }
+        });
+    }
+
+    /**
+     * A webhook made directly, as CreateWebhook would after the passkey step.
+     *
+     * @param  list<string>  $events
+     */
+    public static function webhook(User $user, Company $company, array $events, string $url = 'https://hooks.example.com/nonox', string $secret = 'nnxwh_testhemlighet'): ConnectWebhook
+    {
+        return CurrentCompany::run($company, fn (): ConnectWebhook => ConnectWebhook::create([
+            'url' => $url,
+            'events' => $events,
+            'secret' => $secret,
+            'secret_prefix' => substr($secret, 0, 12),
+            'created_by' => $user->id,
+        ]));
     }
 }

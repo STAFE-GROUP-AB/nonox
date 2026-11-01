@@ -1,16 +1,16 @@
-# Webhooks (coming)
+# Webhooks
 
-> **Coming, not delivered yet.** Webhooks are described in the OpenAPI file (`webhooks`, marked `x-nonox-status: planned`) so you can prepare your receiver, but NONOX does not send them yet. Until then, fetch changes with [sync via updated_since](sidindelning.md). This page changes when they ship, and the [changelog](https://nonox.app/utvecklare/andringar) will say so.
+With webhooks your program does not have to ask for changes: NONOX sends a `POST` to your server when something happens. They are delivered since version 1.1.0 of the API.
 
-With webhooks your program does not have to ask for changes: NONOX sends a `POST` to your server when something happens.
+## How they work
 
-## How they will work
-
-- A company subscribes to events with an address that must be `https`. The address is checked: private networks, loopback and link-local are refused, and so are redirects.
-- Every subscription has a secret of its own, used to sign every delivery.
-- Answer with `2xx` within 10 seconds. Anything else, or no answer, is retried with a growing delay.
-- The same event may arrive more than once. `Nonox-Event-Id` is the same on every retry; keep the ids you have handled and skip duplicates.
-- The body is short: the event and the ids. Fetch the full object from the API when you need more.
+- An owner or administrator adds the webhook under **Anslutningar** in NONOX and confirms with a passkey: an `https` address and the events it should receive. The owner gets an e-mail about every new webhook.
+- The address is checked when it is saved and before every attempt: private networks, loopback, link-local and other internal addresses are refused, the connection is pinned to the checked address and redirects are never followed.
+- Every webhook has a secret of its own (`nnxwh_…`), shown once. It signs every delivery and can be rotated.
+- The event is sent only after the bookkeeping is saved. Answer with `2xx` within 10 seconds (5 to connect). Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours. If the eighth attempt fails too, the webhook is disabled and the owner gets an e-mail.
+- The same event may arrive more than once. `Nonox-Event-Id` is the same on every retry; keep the ids you have handled and skip duplicates. `Nonox-Event-Type` names the event.
+- The body is short: ids, numbers, dates and amounts, never personal data. Fetch the full object from the API if you need more.
+- Want to try without real bookkeeping? Create a [test company](kom-igang.md) under Anslutningar.
 
 ## The events
 

@@ -42,8 +42,8 @@
   @endforeach
 
   <section aria-labelledby="ref-webhooks" style="margin-top:48px">
-    <h2 class="dv-h2" id="ref-webhooks">Webhooks <span class="dv-planned">{{ Dev::t('planned', $lang) }}</span></h2>
-    <p style="color:var(--muted);max-width:760px">{{ $lang === 'en' ? 'The events are described in the spec and in the webhook guide, with signature verification in PHP, JavaScript and Python. They are not delivered yet.' : 'Händelserna är beskrivna i specifikationen och i guiden om webhooks, med kontroll av signaturen i PHP, JavaScript och Python. De skickas inte ännu.' }}</p>
+    <h2 class="dv-h2" id="ref-webhooks">Webhooks</h2>
+    <p style="color:var(--muted);max-width:760px">{{ $lang === 'en' ? 'voucher.posted, invoice.sent, invoice.paid and supplier_invoice.approved are sent to your https address after the bookkeeping is saved, signed with HMAC-SHA256. The webhook guide shows how to verify the signature in PHP, JavaScript and Python.' : 'voucher.posted, invoice.sent, invoice.paid och supplier_invoice.approved skickas till din https-adress när bokföringen är sparad, signerade med HMAC-SHA256. Guiden om webhooks visar hur signaturen kontrolleras i PHP, JavaScript och Python.' }}</p>
     <p><a class="dv-btn dv-btn-ghost" href="{{ Dev::url('developers.guide', ['guide' => 'webhooks'], $lang) }}">{{ App\Support\Developer\Guides::title('webhooks', $lang) }}</a></p>
   </section>
 </div>

@@ -68,6 +68,8 @@ use App\Modules\Banking\Models\BankFeedBalance;
 use App\Modules\Banking\Models\BankFeedTransaction;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\ConnectGrant;
+use App\Modules\Connect\Models\ConnectWebhook;
+use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Connect\Models\IdempotencyRecord;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
@@ -233,6 +235,8 @@ const COMPANY_SCOPED_MODELS = [
     ConnectGrant::class => 'connectGrantAttributes',
     ConnectApiKey::class => 'connectApiKeyAttributes',
     IdempotencyRecord::class => 'connectIdempotencyAttributes',
+    ConnectWebhook::class => 'connectWebhookAttributes',
+    ConnectWebhookDelivery::class => 'connectWebhookDeliveryAttributes',
 ];
 
 function taskAttributes(): array
@@ -347,6 +351,18 @@ function bankFeedTransactionAttributes(): array
 function bankFeedBalanceAttributes(): array
 {
     return ['bank_feed_account_id' => BankFeedAccount::create(bankFeedAccountAttributes())->id, 'balance_date' => '2026-03-20', 'balance_type' => 'CLBD', 'amount_ore' => 100, 'currency' => 'SEK', 'fetched_at' => now()];
+}
+
+function connectWebhookAttributes(): array
+{
+    return ['url' => 'https://hemlig.example.com/hook', 'events' => ['voucher.posted'], 'secret' => 'nnxwh_hemlig', 'secret_prefix' => 'nnxwh_hemlig', 'created_by' => User::factory()->create()->id];
+}
+
+function connectWebhookDeliveryAttributes(): array
+{
+    $webhook = ConnectWebhook::create(connectWebhookAttributes());
+
+    return ['webhook_id' => $webhook->id, 'event_id' => (string) Str::uuid(), 'event_type' => 'voucher.posted', 'body' => '{"hemlig":true}', 'status' => 'pending', 'next_attempt_at' => now()];
 }
 
 function inboxMailboxAttributes(): array
