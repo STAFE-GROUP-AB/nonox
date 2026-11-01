@@ -1,9 +1,9 @@
 {{-- The dark sidebar: the company card with the company menu, the main navigation, and the user at the bottom. --}}
 <div class="flex h-full flex-col gap-6 overflow-y-auto px-4 py-5">
     @if($currentCompany)
-        <x-dropdown align="left" width="60" dropdownClasses="!w-[16rem]">
+        <x-dropdown align="left" width="60" dropdownClasses="w-[16rem]!">
             <x-slot name="trigger">
-                <button type="button" class="flex w-full items-center gap-3 rounded-2xl bg-white/[0.06] p-3 text-left ring-1 ring-white/10 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500">
+                <button type="button" class="flex w-full items-center gap-3 rounded-2xl bg-white/6 p-3 text-left ring-1 ring-white/10 transition hover:bg-white/10 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500">
                     <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-accent-500 text-lg font-bold text-white" aria-hidden="true">{{ $initial($currentCompany->name) }}</span>
                     <span class="min-w-0 flex-1">
                         <span class="block truncate font-semibold leading-tight text-white">{{ $currentCompany->name }}</span>
@@ -27,7 +27,7 @@
                         @if ($companies->count() > 5)
                             <div class="px-4 pb-2">
                                 <input type="search" x-model="search" x-on:click.stop x-on:keydown.stop placeholder="{{ __('Sök företag') }}"
-                                       class="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-accent-500 focus:ring-accent-500" />
+                                       class="w-full rounded-lg border-gray-300 text-sm shadow-xs focus:border-accent-500 focus:ring-accent-500" />
                             </div>
                         @endif
 
@@ -53,7 +53,7 @@
                 @php($ownPage = $section->active && ($section->current() === null))
                 <li>
                     <a href="{{ $section->url() }}" @class([
-                        'block rounded-xl px-4 py-2 text-[15px] font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+                        'block rounded-xl px-4 py-2 text-[15px] font-medium transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500',
                         'bg-accent-500/15 text-white shadow-[inset_3px_0_0_rgb(var(--accent-500))]' => $section->active,
                         'text-stone-300 hover:bg-white/5 hover:text-white' => ! $section->active,
                     ]) @if($ownPage) aria-current="page" @endif>{{ $section->label }}</a>
@@ -68,8 +68,8 @@
                                     @foreach($group['links'] as $link)
                                         <li>
                                             <a href="{{ $link->url() }}" @if($link->active) aria-current="page" x-data x-init="$el.scrollIntoView({ block: 'nearest' })" @endif @class([
-                                                'relative block rounded-lg px-3 py-1.5 text-[13px] leading-5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
-                                                'bg-white/10 font-semibold text-white before:absolute before:-left-[9px] before:inset-y-1.5 before:w-0.5 before:rounded-full before:bg-accent-500' => $link->active,
+                                                'relative block rounded-lg px-3 py-1.5 text-[13px] leading-5 transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500',
+                                                'bg-white/10 font-semibold text-white before:absolute before:left-[-9px] before:inset-y-1.5 before:w-0.5 before:rounded-full before:bg-accent-500' => $link->active,
                                                 'text-stone-300 hover:bg-white/5 hover:text-white' => ! $link->active,
                                             ])>{{ $link->label }}</a>
                                         </li>

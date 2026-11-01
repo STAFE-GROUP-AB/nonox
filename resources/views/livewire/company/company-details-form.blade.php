@@ -1,5 +1,5 @@
 @php
-    $field = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm disabled:bg-gray-50 disabled:text-gray-500';
+    $field = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs disabled:bg-gray-50 disabled:text-gray-500';
 @endphp
 
 <form wire:submit="save" class="space-y-6">

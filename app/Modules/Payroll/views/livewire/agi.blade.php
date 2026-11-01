@@ -69,7 +69,7 @@
                                                 @if($canSubmit && $submission->status === 'GENERATED')
                                                     <div class="mt-2 flex flex-wrap items-end gap-2">
                                                         <label class="text-xs text-gray-600" for="receipt-{{ $submission->id }}">{{ __('Kvittensnummer (frivilligt)') }}
-                                                            <input id="receipt-{{ $submission->id }}" type="text" maxlength="100" class="mt-1 block w-48 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm text-sm" wire:model="receipts.{{ $submission->id }}">
+                                                            <input id="receipt-{{ $submission->id }}" type="text" maxlength="100" class="mt-1 block w-48 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs text-sm" wire:model="receipts.{{ $submission->id }}">
                                                         </label>
                                                         <x-button type="button" wire:click="submitted({{ $submission->id }})" wire:loading.attr="disabled">{{ __('Markera som inlämnad') }}</x-button>
                                                     </div>

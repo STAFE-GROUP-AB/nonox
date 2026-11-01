@@ -1,4 +1,4 @@
-@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <form wire:submit="save" class="space-y-5">
     <div class="rounded-lg border border-gray-200 p-4 text-sm text-gray-700">
         <p class="font-medium text-gray-900">{{ __('Det här innebär det att använda NONOX AI') }}</p>

@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $labels = ['SICK' => __('Sjuk'), 'VAB' => __('Vård av barn'), 'VACATION' => __('Semester')];
 @endphp
 <div class="space-y-6">

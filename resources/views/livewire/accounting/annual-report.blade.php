@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full rounded-xl border-stone-300 shadow-sm focus:border-accent-500 focus:ring-accent-500';
+    $input = 'block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
 @endphp
 <div class="space-y-6">
     <nav class="flex flex-wrap gap-2" aria-label="{{ __('Välj räkenskapsår') }}">
@@ -35,8 +35,8 @@
                 </form>
             </x-ui.card>
 
-            <div class="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-stone-200">
-                <iframe wire:key="preview-{{ $fiscalYear->id }}-{{ $version }}" src="{{ route('accounting.annualReport.show', $fiscalYear) }}" title="{{ __('Förhandsvisning av årsredovisningen') }}" class="h-[70rem] w-full bg-white"></iframe>
+            <div class="overflow-hidden rounded-[28px] bg-white shadow-xs ring-1 ring-stone-200">
+                <iframe wire:key="preview-{{ $fiscalYear->id }}-{{ $version }}" src="{{ route('accounting.annualReport.show', $fiscalYear) }}" title="{{ __('Förhandsvisning av årsredovisningen') }}" class="h-280 w-full bg-white"></iframe>
             </div>
         </div>
     @endif

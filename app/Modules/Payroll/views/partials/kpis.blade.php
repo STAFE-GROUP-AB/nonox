@@ -11,8 +11,8 @@
             @php($dark = $loop->first)
             <a @if($kpi['link']) href="{{ $kpi['link'] }}" @endif @class([
                 'block rounded-3xl px-5 py-4 transition',
-                'bg-ink text-white shadow-sm hover:bg-black' => $dark,
-                'bg-white shadow-sm ring-1 ring-stone-200 hover:ring-stone-300' => ! $dark && ! $kpi['warn'],
+                'bg-ink text-white shadow-xs hover:bg-black' => $dark,
+                'bg-white shadow-xs ring-1 ring-stone-200 hover:ring-stone-300' => ! $dark && ! $kpi['warn'],
                 'bg-accent-50 ring-1 ring-accent-200 hover:ring-accent-300' => ! $dark && $kpi['warn'],
             ])>
                 <span @class(['block text-sm', 'text-stone-300' => $dark, 'text-gray-500' => ! $dark])>{{ $kpi['label'] }}</span>

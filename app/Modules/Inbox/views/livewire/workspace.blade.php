@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm text-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs text-sm';
     $cell = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm py-1';
     $tabs = ['att-granska' => __('Att granska'), 'utkast-klara' => __('Utkast klara'), 'bokfort' => __('Bokfört'), 'avvisat' => __('Avvisat')];
     $kind = $form['kind'] ?? null;
@@ -151,7 +151,7 @@
                         <p class="font-semibold">{{ __('Kontrollera innan du godkänner. Underlaget bokförs aldrig automatiskt med varningar.') }}</p>
                         <ul class="mt-1 list-disc ps-5">@foreach($message->warnings as $warning)<li>{{ $warning['message'] }}</li>@endforeach</ul>
                         @if($open && $message->status !== App\Modules\Inbox\Domain\MessageStatus::Quarantine)
-                            <label class="mt-2 flex items-center gap-2"><input type="checkbox" wire:model="warningsConfirmed" class="rounded border-red-300 text-red-700 focus:ring-red-500"> {{ __('Jag har kontrollerat varningarna') }}</label>
+                            <label class="mt-2 flex items-center gap-2"><input type="checkbox" wire:model="warningsConfirmed" class="rounded-sm border-red-300 text-red-700 focus:ring-red-500"> {{ __('Jag har kontrollerat varningarna') }}</label>
                             <x-input-error for="warnings" class="mt-1" />
                         @endif
                     </div>

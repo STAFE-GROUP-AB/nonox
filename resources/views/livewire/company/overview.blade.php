@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
 @endphp
 <div class="space-y-6">
     @include('livewire.company.overview-tabs')
@@ -8,11 +8,11 @@
             <input id="company_search" type="search" class="{{ $input }} mt-1" wire:model.live.debounce.300ms="search" placeholder="{{ __('Namn eller organisationsnummer') }}">
         </x-ui.field>
         <label class="flex items-center gap-2 pb-2 text-sm text-gray-700">
-            <input type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="showAll">
+            <input type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="showAll">
             {{ __('Visa även företag där inget väntar') }}
         </label>
         <label class="flex items-center gap-2 pb-2 text-sm text-gray-700">
-            <input type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="mine">
+            <input type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="mine">
             {{ __('Bara de jag är ansvarig för') }}
         </label>
     </div>

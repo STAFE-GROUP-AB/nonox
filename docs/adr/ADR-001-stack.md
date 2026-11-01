@@ -38,10 +38,12 @@ Exact versions in use at the end of T-0.1 (verified with `composer show`,
 
 | Package | Version |
 |---|---|
-| tailwindcss | 3.4.19 |
+| tailwindcss (with @tailwindcss/vite) | 4.3.3 |
+| @tailwindcss/forms | 0.5.11 |
+| @tailwindcss/typography | 0.5.20 |
 | alpinejs | 3.15.3 |
-| vite | 6.4.5 |
-| laravel-vite-plugin | 1.3.0 |
+| vite | 8.3.5 |
+| laravel-vite-plugin | 3.2.0 |
 | axios | 1.21.0 |
 
 ### Quality gates
@@ -70,8 +72,8 @@ Exact versions in use at the end of T-0.1 (verified with `composer show`,
 
 | Gap | Planned in |
 |---|---|
-| Tailwind 3 (Jetstream default) instead of Tailwind 4 | T-0.3 |
-| Vite 5 advisories (dev server and build only) | Resolved 2026-10-31: Vite 6.4.5 (esbuild 0.25), and an npm override lifts postcss-selector-parser to 6.1.5 under @tailwindcss/typography. Vite 7/8 waits for laravel-vite-plugin 2+ with Tailwind 4 (T-0.3). |
+| Tailwind 3 (Jetstream default) instead of Tailwind 4 | Resolved 2026-11-01: Tailwind 4.3.3, see the update below |
+| Vite 5 advisories (dev server and build only) | Resolved 2026-10-31: Vite 6.4.5 (esbuild 0.25), and an npm override lifts postcss-selector-parser to 6.1.5 under @tailwindcss/typography. Vite 8.3.5 with laravel-vite-plugin 3.2.0 since 2026-11-01. The override stays: @tailwindcss/typography 0.5.20 still pins postcss-selector-parser 6.0.10. |
 | Redis + Horizon not installed (queue is `sync`) | First task that needs background jobs (SIE import, T-1.4) |
 | S3-compatible storage not configured (local disk) | Attachments (T-1.2/T-1.3) |
 | PDF engine not chosen | ADR-002 |
@@ -97,4 +99,31 @@ against the code first:
 
 `resources/js/app.js` no longer imports and starts its own Alpine. Livewire
 provides Alpine, and starting a second copy gave two instances on the same page.
+
+## Update 2026-11-01: Tailwind 4, Vite 8, laravel-vite-plugin 3
+
+Read first: the Tailwind v4 upgrade guide, Vite's v7 and v8 migration guides,
+and laravel-vite-plugin's UPGRADE.md (2.x to 3.x) and changelog.
+
+- Tailwind runs through `@tailwindcss/vite`; `postcss.config.js`,
+  `tailwind.config.js`, `postcss` and `autoprefixer` are gone (Tailwind 4
+  prefixes on its own). The design tokens moved to `@theme` in
+  `resources/css/app.css`.
+- Classes are found by Tailwind's automatic detection, which follows
+  `.gitignore`, so the module views in `app/Modules` are scanned directly. The
+  old config only listed `resources/views` and compiled views in
+  `storage/framework/views`, so a build on a clean checkout (CI, a fresh
+  server) missed classes used only in module views. Vendor views that render
+  (pagination, Jetstream) are added with `@source`.
+- Tailwind 3 defaults the views depend on are kept as base styles: gray-200
+  borders, gray-400 placeholders and the pointer cursor on buttons. Renamed
+  utilities (`shadow-sm` to `shadow-xs`, `rounded` to `rounded-sm`,
+  `outline-none` to `outline-hidden` and others) were migrated with
+  `@tailwindcss/upgrade` and by hand for the module views.
+- Browser floor: Tailwind 4 needs Safari 16.4, Chrome 111 and Firefox 128;
+  Vite 8's default build target is the same (Safari 16.4, Chrome 111,
+  Firefox 114).
+- Vite 8 needs Node 20.19+ or 22.12+; CI uses Node 22. Vite 8 bundles with
+  Rolldown and adds a small shared runtime chunk; the kiosk's offline cache
+  follows the manifest's `imports`, so it is cached too.
 

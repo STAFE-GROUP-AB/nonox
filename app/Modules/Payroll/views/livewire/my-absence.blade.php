@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $labels = ['SICK' => __('Sjuk'), 'VAB' => __('Vård av barn'), 'VACATION' => __('Semester')];
     $statuses = ['REQUESTED' => [__('Väntar på svar'), 'bg-gray-100 text-gray-700'], 'APPROVED' => [__('Godkänd'), 'bg-green-50 text-green-800'], 'REJECTED' => [__('Inte godkänd'), 'bg-accent-50 text-accent-800']];
 @endphp

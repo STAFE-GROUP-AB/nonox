@@ -45,7 +45,7 @@
                     <template x-for="(row, index) in rows" :key="index">
                         <tr>
                             <td class="py-1 pr-2"><input type="text" list="article-options" class="{{ $cell }}" x-model="row.article" x-on:change="fillArticle(index)" x-on:blur="fillArticle(index)" data-row-article :aria-label="'{{ __('Artikel, rad') }} ' + (index + 1)" autocomplete="off"></td>
-                            <td class="py-1 pr-2 min-w-[14rem]"><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Benämning, rad') }} ' + (index + 1)"></td>
+                            <td class="py-1 pr-2 min-w-56"><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Benämning, rad') }} ' + (index + 1)"></td>
                             <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.quantity" :aria-label="'{{ __('Antal, rad') }} ' + (index + 1)"></td>
                             <td class="py-1 pr-2"><input type="text" class="{{ $cell }}" x-model="row.unit" maxlength="10" :aria-label="'{{ __('Enhet, rad') }} ' + (index + 1)"></td>
                             <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.price" :aria-label="'{{ __('Pris, rad') }} ' + (index + 1)"></td>
@@ -59,7 +59,7 @@
                             </td>
                             <td class="py-1 pr-2 text-right whitespace-nowrap tabular-nums" x-text="net(row)"></td>
                             @if($labour ?? false)
-                                <td class="py-1 pr-2 text-center"><input type="checkbox" class="rounded border-gray-300 text-ink focus:ring-accent-500" x-model="row.labour" :aria-label="'{{ __('Arbetskostnad, rad') }} ' + (index + 1)"></td>
+                                <td class="py-1 pr-2 text-center"><input type="checkbox" class="rounded-sm border-gray-300 text-ink focus:ring-accent-500" x-model="row.labour" :aria-label="'{{ __('Arbetskostnad, rad') }} ' + (index + 1)"></td>
                             @endif
                             <td class="py-1 text-center"><button type="button" class="text-gray-400 hover:text-accent-600" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button></td>
                         </tr>

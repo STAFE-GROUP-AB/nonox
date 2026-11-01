@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $fields = [
         'name' => [__('Namn'), 'sm:col-span-2'],
         'org_number' => [__('Organisationsnummer'), ''],
@@ -51,7 +51,7 @@
                     </select>
                 </x-ui.field>
                 <label class="flex items-start gap-3 text-sm text-gray-800 sm:col-span-2">
-                    <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-ink focus:ring-accent-500" wire:model="reverseCharge">
+                    <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="reverseCharge">
                     <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}<span class="block text-xs text-gray-500">{{ __('Kunden är ett byggföretag som själv redovisar momsen på byggtjänster ni säljer. Nya fakturor till kunden blir utan moms.') }}</span></span>
                 </label>
                 <div class="flex items-center gap-4 sm:col-span-2">
@@ -89,7 +89,7 @@
                     <li wire:key="customer-{{ $customer->id }}" class="flex flex-wrap items-center gap-4 py-3">
                         <span class="w-14 flex-none font-semibold tabular-nums text-gray-900">{{ $customer->number }}</span>
                         <span class="min-w-0 flex-1">
-                            <span class="block font-medium text-gray-900">{{ $customer->name }}@if($customer->processing_restricted_at) <span class="ms-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">{{ __('Begränsad behandling') }}</span>@endif</span>
+                            <span class="block font-medium text-gray-900">{{ $customer->name }}@if($customer->processing_restricted_at) <span class="ms-2 rounded-sm bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">{{ __('Begränsad behandling') }}</span>@endif</span>
                             <span class="block text-sm text-gray-600">{{ collect([$customer->org_number, $customer->email, $customer->city])->filter()->implode(' · ') }}</span>
                         </span>
                         <span class="w-36 flex-none text-right text-sm">

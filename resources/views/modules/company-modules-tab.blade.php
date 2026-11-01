@@ -1,4 +1,4 @@
-@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 
 <div class="space-y-6">
     <p class="text-sm text-gray-600">{{ __('Moduler är tillägg som varje företag slår på när det behöver dem. Att stänga av en modul tar aldrig bort några uppgifter; de finns kvar så länge bokföringslagen kräver.') }}</p>
@@ -28,7 +28,7 @@
                     <button type="button" role="switch" aria-checked="{{ $card['enabled'] ? 'true' : 'false' }}" aria-label="{{ __('Slå på eller av :module', ['module' => $module->name()]) }}"
                         wire:click="ask('{{ $module->key() }}', '{{ $card['enabled'] ? 'disable' : 'enable' }}')"
                         @class(['relative inline-flex h-6 w-11 flex-none rounded-full transition', 'bg-accent-600' => $card['enabled'], 'bg-gray-300' => ! $card['enabled']])>
-                        <span @class(['inline-block size-5 translate-y-0.5 rounded-full bg-white shadow transition', 'translate-x-5' => $card['enabled'], 'translate-x-0.5' => ! $card['enabled']])></span>
+                        <span @class(['inline-block size-5 translate-y-0.5 rounded-full bg-white shadow-sm transition', 'translate-x-5' => $card['enabled'], 'translate-x-0.5' => ! $card['enabled']])></span>
                     </button>
                 </div>
             </div>

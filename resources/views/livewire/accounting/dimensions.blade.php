@@ -1,7 +1,7 @@
 @php
     use App\Domain\Accounting\Dimension;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
 @endphp
 
 <div class="space-y-6">

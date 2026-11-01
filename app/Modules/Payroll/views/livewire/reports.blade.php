@@ -1,6 +1,6 @@
 @php
     $money = fn (?int $ore) => $ore === null ? null : App\Support\Money\Money::ofOre($ore);
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm mt-1';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs mt-1';
 @endphp
 <div class="space-y-6">
     <nav class="flex flex-wrap gap-2" aria-label="{{ __('Rapporter') }}">

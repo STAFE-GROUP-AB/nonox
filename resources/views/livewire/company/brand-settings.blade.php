@@ -1,4 +1,4 @@
-@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-6">
     <x-ui.card :title="__('Varumärke')" :description="__('Er logga och era färger på fakturor, offerter, order, lönebesked och Min sida för anställda.')">
         <form wire:submit="save" class="space-y-6">
@@ -30,14 +30,14 @@
             <div class="grid gap-4 sm:grid-cols-2">
                 <x-ui.field for="brand_color" :label="__('Huvudfärg')" :hint="__('Fält, summor och markeringar.')">
                     <div class="mt-1 flex items-center gap-2">
-                        <input type="color" class="h-10 w-12 cursor-pointer rounded border border-gray-300 bg-white p-1" value="{{ $preview->color }}" wire:model.live="color" aria-label="{{ __('Välj huvudfärg') }}">
+                        <input type="color" class="h-10 w-12 cursor-pointer rounded-sm border border-gray-300 bg-white p-1" value="{{ $preview->color }}" wire:model.live="color" aria-label="{{ __('Välj huvudfärg') }}">
                         <input id="brand_color" type="text" class="{{ $input }} font-mono uppercase" placeholder="{{ App\Support\Branding\Brand::DEFAULT_COLOR }}" wire:model.live.debounce.400ms="color" maxlength="7">
                     </div>
                     <x-input-error for="brand_color" class="mt-1" />
                 </x-ui.field>
                 <x-ui.field for="brand_accent" :label="__('Accentfärg')" :hint="__('Rubriker och etiketter. Tom betyder samma som huvudfärgen.')">
                     <div class="mt-1 flex items-center gap-2">
-                        <input type="color" class="h-10 w-12 cursor-pointer rounded border border-gray-300 bg-white p-1" value="{{ $preview->accent }}" wire:model.live="accent" aria-label="{{ __('Välj accentfärg') }}">
+                        <input type="color" class="h-10 w-12 cursor-pointer rounded-sm border border-gray-300 bg-white p-1" value="{{ $preview->accent }}" wire:model.live="accent" aria-label="{{ __('Välj accentfärg') }}">
                         <input id="brand_accent" type="text" class="{{ $input }} font-mono uppercase" placeholder="{{ $preview->color }}" wire:model.live.debounce.400ms="accent" maxlength="7">
                     </div>
                     <x-input-error for="brand_accent_color" class="mt-1" />
@@ -50,7 +50,7 @@
 
             <div>
                 <p class="text-sm font-medium text-gray-700">{{ __('Så här ser en faktura ut') }}</p>
-                <div class="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white text-xs shadow-sm" aria-hidden="true">
+                <div class="mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white text-xs shadow-xs" aria-hidden="true">
                     <div style="height: 6px; background: {{ $preview->color }}"></div>
                     <div class="flex items-start justify-between gap-4 p-4">
                         <div>

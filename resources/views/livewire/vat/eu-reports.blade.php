@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $kr = fn (int $ore): string => $ore === 0 ? '' : number_format(App\Domain\Vat\EuSalesList::kronor($ore), 0, ',', "\u{a0}");
     $totals = $list->totals();
 @endphp

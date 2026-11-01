@@ -1,7 +1,7 @@
 @php
     use App\Support\Money\Money;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm';
     $rates = [2500 => '25 %', 1200 => '12 %', 600 => '6 %', 0 => __('0 %')];
     $kr = fn (int $ore): Money => Money::ofOre($ore);
@@ -30,7 +30,7 @@
                         @endforeach
                     </select>
                     <label class="mt-2 flex items-start gap-2 text-sm text-gray-800">
-                        <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-ink focus:ring-accent-500" wire:model.live="reverseCharge" @disabled($credit)>
+                        <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model.live="reverseCharge" @disabled($credit)>
                         <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}@if($reverseCharge)<span class="block text-xs text-gray-500">{{ __('Fakturan blir utan moms och försäljningen bokförs på 3231. Köparens och ert momsregistreringsnummer skrivs ut på fakturan.') }}</span>@endif</span>
                     </label>
                     <div class="mt-3 grid gap-3 sm:grid-cols-2">

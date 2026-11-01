@@ -2,7 +2,7 @@
     <x-ui.card>
         <div class="flex flex-wrap items-end justify-between gap-4">
             <x-ui.field for="rules_date" :label="__('Gäller den')">
-                <input id="rules_date" type="date" class="block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm mt-1" wire:model.live="date" value="{{ $day->toDateString() }}">
+                <input id="rules_date" type="date" class="block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs mt-1" wire:model.live="date" value="{{ $day->toDateString() }}">
             </x-ui.field>
             <p @class(['text-sm font-medium', 'text-accent-700' => $missing !== [], 'text-gray-900' => $missing === []])>
                 {{ $missing === []
@@ -63,7 +63,7 @@
                                         @endif
                                         <p class="mt-1 text-sm"><a href="{{ $version->source_url }}" target="_blank" rel="noopener" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Öppna källan och jämför värdet') }}</a></p>
                                         <label class="mt-3 flex items-start gap-2 text-sm">
-                                            <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="confirmed">
+                                            <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="confirmed">
                                             <span>{{ __('Jag har jämfört värdet med källan och tar ansvar för att det stämmer för vårt företag.') }}</span>
                                         </label>
                                         <x-input-error for="confirmed" class="mt-1" />

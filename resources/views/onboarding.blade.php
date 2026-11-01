@@ -7,7 +7,7 @@
 
     <div class="max-w-3xl py-10 px-4 sm:px-6 lg:px-10 space-y-10">
         @if($invitations->isNotEmpty())
-            <section class="bg-white shadow sm:rounded-lg p-6">
+            <section class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="text-lg font-medium text-gray-900">{{ __('Du är inbjuden') }}</h3>
                 <p class="mt-1 text-sm text-gray-600">{{ __('Någon har bjudit in dig till sitt företag. Gå med för att börja arbeta där.') }}</p>
 

@@ -7,7 +7,7 @@
             @elseif(str_starts_with((string) $invoice->file_mime, 'image/'))
                 <img src="{{ route('payables.invoices.file', $invoice) }}" alt="{{ $invoice->file_name }}" class="w-full rounded-xl border border-gray-200 bg-white object-contain">
             @else
-                <iframe src="{{ route('payables.invoices.file', $invoice) }}" title="{{ $invoice->title() }}" class="h-[48rem] w-full rounded-xl border border-gray-200 bg-white"></iframe>
+                <iframe src="{{ route('payables.invoices.file', $invoice) }}" title="{{ $invoice->title() }}" class="h-192 w-full rounded-xl border border-gray-200 bg-white"></iframe>
             @endif
             <livewire:payables.supplier-invoice-actions :invoice="$invoice" />
         </div>

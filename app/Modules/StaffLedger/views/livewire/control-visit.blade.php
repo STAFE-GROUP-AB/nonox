@@ -1,4 +1,4 @@
-@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 @php($number = fn (string $digits): string => App\Modules\StaffLedger\Support\Export\ControlVisitReport::formatNumber($digits))
 <div class="space-y-8">
     <x-ui.card :title="__('Incheckade just nu (:count)', ['count' => count($report->present)])">

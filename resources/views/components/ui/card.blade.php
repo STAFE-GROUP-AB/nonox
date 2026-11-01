@@ -5,7 +5,7 @@
 --}}
 @props(['title' => null, 'description' => null, 'action' => null, 'cta' => null])
 
-<section {{ $attributes->merge(['class' => 'rounded-3xl bg-white p-6 shadow-sm ring-1 ring-stone-200 sm:p-8']) }}>
+<section {{ $attributes->merge(['class' => 'rounded-3xl bg-white p-6 shadow-xs ring-1 ring-stone-200 sm:p-8']) }}>
     @if($title || $action)
         <div class="flex flex-wrap items-baseline justify-between gap-2">
             @if($title)

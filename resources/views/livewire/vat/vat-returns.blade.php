@@ -3,7 +3,7 @@
     use App\Domain\Vat\VatPeriods;
     use App\Support\Money\Money;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm text-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs text-sm';
     $boxes = $return?->boxes() ?? [];
     $shown = [5, 10, 11, 12, 48];
 @endphp

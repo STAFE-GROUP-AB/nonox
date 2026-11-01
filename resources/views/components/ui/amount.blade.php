@@ -4,5 +4,5 @@
 <span {{ $attributes->class([
     'tabular-nums whitespace-nowrap',
     'text-accent-700' => $money->isNegative() && ! $onDark,
-    '!text-accent-400' => $money->isNegative() && $onDark,
+    'text-accent-400!' => $money->isNegative() && $onDark,
 ]) }}>{{ $money->format($currency) }}</span>

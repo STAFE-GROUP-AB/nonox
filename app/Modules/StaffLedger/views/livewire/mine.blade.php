@@ -10,7 +10,7 @@
                 <p class="text-base text-gray-700">{{ $open ? str_replace(':time', $open->start?->format('H:i') ?? '', $strings['mine_status_in']) : $strings['mine_status_out'] }}</p>
                 <div x-data="{ busy: false }" class="mt-4">
                     <button type="button"
-                        class="flex min-h-16 w-full items-center justify-center rounded-2xl bg-accent-600 px-6 text-xl font-bold text-white hover:bg-accent-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-500 disabled:opacity-60"
+                        class="flex min-h-16 w-full items-center justify-center rounded-2xl bg-accent-600 px-6 text-xl font-bold text-white hover:bg-accent-700 focus:outline-hidden focus-visible:ring-4 focus-visible:ring-accent-500 disabled:opacity-60"
                         x-bind:disabled="busy"
                         x-on:click="
                             busy = true;

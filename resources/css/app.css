@@ -1,6 +1,73 @@
-@tailwind base;
+@import 'tailwindcss';
 
-/* NONOX's accent, as "r g b" so Tailwind's opacity modifiers work. A company's own colour replaces it (layouts/app). */
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+/*
+ * Class detection is automatic and follows .gitignore, so it covers
+ * resources/views and the module views in app/Modules. Vendor views are
+ * ignored by default; the ones we render are listed here.
+ */
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../vendor/laravel/jetstream/**/*.blade.php';
+
+/*
+ * NONOX design tokens (AGENTS.md §11.1), the 2027 look of the landing page:
+ * one accent colour, a warm vermilion, on warm neutrals with near-black ink.
+ * The accent is CSS variables (below): a company that has chosen its own
+ * colour under Varumärke gets its own palette instead
+ * (App\Support\Branding\Brand::interfacePalette, set in the app layout).
+ * accent-500 is the bright tone for marks and large surfaces; buttons use
+ * accent-600 (4.9:1 against white) and text links accent-600/700, so text
+ * meets WCAG 2.2 AA. Jetstream's components use `indigo` and `gray`, so those
+ * names are mapped to the NONOX palette instead of rewriting every component.
+ * `gray` is Tailwind 3's `stone`, kept in hex so the neutrals do not shift.
+ */
+@theme {
+    --color-accent-50: rgb(var(--accent-50));
+    --color-accent-100: rgb(var(--accent-100));
+    --color-accent-200: rgb(var(--accent-200));
+    --color-accent-300: rgb(var(--accent-300));
+    --color-accent-400: rgb(var(--accent-400));
+    --color-accent-500: rgb(var(--accent-500));
+    --color-accent-600: rgb(var(--accent-600));
+    --color-accent-700: rgb(var(--accent-700));
+    --color-accent-800: rgb(var(--accent-800));
+    --color-accent-900: rgb(var(--accent-900));
+    --color-accent-950: rgb(var(--accent-950));
+
+    --color-indigo-50: rgb(var(--accent-50));
+    --color-indigo-100: rgb(var(--accent-100));
+    --color-indigo-200: rgb(var(--accent-200));
+    --color-indigo-300: rgb(var(--accent-300));
+    --color-indigo-400: rgb(var(--accent-400));
+    --color-indigo-500: rgb(var(--accent-500));
+    --color-indigo-600: rgb(var(--accent-600));
+    --color-indigo-700: rgb(var(--accent-700));
+    --color-indigo-800: rgb(var(--accent-800));
+    --color-indigo-900: rgb(var(--accent-900));
+    --color-indigo-950: rgb(var(--accent-950));
+
+    --color-gray-50: #fafaf9;
+    --color-gray-100: #f5f5f4;
+    --color-gray-200: #e7e5e4;
+    --color-gray-300: #d6d3d1;
+    --color-gray-400: #a8a29e;
+    --color-gray-500: #78716c;
+    --color-gray-600: #57534e;
+    --color-gray-700: #44403c;
+    --color-gray-800: #292524;
+    --color-gray-900: #1c1917;
+    --color-gray-950: #0c0a09;
+
+    --color-paper: #f7f5f0;
+    --color-ink: #17171a;
+
+    --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
+
+/* NONOX's accent, as "r g b". A company's own colour replaces it (layouts/app). */
 :root {
     --accent-50: 255 244 239;
     --accent-100: 255 229 219;
@@ -14,8 +81,49 @@
     --accent-900: 111 29 12;
     --accent-950: 61 13 4;
 }
-@tailwind components;
-@tailwind utilities;
+
+/*
+ * Tailwind 3 defaults the views were written against (upgrade guide,
+ * "Preflight changes"): borders default to gray-200, placeholders are
+ * gray-400, and buttons show the pointer. Tailwind 4 also resets every
+ * element's padding, which removed the browser's 1px around table cells and
+ * reflowed the row tables; cells keep it.
+ */
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentcolor);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--color-gray-400);
+    }
+
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
+
+    th,
+    td {
+        padding: 1px;
+    }
+}
+
+/*
+ * Tailwind 4 puts utilities in a layer above the forms plugin's base styles,
+ * so the border colour of a checkbox (`border-stone-300`) now outlived its
+ * checked state and drew a grey edge around the filled box. In Tailwind 3 the
+ * plugin's :checked rule won on specificity; outside the layers it wins again.
+ */
+input:where([type='checkbox'], [type='radio']):checked,
+input:where([type='checkbox']):indeterminate {
+    border-color: transparent;
+}
 
 [x-cloak] {
     display: none;

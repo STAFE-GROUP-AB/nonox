@@ -1,9 +1,9 @@
 @php
-    $select = 'mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm';
+    $select = 'mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-xs';
 @endphp
 
 <form wire:submit="create" class="space-y-8">
-    <section class="bg-white shadow sm:rounded-lg p-6 space-y-6">
+    <section class="bg-white shadow-sm sm:rounded-lg p-6 space-y-6">
         <div>
             <h3 class="text-lg font-medium text-gray-900">{{ __('Om företaget') }}</h3>
             <p class="mt-1 text-sm text-gray-600">{{ __('Uppgifterna står på registreringsbeviset från Bolagsverket eller på verksamt.se.') }}</p>
@@ -60,7 +60,7 @@
         </div>
     </section>
 
-    <section class="bg-white shadow sm:rounded-lg p-6 space-y-6">
+    <section class="bg-white shadow-sm sm:rounded-lg p-6 space-y-6">
         <div>
             <h3 class="text-lg font-medium text-gray-900">{{ __('Bokföring och moms') }}</h3>
             <p class="mt-1 text-sm text-gray-600">{{ __('Osäker? Förvalen passar de flesta aktiebolag. Du kan ändra dem senare.') }}</p>

@@ -1,7 +1,7 @@
 @php
     use App\Support\Money\Money;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $fields = [
         'name' => [__('Namn'), 'sm:col-span-2', null],
         'org_number' => [__('Organisationsnummer'), '', null],
@@ -74,7 +74,7 @@
                     <li wire:key="supplier-{{ $supplier->id }}" class="flex flex-wrap items-center gap-4 py-3">
                         <span class="w-14 flex-none font-semibold tabular-nums text-gray-900">{{ $supplier->number }}</span>
                         <span class="min-w-0 flex-1">
-                            <span class="block font-medium text-gray-900">{{ $supplier->name }}@if($supplier->processing_restricted_at) <span class="ms-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">{{ __('Begränsad behandling') }}</span>@endif</span>
+                            <span class="block font-medium text-gray-900">{{ $supplier->name }}@if($supplier->processing_restricted_at) <span class="ms-2 rounded-sm bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">{{ __('Begränsad behandling') }}</span>@endif</span>
                             <span class="block text-sm text-gray-600">{{ collect([$supplier->paymentDetails(), $supplier->defaultAccount ? $supplier->defaultAccount->number.' '.$supplier->defaultAccount->name : null])->filter()->implode(' · ') }}</span>
                         </span>
                         <span class="w-36 flex-none text-right text-sm">

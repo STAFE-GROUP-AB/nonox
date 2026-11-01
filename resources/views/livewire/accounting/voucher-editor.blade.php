@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm';
 @endphp
 
@@ -7,7 +7,7 @@
     x-data="voucherEditor($wire.entangle('rows'), @js($canPost))"
     x-on:keydown.window="shortcuts($event)"
     data-back-url="{{ route('accounting.vouchers.index') }}"
-    class="space-y-6"
+    class="flex flex-col gap-6"
 >
     <datalist id="account-options">
         @foreach($accounts as $account)
@@ -106,13 +106,13 @@
                                 <input :id="'row-credit-' + index" type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" :class="invalid(row.credit) && 'border-accent-500'" x-model="row.credit" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                             </td>
                             @if($showCostCenters)
-                                <td class="py-1 pr-2 align-top min-w-[10rem]">
+                                <td class="py-1 pr-2 align-top min-w-40">
                                     <label :for="'row-cost-center-' + index" class="sr-only" x-text="'{{ __('Kostnadsställe, rad') }} ' + (index + 1)"></label>
                                     <input :id="'row-cost-center-' + index" type="text" list="cost-center-options" class="{{ $cell }}" x-model="row.cost_center" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                                 </td>
                             @endif
                             @if($showProjects)
-                                <td class="py-1 pr-2 align-top min-w-[10rem]">
+                                <td class="py-1 pr-2 align-top min-w-40">
                                     <label :for="'row-project-' + index" class="sr-only" x-text="'{{ __('Projekt, rad') }} ' + (index + 1)"></label>
                                     <input :id="'row-project-' + index" type="text" list="project-options" class="{{ $cell }}" x-model="row.project" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                                 </td>

@@ -1,7 +1,7 @@
 @php
     use App\Domain\Invoicing\AgreementStatus;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $intervals = [1 => __('Varje månad'), 3 => __('Varje kvartal'), 6 => __('Varje halvår'), 12 => __('Varje år')];
 @endphp
 
@@ -72,7 +72,7 @@
             </x-ui.field>
             <div class="sm:col-span-2 lg:col-span-4">
                 <label class="flex items-start gap-3 text-sm">
-                    <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="sendAutomatically" @disabled(! $editable)>
+                    <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="sendAutomatically" @disabled(! $editable)>
                     <span>
                         <span class="font-medium text-gray-900">{{ __('Skapa, bokför och skicka fakturan automatiskt') }}</span>
                         <span class="block text-gray-600">{{ __('Annars blir varje faktura ett utkast som du kontrollerar och skickar själv. Kunden behöver en e-postadress.') }}</span>
