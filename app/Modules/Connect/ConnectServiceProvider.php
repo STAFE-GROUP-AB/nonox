@@ -14,6 +14,7 @@ use App\Modules\Connect\Console\DeliverWebhooksCommand;
 use App\Modules\Connect\Console\PruneConnectCommand;
 use App\Modules\Connect\Http\Controllers\OAuth\AuthorizeController;
 use App\Modules\Connect\Http\Controllers\OAuth\MetadataController;
+use App\Modules\Connect\Http\Controllers\OAuth\RevokeController;
 use App\Modules\Connect\Http\Controllers\OAuth\TokenController;
 use App\Modules\Connect\Http\Middleware\AuditApiWrites;
 use App\Modules\Connect\Http\Middleware\AuthenticateConnect;
@@ -134,6 +135,7 @@ class ConnectServiceProvider extends ServiceProvider
 
         // Called by apps, not people: no session, no cookies, no CSRF.
         Route::post('/oauth/token', TokenController::class)->middleware('throttle:connect-token')->name('connect.token');
+        Route::post('/oauth/revoke', RevokeController::class)->middleware('throttle:connect-token')->name('connect.revoke');
         Route::get('/.well-known/oauth-authorization-server', MetadataController::class)->name('connect.metadata');
 
         Route::prefix('api/v1')

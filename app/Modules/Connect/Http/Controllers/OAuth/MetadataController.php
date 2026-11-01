@@ -26,6 +26,8 @@ final class MetadataController
             'grant_types_supported' => ['authorization_code', 'refresh_token'],
             'code_challenge_methods_supported' => ['S256'],
             'token_endpoint_auth_methods_supported' => ['client_secret_post', 'client_secret_basic', 'none'],
+            'revocation_endpoint' => route('connect.revoke'),
+            'revocation_endpoint_auth_methods_supported' => ['client_secret_post', 'client_secret_basic', 'none'],
             'service_documentation' => 'https://github.com/STAFE-GROUP-AB/nonox/blob/main/docs/api/README.md',
             'ui_locales_supported' => ['sv'],
         ], 200, ['Cache-Control' => 'public, max-age=3600'], JSON_UNESCAPED_SLASHES);
