@@ -33,7 +33,7 @@ dark mode. Dark mode for the signed-in app comes with the Tailwind 4 upgrade
 
 | Component | Use |
 |---|---|
-| `<x-ui.page-heading title lead>` | The greeting or title at the top of a page |
+| `<x-ui.page-heading title lead>` with `<x-slot:action>` | The compact title of a page; the lead is one short sentence |
 | `<x-ui.card title description>` with `<x-slot:action>` | Every content block |
 | `<x-ui.link href>` | Secondary actions; adds the arrow |
 | `<x-ui.badge tone="neutral\|accent\|success">` | Status, "Kommer snart" |
@@ -43,6 +43,23 @@ dark mode. Dark mode for the signed-in app comes with the Tailwind 4 upgrade
 | `<x-button>` | The primary action (Jetstream component, NONOX colours) |
 
 `resources/views/dashboard.blade.php` is the reference page.
+
+## Navigation
+
+One tree, `App\Support\Navigation\Navigation`, holds the sections of the
+sidebar and their pages, with the permission and module checks. Modules add
+their sections through `Module::navigation()`, with a `children` closure for
+their pages.
+
+- The pages of a section are listed in the sidebar under the open section
+  only, indented, in smaller type; Bokföring groups them under small labels
+  (Löpande, Rapporter och moms, Bokslut, Inställningar). On small screens the
+  same tree is in the drawer, and the top bar says where you are.
+- Pages carry no row of links to their siblings. In-page choices (fiscal
+  year, report, filter) stay on the page.
+- The current page has `aria-current="page"` and an accent mark.
+- Key figures are shown on a section's start page only (Fakturor,
+  Leverantörsfakturor, Verifikationer, Lönekörningar) and on Översikt.
 
 ## Amounts
 

@@ -1,24 +1,7 @@
 @php
-    // Navigation of modules that are on for the company, filtered by permission (PAYROLL_MODULE.md A.5).
+    // One navigation tree for the sidebar and the drawer (App\Support\Navigation): sections, and the pages of the open one.
     $navUser = auth()->user();
     $navCompany = $navUser?->currentCompany();
-    $moduleNav = [];
-
-    if ($navCompany !== null) {
-        $navEnabled = app(App\Modules\ModuleManager::class)->enabledModules($navCompany);
-
-        foreach (app(App\Modules\ModuleRegistry::class)->all() as $navModule) {
-            // A module that is off may still show its archive (PAYROLL_MODULE.md A.6).
-            $navItems = in_array($navModule, $navEnabled, true) ? $navModule->navigation() : $navModule->archiveNavigation($navCompany);
-
-            foreach ($navItems as $item) {
-                if ($navUser->hasTeamPermission($navCompany, $item['permission'])) {
-                    $moduleNav[] = $item;
-                }
-            }
-        }
-    }
-
     $currentCompany = $navCompany;
     $companies = $navUser->companies();
     $currentYear = $navCompany === null ? null : App\Models\FiscalYear::query()
@@ -26,21 +9,9 @@
         ->whereDate('end_date', '>=', now()->toDateString())
         ->first();
 
-    $mainNav = [
-        ['route' => 'dashboard', 'label' => __('Dashboard'), 'active' => ['dashboard']],
-        ['route' => 'invoicing.invoices.index', 'label' => __('Försäljning'), 'active' => ['invoicing.invoices.*', 'invoicing.quotes*', 'invoicing.orders*', 'invoicing.incomingPayments', 'invoicing.agreements*']],
-        ['route' => 'payables.invoices.index', 'label' => __('Inköp'), 'active' => ['payables.invoices.*', 'payables.batches.*']],
-        ['route' => 'invoicing.customers', 'label' => __('Register'), 'active' => ['invoicing.customers', 'invoicing.articles', 'payables.suppliers']],
-        ['route' => 'accounting.vouchers.index', 'label' => __('Bokföring'), 'active' => ['accounting.*', 'vat.*']],
-    ];
-
-    foreach ($moduleNav as $item) {
-        $mainNav[] = ['route' => $item['route'], 'label' => $item['label'], 'active' => (array) $item['active']];
-    }
-
-    if ($companies->count() > 1) {
-        $mainNav[] = ['route' => 'companies.overview', 'label' => __('Mina företag'), 'active' => ['companies.overview']];
-    }
+    $sections = app(App\Support\Navigation\Navigation::class)->for($navUser, $navCompany, request()->route()?->getName());
+    $openSection = collect($sections)->first(fn (App\Support\Navigation\NavSection $section): bool => $section->active);
+    $openPage = $openSection?->current();
 
     $initial = fn (string $name): string => mb_strtoupper(mb_substr(trim($name), 0, 1));
 @endphp
@@ -50,7 +21,13 @@
     <div class="sticky top-0 z-40 flex items-center justify-between gap-3 bg-ink px-4 py-3 text-white lg:hidden">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
             <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-500 font-bold text-white" aria-hidden="true">{{ $currentCompany ? $initial($currentCompany->name) : 'N' }}</span>
-            <span class="truncate font-semibold">{{ $currentCompany?->name ?? 'NONOX' }}</span>
+            <span class="min-w-0">
+                <span class="block truncate font-semibold leading-tight">{{ $currentCompany?->name ?? 'NONOX' }}</span>
+                @if($openSection && $openSection->route !== 'dashboard')
+                    {{-- Where you are, since the pages of the section are in the menu on a small screen. --}}
+                    <span class="block truncate text-xs text-stone-300">{{ $openSection->label }}@if($openPage && $openPage->label !== $openSection->label) · {{ $openPage->label }}@endif</span>
+                @endif
+            </span>
         </a>
         <button type="button" x-on:click="open = true" class="rounded-lg p-2 text-stone-300 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500" aria-label="{{ __('Öppna menyn') }}">
             <svg class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>

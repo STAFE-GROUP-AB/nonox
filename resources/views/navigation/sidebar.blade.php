@@ -46,15 +46,41 @@
         <a href="{{ route('dashboard') }}" class="px-2"><x-application-mark class="h-7 w-auto brightness-0 invert" /></a>
     @endif
 
-    <nav class="flex-1 space-y-1" aria-label="{{ __('Huvudmeny') }}">
-        @foreach($mainNav as $item)
-            @php($active = request()->routeIs(...$item['active']))
-            <a href="{{ route($item['route']) }}" @class([
-                'block rounded-xl px-4 py-2.5 text-[15px] font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
-                'bg-accent-500/15 text-white shadow-[inset_3px_0_0_rgb(var(--accent-500))]' => $active,
-                'text-stone-300 hover:bg-white/5 hover:text-white' => ! $active,
-            ]) @if($active) aria-current="page" @endif>{{ $item['label'] }}</a>
-        @endforeach
+    {{-- The sections, and under the open one its pages (App\Support\Navigation). --}}
+    <nav class="flex-1" aria-label="{{ __('Huvudmeny') }}">
+        <ul class="space-y-0.5">
+            @foreach($sections as $section)
+                @php($ownPage = $section->active && ($section->current() === null))
+                <li>
+                    <a href="{{ $section->url() }}" @class([
+                        'block rounded-xl px-4 py-2 text-[15px] font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+                        'bg-accent-500/15 text-white shadow-[inset_3px_0_0_rgb(var(--accent-500))]' => $section->active,
+                        'text-stone-300 hover:bg-white/5 hover:text-white' => ! $section->active,
+                    ]) @if($ownPage) aria-current="page" @endif>{{ $section->label }}</a>
+
+                    @if($section->active && $section->hasChildren())
+                        <div class="mb-3 ml-5 mt-1 border-l border-white/15 pl-2">
+                            @foreach($section->groups() as $group)
+                                @if($group['label'])
+                                    <p class="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-stone-400 first:pt-1.5" aria-hidden="true">{{ $group['label'] }}</p>
+                                @endif
+                                <ul class="space-y-px" aria-label="{{ $group['label'] ?? $section->label }}">
+                                    @foreach($group['links'] as $link)
+                                        <li>
+                                            <a href="{{ $link->url() }}" @if($link->active) aria-current="page" x-data x-init="$el.scrollIntoView({ block: 'nearest' })" @endif @class([
+                                                'relative block rounded-lg px-3 py-1.5 text-[13px] leading-5 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500',
+                                                'bg-white/10 font-semibold text-white before:absolute before:-left-[9px] before:inset-y-1.5 before:w-0.5 before:rounded-full before:bg-accent-500' => $link->active,
+                                                'text-stone-300 hover:bg-white/5 hover:text-white' => ! $link->active,
+                                            ])>{{ $link->label }}</a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @endforeach
+                        </div>
+                    @endif
+                </li>
+            @endforeach
+        </ul>
     </nav>
 
     <div class="space-y-4 border-t border-white/10 pt-4">
@@ -76,7 +102,7 @@
             </form>
         </div>
         @if($currentYear)
-            <p class="px-2 text-sm text-stone-500">{{ __('Räkenskapsår :year', ['year' => $currentYear->label()]) }}</p>
+            <p class="px-2 text-sm text-stone-400">{{ __('Räkenskapsår :year', ['year' => $currentYear->label()]) }}</p>
         @endif
     </div>
 </div>

@@ -14,7 +14,7 @@
         $tab = array_key_exists((string) request('flik'), $tabs) ? (string) request('flik') : 'uppgifter';
     @endphp
 
-    <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-10">
+    <div class="w-full py-6 px-4 sm:px-6 lg:px-10 space-y-8">
         @if(count($tabs) > 1)
             <nav class="flex flex-wrap gap-2" aria-label="{{ __('Företagsinställningar') }}">
                 @foreach($tabs as $key => $label)

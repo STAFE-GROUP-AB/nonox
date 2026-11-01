@@ -3515,5 +3515,8 @@
     "Riksbankens mittkurs :date.": "Riksbanken's mid rate :date.",
     "Beloppen nedan är i kronor och räknas om när du ändrar kursen.": "The amounts below are in kronor and are converted again when you change the rate.",
     "Ta bort kiosken? Den spärras och försvinner ur listan. Incheckningar den redan skickat finns kvar i liggaren.": "Remove the kiosk? It is blocked and leaves the list. Check-ins it has already sent stay in the ledger.",
-    "Kiosken är borttagen.": "The kiosk is removed."
+    "Kiosken är borttagen.": "The kiosk is removed.",
+    "Löpande": "Day to day",
+    "Rapporter och moms": "Reports and VAT",
+    "Kontrollbesök": "Control visit"
 }

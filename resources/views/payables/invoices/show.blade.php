@@ -1,7 +1,6 @@
 <x-app-layout>
-    <div class="w-full py-10 px-4 sm:px-6 lg:px-10 space-y-8">
+    <div class="w-full py-6 px-4 sm:px-6 lg:px-10 space-y-6">
         <x-ui.page-heading :title="$invoice->title()" :lead="$invoice->supplierName().' · '.$invoice->invoice_date->toDateString()" />
-        <x-ui.purchases-nav />
         <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_26rem]">
             @if($invoice->file_path === null)
                 <x-ui.empty-state :title="__('Ingen fil')">{{ __('Fakturan registrerades utan fil. Spara pappersfakturan, eller lägg till den som underlag på verifikationen.') }}</x-ui.empty-state>
