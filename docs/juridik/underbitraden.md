@@ -17,5 +17,7 @@ De här underbiträdena behandlar personuppgifter för {foretag} när vi driftar
 |---|---|---|
 | OpenAI, Anthropic eller Google (företagets eget val och egen nyckel) | Tolkning av kvitton och leverantörsfakturor i AI-modulen | Kan vara utanför EU/EES |
 | Fortnox | Källa vid flytt från Fortnox; vi läser bara | Sverige |
+| Enable Banking Oy (modulen Bank) | Läser saldon och transaktioner på de bankkonton företaget kopplar med BankID; NONOX kan inte betala | Finland (EU) |
 
+<!-- TODO(legal-verify): Enable Banking som underbiträde eller företagets egen leverantör, DPA, och om Stafe behöver registreras hos Finansinspektionen (ADR-034, frågor till jurist 30–31). Modulen Bank erbjuds inte i den driftade tjänsten förrän det är klart. -->
 <!-- TODO(legal-verify): bekräfta Laravel Forges certifiering under EU–US Data Privacy Framework och avtal (DPA) med varje underbiträde. -->

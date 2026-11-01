@@ -137,6 +137,16 @@ Svaren förs in i respektive dokument eller ADR, och frågan stryks här. Öppna
 **29. BAS-licensen.**
 *Fråga:* Får hela BAS-kontoplanen distribueras i ett repository med öppen källkod? Kontonumren och namnen i `database/data/bas/` är skrivna utifrån allmän kunskap om BAS och har inte kontrollerats mot den officiella BAS 2026 (`database/data/bas/README.md`).
 
+### Bank (öppen bankdata)
+
+**30. Registrering hos Finansinspektionen för kontoinformation.**
+*Bakgrund:* Modulen Bank ([ADR-034](../adr/ADR-034-nonox-banking.md)) läser företagets bankkonton (saldon och transaktioner) genom Enable Banking, ett betalningsinstitut med tillstånd för kontoinformationstjänster (PSD2, lag (2010:751) om betaltjänster). Företaget godkänner medgivandet i sin bank med BankID; Stafe har avtalet med Enable Banking, driver tjänsten och tar emot och lagrar uppgifterna. Inga betalningar initieras; betalfiler signeras fortfarande i banken.
+*Fråga:* Måste Stafe registreras hos Finansinspektionen som ombud (agent) för Enable Banking, eller själv registreras som kontoinformationstjänst, eller räcker det att Enable Banking är tjänsteleverantören och Stafe en teknisk mottagare på företagets uppdrag? Ändras svaret om den som kör NONOX själv har eget avtal med Enable Banking?
+*Varför:* Utan svar erbjuds modulen inte i den driftade tjänsten (ingen nyckel är inställd).
+
+**31. Enable Banking som underbiträde och bankdata som räkenskapsinformation.**
+*Fråga:* Är Enable Banking Stafes underbiträde (artikel 28) eller företagets egen leverantör? Finns DPA och sker någon överföring utanför EU/EES? Är transaktioner som hämtats från banken räkenskapsinformation i sig (BFL 5 kap. 7 §, 7 kap.), och ska de därmed sparas i sju år och tas med i arkivpaketet? Gäller något särskilt för en enskild firmas privatkonto, där transaktionerna är personuppgifter om ägaren och motparterna?
+
 ## Del B. Bokföring, moms, skatt och lön (TODO(legal-verify) i koden)
 
 Dessa frågor kräver i första hand en redovisningskonsult eller skattejurist. Varje rad pekar på var frågan står.
