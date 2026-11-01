@@ -41,7 +41,7 @@ Du har rätt att
 - begära att behandlingen begränsas, och invända mot behandling som grundas på berättigat intresse,
 - återkalla ett samtycke.
 
-Inloggad kan du ladda ner dina kontouppgifter under **Profil → Mina uppgifter**. Kontakta oss på {epost} för övriga frågor. Vi svarar inom en månad.
+Inloggad kan du ladda ner dina kontouppgifter under **Profil → Mina uppgifter** och radera ditt konto under **Profil → Radera mitt konto**. Det du gjort i ett företags bokföring sparas då under namnet "Raderad användare", eftersom bokföringslagen kräver det. Kontakta oss på {epost} för övriga frågor. Vi svarar inom en månad.
 
 Du har också rätt att klaga till Integritetsskyddsmyndigheten (IMY), www.imy.se.
 

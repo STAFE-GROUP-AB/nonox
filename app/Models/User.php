@@ -24,6 +24,7 @@ use Laravel\Sanctum\HasApiTokens;
 /**
  * @property ?list<string> $hidden_panels
  * @property ?CarbonImmutable $sessions_valid_from
+ * @property ?CarbonImmutable $anonymised_at
  */
 class User extends Authenticatable
 {
@@ -77,6 +78,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'sessions_valid_from' => 'immutable_datetime',
+            'anonymised_at' => 'immutable_datetime',
             'hidden_panels' => 'array',
         ];
     }

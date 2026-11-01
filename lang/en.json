@@ -3525,5 +3525,20 @@
     "Fakturan är kopplad till :name.": "The invoice is linked to :name.",
     "Menade du :name?": "Did you mean :name?",
     "Koppla": "Link",
-    "Finns leverantören redan med ett annat namn? Välj den i listan.": "Is the supplier already registered under another name? Choose it in the list."
+    "Finns leverantören redan med ett annat namn? Välj den i listan.": "Is the supplier already registered under another name? Choose it in the list.",
+    "Du är ägare till :companies. Överlåt ägarskapet till någon annan eller arkivera företaget innan du raderar ditt konto.": "You own :companies. Transfer ownership to someone else or archive the company before you delete your account.",
+    "Skriv :word för att bekräfta.": "Type :word to confirm.",
+    "Skriv :word för att bekräfta": "Type :word to confirm",
+    "Ditt konto är raderat och du är utloggad.": "Your account has been deleted and you have been signed out.",
+    "Radera mitt konto": "Delete my account",
+    "Ta bort ditt konto och dina uppgifter i NONOX.": "Remove your account and your data from NONOX.",
+    "Ditt namn, din e-postadress, dina inloggningar och dina medlemskap i företag tas bort, och du kan inte logga in med kontot igen.": "Your name, your email address, your sign-ins and your company memberships are removed, and you can never sign in to the account again.",
+    "Det du har bokfört, attesterat eller ändrat finns kvar i företagens bokföring och behandlingshistorik, eftersom bokföringslagen kräver att det sparas. Där står det då \"Raderad användare\" i stället för ditt namn.": "What you have posted, approved or changed stays in the companies' books and audit trail, because the Swedish Bookkeeping Act requires it to be kept. It will show \"Raderad användare\" (deleted user) instead of your name.",
+    "Vill du spara dina uppgifter, ladda ner dem under Mina uppgifter innan du raderar kontot.": "To keep your data, download it under My data before you delete the account.",
+    "Radera ditt konto?": "Delete your account?",
+    "Du loggas ut på alla enheter och kan inte logga in med kontot igen.": "You are signed out on every device and can never sign in to the account again.",
+    "Du tas bort ur alla företag du är medlem i, och dina väntande inbjudningar tas bort.": "You are removed from every company you are a member of, and your pending invitations are removed.",
+    "Det du gjort i bokföringen finns kvar under namnet \"Raderad användare\".": "What you did in the books stays, under the name \"Raderad användare\" (deleted user).",
+    "Det går inte att ångra.": "This cannot be undone.",
+    "Radera kontot": "Delete the account"
 }

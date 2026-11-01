@@ -45,9 +45,9 @@ TODO(legal-verify): om artikel 37.1 c gäller för ett biträde vars tjänst beh
 | Rättighet | I NONOX |
 |---|---|
 | Information (art. 13/14) | Integritetspolicyn på /integritetspolicy, länkad från inloggningen och varje sidfot. Anställda informeras på Min sida när AI läser kvitton. |
-| Tillgång och portabilitet (art. 15/20) | Profil → Mina uppgifter (eget konto, JSON). Registerutdrag per kund, leverantör och anställd för den som hanterar dem. Alla utdrag loggas. |
+| Tillgång och portabilitet (art. 15/20) | Profil → Mina uppgifter (eget konto, JSON). Registerutdrag per kund, leverantör, anställd och person i personalliggaren för den som hanterar dem (JSON), och per avsändare till inkorgen (JSON eller CSV: datum, ämne, status och bilagornas namn för varje meddelande från adressen). Utdraget ur personalliggaren innehåller alla registreringar och rättelser om personen, men aldrig pinkod eller QR-nyckel; fotot beskrivs (sparat eller inte, när samtycket lämnades). Alla utdrag loggas. |
 | Rättelse (art. 16) | Uppgifterna redigeras i registren. Bokförda verifikationer rättas med rättelseverifikation. |
-| Radering (art. 17) | Kund och leverantör: raderas om de aldrig förekommit i bokföringen, annars anonymiseras registret och fakturorna behåller sina uppgifter (art. 17.3 b, bokföringslagen). Nattlig gallring av det som saknar ändamål. |
+| Radering (art. 17) | Eget konto: Profil → Radera mitt konto. Går inte så länge personen äger ett företag som inte är arkiverat. Medlemskap, inloggningar, koder, inbjudningar och profilbild tas bort. Kontot raderas helt om inget i bokföringen eller behandlingshistoriken hänvisar till det, annars pseudonymiseras det ("Raderad användare", ingen inloggning), så att det fortfarande syns att samma person gjorde det som bokfördes (art. 17.3 b, bokföringslagen 7 kap.). Kund och leverantör: raderas om de aldrig förekommit i bokföringen, annars anonymiseras registret och fakturorna behåller sina uppgifter. Nattlig gallring av det som saknar ändamål. |
 | Begränsning och invändning (art. 18/21) | Hanteras manuellt: inaktivera posten och notera beslutet. TODO: en egen markering. |
 
 ## Tekniska och organisatoriska åtgärder (art. 32)

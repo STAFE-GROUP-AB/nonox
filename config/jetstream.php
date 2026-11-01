@@ -66,7 +66,7 @@ return [
         // Features::profilePhotos(),
         // Features::api(),
         Features::teams(['invitations' => true]),
-        // Account deletion is off: companies are archived, never deleted (AGENTS.md §3.5).
+        // Jetstream account deletion is off: "Radera mitt konto" (App\Livewire\Profile\DeleteAccount) deletes or pseudonymises instead, and companies are archived, never deleted (AGENTS.md §3.5).
     ],
 
     /*
