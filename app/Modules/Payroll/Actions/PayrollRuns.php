@@ -23,6 +23,7 @@ use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollFileImportLine;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollMigration;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -148,6 +149,8 @@ class PayrollRuns
 
         CurrentCompany::run($company, function () use ($user, $company, $run, $input): void {
             DB::transaction(function () use ($run, $input): void {
+                // A line approved from a payroll file goes back to being a proposal.
+                PayrollFileImportLine::query()->where('payroll_input_id', $input->id)->get()->each(PayrollFileImports::release(...));
                 $input->delete();
                 $this->backToDraft($run);
             });

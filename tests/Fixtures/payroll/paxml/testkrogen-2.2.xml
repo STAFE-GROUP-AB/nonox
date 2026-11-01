@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!-- Synthetic PAXml 2.2 test file. Every name and personal number is made up; the personal numbers are Luhn-valid test numbers, not real people. -->
+<paxml>
+  <header>
+    <format>LÖNIN</format>
+    <version>2.2</version>
+    <datum>2026-11-01T08:00:00</datum>
+    <foretagorgnr>5560000001</foretagorgnr>
+    <foretagnamn>Testkrogen AB</foretagnamn>
+    <programnamn>Testschema</programnamn>
+  </header>
+  <lonetransaktioner>
+    <lonetrans anstid="1">
+      <lonart>OB1</lonart>
+      <benamning>OB-tillägg kväll</benamning>
+      <datum>2026-10-05</datum>
+      <antal>4.5</antal>
+      <apris>27.50</apris>
+    </lonetrans>
+    <lonetrans persnr="198503024567">
+      <lonart>ÖT1</lonart>
+      <benamning>Övertid enkel</benamning>
+      <datum>2026-10-06</datum>
+      <antal>2</antal>
+      <apris>300.00</apris>
+      <belopp>600.00</belopp>
+    </lonetrans>
+    <lonetrans anstid="99">
+      <lonart>OB1</lonart>
+      <benamning>OB-tillägg kväll</benamning>
+      <datum>2026-10-05</datum>
+      <antal>3</antal>
+      <apris>27.50</apris>
+    </lonetrans>
+    <lonetrans anstid="2">
+      <lonkod>ARB</lonkod>
+      <datumfrom>2026-10-01T00:00:00</datumfrom>
+      <datumtom>2026-10-31T00:00:00</datumtom>
+      <antal>62.25</antal>
+    </lonetrans>
+  </lonetransaktioner>
+  <tidtransaktioner>
+    <attesterat anstid="1" datumfrom="2026-10-01" datumtom="2026-10-31"/>
+    <tidtrans anstid="1">
+      <tidkod>SJK</tidkod>
+      <datum>2026-10-07</datum>
+      <timmar>8</timmar>
+    </tidtrans>
+    <tidtrans anstid="2">
+      <tidkod>OB2</tidkod>
+      <datum>2026-10-11</datum>
+      <timmar>3</timmar>
+    </tidtrans>
+  </tidtransaktioner>
+  <schematransaktioner>
+    <schema anstid="1">
+      <dag datum="2026-10-05" timmar="8"/>
+      <dag datum="2026-10-06" timmar="8"/>
+    </schema>
+  </schematransaktioner>
+  <personal>
+    <person anstid="1" persnr="199006151238">
+      <fornamn>Anna</fornamn>
+      <efternamn>Kock</efternamn>
+      <bankkonto>1234567</bankkonto>
+    </person>
+  </personal>
+</paxml>

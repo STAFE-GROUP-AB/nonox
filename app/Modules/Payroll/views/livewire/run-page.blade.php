@@ -168,6 +168,41 @@
         </div>
     @endif
 
+    @if($canImport && ($canEdit || $fileImports->isNotEmpty()))
+        <x-ui.card :title="__('Löneunderlag från schemasystem')" :description="__('Läs in timmar, OB och tillägg från till exempel ett schema- eller tidsystem, som PAXml eller CSV. Raderna blir förslag som du kontrollerar och godkänner innan de kommer med i lönen.')">
+            @if($canEdit)
+                <form wire:submit="importPayrollFile" class="grid gap-3 sm:grid-cols-3">
+                    <x-ui.field for="import_source" :label="__('Källsystem')" error="importSource">
+                        <select id="import_source" class="{{ $input }} mt-1" wire:model.live="importSource">
+                            <option value="">{{ __('Välj…') }}</option>
+                            @foreach($importSources as $source)<option value="{{ $source->id }}">{{ $source->name }}</option>@endforeach
+                            <option value="new">{{ __('Nytt system…') }}</option>
+                        </select>
+                    </x-ui.field>
+                    @if($importSource === 'new')
+                        <x-ui.field for="import_source_name" :label="__('Systemets namn')" error="source_name">
+                            <input id="import_source_name" type="text" maxlength="80" class="{{ $input }} mt-1" wire:model="newSourceName" placeholder="{{ __('Till exempel Personalkollen') }}">
+                        </x-ui.field>
+                    @endif
+                    <x-ui.field for="import_file" :label="__('Fil (PAXml eller CSV, högst 10 MB)')" error="payrollFile">
+                        <input id="import_file" type="file" accept=".xml,.csv,.txt" class="mt-1 block w-full text-sm" wire:model="payrollFile">
+                    </x-ui.field>
+                    <div class="sm:col-span-3"><x-button wire:loading.attr="disabled" wire:target="payrollFile,importPayrollFile">{{ __('Läs in filen') }}</x-button></div>
+                </form>
+            @endif
+            @if($fileImports->isNotEmpty())
+                <ul class="mt-4 divide-y divide-gray-100 text-sm">
+                    @foreach($fileImports as $fileImport)
+                        <li class="flex flex-wrap items-center justify-between gap-3 py-2" wire:key="file-import-{{ $fileImport->id }}">
+                            <a href="{{ route('payroll.runs.imports.show', [$run, $fileImport]) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $fileImport->original_name }}</a>
+                            <span class="text-gray-600">{{ $fileImport->source?->name }} · {{ __(':proposed att ta ställning till, :approved godkända', ['proposed' => $fileImport->proposed_count, 'approved' => $fileImport->approved_count]) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </x-ui.card>
+    @endif
+
     @if($payslips->isNotEmpty())
         <x-ui.card :title="__('Lönebesked')">
             <div class="divide-y divide-gray-100">

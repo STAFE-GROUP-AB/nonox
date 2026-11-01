@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic PAXml 1.0 test file: made-up data, no real people. -->
+<paxml>
+  <header>
+    <format>LÖNIN</format>
+    <version>1.0</version>
+  </header>
+  <lonetransaktioner>
+    <lonetrans anstid="1">
+      <lonart>OB1</lonart>
+      <datum>2026-10-12</datum>
+      <antal>2</antal>
+      <apris>27.50</apris>
+    </lonetrans>
+  </lonetransaktioner>
+  <tidtransaktioner>
+    <tidtrans anstid="1">
+      <tidkod>OB1</tidkod>
+      <datumfrom>2026-10-13T00:00:00</datumfrom>
+      <datumtom>2026-10-13T00:00:00</datumtom>
+      <timmar>1.5</timmar>
+    </tidtrans>
+  </tidtransaktioner>
+</paxml>
