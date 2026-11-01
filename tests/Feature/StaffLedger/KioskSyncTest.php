@@ -121,7 +121,9 @@ it('gives the kiosk its roster without PINs, and refuses unknown or revoked devi
         ->and($roster['people'][0])->toHaveKeys(['pin_salt', 'pin_verifier', 'qr_hash'])->not->toHaveKey('pin')
         ->and(json_encode($roster))->not->toContain('2580')
         ->and($roster)->not->toHaveKey('sensitive')
-        ->and(json_encode($roster))->not->toContain(substr(StaffLedger::personalNumber('19900101123'), 8))
+        // The whole number, in both its forms: four digits alone can occur by chance in the sealed ciphertext.
+        ->and(json_encode($roster))->not->toContain(StaffLedger::personalNumber('19900101123'))
+        ->and(json_encode($roster))->not->toContain(substr(StaffLedger::personalNumber('19900101123'), 0, 8).'-'.substr(StaffLedger::personalNumber('19900101123'), 8))
         ->and($roster['sealed']['keys'])->toHaveCount(1)
         ->and($roster['sealed']['keys'][0]['person_id'])->toBe($this->bo->id)
         ->and($roster['iterations'])->toBe(Pin::ITERATIONS);
