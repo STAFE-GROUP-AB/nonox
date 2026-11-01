@@ -74,4 +74,10 @@ class InvoiceRow extends Model
     {
         return $this->belongsTo(Account::class);
     }
+
+    /** @return BelongsTo<Article, $this> */
+    public function article(): BelongsTo
+    {
+        return $this->belongsTo(Article::class);
+    }
 }

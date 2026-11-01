@@ -3,12 +3,25 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\AttachToVoucher;
+use App\Actions\Accounting\SaveDimensionObject;
+use App\Actions\Invoicing\IssueInvoice;
+use App\Actions\Invoicing\RegisterPayment;
+use App\Actions\Invoicing\SaveArticle;
 use App\Actions\Invoicing\SaveCustomer;
+use App\Actions\Invoicing\SaveDraftInvoice;
+use App\Actions\Payables\ApproveSupplierInvoice;
+use App\Actions\Payables\PaySupplierInvoice;
+use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
+use App\Actions\Payables\SaveSupplierInvoice;
+use App\Domain\Accounting\Dimension;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Modules\Connect\Support\ConnectScopes;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
@@ -29,8 +42,6 @@ beforeEach(function () {
     Connect::setUp();
 });
 
-const CONNECT_ALL_SCOPES = ['vouchers:view', 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'invoices:view', 'invoices:create', 'supplier-invoices:create', 'supplier-invoices:approve'];
-
 /**
  * @return array{key: string, a: Company, b: array<string, mixed>}
  */
@@ -45,16 +56,37 @@ function twoCompanies(): array
     $customerB = app(SaveCustomer::class)($ownerB, $b, ['name' => 'B:s kund AB', 'payment_terms_days' => 30]);
     $supplierB = app(SaveSupplier::class)($ownerB, $b, ['name' => 'B:s leverantör AB', 'payment_terms_days' => 30]);
     $yearB = CurrentCompany::run($b, fn () => FiscalYear::query()->firstOrFail());
+    $articleB = app(SaveArticle::class)($ownerB, $b, ['number' => 'B1', 'name' => 'B:s artikel', 'unit' => 'st', 'price' => '100', 'vat_rate' => 2500]);
+    $costCenterB = app(SaveDimensionObject::class)($ownerB, $b, Dimension::CostCenter, ['code' => 'B10', 'name' => 'B:s kostnadsställe']);
+    $projectB = app(SaveDimensionObject::class)($ownerB, $b, Dimension::Project, ['code' => 'BP', 'name' => 'B:s projekt']);
+    $invoiceRows = [['description' => 'B:s rad', 'quantity' => '1', 'price' => '100', 'vat_rate' => 2500]];
+    $invoiceB = app(SaveDraftInvoice::class)($ownerB, $b, ['customer_id' => $customerB->id, 'invoice_date' => '2026-03-02', 'rows' => $invoiceRows]);
+    $issuedB = app(IssueInvoice::class)($ownerB, app(SaveDraftInvoice::class)($ownerB, $b, ['customer_id' => $customerB->id, 'invoice_date' => '2026-03-02', 'rows' => $invoiceRows]));
+    app(RegisterPayment::class)($ownerB, $issuedB, CarbonImmutable::parse('2026-03-05'), Money::ofOre(5000));
+    $supplierInvoiceB = app(SaveSupplierInvoice::class)($ownerB, $b, ['supplier_id' => $supplierB->id, 'invoice_date' => '2026-03-03', 'total' => '125', 'vat' => '25', 'rows' => [['account' => '5410', 'amount' => '100']]]);
 
     // A has its own records too, so the lists are not empty by accident.
     Bookkeeping::draft($ownerA, $a);
     app(SaveCustomer::class)($ownerA, $a, ['name' => 'A:s kund AB', 'payment_terms_days' => 30]);
-    app(SaveSupplier::class)($ownerA, $a, ['name' => 'A:s leverantör AB', 'payment_terms_days' => 30]);
+    $supplierA = app(SaveSupplier::class)($ownerA, $a, ['name' => 'A:s leverantör AB', 'payment_terms_days' => 30]);
+    $customerA = app(SaveCustomer::class)($ownerA, $a, ['name' => 'A:s andra kund AB', 'payment_terms_days' => 30]);
+    app(SaveArticle::class)($ownerA, $a, ['number' => 'A1', 'name' => 'A:s artikel', 'unit' => 'st', 'price' => '100', 'vat_rate' => 2500]);
+    app(SaveDimensionObject::class)($ownerA, $a, Dimension::CostCenter, ['code' => 'A10', 'name' => 'A:s kostnadsställe']);
+    app(SaveDimensionObject::class)($ownerA, $a, Dimension::Project, ['code' => 'AP', 'name' => 'A:s projekt']);
+    $issuedA = app(IssueInvoice::class)($ownerA, app(SaveDraftInvoice::class)($ownerA, $a, ['customer_id' => $customerA->id, 'invoice_date' => '2026-03-02', 'rows' => [['description' => 'A:s rad', 'quantity' => '1', 'price' => '100', 'vat_rate' => 2500]]]));
+    app(RegisterPayment::class)($ownerA, $issuedA, CarbonImmutable::parse('2026-03-05'), Money::ofOre(5000));
+    $approverA = Bookkeeping::member($a, 'approver');
+    $registeredA = app(RegisterSupplierInvoice::class)($ownerA, app(SaveSupplierInvoice::class)($ownerA, $a, ['supplier_id' => $supplierA->id, 'invoice_date' => '2026-03-03', 'total' => '125', 'vat' => '25', 'rows' => [['account' => '5410', 'amount' => '100']]]));
+    app(PaySupplierInvoice::class)($ownerA, app(ApproveSupplierInvoice::class)($approverA, $registeredA), CarbonImmutable::parse('2026-03-20'), Money::ofOre(12500));
 
     return [
-        'key' => Connect::apiKey($ownerA, $a, CONNECT_ALL_SCOPES),
+        'key' => Connect::apiKey($ownerA, $a, ConnectScopes::SCOPES),
         'a' => $a,
-        'b' => ['voucher' => $voucherB->id, 'posted' => $postedB->id, 'attachment' => $attachmentB->id, 'customer' => $customerB->id, 'supplier' => $supplierB->id, 'fiscal_year' => $yearB->id],
+        'b' => [
+            'voucher' => $voucherB->id, 'posted' => $postedB->id, 'attachment' => $attachmentB->id, 'customer' => $customerB->id,
+            'supplier' => $supplierB->id, 'fiscal_year' => $yearB->id, 'article' => $articleB->id, 'cost_center' => $costCenterB->id,
+            'project' => $projectB->id, 'invoice' => $invoiceB->id, 'issued' => $issuedB->id, 'supplier_invoice' => $supplierInvoiceB->id,
+        ],
     ];
 }
 
@@ -75,6 +107,35 @@ function crossCompanyCalls(array $b): array
         ['PATCH', "/api/v1/customers/{$b['customer']}", ['name' => 'Kapad']],
         ['GET', "/api/v1/suppliers/{$b['supplier']}"],
         ['PATCH', "/api/v1/suppliers/{$b['supplier']}", ['name' => 'Kapad']],
+        ['GET', "/api/v1/fiscal-years/{$b['fiscal_year']}/periods"],
+        ['GET', "/api/v1/fiscal-years/{$b['fiscal_year']}/sie"],
+        ['GET', "/api/v1/articles/{$b['article']}"],
+        ['PATCH', "/api/v1/articles/{$b['article']}", ['name' => 'Kapad']],
+        ['GET', "/api/v1/cost-centers/{$b['cost_center']}"],
+        ['PATCH', "/api/v1/cost-centers/{$b['cost_center']}", ['name' => 'Kapad']],
+        ['GET', "/api/v1/projects/{$b['project']}"],
+        ['PATCH', "/api/v1/projects/{$b['project']}", ['name' => 'Kapad']],
+        ['GET', "/api/v1/invoices/{$b['invoice']}"],
+        ['PATCH', "/api/v1/invoices/{$b['invoice']}", ['notes' => 'Kapad']],
+        ['GET', "/api/v1/invoices/{$b['issued']}/pdf"],
+        ['POST', "/api/v1/invoices/{$b['invoice']}/issue"],
+        ['POST', "/api/v1/invoices/{$b['issued']}/send", ['email' => 'kapare@exempel.example']],
+        ['POST', "/api/v1/invoices/{$b['issued']}/credit"],
+        ['POST', "/api/v1/invoices/{$b['issued']}/payments", ['paid_on' => '2026-03-05', 'amount_ore' => 100]],
+        ['GET', "/api/v1/supplier-invoices/{$b['supplier_invoice']}"],
+        ['PATCH', "/api/v1/supplier-invoices/{$b['supplier_invoice']}", ['description' => 'Kapad']],
+        ['DELETE', "/api/v1/supplier-invoices/{$b['supplier_invoice']}"],
+        ['POST', "/api/v1/supplier-invoices/{$b['supplier_invoice']}/file"],
+        ['POST', "/api/v1/supplier-invoices/{$b['supplier_invoice']}/register"],
+        ['POST', "/api/v1/supplier-invoices/{$b['supplier_invoice']}/approve"],
+        ['POST', "/api/v1/supplier-invoices/{$b['supplier_invoice']}/payments", ['paid_on' => '2026-03-05', 'amount_ore' => 100]],
+        // Reports that take another company's fiscal year as a parameter.
+        ['GET', "/api/v1/reports/trial-balance?fiscal_year_id={$b['fiscal_year']}"],
+        ['GET', "/api/v1/reports/general-ledger?fiscal_year_id={$b['fiscal_year']}"],
+        ['GET', "/api/v1/reports/balance-sheet?fiscal_year_id={$b['fiscal_year']}"],
+        ['GET', "/api/v1/reports/income-statement?fiscal_year_id={$b['fiscal_year']}"],
+        ['GET', "/api/v1/vat-periods?fiscal_year_id={$b['fiscal_year']}"],
+        ['GET', "/api/v1/vat-return?fiscal_year_id={$b['fiscal_year']}&period_start=2026-01-01"],
     ];
 }
 
@@ -106,6 +167,13 @@ it('lists only the credential\'s own company', function (string $uri, string $fo
     ['/api/v1/accounts', 'B:s'],
     ['/api/v1/fiscal-years', 'B:s'],
     ['/api/v1/voucher-series', 'B:s'],
+    ['/api/v1/articles', 'B:s artikel'],
+    ['/api/v1/cost-centers', 'B:s kostnadsställe'],
+    ['/api/v1/projects', 'B:s projekt'],
+    ['/api/v1/invoices', 'B:s'],
+    ['/api/v1/supplier-invoices', 'B:s'],
+    ['/api/v1/payments', 'B:s'],
+    ['/api/v1/supplier-payments', 'B:s'],
 ]);
 
 it('shows the credential\'s own company, never the person\'s current one', function () {
@@ -121,8 +189,8 @@ it('shows the credential\'s own company, never the person\'s current one', funct
 });
 
 it('covers every API route that takes an id', function () {
-    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year'], 'X')))
-        ->map(fn (array $call): string => $call[0].' '.preg_replace('/X/', '{}', $call[1]))
+    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice'], 'X')))
+        ->map(fn (array $call): string => $call[0].' '.preg_replace('/X/', '{}', explode('?', $call[1])[0]))
         ->unique()->values();
 
     $routes = collect(Route::getRoutes()->getRoutes())

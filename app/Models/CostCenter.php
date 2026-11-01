@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $code
  * @property string $name
  * @property bool $is_active
+ * @property ?CarbonInterface $created_at
+ * @property ?CarbonInterface $updated_at
  */
 class CostCenter extends Model
 {
