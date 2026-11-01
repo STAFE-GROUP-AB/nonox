@@ -950,6 +950,33 @@ lönebeskeden låsta i databasen.
   trigger på `payroll_runs` att ändra det. Timmarna redovisas i AGI för
   körningens utbetalningsmånad, som annan lön som betalas i körningen
   (`TODO(legal-verify)` i ADR-012).
+- Löneunderlag från schemasystem (PAYROLL_MODULE.md B.16a): i en öppen
+  lönekörning kan en lönefil läsas in, PAXml 1.0 eller 2.0–2.3 enligt de
+  officiella schemana på paxml.se, eller en CSV-fil med fasta kolumner.
+  Filen läses som en ström; en fil med DOCTYPE vägras innan något element
+  läses, inga entiteter expanderas och inget hämtas över nätet. Högst 10 MB
+  och 50 000 transaktioner. Originalet sparas krypterat i den privata
+  lagringen och kan bara hämtas med behörigheten att se känsliga
+  löneuppgifter; varje hämtning loggas. Lönetransaktioner och
+  tidtransaktioner blir rader med status Förslag; allt annat i filen
+  (personuppgifter, scheman, resor, saldon) läses inte. Den anställda hittas
+  på anställningsnumret, annars på personnumret, som bara används i minnet
+  och aldrig sparas på raden eller i behandlingshistoriken. Varje kod i
+  filen kopplas till en löneart per källsystem, en gång, och kopplingen
+  används för alla senare filer från samma system. Frånvarokoder (sjukdom,
+  vård av barn, semester, ledighet med flera), schematid och saldon läses
+  aldrig in som lön; frånvaro registreras i lönekörningen. En rad utan
+  à-pris och belopp kan bara vara timlön, eftersom till exempel OB med hela
+  timlönen vore fel, och negativa värden läses inte in. En person godkänner
+  raderna; varje godkänd rad blir en rad i lönekörningen med källan
+  "IMPORT" och körningen måste beräknas igen. Inläsningen godkänner,
+  beräknar eller bokför aldrig något själv. Samma fil (SHA-256) läses bara in
+  en gång per period. "Läs in filen igen" läser den sparade filen med dagens
+  kopplingar och anställda och ersätter alla rader utom de godkända. Tas en
+  godkänd rad bort i lönekörningen blir den ett förslag igen. En fil kan tas
+  bort så länge körningen är öppen, med sina godkända rader. Inläsning,
+  godkännande, avvisning, ångrat godkännande, borttagning, hämtning och
+  ändrade kopplingar loggas (`payroll.file_*`, `payroll.import_*`).
 - Utlägg med NONOX AI påslaget: den anställde skickar bara kvittot. NONOX AI
   läser filen direkt när den skickas och avgör först om den är ett utlägg: ett
   kvitto eller en faktura märkt som betald. En obetald faktura, något som inte
@@ -1306,6 +1333,11 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   rättelse behöver fler uppgifter; Skatteverkets XML-schema och API för
   elektronisk överföring från 1 juli 2027 (TODO SPEC).
 
+- Löneunderlag från schemasystem: om den inlästa originalfilen (PAXml eller
+  CSV) måste sparas som underlag när lönekörningen är attesterad, eller om de
+  godkända raderna räcker; hur länge en fil som tagits bort ur en öppen
+  körning behöver finnas kvar (i dag tas den bort direkt).
+
 - Semester: vilken metod ett kollektivavtal föreskriver för deltidsanställdas
   semesterdagar; om en semester som delas på två månader ska bedömas som en
   ledighet (9 §);
@@ -1492,3 +1524,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.51 | 2026-11-01 | Redovisningsbyråns varumärke (ADR-030): ett företag kan markeras som byrå, kundföretagets ägare väljer sin byrå bland dem som en gemensam redovisningskonsult är med i, och kundsidan ser byråns logga och färger i appen, på Min sida och i mejl om inloggning och uppgifter. Kundens egna fakturor, offerter, order och lönebesked behåller kundens varumärke. Kopplingen ger ingen behörighet och loggas i båda företagen. |
 | 0.52 | 2026-11-01 | Återställningstest av säkerhetskopior (`scripts/restore-test.sh`, `backup:verify-restore`): kopian återställs i en tillfällig databas, och bokföringens hashkedja, underlagens kontrollsummor, personalliggaren och leverantörsfakturornas filer kontrolleras. Körs varje vecka i den driftade tjänsten. SBOM (CycloneDX) som bilaga till varje release. |
 | 0.53 | 2026-11-01 | NONOX går att installera som app på hemskärmen (PWA, ADR-031): manifest för appen och för Min sida, och en service worker som bara visar en offlinesida och inte sparar några uppgifter i enheten. Bokföringen påverkas inte. |
+| 0.54 | 2026-11-01 | Lön: löneunderlag från schemasystem som PAXml (1.0, 2.0–2.3) eller CSV läses in i en öppen lönekörning som förslag. Koderna kopplas till lönearter en gång per källsystem, frånvaro och saldon läses aldrig in som lön, och en person godkänner raderna innan de blir rader i lönekörningen. Samma fil läses en gång per period; originalet sparas krypterat och varje steg loggas. |

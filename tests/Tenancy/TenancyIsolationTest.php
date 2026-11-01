@@ -73,6 +73,10 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollFileImport;
+use App\Modules\Payroll\Models\PayrollFileImportLine;
+use App\Modules\Payroll\Models\PayrollImportMapping;
+use App\Modules\Payroll\Models\PayrollImportSource;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollMigration;
 use App\Modules\Payroll\Models\PayrollRuleVerification;
@@ -186,6 +190,10 @@ const COMPANY_SCOPED_MODELS = [
     PayrollMigration::class => 'payrollMigrationAttributes',
     VacationOpeningBalance::class => 'payrollVacationOpeningAttributes',
     ImportedPayslip::class => 'payrollImportedPayslipAttributes',
+    PayrollImportSource::class => 'payrollImportSourceAttributes',
+    PayrollImportMapping::class => 'payrollImportMappingAttributes',
+    PayrollFileImport::class => 'payrollFileImportAttributes',
+    PayrollFileImportLine::class => 'payrollFileImportLineAttributes',
     RecurringInvoiceRow::class => 'agreementRowAttributes',
     StaffLedgerLocation::class => 'staffLedgerLocationAttributes',
     StaffLedgerPerson::class => 'staffLedgerPersonAttributes',
@@ -810,6 +818,31 @@ function payrollVacationOpeningAttributes(): array
 function payrollImportedPayslipAttributes(): array
 {
     return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'period' => '2026-01', 'file_path' => 'imported/x.pdf', 'original_name' => 'x.pdf', 'sha256' => bin2hex(random_bytes(32)), 'uploaded_by' => User::factory()->create()->id];
+}
+
+function payrollImportSourceAttributes(): array
+{
+    return ['name' => 'Hemligt schema '.random_int(1, 1_000_000)];
+}
+
+function payrollImportMappingAttributes(): array
+{
+    return ['payroll_import_source_id' => PayrollImportSource::create(payrollImportSourceAttributes())->id, 'external_code' => 'OB1'];
+}
+
+function payrollFileImportAttributes(): array
+{
+    return [
+        'payroll_run_id' => PayrollRun::create(payrollPayrollRunAttributes())->id,
+        'payroll_import_source_id' => PayrollImportSource::create(payrollImportSourceAttributes())->id,
+        'period' => '2026-04', 'format' => 'PAXML', 'original_name' => 'x.xml', 'file_path' => 'payroll-imports/x.xml',
+        'sha256' => bin2hex(random_bytes(32)), 'size' => 1,
+    ];
+}
+
+function payrollFileImportLineAttributes(): array
+{
+    return ['payroll_file_import_id' => PayrollFileImport::create(payrollFileImportAttributes())->id, 'line_no' => 1, 'section' => 'lonetrans', 'external_code' => 'OB1', 'status' => 'PROPOSED'];
 }
 
 function payrollYearClosingAttributes(): array

@@ -7,17 +7,23 @@ namespace App\Modules\Payroll\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\User;
 use App\Modules\Payroll\Actions\AddPayrollAccounts;
+use App\Modules\Payroll\Actions\PayrollFileImports;
+use App\Modules\Payroll\Actions\PayrollImportSources;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollFileImport;
+use App\Modules\Payroll\Models\PayrollImportSource;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Support\Run\TimeReportPay;
+use App\Support\Toast;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +31,8 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 /**
  * One payroll run: hours and other inputs, absence, the calculation with
@@ -34,9 +42,18 @@ use Livewire\Component;
 class PayrollRunPage extends Component
 {
     use ShowsToasts;
+    use WithFileUploads;
 
     #[Locked]
     public int $runId;
+
+    /** @var ?UploadedFile a payroll file (PAXml or CSV) from a scheduling or time system */
+    public $payrollFile = null;
+
+    /** An existing source system's id, or 'new' with $newSourceName. */
+    public string $importSource = '';
+
+    public string $newSourceName = '';
 
     /** @var array{employee_id: string, pay_code_id: string, quantity: string, amount: string, note: string} */
     public array $input = ['employee_id' => '', 'pay_code_id' => '', 'quantity' => '', 'amount' => '', 'note' => ''];
@@ -72,6 +89,45 @@ class PayrollRunPage extends Component
         $runs->removeInput($this->user(), $this->run(), PayrollInput::query()->where('payroll_run_id', $this->runId)->findOrFail($inputId));
 
         $this->toast(__('Raden är borttagen. Beräkna lönekörningen igen.'));
+    }
+
+    /**
+     * Reads a payroll file into the run as proposals and opens its page,
+     * where a person checks and approves the lines.
+     */
+    public function importPayrollFile(PayrollFileImports $imports, PayrollImportSources $sources): void
+    {
+        $this->validate([
+            'payrollFile' => ['required', 'file', 'max:10240', 'mimes:xml,csv,txt'],
+            'importSource' => ['required', 'string'],
+        ], attributes: ['payrollFile' => __('fil'), 'importSource' => __('källsystem')]);
+
+        $run = $this->run();
+        $company = $this->user()->currentCompany() ?? abort(404);
+        $source = $this->importSource === 'new'
+            ? $sources->create($this->user(), $company, $this->newSourceName)
+            : PayrollImportSource::query()->findOrFail((int) $this->importSource);
+
+        /** @var UploadedFile $file */
+        $file = $this->payrollFile;
+        $contents = (string) file_get_contents($file->getRealPath());
+        $name = $file->getClientOriginalName();
+
+        // The file holds personal numbers: nothing is left in Livewire's temporary storage.
+        if ($file instanceof TemporaryUploadedFile) {
+            $file->delete();
+        }
+
+        $this->reset('payrollFile');
+
+        try {
+            $import = $imports->upload($this->user(), $run, $source, $name, $contents);
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages(['payrollFile' => $exception->errors()['file'] ?? array_values($exception->errors())[0] ?? [__('Filen kunde inte läsas in.')]]);
+        }
+
+        Toast::flash(__(':file är inläst. Kontrollera raderna och godkänn dem.', ['file' => $import->original_name]));
+        $this->redirectRoute('payroll.runs.imports.show', ['run' => $run, 'import' => $import], navigate: false);
     }
 
     public function recordAbsence(PayrollRuns $runs): void
@@ -208,6 +264,17 @@ class PayrollRunPage extends Component
             'lateIncluded' => self::lateSummary($late->filter(fn (TimeReport $report): bool => in_array($report->id, $included, true))),
             'lateSkipped' => self::lateSummary($late->filter(fn (TimeReport $report): bool => in_array($report->id, $skipped, true))),
             'missingAccounts' => $company === null ? [] : AddPayrollAccounts::missing($company),
+            'canImport' => $company !== null && $user->hasTeamPermission($company, 'payroll:run'),
+            'importSources' => PayrollImportSource::query()->orderBy('name')->get(['id', 'name']),
+            'fileImports' => PayrollFileImport::query()
+                ->with('source:id,name')
+                ->withCount([
+                    'lines as proposed_count' => fn ($query) => $query->where('status', 'PROPOSED'),
+                    'lines as approved_count' => fn ($query) => $query->where('status', 'APPROVED'),
+                ])
+                ->where('payroll_run_id', $run->id)
+                ->orderBy('id')
+                ->get(),
         ]);
     }
 

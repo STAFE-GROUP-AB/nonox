@@ -39,6 +39,7 @@
     ];
 @endphp
 
+<div class="space-y-8">
 <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
     @foreach($options as $key => $allowed)
         <x-ui.field :for="'payroll_'.$key" :label="$labels[$key]" :error="'settings.'.$key">
@@ -60,3 +61,5 @@
     @endforeach
     <div class="sm:col-span-2"><x-button wire:loading.attr="disabled">{{ __('Spara löneinställningarna') }}</x-button></div>
 </form>
+<livewire:payroll.import-sources :company-id="$companyId" />
+</div>
