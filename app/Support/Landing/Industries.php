@@ -30,6 +30,7 @@ use RuntimeException;
  *     lead: string,
  *     month: array{heading: string, intro: string, items: list<Item>},
  *     solutions: array{heading: string, intro: string, items: list<Item>},
+ *     pos?: array{heading: string, intro: string, items: list<Item>, tip: string},
  *     limits: list<array{text: string, feature?: string}>,
  *     pricing: array{employees: int, label: string, text: string},
  *     comparison_features: list<string>,
@@ -90,7 +91,7 @@ final class Industries
     {
         $keys = [];
 
-        foreach ([...$industry['month']['items'], ...$industry['solutions']['items']] as $item) {
+        foreach ([...$industry['month']['items'], ...$industry['solutions']['items'], ...($industry['pos']['items'] ?? [])] as $item) {
             foreach ($item['features'] ?? [] as $key) {
                 $keys[$key] = true;
             }

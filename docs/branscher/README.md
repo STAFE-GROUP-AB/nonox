@@ -61,6 +61,7 @@ till adressen i tabellen ovan; testet kontrollerar det.
 | `eyebrow`, `h1`, `h1_accent`, `lead` | Sidans rubrik och ingress |
 | `month` | Så ser en månad ut i branschen: rubrik, ingress, punkter |
 | `solutions` | Det NONOX gör: punkter med `features` |
+| `pos` | Valfritt: kassasystemet och NONOX, hur försäljningen kommer in (`heading`, `intro`, punkter med `features`, `tip`). Bara det som finns; en kommande koppling står under `limits` |
 | `limits` | Det NONOX inte gör, ärligt redovisat |
 | `pricing` | Räkneexemplets antal anställda och text |
 | `comparison_features` | Rader ur jämförelsefilens funktionstabell som visas |

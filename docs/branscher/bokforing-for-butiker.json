@@ -35,10 +35,22 @@
             {"title": "Säljer du till privatpersoner i andra EU-länder", "text": "Fakturor till privatpersoner i andra EU-länder får köparlandets momssats, och NONOX tar fram underlaget för OSS-deklarationen per kvartal.", "features": ["eu_invoices", "eu_reports"]}
         ]
     },
+    "pos": {
+        "heading": "Kassasystemet och NONOX.",
+        "intro": "NONOX är inget kassasystem och har ingen lagerhantering. Du behåller kassan och lagret du har, och NONOX bokför det kassan rapporterar. Försäljningen kommer in på två sätt redan i dag, och båda kontrolleras innan något bokförs.",
+        "items": [
+            {"title": "Dagsrapporten med e-post", "text": "Ställ in kassan att mejla dagsrapporten till butikens kassaadress i NONOX. CSV, Excel, text och PDF med text fungerar. Har du flera kassor eller butiker får varje format sin egen mall, och rapporterna kan bokföras automatiskt.", "features": ["inbox", "daily_reports"]},
+            {"title": "SIE-fil från kassan", "text": "Kan kassasystemet ta fram försäljningen som en SIE-fil skickar du den till samma adress. Verifikationerna i filen blir förslag i inkorgen som du granskar och godkänner.", "features": ["inbox", "sie"]},
+            {"title": "Kontrollerad innan den bokförs", "text": "NONOX räknar efter att verifikationen balanserar och att momsen per momssats hänger ihop med försäljningen. Stämmer något inte bokförs rapporten aldrig automatiskt, utan väntar i inkorgen med en varning.", "features": ["daily_reports"]},
+            {"title": "Kort och Swish möts i banken", "text": "Kortinlösen betalas ut några dagar senare, ofta med avgiften dragen. I bankavstämningen ser du vilka utbetalningar som ännu inte stämmer mot försäljningen.", "features": ["bank_reconciliation"]}
+        ],
+        "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
+    },
     "limits": [
         {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Inventering och lagervärde sköter du utanför NONOX."},
         {"text": "Import av varor från länder utanför EU är inte byggd ännu.", "feature": "non_eu_goods_import"},
-        {"text": "NONOX har inget personalschema. Timmarna kommer från personalliggaren eller från tidrapporter."}
+        {"text": "NONOX har inget personalschema. Timmarna kommer från personalliggaren eller från tidrapporter."},
+        {"text": "Det finns ännu inget öppet API, så kassasystem kan inte kopplas direkt till NONOX. Det byggs, även för de integrationsplattformar som kassasystemen redan använder. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "public_api"}
     ],
     "pricing": {
         "employees": 3,
@@ -47,7 +59,7 @@
     },
     "comparison_features": ["Leverantörsfakturor med attest", "Alla moduler ingår i priset", "Öppen källkod"],
     "faqs": [
-        {"q": "Kan NONOX bokföra dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton första gången, och sedan tolkas rapporter i samma format med samma mall."},
+        {"q": "Kan NONOX bokföra dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton första gången, och sedan tolkas rapporter i samma format med samma mall. Det går också med en SIE-fil från kassan. En direktkoppling via API finns inte ännu; den byggs."},
         {"q": "Hur hanteras presentkort?", "a": "I dagsrapporten är ett inlöst presentkort ett eget betalsätt som du kopplar till ett konto i mallen. Vilket konto du använder för sålda presentkort bestämmer du i kontoplanen."},
         {"q": "Har NONOX lagerhantering?", "a": "Nej. NONOX är ett bokförings-, faktura- och lönesystem. Lager och inventering sköts i kassasystemet eller ett lagerprogram."},
         {"q": "Kan jag bokföra inköp från leverantörer i andra EU-länder?", "a": "Ja. Inköp från andra EU-länder bokförs med momsen i rätt rutor. Import av varor från länder utanför EU är inte byggd ännu."},
@@ -57,6 +69,7 @@
     "related": ["bokforing-for-cafeer", "bokforing-for-restauranger", "bokforing-for-frisorer"],
     "legal_verify": [
         "Bokföring av sålda och inlösta presentkort (flerfunktionsvoucher och moms): sidan säger bara att det ska hållas isär och att kontot väljs av användaren.",
-        "Personalliggare i handeln: sidan påstår inget krav och hänvisar till Skatteverket."
+        "Personalliggare i handeln: sidan påstår inget krav och hänvisar till Skatteverket.",
+        "Kassaregister: sidan säger att kraven på certifierat kassaregister och kontrollenhet gäller kassan (39 kap. skatteförfarandelagen); kontrollera formuleringen."
     ]
 }

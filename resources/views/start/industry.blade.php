@@ -137,6 +137,33 @@
   </div>
 </section>
 
+@isset($industry['pos'])
+<section aria-labelledby="in-kassa" style="padding:0 0 clamp(56px,8vw,104px)">
+  <div class="in-wrap">
+    <p class="in-eyebrow">Kassan</p>
+    <h2 id="in-kassa" class="in-h2">{{ $industry['pos']['heading'] }}</h2>
+    <p class="in-lead">{{ $industry['pos']['intro'] }}</p>
+    <ol class="in-grid">
+      @foreach($industry['pos']['items'] as $item)
+        <li class="in-card">
+          <span class="in-num">{{ str_pad((string) $loop->iteration, 2, '0', STR_PAD_LEFT) }}</span>
+          <h3>{{ $item['title'] }}</h3>
+          <p>{{ $item['text'] }}</p>
+          @if(! empty($item['features']))
+            <ul class="in-chips" aria-label="Funktioner">
+              @foreach($item['features'] as $key)
+                <li class="in-chip">{{ $features[$key]['name'] }}@isset($features[$key]['module'])<small>Modul</small>@endisset</li>
+              @endforeach
+            </ul>
+          @endif
+        </li>
+      @endforeach
+    </ol>
+    <p class="in-lead" style="margin-top:clamp(20px,3vw,28px)">{{ $industry['pos']['tip'] }}</p>
+  </div>
+</section>
+@endisset
+
 <section id="pris" aria-labelledby="in-pris" style="scroll-margin-top:68px;padding:clamp(56px,8vw,104px) 0;background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
   <div class="in-wrap">
     <p class="in-eyebrow">Vad det kostar</p>

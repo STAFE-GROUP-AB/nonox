@@ -34,9 +34,21 @@
             {"title": "Lön, även timlön", "text": "Månads- eller timlön med Skatteverkets skattetabeller. Med personalliggaren påslagen blir passen förslag till tidrapporter. Lönebesked, lönefil och arbetsgivardeklaration ingår.", "features": ["payroll", "hourly_pay", "agi", "employee_portal"]}
         ]
     },
+    "pos": {
+        "heading": "Kassan i bokningssystemet och NONOX.",
+        "intro": "Många salonger har kassan i bokningssystemet. NONOX är varken kassa eller bokningssystem, utan bokför det kassan rapporterar. Försäljningen kommer in på två sätt redan i dag, och båda kontrolleras innan något bokförs.",
+        "items": [
+            {"title": "Dagsrapporten med e-post", "text": "Ställ in bokningssystemet att mejla dagsrapporten till salongens kassaadress i NONOX. CSV, Excel, text och PDF med text fungerar. Behandlingar och produkter med olika moms delas upp enligt rapporten, och mallen sköter resten.", "features": ["inbox", "daily_reports"]},
+            {"title": "SIE-fil från kassan", "text": "Kan kassasystemet ta fram försäljningen som en SIE-fil skickar du den till samma adress. Verifikationerna i filen blir förslag i inkorgen som du granskar och godkänner.", "features": ["inbox", "sie"]},
+            {"title": "Kontrollerad innan den bokförs", "text": "NONOX räknar efter att verifikationen balanserar och att momsen per momssats hänger ihop med försäljningen. Stämmer något inte bokförs rapporten aldrig automatiskt, utan väntar i inkorgen med en varning.", "features": ["daily_reports"]},
+            {"title": "Kort och Swish möts i banken", "text": "Kortinlösen betalas ut några dagar senare, ofta med avgiften dragen. I bankavstämningen ser du vilka utbetalningar som ännu inte stämmer mot försäljningen.", "features": ["bank_reconciliation"]}
+        ],
+        "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
+    },
     "limits": [
         {"text": "NONOX är inget kassa- eller bokningssystem och har ingen lagerhantering för produkter."},
-        {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."}
+        {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
+        {"text": "Det finns ännu inget öppet API, så kassasystem kan inte kopplas direkt till NONOX. Det byggs, även för de integrationsplattformar som kassasystemen redan använder. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "public_api"}
     ],
     "pricing": {
         "employees": 2,
@@ -49,12 +61,13 @@
         {"q": "Ska den som hyr en stol stå i min liggare?", "a": "Det avgör Skatteverkets regler, inte NONOX. Liggaren i NONOX kan registrera personer med en annan arbetsgivare eller ett eget företag, med namn och organisationsnummer."},
         {"q": "Kan jag fakturera stolshyran automatiskt?", "a": "Ja. Med avtalsfakturering skapas en faktura per hyresgäst varje månad, som utkast eller skickad direkt med e-post."},
         {"q": "Fungerar incheckningen utan internet?", "a": "Ja. Kiosken på surfplattan sparar varje incheckning direkt och skickar dem när nätet är tillbaka."},
-        {"q": "Kan NONOX läsa dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton en gång och godkänner."},
+        {"q": "Kan NONOX läsa dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton en gång och godkänner. Det går också med en SIE-fil från kassan. En direktkoppling via API finns inte ännu; den byggs."},
         {"q": "Vad kostar NONOX för en salong?", "a": "{pris} per år med drift för upp till {max} anställda, med personalliggare och lön inräknade. Kör du NONOX själv kostar det ingenting."}
     ],
     "related": ["bokforing-for-cafeer", "bokforing-for-butiker", "bokforing-for-restauranger"],
     "legal_verify": [
         "Vilka delar av kropps- och skönhetsvården som omfattas av kravet på personalliggare, och om stolshyrare ska stå i salongens liggare (BusinessType har samma TODO).",
-        "Frisörer i restaurang- och frisörbranschens krav sedan tidigare: sidan säger att branschen ska föra liggare och hänvisar detaljerna och 2027 års ändringar till Skatteverket."
+        "Frisörer i restaurang- och frisörbranschens krav sedan tidigare: sidan säger att branschen ska föra liggare och hänvisar detaljerna och 2027 års ändringar till Skatteverket.",
+        "Kassaregister: sidan säger att kraven på certifierat kassaregister och kontrollenhet gäller kassan (39 kap. skatteförfarandelagen); kontrollera formuleringen."
     ]
 }

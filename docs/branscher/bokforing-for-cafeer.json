@@ -35,10 +35,22 @@
             {"title": "Min sida för personalen", "text": "De anställda ser sina lönebesked, sjukanmäler sig och ansöker om semester i mobilen, så att du slipper lappar och sms.", "features": ["employee_portal"]}
         ]
     },
+    "pos": {
+        "heading": "Kassasystemet och NONOX.",
+        "intro": "NONOX är inget kassasystem. Du behåller kassan du har, och NONOX bokför det kassan rapporterar. Försäljningen kommer in på två sätt redan i dag, och båda kontrolleras innan något bokförs.",
+        "items": [
+            {"title": "Dagsrapporten med e-post", "text": "Ställ in kassan att mejla dagsrapporten till caféets kassaadress i NONOX. CSV, Excel, text och PDF med text fungerar. Första rapporten kopplar du till konton, sedan tolkas varje rapport med mallen och kan bokföras automatiskt.", "features": ["inbox", "daily_reports"]},
+            {"title": "SIE-fil från kassan", "text": "Kan kassasystemet ta fram försäljningen som en SIE-fil skickar du den till samma adress. Verifikationerna i filen blir förslag i inkorgen som du granskar och godkänner.", "features": ["inbox", "sie"]},
+            {"title": "Kontrollerad innan den bokförs", "text": "NONOX räknar efter att verifikationen balanserar och att momsen per momssats hänger ihop med försäljningen. Stämmer något inte bokförs rapporten aldrig automatiskt, utan väntar i inkorgen med en varning.", "features": ["daily_reports"]},
+            {"title": "Kort och Swish möts i banken", "text": "Kortinlösen betalas ut några dagar senare, ofta med avgiften dragen. I bankavstämningen ser du vilka utbetalningar som ännu inte stämmer mot försäljningen.", "features": ["bank_reconciliation"]}
+        ],
+        "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
+    },
     "limits": [
         {"text": "NONOX är inget kassasystem. Du behåller din kassa; NONOX tar emot dagsrapporten och bokför den."},
         {"text": "NONOX har inget schema för personalen. Timmarna kommer från personalliggaren eller från tidrapporter."},
-        {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."}
+        {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
+        {"text": "Det finns ännu inget öppet API, så kassasystem kan inte kopplas direkt till NONOX. Det byggs, även för de integrationsplattformar som kassasystemen redan använder. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "public_api"}
     ],
     "pricing": {
         "employees": 4,
@@ -47,7 +59,7 @@
     },
     "comparison_features": ["Personalliggare", "Alla moduler ingår i priset", "Öppen källkod"],
     "faqs": [
-        {"q": "Kan NONOX läsa dagsrapporten från mitt kassasystem?", "a": "Ja, om kassasystemet kan mejla dagsrapporten som CSV, Excel (XLSX), text eller PDF med text i. Första rapporten kopplar du till konton själv, eller låter NONOX AI föreslå kopplingen om du slagit på den modulen. Därefter tolkas varje rapport i samma format med samma mall, utan AI."},
+        {"q": "Kan NONOX läsa dagsrapporten från mitt kassasystem?", "a": "Ja, om kassasystemet kan mejla dagsrapporten som CSV, Excel (XLSX), text eller PDF med text i. Första rapporten kopplar du till konton själv, eller låter NONOX AI föreslå kopplingen om du slagit på den modulen. Därefter tolkas varje rapport i samma format med samma mall, utan AI. Det går också med en SIE-fil från kassan. En direktkoppling via API finns inte ännu; den byggs."},
         {"q": "Är NONOX ett kassasystem?", "a": "Nej. NONOX är ett bokförings-, löne- och faktureringsprogram. Du behåller ditt kassasystem och låter det mejla dagsrapporten till NONOX."},
         {"q": "Måste mitt café ha personalliggare?", "a": "Det beror på verksamheten. Många caféer räknas till restaurangbranschen, som ska föra personalliggare. Det är Skatteverkets regler som avgör, så kontrollera där om du är osäker. Behöver du en liggare finns den i NONOX som en modul."},
         {"q": "Fungerar personalliggaren om internet går ner?", "a": "Ja. Kiosken sparar varje in- och utcheckning på surfplattan direkt och skickar dem när nätet är tillbaka. Personen ser att incheckningen gått igenom med en gång."},
@@ -58,6 +70,7 @@
     "related": ["bokforing-for-restauranger", "bokforing-for-butiker", "bokforing-for-frisorer"],
     "legal_verify": [
         "Om caféer med servering generellt räknas till restaurangbranschen enligt 39 kap. skatteförfarandelagen. Sidan säger bara att många caféer omfattas och hänvisar till Skatteverket.",
-        "Momssatser på mat och varor, inklusive den tillfälligt sänkta momsen på livsmedel 2026–2027: sidan nämner medvetet inga satser per vara."
+        "Momssatser på mat och varor, inklusive den tillfälligt sänkta momsen på livsmedel 2026–2027: sidan nämner medvetet inga satser per vara.",
+        "Kassaregister: sidan säger att kraven på certifierat kassaregister och kontrollenhet gäller kassan (39 kap. skatteförfarandelagen); kontrollera formuleringen."
     ]
 }

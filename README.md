@@ -114,6 +114,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Automatisk avstämning av betalfiler mot bankens svar, och betalfiler och kundfakturor i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
+- Ett öppet API med webhooks, så att kassasystem, e-handel och andra program kan skicka försäljning och underlag direkt till NONOX, även via de integrationsplattformar som programmen redan använder.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 
@@ -377,7 +378,7 @@ Medvetet utanför scope:
 - ❌ ERP-system
 - ❌ CRM
 - ❌ Lagerhantering
-- ❌ Kassasystem
+- ❌ Kassasystem. NONOX bokför kassans dagsrapporter och SIE-filer, se Inkorg ovan, men sköter inte försäljningen.
 - ❌ Inkasso
 
 ## Bidra
