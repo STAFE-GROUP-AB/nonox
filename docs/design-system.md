@@ -11,7 +11,7 @@ resemble any competitor.
 3. **One primary action per view.** Secondary actions are links.
 4. **Honest.** Things that do not exist yet are marked "Kommer snart".
 
-## Tokens (`tailwind.config.js`)
+## Tokens (`@theme` in `resources/css/app.css`)
 
 | Token | Value | Use |
 |---|---|---|
