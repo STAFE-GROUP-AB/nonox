@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Livewire\Accounting;
 
 use App\Actions\Assets\FixedAssets;
+use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\CostCenter;
 use App\Models\FixedAsset;
 use App\Models\User;
+use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -43,11 +45,31 @@ class FixedAssetsPage extends Component
     /** @var array<string, string> */
     public array $disposal = ['date' => '', 'price' => '', 'account' => '1930'];
 
+    /** @var array{accounts: string, threshold: string} the acquisition accounts and the threshold for assets created from purchases */
+    public array $settings = ['accounts' => '', 'threshold' => ''];
+
     public function mount(): void
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage'), 403);
 
         $this->month = $this->month !== '' ? $this->month : now()->subMonthNoOverflow()->format('Y-m');
+        $this->fillSettings($this->company());
+    }
+
+    public function saveSettings(FixedAssets $assets): void
+    {
+        $company = $assets->saveSettings($this->user(), $this->company(), $this->settings['accounts'], $this->settings['threshold']);
+
+        $this->fillSettings($company);
+        $this->toast(__('Inställningarna för inköp av anläggningstillgångar är sparade.'));
+    }
+
+    private function fillSettings(Company $company): void
+    {
+        $this->settings = [
+            'accounts' => AcquisitionAccounts::for($company)->format(),
+            'threshold' => $company->asset_small_value_threshold_ore === null ? '' : Money::ofOre($company->asset_small_value_threshold_ore)->format(withCurrency: false),
+        ];
     }
 
     public function create(): void
@@ -146,7 +168,7 @@ class FixedAssetsPage extends Component
 
     public function render(FixedAssets $assets): View
     {
-        $list = FixedAsset::query()->withSum('depreciations', 'amount_ore')->orderBy('status')->orderBy('number')->get();
+        $list = FixedAsset::query()->withSum('depreciations', 'amount_ore')->with(['acquisitionVoucher.series', 'supplierInvoice'])->orderBy('status')->orderBy('number')->get();
         $preview = preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $this->month) === 1 ? $assets->preview($this->company(), $this->month) : [];
         $months = array_map(fn (int $i): string => now()->startOfMonth()->subMonthsNoOverflow($i)->format('Y-m'), range(0, 12));
 

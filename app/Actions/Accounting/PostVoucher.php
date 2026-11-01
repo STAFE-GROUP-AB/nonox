@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounting;
 
+use App\Actions\Assets\AssetProposals;
 use App\Domain\Accounting\LedgerHash;
 use App\Domain\Accounting\VoucherStatus;
 use App\Events\VoucherPosted;
@@ -35,6 +36,8 @@ use Illuminate\Validation\ValidationException;
  * 4. Chain the hash to the previous posted voucher in the fiscal year.
  * 5. Mark as posted (a database trigger checks the balance again).
  * 6. Write the audit log.
+ * 7. Create the assets proposed on the draft's rows (AssetProposals), linked
+ *    to the voucher and their rows. If that fails, nothing is posted.
  *
  * Lock order, always the same to avoid deadlocks: voucher → fiscal year →
  * company (FOR KEY SHARE) → number counter. YearEndClosing (bookTax,
@@ -45,10 +48,14 @@ use Illuminate\Validation\ValidationException;
  * adds no new kind of wait: it does not block other postings, ordinary
  * updates of the company row or other inserts; only actions that lock the
  * company row for update (LockPeriod, closing a year, SIE import, numbering
- * new accruals and assets) wait for it.
+ * new accruals) wait for it. New assets are numbered under an advisory lock
+ * of their own (FixedAssets::NUMBERING_LOCK), so an asset created by this
+ * posting (step 7) never waits to upgrade the company lock.
  */
 class PostVoucher
 {
+    public function __construct(private readonly AssetProposals $assetProposals) {}
+
     /**
      * @throws ValidationException
      */
@@ -94,6 +101,8 @@ class PostVoucher
                 'amount_ore' => $voucher->rows->sum(fn (VoucherRow $row): int => $row->debit_ore->ore),
                 'hash' => $voucher->hash,
             ], $voucher->company_id, $user);
+
+            $this->assetProposals->createForVoucher($user, $voucher);
 
             event(new VoucherPosted($voucher->company_id, $voucher->id));
 

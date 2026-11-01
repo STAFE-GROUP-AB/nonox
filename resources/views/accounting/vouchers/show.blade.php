@@ -27,6 +27,17 @@
             </div>
         @endif
 
+        @if($acquiredAssets->isNotEmpty())
+            <div class="rounded-xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-700" data-acquired-assets>
+                <p>{{ __('Anläggningstillgångar som skapades när verifikationen bokfördes:') }}</p>
+                <ul class="mt-2 space-y-1">
+                    @foreach($acquiredAssets as $asset)
+                        <li><a href="{{ route('accounting.fixedAssets') }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $asset->number }} {{ $asset->name }}</a> · {{ $asset->acquisition_ore->format() }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <div class="grid gap-8 lg:grid-cols-[minmax(0,1fr)_26rem] lg:items-start">
         <div class="space-y-8">
         <x-ui.card>

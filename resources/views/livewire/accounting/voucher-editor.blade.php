@@ -149,6 +149,10 @@
             @endif
         @endforeach
 
+        @if($assetSettings)
+            @include('partials.asset-proposals', ['kind' => 'voucher', 'blocked' => 'false', 'fallbackName' => '$wire.description'])
+        @endif
+
         <div class="mt-5 rounded-lg px-4 py-3 text-sm font-medium" role="status" aria-live="polite" data-balance-status
              :class="balanced ? 'bg-green-50 text-green-800' : 'bg-gray-100 text-gray-700'">
             <span x-show="hasInvalidAmount">{{ __('Ett belopp går inte att läsa. Skriv till exempel 1 234,50.') }}</span>

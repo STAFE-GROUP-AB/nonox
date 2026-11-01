@@ -39,6 +39,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?Money $disposal_price_ore
  * @property ?string $disposal_voucher_id
  * @property ?string $notes
+ * @property ?string $acquisition_voucher_id
+ * @property ?int $acquisition_voucher_row_id
+ * @property ?string $supplier_invoice_id
  * @property int $created_by
  */
 class FixedAsset extends Model
@@ -67,6 +70,9 @@ class FixedAsset extends Model
         'cost_center_id',
         'status',
         'notes',
+        'acquisition_voucher_id',
+        'acquisition_voucher_row_id',
+        'supplier_invoice_id',
         'created_by',
     ];
 
@@ -124,6 +130,28 @@ class FixedAsset extends Model
     public function depreciations(): HasMany
     {
         return $this->hasMany(FixedAssetDepreciation::class);
+    }
+
+    /**
+     * The voucher that booked the purchase, when the asset was created from it.
+     *
+     * @return BelongsTo<Voucher, $this>
+     */
+    public function acquisitionVoucher(): BelongsTo
+    {
+        return $this->belongsTo(Voucher::class, 'acquisition_voucher_id');
+    }
+
+    /** @return BelongsTo<VoucherRow, $this> */
+    public function acquisitionVoucherRow(): BelongsTo
+    {
+        return $this->belongsTo(VoucherRow::class, 'acquisition_voucher_row_id');
+    }
+
+    /** @return BelongsTo<SupplierInvoice, $this> */
+    public function supplierInvoice(): BelongsTo
+    {
+        return $this->belongsTo(SupplierInvoice::class);
     }
 
     /** @return BelongsTo<CostCenter, $this> */

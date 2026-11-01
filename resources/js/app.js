@@ -2,6 +2,7 @@ import './bootstrap';
 import './voucher-editor';
 import './sales-rows';
 import './supplier-rows';
+import './asset-proposals';
 import './passkeys';
 import './overview-charts';
 import './spotlight';

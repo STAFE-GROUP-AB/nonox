@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Accounting;
 
+use App\Actions\Assets\AssetProposals;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
@@ -23,12 +24,18 @@ use Illuminate\Validation\ValidationException;
  */
 class SaveDraftVoucher
 {
-    public function __construct(private NormaliseVoucherRows $normaliseRows) {}
+    public function __construct(
+        private NormaliseVoucherRows $normaliseRows,
+        private AssetProposals $assetProposals,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $input  voucher_date (Y-m-d), description, series (code, default A),
      *                                       rows (list of account, debit_ore, credit_ore, description,
-     *                                       cost_center and project codes)
+     *                                       cost_center and project codes, and optionally asset: the
+     *                                       register's fields for an asset to create when it is posted),
+     *                                       with_assets (true when the rows' asset fields replace the
+     *                                       draft's proposals; without it they are left as they are)
      *
      * @throws ValidationException
      */
@@ -51,7 +58,7 @@ class SaveDraftVoucher
             'description' => __('beskrivning'),
         ])->validate();
 
-        return CurrentCompany::run($company, fn (): Voucher => DB::transaction(function () use ($validated, $user, $draft): Voucher {
+        return CurrentCompany::run($company, fn (): Voucher => DB::transaction(function () use ($validated, $user, $company, $input, $draft): Voucher {
             $date = CarbonImmutable::createFromFormat('Y-m-d', (string) $validated['voucher_date'])?->startOfDay()
                 ?? throw ValidationException::withMessages(['voucher_date' => __('Datumet ska skrivas som ÅÅÅÅ-MM-DD.')]);
 
@@ -83,6 +90,10 @@ class SaveDraftVoucher
 
             foreach ($rows as $row) {
                 VoucherRow::create(['voucher_id' => $voucher->id, ...$row]);
+            }
+
+            if (($input['with_assets'] ?? false) === true) {
+                $this->assetProposals->sync($user, $company, $voucher, array_map(fn (array $row): mixed => $row['asset'] ?? null, $rowInput));
             }
 
             return $voucher->load('rows');

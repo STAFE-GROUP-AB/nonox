@@ -22,6 +22,7 @@ use App\Models\Customer;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
+use App\Models\FixedAssetProposal;
 use App\Models\ImportedVoucher;
 use App\Models\IncomeTaxReturn;
 use App\Models\Invoice;
@@ -160,6 +161,7 @@ const COMPANY_SCOPED_MODELS = [
     FortnoxImportedFile::class => ['file_id' => 'f-1', 'fortnox_year' => 1, 'voucher_series' => 'A', 'voucher_number' => 1],
     AccrualPosting::class => 'accrualPostingAttributes',
     FixedAssetDepreciation::class => 'fixedAssetDepreciationAttributes',
+    FixedAssetProposal::class => 'fixedAssetProposalAttributes',
     NumberSeries::class => ['key' => 'invoices', 'next_number' => 1],
     Customer::class => ['number' => 1, 'name' => 'Hemlig kund AB', 'payment_terms_days' => 30],
     Article::class => 'articleAttributes',
@@ -481,6 +483,16 @@ function fixedAssetDepreciationAttributes(): array
         'period' => '2026-0'.random_int(1, 9),
         'amount_ore' => 66_667,
         'voucher_id' => Voucher::create(voucherAttributes())->id,
+    ];
+}
+
+function fixedAssetProposalAttributes(): array
+{
+    return [
+        'voucher_id' => Voucher::create(voucherAttributes())->id,
+        'line' => 0,
+        'data' => ['name' => 'Hemlig espressomaskin', 'category' => 'EQUIPMENT', 'acquisition' => '', 'life_months' => 60, 'acquired_on' => null, 'depreciation_start' => null],
+        'created_by' => User::factory()->create()->id,
     ];
 }
 

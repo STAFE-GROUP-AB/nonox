@@ -45,6 +45,20 @@
         @endif
     </x-ui.card>
 
+    <details class="rounded-3xl bg-white px-6 py-4 shadow-xs ring-1 ring-stone-200" @if($errors->has('acquisition_accounts') || $errors->has('small_value_threshold')) open @endif>
+        <summary class="cursor-pointer font-semibold text-ink">{{ __('Tillgångar från inköp') }}</summary>
+        <p class="mt-2 text-sm text-gray-600">{{ __('När en verifikation eller leverantörsfaktura har en rad i debet på ett anskaffningskonto erbjuds du att skapa tillgången här. Den skapas när inköpet bokförs och länkas till verifikationen.') }}</p>
+        <form wire:submit="saveSettings" class="mt-4 grid gap-4 sm:grid-cols-[1fr_14rem_auto] sm:items-start">
+            <x-ui.field for="acquisition_accounts" :label="__('Anskaffningskonton')" error="acquisition_accounts" :hint="__('Kontonummer eller intervall, till exempel 1220, 1221-1227. Tomt: registrets tillgångskonton.')">
+                <input id="acquisition_accounts" type="text" class="{{ $input }} mt-1 tabular-nums" wire:model="settings.accounts">
+            </x-ui.field>
+            <x-ui.field for="small_value_threshold" :label="__('Gräns för inventarier av mindre värde, kr')" error="small_value_threshold" :hint="__('Under gränsen visas bara en upplysning. Tomt: ingen gräns. Gränsen bestämmer företaget själv.')">
+                <input id="small_value_threshold" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="settings.threshold">
+            </x-ui.field>
+            <div class="sm:pt-6"><x-secondary-button type="submit">{{ __('Spara') }}</x-secondary-button></div>
+        </form>
+    </details>
+
     <x-ui.card :title="__('Register')">
         <x-slot:cta>
             @unless($creating)
@@ -109,6 +123,11 @@
                                 <td class="px-3 py-3">
                                     <button type="button" class="font-semibold text-ink hover:underline" wire:click="$set('showing', {{ $showing === $asset->id ? 'null' : $asset->id }})">{{ $asset->name }}</button>
                                     <span class="block text-xs text-gray-500">{{ $asset->category->label() }} · {{ __(':count mån', ['count' => $asset->useful_life_months]) }}@if($asset->status === 'DISPOSED') · {{ __('Avyttrad :date', ['date' => $asset->disposed_on?->toDateString()]) }}@elseif($asset->isFullyDepreciated()) · {{ __('Fullt avskriven') }}@endif</span>
+                                    @if($asset->acquisitionVoucher)
+                                        <span class="block text-xs text-gray-500">{{ __('Anskaffad med verifikation') }} <a href="{{ route('accounting.vouchers.show', $asset->acquisitionVoucher) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->acquisitionVoucher->reference() }}</a></span>
+                                    @elseif($asset->supplierInvoice)
+                                        <span class="block text-xs text-gray-500">{{ __('Anskaffad med') }} <a href="{{ route('payables.invoices.show', $asset->supplierInvoice) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $asset->supplierInvoice->title() }}</a></span>
+                                    @endif
                                 </td>
                                 <td class="px-3 py-3 tabular-nums">{{ $asset->acquired_on->toDateString() }}</td>
                                 <td class="px-3 py-3 text-right tabular-nums">{{ $asset->acquisition_ore->format() }}</td>

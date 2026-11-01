@@ -7,6 +7,7 @@ namespace App\Actions\Assets;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
+use App\Domain\Assets\AcquisitionAccounts;
 use App\Domain\Assets\AssetCategory;
 use App\Models\Account;
 use App\Models\Company;
@@ -40,6 +41,9 @@ class FixedAssets
 
     public const int LOSS_ACCOUNT = 7973;
 
+    /** The first key of the transaction-level advisory lock that numbers a company's new assets. */
+    public const int NUMBERING_LOCK = 4201;
+
     public function __construct(private readonly BookVoucher $book) {}
 
     /**
@@ -49,6 +53,65 @@ class FixedAssets
     {
         $this->authorize($user, $company);
 
+        return $this->store($user, $company, $input, $asset);
+    }
+
+    /**
+     * Creates the asset whose purchase is being booked, linked to the voucher
+     * and row that book it (acquisition_voucher_id, acquisition_voucher_row_id)
+     * or the supplier invoice. Only for AssetProposals, inside the posting or
+     * registration transaction: the person who proposed the asset was
+     * checked for fiscal-years:manage when the proposal was saved, so a
+     * bookkeeper can post a draft an accountant prepared.
+     *
+     * @param  array<string, mixed>  $input  as for save()
+     * @param  array{acquisition_voucher_id?: ?string, acquisition_voucher_row_id?: ?int, supplier_invoice_id?: ?string}  $links
+     */
+    public function createFromPurchase(User $user, Company $company, array $input, array $links): FixedAsset
+    {
+        return $this->store($user, $company, $input, null, $links);
+    }
+
+    /**
+     * The company's settings for assets created from purchases: the
+     * acquisition accounts ("1210, 1220-1227"; empty for the register's own)
+     * and the amount under which no asset is proposed (empty for none).
+     *
+     * TODO(legal-verify): inventarier av mindre värde may be expensed at once
+     * (IL 18 kap. 4 §); Skatteverket's limit is half a price base amount,
+     * excluding VAT, and inventarier bought together count together. The
+     * amount is the company's own setting and NONOX suggests none.
+     */
+    public function saveSettings(User $user, Company $company, string $accounts, string $threshold): Company
+    {
+        $this->authorize($user, $company);
+
+        $ranges = AcquisitionAccounts::parse($accounts, 'acquisition_accounts');
+        $thresholdOre = trim($threshold) === '' ? null : $this->money($threshold, 'small_value_threshold');
+
+        if ($thresholdOre !== null && $thresholdOre < 0) {
+            throw ValidationException::withMessages(['small_value_threshold' => __('Gränsen kan inte vara negativ.')]);
+        }
+
+        $company->forceFill([
+            'asset_acquisition_accounts' => $ranges->isDefault() ? null : $ranges->ranges,
+            'asset_small_value_threshold_ore' => $thresholdOre,
+        ])->save();
+
+        Audit::record('fixed_asset.settings_changed', $company, [
+            'acquisition_accounts' => $ranges->format(),
+            'small_value_threshold_ore' => $thresholdOre,
+        ], $company, $user);
+
+        return $company;
+    }
+
+    /**
+     * @param  array<string, mixed>  $input
+     * @param  array{acquisition_voucher_id?: ?string, acquisition_voucher_row_id?: ?int, supplier_invoice_id?: ?string}  $links
+     */
+    private function store(User $user, Company $company, array $input, ?FixedAsset $asset, array $links = []): FixedAsset
+    {
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'category' => ['required', Rule::enum(AssetCategory::class)],
@@ -87,7 +150,7 @@ class FixedAssets
             throw ValidationException::withMessages(['opening_accumulated' => __('Gjorda avskrivningar kan inte vara större än det som ska skrivas av.')]);
         }
 
-        return CurrentCompany::run($company, fn (): FixedAsset => DB::transaction(function () use ($user, $company, $validated, $acquisition, $residual, $opening, $asset): FixedAsset {
+        return CurrentCompany::run($company, fn (): FixedAsset => DB::transaction(function () use ($user, $company, $validated, $acquisition, $residual, $opening, $asset, $links): FixedAsset {
             if ($asset !== null && $asset->depreciations()->exists()) {
                 // The plan behind booked months cannot change; only the description may.
                 $asset->forceFill(['name' => $validated['name'], 'notes' => $validated['notes'] ?? null])->save();
@@ -116,15 +179,24 @@ class FixedAssets
             ];
 
             if ($asset === null) {
-                // The company row is the lock, so two new assets never get the same number.
-                Company::query()->whereKey($company->id)->lockForUpdate()->firstOrFail();
+                // A lock of its own per company, so two new assets never get the same number. Not the
+                // company row: a posting holds that with FOR KEY SHARE, and two postings each creating
+                // an asset would then deadlock waiting to upgrade it.
+                DB::select('SELECT pg_advisory_xact_lock(?, ?)', [self::NUMBERING_LOCK, $company->id]);
                 $asset = FixedAsset::create([
                     ...$attributes,
+                    ...$links,
                     'number' => (int) FixedAsset::query()->max('number') + 1,
                     'status' => FixedAsset::ACTIVE,
                     'created_by' => $user->id,
                 ]);
-                Audit::record('fixed_asset.created', $asset, ['name' => $asset->name, 'acquisition_ore' => $acquisition], $company, $user);
+                Audit::record('fixed_asset.created', $asset, array_filter([
+                    'name' => $asset->name,
+                    'acquisition_ore' => $acquisition,
+                    'acquisition_voucher_id' => $links['acquisition_voucher_id'] ?? null,
+                    'acquisition_voucher_row_id' => $links['acquisition_voucher_row_id'] ?? null,
+                    'supplier_invoice_id' => $links['supplier_invoice_id'] ?? null,
+                ], fn (mixed $value): bool => $value !== null), $company, $user);
 
                 return $asset;
             }
