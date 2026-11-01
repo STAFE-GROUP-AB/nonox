@@ -9,6 +9,23 @@ aldrig avtalstext. Varje värde har en källa, varje version har giltighetstid
 och en namngiven verifiering, och en lönekörning stoppas när versionen som
 gäller inte är verifierad.
 
+> **Som byggt (2026-11-01, steg A1–A4).** Tabellerna i §1 finns utom
+> `work_shifts` (A5). Formatet i §2 används med dessa skillnader: avtalets
+> tillägg ligger under `codes` (kod → `name`, `kind` OB|OVERTIME,
+> `pay_code` OBTILLAGG|OVERTID, `rates` med steg, valfri `day_type`,
+> `source`) i stället för `ob.windows[].rate`, `ob.rate_steps`,
+> `overtime.ladder` och `pay_codes`; OB-fönstren ligger beskrivande under
+> `ob_windows` för passdelningen (A6). En dagtyp är
+> `{ name, days: [{ day, weekdays?, from?, to? | to_next_day? | until: NEXT_WEEKDAY }], source }`.
+> Lönegrupperna ligger under `groups`, och en minimilönerad kan ha
+> `tenure_months_min` (tid i företaget) utöver ålder och branschvana;
+> `minimum_wages.age_reference` är PERIOD_END, MONTH_OF_BIRTHDAY eller
+> MONTH_AFTER_BIRTHDAY, och `experience_counts_from_age` anger från vilken
+> ålder branschvana räknas. Procent av timlönen kan ha
+> `plus_hourly_wage: true` när tillägget enligt källan betalas utöver
+> timlönen. Källorna ligger i filens `sources` och lagras i kolumnen
+> `sources`. Filen heter `<variant>-<valid_from>.json`.
+
 ## 1. Tabeller
 
 ```

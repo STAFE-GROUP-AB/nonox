@@ -125,14 +125,14 @@ final class PayrollModule implements Module
                 'label' => __('Lön'),
                 'route' => 'payroll.runs.index',
                 'permission' => 'payroll:view',
-                'active' => ['payroll.index', 'payroll.runs.*', 'payroll.requests', 'payroll.employees*', 'payroll.agi*', 'payroll.reports', 'payroll.vacationYear', 'payroll.vacationLiability', 'payroll.rules', 'payroll.migration*'],
-                'children' => fn (User $user, Company $company): array => $this->pages(),
+                'active' => ['payroll.index', 'payroll.runs.*', 'payroll.requests', 'payroll.employees*', 'payroll.agi*', 'payroll.reports', 'payroll.vacationYear', 'payroll.vacationLiability', 'payroll.rules', 'payroll.migration*', 'agreements.*'],
+                'children' => fn (User $user, Company $company): array => $this->pages($user, $company),
             ],
         ];
     }
 
     /** @return list<array{label: string, route: string, active?: list<string>}> the pages of Lön, for the section in the sidebar */
-    private function pages(): array
+    private function pages(User $user, Company $company): array
     {
         $pendingRequests = Absence::query()->where('status', 'REQUESTED')->count() + Expense::query()->where('status', 'SUBMITTED')->count();
 
@@ -145,6 +145,10 @@ final class PayrollModule implements Module
             ['label' => __('Semesterår'), 'route' => 'payroll.vacationYear'],
             ['label' => __('Semesterskuld'), 'route' => 'payroll.vacationLiability'],
             ['label' => __('Regler'), 'route' => 'payroll.rules'],
+            // NONOX Avtal (ADR-033) lives under Lön while it is on.
+            ...(app(ModuleManager::class)->isEnabled('agreements', $company) && $user->hasTeamPermission($company, 'agreements:view')
+                ? [['label' => __('Avtal'), 'route' => 'agreements.index', 'active' => ['agreements.*']]]
+                : []),
             ['label' => __('Flytt av lönedata'), 'route' => 'payroll.migration'],
             ['label' => __('Kom igång'), 'route' => 'payroll.index', 'active' => ['payroll.index']],
         ];

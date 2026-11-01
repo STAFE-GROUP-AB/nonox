@@ -1,7 +1,10 @@
 # NONOX Avtal — kollektivavtal i lönen
 
 Status: **specifikation, förslag** (2026-11-01). Beslut i
-`docs/adr/ADR-033-nonox-avtal.md`. Ingen kod är skriven.
+`docs/adr/ADR-033-nonox-avtal.md`. Steg A1–A4 och AI-förslagen (ADR-033 §6)
+är byggda i `app/Modules/Agreements` (systemdokumentation §5h); avtalsfilerna
+för våg 1 ligger i `app/Modules/Agreements/database/data/agreements`,
+okontrollerade.
 
 NONOX Avtal är en modul (`agreements`, beroende av `payroll`) som låter
 lönen räkna enligt det kollektivavtal företaget är bundet av: minimilöner,

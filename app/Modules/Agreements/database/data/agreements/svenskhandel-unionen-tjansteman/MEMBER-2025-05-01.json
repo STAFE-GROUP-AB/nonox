@@ -1,0 +1,168 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "svenskhandel-unionen-tjansteman",
+        "name": "Handelns tjänstemannaavtal (Svensk Handel – Unionen och Akademikerförbunden)",
+        "short_name": "Handelns tjänstemannaavtal",
+        "parties": ["Svensk Handel", "Unionen", "Akademikerförbunden"],
+        "collective": "TJANSTEMAN",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": ["butikschef", "kontor och administration i handel", "e-handel"],
+        "source": "HT#§ 1.1–1.3 s. 8"
+    },
+    "valid_from": "2025-05-01",
+    "valid_to": "2027-04-30",
+    "validity_source": "HT#§ 17 s. 58",
+    "sources": [
+        { "id": "HT", "title": "Handelns tjänstemannaavtal 2025–2027", "publisher": "Svensk Handel/Unionen/Akademikerförbunden (publicerad av Akavia)", "url": "https://www.akavia.se/siteassets/03-rad-och-stod/kollektivavtal-privat-sektor/svensk-handel/svensk-handel--tjanstemannaavtalet-2025-2027.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
+        { "id": "UN", "title": "Handelns tjänstemannaavtal, hängavtalsnytt 2025", "publisher": "Unionen", "url": "https://www.unionen.se/sites/default/files/files/Handelns_tjmavtal_Svensk%20Handel_H%C3%A4ngavtalsnytt2025.pdf", "edition": "2025", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "source": "HT#bilaga 1 § 2.1–2.2 s. 60"
+    },
+    "groups": [
+        { "code": "UNIONEN", "name": "Unionens löneavtal", "description": "Tjänstemän under Unionens löneavtal som fyllt 18 år", "source": "HT#bilaga 3 § 1.3 s. 73" }
+    ],
+    "minimum_wages": {
+        "age_reference": "PERIOD_END",
+        "check": "WARN",
+        "source": "HT#bilaga 3 § 1.3 s. 73; bilaga 4 § 1.4 s. 83",
+        "steps": [
+            {
+                "valid_from": "2025-05-01",
+                "rows": [
+                    { "group": "UNIONEN", "age_min": 18, "monthly_ore": 2176700, "source": "HT#bilaga 3 § 1.3 s. 73" },
+                    { "group": "UNIONEN", "age_min": 18, "tenure_months_min": 12, "monthly_ore": 2392700, "source": "HT#bilaga 3 § 1.3 s. 73" }
+                ]
+            },
+            {
+                "valid_from": "2026-05-01",
+                "rows": [
+                    { "group": "UNIONEN", "age_min": 18, "monthly_ore": 2235500, "source": "HT#bilaga 3 § 1.3 s. 73" },
+                    { "group": "UNIONEN", "age_min": 18, "tenure_months_min": 12, "monthly_ore": 2457300, "source": "HT#bilaga 3 § 1.3 s. 73" }
+                ]
+            }
+        ]
+    },
+    "day_types": {
+        "HELG_300": {
+            "name": "Trettondagen, 1 maj, nationaldagen, Kristi himmelsfärd och alla helgons dag från 07.00 till närmast följande vardag",
+            "days": [
+                { "day": "TRETTONDEDAG_JUL", "from": "07:00", "until": "NEXT_WEEKDAY" },
+                { "day": "FORSTA_MAJ", "from": "07:00", "until": "NEXT_WEEKDAY" },
+                { "day": "NATIONALDAGEN", "from": "07:00", "until": "NEXT_WEEKDAY" },
+                { "day": "KRISTI_HIMMELSFARDSDAG", "from": "07:00", "until": "NEXT_WEEKDAY" },
+                { "day": "ALLA_HELGONS_DAG", "from": "07:00", "until": "NEXT_WEEKDAY" }
+            ],
+            "source": "HT#§ 5.3 s. 17"
+        },
+        "HELG_150": {
+            "name": "Skärtorsdagen och nyårsafton från 18.00, pingst-, midsommar- och julafton från 07.00, till närmast följande vardag",
+            "days": [
+                { "day": "SKARTORSDAGEN", "from": "18:00", "until": "NEXT_WEEKDAY" },
+                { "day": "NYARSAFTON", "from": "18:00", "until": "NEXT_WEEKDAY" },
+                { "day": "PINGSTAFTON", "from": "07:00", "until": "NEXT_WEEKDAY" },
+                { "day": "MIDSOMMARAFTON", "from": "07:00", "until": "NEXT_WEEKDAY" },
+                { "day": "JULAFTON", "from": "07:00", "until": "NEXT_WEEKDAY" }
+            ],
+            "source": "HT#§ 5.3 s. 17"
+        }
+    },
+    "ob_windows": [
+        { "code": "HT_FT_600", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "18:00", "to": "24:00", "source": "HT#§ 5.3 s. 17" },
+        { "code": "HT_FT_400", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT"], "from": "00:00", "to": "07:00", "source": "HT#§ 5.3 s. 17" },
+        { "code": "HT_FT_300", "days": ["SAT"], "from": "07:00", "to": "24:00", "source": "HT#§ 5.3 s. 17" },
+        { "code": "HT_FT_300", "days": ["SUN"], "from": "00:00", "to": "24:00", "source": "HT#§ 5.3 s. 17" },
+        { "code": "HT_FT_HELG_300", "day_type": "HELG_300", "source": "HT#§ 5.3 s. 17" },
+        { "code": "HT_FT_150", "day_type": "HELG_150", "source": "HT#§ 5.3 s. 17" }
+    ],
+    "codes": {
+        "HT_FT_600": {
+            "name": "Förskjuten arbetstid, kväll",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–fre 18–24: månadslön / 600 per timme",
+            "rates": [
+                { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "600" } }
+            ],
+            "source": "HT#§ 5.3 s. 17"
+        },
+        "HT_FT_400": {
+            "name": "Förskjuten arbetstid, natt",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–lör 00–07: månadslön / 400 per timme",
+            "rates": [
+                { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "400" } }
+            ],
+            "source": "HT#§ 5.3 s. 17"
+        },
+        "HT_FT_300": {
+            "name": "Förskjuten arbetstid, helg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Lördag 07 till söndag 24: månadslön / 300 per timme",
+            "rates": [
+                { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "300" } }
+            ],
+            "source": "HT#§ 5.3 s. 17"
+        },
+        "HT_FT_HELG_300": {
+            "name": "Förskjuten arbetstid, helgdag",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Från 07 trettondagen, 1 maj, nationaldagen, Kristi himmelsfärd och alla helgons dag till 00 närmast följande vardag: månadslön / 300 per timme",
+            "day_type": "HELG_300",
+            "rates": [
+                { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "300" } }
+            ],
+            "source": "HT#§ 5.3 s. 17"
+        },
+        "HT_FT_150": {
+            "name": "Förskjuten arbetstid, storhelg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Från 18 skärtorsdagen och nyårsafton, från 07 pingst-, midsommar- och julafton, till 00 närmast följande vardag: månadslön / 150 per timme",
+            "day_type": "HELG_150",
+            "rates": [
+                { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "150" } }
+            ],
+            "source": "HT#§ 5.3 s. 17"
+        },
+        "HT_OT_94": {
+            "name": "Övertid dagtid",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid kl. 06–20 helgfria mån–fre: månadslön / 94 per timme",
+            "rates": [
+                { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "94" } }
+            ],
+            "source": "HT#§ 4"
+        },
+        "HT_OT_72": {
+            "name": "Övertid, annan tid",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Övertid på annan tid, inklusive arbetsfria vardagar och midsommar-, jul- och nyårsafton: månadslön / 72 per timme",
+            "rates": [
+                { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "72" } }
+            ],
+            "source": "HT#§ 4"
+        }
+    },
+    "notes": [
+        "Minimilönerna gäller bara Unionens löneavtal (HT bilaga 3 och 4). Akademikerförbundens löneavtal (bilaga 6) har inga minimilöner; ingen grupp för dem.",
+        "Minimilönen gäller från fyllda 18 år och heltid; deltid proportionellt. TODO(legal-verify): avtalet anger inte från vilken dag åldern räknas; PERIOD_END är ett antagande.",
+        "Raden med ett års anställning bygger på 'ett års sammanlagd anställning i företaget'. tenure_months_min 12 räknar från anställningsdatum. TODO(legal-verify): hur tidigare anställningar i samma företag ska läggas samman.",
+        "Introduktionslön 18–23 år, lägst 75 % av 18-årsnivån i högst 12 månader (HT bilaga 3 § 1.4 s. 73–74), är inte data ännu.",
+        "Förskjuten arbetstid ersätter OB och ges inte samtidigt med övertidsersättning (HT § 5.3 s. 17).",
+        "TODO(legal-verify): när fönster överlappar (t.ex. lördag efter midsommarafton träffar både 300- och 150-fönstret) anger avtalet inte vilket som gäller; avsikten antas vara att helgdagsfönstret ersätter det ordinarie.",
+        "TODO(legal-verify): 'till 00 närmast följande vardag' tolkas som till kl. 00.00 när närmast följande vardag börjar (until NEXT_WEEKDAY).",
+        "Löneavdrag per timme är 1/167 av månadslönen (HT § 11.3 s. 40; UN s. 3). Den delaren är inte satt som timlönedelare här eftersom avtalet anger den för löneavdrag, inte som timlön. TODO(legal-verify).",
+        "Övertid: deltid räknas upp till heltidslön; endast fulla halvtimmar; övertid som inte ansluter ger minst 3 timmar; anspråk inom 3 månader (HT § 4.2.3, 4.2.4, 4.2.7). Inte data ännu.",
+        "Mertid har utmönstrats 2025: deltidsanställda får övertidsersättning för tid utöver sin ordinarie tid (UN s. 3).",
+        "Arbetstidsförkortning från 2026-01-01, semester (0,8 % och 0,5 %, 4,6 %) och sjuklön är inte data i den här versionen ännu."
+    ]
+}

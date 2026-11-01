@@ -37,6 +37,7 @@ use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Support\RulePresenter;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
+use App\Modules\Payroll\Support\Run\PayrollExtensions;
 use App\Modules\Payroll\Support\Run\TimeReportPay;
 use App\Modules\Payroll\Support\Tax\MissingTaxTableException;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
@@ -69,6 +70,7 @@ class PayrollRuns
         private readonly ContextBuilder $contexts,
         private readonly ModuleManager $modules,
         private readonly TimeReportPay $timeReports,
+        private readonly PayrollExtensions $extensions,
     ) {}
 
     public function create(User $user, Company $company, string $period, ?CarbonImmutable $paymentDate = null): PayrollRun
@@ -98,7 +100,7 @@ class PayrollRuns
     }
 
     /**
-     * @param  array{employee_id: int|string, pay_code_id: int|string, quantity?: ?string, amount?: ?string, note?: ?string}  $input
+     * @param  array{employee_id: int|string, pay_code_id: int|string, quantity?: ?string, amount?: ?string, note?: ?string, date_from?: ?string, date_to?: ?string}  $input
      */
     public function addInput(User $user, PayrollRun $run, array $input): PayrollInput
     {
@@ -110,6 +112,9 @@ class PayrollRuns
             'quantity' => ['nullable', 'regex:/^\d{1,6}([.,]\d{1,3})?$/'],
             'amount' => ['nullable', 'string'],
             'note' => ['nullable', 'string', 'max:255'],
+            // The work date, used by NONOX Avtal to choose the agreement's rate step.
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
         ], ['quantity.regex' => __('Skriv antal timmar eller enheter, till exempel 12,5.')])->validate();
 
         if (blank($validated['quantity'] ?? null) === blank($validated['amount'] ?? null)) {
@@ -133,6 +138,8 @@ class PayrollRuns
                 'quantity' => blank($validated['quantity'] ?? null) ? null : str_replace(',', '.', (string) $validated['quantity']),
                 'amount_ore' => $amount?->ore,
                 'note' => $validated['note'] ?? null,
+                'date_from' => $validated['date_from'] ?? null,
+                'date_to' => $validated['date_to'] ?? ($validated['date_from'] ?? null),
                 'source' => 'MANUAL',
             ]);
             $this->backToDraft($run);
@@ -256,6 +263,8 @@ class PayrollRuns
             if ($employments->isEmpty()) {
                 throw ValidationException::withMessages(['run' => [__('Ingen är anställd under perioden.')]]);
             }
+
+            $this->extensions->prepare($run, $employments);
 
             foreach ($employments as $employment) {
                 $employee = $employment->employee ?? throw new LogicException("Employment {$employment->id} has no employee.");

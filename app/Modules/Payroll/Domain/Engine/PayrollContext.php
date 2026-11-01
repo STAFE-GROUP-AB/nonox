@@ -22,6 +22,7 @@ final readonly class PayrollContext
      * @param  array{last_sick_period_end?: string, last_sick_period_days?: int, karens_count_12m?: int}  $sickHistory
      * @param  ?list<string>  $weekPattern  scheduled hours Monday to Sunday
      * @param  ?array{below_bp: int, above_bp: int, name: string}  $pension  the employment's pension plan
+     * @param  array<string, object>  $extensions  what other modules add for their steps, by module key (for example the agreement the employment is bound by)
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -48,5 +49,28 @@ final readonly class PayrollContext
         public ?array $weekPattern = null,
         public ?VacationInput $vacation = null,
         public ?array $pension = null,
+        public array $extensions = [],
     ) {}
+
+    /**
+     * A copy with other inputs, for a module that prices inputs before the
+     * calculation (PayrollExtensions).
+     *
+     * @param  list<PayInput>  $inputs
+     */
+    public function withInputs(array $inputs): self
+    {
+        return new self(...[...get_object_vars($this), 'inputs' => $inputs]);
+    }
+
+    /** A copy with what a module adds for its own steps. */
+    public function withExtension(string $key, object $value): self
+    {
+        return new self(...[...get_object_vars($this), 'extensions' => [...$this->extensions, $key => $value]]);
+    }
+
+    public function extension(string $key): ?object
+    {
+        return $this->extensions[$key] ?? null;
+    }
 }

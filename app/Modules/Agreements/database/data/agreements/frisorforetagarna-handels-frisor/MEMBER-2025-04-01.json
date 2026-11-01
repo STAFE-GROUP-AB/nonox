@@ -1,0 +1,76 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "frisorforetagarna-handels-frisor",
+        "name": "Frisöravtalet (Frisörföretagarna – Handels)",
+        "short_name": "Frisöravtalet",
+        "parties": ["Frisörföretagarna", "Handelsanställdas förbund"],
+        "collective": "ARBETARE",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": ["frisör", "barberare"],
+        "source": "HS#avtal frisör 2025–2027; F23",
+        "unverified": true
+    },
+    "valid_from": "2025-04-01",
+    "valid_to": "2027-03-31",
+    "validity_source": "HS#lönesteg 1 april 2025 och 1 april 2026",
+    "sources": [
+        { "id": "HS", "title": "Handels sammanfattning av Frisöravtalet 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/avtalsrorelse/avtal-frisor/", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
+        { "id": "F23", "title": "Frisöravtalet 2023–2025 (fulltext)", "publisher": "Frisörföretagarna/Handels", "url": "https://frisor.se/media/ohnjlatu/ha2023-200-friso-r-inlaga.pdf", "edition": "2023-04-01", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "source": "F23#arbetstid (2023-text)",
+        "hourly_divisor": {
+            "monthly_to_hourly": "173",
+            "part_time": { "type": "WEEKLY_HOURS_TIMES", "factor": "4.325" },
+            "source": "F23#§ 6a mom 7 s. 28"
+        }
+    },
+    "groups": [
+        { "code": "BEHORIG_FRISOR", "name": "Behörig frisör", "description": "Frisör med behörighet, lön som basbelopp och provision med garantilön", "source": "HS#lönetabell 2025–2027" },
+        { "code": "BEHORIG_BARBERARE", "name": "Behörig barberare", "description": "Barberare med behörighet, lön som basbelopp och provision med garantilön", "source": "HS#lönetabell 2025–2027" },
+        { "code": "OBEHORIG", "name": "Obehörig frisör eller barberare", "description": "Frisör eller barberare utan behörighet, lön som basbelopp och provision med garantilön", "source": "HS#lönetabell 2025–2027" }
+    ],
+    "minimum_wages": {
+        "age_reference": "PERIOD_END",
+        "check": "WARN",
+        "source": "HS#lönetabell 2025–2027",
+        "steps": [
+            {
+                "valid_from": "2025-04-01",
+                "rows": [
+                    { "group": "BEHORIG_FRISOR", "monthly_ore": 2871300, "source": "HS#garantilön 2025", "unverified": true },
+                    { "group": "BEHORIG_BARBERARE", "monthly_ore": 2498000, "source": "HS#garantilön 2025", "unverified": true },
+                    { "group": "OBEHORIG", "monthly_ore": 2009900, "source": "HS#garantilön 2025", "unverified": true }
+                ]
+            },
+            {
+                "valid_from": "2026-04-01",
+                "rows": [
+                    { "group": "BEHORIG_FRISOR", "monthly_ore": 2957400, "source": "HS#garantilön 2026", "unverified": true },
+                    { "group": "BEHORIG_BARBERARE", "monthly_ore": 2573000, "source": "HS#garantilön 2026", "unverified": true },
+                    { "group": "OBEHORIG", "monthly_ore": 2070200, "source": "HS#garantilön 2026", "unverified": true }
+                ]
+            }
+        ]
+    },
+    "day_types": {},
+    "ob_windows": [],
+    "codes": {},
+    "notes": [
+        "Fulltexten för 2025–2027 är inte publik. Beloppen kommer från Handels sammanfattning (HS) och mekaniken från 2023-texten (F23). Avtalet kan inte verifieras förrän en 2025-text finns. TODO(legal-verify).",
+        "TODO(legal-verify): giltighetstiden 2025-04-01 – 2027-03-31 är overifierad; HS bekräftar bara lönestegen 1 april 2025 och 1 april 2026.",
+        "Minimilönen här är garantilönen: lönen är basbelopp plus arbetsprovision på inarbetat belopp exklusive moms och får aldrig understiga garantilönen (F23 § 6 mom 1 s. 15). Kontrollen jämför alltså total lön mot garantilönen, inte basbeloppet.",
+        "Basbelopp och provisionssatser (HS) är inte data ännu: behörig frisör 16 735 / 16 860 kr och 17,67 / 17,77 %, behörig barberare 13 388 / 13 488 kr och 17,67 / 17,77 %, obehörig 15 423 / 15 613 kr och 10,35 / 10,45 % (2025 / 2026). Provision kräver omsättning per anställd från kassasystemet.",
+        "Obehörigs basbelopp 2025: HS anger 15 423 kr, en annan Handels-sida 15 433 kr. 15 423 kr gäller tills det verifierats. TODO(legal-verify).",
+        "Branschvanetillägg (frisör 500 / 555 kr och 295 / 320 kr, barberare 435 / 485 kr och 260 / 280 kr), tjänstetidstillägg (804 kr efter mer än 5 år) och försäljningsprovision 7 % (2023-text) är inte data ännu.",
+        "Garantilön under provanställning, 87 % av behörigas garantilön (2023-text), är inte med. TODO(legal-verify).",
+        "Inga OB- eller övertidskoder: OB (50 % vardag efter 18, 70 % lördag 12–13, 100 % lördag efter 13 och sön- och helgdag) beräknas enligt 2023-texten på 87 % av garantilönen för behöriga och på garantilönen för obehöriga, inte på timlönen. Den basen kan inte uttryckas med nuvarande satstyper, och 2025-texten är inte publik. TODO(legal-verify).",
+        "Övertid är enligt 2023-texten timlön plus 50 % beräknat på garantilönen; mertidsersättning från 2026-04-01 har en bas som inte är publik. TODO(legal-verify).",
+        "Delaren 173 och deltidsfaktorn 4,325 kommer från 2023-texten och måste bekräftas mot 2025-texten. TODO(legal-verify).",
+        "Receptionister och servicebiträden har timlönetabeller vars belopp för 2025/26 inte hittats; ingen grupp för dem.",
+        "All lön, även provision och OB, betalas månaden efter arbetet (2023-text); det är inte data ännu."
+    ]
+}

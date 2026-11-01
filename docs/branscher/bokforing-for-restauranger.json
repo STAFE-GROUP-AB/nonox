@@ -32,7 +32,8 @@
             {"title": "Timlön från godkända pass", "text": "Passen i liggaren blir förslag till tidrapporter. Den som har rätt att attestera lön godkänner, och lönekörningen räknar timlön, semester, sjuklön och arbetsgivaravgifter. Lönefilen går till banken och arbetsgivardeklarationen blir en fil. Lägger ni schemat i ett annat system läses dess lönefil in som PAXml eller CSV, och OB och tillägg blir förslag som du godkänner innan de betalas.", "features": ["hourly_pay", "payroll", "vacation_sick_pay", "agi", "payment_files", "payroll_file_import"]},
             {"title": "Attest av leverantörsfakturor", "text": "Fakturorna kommer till inkorgen, och en annan person än den som registrerade attesterar. Betalfilen godkänns också av någon annan innan den kan laddas ner. Det gör det svårare att betala fel faktura.", "features": ["supplier_invoices", "payment_files", "inbox"]},
             {"title": "Resultat per enhet", "text": "Märk verifikationsrader och leverantörsfakturor med kostnadsställe, till exempel restaurang och catering, och ta fram resultatet per kostnadsställe som PDF eller CSV.", "features": ["cost_centres", "reports"]},
-            {"title": "Moms och bank utan dubbelarbete", "text": "Momsen räknas fram ur bokföringen och blir en fil till Skatteverket. Bankavstämningen visar vilka kortutbetalningar och betalningar som ännu inte stämmer.", "features": ["vat_return", "bank_reconciliation"]}
+            {"title": "Moms och bank utan dubbelarbete", "text": "Momsen räknas fram ur bokföringen och blir en fil till Skatteverket. Bankavstämningen visar vilka kortutbetalningar och betalningar som ännu inte stämmer.", "features": ["vat_return", "bank_reconciliation"]},
+            {"title": "Gröna Riks i lönen", "text": "Slå på modulen Avtal och välj Gröna Riks, som medlem i Visita eller med hängavtal. Minimilönen kontrolleras per lönegrupp, ålder och branschvana, och OB- och övertidstimmar från schemasystemet prissätts med avtalets satser. Värdena kommer med källa och används först när en namngiven person har kontrollerat versionen mot avtalet.", "features": ["agreements"]}
         ]
     },
     "pos": {
@@ -47,6 +48,7 @@
         "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
     },
     "limits": [
+        {"text": "OB räknas ännu inte direkt från passens klockslag. Timmarna per OB-sort kommer inmatade eller från schemasystemets löneunderlag, och avtalets semester-, sjuklöne- och pensionsregler räknas inte per avtal ännu."},
         {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Du behåller kassan; NONOX bokför dagsrapporten."},
         {"text": "NONOX har inget personalschema. Timmarna kommer från personalliggaren eller från tidrapporter."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},

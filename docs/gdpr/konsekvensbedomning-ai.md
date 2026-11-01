@@ -34,6 +34,26 @@ Artikel 35.1 nämner särskilt behandling som använder ny teknik. AI-tolkning a
 - **Leverantörens användning av uppgifterna.** Om en leverantör får använda innehållet för egna ändamål styrs av företagets avtal med leverantören, inte av NONOX. [Företaget kontrollerar sitt avtal.]
 - **Information till de registrerade.** [Hur företaget informerar leverantörer och andra som finns på underlagen.]
 
+## 3a. Avtal: NONOX AI fyller i avtalsuppgifter (ADR-033 §6)
+
+Tillägg 2026-11-01 för modulen Avtal. Gäller bara när både NONOX AI och Avtal är påslagna och användaren har `ai:use` och `agreements:manage`.
+
+| | |
+|---|---|
+| **Ändamål** | Läsa företagets hängavtal eller medlemsbekräftelse och de anställdas anställningsavtal, och föreslå vilket kollektivavtal som gäller och varje anställnings avtal, lönegrupp, befattning, anställningsform, veckoarbetstid och branschvana. En person godkänner, ändrar eller avvisar varje förslag. |
+| **Registrerade** | Anställda vars anställningsavtal eller lönebesked laddas upp, och personer som nämns i företagets dokument. |
+| **Vad som skickas** | Bara dokumentets text, sida för sida, med personnummer, bankuppgifter, adresser, e-postadresser och telefonnummer dolda innan den skickas. Därtill listan över avtal NONOX har data för, företagets bolagsform och, för anställningar, de avtal företaget är bundet av med avtalets lönegrupper. Ingen fil och ingen kontoplan skickas. |
+| **Vad som sparas** | Dokumentet krypterat på den privata disken. Varje förslag med citat (krypterat) och sida, och om citatet hittades i dokumentet. Behandlingshistoriken sparar agent, antal förslag, antal dolda uppgifter, leverantör, modell och antal token, aldrig innehållet. |
+
+| Risk | Åtgärd |
+|---|---|
+| Fler uppgifter än nödvändigt lämnar tjänsten | Maskering före sändning; bara text. Ålder och minimilön räknas av NONOX ur födelsedatumet i registret, inte av AI:n. |
+| AI:n bestämmer om villkoren i en anställning | AI:n föreslår bara fakta som står i dokumentet, med citat och sida. Inget förs in utan en person. "Godkänn alla" gäller bara förslag vars citat finns ordagrant i dokumentet. Avtalets belopp och satser kommer bara ur kontrollerad avtalsdata, aldrig från AI:n. Lön och startdatum ändras inte härifrån. |
+| AI:n bedömer den anställda | Instruktionerna förbjuder bedömning av personen eller arbetet; agenterna läser bara dokumentet. |
+| Felaktig lönegrupp | Förslaget visar vilken beskrivning i avtalet som matchade, och det som är registrerat i dag står bredvid. Minimilönekontrollen varnar på lönekörningen. |
+
+Kvarstående: maskeringen är mönsterbaserad och kan missa en ovanligt skriven uppgift (till exempel en adress utan rubrik). TODO(legal-verify): om förslag om lönegrupp är högrisk enligt AI-förordningens bilaga III punkt 4 b trots att en person beslutar varje fält, och vad det i så fall kräver från 2 december 2027 (ADR-018, avsnittet om AI-förordningen).
+
 ## 4. Slutsats
 
 [Företagets bedömning, namn, datum, nästa översyn.]

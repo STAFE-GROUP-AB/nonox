@@ -88,6 +88,14 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Arbetsgivardeklaration (AGI) som XML enligt Skatteverkets schema, och ett lönearkiv som finns kvar när modulen stängs av.
 - Min sida för anställda: lönebesked, sjukanmälan, vård av barn, semesteransökan och utlägg.
 
+### Avtal (modul)
+- Kollektivavtal i lönen: avtalets värden som versionerad data med källa till parternas egna texter, aldrig som avtalstext. Data för Gröna Riks (medlem och hängavtal), Besöksnäringens tjänstemannaavtal, Detaljhandeln, Handelns tjänstemannaavtal, Lager och E-handel, bageriavtalet och Frisöravtalet.
+- En avtalsversion används först när en namngiven person har jämfört den med källorna; till dess stoppas lönekörningen för de anställda som omfattas. Frisöravtalets värden kan inte kontrolleras förrän 2025 års text är publik.
+- Företaget väljer avtal och om det är bundet som medlem eller genom hängavtal; varje anställning får avtal, lönegrupp och branschvana.
+- Redan uppdelade timmar för OB och övertid, inmatade eller från en löneunderlagsfil, prissätts med avtalets sats för arbetsdagen, och lönebeskedet visar version och källa. Minimilönen kontrolleras per lönegrupp, ålder och branschvana och ger en varning på lönekörningen. Avtalskalender med aftnar och storhelger.
+- Med NONOX AI påslaget läses hängavtal och anställningsavtal som text där personnummer, bankuppgifter och adresser är dolda, och AI:n föreslår avtal, lönegrupp och andra uppgifter med citat och sida. Inget förs in förrän en person godkänner det.
+- Inte byggt ännu: OB räknat direkt från passens klockslag, övertid mot schemat, komptid, avtalets semester- och sjuklöneregler, pension och avtalsförsäkringar per avtal.
+
 ### Personalliggare (modul)
 - Lokaler och personal med in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet, med kod, personlig QR-kod eller mobil incheckning.
 - Liggaren skrivs bara till, med en kedja av kontrollsummor och rättelser som syns bredvid originalet. Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren.

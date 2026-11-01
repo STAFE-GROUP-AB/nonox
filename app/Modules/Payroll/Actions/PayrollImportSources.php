@@ -45,7 +45,7 @@ class PayrollImportSources
             ->where('is_active', true)
             ->whereNotIn('category', self::EXCLUDED_CATEGORIES)
             ->orderBy('code')
-            ->get(['id', 'code', 'name_sv', 'unit']);
+            ->get(['id', 'code', 'name_sv', 'unit', 'formula_ref']);
     }
 
     public function create(User $user, Company $company, string $name): PayrollImportSource

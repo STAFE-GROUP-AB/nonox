@@ -32,7 +32,8 @@
             {"title": "Personalliggare på en surfplatta", "text": "Personalen checkar in med kod eller QR-kod i en kiosk vid dörren, som fungerar även när internet ligger nere. Liggaren kan inte ändras i efterhand, rättelser syns bredvid originalet och kontrollbesöket öppnas med ett tryck.", "features": ["staff_ledger", "control_visit"]},
             {"title": "Timlön från passen i liggaren", "text": "Med lönemodulen påslagen blir passen i personalliggaren ett förslag till tidrapport. När du godkänt den räknas timlönen fram med Skatteverkets skattetabeller, semester och arbetsgivaravgifter, och arbetsgivardeklarationen blir en fil. Har ni ett schemasystem läses dess lönefil in som PAXml eller CSV, och raderna blir förslag som du godkänner.", "features": ["hourly_pay", "payroll", "young_employer_contributions", "agi", "payroll_file_import"]},
             {"title": "Bank och moms som stämmer", "text": "Bankavstämningen visar vad som skiljer mellan kontot och bokföringen, till exempel en kortutbetalning som inte kommit. Momsdeklarationen räknas fram ur bokföringen och laddas ner som fil till Skatteverket.", "features": ["bank_reconciliation", "vat_return", "templates"]},
-            {"title": "Min sida för personalen", "text": "De anställda ser sina lönebesked, sjukanmäler sig och ansöker om semester i mobilen, så att du slipper lappar och sms.", "features": ["employee_portal"]}
+            {"title": "Min sida för personalen", "text": "De anställda ser sina lönebesked, sjukanmäler sig och ansöker om semester i mobilen, så att du slipper lappar och sms.", "features": ["employee_portal"]},
+            {"title": "Kollektivavtalet i lönen", "text": "Med modulen Avtal väljer du Gröna Riks eller bageriavtalet per anställd. Minimilönen för unga kontrolleras från födelsedatumet, och OB-timmar prissätts med avtalets satser. Varje version används först när en namngiven person har kontrollerat den mot avtalet.", "features": ["agreements"]}
         ]
     },
     "pos": {
@@ -47,6 +48,7 @@
         "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
     },
     "limits": [
+        {"text": "OB räknas ännu inte direkt från passens klockslag. Timmarna per OB-sort kommer inmatade eller från schemasystemets löneunderlag, och avtalets semester-, sjuklöne- och pensionsregler räknas inte per avtal ännu."},
         {"text": "NONOX är inget kassasystem. Du behåller din kassa; NONOX tar emot dagsrapporten och bokför den."},
         {"text": "NONOX har inget schema för personalen. Timmarna kommer från personalliggaren eller från tidrapporter."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},

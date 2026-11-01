@@ -14,17 +14,26 @@ use App\Modules\Payroll\Domain\Engine\Step;
 /**
  * Step 5: hours, overtime, OB, bonus and other inputs that are paid before
  * tax, each taxed as its pay code says. Hourly pay without a rate takes the
- * employment's hourly rate.
+ * employment's hourly rate. An input whose pay code is priced by the
+ * collective agreement (NONOX Avtal, ADR-033) is never priced at the hourly
+ * rate: without the agreement's rate it blocks the run.
  */
 final class Additions implements Step
 {
     public const array NET_CATEGORIES = ['NET_DEDUCTION', 'NET_ADDITION', 'EXPENSE'];
+
+    /** Set in an input's explanation by ContextBuilder when its pay code is priced by the agreement. */
+    public const string AGREEMENT_PRICED = 'agreement_priced';
 
     public function apply(PayrollContext $context, PayslipDraft $draft): void
     {
         foreach ($context->inputs as $input) {
             if (in_array($input->category, self::NET_CATEGORIES, true) || in_array($input->code, Allowances::codes(), true)) {
                 continue;
+            }
+
+            if (($input->explanation[self::AGREEMENT_PRICED] ?? false) === true && $input->amountOre === null && $input->rateOre === null) {
+                throw new PayrollBlockedException(__(':item prissätts av kollektivavtalet men har ingen sats. Slå på modulen Avtal och knyt anställningen till avtalet, eller ange belopp eller timpris.', ['item' => $input->description]));
             }
 
             $rate = $input->rateOre ?? ($input->quantity !== null && $input->amountOre === null ? $context->hourlyRateOre : null);

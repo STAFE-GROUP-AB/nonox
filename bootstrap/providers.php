@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Migration\Fortnox\FortnoxServiceProvider;
+use App\Modules\Agreements\AgreementsServiceProvider;
 use App\Modules\Ai\AiServiceProvider;
 use App\Modules\Banking\BankingServiceProvider;
 use App\Modules\Connect\ConnectServiceProvider;
@@ -20,6 +21,7 @@ return [
     ModuleServiceProvider::class,
     SearchServiceProvider::class,
     PayrollServiceProvider::class,
+    AgreementsServiceProvider::class,
     AiServiceProvider::class,
     StaffLedgerServiceProvider::class,
     InboxServiceProvider::class,

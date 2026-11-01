@@ -49,6 +49,7 @@ final class Features
         'payroll' => ['name' => 'Lön med skattetabeller', 'status' => self::LIVE, 'readme' => 'Skatteverkets skattetabeller, månads- och timlön', 'module' => 'Lön'],
         'hourly_pay' => ['name' => 'Timlön från godkända tidrapporter', 'status' => self::LIVE, 'readme' => 'Timlön räknas från godkända tidrapporter, även från personalliggaren', 'module' => 'Lön'],
         'payroll_file_import' => ['name' => 'Löneunderlag från schemasystem (PAXml)', 'status' => self::LIVE, 'readme' => 'Löneunderlag från schemasystem som PAXml eller CSV', 'module' => 'Lön'],
+        'agreements' => ['name' => 'Kollektivavtal i lönen', 'status' => self::LIVE, 'readme' => 'Kollektivavtal i lönen: avtalets värden som versionerad data med källa', 'module' => 'Avtal'],
         'young_employer_contributions' => ['name' => 'Arbetsgivaravgifter med sänkningen för unga', 'status' => self::LIVE, 'readme' => 'arbetsgivaravgifter med sänkningen för unga', 'module' => 'Lön'],
         'vacation_sick_pay' => ['name' => 'Semester och sjuklön', 'status' => self::LIVE, 'readme' => 'Semester enligt semesterlagen', 'module' => 'Lön'],
         'travel_expenses' => ['name' => 'Traktamente, milersättning och utlägg', 'status' => self::LIVE, 'readme' => 'traktamente och milersättning, tjänstepension, utlägg med kvitto', 'module' => 'Lön'],

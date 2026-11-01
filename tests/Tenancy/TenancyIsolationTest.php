@@ -65,6 +65,10 @@ use App\Modules\Banking\Models\BankFeedTransaction;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\ConnectGrant;
 use App\Modules\Connect\Models\IdempotencyRecord;
+use App\Modules\Agreements\Models\AgreementDocument;
+use App\Modules\Agreements\Models\AgreementProposal;
+use App\Modules\Agreements\Models\AgreementRuleVerification;
+use App\Modules\Agreements\Models\AgreementRuleVersion;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMailbox;
@@ -191,6 +195,9 @@ const COMPANY_SCOPED_MODELS = [
     Expense::class => 'payrollExpenseAttributes',
     TimeReport::class => 'payrollTimeReportAttributes',
     PayrollRuleVerification::class => 'payrollRuleVerificationAttributes',
+    AgreementRuleVerification::class => 'agreementRuleVerificationAttributes',
+    AgreementDocument::class => 'agreementDocumentAttributes',
+    AgreementProposal::class => 'agreementProposalAttributes',
     VacationLiabilitySnapshot::class => 'payrollVacationLiabilityAttributes',
     VacationYearClosing::class => 'payrollVacationYearClosingAttributes',
     AgiSubmission::class => 'payrollAgiSubmissionAttributes',
@@ -836,6 +843,26 @@ function payrollRuleVerificationAttributes(): array
     ];
 }
 
+function agreementRuleVerificationAttributes(): array
+{
+    return [
+        'agreement_rule_version_id' => AgreementRuleVersion::create(['agreement_key' => 'test-'.random_int(1, 1_000_000), 'variant' => 'MEMBER', 'valid_from' => '2026-01-01', 'rules' => [], 'sources' => [], 'checksum' => str_repeat('0', 64)])->id,
+        'verified_by' => User::factory()->create()->id,
+        'verifier_name' => 'Testperson',
+        'verified_at' => now(),
+    ];
+}
+
+function agreementDocumentAttributes(): array
+{
+    return ['document_type' => 'HANGAVTAL', 'original_name' => 'hemligt.txt', 'file_path' => 'agreement-documents/hemligt.txt', 'mime' => 'text/plain', 'size' => 10, 'sha256' => bin2hex(random_bytes(32)), 'uploaded_by' => User::factory()->create()->id];
+}
+
+function agreementProposalAttributes(): array
+{
+    return ['agreement_document_id' => AgreementDocument::create(agreementDocumentAttributes())->id, 'agent' => 'IDENTIFICATION', 'field' => 'binding', 'value' => ['agreement_key' => 'hemligt'], 'quote' => 'Hemligt citat', 'status' => 'PENDING'];
+}
+
 function payrollVacationLiabilityAttributes(): array
 {
     $year = random_int(2030, 2099);
@@ -977,7 +1004,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class];
+const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

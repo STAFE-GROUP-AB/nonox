@@ -1,0 +1,162 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "livsmedelsforetagen-livs-bageri",
+        "name": "Livsmedelsavtalet med tilläggsavtal för bageriföretag (Livsmedelsföretagen – Livs)",
+        "short_name": "Livs bageri",
+        "parties": ["Livsmedelsföretagen", "Svenska Livsmedelsarbetareförbundet (Livs)"],
+        "collective": "ARBETARE",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "segments": ["bageri", "konditori (produktion)"],
+        "source": "LA#s. 3; § 1"
+    },
+    "valid_from": "2025-04-01",
+    "valid_to": "2027-03-31",
+    "validity_source": "LA#§ 10",
+    "sources": [
+        { "id": "LA", "title": "Livsmedelsavtalet 2025–2027 inklusive tilläggsavtal", "publisher": "Livsmedelsföretagen/Livs", "url": "https://www.livsmedelsforetagen.se/app/uploads/2025/05/livsmedelsavtalet-2025-ny.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" }
+    ],
+    "working_time": {
+        "full_time_hours_per_week": "40",
+        "source": "LA#§ 3.1"
+    },
+    "groups": [
+        { "code": "BAGERI", "name": "Bageriarbetare", "description": "Arbetare i bageriföretag, timlön enligt tilläggsavtalet", "source": "LA#tilläggsavtal bagerier § 1 s. 57–58" }
+    ],
+    "minimum_wages": {
+        "age_reference": "PERIOD_END",
+        "check": "WARN",
+        "source": "LA#tilläggsavtal bagerier § 1 s. 57–58",
+        "steps": [
+            {
+                "valid_from": "2025-04-01",
+                "rows": [
+                    { "group": "BAGERI", "age_min": 18, "hourly_ore": 16434, "source": "LA#tilläggsavtal bagerier § 1 s. 57–58" },
+                    { "group": "BAGERI", "age_min": 18, "tenure_months_min": 12, "hourly_ore": 17125, "source": "LA#tilläggsavtal bagerier § 1 s. 57–58" }
+                ]
+            },
+            {
+                "valid_from": "2026-04-01",
+                "rows": [
+                    { "group": "BAGERI", "age_min": 18, "hourly_ore": 16992, "source": "LA#tilläggsavtal bagerier § 1 s. 57–58" },
+                    { "group": "BAGERI", "age_min": 18, "tenure_months_min": 12, "hourly_ore": 17683, "source": "LA#tilläggsavtal bagerier § 1 s. 57–58" }
+                ]
+            }
+        ]
+    },
+    "day_types": {
+        "HELGDAG": {
+            "name": "Helgdag enligt tilläggsavtalet (inklusive julafton)",
+            "days": [
+                { "day": "NYARSDAGEN", "from": "00:00", "to": "24:00" },
+                { "day": "TRETTONDEDAG_JUL", "from": "00:00", "to": "24:00" },
+                { "day": "LANGFREDAGEN", "from": "00:00", "to": "24:00" },
+                { "day": "PASKDAGEN", "from": "00:00", "to": "24:00" },
+                { "day": "ANNANDAG_PASK", "from": "00:00", "to": "24:00" },
+                { "day": "FORSTA_MAJ", "from": "00:00", "to": "24:00" },
+                { "day": "KRISTI_HIMMELSFARDSDAG", "from": "00:00", "to": "24:00" },
+                { "day": "PINGSTDAGEN", "from": "00:00", "to": "24:00" },
+                { "day": "NATIONALDAGEN", "from": "00:00", "to": "24:00" },
+                { "day": "MIDSOMMARDAGEN", "from": "00:00", "to": "24:00" },
+                { "day": "ALLA_HELGONS_DAG", "from": "00:00", "to": "24:00" },
+                { "day": "JULAFTON", "from": "00:00", "to": "24:00" },
+                { "day": "JULDAGEN", "from": "00:00", "to": "24:00" },
+                { "day": "ANNANDAG_JUL", "from": "00:00", "to": "24:00" }
+            ],
+            "source": "LA#tilläggsavtal bagerier § 2 s. 58–59"
+        },
+        "SONDAG_LIK": {
+            "name": "Nyårs- och midsommarafton (jämställs med söndag)",
+            "days": [
+                { "day": "NYARSAFTON", "from": "00:00", "to": "24:00" },
+                { "day": "MIDSOMMARAFTON", "from": "00:00", "to": "24:00" }
+            ],
+            "source": "LA#tilläggsavtal bagerier § 2 s. 58–59"
+        }
+    },
+    "ob_windows": [
+        { "code": "BG_OB_1", "days": ["MON", "TUE", "WED", "THU"], "from": "00:00", "to": "06:00", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_1", "days": ["MON", "TUE", "WED", "THU"], "from": "18:00", "to": "24:00", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_1", "days": ["FRI"], "from": "00:00", "to": "06:00", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_2", "days": ["FRI"], "from": "18:00", "to": "24:00", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_2", "days": ["SAT"], "from": "00:00", "to": "06:00", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_3", "days": ["SAT"], "from": "06:00", "to": "24:00", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_3", "days": ["SUN"], "from": "00:00", "to": "24:00", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_3", "day_type": "SONDAG_LIK", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" },
+        { "code": "BG_OB_HELGDAG", "day_type": "HELGDAG", "source": "LA#tilläggsavtal bagerier § 2 s. 58–59" }
+    ],
+    "codes": {
+        "BG_OB_1": {
+            "name": "OB-tillägg vardag",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Mån–tor 00–06 och 18–24, fredag 00–06",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 4946 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 5089 } }
+            ],
+            "source": "LA#tilläggsavtal bagerier § 2 s. 58–59"
+        },
+        "BG_OB_2": {
+            "name": "OB-tillägg fredagkväll och lördagnatt",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Fredag 18–24 och lördag 00–06",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 9608 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 9887 } }
+            ],
+            "source": "LA#tilläggsavtal bagerier § 2 s. 58–59"
+        },
+        "BG_OB_3": {
+            "name": "OB-tillägg helg",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Lördag 06–24, söndag samt nyårs- och midsommarafton hela dygnet",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 15071 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 15509 } }
+            ],
+            "source": "LA#tilläggsavtal bagerier § 2 s. 58–59"
+        },
+        "BG_OB_HELGDAG": {
+            "name": "OB-tillägg helgdag",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Helgdag enligt tilläggsavtalet (inklusive julafton) hela dygnet",
+            "day_type": "HELGDAG",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 22171 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 22814 } }
+            ],
+            "source": "LA#tilläggsavtal bagerier § 2 s. 58–59"
+        },
+        "BG_FORSKJUTEN": {
+            "name": "Förskjuten arbetstid",
+            "kind": "OB",
+            "pay_code": "OBTILLAGG",
+            "description": "Fast belopp per timme förskjuten arbetstid",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 3602 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "ORE_PER_HOUR", "ore": 3707 } }
+            ],
+            "source": "LA#tilläggsavtal bagerier § 3"
+        }
+    },
+    "notes": [
+        "Tilläggsavtalet för bageriföretag går före huvudavtalet där båda reglerar samma fråga (LA innehållsförteckning s. 5).",
+        "Avtalets helgdagslista skiljer sig från lagens: julafton är helgdag, nyårs- och midsommarafton jämställs med söndag. En helgdag eller afton som infaller på en vardag träffar också vardagsfönstren; dagtypen ska gå före. Motorn måste låta högsta belopp gälla.",
+        "BG_FORSKJUTEN har inga tidsfönster: faktabladet anger bara beloppet (LA § 3), inte när förskjuten tid uppstår. TODO(legal-verify).",
+        "OB mån–sön betalas samtidigt med övertidsersättning, men OB på helgdag gör det inte (LA § 2). Inte data ännu.",
+        "Inga övertidskoder: bageri § 4 (s. 61) ger +50 % de två första timmarna på vardag och +100 % därefter samt på sön- och helgdag, men söndagsdygnet (lördag 11.00 till måndag) och helgdagsdygnet (från 18.00 dagen före) kräver egna dagtyper. Mertid betalas som övertid (huvudavtalet § 3.3). TODO(legal-verify).",
+        "Raden 'vuxen med ett års anställning efter 18 år' är förenklad till fyllda 18 år och 12 månaders anställning. TODO(legal-verify): anställningsmånader före 18 år ska inte räknas.",
+        "TODO(legal-verify): avtalet anger inte från vilken dag ett nytt ålderssteg gäller; PERIOD_END är ett antagande.",
+        "Minimilön för 17 år (65 %), 16 år (63 %) och utbildningsår 1–3 (73 %, 80 %, 87 %) av gällande minimilön är inte data; samma procent gäller OB-beloppen för dem.",
+        "Lägre minimilön i 12 månader för den som saknar arbetslivserfarenhet är overifierad och inte med.",
+        "Ingen timlönedelare anges i faktabladet; minimilönerna är timlöner.",
+        "Skiftformstillägg (5,3 % och 11,1 %), arbetstidskonto (2,78 % och 2,92 %), semester 13,2 % och sjuklön är inte data i den här versionen ännu.",
+        "TODO(legal-verify): servispersonal på konditori eller café med servering kan höra till Gröna Riks i stället; det avgörs per företag och anställning.",
+        "Hängavtal finns och kostar ingen avgift till Livs enligt Livs frågor och svar; ingen HANGAVTAL-variant finns här ännu."
+    ]
+}
