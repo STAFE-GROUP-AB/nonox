@@ -82,7 +82,7 @@ class StaffLedgerServiceProvider extends ServiceProvider
         RateLimiter::for('staff-ledger-kiosk', fn (Request $request): Limit => Limit::perMinute(120)->by('kiosk:'.$request->ip()));
         RateLimiter::for('staff-ledger-pairing', fn (Request $request): Limit => Limit::perMinute(10)->by('kiosk-pair:'.$request->ip()));
 
-        $middleware = ['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class];
+        $middleware = ['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class];
         Route::middleware([...$middleware, 'module:'.StaffLedgerModule::KEY])->group(__DIR__.'/routes/web.php');
         Route::middleware($middleware)->group(__DIR__.'/routes/archive.php');
         Route::middleware([SecurityHeaders::class, 'throttle:staff-ledger-kiosk'])->group(__DIR__.'/routes/kiosk.php');

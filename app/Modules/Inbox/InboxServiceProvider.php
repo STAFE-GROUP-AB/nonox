@@ -61,7 +61,7 @@ class InboxServiceProvider extends ServiceProvider
         Livewire::component(InboxSettingsForm::NAME, InboxSettingsForm::class);
         Livewire::component('inbox.workspace', InboxWorkspace::class);
 
-        Route::middleware(['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.InboxModule::KEY])
+        Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.InboxModule::KEY])
             ->group(__DIR__.'/routes/web.php');
 
         // The raw message must reach the inbox byte for byte: no trimming of the webhook's fields.
