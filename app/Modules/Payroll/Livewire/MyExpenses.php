@@ -51,7 +51,10 @@ class MyExpenses extends Component
         }
 
         // NONOX AI reads the receipt while the employee waits; the provider may take up to two minutes.
-        set_time_limit(150);
+        // Not in tests: set_time_limit would cap the whole test process.
+        if (! app()->runningUnitTests()) {
+            set_time_limit(150);
+        }
 
         $expense = $claims->submit($this->user(), $this->company(), $this->expense, $this->receipt);
 

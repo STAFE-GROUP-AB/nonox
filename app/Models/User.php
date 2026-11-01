@@ -200,4 +200,23 @@ class User extends Authenticatable implements PasskeyUser
 
         $this->forceFill(['hidden_panels' => $panels])->save();
     }
+
+    /**
+     * The initials on a coloured square, drawn here. Jetstream's default
+     * fetches the image from ui-avatars.com, which would send every user's
+     * name to a third party (and the content security policy blocks it).
+     */
+    protected function defaultProfilePhotoUrl(): string
+    {
+        $initials = collect(preg_split('/\s+/', trim((string) $this->name)) ?: [])
+            ->filter()
+            ->take(2)
+            ->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
+            ->implode('');
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#FFE6DF"/>'
+            .'<text x="50%" y="50%" dy=".35em" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="26" font-weight="700" fill="#B8381A">'
+            .e($initials).'</text></svg>';
+
+        return 'data:image/svg+xml;base64,'.base64_encode($svg);
+    }
 }

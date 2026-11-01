@@ -82,3 +82,11 @@ it('does not let a company name become a link in a mail', function () {
 
     expect($rendered)->toContain('Acme')->not->toContain('href="https://evil.example"');
 });
+
+it('draws the default profile photo itself instead of sending the name to a third party', function () {
+    $user = User::factory()->make(['name' => 'Anna Åberg']);
+
+    expect($user->profile_photo_url)->toStartWith('data:image/svg+xml;base64,')
+        ->and(base64_decode(substr($user->profile_photo_url, 26)))->toContain('AÅ')
+        ->and($user->profile_photo_url)->not->toContain('ui-avatars');
+});
