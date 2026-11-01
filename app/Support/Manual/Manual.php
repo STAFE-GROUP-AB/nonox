@@ -38,14 +38,14 @@ final class Manual
      */
     public const array POPULAR = [
         'kom-igang/logga-in',
-        'kom-igang/skapa-ditt-forsta-foretag',
+        'kom-igang/skapa-ett-foretag',
         'bokforing/bokfor-en-verifikation',
         'fakturering/skapa-en-faktura',
         'leverantorer/registrera-en-leverantorsfaktura',
-        'moms/momsdeklarationen',
+        'moms/momsdeklaration',
         'bank/bankavstamning',
-        'bokslut/arsbokslut',
-        'flytta/oversikt',
+        'bokslut/stang-aret',
+        'flytta/fran-fortnox',
     ];
 
     /** How long the body text of an article may be in the search index. */

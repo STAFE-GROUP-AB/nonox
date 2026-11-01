@@ -43,10 +43,10 @@
         ],
         [
             'id' => 'bokforing', 'time' => '10–30 minuter', 'title' => 'Läs in bokföringen',
-            'lead' => 'Under Bokföring → Importera SIE läser du in en fil i taget, det äldsta året först.',
+            'lead' => 'Under Bokföring → Läs in SIE-fil läser du in en fil i taget: först det år som redan finns i NONOX, oftast det pågående, och sedan bakåt ett år i taget.',
             'do' => [
                 'NONOX visar först en avstämning: vilka konton som läggs till, hur verifikationsserierna kopplas och att varje år balanserar. Inget sparas förrän du godkänner.',
-                'Verifikationerna behåller sina serier och nummer, och blir låsta precis som allt annat som är bokfört.',
+                'Verifikationerna behåller sina serier och nummer när det går. Får en verifikation ett nytt nummer sparas originalserien och originalnumret på den, och den blir låst precis som allt annat som är bokfört.',
                 'Kontoplan, kostnadsställen och projekt följer med i filen.',
             ],
             'why' => 'SIE4 är det svenska standardformatet för bokföring. Det är därför en flytt inte behöver vara krånglig, och därför du alltid kan flytta härifrån också.',
@@ -117,7 +117,7 @@
     $faqs = [
         ['Hur lång tid tar det?', 'För de flesta småföretag en eftermiddag. Själva inläsningen tar minuter; det mesta av tiden går åt till att exportera ur det gamla programmet.'],
         ['Kan vi byta mitt i räkenskapsåret?', 'Ja. Hela årets bokföring läses in, och lönen fortsätter med beloppen hittills i år. Byt helst direkt efter en momsdeklaration.'],
-        ['Försvinner något på vägen?', 'Nej. Verifikationerna behåller nummer och serier, och NONOX stoppar inläsningen om ett år inte balanserar. Avstämningen i steg 7 bekräftar resten.'],
+        ['Försvinner något på vägen?', 'Nej. Varje verifikation behåller sitt originalnummer, antingen som nummer eller sparat på verifikationen, och NONOX stoppar inläsningen om ett år inte balanserar. Avstämningen i steg 7 bekräftar resten.'],
         ['Vad händer med underlagen?', 'De är din räkenskapsinformation och sparas i sju år. Spara dem i ditt arkiv från steg 2. Inläsning av underlag direkt till verifikationerna kommer snart.'],
         ['Vad kostar det?', 'Att köra NONOX själv är gratis. Vill du att vi sköter driften kostar det 995 kr om året för upp till 10 anställda och 1 995 kr om året upp till 25.'],
         ['Kan vår redovisningskonsult göra flytten?', 'Ja. Bjud in konsulten till företaget i NONOX, så kan hen läsa in filerna och stämma av.'],

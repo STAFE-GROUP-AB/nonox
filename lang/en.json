@@ -2872,7 +2872,7 @@
     "Anslut igen": "Connect again",
     "Anslut till Fortnox": "Connect to Fortnox",
     "2. Bokföringen, år för år": "2. The bookkeeping, year by year",
-    "Varje räkenskapsår hämtas som en SIE4-fil och granskas innan något bokförs, precis som när du läser in en fil själv. Börja med det äldsta året.": "Each fiscal year is fetched as a SIE4 file and reviewed before anything is booked, just like when you read in a file yourself. Start with the oldest year.",
+    "Varje räkenskapsår hämtas som en SIE4-fil och granskas innan något bokförs, precis som när du läser in en fil själv. Börja med det år som redan finns här, oftast det pågående, och fortsätt sedan bakåt ett år i taget.": "Each fiscal year is fetched as a SIE4 file and reviewed before anything is booked, just like when you read in a file yourself. Start with the year that is already here, usually the current one, and then go back one year at a time.",
     "Visa räkenskapsåren i Fortnox": "Show the fiscal years in Fortnox",
     "Hämtad, granska och läs in": "Fetched, review and read in",
     "Hämta igen": "Fetch again",

@@ -312,7 +312,7 @@ it('has valid front matter, a title, existing roles, modules and routes in every
             ->and($meta)->toHaveKey('ordning')
             ->and($meta['ordning'])->toBeInt()
             ->and($page['title'])->not->toBe('', "{$path}: needs one # title.")
-            ->and(substr_count($body, "\n# ") + (str_starts_with(ltrim($body), '# ') ? 1 : 0))->toBe(1, "{$path}: exactly one # title.");
+            ->and(preg_match_all('/^# /m', (string) preg_replace('/^```.*?^```/ms', '', $body)))->toBe(1, "{$path}: exactly one # title.");
 
         foreach ((array) ($meta['roller'] ?? []) as $role) {
             expect($role === 'owner' || Jetstream::findRole((string) $role) !== null)->toBeTrue("{$path}: role {$role} does not exist.");
@@ -360,7 +360,7 @@ it('has a link that resolves for every /manual link in the real articles', funct
             expect($key === null || in_array($key, $articles, true))->toBeTrue("{$path} links to {$link}, which does not exist.");
 
             if ($fragment !== null && $key !== null) {
-                expect($headings[$key] ?? [])->toContain($fragment, "{$path} links to {$link}, a heading that does not exist.");
+                expect(in_array($fragment, $headings[$key] ?? [], true))->toBeTrue("{$path} links to {$link}, a heading that does not exist.");
             }
         }
     }
