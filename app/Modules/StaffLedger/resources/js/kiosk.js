@@ -4,7 +4,7 @@
 // a sequence number and the device's hash chain) and shown as done at once,
 // and a background loop sends the queue to the server in order.
 import {
-    applyAck, createEvent, csv, MAX_PIN_ATTEMPTS, nextDirection, pinLockState, pinMatches,
+    applyAck, applyToPeople, createEvent, csv, MAX_PIN_ATTEMPTS, nextDirection, pinLockState, pinMatches,
     presentSince, registerPinFailure, sendOrder, sha256, zip,
 } from './kiosk-core.js';
 import '../css/kiosk.css';
@@ -215,7 +215,15 @@ async function sync() {
         const { remaining, rejected } = applyAck(queue, ack);
         const keep = new Set(remaining.map((event) => event.sequence));
 
-        await tx('queue', 'readwrite', (store) => queue.filter((event) => !keep.has(event.sequence)).forEach((event) => store.delete(event.sequence)));
+        const sent = queue.filter((event) => !keep.has(event.sequence));
+        await tx('queue', 'readwrite', (store) => sent.forEach((event) => store.delete(event.sequence)));
+
+        const accepted = sent.filter((event) => !rejected.some((item) => item.sequence === event.sequence));
+
+        if (accepted.length > 0 && state.roster) {
+            state.roster = { ...state.roster, people: applyToPeople(state.roster.people, accepted) };
+            await kv.set('roster', state.roster);
+        }
         await tx('rejected', 'readwrite', (store) => rejected.forEach((event) => store.put(event)));
         await kv.set('logs', []);
 

@@ -4,7 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    applyAck, canonicalEvent, chainHash, createEvent, crc32, csv, MAX_PIN_ATTEMPTS, nextDirection,
+    applyAck, applyToPeople, canonicalEvent, chainHash, createEvent, crc32, csv, MAX_PIN_ATTEMPTS, nextDirection,
     pinLockState, pinMatches, pinVerifier, presentSince, registerPinFailure, sendOrder, zip,
 } from '../../app/Modules/StaffLedger/resources/js/kiosk-core.js';
 
@@ -93,4 +93,14 @@ test('the USB export is a valid ZIP with a safe CSV', () => {
     assert.equal(view.getUint32(archive.length - 22, true), 0x06054b50);
     assert.equal(view.getUint16(archive.length - 12, true), 2);
     assert.equal(csv([['=1+1', '-12,50', 'a;b']]), '﻿\'=1+1;-12,50;"a;b"\r\n');
+});
+
+test('events the server accepted update the roster, so a sent check-out stays out', () => {
+    const people = [{ id: 7, present_since: '2026-11-01T12:11:00+01:00' }, { id: 8, present_since: null }];
+    const after = applyToPeople(people, [{ person_id: 7, sequence: 3, direction: 'OUT', occurred_at: 'y' }, { person_id: 8, sequence: 2, direction: 'IN', occurred_at: 'z' }]);
+
+    assert.equal(presentSince(after[0], []), null);
+    assert.equal(nextDirection(after[0], []), 'IN');
+    assert.equal(presentSince(after[1], []), 'z');
+    assert.equal(applyToPeople(people, [])[0], people[0]);
 });

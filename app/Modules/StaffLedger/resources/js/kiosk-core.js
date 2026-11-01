@@ -144,6 +144,20 @@ export function presentSince(person, queue) {
     return last.direction === 'IN' ? last.occurred_at : null;
 }
 
+/**
+ * The roster's people after the server accepted these events, so leaving the
+ * queue does not bring back the presence the roster was downloaded with.
+ */
+export function applyToPeople(people, events) {
+    const latest = new Map(sendOrder(events).map((event) => [event.person_id, event]));
+
+    return people.map((person) => {
+        const event = latest.get(person.id);
+
+        return event ? { ...person, present_since: event.direction === 'IN' ? event.occurred_at : null } : person;
+    });
+}
+
 export function nextDirection(person, queue) {
     return presentSince(person, queue) ? 'OUT' : 'IN';
 }
