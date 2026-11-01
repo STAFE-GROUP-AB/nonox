@@ -2,7 +2,9 @@ name: Release
 
 # A version tag (v1.2.3) becomes a GitHub release with notes generated from
 # the merged pull requests and commits since the previous tag. A tag with a
-# suffix (v0.10.0-beta.1) is published as a pre-release.
+# suffix (v0.10.0-beta.1) is published as a pre-release. Every release
+# carries a software bill of materials (SBOM, CycloneDX JSON) of the PHP and
+# JavaScript packages in composer.lock and package-lock.json.
 on:
   push:
     tags:
@@ -17,6 +19,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - name: Software bill of materials
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: nonox-${{ github.ref_name }}-sbom.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
       - name: Create the release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -24,4 +34,4 @@ jobs:
         run: |
           prerelease=""
           if [[ "$TAG" == *-* || "$TAG" == v0.* ]]; then prerelease="--prerelease"; fi
-          gh release create "$TAG" --title "NONOX $TAG" --generate-notes --verify-tag $prerelease
+          gh release create "$TAG" --title "NONOX $TAG" --generate-notes --verify-tag $prerelease "nonox-$TAG-sbom.cdx.json"
