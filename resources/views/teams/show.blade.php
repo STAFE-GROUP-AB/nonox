@@ -10,6 +10,7 @@
             'uppgifter' => __('Uppgifter och personer'),
             'varumarke' => Gate::allows('update', $team) ? __('Varumärke') : null,
             'moduler' => auth()->user()->hasTeamPermission($team, 'modules:manage') ? __('Moduler') : null,
+            'agarskap' => Gate::allows('transferOwnership', $team) ? __('Ägarskap och arkiv') : null,
         ]);
         $tab = array_key_exists((string) request('flik'), $tabs) ? (string) request('flik') : 'uppgifter';
     @endphp
@@ -27,12 +28,18 @@
             </nav>
         @endif
 
-        @if($tab === 'moduler')
+        @if($tab === 'agarskap')
+            <livewire:company.ownership-settings :company="$team" />
+        @elseif($tab === 'moduler')
             <livewire:modules.company-modules-tab :company="$team" />
         @elseif($tab === 'varumarke')
             <livewire:company.brand-settings :company="$team" />
         @else
             <livewire:company.company-details-form :company="$team" />
+
+            @if(auth()->user()->ownsTeam($team))
+                <livewire:company.passkey-policy :company="$team" />
+            @endif
 
             <div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Personer i företaget') }}</h3>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Support\Tenancy\BelongsToCompany;
+use App\Support\Tenancy\WritableWhenArchived;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?int $note_updated_by
  * @property ?CarbonImmutable $note_updated_at
  */
-class ClientProfile extends Model
+class ClientProfile extends Model implements WritableWhenArchived
 {
     use BelongsToCompany;
 

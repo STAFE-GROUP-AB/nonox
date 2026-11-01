@@ -21,7 +21,7 @@
                 </p>
             </div>
             <button type="button" x-on:click="run('analyze')" x-bind:disabled="running"
-                class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60">
+                class="inline-flex items-center gap-2 rounded-lg bg-gray-900 px-4 py-2 max-sm:min-h-11 text-sm font-semibold text-white hover:bg-gray-800 disabled:cursor-wait disabled:opacity-60">
                 <span x-show="! running">{{ __('Analysera') }}</span>
                 <span x-show="running" x-cloak class="tabular-nums" x-text="left > 0 ? left + ' s' : '…'"></span>
             </button>

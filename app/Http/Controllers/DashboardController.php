@@ -38,9 +38,13 @@ class DashboardController
             ->unique()
             ->values();
 
+        $canSeeStatistics = $user->hasTeamPermission($company, 'reports:view');
+
         return view('dashboard', [
             'user' => $user,
             'company' => $company,
+            'canSeeStatistics' => $canSeeStatistics,
+            'tab' => $canSeeStatistics && $request->query('flik') === 'statistik' ? 'statistik' : 'oversikt',
             'canManage' => $user->can('update', $company),
             'firm' => FirmActivity::forViewer($user, $company),
             'hideGettingStarted' => $user->hidesPanel(GettingStartedController::PANEL, $company),

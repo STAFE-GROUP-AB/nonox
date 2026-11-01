@@ -4,7 +4,8 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "test": "node --test tests/js/*.test.mjs"
+        "test": "node --test tests/js/*.test.mjs",
+        "check:mobile": "node scripts/mobile-overflow.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",
@@ -12,6 +13,7 @@
         "@tailwindcss/vite": "^4.3.3",
         "alpinejs": "^3.17.5",
         "axios": "^1.7.2",
+        "chart.js": "4.5.1",
         "jsqr": "^1.4.0",
         "laravel-vite-plugin": "^3.2.0",
         "tailwindcss": "^4.3.3",

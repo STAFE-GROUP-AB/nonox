@@ -30,6 +30,8 @@ use LogicException;
  * @property ?string $rule_snapshot_hash
  * @property ?string $posted_voucher_id
  * @property ?string $tax_voucher_id
+ * @property ?list<int> $late_time_reports_included time reports from earlier months the person running payroll chose to pay in this run
+ * @property ?list<int> $late_time_reports_skipped time reports from earlier months left for a later run
  */
 class PayrollRun extends Model
 {
@@ -68,12 +70,24 @@ class PayrollRun extends Model
             'payment_date' => 'immutable_date',
             'calculated_at' => 'immutable_datetime',
             'approved_at' => 'immutable_datetime',
+            'late_time_reports_included' => 'array',
+            'late_time_reports_skipped' => 'array',
         ];
     }
 
     public function isOpen(): bool
     {
         return in_array($this->status, [self::DRAFT, self::CALCULATED], true);
+    }
+
+    /**
+     * The time reports from earlier months this run has an answer for.
+     *
+     * @return list<int>
+     */
+    public function lateTimeReportsDecided(): array
+    {
+        return [...($this->late_time_reports_included ?? []), ...($this->late_time_reports_skipped ?? [])];
     }
 
     public function periodStart(): CarbonImmutable

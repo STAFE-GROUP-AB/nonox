@@ -109,8 +109,8 @@
         ['Obetalda kund- och leverantörsfakturor', 'Som saldo på 1510 och 2440', true],
         ['Lön: anställda, årets summor, semester', 'CSV-mallar i NONOX', true],
         ['Gamla lönebesked', 'PDF till lönearkivet', true],
-        ['Kund-, leverantörs- och artikelregister', 'För hand i dag, import kommer snart', false],
-        ['Underlag och kvitton', 'Sparas i ditt arkiv, inläsning kommer snart', false],
+        ['Kund-, leverantörs- och artikelregister', $directFetch ? 'Hämtas automatiskt från Fortnox; från andra program för hand, import kommer snart' : 'För hand i dag, import kommer snart', $directFetch],
+        ['Underlag och kvitton', $directFetch ? 'Hämtas automatiskt från Fortnox och kopplas till verifikationerna; från andra program sparas de i ditt arkiv' : 'Sparas i ditt arkiv, inläsning kommer snart', $directFetch],
         ['Automatisk hämtning direkt från Fortnox', $directFetch ? 'Logga in på Fortnox-kontot, NONOX hämtar resten' : 'Kommer snart', $directFetch],
         ['Automatisk hämtning från andra program', 'Kommer snart', false],
     ];

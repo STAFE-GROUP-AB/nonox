@@ -11,6 +11,8 @@
         'verifikationer' => __('Verifikationslista'),
     ];
     $th = 'py-2 pr-4 font-medium';
+    // On a phone the account column stays in place while the amounts scroll sideways.
+    $sticky = 'sticky left-0 z-[1] bg-white max-sm:min-w-40';
     $num = 'py-2 pr-4 text-right';
 @endphp
 
@@ -103,7 +105,7 @@
                     <table class="w-full text-sm">
                         <thead>
                             <tr class="border-b border-gray-200 text-left text-gray-500">
-                                <th class="{{ $th }}">{{ __('Konto') }}</th>
+                                <th class="{{ $th }} {{ $sticky }}">{{ __('Konto') }}</th>
                                 <th class="{{ $th }} text-right">{{ __('Ingående') }}</th>
                                 <th class="{{ $th }} text-right">{{ __('Debet') }}</th>
                                 <th class="{{ $th }} text-right">{{ __('Kredit') }}</th>
@@ -113,7 +115,7 @@
                         <tbody class="divide-y divide-gray-100">
                             @foreach($data['rows'] as $row)
                                 <tr>
-                                    <td class="py-2 pr-4"><span class="font-semibold tabular-nums">{{ $row['number'] }}</span> {{ $row['name'] }}</td>
+                                    <td class="py-2 pr-4 {{ $sticky }}"><span class="font-semibold tabular-nums">{{ $row['number'] }}</span> {{ $row['name'] }}</td>
                                     <td class="{{ $num }}"><x-ui.amount :money="$m($row['opening'])" :currency="false" /></td>
                                     <td class="{{ $num }}"><x-ui.amount :money="$m($row['debit'])" :currency="false" /></td>
                                     <td class="{{ $num }}"><x-ui.amount :money="$m($row['credit'])" :currency="false" /></td>
@@ -123,7 +125,7 @@
                         </tbody>
                         <tfoot>
                             <tr class="border-t border-gray-200 font-semibold">
-                                <td class="pt-3 pr-4">{{ __('Summa') }}</td>
+                                <td class="pt-3 pr-4 {{ $sticky }}">{{ __('Summa') }}</td>
                                 <td class="pt-3 pr-4 text-right"><x-ui.amount :money="$m($data['totals']['opening'])" :currency="false" /></td>
                                 <td class="pt-3 pr-4 text-right"><x-ui.amount :money="$m($data['totals']['debit'])" :currency="false" /></td>
                                 <td class="pt-3 pr-4 text-right"><x-ui.amount :money="$m($data['totals']['credit'])" :currency="false" /></td>

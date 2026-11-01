@@ -19,6 +19,35 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Användare loggar in med en engångskod via e-post. Behörigheten styrs av roller
   per företag ([ADR-003](../adr/ADR-003-company-roles.md)).
 
+### 1.1 Överlåtelse och arkivering
+
+Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md).
+
+- Ägaren kan överlåta företaget till en annan medlem med en av företagsrollerna
+  (Företagsinställningar → Ägarskap och arkiv). Medlemmen blir ägare, den
+  tidigare ägaren blir administratör. Överlåtelsen skrivs i
+  behandlingshistoriken (`company.ownership_transferred`).
+- Ett företag raderas aldrig. Ägaren arkiverar det i stället. Före
+  arkiveringen visas arkivpaketet för varje räkenskapsår (avsnitt 7a); ett
+  paket räknas som aktuellt när det skapades efter årets senaste bokföring.
+  Saknas ett aktuellt paket måste ägaren bekräfta att räkenskapsinformationen
+  är sparad på annat sätt. Arkiveringen skrivs i behandlingshistoriken
+  (`company.archived`) med paketen och bekräftelsen.
+- Ett arkiverat företag kan bara läsas. Det spärras i två led: behörigheterna
+  i ett arkiverat företag är bara de som läser och exporterar (verifikationer,
+  fakturor, rapporter, SIE-export, arkivpaket, behandlingshistorik och
+  lönearkiv), och en rad med företagsdata kan inte skapas eller ändras i ett
+  arkiverat företag även om koden inte frågar efter behörighet (schemalagda
+  körningar, kiosker). Inget kan bokföras, faktureras, betalas eller ändras,
+  ingen lön köras och ingen in- eller utcheckning göras. Post till inkorgen
+  tas inte emot utan loggas (`inbox.dropped`, `company_archived`), och avtal
+  faktureras inte. Registerutdrag enligt GDPR fungerar som förut, och
+  gallring av personuppgifter fortsätter.
+- Varje sida i ett arkiverat företag visar att företaget är arkiverat och
+  bara kan läsas. Arkiverade företag visas för sig, nedtonade, i
+  företagsväljaren och under Mina företag.
+- Ägaren kan ta företaget ur arkivet (`company.unarchived`).
+
 ## 1a. Mina företag (översikt för byråer)
 
 - Sidan Mina företag (`/mina-foretag`) visar alla företag användaren är medlem
@@ -67,7 +96,35 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Översikten hämtar varje siffra med en fråga för alla företag tillsammans,
   så antalet databasfrågor är detsamma oavsett hur många klienter byrån har.
 
-## 1b. Byråns arbetsyta och uppgifter (ADR-028)
+## 1b. Översikt (startsidan)
+
+- Översikt (`/oversikt`) visar för det valda företaget fyra nyckeltal
+  (saldot på företagskontot 1930 enligt bokföringen och hur långt det är
+  avstämt, obetalda kundfakturor, obetalda leverantörsfakturor och nästa
+  momsdeklaration med sista dag), "Att göra" och de fem senast bokförda
+  verifikationerna. Fliken Statistik och prognos visar diagram med samma
+  siffror som tabeller ([ADR-027](../adr/ADR-027-overview.md)).
+- Översikten läser bara. Den bokför, ändrar och loggar ingenting.
+- "Att göra" bygger på samma regler som Mina företag (1a) för det valda
+  företaget, plus bankposter som inte är kopplade till en faktura, företags-
+  kontot som inte är avstämt till och med förra månadens slut, underlag i
+  inkorgen och glömda utcheckningar i personalliggaren när de modulerna är
+  påslagna. Varje rad visas bara för en roll som får utföra den.
+- Belopp på senaste verifikationer: rör verifikationen bank och kassa (konto
+  1900–1999) visas nettoförändringen där med tecken, plus för pengar in och
+  minus för pengar ut. Andra verifikationer visar summan av debet utan tecken.
+- Siffrorna sparas i en cache per företag, roll och dag i högst tio minuter.
+  Cachen töms när en transaktion som skriver i behandlingshistoriken eller
+  ändrar verifikationer, fakturor, bankposter med mera har sparats, och när
+  användaren trycker på pilen för att ladda om. Tidpunkten för uträkningen
+  visas ("Uppdaterad 14:32").
+- Prognosen för likviditeten är en enkel räkning som förklaras under
+  diagrammet: dagens saldo på bank och kassa, plus obetalda kundfakturor och
+  minus obetalda leverantörsfakturor den månad de förfaller, plus det
+  genomsnittliga resultatet för de tre senaste hela månaderna. Den märks
+  "Prognos" och är ingen AI.
+
+## 1c. Byråns arbetsyta och uppgifter (ADR-028)
 
 - Fliken Översikt på Mina företag summerar alla användarens företag: pengar
   på bank och kassa (konto 1900–1999) och saldot på momskontona (2600–2699)
@@ -434,6 +491,31 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
   utgående och ingående moms. Kreditnotor från leverantörer bokförs med
   omvända belopp och kvittas mot en faktura eller betalas tillbaka
   ([ADR-016](../adr/ADR-016-supplier-credit-and-foreign-purchases.md)).
+- Leverantörsfakturor i utländsk valuta
+  ([ADR-025](../adr/ADR-025-exchange-differences.md)): fakturan sparar valuta
+  (ISO 4217), beloppet i valutan (i hundradelar) och kursen den bokförs till
+  (kronor per enhet, i miljondelar). Kursen fylls i med Riksbankens mittkurs
+  på fakturadatumet och kan ändras; beloppet i kronor måste vara valutabeloppet
+  gånger kursen, med högst en krona i avvikelse. Fakturan bokförs i kronor som
+  andra fakturor.
+- Betalning av en faktura i utländsk valuta: användaren anger hur mycket av
+  valutabeloppet som betalas (förifyllt med det som återstår) och hur många
+  kronor banken drog (förifyllt med Riksbankens kurs på betaldagen, ändras
+  till beloppet på kontoutdraget). Betalningen minskar skulden med sin andel
+  av de bokförda kronorna, avrundat till hela ören, och den sista betalningen
+  med allt som återstår, så att 2440 går jämnt ut. Verifikationen i serie E:
+  2440 debet med den bokförda andelen, 1930 kredit med kronorna som betalades
+  och skillnaden på 7960 Valutakursförluster (debet) eller 3960
+  Valutakursvinster (kredit) på fordringar och skulder av rörelsekaraktär.
+  Samma kurs ger ingen differensrad. Enligt kontantmetoden bokförs kostnader
+  och moms till den bokförda kursen och skillnaden på samma sätt. Saknas
+  kontot i kontoplanen läggs det till med BAS-namnet och det loggas.
+  Delbetalningar minskar valutabeloppet; det som återstår i valutan visas
+  bredvid kronorna. Betalningen sparar valutabeloppet och kursdifferensen och
+  skrivs till behandlingshistoriken. Fakturor i utländsk valuta kan inte tas
+  med i betalfiler (de betalar kronor till bankgiro och plusgiro) och kan
+  inte kvittas mot kreditnotor ännu. Orealiserade kursdifferenser på obetalda
+  fakturor vid bokslutet bokas inte automatiskt.
 - Betalfiler: attesterade fakturor kan betalas med en fil till banken (ISO
   20022 pain.001.001.03, [ADR-014](../adr/ADR-014-payment-files.md)). Filen
   sparas som den skapades, med kontrollsumma, och kan inte ändras. Betalningen
@@ -635,6 +717,24 @@ till jurist). Säkerhetsrapporter: `SECURITY.md`. Tillgänglighet:
   timmen). Koden fylls bara i automatiskt på en lokal adress och står inte i
   ämnesraden. Sessioner upphör efter 12 timmar, och användaren kan logga ut
   från alla andra enheter.
+- **Passkey som andra steg** ([ADR-029](../adr/ADR-029-passkeys.md)): den som
+  i något företag kan se sjukfrånvaro, lönebesked eller fullständiga
+  personnummer (`payroll:view-sensitive`, `payroll:view`,
+  `payroll:archive-view`, `staff-ledger:view-sensitive`,
+  `staff-ledger:control-visit`, i ett företag där modulen någon gång varit
+  påslagen), alla i ett företag där ägaren valt "Kräv passkey för alla i
+  företaget", och alla som själva lagt till en passkey, bekräftar inloggningen
+  med passkey efter koden, innan sessionen börjar. Den som måste ha en men
+  saknar lägger till en direkt efter koden. Passkeys kräver
+  användarverifiering (PIN, fingeravtryck, ansikte); bara den publika nyckeln
+  sparas. Den sista passkeyn kan inte tas bort medan en krävs. Tillagd passkey
+  och återställning mejlas till användaren och loggas (namn, aldrig
+  nyckeldata). Återställning görs av en ägare eller administratör i ett
+  företag där personen är med, som själv loggat in med passkey (inte av
+  ägaren av en administratör), loggas i det företaget och loggar ut personen
+  överallt; som sista utväg med `php artisan passkeys:reset`. Lokalt kan
+  steget hoppas över med `PASSKEYS_SKIP_LOCALLY` (kräver `APP_ENV=local` och
+  lokal adress).
 - **Säkerhetsrubriker:** begränsad CSP, X-Frame-Options, Referrer-Policy,
   Permissions-Policy och HSTS.
 - **Lön:**
@@ -758,9 +858,30 @@ lönebeskeden låsta i databasen.
   knuten. När körningen är attesterad vägrar databasen att ändra eller ta bort
   dess tidrapporter. Tidrapporter som inte är godkända räknas inte i lönen;
   lönekörningens sida visar hur många timmar i perioden som väntar på
-  godkännande (inskickade tidrapporter och personalliggarens förslag). En
-  tidrapport för en månad vars lönekörning redan är attesterad betalas inte
-  automatiskt; den läggs in som timlön i en senare körning.
+  godkännande (inskickade tidrapporter och personalliggarens förslag).
+- Sena tidrapporter: en godkänd tidrapport med Timlön som är daterad före
+  körningens månad och som ingen körning har betalat (den godkändes efter
+  att dess månads körning attesterades) betalas aldrig automatiskt. En
+  ordinarie lönekörning frågar den som kör lönen: sidan visar hur många
+  timmar det gäller, för vem och från vilka månader, med valen "Ta med i den
+  här lönekörningen" och "Inte nu". Frågan gäller anställda i körningen som
+  hade en anställning med timlön som gällde den dagen; den ställs inte så
+  länge tidrapportens egen månad har en ordinarie körning som är öppen (den
+  körningen betalar den). Hela frågan läses i en databasfråga för alla
+  anställda. Svaret sparas per tidrapport på körningen
+  (`payroll_runs.late_time_reports_included` och `late_time_reports_skipped`)
+  och i behandlingshistoriken (`payroll.late_time_reports_included`,
+  `payroll.late_time_reports_skipped`, `payroll.late_time_reports_reset`).
+  Medtagna tidrapporter knyts till körningen som andra tidrapporter och
+  betalas som egna rader, en per månad och anställning, till exempel
+  "Timlön enligt tidrapport (oktober 2026)", med timmar × timlönen i den
+  anställning timmarna arbetades i. En ny beräkning följer svaret; "Inte nu"
+  lämnar tidrapporterna obetalda och nästa körning frågar igen. Tidrapporter
+  som godkänns efter svaret frågas om för sig. Svaret kan ändras ("Ändra
+  valet") medan körningen är öppen; när den är attesterad vägrar databasens
+  trigger på `payroll_runs` att ändra det. Timmarna redovisas i AGI för
+  körningens utbetalningsmånad, som annan lön som betalas i körningen
+  (`TODO(legal-verify)` i ADR-012).
 - Utlägg med NONOX AI påslaget: den anställde skickar bara kvittot. NONOX AI
   läser filen direkt när den skickas och avgör först om den är ett utlägg: ett
   kvitto eller en faktura märkt som betald. En obetald faktura, något som inte
@@ -1142,9 +1263,15 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   skattskyldighet, EU- och exportfakturor är inte byggda ännu.
 - Kontantmetoden: obetalda kundfakturor vid räkenskapsårets slut ska bokföras
   som fordringar, och obetalda leverantörsfakturor som skulder, vid bokslutet.
-- Import av varor från länder utanför EU (ruta 50, 60–62) och fakturor i
-  utländsk valuta är inte byggda ännu; vilket datum som styr växelkursen för
-  varor från andra EU-länder ska bekräftas.
+- Import av varor från länder utanför EU (ruta 50, 60–62) är inte byggd ännu;
+  vilket datum som styr växelkursen för varor från andra EU-länder ska
+  bekräftas.
+- Leverantörsfakturor i utländsk valuta: att Riksbankens mittkurs på
+  fakturadatumet är rätt bokföringskurs (ML 8 kap. 21 § nämner ECB:s kurs
+  för momsens beskattningsunderlag); att realiserade kursdifferenser på
+  leverantörsskulder hör hemma på 3960/7960; hur orealiserade
+  kursdifferenser på obetalda skulder ska värderas vid bokslutet (K2 punkt
+  10.7, K3 kap. 30) och om det ska göras även enligt kontantmetoden.
 - Inlästa verifikationer bokförs med en behandlingshistorikpost per inläsning,
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt
@@ -1272,5 +1399,10 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.41 | 2026-11-01 | Dataskydd: "Radera mitt konto" på profilen (art. 17). Nekas så länge användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner, API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas bort; kontot raderas om inget längre hänvisar till det, annars pseudonymiseras det ("Raderad användare", en adress på .invalid, ingen inloggning) så att verifikationer och behandlingshistorik fortfarande visar vem som gjorde vad. Registerutdrag för en person i personalliggaren och för en avsändare till inkorgen (JSON, för inkorgen även CSV), loggade. |
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
-| 0.45 | 2026-11-01 | Byråns arbetsyta på Mina företag: summor och en gemensam Att göra-lista för alla företag med filter och sparade vyer, månadsstängning per klient, uppgifter med tilldelning, kommentarer, checklistor och återkommande uppgifter, notiser och daglig sammanfattning med e-post (ADR-028). |
 | 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
+| 0.45 | 2026-11-01 | Lön: godkända tidrapporter från tidigare månader som ingen lönekörning har betalat blir en fråga i nästa ordinarie lönekörning – "Ta med i den här lönekörningen" eller "Inte nu". Svaret sparas på körningen och i behandlingshistoriken, följs vid ny beräkning och låses när körningen attesteras. Medtagna timmar betalas som egna rader med den månad de hör till. |
+| 0.46 | 2026-11-01 | Företag: ägaren kan överlåta företaget till en annan medlem (blir själv administratör) och arkivera det. Före arkiveringen visas arkivpaketen per räkenskapsår; saknas ett aktuellt paket krävs en bekräftelse. Ett arkiverat företag kan bara läsas: bara läsande behörigheter gäller, och företagsdata kan inte skapas eller ändras ens av schemalagda körningar. Inkommande post till ett arkiverat företag loggas och tas inte emot. Ägaren kan ta företaget ur arkivet. |
+| 0.47 | 2026-11-01 | Leverantörsfakturor i utländsk valuta: valuta, valutabelopp och bokföringskurs sparas på fakturan (från inkorgen och i formuläret, med Riksbankens kurs förifylld). Betalning i valutan med kronorna banken drog; skillnaden mot de bokförda kronorna bokförs på 3960 eller 7960 i betalningens verifikation. Delbetalningar i valutan, och återstående valutabelopp visas. Sådana fakturor tas inte med i betalfiler eller kvittningar. |
+| 0.48 | 2026-11-01 | Passkeys (ADR-029): andra steg efter e-postkoden för den som kan se hälsouppgifter eller fullständiga personnummer, och för alla i ett företag som kräver det. Passkeys under Profil, återställning av ägare eller administratör, loggat och mejlat. |
+| 0.49 | 2026-11-01 | Översikt: nyckeltal, "Att göra" från bokföringen och modulerna, senaste verifikationer med belopp ur bankens synvinkel, cache per företag och roll med omladdning, och fliken Statistik och prognos med diagram, tabeller och en förklarad likviditetsprognos. Översikten läser bara. |
+| 0.50 | 2026-11-01 | Byråns arbetsyta på Mina företag: summor och en gemensam Att göra-lista för alla företag med filter och sparade vyer, månadsstängning per klient, uppgifter med tilldelning, kommentarer, checklistor och återkommande uppgifter, notiser och daglig sammanfattning med e-post (ADR-028). |

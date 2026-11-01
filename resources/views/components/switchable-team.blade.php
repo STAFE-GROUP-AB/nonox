@@ -15,7 +15,10 @@
                 </svg>
             @endif
 
-            <div class="truncate">{{ $team->name }}</div>
+            <div @class(['truncate', 'opacity-60' => $team->isArchived()])>{{ $team->name }}</div>
+            @if($team->isArchived())
+                <span class="ms-2 shrink-0 rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-gray-600">{{ __('Arkiverat') }}</span>
+            @endif
         </div>
     </x-dynamic-component>
 </form>

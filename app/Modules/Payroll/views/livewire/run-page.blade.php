@@ -67,6 +67,29 @@
                 {{ __(':hours timmar i perioden väntar på godkännande och kommer inte med i lönen förrän de är godkända. Godkänn tidrapporterna och beräkna lönekörningen igen.', ['hours' => $pendingHours]) }}
             </p>
         @endif
+        @if($lateWaiting !== null)
+            <div class="mt-4 rounded-lg border border-accent-200 bg-accent-50 p-4 text-sm text-gray-800" role="alert">
+                <p class="font-medium">{{ __(':hours godkända timmar från tidigare månader har inte betalats ut.', ['hours' => $lateWaiting['hours']]) }}</p>
+                <ul class="mt-2 space-y-1">
+                    @foreach($lateWaiting['employees'] as $row)
+                        <li>{{ __(':name: :hours tim från :months', ['name' => $row['name'], 'hours' => $row['hours'], 'months' => implode(', ', $row['months'])]) }}</li>
+                    @endforeach
+                </ul>
+                <p class="mt-2 text-gray-700">{{ __('Ska de betalas ut i den här lönekörningen? De visas som egna rader på lönebeskedet med den månad timmarna hör till. Väljer du Inte nu kommer frågan tillbaka i nästa lönekörning.') }}</p>
+                <div class="mt-3 flex flex-wrap items-center gap-3">
+                    <x-button type="button" wire:click="includeLateTimeReports" wire:loading.attr="disabled">{{ __('Ta med i den här lönekörningen') }}</x-button>
+                    <button type="button" class="text-sm font-medium text-gray-700 underline" wire:click="skipLateTimeReports" wire:loading.attr="disabled">{{ __('Inte nu') }}</button>
+                </div>
+                <x-input-error for="late_time_reports" class="mt-2" />
+            </div>
+        @endif
+        @if($lateIncluded !== null || $lateSkipped !== null)
+            <p class="mt-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-700" role="status">
+                @if($lateIncluded !== null){{ __('Timmar från tidigare månader som tas med i den här lönekörningen: :hours tim.', ['hours' => $lateIncluded['hours']]) }}@endif
+                @if($lateSkipped !== null){{ __('Timmar från tidigare månader som inte tas med nu: :hours tim.', ['hours' => $lateSkipped['hours']]) }}@endif
+                <button type="button" class="ml-1 font-medium text-accent-600 underline hover:text-accent-700" wire:click="resetLateTimeReports">{{ __('Ändra valet') }}</button>
+            </p>
+        @endif
         @if($blockers !== [])
             <div class="mt-4 rounded-lg border border-accent-200 bg-accent-50 p-4 text-sm text-accent-800" role="alert">
                 <p class="font-medium">{{ __('Det här måste lösas innan lönekörningen kan beräknas:') }}</p>

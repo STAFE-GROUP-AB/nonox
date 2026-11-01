@@ -17,7 +17,7 @@ it('greets the user and guides them through the first steps', function () {
         ->get(route('dashboard'))
         ->assertOk()
         ->assertSee('Hej Anna!')
-        ->assertSee('Här är översikten för Ettan AB.')
+        ->assertSee('Här är översikten för Ettan AB, '.now()->translatedFormat('F Y').'.')
         ->assertSee('Fyll i adress och bankgiro')
         ->assertSee(route('invoicing.invoices.create'), escape: false)
         ->assertDontSee('Jetstream')
@@ -75,12 +75,17 @@ it('uses a fixed number of queries', function () {
 
     DB::enableQueryLog();
     $this->get(route('dashboard'))->assertOk();
-    $queries = count(DB::getQueryLog());
+    $cold = count(DB::getQueryLog());
 
-    // One query per installed module that keeps an archive (payroll, staff ledger) to decide whether its archive link shows,
-    // and one per Livewire component for the role fingerprint (LivewireCompanyGuard); one for the bell's unread
-    // notices and one for the tasks handed to the user (ADR-028).
-    expect($queries)->toBeLessThan(19);
+    DB::flushQueryLog();
+    $this->get(route('dashboard'))->assertOk();
+    $warm = count(DB::getQueryLog());
+
+    // The overview is computed once and then read from the cache (ADR-027). Warm, what is left is one query per installed
+    // module that keeps an archive (payroll, staff ledger) to decide whether its archive link shows, one per Livewire
+    // component for the role fingerprint (LivewireCompanyGuard), the getting started steps and one for the overview's own fingerprint.
+    expect($cold)->toBeLessThan(45)
+        ->and($warm)->toBeLessThan(17);
 });
 
 it('hides the getting started panel per user and company, and shows it again', function () {

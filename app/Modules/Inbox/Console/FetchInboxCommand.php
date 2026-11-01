@@ -25,7 +25,8 @@ class FetchInboxCommand extends Command
         $ids = $this->argument('company') !== null ? [(int) $this->argument('company')] : $modules->companiesWith(InboxModule::KEY);
         $total = 0;
 
-        foreach (Company::query()->whereIn('id', $ids)->orderBy('id')->get() as $company) {
+        // An archived company takes no new mail (ADR-024).
+        foreach (Company::query()->whereIn('id', $ids)->whereNull('archived_at')->orderBy('id')->get() as $company) {
             $this->info("Fetching mail for company `{$company->id}`...");
             $result = $fetch($company);
             $total += $result['fetched'];

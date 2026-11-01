@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Modules\StaffLedger;
 
+use App\Domain\Overview\Contracts\TodoProvider;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Contracts\Module;
+use App\Modules\Contracts\ProvidesTodos;
 use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\StaffLedger\Livewire\StaffLedgerSettingsForm;
 use App\Modules\StaffLedger\Models\Entry;
+use App\Modules\StaffLedger\Support\StaffLedgerTodos;
 use App\Support\Tenancy\CurrentCompany;
 
 /**
@@ -20,7 +23,7 @@ use App\Support\Tenancy\CurrentCompany;
  * location check; an append-only ledger with a hash chain; and the control
  * visit view with exports. Free and built in.
  */
-final class StaffLedgerModule implements Module
+final class StaffLedgerModule implements Module, ProvidesTodos
 {
     public const string KEY = 'staff_ledger';
 
@@ -155,4 +158,10 @@ final class StaffLedgerModule implements Module
     }
 
     public function onDisable(Company $company, User $by): void {}
+
+    /** Översikt's "Att göra" (ADR-027). */
+    public function todoProvider(): TodoProvider
+    {
+        return app(StaffLedgerTodos::class);
+    }
 }

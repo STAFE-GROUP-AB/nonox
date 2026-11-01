@@ -112,7 +112,7 @@
             <ul class="divide-y divide-gray-100 text-sm">
                 @foreach($batches as $batch)
                     <li wire:key="batch-{{ $batch->id }}" class="flex flex-wrap items-center gap-4 py-3">
-                        <span class="min-w-0 flex-1">
+                        <span class="min-w-0 flex-1 basis-40">
                             <span class="block font-medium text-gray-900">{{ $batch->title() }} · {{ $batch->bank->label() }}</span>
                             <span class="block text-gray-600">{{ __('Betaldag :date, :count betalningar, skapad av :name', ['date' => $batch->execution_date->toDateString(), 'count' => $batch->payment_count, 'name' => $batch->creator?->name]) }}</span>
                             @if($batch->isApproved())

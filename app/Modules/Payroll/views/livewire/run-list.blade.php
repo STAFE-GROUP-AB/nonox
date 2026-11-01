@@ -18,7 +18,7 @@
             <ul class="divide-y divide-gray-100 text-sm">
                 @foreach($runs as $run)
                     <li class="flex flex-wrap items-center gap-4 py-3">
-                        <a href="{{ route('payroll.runs.show', $run) }}" class="min-w-0 flex-1 font-medium text-accent-600 hover:text-accent-700">{{ $run->title() }}</a>
+                        <a href="{{ route('payroll.runs.show', $run) }}" class="min-w-0 flex-1 basis-40 font-medium text-accent-600 hover:text-accent-700">{{ $run->title() }}</a>
                         <span class="tabular-nums text-gray-600">{{ __('Utbetalning :date', ['date' => $run->payment_date->toDateString()]) }}</span>
                         <span class="tabular-nums text-gray-600">{{ $run->payslips_count === 1 ? __('1 lönebesked') : __(':count lönebesked', ['count' => $run->payslips_count]) }}</span>
                         <x-ui.amount :money="App\Support\Money\Money::ofOre((int) $run->payslips_sum_net_ore)" />

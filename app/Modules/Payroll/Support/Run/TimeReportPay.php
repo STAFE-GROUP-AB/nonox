@@ -25,6 +25,10 @@ use Illuminate\Support\Collection;
  * - Reports not yet approved are only counted, so the run page can say how
  *   many hours are waiting. Other modules (the staff ledger's proposals) add
  *   their own waiting hours through addPendingSource().
+ * - Approved reports from an earlier month that no run paid (approved after
+ *   that month's run was attested) are never paid on their own: the regular
+ *   run asks the person running payroll (late()), and pays only the ones
+ *   that person chose to include, one line per month and employment.
  */
 final class TimeReportPay
 {
@@ -44,12 +48,15 @@ final class TimeReportPay
     /**
      * The approved hourly reports the run may pay, for all the employees at
      * once, locked until the run's transaction ends: not claimed, or claimed
-     * by this run already.
+     * by this run already. Reports from earlier months come along only when
+     * they are among $lateIds, the ones the person running payroll chose to
+     * include.
      *
      * @param  Collection<int, int>  $employeeIds
+     * @param  list<int>  $lateIds
      * @return Collection<int, TimeReport>
      */
-    public function claimable(PayrollRun $run, Collection $employeeIds): Collection
+    public function claimable(PayrollRun $run, Collection $employeeIds, array $lateIds = []): Collection
     {
         $payCodeId = PayCode::query()->where('code', self::PAY_CODE)->value('id');
 
@@ -57,12 +64,15 @@ final class TimeReportPay
             return collect();
         }
 
+        $start = $run->periodStart()->toDateString();
+
         return TimeReport::query()
             ->whereIn('employee_id', $employeeIds->unique()->values())
             ->where('pay_code_id', $payCodeId)
             ->where('status', 'APPROVED')
-            ->whereDate('date', '>=', $run->periodStart()->toDateString())
             ->whereDate('date', '<=', $run->periodEnd()->toDateString())
+            ->where(fn ($query) => $query->whereDate('date', '>=', $start)
+                ->orWhere(fn ($late) => $late->whereIn('id', $lateIds)->whereDate('date', '<', $start)))
             ->where(fn ($query) => $query->whereNull('payroll_run_id')->orWhere('payroll_run_id', $run->id))
             ->orderBy('date')
             ->orderBy('id')
@@ -87,6 +97,126 @@ final class TimeReportPay
         return $reports->filter(fn (TimeReport $report): bool => $report->employee_id === $employment->employee_id
             && $report->date->greaterThanOrEqualTo($employment->start_date)
             && ($employment->end_date === null || $report->date->lessThanOrEqualTo($employment->end_date)))->values();
+    }
+
+    /**
+     * Approved hourly reports dated before the run's month that no run has
+     * paid, for the employees in the run, read in one query: the employee
+     * had an employment paid by the hour in force on the day, and the
+     * report's month has no regular run still open (that run pays it). Only
+     * a regular run asks; the ones the run already has an answer for are
+     * left out unless $withDecided.
+     *
+     * @return Collection<int, TimeReport>
+     */
+    public function late(PayrollRun $run, bool $withDecided = false): Collection
+    {
+        $payCodeId = PayCode::query()->where('code', self::PAY_CODE)->value('id');
+
+        if ($payCodeId === null || $run->type !== 'REGULAR') {
+            return collect();
+        }
+
+        $start = $run->periodStart()->toDateString();
+        $end = $run->periodEnd()->toDateString();
+
+        return TimeReport::query()
+            ->with('employee:id,first_name,last_name')
+            ->where('pay_code_id', $payCodeId)
+            ->where('status', 'APPROVED')
+            ->whereDate('date', '<', $start)
+            ->where(fn ($query) => $query->whereNull('payroll_run_id')->orWhere('payroll_run_id', $run->id))
+            ->when(! $withDecided, fn ($query) => $query->whereNotIn('id', $run->lateTimeReportsDecided()))
+            // Paid by the hour on the day the hours were worked.
+            ->whereExists(fn ($query) => $query->from('employments')
+                ->whereColumn('employments.company_id', 'time_reports.company_id')
+                ->whereColumn('employments.employee_id', 'time_reports.employee_id')
+                ->where('employments.salary_form', 'HOURLY')
+                ->whereColumn('employments.start_date', '<=', 'time_reports.date')
+                ->where(fn ($inForce) => $inForce->whereNull('employments.end_date')->orWhereColumn('employments.end_date', '>=', 'time_reports.date')))
+            // In the run: employed during its month.
+            ->whereExists(fn ($query) => $query->from('employments')
+                ->whereColumn('employments.company_id', 'time_reports.company_id')
+                ->whereColumn('employments.employee_id', 'time_reports.employee_id')
+                ->whereDate('employments.start_date', '<=', $end)
+                ->where(fn ($inForce) => $inForce->whereNull('employments.end_date')->orWhereDate('employments.end_date', '>=', $start)))
+            // Not the question of this run while the report's own month still has an open run.
+            ->whereNotExists(fn ($query) => $query->from('payroll_runs')
+                ->whereColumn('payroll_runs.company_id', 'time_reports.company_id')
+                ->where('payroll_runs.type', 'REGULAR')
+                ->whereIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
+                ->where('payroll_runs.id', '<>', $run->id)
+                ->whereRaw("payroll_runs.period = to_char(time_reports.date, 'YYYY-MM')"))
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get()
+            ->toBase();
+    }
+
+    /**
+     * The late reports as the run page shows them: per employee the hours
+     * and the months they belong to.
+     *
+     * @param  Collection<int, TimeReport>  $reports
+     * @return array{hours: string, employees: list<array{name: string, hours: string, months: list<string>}>}
+     */
+    public static function summary(Collection $reports): array
+    {
+        $employees = [];
+
+        foreach ($reports->groupBy('employee_id') as $own) {
+            $employee = $own->first()?->employee;
+            $months = [];
+
+            foreach ($own as $report) {
+                $months[$report->date->format('Y-m')] = $report->date->startOfMonth()->translatedFormat('F Y');
+            }
+
+            ksort($months);
+            $employees[] = [
+                'name' => trim(($employee->first_name ?? '').' '.($employee->last_name ?? '')),
+                'hours' => (string) self::hours($own),
+                'months' => array_values($months),
+            ];
+        }
+
+        usort($employees, fn (array $a, array $b): int => strcmp($a['name'], $b['name']));
+
+        return ['hours' => (string) self::hours($reports), 'employees' => $employees];
+    }
+
+    /**
+     * Late reports for one payslip as lines: one per month and employment
+     * paid by the hour that was in force on the day, at that employment's
+     * hourly rate. A report without such an employment is left out (and so
+     * not claimed).
+     *
+     * @param  Collection<int, TimeReport>  $reports  the employee's late reports the run pays
+     * @param  Collection<int, Employment>  $employments  the employee's employments paid by the hour
+     * @return list<array{month: CarbonImmutable, rate_ore: ?int, reports: Collection<int, TimeReport>}>
+     */
+    public static function lateGroups(Collection $reports, Collection $employments): array
+    {
+        $groups = [];
+
+        foreach ($reports as $report) {
+            $employment = $employments->first(fn (Employment $employment): bool => $employment->employee_id === $report->employee_id
+                && $employment->salary_form === 'HOURLY'
+                && $report->date->greaterThanOrEqualTo($employment->start_date)
+                && ($employment->end_date === null || $report->date->lessThanOrEqualTo($employment->end_date)));
+
+            if ($employment === null) {
+                continue;
+            }
+
+            $key = $report->date->format('Y-m').'|'.$employment->id;
+            $groups[$key] ??= ['month' => $report->date->startOfMonth(), 'rate_ore' => $employment->hourly_rate_ore?->ore, 'reports' => collect()];
+            $groups[$key]['reports']->push($report);
+        }
+
+        ksort($groups);
+
+        return array_values($groups);
     }
 
     /** @param  Collection<int, TimeReport>  $reports */

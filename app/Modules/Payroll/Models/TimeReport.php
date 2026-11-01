@@ -7,6 +7,7 @@ namespace App\Modules\Payroll\Models;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Hours reported for a day and pay code. An approved report with the hourly
@@ -45,5 +46,11 @@ class TimeReport extends Model
         return [
             'date' => 'immutable_date',
         ];
+    }
+
+    /** @return BelongsTo<Employee, $this> */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class);
     }
 }

@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Http;
  *
  * TODO(legal-verify): which rate a supplier invoice in a foreign currency is
  * booked at (Riksbanken's mid rate on the invoice date is used here), and
- * how exchange differences at payment are booked.
+ * that differences at payment belong on 3960/7960 (ADR-025).
  */
 class RiksbankRates
 {

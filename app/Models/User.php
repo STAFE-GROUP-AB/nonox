@@ -8,6 +8,7 @@ namespace App\Models;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Support\Audit\Audit;
+use App\Support\Tenancy\ArchivedCompany;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -19,6 +20,8 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Jetstream\HasTeams;
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -26,7 +29,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property ?CarbonImmutable $sessions_valid_from
  * @property ?CarbonImmutable $anonymised_at
  */
-class User extends Authenticatable
+class User extends Authenticatable implements PasskeyUser
 {
     use HasApiTokens;
 
@@ -38,6 +41,7 @@ class User extends Authenticatable
         hasTeamPermission as jetstreamHasTeamPermission;
     }
     use Notifiable;
+    use PasskeyAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
@@ -149,12 +153,18 @@ class User extends Authenticatable
      * Jetstream's check, with modules: a permission that belongs to a module
      * is false while the module is off for the company, except the module's
      * archive permissions, and the owner gets only the module permissions the
-     * module gives owners (PAYROLL_MODULE.md A.7).
+     * module gives owners (PAYROLL_MODULE.md A.7). An archived company grants
+     * only the permissions that read (ArchivedCompany::READ).
      *
      * @param  mixed  $team
      */
     public function hasTeamPermission($team, string $permission): bool
     {
+        // An archived company can only be read (ADR-024).
+        if ($team instanceof Company && $team->isArchived() && ! ArchivedCompany::allows($permission)) {
+            return false;
+        }
+
         $module = app(ModuleRegistry::class)->moduleForPermission($permission);
 
         if ($module === null || ! $team instanceof Company) {
@@ -189,5 +199,24 @@ class User extends Authenticatable
         }
 
         $this->forceFill(['hidden_panels' => $panels])->save();
+    }
+
+    /**
+     * The initials on a coloured square, drawn here. Jetstream's default
+     * fetches the image from ui-avatars.com, which would send every user's
+     * name to a third party (and the content security policy blocks it).
+     */
+    protected function defaultProfilePhotoUrl(): string
+    {
+        $initials = collect(preg_split('/\s+/', trim((string) $this->name)) ?: [])
+            ->filter()
+            ->take(2)
+            ->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
+            ->implode('');
+        $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="64" height="64" fill="#FFE6DF"/>'
+            .'<text x="50%" y="50%" dy=".35em" text-anchor="middle" font-family="Inter,system-ui,sans-serif" font-size="26" font-weight="700" fill="#B8381A">'
+            .e($initials).'</text></svg>';
+
+        return 'data:image/svg+xml;base64,'.base64_encode($svg);
     }
 }

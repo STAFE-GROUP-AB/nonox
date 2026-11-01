@@ -72,16 +72,16 @@
             <ul class="mt-4 divide-y divide-gray-100">
                 @foreach($suppliers as $supplier)
                     <li wire:key="supplier-{{ $supplier->id }}" class="flex flex-wrap items-center gap-4 py-3">
-                        <span class="w-14 flex-none font-semibold tabular-nums text-gray-900">{{ $supplier->number }}</span>
-                        <span class="min-w-0 flex-1">
+                        <span class="w-8 flex-none font-semibold tabular-nums text-gray-900 sm:w-14">{{ $supplier->number }}</span>
+                        <span class="min-w-0 flex-1 basis-52">
                             <span class="block font-medium text-gray-900">{{ $supplier->name }}@if($supplier->processing_restricted_at) <span class="ms-2 rounded-sm bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">{{ __('Begränsad behandling') }}</span>@endif</span>
                             <span class="block text-sm text-gray-600">{{ collect([$supplier->paymentDetails(), $supplier->defaultAccount ? $supplier->defaultAccount->number.' '.$supplier->defaultAccount->name : null])->filter()->implode(' · ') }}</span>
                         </span>
-                        <span class="w-36 flex-none text-right text-sm">
+                        <span class="flex-1 text-right text-sm sm:w-36 sm:flex-none">
                             <span class="block text-gray-500">{{ __('Köpt :year', ['year' => $year]) }}</span>
                             <x-ui.amount :money="Money::ofOre((int) $supplier->bought_this_year)" class="font-medium text-gray-900" />
                         </span>
-                        <span class="w-32 flex-none text-right text-sm">
+                        <span class="flex-1 text-right text-sm sm:w-32 sm:flex-none">
                             <span class="block text-gray-500">{{ __('Obetalt') }}</span>
                             <x-ui.amount :money="Money::ofOre((int) $supplier->unpaid)" class="font-medium text-gray-900" />
                         </span>

@@ -9,6 +9,7 @@ use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Payables\PaymentBank;
+use App\Support\Tenancy\ArchivedCompany;
 use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,6 +23,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  *
  * @property LegalForm $legal_form
  * @property ?string $logo_path
+ * @property bool $require_passkeys
  * @property ?string $brand_color
  * @property ?string $brand_accent_color
  * @property AccountingMethod $accounting_method
@@ -30,6 +32,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ReportingFramework $reporting_framework
  * @property int $fiscal_year_start_month
  * @property ?CarbonImmutable $locked_until_date
+ * @property ?CarbonImmutable $archived_at
  * @property bool $separate_supplier_approval
  * @property ?PaymentBank $payment_bank
  * @property ?string $bank_agreement_id
@@ -97,6 +100,7 @@ class Company extends JetstreamTeam
             'f_skatt' => 'boolean',
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',
+            'require_passkeys' => 'boolean',
             'payment_bank' => PaymentBank::class,
             'fiscal_year_start_month' => 'integer',
             'locked_until_date' => 'immutable_date',
@@ -141,8 +145,17 @@ class Company extends JetstreamTeam
         return '1 '.$months[$this->fiscal_year_start_month - 1];
     }
 
+    /**
+     * An archived company is read-only (AGENTS.md §3.5, ADR-024): see
+     * ArchivedCompany for what that means and where it is enforced.
+     */
     public function isArchived(): bool
     {
         return $this->archived_at !== null;
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(fn (self $company) => ArchivedCompany::forget($company->id));
     }
 }

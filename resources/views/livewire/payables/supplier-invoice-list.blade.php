@@ -8,7 +8,7 @@
     <x-ui.card>
         <div class="flex flex-wrap items-center gap-4">
             @if($canCreate)
-                <a href="{{ route('payables.invoices.create') }}" class="inline-flex items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Ny leverantörsfaktura') }}</a>
+                <a href="{{ route('payables.invoices.create') }}" class="inline-flex items-center rounded-lg bg-accent-600 px-4 py-2 max-sm:min-h-11 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Ny leverantörsfaktura') }}</a>
             @endif
             <nav class="flex flex-wrap gap-2" aria-label="{{ __('Visa leverantörsfakturor') }}">
                 @foreach(App\Livewire\Payables\SupplierInvoiceList::FILTERS as $key => $label)
@@ -26,9 +26,9 @@
                 {{ __('Ladda upp fakturan som PDF eller bild, fyll i belopp och konto och registrera den. Den bokförs, attesteras och betalas härifrån.') }}
             </x-ui.empty-state>
         @else
-            <div class="mt-4 overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
+            <div class="mt-4 sm:overflow-x-auto">
+                <table class="block w-full text-sm sm:table">
+                    <thead class="hidden sm:table-header-group">
                         <tr class="border-b border-gray-200 text-left text-gray-500">
                             <th class="py-2 pr-4 font-medium">{{ __('Nummer') }}</th>
                             <th class="py-2 pr-4 font-medium">{{ __('Leverantör') }}</th>
@@ -39,18 +39,18 @@
                             <th class="py-2 font-medium">{{ __('Status') }}</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="block divide-y divide-gray-100 sm:table-row-group">
                         @foreach($invoices as $invoice)
-                            <tr wire:key="supplier-invoice-{{ $invoice->id }}">
-                                <td class="py-2 pr-4">
+                            <tr wire:key="supplier-invoice-{{ $invoice->id }}" class="grid grid-cols-2 items-baseline gap-x-3 gap-y-1 py-3 sm:table-row sm:py-0">
+                                <td class="sm:py-2 sm:pr-4">
                                     <a href="{{ $invoice->isDraft() ? route('payables.invoices.edit', $invoice) : route('payables.invoices.show', $invoice) }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $invoice->number ?? __('Utkast') }}</a>
                                 </td>
-                                <td class="py-2 pr-4">{{ $invoice->supplier?->name }}</td>
-                                <td class="py-2 pr-4">{{ $invoice->invoice_number }}</td>
-                                <td class="py-2 pr-4 tabular-nums">{{ $invoice->due_date->toDateString() }}</td>
-                                <td class="py-2 pr-4 text-right"><x-ui.amount :money="$invoice->total_ore" /></td>
-                                <td class="py-2 pr-4 text-right">@unless($invoice->status === SupplierInvoiceStatus::Paid || $invoice->isDraft())<x-ui.amount :money="$invoice->remaining()" />@endunless</td>
-                                <td class="py-2">
+                                <td class="order-2 col-span-2 sm:py-2 sm:pr-4">{{ $invoice->supplier?->name }}</td>
+                                <td class="order-3 text-gray-600 sm:py-2 sm:pr-4 sm:text-inherit">{{ $invoice->invoice_number }}</td>
+                                <td class="order-5 text-gray-600 tabular-nums sm:py-2 sm:pr-4 sm:text-inherit"><span class="text-xs sm:hidden">{{ __('Förfaller') }} </span>{{ $invoice->due_date->toDateString() }}</td>
+                                <td class="order-4 text-right sm:py-2 sm:pr-4"><x-ui.amount :money="$invoice->total_ore" />@if($invoice->isForeign())<span class="block text-xs text-gray-500 tabular-nums">{{ $invoice->formatForeign((int) $invoice->foreign_total_minor) }}</span>@endif</td>
+                                <td class="order-6 text-right sm:py-2 sm:pr-4">@unless($invoice->status === SupplierInvoiceStatus::Paid || $invoice->isDraft())<span class="text-xs text-gray-600 sm:hidden">{{ __('Kvar') }} </span><x-ui.amount :money="$invoice->remaining()" />@if($invoice->isForeign())<span class="block text-xs text-gray-500 tabular-nums">{{ $invoice->formatForeign((int) $invoice->foreignRemaining()) }}</span>@endif @endunless</td>
+                                <td class="order-1 text-right sm:py-2 sm:text-left">
                                     @if($invoice->isOverdue($today))
                                         <span class="inline-flex rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">{{ __('Förfallen') }}</span>
                                     @else

@@ -8,8 +8,8 @@ use App\Livewire\Company\MemberManager;
 use App\Livewire\Profile\ProfileInformationForm;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Files\EncryptedAdapter;
+use App\Domain\Overview\TodoProviders;
 use App\Support\Overview\TaskTodoProvider;
-use App\Support\Overview\TodoProvider;
 use App\Support\Tenancy\CompanyContext;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\LivewireCompanyGuard;
@@ -45,7 +45,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->scoped(CompanyContext::class);
 
         // "Att göra" on a company's Översikt includes the tasks assigned to the user (ADR-028).
-        $this->app->tag([TaskTodoProvider::class], TodoProvider::TAG);
+        $this->app->tag([TaskTodoProvider::class], TodoProviders::TAG);
     }
 
     /**

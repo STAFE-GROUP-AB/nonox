@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Domain\Payables\VatTreatment;
+use App\Support\Currency\ExchangeRate;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
@@ -49,6 +50,10 @@ use LogicException;
  * @property ?int $created_by
  * @property string $kind
  * @property VatTreatment $vat_treatment
+ * @property string $invoice_currency
+ * @property ?int $foreign_total_minor
+ * @property int $foreign_paid_minor
+ * @property ?int $exchange_rate_micros
  */
 class SupplierInvoice extends Model
 {
@@ -60,7 +65,7 @@ class SupplierInvoice extends Model
     public const string CREDIT = 'CREDIT';
 
     /** Columns that may change after the invoice is registered. */
-    private const array MUTABLE_WHEN_REGISTERED = ['status', 'paid_ore', 'approved_at', 'approved_by', 'updated_at'];
+    private const array MUTABLE_WHEN_REGISTERED = ['status', 'paid_ore', 'foreign_paid_minor', 'approved_at', 'approved_by', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -84,6 +89,8 @@ class SupplierInvoice extends Model
         'total_ore' => 0,
         'vat_ore' => 0,
         'paid_ore' => 0,
+        'invoice_currency' => 'SEK',
+        'foreign_paid_minor' => 0,
     ];
 
     /** @return array<string, string> */
@@ -100,6 +107,9 @@ class SupplierInvoice extends Model
             'vat_ore' => MoneyCast::class,
             'paid_ore' => MoneyCast::class,
             'file_size' => 'integer',
+            'foreign_total_minor' => 'integer',
+            'foreign_paid_minor' => 'integer',
+            'exchange_rate_micros' => 'integer',
             'registered_at' => 'immutable_datetime',
             'approved_at' => 'immutable_datetime',
         ];
@@ -137,6 +147,32 @@ class SupplierInvoice extends Model
     public function remaining(): Money
     {
         return $this->total_ore->minus($this->paid_ore);
+    }
+
+    /** An invoice in another currency than kronor, booked at exchange_rate_micros. */
+    public function isForeign(): bool
+    {
+        return $this->invoice_currency !== 'SEK' && $this->foreign_total_minor !== null && $this->exchange_rate_micros !== null;
+    }
+
+    /** What is left to pay in the invoice's own currency, in hundredths; null for an invoice in kronor. */
+    public function foreignRemaining(): ?int
+    {
+        return $this->isForeign() ? (int) $this->foreign_total_minor - $this->foreign_paid_minor : null;
+    }
+
+    /** The rate the invoice was booked at; null for an invoice in kronor. */
+    public function bookingRate(): ?ExchangeRate
+    {
+        return $this->isForeign()
+            ? new ExchangeRate($this->invoice_currency, $this->invoice_date->toDateString(), (int) $this->exchange_rate_micros, 'invoice')
+            : null;
+    }
+
+    /** "1 517,50 USD": an amount in hundredths of the invoice's currency. */
+    public function formatForeign(int $minor): string
+    {
+        return Money::ofOre($minor)->format(withCurrency: false).' '.$this->invoice_currency;
     }
 
     public function isOverdue(?CarbonImmutable $today = null): bool

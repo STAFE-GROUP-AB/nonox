@@ -57,8 +57,27 @@ class CompanyPolicy
         return false;
     }
 
+    /**
+     * Owner only (AGENTS.md §4): `company:archive` is not given to any member
+     * role. An archived company is read-only (ADR-024).
+     */
     public function archive(User $user, Company $company): bool
     {
-        return $user->hasTeamPermission($company, 'company:archive');
+        return ! $company->isArchived() && $user->hasTeamPermission($company, 'company:archive');
+    }
+
+    public function unarchive(User $user, Company $company): bool
+    {
+        return $company->isArchived() && $user->hasTeamPermission($company, 'company:archive');
+    }
+
+    /**
+     * Only the owner hands the company over (AGENTS.md §4), also while it is
+     * archived: the ownership is not räkenskapsinformation, and an owner
+     * leaving an archived company needs someone to take it over.
+     */
+    public function transferOwnership(User $user, Company $company): bool
+    {
+        return $user->ownsTeam($company);
     }
 }

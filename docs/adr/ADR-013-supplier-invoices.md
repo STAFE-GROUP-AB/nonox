@@ -58,7 +58,7 @@
 - Payment proposals and payment files (ISO 20022 pain.001, Bankgirot LB) and
   reading the bank's confirmation (camt.054). Payments are registered by hand
   until then.
-- Invoices in other currencies.
+- Invoices in other currencies (built in ADR-025).
 - Email-in of invoices and reading them automatically (optional module).
 - `TODO(legal-verify)`: under kontantmetoden, unpaid supplier invoices at the
   end of the fiscal year must be booked as liabilities at bokslut.

@@ -17,6 +17,7 @@
         "laravel/ai": "^1.2",
         "laravel/framework": "^13.0",
         "laravel/jetstream": "^5.5",
+        "laravel/passkeys": "^0.2",
         "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.0",

@@ -23,7 +23,7 @@
         <ul class="divide-y divide-gray-100">
             @foreach($payslips as $payslip)
                 <li class="flex flex-wrap items-center gap-4 py-4">
-                    <span class="min-w-0 flex-1">
+                    <span class="min-w-0 flex-1 basis-40">
                         <span class="block font-medium text-gray-900">{{ __('Lön :period', ['period' => \Carbon\CarbonImmutable::parse($payslip->getAttribute('period').'-01')->translatedFormat('F Y')]) }}</span>
                         <span class="block text-sm text-gray-600">{{ __('Utbetalning :date', ['date' => \Carbon\CarbonImmutable::parse($payslip->getAttribute('payment_date'))->toDateString()]) }}</span>
                     </span>

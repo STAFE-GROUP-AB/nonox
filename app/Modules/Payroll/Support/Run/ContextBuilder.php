@@ -47,8 +47,9 @@ final class ContextBuilder
      * @param  Collection<int, PayCode>  $payCodes  by id
      * @param  array<string, mixed>  $settings
      * @param  ?Collection<int, TimeReport>  $timeReports  the employment's approved hourly reports the run pays
+     * @param  list<array{month: CarbonImmutable, rate_ore: ?int, reports: Collection<int, TimeReport>}>  $lateTimeReports  reports from earlier months the person running payroll chose to include (TimeReportPay::lateGroups)
      */
-    public function build(PayrollRun $run, Employee $employee, Employment $employment, Collection $inputs, Collection $payCodes, array $settings, RuleSet $rules, ?Collection $timeReports = null): PayrollContext
+    public function build(PayrollRun $run, Employee $employee, Employment $employment, Collection $inputs, Collection $payCodes, array $settings, RuleSet $rules, ?Collection $timeReports = null, array $lateTimeReports = []): PayrollContext
     {
         $periodStart = $run->periodStart();
         $periodEnd = $run->periodEnd();
@@ -74,7 +75,7 @@ final class ContextBuilder
 
                 return new PayInput($code->code, $input->note ?: $code->name_sv, $code->category, $code->is_taxable, $code->tax_method, $code->is_contribution_basis, $code->is_vacation_basis,
                     $input->quantity === null ? null : (string) $input->quantity, $input->rate_ore?->ore, $input->amount_ore?->ore);
-            })->all()), ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes)],
+            })->all()), ...$this->timeReports($timeReports ?? collect(), $payCodes), ...$this->lateTimeReports($lateTimeReports, $payCodes), ...$this->outlays($run, $employee), ...$this->retroactive($run, $employment, $payCodes)],
             accumulators: Accumulator::query()
                 ->where('employee_id', $employee->id)
                 ->where('scope', 'CALENDAR_YEAR')
@@ -195,6 +196,48 @@ final class ContextBuilder
             quantity: (string) TimeReportPay::hours($reports),
             explanation: ['source' => 'time_report', 'days' => $reports->count(), 'time_report_ids' => $reports->pluck('id')->values()->all()],
         )];
+    }
+
+    /**
+     * Approved time reports from earlier months that the person running
+     * payroll chose to pay in this run: one hourly pay line per month and
+     * employment, saying which month the hours belong to, at the hourly rate
+     * of the employment the hours were worked in. The pay code decides tax,
+     * contributions and vacation basis as for the run's own month.
+     *
+     * @param  list<array{month: CarbonImmutable, rate_ore: ?int, reports: Collection<int, TimeReport>}>  $groups
+     * @param  Collection<int, PayCode>  $payCodes  by id
+     * @return list<PayInput>
+     */
+    private function lateTimeReports(array $groups, Collection $payCodes): array
+    {
+        if ($groups === []) {
+            return [];
+        }
+
+        $code = $payCodes->first(fn (PayCode $code): bool => $code->code === TimeReportPay::PAY_CODE)
+            ?? throw new PayrollBlockedException(__('Lönearten Timlön saknas. Slå av och på lönemodulen för att lägga till systemets lönearter.'));
+
+        return array_map(function (array $group) use ($code): PayInput {
+            $month = $group['month']->translatedFormat('F Y');
+
+            if ($group['rate_ore'] === null) {
+                throw new PayrollBlockedException(__('Timlönen saknas för anställningen som timmarna i :month hör till.', ['month' => $month]));
+            }
+
+            return new PayInput(
+                $code->code,
+                __('Timlön enligt tidrapport (:month)', ['month' => $month]),
+                $code->category,
+                $code->is_taxable,
+                $code->tax_method,
+                $code->is_contribution_basis,
+                $code->is_vacation_basis,
+                quantity: (string) TimeReportPay::hours($group['reports']),
+                rateOre: $group['rate_ore'],
+                explanation: ['source' => 'time_report', 'month' => $group['month']->format('Y-m'), 'days' => $group['reports']->count(), 'time_report_ids' => $group['reports']->pluck('id')->values()->all()],
+            );
+        }, $groups);
     }
 
     /**

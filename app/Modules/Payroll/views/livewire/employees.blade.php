@@ -124,7 +124,7 @@
                     @php($employment = $employee->employments->first())
                     <li wire:key="employee-{{ $employee->id }}" class="flex flex-wrap items-center gap-4 py-3">
                         <span class="w-12 flex-none font-semibold tabular-nums text-gray-900">{{ $employee->employee_number }}</span>
-                        <span class="min-w-0 flex-1">
+                        <span class="min-w-0 flex-1 basis-48">
                             <span class="block font-medium text-gray-900">{{ $employee->first_name }} {{ $employee->last_name }}</span>
                             <span class="block text-sm text-gray-600 tabular-nums">{{ collect([PersonalNumber::masked($employee->personal_number), $employment?->position_title, $employment ? $types[$employment->employment_type] ?? null : null])->filter()->implode(' · ') }}</span>
                         </span>

@@ -43,10 +43,15 @@ trait BelongsToCompany
             }
         });
 
+        // After the hook above has set company_id: an archived company is read-only (ADR-024).
+        static::creating(fn (Model $model) => ArchivedCompany::guardWrite($model, $model->getAttribute('company_id')));
+
         static::updating(function (Model $model): void {
             if ($model->isDirty('company_id')) {
                 throw MissingCompanyContext::whileMoving($model::class);
             }
+
+            ArchivedCompany::guardWrite($model, $model->getAttribute('company_id'));
         });
     }
 

@@ -6,6 +6,7 @@ namespace App\Console\Commands;
 
 use App\Actions\Invoicing\RunRecurringInvoice;
 use App\Domain\Invoicing\AgreementStatus;
+use App\Models\Company;
 use App\Models\RecurringInvoice;
 use App\Models\User;
 use App\Support\Tenancy\CompanyScope;
@@ -34,8 +35,10 @@ class RunAgreementsCommand extends Command
         $today = CarbonImmutable::today();
 
         // Every company's agreements are read here; each one is then run inside its own company.
+        // An archived company is read-only (ADR-024): its agreements wait until it is taken out of the archive.
         $agreements = CompanyScope::bypass(fn () => RecurringInvoice::query()
             ->where('status', AgreementStatus::Active->value)
+            ->whereIn('company_id', Company::query()->whereNull('archived_at')->select('id'))
             ->whereDate('next_invoice_date', '<=', $today->toDateString())
             ->orderBy('company_id')
             ->get());

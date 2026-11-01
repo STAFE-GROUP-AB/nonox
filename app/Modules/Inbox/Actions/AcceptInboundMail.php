@@ -24,6 +24,7 @@ use App\Support\FileName;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\WorkQuota;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -69,6 +70,14 @@ class AcceptInboundMail
     public function __invoke(Company $company, string $raw, Channel $channel, string $recipient, ?string $alias = null, array $transport = [], ?ParsedMail $mail = null): ?InboxMessage
     {
         if (! $this->modules->isEnabled(InboxModule::KEY, $company)) {
+            return null;
+        }
+
+        // An archived company takes no new mail (ADR-024): dropped, and the drop is logged.
+        if ($company->isArchived()) {
+            Log::info('Inbox: dropped a message to an archived company.', ['company_id' => $company->id, 'channel' => $channel->value]);
+            Audit::record('inbox.dropped', null, ['reason' => 'company_archived', 'channel' => $channel->value], $company);
+
             return null;
         }
 

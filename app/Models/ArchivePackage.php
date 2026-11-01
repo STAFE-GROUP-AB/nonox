@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Support\Tenancy\BelongsToCompany;
+use App\Support\Tenancy\WritableWhenArchived;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?CarbonImmutable $completed_at
  * @property CarbonImmutable $created_at
  */
-class ArchivePackage extends Model
+class ArchivePackage extends Model implements WritableWhenArchived
 {
     use BelongsToCompany;
 

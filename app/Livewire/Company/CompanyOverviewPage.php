@@ -102,11 +102,14 @@ class CompanyOverviewPage extends Component implements SpansCompanies
                     'DUE' => 1,
                     default => 0,
                 })->sum() + (($row['cells'][$month]['bank'] ?? 0) > 0 ? 1 : 0);
-            $rows = collect($status['rows'])->filter($matches)
+            $matching = collect($status['rows'])->filter($matches);
+            $archived = $matching->filter(fn (array $row): bool => $row['company']->isArchived());
+            $rows = $matching->reject(fn (array $row): bool => $row['company']->isArchived())
                 ->sortBy([fn (array $a, array $b): int => $weight($b) <=> $weight($a), fn (array $a, array $b): int => strnatcasecmp($a['company']->name, $b['company']->name)])
                 ->values()->all();
 
             return view('livewire.company.overview-months', [
+                'archived' => $this->archivedCompanies($archived->all(), $user),
                 'months' => $status['months'],
                 'selected' => $month,
                 'rows' => $rows,
@@ -114,19 +117,38 @@ class CompanyOverviewPage extends Component implements SpansCompanies
             ]);
         }
 
-        $rows = $overview->for($user);
+        $all = $overview->for($user);
+        $archived = array_values(array_filter($all, fn (array $row): bool => $row['company']->isArchived()));
+        $rows = array_values(array_filter($all, fn (array $row): bool => ! $row['company']->isArchived()));
 
         $shown = array_values(array_filter($rows, fn (array $row): bool => ($this->showAll || $this->mine || $needle !== '' || $row['tasks'] !== [])
             && (! $this->mine || ($row['responsible']['id'] ?? null) === $user->id)
             && $matches($row)));
 
         return view('livewire.company.overview', [
+            'archived' => $this->archivedCompanies(array_values(array_filter($archived, fn (array $row): bool => (! $this->mine || ($row['responsible']['id'] ?? null) === $user->id) && $matches($row))), $user),
             'rows' => $shown,
             'total' => count($rows),
             'waiting' => count(array_filter($rows, fn (array $row): bool => $row['tasks'] !== [])),
             'roleLabels' => collect(Jetstream::$roles)->mapWithKeys(fn ($role): array => [$role->key => $role->name])->put('owner', __('Ägare'))->all(),
             'currentId' => $user->current_team_id,
         ]);
+    }
+
+    /**
+     * Archived companies, shown apart from the others (ADR-024).
+     *
+     * @param  array<int, array{company: Company}>  $rows
+     * @return list<array{company: Company, role: string}>
+     */
+    private function archivedCompanies(array $rows, User $user): array
+    {
+        return array_values(collect($rows)
+            ->map(fn (array $row): array => ['company' => $row['company'], 'role' => $user->ownsTeam($row['company'])
+                ? __('Ägare')
+                : (string) (Jetstream::findRole((string) $row['company']->getRelationValue('membership')?->getAttribute('role'))->name ?? '')])
+            ->sortBy(fn (array $row): string => mb_strtolower($row['company']->name))
+            ->all());
     }
 
     /**

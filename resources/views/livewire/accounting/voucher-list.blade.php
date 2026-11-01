@@ -32,7 +32,7 @@
     <x-ui.card>
         <x-slot:cta>
             @if($canCreate)
-                <a href="{{ route('accounting.vouchers.create') }}" class="inline-flex items-center px-4 py-2 bg-accent-600 rounded-lg font-semibold text-sm text-white hover:bg-accent-700">{{ __('Ny verifikation') }}</a>
+                <a href="{{ route('accounting.vouchers.create') }}" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 bg-accent-600 rounded-lg font-semibold text-sm text-white hover:bg-accent-700">{{ __('Ny verifikation') }}</a>
             @endif
         </x-slot:cta>
 
@@ -64,9 +64,9 @@
                 @endif
             </x-ui.empty-state>
         @else
-            <div class="mt-6 overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
+            <div class="mt-6 sm:overflow-x-auto">
+                <table class="block w-full text-sm sm:table">
+                    <thead class="hidden sm:table-header-group">
                         <tr class="border-b border-gray-200 text-left text-gray-500">
                             <th scope="col" class="py-2 pr-4 font-medium w-20">{{ __('Ver') }}</th>
                             <th scope="col" class="py-2 pr-4 font-medium w-28">{{ __('Datum') }}</th>
@@ -74,10 +74,10 @@
                             <th scope="col" class="py-2 font-medium text-right">{{ __('Belopp') }}</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-100">
+                    <tbody class="block divide-y divide-gray-100 sm:table-row-group">
                         @foreach($vouchers as $voucher)
-                            <tr wire:key="voucher-{{ $voucher->id }}" class="hover:bg-gray-50">
-                                <td class="py-2.5 pr-4 font-semibold tabular-nums">
+                            <tr wire:key="voucher-{{ $voucher->id }}" class="grid grid-cols-[auto_1fr_auto] items-baseline gap-x-3 gap-y-1 py-3 hover:bg-gray-50 sm:table-row sm:py-0">
+                                <td class="font-semibold tabular-nums sm:py-2.5 sm:pr-4">
                                     <a href="{{ route('accounting.vouchers.show', $voucher) }}" class="hover:text-accent-700">
                                         @if($voucher->isPosted())
                                             {{ $voucher->reference() }}
@@ -86,14 +86,14 @@
                                         @endif
                                     </a>
                                 </td>
-                                <td class="py-2.5 pr-4 tabular-nums text-gray-600">{{ $voucher->voucher_date->toDateString() }}</td>
-                                <td class="py-2.5 pr-4">
+                                <td class="tabular-nums text-gray-600 sm:py-2.5 sm:pr-4">{{ $voucher->voucher_date->toDateString() }}</td>
+                                <td class="order-last col-span-3 sm:py-2.5 sm:pr-4">
                                     <a href="{{ route('accounting.vouchers.show', $voucher) }}" class="hover:text-accent-700">{{ $voucher->description }}</a>
                                     @if($voucher->corrected_by_voucher_id)
                                         <x-ui.badge class="ms-2">{{ __('Rättad') }}</x-ui.badge>
                                     @endif
                                 </td>
-                                <td class="py-2.5 text-right">
+                                <td class="text-right sm:py-2.5">
                                     <x-ui.amount :money="App\Support\Money\Money::ofOre((int) $voucher->debit_total)" />
                                 </td>
                             </tr>

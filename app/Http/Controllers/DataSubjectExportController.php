@@ -13,6 +13,7 @@ use App\Modules\StaffLedger\Models\Person;
 use App\Support\Audit\Audit;
 use App\Support\Csv;
 use App\Support\Privacy\DataSubjectExport;
+use App\Support\Tenancy\ArchivedCompany;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -39,7 +40,7 @@ class DataSubjectExportController
 
     public function customer(Request $request, Customer $customer): JsonResponse
     {
-        Gate::authorize('update', $customer);
+        ArchivedCompany::reading(fn () => Gate::authorize('update', $customer));
         $this->log($request, $customer, 'customer');
 
         return $this->download(DataSubjectExport::customer($customer), 'registerutdrag-kund-'.$customer->number);
@@ -47,7 +48,7 @@ class DataSubjectExportController
 
     public function supplier(Request $request, Supplier $supplier): JsonResponse
     {
-        Gate::authorize('update', $supplier);
+        ArchivedCompany::reading(fn () => Gate::authorize('update', $supplier));
         $this->log($request, $supplier, 'supplier');
 
         return $this->download(DataSubjectExport::supplier($supplier), 'registerutdrag-leverantor-'.$supplier->number);
@@ -55,7 +56,7 @@ class DataSubjectExportController
 
     public function employee(Request $request, Employee $employee): JsonResponse
     {
-        Gate::authorize('viewSensitive', $employee);
+        ArchivedCompany::reading(fn () => Gate::authorize('viewSensitive', $employee));
         $this->log($request, $employee, 'employee');
 
         return $this->download(DataSubjectExport::employee($employee), 'registerutdrag-anstalld-'.$employee->employee_number);
@@ -68,7 +69,7 @@ class DataSubjectExportController
      */
     public function staffLedgerPerson(Request $request, Person $person): JsonResponse
     {
-        Gate::authorize('viewSensitive', [Person::class, Company::query()->findOrFail($person->company_id)]);
+        ArchivedCompany::reading(fn () => Gate::authorize('viewSensitive', [Person::class, Company::query()->findOrFail($person->company_id)]));
         $this->log($request, $person, 'staff_ledger_person');
 
         return $this->download(DataSubjectExport::staffLedgerPerson($person), 'registerutdrag-personal-'.$person->id);
@@ -86,7 +87,7 @@ class DataSubjectExportController
         $user = $request->user();
         $company = $user->currentCompany();
 
-        abort_unless($company instanceof Company && $user->hasTeamPermission($company, 'inbox:manage'), 403);
+        abort_unless($company instanceof Company && ArchivedCompany::reading(fn (): bool => $user->hasTeamPermission($company, 'inbox:manage')), 403);
 
         /** @var array{avsandare: string, format?: string} $input */
         $input = $request->validate([
