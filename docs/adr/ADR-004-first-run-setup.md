@@ -29,6 +29,9 @@ first visit, and makes that email the sign-in address.
   frontend has been built.
 - `composer setup` no longer seeds demo data. `DemoCompanySeeder` remains for
   developers.
+  `IndustryDemoSeeder` adds one synthetic company per industry page, with
+  the year's bookkeeping, for demos and manual screenshots; it is never part
+  of the installation and refuses to run in production.
 
 ## Open
 

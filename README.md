@@ -346,6 +346,19 @@ DB_DATABASE=nonox_test php artisan migrate --force
 
 Kör `DB_DATABASE=nonox_test php artisan migrate --force` igen när nya migrationer har tillkommit.
 
+### Demoföretag per bransch
+
+Ett påhittat demoföretag för varje branschsida (restaurang, café, butik, frisör, hantverkare, konsult, redovisningsbyrå och ekonomikonsult), med årets bokföring fram till i går: dagsrapporter eller kundfakturor (med ROT och omvänd betalningsskyldighet hos hantverkaren), leverantörsfakturor med attest och betalning, löner, momsdeklarationer, anställda och personalliggare. Byråerna är kopplade till sina kundföretag.
+
+Lägg dem i en egen databas, så att de inte blandas med riktiga företag:
+
+```bash
+DB_DATABASE=nonox_demo php artisan migrate --force
+DB_DATABASE=nonox_demo php artisan db:seed --class=IndustryDemoSeeder --force
+```
+
+Seedern tar ett par minuter och lägger bara till: ett företag som redan finns hoppas över. Den vägrar köra i produktion. Du loggar in med `ADMIN_EMAIL`, som äger företagen och är administratör i byråerna. Byråerna ägs av `redovisningsbyra@example.test` och `ekonomikonsult@example.test`. Alla namn och organisations- och personnummer är påhittade; datan finns i `database/seeders/Demo/DemoIndustries.php`.
+
 ### Kvalitetskontroll
 
 Samma tre kontroller som körs i GitHub Actions vid varje push:
