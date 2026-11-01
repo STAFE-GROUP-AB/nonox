@@ -99,5 +99,11 @@
     "You have not enabled two factor authentication.": "Tvåstegsverifiering är inte på.",
     "You may accept this invitation by clicking the button below:": "Acceptera inbjudan med knappen nedan:",
     "You may not leave a team that you created.": "Du kan inte lämna ett företag som du äger.",
-    "Your email address is unverified.": "Din e-postadress är inte verifierad."
+    "Your email address is unverified.": "Din e-postadress är inte verifierad.",
+    ":count verifikationsutkast att bokföra|:count verifikationsutkast att bokföra": ":count verifikationsutkast att bokföra|:count verifikationsutkast att bokföra",
+    ":count förfallen kundfaktura|:count förfallna kundfakturor": ":count förfallen kundfaktura|:count förfallna kundfakturor",
+    ":count leverantörsfaktura att attestera|:count leverantörsfakturor att attestera": ":count leverantörsfaktura att attestera|:count leverantörsfakturor att attestera",
+    ":count leverantörsfaktura att betala|:count leverantörsfakturor att betala": ":count leverantörsfaktura att betala|:count leverantörsfakturor att betala",
+    ":count ansökan om ledighet eller utlägg att hantera|:count ansökningar om ledighet eller utlägg att hantera": ":count ansökan om ledighet eller utlägg att hantera|:count ansökningar om ledighet eller utlägg att hantera",
+    ":count underlag i inkorgen att granska|:count underlag i inkorgen att granska": ":count underlag i inkorgen att granska|:count underlag i inkorgen att granska"
 }

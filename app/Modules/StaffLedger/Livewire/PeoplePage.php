@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\StaffLedger\Livewire;
 
+use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\User;
 use App\Modules\ModuleManager;
@@ -30,6 +31,7 @@ use Livewire\WithFileUploads;
 class PeoplePage extends Component
 {
     use InCurrentCompany;
+    use OpensFormFromLink;
     use RevealsPersonalNumbers;
     use ShowsToasts;
     use WithFileUploads;
@@ -55,6 +57,8 @@ class PeoplePage extends Component
     public function mount(): void
     {
         abort_unless($this->allowed('staff-ledger:view'), 403);
+
+        $this->openFormFromLink(Person::class, 'manage');
     }
 
     public function create(): void

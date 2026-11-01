@@ -28,6 +28,45 @@ final class Navigation
     /** @return list<NavSection> */
     public function for(User $user, ?Company $company, ?string $currentRoute): array
     {
+        $sections = $this->sections($user, $company);
+        $open = $this->openSection($sections, $currentRoute);
+        $result = [];
+
+        foreach ($sections as $index => $section) {
+            $children = $index === $open && $company !== null ? $this->links(($section['children'])($user, $company), $currentRoute) : [];
+            $result[] = new NavSection($section['label'], $section['route'], $section['patterns'], $index === $open, $children);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Every page in the tree with the section it belongs to, for the
+     * spotlight's "Gå till" (ADR-026). Unlike the sidebar, this resolves the
+     * pages of every section.
+     *
+     * @return list<array{label: string, route: string, section: string, group: ?string}>
+     */
+    public function pages(User $user, Company $company): array
+    {
+        $pages = [];
+        $label = fn (string $label): string => trim((string) preg_replace('/\s*\(\d+\)$/', '', $label));
+
+        foreach ($this->sections($user, $company) as $section) {
+            foreach (($section['children'])($user, $company) as $child) {
+                $pages[$child['route']] ??= ['label' => $label($child['label']), 'route' => $child['route'], 'section' => $label($section['label']), 'group' => $child['group'] ?? null];
+            }
+
+            // A section whose start page is also one of its pages is found under the page's own name.
+            $pages[$section['route']] ??= ['label' => $label($section['label']), 'route' => $section['route'], 'section' => $label($section['label']), 'group' => null];
+        }
+
+        return array_values($pages);
+    }
+
+    /** @return list<array{label: string, route: string, patterns: list<string>, children: Closure(User, Company): list<ChildLink>}> */
+    private function sections(User $user, ?Company $company): array
+    {
         $can = fn (string $permission): bool => $company !== null && $user->hasTeamPermission($company, $permission);
 
         $sections = [
@@ -89,15 +128,7 @@ final class Navigation
             ];
         }
 
-        $open = $this->openSection($sections, $currentRoute);
-        $result = [];
-
-        foreach ($sections as $index => $section) {
-            $children = $index === $open && $company !== null ? $this->links(($section['children'])($user, $company), $currentRoute) : [];
-            $result[] = new NavSection($section['label'], $section['route'], $section['patterns'], $index === $open, $children);
-        }
-
-        return $result;
+        return $sections;
     }
 
     /**

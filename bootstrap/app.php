@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\EndExpiredSessions;
+use App\Http\Middleware\RemembersRecentItems;
 use App\Http\Middleware\SecurityHeaders;
 use App\Modules\Http\Middleware\EnsureModuleEnabled;
 use Illuminate\Foundation\Application;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SecurityHeaders::class,
             EndExpiredSessions::class,
+            RemembersRecentItems::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

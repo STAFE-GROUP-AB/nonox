@@ -25,10 +25,14 @@ use App\Modules\StaffLedger\Models\Person;
 use App\Modules\StaffLedger\Policies\EntryPolicy;
 use App\Modules\StaffLedger\Policies\LocationPolicy;
 use App\Modules\StaffLedger\Policies\PersonPolicy;
+use App\Modules\StaffLedger\Search\PeopleSearchProvider;
 use App\Modules\StaffLedger\Support\Export\LedgerXmlFormat;
 use App\Modules\StaffLedger\Support\Export\MockSkatteverketTransfer;
 use App\Modules\StaffLedger\Support\Export\ProvisionalLedgerXml;
 use App\Modules\StaffLedger\Support\Export\SkatteverketTransfer;
+use App\Support\Search\SearchAction;
+use App\Support\Search\SearchActions;
+use App\Support\Search\SearchRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Http\Request;
@@ -49,6 +53,12 @@ class StaffLedgerServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->make(ModuleRegistry::class)->register(new StaffLedgerModule);
+
+        // Spotlight (ADR-026): found only while the staff ledger is on for the company.
+        $this->callAfterResolving(SearchRegistry::class, fn (SearchRegistry $search) => $search->register(new PeopleSearchProvider));
+        $this->callAfterResolving(SearchActions::class, fn (SearchActions $actions) => $actions->register(
+            new SearchAction('staff-ledger-person', 'Lägg till personal i personalliggaren', 'staff-ledger.people', 'staff-ledger:manage', query: ['ny' => 1], keywords: ['personalliggare', 'ny personal'], module: StaffLedgerModule::KEY),
+        ));
         $this->app->singleton(LedgerXmlFormat::class, ProvisionalLedgerXml::class);
         $this->app->singleton(SkatteverketTransfer::class, MockSkatteverketTransfer::class);
     }

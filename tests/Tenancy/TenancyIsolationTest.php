@@ -31,6 +31,7 @@ use App\Models\InvoiceRow;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
 use App\Models\Project;
+use App\Models\RecentItem;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
 use App\Models\SalesDocument;
@@ -191,7 +192,13 @@ const COMPANY_SCOPED_MODELS = [
     InboxTemplate::class => 'inboxTemplateAttributes',
     InboxMessage::class => 'inboxMessageAttributes',
     InboxAttachment::class => 'inboxAttachmentAttributes',
+    RecentItem::class => 'recentItemAttributes',
 ];
+
+function recentItemAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'type' => 'customers', 'record_id' => '1', 'title' => 'Hemlig kund AB', 'url' => '/kunder', 'icon' => 'customer', 'opened_at' => now()];
+}
 
 function staffLedgerLocationAttributes(): array
 {

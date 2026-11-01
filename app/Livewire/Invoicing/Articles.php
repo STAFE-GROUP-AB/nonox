@@ -6,6 +6,7 @@ namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\SaveArticle;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Article;
@@ -22,6 +23,7 @@ use Livewire\Component;
  */
 class Articles extends Component
 {
+    use OpensFormFromLink;
     use ShowsToasts;
 
     public bool $showForm = false;
@@ -34,6 +36,8 @@ class Articles extends Component
     public function mount(): void
     {
         abort_unless($this->user()->can('viewAny', [Article::class, $this->company()]), 403);
+
+        $this->openFormFromLink(Article::class);
     }
 
     public function create(): void
