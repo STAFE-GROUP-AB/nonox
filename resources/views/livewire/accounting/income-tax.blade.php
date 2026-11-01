@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full rounded-xl border-stone-300 shadow-sm focus:border-accent-500 focus:ring-accent-500';
+    $input = 'block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
     $kr = fn (int $kronor): string => number_format($kronor, 0, ',', "\u{a0}")."\u{a0}kr";
 @endphp
 <div class="space-y-6">
@@ -18,15 +18,15 @@
     @else
         @php($taxable = $ink2->taxableKronor())
         <section class="grid gap-3 sm:grid-cols-3">
-            <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+            <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">
                 <p class="text-sm text-gray-500">{{ __('Bokfört resultat') }}</p>
                 <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ $kr($ink2->resultKronor()) }}</p>
             </div>
-            <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+            <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">
                 <p class="text-sm text-gray-500">{{ __('Bokförd skatt') }}</p>
                 <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ $kr($ink2->taxKronor()) }}</p>
             </div>
-            <div class="rounded-3xl bg-ink px-5 py-4 text-white shadow-sm">
+            <div class="rounded-3xl bg-ink px-5 py-4 text-white shadow-xs">
                 <p class="text-sm text-stone-300">{{ $taxable >= 0 ? __('Överskott av näringsverksamhet') : __('Underskott av näringsverksamhet') }}</p>
                 <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums">{{ $kr(abs($taxable)) }}</p>
             </div>

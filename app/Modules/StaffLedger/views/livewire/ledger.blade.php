@@ -1,4 +1,4 @@
-@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-8">
     <x-ui.card>
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

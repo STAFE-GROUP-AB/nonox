@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $statuses = ['SUBMITTED' => [__('Väntar på svar'), 'bg-gray-100 text-gray-700'], 'APPROVED' => [__('Godkänt, betalas med lönen'), 'bg-green-50 text-green-800'], 'PAID' => [__('Utbetalt'), 'bg-green-50 text-green-800'], 'REJECTED' => [__('Inte godkänt'), 'bg-accent-50 text-accent-800']];
 @endphp
 <div @if($reading) wire:poll.5s @endif>

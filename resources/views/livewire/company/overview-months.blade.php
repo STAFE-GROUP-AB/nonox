@@ -1,6 +1,6 @@
 @php
     $tab = 'manad';
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-xl shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-xl shadow-xs';
     $short = [1 => __('Jan'), __('Feb'), __('Mar'), __('Apr'), __('Maj'), __('Jun'), __('Jul'), __('Aug'), __('Sep'), __('Okt'), __('Nov'), __('Dec')];
     $long = [1 => __('januari'), __('februari'), __('mars'), __('april'), __('maj'), __('juni'), __('juli'), __('augusti'), __('september'), __('oktober'), __('november'), __('december')];
     [$year, $monthNumber] = array_map('intval', explode('-', $selected));
@@ -38,7 +38,7 @@
         <input id="company_search_months" type="search" class="{{ $input }}" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök klient på namn eller organisationsnummer') }}">
     </div>
 
-    <section class="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-stone-200">
+    <section class="overflow-hidden rounded-[28px] bg-white shadow-xs ring-1 ring-stone-200">
         <header class="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 bg-paper px-6 py-6 sm:px-8">
             <div>
                 <p class="text-sm text-gray-500">{{ __('Byråvy') }} · {{ $firm }}</p>

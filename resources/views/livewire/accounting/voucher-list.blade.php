@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
 @endphp
 
 <div class="space-y-6">
@@ -41,14 +41,14 @@
             <input id="voucher_search" type="search" class="{{ $input }} sm:max-w-xs" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök på text eller nummer, t.ex. A12') }}">
 
             <label for="voucher_status" class="sr-only">{{ __('Visa') }}</label>
-            <select id="voucher_status" class="{{ $input }} sm:max-w-[12rem]" wire:model.live="status">
+            <select id="voucher_status" class="{{ $input }} sm:max-w-48" wire:model.live="status">
                 <option value="alla">{{ __('Alla') }}</option>
                 <option value="bokforda">{{ __('Bokförda') }}</option>
                 <option value="utkast">{{ __('Utkast') }}</option>
             </select>
 
             <label for="voucher_year" class="sr-only">{{ __('Räkenskapsår') }}</label>
-            <select id="voucher_year" class="{{ $input }} sm:max-w-[12rem]" wire:model.live="fiscalYearId">
+            <select id="voucher_year" class="{{ $input }} sm:max-w-48" wire:model.live="fiscalYearId">
                 @foreach($fiscalYears as $fiscalYear)
                     <option value="{{ $fiscalYear->id }}">{{ $fiscalYear->label() }}</option>
                 @endforeach

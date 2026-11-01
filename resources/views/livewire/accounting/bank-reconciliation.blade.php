@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full rounded-xl border-stone-300 shadow-sm focus:border-accent-500 focus:ring-accent-500';
+    $input = 'block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
     $kr = fn (int $ore): string => \App\Support\Money\Money::ofOre($ore)->format();
 @endphp
 <div class="space-y-6">
@@ -76,7 +76,7 @@
                         @if($prepared['rows']->isEmpty())
                             <p class="mt-2 text-sm text-gray-600">{{ __('Inget är bokfört på kontot under perioden.') }}</p>
                         @else
-                            <div class="-mx-6 mt-2 max-h-[32rem] overflow-auto sm:mx-0">
+                            <div class="-mx-6 mt-2 max-h-128 overflow-auto sm:mx-0">
                                 <table class="min-w-full text-left text-sm">
                                     <thead class="sticky top-0 bg-white">
                                         <tr class="border-b border-stone-200 text-xs font-medium uppercase tracking-[0.12em] text-gray-500">
@@ -90,7 +90,7 @@
                                     <tbody class="divide-y divide-stone-200">
                                         @foreach($prepared['rows'] as $row)
                                             <tr wire:key="row-{{ $row->id }}" @class(['bg-accent-50/60' => in_array($row->id, $outstanding)])>
-                                                <td class="px-3 py-2"><input type="checkbox" class="rounded border-stone-300 text-ink focus:ring-accent-500" value="{{ $row->id }}" wire:model.live="outstanding" aria-label="{{ __('Inte hos banken ännu') }}"></td>
+                                                <td class="px-3 py-2"><input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" value="{{ $row->id }}" wire:model.live="outstanding" aria-label="{{ __('Inte hos banken ännu') }}"></td>
                                                 <td class="whitespace-nowrap px-3 py-2 tabular-nums">{{ $row->voucher->voucher_date->toDateString() }}</td>
                                                 <td class="whitespace-nowrap px-3 py-2"><a href="{{ route('accounting.vouchers.show', $row->voucher) }}" class="font-medium text-accent-700 hover:underline">{{ $row->voucher->reference() }}</a></td>
                                                 <td class="px-3 py-2 text-gray-700">{{ $row->description ?? $row->voucher->description }}</td>

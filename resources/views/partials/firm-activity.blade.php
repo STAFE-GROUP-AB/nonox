@@ -17,7 +17,7 @@
     };
     $initials = fn (string $name): string => mb_strtoupper(collect(preg_split('/\s+/u', trim($name)) ?: [])->filter()->take(2)->map(fn (string $word): string => mb_substr($word, 0, 1))->implode(''));
 @endphp
-<section class="overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-stone-200" aria-labelledby="firm-activity-title">
+<section class="overflow-hidden rounded-[28px] bg-white shadow-xs ring-1 ring-stone-200" aria-labelledby="firm-activity-title">
     <header class="flex flex-wrap items-end justify-between gap-4 border-b border-stone-200 bg-paper px-6 py-6 sm:px-8">
         <div>
             <p class="text-sm text-gray-500">{{ __('Din redovisningsbyrå') }}</p>

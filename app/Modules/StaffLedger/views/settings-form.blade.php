@@ -1,4 +1,4 @@
-@php($input = 'mt-1 block w-32 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm tabular-nums')
+@php($input = 'mt-1 block w-32 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs tabular-nums')
 <form wire:submit="save" class="space-y-5">
     <x-ui.field for="sl-reminder" :label="__('Påminn om glömd utcheckning efter (timmar)')" :hint="__('Personen (om e-post finns) och cheferna får en påminnelse. Ingen checkas ut automatiskt.')" error="settings.reminder_after_hours">
         <input id="sl-reminder" type="number" min="1" max="48" wire:model="settings.reminder_after_hours" class="{{ $input }}">

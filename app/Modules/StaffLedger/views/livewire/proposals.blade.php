@@ -1,4 +1,4 @@
-@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-8">
     <x-ui.card :title="__('Föreslå tidrapport')" :description="__('Timmar per dag räknas från avslutade arbetspass för personal som är kopplad till en anställd i lönen. Pass utan utcheckning tas inte med; rätta dem först.')">
         <form wire:submit="propose" class="flex flex-wrap items-end gap-4">

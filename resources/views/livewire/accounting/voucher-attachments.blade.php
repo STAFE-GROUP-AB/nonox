@@ -21,7 +21,7 @@
                 @if($selected->isImage())
                     <img src="{{ $url }}" alt="{{ $selected->original_name }}" class="w-full object-contain">
                 @elseif($selected->mime === 'application/pdf')
-                    <iframe src="{{ $url }}" title="{{ $selected->original_name }}" class="h-[32rem] w-full"></iframe>
+                    <iframe src="{{ $url }}" title="{{ $selected->original_name }}" class="h-128 w-full"></iframe>
                 @else
                     <p class="p-4 text-sm text-gray-700">{{ __('Filen kan inte visas här. Ladda ner den för att öppna den.') }} <a href="{{ $url }}" class="font-medium text-accent-700 underline">{{ __('Ladda ner') }}</a></p>
                 @endif

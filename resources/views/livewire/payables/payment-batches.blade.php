@@ -3,7 +3,7 @@
     use App\Domain\Payables\PaymentBatchStatus;
     use App\Support\Money\Money;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
 @endphp
 
 <div class="space-y-6">
@@ -65,7 +65,7 @@
                             @foreach($payable as $invoice)
                                 @php($snapshot = $invoice->supplier_snapshot ?? [])
                                 <tr wire:key="payable-{{ $invoice->id }}">
-                                    <td class="py-2 pr-3"><input type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $invoice->id }}" wire:model.live="selected" aria-label="{{ __('Välj :title', ['title' => $invoice->title()]) }}"></td>
+                                    <td class="py-2 pr-3"><input type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $invoice->id }}" wire:model.live="selected" aria-label="{{ __('Välj :title', ['title' => $invoice->title()]) }}"></td>
                                     <td class="py-2 pr-4"><a href="{{ route('payables.invoices.show', $invoice) }}" class="font-semibold text-accent-600 hover:text-accent-700">{{ $invoice->number }}</a></td>
                                     <td class="py-2 pr-4">{{ $invoice->supplierName() }}</td>
                                     <td class="py-2 pr-4 tabular-nums">

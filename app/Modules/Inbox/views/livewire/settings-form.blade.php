@@ -1,4 +1,4 @@
-@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-8">
     <section class="space-y-3">
         <h3 class="text-sm font-semibold text-gray-900">{{ __('Företagets adress') }}</h3>
@@ -55,11 +55,11 @@
 
     <form wire:submit="saveOptions" class="space-y-3">
         <h3 class="text-sm font-semibold text-gray-900">{{ __('Tolkning och aviseringar') }}</h3>
-        <label class="flex items-start gap-2 text-sm"><input type="checkbox" wire:model="aiInterpretation" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500">
+        <label class="flex items-start gap-2 text-sm"><input type="checkbox" wire:model="aiInterpretation" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500">
             <span>{{ __('Låt NONOX AI läsa underlag som ingen mall känner igen (kräver att modulen NONOX AI är påslagen; underlaget skickas då till er AI-leverantör)') }}</span></label>
-        <label class="flex items-start gap-2 text-sm"><input type="checkbox" wire:model="notifyOnAction" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500">
+        <label class="flex items-start gap-2 text-sm"><input type="checkbox" wire:model="notifyOnAction" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500">
             <span>{{ __('Skicka e-post när något behöver granskas (högst en gång i timmen)') }}</span></label>
-        <label class="flex items-start gap-2 text-sm"><input type="checkbox" wire:model="dailySummary" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500">
+        <label class="flex items-start gap-2 text-sm"><input type="checkbox" wire:model="dailySummary" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500">
             <span>{{ __('Skicka en daglig sammanfattning på morgonen') }}</span></label>
         <button type="submit" class="rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Spara') }}</button>
     </form>
@@ -94,7 +94,7 @@
     <form wire:submit="saveImap" class="space-y-3">
         <h3 class="text-sm font-semibold text-gray-900">{{ __('Egen brevlåda (IMAP)') }}</h3>
         <p class="text-sm text-gray-600">{{ __('Kör ni NONOX själva kan NONOX hämta e-post från en egen brevlåda i stället. Använd en brevlåda som bara används för underlag.') }}</p>
-        <label class="flex items-center gap-2 text-sm"><input type="checkbox" wire:model.live="imapEnabled" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500"> {{ __('Hämta e-post från en egen brevlåda') }}</label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" wire:model.live="imapEnabled" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500"> {{ __('Hämta e-post från en egen brevlåda') }}</label>
         @if($imapEnabled)
             <div class="grid gap-3 sm:grid-cols-2">
                 <x-ui.field for="imap_host" :label="__('Server')" error="imap_host"><input id="imap_host" type="text" class="{{ $input }} mt-1" wire:model="imapHost" placeholder="imap.exempel.se"></x-ui.field>

@@ -57,7 +57,7 @@
                                     <td class="py-2 pr-4 text-right">{{ $row['left'] }}</td>
                                     <td class="py-2 pr-4">
                                         @if($row['max_save'] > 0)
-                                            <input type="number" min="0" max="{{ $row['max_save'] }}" class="block w-20 rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500" wire:model.live="save.{{ $id }}" aria-label="{{ __('Dagar att spara för :name', ['name' => $row['employee']->first_name]) }}">
+                                            <input type="number" min="0" max="{{ $row['max_save'] }}" class="block w-20 rounded-lg border-gray-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model.live="save.{{ $id }}" aria-label="{{ __('Dagar att spara för :name', ['name' => $row['employee']->first_name]) }}">
                                             <span class="text-xs text-gray-500">{{ __('högst :max', ['max' => $row['max_save']]) }}</span>
                                             <x-input-error :for="'save.'.$id" />
                                         @else

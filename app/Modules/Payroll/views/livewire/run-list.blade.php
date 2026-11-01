@@ -3,7 +3,7 @@
         <x-ui.card :title="__('Ny lönekörning')">
             <form wire:submit="create" class="flex flex-wrap items-end gap-4">
                 <x-ui.field for="run_period" :label="__('Månad')" error="period">
-                    <input id="run_period" type="month" class="block border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm mt-1" wire:model="period">
+                    <input id="run_period" type="month" class="block border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs mt-1" wire:model="period">
                 </x-ui.field>
                 <x-button wire:loading.attr="disabled">{{ __('Skapa lönekörning') }}</x-button>
             </form>

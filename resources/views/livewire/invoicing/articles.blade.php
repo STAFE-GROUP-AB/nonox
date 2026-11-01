@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $rates = [2500 => '25 %', 1200 => '12 %', 600 => '6 %', 0 => __('Momsfri')];
 @endphp
 

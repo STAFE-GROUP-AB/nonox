@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full rounded-xl border-stone-300 shadow-sm focus:border-accent-500 focus:ring-accent-500';
+    $input = 'block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
     $kr = fn (int $ore): string => \App\Support\Money\Money::ofOre($ore)->format();
     $done = collect($items)->where('status', '!=', 'todo')->count();
     $profit = -$result->beforeTaxOre;
@@ -16,15 +16,15 @@
     </nav>
 
     <section class="grid gap-3 sm:grid-cols-3">
-        <div class="rounded-3xl bg-ink px-5 py-4 text-white shadow-sm">
+        <div class="rounded-3xl bg-ink px-5 py-4 text-white shadow-xs">
             <p class="text-sm text-stone-300">{{ $profit >= 0 ? __('Resultat före skatt') : __('Förlust före skatt') }}</p>
             <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums">{{ $kr(abs($profit)) }}</p>
         </div>
-        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">
             <p class="text-sm text-gray-500">{{ __('Checklistan') }}</p>
             <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ __(':done av :total klara', ['done' => $done, 'total' => count($items)]) }}</p>
         </div>
-        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">
             <p class="text-sm text-gray-500">{{ __('Status') }}</p>
             <p class="mt-1 text-2xl font-bold tracking-tight text-ink">{{ $fiscalYear->isOpen() ? __('Öppet') : __('Stängt :date', ['date' => $fiscalYear->closed_at?->toDateString()]) }}</p>
         </div>
@@ -46,7 +46,7 @@
                     </div>
                     @if($item['manual'] && $fiscalYear->isOpen())
                         <label class="flex items-center gap-2 text-sm text-gray-800">
-                            <input type="checkbox" class="rounded border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
+                            <input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
                             {{ __('Klart eller gäller inte') }}
                         </label>
                     @elseif($item['route'] !== null && $item['status'] === 'todo')

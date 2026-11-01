@@ -1,7 +1,7 @@
 @php
     use App\Modules\Payroll\Domain\PersonalNumber;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $types = ['TILLSVIDARE' => __('Tillsvidare'), 'ALLMAN_VISSTID' => __('Allmän visstid'), 'VIKARIAT' => __('Vikariat'), 'SASONG' => __('Säsong'), 'PROVANSTALLNING' => __('Provanställning'), 'TIMANSTALLD' => __('Timanställd')];
     $residences = ['SE' => __('Bosatt i Sverige (skattetabell)'), 'NON_RESIDENT_SINK' => __('Bosatt utomlands, SINK'), 'NON_RESIDENT_A_SINK' => __('Bosatt utomlands, A-SINK')];
 @endphp
@@ -79,7 +79,7 @@
                         </select>
                     </x-ui.field>
                     <label class="flex items-start gap-2 text-sm sm:col-span-3">
-                        <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="form.vacation_payout_with_salary">
+                        <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="form.vacation_payout_with_salary">
                         <span>{{ __('Betala semesterersättning med varje lön i stället för betalda semesterdagar') }}
                             <span class="block text-xs text-gray-500">{{ __('Bara när anställningen är högst tre månader (semesterlagen 5 §) eller kollektivavtalet tillåter det, vanligt för timanställda.') }}</span>
                         </span>

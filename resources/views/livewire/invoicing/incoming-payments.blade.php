@@ -40,7 +40,7 @@
                                 <tr wire:key="transaction-{{ $transaction->id }}">
                                     <td class="py-2 pr-3">
                                         @if($canBook && ! $transaction->isBooked() && $transaction->invoice_id)
-                                            <input type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $transaction->id }}" wire:model.live="selected" aria-label="{{ __('Välj inbetalning') }}">
+                                            <input type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $transaction->id }}" wire:model.live="selected" aria-label="{{ __('Välj inbetalning') }}">
                                         @endif
                                     </td>
                                     <td class="py-2 pr-4 tabular-nums">{{ $transaction->booking_date->toDateString() }}</td>

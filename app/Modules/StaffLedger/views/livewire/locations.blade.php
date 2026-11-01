@@ -1,4 +1,4 @@
-@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-8">
     @if($pairing)
         <x-ui.card :title="__('Koppla kiosken :name', ['name' => $pairing['device']])" :description="__('Öppna länken i surfplattans webbläsare, eller skanna QR-koden med den. Koden gäller till :time och kan bara användas en gång.', ['time' => $pairing['expires']])">

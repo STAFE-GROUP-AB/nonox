@@ -8,7 +8,7 @@
 
     <div class="mt-5 md:mt-0 md:col-span-2">
         <form wire:submit="{{ $submit }}">
-            <div class="bg-white px-4 py-5 shadow-sm ring-1 ring-stone-200 sm:p-6 {{ isset($actions) ? 'rounded-t-3xl' : 'rounded-3xl' }}">
+            <div class="bg-white px-4 py-5 shadow-xs ring-1 ring-stone-200 sm:p-6 {{ isset($actions) ? 'rounded-t-3xl' : 'rounded-3xl' }}">
                 <div class="grid grid-cols-6 gap-6">
                     {{ $form }}
                 </div>

@@ -1,7 +1,7 @@
 @php
     use App\Support\Money\Money;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $absenceTypes = ['SICK' => __('Sjuk'), 'VACATION' => __('Semester'), 'VAB' => __('Vård av barn'), 'PARENTAL' => __('Föräldraledig'), 'LEAVE_UNPAID' => __('Tjänstledig utan lön'), 'LEAVE_PAID' => __('Ledig med lön'), 'OTHER' => __('Annan frånvaro')];
 @endphp
 
@@ -49,7 +49,7 @@
                 @else
                     <span class="min-w-0 flex-1 text-gray-700">{{ __('När Skatteverket drar skatt och arbetsgivaravgifter från skattekontot: bokför det här.') }}</span>
                     <label class="text-gray-600">{{ __('Dag') }}
-                        <input type="date" class="mt-1 block rounded-lg border-gray-300 shadow-sm focus:border-accent-500 focus:ring-accent-500" wire:model="taxDate">
+                        <input type="date" class="mt-1 block rounded-lg border-gray-300 shadow-xs focus:border-accent-500 focus:ring-accent-500" wire:model="taxDate">
                     </label>
                     <x-button type="button" wire:click="postTax" wire:loading.attr="disabled">{{ __('Bokför mot skattekontot') }}</x-button>
                 @endif

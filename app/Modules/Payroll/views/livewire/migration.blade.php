@@ -9,7 +9,7 @@
             <p class="text-sm text-gray-600">{{ __('Läs in de anställda, lön, skatt och arbetsgivaravgifter hittills i år, semestersaldona och de gamla lönebeskeden innan den första lönen räknas här. Bokföringen för året läses in för sig, som SIE-fil. Medan flytten pågår kan ingen lönekörning räknas.') }}</p>
             <form wire:submit="start" class="mt-4 flex flex-wrap items-end gap-4">
                 <x-ui.field for="migration_year" :label="__('Året som beloppen gäller')" error="year">
-                    <input id="migration_year" type="number" class="block w-28 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm mt-1" wire:model="year">
+                    <input id="migration_year" type="number" class="block w-28 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs mt-1" wire:model="year">
                 </x-ui.field>
                 <x-button wire:loading.attr="disabled">{{ __('Starta flytten') }}</x-button>
             </form>

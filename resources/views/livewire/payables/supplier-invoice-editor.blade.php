@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm';
     $fileUrl = $invoice?->file_path ? route('payables.invoices.file', $invoice) : null;
     $selectedSupplier = $suppliers->firstWhere('id', (int) $supplierId);
@@ -15,7 +15,7 @@
         @elseif($fileUrl && str_starts_with((string) $invoice->file_mime, 'image/'))
             <img src="{{ $fileUrl }}" alt="{{ $invoice->file_name }}" class="w-full rounded-lg border border-gray-200 object-contain">
         @elseif($fileUrl)
-            <iframe src="{{ $fileUrl }}" title="{{ $invoice->file_name }}" class="h-[40rem] w-full rounded-lg border border-gray-200 bg-gray-50"></iframe>
+            <iframe src="{{ $fileUrl }}" title="{{ $invoice->file_name }}" class="h-160 w-full rounded-lg border border-gray-200 bg-gray-50"></iframe>
         @endif
 
         <div
@@ -69,7 +69,7 @@
                         <p class="font-medium text-gray-900">{{ __(':name finns inte i leverantörsregistret.', ['name' => $aiResult['new_supplier']['name']]) }}</p>
                         <p class="mt-1 text-gray-700">{{ collect([$aiResult['new_supplier']['org_number'] ?? null ? __('Org.nr :number', ['number' => $aiResult['new_supplier']['org_number']]) : null, $aiResult['new_supplier']['bankgiro'] ?? null ? __('Bankgiro :number', ['number' => $aiResult['new_supplier']['bankgiro']]) : null, $aiResult['new_supplier']['plusgiro'] ?? null ? __('Plusgiro :number', ['number' => $aiResult['new_supplier']['plusgiro']]) : null, $aiResult['new_supplier']['city'] ?? null])->filter()->implode(' · ') }}</p>
                         <label class="mt-3 flex items-start gap-2">
-                            <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="createSupplier">
+                            <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="createSupplier">
                             <span>{{ __('Skapa leverantören med de här uppgifterna och koppla fakturan till den när du sparar') }}</span>
                         </label>
                     </div>
@@ -83,7 +83,7 @@
                     <p class="mt-1 text-sm text-gray-500" x-show="buyerLiable" x-cloak>{{ __('Fakturan har ingen svensk moms. Du redovisar momsen själv och drar av den samtidigt. Kontot väljs efter momssatsen så att beloppen hamnar i rätt ruta i momsdeklarationen.') }}</p>
                 </x-ui.field>
                 <label class="flex items-start gap-3 text-sm sm:col-span-2">
-                    <input type="checkbox" class="mt-0.5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="credit">
+                    <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="credit">
                     <span>
                         <span class="font-medium text-gray-900">{{ __('Det här är en kreditnota') }}</span>
                         <span class="block text-gray-600">{{ __('Skriv beloppen som de står på kreditnotan. Den minskar skulden till leverantören och kvittas mot en faktura eller betalas tillbaka.') }}</span>
@@ -155,7 +155,7 @@
                                         <option value="600">6 %</option>
                                     </select>
                                 </td>
-                                <td class="py-1 pr-2 min-w-[10rem]"><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Text, rad') }} ' + (index + 1)"></td>
+                                <td class="py-1 pr-2 min-w-40"><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Text, rad') }} ' + (index + 1)"></td>
                                 @if($costCenters->isNotEmpty())
                                     <td class="py-1 pr-2">
                                         <select class="{{ $cell }}" x-model="row.cost_center" :aria-label="'{{ __('Kostnadsställe, rad') }} ' + (index + 1)">

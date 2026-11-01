@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $labels = [
         'salary_period' => __('Löneperiod'),
         'default_payment_day' => __('Utbetalningsdag'),
@@ -54,7 +54,7 @@
             @elseif(in_array($key, ['default_payment_day', 'vacation_year_start_month'], true))
                 <input id="payroll_{{ $key }}" type="number" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
             @else
-                <label class="mt-2 flex items-center gap-2 text-sm"><input id="payroll_{{ $key }}" type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="settings.{{ $key }}"> {{ __('Ja') }}</label>
+                <label class="mt-2 flex items-center gap-2 text-sm"><input id="payroll_{{ $key }}" type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="settings.{{ $key }}"> {{ __('Ja') }}</label>
             @endif
         </x-ui.field>
     @endforeach

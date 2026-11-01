@@ -1,7 +1,7 @@
 @php
     use App\Support\Money\Money;
 
-    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm text-sm';
+    $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs text-sm';
     $m = fn (int $ore): Money => Money::ofOre($ore);
     $tabs = [
         'saldobalans' => __('Saldobalans'),
@@ -69,7 +69,7 @@
         <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
             @if($filters->report === 'resultat')
                 <label class="flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" class="rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="jamfor">
+                    <input type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="jamfor">
                     {{ __('Jämför med samma period förra året') }}
                 </label>
             @else

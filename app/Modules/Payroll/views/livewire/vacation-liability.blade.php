@@ -4,7 +4,7 @@
     <x-ui.card>
         <div class="flex flex-wrap items-end justify-between gap-4">
             <x-ui.field for="liability_date" :label="__('Per dag')">
-                <input id="liability_date" type="date" class="block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm mt-1" wire:model.live="date" value="{{ $day->toDateString() }}">
+                <input id="liability_date" type="date" class="block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs mt-1" wire:model.live="date" value="{{ $day->toDateString() }}">
             </x-ui.field>
             <div class="flex flex-wrap gap-8 text-right">
                 <div><p class="text-xs text-gray-500">{{ __('Semesterlöneskuld') }}</p><p class="text-xl font-semibold tabular-nums">{{ App\Support\Money\Money::ofOre($total)->format() }}</p></div>

@@ -1,5 +1,5 @@
 @php
-    $input = 'block w-full rounded-xl border-stone-300 shadow-sm focus:border-accent-500 focus:ring-accent-500';
+    $input = 'block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
     $kr = fn (int $ore): string => \App\Support\Money\Money::ofOre($ore)->format();
 @endphp
 <div class="space-y-6">
@@ -11,15 +11,15 @@
     @endif
 
     <section class="grid gap-3 sm:grid-cols-3">
-        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">
             <p class="text-sm text-gray-500">{{ __('Bokfört värde') }}</p>
             <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ $kr($totals['book_value']) }}</p>
         </div>
-        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">
             <p class="text-sm text-gray-500">{{ __('Anskaffningsvärde') }}</p>
             <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ $kr($totals['acquisition']) }}</p>
         </div>
-        <div class="rounded-3xl bg-white px-5 py-4 shadow-sm ring-1 ring-stone-200">
+        <div class="rounded-3xl bg-white px-5 py-4 shadow-xs ring-1 ring-stone-200">
             <p class="text-sm text-gray-500">{{ __('Att skriva av för :month', ['month' => $month]) }}</p>
             <p class="mt-1 text-2xl font-bold tracking-tight tabular-nums text-ink">{{ $kr(array_sum(array_column($preview, 'amount'))) }}</p>
         </div>

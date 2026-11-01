@@ -1,4 +1,4 @@
-@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-sm')
+@php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-8">
     @if($canManage && $editing === null)
         <div class="flex flex-wrap items-center gap-4">
