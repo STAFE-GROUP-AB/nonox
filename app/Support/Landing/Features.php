@@ -57,6 +57,7 @@ final class Features
         'control_visit' => ['name' => 'Kontrollbesök i personalliggaren', 'status' => self::LIVE, 'readme' => 'Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren', 'module' => 'Personalliggare'],
         'inbox' => ['name' => 'Inkorg för fakturor och kvitton', 'status' => self::LIVE, 'readme' => 'En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem', 'module' => 'Inkorg'],
         'daily_reports' => ['name' => 'Dagsrapporter från kassasystemet', 'status' => self::LIVE, 'readme' => 'dagsrapporter läses utan AI, med mallar som en person godkänt', 'module' => 'Inkorg'],
+        'bank_feed' => ['name' => 'Bankkoppling med BankID', 'status' => self::LIVE, 'readme' => 'Företagets bankkonton kopplas med BankID genom öppen bankdata (PSD2)', 'module' => 'Bank'],
         'ai' => ['name' => 'NONOX AI läser underlag', 'status' => self::LIVE, 'readme' => 'Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel', 'module' => 'NONOX AI'],
         'multi_company' => ['name' => 'Flera företag per användare', 'status' => self::LIVE, 'readme' => 'Flera företag per användare med roller'],
         'roles' => ['name' => 'Roller för konsult, attestant och revisor', 'status' => self::LIVE, 'readme' => 'ägare, administratör, redovisningskonsult, bokförare, attestant och revisor'],

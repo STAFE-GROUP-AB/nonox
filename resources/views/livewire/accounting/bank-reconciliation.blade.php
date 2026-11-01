@@ -33,6 +33,18 @@
                     <x-ui.field for="reconcile_statement" :label="__('Saldo enligt kontoutdraget, kr')"><input id="reconcile_statement" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model.live.debounce.400ms="statement" placeholder="{{ __('Till exempel 125 000,00') }}"></x-ui.field>
                 </div>
 
+                @if($feed !== null && $error === null)
+                    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-paper px-4 py-3 ring-1 ring-stone-200">
+                        <p class="text-sm text-gray-700">
+                            {{ __('Saldo enligt banken (:account): :amount', ['account' => $feed['bank_account']->label(), 'amount' => $kr($feed['balance_ore'])]) }}
+                            @if($feed['calculated'])
+                                <span class="block text-xs text-gray-500">{{ __('Räknat från bankens saldo :date och transaktionerna däremellan.', ['date' => $feed['reported_on']->toDateString()]) }}</span>
+                            @endif
+                        </p>
+                        <button type="button" wire:click="useBankFeed" class="inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-stone-300 hover:ring-stone-400">{{ __('Använd bankens saldo') }}</button>
+                    </div>
+                @endif
+
                 @if($error !== null)
                     <p class="mt-4 text-sm text-accent-700">{{ $error }}</p>
                 @elseif($prepared !== null)

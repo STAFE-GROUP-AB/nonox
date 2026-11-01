@@ -13,12 +13,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use LogicException;
 
 /**
- * An incoming payment read from a bank file, with the invoice it is matched
+ * An incoming payment read from a bank file or fetched by NONOX Banking
+ * (bank_file_import_id null, ADR-034), with the invoice it is matched
  * to and, once booked, the payment that settled it. What the bank said never
  * changes; a database trigger backs this up.
  *
  * @property int $id
- * @property string $bank_file_import_id
+ * @property ?string $bank_file_import_id
  * @property string $reference
  * @property CarbonImmutable $booking_date
  * @property Money $amount_ore
