@@ -1,0 +1,89 @@
+# The sections of the public manual at /manual, in menu order.
+# Each key is a folder next to this file and the path under /manual.
+# "for" is the audience: foretag (people who run or keep the books of a
+# company) or personal (employees using Min sida and the staff ledger).
+# "modul" names the module key (app/Modules/*/…Module::KEY) a section needs.
+
+kom-igang:
+  titel: Kom igång
+  beskrivning: Konto och inloggning, ditt första företag, roller, inbjudningar och hur appen är uppbyggd.
+  for: foretag
+  ikon: rocket
+bokforing:
+  titel: Bokföring
+  beskrivning: Verifikationer, kontoplan, underlag, rättelser, kostnadsställen, räkenskapsår och SIE.
+  for: foretag
+  ikon: book
+fakturering:
+  titel: Fakturering
+  beskrivning: Kunder, artiklar, fakturor med OCR, offerter, avtalsfakturor, påminnelser, ROT och RUT och inbetalningar.
+  for: foretag
+  ikon: invoice
+leverantorer:
+  titel: Leverantörsfakturor
+  beskrivning: Leverantörer, registrering, inkorgen, attest, betalfiler och fakturor i utländsk valuta.
+  for: foretag
+  ikon: inbox
+bank:
+  titel: Bank
+  beskrivning: Bankkoppling, kontoutdrag, bankavstämning och inlästa bankfiler.
+  for: foretag
+  ikon: bank
+moms:
+  titel: Moms och EU
+  beskrivning: Momsdeklarationen, momsrapporten, periodisk sammanställning, OSS och VIES.
+  for: foretag
+  ikon: percent
+rapporter:
+  titel: Rapporter
+  beskrivning: Resultat- och balansrapport, saldobalans, huvudbok, kontoanalys och verifikationslista.
+  for: foretag
+  ikon: chart
+bokslut:
+  titel: Bokslut och årsredovisning
+  beskrivning: Checklistan, periodiseringar, anläggningsregistret, årsredovisning, inkomstdeklaration, arkivpaket och nytt räkenskapsår.
+  for: foretag
+  ikon: calendar
+lon:
+  titel: Lön
+  beskrivning: Anställda, lönekörningar, skattetabeller, semester, sjuklön, utlägg, lönefil och arbetsgivardeklaration.
+  for: foretag
+  modul: payroll
+  ikon: wallet
+avtal:
+  titel: Kollektivavtal
+  beskrivning: NONOX Avtal – avtalets regler i lönen, och hur NONOX AI föreslår inställningarna per anställd.
+  for: foretag
+  modul: agreements
+  ikon: handshake
+personalliggare:
+  titel: Personalliggare
+  beskrivning: Att sätta upp personalliggaren, kiosken på surfplattan, rättelser och kontrollbesök.
+  for: foretag
+  modul: staff_ledger
+  ikon: clipboard
+byra:
+  titel: För redovisningsbyråer
+  beskrivning: Mina företag, månadsstängning, uppgifter mellan byrå och kund och byråns varumärke.
+  for: foretag
+  ikon: building
+installningar:
+  titel: Inställningar och säkerhet
+  beskrivning: Företagets uppgifter, moduler, AI-nyckel, integrationer, passkeys, personuppgifter och arkivering.
+  for: foretag
+  ikon: settings
+flytta:
+  titel: Flytta till NONOX
+  beskrivning: Byt från ett annat bokföringsprogram mitt i året eller vid årsskiftet, utan att något går förlorat.
+  for: foretag
+  ikon: truck
+personal:
+  titel: För anställda
+  beskrivning: Min sida, lönebesked, utlägg, sjukanmälan, semester, tidrapporter och in- och utcheckning i personalliggaren.
+  for: personal
+  ikon: person
+ordlista:
+  titel: Ordlista
+  beskrivning: Bokföringens ord förklarade på vanlig svenska, från attest till öresavrundning.
+  for: foretag
+  ikon: glossary
