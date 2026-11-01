@@ -7,6 +7,7 @@ namespace App\Livewire\Tasks;
 use App\Actions\Tasks\SaveTask;
 use App\Actions\Tasks\WorkOnTask;
 use App\Domain\Tasks\TaskLinks;
+use App\Domain\Tasks\TaskPeople;
 use App\Domain\Tasks\TaskPriority;
 use App\Domain\Tasks\TaskStatus;
 use App\Domain\Tasks\TaskType;
@@ -147,7 +148,7 @@ class TaskDetail extends Component
     {
         $work->delete($this->user(), $this->task);
         Toast::flash(__('Uppgiften är borttagen.'));
-        $this->redirectRoute('tasks.index');
+        $this->redirectRoute('tasks.index', ['foretag' => $this->task->company_id, 'visa' => 'alla']);
     }
 
     public function render(): View
@@ -162,7 +163,7 @@ class TaskDetail extends Component
             'statuses' => TaskStatus::cases(),
             'types' => TaskType::cases(),
             'priorities' => TaskPriority::cases(),
-            'members' => $this->editing ? TaskForm::members($this->company()) : [],
+            'people' => $this->editing ? TaskPeople::of($this->company()) : ['firm' => [], 'client' => []],
             'linkTypes' => array_keys(TaskLinks::TYPES),
             'linkOptions' => $this->editing && $this->subjectType !== '' ? TaskLinks::options($this->subjectType) : [],
             'linkLabel' => TaskLinks::label($this->task),

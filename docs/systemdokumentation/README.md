@@ -171,6 +171,13 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   `month_close.checked` och `month_close.unchecked`, med typ, status,
   tilldelad och datum men aldrig uppgiftens eller kommentarens text.
 - Uppgifter är inte räkenskapsinformation och tas bort med företaget.
+- Sidan Uppgifter (`/uppgifter`) visar uppgifterna i alla användarens
+  företag: till mig, alla klienter, väntar på kund, lämnade till andra och
+  klara. Byrån är företagets medlemmar med rollen Redovisningskonsult, kunden
+  övriga inklusive ägaren; uppgifter kan lämnas åt båda hållen och varje
+  tilldelning ger en notis och loggas med vilken sida mottagaren är på.
+  Arkiverade företag räknas inte med i summor, Att göra och månadsstängning,
+  och där kan inga uppgifter skapas eller ändras.
 
 ## 2. Kontoplan
 

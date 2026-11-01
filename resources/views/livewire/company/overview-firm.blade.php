@@ -7,4 +7,6 @@
     @else
         <livewire:firm.firm-overview :key="'firm-overview'" />
     @endif
+
+    @include('livewire.company.overview-archived')
 </div>

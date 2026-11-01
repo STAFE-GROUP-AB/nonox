@@ -29,11 +29,8 @@
                 </x-ui.field>
                 <x-ui.field for="rec_assignee" :label="__('Ansvarig')" error="assignee_id">
                     <select id="rec_assignee" class="{{ $input }}" wire:model="assigneeId">
-                        <option value="">{{ __('Ingen ännu') }}</option>
-                        @foreach($members as $id => $name)
-                            <option value="{{ $id }}">{{ $name }}</option>
-                        @endforeach
-                    </select>
+                            @include('tasks.assignee-options', ['people' => $people])
+                        </select>
                 </x-ui.field>
             </div>
             <x-ui.field for="rec_description" :label="__('Beskrivning (valfri)')" error="description">

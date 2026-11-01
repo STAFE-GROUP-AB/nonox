@@ -89,7 +89,7 @@ final class FirmWorkspace
     public function for(User $user, ?CarbonImmutable $today = null): array
     {
         $today ??= CarbonImmutable::today();
-        $memberships = Memberships::of($user);
+        $memberships = Memberships::of($user, active: true);
 
         return FirmCache::remember($user, 'workspace', $memberships->ids(), ['day' => $today->toDateString(), 'locale' => app()->getLocale()], fn (): array => $this->compute($memberships, $today));
     }
@@ -114,6 +114,11 @@ final class FirmWorkspace
 
         foreach ($overviewRows as $row) {
             $id = $row['company']->id;
+
+            if (! $memberships->has($id)) {
+                continue;
+            }
+
             $names[$id] = (string) $row['company']->name;
             $responsible[$id] = $row['responsible'];
 

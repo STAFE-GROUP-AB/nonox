@@ -130,7 +130,7 @@ it('opens a task in its own company, and never another company\'s task', functio
     expect($this->firm->fresh()->current_team_id)->toBe($bistro->id);
 
     // The task belongs to another company than the one asked for: it is not found there.
-    $this->put(route('current-team.update'), ['team_id' => $bygg->id, 'uppgift' => $task->id])->assertRedirect(route('tasks.index'));
+    $this->put(route('current-team.update'), ['team_id' => $bygg->id, 'uppgift' => $task->id])->assertRedirect(route('tasks.index', ['foretag' => $bygg->id, 'visa' => 'alla']));
     $this->put(route('current-team.update'), ['team_id' => $stranger->id, 'uppgift' => $foreign->id])->assertNotFound();
     // A new request reads the user afresh, as in production.
     $this->actingAs($this->firm->fresh());

@@ -104,5 +104,7 @@
     "My tasks": "Mina uppgifter",
     ":count kommentar|:count kommentarer": ":count kommentar|:count kommentarer",
     "{0} Inga olästa notiser.|{1} :count oläst notis.|[2,*] :count olästa notiser.": "{0} Inga olästa notiser.|{1} :count oläst notis.|[2,*] :count olästa notiser.",
-    "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa": "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa"
+    "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa": "{1} Notiser, :count oläst|[2,*] Notiser, :count olästa",
+    "{1} :count dag sen|[2,*] :count dagar sen": "{1} :count dag sen|[2,*] :count dagar sen",
+    "{1} :count försenad|[2,*] :count försenade": "{1} :count försenad|[2,*] :count försenade"
 }

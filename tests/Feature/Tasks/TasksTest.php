@@ -7,9 +7,9 @@ use App\Actions\Tasks\SaveRecurrence;
 use App\Actions\Tasks\SaveTask;
 use App\Actions\Tasks\WorkOnTask;
 use App\Domain\Tasks\TaskFrequency;
+use App\Domain\Tasks\TaskPeople;
 use App\Domain\Tasks\TaskStatus;
-use App\Livewire\Tasks\MyTasks;
-use App\Livewire\Tasks\TaskBoard;
+use App\Livewire\Tasks\TaskCenter;
 use App\Livewire\Tasks\TaskDetail;
 use App\Livewire\Tasks\TaskForm;
 use App\Mail\TaskDigestMail;
@@ -24,6 +24,7 @@ use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -133,22 +134,22 @@ it('lets the client work on a task handed to them, and shows it on their overvie
         ->and($client->can('update', $task))->toBeFalse();
 
     $todos = app(TaskTodoProvider::class)->todos($client, $this->company, CarbonImmutable::today());
-    expect($todos)->toHaveCount(1)->and($todos[0]['title'])->toBe('Skicka kvitto för köpet den 12 oktober')
-        ->and($todos[0]['url'])->toBe(route('tasks.show', $task));
+    expect($todos)->toHaveCount(1)->and($todos[0]->title)->toBe('Skicka kvitto för köpet den 12 oktober')
+        ->and($todos[0]->url)->toBe(route('tasks.show', $task));
     expect(app(TaskTodoProvider::class)->todos($this->owner, $this->company, CarbonImmutable::today()))->toBe([]);
 
     $other = newTask($this->consultant, $this->company, ['title' => 'Internt: stäm av lönen']);
     expect($client->can('view', $other))->toBeFalse();
 
     $this->actingAs($client);
-    Livewire::test(TaskBoard::class)
+    Livewire::test(TaskCenter::class)
         ->assertSee('Skicka kvitto för köpet den 12 oktober')
         ->assertDontSee('Internt: stäm av lönen');
 
     // The client company's owner, the usual person the firm asks for something, sees it on the overview.
     $ask = newTask($this->consultant, $this->company, ['title' => 'Skicka kontoutdraget för oktober', 'status' => 'WAITING_FOR_CLIENT', 'assignee_id' => $this->owner->id]);
     $this->actingAs($this->owner);
-    $this->get(route('dashboard'))->assertOk()->assertSee('Att göra åt dig')->assertSee('Skicka kontoutdraget för oktober');
+    $this->get(route('tasks.index'))->assertOk()->assertSee('Skicka kontoutdraget för oktober');
     $this->get(route('tasks.show', $ask))->assertOk()->assertSee('Väntar på kund');
 
     app(WorkOnTask::class)->comment($client, $task, 'Kvittot är uppladdat.');
@@ -281,7 +282,7 @@ it('runs the pages with toasts: new task, status, comment, checklist', function 
     $task = Task::query()->latest('id')->firstOrFail();
     expect($task->status)->toBe(TaskStatus::WaitingForClient);
 
-    $this->get(route('tasks.index'))->assertOk()->assertSee('Skicka underlag för oktober')->assertSee('Väntar på kund')->assertSee('Ny uppgift');
+    $this->get(route('tasks.index', ['visa' => 'vantar']))->assertOk()->assertSee('Skicka underlag för oktober')->assertSee('Väntar på kund')->assertSee('Ny uppgift');
 
     Livewire::test(TaskDetail::class, ['task' => $task])
         ->call('setStatus', 'IN_PROGRESS')->assertDispatched('toast')
@@ -303,13 +304,113 @@ it('lists my tasks across my companies and switches the digest on', function () 
 
     $this->actingAs($this->consultant->fresh());
 
-    Livewire::test(MyTasks::class)
+    Livewire::test(TaskCenter::class)
         ->assertSee('Uppgift i första')
         ->assertSee('Uppgift i andra')
         ->assertDontSee('Främmande uppgift')
+        ->set('company', (string) $second->id)
+        ->assertDontSee('Uppgift i första')
+        ->assertSee('Uppgift i andra')
+        ->set('company', (string) $stranger->id)
+        ->assertDontSee('Främmande uppgift')
+        ->set('company', '')
         ->set('digest', 'DAILY')
         ->assertDispatched('toast');
 
     expect($this->consultant->fresh()->task_digest)->toBe('DAILY');
-    $this->get(route('tasks.mine'))->assertOk();
+    $this->get('/uppgifter')->assertOk()->assertSee('Uppgift i andra');
+    $this->get('/mina-uppgifter')->assertRedirect('/uppgifter');
+});
+
+it('shows the firm every client\'s tasks, and filters by who the task is with', function () {
+    [$secondOwner, $second] = Bookkeeping::company();
+    $second->users()->attach($this->consultant, ['role' => 'accountant']);
+    newTask($this->owner, $this->company, ['title' => 'Kvitton saknas', 'assignee_id' => $this->owner->id]);
+    newTask($secondOwner, $second, ['title' => 'Momsavstämning klar', 'assignee_id' => $this->consultant->id]);
+    $this->actingAs($this->consultant->fresh());
+
+    Livewire::test(TaskCenter::class)
+        ->set('view', 'alla')
+        ->assertSee('Kvitton saknas')
+        ->assertSee('Momsavstämning klar')
+        ->set('side', 'kunden')
+        ->assertSee('Kvitton saknas')
+        ->assertDontSee('Momsavstämning klar')
+        ->set('side', 'byran')
+        ->assertSee('Momsavstämning klar')
+        ->assertDontSee('Kvitton saknas');
+});
+
+it('delegates both ways between the firm and the client, grouped as Byrån and Kunden', function () {
+    $people = TaskPeople::of($this->company);
+    expect(array_keys($people['firm']))->toBe([$this->consultant->id])
+        ->and(array_keys($people['client']))->toContain($this->owner->id);
+
+    // The firm hands a task to the client: it waits for the client.
+    $this->actingAs($this->consultant);
+    Livewire::test(TaskForm::class)
+        ->call('start')
+        ->assertSet('companyId', (string) $this->company->id)
+        ->assertSee('Byrån')
+        ->assertSee('Kunden')
+        ->set('title', 'Skicka kvitton för oktober')
+        ->set('assigneeId', (string) $this->owner->id)
+        ->assertSet('status', 'WAITING_FOR_CLIENT')
+        ->call('save')
+        ->assertHasNoErrors();
+    expect($this->owner->notifications()->count())->toBe(1);
+
+    // The client hands one back to the firm: it is the firm's to do.
+    $this->actingAs($this->owner);
+    Livewire::test(TaskForm::class)
+        ->call('start')
+        ->set('title', 'Hur bokför jag leasingbilen?')
+        ->set('status', 'WAITING_FOR_CLIENT')
+        ->set('assigneeId', (string) $this->consultant->id)
+        ->assertSet('status', 'TODO')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $back = Task::query()->where('title', 'Hur bokför jag leasingbilen?')->firstOrFail();
+    expect($back->assignee_id)->toBe($this->consultant->id)
+        ->and($back->status)->toBe(TaskStatus::Todo)
+        ->and($this->consultant->notifications()->count())->toBe(1)
+        ->and(AuditLog::query()->where('action', 'task.assigned')->where('subject_id', (string) $back->id)->value('payload'))->toMatchArray(['side' => 'firm']);
+});
+
+it('refuses to pick a company the user does not belong to in the new-task form', function () {
+    [$strangerOwner, $stranger] = Bookkeeping::company();
+    $this->actingAs($this->consultant);
+
+    Livewire::test(TaskForm::class)
+        ->call('start')
+        ->set('companyId', (string) $stranger->id)
+        ->set('title', 'Smyguppgift')
+        ->call('save')
+        ->assertHasErrors('companyId');
+
+    expect(CompanyScope::bypass(fn () => Task::query()->where('title', 'Smyguppgift')->exists()))->toBeFalse();
+});
+
+it('reads a page of tasks with the same number of queries for many companies', function () {
+    $count = function (int $companies): int {
+        $user = User::factory()->create();
+
+        for ($i = 0; $i < $companies; $i++) {
+            [$owner, $company] = Bookkeeping::company();
+            $company->users()->attach($user, ['role' => 'accountant']);
+            newTask($owner, $company, ['title' => "Uppgift {$i}", 'assignee_id' => $user->id, 'checklist' => ['A']]);
+        }
+
+        $this->actingAs($user->fresh());
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        Livewire::test(TaskCenter::class);
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $queries;
+    };
+
+    expect($count(8))->toBe($count(1));
 });

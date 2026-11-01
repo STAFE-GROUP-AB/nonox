@@ -6,6 +6,7 @@ namespace App\Actions\Tasks;
 
 use App\Domain\Firm\FirmCache;
 use App\Domain\Tasks\TaskLinks;
+use App\Domain\Tasks\TaskPeople;
 use App\Domain\Tasks\TaskPriority;
 use App\Domain\Tasks\TaskStatus;
 use App\Domain\Tasks\TaskType;
@@ -113,7 +114,7 @@ class SaveTask
         }));
 
         if ($saved->assignee_id !== null && $saved->assignee_id !== $before) {
-            Audit::record('task.assigned', $saved, ['before' => $before, 'after' => $saved->assignee_id], $company, $actor);
+            Audit::record('task.assigned', $saved, ['before' => $before, 'after' => $saved->assignee_id, 'side' => TaskPeople::sideOf($company, $saved->assignee_id)], $company, $actor);
 
             if ($saved->assignee_id !== $actor->id) {
                 User::query()->find($saved->assignee_id)?->notify(TaskActivity::about(TaskActivity::ASSIGNED, $saved, $company, $actor));

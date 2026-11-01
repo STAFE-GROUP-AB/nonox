@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\CompanyModule;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
+use App\Support\Tenancy\ArchivedCompany;
 use App\Support\Tenancy\CompanyScope;
 use Illuminate\Support\Collection;
 use Laravel\Jetstream\Jetstream;
@@ -41,9 +42,12 @@ final class Memberships
             ->map(fn (Collection $rows): array => array_values($rows->pluck('module_key')->map(fn (mixed $key): string => (string) $key)->all()))->all());
     }
 
-    public static function of(User $user): self
+    /** With $active, archived companies (read-only, ADR-024) are left out. */
+    public static function of(User $user, bool $active = false): self
     {
-        return new self($user, $user->companies());
+        $companies = $user->companies();
+
+        return new self($user, $active ? $companies->reject(fn (Company $company): bool => $company->isArchived())->values() : $companies);
     }
 
     /** @return list<int> */
@@ -70,6 +74,11 @@ final class Memberships
     public function may(int $companyId, string $permission): bool
     {
         if (! $this->has($companyId)) {
+            return false;
+        }
+
+        // An archived company can only be read (ADR-024), as in User::hasTeamPermission.
+        if ($this->companies->firstWhere('id', $companyId)?->isArchived() && ! ArchivedCompany::allows($permission)) {
             return false;
         }
 

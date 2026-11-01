@@ -27,7 +27,7 @@ Tabs, all under `/mina-foretag` (`?vy=`):
 | Översikt (default) | `oversikt` | Totals across clients (bank and cash, customer receivables, supplier payables, VAT to pay) and **Att göra**: the system's to-dos (VAT, AGI, year-end, annual report, overdue invoices, approvals, payments, drafts, inbox, payroll) and open tasks in one list, sorted overdue → due date → priority. Filters: responsible consultant, deadline (this week / this month / overdue), type, status; saved views per user. |
 | Månadsstängning | `stangning` | One row per client, columns for the month's steps. |
 | Månad för månad | `manad` | Unchanged. |
-| Per företag | `uppgifter` | Unchanged (the per-company cards). |
+| Per företag | `foretag` | Unchanged (the per-company cards). The old `?vy=uppgifter` redirects to `/uppgifter`. |
 
 Every item names its company and opens **in** that company: the form posts to
 `current-team.update` (`PUT /aktuellt-foretag`), which already only accepts a
@@ -133,7 +133,7 @@ bell (sidebar and phone bar) shows the unread count (one query) and opens
 goes through the company switch, so a user removed from the company gets
 404.
 
-Email: the user may choose a daily digest (on Mina uppgifter, `/mina-uppgifter`: "E-post
+Email: the user may choose a daily digest (on Uppgifter, `/uppgifter`: "E-post
 varje vardag"). `tasks:send-digest` (weekdays 06:45) sends one
 `TaskDigestMail` to each such user with open tasks assigned to them across
 their companies. No email per event.
@@ -152,10 +152,53 @@ month.
 
 ### 8. Per-company Översikt
 
-`App\Support\Overview\TodoProvider` is the contract another branch's
-redesigned Översikt consumes. `TaskTodoProvider` returns the tasks
-assigned to the signed-in user in the current company. Providers are
-tagged `overview.todos` in the container.
+`App\Support\Overview\TaskTodoProvider` implements the Översikt's
+`PersonalTodoProvider` (ADR-027) and is tagged `TodoProviders::TAG`: the
+tasks assigned to the signed-in user in the current company show in "Att
+göra", cached per user.
+
+### 9. Uppgifter is its own page (owner, 2026-11-01)
+
+Tasks are not a tab of Mina företag. `/uppgifter` (`tasks.index`) spans
+every company the user belongs to, with the views Till mig (default), Alla
+klienter (every open task in companies where the user holds `tasks:view`),
+Väntar på kund, Lämnade till andra and Klara (30 days), each with its count
+from one aggregate query. Filters (company, Hos byrån/kunden/ingen, due,
+type, search) live in the URL. A row opens the task in its own company
+through the company switch; the round button marks it done (or opens it
+again) for the assignee or anyone with `tasks:manage` there. A page of 40
+tasks is a fixed number of queries, whatever the number of companies.
+`/mina-uppgifter` redirects to `/uppgifter`; recurring tasks stay per
+company at `/uppgifter/aterkommande`.
+
+### 10. Byrån and Kunden
+
+Delegation works both ways inside one client company: the firm hands work
+to the client ("Väntar på kund") and the client hands it back to the firm.
+**Firm membership is derived from the role**: a member with the
+Redovisningskonsult role (`accountant`, `ClientProfile::FIRM_ROLE`) is the
+firm; everyone else, the owner included, is the client. This is the rule the
+firm's note and the firm activity panel already use, so no new flag is
+stored. A company without consultants has only one group ("I företaget").
+
+- The assignee picker is grouped "Byrån" / "Kunden" (`TaskPeople::of`).
+- When the firm picks a client person the status becomes "Väntar på kund";
+  picking a firm person makes it "Att göra". The user can change it.
+- A client user with `tasks:manage` (owner, admin, bookkeeper) can create
+  tasks and assign them to the consultant; an assignee of any role works
+  on their own task.
+- Every assignment notifies the assignee (bell, and the digest for those
+  who chose it) and is audited as `task.assigned` with the side.
+- Only the owner or members of that company can be assigned (404 otherwise).
+- A firm consultant who should not be treated as the firm can be given
+  another role; a firm that uses the Bokförare role for its own staff will
+  see them under Kunden. Open question below.
+
+### 11. Archived companies
+
+Archived companies (ADR-024) are left out of the totals, Att göra and the
+month-close board, and no task can be created or changed there (the same
+read-only rule as `User::hasTeamPermission`). Their tasks stay readable.
 
 ## Consequences
 
@@ -166,6 +209,10 @@ tagged `overview.todos` in the container.
   3 §) — shown as a reminder only.
 
 ## Open questions
+
+- Firm vs client is taken from the Redovisningskonsult role. Should a firm be
+  able to mark more of its staff (for example bookkeepers) as "Byrån" with a
+  membership flag?
 
 - Should a firm be able to keep some tasks internal (hidden from the
   client's own users)? v1 shows all of a company's tasks to everyone with

@@ -9,8 +9,8 @@
 @endforeach
 
 @component('mail::button', ['url' => $url])
-{{ __('Öppna Mina uppgifter') }}
+{{ __('Öppna Uppgifter') }}
 @endcomponent
 
-{{ __('Du får det här mejlet för att du har valt en daglig sammanfattning. Du stänger av den under Mina uppgifter.') }}
+{{ __('Du får det här mejlet för att du har valt en daglig sammanfattning. Du stänger av den på sidan Uppgifter.') }}
 @endcomponent

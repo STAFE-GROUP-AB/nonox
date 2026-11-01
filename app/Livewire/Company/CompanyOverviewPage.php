@@ -32,7 +32,7 @@ class CompanyOverviewPage extends Component implements SpansCompanies
     #[Url(as: 'alla', except: false)]
     public bool $showAll = false;
 
-    /** oversikt: totals and Att göra (ADR-028); stangning: month close; manad: the clients month by month; uppgifter: what waits. */
+    /** oversikt: totals and Att göra (ADR-028); stangning: month close; manad: the clients month by month; foretag: what waits per company. */
     #[Url(as: 'vy', except: 'oversikt')]
     public string $tab = 'oversikt';
 
@@ -45,6 +45,14 @@ class CompanyOverviewPage extends Component implements SpansCompanies
     public bool $mine = false;
 
     public ?int $editingNote = null;
+
+    /** Tasks have their own page (ADR-028); old links to the tab lead there. */
+    public function mount(): void
+    {
+        if ($this->tab === 'uppgifter') {
+            $this->redirectRoute('tasks.index');
+        }
+    }
 
     public string $note = '';
 
@@ -82,11 +90,15 @@ class CompanyOverviewPage extends Component implements SpansCompanies
     public function render(CompanyOverview $overview): View
     {
         // The firm workspace (ADR-028) lives in its own components.
+        $user = $this->user();
+
         if (in_array($this->tab, ['oversikt', 'stangning'], true)) {
-            return view('livewire.company.overview-firm');
+            return view('livewire.company.overview-firm', [
+                'archived' => $this->archivedCompanies($user->companies()->filter(fn (Company $company): bool => $company->isArchived())
+                    ->map(fn (Company $company): array => ['company' => $company])->values()->all(), $user),
+            ]);
         }
 
-        $user = $this->user();
         $needle = mb_strtolower(trim($this->search));
         $digits = (string) preg_replace('/\D/', '', $needle);
         $matches = fn (array $row): bool => $needle === ''

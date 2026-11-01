@@ -30,6 +30,6 @@ class TaskDigestMail extends Mailable
 
     public function content(): Content
     {
-        return new Content(markdown: 'mail.task-digest', with: ['url' => route('tasks.mine')]);
+        return new Content(markdown: 'mail.task-digest', with: ['url' => route('tasks.index')]);
     }
 }

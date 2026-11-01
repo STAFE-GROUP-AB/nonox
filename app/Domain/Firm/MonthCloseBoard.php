@@ -54,7 +54,7 @@ final class MonthCloseBoard
     public function for(User $user, string $month, ?CarbonImmutable $today = null): array
     {
         $today ??= CarbonImmutable::today();
-        $memberships = Memberships::of($user);
+        $memberships = Memberships::of($user, active: true);
         $ids = $memberships->where('tasks:view');
 
         if ($ids === [] || ! in_array($month, self::months($today), true)) {

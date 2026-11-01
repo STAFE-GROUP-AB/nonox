@@ -54,7 +54,7 @@ it('shows each client with what waits there and opens the task in the right comp
     $this->actingAs($this->consultant);
 
     Livewire::test(CompanyOverviewPage::class)
-        ->set('tab', 'uppgifter')
+        ->set('tab', 'foretag')
         ->assertSee('Bistro Hamnen AB')
         ->assertSee('Moms att redovisa, äldsta 2026-01-01 – 2026-01-31')
         ->assertSee('försenad, sista dag var 2026-03-12')
@@ -129,7 +129,8 @@ it('is reached from the company menu at a Swedish address', function () {
 
     $this->get('/mina-foretag')->assertOk()->assertSee('Att göra')->assertSee('Moms att redovisa');
     $this->get('/mina-foretag?vy=manad')->assertOk()->assertSee('Byråvy')->assertSee('Pågår');
-    $this->get('/mina-foretag?vy=uppgifter')->assertOk()->assertSee('Moms att redovisa');
+    $this->get('/mina-foretag?vy=foretag')->assertOk()->assertSee('Moms att redovisa');
+    $this->get('/mina-foretag?vy=uppgifter')->assertRedirect(route('tasks.index'));
     $this->get(route('dashboard'))->assertOk()->assertSee(route('companies.overview'));
 });
 
@@ -192,7 +193,7 @@ it('lets the firm choose a responsible consultant and keep a note the client doe
     $this->actingAs($this->consultant);
 
     Livewire::test(CompanyOverviewPage::class)
-        ->set('tab', 'uppgifter')
+        ->set('tab', 'foretag')
         ->set('showAll', true)
         ->call('assign', $bistro->id, (string) $this->consultant->id)
         ->assertDispatched('toast')

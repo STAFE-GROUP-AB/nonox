@@ -6,6 +6,7 @@ namespace App\Livewire\Tasks;
 
 use App\Actions\Tasks\SaveRecurrence;
 use App\Domain\Tasks\TaskFrequency;
+use App\Domain\Tasks\TaskPeople;
 use App\Domain\Tasks\TaskType;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
@@ -68,7 +69,7 @@ class RecurringTasks extends Component
 
         return view('livewire.tasks.recurring-tasks', [
             'recurrences' => TaskRecurrence::query()->with('assignee:id,name')->orderByDesc('active')->orderBy('title')->get(),
-            'members' => TaskForm::members($company),
+            'people' => TaskPeople::of($company),
             'types' => TaskType::cases(),
             'frequencies' => TaskFrequency::cases(),
         ]);

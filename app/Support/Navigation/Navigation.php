@@ -82,8 +82,7 @@ final class Navigation
             'route' => 'tasks.index',
             'patterns' => ['tasks.*'],
             'children' => fn (User $user, Company $company): array => [
-                ['label' => __('Företagets uppgifter'), 'route' => 'tasks.index', 'active' => ['tasks.index', 'tasks.show']],
-                ['label' => __('My tasks'), 'route' => 'tasks.mine'],
+                ['label' => __('Alla uppgifter'), 'route' => 'tasks.index', 'active' => ['tasks.index', 'tasks.show']],
                 ...($can('tasks:manage') ? [['label' => __('Återkommande'), 'route' => 'tasks.recurring']] : []),
             ],
         ];

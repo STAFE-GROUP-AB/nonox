@@ -63,7 +63,7 @@ class CompanyController
 
             return $task instanceof Task
                 ? redirect()->route('tasks.show', $task, status: 303)
-                : redirect()->route('tasks.index', status: 303);
+                : redirect()->route('tasks.index', ['foretag' => $company->id, 'visa' => 'alla'], status: 303);
         }
 
         // From Mina företag a row opens a page in that company; only known pages.

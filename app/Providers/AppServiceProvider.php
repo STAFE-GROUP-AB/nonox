@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Domain\Overview\TodoProviders;
 use App\Livewire\Company\MemberManager;
 use App\Livewire\Profile\ProfileInformationForm;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Files\EncryptedAdapter;
-use App\Domain\Overview\TodoProviders;
 use App\Support\Overview\TaskTodoProvider;
 use App\Support\Tenancy\CompanyContext;
 use App\Support\Tenancy\CurrentCompany;

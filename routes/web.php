@@ -78,7 +78,8 @@ Route::middleware([
     Route::put('/aktuellt-foretag', [CompanyController::class, 'switch'])->name('current-team.update');
     Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
     // Across every company the user belongs to (ADR-028).
-    Route::view('/mina-uppgifter', 'tasks.mine')->name('tasks.mine');
+    Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
+    Route::redirect('/mina-uppgifter', '/uppgifter');
     Route::view('/notiser', 'notifications.index')->name('notifications.index');
 
     Route::get('/foretagsinbjudningar/{invitation}', [CompanyInvitationController::class, 'accept'])
@@ -101,7 +102,6 @@ Route::middleware([
         Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
 
         // Tasks in the current company (ADR-028).
-        Route::view('/uppgifter', 'tasks.index')->name('tasks.index');
         Route::view('/uppgifter/aterkommande', 'tasks.recurring')->name('tasks.recurring');
         Route::get('/uppgifter/{task}', TaskController::class)->whereNumber('task')->name('tasks.show');
 

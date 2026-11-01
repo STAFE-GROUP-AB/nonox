@@ -6,6 +6,7 @@ namespace App\Livewire\Tasks;
 
 use App\Actions\Tasks\SaveTask;
 use App\Domain\Firm\Memberships;
+use App\Domain\Tasks\TaskPeople;
 use App\Domain\Tasks\TaskPriority;
 use App\Domain\Tasks\TaskStatus;
 use App\Domain\Tasks\TaskType;
@@ -15,16 +16,16 @@ use App\Models\User;
 use App\Support\Tenancy\SpansCompanies;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use Laravel\Jetstream\Jetstream;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
- * "Ny uppgift": on Mina företag the user picks the company, on a company's
- * task list the company is fixed. The company is always one of the user's
- * own where they hold tasks:manage; SaveTask checks it again.
+ * "Ny uppgift": the user picks one of their companies where they hold
+ * tasks:manage (or the company is fixed), and the person, grouped as Byrån
+ * and Kunden. Handing a task from the firm to the client makes it "Väntar på
+ * kund"; handing it back makes it "Att göra". SaveTask checks everything
+ * again.
  */
 class TaskForm extends Component implements SpansCompanies
 {
@@ -59,9 +60,39 @@ class TaskForm extends Component implements SpansCompanies
         $this->companyId = $companyId === null ? '' : (string) $companyId;
     }
 
+    public function start(): void
+    {
+        $this->open = true;
+        $allowed = Memberships::of($this->user())->where('tasks:manage');
+
+        // One company to choose from, or the one the user works in now: chosen already.
+        if ($this->companyId === '') {
+            $current = $this->user()->current_team_id;
+            $this->companyId = (string) (count($allowed) === 1 ? $allowed[0] : (in_array($current, $allowed, true) ? $current : ''));
+        }
+    }
+
     public function updatedCompanyId(): void
     {
         $this->assigneeId = '';
+    }
+
+    public function updatedAssigneeId(): void
+    {
+        $company = $this->company();
+
+        if (! $company instanceof Company || $this->assigneeId === '') {
+            return;
+        }
+
+        $mine = TaskPeople::sideOf($company, $this->user()->id);
+        $theirs = TaskPeople::sideOf($company, (int) $this->assigneeId);
+
+        if ($mine === TaskPeople::FIRM && $theirs === TaskPeople::CLIENT) {
+            $this->status = TaskStatus::WaitingForClient->value;
+        } elseif ($theirs === TaskPeople::FIRM) {
+            $this->status = TaskStatus::Todo->value;
+        }
     }
 
     public function save(SaveTask $save): void
@@ -104,36 +135,16 @@ class TaskForm extends Component implements SpansCompanies
         $memberships = Memberships::of($this->user());
         $allowed = $memberships->where('tasks:manage');
         $companies = $memberships->companies->filter(fn (Company $company): bool => in_array($company->id, $allowed, true))->values();
-        $company = $this->company($memberships);
+        $company = $this->open ? $this->company($memberships) : null;
 
         return view('livewire.tasks.task-form', [
             'companies' => $companies,
             'company' => $company,
-            'members' => $company instanceof Company ? self::members($company) : [],
+            'people' => $company instanceof Company ? TaskPeople::of($company) : ['firm' => [], 'client' => []],
             'types' => TaskType::cases(),
             'priorities' => TaskPriority::cases(),
             'canCreate' => $allowed !== [] && ($this->fixedCompanyId === null || in_array($this->fixedCompanyId, $allowed, true)),
         ]);
-    }
-
-    /**
-     * The owner and members of a company, the people a task can go to, with
-     * their role there. One query.
-     *
-     * @return array<int, string> user id => "Name (role)"
-     */
-    public static function members(Company $company): array
-    {
-        $rows = DB::table('users')
-            ->leftJoin('team_user', fn ($join) => $join->on('team_user.user_id', '=', 'users.id')->where('team_user.team_id', $company->id))
-            ->where(fn ($query) => $query->where('users.id', $company->user_id)->orWhereNotNull('team_user.user_id'))
-            ->orderBy('users.name')
-            ->get(['users.id', 'users.name', 'team_user.role']);
-        $roles = collect(Jetstream::$roles)->mapWithKeys(fn ($role): array => [$role->key => $role->name])->all();
-
-        return $rows->mapWithKeys(fn (object $row): array => [(int) $row->id => $row->role === null
-            ? "{$row->name} (".__('Ägare').')'
-            : "{$row->name} (".($roles[$row->role] ?? $row->role).')'])->all();
     }
 
     private function company(?Memberships $memberships = null): ?Company

@@ -12,10 +12,7 @@
                     </x-ui.field>
                     <x-ui.field for="edit_assignee" :label="__('Ansvarig')" error="assignee_id">
                         <select id="edit_assignee" class="{{ $input }}" wire:model="assigneeId">
-                            <option value="">{{ __('Ingen ännu') }}</option>
-                            @foreach($members as $id => $name)
-                                <option value="{{ $id }}">{{ $name }}</option>
-                            @endforeach
+                            @include('tasks.assignee-options', ['people' => $people])
                         </select>
                     </x-ui.field>
                     <x-ui.field for="edit_due" :label="__('Sista dag')" error="due_date">
@@ -162,6 +159,6 @@
                 <p class="mt-2 text-sm text-gray-600">{{ __('Du kan läsa uppgiften men inte ändra den.') }}</p>
             @endif
         </x-ui.card>
-        <a href="{{ route('tasks.index') }}" class="block text-sm font-semibold text-accent-700 hover:text-accent-800">← {{ __('Alla uppgifter i företaget') }}</a>
+        <a href="{{ route('tasks.index', ['foretag' => $task->company_id, 'visa' => 'alla']) }}" class="block text-sm font-semibold text-accent-700 hover:text-accent-800">← {{ __('Alla uppgifter i företaget') }}</a>
     </aside>
 </div>

@@ -290,7 +290,7 @@ it('shows archived companies apart in the switcher and on Mina företag', functi
 
     Livewire::test(CompanyOverviewPage::class)
         ->assertSeeInOrder(['Arkiverade företag', 'Nedlagda Bolaget AB', 'Arkiverat', 'Öppna arkivet'])
-        ->set('tab', 'uppgifter')
+        ->set('tab', 'foretag')
         ->assertSee('Nedlagda Bolaget AB')
         ->assertViewHas('archived', fn (array $archived): bool => count($archived) === 1 && $archived[0]['company']->id === $second->id)
         ->assertViewHas('rows', fn (array $rows): bool => collect($rows)->every(fn (array $row): bool => ! $row['company']->isArchived()));
