@@ -2,7 +2,7 @@
 
 Version {version} · gäller från {datum}
 
-Avtalet ingås mellan företaget som använder NONOX (**den personuppgiftsansvarige**) och {foretag} ({orgnr}) (**biträdet**), och gäller när biträdet behandlar personuppgifter för den personuppgiftsansvariges räkning i tjänsten NONOX, enligt artikel 28 i dataskyddsförordningen (GDPR).
+Avtalet ingås mellan företaget som använder NONOX (**den personuppgiftsansvarige**) och {foretag} ({orgnr}) (**biträdet**), och gäller när biträdet behandlar personuppgifter för den personuppgiftsansvariges räkning i tjänsten NONOX, enligt artikel 28 i dataskyddsförordningen (GDPR). Avtalet gäller bara den tjänst som biträdet driftar. När NONOX körs i egen drift är biträdet inte personuppgiftsbiträde, se [NONOX i egen drift]({egendrift}).
 
 ## 1. Behandlingen
 

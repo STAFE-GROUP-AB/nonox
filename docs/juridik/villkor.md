@@ -4,6 +4,8 @@ Version {version} · gäller från {datum}
 
 Villkoren gäller när ett företag (**Kunden**) använder tjänsten NONOX som {foretag} ({orgnr}) driftar på {webbplats}. Den som godkänner villkoren intygar att hen får företräda Kunden.
 
+Villkoren gäller bara den driftade tjänsten. Den som laddar ner NONOX och kör programmet själv gör det enligt licensen AGPL-3.0 och ansvarar själv för driften, se [NONOX i egen drift]({egendrift}).
+
 ## 1. Tjänsten
 
 NONOX är ett bokförings-, fakturerings- och lönesystem med öppen källkod (AGPL-3.0). Programvaran tillhandahålls i befintligt skick. Vi driftar den, säkerhetskopierar Kundens uppgifter dagligen och installerar uppdateringar.

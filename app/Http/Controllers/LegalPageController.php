@@ -27,6 +27,7 @@ class LegalPageController
         'terms' => ['file' => 'villkor', 'title' => 'Allmänna villkor'],
         'dpa' => ['file' => 'personuppgiftsbitradesavtal', 'title' => 'Personuppgiftsbiträdesavtal'],
         'subprocessors' => ['file' => 'underbitraden', 'title' => 'Underbiträden'],
+        'selfHosting' => ['file' => 'egen-drift', 'title' => 'NONOX i egen drift'],
     ];
 
     public function __invoke(string $document): View
@@ -70,6 +71,9 @@ class LegalPageController
             '{integritet}' => route('legal.privacy'),
             '{underbitraden}' => route('legal.subprocessors'),
             '{cookies}' => route('cookies'),
+            '{villkor}' => route('legal.terms'),
+            '{egendrift}' => route('legal.selfHosting'),
+            '{sakerhet}' => route('security'),
         ];
     }
 }

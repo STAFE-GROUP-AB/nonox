@@ -253,7 +253,7 @@ it('asks for cookie consent with equal choices and lists every cookie on the coo
 });
 
 it('publishes the privacy policy, terms, data processing agreement and sub-processors', function () {
-    foreach (['legal.privacy' => 'Integritetspolicy', 'legal.terms' => 'Allmänna villkor', 'legal.dpa' => 'Personuppgiftsbiträdesavtal', 'legal.subprocessors' => 'Underbiträden'] as $route => $title) {
+    foreach (['legal.privacy' => 'Integritetspolicy', 'legal.terms' => 'Allmänna villkor', 'legal.dpa' => 'Personuppgiftsbiträdesavtal', 'legal.subprocessors' => 'Underbiträden', 'legal.selfHosting' => 'NONOX i egen drift'] as $route => $title) {
         $this->get(route($route))->assertOk()->assertSee($title)->assertDontSee('{foretag}')->assertDontSee('legal-verify');
     }
 

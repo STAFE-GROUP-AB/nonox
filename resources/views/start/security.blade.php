@@ -47,6 +47,7 @@
     <strong>{{ $review['kind'] }}, inte ett oberoende intyg.</strong>
     {{ $review['independent_note'] }}
   </div>
+  <p style="margin:16px 0 0;max-width:860px;color:var(--muted);font-size:15px">Granskningen gäller programmets källkod och, för området Drift och säkerhetskopior, den driftade tjänsten på nonox.app. Kör du NONOX själv ansvarar du för driften, se <a href="{{ route('legal.selfHosting') }}">NONOX i egen drift</a>.</p>
 
   <section aria-labelledby="sec-resultat" style="margin-top:clamp(48px,7vw,80px)">
     <h2 id="sec-resultat">Fynd och rättelser</h2>

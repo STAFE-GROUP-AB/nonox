@@ -24,6 +24,7 @@
   <a href="{{ route('legal.terms') }}">Villkor</a>
   <a href="{{ route('legal.dpa') }}">Personuppgiftsbiträdesavtal</a>
   <a href="{{ route('legal.subprocessors') }}">Underbiträden</a>
+  <a href="{{ route('legal.selfHosting') }}">Egen drift</a>
   <a href="{{ route('cookies') }}">Cookies</a>
 </nav>
 </main>

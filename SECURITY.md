@@ -32,6 +32,8 @@ If a report shows that personal data on nonox.app may have been exposed, we hand
 
 ## Scope
 
+This policy covers the NONOX source code in this repository and the hosted service at https://nonox.app operated by Stafe Development AB. If you run NONOX yourself, you are responsible for operating it securely and for applying new releases; see [NONOX i egen drift](https://nonox.app/egen-drift).
+
 In scope:
 - the code in this repository,
 - the hosted service at https://nonox.app and its subdomains operated by Stafe Development AB,

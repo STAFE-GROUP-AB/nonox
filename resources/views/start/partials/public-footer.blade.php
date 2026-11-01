@@ -39,6 +39,7 @@
         @if($ph['privacy'])<a class="lp39" href="{{ $ph['privacy'] }}" style="text-decoration:none;color:#D9D7D1">Integritetspolicy</a>@endif
         <a href="{{ route('legal.dpa') }}" style="text-decoration:none;color:#D9D7D1">Personuppgiftsbiträdesavtal</a>
         <a href="{{ route('legal.subprocessors') }}" style="text-decoration:none;color:#D9D7D1">Underbiträden</a>
+        <a href="{{ route('legal.selfHosting') }}" style="text-decoration:none;color:#D9D7D1">Egen drift</a>
         <a href="{{ route('security') }}" style="text-decoration:none;color:#D9D7D1">Säkerhet och regelverk</a>
         <a href="{{ route('cookies') }}" style="text-decoration:none;color:#D9D7D1">Cookies</a>
         <a href="{{ route('cookies') }}" data-cookie-settings style="text-decoration:none;color:#D9D7D1">Cookie-inställningar</a>

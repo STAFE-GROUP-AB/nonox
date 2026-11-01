@@ -2,7 +2,7 @@
 
 Version {version} · gäller från {datum}
 
-Den här policyn beskriver hur {foretag} ({orgnr}) behandlar personuppgifter i tjänsten NONOX på {webbplats}. NONOX är ett bokförings-, fakturerings- och lönesystem för svenska företag.
+Den här policyn beskriver hur {foretag} ({orgnr}) behandlar personuppgifter i tjänsten NONOX på {webbplats}. Den gäller inte installationer som andra kör själva: där är den som driftar installationen ansvarig, och vi får inga uppgifter därifrån, se [NONOX i egen drift]({egendrift}). NONOX är ett bokförings-, fakturerings- och lönesystem för svenska företag.
 
 ## 1. Två roller
 

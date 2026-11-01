@@ -352,6 +352,10 @@ Pull requests granskas och slås ihop av projektets team. Varje version publicer
 
 > **Bygg tråkigt. Bygg korrekt. Bygg transparent.**
 
+## Egen drift eller driftad tjänst
+
+Du kan köra NONOX själv gratis, enligt licensen, och ansvarar då själv för drift, säkerhetskopior och personuppgifter. Eller så låter du oss sköta driften på [nonox.app](https://nonox.app), med avtal och personuppgiftsbiträdesavtal. Skillnaden beskrivs på [nonox.app/egen-drift](https://nonox.app/egen-drift).
+
 ## Licens
 
 NONOX är licensierat under **GNU Affero General Public License v3.0 (AGPL-3.0)**, se [LICENSE](LICENSE). Du får använda, ändra och dela systemet fritt. Kör du en ändrad version som en tjänst åt andra måste du göra din källkod tillgänglig för dem på samma villkor.
