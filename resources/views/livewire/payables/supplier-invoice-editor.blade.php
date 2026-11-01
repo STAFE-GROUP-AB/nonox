@@ -30,6 +30,8 @@
                 <label for="supplier_invoice_file" class="cursor-pointer font-semibold text-accent-600 hover:text-accent-700">{{ __('välj fil') }}</label>
             </p>
             <input id="supplier_invoice_file" type="file" class="sr-only" wire:model="file" accept="application/pdf,image/jpeg,image/png,image/webp">
+            <label for="supplier_invoice_camera" class="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50 max-sm:min-h-11">{{ __('Fota fakturan') }}</label>
+            <input id="supplier_invoice_camera" type="file" class="sr-only" accept="image/*" capture="environment" x-on:change="$event.target.files.length && $wire.upload('file', $event.target.files[0])">
             <p class="mt-1 text-xs text-gray-500" wire:loading wire:target="file">{{ __('Laddar upp…') }}</p>
             <p class="mt-1 text-xs text-gray-500">{{ __('Fakturan blir underlag till verifikationen när den bokförs.') }}</p>
         </div>

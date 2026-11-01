@@ -1745,7 +1745,7 @@
     "API-nyckel": "API key",
     "En nyckel som slutar på …:end är sparad. Fyll bara i fältet för att byta den.": "A key ending in …:end is saved. Only fill in the field to change it.",
     "NONOX AI": "NONOX AI",
-    "Läser underlaget och fyller i ett förslag. Inget sparas förrän du gör det.": "Reads the document and fills in a proposal. Nothing is saved until you do it.",
+    "Läser underlaget så fort det är uppladdat och fyller i ett förslag. Inget sparas förrän du gör det.": "Reads the document as soon as it is uploaded and fills in a proposal. Nothing is saved until you do it.",
     "Analysera": "Analyse",
     "Analyserar…": "Analysing…",
     "Förslaget är ifyllt. Kontrollera varje uppgift mot underlaget innan du sparar.": "The proposal is filled in. Check every detail against the document before you save.",
@@ -4780,5 +4780,16 @@
     "Tomt: radens belopp utan moms.": "Empty: the row's amount excluding VAT.",
     "Tomt: verifikationens datum.": "Empty: the voucher date.",
     "Tomt: fakturadatum.": "Empty: the invoice date.",
-    "Tomt: anskaffningsmånaden.": "Empty: the month of acquisition."
+    "Tomt: anskaffningsmånaden.": "Empty: the month of acquisition.",
+    "Kontosaldo": "Account balance",
+    "Kontosaldo efter raden": "Account balance after the row",
+    "Saldo nu": "Balance now",
+    "Kontots saldo efter raden, på kontots normala sida: tillgångar och kostnader som debet, eget kapital, skulder och intäkter som kredit.": "The account's balance after the row, on the account's normal side: assets and costs as debit, equity, liabilities and revenue as credit.",
+    "Kontots saldo efter raden, på kontots normala sida: tillgångar och kostnader som debet, eget kapital, skulder och intäkter som kredit. Bara bokförda verifikationer till och med datumet räknas.": "The account's balance after the row, on the account's normal side: assets and costs as debit, equity, liabilities and revenue as credit. Only posted vouchers up to and including the date count.",
+    "Visa kontot i huvudboken": "Show the account in the general ledger",
+    "Kontoanalys: bara det här kontot": "Account analysis: only this account",
+    "Kontoanalys för konto :number": "Account analysis for account :number",
+    "Visa alla konton": "Show all accounts",
+    "Fota underlaget": "Take a photo of the document",
+    "Fota fakturan": "Take a photo of the invoice"
 }

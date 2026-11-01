@@ -1,4 +1,5 @@
 @php
+    use App\Domain\Accounting\AccountBalances;
     use App\Support\Money\Money;
     $debit = Money::ofOre($voucher->rows->sum(fn ($row) => $row->debit_ore->ore));
     $credit = Money::ofOre($voucher->rows->sum(fn ($row) => $row->credit_ore->ore));
@@ -67,35 +68,45 @@
                     <thead>
                         <tr class="border-b border-gray-200 text-left text-gray-500">
                             <th scope="col" class="py-2 pr-4 font-medium">{{ __('Konto') }}</th>
+                            @if($showCostCenters)
+                                <th scope="col" class="py-2 pr-4 font-medium">{{ __('Kostnadsställe') }}</th>
+                            @endif
+                            @if($showProjects)
+                                <th scope="col" class="py-2 pr-4 font-medium">{{ __('Projekt') }}</th>
+                            @endif
                             <th scope="col" class="py-2 pr-4 font-medium">{{ __('Radtext') }}</th>
                             <th scope="col" class="py-2 pr-4 font-medium text-right">{{ __('Debet') }}</th>
-                            <th scope="col" class="py-2 font-medium text-right">{{ __('Kredit') }}</th>
+                            <th scope="col" class="py-2 pr-4 font-medium text-right">{{ __('Kredit') }}</th>
+                            <th scope="col" class="py-2 font-medium text-right" title="{{ __('Kontots saldo efter raden, på kontots normala sida: tillgångar och kostnader som debet, eget kapital, skulder och intäkter som kredit.') }}">{{ __('Kontosaldo') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                         @foreach($voucher->rows as $row)
                             <tr>
-                                <td class="py-2.5 pr-4"><span class="font-semibold tabular-nums">{{ $row->account?->number }}</span> {{ $row->account?->name }}</td>
-                                <td class="py-2.5 pr-4 text-gray-600">
-                                    {{ $row->description }}
-                                    @if($row->costCenter || $row->project)
-                                        <span class="block text-xs text-gray-500">
-                                            @if($row->costCenter){{ __('Kostnadsställe') }}: {{ $row->costCenter->label() }}@endif
-                                            @if($row->costCenter && $row->project) · @endif
-                                            @if($row->project){{ __('Projekt') }}: {{ $row->project->label() }}@endif
-                                        </span>
+                                <td class="py-2.5 pr-4">
+                                    @if($row->account)
+                                        <a href="{{ route('accounting.reports', ['rapport' => 'huvudbok', 'ar' => $voucher->fiscal_year_id, 'konto' => $row->account->number]) }}" class="hover:text-accent-700" title="{{ __('Visa kontot i huvudboken') }}"><span class="font-semibold tabular-nums">{{ $row->account->number }}</span> {{ $row->account->name }}</a>
                                     @endif
                                 </td>
+                                @if($showCostCenters)
+                                    <td class="py-2.5 pr-4 text-gray-600">{{ $row->costCenter?->label() }}</td>
+                                @endif
+                                @if($showProjects)
+                                    <td class="py-2.5 pr-4 text-gray-600">{{ $row->project?->label() }}</td>
+                                @endif
+                                <td class="py-2.5 pr-4 text-gray-600">{{ $row->description }}</td>
                                 <td class="py-2.5 pr-4 text-right">@unless($row->debit_ore->isZero())<x-ui.amount :money="$row->debit_ore" :currency="false" />@endunless</td>
-                                <td class="py-2.5 text-right">@unless($row->credit_ore->isZero())<x-ui.amount :money="$row->credit_ore" :currency="false" />@endunless</td>
+                                <td class="py-2.5 pr-4 text-right">@unless($row->credit_ore->isZero())<x-ui.amount :money="$row->credit_ore" :currency="false" />@endunless</td>
+                                <td class="py-2.5 text-right text-gray-600" data-account-balance>@if($row->account && isset($balances[$row->id]))<x-ui.amount :money="Money::ofOre(AccountBalances::forDisplay($balances[$row->id], $row->account->type))" :currency="false" />@endif</td>
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot>
                         <tr class="border-t border-gray-200 font-semibold">
-                            <td class="pt-3 pr-4" colspan="2">{{ __('Summa') }}</td>
+                            <td class="pt-3 pr-4" colspan="{{ 2 + ($showCostCenters ? 1 : 0) + ($showProjects ? 1 : 0) }}">{{ __('Summa') }}</td>
                             <td class="pt-3 pr-4 text-right"><x-ui.amount :money="$debit" :currency="false" /></td>
-                            <td class="pt-3 text-right"><x-ui.amount :money="$credit" :currency="false" /></td>
+                            <td class="pt-3 pr-4 text-right"><x-ui.amount :money="$credit" :currency="false" /></td>
+                            <td class="pt-3"></td>
                         </tr>
                     </tfoot>
                 </table>

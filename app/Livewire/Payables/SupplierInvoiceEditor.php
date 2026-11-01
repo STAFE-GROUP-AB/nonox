@@ -154,6 +154,21 @@ class SupplierInvoiceEditor extends Component
     }
 
     /** A new currency or invoice date: Riksbanken's rate for that day, and the total in kronor again. */
+    /**
+     * A new invoice file, chosen, dropped or photographed. With NONOX AI on
+     * and the right to use it, it is read at once: the browser runs
+     * analyze() with its countdown. The AI only fills in the form; nothing is
+     * saved or registered (ADR-018). The Analysera button stays for a second try.
+     */
+    public function updatedFile(): void
+    {
+        $this->validateFile();
+
+        if ($this->file !== null && AnalyzeDocument::availableFor($this->user(), $this->company())) {
+            $this->dispatch(AnalyzeDocument::AUTO_EVENT);
+        }
+    }
+
     public function updatedCurrency(): void
     {
         $this->currency = strtoupper(trim($this->currency)) ?: 'SEK';
@@ -437,7 +452,7 @@ class SupplierInvoiceEditor extends Component
     {
         $this->resetErrorBag();
         $this->createSupplierFromAi();
-        $this->validate(['file' => ['nullable', 'file', 'max:10240']], ['file.max' => __('Filen är för stor. Den får vara högst 10 MB.')]);
+        $this->validateFile();
 
         return $save($this->user(), $this->company(), [
             'supplier_id' => $this->supplierId === '' ? null : (int) $this->supplierId,
@@ -456,6 +471,11 @@ class SupplierInvoiceEditor extends Component
             'exchange_rate' => $this->exchangeRate,
             'with_assets' => $this->managesAssets(),
         ], $this->invoiceId === null ? null : SupplierInvoice::query()->findOrFail($this->invoiceId), $this->file);
+    }
+
+    private function validateFile(): void
+    {
+        $this->validate(['file' => ['nullable', 'file', 'max:10240']], ['file.max' => __('Filen är för stor. Den får vara högst 10 MB.')]);
     }
 
     private function user(): User

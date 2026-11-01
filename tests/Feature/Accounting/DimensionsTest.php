@@ -168,8 +168,7 @@ describe('in the voucher editor', function () {
             ->and($voucher->rows[1]->project->code)->toBe('P1');
 
         $this->get(route('accounting.vouchers.show', $voucher))->assertOk()
-            ->assertSee('Kostnadsställe: 10 Malmö')
-            ->assertSee('Projekt: P1 Kök');
+            ->assertSeeInOrder(['Konto', 'Kostnadsställe', 'Projekt', 'Radtext', '3001', '10 Malmö', 'P1 Kök']);
     });
 
     it('explains an unknown code on the right row', function () {
