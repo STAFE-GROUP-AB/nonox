@@ -87,7 +87,7 @@ class PayrollServiceProvider extends ServiceProvider
         Event::listen(TeamMemberAdded::class, LinkEmployeeLogin::class);
         $this->app->make(Router::class)->pushMiddlewareToGroup('web', SendEmployeesToPortal::class);
 
-        $middleware = ['web', 'auth:sanctum', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY];
+        $middleware = ['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.PayrollModule::KEY];
         Route::middleware($middleware)->group(__DIR__.'/routes/web.php');
         Route::middleware($middleware)->group(__DIR__.'/routes/portal.php');
         Route::middleware(array_values(array_diff($middleware, ['module:'.PayrollModule::KEY])))->group(__DIR__.'/routes/archive.php');

@@ -8,6 +8,7 @@ use App\Actions\Company\CreateCompany;
 use App\Actions\Jetstream\AddTeamMember;
 use App\Actions\Jetstream\InviteTeamMember;
 use App\Actions\Jetstream\RemoveTeamMember;
+use App\Actions\Jetstream\UpdateTeamMemberRole;
 use App\Actions\Jetstream\UpdateTeamName;
 use App\Domain\Company\CompanyRole;
 use App\Models\Company;
@@ -15,6 +16,7 @@ use App\Models\CompanyMembership;
 use App\Models\TeamInvitation;
 use App\Modules\ModuleRegistry;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Jetstream\Actions\UpdateTeamMemberRole as JetstreamUpdateTeamMemberRole;
 use Laravel\Jetstream\Jetstream;
 
 class JetstreamServiceProvider extends ServiceProvider
@@ -24,6 +26,9 @@ class JetstreamServiceProvider extends ServiceProvider
         // Jetstream's English paths are replaced by Swedish ones in routes/web.php
         // (AGENTS.md §11.4).
         Jetstream::ignoreRoutes();
+
+        // Jetstream has no hook for its role change; ours also withdraws invitations.
+        $this->app->bind(JetstreamUpdateTeamMemberRole::class, UpdateTeamMemberRole::class);
     }
 
     public function boot(): void
