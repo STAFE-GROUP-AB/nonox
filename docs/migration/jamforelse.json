@@ -76,6 +76,7 @@
         {"name": "Lön för fem anställda", "values": {"nonox": "yes", "fortnox": "per", "visma": "yes", "bokio": "per", "bjorn-lunden": "per", "kleer": "per"}},
         {"name": "Leverantörsfakturor med attest", "values": {"nonox": "yes", "fortnox": "yes", "visma": "yes", "bokio": "unknown", "bjorn-lunden": "unknown", "kleer": "yes"}},
         {"name": "ROT- och RUT-avdrag", "values": {"nonox": "yes", "fortnox": "unknown", "visma": "yes", "bokio": "yes", "bjorn-lunden": "unknown", "kleer": "unknown"}},
+        {"name": "Personalliggare", "values": {"nonox": "yes", "fortnox": "unknown", "visma": "unknown", "bokio": "unknown", "bjorn-lunden": "unknown", "kleer": "unknown"}},
         {"name": "Bokslut och årsredovisning", "values": {"nonox": "yes", "fortnox": "addon", "visma": "addon", "bokio": "addon", "bjorn-lunden": "unknown", "kleer": "addon"}},
         {"name": "Inkomstdeklaration (SRU)", "values": {"nonox": "yes", "fortnox": "addon", "visma": "addon", "bokio": "unknown", "bjorn-lunden": "unknown", "kleer": "addon"}},
         {"name": "Flera bolag under en inloggning", "values": {"nonox": "yes", "fortnox": "unknown", "visma": "unknown", "bokio": "unknown", "bjorn-lunden": "unknown", "kleer": "unknown"}},

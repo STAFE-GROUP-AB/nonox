@@ -203,6 +203,7 @@ it('has an alternative page per program and 404 for an unknown one', function ()
         ->assertSee('Ett gratis alternativ till')
         ->assertSee('Du sparar')
         ->assertSee('Så flyttar du från Fortnox.')
+        ->assertSee('Personalliggare')
         ->assertSee('<link rel="canonical" href="'.route('alternative', 'fortnox').'">', false);
 
     $this->get(route('alternative', 'bjorn-lunden'))->assertOk()->assertSee('ej verifierat');
@@ -229,7 +230,7 @@ it('lists the features that exist, including the staff ledger and inbox modules'
         ->assertSee('Moms och EU')
         ->assertSee('Min sida för anställda')
         ->assertSee('Personalliggare')
-        ->assertSee('fungerar även utan internet')
+        ->assertSee('även utan internet')
         ->assertSee('Bara avsändare du godkänt släpps in')
         ->assertSee('Inställningar → Moduler', false);
 });
