@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Modules\Inbox\Actions\ApproveInboxMessage;
 use App\Modules\Inbox\Actions\ClaimUnassignedMessage;
 use App\Modules\Inbox\Actions\InboxReview;
+use App\Modules\Inbox\Actions\InterpretInboxMessage;
 use App\Modules\Inbox\Actions\ReplyToSender;
 use App\Modules\Inbox\Domain\FieldRole;
 use App\Modules\Inbox\Domain\MessageStatus;
@@ -64,6 +65,9 @@ class InboxWorkspace extends Component
 
     public string $replyText = '';
 
+    /** Whether the selected message holds a report that can be started as a daily report by hand. */
+    public bool $readableReport = false;
+
     public function mount(): void
     {
         Gate::authorize('viewAny', [InboxMessage::class, $this->company()]);
@@ -96,6 +100,8 @@ class InboxWorkspace extends Component
 
         $this->selected = $message->id;
         $this->form = $this->editable((array) $message->proposal);
+        // Read once here, not per render: it parses the attachments.
+        $this->readableReport = $message->proposal === null && app(InterpretInboxMessage::class)->readableReport($message) !== null;
         $this->reset('warningsConfirmed', 'confirmingApproval', 'confirmingRejection', 'rejectionReason', 'replyText');
     }
 
@@ -120,9 +126,16 @@ class InboxWorkspace extends Component
     /**
      * Starts a proposal by hand for a message in the manual queue.
      */
-    public function startAs(string $kind): void
+    public function startAs(string $kind, InterpretInboxMessage $interpret): void
     {
         $message = $this->message();
+
+        if ($kind === 'daily_report') {
+            Gate::authorize('manage', $message);
+            $this->form = $this->editable((array) $interpret->startDailyReport($message)->proposal);
+
+            return;
+        }
         $date = $message->received_at->toDateString();
 
         $this->form = match ($kind) {

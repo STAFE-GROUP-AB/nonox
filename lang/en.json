@@ -3490,5 +3490,9 @@
     "1 varning": "1 warning",
     ":count varningar": ":count warnings",
     "Ett underlag väntar på att någon tittar på det.": "One document is waiting for someone to look at it.",
-    ":count underlag väntar på att någon tittar på dem.": ":count documents are waiting for someone to look at them."
+    ":count underlag väntar på att någon tittar på dem.": ":count documents are waiting for someone to look at them.",
+    "Övrig verksamhet (bara tidsredovisning)": "Other business (time reporting only)",
+    "Har lokalen inget krav på personalliggare kan du välja Övrig verksamhet och använda in- och utcheckningen som tidsredovisning.": "If the location has no staff register requirement, choose Other business and use check-in and check-out for time reporting.",
+    "Som dagsrapport": "As a daily report",
+    "Mejlet nämner :names men filen följde inte med. Skicka mejlet igen med bilagan. På iPhone och iPad: öppna bilagan först så att den laddas ner, eller välj att ta med bilagor när du vidarebefordrar.": "The email mentions :names but the file did not come with it. Send the email again with the attachment. On iPhone and iPad: open the attachment first so it is downloaded, or choose to include attachments when you forward."
 }

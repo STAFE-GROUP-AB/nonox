@@ -9,18 +9,23 @@ use App\Models\VoucherAttachment;
 use App\Modules\Inbox\Actions\ApproveInboxMessage;
 use App\Modules\Inbox\Actions\ManageInbox;
 use App\Modules\Inbox\Agents\DailyReportAgent;
+use App\Modules\Inbox\Agents\InboxClassifierAgent;
 use App\Modules\Inbox\Domain\DocumentType;
 use App\Modules\Inbox\Domain\Interpreter;
 use App\Modules\Inbox\Domain\MessageStatus;
+use App\Modules\Inbox\Livewire\InboxWorkspace;
 use App\Modules\Inbox\Models\InboxTemplate;
 use App\Modules\Inbox\Support\DailyReportVoucher;
+use App\Modules\Inbox\Support\ReportFields;
 use App\Modules\ModuleManager;
+use App\Support\Pdf\PdfText;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Laravel\Ai\Prompts\AgentPrompt;
+use Livewire\Livewire;
 use Tests\Support\Inbox;
 
 /*
@@ -271,4 +276,105 @@ it('refuses to approve a mapping that does not balance', function () {
     expect(fn () => app(ApproveInboxMessage::class)($this->owner, $message, ['kind' => 'daily_report', 'date' => '2026-10-30', 'mapping' => $mapping]))
         ->toThrow(ValidationException::class);
     expect(Voucher::query()->count())->toBe(0);
+});
+
+/** The text printout as a PDF report from the register, for the given day. */
+function pdfReport(string $date = '30.10.2026'): string
+{
+    return Inbox::pdf(explode("\n", str_replace('30.10.2026', $date, Inbox::fixture('textrapport.txt'))));
+}
+
+/** The mapping a person makes for the text printout. */
+function pdfMapping(): array
+{
+    $mapping = [];
+
+    foreach (zFormats()['plain text printout in the mail body'][2]['fields'] as $field) {
+        $mapping[$field['key']] = ['role' => $field['role'], 'account' => $field['account'], 'side' => $field['side'], 'vat_rate' => $field['vat_rate'] < 0 ? null : $field['vat_rate']];
+    }
+
+    return $mapping;
+}
+
+it('reads the text of a PDF report without AI, and the next PDF from the same register with the template', function () {
+    app(ModuleManager::class)->disable('ai', $this->company, $this->owner, true);
+    $from = 'z@pdfkassan.example';
+    Inbox::allow($this->company, $from);
+    DailyReportAgent::fake();
+    InboxClassifierAgent::fake();
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::mail($from, 'Z-rapport', 'Dagens rapport.', [['z-rapport.pdf', pdfReport(), 'application/pdf']]), 'kassa'));
+
+    expect($message->document_type)->toBe(DocumentType::DailyReport)
+        ->and($message->interpreted_by)->toBe(Interpreter::Manual)
+        ->and($message->proposal['format'])->toBe(ReportFields::PDF)
+        ->and($message->proposal['date'])->toBe('2026-10-30')
+        ->and($message->proposal['fields']['kort']['amount_ore'])->toBe(1_240_000);
+
+    $approved = app(ApproveInboxMessage::class)($this->owner, $message, ['kind' => 'daily_report', 'date' => '2026-10-30', 'mapping' => pdfMapping()], ApproveInboxMessage::POST, true);
+
+    expect($approved->status)->toBe(MessageStatus::Booked)
+        ->and(InboxTemplate::query()->where('sender', $from)->value('format'))->toBe(ReportFields::PDF);
+
+    // The next day, to the plain address: the template knows the layout.
+    $next = Inbox::fresh(Inbox::receive($this->company, Inbox::mail($from, 'Z-rapport', 'Dagens rapport.', [['z-rapport.pdf', pdfReport('31.10.2026'), 'application/pdf']])));
+    $chart = CurrentCompany::run($this->company, fn () => Account::query()->pluck('number')->map(fn ($number) => (int) $number)->all());
+
+    expect($next->interpreted_by)->toBe(Interpreter::Template)
+        ->and($next->status)->toBe(MessageStatus::DraftReady)
+        ->and($next->proposal['date'])->toBe('2026-10-31')
+        ->and(DailyReportVoucher::build($next->proposal['fields'], $next->proposal['mapping'], $chart)['vat'])->toBe(Z_VAT);
+    DailyReportAgent::assertNeverPrompted();
+    InboxClassifierAgent::assertNeverPrompted();
+});
+
+it('has NONOX AI map a PDF report from its text, so the mapping can become a template', function () {
+    $from = 'z@pdfkassan.example';
+    Inbox::allow($this->company, $from);
+    InboxClassifierAgent::fake([['document_type' => 'DAILY_REPORT', 'confidence' => 0.9, 'notes' => '']]);
+    DailyReportAgent::fake([zFormats()['plain text printout in the mail body'][2]]);
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::mail($from, 'Z-rapport', 'Dagens rapport.', [['z-rapport.pdf', pdfReport(), 'application/pdf']])));
+
+    expect($message->interpreted_by)->toBe(Interpreter::Ai)
+        ->and($message->proposal['format'])->toBe(ReportFields::PDF)
+        ->and($message->proposal['fingerprint'])->toBeString()
+        ->and($message->status)->toBe(MessageStatus::DraftReady);
+    DailyReportAgent::assertPrompted(fn (AgentPrompt $prompt): bool => str_contains($prompt->prompt, 'kort = ') && $prompt->attachments->isEmpty());
+});
+
+it('lets a person start a PDF in the manual queue as a daily report', function () {
+    app(ModuleManager::class)->disable('ai', $this->company, $this->owner, true);
+    $from = 'z@pdfkassan.example';
+    Inbox::allow($this->company, $from);
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::mail($from, 'Rapport', 'Se bilagan.', [['rapport.pdf', pdfReport(), 'application/pdf']])));
+
+    expect($message->proposal)->toBeNull();
+
+    Livewire::test(InboxWorkspace::class)
+        ->call('select', $message->id)
+        ->assertSee('Som dagsrapport')
+        ->call('startAs', 'daily_report')
+        ->assertSet('form.kind', 'daily_report')
+        ->assertSee('Öresavrundning');
+
+    expect(Inbox::fresh($message)->proposal['fingerprint'])->toBe(ReportFields::fromPdf(pdfReport())?->fingerprint());
+});
+
+it('warns when the mail names a file that did not come with it', function () {
+    $from = 'leverantor@exempel.example';
+    Inbox::allow($this->company, $from);
+
+    $message = Inbox::fresh(Inbox::receive($this->company, Inbox::mail($from, 'Fwd: Ny faktura', "Skickat från min iPad\n\nDin faktura finns bifogad.\n<Invoice_30982567.pdf>"), 'faktura'));
+
+    expect(array_column($message->warnings, 'code'))->toContain('MISSING_ATTACHMENT')
+        ->and($message->warnings[0]['message'])->toContain('Invoice_30982567.pdf');
+});
+
+it('reads no text from what is not a PDF, a PDF without text, or one that is too large', function () {
+    expect(PdfText::extract('inte en pdf'))->toBeNull()
+        ->and(PdfText::extract(Inbox::pdf([])))->toBeNull()
+        ->and(PdfText::extract(Inbox::pdf(['Kort 1,00']).str_repeat(' ', PdfText::MAX_BYTES)))->toBeNull()
+        ->and(PdfText::extract(Inbox::pdf(['Kort 12 400,00', 'Swish 3 000,00'])))->toBe("Kort 12 400,00\nSwish 3 000,00");
 });

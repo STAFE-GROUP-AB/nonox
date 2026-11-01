@@ -312,7 +312,7 @@ class ApproveInboxMessage
 
         $kind = (string) $proposal['kind'];
 
-        if ($kind === 'daily_report' && in_array($proposal['format'] ?? null, ['csv', 'xlsx', 'text'], true)) {
+        if ($kind === 'daily_report' && in_array($proposal['format'] ?? null, ['csv', 'xlsx', 'text', 'pdf'], true)) {
             $template = $this->saveTemplate($message, InboxTemplate::DAILY_REPORT, (string) $proposal['format'], $fingerprint, (array) $proposal['mapping'], $user, __('Dagsrapport från :sender', ['sender' => $message->from_email]));
         } elseif ($kind === 'supplier_invoice') {
             $accounts = [];

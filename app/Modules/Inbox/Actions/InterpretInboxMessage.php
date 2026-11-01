@@ -76,7 +76,7 @@ class InterpretInboxMessage
 
             $result = $this->interpret($message, $company);
             $kept = array_values(array_filter($message->warnings, fn (array $warning): bool => InboxChecks::keepsOnRereading($warning['code'])));
-            $warnings = $this->unique([...$kept, ...$result['warnings'], ...InboxChecks::duplicateAttachments($message)]);
+            $warnings = $this->unique([...$kept, ...$result['warnings'], ...InboxChecks::duplicateAttachments($message), ...InboxChecks::missingAttachments($message)]);
             $ready = $result['proposal'] !== null && $warnings === [];
 
             $message->fill([
@@ -142,6 +142,24 @@ class InterpretInboxMessage
             }
         }
 
+        // A PDF report with a text layer is read without AI when its sender's
+        // template knows the layout or it was sent to the +kassa address.
+        $pdfReport = null;
+
+        foreach ($files as $file) {
+            $report = $file->mime === 'application/pdf' ? ReportFields::fromPdf($contents($file)) : null;
+
+            if ($report === null) {
+                continue;
+            }
+
+            if ($message->alias === 'kassa' || $this->reportTemplate($message, $report) instanceof InboxTemplate) {
+                return $this->dailyReport($message, $company, $report);
+            }
+
+            $pdfReport ??= $report;
+        }
+
         $document = $files->first(fn (InboxAttachment $attachment): bool => $attachment->isPreviewable() && ($attachment->mime === 'application/pdf' || $attachment->size > 20_000));
 
         if ($document === null && $message->body_text !== null && ($report = ReportFields::fromText($message->body_text)) !== null) {
@@ -149,7 +167,7 @@ class InterpretInboxMessage
         }
 
         if ($document instanceof InboxAttachment && $this->aiOn($company)) {
-            return $this->aiDocument($message, $company, $document);
+            return $this->aiDocument($message, $company, $document, $pdfReport);
         }
 
         return $this->manual(self::ALIAS_TYPES[$message->alias ?? ''] ?? DocumentType::Other);
@@ -316,7 +334,7 @@ class InterpretInboxMessage
         }
 
         $fingerprint = $report->fingerprint();
-        $template = InboxTemplate::query()->where('sender', $message->from_email)->where('fingerprint', $fingerprint)->where('kind', InboxTemplate::DAILY_REPORT)->first();
+        $template = $this->reportTemplate($message, $report);
         $mapping = [];
         $by = Interpreter::Manual;
         $date = $report->date;
@@ -366,14 +384,15 @@ class InterpretInboxMessage
 
     /**
      * A PDF or picture, read by NONOX AI: what it is, then the matching
-     * agent of the AI module.
+     * agent of the AI module. A daily report with a text layer is mapped
+     * from its text, so the mapping can become the sender's template.
      *
      * @return array{type: DocumentType, by: Interpreter, proposal: ?array<string, mixed>, warnings: list<array{code: string, message: string}>, template: ?InboxTemplate}
      */
-    private function aiDocument(InboxMessage $message, Company $company, InboxAttachment $document): array
+    private function aiDocument(InboxMessage $message, Company $company, InboxAttachment $document, ?ReportFields $pdfReport): array
     {
         try {
-            return PrivateFile::withLocalCopy(AcceptInboundMail::DISK, $document->path, function (string $path) use ($message, $company, $document): array {
+            return PrivateFile::withLocalCopy(AcceptInboundMail::DISK, $document->path, function (string $path) use ($message, $company, $document, $pdfReport): array {
                 $type = self::ALIAS_TYPES[$message->alias ?? ''] ?? null;
 
                 if ($type === null) {
@@ -384,7 +403,10 @@ class InterpretInboxMessage
                 return match ($type) {
                     DocumentType::SupplierInvoice => $this->aiSupplierInvoice($company, $document, $path),
                     DocumentType::Receipt => $this->aiReceipt($company, $document, $path),
-                    DocumentType::DailyReport => $this->aiDailyReport($message, $company, $document, $path),
+                    // From the PDF's text the mapping can be saved as a template; from the picture it cannot.
+                    DocumentType::DailyReport => $pdfReport instanceof ReportFields
+                        ? $this->dailyReport($message, $company, $pdfReport)
+                        : $this->aiDailyReport($message, $company, $document, $path),
                     default => [...$this->manual($type), 'by' => Interpreter::Ai],
                 };
             });
@@ -478,8 +500,9 @@ class InterpretInboxMessage
     }
 
     /**
-     * A daily report as a PDF or picture: NONOX AI reads the amounts too.
-     * No template can be learned, since the next one must be read again.
+     * A daily report as a picture or a PDF without text: NONOX AI reads the
+     * amounts too. No template can be learned, since the next one must be
+     * read again.
      *
      * @return array{type: DocumentType, by: Interpreter, proposal: ?array<string, mixed>, warnings: list<array{code: string, message: string}>, template: ?InboxTemplate}
      */
@@ -515,6 +538,79 @@ class InterpretInboxMessage
             'warnings' => $built['warnings'],
             'template' => null,
         ];
+    }
+
+    /**
+     * The first report the message's files hold, read without AI: for a
+     * message in the manual queue that a person starts as a daily report.
+     */
+    public function readableReport(InboxMessage $message): ?ReportFields
+    {
+        $message->loadMissing('attachments');
+
+        foreach ($message->attachments->reject(fn (InboxAttachment $attachment): bool => $attachment->isBlocked()) as $file) {
+            $data = (string) Storage::disk(AcceptInboundMail::DISK)->get($file->path);
+            $report = match (true) {
+                AttachmentType::isSpreadsheet($file->filename, $data) => ReportFields::fromXlsx($data),
+                AttachmentType::isText($file->filename, $file->mime) => ReportFields::fromCsv($data) ?? ReportFields::fromText($data),
+                $file->mime === 'application/pdf' => ReportFields::fromPdf($data),
+                default => null,
+            };
+
+            if ($report !== null) {
+                return $report;
+            }
+        }
+
+        return $message->body_text === null ? null : ReportFields::fromText($message->body_text);
+    }
+
+    /**
+     * Turns a message in the manual queue into a daily report proposal from
+     * its readable report, with no accounts chosen yet. Approving it saves
+     * the mapping as the sender's template.
+     */
+    public function startDailyReport(InboxMessage $message): InboxMessage
+    {
+        return CurrentCompany::run($message->company_id, function () use ($message): InboxMessage {
+            $message->loadMissing('attachments');
+            $report = $this->readableReport($message);
+
+            if ($report === null || $message->proposal !== null) {
+                return $message;
+            }
+
+            $fields = [];
+
+            foreach ($report->fields as $key => $amount) {
+                $fields[$key] = ['label' => $report->labels[$key], 'amount_ore' => $amount];
+            }
+
+            $message->fill([
+                'document_type' => DocumentType::DailyReport,
+                'interpreted_by' => Interpreter::Manual,
+                'proposal' => [
+                    'kind' => 'daily_report',
+                    'format' => $report->format,
+                    'fingerprint' => $report->fingerprint(),
+                    'date' => $report->date ?? $message->received_at->toDateString(),
+                    'fields' => $fields,
+                    'mapping' => [],
+                    'notes' => '',
+                ],
+            ])->save();
+
+            return $message;
+        });
+    }
+
+    private function reportTemplate(InboxMessage $message, ReportFields $report): ?InboxTemplate
+    {
+        return InboxTemplate::query()
+            ->where('sender', $message->from_email)
+            ->where('fingerprint', $report->fingerprint())
+            ->where('kind', InboxTemplate::DAILY_REPORT)
+            ->first();
     }
 
     /**

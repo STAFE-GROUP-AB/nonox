@@ -67,6 +67,12 @@ it('validates locations and requires coordinates for mobile check-in', function 
         ->and(AuditLog::forCompany($this->company)->where('action', 'staff_ledger.location_updated')->sole()->payload['after'])->toMatchArray(['business_type' => 'LAUNDRY', 'mobile_enabled' => true]);
 });
 
+it('accepts a location without a ledger obligation, used for time reporting only', function () {
+    $location = StaffLedger::location($this->owner, $this->company, ['business_type' => 'OTHER']);
+
+    expect($location->business_type->label())->toBe('Övrig verksamhet (bara tidsredovisning)');
+});
+
 it('validates people: Luhn, duplicates and hired staff', function () {
     expect(fn () => StaffLedger::person($this->owner, $this->company, '19900101123'))->toThrow(ValidationException::class, 'Det finns redan en person med det numret i personalliggaren.')
         ->and(fn () => app(SavePerson::class)($this->owner, $this->company, ['first_name' => 'A', 'last_name' => 'B', 'personal_number' => '199001011230', 'language' => 'sv']))->toThrow(ValidationException::class)

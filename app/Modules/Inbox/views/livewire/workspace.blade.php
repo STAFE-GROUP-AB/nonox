@@ -174,6 +174,9 @@
                             <div class="mt-3 flex flex-wrap gap-2">
                                 <button type="button" wire:click="startAs('vouchers')" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium hover:bg-gray-50">{{ __('Som verifikation') }}</button>
                                 <button type="button" wire:click="startAs('supplier_invoice')" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium hover:bg-gray-50">{{ __('Som leverantörsfaktura') }}</button>
+                                @if($readableReport)
+                                    <button type="button" wire:click="startAs('daily_report')" class="rounded-lg border border-gray-300 bg-white px-3 py-1.5 font-medium hover:bg-gray-50">{{ __('Som dagsrapport') }}</button>
+                                @endif
                             </div>
                         </div>
                     @elseif($kind === 'daily_report')

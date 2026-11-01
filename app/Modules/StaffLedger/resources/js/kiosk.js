@@ -35,7 +35,8 @@ function tx(store, mode, run) {
     return new Promise((resolve, reject) => {
         const transaction = db.transaction(store, mode);
         const result = run(transaction.objectStore(store));
-        transaction.oncomplete = () => resolve(result?.result ?? result);
+        // A request's own result, also when it is undefined (a missing key): never the request itself.
+        transaction.oncomplete = () => resolve(result instanceof IDBRequest ? result.result : result);
         transaction.onerror = () => reject(transaction.error);
     });
 }

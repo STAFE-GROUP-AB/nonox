@@ -33,7 +33,7 @@
                 <x-ui.field for="loc-city" :label="__('Ort')" error="form.city">
                     <input id="loc-city" wire:model="form.city" class="{{ $input }}" required>
                 </x-ui.field>
-                <x-ui.field for="loc-type" :label="__('Verksamhet')" error="form.business_type" class="sm:col-span-2">
+                <x-ui.field for="loc-type" :label="__('Verksamhet')" error="form.business_type" class="sm:col-span-2" :hint="__('Har lokalen inget krav på personalliggare kan du välja Övrig verksamhet och använda in- och utcheckningen som tidsredovisning.')">
                     <select id="loc-type" wire:model="form.business_type" class="{{ $input }}">
                         @foreach($types as $type)
                             <option value="{{ $type->value }}">{{ $type->label() }}</option>

@@ -197,7 +197,12 @@ AI → manual queue.
   installed). All are AGPL-compatible.
 - Mailgun becomes a receiver of inbound mail for nonox.app as well as a sender
   (docs/juridik/underbitraden.md).
-- PDFs of daily reports always need NONOX AI or a person, since NONOX does
-  not extract text from PDFs; templates apply to CSV, XLSX and text.
+- PDF daily reports are read from their text layer with smalot/pdfparser
+  (LGPL-3.0, AGPL-compatible; added 2026-11-01), at most 5 MB and 10 pages,
+  so templates apply to PDF as well as CSV, XLSX and text. A PDF is read as a
+  report without AI only when the sender's template knows its layout or it
+  was sent to +kassa; otherwise NONOX AI classifies it and maps the fields
+  from the text, or a person starts it as a daily report by hand. Scanned
+  PDFs without text still need NONOX AI or a person.
 - Going live needs the Mailgun route and DNS described in
   `docs/inkorg-installation.md`.

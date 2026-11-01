@@ -123,6 +123,29 @@ final class InboxChecks
         return $warnings;
     }
 
+    /**
+     * Files the text names but the mail does not carry. A forward from Mail
+     * on an iPhone or iPad leaves "<Faktura.pdf>" in the text when the
+     * attachment was not downloaded to the device, and sends no file.
+     *
+     * @return list<array{code: string, message: string}>
+     */
+    public static function missingAttachments(InboxMessage $message): array
+    {
+        if ($message->attachments->isNotEmpty() || $message->body_text === null) {
+            return [];
+        }
+
+        preg_match_all('#<([^<>\r\n/]{1,120}\.(?:pdf|jpe?g|png|heic|xlsx|csv|txt|xml|se|si|sie))>#iu', $message->body_text, $matches);
+        $names = array_values(array_unique($matches[1]));
+
+        if ($names === []) {
+            return [];
+        }
+
+        return [['code' => 'MISSING_ATTACHMENT', 'message' => __('Mejlet nämner :names men filen följde inte med. Skicka mejlet igen med bilagan. På iPhone och iPad: öppna bilagan först så att den laddas ner, eller välj att ta med bilagor när du vidarebefordrar.', ['names' => implode(', ', array_slice($names, 0, 3))])]];
+    }
+
     private static function duplicateMessage(string $filename): string
     {
         return __('Bilagan :name har kommit in förut. Kontrollera att den inte bokförs två gånger.', ['name' => $filename]);

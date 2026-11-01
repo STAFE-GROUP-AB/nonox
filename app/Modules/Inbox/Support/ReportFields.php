@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Inbox\Support;
 
+use App\Support\Pdf\PdfText;
 use App\Support\Spreadsheet\XlsxReader;
 use RuntimeException;
 
@@ -22,6 +23,8 @@ final readonly class ReportFields
     public const string XLSX = 'xlsx';
 
     public const string TEXT = 'text';
+
+    public const string PDF = 'pdf';
 
     /**
      * @param  array<string, int>  $fields  normalised key => öre
@@ -64,7 +67,19 @@ final readonly class ReportFields
      */
     public static function fromText(string $contents): ?self
     {
-        $text = self::utf8($contents);
+        return self::fromLines(self::TEXT, self::utf8($contents));
+    }
+
+    /** The text layer of a PDF report, read line by line like a text printout. */
+    public static function fromPdf(string $contents): ?self
+    {
+        $text = PdfText::extract($contents);
+
+        return $text === null ? null : self::fromLines(self::PDF, $text);
+    }
+
+    private static function fromLines(string $format, string $text): ?self
+    {
         $fields = [];
         $labels = [];
         $date = null;
@@ -88,7 +103,7 @@ final readonly class ReportFields
             $labels[$key] = $label;
         }
 
-        return count($fields) >= 4 ? new self(self::TEXT, $fields, $labels, $date) : null;
+        return count($fields) >= 4 ? new self($format, $fields, $labels, $date) : null;
     }
 
     /**
