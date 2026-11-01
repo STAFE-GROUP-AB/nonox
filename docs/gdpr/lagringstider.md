@@ -3,6 +3,7 @@
 | Uppgifter | Hur länge | Varför | Hur |
 |---|---|---|---|
 | Räkenskapsinformation: verifikationer, fakturor, underlag, lönebesked, AGI, behandlingshistorik | 7 år efter utgången av det kalenderår då räkenskapsåret avslutades | Bokföringslagen 7 kap. 2 § | Kan inte raderas i systemet; arkivpaket per år |
+| Användarkonto (namn, e-post, medlemskap) | Tills användaren raderar kontot | Avtal | "Radera mitt konto" på profilen: kontot raderas, eller pseudonymiseras om bokföring eller behandlingshistorik hänvisar till det (då finns bara användar-id:t kvar, med namnet "Raderad användare") |
 | Inloggningskoder | 1 dygn | Behövs bara för inloggningen | `privacy:prune` varje natt |
 | Inbjudningar som inte accepterats | 14 dagar | Inbjudan går ut efter 14 dagar och saknar ändamål därefter | `privacy:prune` |
 | Nycklar till Fortnox vid avbruten flytt | 30 dagar utan aktivitet | Saknar ändamål | `privacy:prune` tömmer nycklarna; vid avslutad flytt direkt |

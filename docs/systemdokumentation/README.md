@@ -577,9 +577,27 @@ villkor, personuppgiftsbiträdesavtal, underbiträden).
   - Personnummer och bankkonton skickas inte till sidans tillstånd.
   - Skäl och anteckningar krypteras, och lönebelopp skrivs inte i
     behandlingshistoriken.
-- **Registerutdrag** (art. 15/20) för konto, kund, leverantör och anställd,
-  loggade. **Radering** (art. 17): kund och leverantör raderas om de aldrig
+- **Registerutdrag** (art. 15/20) för konto, kund, leverantör, anställd,
+  person i personalliggaren (`/registerutdrag/personal/{id}`, kräver
+  staff-ledger:view-sensitive, fungerar även med modulen avstängd) och
+  avsändare till inkorgen (`/registerutdrag/inkorg?avsandare=…&format=csv`,
+  kräver inbox:manage, bara det aktuella företagets meddelanden), loggade.
+  Utdraget ur personalliggaren innehåller aldrig pinkod, QR-nyckel eller
+  kontrollnyckel, och fotot beskrivs men skickas inte med. Inkorgens utdrag
+  innehåller metadata (datum, ämne, status, bilagornas namn), inte texten.
+  I behandlingshistoriken står en nyckelhash av avsändarens adress, inte
+  adressen. **Radering** (art. 17): kund och leverantör raderas om de aldrig
   bokförts, annars anonymiseras de. Fakturorna behåller sina uppgifter.
+- **Radera mitt konto** (art. 17, `DeleteAccount`): nekas så länge
+  användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner,
+  API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas
+  bort. Därefter läses alla främmande nycklar mot `users` ur databasens
+  katalog: hänvisar ingen rad längre till användaren raderas raden, annars
+  pseudonymiseras den (namnet "Raderad användare", en slumpad adress på
+  `konto.invalid`, `anonymised_at` satt, sessioner ogiltiga). Verifikationer,
+  fakturor och behandlingshistorik behåller användar-id:t (bokföringslagen
+  7 kap., art. 17.3 b). Åtgärden loggas som `user.account_deleted`, en rad
+  för kontot och en per företag, utan namn, adress eller IP-adress.
 - **Gallring:** `privacy:prune` körs varje natt.
 - **Avtal:** på den driftade tjänsten godkänns villkor och
   personuppgiftsbiträdesavtal när ett företag skapas. Vem, när och vilken
@@ -1152,3 +1170,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
 | 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |
 | 0.37 | 2026-11-02 | Personalliggare (modul): lokaler, personal, kiosk som fungerar utan internet, personlig QR-kod, mobil incheckning med platskontroll, liggare med hashkedja och rättelser, kontrollbesök med export och förslag till tidrapport i lönen. |
+| 0.40 | 2026-11-01 | Dataskydd: "Radera mitt konto" på profilen (art. 17). Nekas så länge användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner, API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas bort; kontot raderas om inget längre hänvisar till det, annars pseudonymiseras det ("Raderad användare", en adress på .invalid, ingen inloggning) så att verifikationer och behandlingshistorik fortfarande visar vem som gjorde vad. Registerutdrag för en person i personalliggaren och för en avsändare till inkorgen (JSON, för inkorgen även CSV), loggade. |

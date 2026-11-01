@@ -12,7 +12,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Ends a signed-in session that is older than the absolute limit, or that
- * started before the user chose "Logga ut överallt" (users.sessions_valid_from).
+ * started before the user chose "Logga ut överallt" (users.sessions_valid_from),
+ * or whose account has been deleted (users.anonymised_at).
  * The idle timeout is the session lifetime; this adds an upper bound, so a
  * stolen session cannot be kept alive forever.
  */
@@ -38,7 +39,7 @@ class EndExpiredSessions
 
         $revoked = $user->sessions_valid_from !== null && $started < $user->sessions_valid_from->getTimestamp();
 
-        if ($revoked || $started < time() - self::ABSOLUTE_HOURS * 3600) {
+        if ($revoked || $user->anonymised_at !== null || $started < time() - self::ABSOLUTE_HOURS * 3600) {
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

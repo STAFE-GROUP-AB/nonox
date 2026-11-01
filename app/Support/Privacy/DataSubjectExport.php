@@ -11,6 +11,8 @@ use App\Models\Invoice;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Modules\Inbox\Models\InboxAttachment;
+use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
@@ -18,6 +20,9 @@ use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\StaffLedger\Models\Entry;
+use App\Modules\StaffLedger\Models\Location;
+use App\Modules\StaffLedger\Models\Person;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -115,6 +120,106 @@ final class DataSubjectExport
             'utlagg' => Expense::query()->where('employee_id', $employee->id)->orderBy('date')->get()
                 ->map(fn (Expense $expense): array => ['datum' => $expense->date->toDateString(), 'beskrivning' => $expense->description, 'belopp_ore' => $expense->amount_ore->ore, 'status' => $expense->status])->all(),
         ];
+    }
+
+    /**
+     * A person in the staff ledger: the register entry and every entry in
+     * the ledger about them, corrections included. The kiosk PIN, the QR key
+     * and the control key are never part of it, and the photo is described
+     * (stored or not, consent given when) rather than included.
+     *
+     * @return array<string, mixed>
+     */
+    public static function staffLedgerPerson(Person $person): array
+    {
+        $locations = Location::query()->pluck('name', 'id');
+        $entries = Entry::query()->where('person_id', $person->id)->orderBy('occurred_at')->orderBy('id')->get();
+        $uuids = $entries->pluck('uuid', 'id');
+
+        return [
+            'utdrag' => self::meta('Person i personalliggaren'),
+            'person' => [
+                'fornamn' => $person->first_name,
+                'efternamn' => $person->last_name,
+                'personnummer' => $person->personal_number,
+                'e_post' => $person->email,
+                'sprak' => $person->language,
+                'arbetsgivare' => $person->employer_name,
+                'arbetsgivarens_organisationsnummer' => $person->employer_org_number,
+                'personalansvarig' => $person->is_manager,
+                'arkiverad' => $person->archived_at?->toIso8601String(),
+                'har_pinkod' => $person->hasPin(),
+            ],
+            'foto' => [
+                'sparat' => $person->photo_path !== null,
+                'samtycke_lamnat' => $person->photo_consent_at?->toIso8601String(),
+                'kommentar' => 'Fotot visas på kiosken bara med personens samtycke. Samtycket kan återkallas när som helst, och då raderas fotot.',
+            ],
+            'registreringar' => $entries->map(fn (Entry $entry): array => [
+                'id' => $entry->uuid,
+                'typ' => $entry->type->value,
+                'riktning' => $entry->effectiveDirection()?->value,
+                'rattelse' => $entry->correction?->value,
+                'rattar_registrering' => $entry->corrects_entry_id === null ? null : ($uuids[$entry->corrects_entry_id] ?? null),
+                'metod' => $entry->method->value,
+                'tidpunkt' => $entry->occurred_at->toIso8601String(),
+                'mottagen' => $entry->received_at->toIso8601String(),
+                'lokal' => $locations[$entry->location_id] ?? null,
+                'namn' => $entry->person_name,
+                'personnummer' => $entry->personal_number,
+                'arbetsgivare' => $entry->employer_name,
+                'arbetsgivarens_organisationsnummer' => $entry->employer_org_number,
+                'avstand_meter' => $entry->geo_distance_meters,
+                'flaggor' => $entry->flags,
+                'skal' => $entry->reason,
+            ])->values()->all(),
+        ];
+    }
+
+    /**
+     * Messages the current company's inbox received from one address: the
+     * metadata of each message and its attachments. The text and the files
+     * themselves are not part of the extract.
+     *
+     * @return array<string, mixed>
+     */
+    public static function inboxSender(string $email): array
+    {
+        return [
+            'utdrag' => self::meta('Avsändare till inkorgen'),
+            'avsandare' => mb_strtolower(trim($email)),
+            'meddelanden' => self::inboxMessages($email),
+        ];
+    }
+
+    /**
+     * One row per message, for both the JSON and the CSV extract.
+     *
+     * @return list<array{mottaget: string, avsandare: string, avsandarnamn: ?string, amne: ?string, status: string, dokumenttyp: ?string, bilagor: list<array{filnamn: string, typ: string, storlek_byte: int, blockerad: bool}>}>
+     */
+    public static function inboxMessages(string $email): array
+    {
+        return array_values(InboxMessage::query()
+            ->whereRaw('lower(from_email) = ?', [mb_strtolower(trim($email))])
+            ->with('attachments')
+            ->orderBy('received_at')
+            ->get()
+            ->map(fn (InboxMessage $message): array => [
+                'mottaget' => $message->received_at->toIso8601String(),
+                'avsandare' => $message->from_email,
+                'avsandarnamn' => $message->from_name,
+                'amne' => $message->subject,
+                'status' => $message->status->value,
+                'dokumenttyp' => $message->document_type?->value,
+                'bilagor' => array_values($message->attachments->map(fn (InboxAttachment $attachment): array => [
+                    'filnamn' => $attachment->filename,
+                    'typ' => $attachment->mime,
+                    'storlek_byte' => $attachment->size,
+                    'blockerad' => $attachment->isBlocked(),
+                ])->all()),
+            ])
+            ->values()
+            ->all());
     }
 
     /** @return array{typ: string, skapat: string, rattslig_grund: string} */
