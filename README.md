@@ -19,7 +19,7 @@ Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 [![Laravel 13](https://img.shields.io/badge/Laravel-13-FF2D20)](https://laravel.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-4169E1)](https://www.postgresql.org)
 
-**[nonox.app](https://nonox.app)** · [Säkerhet och regelverk](https://nonox.app/sakerhet) · [Flytta hit](https://nonox.app/flytta-hit) · [Branscher](https://nonox.app/branscher) · [Systemdokumentation](docs/systemdokumentation/README.md) · [Bidra](CONTRIBUTING.md)
+**[nonox.app](https://nonox.app)** · [Manual](https://nonox.app/manual) · [Säkerhet och regelverk](https://nonox.app/sakerhet) · [Flytta hit](https://nonox.app/flytta-hit) · [Branscher](https://nonox.app/branscher) · [Systemdokumentation](docs/systemdokumentation/README.md) · [Bidra](CONTRIBUTING.md)
 
 </div>
 
@@ -314,6 +314,7 @@ npm install && npm run build
 
 - [Systemdokumentation](docs/systemdokumentation/README.md) – hur bokföringen fungerar, som bokföringslagen kräver. Uppdateras med varje ändring.
 - [Beslut (ADR)](docs/adr/) – varför systemet är byggt som det är: verifikationer, SIE, kostnadsställen, rapporter och moms.
+- [Manual](https://nonox.app/manual) – manualen för användare: kom igång, bokföring, fakturor, moms, bokslut, lön och en egen del för anställda (Min sida och personalliggaren), med sök. Artiklarna skrivs i Markdown i [docs/manual/sv](docs/manual/sv) enligt [skrivreglerna](docs/manual/SKRIVREGLER.md). Knappen **Hjälp** i appen öppnar artikeln om sidan du står på.
 - [Utvecklare och API](https://nonox.app/utvecklare) – den publika utvecklarwebben för NONOX Connect: guider, en referens som genereras från [docs/api/openapi.yaml](docs/api/openapi.yaml), kodexempel och [ändringar](docs/api/CHANGELOG.md). Guiderna ligger i [docs/api/guider](docs/api/guider), på svenska och engelska.
 - [Branschsidor](docs/branscher/README.md) – sidorna per bransch på [nonox.app/branscher](https://nonox.app/branscher), deras adresser och reglerna för innehållet. Funktionerna de nämner kontrolleras mot listan ovan.
 - [AGENTS.md](AGENTS.md) – specifikationen och reglerna för alla som bidrar, människor som AI.

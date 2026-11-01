@@ -309,6 +309,7 @@
           <p style="margin:0;padding:0 56px 24px 0;font-size:16.5px;line-height:1.6;color:var(--muted)">{{ $answer }}</p>
         </details>
       @endforeach
+      <p style="margin:28px 0 0;font-size:16.5px;line-height:1.6;color:var(--muted)">Varje steg i appen, från första SIE-filen till avstämningen, beskrivs i <a href="{{ App\Support\Manual\Manual::section('flytta') ? App\Support\Manual\Manual::url('flytta') : route('manual.home') }}" style="color:var(--acct);font-weight:600">manualen för NONOX</a>.</p>
     </div>
   </div>
 </section>

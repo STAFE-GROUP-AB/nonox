@@ -65,6 +65,10 @@
             'itemListElement' => array_map(fn (array $crumb, int $index): array => ['@type' => 'ListItem', 'position' => $index + 1, 'name' => $crumb['name'], 'item' => $crumb['url']], $breadcrumbs, array_keys($breadcrumbs)),
         ];
     }
+    // A page's own data, such as a manual article's HowTo or TechArticle.
+    foreach ($structuredData ?? [] as $item) {
+        $structured[] = $item;
+    }
     if (! empty($faqSchema ?? $faqs ?? [])) {
         $structured[] = [
             '@context' => 'https://schema.org',

@@ -35,10 +35,14 @@
                             <p class="text-lg font-semibold text-gray-900">{{ __('Min sida') }}</p>
                         </div>
                     </div>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button type="submit" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">{{ __('Logga ut') }}</button>
-                    </form>
+                    <div class="flex shrink-0 items-center gap-1">
+                        {{-- Hjälp: the manual's pages for employees (ADR-036), in a new tab; left out when the manual is off. --}}
+                        @include('navigation.help', ['helpUrl' => App\Support\Manual\Manual::helpUrl(request()->route()?->getName(), 'personal'), 'helpClass' => 'rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900', 'helpLabel' => true])
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900">{{ __('Logga ut') }}</button>
+                        </form>
+                    </div>
                 </div>
                 @if($presented?->viaFirm())
                     {{-- The accounting firm the employer works with (ADR-030). --}}

@@ -4811,5 +4811,8 @@
     "Uppgifterna är ifyllda nedan och sparas först när du sparar.": "The details are filled in below and are saved only when you save.",
     "Det här skiljer sig från det du har skrivit. Vill du använda registrets uppgifter?": "This differs from what you have written. Do you want to use the register's details?",
     "Använd registrets uppgifter": "Use the register's details",
-    "Behåll mina": "Keep mine"
+    "Behåll mina": "Keep mine",
+    "Hjälp": "Help",
+    "Hjälp om den här sidan (öppnas i en ny flik)": "Help with this page (opens in a new tab)",
+    "om den här sidan (öppnas i en ny flik)": "with this page (opens in a new tab)"
 }

@@ -6,6 +6,7 @@ namespace App\Support\Landing;
 
 use App\Support\Developer\ApiSpec;
 use App\Support\Developer\Guides;
+use App\Support\Manual\Manual;
 
 /**
  * The image a public page shows when its link is shared (Open Graph), one
@@ -76,7 +77,7 @@ final class ShareCards
             ];
         }
 
-        return [...$cards, ...self::developerCards()];
+        return [...$cards, ...self::developerCards(), ...self::manualCards()];
     }
 
     /**
@@ -130,11 +131,50 @@ final class ShareCards
         return $cards;
     }
 
-    /** The image for a request path, or the start page's when the page has none of its own. */
+    /**
+     * The user manual (/manual): its start page and every section in
+     * avsnitt.yaml. An article shares its section's image (imageFor()), so
+     * these images live in public/og/manual/.
+     *
+     * @return array<string, Card>
+     */
+    private static function manualCards(): array
+    {
+        $cards = [
+            'manual' => [
+                'eyebrow' => 'Manual för NONOX',
+                'title' => 'Hur kan vi',
+                'accent' => 'hjälpa dig?',
+                'text' => 'Bokföring, fakturor, moms, bokslut och lön steg för steg, på vanlig svenska.',
+            ],
+        ];
+
+        foreach (Manual::catalogue() as $key => $section) {
+            $cards["manual/{$key}"] = [
+                'eyebrow' => 'Manual för NONOX',
+                'title' => $section['title'],
+                'accent' => '',
+                'text' => $section['description'],
+            ];
+        }
+
+        return $cards;
+    }
+
+    /**
+     * The image for a request path: the page's own, else the nearest page
+     * above it that has one (a manual article shows its section's), else
+     * the start page's.
+     */
     public static function imageFor(string $path): string
     {
         $key = trim($path, '/') === '' ? 'start' : trim($path, '/');
         $file = public_path(self::DIRECTORY."/{$key}.png");
+
+        while (! is_file($file) && str_contains($key, '/')) {
+            $key = dirname($key);
+            $file = public_path(self::DIRECTORY."/{$key}.png");
+        }
 
         if (! is_file($file)) {
             $key = 'start';

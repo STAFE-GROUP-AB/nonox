@@ -25,6 +25,7 @@ use App\Http\Controllers\Invoicing\AgreementController;
 use App\Http\Controllers\Invoicing\InvoiceController;
 use App\Http\Controllers\Invoicing\SalesDocumentController;
 use App\Http\Controllers\LegalPageController;
+use App\Http\Controllers\ManualController;
 use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
@@ -69,6 +70,13 @@ Route::prefix('utvecklare')->name('developers.')->controller(DeveloperPortalCont
     Route::get('/andringar', 'changelog')->name('changelog');
     Route::get('/openapi.{format}', 'spec')->where('format', 'yaml|json')->name('spec');
     Route::get('/{guide}', 'guide')->where('guide', implode('|', array_map(fn (string $slug): string => preg_quote($slug, '#'), Guides::slugs())))->name('guide');
+});
+// The user manual (ADR-036): docs/manual/sv as pages, while the public pages are on. Search is client-side, from the index.
+Route::prefix('manual')->name('manual.')->controller(ManualController::class)->group(function () {
+    Route::get('/', 'home')->name('home');
+    Route::get('/sokindex.json', 'searchIndex')->name('search');
+    Route::get('/{section}', 'section')->where('section', '[a-z0-9-]+')->name('section');
+    Route::get('/{section}/{article}', 'article')->where(['section' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
 });
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');

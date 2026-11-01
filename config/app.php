@@ -40,6 +40,16 @@ return [
         'company_address' => env('NONOX_COMPANY_ADDRESS'),
     ],
 
+    /*
+    | The user manual at /manual (ADR-036): Markdown articles in this folder,
+    | with avsnitt.yaml naming the sections. Shown whenever the public pages
+    | are; the tests point it at a small fixture manual.
+    */
+
+    'manual' => [
+        'path' => env('NONOX_MANUAL_PATH') ?: base_path('docs/manual/sv'),
+    ],
+
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),

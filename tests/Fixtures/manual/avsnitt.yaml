@@ -1,0 +1,25 @@
+# A small manual for tests/Feature/ManualTest.php: every feature of the
+# manual's Markdown once, in three sections. "ej-skrivet" has no folder, so
+# it is not shown.
+
+kom-igang:
+  titel: Kom igång
+  beskrivning: Konto, inloggning och ditt första företag.
+  for: foretag
+  ikon: rocket
+lon:
+  titel: Lön
+  beskrivning: Anställda och lönekörningar.
+  for: foretag
+  modul: payroll
+  ikon: wallet
+ej-skrivet:
+  titel: Ej skrivet
+  beskrivning: Ett avsnitt utan mapp.
+  for: foretag
+  ikon: book
+personal:
+  titel: För anställda
+  beskrivning: Min sida, lönebesked och utlägg i telefonen.
+  for: personal
+  ikon: person

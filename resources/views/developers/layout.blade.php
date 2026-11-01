@@ -89,6 +89,7 @@
     <a href="{{ url('/') }}">{{ $t('back_to_site') }}</a>
     <a href="{{ Dev::url('developers.reference', [], $lang) }}">{{ $t('reference') }}</a>
     <a href="{{ route('developers.spec', ['format' => 'yaml']) }}">openapi.yaml</a>
+    <a href="{{ route('manual.home') }}" hreflang="sv">{{ $lang === 'en' ? 'User manual (Swedish)' : 'Manual för användare' }}</a>
     <a href="{{ App\Support\Landing\LandingPage::links()['github'] }}">GitHub</a>
     <a href="{{ route('security') }}">{{ $lang === 'en' ? 'Security' : 'Säkerhet' }}</a>
     <a href="{{ route('legal.privacy') }}">{{ $lang === 'en' ? 'Privacy' : 'Integritetspolicy' }}</a>

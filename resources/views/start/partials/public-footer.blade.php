@@ -16,6 +16,7 @@
         <a class="lp28" href="{{ $home }}#funktioner" style="text-decoration:none;color:#D9D7D1">Funktioner</a>
         <a class="lp29" href="{{ $home }}#priser" style="text-decoration:none;color:#D9D7D1">Priser</a>
         <a class="lp30" href="{{ $ph['flytt'] }}" style="text-decoration:none;color:#D9D7D1">Flyttguide</a>
+        <a href="{{ route('manual.home') }}" style="text-decoration:none;color:#D9D7D1">Manual</a>
         <a class="lp31" href="{{ $home }}#kor-sjalv" style="text-decoration:none;color:#D9D7D1">Nedladdning</a>
       </nav>
       <nav aria-label="Utvecklare" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
