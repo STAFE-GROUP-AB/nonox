@@ -103,8 +103,8 @@ final class LandingPage
         return number_format($kronor, 0, ',', "\u{a0}")."\u{a0}kr";
     }
 
-    /** @return array{version: string, github: string, flytt: string, docs: string, api: ?string, contact: string, terms: ?string, privacy: ?string, company: ?string, orgnr: ?string, host: string} */
-    private static function links(): array
+    /** @return array{version: string, github: string, flytt: string, docs: string, api: string, contact: string, terms: ?string, privacy: ?string, company: ?string, orgnr: ?string, host: string} */
+    public static function links(): array
     {
         /** @var array<string, ?string> $config */
         $config = (array) config('app.landing', []);
@@ -115,7 +115,7 @@ final class LandingPage
             'github' => $github,
             'flytt' => ($config['migration_guide_url'] ?? null) ?: route('migrationGuide'),
             'docs' => $config['docs_url'] ?? "{$github}/tree/main/docs",
-            'api' => $config['api_url'] ?? null,
+            'api' => ($config['api_url'] ?? null) ?: route('developers.home'),
             'contact' => ($config['contact_url'] ?? null) ?: route('login'),
             'terms' => ($config['terms_url'] ?? null) ?: route('legal.terms'),
             'privacy' => ($config['privacy_url'] ?? null) ?: route('legal.privacy'),

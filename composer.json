@@ -23,6 +23,7 @@
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.0",
         "smalot/pdfparser": "^2.13",
+        "symfony/yaml": "^8.1",
         "webklex/php-imap": "^6.2",
         "zbateson/mail-mime-parser": "^4.0"
     },

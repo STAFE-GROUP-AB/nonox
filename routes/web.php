@@ -17,6 +17,7 @@ use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\CompanyLogoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataSubjectExportController;
+use App\Http\Controllers\DeveloperPortalController;
 use App\Http\Controllers\FirmLogoController;
 use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\IndustryController;
@@ -37,6 +38,7 @@ use App\Http\Controllers\TaskController;
 use App\Http\Controllers\Vat\VatFileController;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\SalesDocument;
+use App\Support\Developer\Guides;
 use App\Support\Landing\Industries;
 use App\Support\Landing\LandingPage;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +61,15 @@ Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->nam
 Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');
 Route::get('/branscher', [IndustryController::class, 'index'])->name('industries');
 Route::get('/{industry}', [IndustryController::class, 'show'])->where('industry', implode('|', array_map(fn (string $slug): string => preg_quote($slug, '#'), Industries::slugs())))->name('industry');
+// The developer site (ADR-032): Swedish paths, English with ?lang=en. The spec files keep their conventional names for API tools.
+Route::prefix('utvecklare')->name('developers.')->controller(DeveloperPortalController::class)->group(function () {
+    Route::get('/', 'home')->name('home');
+    Route::get('/referens', 'reference')->name('reference');
+    Route::get('/referens/{tag}', 'tag')->where('tag', '[a-z0-9-]+')->name('tag');
+    Route::get('/andringar', 'changelog')->name('changelog');
+    Route::get('/openapi.{format}', 'spec')->where('format', 'yaml|json')->name('spec');
+    Route::get('/{guide}', 'guide')->where('guide', implode('|', array_map(fn (string $slug): string => preg_quote($slug, '#'), Guides::slugs())))->name('guide');
+});
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 

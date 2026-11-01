@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Route;
  */
 
 // oauth/ and .well-known/ are called by apps, with paths fixed by RFC 6749 and RFC 8414 (ADR-032).
-const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/'];
+// utvecklare/openapi.yaml and .json keep the names API tools and code generators look for.
+const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.'];
 
 const ENGLISH_WORDS = [
     'login', 'logout', 'register', 'user', 'profile', 'team', 'teams', 'dashboard', 'password',

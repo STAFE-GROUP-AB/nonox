@@ -100,7 +100,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Gallring: avvisad post tas bort efter 7 dagar, och karantän som ingen hanterat efter 90 dagar.
 
 ### NONOX Connect – öppet API (modul)
-- Ett API för andra program: kontoplan, momskoder, räkenskapsår, verifikationer (utkast, bokföring, rättelse och underlag), kunder och leverantörer. Beskrivet i OpenAPI med exempel, se [docs/api](docs/api/README.md).
+- Ett API för andra program: kontoplan, momskoder, räkenskapsår, verifikationer (utkast, bokföring, rättelse och underlag), kunder och leverantörer. Beskrivet i OpenAPI med exempel, och dokumenterat för utvecklare på [nonox.app/utvecklare](https://nonox.app/utvecklare) (guider, referens och kodexempel i curl, PHP, JavaScript och Python, på svenska och engelska). Gratis, utan tilläggsavgift. Webhooks är beskrivna men skickas inte ännu.
 - Appar ansluts med OAuth 2.0 (med PKCE) och godkänns av en ägare eller administratör med passkey, ett företag i taget. API-nycklar för egna skript har alltid ett slutdatum och visas bara en gång.
 - En anslutning får aldrig mer än personen som gav den får göra just då. Varje skrivning kräver en Idempotency-Key och loggas.
 
@@ -120,7 +120,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Automatisk avstämning av betalfiler mot bankens svar, och betalfiler och kundfakturor i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
-- Ett öppet API med webhooks, så att kassasystem, e-handel och andra program kan skicka försäljning och underlag direkt till NONOX, även via de integrationsplattformar som programmen redan använder.
+- Webhooks från det öppna API:t, så att kassasystem, e-handel och andra program får besked direkt när något bokförs, och färdiga kopplingar via de integrationsplattformar som programmen redan använder.
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 
@@ -297,6 +297,7 @@ npm install && npm run build
 
 - [Systemdokumentation](docs/systemdokumentation/README.md) – hur bokföringen fungerar, som bokföringslagen kräver. Uppdateras med varje ändring.
 - [Beslut (ADR)](docs/adr/) – varför systemet är byggt som det är: verifikationer, SIE, kostnadsställen, rapporter och moms.
+- [Utvecklare och API](https://nonox.app/utvecklare) – den publika utvecklarwebben för NONOX Connect: guider, en referens som genereras från [docs/api/openapi.yaml](docs/api/openapi.yaml), kodexempel och [ändringar](docs/api/CHANGELOG.md). Guiderna ligger i [docs/api/guider](docs/api/guider), på svenska och engelska.
 - [Branschsidor](docs/branscher/README.md) – sidorna per bransch på [nonox.app/branscher](https://nonox.app/branscher), deras adresser och reglerna för innehållet. Funktionerna de nämner kontrolleras mot listan ovan.
 - [AGENTS.md](AGENTS.md) – specifikationen och reglerna för alla som bidrar, människor som AI.
 

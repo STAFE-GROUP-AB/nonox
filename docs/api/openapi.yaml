@@ -43,18 +43,23 @@ servers:
         description: "Your installation's host name."
 tags:
   - name: Företaget
+    x-en-name: Company
     description: 'The company the credential belongs to.'
     x-sv-description: 'Företaget som nyckeln eller appen gäller.'
   - name: Bokföring
+    x-en-name: Bookkeeping
     description: 'Reference data for bookkeeping: chart of accounts, VAT codes, fiscal years and voucher series.'
     x-sv-description: 'Kontoplan, momskoder, räkenskapsår och verifikationsserier.'
   - name: Verifikationer
+    x-en-name: Vouchers
     description: 'Vouchers: drafts, posting, corrections and attachments (underlag). A posted voucher is immutable.'
     x-sv-description: 'Verifikationer: utkast, bokföring, rättelser och underlag. En bokförd verifikation kan aldrig ändras.'
   - name: Kunder
+    x-en-name: Customers
     description: 'The customer register.'
     x-sv-description: Kundregistret.
   - name: Leverantörer
+    x-en-name: Suppliers
     description: 'The supplier register.'
     x-sv-description: Leverantörsregistret.
 security:
@@ -2430,6 +2435,15 @@ components:
             'invoices:create': 'Create and change customers'
             'supplier-invoices:create': 'Read, create and change suppliers'
             'supplier-invoices:approve': 'Read the supplier register'
+      x-sv-scopes:
+        'vouchers:view': 'Läsa verifikationer, underlag, kontoplan, räkenskapsår, verifikationsserier och momskoder'
+        'vouchers:create': 'Skapa och ändra utkast till verifikationer och lägga till underlag'
+        'vouchers:post': 'Bokföra verifikationer (går inte att ångra, bara rätta)'
+        'vouchers:correct': 'Rätta bokförda verifikationer med en rättelseverifikation'
+        'invoices:view': 'Läsa kundregistret'
+        'invoices:create': 'Lägga till och ändra kunder'
+        'supplier-invoices:create': 'Läsa, lägga till och ändra leverantörer'
+        'supplier-invoices:approve': 'Läsa leverantörsregistret'
     apiKey:
       type: http
       scheme: bearer

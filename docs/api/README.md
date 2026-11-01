@@ -4,6 +4,8 @@ NONOX Connect är NONOX öppna API. Andra program – integrationsplattformar, k
 
 Den fullständiga beskrivningen av varje anrop, med exempel, finns i [`openapi.yaml`](openapi.yaml) (OpenAPI 3.1). Den filen är facit; den här guiden förklarar hur delarna hänger ihop. Beslut och säkerhetsmodell: [ADR-032](../adr/ADR-032-public-api-and-nonox-connect.md).
 
+Den publika utvecklarwebben finns på [nonox.app/utvecklare](https://nonox.app/utvecklare) (och på `/utvecklare` i varje installation): guider med kodexempel i curl, PHP, JavaScript och Python, en referens som genereras från `openapi.yaml`, och [ändringarna](CHANGELOG.md). English: [nonox.app/utvecklare?lang=en](https://nonox.app/utvecklare?lang=en). Guiderna skrivs i [`guider/sv`](guider/sv) och [`guider/en`](guider/en); webbsidorna och filerna är samma text.
+
 - API: `https://nonox.app/api/v1` (eller `https://<din-server>/api/v1` för den som driftar själv)
 - Godkännande (OAuth): `https://nonox.app/anslut`
 - Token: `https://nonox.app/oauth/token`
