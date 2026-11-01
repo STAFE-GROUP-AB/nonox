@@ -73,6 +73,9 @@ class DeleteAccount
             TeamInvitation::query()->whereRaw('lower(email) = ?', [$email])->delete();
             // The user's own filters and notices on Mina företag (ADR-028) are nobody else's.
             DB::table('saved_views')->where('user_id', $user->id)->delete();
+            // Passkeys (ADR-029) and the recently opened records in search (ADR-026) are the user's alone.
+            DB::table('passkeys')->where('user_id', $user->id)->delete();
+            DB::table('recent_items')->where('user_id', $user->id)->delete();
             $user->notifications()->delete();
 
             if ($user->profile_photo_path !== null) {

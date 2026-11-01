@@ -43,6 +43,36 @@ it('refuses while the user owns a company that is not archived', function () {
     expect(app(DeleteAccountAction::class)->ownedCompanies($this->owner))->toBe([]);
 });
 
+it('deletes the passkeys and recently opened records instead of keeping the account for them', function () {
+    $member = Bookkeeping::member($this->company, 'bookkeeper');
+
+    DB::table('passkeys')->insert([
+        'user_id' => $member->id,
+        'name' => 'Telefon',
+        'credential_id' => 'test-credential-'.$member->id,
+        'credential' => json_encode(['publicKey' => 'test']),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+    DB::table('recent_items')->insert([
+        'company_id' => $this->company->id,
+        'user_id' => $member->id,
+        'type' => 'customer',
+        'record_id' => '1',
+        'title' => 'Kund AB',
+        'url' => '/kunder/1',
+        'icon' => 'user',
+        'opened_at' => now(),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect(app(DeleteAccountAction::class)($member))->toBe(DeleteAccountAction::DELETED)
+        ->and(User::query()->find($member->id))->toBeNull()
+        ->and(DB::table('passkeys')->where('user_id', $member->id)->exists())->toBeFalse()
+        ->and(DB::table('recent_items')->where('user_id', $member->id)->exists())->toBeFalse();
+});
+
 it('deletes an account that nothing refers to, with everything that belongs to it', function () {
     $member = Bookkeeping::member($this->company, 'bookkeeper');
     $email = $member->email;
