@@ -74,8 +74,8 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Kunder, artiklar och leverantörer med pris, moms och konto. Per kund syns vad den fakturerats i år och vad som är obetalt.
 
 ### Bokföring
-- **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar, och inläsning av SIE4 i två steg med avstämning.
-- **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok och verifikationslista per period och kostnadsställe, som PDF och CSV. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS och VIES-kontroll.
+- **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag som kan fotograferas med mobilen. Kontosaldot syns direkt när du väljer konto och efter varje rad. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar, och inläsning av SIE4 i två steg med avstämning.
+- **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok, kontoanalys och verifikationslista per period och kostnadsställe, som PDF och CSV. Klicka på ett konto för att se dess huvudbok och vidare till verifikationen. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS och VIES-kontroll.
 - **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
 - **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
@@ -120,7 +120,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Påminnelse med e-post och under Att göra innan medgivandet går ut (högst 180 dagar), och bortkoppling när som helst. Kräver att den som driftar NONOX har avtal med Enable Banking; i den driftade tjänsten slås modulen på när de juridiska frågorna är besvarade.
 
 ### NONOX AI (modul)
-- Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
+- Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
 
 ### Företaget och din data
 - Flera företag per användare med roller: ägare, administratör, redovisningskonsult, bokförare, attestant och revisor. Ägarskap kan föras över, och ett företag kan arkiveras så att det bara kan läsas.

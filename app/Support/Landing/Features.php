@@ -26,7 +26,7 @@ final class Features
     private const array FEATURES = [
         'vouchers' => ['name' => 'Verifikationer som aldrig kan ändras', 'status' => self::LIVE, 'readme' => 'En bokförd verifikation kan aldrig ändras'],
         'templates' => ['name' => 'Konteringsmallar', 'status' => self::LIVE, 'readme' => 'konteringsmallar och underlag'],
-        'reports' => ['name' => 'Rapporter per period och kostnadsställe', 'status' => self::LIVE, 'readme' => 'huvudbok och verifikationslista per period och kostnadsställe'],
+        'reports' => ['name' => 'Rapporter per period och kostnadsställe', 'status' => self::LIVE, 'readme' => 'huvudbok, kontoanalys och verifikationslista per period och kostnadsställe'],
         'cost_centres' => ['name' => 'Kostnadsställen och projekt', 'status' => self::LIVE, 'readme' => 'kostnadsställen och projekt'],
         'vat_return' => ['name' => 'Momsdeklaration som fil', 'status' => self::LIVE, 'readme' => 'Momsdeklaration med fil till Skatteverket'],
         'eu_reports' => ['name' => 'Periodisk sammanställning, OSS och VIES', 'status' => self::LIVE, 'readme' => 'periodisk sammanställning, underlag för OSS och VIES-kontroll'],
@@ -60,7 +60,7 @@ final class Features
         'inbox' => ['name' => 'Inkorg för fakturor och kvitton', 'status' => self::LIVE, 'readme' => 'En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem', 'module' => 'Inkorg'],
         'daily_reports' => ['name' => 'Dagsrapporter från kassasystemet', 'status' => self::LIVE, 'readme' => 'dagsrapporter läses utan AI, med mallar som en person godkänt', 'module' => 'Inkorg'],
         'bank_feed' => ['name' => 'Bankkoppling med BankID', 'status' => self::LIVE, 'readme' => 'Företagets bankkonton kopplas med BankID genom öppen bankdata (PSD2)', 'module' => 'Bank'],
-        'ai' => ['name' => 'NONOX AI läser underlag', 'status' => self::LIVE, 'readme' => 'Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel', 'module' => 'NONOX AI'],
+        'ai' => ['name' => 'NONOX AI läser underlag', 'status' => self::LIVE, 'readme' => 'Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel', 'module' => 'NONOX AI'],
         'multi_company' => ['name' => 'Flera företag per användare', 'status' => self::LIVE, 'readme' => 'Flera företag per användare med roller'],
         'roles' => ['name' => 'Roller för konsult, attestant och revisor', 'status' => self::LIVE, 'readme' => 'ägare, administratör, redovisningskonsult, bokförare, attestant och revisor'],
         'firm_overview' => ['name' => 'Mina företag', 'status' => self::LIVE, 'readme' => 'summor och en gemensam "Att göra" för alla klienter, med filter per konsult, deadline och typ'],

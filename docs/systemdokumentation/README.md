@@ -275,6 +275,18 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   ordningen verifikation, räkenskapsår, företag, nummerräknare.
 - Varje rad har antingen ett debet- eller ett kreditbelopp i hela ören, aldrig
   båda och aldrig negativt.
+- Raderna visas och skrivs i ordningen konto, kostnadsställe, projekt, radtext,
+  debet, kredit och kontosaldo; kostnadsställe och projekt bara när företaget
+  använder dem. Kontosaldot är bara information och påverkar inte bokföringen:
+  räkenskapsårets ingående balans plus de bokförda verifikationerna, aldrig
+  utkast. Medan en verifikation skrivs är det saldot till och med
+  verifikationens datum plus raderna ovanför på samma konto; på en bokförd
+  verifikation saldot efter raden i huvudbokens ordning (datum, serie, nummer,
+  rad), samma belopp som huvudboken visar. Saldot visas på kontots normala
+  sida: tillgångar och kostnader som debet, eget kapital, skulder och intäkter
+  som kredit, så ett negativt saldo betyder till exempel ett övertrasserat
+  bankkonto. Saldona räknas med en fråga per verifikation
+  (`App\Domain\Accounting\AccountBalances`).
 
 ### 4.3 Oföränderlighet
 
@@ -393,6 +405,9 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   valfri period inom ett räkenskapsår och per kostnadsställe eller projekt
   ([ADR-010](../adr/ADR-010-reports-vat-year-end.md)). Utkast ingår aldrig.
 - Rapporterna kan laddas ner som CSV och skrivas ut eller sparas som PDF.
+- Varje konto i rapporterna och på en verifikation leder till huvudboken för
+  just det kontot (kontoanalys) med samma år, period, kostnadsställe och
+  projekt, och därifrån till verifikationerna och deras kontering.
 
 ### 4.13 Moms
 
@@ -1121,6 +1136,11 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   eller en hel verifikation. Förslaget sparas och bokförs aldrig av AI:n; det
   gör en person efter kontroll, på samma sätt som när uppgifterna skrivs in för
   hand. Därför ändrar modulen ingenting i verifikationsflödet.
+- När modulen är påslagen och personen får använda AI läses ett underlag direkt
+  när det laddats upp, dragits in eller fotograferats med mobilens kamera, på
+  verifikationen och leverantörsfakturan. Det fyller bara i formuläret som när
+  någon klickar Analysera; knappen finns kvar för ett nytt försök. Fotot
+  kontrolleras och sparas som annat underlag.
 - Ett utlägg från Min sida läses av NONOX AI när det skickas, när modulen är
   påslagen, utan att den anställde själv behöver behörigheten att använda AI.
   Läsningen är ett förslag som lagras på utlägget tills någon med ansvar för
@@ -1752,3 +1772,4 @@ förslag från NONOX AI (ADR-033 §6).
 | 0.57 | 2026-11-01 | Utvecklarwebben för NONOX Connect under `/utvecklare` (svenska, engelska med `?lang=en`): guider från `docs/api/guider`, en referens som genereras på servern från `docs/api/openapi.yaml`, kodexempel, ändringslogg (`docs/api/CHANGELOG.md`) och specifikationen som YAML och JSON. Ändrar ingen bokföring: sidorna läser bara specifikationen och inställningarna för gränser. |
 | 0.58 | 2026-11-01 | Avtal (modul, ADR-033): kollektivavtalens värden som versionerad data med källa, inläst okontrollerad och använd först efter en namngiven kontroll (installationen eller företaget), skyddad mot ändring när den är kontrollerad. Företagets bindning (medlem eller hängavtal) och anställningens avtal, lönegrupp och branschvana. Lönekörningen stoppas utan kontrollerad version; redan uppdelade OB- och övertidstimmar prissätts med avtalets sats med version och källa på raden; avtalskalender med aftnar och storhelger; minimilönekontroll med varning. NONOX AI föreslår avtal och anställningsuppgifter ur maskerad text, med citat och sida, och inget förs in utan en person. |
 | 0.59 | 2026-11-01 | NONOX Connect: kundfakturor, leverantörsfakturor med attest av någon annan, betalningar, artiklar, kostnadsställen och projekt, rapporter, momsdeklaration per period, periodernas låsning och SIE-export i API:t, med samma funktioner som appen; ett anrop som bokför kräver behörighet att bokföra. Signerade webhooks som skickas efter att bokföringen sparats, med skydd mot anrop till interna nät och avstängning efter ett dygns fel. Appar kan återkalla sin egen anslutning. Testföretag med exempeldata, tydligt märkta och utan utskick. |
+| 0.61 | 2026-11-01 | Verifikationens rader i ordningen konto, kostnadsställe, projekt, radtext, debet, kredit och kontosaldo, i inmatningen, på verifikationen och i verifikationslistan. Kontosaldo (ingående balans plus bokförda verifikationer, aldrig utkast) visas när ett konto väljs och efter varje rad, på kontots normala sida; bara information, bokföringen ändras inte. Konton i rapporterna och på verifikationen leder till huvudboken för kontot (kontoanalys) med samma filter. Underlag kan fotograferas med mobilen, och NONOX AI läser det direkt efter uppladdningen när modulen är påslagen; AI:n fyller bara i formuläret. |
