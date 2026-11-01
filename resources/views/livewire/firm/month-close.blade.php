@@ -68,11 +68,11 @@
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="border-b border-stone-200 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                            <th scope="col" class="sticky left-0 bg-white px-5 py-3">{{ __('Klient') }}</th>
+                            <th scope="col" class="sticky left-0 min-w-52 bg-white px-5 py-3">{{ __('Klient') }}</th>
                             @foreach($steps as $step)
                                 <th scope="col" class="px-3 py-3" title="{{ $step->hint() }}">{{ $step->label() }}</th>
                             @endforeach
-                            <th scope="col" class="px-5 py-3 text-right">{{ __('Klart') }}</th>
+                            <th scope="col" class="min-w-28 px-5 py-3 text-right">{{ __('Klart') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-stone-200">
