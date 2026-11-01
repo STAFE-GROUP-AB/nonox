@@ -136,14 +136,14 @@
         {
             "group": "sakerhet",
             "name": "Drift och säkerhetskopior",
-            "grade": "D",
-            "summary": "Krypterade säkerhetskopior varje natt, men bara på samma server.",
+            "grade": "C",
+            "summary": "Krypterade säkerhetskopior varje natt på servern och två gånger per dygn på en annan plats i Sverige.",
             "done": [
-                "Databas och filer säkerhetskopieras krypterat varje natt och sparas i sju dagar, i Sverige."
+                "Databas och filer säkerhetskopieras krypterat varje natt och sparas i sju dagar, i Sverige.",
+                "Två gånger per dygn förs en krypterad kopia över till en annan plats i Sverige, i Stafes egen regi."
             ],
             "open": [
-                "Ingen kopia på en annan plats eller hos en annan leverantör.",
-                "Ingen dokumenterad återläsningsövning.",
+                "Återställningstest är inte dokumenterade som en regelbunden rutin.",
                 "Tjänsten delar server med andra webbplatser."
             ],
             "law": [

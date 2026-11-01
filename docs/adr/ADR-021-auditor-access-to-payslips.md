@@ -1,6 +1,6 @@
 # ADR-021: Auditors keep read access to payslips, and every view is logged
 
-- Status: Proposed (needs the project owner's approval)
+- Status: Accepted (approved by the project owner 2026-11-01)
 - Relates to: AGENTS.md §4 (auditor role), GDPR art. 5.1 c and art. 32
 
 ## Context

@@ -43,7 +43,7 @@ Svaren förs in i respektive dokument eller ADR, och frågan stryks här. Öppna
 *Varför:* Ett kapat e-postkonto ger då full åtkomst. Det är inte utrett om IMY i tillsynsbeslut har krävt stark autentisering för hälsouppgifter utanför vården, och i så fall vad det betyder här.
 
 **7. Revisorns läsning av lönebesked.**
-*Bakgrund:* Revisorn kan läsa lönebesked, som kan avslöja sjukfrånvaro, och varje läsning loggas. Förslaget i ADR-021 är ännu inte godkänt.
+*Bakgrund:* Revisorn kan läsa lönebesked, som kan avslöja sjukfrånvaro, och varje läsning loggas. ADR-021 godkändes av projektägaren 2026-11-01; den juridiska frågan står kvar.
 *Fråga:* Krävs en egen rättslig grund utöver revisionsplikten i aktiebolagslagen 9 kap.?
 
 ### Personalliggare

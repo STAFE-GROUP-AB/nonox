@@ -28,6 +28,6 @@ Uppgifterna krävs för att beräkna lön, skatt, arbetsgivaravgifter, sjuklön 
   - Livewires tillfälliga uppladdningar ligger okrypterade på disken tills Livewire raderar dem efter 24 timmar. Den sparade kopian är krypterad.
   - Den som kör NONOX själv kan stänga av krypteringen (`PRIVATE_FILES_DRIVER=local`) och ansvarar då för diskkryptering.
   - Förloras applikationsnyckeln går filerna inte att läsa, inte heller i en säkerhetskopia.
-- **Revisorer** kan läsa enskilda lönebesked men inte frånvaroregistret, och varje läsning loggas. Förslaget finns i [ADR-021](../adr/ADR-021-auditor-access-to-payslips.md), som ännu inte är godkänt. TODO(legal-verify): om revisorns läsning kräver en egen rättslig grund.
+- **Revisorer** kan läsa enskilda lönebesked men inte frånvaroregistret, och varje läsning loggas. Beslutet finns i [ADR-021](../adr/ADR-021-auditor-access-to-payslips.md), godkänt 2026-11-01. TODO(legal-verify): om revisorns läsning kräver en egen rättslig grund.
 - **Fackföreningsavgift.** Lönemodulen har ingen löneart för fackavgift. Görs avdraget som nettolöneavdrag eller skrivs i fritext behandlas uppgift om fackligt medlemskap (artikel 9.1) utan särskilt skydd. TODO(legal-verify).
 - **AI-läsning av kvitton:** se [konsekvensbedömningen för AI](konsekvensbedomning-ai.md), särskilt AI:ns anteckningar om kvitton som ser privata ut.
