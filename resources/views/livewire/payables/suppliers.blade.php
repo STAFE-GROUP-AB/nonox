@@ -34,10 +34,27 @@
             <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
                 @foreach($fields as $field => [$label, $span, $hint])
                     <x-ui.field :for="'supplier_'.$field" :label="$label" :error="$field" :hint="$hint" class="{{ $span }}">
-                        <input id="supplier_{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="{{ $input }} mt-1" wire:model="form.{{ $field }}"
+                        <input id="supplier_{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="{{ $input }} mt-1" wire:model{{ $field === 'org_number' ? '.blur' : '' }}="form.{{ $field }}"
                             @if(in_array($field, ['payment_terms_days', 'default_account', 'bankgiro', 'plusgiro'], true)) inputmode="numeric" @endif
                             @if($field === 'default_account') list="supplier-default-accounts" autocomplete="off" @endif>
                     </x-ui.field>
+                    @if($field === 'vat_number')
+                        @if($editingId && filled($form['vat_number'] ?? ''))
+                            <div class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm sm:col-span-2">
+                                @if($vatCheck)
+                                    <span @class(['font-medium', 'text-gray-900' => $vatCheck['valid'], 'text-accent-700' => ! $vatCheck['valid']])>
+                                        {{ $vatCheck['valid'] ? __('Giltigt i VIES') : __('Ogiltigt i VIES') }} {{ $vatCheck['vat_number'] }}
+                                    </span>
+                                    @if($vatCheck['request_identifier'])<span class="text-gray-600">{{ __('Konsultationsnummer :id', ['id' => $vatCheck['request_identifier']]) }}</span>@endif
+                                    @if($vatCheck['name'])<span class="w-full text-gray-600">{{ $vatCheck['name'] }}</span>@endif
+                                @else
+                                    <span class="text-gray-600">{{ __('Kontrollera numret i EU:s register VIES, till exempel före ett inköp med omvänd betalningsskyldighet.') }}</span>
+                                @endif
+                                <button type="button" class="ml-auto font-medium text-accent-600 hover:text-accent-700" wire:click="checkVatNumber" wire:loading.attr="disabled">{{ __('Kontrollera i VIES') }}</button>
+                            </div>
+                        @endif
+                        @include('livewire.partials.company-lookup', ['class' => 'sm:col-span-2'])
+                    @endif
                 @endforeach
                 <div class="flex items-center gap-4 sm:col-span-2">
                     <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>

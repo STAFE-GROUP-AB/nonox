@@ -97,6 +97,25 @@ return [
         ],
     ],
 
+    /*
+     * Company lookup (ADR-035): filling in name, address and legal form
+     * from an organisation number. driver: 'bolagsverket' or 'fake' (local
+     * and tests only); empty means fake locally and no lookup elsewhere.
+     * Bolagsverket's "API för värdefulla datamängder" is free but needs a
+     * client id and secret from Bolagsverket; environment 'test' uses
+     * their accept2 environment, 'prod' the real register. Answers are
+     * cached for cache_minutes.
+     */
+    'company_registry' => [
+        'driver' => env('COMPANY_REGISTRY_DRIVER'),
+        'cache_minutes' => (int) env('COMPANY_REGISTRY_CACHE_MINUTES', 10),
+        'bolagsverket' => [
+            'client_id' => env('BOLAGSVERKET_CLIENT_ID'),
+            'client_secret' => env('BOLAGSVERKET_CLIENT_SECRET'),
+            'environment' => env('BOLAGSVERKET_ENVIRONMENT', 'prod'),
+        ],
+    ],
+
     'riksbank' => [
         'url' => env('RIKSBANK_URL', 'https://api.riksbank.se/swea/v1/'),
     ],

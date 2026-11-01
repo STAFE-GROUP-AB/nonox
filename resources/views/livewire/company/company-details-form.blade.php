@@ -21,6 +21,10 @@
             <p class="sm:col-span-2 text-gray-500">{{ __('Organisationsnummer och företagsform går inte att ändra, eftersom det då blir ett annat företag. Lägg i så fall till det som ett nytt företag.') }}</p>
         </dl>
 
+        @if($canUpdate)
+            @include('livewire.partials.company-lookup')
+        @endif
+
         <div>
             <x-label for="details_name" value="{{ __('Företagsnamn') }}" />
             <input id="details_name" type="text" class="{{ $field }}" wire:model="state.name" @disabled(! $canUpdate)>

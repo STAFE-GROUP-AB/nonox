@@ -9,6 +9,8 @@ use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
+use App\Livewire\Concerns\LooksUpCompanies;
+use App\Models\Company;
 use App\Models\User;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
@@ -18,6 +20,8 @@ use Livewire\Component;
 
 class CreateCompanyForm extends Component implements SpansCompanies
 {
+    use LooksUpCompanies;
+
     public string $name = '';
 
     public string $org_number = '';
@@ -56,6 +60,11 @@ class CreateCompanyForm extends Component implements SpansCompanies
         $this->org_number = (string) ($prefill['org_number'] ?? $this->org_number);
     }
 
+    public function updatedOrgNumber(): void
+    {
+        $this->lookUpCompanyAutomatically();
+    }
+
     public function create(CreateCompany $createCompany): void
     {
         /** @var User $user */
@@ -84,6 +93,32 @@ class CreateCompanyForm extends Component implements SpansCompanies
         Toast::flash(__(':company är skapat. Du arbetar nu i det företaget.', ['company' => $company->name]));
 
         $this->redirectRoute('dashboard');
+    }
+
+    protected function registryFields(): array
+    {
+        return ['name' => 'name', 'legal_form' => 'legal_form', 'address_line1' => 'address_line1', 'postal_code' => 'postal_code', 'city' => 'city'];
+    }
+
+    protected function registryNumber(): string
+    {
+        return $this->org_number;
+    }
+
+    /** The company does not exist yet: the lookup counts against the user's own limit. */
+    protected function registryQuotaCompany(): ?Company
+    {
+        return null;
+    }
+
+    /**
+     * The legal form select starts on AB, which is not a choice the user has made.
+     *
+     * @return array<string, string>
+     */
+    protected function registryPresets(): array
+    {
+        return ['legal_form' => 'AB'];
     }
 
     public function render(): View

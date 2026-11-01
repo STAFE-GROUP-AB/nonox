@@ -147,6 +147,18 @@ Svaren förs in i respektive dokument eller ADR, och frågan stryks här. Öppna
 **31. Enable Banking som underbiträde och bankdata som räkenskapsinformation.**
 *Fråga:* Är Enable Banking Stafes underbiträde (artikel 28) eller företagets egen leverantör? Finns DPA och sker någon överföring utanför EU/EES? Är transaktioner som hämtats från banken räkenskapsinformation i sig (BFL 5 kap. 7 §, 7 kap.), och ska de därmed sparas i sju år och tas med i arkivpaketet? Gäller något särskilt för en enskild firmas privatkonto, där transaktionerna är personuppgifter om ägaren och motparterna?
 
+### Företagsuppgifter från Bolagsverket
+
+**32. Personnummer till Bolagsverket vid hämtning för en enskild firma.**
+*Bakgrund:* Med organisationsnumret hämtar NONOX namn, adress och företagsform från Bolagsverkets API för värdefulla datamängder ([ADR-035](../adr/ADR-035-company-lookup.md)). För en enskild firma är numret ägarens personnummer, och firmanamnet innehåller ofta ägarens namn. Hämtningen sker när användaren trycker *Hämta uppgifter*, eller av sig själv när ett giltigt nummer skrivs i ett formulär där namnet är tomt. Svaret sparas bara om användaren sparar formuläret; det cachas högst tio minuter under en hash av numret.
+*Fråga:* Vilken rättslig grund har vi som personuppgiftsbiträde (och företaget som ansvarig) för att skicka personnumret till Bolagsverket och visa svaret? Räcker det för behandling av personnummer att det är "klart motiverat med hänsyn till ändamålet" (3 kap. 10 § lag (2018:218) med kompletterande bestämmelser till EU:s dataskyddsförordning) när numret redan finns i kund- eller leverantörsregistret? Ska den automatiska hämtningen vid tomt formulär tas bort för personnummer?
+
+**33. Bolagsverket i integritetstexterna.**
+*Fråga:* Är Bolagsverket en mottagare som ska anges i integritetspolicyn och registerförteckningen, och ska källan till uppgifterna anges för de registrerade enligt artikel 14 när uppgifterna hämtas från Bolagsverket i stället för från den registrerade?
+
+**34. Villkor för vidareanvändning av Bolagsverkets data.**
+*Fråga:* Vilka villkor gäller för data från API för värdefulla datamängder (licens, krav på källangivelse, krav på att återge uppgifterna korrekt), och räcker det att källan visas vid varje svar i formuläret? Får uppgifterna sparas i kundens register utan tidsgräns när användaren sparar formuläret? Gäller något särskilt för uppgifter där SCB är dataproducent (postadress, juridisk form)?
+
 ## Del B. Bokföring, moms, skatt och lön (TODO(legal-verify) i koden)
 
 Dessa frågor kräver i första hand en redovisningskonsult eller skattejurist. Varje rad pekar på var frågan står.

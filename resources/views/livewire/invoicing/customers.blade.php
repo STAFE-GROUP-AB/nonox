@@ -25,8 +25,11 @@
             <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
                 @foreach($fields as $field => [$label, $span])
                     <x-ui.field :for="'customer_'.$field" :label="$label" :error="$field" class="{{ $span }}">
-                        <input id="customer_{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="{{ $input }} mt-1" wire:model="form.{{ $field }}" @if($field === 'payment_terms_days') inputmode="numeric" @endif>
+                        <input id="customer_{{ $field }}" type="{{ $field === 'email' ? 'email' : 'text' }}" class="{{ $input }} mt-1" wire:model{{ $field === 'org_number' ? '.blur' : '' }}="form.{{ $field }}" @if($field === 'payment_terms_days') inputmode="numeric" @endif>
                     </x-ui.field>
+                    @if($field === 'personal_number')
+                        @include('livewire.partials.company-lookup', ['class' => 'sm:col-span-2'])
+                    @endif
                 @endforeach
                 @if($editingId && filled($form['vat_number'] ?? '') && ! str_starts_with(strtoupper($form['vat_number']), 'SE'))
                     <div class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 px-4 py-3 text-sm sm:col-span-2">
