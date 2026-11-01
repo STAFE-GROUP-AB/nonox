@@ -169,8 +169,25 @@ The owner decided that the payroll run uses approved time reports.
 - Reports not approved are not paid; the run page shows the hours waiting
   (submitted reports, and the staff ledger's pending proposals through
   `TimeReportPay::addPendingSource`).
-- Not built: a report approved after its month's run was attested is not
-  paid automatically in a later run; it must be entered by hand.
+- A report approved after its month's run was attested is never paid
+  automatically (owner's decision, 2026-11-01). A regular run asks the
+  person running payroll about approved, unclaimed TIMLON reports dated
+  before its month, for employees in the run with an hourly employment in
+  force on the report date, and not while the report's own month has an
+  open regular run. The run page shows the hours per person and months with
+  "Ta med i den här lönekörningen" and "Inte nu". The answer is stored per
+  report on the run (`late_time_reports_included` / `_skipped`, jsonb) and
+  audited; recalculation respects it, reports approved after the answer are
+  asked about separately, "Ändra valet" takes it back while the run is open,
+  and the payroll_runs trigger freezes it at attestation. Included reports
+  are claimed like the month's own and paid as one line per month and
+  employment, "Timlön enligt tidrapport (oktober 2026)", at the hourly rate
+  of the employment the hours were worked in; "Inte nu" leaves them
+  unclaimed and the next run asks again. No new rule: tax, contributions
+  and vacation basis follow the pay code.
   `TODO(legal-verify)`: whether hourly pay for an earlier month paid in a
   later run is reported in AGI for the payment month (as assumed for other
-  late payments).
+  late payments; the engine does so today). Also unverified: whether such
+  hours should be priced at the hourly rate in force when they were worked
+  if it has changed since (the engine uses the employment's current rate,
+  as for the run's own month).

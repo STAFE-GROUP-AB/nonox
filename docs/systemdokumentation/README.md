@@ -710,9 +710,30 @@ lönebeskeden låsta i databasen.
   knuten. När körningen är attesterad vägrar databasen att ändra eller ta bort
   dess tidrapporter. Tidrapporter som inte är godkända räknas inte i lönen;
   lönekörningens sida visar hur många timmar i perioden som väntar på
-  godkännande (inskickade tidrapporter och personalliggarens förslag). En
-  tidrapport för en månad vars lönekörning redan är attesterad betalas inte
-  automatiskt; den läggs in som timlön i en senare körning.
+  godkännande (inskickade tidrapporter och personalliggarens förslag).
+- Sena tidrapporter: en godkänd tidrapport med Timlön som är daterad före
+  körningens månad och som ingen körning har betalat (den godkändes efter
+  att dess månads körning attesterades) betalas aldrig automatiskt. En
+  ordinarie lönekörning frågar den som kör lönen: sidan visar hur många
+  timmar det gäller, för vem och från vilka månader, med valen "Ta med i den
+  här lönekörningen" och "Inte nu". Frågan gäller anställda i körningen som
+  hade en anställning med timlön som gällde den dagen; den ställs inte så
+  länge tidrapportens egen månad har en ordinarie körning som är öppen (den
+  körningen betalar den). Hela frågan läses i en databasfråga för alla
+  anställda. Svaret sparas per tidrapport på körningen
+  (`payroll_runs.late_time_reports_included` och `late_time_reports_skipped`)
+  och i behandlingshistoriken (`payroll.late_time_reports_included`,
+  `payroll.late_time_reports_skipped`, `payroll.late_time_reports_reset`).
+  Medtagna tidrapporter knyts till körningen som andra tidrapporter och
+  betalas som egna rader, en per månad och anställning, till exempel
+  "Timlön enligt tidrapport (oktober 2026)", med timmar × timlönen i den
+  anställning timmarna arbetades i. En ny beräkning följer svaret; "Inte nu"
+  lämnar tidrapporterna obetalda och nästa körning frågar igen. Tidrapporter
+  som godkänns efter svaret frågas om för sig. Svaret kan ändras ("Ändra
+  valet") medan körningen är öppen; när den är attesterad vägrar databasens
+  trigger på `payroll_runs` att ändra det. Timmarna redovisas i AGI för
+  körningens utbetalningsmånad, som annan lön som betalas i körningen
+  (`TODO(legal-verify)` i ADR-012).
 - Utlägg med NONOX AI påslaget: den anställde skickar bara kvittot. NONOX AI
   läser filen direkt när den skickas och avgör först om den är ett utlägg: ett
   kvitto eller en faktura märkt som betald. En obetald faktura, något som inte
@@ -1225,3 +1246,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
 | 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
+| 0.45 | 2026-11-01 | Lön: godkända tidrapporter från tidigare månader som ingen lönekörning har betalat blir en fråga i nästa ordinarie lönekörning – "Ta med i den här lönekörningen" eller "Inte nu". Svaret sparas på körningen och i behandlingshistoriken, följs vid ny beräkning och låses när körningen attesteras. Medtagna timmar betalas som egna rader med den månad de hör till. |

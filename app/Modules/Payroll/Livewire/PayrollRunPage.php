@@ -14,9 +14,11 @@ use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollInput;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
 use App\Modules\Payroll\Support\Run\TimeReportPay;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -98,6 +100,29 @@ class PayrollRunPage extends Component
         $this->toast(__('Lönekörningen är beräknad. Kontrollera lönebeskeden och skicka den för attest.'));
     }
 
+    public function includeLateTimeReports(PayrollRuns $runs): void
+    {
+        $count = $runs->decideLateTimeReports($this->user(), $this->run(), true);
+
+        $this->toast($count === 1
+            ? __('Tidrapporten tas med i den här lönekörningen. Beräkna lönekörningen igen.')
+            : __(':count tidrapporter tas med i den här lönekörningen. Beräkna lönekörningen igen.', ['count' => $count]));
+    }
+
+    public function skipLateTimeReports(PayrollRuns $runs): void
+    {
+        $runs->decideLateTimeReports($this->user(), $this->run(), false);
+
+        $this->toast(__('Timmarna tas inte med nu. Frågan kommer tillbaka i nästa lönekörning.'));
+    }
+
+    public function resetLateTimeReports(PayrollRuns $runs): void
+    {
+        $runs->resetLateTimeReports($this->user(), $this->run());
+
+        $this->toast(__('Valet är ångrat. Ta ställning till timmarna från tidigare månader igen.'));
+    }
+
     public function reopen(PayrollRuns $runs): void
     {
         $runs->reopen($this->user(), $this->run());
@@ -157,6 +182,10 @@ class PayrollRunPage extends Component
         $company = $user->currentCompany();
         $canSeeSensitive = $company !== null && $user->hasTeamPermission($company, 'payroll:view-sensitive');
         $pendingHours = $run->isOpen() ? app(TimeReportPay::class)->pendingHours($run->periodStart(), $run->periodEnd()) : null;
+        // Approved hours from earlier months that no run paid: a question to the person running payroll, while the run is open.
+        $late = $run->isOpen() && Gate::allows('update', $run) ? app(TimeReportPay::class)->late($run, withDecided: true) : collect();
+        $included = $run->late_time_reports_included ?? [];
+        $skipped = $run->late_time_reports_skipped ?? [];
 
         return view('payroll::livewire.run-page', [
             'run' => $run,
@@ -175,8 +204,29 @@ class PayrollRunPage extends Component
             'canPostTax' => $company !== null && $user->hasTeamPermission($company, 'payroll:post'),
             'units' => PayCode::query()->pluck('unit', 'id'),
             'pendingHours' => $pendingHours !== null && $pendingHours->isPositive() ? self::hours((string) $pendingHours) : null,
+            'lateWaiting' => self::lateSummary($late->reject(fn (TimeReport $report): bool => in_array($report->id, [...$included, ...$skipped], true))),
+            'lateIncluded' => self::lateSummary($late->filter(fn (TimeReport $report): bool => in_array($report->id, $included, true))),
+            'lateSkipped' => self::lateSummary($late->filter(fn (TimeReport $report): bool => in_array($report->id, $skipped, true))),
             'missingAccounts' => $company === null ? [] : AddPayrollAccounts::missing($company),
         ]);
+    }
+
+    /**
+     * @param  Collection<int, TimeReport>  $reports
+     * @return ?array{hours: string, employees: list<array{name: string, hours: string, months: list<string>}>}
+     */
+    private static function lateSummary(Collection $reports): ?array
+    {
+        if ($reports->isEmpty()) {
+            return null;
+        }
+
+        $summary = TimeReportPay::summary($reports);
+
+        return [
+            'hours' => self::hours($summary['hours']),
+            'employees' => array_map(fn (array $employee): array => [...$employee, 'hours' => self::hours($employee['hours'])], $summary['employees']),
+        ];
     }
 
     /** Hours as Swedish text: 12,5 and 8, not 12.50 and 8.00. */

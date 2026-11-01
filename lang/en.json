@@ -3567,5 +3567,21 @@
     "Tidrapporterna ändrades medan lönen räknades. Beräkna lönekörningen igen.": "The time reports changed while the payroll was being calculated. Calculate the payroll run again.",
     ":hours timmar i perioden väntar på godkännande och kommer inte med i lönen förrän de är godkända. Godkänn tidrapporterna och beräkna lönekörningen igen.": ":hours hours in the period are waiting for approval and are not included in the payroll until they are approved. Approve the time reports and calculate the payroll run again.",
     ":hours tim × :rate kr": ":hours h × :rate kr",
-    "Några av dagarna finns redan i en annan tidrapport. Avslå förslaget och föreslå perioden igen.": "Some of the days are already in another time report. Reject the proposal and propose the period again."
+    "Några av dagarna finns redan i en annan tidrapport. Avslå förslaget och föreslå perioden igen.": "Some of the days are already in another time report. Reject the proposal and propose the period again.",
+    "Timlön enligt tidrapport (:month)": "Hourly pay from time reports (:month)",
+    "Timlönen saknas för anställningen som timmarna i :month hör till.": "The hourly rate is missing for the employment the hours in :month belong to.",
+    "Lönekörningen är attesterad och kan inte ändras.": "The payroll run is approved and can no longer be changed.",
+    "Det finns inga timmar från tidigare månader att ta ställning till.": "There are no hours from earlier months to decide on.",
+    "Tidrapporten tas med i den här lönekörningen. Beräkna lönekörningen igen.": "The time report is included in this payroll run. Calculate the payroll run again.",
+    ":count tidrapporter tas med i den här lönekörningen. Beräkna lönekörningen igen.": ":count time reports are included in this payroll run. Calculate the payroll run again.",
+    "Timmarna tas inte med nu. Frågan kommer tillbaka i nästa lönekörning.": "The hours are not included now. The question comes back in the next payroll run.",
+    "Valet är ångrat. Ta ställning till timmarna från tidigare månader igen.": "The choice is undone. Decide on the hours from earlier months again.",
+    ":hours godkända timmar från tidigare månader har inte betalats ut.": ":hours approved hours from earlier months have not been paid.",
+    ":name: :hours tim från :months": ":name: :hours h from :months",
+    "Ska de betalas ut i den här lönekörningen? De visas som egna rader på lönebeskedet med den månad timmarna hör till. Väljer du Inte nu kommer frågan tillbaka i nästa lönekörning.": "Should they be paid in this payroll run? They are shown as separate lines on the payslip with the month the hours belong to. If you choose Not now, the question comes back in the next payroll run.",
+    "Ta med i den här lönekörningen": "Include in this payroll run",
+    "Inte nu": "Not now",
+    "Timmar från tidigare månader som tas med i den här lönekörningen: :hours tim.": "Hours from earlier months included in this payroll run: :hours h.",
+    "Timmar från tidigare månader som inte tas med nu: :hours tim.": "Hours from earlier months not included now: :hours h.",
+    "Ändra valet": "Change the choice"
 }
