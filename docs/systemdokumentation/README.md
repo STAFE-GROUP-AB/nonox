@@ -614,6 +614,48 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   konto och skillnaden blir vinst (3973) eller förlust (7973).
 - När en månad har bokförts kan bara benämning och anteckning ändras.
 - Registret kräver behörigheten att hantera räkenskapsår (bokslut).
+- **Tillgång direkt från inköpet.** En rad i debet på ett av företagets
+  anskaffningskonton, i en verifikation eller en leverantörsfaktura, kan bära
+  registrets uppgifter: benämning (radtexten), slag, nyttjandeperiod,
+  anskaffningsvärde (tomt: radens belopp utan moms), anskaffningsdag (tomt:
+  verifikationens datum eller fakturadatum) och första avskrivningsmånad
+  (tomt: anskaffningsmånaden). Kontot för ackumulerade avskrivningar och
+  avskrivningskontot följer slaget, radens kostnadsställe följer med.
+  - Anskaffningskontona väljer företaget under Anläggningar → Tillgångar från
+    inköp. Utan eget val gäller tillgångskontona för registrets slag (1210,
+    1220, 1240, 1250); kontona för ackumulerade avskrivningar (12x9) är inte
+    med, eftersom en debet där är en avyttring.
+  - Under företagets gräns för inventarier av mindre värde visas bara en
+    upplysning, inget förslag. Gränsen är företagets egen inställning och
+    NONOX föreslår inget belopp (`TODO(legal-verify)`: halva prisbasbeloppet
+    exklusive moms enligt Skatteverket, inventarier som köps samtidigt räknas
+    ihop).
+  - På ett utkast sparas förslaget i `fixed_asset_proposals` (rad räknad
+    bland utkastets sparade rader). Tillgången skapas i samma
+    databastransaktion som bokför verifikationen (PostVoucher) eller
+    registrerar leverantörsfakturan (RegisterSupplierInvoice), och får
+    `acquisition_voucher_id`, `acquisition_voucher_row_id` och
+    `supplier_invoice_id`. Misslyckas bokföringen skapas ingen tillgång;
+    går tillgången inte att skapa bokförs inget. Hör förslaget inte längre
+    till en inköpsrad på ett anskaffningskonto stoppas bokföringen med ett
+    fel på raden. Avskrivningar bokförs inte här, utan av registrets
+    månadsavskrivning.
+  - Bara den som har behörigheten för registret kan lägga förslag; en
+    bokförare kan sedan bokföra utkastet. Förslag på kreditnotor och på
+    inköp där köparen redovisar momsen tas inte emot.
+  - Under kontantmetoden bokförs leverantörsfakturan först vid betalning;
+    tillgången skapas ändå vid registreringen och länkas då bara till
+    fakturan (`TODO(legal-verify)`: anskaffningsdag och bokföring av
+    anskaffningen under kontantmetoden).
+  - Registret visar "Anskaffad med verifikation A57" med länk, och
+    verifikationen visar de tillgångar som skapades när den bokfördes.
+    Tillgången ändras och avyttras sedan enligt reglerna ovan.
+  - Nya tillgångar numreras under ett eget lås per företag
+    (`pg_advisory_xact_lock`), inte företagets rad, så två samtidiga
+    bokföringar med tillgångar inte låser varandra.
+  - Behandlingshistoriken: `fixed_asset.proposed` när ett utkasts förslag
+    ändras, `fixed_asset.created` med verifikation, rad och faktura, och
+    `fixed_asset.settings_changed`.
 
 ## 5a3. Periodiseringar
 
@@ -1752,3 +1794,4 @@ förslag från NONOX AI (ADR-033 §6).
 | 0.57 | 2026-11-01 | Utvecklarwebben för NONOX Connect under `/utvecklare` (svenska, engelska med `?lang=en`): guider från `docs/api/guider`, en referens som genereras på servern från `docs/api/openapi.yaml`, kodexempel, ändringslogg (`docs/api/CHANGELOG.md`) och specifikationen som YAML och JSON. Ändrar ingen bokföring: sidorna läser bara specifikationen och inställningarna för gränser. |
 | 0.58 | 2026-11-01 | Avtal (modul, ADR-033): kollektivavtalens värden som versionerad data med källa, inläst okontrollerad och använd först efter en namngiven kontroll (installationen eller företaget), skyddad mot ändring när den är kontrollerad. Företagets bindning (medlem eller hängavtal) och anställningens avtal, lönegrupp och branschvana. Lönekörningen stoppas utan kontrollerad version; redan uppdelade OB- och övertidstimmar prissätts med avtalets sats med version och källa på raden; avtalskalender med aftnar och storhelger; minimilönekontroll med varning. NONOX AI föreslår avtal och anställningsuppgifter ur maskerad text, med citat och sida, och inget förs in utan en person. |
 | 0.59 | 2026-11-01 | NONOX Connect: kundfakturor, leverantörsfakturor med attest av någon annan, betalningar, artiklar, kostnadsställen och projekt, rapporter, momsdeklaration per period, periodernas låsning och SIE-export i API:t, med samma funktioner som appen; ett anrop som bokför kräver behörighet att bokföra. Signerade webhooks som skickas efter att bokföringen sparats, med skydd mot anrop till interna nät och avstängning efter ett dygns fel. Appar kan återkalla sin egen anslutning. Testföretag med exempeldata, tydligt märkta och utan utskick. |
+| 0.62 | 2026-11-11 | Anläggningstillgång direkt från inköpet: en rad i debet på ett anskaffningskonto i en verifikation eller leverantörsfaktura kan bli en tillgång i registret. Förslaget sparas med utkastet, och tillgången skapas i samma transaktion som bokföringen eller registreringen, länkad till verifikationen och raden. Anskaffningskonton och gräns för inventarier av mindre värde är företagets egna inställningar. |

@@ -45,6 +45,8 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property bool $separate_supplier_approval
  * @property ?PaymentBank $payment_bank
  * @property ?string $bank_agreement_id
+ * @property ?array<int, array{0: int, 1: int}> $asset_acquisition_accounts
+ * @property ?int $asset_small_value_threshold_ore
  */
 class Company extends JetstreamTeam
 {
@@ -119,6 +121,8 @@ class Company extends JetstreamTeam
             'locked_until_date' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
             'is_test_company' => 'boolean',
+            'asset_acquisition_accounts' => 'array',
+            'asset_small_value_threshold_ore' => 'integer',
         ];
     }
 

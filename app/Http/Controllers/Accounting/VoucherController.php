@@ -50,6 +50,7 @@ class VoucherController
         return view('accounting.vouchers.show', [
             'voucher' => $voucher,
             'postedBy' => $voucher->posted_by ? User::query()->find($voucher->posted_by) : null,
+            'acquiredAssets' => $voucher->isPosted() ? $voucher->acquiredAssets()->orderBy('number')->get(['id', 'number', 'name', 'acquisition_ore']) : collect(),
         ]);
     }
 

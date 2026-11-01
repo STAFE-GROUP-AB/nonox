@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Payables;
 
 use App\Actions\Accounting\AttachToVoucher;
+use App\Actions\Assets\AssetProposals;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Payables\VatTreatment;
 use App\Models\Account;
@@ -43,8 +44,12 @@ use InvalidArgumentException;
  */
 class SaveSupplierInvoice
 {
+    public function __construct(private readonly AssetProposals $assetProposals) {}
+
     /**
-     * @param  array<string, mixed>  $input
+     * @param  array<string, mixed>  $input  rows may carry asset: the register's fields for an asset
+     *                                       to create when the invoice is registered; with_assets true
+     *                                       makes them replace the draft's proposals
      */
     public function __invoke(User $user, Company $company, array $input, ?SupplierInvoice $invoice = null, ?UploadedFile $file = null): SupplierInvoice
     {
@@ -120,7 +125,7 @@ class SaveSupplierInvoice
             $stored = $file === null ? null : $this->store($company, $file);
             $invoiceDate = CarbonImmutable::parse($validated['invoice_date']);
 
-            return DB::transaction(function () use ($user, $company, $validated, $invoice, $supplier, $total, $vat, $rows, $stored, $invoiceDate, $credit, $treatment, $currency, $foreignTotal, $rate): SupplierInvoice {
+            return DB::transaction(function () use ($user, $company, $input, $validated, $invoice, $supplier, $total, $vat, $rows, $stored, $invoiceDate, $credit, $treatment, $currency, $foreignTotal, $rate): SupplierInvoice {
                 $invoice ??= new SupplierInvoice(['created_by' => $user->id]);
                 $isNew = ! $invoice->exists;
 
@@ -155,6 +160,13 @@ class SaveSupplierInvoice
                     SupplierInvoiceRow::create([...$row, 'supplier_invoice_id' => $invoice->id, 'position' => $position + 1]);
                 }
 
+                if (($input['with_assets'] ?? false) === true) {
+                    $this->assetProposals->sync($user, $company, $invoice, array_map(
+                        fn (array $row): mixed => $row['asset'] ?? null,
+                        self::filledRows(is_array($input['rows'] ?? null) ? $input['rows'] : []),
+                    ));
+                }
+
                 Audit::record($isNew ? 'supplier_invoice.draft_created' : 'supplier_invoice.draft_updated', $invoice, [
                     'supplier' => $supplier->name,
                     'total_ore' => $total->ore,
@@ -178,8 +190,7 @@ class SaveSupplierInvoice
      */
     private function rows(array $input, Supplier $supplier, VatTreatment $treatment, User $user, Company $company): array
     {
-        $rows = array_values(array_filter($input, fn (mixed $row): bool => is_array($row)
-            && (trim((string) ($row['account'] ?? '')) !== '' || trim((string) ($row['amount'] ?? '')) !== '')));
+        $rows = self::filledRows($input);
 
         if ($rows === []) {
             throw ValidationException::withMessages(['rows' => __('Lägg till minst en rad med konto och belopp.')]);
@@ -258,6 +269,18 @@ class SaveSupplierInvoice
         }
 
         return $result;
+    }
+
+    /**
+     * The rows with an account or an amount; empty rows are skipped.
+     *
+     * @param  array<int|string, mixed>  $input
+     * @return list<array<string, mixed>>
+     */
+    private static function filledRows(array $input): array
+    {
+        return array_values(array_filter($input, fn (mixed $row): bool => is_array($row)
+            && (trim((string) ($row['account'] ?? '')) !== '' || trim((string) ($row['amount'] ?? '')) !== '')));
     }
 
     /**

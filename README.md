@@ -74,7 +74,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Kunder, artiklar och leverantörer med pris, moms och konto. Per kund syns vad den fakturerats i år och vad som är obetalt.
 
 ### Bokföring
-- **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar, och inläsning av SIE4 i två steg med avstämning.
+- **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar (tillgången kan skapas direkt när inköpet bokförs), och inläsning av SIE4 i två steg med avstämning.
 - **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok och verifikationslista per period och kostnadsställe, som PDF och CSV. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS och VIES-kontroll.
 - **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
 - **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.

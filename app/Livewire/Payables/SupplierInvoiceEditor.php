@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Payables;
 
 use App\Actions\Accounting\AttachToVoucher;
+use App\Actions\Assets\AssetProposals;
 use App\Actions\Payables\DeleteSupplierInvoiceDraft;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
@@ -90,7 +91,7 @@ class SupplierInvoiceEditor extends Component
     /** Where the rate came from, for the hint under the field: the date of Riksbanken's rate, or empty. */
     public string $rateDate = '';
 
-    /** @var list<array{account: string, amount: string, description: string, cost_center: string, project: string, vat_rate: string}> */
+    /** @var list<array{account: string, amount: string, description: string, cost_center: string, project: string, vat_rate: string, asset?: ?array<string, string>}> */
     public array $rows = [];
 
     public ?TemporaryUploadedFile $file = null;
@@ -134,6 +135,14 @@ class SupplierInvoiceEditor extends Component
                 'cost_center' => (string) $row->costCenter?->code,
                 'project' => (string) $row->project?->code,
             ])->all());
+
+            if ($this->managesAssets()) {
+                foreach (AssetProposals::forms($invoice) as $line => $proposal) {
+                    if (isset($this->rows[$line])) {
+                        $this->rows[$line]['asset'] = $proposal;
+                    }
+                }
+            }
 
             return;
         }
@@ -363,7 +372,14 @@ class SupplierInvoiceEditor extends Component
             'canRegister' => $invoice === null
                 ? $this->user()->can('create', [SupplierInvoice::class, $this->company()])
                 : $this->user()->can('register', $invoice),
+            'assetSettings' => $this->managesAssets() ? AssetProposals::editorSettings($this->company()) : null,
         ]);
+    }
+
+    /** Whether this person keeps the fixed asset register, and so may create assets from the rows. */
+    private function managesAssets(): bool
+    {
+        return $this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage');
     }
 
     /**
@@ -438,6 +454,7 @@ class SupplierInvoiceEditor extends Component
             'currency' => $this->currency,
             'foreign_total' => $this->foreignTotal,
             'exchange_rate' => $this->exchangeRate,
+            'with_assets' => $this->managesAssets(),
         ], $this->invoiceId === null ? null : SupplierInvoice::query()->findOrFail($this->invoiceId), $this->file);
     }
 

@@ -134,6 +134,16 @@ class Voucher extends Model
         return $this->hasOne(ImportedVoucher::class);
     }
 
+    /**
+     * The assets in the register whose purchase this voucher booked.
+     *
+     * @return HasMany<FixedAsset, $this>
+     */
+    public function acquiredAssets(): HasMany
+    {
+        return $this->hasMany(FixedAsset::class, 'acquisition_voucher_id');
+    }
+
     /** @return HasMany<VoucherRowHistory, $this> */
     public function rowHistory(): HasMany
     {

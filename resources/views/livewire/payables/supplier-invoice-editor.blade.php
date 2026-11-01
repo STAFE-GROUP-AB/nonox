@@ -249,6 +249,10 @@
                 </div>
             </template>
 
+            @if($assetSettings)
+                @include('partials.asset-proposals', ['kind' => 'supplier', 'blocked' => 'credit || buyerLiable', 'fallbackName' => '$wire.description'])
+            @endif
+
             @foreach($errors->getMessages() as $key => $messages)
                 @if(str_starts_with($key, 'rows'))
                     @foreach($messages as $message)

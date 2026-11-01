@@ -8,6 +8,7 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\RemoveAttachment;
 use App\Actions\Accounting\SaveDraftVoucher;
+use App\Actions\Assets\AssetProposals;
 use App\Domain\Accounting\VoucherTemplate;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Payables\SupplierInvoiceEditor;
@@ -86,6 +87,7 @@ class VoucherEditor extends Component
 
             $this->voucherId = $voucher->id;
             $this->fillFrom($voucher);
+            $this->rows = $this->withAssetProposals($this->rows, $voucher);
 
             return;
         }
@@ -320,7 +322,38 @@ class VoucherEditor extends Component
             'seriesOptions' => VoucherSeries::query()->orderBy('code')->get(['code', 'name']),
             'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),
             'canPost' => $this->user()->hasTeamPermission($this->company(), 'vouchers:post'),
+            'assetSettings' => $this->managesAssets() ? AssetProposals::editorSettings($this->company()) : null,
         ]);
+    }
+
+    /** Whether this person keeps the fixed asset register, and so may create assets from the rows. */
+    private function managesAssets(): bool
+    {
+        return $this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage');
+    }
+
+    /**
+     * Puts a draft's asset proposals back on its rows (row.asset), counted
+     * among the rows with content, as they were saved.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return list<array<string, mixed>>
+     */
+    private function withAssetProposals(array $rows, Voucher $voucher): array
+    {
+        if (! $this->managesAssets()) {
+            return $rows;
+        }
+
+        $proposals = AssetProposals::forms($voucher);
+
+        foreach ($rows as $index => $row) {
+            if (isset($proposals[$index])) {
+                $rows[$index]['asset'] = $proposals[$index];
+            }
+        }
+
+        return $rows;
     }
 
     private function persist(SaveDraftVoucher $saveDraft): ?Voucher
@@ -335,6 +368,7 @@ class VoucherEditor extends Component
                 'description' => $this->description,
                 'series' => $this->series,
                 'rows' => array_column($rows, 'input'),
+                'with_assets' => $this->managesAssets(),
             ], $this->voucherId === null ? null : Voucher::query()->findOrFail($this->voucherId));
         } catch (ValidationException $exception) {
             $this->addErrorsFrom($exception, $rows ?? []);
@@ -405,6 +439,7 @@ class VoucherEditor extends Component
                     'description' => trim((string) ($row['description'] ?? '')),
                     'cost_center' => $this->leadingCode($row['cost_center'] ?? ''),
                     'project' => $this->leadingCode($row['project'] ?? ''),
+                    'asset' => is_array($row['asset'] ?? null) ? $row['asset'] : null,
                 ]];
             } catch (InvalidArgumentException) {
                 $errors["rows.{$index}.amount"] = __('Rad :line: beloppet går inte att läsa. Skriv till exempel 1 234,50.', ['line' => $index + 1]);

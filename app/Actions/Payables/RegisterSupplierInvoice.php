@@ -6,6 +6,7 @@ namespace App\Actions\Payables;
 
 use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\BookVoucher;
+use App\Actions\Assets\AssetProposals;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
@@ -24,14 +25,16 @@ use Illuminate\Validation\ValidationException;
 /**
  * Registers a draft supplier invoice: it gets the next number, the supplier
  * is kept as it is now, and under fakturametoden it is booked in series D
- * with the invoice file as underlag. From here on its contents never change;
- * it waits for approval (attest).
+ * with the invoice file as underlag. Assets proposed on its rows are created
+ * in the register in the same transaction. From here on its contents never
+ * change; it waits for approval (attest).
  */
 class RegisterSupplierInvoice
 {
     public function __construct(
         private readonly BookVoucher $bookVoucher,
         private readonly AttachToVoucher $attach,
+        private readonly AssetProposals $assetProposals,
     ) {}
 
     public function __invoke(User $user, SupplierInvoice $invoice): SupplierInvoice
@@ -83,6 +86,9 @@ class RegisterSupplierInvoice
                 'registered_at' => now(),
                 'registered_by' => $user->id,
             ])->save();
+
+            // Assets proposed on the draft's rows are created now, linked to the invoice and its voucher.
+            $this->assetProposals->createForSupplierInvoice($user, $invoice, $voucher);
 
             Audit::record('supplier_invoice.registered', $invoice, [
                 'number' => $invoice->number,
