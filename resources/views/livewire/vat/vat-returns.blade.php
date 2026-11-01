@@ -124,7 +124,7 @@
                 <x-ui.card :title="__('Lås perioden')" class="print:hidden">
                     <p class="text-gray-700">{{ __('När momsen är deklarerad bör perioden låsas, så att inget kan bokföras i den i efterhand. Det går inte att låsa upp.') }}</p>
                     <div class="mt-4" x-data="{ confirming: false }">
-                        <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" x-show="! confirming" x-on:click="confirming = true">{{ __('Lås till och med :date', ['date' => $selected['end']->toDateString()]) }}</button>
+                        <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" x-show="! confirming" x-on:click="confirming = true">{{ __('Lås till och med :date', ['date' => $selected['end']->toDateString()]) }}</button>
                         <div x-show="confirming" x-cloak class="flex flex-wrap items-center gap-4">
                             <x-button type="button" wire:click="lock" wire:loading.attr="disabled">{{ __('Ja, lås perioden') }}</x-button>
                             <button type="button" class="text-sm text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>

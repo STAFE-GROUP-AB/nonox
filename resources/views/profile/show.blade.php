@@ -47,7 +47,7 @@
                     <x-slot name="description">{{ __('Ladda ner allt NONOX har om ditt konto, i ett maskinläsbart format.') }}</x-slot>
                     <x-slot name="content">
                         <p class="text-sm text-gray-600">{{ __('Utdraget innehåller ditt konto, dina företag och roller, din behandlingshistorik och, om du är anställd, dina löneuppgifter. Uppgifter som ett företag har om dig som kund eller leverantör begär du ut hos det företaget.') }} <a href="{{ route('legal.privacy') }}" class="underline">{{ __('Integritetspolicy') }}</a></p>
-                        <a href="{{ route('privacy.export.me') }}" class="mt-4 inline-flex items-center rounded-md bg-gray-800 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white hover:bg-gray-700">{{ __('Ladda ner mina uppgifter') }}</a>
+                        <a href="{{ route('privacy.export.me') }}" class="mt-4 inline-flex items-center rounded-md bg-gray-800 px-4 py-2 max-sm:min-h-11 text-xs font-semibold uppercase tracking-widest text-white hover:bg-gray-700">{{ __('Ladda ner mina uppgifter') }}</a>
                     </x-slot>
                 </x-action-section>
             </div>

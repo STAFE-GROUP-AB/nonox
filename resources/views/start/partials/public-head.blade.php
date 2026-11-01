@@ -146,7 +146,7 @@ input[type=range]{accent-color:#FF5A36}
 .lp-desktop{display:contents}
 @media (max-width:959px){.lp-desktop{display:none}.lp-mobile{display:block}}
 @media (min-width:960px){#lp-mobilmeny{display:none!important}}
-.cmp-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:24px;background:var(--card)}
+.cmp-wrap{position:relative;overflow-x:auto;border:1px solid var(--line);border-radius:24px;background:var(--card)}
 .cmp-table{width:100%;min-width:860px;border-collapse:separate;border-spacing:0;font-size:15px}
 .cmp-table th,.cmp-table td{padding:14px 12px;text-align:center;border-bottom:1px solid var(--line);vertical-align:middle}
 .cmp-table thead th{position:sticky;top:0;background:var(--card);font-size:13.5px;font-weight:700;line-height:1.25}

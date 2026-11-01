@@ -5,7 +5,11 @@
     The server calculates everything again when the document is saved.
 --}}
 @php
-    $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm';
+    $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm max-lg:min-h-11';
+    // Below lg a row is a card: a six-column grid of labelled fields.
+    $row = 'relative grid grid-cols-6 gap-x-3 gap-y-3 rounded-2xl p-4 ring-1 ring-gray-200 lg:table-row lg:p-0 lg:ring-0';
+    $field = 'block lg:table-cell lg:py-1 lg:pr-2';
+    $label = 'mb-1 block text-xs font-medium text-gray-500 lg:hidden';
     $rates = [2500 => '25 %', 1200 => '12 %', 600 => '6 %', 0 => __('0 %')];
     $articleMap = $articles->mapWithKeys(fn ($article) => [$article->number => [
         'name' => $article->name,
@@ -23,9 +27,10 @@
     </datalist>
 
     <x-ui.card :title="__('Rader')" :description="__('Skriv ett artikelnummer för att hämta artikeln, eller skriv en egen rad. Priser är utan moms.')">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
+        {{-- A table from lg up; below that every row is a card with labelled fields. --}}
+        <div class="lg:overflow-x-auto">
+            <table class="block w-full text-sm lg:table">
+                <thead class="hidden lg:table-header-group">
                     <tr class="text-left text-gray-500">
                         <th class="pb-2 pr-2 font-medium w-28">{{ __('Artikel') }}</th>
                         <th class="pb-2 pr-2 font-medium">{{ __('Benämning') }}</th>
@@ -41,33 +46,62 @@
                         <th class="pb-2 w-8"><span class="sr-only">{{ __('Ta bort') }}</span></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="flex flex-col gap-3 lg:table-row-group" data-row-cards>
                     <template x-for="(row, index) in rows" :key="index">
-                        <tr>
-                            <td class="py-1 pr-2"><input type="text" list="article-options" class="{{ $cell }}" x-model="row.article" x-on:change="fillArticle(index)" x-on:blur="fillArticle(index)" data-row-article :aria-label="'{{ __('Artikel, rad') }} ' + (index + 1)" autocomplete="off"></td>
-                            <td class="py-1 pr-2 min-w-56"><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Benämning, rad') }} ' + (index + 1)"></td>
-                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.quantity" :aria-label="'{{ __('Antal, rad') }} ' + (index + 1)"></td>
-                            <td class="py-1 pr-2"><input type="text" class="{{ $cell }}" x-model="row.unit" maxlength="10" :aria-label="'{{ __('Enhet, rad') }} ' + (index + 1)"></td>
-                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.price" :aria-label="'{{ __('Pris, rad') }} ' + (index + 1)"></td>
-                            <td class="py-1 pr-2"><input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.discount" :aria-label="'{{ __('Rabatt, rad') }} ' + (index + 1)"></td>
-                            <td class="py-1 pr-2">
+                        <tr class="{{ $row }}">
+                            <td class="{{ $field }} col-span-6 pr-10 sm:col-span-2 sm:pr-0">
+                                <span class="{{ $label }}" aria-hidden="true">{{ __('Artikel') }}</span>
+                                <input type="text" list="article-options" class="{{ $cell }}" x-model="row.article" x-on:change="fillArticle(index)" x-on:blur="fillArticle(index)" data-row-article :aria-label="'{{ __('Artikel, rad') }} ' + (index + 1)" autocomplete="off">
+                            </td>
+                            <td class="{{ $field }} col-span-6 sm:col-span-4 sm:pr-10 lg:min-w-56">
+                                <span class="{{ $label }}" aria-hidden="true">{{ __('Benämning') }}</span>
+                                <input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Benämning, rad') }} ' + (index + 1)">
+                            </td>
+                            <td class="{{ $field }} col-span-3 sm:col-span-2">
+                                <span class="{{ $label }}" aria-hidden="true">{{ __('Antal') }}</span>
+                                <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.quantity" :aria-label="'{{ __('Antal, rad') }} ' + (index + 1)">
+                            </td>
+                            <td class="{{ $field }} col-span-3 sm:col-span-2">
+                                <span class="{{ $label }}" aria-hidden="true">{{ __('Enhet') }}</span>
+                                <input type="text" class="{{ $cell }}" x-model="row.unit" maxlength="10" :aria-label="'{{ __('Enhet, rad') }} ' + (index + 1)">
+                            </td>
+                            <td class="{{ $field }} col-span-3 sm:col-span-2">
+                                <span class="{{ $label }}" aria-hidden="true">{{ __('À-pris') }}</span>
+                                <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.price" :aria-label="'{{ __('Pris, rad') }} ' + (index + 1)">
+                            </td>
+                            <td class="{{ $field }} col-span-3 sm:col-span-2">
+                                <span class="{{ $label }}" aria-hidden="true">{{ __('Rabatt %') }}</span>
+                                <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.discount" :aria-label="'{{ __('Rabatt, rad') }} ' + (index + 1)">
+                            </td>
+                            <td class="{{ $field }} col-span-3 sm:col-span-2">
+                                <span class="{{ $label }}" aria-hidden="true">{{ __('Moms') }}</span>
                                 <select class="{{ $cell }}" x-model="row.vat_rate" :aria-label="'{{ __('Moms, rad') }} ' + (index + 1)">
-                                    @foreach($rates as $rate => $label)
-                                        <option value="{{ $rate }}">{{ $label }}</option>
+                                    @foreach($rates as $rate => $rateLabel)
+                                        <option value="{{ $rate }}">{{ $rateLabel }}</option>
                                     @endforeach
                                 </select>
                             </td>
-                            <td class="py-1 pr-2 text-right whitespace-nowrap tabular-nums" x-text="net(row)"></td>
+                            <td class="order-last col-span-6 flex items-baseline justify-between gap-3 border-t border-gray-100 pt-3 font-semibold whitespace-nowrap tabular-nums lg:table-cell lg:border-0 lg:py-1 lg:pr-2 lg:text-right lg:font-normal">
+                                <span class="text-xs font-medium text-gray-500 lg:hidden" aria-hidden="true">{{ __('Belopp') }}</span>
+                                <span x-text="net(row)"></span>
+                            </td>
                             @if($labour ?? false)
-                                <td class="py-1 pr-2 text-center"><input type="checkbox" class="rounded-sm border-gray-300 text-ink focus:ring-accent-500" x-model="row.labour" :aria-label="'{{ __('Arbetskostnad, rad') }} ' + (index + 1)"></td>
+                                <td class="{{ $field }} col-span-3 self-end sm:col-span-2 lg:text-center">
+                                    <label class="inline-flex min-h-11 items-center gap-2 text-sm text-gray-700 lg:min-h-0">
+                                        <input type="checkbox" class="rounded-sm border-gray-300 text-ink focus:ring-accent-500" x-model="row.labour" :aria-label="'{{ __('Arbetskostnad, rad') }} ' + (index + 1)">
+                                        <span class="lg:hidden" aria-hidden="true">{{ __('Arbetskostnad') }}</span>
+                                    </label>
+                                </td>
                             @endif
-                            <td class="py-1 text-center"><button type="button" class="text-gray-400 hover:text-accent-600" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button></td>
+                            <td class="absolute top-2 right-2 lg:static lg:table-cell lg:py-1 lg:text-center">
+                                <button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 lg:inline lg:size-auto lg:text-sm" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button>
+                            </td>
                         </tr>
                     </template>
                 </tbody>
             </table>
         </div>
-        <button type="button" class="mt-3 text-sm font-medium text-accent-600 hover:text-accent-700" x-on:click="addRow()">+ {{ __('Lägg till rad') }}</button>
+        <button type="button" class="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 lg:inline lg:min-h-0" x-on:click="addRow()">+ {{ __('Lägg till rad') }}</button>
 
         @foreach($errors->getMessages() as $key => $messages)
             @if(str_starts_with($key, 'rows'))

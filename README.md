@@ -318,6 +318,23 @@ npm test            # fakturaradernas uträkning i webbläsaren (Node)
 
 Rätta kodstilen automatiskt med `./vendor/bin/pint`.
 
+### Mobilen
+
+Allt ska fungera på en telefon. `npm run check:mobile` öppnar sidorna i en riktig webbläsare i tre storlekar (iPhone 390 px, liten Android 360 px och iPad på höjden 768 px) och misslyckas om någon sida går att skrolla i sidled. En bred tabell ska skrolla inuti sitt kort, inte göra hela sidan bredare.
+
+Skriptet loggar in via `/logga-in`, så kör det mot en lokal installation med `APP_ENV=local` och `OTP_AUTOFILL=true`. Det behöver Playwright, som inte är ett beroende i projektet:
+
+```bash
+npm install --no-save playwright && npx playwright install chromium
+php artisan serve
+npm run check:mobile                                       # mot http://127.0.0.1:8000
+BASE_URL=http://oss.test npm run check:mobile              # mot en annan adress
+ROUTES="/fakturor/ny /verifikationer/ny" npm run check:mobile  # bara vissa sidor
+CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run check:mobile
+```
+
+Sidor med id (en viss faktura eller verifikation) läggs till med `ROUTES` när det finns data att visa. Radredigerarna på fakturor, offerter, order, avtal, leverantörsfakturor och verifikationer är en tabell på större skärmar och ett kort per rad på telefonen; `tests/Feature/MobileLayoutTest.php` kontrollerar att det är så.
+
 ### Bygga Assets
 
 ```bash

@@ -1,6 +1,6 @@
 @php
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
-    $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm';
+    $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm max-md:min-h-11';
     $fileUrl = $invoice?->file_path ? route('payables.invoices.file', $invoice) : null;
     $selectedSupplier = $suppliers->firstWhere('id', (int) $supplierId);
 @endphp
@@ -143,9 +143,10 @@
                 @endforeach
             </datalist>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm">
-                    <thead>
+            {{-- A table from md up; below that every row is a card with labelled fields. --}}
+            <div class="md:overflow-x-auto">
+                <table class="block w-full text-sm md:table">
+                    <thead class="hidden md:table-header-group">
                         <tr class="text-left text-gray-500">
                             <th class="pb-2 pr-2 font-medium w-24" x-show="! buyerLiable">{{ __('Konto') }}</th>
                             <th class="pb-2 pr-2 font-medium w-24" x-show="buyerLiable" x-cloak>{{ __('Momssats') }}</th>
@@ -160,20 +161,22 @@
                             <th class="pb-2 w-8"><span class="sr-only">{{ __('Ta bort') }}</span></th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody class="flex flex-col gap-3 md:table-row-group" data-row-cards>
                         <template x-for="(row, index) in rows" :key="index">
-                            <tr>
-                                <td class="py-1 pr-2" x-show="! buyerLiable"><input type="text" list="supplier-accounts" inputmode="numeric" class="{{ $cell }} tabular-nums" x-model="row.account" data-row-account :placeholder="'{{ $selectedSupplier?->defaultAccount?->number }}'" :aria-label="'{{ __('Konto, rad') }} ' + (index + 1)" autocomplete="off"></td>
-                                <td class="py-1 pr-2" x-show="buyerLiable" x-cloak>
+                            <tr class="relative grid grid-cols-2 gap-x-3 gap-y-3 rounded-2xl p-4 ring-1 ring-gray-200 md:table-row md:p-0 md:ring-0">
+                                <td class="block md:table-cell md:py-1 md:pr-2 col-span-2 pr-12" x-show="! buyerLiable"><span class="mb-1 block text-xs font-medium text-gray-500 md:hidden" aria-hidden="true">{{ __('Konto') }}</span><input type="text" list="supplier-accounts" inputmode="numeric" class="{{ $cell }} tabular-nums" x-model="row.account" data-row-account :placeholder="'{{ $selectedSupplier?->defaultAccount?->number }}'" :aria-label="'{{ __('Konto, rad') }} ' + (index + 1)" autocomplete="off"></td>
+                                <td class="block md:table-cell md:py-1 md:pr-2 col-span-2 pr-12" x-show="buyerLiable" x-cloak>
+                                    <span class="mb-1 block text-xs font-medium text-gray-500 md:hidden" aria-hidden="true">{{ __('Momssats') }}</span>
                                     <select class="{{ $cell }}" x-model="row.vat_rate" :aria-label="'{{ __('Momssats, rad') }} ' + (index + 1)">
                                         <option value="2500">25 %</option>
                                         <option value="1200">12 %</option>
                                         <option value="600">6 %</option>
                                     </select>
                                 </td>
-                                <td class="py-1 pr-2 min-w-40"><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Text, rad') }} ' + (index + 1)"></td>
+                                <td class="block md:table-cell md:py-1 md:pr-2 col-span-2 md:min-w-40"><span class="mb-1 block text-xs font-medium text-gray-500 md:hidden" aria-hidden="true">{{ __('Text') }}</span><input type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" :aria-label="'{{ __('Text, rad') }} ' + (index + 1)"></td>
                                 @if($costCenters->isNotEmpty())
-                                    <td class="py-1 pr-2">
+                                    <td class="block md:table-cell md:py-1 md:pr-2">
+                                        <span class="mb-1 block text-xs font-medium text-gray-500 md:hidden" aria-hidden="true">{{ __('Kostnadsställe') }}</span>
                                         <select class="{{ $cell }}" x-model="row.cost_center" :aria-label="'{{ __('Kostnadsställe, rad') }} ' + (index + 1)">
                                             <option value="">–</option>
                                             @foreach($costCenters as $costCenter)
@@ -183,7 +186,8 @@
                                     </td>
                                 @endif
                                 @if($projects->isNotEmpty())
-                                    <td class="py-1 pr-2">
+                                    <td class="block md:table-cell md:py-1 md:pr-2">
+                                        <span class="mb-1 block text-xs font-medium text-gray-500 md:hidden" aria-hidden="true">{{ __('Projekt') }}</span>
                                         <select class="{{ $cell }}" x-model="row.project" :aria-label="'{{ __('Projekt, rad') }} ' + (index + 1)">
                                             <option value="">–</option>
                                             @foreach($projects as $project)
@@ -192,10 +196,11 @@
                                         </select>
                                     </td>
                                 @endif
-                                <td class="py-1 pr-2">
+                                <td class="block md:table-cell md:py-1 md:pr-2 col-span-2">
+                                    <span class="mb-1 block text-xs font-medium text-gray-500 md:hidden" aria-hidden="true">{{ __('Belopp') }}</span>
                                     <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.amount" x-on:dblclick="fillRest(index)" :aria-label="'{{ __('Belopp, rad') }} ' + (index + 1)">
                                 </td>
-                                <td class="py-1 text-center"><button type="button" class="text-gray-400 hover:text-accent-600" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button></td>
+                                <td class="absolute top-2 right-2 md:static md:table-cell md:py-1 md:text-center"><button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 md:inline md:size-auto md:text-sm" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button></td>
                             </tr>
                         </template>
                     </tbody>
@@ -203,7 +208,7 @@
             </div>
 
             <div class="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm">
-                <button type="button" class="font-medium text-accent-600 hover:text-accent-700" x-on:click="addRow()">+ {{ __('Lägg till rad') }}</button>
+                <button type="button" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700 md:inline md:min-h-0" x-on:click="addRow()">+ {{ __('Lägg till rad') }}</button>
                 <p class="tabular-nums" aria-live="polite">
                     <template x-if="remaining === null"><span class="text-accent-700">{{ __('Ett belopp går inte att läsa.') }}</span></template>
                     <template x-if="remaining === 0"><span class="font-medium text-gray-900">✓ {{ __('Raderna och momsen stämmer med fakturan.') }}</span></template>
@@ -221,7 +226,8 @@
                 <div class="mt-5 rounded-lg bg-gray-50 p-4">
                     <p class="text-sm font-medium text-gray-900">{{ __('Så här bokförs fakturan när du registrerar den') }}</p>
                     <p class="text-xs text-gray-600">{{ __('Raderna ovan är kostnaderna. Momsen och skulden till leverantören läggs till automatiskt.') }}</p>
-                    <table class="mt-3 w-full text-sm tabular-nums">
+                    <div class="mt-3 overflow-x-auto">
+                    <table class="w-full text-sm tabular-nums">
                         <thead>
                             <tr class="text-left text-xs text-gray-500">
                                 <th class="py-1 pr-3 font-medium">{{ __('Konto') }}</th>
@@ -239,6 +245,7 @@
                             </template>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </template>
 
@@ -262,7 +269,7 @@
                 </span>
             @endif
             <a href="{{ route('payables.invoices.index') }}" class="text-sm text-gray-600 underline">{{ __('Tillbaka') }}</a>
-            <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="save" wire:loading.attr="disabled">{{ __('Spara som utkast') }}</button>
+            <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="save" wire:loading.attr="disabled">{{ __('Spara som utkast') }}</button>
             @if($canRegister)
                 <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Registrera fakturan') }}</x-button>
                 <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3 text-sm">

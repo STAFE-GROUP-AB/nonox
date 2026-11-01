@@ -53,7 +53,7 @@
                 <ul class="mt-6 divide-y divide-gray-100 border-t border-gray-100">
                     @foreach($requests as $request)
                         <li class="flex flex-wrap items-center gap-3 py-3 text-sm" wire:key="request-{{ $request->id }}">
-                            <span class="min-w-0 flex-1">
+                            <span class="min-w-0 flex-1 basis-40">
                                 <span class="block font-medium text-gray-900">{{ $labels[$request->type] ?? $request->type }}</span>
                                 <span class="block text-gray-600 tabular-nums">{{ $request->date_from->toDateString() }} – {{ $request->date_to->toDateString() }}</span>
                                 @if($request->status === 'REJECTED' && $request->rejection_reason)

@@ -54,39 +54,41 @@
                 {{ __('Artiklar är det du säljer, med pris och moms. De gör det snabbt att fylla i fakturor. Du kan också skriva fria rader direkt på fakturan.') }}
             </x-ui.empty-state>
         @else
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="border-b border-gray-200 text-left text-gray-500">
-                        <th class="py-2 pr-4 font-medium">{{ __('Nummer') }}</th>
-                        <th class="py-2 pr-4 font-medium">{{ __('Benämning') }}</th>
-                        <th class="py-2 pr-4 text-right font-medium">{{ __('Pris exkl. moms') }}</th>
-                        <th class="py-2 pr-4 font-medium">{{ __('Moms') }}</th>
-                        <th class="py-2 pr-4 font-medium">{{ __('Konto') }}</th>
-                        <th class="py-2 pr-4 text-right font-medium">{{ __('Sålt :year', ['year' => $year]) }}</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100">
-                    @foreach($articles as $article)
-                        <tr wire:key="article-{{ $article->id }}">
-                            <td class="py-2 pr-4 font-semibold tabular-nums">{{ $article->number }}</td>
-                            <td class="py-2 pr-4">{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}</span></td>
-                            <td class="py-2 pr-4 text-right"><x-ui.amount :money="$article->price_ore" /></td>
-                            <td class="py-2 pr-4">{{ $rates[$article->vat_rate] ?? '' }}</td>
-                            <td class="py-2 pr-4 tabular-nums">{{ $article->account?->number }}</td>
-                            <td class="py-2 pr-4 text-right">
-                                <x-ui.amount :money="App\Support\Money\Money::ofOre((int) $article->sold_this_year)" />
-                                <span class="block text-xs text-gray-500 tabular-nums">{{ rtrim(rtrim(number_format((float) $article->quantity_this_year, 3, ',', ' '), '0'), ',') }} {{ $article->unit }}</span>
-                            </td>
-                            <td class="py-2 text-right">
-                                @if($canManage)
-                                    <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $article->id }})">{{ __('Ändra') }}</button>
-                                @endif
-                            </td>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-200 text-left text-gray-500">
+                            <th class="py-2 pr-4 font-medium">{{ __('Nummer') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Benämning') }}</th>
+                            <th class="py-2 pr-4 text-right font-medium">{{ __('Pris exkl. moms') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Moms') }}</th>
+                            <th class="py-2 pr-4 font-medium">{{ __('Konto') }}</th>
+                            <th class="py-2 pr-4 text-right font-medium">{{ __('Sålt :year', ['year' => $year]) }}</th>
+                            <th></th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @foreach($articles as $article)
+                            <tr wire:key="article-{{ $article->id }}">
+                                <td class="py-2 pr-4 font-semibold tabular-nums">{{ $article->number }}</td>
+                                <td class="py-2 pr-4">{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}</span></td>
+                                <td class="py-2 pr-4 text-right"><x-ui.amount :money="$article->price_ore" /></td>
+                                <td class="py-2 pr-4">{{ $rates[$article->vat_rate] ?? '' }}</td>
+                                <td class="py-2 pr-4 tabular-nums">{{ $article->account?->number }}</td>
+                                <td class="py-2 pr-4 text-right">
+                                    <x-ui.amount :money="App\Support\Money\Money::ofOre((int) $article->sold_this_year)" />
+                                    <span class="block text-xs text-gray-500 tabular-nums">{{ rtrim(rtrim(number_format((float) $article->quantity_this_year, 3, ',', ' '), '0'), ',') }} {{ $article->unit }}</span>
+                                </td>
+                                <td class="py-2 text-right">
+                                    @if($canManage)
+                                        <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="edit({{ $article->id }})">{{ __('Ändra') }}</button>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </x-ui.card>
 </div>

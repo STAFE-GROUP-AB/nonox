@@ -11,7 +11,7 @@
         @php($module = $card['module'])
         <x-ui.card wire:key="module-{{ $module->key() }}">
             <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="min-w-0 flex-1">
+                <div class="min-w-0 flex-1 basis-40">
                     <h3 class="flex items-center gap-3 text-base font-semibold text-gray-900">
                         {{ $module->name() }}
                         <x-ui.badge :tone="$card['enabled'] ? 'success' : 'neutral'">{{ $card['enabled'] ? __('Aktiv') : __('Inaktiv') }}</x-ui.badge>

@@ -40,12 +40,12 @@
                         'bg-stone-200 text-gray-600' => $item['status'] === 'na',
                         'bg-accent-100 text-accent-800' => $item['status'] === 'todo',
                     ]) aria-hidden="true">{{ match ($item['status']) { 'ok' => '✓', 'na' => '–', default => '!' } }}</span>
-                    <div class="min-w-0 flex-1">
+                    <div class="min-w-0 flex-1 basis-48">
                         <p class="font-semibold text-ink">{{ $item['label'] }} <span class="sr-only">{{ match ($item['status']) { 'ok' => __('Klar'), 'na' => __('Gäller inte'), default => __('Att göra') } }}</span></p>
                         <p class="text-sm text-gray-600">{{ $item['detail'] }}</p>
                     </div>
                     @if($item['manual'] && $fiscalYear->isOpen())
-                        <label class="flex items-center gap-2 text-sm text-gray-800">
+                        <label class="ml-10 flex min-h-11 items-center gap-2 text-sm text-gray-800 sm:ml-0 sm:min-h-0">
                             <input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
                             {{ __('Klart eller gäller inte') }}
                         </label>

@@ -37,7 +37,7 @@
                 <ul class="mt-4 divide-y divide-gray-100 border-t border-gray-100">
                     @foreach($expenses as $item)
                         <li class="flex flex-wrap items-center gap-3 py-3 text-sm">
-                            <span class="min-w-0 flex-1">
+                            <span class="min-w-0 flex-1 basis-40">
                                 @if($item->ai_status === 'PENDING')
                                     <span class="block font-medium text-gray-900">{{ __('NONOX AI läser kvittot…') }}</span>
                                     <span class="block text-gray-600">{{ $item->receipt_name }}</span>

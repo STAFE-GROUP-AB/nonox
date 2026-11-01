@@ -4,7 +4,8 @@
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "test": "node --test tests/js/*.test.mjs"
+        "test": "node --test tests/js/*.test.mjs",
+        "check:mobile": "node scripts/mobile-overflow.mjs"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",

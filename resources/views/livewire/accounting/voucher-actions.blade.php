@@ -5,12 +5,12 @@
 <div class="space-y-4">
     <div class="flex flex-wrap items-center gap-3">
         @if($canEdit)
-            <a href="{{ route('accounting.vouchers.edit', $voucher) }}" class="inline-flex items-center px-4 py-2 bg-accent-600 rounded-lg font-semibold text-sm text-white hover:bg-accent-700">{{ __('Fortsätt med utkastet') }}</a>
+            <a href="{{ route('accounting.vouchers.edit', $voucher) }}" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 bg-accent-600 rounded-lg font-semibold text-sm text-white hover:bg-accent-700">{{ __('Fortsätt med utkastet') }}</a>
             <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('confirmingDelete', true)">{{ __('Ta bort utkastet') }}</button>
         @endif
 
         @if($canCorrect && ! $correcting)
-            <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="$set('correcting', true)">{{ __('Rätta verifikationen') }}</button>
+            <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="$set('correcting', true)">{{ __('Rätta verifikationen') }}</button>
         @endif
 
         @if($canCopy)
@@ -42,7 +42,7 @@
                 <p class="mt-2 text-sm text-gray-600">{{ __('Utkastet är inte bokfört, så inget i bokföringen påverkas. Det går inte att ångra.') }}</p>
                 <div class="mt-6 flex justify-end gap-3">
                     <button type="button" class="text-sm text-gray-600 underline" wire:click="$set('confirmingDelete', false)">{{ __('Avbryt') }}</button>
-                    <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg bg-accent-600 text-sm font-semibold text-white" wire:click="deleteDraft">{{ __('Ja, ta bort') }}</button>
+                    <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg bg-accent-600 text-sm font-semibold text-white" wire:click="deleteDraft">{{ __('Ja, ta bort') }}</button>
                 </div>
             </div>
         </div>
