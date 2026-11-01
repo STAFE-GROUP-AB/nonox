@@ -26,6 +26,7 @@ use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
+use App\Http\Controllers\SecurityPageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\Vat\VatFileController;
@@ -46,6 +47,7 @@ Route::get('/integritetspolicy', LegalPageController::class)->defaults('document
 Route::get('/villkor', LegalPageController::class)->defaults('document', 'terms')->name('legal.terms');
 Route::get('/personuppgiftsbitradesavtal', LegalPageController::class)->defaults('document', 'dpa')->name('legal.dpa');
 Route::get('/underbitraden', LegalPageController::class)->defaults('document', 'subprocessors')->name('legal.subprocessors');
+Route::get('/sakerhet', SecurityPageController::class)->name('security');
 Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->name('cookies');
 Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');

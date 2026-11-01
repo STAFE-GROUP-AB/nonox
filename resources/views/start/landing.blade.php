@@ -272,6 +272,20 @@
   </div>
 </section>
 
+<section id="sakerhet" aria-labelledby="sak-rubrik" style="scroll-margin-top:68px;padding:clamp(80px,11vw,150px) clamp(20px,4vw,40px)">
+  <div style="max-width:1240px;margin:0 auto">
+    <p style="margin:0 0 14px;font-family:ui-monospace,Menlo,monospace;font-size:13px;color:var(--acct)">Senast granskat {{ \Carbon\CarbonImmutable::parse($securityReview['reviewed_at'])->locale('sv')->isoFormat('D MMMM YYYY') }}</p>
+    <h2 id="sak-rubrik" data-reveal="" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(36px,6vw,72px);line-height:1;letter-spacing:-0.045em;text-wrap:balance">Öppen källkod får inte betyda osäkert.</h2>
+    <p style="margin:22px 0 0;max-width:760px;font-size:clamp(17px,2vw,20px);line-height:1.6;color:var(--muted)">Vi granskar säkerheten och hur NONOX följer GDPR, Bokföringslagen, AI-förordningen och andra regelverk, och redovisar resultatet öppet: betyg per område, vad som är klart och vad som återstår. {{ $securityTotals['fixed'] }} av {{ $securityTotals['found'] }} fynd i senaste granskningen är rättade.</p>
+    <ul style="list-style:none;margin:32px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:12px">
+      @foreach($securityReview['areas'] as $area)
+        <li style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px"><span style="flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--soft);font:800 17px InterDisplay,Inter,sans-serif" aria-label="Betyg {{ $area['grade'] }}">{{ $area['grade'] }}</span><span style="font-size:15px;font-weight:600">{{ $area['name'] }}</span></li>
+      @endforeach
+    </ul>
+    <p style="margin:28px 0 0"><a href="{{ route('security') }}" style="font-weight:700;color:var(--acct)">Läs hela granskningen och vad som återstår →</a></p>
+  </div>
+</section>
+
 <section id="priser" aria-labelledby="pris-rubrik" style="scroll-margin-top:68px;padding:clamp(80px,11vw,150px) clamp(20px,4vw,40px)">
   <div style="max-width:1240px;margin:0 auto">
     <div data-reveal="" style="max-width:900px">

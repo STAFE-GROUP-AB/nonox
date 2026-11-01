@@ -17,7 +17,7 @@ class SitemapController
     public function sitemap(): Response
     {
         $urls = config('app.landing.enabled')
-            ? [url('/'), route('migrationGuide'), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others())]
+            ? [url('/'), route('migrationGuide'), route('security'), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others())]
             : [];
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";

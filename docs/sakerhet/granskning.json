@@ -1,0 +1,224 @@
+{
+    "reviewed_at": "2026-11-01",
+    "version": "0.9",
+    "kind": "Egen granskning",
+    "method": "Granskning av hela källkoden (white box) i fem delar: inloggning och sessioner, isolering mellan företag och behörigheter, filer och e-post, det som nås utan inloggning, samt regelverk. Granskningen gjordes av oss själva med hjälp av AI-agenter (Claude, Anthropic) och följdes av rättelser med tester. Inga angrepp gjordes mot den driftade tjänsten.",
+    "independent": false,
+    "independent_note": "Det här är inte ett oberoende penetrationstest. Ett externt säkerhetsföretag ska testa den driftade tjänsten innan NONOX lämnar betan, och resultatet publiceras här.",
+    "scale": {
+        "A": "Stark. Inga kända brister, skyddet är testat.",
+        "B": "God. Små kända förbättringar återstår.",
+        "C": "Godkänd med brister. Det viktigaste finns, men kända luckor återstår.",
+        "D": "Brister. Viktiga delar saknas.",
+        "E": "Saknas eller inte bedömt."
+    },
+    "findings": {
+        "high": {"found": 3, "fixed": 3},
+        "medium": {"found": 6, "fixed": 3},
+        "low": {"found": 18, "fixed": 4}
+    },
+    "areas": [
+        {
+            "group": "sakerhet",
+            "name": "Inloggning och sessioner",
+            "grade": "B",
+            "summary": "Inloggning utan lösenord med engångskod på åtta siffror, som bara sparas som kontrollvärde och gäller en gång i tio minuter.",
+            "done": [
+                "Engångskoder med åtta siffror, fem försök per kod och tak per adress, dag och för hela tjänsten.",
+                "Felaktiga koder spärrar bara den webbläsare som skrev dem, så ingen kan låsa ute någon annan.",
+                "Sessionen byts vid inloggning, har en absolut gräns på tolv timmar och kan avslutas överallt."
+            ],
+            "open": [
+                "Ingen andra faktor (till exempel passkey) för roller som ser hälsouppgifter och personnummer."
+            ],
+            "law": []
+        },
+        {
+            "group": "sakerhet",
+            "name": "Isolering mellan företag",
+            "grade": "A",
+            "summary": "Varje rad tillhör ett företag, och varje fråga filtreras på det. Ett annat företags post svarar 404, inte 403.",
+            "done": [
+                "En testsvit prövar varje modell med företagsdata: ingen data syns i ett annat företag.",
+                "Sidor som öppnats för ett företag slutar svara om användaren byter företag.",
+                "Den gemensamma inkorgsadressen tar bara post från någon som loggar in i företaget."
+            ],
+            "open": [],
+            "law": []
+        },
+        {
+            "group": "sakerhet",
+            "name": "Behörigheter och roller",
+            "grade": "C",
+            "summary": "Sex roller med behörigheter per handling, och en öppen sida slutar fungera när rollen ändras.",
+            "done": [
+                "Attest av leverantörsfakturor kräver en annan person än den som registrerade dem.",
+                "Behörigheten prövas igen när rollen eller modulerna ändras, även på en sida som redan är öppen."
+            ],
+            "open": [
+                "Betalningar saknar ett eget godkännandesteg av en andra person."
+            ],
+            "law": []
+        },
+        {
+            "group": "sakerhet",
+            "name": "Filer, e-post och tolkning",
+            "grade": "B",
+            "summary": "Filer krypteras på disk, och typen avgörs av innehållet. Farliga bilagor spärras och virussöks innan något läses.",
+            "done": [
+                "XML läses utan externa entiteter, PDF och SIE med storleks- och sidgränser.",
+                "E-post räknas som äkta bara när avsändardomänen bekräftas av mottagande server.",
+                "NONOX AI har inga verktyg och kan inte bokföra själv. En person godkänner alltid."
+            ],
+            "open": [
+                "Inkorgens IMAP-inställning kan peka på interna adresser.",
+                "PDF i Peppol-fakturor virussöks inte."
+            ],
+            "law": []
+        },
+        {
+            "group": "sakerhet",
+            "name": "Personalliggarens kiosk",
+            "grade": "B",
+            "summary": "Kiosken fungerar utan internet. Personnummer finns på surfplattan bara låsta med chefens kod.",
+            "done": [
+                "Kopplingskoder gäller i 15 minuter och en gång, kiosknyckeln sparas bara som kontrollvärde.",
+                "Varje händelse ingår i en hashkedja per enhet, och luckor och tidsavvikelser flaggas.",
+                "Personnummer lämnas ut i klartext först när servern prövat chefens kod."
+            ],
+            "open": [
+                "En kod med fyra siffror kan provas fram av den som kopierar surfplattans lagring.",
+                "Mobil incheckning litar på telefonens position."
+            ],
+            "law": []
+        },
+        {
+            "group": "sakerhet",
+            "name": "Bokföringens integritet",
+            "grade": "A",
+            "summary": "En bokförd verifikation kan inte ändras eller tas bort, varken i appen eller direkt i databasen.",
+            "done": [
+                "Spärrar på tre nivåer: behörighet, modell och databasutlösare.",
+                "Obrutna nummerserier och en hashkedja som kontrolleras varje natt.",
+                "Behandlingshistoriken kan bara skrivas till, aldrig ändras."
+            ],
+            "open": [
+                "Bokslutsspärren läses utan lås, en mycket smal lucka vid samtidig låsning."
+            ],
+            "law": []
+        },
+        {
+            "group": "sakerhet",
+            "name": "Webbsäkerhet",
+            "grade": "B",
+            "summary": "Innehållspolicyn tillåter bara NONOX egen adress, och sidor kan inte ramas in av andra.",
+            "done": [
+                "Allt innehåll escapas, Markdown i e-post likaså.",
+                "Cookies är httpOnly och SameSite, HSTS är påslaget.",
+                "Inga kända sårbarheter i beroendena (composer audit och npm audit)."
+            ],
+            "open": [
+                "Livewire och Alpine kräver inline-skript, vilket gör policyn mindre sträng än den kunde vara."
+            ],
+            "law": []
+        },
+        {
+            "group": "sakerhet",
+            "name": "Drift och säkerhetskopior",
+            "grade": "D",
+            "summary": "Krypterade säkerhetskopior varje natt, men bara på samma server.",
+            "done": [
+                "Databas och filer säkerhetskopieras krypterat varje natt och sparas i sju dagar, i Sverige."
+            ],
+            "open": [
+                "Ingen kopia på en annan plats eller hos en annan leverantör.",
+                "Ingen dokumenterad återläsningsövning.",
+                "Tjänsten delar server med andra webbplatser."
+            ],
+            "law": ["GDPR art. 32"]
+        },
+        {
+            "group": "regelverk",
+            "name": "Bokföringslagen och BFNAR 2013:2",
+            "grade": "A",
+            "summary": "Verifikationer, behandlingshistorik, systemdokumentation och arkiv enligt lagen.",
+            "done": [
+                "Systemdokumentation och behandlingshistorik som uppdateras med varje ändring.",
+                "Arkivpaket per år som går att läsa utan NONOX.",
+                "Radering spärras under lagringstiden på sju år."
+            ],
+            "open": [],
+            "law": ["Bokföringslagen (1999:1078)", "BFNAR 2013:2"]
+        },
+        {
+            "group": "regelverk",
+            "name": "GDPR",
+            "grade": "C",
+            "summary": "Kryptering, registerutdrag, begränsning och gallring finns. Några rättigheter och dokument saknas.",
+            "done": [
+                "Personnummer och filer krypteras, och visning av hela personnummer loggas.",
+                "Registerutdrag för konton, kunder, leverantörer och anställda.",
+                "Registerförteckning, incidentrutin och konsekvensbedömning för lön."
+            ],
+            "open": [
+                "Det går inte att radera sitt eget konto.",
+                "Registerutdrag saknas för personalliggarens personal och inkorgens avsändare.",
+                "Konsekvensbedömning saknas för personalliggaren, inkorgen och AI.",
+                "Personuppgiftsbiträdesavtalet nämner inte de nyaste modulerna."
+            ],
+            "law": ["Förordning (EU) 2016/679", "Dataskyddslagen (2018:218)"]
+        },
+        {
+            "group": "regelverk",
+            "name": "AI-förordningen",
+            "grade": "D",
+            "summary": "AI är avstängt som standard, kan inte agera själv och allt godkänns av en person. Klassningen är inte nedskriven.",
+            "done": [
+                "Vad som skickas till AI-leverantören loggas, aldrig innehållet.",
+                "Allt AI föreslår märks som förslag och kräver ett mänskligt godkännande."
+            ],
+            "open": [
+                "Riskklassning per AI-funktion är inte dokumenterad.",
+                "Kvittoläsaren bedömer om ett kvitto ser privat ut, vilket kan räknas som bedömning av anställda."
+            ],
+            "law": ["Förordning (EU) 2024/1689"]
+        },
+        {
+            "group": "regelverk",
+            "name": "NIS2 och cybersäkerhetslagen",
+            "grade": "E",
+            "summary": "Gäller sannolikt inte ett företag av vår storlek, men bedömningen är inte nedskriven.",
+            "done": [],
+            "open": [
+                "Bedömning av storlek på koncernnivå och om tjänsten räknas som molntjänst."
+            ],
+            "law": ["Direktiv (EU) 2022/2555", "Cybersäkerhetslag (2025:1506)"]
+        },
+        {
+            "group": "regelverk",
+            "name": "Tillgänglighet",
+            "grade": "D",
+            "summary": "Målet är WCAG 2.2 AA, men ingen granskning är gjord och det finns ingen tillgänglighetsredogörelse.",
+            "done": [
+                "Tangentbordsnavigering, synligt fokus och kontrast enligt designsystemet."
+            ],
+            "open": [
+                "Ingen granskning mot WCAG 2.2 AA.",
+                "Ingen tillgänglighetsredogörelse."
+            ],
+            "law": ["Lag (2023:254) om vissa produkters och tjänsters tillgänglighet"]
+        },
+        {
+            "group": "regelverk",
+            "name": "Cyberresiliensförordningen",
+            "grade": "E",
+            "summary": "Rollen som tillverkare eller förvaltare av öppen källkod är inte bedömd, och det finns ingen väg att rapportera sårbarheter.",
+            "done": [],
+            "open": [
+                "SECURITY.md med kontaktväg för sårbarheter.",
+                "Förteckning över programvarukomponenter (SBOM)."
+            ],
+            "law": ["Förordning (EU) 2024/2847"]
+        }
+    ]
+}
