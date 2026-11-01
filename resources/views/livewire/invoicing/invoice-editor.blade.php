@@ -93,7 +93,7 @@
 
     <div class="flex flex-wrap items-center justify-end gap-3" x-data="{ confirming: false }">
         <a href="{{ route('invoicing.invoices.index') }}" class="text-sm text-gray-600 underline">{{ __('Avbryt') }}</a>
-        <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="save" wire:loading.attr="disabled">{{ __('Spara som utkast') }}</button>
+        <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="save" wire:loading.attr="disabled">{{ __('Spara som utkast') }}</button>
         @if($canIssue)
             <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ $credit ? __('Skapa kreditfakturan') : __('Skapa fakturan') }}</x-button>
             <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3 text-sm">

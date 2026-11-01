@@ -21,7 +21,7 @@
                     @if($isQuote)
                         <x-button type="button" wire:click="toOrder" wire:loading.attr="disabled">{{ __('Kunden tackade ja – gör order') }}</x-button>
                     @endif
-                    <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="toInvoice" wire:loading.attr="disabled">{{ __('Gör faktura') }}</button>
+                    <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="toInvoice" wire:loading.attr="disabled">{{ __('Gör faktura') }}</button>
                     <button type="button" class="text-sm text-gray-600 underline" x-show="confirming !== 'cancel'" x-on:click="confirming = 'cancel'">{{ __('Makulera') }}</button>
                     <span x-show="confirming === 'cancel'" x-cloak class="flex items-center gap-3 text-sm">
                         <button type="button" class="font-semibold text-accent-700" wire:click="cancel" x-on:click="confirming = null">{{ __('Ja, makulera') }}</button>

@@ -6,7 +6,7 @@
 <x-ui.card>
     <div class="flex flex-wrap items-center gap-4">
         @if($canCreate)
-            <a href="{{ route('invoicing.agreements.create') }}" class="inline-flex items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Nytt avtal') }}</a>
+            <a href="{{ route('invoicing.agreements.create') }}" class="inline-flex items-center rounded-lg bg-accent-600 px-4 py-2 max-sm:min-h-11 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Nytt avtal') }}</a>
         @endif
         <p class="text-sm text-gray-700">{{ __('Aktiva avtal motsvarar :amount i månaden, exkl. moms.', ['amount' => Money::ofOre($monthly)->format()]) }}</p>
     </div>

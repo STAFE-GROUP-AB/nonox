@@ -11,7 +11,7 @@
                 @foreach($pending as $absence)
                     <li class="space-y-3 py-4" wire:key="pending-{{ $absence->id }}">
                         <div class="flex flex-wrap items-center gap-4">
-                            <span class="min-w-0 flex-1">
+                            <span class="min-w-0 flex-1 basis-40">
                                 <span class="block font-medium text-gray-900">{{ $absence->employee?->first_name }} {{ $absence->employee?->last_name }} · {{ $sensitive ? ($labels[$absence->type] ?? $absence->type) : __('Frånvaro') }}</span>
                                 <span class="block text-sm text-gray-600 tabular-nums">{{ $absence->date_from->toDateString() }} – {{ $absence->date_to->toDateString() }}</span>
                                 @if($sensitive && $absence->note)<span class="block text-sm text-gray-700">”{{ $absence->note }}”</span>@endif
@@ -45,7 +45,7 @@
                 @foreach($expenses as $expense)
                     <li class="space-y-3 py-4" wire:key="expense-{{ $expense->id }}">
                         <div class="flex flex-wrap items-center gap-3">
-                            <span class="min-w-0 flex-1">
+                            <span class="min-w-0 flex-1 basis-40">
                                 <span class="block font-medium text-gray-900">{{ $expense->employee?->first_name }} {{ $expense->employee?->last_name }} · {{ $expense->description ?? $expense->receipt_name }}</span>
                                 <a href="{{ route('payroll.expenses.receipt', $expense) }}" target="_blank" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Visa kvittot') }}</a>
                             </span>

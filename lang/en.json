@@ -2768,6 +2768,7 @@
     "Begär utbetalningen i Skatteverkets e-tjänst Rot och rut när kunden har betalat sin del. Registrera Skatteverkets betalning här när den kommer.": "Claim the payment in Skatteverket's Rot och rut e-service when the customer has paid their part. Register Skatteverket's payment here when it arrives.",
     "Registrera Skatteverkets betalning": "Register Skatteverket's payment",
     "Arbete": "Labour",
+    "Arbetskostnad": "Labour cost",
     "Arbetskostnad, rad": "Labour cost, row",
     "Summa inkl. moms": "Total incl. VAT",
     "Avgår :type": "Less :type",

@@ -1,6 +1,9 @@
 @php
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
-    $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm';
+    $cell = 'w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm max-md:min-h-11';
+    // Below md a row is a card with labelled fields; from md up it is the keyboard-first grid.
+    $field = 'block md:table-cell md:py-1 md:pr-2 md:align-top';
+    $label = 'mb-1 block text-xs font-medium text-gray-500 md:sr-only';
 @endphp
 
 <div
@@ -67,15 +70,15 @@
                 <input id="template_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="templateAmount" placeholder="1 250,00">
             </x-ui.field>
             <div class="sm:pt-6">
-                <button type="submit" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:loading.attr="disabled" wire:target="applyTemplate">{{ __('Fyll i rader') }}</button>
+                <button type="submit" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:loading.attr="disabled" wire:target="applyTemplate">{{ __('Fyll i rader') }}</button>
             </div>
         </form>
     </details>
 
     <x-ui.card :title="__('Rader')" :description="__('Skriv kontonummer eller kontonamn och välj i listan. Tab eller Enter tar dig till nästa fält, och en ny rad dyker upp av sig själv.')">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead>
+        <div class="md:overflow-x-auto">
+            <table class="block w-full text-sm md:table">
+                <thead class="hidden md:table-header-group">
                     <tr class="text-left text-gray-500">
                         <th scope="col" class="pb-2 pr-2 font-medium">{{ __('Konto') }}</th>
                         <th scope="col" class="pb-2 pr-2 font-medium text-right w-36">{{ __('Debet') }}</th>
@@ -90,49 +93,49 @@
                         <th scope="col" class="pb-2 w-8"><span class="sr-only">{{ __('Ta bort') }}</span></th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody class="flex flex-col gap-3 md:table-row-group" data-row-cards>
                     <template x-for="(row, index) in rows" :key="index">
-                        <tr>
-                            <td class="py-1 pr-2 align-top min-w-[16rem]">
-                                <label :for="'row-account-' + index" class="sr-only" x-text="'{{ __('Konto, rad') }} ' + (index + 1)"></label>
+                        <tr class="relative grid grid-cols-2 gap-x-3 gap-y-3 rounded-2xl p-4 ring-1 ring-gray-200 md:table-row md:p-0 md:ring-0">
+                            <td class="{{ $field }} col-span-2 pr-10 md:min-w-[16rem]">
+                                <label :for="'row-account-' + index" class="{{ $label }}" x-text="'{{ __('Konto, rad') }} ' + (index + 1)"></label>
                                 <input :id="'row-account-' + index" type="text" list="account-options" class="{{ $cell }}" x-model="row.account" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                             </td>
-                            <td class="py-1 pr-2 align-top">
-                                <label :for="'row-debit-' + index" class="sr-only" x-text="'{{ __('Debet, rad') }} ' + (index + 1)"></label>
+                            <td class="{{ $field }}">
+                                <label :for="'row-debit-' + index" class="{{ $label }}" x-text="'{{ __('Debet, rad') }} ' + (index + 1)"></label>
                                 <input :id="'row-debit-' + index" type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" :class="invalid(row.debit) && 'border-accent-500'" x-model="row.debit" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                             </td>
-                            <td class="py-1 pr-2 align-top">
-                                <label :for="'row-credit-' + index" class="sr-only" x-text="'{{ __('Kredit, rad') }} ' + (index + 1)"></label>
+                            <td class="{{ $field }}">
+                                <label :for="'row-credit-' + index" class="{{ $label }}" x-text="'{{ __('Kredit, rad') }} ' + (index + 1)"></label>
                                 <input :id="'row-credit-' + index" type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" :class="invalid(row.credit) && 'border-accent-500'" x-model="row.credit" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                             </td>
                             @if($showCostCenters)
-                                <td class="py-1 pr-2 align-top min-w-40">
-                                    <label :for="'row-cost-center-' + index" class="sr-only" x-text="'{{ __('Kostnadsställe, rad') }} ' + (index + 1)"></label>
+                                <td class="{{ $field }} md:min-w-40">
+                                    <label :for="'row-cost-center-' + index" class="{{ $label }}" x-text="'{{ __('Kostnadsställe, rad') }} ' + (index + 1)"></label>
                                     <input :id="'row-cost-center-' + index" type="text" list="cost-center-options" class="{{ $cell }}" x-model="row.cost_center" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                                 </td>
                             @endif
                             @if($showProjects)
-                                <td class="py-1 pr-2 align-top min-w-40">
-                                    <label :for="'row-project-' + index" class="sr-only" x-text="'{{ __('Projekt, rad') }} ' + (index + 1)"></label>
+                                <td class="{{ $field }} md:min-w-40">
+                                    <label :for="'row-project-' + index" class="{{ $label }}" x-text="'{{ __('Projekt, rad') }} ' + (index + 1)"></label>
                                     <input :id="'row-project-' + index" type="text" list="project-options" class="{{ $cell }}" x-model="row.project" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                                 </td>
                             @endif
-                            <td class="py-1 pr-2 align-top">
-                                <label :for="'row-description-' + index" class="sr-only" x-text="'{{ __('Radtext, rad') }} ' + (index + 1)"></label>
+                            <td class="{{ $field }} col-span-2">
+                                <label :for="'row-description-' + index" class="{{ $label }}" x-text="'{{ __('Radtext, rad') }} ' + (index + 1)"></label>
                                 <input :id="'row-description-' + index" type="text" class="{{ $cell }}" x-model="row.description" maxlength="255" data-grid x-on:keydown.enter.prevent="focusNext($event)" autocomplete="off">
                             </td>
-                            <td class="py-1 align-top text-center">
-                                <button type="button" class="mt-1.5 text-gray-400 hover:text-accent-600" x-on:click="removeRow(index)" x-show="rows.length > 1" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button>
+                            <td class="absolute top-2 right-2 md:static md:table-cell md:py-1 md:align-top md:text-center">
+                                <button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 md:mt-1.5 md:inline md:size-auto md:text-sm" x-on:click="removeRow(index)" x-show="rows.length > 1" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button>
                             </td>
                         </tr>
                     </template>
                 </tbody>
-                <tfoot>
-                    <tr class="border-t border-gray-200 font-semibold">
-                        <td class="pt-3 pr-2">{{ __('Summa') }}</td>
-                        <td class="pt-3 pr-2 text-right tabular-nums" x-text="format(debit)"></td>
-                        <td class="pt-3 pr-2 text-right tabular-nums" x-text="format(credit)"></td>
-                        <td colspan="{{ 2 + ($showCostCenters ? 1 : 0) + ($showProjects ? 1 : 0) }}"></td>
+                <tfoot class="mt-3 block md:table-footer-group">
+                    <tr class="grid grid-cols-[1fr_auto_auto] gap-x-4 border-t border-gray-200 font-semibold md:table-row">
+                        <td class="pt-3 md:table-cell md:pr-2">{{ __('Summa') }}</td>
+                        <td class="pt-3 text-right tabular-nums md:table-cell md:pr-2"><span class="mr-1 text-xs font-medium text-gray-500 md:hidden">{{ __('Debet') }}</span><span x-text="format(debit)"></span></td>
+                        <td class="pt-3 text-right tabular-nums md:table-cell md:pr-2"><span class="mr-1 text-xs font-medium text-gray-500 md:hidden">{{ __('Kredit') }}</span><span x-text="format(credit)"></span></td>
+                        <td class="hidden md:table-cell" colspan="{{ 2 + ($showCostCenters ? 1 : 0) + ($showProjects ? 1 : 0) }}"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -206,7 +209,7 @@
 
         <div class="flex flex-wrap items-center gap-3">
             <a href="{{ route('accounting.vouchers.index') }}" class="text-sm text-gray-600 underline">{{ __('Avbryt') }}</a>
-            <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="saveDraft" wire:loading.attr="disabled">
+            <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg border border-gray-300 bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50" wire:click="saveDraft" wire:loading.attr="disabled">
                 {{ __('Spara som utkast') }}
             </button>
             @if($canPost)
@@ -245,7 +248,7 @@
             <p class="mt-2 text-sm text-gray-600">{{ __('Det du har skrivit sparas inte. Vill du behålla det, välj Spara som utkast.') }}</p>
             <div class="mt-6 flex justify-end gap-3">
                 <button type="button" class="text-sm text-gray-600 underline" x-on:click="confirmingLeave = false">{{ __('Stanna kvar') }}</button>
-                <button type="button" class="inline-flex items-center px-4 py-2 rounded-lg bg-gray-800 text-sm font-semibold text-white" x-on:click="leave()">{{ __('Lämna') }}</button>
+                <button type="button" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg bg-gray-800 text-sm font-semibold text-white" x-on:click="leave()">{{ __('Lämna') }}</button>
             </div>
         </div>
     </div>

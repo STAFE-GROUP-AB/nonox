@@ -112,6 +112,28 @@
     td {
         padding: 1px;
     }
+
+    /*
+     * A scrolling container is the containing block of what it scrolls. An
+     * sr-only label in a table cell is absolutely positioned; without this it
+     * is placed against the page, not the container, and a wide table then
+     * widens the whole page on a phone instead of scrolling inside its card.
+     */
+    .overflow-x-auto,
+    .overflow-auto {
+        position: relative;
+    }
+
+    /*
+     * A fieldset, and an item in a grid, is at least as wide as
+     * its widest content by default: a select with a long customer name then
+     * pushes a one-column form wider than the phone. Let them shrink; the
+     * content wraps or scrolls inside its own card instead.
+     */
+    fieldset,
+    .grid > * {
+        min-width: 0;
+    }
 }
 
 /*
@@ -127,4 +149,17 @@ input:where([type='checkbox']):indeterminate {
 
 [x-cloak] {
     display: none;
+}
+
+/*
+ * iOS zooms the page in when a field with text smaller than 16px gets focus,
+ * and leaves it zoomed. On phones every field is 16px, also the compact
+ * text-sm ones in the row editors (outside the layers, so it wins).
+ */
+@media (width < 40rem) {
+    input:where(:not([type='checkbox'], [type='radio'], [type='range'])),
+    select,
+    textarea {
+        font-size: 1rem;
+    }
 }
