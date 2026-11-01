@@ -13,6 +13,7 @@ use App\Support\Branding\FirmBranding;
 use App\Support\Tenancy\ArchivedCompany;
 use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -40,6 +41,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property int $fiscal_year_start_month
  * @property ?CarbonImmutable $locked_until_date
  * @property ?CarbonImmutable $archived_at
+ * @property bool $is_test_company
  * @property bool $separate_supplier_approval
  * @property ?PaymentBank $payment_bank
  * @property ?string $bank_agreement_id
@@ -116,6 +118,7 @@ class Company extends JetstreamTeam
             'fiscal_year_start_month' => 'integer',
             'locked_until_date' => 'immutable_date',
             'archived_at' => 'immutable_datetime',
+            'is_test_company' => 'boolean',
         ];
     }
 
@@ -163,6 +166,26 @@ class Company extends JetstreamTeam
     public function isArchived(): bool
     {
         return $this->archived_at !== null;
+    }
+
+    /**
+     * A test company (Testföretag, ADR-032): demo data for trying NONOX and
+     * its API, never real bookkeeping. Its documents are never e-mailed.
+     */
+    public function isTestCompany(): bool
+    {
+        return (bool) $this->is_test_company;
+    }
+
+    /**
+     * Real companies only, for statistics and billing.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeWithoutTestCompanies(Builder $query): Builder
+    {
+        return $query->where('is_test_company', false);
     }
 
     /**

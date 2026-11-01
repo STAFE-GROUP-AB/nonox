@@ -3,6 +3,9 @@
         <x-ui.page-heading :title="__('Anslutningar')" :lead="__('Appar som har fått ansluta till företaget, API-nycklar för egna skript och webhooks som berättar när något händer. Varje anslutning gäller bara det här företaget och bara det den har fått rätt till.')" />
         <livewire:connect.connections-manager />
         <livewire:connect.webhooks-manager />
+        @if(auth()->user()?->hasTeamPermission(auth()->user()->currentCompany(), 'connect:manage'))
+            <livewire:connect.test-company-panel />
+        @endif
     </div>
     @include('auth.partials.passkey-script')
 </x-app-layout>

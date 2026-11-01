@@ -12,6 +12,7 @@ use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\Connect\Console\ConnectAppCommand;
 use App\Modules\Connect\Console\DeliverWebhooksCommand;
 use App\Modules\Connect\Console\PruneConnectCommand;
+use App\Modules\Connect\Console\TestCompanyCommand;
 use App\Modules\Connect\Http\Controllers\OAuth\AuthorizeController;
 use App\Modules\Connect\Http\Controllers\OAuth\MetadataController;
 use App\Modules\Connect\Http\Controllers\OAuth\RevokeController;
@@ -25,6 +26,7 @@ use App\Modules\Connect\Http\Middleware\RequireScope;
 use App\Modules\Connect\Livewire\ConnectionsManager;
 use App\Modules\Connect\Livewire\ConnectSettingsForm;
 use App\Modules\Connect\Livewire\ConsentScreen;
+use App\Modules\Connect\Livewire\TestCompanyPanel;
 use App\Modules\Connect\Livewire\WebhooksManager;
 use App\Modules\Connect\Models\ConnectApp;
 use App\Modules\Connect\OAuth\ConnectAccessTokenRepository;
@@ -76,7 +78,7 @@ class ConnectServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ConnectAppCommand::class, PruneConnectCommand::class, DeliverWebhooksCommand::class]);
+            $this->commands([ConnectAppCommand::class, PruneConnectCommand::class, DeliverWebhooksCommand::class, TestCompanyCommand::class]);
         }
 
         // Webhooks (ADR-032): the domain events are dispatched after commit.
@@ -91,6 +93,7 @@ class ConnectServiceProvider extends ServiceProvider
         Livewire::component(ConnectionsManager::NAME, ConnectionsManager::class);
         Livewire::component(ConnectSettingsForm::NAME, ConnectSettingsForm::class);
         Livewire::component(WebhooksManager::NAME, WebhooksManager::class);
+        Livewire::component(TestCompanyPanel::NAME, TestCompanyPanel::class);
 
         $this->registerRateLimits();
         $this->registerRoutes();

@@ -56,7 +56,10 @@ class SendReminder
 
             MailQuota::take($company, 'documents');
 
-            Mail::to($email)->send(new ReminderMail($invoice, $reminder, $company));
+            // A test company's documents never leave NONOX (ADR-032).
+            if (! $company->isTestCompany()) {
+                Mail::to($email)->send(new ReminderMail($invoice, $reminder, $company));
+            }
 
             Audit::record('invoice.reminder_sent', $invoice, [
                 'number' => $invoice->number,

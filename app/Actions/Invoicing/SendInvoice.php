@@ -31,7 +31,10 @@ class SendInvoice
 
         MailQuota::take($company, 'documents');
 
-        Mail::to($email)->send(new InvoiceMail($invoice, $company));
+        // A test company's invoices never leave NONOX (ADR-032): marked as sent, but not e-mailed.
+        if (! $company->isTestCompany()) {
+            Mail::to($email)->send(new InvoiceMail($invoice, $company));
+        }
 
         $invoice->forceFill(['sent_at' => CarbonImmutable::now(), 'sent_to' => $email])->save();
 
