@@ -15,10 +15,12 @@ use Illuminate\Support\Facades\Storage;
 
 /**
  * Removes inbox mail that never became räkenskapsinformation (GDPR art. 5.1
- * e, docs/gdpr/lagringstider.md): rejected messages after 90 days, and mail
- * to the shared address that no company claimed after 30 days. A message
- * linked to a voucher or supplier invoice is never removed here; it is kept
- * with the bookkeeping.
+ * e, docs/gdpr/lagringstider.md), as the owner decided (2026-11-01, #16):
+ * rejected messages after 7 days, quarantined messages nobody handled after
+ * 90 days, and mail to the shared address that no company claimed after 90
+ * days. Spam from senders outside the allowlist is never stored at all
+ * (AcceptInboundMail). A message linked to a voucher or supplier invoice is
+ * never removed here; it is kept with the bookkeeping.
  *
  * TODO(legal-verify): whether a rejected document can still be
  * räkenskapsinformation (BFL 5 kap. 7 §) when it was rejected as a
@@ -26,9 +28,11 @@ use Illuminate\Support\Facades\Storage;
  */
 class PruneInboxCommand extends Command
 {
-    public const int REJECTED_DAYS = 90;
+    public const int REJECTED_DAYS = 7;
 
-    public const int UNASSIGNED_DAYS = 30;
+    public const int UNHANDLED_DAYS = 90;
+
+    public const int UNASSIGNED_DAYS = 90;
 
     protected $signature = 'inbox:prune';
 
@@ -41,8 +45,9 @@ class PruneInboxCommand extends Command
         // Retention runs across every company; each message's own files are removed with it.
         $removed = CompanyScope::bypass(function () use ($disk): int {
             $messages = InboxMessage::query()
-                ->where('status', MessageStatus::Rejected->value)
-                ->where('handled_at', '<', now()->subDays(self::REJECTED_DAYS))
+                ->where(fn ($query) => $query
+                    ->where(fn ($rejected) => $rejected->where('status', MessageStatus::Rejected->value)->where('handled_at', '<', now()->subDays(self::REJECTED_DAYS)))
+                    ->orWhere(fn ($ignored) => $ignored->where('status', MessageStatus::Quarantine->value)->whereNull('handled_at')->where('received_at', '<', now()->subDays(self::UNHANDLED_DAYS))))
                 ->whereNull('supplier_invoice_id')
                 ->whereJsonLength('voucher_ids', 0)
                 ->with('attachments')
@@ -64,7 +69,7 @@ class PruneInboxCommand extends Command
             $message->delete();
         }
 
-        $this->comment("Removed {$removed} rejected and {$unclaimed->count()} unclaimed messages.");
+        $this->comment("Removed {$removed} rejected or unhandled and {$unclaimed->count()} unclaimed messages.");
 
         return self::SUCCESS;
     }

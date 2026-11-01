@@ -50,7 +50,7 @@ company has it and rule-based readers and a manual queue otherwise.
     as an `UnassignedMessage` that belongs to no company until a member with
     `inbox:manage` of one of the candidates claims it. It is never assigned
     by guess. Only sender, subject and date are shown before the claim.
-    Unclaimed mail is removed after 30 days.
+    Unclaimed mail is removed after 90 days.
 
 ### Receiving
 
@@ -222,9 +222,12 @@ AI → manual queue.
 ### Retention
 
 - A message that led to bookkeeping is kept with it (BFL 7 kap.). Rejected
-  messages are removed after 90 days and unclaimed shared-address mail after
-  30 days (`inbox:prune`). TODO(legal-verify): whether a rejected document
-  can still be räkenskapsinformation.
+  messages are removed after 7 days, quarantined messages nobody handled and
+  unclaimed shared-address mail after 90 days (`inbox:prune`), and spam from
+  senders outside the allowlist is never stored (owner's decision 2026-11-01,
+  #16). Mail from an allowed sender is always kept, in quarantine when it is
+  flagged, so a supplier is never lost to a false alarm. TODO(legal-verify):
+  whether a rejected document can still be räkenskapsinformation.
 
 ## Consequences
 

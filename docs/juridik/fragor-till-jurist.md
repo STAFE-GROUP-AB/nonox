@@ -68,8 +68,8 @@ Svaren förs in i respektive dokument eller ADR, och frågan stryks här. Öppna
 *Fråga:* Räcker undantagen i artikel 14.5 b eller 14.5 c, eller vad ska kunden skriva i sin integritetspolicy?
 
 **12. Gallring av avvisade meddelanden.**
-*Bakgrund:* Avvisade meddelanden raderas efter 90 dagar (`PruneInboxCommand.php`).
-*Fråga:* Kan ett avvisat underlag ändå vara räkenskapsinformation (bokföringslagen 5 kap. 7 §), till exempel en dubblett av ett bokfört underlag? Är 90 dagar rätt? Uppfyller ett underlag som sparas som `.eml` kraven i bokföringslagen 7 kap. på hur räkenskapsinformation ska bevaras?
+*Bakgrund:* Avvisade meddelanden raderas efter 7 dagar, enligt projektägarens beslut 2026-11-01 (`PruneInboxCommand.php`).
+*Fråga:* Kan ett avvisat underlag ändå vara räkenskapsinformation (bokföringslagen 5 kap. 7 §), till exempel en dubblett av ett bokfört underlag? Är 7 dagar rätt? Uppfyller ett underlag som sparas som `.eml` kraven i bokföringslagen 7 kap. på hur räkenskapsinformation ska bevaras?
 
 **13. Den gemensamma adressen.**
 *Bakgrund:* När ett mejl matchar flera företag visas avsändare, ämne och datum för alla möjliga företag innan någon hämtar mejlet (`docs/gdpr/registerforteckning.md`).

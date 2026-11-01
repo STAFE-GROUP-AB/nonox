@@ -80,7 +80,7 @@ class AcceptInboundMail
 
         $sha256 = hash('sha256', $raw);
 
-        return CurrentCompany::run($company, function () use ($company, $raw, $channel, $recipient, $alias, $transport, $mail, $sha256): InboxMessage {
+        return CurrentCompany::run($company, function () use ($company, $raw, $channel, $recipient, $alias, $transport, $mail, $sha256): ?InboxMessage {
             $existing = InboxMessage::query()->where('eml_sha256', $sha256)->first();
 
             if ($existing instanceof InboxMessage) {
@@ -96,6 +96,14 @@ class AcceptInboundMail
 
             $mail ??= $this->parser->parse($raw);
             $auth = MailAuthentication::evaluate($mail, $channel, $transport, $channel === Channel::Imap ? (string) config('services.inbox.imap_authserv_id') : null);
+
+            // Spam from someone outside the allowlist is never stored. An allowed sender's mail is always kept, in quarantine if flagged, so a supplier is never lost to a false alarm.
+            if ((bool) $auth['spam'] && ! InboxChecks::isAllowed($mail->fromEmail)) {
+                Audit::record('inbox.dropped', null, ['reason' => 'spam', 'sha256' => $sha256, 'size' => strlen($raw)], $company);
+
+                return null;
+            }
+
             $id = Str::uuid()->toString();
             $directory = "inkorg/{$company->id}/{$id}";
             $emlPath = "{$directory}/original.eml";

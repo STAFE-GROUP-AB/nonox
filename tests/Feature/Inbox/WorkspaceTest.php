@@ -9,12 +9,14 @@ use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Modules\Ai\Agents\SupplierInvoiceAgent;
 use App\Modules\Ai\Agents\VoucherAgent;
+use App\Modules\Inbox\Actions\AcceptInboundMail;
 use App\Modules\Inbox\Actions\ApproveInboxMessage;
 use App\Modules\Inbox\Actions\InboxReview;
 use App\Modules\Inbox\Actions\ManageInbox;
 use App\Modules\Inbox\Actions\ReplyToSender;
 use App\Modules\Inbox\Agents\DailyReportAgent;
 use App\Modules\Inbox\Agents\InboxClassifierAgent;
+use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\Domain\DocumentType;
 use App\Modules\Inbox\Domain\Interpreter;
 use App\Modules\Inbox\Domain\MessageStatus;
@@ -230,18 +232,40 @@ it('tells the inbox handlers by e-mail at most once an hour, and sends the daily
     Mail::assertSent(InboxSummaryMail::class, fn (InboxSummaryMail $mail): bool => $mail->counts['review'] === 2 && $mail->counts['received'] === 2);
 });
 
-it('removes rejected mail after 90 days but never mail that led to bookkeeping', function () {
+it('removes rejected mail after 7 days, unhandled quarantine after 90, but never mail that led to bookkeeping', function () {
     Inbox::allow($this->company, 'export@kassaexport.example');
     $rejected = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('sie.eml')));
     app(InboxReview::class)->reject($this->owner, $rejected);
     $booked = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('peppol.eml')));
     $booked->forceFill(['status' => MessageStatus::Rejected, 'handled_at' => now(), 'voucher_ids' => ['00000000-0000-0000-0000-000000000000']])->save();
 
-    $this->travel(91)->days();
+    $quarantined = Inbox::fresh(Inbox::receive($this->company, Inbox::fixture('z-kassanova.eml')));
+    expect($quarantined->status)->toBe(MessageStatus::Quarantine);
+
+    $this->travel(8)->days();
     $this->artisan('inbox:prune')->assertSuccessful();
 
-    expect(InboxMessage::query()->pluck('id')->all())->toBe([$booked->id])
+    expect(InboxMessage::query()->orderBy('received_at')->pluck('id')->sort()->values()->all())->toBe(collect([$booked->id, $quarantined->id])->sort()->values()->all())
         ->and(Storage::disk('local')->exists($rejected->eml_path))->toBeFalse();
+
+    $this->travel(83)->days();
+    $this->artisan('inbox:prune')->assertSuccessful();
+
+    expect(InboxMessage::query()->pluck('id')->all())->toBe([$booked->id]);
+});
+
+it('never stores spam from senders outside the allowlist, but keeps an allowed sender\'s flagged mail', function () {
+    $spam = app(AcceptInboundMail::class)($this->company, Inbox::fixture('z-kassanova.eml'), Channel::Mailgun, 'exempel-abc12345@in.nonox.app', null, ['X-Mailgun-Sflag' => 'Yes']);
+
+    expect($spam)->toBeNull()
+        ->and(InboxMessage::query()->count())->toBe(0)
+        ->and(AuditLog::query()->where('action', 'inbox.dropped')->latest('id')->value('payload'))->toMatchArray(['reason' => 'spam']);
+
+    Inbox::allow($this->company, 'rapport@kassanova.example');
+    $kept = app(AcceptInboundMail::class)($this->company, Inbox::fixture('z-kassanova.eml'), Channel::Mailgun, 'exempel-abc12345@in.nonox.app', null, ['X-Mailgun-Sflag' => 'Yes']);
+
+    expect($kept?->status)->toBe(MessageStatus::Quarantine)
+        ->and(collect($kept?->quarantine_reasons)->pluck('code')->all())->toContain('SPAM');
 });
 
 describe('permissions', function () {

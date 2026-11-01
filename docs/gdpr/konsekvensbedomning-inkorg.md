@@ -24,7 +24,7 @@ TODO(legal-verify): om inkorgen kräver en konsekvensbedömning. Den behandlar o
 | Läckage i vila | Meddelandets text krypteras i databasen, och `.eml` och bilagor krypteras på disken (`EncryptedAdapter`). HTML visas aldrig. Filer visas i en sandlåda. |
 | Felaktig bokföring | AI bokför aldrig. Automatisk bokföring kräver en mall som en person har slagit på, exakt matchning, en balanserad verifikation, inga varningar och en godkänd och autentiserad avsändare. Bokföringen sker i den personens namn och loggas. |
 | Bedrägeri (ändrat bankgiro, liknande domän) | Varning som alltid stoppar automatisk bokföring och måste bockas av. |
-| Uppgifter sparas för länge | Avvisade meddelanden gallras efter 90 dagar, och mejl till den gemensamma adressen som ingen hämtat efter 30 dagar (`inbox:prune`). Det som bokförts sparas som räkenskapsinformation. |
+| Uppgifter sparas för länge | Avvisade meddelanden gallras efter 7 dagar, karantän som ingen hanterat och mejl till den gemensamma adressen som ingen hämtat efter 90 dagar (`inbox:prune`), och skräppost från avsändare som inte är godkända sparas aldrig. Det som bokförts sparas som räkenskapsinformation. |
 | Uppgifter till AI-leverantör | Bara om företaget har slagit på NONOX AI och valt det i inkorgens inställningar, se [konsekvensbedömningen för AI](konsekvensbedomning-ai.md). |
 
 ## 3. Kvarstående risker

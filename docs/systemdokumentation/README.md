@@ -988,9 +988,12 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   bokföring, adressbyte och hämtning från den gemensamma adressen skrivs
   till behandlingshistoriken. Lösenordet till en egen brevlåda lagras
   krypterat och skrivs aldrig dit.
-- **Gallring.** Avvisade meddelanden tas bort efter 90 dagar och meddelanden
-  till den gemensamma adressen som inget företag hämtat efter 30 dagar
-  (`inbox:prune`). Meddelanden som lett till bokföring tas aldrig bort här.
+- **Gallring.** Avvisade meddelanden tas bort efter 7 dagar. Meddelanden i
+  karantän som ingen hanterat, och meddelanden till den gemensamma adressen
+  som inget företag hämtat, tas bort efter 90 dagar (`inbox:prune`).
+  Skräppost från avsändare som inte är godkända sparas aldrig; godkända
+  avsändares meddelanden sparas alltid, i karantän om de flaggats.
+  Meddelanden som lett till bokföring tas aldrig bort här.
 
 ## 6. Belopp
 
@@ -1221,3 +1224,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.41 | 2026-11-01 | Dataskydd: "Radera mitt konto" på profilen (art. 17). Nekas så länge användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner, API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas bort; kontot raderas om inget längre hänvisar till det, annars pseudonymiseras det ("Raderad användare", en adress på .invalid, ingen inloggning) så att verifikationer och behandlingshistorik fortfarande visar vem som gjorde vad. Registerutdrag för en person i personalliggaren och för en avsändare till inkorgen (JSON, för inkorgen även CSV), loggade. |
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
+| 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
