@@ -13,6 +13,7 @@ const config = JSON.parse(document.getElementById('kiosk-config').textContent);
 const app = document.getElementById('kiosk');
 const SYNC_MS = 15000;
 const ROSTER_MS = 5 * 60 * 1000;
+const PRESS_MS = 180;
 const RESULT_MS = 3000;
 const IDLE_MS = 30000;
 
@@ -92,6 +93,8 @@ const state = {
     pin: '',
     message: null,
     timer: null,
+    pressedKey: null,
+    pressTimer: null,
 };
 
 function t(key, replace = {}, language = state.language) {
@@ -275,11 +278,26 @@ function show(screen, extra = {}) {
     render();
 }
 
+/**
+ * Marks a key as pressed. Every press redraws the keypad, which would end a
+ * CSS :active state at once, so the new key carries the mark itself. It is
+ * cleared in place (not by a redraw), so the next tap is never lost.
+ */
+function flash(label) {
+    state.pressedKey = label;
+    clearTimeout(state.pressTimer);
+    state.pressTimer = setTimeout(() => {
+        state.pressedKey = null;
+        document.querySelectorAll('.k-pressed').forEach((key) => key.classList.remove('k-pressed'));
+    }, PRESS_MS);
+}
+
 async function pressDigit(digit) {
     if (state.pin.length >= 4) {
         return;
     }
 
+    flash(digit);
     state.pin += digit;
     state.message = null;
     render();
@@ -575,21 +593,28 @@ function homeScreen() {
 }
 
 function keypad() {
-    const key = (label, onclick, extra = {}) => el('button', { type: 'button', class: 'k-key', onclick, ...extra }, label);
+    const key = (label, onclick, extra = {}) => el('button', {
+        type: 'button',
+        onpointerdown: (event) => event.currentTarget.classList.add('k-pressed'),
+        onclick,
+        ...extra,
+        class: `${extra.class ?? 'k-key'}${state.pressedKey === label ? ' k-pressed' : ''}`,
+    }, label);
 
     return el('div', { class: 'k-keypad', dir: 'ltr' },
         ['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => key(digit, () => pressDigit(digit))),
         key(t('back'), () => show('home', { person: null }), { class: 'k-key k-key-text' }),
         key('0', () => pressDigit('0')),
-        key('⌫', () => { state.pin = state.pin.slice(0, -1); render(); }, { 'aria-label': t('digit_delete') }));
+        key('⌫', () => { flash('⌫'); state.pin = state.pin.slice(0, -1); render(); }, { 'aria-label': t('digit_delete') }));
 }
 
 function pinScreen(title) {
-    return el('main', { class: 'k-main k-center' },
+    return el('main', { class: 'k-main k-center k-pin' },
         el('h2', { class: 'k-lead' }, title),
         el('p', { class: 'k-sub' }, state.screen === 'manager-pin' ? t('manager_pin') : t('enter_pin')),
         el('div', { class: 'k-dots', 'aria-label': `${state.pin.length} / 4` }, [0, 1, 2, 3].map((i) => el('span', { class: i < state.pin.length ? 'k-dot k-filled' : 'k-dot' }))),
-        state.message ? el('p', { class: 'k-error', role: 'alert' }, state.message) : null,
+        // Always there, so a message never pushes the keypad down.
+        el('p', { class: 'k-error', role: 'alert' }, state.message ?? ''),
         keypad());
 }
 
