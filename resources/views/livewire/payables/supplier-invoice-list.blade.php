@@ -69,8 +69,8 @@
     <x-ui.card :title="__('Attest')">
         <p class="text-sm text-gray-700">
             {{ $company->separate_supplier_approval
-                ? __('Någon annan än den som registrerade en faktura måste attestera den innan den betalas.')
-                : __('Den som registrerade en faktura får också attestera den.') }}
+                ? __('Någon annan än den som registrerade en faktura måste attestera den innan den betalas, och någon annan än den som skapade en betalfil måste godkänna den.')
+                : __('Den som registrerade en faktura får också attestera den, och den som skapade en betalfil får också godkänna den.') }}
         </p>
         @if($canChangeRule)
             <button type="button" class="mt-3 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="setSeparateApproval({{ $company->separate_supplier_approval ? 'false' : 'true' }})">

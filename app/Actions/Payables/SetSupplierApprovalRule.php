@@ -11,8 +11,9 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * Turns the requirement on or off that someone other than the person who
- * registered a supplier invoice approves it (AGENTS.md §4, default on). A
- * company with one person must turn it off to pay its invoices.
+ * registered a supplier invoice approves it, and someone other than the
+ * person who made a payment file approves the file (AGENTS.md §4, default
+ * on). A company with one person must turn it off to pay its invoices.
  */
 class SetSupplierApprovalRule
 {

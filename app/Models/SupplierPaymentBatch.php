@@ -18,7 +18,8 @@ use LogicException;
 
 /**
  * A payment file sent to the bank: which invoices, how much, on which date.
- * The file and its contents never change; the batch is confirmed when the
+ * The file and its contents never change. It is approved once before it may
+ * be downloaded or confirmed (AGENTS.md §4); the batch is confirmed when the
  * bank has paid, or cancelled when it did not.
  *
  * @property string $id
@@ -35,6 +36,8 @@ use LogicException;
  * @property string $file_path
  * @property string $file_sha256
  * @property int $created_by
+ * @property ?CarbonImmutable $approved_at
+ * @property ?int $approved_by
  * @property ?CarbonImmutable $confirmed_at
  * @property ?int $confirmed_by
  * @property ?CarbonImmutable $cancelled_at
@@ -45,7 +48,7 @@ class SupplierPaymentBatch extends Model
     use BelongsToCompany;
     use HasUuids;
 
-    private const array MUTABLE = ['status', 'confirmed_at', 'confirmed_by', 'cancelled_at', 'cancelled_by', 'updated_at'];
+    private const array MUTABLE = ['status', 'approved_at', 'approved_by', 'confirmed_at', 'confirmed_by', 'cancelled_at', 'cancelled_by', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -78,6 +81,7 @@ class SupplierPaymentBatch extends Model
             'execution_date' => 'immutable_date',
             'payment_count' => 'integer',
             'total_ore' => MoneyCast::class,
+            'approved_at' => 'immutable_datetime',
             'confirmed_at' => 'immutable_datetime',
             'cancelled_at' => 'immutable_datetime',
         ];
@@ -89,6 +93,10 @@ class SupplierPaymentBatch extends Model
             if (array_diff(array_keys($batch->getDirty()), self::MUTABLE) !== []) {
                 throw new LogicException("Payment batch {$batch->id} cannot be changed.");
             }
+
+            if ($batch->getOriginal('approved_at') !== null && $batch->isDirty(['approved_at', 'approved_by'])) {
+                throw new LogicException("Payment batch {$batch->id} is already approved.");
+            }
         });
 
         static::deleting(function (SupplierPaymentBatch $batch): never {
@@ -99,6 +107,31 @@ class SupplierPaymentBatch extends Model
     public function isOpen(): bool
     {
         return $this->status === PaymentBatchStatus::Created;
+    }
+
+    public function isApproved(): bool
+    {
+        return $this->approved_at !== null;
+    }
+
+    /**
+     * Only an approved file goes to the bank. Batches confirmed before the
+     * approval step existed have no approval but are paid history.
+     */
+    public function canBeDownloaded(): bool
+    {
+        return $this->isApproved() || $this->status === PaymentBatchStatus::Confirmed;
+    }
+
+    public function statusLabel(): string
+    {
+        if (! $this->isOpen()) {
+            return $this->status->label();
+        }
+
+        return $this->isApproved()
+            ? __('Godkänd, väntar på banken')
+            : __('Väntar på godkännande');
     }
 
     /** "Betalfil 3" */
@@ -122,5 +155,11 @@ class SupplierPaymentBatch extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

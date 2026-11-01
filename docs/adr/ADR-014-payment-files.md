@@ -79,6 +79,21 @@ same schema but differ in a few fields. Sources read for this decision:
   payment on the execution date (series E, through `PaySupplierInvoice`). If the
   bank did not pay it, the batch is cancelled and the invoices can be paid
   again. Nothing is booked when the file is made.
+- **Approval of the batch** (added 2026-11-01 after a security review found
+  `payments:approve` defined but never enforced). A new batch waits for
+  approval by a user with `payments:approve` (owner, admin, approver) through
+  `ApprovePaymentBatch`. While the company setting
+  `separate_supplier_approval` is on (default, AGENTS.md §4) the user who made
+  the batch may not approve it; it is the same setting that governs the attest
+  of supplier invoices, so a one-person company turns off both with one
+  switch. Until the batch is approved the file is not handed out for download
+  and the batch cannot be confirmed as paid; it can still be cancelled. The
+  approval (`approved_at`, `approved_by`) is written once, while the batch is
+  open, and audited as `payment_batch.approved` with the file's SHA-256. The
+  batch's file, amounts and items were already frozen when it was made; the
+  trigger now also refuses changing or removing an approval and confirming an
+  unapproved batch. Batches confirmed before this step have no approval and
+  stay downloadable as history; open ones must be approved like new ones.
 
 ## Open
 
@@ -87,4 +102,5 @@ same schema but differ in a few fields. Sources read for this decision:
 - Reading the bank's status report (pain.002) and debit notifications
   (camt.054) to confirm batches automatically.
 - Signing in the bank is the bank's approval of the payment; within NONOX the
-  approval is the attest of the invoice.
+  invoice is attested and the payment file approved, by different people
+  unless the company has turned separate approval off.

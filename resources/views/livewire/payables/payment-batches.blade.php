@@ -115,13 +115,34 @@
                         <span class="min-w-0 flex-1">
                             <span class="block font-medium text-gray-900">{{ $batch->title() }} · {{ $batch->bank->label() }}</span>
                             <span class="block text-gray-600">{{ __('Betaldag :date, :count betalningar, skapad av :name', ['date' => $batch->execution_date->toDateString(), 'count' => $batch->payment_count, 'name' => $batch->creator?->name]) }}</span>
+                            @if($batch->isApproved())
+                                <span class="block text-gray-600">{{ __('Godkänd av :name :date', ['name' => $batch->approver?->name, 'date' => $batch->approved_at?->toDateString()]) }}</span>
+                            @endif
                         </span>
                         <x-ui.amount :money="$batch->total_ore" class="font-medium" />
-                        <x-ui.badge :tone="$batch->status === PaymentBatchStatus::Confirmed ? 'success' : 'neutral'">{{ $batch->status->label() }}</x-ui.badge>
-                        <a href="{{ route('payables.batches.file', $batch) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ned fil') }}</a>
+                        <x-ui.badge :tone="$batch->status === PaymentBatchStatus::Confirmed ? 'success' : 'neutral'">{{ $batch->statusLabel() }}</x-ui.badge>
+                        @if($batch->canBeDownloaded())
+                            <a href="{{ route('payables.batches.file', $batch) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ned fil') }}</a>
+                        @endif
+                        @if($batch->isOpen() && ! $batch->isApproved() && $canApprove)
+                            @if($separateApproval && $batch->created_by === $userId)
+                                <span class="text-gray-600">{{ __('Du skapade filen. Någon annan behöver godkänna den.') }}</span>
+                            @else
+                                <span x-data="{ confirming: false }" class="flex items-center gap-3">
+                                    <button type="button" class="font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = true">{{ __('Godkänn betalningen') }}</button>
+                                    <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-2">
+                                        <span class="text-gray-700">{{ __('När du godkänner kan filen laddas ned och läsas in i banken: :count betalningar på sammanlagt :total med betaldag :date. Godkännandet går inte att ångra.', ['count' => $batch->payment_count, 'total' => $batch->total_ore->format(), 'date' => $batch->execution_date->toDateString()]) }}</span>
+                                        <x-button type="button" wire:click="approve('{{ $batch->id }}')" wire:loading.attr="disabled">{{ __('Ja, godkänn') }}</x-button>
+                                        <button type="button" class="text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
+                                    </span>
+                                </span>
+                            @endif
+                        @endif
                         @if($batch->isOpen() && $canCreate)
                             <span x-data="{ confirming: null }" class="flex items-center gap-3">
-                                <button type="button" class="font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = 'paid'">{{ __('Banken har betalat') }}</button>
+                                @if($batch->isApproved())
+                                    <button type="button" class="font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = 'paid'">{{ __('Banken har betalat') }}</button>
+                                @endif
                                 <button type="button" class="text-gray-600 underline" x-show="! confirming" x-on:click="confirming = 'cancel'">{{ __('Makulera') }}</button>
                                 <span x-show="confirming === 'paid'" x-cloak class="flex items-center gap-2">
                                     <span class="text-gray-700">{{ __('Alla betalningar bokförs på betaldagen.') }}</span>
