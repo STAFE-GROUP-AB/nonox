@@ -6,8 +6,11 @@ namespace App\Livewire\Auth;
 
 use App\Actions\Auth\SendLoginCode;
 use App\Actions\Auth\VerifyLoginCode;
+use App\Domain\Auth\PasskeyRequirement;
+use App\Livewire\Auth\Concerns\HandlesPasskeyStep;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use App\Support\Auth\PasskeySession;
 use App\Support\LoginCodeAutofill;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
@@ -23,12 +26,22 @@ use Livewire\Component;
  * address only adds a name step, and not even that when an invitation to the
  * address already carries the name. The verified address is kept in the session,
  * never trusted from the browser.
+ *
+ * A user who has passkeys, or who must have one (PasskeyRequirement), passes
+ * a passkey step after the code and before the session starts (ADR-029).
  */
 class LoginForm extends Component implements SpansCompanies
 {
+    use HandlesPasskeyStep;
+
     private const string PENDING_EMAIL = 'login.pending_email';
 
     private const string VERIFIED_EMAIL = 'login.verified_email';
+
+    /** The user who has passed the code and waits for the passkey step, with a deadline. */
+    private const string PASSKEY_USER = 'login.passkey_user';
+
+    private const int PASSKEY_STEP_MINUTES = 10;
 
     public string $email = '';
 
@@ -120,7 +133,7 @@ class LoginForm extends Component implements SpansCompanies
         $user = User::query()->byEmail($email)->orderBy('id')->first();
 
         if ($user instanceof User) {
-            $this->signIn($user);
+            $this->signInOrAskForPasskey($user);
 
             return;
         }
@@ -128,7 +141,7 @@ class LoginForm extends Component implements SpansCompanies
         $invitedName = TeamInvitation::query()->whereRaw('lower(email) = ?', [$email])->whereNotNull('name')->latest()->value('name');
 
         if (is_string($invitedName) && trim($invitedName) !== '') {
-            $this->signIn($this->createUser($email, $invitedName), __('Välkommen, :name!', ['name' => $invitedName]));
+            $this->signInOrAskForPasskey($this->createUser($email, $invitedName), __('Välkommen, :name!', ['name' => $invitedName]));
 
             return;
         }
@@ -156,14 +169,14 @@ class LoginForm extends Component implements SpansCompanies
 
         session()->forget(self::VERIFIED_EMAIL);
 
-        $this->signIn($user, __('Ditt konto är skapat. Välkommen, :name!', ['name' => $user->name]));
+        $this->signInOrAskForPasskey($user, __('Ditt konto är skapat. Välkommen, :name!', ['name' => $user->name]));
     }
 
     public function startOver(): void
     {
-        session()->forget([self::PENDING_EMAIL, self::VERIFIED_EMAIL]);
+        session()->forget([self::PENDING_EMAIL, self::VERIFIED_EMAIL, self::PASSKEY_USER]);
 
-        $this->reset('code', 'name');
+        $this->reset('code', 'name', 'passkeyName');
         $this->step = 'email';
     }
 
@@ -182,11 +195,51 @@ class LoginForm extends Component implements SpansCompanies
         );
     }
 
-    private function signIn(User $user, ?string $message = null): void
+    /**
+     * The code is right. Without a passkey to ask for the user is signed in;
+     * otherwise the session waits for the passkey step and the user is only
+     * remembered in it, not signed in.
+     */
+    private function signInOrAskForPasskey(User $user, ?string $message = null): void
+    {
+        if (PasskeySession::skippedLocally() || ! PasskeyRequirement::mustVerify($user)) {
+            $this->signIn($user, $message);
+
+            return;
+        }
+
+        session()->put(self::PASSKEY_USER, ['id' => $user->id, 'expires_at' => time() + self::PASSKEY_STEP_MINUTES * 60]);
+
+        $this->step = $user->hasPasskeysEnabled() ? 'passkey' : 'passkey-register';
+    }
+
+    protected function passkeyUser(): ?User
+    {
+        $pending = session()->get(self::PASSKEY_USER);
+
+        if (! is_array($pending) || ! is_int($pending['id'] ?? null) || (int) ($pending['expires_at'] ?? 0) < time()) {
+            return null;
+        }
+
+        return User::query()->whereNull('anonymised_at')->find($pending['id']);
+    }
+
+    protected function passkeyPassed(User $user): void
+    {
+        session()->forget(self::PASSKEY_USER);
+
+        $this->signIn($user, passkey: true);
+    }
+
+    private function signIn(User $user, ?string $message = null, bool $passkey = false): void
     {
         Auth::login($user);
 
         session()->regenerate();
+
+        if ($passkey) {
+            PasskeySession::markVerified();
+        }
 
         Toast::flash($message ?? __('Du är inloggad. Välkommen tillbaka, :name!', ['name' => $user->name]));
 

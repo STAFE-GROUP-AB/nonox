@@ -187,6 +187,8 @@ APP_DEBUG=true       # visar felets detaljer i webbläsaren, aldrig på en serve
 OTP_AUTOFILL=true    # fyller i inloggningskoden åt dig
 ```
 
+`OTP_AUTOFILL=true` hoppar också över passkey-steget lokalt, eftersom passkeys kräver en säker adress och `http://….test` inte är det. Vill du prova passkeys lokalt: sätt `PASSKEYS_SKIP_LOCALLY=false` och öppna NONOX på `http://localhost:8000` (`php artisan serve`, med `APP_URL=http://localhost:8000`).
+
 Fyll sedan i ditt användarnamn från steg 3 på raden `DB_USERNAME`:
 
 ```dotenv
@@ -281,6 +283,7 @@ npm install && npm run build
 
 - Varje företag ser bara sina egna uppgifter. Det prövas för varje tabell i en egen testsvit.
 - Inloggning med engångskod via e-post, inga lösenord. Koderna har åtta siffror, sparas bara som kontrollvärden, gäller i 10 minuter och en gång.
+- Den som kan se sjukfrånvaro, lönebesked eller fullständiga personnummer bekräftar dessutom inloggningen med en passkey (fingeravtryck, ansiktsigenkänning eller skärmlås). Ägaren kan kräva passkey för alla i företaget. Se [ADR-029](docs/adr/ADR-029-passkeys.md).
 - Bokförda verifikationer och behandlingshistoriken kan inte ändras, och en kedja av kontrollsummor kontrolleras varje natt.
 - Filer och personnummer krypteras, och en strikt innehållspolicy stoppar skript från andra adresser.
 

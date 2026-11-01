@@ -40,6 +40,11 @@
                 <button class="link" type="button" wire:click="startOver">Fel adress eller ingen kod? Börja om</button>
             </div>
         </form>
+    @elseif($step === 'passkey' || $step === 'passkey-register')
+        @include('livewire.auth.partials.passkey-step', ['step' => $step])
+        <div class="actions">
+            <button class="link" type="button" wire:click="startOver">{{ __('Avbryt och börja om') }}</button>
+        </div>
     @else
         <h1>Välkommen!</h1>
         <p class="lead">Du är ny här. Vad heter du?</p>

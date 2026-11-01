@@ -23,6 +23,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  *
  * @property LegalForm $legal_form
  * @property ?string $logo_path
+ * @property bool $require_passkeys
  * @property ?string $brand_color
  * @property ?string $brand_accent_color
  * @property AccountingMethod $accounting_method
@@ -99,6 +100,7 @@ class Company extends JetstreamTeam
             'f_skatt' => 'boolean',
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',
+            'require_passkeys' => 'boolean',
             'payment_bank' => PaymentBank::class,
             'fiscal_year_start_month' => 'integer',
             'locked_until_date' => 'immutable_date',

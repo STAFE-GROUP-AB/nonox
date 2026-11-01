@@ -60,6 +60,8 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::post('/logga-ut', LogoutController::class)->middleware('auth')->name('logout');
+// The passkey step for a signed-in session that has to pass it (RequirePasskey, ADR-029).
+Route::view('/logga-in/passkey', 'auth.passkey')->middleware('auth')->name('passkeys.challenge');
 
 Route::middleware([
     'auth:web',

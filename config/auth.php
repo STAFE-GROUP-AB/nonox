@@ -21,4 +21,14 @@ return [
          */
         'autofill' => (bool) env('OTP_AUTOFILL', false),
     ],
+
+    'passkeys' => [
+        /*
+         * Local only (ADR-029): sign in without the passkey step, because
+         * WebAuthn needs a secure origin and http://*.test is not one. Needs
+         * APP_ENV=local and a local APP_URL as well; ignored everywhere else.
+         * Follows OTP_AUTOFILL unless set on its own.
+         */
+        'skip_locally' => (bool) env('PASSKEYS_SKIP_LOCALLY', env('OTP_AUTOFILL', false)),
+    ],
 ];

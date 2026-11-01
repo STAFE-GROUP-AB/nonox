@@ -20,6 +20,8 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Collection;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Jetstream\HasTeams;
+use Laravel\Passkeys\Contracts\PasskeyUser;
+use Laravel\Passkeys\PasskeyAuthenticatable;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -27,7 +29,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property ?CarbonImmutable $sessions_valid_from
  * @property ?CarbonImmutable $anonymised_at
  */
-class User extends Authenticatable
+class User extends Authenticatable implements PasskeyUser
 {
     use HasApiTokens;
 
@@ -39,6 +41,7 @@ class User extends Authenticatable
         hasTeamPermission as jetstreamHasTeamPermission;
     }
     use Notifiable;
+    use PasskeyAuthenticatable;
 
     /**
      * The attributes that are mass assignable.

@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace App\Livewire\Company;
 
+use App\Actions\Auth\Passkeys\ResetPasskeys;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\Company;
 use App\Models\TeamInvitation;
+use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Modules\Rules\AvailableRole;
 use App\Support\Audit\Audit;
+use App\Support\Auth\PasskeySession;
 use App\Support\Toast;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Jetstream\Actions\UpdateTeamMemberRole;
@@ -18,6 +23,7 @@ use Laravel\Jetstream\Contracts\RemovesTeamMembers;
 use Laravel\Jetstream\Http\Livewire\TeamMemberManager;
 use Laravel\Jetstream\Jetstream;
 use Laravel\Jetstream\Role;
+use Laravel\Passkeys\Passkey;
 
 /**
  * Jetstream's member manager with a toast after every action, and with the
@@ -99,6 +105,47 @@ class MemberManager extends TeamMemberManager
         $withdrawn = $pending - $this->invitationsSentBy($memberId);
 
         $this->toast(trim(__(':name har inte längre tillgång till företaget.', ['name' => $name]).' '.$this->withdrawnMessage($name, $withdrawn)));
+    }
+
+    /**
+     * Members whose passkeys the signed-in user may reset here (ADR-029),
+     * looked up in one query for the whole list.
+     *
+     * @return list<int>
+     */
+    public function getPasskeyResettableProperty(): array
+    {
+        $by = Auth::user();
+        $company = $this->team;
+
+        if (! $by instanceof User || ! $company instanceof Company) {
+            return [];
+        }
+
+        $withPasskeys = Passkey::query()->whereIn('user_id', $company->users->modelKeys())->distinct()->pluck('user_id')->all();
+        $confirmed = PasskeySession::isVerified() || PasskeySession::skippedLocally();
+        $resettable = [];
+
+        foreach ($company->users as $member) {
+            if ($member instanceof User && in_array($member->id, $withPasskeys, false) && ResetPasskeys::allowed($by, $company, $member, $confirmed)) {
+                $resettable[] = $member->id;
+            }
+        }
+
+        return $resettable;
+    }
+
+    public function resetPasskeys(int $userId, ResetPasskeys $reset): void
+    {
+        $by = Auth::user();
+        $company = $this->team;
+        $member = $company instanceof Company ? $company->users->firstWhere('id', $userId) : null;
+
+        abort_unless($member instanceof User && $by instanceof User, 404);
+
+        $removed = $reset($by, $company, $member, PasskeySession::isVerified() || PasskeySession::skippedLocally());
+
+        $this->toast(__(':name har fått sina passkeys återställda (:count borttagna) och har loggats ut. Hen lägger till en ny passkey vid nästa inloggning och har fått ett mejl om det.', ['name' => $member->name, 'count' => $removed]));
     }
 
     private function invitationsSentBy(int $userId): int

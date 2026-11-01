@@ -149,6 +149,12 @@
                                         </div>
                                     @endif
 
+                                    @if ($this instanceof App\Livewire\Company\MemberManager && in_array($user->id, $this->passkeyResettable, true))
+                                        <button class="cursor-pointer ms-6 text-sm text-gray-600 underline" wire:click="resetPasskeys({{ $user->id }})" wire:confirm="{{ __('Återställ passkeys för :name? Alla hens passkeys tas bort och hen loggas ut överallt. Gör det bara om hen har tappat bort sina enheter och du har kontrollerat att det verkligen är hen som ber om det.', ['name' => $user->name]) }}">
+                                            {{ __('Återställ passkeys') }}
+                                        </button>
+                                    @endif
+
                                     <!-- Leave Team -->
                                     @if ($this->user->id === $user->id)
                                         <button class="cursor-pointer ms-6 text-sm text-red-500" wire:click="$toggle('confirmingLeavingTeam')">

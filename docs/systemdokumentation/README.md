@@ -641,6 +641,24 @@ till jurist). Säkerhetsrapporter: `SECURITY.md`. Tillgänglighet:
   timmen). Koden fylls bara i automatiskt på en lokal adress och står inte i
   ämnesraden. Sessioner upphör efter 12 timmar, och användaren kan logga ut
   från alla andra enheter.
+- **Passkey som andra steg** ([ADR-029](../adr/ADR-029-passkeys.md)): den som
+  i något företag kan se sjukfrånvaro, lönebesked eller fullständiga
+  personnummer (`payroll:view-sensitive`, `payroll:view`,
+  `payroll:archive-view`, `staff-ledger:view-sensitive`,
+  `staff-ledger:control-visit`, i ett företag där modulen någon gång varit
+  påslagen), alla i ett företag där ägaren valt "Kräv passkey för alla i
+  företaget", och alla som själva lagt till en passkey, bekräftar inloggningen
+  med passkey efter koden, innan sessionen börjar. Den som måste ha en men
+  saknar lägger till en direkt efter koden. Passkeys kräver
+  användarverifiering (PIN, fingeravtryck, ansikte); bara den publika nyckeln
+  sparas. Den sista passkeyn kan inte tas bort medan en krävs. Tillagd passkey
+  och återställning mejlas till användaren och loggas (namn, aldrig
+  nyckeldata). Återställning görs av en ägare eller administratör i ett
+  företag där personen är med, som själv loggat in med passkey (inte av
+  ägaren av en administratör), loggas i det företaget och loggar ut personen
+  överallt; som sista utväg med `php artisan passkeys:reset`. Lokalt kan
+  steget hoppas över med `PASSKEYS_SKIP_LOCALLY` (kräver `APP_ENV=local` och
+  lokal adress).
 - **Säkerhetsrubriker:** begränsad CSP, X-Frame-Options, Referrer-Policy,
   Permissions-Policy och HSTS.
 - **Lön:**
@@ -1309,3 +1327,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.45 | 2026-11-01 | Lön: godkända tidrapporter från tidigare månader som ingen lönekörning har betalat blir en fråga i nästa ordinarie lönekörning – "Ta med i den här lönekörningen" eller "Inte nu". Svaret sparas på körningen och i behandlingshistoriken, följs vid ny beräkning och låses när körningen attesteras. Medtagna timmar betalas som egna rader med den månad de hör till. |
 | 0.46 | 2026-11-01 | Företag: ägaren kan överlåta företaget till en annan medlem (blir själv administratör) och arkivera det. Före arkiveringen visas arkivpaketen per räkenskapsår; saknas ett aktuellt paket krävs en bekräftelse. Ett arkiverat företag kan bara läsas: bara läsande behörigheter gäller, och företagsdata kan inte skapas eller ändras ens av schemalagda körningar. Inkommande post till ett arkiverat företag loggas och tas inte emot. Ägaren kan ta företaget ur arkivet. |
 | 0.47 | 2026-11-01 | Leverantörsfakturor i utländsk valuta: valuta, valutabelopp och bokföringskurs sparas på fakturan (från inkorgen och i formuläret, med Riksbankens kurs förifylld). Betalning i valutan med kronorna banken drog; skillnaden mot de bokförda kronorna bokförs på 3960 eller 7960 i betalningens verifikation. Delbetalningar i valutan, och återstående valutabelopp visas. Sådana fakturor tas inte med i betalfiler eller kvittningar. |
+| 0.48 | 2026-11-01 | Passkeys (ADR-029): andra steg efter e-postkoden för den som kan se hälsouppgifter eller fullständiga personnummer, och för alla i ett företag som kräver det. Passkeys under Profil, återställning av ägare eller administratör, loggat och mejlat. |
