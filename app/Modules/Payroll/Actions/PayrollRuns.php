@@ -234,7 +234,17 @@ class PayrollRuns
                 ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $run->periodStart()->toDateString()))
                 ->get();
             $inputs = PayrollInput::query()->where('payroll_run_id', $run->id)->get()->groupBy('employee_id');
-            $timeReports = $this->timeReports->claimable($run, $employments->pluck('employee_id'));
+            // Reports from earlier months only when the person running payroll chose to include them.
+            $timeReports = $this->timeReports->claimable($run, $employments->pluck('employee_id'), $run->type === 'REGULAR' ? ($run->late_time_reports_included ?? []) : []);
+            $start = $run->periodStart();
+            $lateReports = $timeReports->filter(fn (TimeReport $report): bool => $report->date->lessThan($start))->values();
+            $timeReports = $timeReports->filter(fn (TimeReport $report): bool => ! $report->date->lessThan($start))->values();
+            $lateEmployments = $lateReports->isEmpty()
+                ? collect()
+                : Employment::query()->whereIn('employee_id', $lateReports->pluck('employee_id')->unique()->values())->where('salary_form', 'HOURLY')->get();
+            // The late hours go on one payslip per employee: the employment that started last in the run.
+            $latePayslip = $employments->sortBy(fn (Employment $employment): string => $employment->start_date->toDateString().'#'.str_pad((string) $employment->id, 12, '0', STR_PAD_LEFT))
+                ->mapWithKeys(fn (Employment $employment): array => [$employment->employee_id => $employment->id]);
             $claimed = [];
             $results = [];
             $blockers = [];
@@ -253,9 +263,16 @@ class PayrollRuns
                     ->reject(fn (TimeReport $report): bool => in_array($report->id, $claimed, true))
                     ->values();
                 $claimed = [...$claimed, ...array_map(fn (TimeReport $report): int => $report->id, $reports->all())];
+                $late = $latePayslip->get($employee->id) === $employment->id
+                    ? TimeReportPay::lateGroups($lateReports->where('employee_id', $employee->id)->values(), $lateEmployments)
+                    : [];
+
+                foreach ($late as $group) {
+                    $claimed = [...$claimed, ...array_map(fn (TimeReport $report): int => $report->id, $group['reports']->all())];
+                }
 
                 try {
-                    $context = $this->contexts->build($run, $employee, $employment, $inputs->get($employee->id, collect()), $payCodes, $settings, $rules, $reports);
+                    $context = $this->contexts->build($run, $employee, $employment, $inputs->get($employee->id, collect()), $payCodes, $settings, $rules, $reports, $late);
                     $results[] = [$employment, $this->calculator->calculate($context)];
                 } catch (PayrollBlockedException|MissingTaxTableException $exception) {
                     $blockers[] = "{$name}: {$exception->getMessage()}";
@@ -331,6 +348,81 @@ class PayrollRuns
             ])->save();
 
             Audit::record('payroll.run_calculated', $run, ['period' => $run->period, 'payslips' => count($results), 'time_reports' => count($claimed), 'rule_snapshot_hash' => $run->rule_snapshot_hash], $company, $user);
+
+            return $run;
+        }));
+    }
+
+    /**
+     * The answer to the run's question about approved hours from earlier
+     * months that no run has paid: include them in this run, or not now.
+     * The answer covers the reports waiting when it is given and is kept on
+     * the run, so a recalculation respects it; reports that turn up later
+     * are asked about again. Including makes the calculation out of date.
+     *
+     * @return int how many time reports the answer covers
+     */
+    public function decideLateTimeReports(User $user, PayrollRun $run, bool $include): int
+    {
+        $company = $this->open($user, $run);
+
+        return CurrentCompany::run($company, fn (): int => DB::transaction(function () use ($user, $company, $run, $include): int {
+            /** @var PayrollRun $run */
+            $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
+
+            if (! $run->isOpen()) {
+                throw new AuthorizationException(__('Lönekörningen är attesterad och kan inte ändras.'));
+            }
+
+            $waiting = $this->timeReports->late($run);
+
+            if ($waiting->isEmpty()) {
+                throw ValidationException::withMessages(['late_time_reports' => __('Det finns inga timmar från tidigare månader att ta ställning till.')]);
+            }
+
+            $ids = array_values(array_map(fn (TimeReport $report): int => $report->id, $waiting->all()));
+            $column = $include ? 'late_time_reports_included' : 'late_time_reports_skipped';
+            $run->forceFill([$column => [...($run->{$column} ?? []), ...$ids]])->save();
+
+            if ($include) {
+                $this->backToDraft($run);
+            }
+
+            Audit::record($include ? 'payroll.late_time_reports_included' : 'payroll.late_time_reports_skipped', $run, [
+                'time_report_ids' => $ids,
+                'hours' => (string) TimeReportPay::hours($waiting),
+            ], $company, $user);
+
+            return count($ids);
+        }));
+    }
+
+    /**
+     * Takes back the answer about hours from earlier months while the run is
+     * open, so the question is asked again. Reports that were included are
+     * released, which makes the calculation out of date.
+     */
+    public function resetLateTimeReports(User $user, PayrollRun $run): PayrollRun
+    {
+        $company = $this->open($user, $run);
+
+        return CurrentCompany::run($company, fn (): PayrollRun => DB::transaction(function () use ($user, $company, $run): PayrollRun {
+            /** @var PayrollRun $run */
+            $run = PayrollRun::query()->whereKey($run->id)->lockForUpdate()->firstOrFail();
+
+            if (! $run->isOpen()) {
+                throw new AuthorizationException(__('Lönekörningen är attesterad och kan inte ändras.'));
+            }
+
+            $included = $run->late_time_reports_included ?? [];
+            $previous = ['included' => $included, 'skipped' => $run->late_time_reports_skipped ?? []];
+            $run->forceFill(['late_time_reports_included' => null, 'late_time_reports_skipped' => null])->save();
+
+            if ($included !== []) {
+                $this->backToDraft($run);
+            }
+
+            Audit::record('payroll.late_time_reports_reset', $run, $previous, $company, $user);
 
             return $run;
         }));
