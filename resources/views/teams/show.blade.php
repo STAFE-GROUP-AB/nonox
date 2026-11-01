@@ -34,6 +34,11 @@
             <livewire:modules.company-modules-tab :company="$team" />
         @elseif($tab === 'varumarke')
             <livewire:company.brand-settings :company="$team" />
+
+            @if(auth()->user()->ownsTeam($team))
+                {{-- Accounting firm and client (ADR-030). --}}
+                <livewire:company.firm-settings :company="$team" />
+            @endif
         @else
             <livewire:company.company-details-form :company="$team" />
 

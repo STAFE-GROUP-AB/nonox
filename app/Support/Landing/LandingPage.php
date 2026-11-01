@@ -159,7 +159,7 @@ final class LandingPage
             ['t' => 'Min sida för anställda', 'b' => 'Lönebesked, utlägg med kvitto, sjukanmälan och semesteransökan direkt i mobilen.', 'd' => 'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0'],
             ['t' => 'ROT, RUT och byggmoms', 'b' => 'Avdrag direkt på fakturan och omvänd betalningsskyldighet för byggtjänster.', 'd' => 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5'],
             ['t' => 'AI', 'mod' => true, 'b' => 'Läser kvitton och leverantörsfakturor och föreslår kontering, med företagets egen AI-nyckel.', 'd' => 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z'],
-            ['t' => 'Flera bolag', 'b' => 'Alla bolag under en inloggning, för byråer, koncerner och dig som driver flera företag.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
+            ['t' => 'Flera bolag', 'b' => 'Alla bolag under en inloggning, för byråer, koncerner och dig som driver flera företag. En byrå kan visa sin logga och sina färger för sina kunder.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
             ['t' => 'Arkiv och export', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
             ['t' => 'Personalliggare', 'mod' => true, 'b' => 'Elektronisk personalliggare med incheckning via PIN eller QR-kod på en surfplatta, även utan internet.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
             ['t' => 'Inbox', 'mod' => true, 'b' => 'En egen e-postadress för fakturor, kvitton och kassarapporter. Bara avsändare du godkänt släpps in.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],

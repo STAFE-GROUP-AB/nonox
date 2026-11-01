@@ -1,4 +1,13 @@
-<div class="card">
+<div class="card" @if($firmBrand) style="border-top: 4px solid {{ $firmBrand->brand()->color }}" @endif>
+    @if($firmBrand)
+        {{-- Reached from an invitation to a client of an accounting firm (ADR-030). --}}
+        <div class="firm-brand" style="display:flex;align-items:center;gap:12px;margin-bottom:18px" data-firm-brand>
+            @if($firmBrand->signedLogoUrl())
+                <img src="{{ $firmBrand->signedLogoUrl() }}" alt="{{ $firmBrand->firmName }}" style="max-height:44px;max-width:160px;object-fit:contain">
+            @endif
+            <p style="margin:0;font-size:13px;font-weight:600;color:{{ $firmBrand->brand()->accentText() }}">{{ $firmBrand->title() }}</p>
+        </div>
+    @endif
     @if($step === 'email')
         <h1>Logga in</h1>
         <p class="lead">Skriv din e-postadress så skickar vi en kod. Inga lösenord att komma ihåg. Är du ny skapas ett konto åt dig.</p>

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Actions\Company\ReconcileFirmLinks;
 use App\Domain\Overview\TodoProviders;
 use App\Livewire\Company\MemberManager;
 use App\Livewire\Profile\ProfileInformationForm;
+use App\Models\Company;
+use App\Models\User;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Files\EncryptedAdapter;
 use App\Support\Overview\TaskTodoProvider;
@@ -19,9 +22,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Mail\Markdown;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Jetstream\Events\TeamMemberRemoved;
 use Laravel\Sanctum\Sanctum;
 use League\Flysystem\Filesystem;
 use League\Flysystem\Local\LocalFilesystemAdapter;
@@ -72,6 +77,12 @@ class AppServiceProvider extends ServiceProvider
 
         Event::listen([Login::class, Logout::class], fn () => CurrentCompany::forget());
         Event::subscribe(AuditSubscriber::class);
+        // Someone who leaves or is removed may have been what linked a client to its firm (ADR-030).
+        Event::listen(TeamMemberRemoved::class, function (TeamMemberRemoved $event): void {
+            if ($event->team instanceof Company) {
+                app(ReconcileFirmLinks::class)($event->team, Auth::user() instanceof User ? Auth::user() : null);
+            }
+        });
 
         // Jetstream's components, extended with toasts (and a permission check
         // Jetstream lacks). App providers boot after Jetstream's, so these win.

@@ -11,6 +11,7 @@ use App\Livewire\Auth\Concerns\HandlesPasskeyStep;
 use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Support\Auth\PasskeySession;
+use App\Support\Branding\InvitationBrand;
 use App\Support\LoginCodeAutofill;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
@@ -72,7 +73,7 @@ class LoginForm extends Component implements SpansCompanies
             return;
         }
 
-        $sendLoginCode($email, request()->ip());
+        $sendLoginCode($email, request()->ip(), InvitationBrand::forLoginCode($email));
 
         session()->put(self::PENDING_EMAIL, $email);
         $this->email = $email;
@@ -184,6 +185,8 @@ class LoginForm extends Component implements SpansCompanies
     {
         return view('livewire.auth.login-form', [
             'autofill' => LoginCodeAutofill::enabled(),
+            // Reached from an invitation to a client of an accounting firm: the firm's brand (ADR-030).
+            'firmBrand' => InvitationBrand::forLoginPage(),
         ]);
     }
 

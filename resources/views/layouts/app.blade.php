@@ -15,9 +15,14 @@
         <!-- Styles -->
         @livewireStyles
 
-        @php($palette = ($layoutCompany = auth()->user()?->currentCompany()) ? App\Support\Branding\Brand::interfacePalette($layoutCompany) : null)
+        @php
+            $layoutCompany = auth()->user()?->currentCompany();
+            // The client side of a company linked to an accounting firm sees the firm's colours (ADR-030).
+            $layoutBrand = $layoutCompany ? App\Support\Branding\FirmBranding::forViewer(auth()->user(), $layoutCompany) : null;
+            $palette = $layoutBrand?->palette();
+        @endphp
         @if($palette)
-            {{-- The company's own colour under Varumärke replaces NONOX's accent. --}}
+            {{-- The company's own colour under Varumärke, or its firm's, replaces NONOX's accent. --}}
             <style>:root { @foreach($palette as $shade => $rgb)--accent-{{ $shade }}: {{ $rgb }}; @endforeach }</style>
         @endif
     </head>

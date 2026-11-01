@@ -6,6 +6,7 @@ namespace App\Actions\Auth;
 
 use App\Mail\LoginCodeMail;
 use App\Models\LoginCode;
+use App\Support\Branding\PresentedBrand;
 use App\Support\LoginCodeAutofill;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -18,11 +19,11 @@ use Illuminate\Support\Facades\Mail;
  */
 class SendLoginCode
 {
-    public function __invoke(string $email, ?string $ipAddress = null): void
+    public function __invoke(string $email, ?string $ipAddress = null, ?PresentedBrand $brand = null): void
     {
         $email = self::normalise($email);
 
-        Cache::lock('login-code:send:'.sha1($email), 10)->block(5, function () use ($email, $ipAddress): void {
+        Cache::lock('login-code:send:'.sha1($email), 10)->block(5, function () use ($email, $ipAddress, $brand): void {
             if ($this->recentlySent($email)) {
                 return;
             }
@@ -42,7 +43,7 @@ class SendLoginCode
 
             LoginCodeAutofill::remember($email, $code);
 
-            Mail::to($email)->send(new LoginCodeMail($code));
+            Mail::to($email)->send(new LoginCodeMail($code, $brand));
         });
     }
 

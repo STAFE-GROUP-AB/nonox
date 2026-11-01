@@ -3,6 +3,9 @@
     $navUser = auth()->user();
     $navCompany = $navUser?->currentCompany();
     $currentCompany = $navCompany;
+    // A client of an accounting firm shows the firm's logo to its own people (ADR-030); the firm's consultants see the company as before.
+    $navBrand = $navCompany === null ? null : App\Support\Branding\FirmBranding::forViewer($navUser, $navCompany);
+    $firmBrand = $navBrand?->viaFirm() ? $navBrand : null;
     $companies = $navUser->companies();
     $currentYear = $navCompany === null ? null : App\Models\FiscalYear::query()
         ->whereDate('start_date', '<=', now()->toDateString())
@@ -22,7 +25,11 @@
     {{-- Phones and tablets: a dark bar with the company and the menu button. --}}
     <div class="sticky top-0 z-40 flex items-center justify-between gap-3 bg-ink px-4 py-3 text-white lg:hidden">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
-            <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-500 font-bold text-white" aria-hidden="true">{{ $currentCompany ? $initial($currentCompany->name) : 'N' }}</span>
+            @if($firmBrand?->logoUrl())
+                <span class="flex h-9 w-14 shrink-0 items-center justify-center rounded-lg bg-white p-1" aria-hidden="true"><img src="{{ $firmBrand->logoUrl() }}" alt="" class="max-h-7 max-w-full object-contain"></span>
+            @else
+                <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent-500 font-bold text-white" aria-hidden="true">{{ $currentCompany ? $initial($currentCompany->name) : 'N' }}</span>
+            @endif
             <span class="min-w-0">
                 <span class="block truncate font-semibold leading-tight">{{ $currentCompany?->name ?? 'NONOX' }}</span>
                 @if($openSection && $openSection->route !== 'dashboard')

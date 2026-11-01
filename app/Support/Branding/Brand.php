@@ -46,7 +46,19 @@ final readonly class Brand
      */
     public static function interfacePalette(Company $company): ?array
     {
-        $color = collect([$company->brand_accent_color, $company->brand_color])
+        return self::palette($company->brand_accent_color, $company->brand_color);
+    }
+
+    /**
+     * The interface palette from an accent and a main colour, whichever is
+     * usable first (see interfacePalette). Used for a company's own colours
+     * and for the colours of the accounting firm it shows (ADR-030).
+     *
+     * @return array<int, string>|null
+     */
+    public static function palette(?string $accent, ?string $color): ?array
+    {
+        $color = collect([$accent, $color])
             ->first(fn (mixed $candidate): bool => is_string($candidate)
                 && preg_match('/^#[0-9A-Fa-f]{6}$/', $candidate) === 1
                 && self::contrast($candidate, '#FFFFFF') >= 1.2);
@@ -55,21 +67,10 @@ final readonly class Brand
             return null;
         }
 
-        $mix = fn (string $hex, string $with, float $amount): string => sprintf('#%02X%02X%02X', ...array_map(
-            fn (int $c, int $w): int => (int) round($c + ($w - $c) * $amount),
-            self::rgb($hex),
-            self::rgb($with),
-        ));
-        $readable = function (string $hex, float $ratio = 4.5) use ($mix): string {
-            for ($step = 0.0; self::contrast($hex, '#FFFFFF') < $ratio && $step < 1.0; $step += 0.05) {
-                $hex = $mix($hex, '#000000', 0.05);
-            }
-
-            return $hex;
-        };
-        $mark = $readable($color, 3.0);
-        $button = $readable($color);
-        $text = $readable($mix($button, '#000000', 0.12));
+        $mix = self::mix(...);
+        $mark = self::readable($color, 3.0);
+        $button = self::readable($color);
+        $text = self::readable($mix($button, '#000000', 0.12));
 
         $palette = [
             50 => $mix($color, '#FFFFFF', 0.94),
@@ -86,6 +87,37 @@ final readonly class Brand
         ];
 
         return array_map(fn (string $hex): string => implode(' ', self::rgb($hex)), $palette);
+    }
+
+    /**
+     * The colour darkened until text in it on white reaches the ratio
+     * (WCAG 2.2 AA: 4.5 for text, 3 for large text and marks). A colour that
+     * already reads well is returned unchanged.
+     */
+    public static function readable(string $hex, float $ratio = 4.5): string
+    {
+        $hex = strtoupper($hex);
+
+        for ($step = 0.0; self::contrast($hex, '#FFFFFF') < $ratio && $step < 1.0; $step += 0.05) {
+            $hex = self::mix($hex, '#000000', 0.05);
+        }
+
+        return $hex;
+    }
+
+    /** The accent colour as text on white, never below 4.5:1. */
+    public function accentText(): string
+    {
+        return self::readable($this->accent);
+    }
+
+    private static function mix(string $hex, string $with, float $amount): string
+    {
+        return sprintf('#%02X%02X%02X', ...array_map(
+            fn (int $c, int $w): int => (int) round($c + ($w - $c) * $amount),
+            self::rgb($hex),
+            self::rgb($with),
+        ));
     }
 
     /** Black or white, whichever reads best on the main colour (WCAG contrast). */

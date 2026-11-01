@@ -49,7 +49,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 
 ### Översikt
 - Nyckeltal för företagaren: resultat hittills i år, pengar på bank och kassa, moms att betala, obetalda kundfakturor och vad som väntar på attest. Var och en visas bara för roller som får se underlaget.
-- **Mina företag** för redovisningsbyråer och ägare med flera bolag: alla klienter på en sida med vad som väntar i varje (moms, AGI, bokslut, förfallna fakturor, attester, utkast och lön), sista dag för moms och AGI, ansvarig konsult och byråns egna anteckningar.
+- **Mina företag** för redovisningsbyråer och ägare med flera bolag: alla klienter på en sida med vad som väntar i varje (moms, AGI, bokslut, förfallna fakturor, attester, utkast och lön), sista dag för moms och AGI, ansvarig konsult och byråns egna anteckningar. Kunder som har valt byrån ser byråns logga och färger.
 
 ### Försäljning
 - Fakturor med OCR-nummer, PDF och utskick via e-post, bokförda automatiskt enligt fakturametoden eller kontantmetoden.
@@ -95,6 +95,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Export av allt när som helst. Arkivpaket per räkenskapsår med SIE-fil, rapporter, underlag, fakturor och behandlingshistorik, med kontrollsumma för varje fil, som går att läsa utan NONOX.
 - Behandlingshistorik över allt som görs, och dataskydd: registerutdrag, radering av eget konto, gallring och personuppgiftsbiträdesavtal.
 - Eget varumärke: logga och färger på fakturor, lönebesked och Min sida.
+- Redovisningsbyråns varumärke: en byrå kan visa sin logga och sina färger för sina kunder i appen, på Min sida och i mejlen om inloggning och uppgifter. Kunden väljer själv sin byrå, kopplingen ger byrån ingen behörighet, och kundens egna fakturor och lönebesked behåller kundens varumärke.
 - Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
 
 ### På väg

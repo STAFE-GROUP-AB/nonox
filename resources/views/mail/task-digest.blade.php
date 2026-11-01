@@ -1,4 +1,5 @@
 @component('mail::message')
+@include('mail.partials.firm-brand')
 # {{ __('God morgon, :name', ['name' => $userName]) }}
 
 {{ __('Det här väntar på dig i NONOX.') }}

@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Mail\TaskDigestMail;
 use App\Models\Task;
 use App\Models\User;
+use App\Support\Branding\FirmBranding;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -42,7 +43,15 @@ class SendTaskDigestCommand extends Command
                 ->orWhereExists(fn ($exists) => $exists->selectRaw('1')->from('team_user')
                     ->whereColumn('team_user.team_id', 'tasks.company_id')->whereColumn('team_user.user_id', 'tasks.assignee_id')))
             ->orderByRaw('tasks.due_date asc nulls last')
-            ->get(['tasks.*', 'teams.name as company_name']));
+            ->get(['tasks.*', 'teams.name as company_name', 'teams.accounting_firm_id as company_firm_id']));
+
+        // The accounting firm's brand for a user whose tasks are all in companies that show the same firm (ADR-030).
+        $brands = FirmBranding::sharedFirmBrands(array_values($tasks->map(fn (Task $task): array => [
+            'user_id' => (int) $task->assignee_id,
+            'company_id' => (int) $task->company_id,
+            'company_name' => (string) $task->getAttribute('company_name'),
+            'firm_id' => $task->getAttribute('company_firm_id') === null ? null : (int) $task->getAttribute('company_firm_id'),
+        ])->all()));
 
         $sent = 0;
 
@@ -60,7 +69,7 @@ class SendTaskDigestCommand extends Command
                 'due' => $task->due_date?->toDateString(),
                 'overdue' => $task->due_date !== null && $task->due_date->lessThan($today),
                 'status' => $task->status->label(),
-            ])->all())));
+            ])->all()), $brands[$user->id] ?? null));
             $sent++;
         }
 

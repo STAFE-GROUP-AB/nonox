@@ -1,4 +1,5 @@
 @component('mail::message')
+@include('mail.partials.firm-brand')
 # {{ __('Du har bjudits in till :company', ['company' => $invitation->team->name]) }}
 
 {{ __('Klicka på knappen och logga in med den här e-postadressen. Har du inget konto skapas det när du loggar in första gången.') }}
