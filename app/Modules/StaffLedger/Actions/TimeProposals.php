@@ -56,10 +56,19 @@ final class TimeProposals
             $hours[(int) $person->employee_id][$day] = round(($hours[(int) $person->employee_id][$day] ?? 0) + (float) $shift->hours(), 2);
         }
 
-        return DB::transaction(function () use ($user, $company, $from, $to, $hours): array {
+        $covered = self::coveredDays(array_keys($hours), $from, $to);
+
+        return DB::transaction(function () use ($user, $company, $from, $to, $hours, $covered): array {
             $created = [];
 
             foreach ($hours as $employeeId => $days) {
+                // A day already proposed, approved or reported is never proposed again, so it cannot be paid twice.
+                $days = array_diff_key($days, $covered[$employeeId] ?? []);
+
+                if ($days === []) {
+                    continue;
+                }
+
                 ksort($days);
                 $proposal = TimeProposal::create([
                     'employee_id' => $employeeId,
@@ -89,6 +98,12 @@ final class TimeProposals
 
         if (! $payCode instanceof PayCode) {
             throw ValidationException::withMessages(['proposal' => __('Lönearten Timlön saknas i lönen.')]);
+        }
+
+        $covered = self::coveredDays([$proposal->employee_id], CarbonImmutable::parse((string) array_key_first($proposal->days)), CarbonImmutable::parse((string) array_key_last($proposal->days)), $proposal->id, pending: false);
+
+        if (array_intersect_key($proposal->days, $covered[$proposal->employee_id] ?? []) !== []) {
+            throw ValidationException::withMessages(['proposal' => __('Några av dagarna finns redan i en annan tidrapport. Avslå förslaget och föreslå perioden igen.')]);
         }
 
         return DB::transaction(function () use ($user, $company, $proposal, $payCode): int {
@@ -158,5 +173,48 @@ final class TimeProposals
         if (! $user->hasTeamPermission($company, 'staff-ledger:manage')) {
             abort(403);
         }
+    }
+
+    /**
+     * Days per employee that are already in an approved proposal (or, with
+     * $pending, a pending one) or in a time report that is not rejected.
+     *
+     * @param  list<int>  $employeeIds
+     * @return array<int, array<string, true>>
+     */
+    private static function coveredDays(array $employeeIds, CarbonImmutable $from, CarbonImmutable $to, ?int $exceptProposal = null, bool $pending = true): array
+    {
+        $covered = [];
+
+        if ($employeeIds === []) {
+            return $covered;
+        }
+
+        $proposals = TimeProposal::query()
+            ->whereIn('employee_id', $employeeIds)
+            ->whereIn('status', $pending ? [TimeProposal::PROPOSED, TimeProposal::APPROVED] : [TimeProposal::APPROVED])
+            ->when($exceptProposal !== null, fn ($query) => $query->whereKeyNot($exceptProposal))
+            ->whereDate('period_start', '<=', $to->toDateString())
+            ->whereDate('period_end', '>=', $from->toDateString())
+            ->get(['employee_id', 'days']);
+
+        foreach ($proposals as $proposal) {
+            foreach (array_keys($proposal->days) as $day) {
+                $covered[(int) $proposal->employee_id][(string) $day] = true;
+            }
+        }
+
+        $reports = TimeReport::query()
+            ->whereIn('employee_id', $employeeIds)
+            ->where('status', '<>', 'REJECTED')
+            ->whereDate('date', '>=', $from->toDateString())
+            ->whereDate('date', '<=', $to->toDateString())
+            ->get(['employee_id', 'date']);
+
+        foreach ($reports as $report) {
+            $covered[(int) $report->employee_id][CarbonImmutable::parse($report->date)->toDateString()] = true;
+        }
+
+        return $covered;
     }
 }

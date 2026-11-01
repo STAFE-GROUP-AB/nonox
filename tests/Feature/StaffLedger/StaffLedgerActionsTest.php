@@ -262,6 +262,35 @@ it('proposes time reports from closed shifts and writes them only when approved'
         ->and(TimeReport::query()->sole()->only(['employee_id', 'status']))->toBe(['employee_id' => $employee->id, 'status' => 'APPROVED'])
         ->and($proposals[0]->fresh()->status)->toBe(TimeProposal::APPROVED)
         ->and(fn () => app(TimeProposals::class)->reject($this->owner, $this->company, $proposals[0]->fresh()))->toThrow(ValidationException::class);
+
+    // Proposing the same period again proposes nothing for days already reported, so nothing is paid twice.
+    expect(app(TimeProposals::class)->propose($this->owner, $this->company, CarbonImmutable::parse('2026-10-01'), CarbonImmutable::parse('2026-10-31')))->toBe([])
+        ->and(TimeProposal::query()->count())->toBe(1);
+});
+
+it('never proposes or approves the same day twice for an employee', function () {
+    Payroll::setUp($this->company, $this->owner);
+    $employee = app(SaveEmployee::class)($this->owner, $this->company, [
+        'first_name' => 'Testa', 'last_name' => 'Person123', 'personal_number' => StaffLedger::personalNumber('19900101123'),
+        'tax_residence' => 'SE', 'tax_table' => 33, 'tax_column' => 1, 'start_date' => '2026-01-01',
+        'employment_type' => 'TIMANSTALLD', 'salary_form' => 'HOURLY', 'salary' => '180',
+    ]);
+    app(SavePerson::class)($this->owner, $this->company, [...$this->person->only(['first_name', 'last_name', 'language']), 'employee_id' => $employee->id], $this->person);
+    checkInAt($this, '2026-10-05 08:00');
+    checkInAt($this, '2026-10-05 16:30', EntryType::CheckOut);
+
+    $proposals = app(TimeProposals::class);
+    [$first] = $proposals->propose($this->owner, $this->company, CarbonImmutable::parse('2026-10-01'), CarbonImmutable::parse('2026-10-31'));
+
+    // A pending proposal already covers the day.
+    expect($proposals->propose($this->owner, $this->company, CarbonImmutable::parse('2026-10-05'), CarbonImmutable::parse('2026-10-05')))->toBe([]);
+
+    // A duplicate that slipped in earlier cannot be approved once the day is reported.
+    $duplicate = TimeProposal::create(['employee_id' => $employee->id, 'period_start' => '2026-10-05', 'period_end' => '2026-10-05', 'days' => ['2026-10-05' => 8.5], 'status' => TimeProposal::PROPOSED, 'proposed_by' => $this->owner->id]);
+    $proposals->approve($this->owner, $this->company, $first);
+
+    expect(fn () => $proposals->approve($this->owner, $this->company, $duplicate))->toThrow(ValidationException::class)
+        ->and(TimeReport::query()->count())->toBe(1);
 });
 
 it('pays an approved proposal as hourly pay on the payslip, and counts it as waiting until then', function () {
