@@ -45,62 +45,62 @@ NONOX is an open-source (AGPL-3.0) bookkeeping, invoicing, VAT, year-end and pay
 
 ## Funktioner
 
-Systemet byggs en del i taget. Det här finns i dag:
+Grupperat som i menyn i appen. Moduler slår varje företag på och av under Företagsinställningar → Moduler, utan att något raderas.
 
-**Bokföring**
-- ✅ Företag med organisationsnummer, momsuppgifter och bankgiro. Flera företag per användare, med roller (ägare, administratör, redovisningskonsult, bokförare, attestant, revisor).
-- ✅ Mina företag: för redovisningsbyråer och ägare med flera företag. Alla klienter på en sida med vad som väntar i varje (moms att redovisa, AGI, bokslut, förfallna fakturor, attester, utkast och lön), och ett klick öppnar uppgiften i rätt företag. Byråvyn visar alla klienter per månad (bokfört t.o.m., bankposter, moms, AGI och obetalda kundfakturor) med sista dag för moms och AGI, ansvarig konsult och byråns egna anteckningar. Kunden ser på sin översikt vad byrån har gjort.
-- ✅ Kontoplan enligt BAS 2026 (K1, K2/K3), räkenskapsår och verifikationsserier.
-- ✅ Verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag (kvitton som PDF eller bild).
-- ✅ Kostnadsställen och projekt per rad, till exempel en per restaurang.
-- ✅ Bokförda verifikationer kan aldrig ändras; databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
-- ✅ Rapporter: saldobalans, resultatrapport, balansrapport, huvudbok och verifikationslista, per period och kostnadsställe. Excel (CSV) och utskrift/PDF.
-- ✅ Momsdeklaration med fil till Skatteverket, bokföring av momsen och låsning av perioden.
-- ✅ Årsskifte: utgående balanser blir ingående balanser för nästa år.
-- ✅ SIE4: export av varje räkenskapsår och inläsning i två steg med avstämning mot filen. Så flyttar du in bokföringen från ditt gamla program.
-- ✅ Behandlingshistorik över allt som görs.
-- ✅ Arkivpaket per räkenskapsår: en ZIP med SIE-fil, rapporter som PDF och CSV, underlag, fakturor, momsdeklarationer, lönebesked, behandlingshistorik och systemdokumentation, med en kontrollsumma (SHA-256) för varje fil. Går att läsa utan NONOX och sparas i sju år.
+### Översikt
+- Nyckeltal för företagaren: resultat hittills i år, pengar på bank och kassa, moms att betala, obetalda kundfakturor och vad som väntar på attest. Var och en visas bara för roller som får se underlaget.
+- **Mina företag** för redovisningsbyråer och ägare med flera bolag: alla klienter på en sida med vad som väntar i varje (moms, AGI, bokslut, förfallna fakturor, attester, utkast och lön), sista dag för moms och AGI, ansvarig konsult och byråns egna anteckningar.
 
-**Fakturering**
-- ✅ Kund-, artikel- och leverantörsregister under en egen flik, Register, med pris, moms och intäktskonto. Per kund visas vad den fakturerats i år och vad som är obetalt, per artikel vad som sålts i år.
-- ✅ Nyckeltal för företagaren, egna för varje flik: under Försäljning fakturerat i månaden, obetalt och förfallet hos kunder och order att fakturera; under Inköp inköpt i månaden, att betala till leverantörer och vad som väntar på attest; under Bokföring resultat hittills i år, pengar på bank och kassa och moms att betala. Översikten visar alla. Var och en visas bara för roller som får se underlaget.
-- ✅ Fakturor med OCR-nummer, PDF och utskick via e-post. De bokförs automatiskt, enligt fakturametoden eller kontantmetoden.
-- ✅ Inbetalningar, även delbetalningar, kreditfakturor och påminnelser via e-post.
-- ✅ Läs in bankens fil med inbetalningar (ISO 20022 camt.054, ersätter BgMax). Fakturorna föreslås efter OCR-numret och bokförs med ett klick. Samma inbetalning bokförs aldrig två gånger.
-- ✅ Offerter och order (till exempel catering) som blir fakturor utan att något skrivs två gånger.
-- ✅ Avtalsfakturering: samma faktura varje månad, kvartal, halvår eller år. Som utkast att kontrollera, eller skapad, bokförd och mejlad automatiskt varje morgon.
-- ✅ Leverantörsfakturor: ladda upp fakturan som PDF eller bild, kontera per kostnadsställe (till exempel per restaurang), registrera, attestera och registrera betalningen. Fakturan blir underlag till verifikationen. Den som registrerar får inte attestera själv, om inte företaget bara är en person.
+### Försäljning
+- Fakturor med OCR-nummer, PDF och utskick via e-post, bokförda automatiskt enligt fakturametoden eller kontantmetoden.
+- Offerter och order som blir fakturor utan att något skrivs två gånger, och avtalsfakturering varje månad, kvartal, halvår eller år.
+- Inbetalningar och delbetalningar, kreditfakturor och påminnelser. Bankens fil med inbetalningar (ISO 20022 camt.054) läses in och matchas på OCR-numret.
+- ROT- och RUT-avdrag, omvänd betalningsskyldighet för byggtjänster, och fakturor till andra EU-länder och export med rätt konto, momsruta och fakturatext.
 
-**På väg** (i den här ordningen)
-- ✅ Betalfiler till banken (ISO 20022 pain.001) för attesterade leverantörsfakturor, för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. Betalningarna bokförs när banken har betalat.
-- ✅ Kreditnotor från leverantörer (kvittas mot en faktura eller betalas tillbaka) och inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet i Sverige, med momsen i rätt rutor.
-- 🚧 Automatisk avstämning mot bankens svar, import av varor från länder utanför EU och fakturor i utländsk valuta.
-- ✅ Moduler: tillägg som varje företag slår på och av under Företagsinställningar → Moduler, utan att något raderas.
-- ✅ Lön som modul, enligt [PAYROLL_MODULE.md](PAYROLL_MODULE.md): anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag, arbetsgivaravgifter med sänkningen för unga, lönekörning med attest, lönebokföring i serie L, lönebesked som PDF och en egen portal för anställda (Min sida, `/anstalld`) med inbjudan via e-post. Alla satser är data med källa som måste kontrolleras av en behörig person innan de används.
-- ✅ NONOX AI (modul): dra in en leverantörsfaktura eller ett kvitto och låt AI fylla i förslaget med konton och belopp via Laravel AI SDK och OpenAI, Claude eller Gemini med företagets egen API-nyckel. Du kontrollerar och sparar; AI:n sparar aldrig själv.
-- ✅ NONOX AI för utlägg: den anställde skickar bara kvittot från Min sida, AI:n läser datum, vad som köptes, belopp och moms och föreslår konto, och den som godkänner kontrollerar och rättar.
-- ✅ Självservice på Min sida: sjukanmälan, vård av barn och semesteransökan som godkänns under Lön → Ansökningar, med e-post åt båda håll.
-- ✅ Eget varumärke per företag: logga och färger på fakturor, offerter, order, lönebesked och Min sida, och hela appen får företagets färg (med läsbar kontrast) i stället för NONOX:s.
-- ✅ Lön: semester enligt semesterlagen (sammalöneregeln, procentregeln, semesterersättning med lönen) med saldo på lönebeskedet och Min sida, helgarbete (9 §), sparade dagar och semesterårsskifte, och semesterlöneskuld som rapport och månadsbokföring.
-- ✅ Lön: förmåner (kost, bil, drivmedel), traktamente och milersättning, tjänstepension med särskild löneskatt, utlägg med kvitto från Min sida, lönefil till banken (pain.001, SALA) och bokföring mot skattekontot.
-- ✅ Lön: arbetsgivardeklaration (AGI) per utbetalningsmånad som XML enligt Skatteverkets schema 1.1, med rättelser och borttag, kvittens och deklarationsdagar.
-- ✅ Lön: lönerevision med retroaktiv lön, slutlön med semesterersättning, underlag för arbetsgivarintyg, lönerapporter med avstämning mot deklaration och bokföring, och löneårsskifte.
-- ✅ Lön: Lönearkiv som finns kvar när lönemodulen stängs av, och spärrar mot att stänga av med obokförd lön, odeklarerade månader eller obetalda utlägg.
-- ✅ Lön: flytt av lönedata från ett tidigare lönesystem (anställda, belopp hittills i år, semestersaldon och gamla lönebesked) med avstämning mot bokföringen. Se [guiden för att flytta](docs/migration/leaving-fortnox.md).
-- ✅ Anläggningsregister: inventarier, datorer, maskiner och bilar med linjära avskrivningar som bokförs varje månad, och försäljning eller utrangering.
-- ✅ Bankavstämning: bank- och kassakonton stäms av mot kontoutdraget, med poster som förs vidare tills banken har dragit dem.
-- ✅ Periodiseringar: förutbetalda kostnader och intäkter som fördelas över månader, och upplupna poster som bokförs vid månadens slut och återförs nästa månad.
-- ✅ Bokslut: checklista som kontrollerar bokföringen själv, skatt och årets resultat, stängning av året med låsning och resultatdisposition efter årsstämman.
-- ✅ Årsredovisning enligt K2 som PDF: förvaltningsberättelse med flerårsöversikt, resultat- och balansräkning med föregående år, noter och underskrifter.
-- ✅ ROT- och RUT-avdrag på kundfakturor, med arbetskostnad per rad, delad fordran mot Skatteverket och registrering av deras betalning.
-- ✅ Dataskydd: registerutdrag, radering och anonymisering, nattlig gallring, cookie-samtycke, integritetspolicy, villkor och personuppgiftsbiträdesavtal, se `docs/gdpr`.
-- ✅ Flytt från Fortnox via deras API: logga in på Fortnox-kontot, och bokföringen år för år, register och underlag hämtas med avstämning. Kräver att installationen har `FORTNOX_CLIENT_ID` och `FORTNOX_CLIENT_SECRET`.
-- ✅ Flyttguide på /flytta-hit: steg för steg från andra svenska bokföringsprogram, med exportråd per program i `docs/migration/kallor`.
-- ✅ EU-rapporter: periodisk sammanställning som fil till Skatteverket, underlag för OSS-deklarationen, VIES-kontroll av kunders momsregistreringsnummer och trepartshandel.
-- ✅ EU och export: fakturor utan svensk moms till företag i andra EU-länder och kunder utanför EU, med rätt konto, momsruta och fakturatext.
-- ✅ Byggföretag: omvänd betalningsskyldighet för byggtjänster på kundfakturor, med rätt fakturatext, konto 3231 och momsruta 41.
-- ✅ Inkomstdeklaration 2 för aktiebolag: räkenskapsschema och skattemässiga justeringar ur bokföringen, som SRU-filer till Skatteverkets filöverföring.
-- 🚧 Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
+### Inköp
+- Leverantörsfakturor som PDF eller bild, kontering per kostnadsställe, attest av en annan person än den som registrerade, och fakturor i utländsk valuta omräknade med Riksbankens kurs.
+- Betalfiler till banken (ISO 20022 pain.001) för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. En betalfil godkänns av en annan person innan den kan laddas ner, och bokförs när banken har betalat.
+- Kreditnotor från leverantörer, inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet, med momsen i rätt rutor.
+
+### Register
+- Kunder, artiklar och leverantörer med pris, moms och konto. Per kund syns vad den fakturerats i år och vad som är obetalt.
+
+### Bokföring
+- **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar, och inläsning av SIE4 i två steg med avstämning.
+- **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok och verifikationslista per period och kostnadsställe, som PDF och CSV. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS och VIES-kontroll.
+- **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
+- **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.
+- En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
+
+### Lön (modul)
+- Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag och arbetsgivaravgifter med sänkningen för unga.
+- Lönekörning med attest, lönebesked som PDF, lönefil till banken och bokföring i serie L.
+- Semester enligt semesterlagen, förmåner, traktamente och milersättning, tjänstepension, utlägg med kvitto, lönerevision och slutlön.
+- Arbetsgivardeklaration (AGI) som XML enligt Skatteverkets schema, och ett lönearkiv som finns kvar när modulen stängs av.
+- Min sida för anställda: lönebesked, sjukanmälan, vård av barn, semesteransökan och utlägg.
+
+### Personalliggare (modul)
+- Lokaler och personal med in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet, med kod, personlig QR-kod eller mobil incheckning.
+- Liggaren skrivs bara till, med en kedja av kontrollsummor och rättelser som syns bredvid originalet. Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren.
+
+### Inkorg (modul)
+- En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och virussöks innan något läses.
+- Peppol-fakturor, SIE-filer och dagsrapporter läses utan AI, med mallar som en person godkänt.
+
+### NONOX AI (modul)
+- Läser leverantörsfakturor, kvitton och utlägg och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv.
+
+### Företaget och din data
+- Flera företag per användare med roller: ägare, administratör, redovisningskonsult, bokförare, attestant och revisor.
+- Export av allt när som helst. Arkivpaket per räkenskapsår med SIE-fil, rapporter, underlag, fakturor och behandlingshistorik, med kontrollsumma för varje fil, som går att läsa utan NONOX.
+- Behandlingshistorik över allt som görs, och dataskydd: registerutdrag, radering av eget konto, gallring och personuppgiftsbiträdesavtal.
+- Eget varumärke: logga och färger på fakturor, lönebesked och Min sida.
+- Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
+
+### På väg
+- Automatisk avstämning av betalfiler mot bankens svar, och kursdifferenser när en faktura i utländsk valuta betalas.
+- Import av varor från länder utanför EU.
+- Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 
@@ -116,8 +116,8 @@ Den här guiden förutsätter inga förkunskaper. Följ stegen uppifrån och ned
 
 Var medveten om var projektet står innan du installerar:
 
-- ✅ **Fungerar:** inloggning med engångskod via e-post, guiden som skapar ditt företag, bokföring, rapporter, moms, årsskifte, SIE-import och -export, fakturering, leverantörsfakturor, lön (modul) och NONOX AI (modul). Se listan under Funktioner ovan.
-- 🚧 **Inte byggt ännu:** digital inlämning av årsredovisningen, EU- och exportfakturor samt utländsk valuta.
+- **Fungerar:** allt under [Funktioner](#funktioner) ovan.
+- **Inte byggt ännu:** det som står under [På väg](#på-väg).
 
 ### 1. Installera verktygen (en gång per dator)
 
@@ -143,15 +143,15 @@ psql --version  # ska visa 16 eller högre
 
 ### 2. Hämta koden
 
-Med Herd: lägg projektet i mappen `~/Herd` så får det automatiskt adressen `http://oss.test`.
+Med Herd: lägg projektet i mappen `~/Herd` så får det automatiskt adressen `http://nonox.test`.
 
 ```bash
 cd ~/Herd                                   # utan Herd: valfri mapp
-git clone https://github.com/STAFE-GROUP-AB/nonox.git oss
-cd oss
+git clone https://github.com/STAFE-GROUP-AB/nonox.git
+cd nonox
 ```
 
-> Mappnamnet styr adressen i Herd: mappen `oss` blir `http://oss.test`.
+> Mappnamnet styr adressen i Herd: mappen `nonox` blir `http://nonox.test`.
 
 ### 3. Skapa databasen
 
@@ -208,7 +208,7 @@ Det skapar applikationsnyckeln, bygger alla tabeller och bygger webbsidans utsee
 
 ### 5. Öppna appen
 
-- **Med Herd:** gå till **http://oss.test** i webbläsaren. Klart, ingen server behöver startas.
+- **Med Herd:** gå till **http://nonox.test** i webbläsaren. Klart, ingen server behöver startas.
 - **Utan Herd:** kör `php artisan serve` och gå till **http://localhost:8000**. Låt Terminalfönstret vara öppet så länge du använder appen. Ändra också `APP_URL=http://localhost:8000` i `.env`.
 
 Första gången möts du av en **guide i tre steg**:
@@ -267,7 +267,7 @@ npm install && npm run build
 | `password authentication failed` | Fel lösenord. Fyll i `DB_PASSWORD` i `.env`. |
 | `Please provide a valid cache path` | Mapparna under `storage/` saknas. Kör `mkdir -p storage/framework/{cache/data,sessions,views} storage/logs` och försök igen. |
 | `Vite manifest not found` | CSS/JS är inte byggt. Kör `npm install && npm run build`. |
-| `oss.test` öppnar inte | Projektet ligger inte i en mapp som Herd bevakar. Flytta det till `~/Herd`, eller kör `herd link oss` i projektmappen. |
+| `nonox.test` öppnar inte | Projektet ligger inte i en mapp som Herd bevakar. Flytta det till `~/Herd`, eller kör `herd link nonox` i projektmappen. |
 | Sidan visar bara ett fel utan detaljer | Läs `storage/logs/laravel.log`, där står det verkliga felet. |
 | Något är konstigt efter en uppdatering | Kör `php artisan optimize:clear`. |
 

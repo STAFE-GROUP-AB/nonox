@@ -279,7 +279,7 @@ it('ships an example environment that is safe on a server', function () {
     expect($example)->toMatch('/^APP_ENV=production$/m')
         ->toMatch('/^APP_DEBUG=false$/m')
         ->toMatch('/^OTP_AUTOFILL=false$/m')
-        ->toMatch('/^TRUSTED_PROXIES=$/m');
+        ->toMatch('/^# TRUSTED_PROXIES=$/m');
 });
 
 // 5. Trusted proxies are opt-in.
