@@ -248,6 +248,8 @@ npm install && npm run build
 - Audit trail för alla kritiska operationer
 - Ingen hårdkodad affärslogik i frontend
 
+Hittar du en säkerhetsbrist? Läs [SECURITY.md](SECURITY.md) och rapportera den där, inte i ett öppet ärende. Dataskydd och juridik: [docs/gdpr](docs/gdpr/README.md) och [docs/juridik](docs/juridik/regelverk.md).
+
 ## 🛠️ Utveckling
 
 ### Köra tester

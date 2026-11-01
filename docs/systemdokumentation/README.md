@@ -556,9 +556,12 @@ direkt från Fortnox. Koden ligger i `app/Migration/Fortnox`.
 
 ## 5a9. Dataskydd och säkerhet
 
-Se `docs/gdpr/` (registerförteckning, konsekvensbedömning för lön,
-incidentrutin, lagringstider) och `docs/juridik/` (integritetspolicy,
-villkor, personuppgiftsbiträdesavtal, underbiträden).
+Se `docs/gdpr/` (registerförteckning, konsekvensbedömningar för lön,
+personalliggare, inkorg och AI, incidentrutin, lagringstider,
+säkerhetskopiering) och `docs/juridik/` (integritetspolicy, villkor,
+personuppgiftsbiträdesavtal, underbiträden, AI i NONOX, regelverk, frågor
+till jurist). Säkerhetsrapporter: `SECURITY.md`. Tillgänglighet:
+`docs/tillganglighet.md`.
 
 - **Företagsbindning:** varje Livewire-sida är låst till företaget den
   visades i (LivewireCompanyGuard). Byter användaren företag i en annan flik
