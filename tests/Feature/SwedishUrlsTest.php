@@ -10,7 +10,8 @@ use Illuminate\Support\Facades\Route;
  * hyphens. Technical endpoints users never see are exempt.
  */
 
-const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio'];
+// oauth/ and .well-known/ are called by apps, with paths fixed by RFC 6749 and RFC 8414 (ADR-032).
+const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/'];
 
 const ENGLISH_WORDS = [
     'login', 'logout', 'register', 'user', 'profile', 'team', 'teams', 'dashboard', 'password',
