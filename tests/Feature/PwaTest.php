@@ -19,6 +19,10 @@ it('links the app manifest and the touch icon from the app', function () {
         ->assertSee(asset('brand/apple-touch-icon.png'), false);
 });
 
+it('links the app manifest from the public pages', function () {
+    $this->get(route('start'))->assertOk()->assertSee('rel="manifest" href="'.asset('app.webmanifest').'"', false);
+});
+
 it('describes installable apps whose start pages and icons exist', function (string $file, string $route) {
     $manifest = manifest($file);
 
