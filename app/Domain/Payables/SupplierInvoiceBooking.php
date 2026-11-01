@@ -28,6 +28,10 @@ use Illuminate\Support\Collection;
  * - A credit note has negative amounts, so the same rules reverse it.
  * - Kontantmetoden: nothing when registered. A payment books its share of the
  *   costs and the VAT directly against the bank account.
+ * - An invoice in another currency is booked in kronor at the rate on the
+ *   invoice. A payment settles its share of those kronor; the bank is
+ *   credited with the kronor actually paid and the difference goes to 3960
+ *   (gain) or 7960 (loss), ADR-025.
  *
  * TODO(legal-verify): under kontantmetoden, supplier invoices still unpaid at
  * the end of the fiscal year must be booked as liabilities; that belongs to
@@ -40,6 +44,18 @@ final class SupplierInvoiceBooking
     public const int INPUT_VAT = 2641;
 
     public const int BANK = 1930;
+
+    /** BAS 2026: Valutakursvinster på fordringar och skulder av rörelsekaraktär. */
+    public const int EXCHANGE_GAIN = 3960;
+
+    /** BAS 2026: Valutakursförluster på fordringar och skulder av rörelsekaraktär. */
+    public const int EXCHANGE_LOSS = 7960;
+
+    /** @var array<int, string> account names copied from BAS 2026 (database/data/bas/2026). */
+    public const array EXCHANGE_ACCOUNT_NAMES = [
+        self::EXCHANGE_GAIN => 'Valutakursvinster på fordringar och skulder av rörelsekaraktär',
+        self::EXCHANGE_LOSS => 'Valutakursförluster på fordringar och skulder av rörelsekaraktär',
+    ];
 
     /**
      * The voucher rows when the invoice is registered under fakturametoden.
@@ -56,17 +72,29 @@ final class SupplierInvoiceBooking
     }
 
     /**
-     * The voucher rows for a payment of $amount öre from $bankAccount.
+     * The voucher rows for a payment that settles $amount öre of the invoice
+     * as booked. $paid is the kronor that actually left $bankAccount when it
+     * differs (an invoice in another currency): the bank row then carries
+     * $paid and the difference is booked as an exchange gain or loss.
      *
      * @param  Collection<int, SupplierInvoiceRow>  $rows
      * @return list<array{account: int, amount: int, description?: ?string, cost_center?: ?string, project?: ?string}>
      */
-    public static function payment(SupplierInvoice $invoice, Collection $rows, int $amount, int $bankAccount, bool $cashMethod): array
+    public static function payment(SupplierInvoice $invoice, Collection $rows, int $amount, int $bankAccount, bool $cashMethod, ?int $paid = null): array
     {
+        $paid ??= $amount;
+        $difference = $paid - $amount;
+        $exchange = $difference === 0 ? [] : [[
+            'account' => $difference > 0 ? self::EXCHANGE_LOSS : self::EXCHANGE_GAIN,
+            'amount' => $difference,
+            'description' => (string) __('Kursdifferens :currency', ['currency' => $invoice->invoice_currency]),
+        ]];
+
         if (! $cashMethod) {
             return [
                 ['account' => self::PAYABLES, 'amount' => $amount],
-                ['account' => $bankAccount, 'amount' => -$amount],
+                ...$exchange,
+                ['account' => $bankAccount, 'amount' => -$paid],
             ];
         }
 
@@ -86,7 +114,7 @@ final class SupplierInvoiceBooking
 
         $costs = array_map(fn (array $cost, int $share): array => [...$cost, 'amount' => $share], $costs, $shares);
 
-        return [...$costs, ['account' => $bankAccount, 'amount' => -$amount]];
+        return [...$costs, ...$exchange, ['account' => $bankAccount, 'amount' => -$paid]];
     }
 
     /**
@@ -110,6 +138,21 @@ final class SupplierInvoiceBooking
         }
 
         return array_filter($vat);
+    }
+
+    /**
+     * The kronor of the invoice as booked that a payment of $foreign
+     * hundredths of its currency settles: its share of the total, rounded half
+     * up, and whatever is left when the payment clears the foreign amount, so
+     * the payables account ends at zero.
+     */
+    public static function settledShare(SupplierInvoice $invoice, int $foreign): int
+    {
+        if ($foreign === $invoice->foreignRemaining()) {
+            return $invoice->remaining()->ore;
+        }
+
+        return BigDecimal::of($invoice->total_ore->ore)->multipliedBy($foreign)->dividedBy((int) $invoice->foreign_total_minor, 0, RoundingMode::HalfUp)->toInt();
     }
 
     /**

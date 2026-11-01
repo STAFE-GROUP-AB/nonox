@@ -96,12 +96,28 @@
                     <input id="supplier_invoice_ocr" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="ocr" maxlength="30">
                 </x-ui.field>
                 <x-ui.field for="supplier_invoice_date" :label="__('Fakturadatum')" error="invoice_date" :hint="__('Fakturan bokförs på det här datumet.')">
-                    <input id="supplier_invoice_date" type="date" class="{{ $input }} mt-1" wire:model="invoiceDate">
+                    <input id="supplier_invoice_date" type="date" class="{{ $input }} mt-1" wire:model.change="invoiceDate">
                 </x-ui.field>
                 <x-ui.field for="supplier_invoice_due" :label="__('Förfallodag')" error="due_date" :hint="$selectedSupplier ? __('Tomt: :days dagar efter fakturadatum.', ['days' => $selectedSupplier->payment_terms_days]) : __('Tomt: leverantörens betalningsvillkor.')">
                     <input id="supplier_invoice_due" type="date" class="{{ $input }} mt-1" wire:model="dueDate">
                 </x-ui.field>
-                <x-ui.field for="supplier_invoice_total" :label="__('Att betala, inkl. moms')" error="total">
+                <x-ui.field for="supplier_invoice_currency" :label="__('Valuta')" error="currency" :hint="$currency === 'SEK' ? __('Välj en annan valuta om fakturan inte är i kronor.') : null">
+                    <input id="supplier_invoice_currency" type="text" list="supplier-currencies" class="{{ $input }} mt-1 uppercase" wire:model.change="currency" maxlength="3" autocomplete="off">
+                    <datalist id="supplier-currencies">
+                        @foreach($currencies as $code)
+                            <option value="{{ $code }}"></option>
+                        @endforeach
+                    </datalist>
+                </x-ui.field>
+                @if($currency !== 'SEK')
+                    <x-ui.field for="supplier_invoice_foreign_total" :label="__('Att betala i :currency, inkl. moms', ['currency' => $currency])" error="foreign_total">
+                        <input id="supplier_invoice_foreign_total" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="foreignTotal" placeholder="0,00">
+                    </x-ui.field>
+                    <x-ui.field for="supplier_invoice_rate" :label="__('Kurs, kronor per :currency', ['currency' => $currency])" error="exchange_rate" :hint="$rateDate !== '' ? __('Riksbankens kurs :date. Du kan ändra den.', ['date' => $rateDate]) : __('Fakturan bokförs i kronor till den här kursen.')">
+                        <input id="supplier_invoice_rate" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="exchangeRate" placeholder="0,000000">
+                    </x-ui.field>
+                @endif
+                <x-ui.field for="supplier_invoice_total" :label="$currency === 'SEK' ? __('Att betala, inkl. moms') : __('Att betala i kronor, inkl. moms')" error="total">
                     <input id="supplier_invoice_total" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" x-model="total" x-on:blur="fillSingleRow()" placeholder="0,00">
                 </x-ui.field>
                 <div x-show="! buyerLiable">

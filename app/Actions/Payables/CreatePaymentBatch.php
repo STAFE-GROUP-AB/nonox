@@ -156,6 +156,11 @@ class CreatePaymentBatch
             return __(':title är inte attesterad och obetald.', ['title' => $title]);
         }
 
+        // A payment file pays kronor to bankgiro and plusgiro only.
+        if ($invoice->isForeign()) {
+            return __(':title är i :currency. Betala den i internetbanken och registrera betalningen på fakturan.', ['title' => $title, 'currency' => $invoice->invoice_currency]);
+        }
+
         if ($inOpenBatch) {
             return __(':title finns redan i en betalfil som väntar på banken.', ['title' => $title]);
         }

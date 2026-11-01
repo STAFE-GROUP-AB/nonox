@@ -204,7 +204,7 @@ class ApproveInboxMessage
         $input = (array) ($proposal['invoice'] ?? []);
         $currency = strtoupper((string) ($input['currency'] ?? 'SEK'));
 
-        // Supplier invoices are kept in kronor: one in another currency needs the rate it was converted at.
+        // Supplier invoices are booked in kronor: one in another currency keeps its currency, amount and rate (ADR-025).
         if ($currency !== 'SEK') {
             $rate = ExchangeRate::parse($currency, (string) ($input['exchange_rate'] ?? ''));
 
@@ -233,6 +233,9 @@ class ApproveInboxMessage
             'vat' => (string) ($input['vat'] ?? ''),
             'credit' => (bool) ($input['credit'] ?? false),
             'rows' => array_values((array) ($input['rows'] ?? [])),
+            'currency' => $currency,
+            'foreign_total' => $currency === 'SEK' ? null : (string) (((array) ($input['foreign'] ?? []))['total'] ?? ''),
+            'exchange_rate' => $currency === 'SEK' ? null : (string) ($input['exchange_rate'] ?? ''),
         ], null, $file);
 
         $invoice = $fileAttachment === null
