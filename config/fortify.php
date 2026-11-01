@@ -136,6 +136,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Passkeys (ADR-029)
+    |--------------------------------------------------------------------------
+    |
+    | Fortify configures laravel/passkeys from these keys and keeps the
+    | package's routes off. NONOX uses the package's actions for its own
+    | passkey step after the email code; Fortify's passkey sign-in feature
+    | stays off. Passkeys are bound to the host: changing APP_URL's host
+    | makes existing passkeys unusable. Extra origins, comma-separated, go in
+    | PASSKEYS_ALLOWED_ORIGINS.
+    |
+    */
+
+    'passkeys' => [
+        'relying_party_id' => env('PASSKEYS_RELYING_PARTY_ID', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+        'allowed_origins' => array_values(array_filter(array_map(
+            fn (string $origin): string => rtrim(trim($origin), '/'),
+            explode(',', (string) env('PASSKEYS_ALLOWED_ORIGINS', (string) env('APP_URL', 'http://localhost'))),
+        ))),
+        'user_handle_secret' => env('PASSKEYS_USER_HANDLE_SECRET', env('APP_KEY')),
+        'timeout' => 60000,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Features
     |--------------------------------------------------------------------------
     |

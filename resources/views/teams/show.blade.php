@@ -34,6 +34,10 @@
         @else
             <livewire:company.company-details-form :company="$team" />
 
+            @if(auth()->user()->ownsTeam($team))
+                <livewire:company.passkey-policy :company="$team" />
+            @endif
+
             <div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ __('Personer i företaget') }}</h3>
                 @livewire('teams.team-member-manager', ['team' => $team])

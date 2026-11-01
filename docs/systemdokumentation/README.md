@@ -587,6 +587,24 @@ till jurist). Säkerhetsrapporter: `SECURITY.md`. Tillgänglighet:
   timmen). Koden fylls bara i automatiskt på en lokal adress och står inte i
   ämnesraden. Sessioner upphör efter 12 timmar, och användaren kan logga ut
   från alla andra enheter.
+- **Passkey som andra steg** ([ADR-029](../adr/ADR-029-passkeys.md)): den som
+  i något företag kan se sjukfrånvaro, lönebesked eller fullständiga
+  personnummer (`payroll:view-sensitive`, `payroll:view`,
+  `payroll:archive-view`, `staff-ledger:view-sensitive`,
+  `staff-ledger:control-visit`, i ett företag där modulen någon gång varit
+  påslagen), alla i ett företag där ägaren valt "Kräv passkey för alla i
+  företaget", och alla som själva lagt till en passkey, bekräftar inloggningen
+  med passkey efter koden, innan sessionen börjar. Den som måste ha en men
+  saknar lägger till en direkt efter koden. Passkeys kräver
+  användarverifiering (PIN, fingeravtryck, ansikte); bara den publika nyckeln
+  sparas. Den sista passkeyn kan inte tas bort medan en krävs. Tillagd passkey
+  och återställning mejlas till användaren och loggas (namn, aldrig
+  nyckeldata). Återställning görs av en ägare eller administratör i ett
+  företag där personen är med, som själv loggat in med passkey (inte av
+  ägaren av en administratör), loggas i det företaget och loggar ut personen
+  överallt; som sista utväg med `php artisan passkeys:reset`. Lokalt kan
+  steget hoppas över med `PASSKEYS_SKIP_LOCALLY` (kräver `APP_ENV=local` och
+  lokal adress).
 - **Säkerhetsrubriker:** begränsad CSP, X-Frame-Options, Referrer-Policy,
   Permissions-Policy och HSTS.
 - **Lön:**
@@ -1225,3 +1243,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
 | 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
+| 0.45 | 2026-11-01 | Passkeys (ADR-029): andra steg efter e-postkoden för den som kan se hälsouppgifter eller fullständiga personnummer, och för alla i ett företag som kräver det. Passkeys under Profil, återställning av ägare eller administratör, loggat och mejlat. |

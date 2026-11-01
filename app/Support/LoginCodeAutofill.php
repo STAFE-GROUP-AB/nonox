@@ -17,10 +17,15 @@ final class LoginCodeAutofill
     public static function enabled(): bool
     {
         // Also requires a local address, so a server deployed with the example .env never fills in codes for anyone.
-        $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
-        $local = in_array($host, ['localhost', '127.0.0.1', '::1'], true) || str_ends_with($host, '.test') || str_ends_with($host, '.localhost');
+        return app()->environment('local') && config('auth.login_codes.autofill') === true && self::localAddress();
+    }
 
-        return app()->environment('local') && config('auth.login_codes.autofill') === true && $local;
+    /** Whether APP_URL is this computer: localhost, a loopback address, or *.test / *.localhost. */
+    public static function localAddress(): bool
+    {
+        $host = (string) parse_url((string) config('app.url'), PHP_URL_HOST);
+
+        return in_array($host, ['localhost', '127.0.0.1', '::1', '[::1]'], true) || str_ends_with($host, '.test') || str_ends_with($host, '.localhost');
     }
 
     public static function remember(string $email, string $code): void

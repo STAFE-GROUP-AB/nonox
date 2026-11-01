@@ -37,10 +37,12 @@
                 "Felaktiga koder spärrar bara den webbläsare som skrev dem, så ingen kan låsa ute någon annan.",
                 "Sessionen byts vid inloggning, har en absolut gräns på tolv timmar och kan avslutas överallt.",
                 "E-postadresser jämförs utan hänsyn till versaler, och en borttagen administratörs inbjudningar återkallas.",
-                "API-nycklar kan inte öppna sidor, de gäller bara API:t och slutar gälla efter 30 dagar."
+                "API-nycklar kan inte öppna sidor, de gäller bara API:t och slutar gälla efter 30 dagar.",
+                "Passkey som andra steg efter koden för alla som kan se hälsouppgifter eller fullständiga personnummer, och för alla i ett företag som kräver det. Tillagda och återställda passkeys mejlas och loggas."
             ],
             "open": [
-                "Ingen andra faktor (till exempel passkey) för roller som ser hälsouppgifter och personnummer."
+                "En helt ny användare som måste ha passkey lägger till den första med bara e-postkoden, så den som redan styr hens e-post hinner före. Hen får ett mejl om varje tillagd passkey.",
+                "API-nycklar kräver ingen passkey."
             ],
             "law": []
         },
@@ -178,7 +180,6 @@
                 "Konsekvensbedömningar för lön, personalliggare, inkorg och AI, och ett uppdaterat personuppgiftsbiträdesavtal."
             ],
             "open": [
-                "Ingen andra faktor vid inloggning för roller som ser hälsouppgifter.",
                 "Säkerhetskopior saknar kopia på annan plats.",
                 "Frågor om dataskyddsombud och AI-leverantörernas roll väntar på jurist."
             ],
