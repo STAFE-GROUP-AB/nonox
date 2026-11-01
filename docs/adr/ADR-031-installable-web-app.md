@@ -16,8 +16,11 @@ chrome.
 
 1. **One web app, no store apps.** `public/app.webmanifest` describes NONOX
    (`start_url` `/oversikt`, `display: standalone`, icons in `public/brand`,
-   shortcuts to Inkorg and Uppgifter). The layouts link it from
-   `partials/favicon`, together with an `apple-touch-icon` for iOS.
+   shortcuts to Inkorg and Uppgifter). The app's layouts and the sign-in page
+   link it from `partials/favicon`, together with an `apple-touch-icon` for
+   iOS. The public website (landing page, industry, comparison, security and
+   legal pages) does not: it is a website, not the app, and installing it
+   would only open a page that leads to the sign-in.
 2. **Min sida gets its own manifest.** Employees who only use Min sida are not
    members of a company and would be sent to onboarding from `/oversikt`.
    `public/anstalld.webmanifest` starts at `/anstalld`; the portal layout links

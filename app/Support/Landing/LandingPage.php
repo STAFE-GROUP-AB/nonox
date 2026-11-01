@@ -230,7 +230,7 @@ final class LandingPage
             ['q' => 'Följer NONOX Bokföringslagen?', 'a' => 'NONOX är byggt efter Bokföringslagen och Bokföringsnämndens regler, med oföränderliga verifikationer, behandlingshistorik och arkivering.'],
             ['q' => 'Kan jag flytta från mitt nuvarande program?', 'a' => 'Ja, via SIE4 och vårt importverktyg. Se flyttguiden.'],
             ['q' => 'Kan jag sluta när jag vill?', 'a' => 'Ja. Ingen bindningstid, och du exporterar all data med ett klick.'],
-            ['q' => 'Finns det en app till mobilen?', 'a' => 'Ja, som webbapp. Öppna NONOX i mobilens webbläsare och välj Lägg till på hemskärmen (Safari) eller Installera app (Chrome), så öppnas NONOX som en app. Den finns inte i App Store eller Google Play. Ingen bokföring sparas i telefonen. Personalliggarens kiosk installeras på samma sätt på en surfplatta och fungerar även utan internet.'],
+            ['q' => 'Finns det en app till mobilen?', 'a' => 'Ja, som webbapp. Logga in i NONOX i mobilens webbläsare och välj Lägg till på hemskärmen (Safari) eller Installera app (Chrome), så öppnas NONOX som en app. Den finns inte i App Store eller Google Play. Ingen bokföring sparas i telefonen. Personalliggarens kiosk installeras på samma sätt på en surfplatta och fungerar även utan internet.'],
             ['q' => 'Var lagras min data?', 'a' => 'Kör du själv: där du väljer. I våra driftpaket: på servrar i Sverige/EU.'],
         ];
     }

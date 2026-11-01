@@ -59,8 +59,6 @@
 <script type="application/ld+json">{!! json_encode($item, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
 @endforeach
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23FF5A36' d='M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z'/%3E%3C/svg%3E">
-<link rel="manifest" href="{{ asset('app.webmanifest') }}">
-<link rel="apple-touch-icon" href="{{ asset('brand/apple-touch-icon.png') }}">
 <link rel="preload" href="/fonts/inter/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/inter/InterDisplay-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
 <style>
