@@ -27,6 +27,7 @@
         @livewire('navigation-menu')
 
         <div class="min-h-screen bg-paper lg:pl-72">
+            <x-archived-company-banner :company="$layoutCompany" />
 
             <!-- Page Heading -->
             @if (isset($header))

@@ -32,10 +32,16 @@
                         @endif
 
                         <div class="max-h-80 overflow-y-auto">
-                            @foreach ($companies as $company)
-                                <div x-show="search === '' || {{ Js::from(mb_strtolower($company->name.' '.$company->org_number)) }}.includes(search.toLowerCase())">
-                                    <x-switchable-team :team="$company" />
-                                </div>
+                            {{-- Archived companies last, under their own heading (ADR-024). --}}
+                            @foreach ($companies->partition(fn ($company): bool => ! $company->isArchived()) as $group => $groupCompanies)
+                                @if($group === 1 && $groupCompanies->isNotEmpty())
+                                    <div class="block px-4 pb-1 pt-3 text-xs text-gray-400">{{ __('Arkiverade företag') }}</div>
+                                @endif
+                                @foreach ($groupCompanies as $company)
+                                    <div x-show="search === '' || {{ Js::from(mb_strtolower($company->name.' '.$company->org_number)) }}.includes(search.toLowerCase())">
+                                        <x-switchable-team :team="$company" />
+                                    </div>
+                                @endforeach
                             @endforeach
                         </div>
                     @endif

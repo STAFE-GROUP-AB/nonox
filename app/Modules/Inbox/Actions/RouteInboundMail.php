@@ -138,6 +138,7 @@ class RouteInboundMail
 
         return array_values(Company::query()
             ->whereIn('id', $ids)
+            ->whereNull('archived_at')
             ->where(fn ($query) => $query->whereHas('owner', $signsIn)->orWhereHas('users', $signsIn))
             ->orderBy('id')
             ->get()

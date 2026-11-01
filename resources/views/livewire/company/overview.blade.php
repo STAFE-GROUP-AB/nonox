@@ -119,4 +119,6 @@
             @endforeach
         </ul>
     @endif
+
+    @include('livewire.company.overview-archived')
 </div>

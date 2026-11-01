@@ -8,6 +8,7 @@ namespace App\Models;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Support\Audit\Audit;
+use App\Support\Tenancy\ArchivedCompany;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Database\Factories\UserFactory;
@@ -149,12 +150,18 @@ class User extends Authenticatable
      * Jetstream's check, with modules: a permission that belongs to a module
      * is false while the module is off for the company, except the module's
      * archive permissions, and the owner gets only the module permissions the
-     * module gives owners (PAYROLL_MODULE.md A.7).
+     * module gives owners (PAYROLL_MODULE.md A.7). An archived company grants
+     * only the permissions that read (ArchivedCompany::READ).
      *
      * @param  mixed  $team
      */
     public function hasTeamPermission($team, string $permission): bool
     {
+        // An archived company can only be read (ADR-024).
+        if ($team instanceof Company && $team->isArchived() && ! ArchivedCompany::allows($permission)) {
+            return false;
+        }
+
         $module = app(ModuleRegistry::class)->moduleForPermission($permission);
 
         if ($module === null || ! $team instanceof Company) {

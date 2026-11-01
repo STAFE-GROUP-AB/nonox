@@ -23,7 +23,7 @@
         },
         "low": {
             "found": 17,
-            "fixed": 16
+            "fixed": 17
         }
     },
     "areas": [
@@ -60,16 +60,15 @@
         {
             "group": "sakerhet",
             "name": "Behörigheter och roller",
-            "grade": "B",
+            "grade": "A",
             "summary": "Sex roller med behörigheter per handling. Attest och betalning kräver två personer, och en öppen sida slutar fungera när rollen ändras.",
             "done": [
                 "Attest av leverantörsfakturor och godkännande av betalfiler kräver en annan person än den som skapade dem.",
                 "En betalfil kan varken laddas ner eller markeras som betald innan den är godkänd, och databasen spärrar ändringar efter godkännandet.",
-                "Behörigheten prövas igen när rollen eller modulerna ändras, även på en sida som redan är öppen."
+                "Behörigheten prövas igen när rollen eller modulerna ändras, även på en sida som redan är öppen.",
+                "Ett arkiverat företag kan bara läsas: bara läsande behörigheter gäller, och företagsdata kan inte skapas eller ändras ens av schemalagda körningar. Bara ägaren arkiverar och överlåter företaget."
             ],
-            "open": [
-                "Ett arkiverat företag är ännu inte helt skrivskyddat."
-            ],
+            "open": [],
             "law": []
         },
         {

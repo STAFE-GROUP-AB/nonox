@@ -40,7 +40,8 @@ class RemindForgottenCheckOutsCommand extends Command
         foreach ($modules->companiesWith(StaffLedgerModule::KEY) as $companyId) {
             $company = Company::query()->find($companyId);
 
-            if (! $company instanceof Company) {
+            // Nobody works in an archived company (ADR-024).
+            if (! $company instanceof Company || $company->isArchived()) {
                 continue;
             }
 
