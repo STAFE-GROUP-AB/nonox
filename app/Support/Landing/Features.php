@@ -80,7 +80,8 @@ final class Features
         'foreign_currency_sales' => ['name' => 'Kundfakturor i utländsk valuta', 'status' => self::SOON, 'readme' => 'betalfiler och kundfakturor i utländsk valuta'],
         'non_eu_goods_import' => ['name' => 'Import av varor från länder utanför EU', 'status' => self::SOON, 'readme' => 'Import av varor från länder utanför EU'],
         'ixbrl' => ['name' => 'Digital inlämning av årsredovisningen', 'status' => self::SOON, 'readme' => 'Digital inlämning av årsredovisningen till Bolagsverket (iXBRL)'],
-        'public_api' => ['name' => 'Öppet API för integrationer', 'status' => self::SOON, 'readme' => 'Ett öppet API med webhooks'],
+        'public_api' => ['name' => 'Öppet API med webhooks', 'status' => self::LIVE, 'readme' => 'webhooks som signeras', 'module' => 'NONOX Connect'],
+        'pos_integrations' => ['name' => 'Färdiga kopplingar från kassasystem', 'status' => self::SOON, 'readme' => 'Färdiga kopplingar från kassasystem'],
     ];
 
     /**
@@ -94,7 +95,7 @@ final class Features
         'foreign_currency_sales' => ['kundfakturor i utländsk valuta', 'fakturera i euro', 'fakturor i euro'],
         'non_eu_goods_import' => ['import av varor'],
         'ixbrl' => ['iXBRL', 'digital inlämning av årsredovisningen'],
-        'public_api' => ['öppet api', 'direktkoppling', 'kopplas direkt'],
+        'pos_integrations' => ['direktkoppling', 'kopplas direkt'],
     ];
 
     /** @return array<string, array{name: string, status: string, readme: string, module?: string}> */

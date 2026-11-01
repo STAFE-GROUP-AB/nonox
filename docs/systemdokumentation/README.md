@@ -1306,6 +1306,33 @@ företaget.
   eller återkallade nycklar loggas också.
 - **Personuppgifter.** Personnummer lämnas aldrig ut via API:t; för en kund
   syns bara om ett personnummer finns.
+- **Fakturor, leverantörsfakturor och betalningar.** Kundfakturor skapas som
+  utkast och blir fakturor (nummer, OCR, bokföring i serie B) med samma
+  funktion som i appen; leverantörsfakturor registreras (serie D), attesteras
+  och betalas (serie E), och inbetalningar bokförs i serie C. Ett anrop som
+  bokför kräver att anslutningen också har behörigheten att bokföra
+  verifikationer. Attest av en annan person än den som registrerade gäller
+  likadant i API:t som i appen. Rapporter, momsdeklarationen per period och
+  SIE-exporten räknas fram av samma kod som i appen; momsen bokförs och
+  perioder låses bara i appen.
+- **Webhooks.** En ägare eller administratör kan, med passkey, låta företaget
+  skicka händelser (bokförd verifikation, mejlad faktura, betald faktura,
+  attesterad leverantörsfaktura) till en https-adress på internet. Händelsen
+  skickas först när bokföringen är sparad och innehåller bara id, nummer,
+  datum och belopp. Den signeras med en hemlighet som visas en gång och
+  sparas krypterad. Adresser i interna nät vägras, före varje försök. Svarar
+  mottagaren inte försöker NONOX igen i ungefär ett dygn och stänger sedan av
+  webhooken och mejlar ägaren. Leveransloggen sparar tid, försök och
+  statuskod, aldrig mottagarens svar, och rensas efter 30 dagar. Att lägga
+  till, ändra hemlighet, stänga av och ta bort loggas.
+- **Återkallelse.** En app kan själv återkalla sin anslutning (RFC 7009);
+  det loggas som en återkallelse av appen.
+- **Testföretag.** Ett testföretag är ett eget företag med påhittade
+  uppgifter för att prova API:t. Det är märkt på varje sida, har ett
+  organisationsnummer som inget riktigt företag kan ha, mejlar aldrig
+  fakturor, påminnelser eller offerter och räknas inte med i statistik eller
+  debitering. Dess bokföring följer samma regler som allt annat men är inte
+  någons riktiga räkenskapsinformation.
 
 ## 6. Belopp
 
@@ -1559,3 +1586,4 @@ företaget.
 | 0.53 | 2026-11-01 | NONOX går att installera som app på hemskärmen (PWA, ADR-031): manifest för appen och för Min sida, och en service worker som bara visar en offlinesida och inte sparar några uppgifter i enheten. Bokföringen påverkas inte. |
 | 0.54 | 2026-11-01 | Lön: löneunderlag från schemasystem som PAXml (1.0, 2.0–2.3) eller CSV läses in i en öppen lönekörning som förslag. Koderna kopplas till lönearter en gång per källsystem, frånvaro och saldon läses aldrig in som lön, och en person godkänner raderna innan de blir rader i lönekörningen. Samma fil läses en gång per period; originalet sparas krypterat och varje steg loggas. |
 | 0.55 | 2026-11-01 | NONOX Connect (modul, ADR-032): öppet API under `/api/v1` för företaget, kontoplan, momskoder, räkenskapsår, verifikationsserier, verifikationer (utkast, bokföring, rättelse, underlag), kunder och leverantörer. Appar ansluts med OAuth 2.0 och PKCE efter godkännande med passkey av ägare eller administratör, API-nycklar har slutdatum och skapas med passkey. Bokförda verifikationer kan fortfarande bara rättas, och varje skrivande anrop loggas. |
+| 0.57 | 2026-11-01 | NONOX Connect: kundfakturor, leverantörsfakturor med attest av någon annan, betalningar, artiklar, kostnadsställen och projekt, rapporter, momsdeklaration per period, periodernas låsning och SIE-export i API:t, med samma funktioner som appen; ett anrop som bokför kräver behörighet att bokföra. Signerade webhooks som skickas efter att bokföringen sparats, med skydd mot anrop till interna nät och avstängning efter ett dygns fel. Appar kan återkalla sin egen anslutning. Testföretag med exempeldata, tydligt märkta och utan utskick. |

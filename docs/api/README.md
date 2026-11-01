@@ -7,12 +7,14 @@ Den fullständiga beskrivningen av varje anrop, med exempel, finns i [`openapi.y
 - API: `https://nonox.app/api/v1` (eller `https://<din-server>/api/v1` för den som driftar själv)
 - Godkännande (OAuth): `https://nonox.app/anslut`
 - Token: `https://nonox.app/oauth/token`
+- Återkalla token: `https://nonox.app/oauth/revoke`
 - Metadata: `https://nonox.app/.well-known/oauth-authorization-server`
-- I appen: **Anslutningar** (`/anslutningar`) visar anslutna appar och API-nycklar
+- I appen: **Anslutningar** (`/anslutningar`) visar anslutna appar, API-nycklar, webhooks och testföretag
+- Ändringar i API:t: [CHANGELOG.md](CHANGELOG.md)
 
 ## 1. Slå på modulen
 
-API:t är en modul och är avstängt från början. En ägare eller administratör slår på **NONOX Connect** under Inställningar → Moduler. Så länge modulen är avstängd svarar varje anrop för företaget `404`, som om API:t inte fanns. Stängs modulen av kopplas alla appar bort och alla API-nycklar återkallas.
+API:t är en modul och är avstängt från början. En ägare eller administratör slår på **NONOX Connect** under Inställningar → Moduler. Så länge modulen är avstängd svarar varje anrop för företaget `404`, som om API:t inte fanns. Stängs modulen av kopplas alla appar bort, alla API-nycklar återkallas och alla webhooks stängs av.
 
 Under modulens inställningar kan företaget välja att bara tillåta vissa appar och begränsa hela API:t till vissa IP-adresser eller nät.
 
@@ -100,6 +102,18 @@ Varje förnyelse ger en **ny** refresh token och gör den gamla ogiltig. Spara a
 
 Fel från `/oauth/token` följer OAuth (RFC 6749 §5.2): `{"error": "invalid_grant", "error_description": "…"}`.
 
+**6. Koppla bort** (RFC 7009). När en användare kopplar bort er app, eller om en token kan ha läckt, återkallar appen själv:
+
+```bash
+curl -X POST https://nonox.app/oauth/revoke \
+  -d client_id=<client_id> \
+  -d client_secret=<client_secret> \
+  -d token=<refresh_token> \
+  -d token_type_hint=refresh_token
+```
+
+En egen access- eller refresh-token återkallar **hela anslutningen** (alla koder och tokens); appen måste be om godkännande igen. Svaret är alltid `200`, också för en okänd eller redan återkallad token eller en annan apps token – då händer ingenting. Fel klientautentisering ger `401 invalid_client`.
+
 ## 5. API-nycklar
 
 En ägare eller administratör skapar nycklar under **Anslutningar**: namn, behörigheter, slutdatum (obligatoriskt) och om man vill en lista över IP-adresser eller nät som nyckeln får användas från. Det kräver en färsk passkey-bekräftelse. Nyckeln (`nnx_…`) visas **en gång**; NONOX sparar bara ett SHA-256-avtryck. Ägaren får ett mejl om varje ny nyckel. Senast använd (tid och adress) syns i listan, och en nyckel kan återkallas direkt.
@@ -114,16 +128,27 @@ Varje scope är samma behörighet som rollerna i NONOX använder.
 
 | Scope | Ger |
 |---|---|
-| `vouchers:view` | Läsa verifikationer, underlag, kontoplan, räkenskapsår, verifikationsserier och momskoder |
+| `vouchers:view` | Läsa verifikationer, underlag, kontoplan, räkenskapsår och perioder, kostnadsställen, projekt, verifikationsserier och momskoder |
 | `vouchers:create` | Skapa och ändra utkast och lägga till underlag |
 | `vouchers:post` | Bokföra verifikationer |
 | `vouchers:correct` | Rätta bokförda verifikationer |
-| `invoices:view` | Läsa kundregistret |
-| `invoices:create` | Lägga till och ändra kunder |
-| `supplier-invoices:create` | Läsa, lägga till och ändra leverantörer |
-| `supplier-invoices:approve` | Läsa leverantörsregistret |
+| `accounts:manage` | Lägga till och ändra kostnadsställen och projekt |
+| `reports:view` | Saldobalans, huvudbok, balansrapport och resultatrapport |
+| `vat:prepare` | Läsa momsdeklarationen per period |
+| `export:sie` | Hämta ett räkenskapsår som SIE-fil |
+| `invoices:view` | Läsa kunder, artiklar, kundfakturor (med PDF) och inbetalningar |
+| `invoices:create` | Lägga till och ändra kunder, artiklar och fakturautkast |
+| `invoices:send` | Skapa fakturor av utkast och mejla dem |
+| `invoices:credit` | Kreditera obetalda fakturor |
+| `payments:create` | Registrera inbetalningar och betalningar av leverantörsfakturor |
+| `supplier-invoices:create` | Läsa och lägga till leverantörer och leverantörsfakturor, registrera fakturor |
+| `supplier-invoices:approve` | Läsa och attestera leverantörsfakturor |
 
 `GET /company` kräver ingen särskild behörighet.
+
+**Anrop som bokför.** Att skapa en kundfaktura (`/invoices/{id}/issue`), registrera en leverantörsfaktura (`/supplier-invoices/{id}/register`) och registrera en betalning (`/invoices/{id}/payments`, `/supplier-invoices/{id}/payments`) bokför en verifikation i personens namn. De kräver därför också `vouchers:create` och `vouchers:post`. I `openapi.yaml` står det som `x-required-scopes` (en lista av uppsättningar där alla scopes i en uppsättning behövs), och ett `403 insufficient_scope` har `required_scope_sets` på samma form.
+
+**Attest av någon annan.** Kräver företaget att en annan person attesterar (standard), kan den som registrerade en leverantörsfaktura inte attestera den – oavsett vilken app eller nyckel som används. Svaret är då `422`.
 
 **Vad ett anrop faktiskt får göra** är snittet av två saker, som prövas vid varje anrop: nyckelns eller appens scopes **och** vad personen som godkände appen eller skapade nyckeln får göra i företaget **just nu**. Får personen en annan roll minskar åtkomsten direkt; lämnar personen företaget slutar nyckeln eller appen fungera (en OAuth-anslutning återkallas då för gott). Ett arkiverat företag kan bara läsas.
 
@@ -214,6 +239,79 @@ De hamnar i `storage/oauth-private.key` och `storage/oauth-public.key` (aldrig i
 
 `php artisan connect:prune` (körs varje natt av schemaläggaren) tar bort utgångna idempotensposter, koder och tokens.
 
-## 13. Webhooks – kommer
+`php artisan connect:webhooks` körs varje minut av schemaläggaren och köar webhook-leveranser som ska försökas igen. Leveranserna skickas i kön (`QUEUE_CONNECTION`); med `sync` skickas de direkt i anropet som orsakade dem, så kör en köarbetare i drift.
 
-Webhooks för `voucher.posted`, `invoice.sent`, `invoice.paid` och `supplier_invoice.approved` är beskrivna i `openapi.yaml` under `webhooks` (med exempel och signaturhuvudet `Nonox-Signature: t=<unix>,v1=<HMAC-SHA256>`), men skickas inte ännu.
+## 13. Resurser
+
+| Område | Adresser |
+|---|---|
+| Företaget | `GET /company` |
+| Bokföring | `/accounts`, `/vat-codes`, `/fiscal-years`, `/fiscal-years/{id}/periods` (låsta månader), `/fiscal-years/{id}/sie` (SIE 4, CP437), `/voucher-series` |
+| Kostnadsställen och projekt | `/cost-centers`, `/projects` (läsa, lägga till, byta namn, inaktivera) |
+| Verifikationer | `/vouchers` (utkast, bokföra, rätta, underlag) |
+| Kunder och artiklar | `/customers`, `/articles` |
+| Kundfakturor | `/invoices` (utkast), `/issue` (nummer, OCR, bokförs i B), `/send` (mejl), `/credit` (utkast till kreditfaktura), `/payments` (inbetalning i C), `/pdf` |
+| Leverantörsfakturor | `/suppliers`, `/supplier-invoices` (utkast), `/file` (fakturan som PDF eller bild), `/register` (bokförs i D), `/approve` (attest), `/payments` (betalning i E) |
+| Betalningar | `GET /payments` (inbetalningar), `GET /supplier-payments` (utbetalningar) |
+| Rapporter | `/reports/trial-balance`, `/reports/general-ledger`, `/reports/balance-sheet`, `/reports/income-statement` med `fiscal_year_id`, `from`, `to`, `cost_center`, `project` |
+| Moms | `/vat-periods?fiscal_year_id=…`, `/vat-return?fiscal_year_id=…&period_start=…` |
+
+Belopp in och ut är hela öre. Momssatser och rabatter anges i hundradels procent: `2500` är 25 %, `1000` är 10 %. Antal skickas som heltal eller som text med högst tre decimaler (`"1.5"`); decimaltal i JSON avvisas, eftersom de inte är exakta. Momsdeklarationens rutor är hela kronor (`amount_sek`), precis som på blanketten.
+
+Ännu inte i API:t: offerter och order, avtalsfakturering, påminnelser, SIE-import (den tvåstegsimport som finns i appen) och att bokföra momsen eller låsa perioder.
+
+## 14. Webhooks
+
+En webhook berättar för ert program när något händer, så att ni slipper fråga hela tiden. En ägare eller administratör lägger till den under **Anslutningar** med passkey: en `https`-adress, vilka händelser och – en gång – en hemlighet (`nnxwh_…`). Ägaren får ett mejl om varje ny webhook.
+
+| Händelse | När |
+|---|---|
+| `voucher.posted` | En verifikation har bokförts (också när en faktura skapas eller en betalning registreras) |
+| `invoice.sent` | En kundfaktura har mejlats till kunden |
+| `invoice.paid` | En kundfaktura är helt betald |
+| `supplier_invoice.approved` | En leverantörsfaktura har attesterats |
+
+Händelser skickas först när ändringen är sparad (efter commit), aldrig för något som sedan ångrades. De är tunna: id, nummer, datum och belopp, inga personuppgifter. Behöver ni mer hämtar ni posten med API:t.
+
+```http
+POST /er/webhook HTTP/1.1
+Content-Type: application/json
+User-Agent: NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)
+Nonox-Event-Id: c2d4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f
+Nonox-Event-Type: invoice.paid
+Nonox-Signature: t=1772444713,v1=5f8e2a1c…
+
+{"id":"c2d4e6f8-…","type":"invoice.paid","created_at":"2026-03-28T09:12:01+01:00","company_id":42,"data":{"invoice_id":"5c2e8a41-…","invoice_number":1042,"customer_id":18,"total_ore":237500,"paid_ore":237500,"currency":"SEK","payment_id":88,"paid_on":"2026-03-28"}}
+```
+
+**Kontrollera varje leverans** innan ni litar på den:
+
+1. Läs `t` och `v1` ur `Nonox-Signature`.
+2. Räkna HMAC-SHA256 med hemligheten över `"<t>.<rå kropp>"` – exakt de bytes ni fick, innan JSON tolkas – och jämför med `v1` i konstant tid.
+3. Avvisa om `t` skiljer mer än fem minuter från er klocka (skydd mot uppspelning).
+4. Spara `Nonox-Event-Id` och hoppa över en händelse ni redan har tagit emot: samma händelse kan komma två gånger om ert svar försvann på vägen.
+
+```php
+[$t, $v1] = [null, null];
+foreach (explode(',', $_SERVER['HTTP_NONOX_SIGNATURE']) as $part) {
+    [$k, $v] = explode('=', $part, 2) + [1 => ''];
+    if ($k === 't') { $t = (int) $v; }
+    if ($k === 'v1') { $v1 = $v; }
+}
+$body = file_get_contents('php://input');
+$ok = $t !== null && abs(time() - $t) <= 300
+    && hash_equals(hash_hmac('sha256', "{$t}.{$body}", $secret), (string) $v1);
+```
+
+**Svara 2xx inom tio sekunder** och gör det tunga arbetet efteråt. Allt annat – ett annat statusvärde, inget svar, en omdirigering – räknas som misslyckat och försöks igen efter 1, 5 och 15 minuter och 1, 3, 6 och 13 timmar: åtta försök under ungefär ett dygn. Misslyckas även det sista stängs webhooken av, väntande händelser ställs in och ägaren får ett mejl. Den slås på igen under Anslutningar; det som hände medan den var avstängd hämtas med `updated_since`.
+
+**Säkerhet.** Adressen måste vara `https` (port 443 eller 1024–65535) och peka ut på internet. NONOX slår upp namnet före varje försök och vägrar adresser i privata nät, loopback, link-local (till exempel molnens metadata-adress 169.254.169.254), CGNAT, multicast och motsvarande i IPv6. Anslutningen görs till exakt den adress som kontrollerades, omdirigeringar följs aldrig, svaret läses som mest 64 kB och sparas inte – leveransloggen under Anslutningar visar bara tid, händelse, antal försök och statuskod. Hemligheten byts med **Ny hemlighet** (den gamla slutar gälla direkt).
+
+## 15. Testföretag
+
+För att prova API:t utan att röra riktig bokföring finns testföretag: egna företag med påhittade kunder, leverantörer, artiklar, kostnadsställen, verifikationer, en skapad och delbetald faktura, ett fakturautkast och en leverantörsfaktura som väntar på attest – allt gjort med samma funktioner som appen. NONOX Connect är påslaget.
+
+- Den som driftar: `php artisan connect:test-company utvecklare@exempel.se --name="Prova API AB"` (användaren måste finnas).
+- En ägare eller administratör: **Anslutningar → Testföretag för API:t**. Högst tre per person.
+
+Ett testföretag har en gul banderoll på varje sida, ett organisationsnummer som börjar med `00` (en grupp som inget riktigt företag har), mejlar aldrig fakturor, påminnelser eller offerter till någon och räknas inte med i statistik eller debitering. Det är ett vanligt företag i övrigt, helt skilt från andra företags data. Skapa en API-nyckel i testföretaget och börja anropa.

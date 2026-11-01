@@ -269,7 +269,7 @@ it('explains how the sales from the till reach NONOX on the pages for businesses
     $industry = Industries::find($slug);
 
     expect($industry['pos']['items'])->not->toBeEmpty()
-        ->and(collect($industry['limits'])->pluck('feature')->all())->toContain('public_api');
+        ->and(collect($industry['limits'])->pluck('feature')->all())->toContain('pos_integrations');
 
     $this->get('/'.$slug)->assertOk()->assertSee($industry['pos']['heading'])->assertSee('SIE-fil från kassan');
 })->with(['bokforing-for-restauranger', 'bokforing-for-cafeer', 'bokforing-for-butiker', 'bokforing-for-frisorer']);
