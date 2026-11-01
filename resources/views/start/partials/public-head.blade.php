@@ -9,6 +9,18 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NONOX">
 <meta property="og:locale" content="sv_SE">
+@php
+    $shareImage = \App\Support\Landing\ShareCards::imageFor(request()->path());
+@endphp
+<meta property="og:image" content="{{ $shareImage }}">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{ $pageTitle ?? 'NONOX – bokföring, fakturering och lön med öppen källkod' }}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ $pageTitle ?? 'Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod' }}">
+<meta name="twitter:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
+<meta name="twitter:image" content="{{ $shareImage }}">
 <meta name="theme-color" content="#15171C">
 <link rel="canonical" href="{{ url()->current() }}">
 <meta name="robots" content="index,follow">

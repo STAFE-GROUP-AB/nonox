@@ -25,6 +25,8 @@ Företagsbranscher heter `/bokforing-for-…`, sidor för den som för bokförin
 | `/for-redovisningsbyraer` | `for-redovisningsbyraer.json` | Redovisningsbyråer |
 | `/for-ekonomikonsulter` | `for-ekonomikonsulter.json` | Ekonomikonsulter och egna redovisare |
 
+Varje sida har en egen delningsbild (Open Graph) i `public/og`, ritad från rubriken av `php artisan og:images` (kräver Chrome lokalt). Kör kommandot och committa bilderna när en rubrik ändras; `tests/Feature/ShareImagesTest.php` kontrollerar att bilden finns.
+
 En ny fil blir en ny sida, kommer med i menyn, sidfoten, navet och
 sitemap.xml, och testas av `tests/Feature/IndustryPagesTest.php`. Lägg också
 till adressen i tabellen ovan; testet kontrollerar det.
