@@ -6,6 +6,7 @@ namespace App\Actions\Accounting;
 
 use App\Domain\Accounting\LedgerHash;
 use App\Domain\Accounting\VoucherStatus;
+use App\Events\VoucherPosted;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -93,6 +94,8 @@ class PostVoucher
                 'amount_ore' => $voucher->rows->sum(fn (VoucherRow $row): int => $row->debit_ore->ore),
                 'hash' => $voucher->hash,
             ], $voucher->company_id, $user);
+
+            event(new VoucherPosted($voucher->company_id, $voucher->id));
 
             return $voucher;
         }));

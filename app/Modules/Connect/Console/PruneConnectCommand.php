@@ -9,14 +9,17 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Removes what has no use any more (ADR-032): idempotency records past
- * their 24 hours, and expired authorization codes and tokens. Grants, API
- * keys and the audit log are kept.
+ * their 24 hours, expired authorization codes and tokens, and webhook
+ * deliveries finished more than 30 days ago. Grants, API keys, webhooks
+ * and the audit log are kept.
  */
 final class PruneConnectCommand extends Command
 {
     protected $signature = 'connect:prune';
 
-    protected $description = 'Remove expired idempotency records, authorization codes and tokens';
+    protected $description = 'Remove expired idempotency records, authorization codes, tokens and old webhook deliveries';
+
+    public const int DELIVERY_LOG_DAYS = 30;
 
     public function handle(): int
     {
@@ -30,7 +33,10 @@ final class PruneConnectCommand extends Command
             ->whereNotIn('id', DB::table('oauth_refresh_tokens')->select('access_token_id'))
             ->delete();
 
-        $this->comment("Removed {$idempotency} idempotency records, {$codes} codes, {$refresh} refresh tokens and {$access} access tokens.");
+        $this->info('Pruning finished webhook deliveries...');
+        $deliveries = DB::table('connect_webhook_deliveries')->where('status', '<>', 'pending')->where('created_at', '<', now()->subDays(self::DELIVERY_LOG_DAYS))->delete();
+
+        $this->comment("Removed {$idempotency} idempotency records, {$codes} codes, {$refresh} refresh tokens, {$access} access tokens and {$deliveries} webhook deliveries.");
 
         return self::SUCCESS;
     }

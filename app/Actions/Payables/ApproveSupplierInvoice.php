@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Payables;
 
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Events\SupplierInvoiceApproved;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Policies\SupplierInvoicePolicy;
@@ -44,6 +45,8 @@ class ApproveSupplierInvoice
             ])->save();
 
             Audit::record('supplier_invoice.approved', $invoice, ['number' => $invoice->number], $invoice->company_id, $user);
+
+            event(new SupplierInvoiceApproved($invoice->company_id, $invoice->id));
 
             return $invoice;
         }));

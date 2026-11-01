@@ -28,6 +28,32 @@ final class ConnectAccess
         app(self::class)->credential = $credential;
     }
 
+    /**
+     * Runs a check of someone else's rights (a webhook's creator) without the
+     * current request's credential narrowing it, then puts the credential back.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function without(callable $callback): mixed
+    {
+        $credential = self::current();
+
+        if ($credential === null) {
+            return $callback();
+        }
+
+        self::set(null);
+
+        try {
+            return $callback();
+        } finally {
+            self::set($credential);
+        }
+    }
+
     /** Whether the current API credential forbids this permission check. */
     public static function restricts(mixed $team, string $permission): bool
     {

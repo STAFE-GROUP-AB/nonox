@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Connect;
 
+use App\Events\InvoicePaid;
+use App\Events\InvoiceSent;
+use App\Events\SupplierInvoiceApproved;
+use App\Events\VoucherPosted;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\Connect\Console\ConnectAppCommand;
+use App\Modules\Connect\Console\DeliverWebhooksCommand;
 use App\Modules\Connect\Console\PruneConnectCommand;
 use App\Modules\Connect\Http\Controllers\OAuth\AuthorizeController;
 use App\Modules\Connect\Http\Controllers\OAuth\MetadataController;
@@ -19,6 +24,7 @@ use App\Modules\Connect\Http\Middleware\RequireScope;
 use App\Modules\Connect\Livewire\ConnectionsManager;
 use App\Modules\Connect\Livewire\ConnectSettingsForm;
 use App\Modules\Connect\Livewire\ConsentScreen;
+use App\Modules\Connect\Livewire\WebhooksManager;
 use App\Modules\Connect\Models\ConnectApp;
 use App\Modules\Connect\OAuth\ConnectAccessTokenRepository;
 use App\Modules\Connect\OAuth\ConnectAuthCodeRepository;
@@ -26,12 +32,14 @@ use App\Modules\Connect\OAuth\ConnectRefreshTokenRepository;
 use App\Modules\Connect\OAuth\GrantContext;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Connect\Support\ConnectScopes;
+use App\Modules\Connect\Webhooks\WebhookDispatcher;
 use App\Modules\ModuleRegistry;
 use DateInterval;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Router;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -67,14 +75,21 @@ class ConnectServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ConnectAppCommand::class, PruneConnectCommand::class]);
+            $this->commands([ConnectAppCommand::class, PruneConnectCommand::class, DeliverWebhooksCommand::class]);
         }
+
+        // Webhooks (ADR-032): the domain events are dispatched after commit.
+        Event::listen(VoucherPosted::class, [WebhookDispatcher::class, 'voucherPosted']);
+        Event::listen(InvoiceSent::class, [WebhookDispatcher::class, 'invoiceSent']);
+        Event::listen(InvoicePaid::class, [WebhookDispatcher::class, 'invoicePaid']);
+        Event::listen(SupplierInvoiceApproved::class, [WebhookDispatcher::class, 'supplierInvoiceApproved']);
 
         $this->configurePassport();
 
         Livewire::component(ConsentScreen::NAME, ConsentScreen::class);
         Livewire::component(ConnectionsManager::NAME, ConnectionsManager::class);
         Livewire::component(ConnectSettingsForm::NAME, ConnectSettingsForm::class);
+        Livewire::component(WebhooksManager::NAME, WebhooksManager::class);
 
         $this->registerRateLimits();
         $this->registerRoutes();

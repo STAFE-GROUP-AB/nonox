@@ -60,6 +60,8 @@ use App\Models\VoucherSeries;
 use App\Models\YearEndEntry;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\ConnectGrant;
+use App\Modules\Connect\Models\ConnectWebhook;
+use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Connect\Models\IdempotencyRecord;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
@@ -218,6 +220,8 @@ const COMPANY_SCOPED_MODELS = [
     ConnectGrant::class => 'connectGrantAttributes',
     ConnectApiKey::class => 'connectApiKeyAttributes',
     IdempotencyRecord::class => 'connectIdempotencyAttributes',
+    ConnectWebhook::class => 'connectWebhookAttributes',
+    ConnectWebhookDelivery::class => 'connectWebhookDeliveryAttributes',
 ];
 
 function taskAttributes(): array
@@ -309,6 +313,18 @@ function connectApiKeyAttributes(): array
 function connectIdempotencyAttributes(): array
 {
     return ['credential' => 'key:'.random_int(1, 999999), 'idempotency_key' => 'hemlig', 'request_hash' => str_repeat('a', 64), 'status' => 'done', 'expires_at' => now()->addDay()];
+}
+
+function connectWebhookAttributes(): array
+{
+    return ['url' => 'https://hemlig.example.com/hook', 'events' => ['voucher.posted'], 'secret' => 'nnxwh_hemlig', 'secret_prefix' => 'nnxwh_hemlig', 'created_by' => User::factory()->create()->id];
+}
+
+function connectWebhookDeliveryAttributes(): array
+{
+    $webhook = ConnectWebhook::create(connectWebhookAttributes());
+
+    return ['webhook_id' => $webhook->id, 'event_id' => (string) Str::uuid(), 'event_type' => 'voucher.posted', 'body' => '{"hemlig":true}', 'status' => 'pending', 'next_attempt_at' => now()];
 }
 
 function inboxMailboxAttributes(): array
