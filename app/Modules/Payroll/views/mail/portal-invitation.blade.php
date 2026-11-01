@@ -1,4 +1,5 @@
 @component('mail::message')
+@include('mail.partials.firm-brand')
 # {{ __('Hej :name!', ['name' => $firstName]) }}
 
 {{ __(':company använder Min sida för lönebesked. Där ser du dina lönebesked och kan spara dem som PDF.', ['company' => $company]) }}

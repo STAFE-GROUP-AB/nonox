@@ -17,6 +17,7 @@ use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\CompanyLogoController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DataSubjectExportController;
+use App\Http\Controllers\FirmLogoController;
 use App\Http\Controllers\GettingStartedController;
 use App\Http\Controllers\IndustryController;
 use App\Http\Controllers\Invoicing\AgreementController;
@@ -61,6 +62,9 @@ Route::get('/{industry}', [IndustryController::class, 'show'])->where('industry'
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
+// The firm's logo on the login page reached from an invitation (ADR-030): signed, short-lived.
+Route::get('/varumarke/{company}/byrans-logotyp', [FirmLogoController::class, 'signed'])->whereNumber('company')->middleware('signed')->name('brand.firm-logo');
+
 Route::middleware('guest')->group(function () {
     Route::view('/logga-in', 'auth.login')->name('login');
     Route::redirect('/registrera', '/logga-in')->name('register');
@@ -81,6 +85,8 @@ Route::middleware([
     Route::get('/foretag/nytt', [CompanyController::class, 'create'])->name('teams.create');
     Route::get('/foretag/{company}', [CompanyController::class, 'show'])->whereNumber('company')->name('teams.show');
     Route::get('/foretag/{company}/logotyp', CompanyLogoController::class)->whereNumber('company')->name('teams.logo');
+    // The logo of the accounting firm the company shows its people (ADR-030).
+    Route::get('/foretag/{company}/byrans-logotyp', [FirmLogoController::class, 'member'])->whereNumber('company')->name('teams.firm-logo');
     Route::put('/aktuellt-foretag', [CompanyController::class, 'switch'])->name('current-team.update');
     Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
     // Across every company the user belongs to (ADR-028).

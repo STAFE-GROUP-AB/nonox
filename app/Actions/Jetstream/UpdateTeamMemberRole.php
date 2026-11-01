@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Jetstream;
 
+use App\Actions\Company\ReconcileFirmLinks;
 use App\Actions\Company\WithdrawInvitationsSentBy;
 use App\Models\Company;
 use App\Models\User;
@@ -17,7 +18,10 @@ use Laravel\Jetstream\Actions\UpdateTeamMemberRole as JetstreamUpdateTeamMemberR
  */
 class UpdateTeamMemberRole extends JetstreamUpdateTeamMemberRole
 {
-    public function __construct(private readonly WithdrawInvitationsSentBy $withdrawInvitations) {}
+    public function __construct(
+        private readonly WithdrawInvitationsSentBy $withdrawInvitations,
+        private readonly ReconcileFirmLinks $reconcileFirmLinks,
+    ) {}
 
     /**
      * @param  mixed  $user
@@ -45,6 +49,11 @@ class UpdateTeamMemberRole extends JetstreamUpdateTeamMemberRole
 
             ($this->withdrawInvitations)($team, $member, 'role_changed');
         });
+
+        // A consultant who is no longer one may have been what linked the company to its firm (ADR-030).
+        if ($team instanceof Company) {
+            ($this->reconcileFirmLinks)($team, $user instanceof User ? $user : null);
+        }
     }
 
     private function canManageMembers(User $member, Company $team): bool

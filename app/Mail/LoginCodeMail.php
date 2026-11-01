@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Support\Branding\PresentedBrand;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -13,7 +14,7 @@ class LoginCodeMail extends Mailable
 {
     use Queueable;
 
-    public function __construct(public readonly string $code) {}
+    public function __construct(public readonly string $code, public readonly ?PresentedBrand $mailBrand = null) {}
 
     public function envelope(): Envelope
     {

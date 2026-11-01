@@ -1,4 +1,5 @@
 @component('mail::message')
+@include('mail.partials.firm-brand')
 # {{ __('Hej :name!', ['name' => $firstName]) }}
 
 {{ $approved

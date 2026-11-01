@@ -179,6 +179,29 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   Arkiverade företag räknas inte med i summor, Att göra och månadsstängning,
   och där kan inga uppgifter skapas eller ändras.
 
+## 1d. Redovisningsbyråns varumärke för kunderna (ADR-030)
+
+- Ägaren kan markera ett företag som redovisningsbyrå
+  (`teams.is_accounting_firm`) och välja om kunderna ska se byråns logga och
+  färger (`teams.firm_brand_for_clients`, på från början).
+- Ett kundföretags ägare väljer en byrå (`teams.accounting_firm_id`) bland
+  byråer där någon med rollen Redovisningskonsult i kundföretaget också är med.
+  Båda sidors ägare kan ta bort kopplingen. Den tas bort av sig själv när
+  ingen sådan konsult finns kvar, och när byrån slutar vara byrå. Varje
+  ändring loggas i båda företagens behandlingshistorik
+  (`company.accounting_firm_linked`, `company.accounting_firm_unlinked`,
+  `company.firm_client_linked`, `company.firm_client_unlinked`,
+  `company.accounting_firm_settings_changed`).
+- Kopplingen styr bara utseendet. Den ger byrån ingen behörighet i
+  kundföretaget; behörighet kommer bara av medlemskap.
+- Kundsidan (ägaren, medlemmar utan rollen Redovisningskonsult och de
+  anställda på Min sida) ser byråns logga och färger i appen, på Min sida och
+  i mejlen om inloggning, inbjudningar, uppgifter och frånvarobeslut.
+  Byråns konsulter ser företagets eget varumärke.
+- Kundföretagets egna dokument – fakturor, offerter, order, påminnelser och
+  lönebesked – har alltid kundföretagets eget varumärke. Ingen
+  räkenskapsinformation ändras av kopplingen.
+
 ## 2. Kontoplan
 
 - Ett nytt företag får en förifylld kontoplan med vanliga konton enligt BAS 2026,
@@ -1413,3 +1436,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.48 | 2026-11-01 | Passkeys (ADR-029): andra steg efter e-postkoden för den som kan se hälsouppgifter eller fullständiga personnummer, och för alla i ett företag som kräver det. Passkeys under Profil, återställning av ägare eller administratör, loggat och mejlat. |
 | 0.49 | 2026-11-01 | Översikt: nyckeltal, "Att göra" från bokföringen och modulerna, senaste verifikationer med belopp ur bankens synvinkel, cache per företag och roll med omladdning, och fliken Statistik och prognos med diagram, tabeller och en förklarad likviditetsprognos. Översikten läser bara. |
 | 0.50 | 2026-11-01 | Byråns arbetsyta på Mina företag: summor och en gemensam Att göra-lista för alla företag med filter och sparade vyer, månadsstängning per klient, uppgifter med tilldelning, kommentarer, checklistor och återkommande uppgifter, notiser och daglig sammanfattning med e-post (ADR-028). |
+| 0.51 | 2026-11-01 | Redovisningsbyråns varumärke (ADR-030): ett företag kan markeras som byrå, kundföretagets ägare väljer sin byrå bland dem som en gemensam redovisningskonsult är med i, och kundsidan ser byråns logga och färger i appen, på Min sida och i mejl om inloggning och uppgifter. Kundens egna fakturor, offerter, order och lönebesked behåller kundens varumärke. Kopplingen ger ingen behörighet och loggas i båda företagen. |

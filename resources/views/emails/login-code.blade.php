@@ -1,4 +1,5 @@
 <x-mail::message>
+@include('mail.partials.firm-brand')
 # {{ __('Din inloggningskod') }}
 
 {{ __('Skriv in koden i fönstret där du loggar in:') }}

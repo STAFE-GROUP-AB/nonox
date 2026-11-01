@@ -9,10 +9,13 @@ use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Payables\PaymentBank;
+use App\Support\Branding\FirmBranding;
 use App\Support\Tenancy\ArchivedCompany;
 use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Jetstream\Events\TeamCreated;
 use Laravel\Jetstream\Events\TeamDeleted;
 use Laravel\Jetstream\Events\TeamUpdated;
@@ -26,6 +29,10 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property bool $require_passkeys
  * @property ?string $brand_color
  * @property ?string $brand_accent_color
+ * @property bool $is_accounting_firm
+ * @property bool $firm_brand_for_clients
+ * @property ?int $accounting_firm_id
+ * @property ?CarbonImmutable $accounting_firm_linked_at
  * @property AccountingMethod $accounting_method
  * @property VatPeriod $vat_period
  * @property bool $turnover_over_40_msek
@@ -101,6 +108,10 @@ class Company extends JetstreamTeam
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',
             'require_passkeys' => 'boolean',
+            'is_accounting_firm' => 'boolean',
+            'firm_brand_for_clients' => 'boolean',
+            'accounting_firm_id' => 'integer',
+            'accounting_firm_linked_at' => 'immutable_datetime',
             'payment_bank' => PaymentBank::class,
             'fiscal_year_start_month' => 'integer',
             'locked_until_date' => 'immutable_date',
@@ -154,8 +165,32 @@ class Company extends JetstreamTeam
         return $this->archived_at !== null;
     }
 
+    /**
+     * The accounting firm whose brand the company shows its own people
+     * (ADR-030). Branding only: it gives the firm no access.
+     *
+     * @return BelongsTo<Company, $this>
+     */
+    public function accountingFirm(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'accounting_firm_id');
+    }
+
+    /**
+     * The companies that show this firm's brand (ADR-030).
+     *
+     * @return HasMany<Company, $this>
+     */
+    public function firmClients(): HasMany
+    {
+        return $this->hasMany(self::class, 'accounting_firm_id');
+    }
+
     protected static function booted(): void
     {
-        static::saved(fn (self $company) => ArchivedCompany::forget($company->id));
+        static::saved(function (self $company): void {
+            ArchivedCompany::forget($company->id);
+            FirmBranding::forgetIfChanged($company);
+        });
     }
 }

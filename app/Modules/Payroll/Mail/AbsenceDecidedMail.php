@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Mail;
 
+use App\Support\Branding\PresentedBrand;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -16,7 +17,7 @@ class AbsenceDecidedMail extends Mailable
 {
     use Queueable;
 
-    public function __construct(public readonly string $firstName, public readonly string $what, public readonly string $dates, public readonly bool $approved, public readonly ?string $reason, public readonly string $company) {}
+    public function __construct(public readonly string $firstName, public readonly string $what, public readonly string $dates, public readonly bool $approved, public readonly ?string $reason, public readonly string $company, public readonly ?PresentedBrand $mailBrand = null) {}
 
     public function envelope(): Envelope
     {

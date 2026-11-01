@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Mail;
 
 use App\Models\TeamInvitation;
+use App\Support\Branding\FirmBranding;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
@@ -30,6 +31,7 @@ class EmployeePortalInvitationMail extends Mailable
     {
         return new Content(markdown: 'payroll::mail.portal-invitation', with: [
             'company' => $this->invitation->team?->name,
+            'mailBrand' => FirmBranding::forInvitation($this->invitation),
             'firstName' => $this->firstName,
             'email' => $this->invitation->email,
             'acceptUrl' => URL::temporarySignedRoute('team-invitations.accept', now()->addDays(14), ['invitation' => $this->invitation->id]),

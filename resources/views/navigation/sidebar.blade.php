@@ -1,5 +1,14 @@
 {{-- The dark sidebar: the company card with the company menu, the main navigation, and the user at the bottom. --}}
 <div class="flex h-full flex-col gap-6 overflow-y-auto px-4 py-5">
+    @if($firmBrand)
+        {{-- The accounting firm the company works with, in its own logo (ADR-030). --}}
+        <div class="-mb-3 rounded-2xl bg-white px-4 py-3" data-firm-brand>
+            @if($firmBrand->logoUrl())
+                <img src="{{ $firmBrand->logoUrl() }}" alt="{{ $firmBrand->firmName }}" class="h-9 max-w-full object-contain object-left">
+            @endif
+            <p class="mt-1.5 truncate text-xs text-gray-600 first:mt-0">{{ __('i samarbete med') }} <span class="font-semibold text-gray-900">{{ $firmBrand->firmName }}</span></p>
+        </div>
+    @endif
     @if($currentCompany)
         <x-dropdown align="left" width="60" dropdownClasses="w-[16rem]!">
             <x-slot name="trigger">

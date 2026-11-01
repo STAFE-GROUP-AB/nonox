@@ -15,6 +15,7 @@ use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
+use App\Support\Branding\FirmBranding;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -230,7 +231,7 @@ class AbsenceRequests
             return;
         }
 
-        Mail::to($requester->email)->send(new AbsenceDecidedMail($employee->first_name, self::label($absence->type), self::dates($absence), $approved, $absence->rejection_reason, $company->name));
+        Mail::to($requester->email)->send(new AbsenceDecidedMail($employee->first_name, self::label($absence->type), self::dates($absence), $approved, $absence->rejection_reason, $company->name, FirmBranding::emailBrand($requester, $company)));
     }
 
     /** @return list<string> the months the dates touch, Y-m */
