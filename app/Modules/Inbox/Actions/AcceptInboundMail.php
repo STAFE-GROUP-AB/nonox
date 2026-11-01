@@ -11,15 +11,13 @@ use App\Modules\Inbox\InboxModule;
 use App\Modules\Inbox\Jobs\InterpretInboxMessageJob;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
+use App\Modules\Inbox\Support\AttachmentScreen;
 use App\Modules\Inbox\Support\AttachmentType;
-use App\Modules\Inbox\Support\DangerousContent;
 use App\Modules\Inbox\Support\InboxChecks;
 use App\Modules\Inbox\Support\InboxQuotaExceeded;
 use App\Modules\Inbox\Support\MailAuthentication;
 use App\Modules\Inbox\Support\MailParser;
 use App\Modules\Inbox\Support\ParsedMail;
-use App\Modules\Inbox\Support\VirusScanFailed;
-use App\Modules\Inbox\Support\VirusScanner;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\FileName;
@@ -53,7 +51,7 @@ class AcceptInboundMail
 
     public function __construct(
         private readonly MailParser $parser,
-        private readonly VirusScanner $scanner,
+        private readonly AttachmentScreen $screen,
         private readonly ModuleManager $modules,
     ) {}
 
@@ -164,15 +162,7 @@ class AcceptInboundMail
         foreach ($mail->attachments as $position => $attachment) {
             $contents = $attachment['contents'];
             $filename = FileName::clean($attachment['filename'] !== '' ? $attachment['filename'] : __('bilaga-:number', ['number' => $position + 1]));
-            $blocked = DangerousContent::reason($filename, $contents);
-
-            if ($blocked === null && $this->scanner->enabled()) {
-                try {
-                    $blocked = $this->scanner->scan($contents);
-                } catch (VirusScanFailed) {
-                    $blocked = self::scanFailed();
-                }
-            }
+            $blocked = $this->screen->reason($filename, $contents);
 
             $path = "{$directory}/".($position + 1).'.'.AttachmentType::storedExtension($filename);
             Storage::disk(self::DISK)->put($path, $contents);
@@ -188,11 +178,6 @@ class AcceptInboundMail
         }
 
         return $stored;
-    }
-
-    private static function scanFailed(): string
-    {
-        return __('Viruskontrollen kunde inte göras. Bilagan släpps inte igenom förrän den har kontrollerats.');
     }
 
     /**

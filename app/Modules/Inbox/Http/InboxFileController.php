@@ -7,6 +7,7 @@ namespace App\Modules\Inbox\Http;
 use App\Modules\Inbox\Actions\AcceptInboundMail;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
+use App\Support\Files\InlineFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -43,7 +44,7 @@ class InboxFileController
         $headers = [
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, max-age=0',
-            'Content-Security-Policy' => "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; object-src 'self'; frame-ancestors 'self'",
+            'Content-Security-Policy' => InlineFile::CONTENT_SECURITY_POLICY,
         ];
 
         if ($file->isPreviewable()) {

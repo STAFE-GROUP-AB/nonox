@@ -54,6 +54,8 @@ return [
         'max_message_kb' => (int) env('NONOX_INBOX_MAX_MESSAGE_KB', 25600),
         'clamd_socket' => env('NONOX_INBOX_CLAMD_SOCKET'),
         'imap_authserv_id' => env('NONOX_INBOX_IMAP_AUTHSERV_ID'),
+        // Let a self-hosted NONOX fetch from an IMAP server on a private network. Off: only public addresses (ADR-023).
+        'imap_allow_private' => (bool) env('NONOX_INBOX_IMAP_ALLOW_PRIVATE', false),
         // Read an Authentication-Results header in Mailgun mail only when it carries this authserv-id.
         'mailgun_authserv_id' => env('NONOX_INBOX_MAILGUN_AUTHSERV_ID'),
     ],

@@ -14,7 +14,9 @@ use App\Modules\Inbox\Livewire\InboxWorkspace;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Policies\InboxMessagePolicy;
 use App\Modules\Inbox\Support\ClamdScanner;
+use App\Modules\Inbox\Support\Imap\HostResolver;
 use App\Modules\Inbox\Support\Imap\MailboxClient;
+use App\Modules\Inbox\Support\Imap\SystemHostResolver;
 use App\Modules\Inbox\Support\Imap\WebklexMailboxClient;
 use App\Modules\Inbox\Support\NoVirusScanner;
 use App\Modules\Inbox\Support\VirusScanner;
@@ -40,6 +42,7 @@ class InboxServiceProvider extends ServiceProvider
         $this->app->make(ModuleRegistry::class)->register(new InboxModule);
 
         $this->app->bind(MailboxClient::class, WebklexMailboxClient::class);
+        $this->app->bind(HostResolver::class, SystemHostResolver::class);
         $this->app->bind(VirusScanner::class, function (): VirusScanner {
             $socket = (string) config('services.inbox.clamd_socket');
 

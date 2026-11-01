@@ -73,7 +73,7 @@ class InboxSettingsForm extends Component
         $this->imapEnabled = $options['imap_enabled'];
         $this->imapHost = (string) ($settings['imap_host'] ?? '');
         $this->imapPort = (string) ($settings['imap_port'] ?? '993');
-        $this->imapEncryption = (string) ($settings['imap_encryption'] ?? 'ssl');
+        $this->imapEncryption = ($settings['imap_encryption'] ?? null) === 'starttls' ? 'starttls' : 'ssl';
         $this->imapUsername = (string) ($settings['imap_username'] ?? '');
         $this->imapFolder = (string) ($settings['imap_folder'] ?? 'INBOX');
     }

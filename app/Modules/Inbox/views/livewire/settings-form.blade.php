@@ -98,10 +98,10 @@
         @if($imapEnabled)
             <div class="grid gap-3 sm:grid-cols-2">
                 <x-ui.field for="imap_host" :label="__('Server')" error="imap_host"><input id="imap_host" type="text" class="{{ $input }} mt-1" wire:model="imapHost" placeholder="imap.exempel.se"></x-ui.field>
-                <x-ui.field for="imap_port" :label="__('Port')" error="imap_port"><input id="imap_port" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="imapPort"></x-ui.field>
+                <x-ui.field for="imap_port" :label="__('Port')" error="imap_port" :hint="__('993 för SSL/TLS, 143 för STARTTLS.')"><input id="imap_port" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="imapPort"></x-ui.field>
                 <x-ui.field for="imap_encryption" :label="__('Kryptering')" error="imap_encryption">
                     <select id="imap_encryption" class="{{ $input }} mt-1" wire:model="imapEncryption">
-                        <option value="ssl">SSL/TLS</option><option value="tls">STARTTLS</option><option value="none">{{ __('Ingen (rekommenderas inte)') }}</option>
+                        <option value="ssl">SSL/TLS</option><option value="starttls">STARTTLS</option>
                     </select>
                 </x-ui.field>
                 <x-ui.field for="imap_folder" :label="__('Mapp')" error="imap_folder"><input id="imap_folder" type="text" class="{{ $input }} mt-1" wire:model="imapFolder"></x-ui.field>
@@ -111,7 +111,7 @@
                 </x-ui.field>
             </div>
             @if($mailbox->imap_last_error)
-                <p class="text-sm text-red-700">{{ __('Senaste hämtningen misslyckades: :error', ['error' => $mailbox->imap_last_error]) }}</p>
+                <p class="text-sm text-red-700">{{ __('Senaste hämtningen misslyckades.') }} {{ \App\Modules\Inbox\Actions\FetchImapMail::explain($mailbox->imap_last_error) }}</p>
             @elseif($mailbox->imap_last_fetched_at)
                 <p class="text-sm text-gray-600">{{ __('Senast hämtat :time.', ['time' => $mailbox->imap_last_fetched_at->timezone('Europe/Stockholm')->format('Y-m-d H:i')]) }}</p>
             @endif

@@ -91,8 +91,20 @@ gratis och utan NONOX CLOUD.
    `underlag@ertforetag.se`.
 2. Under inställningarna för Inkorg, slå på **Hämta e-post från en egen
    brevlåda** och fyll i server (till exempel `imap.ertforetag.se`), port
-   (oftast 993), kryptering (SSL/TLS), användarnamn och lösenord. Lösenordet
-   sparas krypterat.
+   (993 med SSL/TLS eller 143 med STARTTLS), användarnamn och lösenord.
+   Lösenordet sparas krypterat. NONOX hämtar aldrig e-post okrypterat och
+   kräver ett giltigt certifikat för serverns namn.
+   - NONOX ansluter bara till servrar med en **offentlig adress** på
+     internet. Ett namn som pekar på en intern adress (127.0.0.1, 10.x,
+     172.16–31.x, 192.168.x, 169.254.x, IPv6 som `::1`, `fc00::/7`,
+     `fe80::/10` med flera) nekas, så att inställningarna inte kan användas
+     för att nå tjänster inne i ert nät. Ligger er e-postserver på ett eget,
+     privat nät, sätt `NONOX_INBOX_IMAP_ALLOW_PRIVATE=true` i `.env`. Gör det
+     bara om alla som kan ändra inkorgens inställningar får nå det nätet.
+   - Misslyckas en hämtning visar inställningarna ett allmänt skäl.
+     Detaljerna skrivs i NONOX logg (`storage/logs`).
+   - Ett meddelande som är större än `NONOX_INBOX_MAX_MESSAGE_KB` (25 MB)
+     hämtas inte; det hoppas över och syns i behandlingshistoriken.
 3. Se till att schemaläggaren körs (`php artisan schedule:run` varje minut).
    NONOX hämtar ny e-post var femte minut med `php artisan inbox:fetch`.
    Ingenting på e-postservern ändras.

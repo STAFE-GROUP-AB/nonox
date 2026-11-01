@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Payables;
 
 use App\Actions\Accounting\AttachToVoucher;
 use App\Models\SupplierInvoice;
+use App\Support\Files\InlineFile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -50,10 +51,6 @@ class SupplierInvoiceController
 
         abort_if($supplierInvoice->file_path === null, 404);
 
-        return Storage::disk(AttachToVoucher::DISK)->response($supplierInvoice->file_path, $supplierInvoice->file_name, [
-            'Content-Type' => (string) $supplierInvoice->file_mime,
-            'X-Content-Type-Options' => 'nosniff',
-            'Cache-Control' => 'private, max-age=0',
-        ], 'inline');
+        return Storage::disk(AttachToVoucher::DISK)->response($supplierInvoice->file_path, $supplierInvoice->file_name, InlineFile::headers((string) $supplierInvoice->file_mime), 'inline');
     }
 }

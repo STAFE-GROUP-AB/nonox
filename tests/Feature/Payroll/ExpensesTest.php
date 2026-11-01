@@ -11,6 +11,7 @@ use App\Modules\Payroll\Livewire\MyExpenses;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\Payslip;
+use App\Support\Files\InlineFile;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -104,7 +105,8 @@ it('keeps outlays and receipts to payroll staff, and nobody approves their own',
 
     expect(fn () => $this->claims->approve($this->worker, $expense, 4010))->toThrow(AuthorizationException::class);
 
-    $this->actingAs($this->owner)->get(route('payroll.expenses.receipt', $expense))->assertOk();
+    $this->actingAs($this->owner)->get(route('payroll.expenses.receipt', $expense))->assertOk()
+        ->assertHeader('Content-Security-Policy', InlineFile::CONTENT_SECURITY_POLICY)->assertHeader('X-Content-Type-Options', 'nosniff');
     $this->actingAs($stranger)->get(route('payroll.expenses.receipt', $expense))->assertNotFound();
 
     Payroll::employee($this->owner, $this->company, ['first_name' => 'Ägaren', 'personal_number' => '199001011239', 'user_id' => $this->owner->id]);

@@ -8,6 +8,7 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
+use App\Support\Files\InlineFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -54,7 +55,8 @@ class VoucherController
 
     /**
      * Shows an attachment inline. The type is the stored, validated MIME type,
-     * and nosniff stops the browser from guessing another one. Underlag of
+     * nosniff stops the browser from guessing another one, and the file is
+     * shown in a sandbox (InlineFile). Underlag of
      * another type, such as the original e-mail (.eml) and attachments the
      * inbox linked, is only ever a download.
      */
@@ -65,18 +67,10 @@ class VoucherController
         $file = VoucherAttachment::query()->where('voucher_id', $voucher->id)->findOrFail($attachment);
 
         if (! array_key_exists($file->mime, AttachToVoucher::ALLOWED)) {
-            return Storage::disk(AttachToVoucher::DISK)->download($file->file_path, $file->original_name, [
-                'Content-Type' => 'application/octet-stream',
-                'X-Content-Type-Options' => 'nosniff',
-                'Cache-Control' => 'private, max-age=0',
-            ]);
+            return Storage::disk(AttachToVoucher::DISK)->download($file->file_path, $file->original_name, InlineFile::headers('application/octet-stream'));
         }
 
-        return Storage::disk(AttachToVoucher::DISK)->response($file->file_path, $file->original_name, [
-            'Content-Type' => $file->mime,
-            'X-Content-Type-Options' => 'nosniff',
-            'Cache-Control' => 'private, max-age=0',
-        ], 'inline');
+        return Storage::disk(AttachToVoucher::DISK)->response($file->file_path, $file->original_name, InlineFile::headers($file->mime), 'inline');
     }
 
     public function edit(Voucher $voucher): View

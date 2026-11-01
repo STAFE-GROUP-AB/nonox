@@ -12,6 +12,7 @@ use App\Livewire\Accounting\VoucherEditor;
 use App\Models\AuditLog;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
+use App\Support\Files\InlineFile;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -133,7 +134,10 @@ it('shows underlag inline with a safe content type', function () {
         ->and($response->headers->get('X-Content-Type-Options'))->toBe('nosniff')
         ->and($response->headers->get('Content-Disposition'))->toStartWith('inline')
         // Shown in a frame on the voucher page: NONOX's own pages may frame it, no other site may.
-        ->and($response->headers->get('Content-Security-Policy'))->toContain("frame-ancestors 'self';");
+        ->and($response->headers->get('Content-Security-Policy'))->toBe(InlineFile::CONTENT_SECURITY_POLICY)
+        // A file that is not what its type says cannot run script on NONOX's origin.
+        ->and($response->headers->get('Content-Security-Policy'))->toStartWith('sandbox;')
+        ->and($response->headers->get('Content-Security-Policy'))->toContain("frame-ancestors 'self'");
 });
 
 it('answers 404 for another company\'s underlag or a mismatched voucher', function () {
