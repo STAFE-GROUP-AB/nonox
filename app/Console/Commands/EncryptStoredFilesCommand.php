@@ -6,7 +6,7 @@ namespace App\Console\Commands;
 
 use App\Support\Files\EncryptedAdapter;
 use Illuminate\Console\Command;
-use Illuminate\Contracts\Encryption\Encrypter;
+use Illuminate\Encryption\Encrypter;
 use League\Flysystem\Local\LocalFilesystemAdapter;
 
 /**

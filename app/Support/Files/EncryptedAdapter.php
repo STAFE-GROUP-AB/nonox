@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Files;
 
 use finfo;
-use Illuminate\Contracts\Encryption\Encrypter;
+use Illuminate\Contracts\Encryption\StringEncrypter;
 use League\Flysystem\Config;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemAdapter;
@@ -28,7 +28,7 @@ final class EncryptedAdapter implements FilesystemAdapter
 
     public function __construct(
         private readonly FilesystemAdapter $inner,
-        private readonly Encrypter $encrypter,
+        private readonly StringEncrypter $encrypter,
     ) {}
 
     public static function isEncrypted(string $contents): bool

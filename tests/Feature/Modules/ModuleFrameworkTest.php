@@ -27,6 +27,8 @@ beforeEach(function () {
     (new JetstreamServiceProvider(app()))->configurePermissions();
 
     Route::middleware(['web', 'auth', 'module:dummy'])->get('/dummy-test', fn () => 'Modulsidan')->name('dummy.index');
+    // A route added after boot is not found by name until the lookup is rebuilt.
+    Route::getRoutes()->refreshNameLookups();
 
     [$this->owner, $this->companyA] = Bookkeeping::company();
     [$this->otherOwner, $this->companyB] = Bookkeeping::company();
