@@ -6,9 +6,39 @@ Dokumentationen som dataskyddsförordningen kräver för den driftade tjänsten 
 |---|---|
 | [Registerförteckning](registerforteckning.md) | Artikel 30 |
 | [Konsekvensbedömning för lön](konsekvensbedomning-lon.md) | Artikel 35 |
+| [Konsekvensbedömning för personalliggaren (mall för kunden)](konsekvensbedomning-personalliggare.md) | Artikel 35 och 28.3 f |
+| [Konsekvensbedömning för inkorgen (kort mall)](konsekvensbedomning-inkorg.md) | Artikel 35 och 28.3 f |
+| [Konsekvensbedömning för NONOX AI (kort mall)](konsekvensbedomning-ai.md) | Artikel 35 och 28.3 f |
+| [Säkerhetskopiering](sakerhetskopiering.md) | Artikel 32.1 c och d |
 | [Incidentrutin](incidentrutin.md) | Artikel 33 och 34 |
 | [Lagringstider och gallring](lagringstider.md) | Artikel 5.1 e, bokföringslagen 7 kap. |
 | [Integritetspolicy, villkor, PUB-avtal, underbiträden](../juridik/) | Artikel 13, 14 och 28 |
+| [AI i NONOX](../juridik/ai.md), [regelverk](../juridik/regelverk.md), [frågor till jurist](../juridik/fragor-till-jurist.md) | Översikt och öppna frågor |
+
+## Personnummer
+
+Personnummer får behandlas utan samtycke bara när det är klart motiverat med hänsyn till ändamålet, vikten av en säker identifiering eller något annat beaktansvärt skäl (3 kap. 10 § lagen (2018:218) med kompletterande bestämmelser till EU:s dataskyddsförordning, dataskyddslagen). NONOX behandlar personnummer bara där en lagstadgad skyldighet kräver en säker identifiering:
+
+| Var | Skyldighet |
+|---|---|
+| Lön och anställda | Arbetsgivardeklaration på individnivå (AGI) och skatteavdrag enligt skatteförfarandelagen (2011:1244) |
+| Personalliggare | Identifiering av den som arbetar enligt 39 kap. skatteförfarandelagen |
+| ROT- och RUT-avdrag på kundfakturor | Köparens personnummer i begäran om utbetalning till Skatteverket. TODO(legal-verify): exakt lagrum (lagen (2009:194) om förfarandet vid skattereduktion för hushållsarbete) och hur länge numret ska sparas. |
+| Kunder och leverantörer som är enskilda näringsidkare | Organisationsnumret är ägarens personnummer. Det står på fakturor och i bokföringen enligt bokföringslagen och mervärdesskattelagen. |
+
+Personnummer krypteras i databasen, maskeras i listor där det går, och visning i klartext i personalliggaren loggas.
+
+TODO(legal-verify): att varje användning ovan är "klart motiverad" i lagens mening.
+
+## Dataskyddsombud (artikel 37)
+
+Stafe Development AB har inget dataskyddsombud. Ett ombud krävs bland annat när kärnverksamheten består av behandling i stor omfattning av särskilda kategorier av uppgifter (artikel 37.1 c). Som biträde behandlar tjänsten uppgifter om hälsa (sjukfrånvaro i lönen) åt många kunder. Kärnverksamheten är dock ett bokförings- och lönesystem, och omfattningen är i dag liten. Bedömningen är därför att ett ombud inte krävs ännu. Bedömningen ska göras om när antalet kunder med lön växer. Artikel 37.1 gäller både personuppgiftsansvariga och biträden.
+
+TODO(legal-verify): om artikel 37.1 c gäller för ett biträde vars tjänst behandlar hälsouppgifter åt många arbetsgivare, och från vilken omfattning.
+
+## Ansvar och kontakt
+
+- **Incidentansvarig:** TODO(legal-verify): namn och kontaktväg, se [incidentrutinen](incidentrutin.md). Säkerhetsrapporter tas emot enligt [SECURITY.md](../../SECURITY.md).
 
 ## Vad systemet gör för de registrerades rättigheter
 
@@ -29,7 +59,8 @@ Se avsnitt 4 i [personuppgiftsbiträdesavtalet](../juridik/personuppgiftsbitrade
 - **Åtkomst:** behörigheter per roll. Känsliga löneuppgifter kräver en egen behörighet och läsning loggas. Ett bankbyte kräver en andra persons bekräftelse.
 - **Spårbarhet:** behandlingshistorik som inte kan ändras.
 - **Gränssnitt:** säkerhetsrubriker på varje svar, och varje sida är låst till sitt företag.
-- **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar.
+- **Filer:** krypteras i vila med applikationsnyckeln (`EncryptedAdapter`).
+- **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar. Kopiorna ligger i dag på samma server som tjänsten. En kopia på annan plats och återställningstester är planerade, se [säkerhetskopiering](sakerhetskopiering.md).
 
 ## Egen drift
 
