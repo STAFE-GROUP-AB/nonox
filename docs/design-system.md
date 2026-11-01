@@ -61,6 +61,14 @@ their pages.
 - Key figures are shown on a section's start page only (Fakturor,
   Leverantörsfakturor, Verifikationer, Lönekörningar) and on Översikt.
 
+## Calls to action
+
+- The main call to action of a list or card ("Ny artikel", "Ny faktura",
+  "Lägg till lokal") always sits first, on the left, before search fields
+  and filters, on every page. In a card use the `cta` slot of
+  `<x-ui.card>`; the `action` slot (right of the title) is for secondary
+  things such as "Stäng" or "Visa".
+
 ## Amounts
 
 Always through `App\Support\Money\Money` and `<x-ui.amount>`: whole öre

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inbox\Livewire;
 
 use App\Actions\Payables\SaveSupplier;
+use App\Domain\Payables\SupplierMatcher;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Company;
@@ -274,6 +275,24 @@ class InboxWorkspace extends Component
     public function createSupplier(SaveSupplier $save): void
     {
         $invoice = (array) ($this->form['invoice'] ?? []);
+        $existing = SupplierMatcher::find([
+            'name' => (string) ($invoice['supplier_name'] ?? ''),
+            'org_number' => (string) ($invoice['supplier_org_number'] ?? ''),
+            'vat_number' => (string) ($invoice['supplier_vat_number'] ?? ''),
+            'bankgiro' => (string) ($invoice['bankgiro'] ?? ''),
+            'plusgiro' => (string) ($invoice['plusgiro'] ?? ''),
+            'iban' => (string) ($invoice['iban'] ?? ''),
+            'email' => (string) ($invoice['supplier_email'] ?? ''),
+        ]);
+
+        // Never a second copy: an interpreted invoice whose supplier is already registered selects it.
+        if ($existing !== null) {
+            $this->form['invoice']['supplier_id'] = $existing->id;
+            $this->toast(__(':name finns redan i leverantörsregistret och är vald.', ['name' => $existing->name]));
+
+            return;
+        }
+
         $supplier = $save($this->user(), $this->company(), [
             'name' => (string) ($invoice['supplier_name'] ?? ''),
             'org_number' => ($invoice['supplier_org_number'] ?? '') ?: null,
@@ -289,9 +308,23 @@ class InboxWorkspace extends Component
         $this->toast(__(':name är tillagd i leverantörsregistret.', ['name' => $supplier->name]));
     }
 
+    /** Links the invoice to a supplier already in the register, chosen by a person. */
+    public function chooseSupplier(int $id): void
+    {
+        $supplier = Supplier::query()->where('is_active', true)->find($id);
+
+        if (! $supplier instanceof Supplier) {
+            return;
+        }
+
+        $this->form['invoice']['supplier_id'] = $supplier->id;
+        $this->toast(__('Fakturan är kopplad till :name.', ['name' => $supplier->name]));
+    }
+
     public function render(): View
     {
         $company = $this->company();
+        $suppliers = ($this->form['kind'] ?? null) === 'supplier_invoice' ? Supplier::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']) : collect();
         $message = $this->selected === '' ? null : InboxMessage::query()->with(['attachments', 'template', 'handler'])->find($this->selected);
 
         return view('inbox::livewire.workspace', [
@@ -301,7 +334,8 @@ class InboxWorkspace extends Component
             'unassigned' => UnassignedMessage::waitingFor($company)->latest('received_at')->limit(20)->get(),
             'preview' => $message !== null && ($this->form['kind'] ?? null) === 'daily_report' ? $this->dailyReportPreview($message) : null,
             'roles' => FieldRole::cases(),
-            'suppliers' => ($this->form['kind'] ?? null) === 'supplier_invoice' ? Supplier::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']) : collect(),
+            'suppliers' => $suppliers,
+            'similarSuppliers' => empty($this->form['invoice']['supplier_id']) ? SupplierMatcher::similar((string) ($this->form['invoice']['supplier_name'] ?? ''), $suppliers) : [],
             'accounts' => $message !== null ? Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name']) : collect(),
             'canManage' => $this->user()->hasTeamPermission($company, 'inbox:manage'),
             'address' => InboxAddress::forSlug(InboxAddress::mailbox($company)->slug),

@@ -46,11 +46,11 @@
     </x-ui.card>
 
     <x-ui.card :title="__('Register')">
-        <x-slot:action>
+        <x-slot:cta>
             @unless($creating)
                 <x-button type="button" wire:click="create">{{ __('Ny tillgång') }}</x-button>
             @endunless
-        </x-slot:action>
+        </x-slot:cta>
 
         @if($creating)
             <form wire:submit="save" class="mb-6 space-y-4 rounded-2xl bg-paper p-5 ring-1 ring-stone-200">

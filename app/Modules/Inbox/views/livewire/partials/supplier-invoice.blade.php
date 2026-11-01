@@ -8,8 +8,15 @@
             </select>
         </x-ui.field>
         @if(empty($form['invoice']['supplier_id']) && ($form['invoice']['supplier_name'] ?? '') !== '')
-            <div class="pt-6 text-sm">
+            <div class="space-y-2 pt-6 text-sm">
+                @foreach($similarSuppliers as $similar)
+                    <p class="flex flex-wrap items-center gap-2">
+                        <span class="text-gray-700">{{ __('Menade du :name?', ['name' => $similar->name]) }}</span>
+                        <button type="button" wire:click="chooseSupplier({{ $similar->id }})" class="rounded-md bg-ink px-2.5 py-1 text-xs font-semibold text-white">{{ __('Koppla') }}</button>
+                    </p>
+                @endforeach
                 <button type="button" wire:click="createSupplier" class="font-medium text-accent-700 hover:underline">{{ __('Lägg till :name i leverantörsregistret', ['name' => $form['invoice']['supplier_name']]) }}</button>
+                <p class="text-xs text-gray-600">{{ __('Finns leverantören redan med ett annat namn? Välj den i listan.') }}</p>
             </div>
         @endif
         <x-ui.field for="invoice_number" :label="__('Fakturanummer')" error="invoice_number"><input id="invoice_number" type="text" class="{{ $cell }} mt-1" wire:model.blur="form.invoice.invoice_number"></x-ui.field>

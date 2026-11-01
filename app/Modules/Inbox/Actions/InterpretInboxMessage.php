@@ -6,6 +6,7 @@ namespace App\Modules\Inbox\Actions;
 
 use App\Domain\Accounting\SieImport\SieTransaction;
 use App\Domain\Accounting\SieImport\SieVoucher;
+use App\Domain\Payables\SupplierMatcher;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Supplier;
@@ -808,18 +809,23 @@ class InterpretInboxMessage
 
     private function matchSupplier(PeppolInvoice $invoice): ?Supplier
     {
-        $digits = fn (?string $value): string => (string) preg_replace('/\D/', '', (string) $value);
-        $org = $digits($invoice->supplierOrgNumber);
+        $org = (string) $invoice->supplierOrgNumber;
         $vat = strtoupper((string) preg_replace('/\s/', '', (string) $invoice->supplierVatNumber));
 
-        if (preg_match('/^SE(\d{10})01$/', $vat, $match) === 1 && strlen($org) !== 10) {
+        // A Swedish VAT number carries the organisation number.
+        if (preg_match('/^SE(\d{10})01$/', $vat, $match) === 1 && strlen((string) preg_replace('/\D/', '', $org)) !== 10) {
             $org = $match[1];
         }
 
-        $suppliers = Supplier::query()->where('is_active', true)->get(['id', 'name', 'org_number', 'vat_number', 'bankgiro', 'plusgiro', 'iban', 'default_account_id']);
-
-        return $suppliers->first(fn (Supplier $supplier): bool => (strlen($org) === 10 && $digits($supplier->org_number) === $org)
-            || ($vat !== '' && strtoupper((string) preg_replace('/\s/', '', (string) $supplier->vat_number)) === $vat));
+        return SupplierMatcher::find([
+            'name' => $invoice->supplierName,
+            'org_number' => $org,
+            'vat_number' => $vat,
+            'bankgiro' => $invoice->bankgiro,
+            'plusgiro' => $invoice->plusgiro,
+            'iban' => $invoice->iban,
+            'email' => $invoice->supplierEmail,
+        ]);
     }
 
     private function aiOn(Company $company): bool

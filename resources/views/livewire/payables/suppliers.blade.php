@@ -57,11 +57,11 @@
     @endif
 
     <x-ui.card>
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <input type="search" class="{{ $input }} max-w-sm" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök på namn, nummer eller bankgiro') }}" aria-label="{{ __('Sök leverantör') }}">
+        <div class="flex flex-wrap items-center gap-4">
             @if($canManage && ! $showForm)
                 <x-button type="button" wire:click="create">{{ __('Ny leverantör') }}</x-button>
             @endif
+            <input type="search" class="{{ $input }} max-w-sm" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök på namn, nummer eller bankgiro') }}" aria-label="{{ __('Sök leverantör') }}">
         </div>
 
         @if($suppliers->isEmpty())

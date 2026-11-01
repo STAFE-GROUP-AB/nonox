@@ -109,11 +109,11 @@
     @endif
 
     <x-ui.card>
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <p class="text-sm text-gray-600">{{ $employees->count() === 1 ? __('1 anställd') : __(':count anställda', ['count' => $employees->count()]) }}</p>
+        <div class="flex flex-wrap items-center gap-4">
             @if($canManage && ! $showForm)
                 <x-button type="button" wire:click="create">{{ __('Ny anställd') }}</x-button>
             @endif
+            <p class="text-sm text-gray-600">{{ $employees->count() === 1 ? __('1 anställd') : __(':count anställda', ['count' => $employees->count()]) }}</p>
         </div>
 
         @if($employees->isEmpty())

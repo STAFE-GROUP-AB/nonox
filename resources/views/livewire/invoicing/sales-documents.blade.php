@@ -1,7 +1,10 @@
 @php($base = $isQuote ? 'invoicing.quotes' : 'invoicing.orders')
 
 <x-ui.card>
-    <div class="flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-4">
+        @if($canCreate)
+            <a href="{{ route($base.'.create') }}" class="inline-flex items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{{ $isQuote ? __('Ny offert') : __('Ny order') }}</a>
+        @endif
         <nav class="flex flex-wrap gap-2" aria-label="{{ __('Visa') }}">
             @foreach(['oppna' => __('Öppna'), 'alla' => __('Alla')] as $key => $label)
                 <button type="button" wire:click="$set('filter', '{{ $key }}')" @class([
@@ -11,9 +14,6 @@
                 ])>{{ $label }}</button>
             @endforeach
         </nav>
-        @if($canCreate)
-            <a href="{{ route($base.'.create') }}" class="inline-flex items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{{ $isQuote ? __('Ny offert') : __('Ny order') }}</a>
-        @endif
     </div>
 
     @if($documents->isEmpty())

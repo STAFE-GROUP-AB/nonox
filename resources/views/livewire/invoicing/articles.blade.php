@@ -44,9 +44,9 @@
 
     <x-ui.card>
         @if($canManage && ! $showForm)
-            <x-slot:action>
+            <x-slot:cta>
                 <x-button type="button" wire:click="create">{{ __('Ny artikel') }}</x-button>
-            </x-slot:action>
+            </x-slot:cta>
         @endif
 
         @if($articles->isEmpty())

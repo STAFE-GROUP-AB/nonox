@@ -30,11 +30,11 @@
     </div>
 
     <x-ui.card>
-        <x-slot:action>
+        <x-slot:cta>
             @if($canCreate)
                 <a href="{{ route('accounting.vouchers.create') }}" class="inline-flex items-center px-4 py-2 bg-accent-600 rounded-lg font-semibold text-sm text-white hover:bg-accent-700">{{ __('Ny verifikation') }}</a>
             @endif
-        </x-slot:action>
+        </x-slot:cta>
 
         <div class="flex flex-wrap items-center gap-3">
             <label for="voucher_search" class="sr-only">{{ __('Sök verifikation') }}</label>

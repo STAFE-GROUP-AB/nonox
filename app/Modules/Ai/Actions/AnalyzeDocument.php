@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Ai\Actions;
 
+use App\Domain\Payables\SupplierMatcher;
 use App\Models\Account;
 use App\Models\Company;
-use App\Models\Supplier;
 use App\Models\User;
 use App\Modules\Ai\Agents\ExpenseReceiptAgent;
 use App\Modules\Ai\Agents\SupplierInvoiceAgent;
@@ -278,29 +278,23 @@ class AnalyzeDocument
     }
 
     /**
-     * The register's supplier with the same organisation number, bankgiro or
-     * plusgiro; null when there is none, so a person adds it.
+     * The register's supplier for the invoice (SupplierMatcher); null when
+     * there is none, so a person adds it.
      *
      * @param  array<string, mixed>  $answer
      */
     private function matchSupplier(array $answer): ?int
     {
-        $digits = fn (mixed $value): string => (string) preg_replace('/\D/', '', (string) $value);
+        $text = fn (string $field): string => (string) ($answer[$field] ?? '');
 
-        foreach (['org_number' => 'supplier_org_number', 'bankgiro' => 'supplier_bankgiro', 'plusgiro' => 'supplier_plusgiro'] as $column => $field) {
-            $wanted = $digits($answer[$field] ?? '');
-
-            if (strlen($wanted) < 5) {
-                continue;
-            }
-
-            $match = Supplier::query()->whereNotNull($column)->get(['id', $column])->first(fn (Supplier $supplier): bool => $digits($supplier->getAttribute($column)) === $wanted);
-
-            if ($match instanceof Supplier) {
-                return $match->id;
-            }
-        }
-
-        return null;
+        return SupplierMatcher::find([
+            'name' => $text('supplier_name'),
+            'org_number' => $text('supplier_org_number'),
+            'vat_number' => $text('supplier_vat_number'),
+            'bankgiro' => $text('supplier_bankgiro'),
+            'plusgiro' => $text('supplier_plusgiro'),
+            'iban' => $text('supplier_iban'),
+            'email' => $text('supplier_email'),
+        ])?->id;
     }
 }

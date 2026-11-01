@@ -3,9 +3,9 @@
         <x-ui.empty-state :title="__('Lägg till din första lokal')">
             {{ __('Börja med lokalen där personalen arbetar. Sedan lägger du till personalen och kopplar en surfplatta som kiosk vid entrén.') }}
             @if($canManage)
-                <x-slot:action>
+                <x-slot:cta>
                     <a href="{{ route('staff-ledger.locations') }}" class="inline-flex min-h-11 items-center rounded-lg bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Lägg till lokal') }}</a>
-                </x-slot:action>
+                </x-slot:cta>
             @endif
         </x-ui.empty-state>
     @endif

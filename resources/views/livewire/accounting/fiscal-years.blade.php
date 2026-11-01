@@ -5,9 +5,9 @@
 <div class="space-y-6" @if($building) wire:poll.5s @endif>
     <x-ui.card :title="__('Dina räkenskapsår')">
         @if($canManage)
-            <x-slot:action>
+            <x-slot:cta>
                 <x-button type="button" wire:click="createNext" wire:loading.attr="disabled">{{ __('Skapa nästa räkenskapsår') }}</x-button>
-            </x-slot:action>
+            </x-slot:cta>
         @endif
 
         <ul class="divide-y divide-gray-100">

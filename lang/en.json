@@ -3518,5 +3518,10 @@
     "Koden består av :count siffror.": "The code has :count digits.",
     "Löpande": "Day to day",
     "Rapporter och moms": "Reports and VAT",
-    "Kontrollbesök": "Control visit"
+    "Kontrollbesök": "Control visit",
+    ":name finns redan i leverantörsregistret och är vald.": ":name is already in the supplier register and is selected.",
+    "Fakturan är kopplad till :name.": "The invoice is linked to :name.",
+    "Menade du :name?": "Did you mean :name?",
+    "Koppla": "Link",
+    "Finns leverantören redan med ett annat namn? Välj den i listan.": "Is the supplier already registered under another name? Choose it in the list."
 }
