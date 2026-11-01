@@ -48,7 +48,7 @@
     "limits": [
         {"text": "NONOX är inget kassa- eller bokningssystem och har ingen lagerhantering för produkter."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
-        {"text": "Det finns ännu inget öppet API, så kassasystem kan inte kopplas direkt till NONOX. Det byggs, även för de integrationsplattformar som kassasystemen redan använder. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "public_api"}
+        {"text": "NONOX har ett öppet API, men inget kassasystem har ännu en färdig koppling till det, och webhooks som säger till när något bokförs skickas inte ännu. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "webhooks"}
     ],
     "pricing": {
         "employees": 2,
@@ -61,7 +61,7 @@
         {"q": "Ska den som hyr en stol stå i min liggare?", "a": "Det avgör Skatteverkets regler, inte NONOX. Liggaren i NONOX kan registrera personer med en annan arbetsgivare eller ett eget företag, med namn och organisationsnummer."},
         {"q": "Kan jag fakturera stolshyran automatiskt?", "a": "Ja. Med avtalsfakturering skapas en faktura per hyresgäst varje månad, som utkast eller skickad direkt med e-post."},
         {"q": "Fungerar incheckningen utan internet?", "a": "Ja. Kiosken på surfplattan sparar varje incheckning direkt och skickar dem när nätet är tillbaka."},
-        {"q": "Kan NONOX läsa dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton en gång och godkänner. Det går också med en SIE-fil från kassan. En direktkoppling via API finns inte ännu; den byggs."},
+        {"q": "Kan NONOX läsa dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton en gång och godkänner. Det går också med en SIE-fil från kassan. Det öppna API:t finns, men inget kassasystem har ännu en färdig koppling till NONOX."},
         {"q": "Vad kostar NONOX för en salong?", "a": "{pris} per år med drift för upp till {max} anställda, med personalliggare och lön inräknade. Kör du NONOX själv kostar det ingenting."}
     ],
     "related": ["bokforing-for-cafeer", "bokforing-for-butiker", "bokforing-for-restauranger"],

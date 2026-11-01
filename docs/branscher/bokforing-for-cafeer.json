@@ -50,7 +50,7 @@
         {"text": "NONOX är inget kassasystem. Du behåller din kassa; NONOX tar emot dagsrapporten och bokför den."},
         {"text": "NONOX har inget schema för personalen. Timmarna kommer från personalliggaren eller från tidrapporter."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
-        {"text": "Det finns ännu inget öppet API, så kassasystem kan inte kopplas direkt till NONOX. Det byggs, även för de integrationsplattformar som kassasystemen redan använder. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "public_api"}
+        {"text": "NONOX har ett öppet API, men inget kassasystem har ännu en färdig koppling till det, och webhooks som säger till när något bokförs skickas inte ännu. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "webhooks"}
     ],
     "pricing": {
         "employees": 4,
@@ -59,7 +59,7 @@
     },
     "comparison_features": ["Personalliggare", "Alla moduler ingår i priset", "Öppen källkod"],
     "faqs": [
-        {"q": "Kan NONOX läsa dagsrapporten från mitt kassasystem?", "a": "Ja, om kassasystemet kan mejla dagsrapporten som CSV, Excel (XLSX), text eller PDF med text i. Första rapporten kopplar du till konton själv, eller låter NONOX AI föreslå kopplingen om du slagit på den modulen. Därefter tolkas varje rapport i samma format med samma mall, utan AI. Det går också med en SIE-fil från kassan. En direktkoppling via API finns inte ännu; den byggs."},
+        {"q": "Kan NONOX läsa dagsrapporten från mitt kassasystem?", "a": "Ja, om kassasystemet kan mejla dagsrapporten som CSV, Excel (XLSX), text eller PDF med text i. Första rapporten kopplar du till konton själv, eller låter NONOX AI föreslå kopplingen om du slagit på den modulen. Därefter tolkas varje rapport i samma format med samma mall, utan AI. Det går också med en SIE-fil från kassan. Det öppna API:t finns, men inget kassasystem har ännu en färdig koppling till NONOX."},
         {"q": "Är NONOX ett kassasystem?", "a": "Nej. NONOX är ett bokförings-, löne- och faktureringsprogram. Du behåller ditt kassasystem och låter det mejla dagsrapporten till NONOX."},
         {"q": "Måste mitt café ha personalliggare?", "a": "Det beror på verksamheten. Många caféer räknas till restaurangbranschen, som ska föra personalliggare. Det är Skatteverkets regler som avgör, så kontrollera där om du är osäker. Behöver du en liggare finns den i NONOX som en modul."},
         {"q": "Fungerar personalliggaren om internet går ner?", "a": "Ja. Kiosken sparar varje in- och utcheckning på surfplattan direkt och skickar dem när nätet är tillbaka. Personen ser att incheckningen gått igenom med en gång."},

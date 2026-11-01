@@ -50,6 +50,9 @@ class GenerateShareImagesCommand extends Command
                 $this->line("Ritar {$key}.png...");
 
                 $html = "{$work}/{$key}.html";
+                // A key with a slash (utvecklare/referens) is a page below another, and its image a file in a folder.
+                File::ensureDirectoryExists(dirname($html));
+                File::ensureDirectoryExists(dirname("{$target}/{$key}.png"));
                 File::put($html, view('og.card', [
                     'card' => $card,
                     'fonts' => 'file://'.public_path('fonts/inter'),

@@ -5,10 +5,10 @@
 <meta name="description" content="{{ $pageDescription ?? 'NONOX är ett gratis alternativ till Fortnox, Visma och Bokio: ett komplett svenskt bokföringsprogram med öppen källkod för bokföring, fakturering, lön och bokslut. Kör själv gratis, eller låt oss sköta driften för 995 kr om året.' }}">
 <meta property="og:title" content="{{ $pageTitle ?? 'Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod' }}">
 <meta property="og:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
-<meta property="og:url" content="{{ url()->current() }}">
+<meta property="og:url" content="{{ $canonical ?? url()->current() }}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NONOX">
-<meta property="og:locale" content="sv_SE">
+<meta property="og:locale" content="{{ ($lang ?? 'sv') === 'en' ? 'en_GB' : 'sv_SE' }}">
 @php
     $shareImage = \App\Support\Landing\ShareCards::imageFor(request()->path());
 @endphp
@@ -22,7 +22,13 @@
 <meta name="twitter:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
 <meta name="twitter:image" content="{{ $shareImage }}">
 <meta name="theme-color" content="#15171C">
-<link rel="canonical" href="{{ url()->current() }}">
+<link rel="canonical" href="{{ $canonical ?? url()->current() }}">
+@foreach($alternates ?? [] as $hreflang => $alternate)
+<link rel="alternate" hreflang="{{ $hreflang }}" href="{{ $alternate }}">
+@endforeach
+@if(isset($alternates['sv']))
+<link rel="alternate" hreflang="x-default" href="{{ $alternates['sv'] }}">
+@endif
 <meta name="robots" content="index,follow">
 @php
     $structured = [

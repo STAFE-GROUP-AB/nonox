@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support\Landing;
 
+use App\Support\Developer\ApiSpec;
+use App\Support\Developer\Guides;
+
 /**
  * The image a public page shows when its link is shared (Open Graph), one
  * per page and named after its path. `php artisan og:images` renders them
@@ -70,6 +73,57 @@ final class ShareCards
                 'title' => 'Gratis alternativ',
                 'accent' => "till {$program['name']}.",
                 'text' => "Bokföring, fakturering och lön med öppen källkod. {$priceText}",
+            ];
+        }
+
+        return [...$cards, ...self::developerCards()];
+    }
+
+    /**
+     * The developer site (/utvecklare): its start page, every guide, the
+     * reference and each of its tags, and the changelog. Keyed by path, so
+     * these images live in public/og/utvecklare/.
+     *
+     * @return array<string, Card>
+     */
+    private static function developerCards(): array
+    {
+        $cards = [
+            'utvecklare' => [
+                'eyebrow' => 'NONOX för utvecklare',
+                'title' => 'Ett öppet API för',
+                'accent' => 'svensk bokföring.',
+                'text' => 'OAuth 2.0 med PKCE, API-nycklar och idempotenta anrop. Gratis och utan tilläggsavgift.',
+            ],
+            'utvecklare/referens' => [
+                'eyebrow' => 'API-referens',
+                'title' => 'Varje anrop,',
+                'accent' => 'med exempel.',
+                'text' => 'Parametrar, scheman, svar och fel, med kod i curl, PHP, JavaScript och Python.',
+            ],
+            'utvecklare/andringar' => [
+                'eyebrow' => 'NONOX för utvecklare',
+                'title' => 'Ändringar',
+                'accent' => 'i API:t.',
+                'text' => 'Varje ändring i NONOX Connect, den senaste först.',
+            ],
+        ];
+
+        foreach (Guides::slugs() as $slug) {
+            $cards["utvecklare/{$slug}"] = [
+                'eyebrow' => 'Guide för utvecklare',
+                'title' => Guides::title($slug, 'sv'),
+                'accent' => '',
+                'text' => Guides::description($slug, 'sv'),
+            ];
+        }
+
+        foreach (ApiSpec::data()['tags'] as $slug => $tag) {
+            $cards["utvecklare/referens/{$slug}"] = [
+                'eyebrow' => 'API-referens',
+                'title' => $tag['name'],
+                'accent' => 'i API:t.',
+                'text' => $tag['description']['sv'],
             ];
         }
 

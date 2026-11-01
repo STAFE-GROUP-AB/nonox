@@ -22,7 +22,7 @@
         <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Utvecklare</span>
         <a class="lp32" href="{{ $ph['github'] }}" style="text-decoration:none;color:#D9D7D1">GitHub</a>
         <a class="lp33" href="{{ $ph['docs'] }}" style="text-decoration:none;color:#D9D7D1">Dokumentation</a>
-        @if($ph['api'])<a class="lp34" href="{{ $ph['api'] }}" style="text-decoration:none;color:#D9D7D1">API</a>@endif
+        <a class="lp34" href="{{ $ph['api'] }}" style="text-decoration:none;color:#D9D7D1">API för utvecklare</a>
         <a class="lp35" href="https://www.gnu.org/licenses/agpl-3.0.html" style="text-decoration:none;color:#D9D7D1">Licens AGPL-3.0</a>
       </nav>
       <nav aria-label="Branscher" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
