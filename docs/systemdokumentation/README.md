@@ -19,6 +19,35 @@ den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 - Användare loggar in med en engångskod via e-post. Behörigheten styrs av roller
   per företag ([ADR-003](../adr/ADR-003-company-roles.md)).
 
+### 1.1 Överlåtelse och arkivering
+
+Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md).
+
+- Ägaren kan överlåta företaget till en annan medlem med en av företagsrollerna
+  (Företagsinställningar → Ägarskap och arkiv). Medlemmen blir ägare, den
+  tidigare ägaren blir administratör. Överlåtelsen skrivs i
+  behandlingshistoriken (`company.ownership_transferred`).
+- Ett företag raderas aldrig. Ägaren arkiverar det i stället. Före
+  arkiveringen visas arkivpaketet för varje räkenskapsår (avsnitt 7a); ett
+  paket räknas som aktuellt när det skapades efter årets senaste bokföring.
+  Saknas ett aktuellt paket måste ägaren bekräfta att räkenskapsinformationen
+  är sparad på annat sätt. Arkiveringen skrivs i behandlingshistoriken
+  (`company.archived`) med paketen och bekräftelsen.
+- Ett arkiverat företag kan bara läsas. Det spärras i två led: behörigheterna
+  i ett arkiverat företag är bara de som läser och exporterar (verifikationer,
+  fakturor, rapporter, SIE-export, arkivpaket, behandlingshistorik och
+  lönearkiv), och en rad med företagsdata kan inte skapas eller ändras i ett
+  arkiverat företag även om koden inte frågar efter behörighet (schemalagda
+  körningar, kiosker). Inget kan bokföras, faktureras, betalas eller ändras,
+  ingen lön köras och ingen in- eller utcheckning göras. Post till inkorgen
+  tas inte emot utan loggas (`inbox.dropped`, `company_archived`), och avtal
+  faktureras inte. Registerutdrag enligt GDPR fungerar som förut, och
+  gallring av personuppgifter fortsätter.
+- Varje sida i ett arkiverat företag visar att företaget är arkiverat och
+  bara kan läsas. Arkiverade företag visas för sig, nedtonade, i
+  företagsväljaren och under Mina företag.
+- Ägaren kan ta företaget ur arkivet (`company.unarchived`).
+
 ## 1a. Mina företag (översikt för byråer)
 
 - Sidan Mina företag (`/mina-foretag`) visar alla företag användaren är medlem
@@ -1247,3 +1276,4 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
 | 0.44 | 2026-11-01 | Inkorgens gallring enligt beslut: avvisat efter 7 dagar, ohanterad karantän och omatchad post till den gemensamma adressen efter 90 dagar, skräppost från avsändare som inte är godkända sparas aldrig. Godkända avsändares post sparas alltid. ClamAV skannar alla bilagor i den driftade tjänsten. |
 | 0.45 | 2026-11-01 | Lön: godkända tidrapporter från tidigare månader som ingen lönekörning har betalat blir en fråga i nästa ordinarie lönekörning – "Ta med i den här lönekörningen" eller "Inte nu". Svaret sparas på körningen och i behandlingshistoriken, följs vid ny beräkning och låses när körningen attesteras. Medtagna timmar betalas som egna rader med den månad de hör till. |
+| 0.46 | 2026-11-01 | Företag: ägaren kan överlåta företaget till en annan medlem (blir själv administratör) och arkivera det. Före arkiveringen visas arkivpaketen per räkenskapsår; saknas ett aktuellt paket krävs en bekräftelse. Ett arkiverat företag kan bara läsas: bara läsande behörigheter gäller, och företagsdata kan inte skapas eller ändras ens av schemalagda körningar. Inkommande post till ett arkiverat företag loggas och tas inte emot. Ägaren kan ta företaget ur arkivet. |

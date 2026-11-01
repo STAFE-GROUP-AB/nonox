@@ -132,4 +132,6 @@
             </div>
         @endif
     </section>
+
+    @include('livewire.company.overview-archived')
 </div>

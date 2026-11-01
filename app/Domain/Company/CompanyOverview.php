@@ -143,7 +143,8 @@ final class CompanyOverview
                 return [
                     'company' => $company,
                     'role' => $this->roles[$id] === null ? 'owner' : (string) $this->roles[$id],
-                    'tasks' => $tasks,
+                    // Nothing waits in an archived company: it can only be read (ADR-024).
+                    'tasks' => $company->isArchived() ? [] : $tasks,
                     'last_posted' => $this->may($id, 'vouchers:view') && isset($lastPosted[$id]) ? CarbonImmutable::parse((string) $lastPosted[$id])->toDateString() : null,
                     'attention' => array_sum(array_column($tasks, 'count')),
                     ...$this->clientProfile($id, $profiles->get($id), $consultants[$id] ?? []),

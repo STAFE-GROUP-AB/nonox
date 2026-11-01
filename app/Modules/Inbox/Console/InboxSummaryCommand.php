@@ -31,7 +31,7 @@ class InboxSummaryCommand extends Command
     {
         $sent = 0;
 
-        foreach (Company::query()->whereIn('id', $modules->companiesWith(InboxModule::KEY))->orderBy('id')->get() as $company) {
+        foreach (Company::query()->whereIn('id', $modules->companiesWith(InboxModule::KEY))->whereNull('archived_at')->orderBy('id')->get() as $company) {
             if (! InboxSettings::for($company)['daily_summary']) {
                 continue;
             }

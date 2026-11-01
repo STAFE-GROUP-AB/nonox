@@ -12,6 +12,7 @@ use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\StaffLedger\Actions\PruneStaffLedger;
 use App\Support\Audit\Audit;
+use App\Support\Tenancy\ArchivedCompany;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -46,7 +47,8 @@ class PrunePersonalDataCommand extends Command
         $now = CarbonImmutable::now();
 
         // Every company at once: these rows have no purpose left in any company.
-        $counts = CompanyScope::bypass(function () use ($now): array {
+        // Archived companies too: their personal data outlives its purpose the same way (ADR-024).
+        $counts = ArchivedCompany::maintenance(fn (): array => CompanyScope::bypass(function () use ($now): array {
             $codes = LoginCode::query()->where('created_at', '<', $now->subDays(self::RETENTION['login_codes']))->delete();
             $invitations = TeamInvitation::query()->where('created_at', '<', $now->subDays(self::RETENTION['invitations']))->delete();
 
@@ -72,9 +74,9 @@ class PrunePersonalDataCommand extends Command
             });
 
             return ['login_codes' => $codes, 'invitations' => $invitations, 'fortnox_tokens' => $tokens, 'absences' => $absences, 'expenses' => $expenses];
-        });
+        }));
 
-        $staffLedger = app(PruneStaffLedger::class)();
+        $staffLedger = ArchivedCompany::maintenance(fn (): array => app(PruneStaffLedger::class)());
         $counts['staff_ledger_entries'] = $staffLedger['entries'];
         $counts['staff_ledger_people'] = $staffLedger['people'];
 

@@ -24,7 +24,8 @@ use Livewire\Mechanisms\HandleComponents\ComponentContext;
  * of the company's modules. Most components check permissions only when
  * they are first rendered; a page kept open after a demotion, or after a
  * module was switched off, would otherwise keep working (security review
- * 2026-11-01). When the fingerprint differs the request answers 404, and
+ * 2026-11-01). The same goes for a page kept open while the company was
+ * archived (ADR-024). When the fingerprint differs the request answers 404, and
  * reloading the page runs every check again.
  */
 class LivewireCompanyGuard extends ComponentHook
@@ -56,7 +57,7 @@ class LivewireCompanyGuard extends ComponentHook
         $context->addMemo('access', $this->access());
     }
 
-    /** The user's role in the current company and the company's modules, as one hash. */
+    /** The user's role in the current company, the company's modules and whether it is archived, as one hash. */
     private function access(): ?string
     {
         $user = Auth::user();
@@ -69,12 +70,14 @@ class LivewireCompanyGuard extends ComponentHook
         $row = DB::table('teams')
             ->leftJoin('team_user', fn ($join) => $join->on('team_user.team_id', '=', 'teams.id')->where('team_user.user_id', $user->id))
             ->where('teams.id', $companyId)
-            ->first(['teams.user_id', 'team_user.role']);
+            ->first(['teams.user_id', 'teams.archived_at', 'team_user.role']);
         $role = $row === null ? '' : ((int) $row->user_id === $user->id ? 'owner' : (string) $row->role);
         $modules = app(ModuleManager::class);
         $enabled = array_filter(array_keys(app(ModuleRegistry::class)->all()), fn (string $key): bool => $modules->isEnabled($key, $companyId));
 
-        return hash('sha256', $role.'|'.implode(',', $enabled));
+        $archived = $row !== null && $row->archived_at !== null ? 'archived' : '';
+
+        return hash('sha256', $role.'|'.implode(',', $enabled).'|'.$archived);
     }
 
     private function currentCompanyId(): ?int

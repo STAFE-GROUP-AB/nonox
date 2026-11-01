@@ -23,4 +23,11 @@ final class CompanyContext
     public ?int $companyId = null;
 
     public int $bypassDepth = 0;
+
+    /** @var array<int, bool> whether a company is archived, by id (ArchivedCompany) */
+    public array $archived = [];
+
+    public int $archiveReadingDepth = 0;
+
+    public int $archiveMaintenanceDepth = 0;
 }
