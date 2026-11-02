@@ -5894,5 +5894,18 @@
     "Arbetsgivarens land": "Employer's country",
     "Person- eller ID-nummer": "Personal or ID number",
     "Land som utfärdat ID-numret": "Country that issued the ID number",
-    "Arbetsgivarens organisationsnummer eller utländska nummer": "Employer's organisation number or foreign number"
+    "Arbetsgivarens organisationsnummer eller utländska nummer": "Employer's organisation number or foreign number",
+    "Tid utöver schemat betalas som timlön. Avtalets övertids- och mertidstillägg räknas per beräkningsperiod och skickas med periodens sista dag.": "Time beyond the schedule is paid as hourly pay. The agreement's overtime and extra time supplements are counted per calculation period and sent with the period's last day.",
+    "Övertid räknas per dag mot dagens ordinarie arbetstid enligt avtalet (:source), inte netto över perioden.": "Overtime is counted per day against the day's ordinary working time under the agreement (:source), not net over the period.",
+    ":minutes min ledighet på schemalagd tid räknas som arbetad tid när övertid och mertid räknas (arbetstidslagen 7 § andra stycket).": ":minutes min of leave on scheduled time count as worked when overtime and extra time are counted (Working Hours Act section 7, second paragraph).",
+    ":minutes min förlängning räknas inte som övertid: högst :threshold min per tillfälle (:source).": ":minutes min of extension do not count as overtime: at most :threshold min per occasion (:source).",
+    "Övertiden är avrundad per tillfälle enligt avtalet (:source).": "Overtime is rounded per occasion under the agreement (:source).",
+    "Övertiden är avrundad per dag enligt avtalet (:source).": "Overtime is rounded per day under the agreement (:source).",
+    "Utan kollektivavtal räknas övertid och mertid över högst :max veckor (arbetstidslagen 5 § andra stycket), inte :weeks veckor som i inställningarna.": "Without a collective agreement, overtime and extra time are counted over at most :max weeks (Working Hours Act section 5, second paragraph), not :weeks weeks as in the settings.",
+    ":agreement har inget tillägg för timavlönade för :code den här dagen; timlönen betalar redan tiden.": ":agreement has no supplement for hourly-paid staff for :code on this day; the hourly pay already pays the time.",
+    ":item (inte semesterlönegrundande enligt avtalet)": ":item (not vacation-pay basis under the agreement)",
+    "overtime.hourly_paid: :code pekar på en kod som inte finns.": "overtime.hourly_paid: :code points to a code that does not exist.",
+    "Avrundningen :kind har fel form (unit_minutes 2–60, method :methods, per SHIFT, DAY eller OCCASION, threshold_minutes 0–60).": "The rounding :kind has the wrong form (unit_minutes 2–60, method :methods, per SHIFT, DAY or OCCASION, threshold_minutes 0–60).",
+    "Beräkningsperioden måste ha max_weeks (och max_weeks_hourly) som ett heltal 1–53.": "The calculation period must have max_weeks (and max_weeks_hourly) as a whole number 1–53.",
+    "working_time.overtime_method måste vara PERIOD eller DAILY.": "working_time.overtime_method must be PERIOD or DAILY."
 }

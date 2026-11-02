@@ -86,7 +86,9 @@ it('imports the shipped agreement versions unverified when the module is turned 
         ->name_sv->toBe('OB-tillägg (Gröna Riks)')
         ->formula_ref->toBe('agreement:GR_OB')
         ->is_vacation_basis->toBeTrue()
-        ->and(PayCode::query()->where('code', 'GR_OT_A')->sole()->is_vacation_basis)->toBeFalse();
+        // Gröna Riks excludes no overtime from the vacation-pay basis (§ 17 p. 1, semesterlagen 16 b §).
+        ->and(PayCode::query()->where('code', 'GR_OT_A')->sole()->is_vacation_basis)->toBeTrue()
+        ->and(PayCode::query()->where('code', 'GR_OT_A_TL')->sole()->is_vacation_basis)->toBeTrue();
 });
 
 it('blocks the run while no verified version covers the period, with a Swedish message', function () {

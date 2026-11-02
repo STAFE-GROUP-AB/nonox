@@ -1,9 +1,9 @@
 ---
-beskrivning: Hur attesterad tid blir tidrapporter i lönen – timlön, OB uppdelad enligt kollektivavtalets tider, och tid utöver schemat för månadsavlönade.
+beskrivning: Hur attesterad tid blir tidrapporter i lönen – timlön, OB uppdelad enligt kollektivavtalets tider, och övertid och mertid per dag eller per beräkningsperiod enligt avtalet.
 ordning: 90
 roller: [owner, admin, payroll_admin]
 modul: planning
-sokord: [OB, OB-tillägg, obekväm arbetstid, övertid, mertid, löneunderlag, tidrapport, timlön, månadslön, storhelg]
+sokord: [OB, OB-tillägg, obekväm arbetstid, övertid, mertid, löneunderlag, tidrapport, timlön, månadslön, storhelg, övertidstillägg, avrundning, beräkningsperiod, semesterlönegrundande]
 ---
 
 # OB och övertid i lönen
@@ -18,29 +18,46 @@ I kolumnen **Till lönen** på [Tid att attestera](/manual/planering/tid-att-att
 
 All faktisk tid blir lönearten Timlön, planerad eller inte. På lönebeskedet blir det **Timlön enligt tidrapport**, med timmarna gånger timlönen. Till det kommer OB, se nedan.
 
-Arbetade personen längre än schemat betalas tiden som timlön. Om avtalet ger ett övertids- eller mertidstillägg för den tiden lägger du in det i lönekörningen själv.
+Arbetade personen längre än schemat betalas tiden som timlön.
+
+Ger avtalet timanställda ett övertids- eller mertidstillägg, som Gröna Riks och Detaljhandelns avtal, räknar Planering det per beräkningsperiod på samma sätt som för månadsavlönade, se nedan. Tillägget skickas på avtalets löneart för bara tillägget, till exempel **Övertidstillägg timavlönad, två första timmarna**, eftersom timlönen redan betalar timmen. Vilken art det blir följer lönearten du har valt för övertid och mertid under **Planering → Inställningar**. Utan kollektivavtal ger lagen inget tillägg, och tiden betalas bara som timlön.
 
 ## Månadsavlönade
 
 Månadslönen betalar redan den planerade tiden, så bara det som skiljer sig blir rader i lönen:
 
 - **OB**, se nedan.
-- **Övertid och mertid** räknas per kalendervecka, måndag till söndag, se nedan.
+- **Övertid och mertid** räknas per kalendervecka, eller per beräkningsperiod, se nedan.
 - **Kortare tid** dras inte av här, varken en dag eller en vecka. Ska den dras av registrerar du frånvaro i lönen, där sjuklön och avdrag räknas. Se [Frånvaro, sjuklön och karensavdrag](/manual/lon/franvaro-och-sjuklon).
 
-### Övertid och mertid per vecka
+### Övertid och mertid per period
 
-NONOX lägger ihop den attesterade tiden för veckan och jämför den med anställningens veckoarbetstid. Saknas veckoarbetstiden på anställningen används den ordinarie veckan i arbetstidsreglerna gånger sysselsättningsgraden.
+NONOX lägger ihop den attesterade tiden för veckan, eller perioden, och jämför den med anställningens veckoarbetstid gånger antalet veckor. Saknas veckoarbetstiden på anställningen används den ordinarie veckan i arbetstidsreglerna gånger sysselsättningsgraden.
 
 - För den som arbetar **deltid** är tiden upp till heltid mertid, och tiden därutöver övertid.
 - För den som arbetar **heltid** är all tid över veckoarbetstiden övertid.
+- **Ledighet räknas som arbetad tid.** En dag med godkänd frånvaro eller uttagen komptid på schemalagd tid räknas som om den schemalagda tiden var arbetad (arbetstidslagen 7 § andra stycket). Är någon ledig en dag och arbetar två timmar längre en annan dag blir det alltså två timmar övertid.
 - Ingår övertid i lönen enligt anställningen skickas ingen övertid.
 
-En vecka räknas först när den är slut och alla dess dagar är attesterade. Till dess står det på veckans sista dag att veckan väntar, till exempel **Veckan: hittills 90 min utöver schemat. Övertid och mertid räknas mot veckoarbetstiden när hela veckan är attesterad – väntar på hela veckan.** En enskild dag som är längre än schemat blir alltså ingen övertid i sig.
+En vecka räknas först när den är slut och alla dess dagar är attesterade. Till dess står det på veckans sista dag att veckan väntar, till exempel **Veckan: hittills 90 min utöver schemat. Övertid och mertid räknas mot veckoarbetstiden när hela veckan är attesterad – väntar på hela veckan.**
 
 När veckan är klar skickas övertiden och mertiden med veckans sista dag, på lönearterna du har valt: **Löneart för övertid (månadslön, heltid)** och **Löneart för mertid (månadslön, deltid)**. Har du inte valt någon löneart skickas tiden inte, utan visas som en avvikelse som du lägger in i lönekörningen själv.
 
-Ger avtalet en avrundningsregel för övertid, till exempel att varje påbörjad halvtimme räknas, avrundas veckans övertid och mertid så.
+### Övertid per dag
+
+Vissa avtal räknar övertid per dag, mot dagens ordinarie arbetstid, i stället för netto över veckan. Det gäller Visita–Unionen och Handelns tjänstemannaavtal. Då jämförs varje dag med schemat för dagen. En längre dag ger övertid även om en annan dag i veckan var kortare. Dagen får en anteckning med källan i avtalet.
+
+### Avrundning per dag eller tillfälle
+
+Ger avtalet en avrundningsregel för övertid avrundas tiden per dag eller per tillfälle, aldrig på periodens summa:
+
+- **Visita–Unionen:** varje påbörjad halvtimme per dag räknas som hel. Tre dagar med 20 minuter övertid blir 3 × 30 = 90 minuter, inte 60.
+- **Handelns tjänstemannaavtal:** bara hela halvtimmar per dag räknas. 50 minuter en dag blir 30.
+- **Gröna Riks:** en förlängning på högst 10 minuter är inte övertid. Längre tillfällen avrundas uppåt till påbörjad halvtimme. Ett tillfälle är tid utanför schemat, till exempel före passet eller efter det.
+
+### Utan kollektivavtal: högst fyra veckor
+
+Utan kollektivavtal får arbetstiden räknas i genomsnitt över högst fyra veckor (arbetstidslagen 5 § andra stycket). Har du ställt in en längre beräkningsperiod räknar NONOX ändå högst fyra veckor åt gången för den som inte har något avtal, och dagen får en anteckning om det. Med avtal gäller avtalets gräns. I Gröna Riks är den 16 veckor för månadsavlönade och 8 veckor för timavlönade.
 
 ### Längre period än en vecka
 
@@ -51,7 +68,11 @@ Har ni ett rullande schema kan övertiden räknas över hela schemats längd i s
 På veckans eller periodens sista dag väljer du **Betala ut** eller **Komptid**. Med komptid blir tiden ett saldo i lönen i stället för en tidrapport, med avtalets faktor, till exempel 1,5 timmar per övertidstimme. Se [Komptid](/manual/lon/komptid).
 
 > [!IMPORTANT]
-> Arbetstidslagen och kollektivavtalet kan räkna frånvaro och helgdagar på ett annat sätt än NONOX och ha flera slags övertid, till exempel i anslutning till ordinarie tid eller inte. Det tillämpas inte här. Kontrollera mot ert avtal vilken löneart och vilken beräkningsperiod som gäller, eller fråga er redovisningskonsult.
+> Reglerna för ledighet, beräkningsperiod och avrundning bygger på en AI-utredning av lagen och avtalen den 2 november 2026. Juristgranskning återstår. Avtalen har också flera slags övertid, till exempel i anslutning till ordinarie tid eller inte, och minst tre timmar för övertid som inte ansluter. Det skiljs inte åt här: periodens övertid går på den löneart du har valt. Helgdagar utan planerat pass räknas inte som arbetad tid. Kontrollera mot ert avtal, eller fråga er redovisningskonsult.
+
+### Semesterlön på övertid
+
+Övertid och utbetald komptid räknas in i semesterlönegrundande lön enligt semesterlagen 16 b §. Har avtalet sagt att semesterlönen redan ingår i övertidsersättningen, som Visita–Unionen och Handelns tjänstemannaavtal, räknas avtalets övertid inte in. Se [Semester](/manual/lon/semester).
 
 ## OB
 

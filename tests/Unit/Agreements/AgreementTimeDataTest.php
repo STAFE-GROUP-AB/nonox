@@ -49,11 +49,11 @@ it('refuses A5–A8 data in the wrong shape or without a source', function (arra
 
     expect(app(AgreementFileValidator::class)->validate($file, 'visita-unionen'))->toContain($problem);
 })->with([
-    'unknown rounding method' => [['rounding' => ['ob' => ['method' => 'NEAREST']]], 'Avrundningen ob har fel form (unit_minutes 2–60, method UP_PER_STARTED_UNIT eller DOWN_TO_WHOLE_UNIT, per SHIFT).'],
+    'unknown rounding method' => [['rounding' => ['ob' => ['method' => 'NEAREST']]], 'Avrundningen ob har fel form (unit_minutes 2–60, method UP_PER_STARTED_UNIT eller DOWN_TO_WHOLE_UNIT, per SHIFT, DAY eller OCCASION, threshold_minutes 0–60).'],
     'rounding without source' => [['rounding' => ['overtime' => ['source' => '']]], 'rounding.overtime saknar källa.'],
     'comp time for a code that does not exist' => [['overtime' => ['comp_time' => ['hours_per_hour' => ['VU_OT_99' => '1.5']]]], 'Komptiden för VU_OT_99 pekar på en kod som inte finns eller har en faktor i fel form.'],
     'comp time factor as a number' => [['overtime' => ['comp_time' => ['hours_per_hour' => ['VU_OT_94' => 1.5]]]], 'Komptiden för VU_OT_94 pekar på en kod som inte finns eller har en faktor i fel form.'],
-    'calculation period of zero weeks' => [['working_time' => ['calculation_period' => ['max_weeks' => 0]]], 'Beräkningsperioden måste ha max_weeks som ett heltal 1–53.'],
+    'calculation period of zero weeks' => [['working_time' => ['calculation_period' => ['max_weeks' => 0]]], 'Beräkningsperioden måste ha max_weeks (och max_weeks_hourly) som ett heltal 1–53.'],
     'long sickness from day 10' => [['sick_pay' => ['after_employer_period' => ['from_day' => 10]]], 'sick_pay.after_employer_period har fel form (from_day, deduction med per CALENDAR_DAY, days_per_year, below_bp, above_bp, threshold_prisbasbelopp, och duration med to_day).'],
     'sick pay with a source that is not listed' => [['sick_pay' => ['source' => 'XX#s. 1']], 'sick_pay hänvisar till en källa som inte finns i listan: XX#s. 1.'],
 ]);

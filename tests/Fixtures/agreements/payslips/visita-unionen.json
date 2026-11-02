@@ -413,6 +413,48 @@
         },
         "warnings": []
       }
+    },
+    {
+      "name": "övertid /94 ger ingen semesterersättning: semesterlönen ingår i övertidsersättningen",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_OT_94",
+          "quantity": "3",
+          "date": "2026-05-13"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_OT_94": 111702,
+          "SEMESTERERSATTNING": 420000
+        },
+        "gross_ore": 4031702,
+        "employer": {
+          "TJANSTEPENSION": 181427,
+          "AVTALSFORSAKRING": 16933
+        },
+        "warnings": []
+      },
+      "vacation": {
+        "rule": "SAMMALONEREGELN",
+        "paid_days_earned": 0,
+        "basis_ore": 0,
+        "payout_with_salary": true
+      }
     }
   ]
 }

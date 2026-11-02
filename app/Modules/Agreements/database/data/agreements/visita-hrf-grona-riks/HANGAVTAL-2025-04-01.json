@@ -22,7 +22,8 @@
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
-        "calculation_period": { "max_weeks": 26, "source": "GR#§ 9 s. 13" },
+        "calculation_period": { "max_weeks": 16, "max_weeks_hourly": 8, "source": "GR#§ 9 p. 1 s. 13" },
+        "overtime_method": { "method": "PERIOD", "source": "GR#§ 9 p. 1 s. 13; § 12 p. 1.1 s. 18" },
         "source": "GR#§ 9 s. 13",
         "hourly_divisor": {
             "monthly_to_hourly": "173",
@@ -151,6 +152,8 @@
                 { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 4500, "plus_hourly_wage": true } },
                 { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500, "plus_hourly_wage": true } }
             ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
             "source": "GR#§§ 11–12 s. 18–20"
         },
         "GR_OT_B": {
@@ -161,6 +164,8 @@
             "rates": [
                 { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000, "plus_hourly_wage": true } }
             ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
             "source": "GR#§§ 11–12 s. 18–20"
         },
         "GR_OT_C": {
@@ -171,7 +176,118 @@
             "rates": [
                 { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 9000, "plus_hourly_wage": true } }
             ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
             "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_MT_A": {
+            "name": "Mertid, två första timmarna i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Mertid för deltidsanställd i anslutning till ordinarie tid, de två första timmarna: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500, "plus_hourly_wage": true } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§ 12 p. 2 s. 19–20"
+        },
+        "GR_MT_B": {
+            "name": "Mertid i anslutning, därutöver",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Mertid i anslutning till ordinarie tid efter de två första timmarna: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000, "plus_hourly_wage": true } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§ 12 p. 2 s. 19–20"
+        },
+        "GR_MT_C": {
+            "name": "Mertid, inte i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Mertid som inte ansluter till ordinarie tid: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 9000, "plus_hourly_wage": true } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§ 12 p. 2 s. 19–20"
+        },
+        "GR_OT_A_TL": {
+            "name": "Övertidstillägg timavlönad, två första timmarna",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen (övertid a)",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 4500 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_OT_B_TL": {
+            "name": "Övertidstillägg timavlönad, därutöver",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen (övertid b)",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_OT_C_TL": {
+            "name": "Övertidstillägg timavlönad, inte i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen (övertid c)",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 9000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_MT_A_TL": {
+            "name": "Mertidstillägg timavlönad, två första timmarna",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen (mertid a)",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§ 12 p. 2 s. 19–20"
+        },
+        "GR_MT_B_TL": {
+            "name": "Mertidstillägg timavlönad, därutöver",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen (mertid b)",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§ 12 p. 2 s. 19–20"
+        },
+        "GR_MT_C_TL": {
+            "name": "Mertidstillägg timavlönad, inte i anslutning",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen (mertid c)",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 9000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "GR#§ 17 p. 1 s. 25 (semester enligt lag, ingen undantagen övertid; semesterlagen 16 b §)",
+            "source": "GR#§ 12 p. 2 s. 19–20"
         },
         "GR_KOST": {
             "name": "Kostavdrag",
@@ -208,8 +324,9 @@
         "overtime": {
             "unit_minutes": 30,
             "method": "UP_PER_STARTED_UNIT",
-            "per": "SHIFT",
-            "source": "GR#§§ 11–12 s. 19"
+            "per": "OCCASION",
+            "threshold_minutes": 10,
+            "source": "GR#§ 12 p. 1.2 anm. s. 19"
         }
     },
     "overtime": {
@@ -221,6 +338,17 @@
             },
             "requires_agreement": true,
             "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "hourly_paid": {
+            "supplement_codes": {
+                "GR_OT_A": "GR_OT_A_TL",
+                "GR_OT_B": "GR_OT_B_TL",
+                "GR_OT_C": "GR_OT_C_TL",
+                "GR_MT_A": "GR_MT_A_TL",
+                "GR_MT_B": "GR_MT_B_TL",
+                "GR_MT_C": "GR_MT_C_TL"
+            },
+            "source": "GR#§ 12 p. 1–2 s. 18–20"
         }
     },
     "sick_pay": {
@@ -233,7 +361,9 @@
         "Administrationsavgift 0,51 % av premieunderlaget för hängavtalsföretag (GH/GR § 28 s. 35) ligger under insurances.admin_fee_bp.",
         "Grupp 1N (nattreceptionist i lönegrupp 1) har bara timlön i tabellen; ingen månadslön anges. TODO(legal-verify): exakt vilka anställningar som räknas som nattreceptionist i hängavtalets tabell, och hur den förhåller sig till regeln om minimitimlön × 1,055 för viss nattpersonal (GR § 9 p. 1 st. 2).",
         "Avrundning av OB och övertid till påbörjad halvtimme tillämpas när pass delas upp (A6), inte på redan uppdelade timmar. TODO(legal-verify): per pass eller per period.",
-        "Mertid, röda dagar och sjuklön med OB är inte data i den här versionen ännu (A5–A8).",
+        "Röda dagar är inte data i den här versionen ännu (A5–A8). Mertid med tillägg (GR_MT_*) gäller från 2026-04-01 (GR § 12 p. 2).",
+        "Beräkningsperioden är högst 8 veckor för timavlönade och 16 för månadsavlönade; 26 veckor bara för månadslön med minst 70 % sysselsättning och schema för hela perioden m.m. (GR § 9 p. 1). Enligt AI-utredning 2026-11-02, juristgranskning återstår.",
+        "Förlängning av arbetstiden med högst 10 minuter är inte övertid, och övertid avrundas uppåt till påbörjad halvtimme per tillfälle (GR § 12 p. 1.2 anm.). Enligt AI-utredning 2026-11-02, juristgranskning återstår.",
         "Ett erfarenhetsår räknas om man arbetat minst 75 % eller 1 300 timmar (GR s. 60). NONOX räknar från datumet för branschvana som anges på anställningen."
     ],
     "vacation": {

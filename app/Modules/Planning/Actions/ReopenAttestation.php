@@ -10,6 +10,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\CompTimeEntries;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Models\CompTimeEntry;
+use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
@@ -112,12 +113,21 @@ final class ReopenAttestation
     private function withdrawWeek(User $user, Company $company, Attestation $attestation): void
     {
         $settings = PlanningSettings::resolve($this->modules->settings(PlanningModule::KEY, $company));
-        $monday = PlanningSettings::periodStart($settings, CarbonImmutable::parse($attestation->date->toDateString(), LocalTimestamp::ZONE));
+        $day = $attestation->date->toDateString();
+        // The period the day belongs to: at most four weeks when no collective agreement binds the employment (AttestData::withWeeks).
+        $bound = Employment::query()
+            ->where('employee_id', $attestation->employee_id)
+            ->whereDate('start_date', '<=', $day)
+            ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $day))
+            ->orderByDesc('start_date')
+            ->first()?->collective_agreement_id !== null;
+        $weeks = PlanningSettings::periodWeeks($settings, $bound);
+        $monday = PlanningSettings::periodStart($settings, CarbonImmutable::parse($day, LocalTimestamp::ZONE), $weeks);
         $carriers = Attestation::query()
             ->where('employee_id', $attestation->employee_id)
             ->whereKeyNot($attestation->id)
             ->whereDate('date', '>=', $monday->toDateString())
-            ->whereDate('date', '<=', $monday->addWeeks(max(1, PlanningSettings::int($settings, 'overtime_period_weeks')))->subDay()->toDateString())
+            ->whereDate('date', '<=', $monday->addWeeks($weeks)->subDay()->toDateString())
             ->whereNotNull('details->week')
             ->lockForUpdate()
             ->get();

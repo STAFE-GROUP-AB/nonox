@@ -28,8 +28,11 @@ use Tests\Support\Payroll;
  * synthetic agreement where no public value exists, as for the
  * hairdressers' commission) and the 2026 premium rules. The engine reads the
  * agreement exactly as a run does (AgreementContextExtension::applyAgreement,
- * then the payroll calculator with the agreement's steps). Shifts, mertid
- * and sick pay with OB (A5–A8) are not covered here yet.
+ * then the payroll calculator with the agreement's steps). Shifts and sick
+ * pay with OB (A5–A8) are not covered here yet. Overtime and mertid
+ * supplements for hourly pay and the vacation-pay basis of overtime per
+ * agreement are (fix-overtid; enligt AI-utredning 2026-11-02,
+ * juristgranskning återstår).
  */
 
 beforeEach(function () {
@@ -95,7 +98,7 @@ function goldenAgreementContext(array $case): array
             [Additions::AGREEMENT_PRICED => true, 'date_from' => $input['date'], 'date_to' => $input['date']]);
     }, $case['inputs']);
 
-    $vacation = isset($case['vacation']) ? new VacationInput($case['vacation']['rule'], $case['vacation']['paid_days_earned'], 0, $case['vacation']['basis_ore'], false) : null;
+    $vacation = isset($case['vacation']) ? new VacationInput($case['vacation']['rule'], $case['vacation']['paid_days_earned'], 0, $case['vacation']['basis_ore'], $case['vacation']['payout_with_salary'] ?? false) : null;
 
     $context = new PayrollContext(
         birthDate: CarbonImmutable::parse($employment['birth_date']),

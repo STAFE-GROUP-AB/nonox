@@ -171,3 +171,10 @@ saknar rörlig del och 4,6 %-regeln (gap G13).
 - Tillägg: restid `/240` och `/190` (inte semestergrundande), jour `/600`, `/400`, `/300`, `/150` och beredskap `/1400`, `/1000`, `/700`, `/350` som SUPPLEMENT-koder. Minsta antal timmar kontrolleras inte.
 - Kostavdrag: `VU_KOST` 55 kr (2025-06-01) och 56 kr (2026-06-01) per dag.
 - Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/visita-unionen.json`.
+
+## I NONOX: övertid, mertid och semestergrund (fix-overtid, 2026-11-02)
+
+Enligt AI-utredning 2026-11-02, juristgranskning återstår.
+
+- Övertid räknas per dag mot den ordinarie dagliga arbetstiden (`overtime_method: DAILY`, § 11.1 s. 24), avrundat uppåt per påbörjad halvtimme per dag (`rounding.overtime.per: DAY`).
+- Övertidskoderna är inte semesterlönegrundande (`vacation_basis: false`, § 16 s. 35: i övertidsersättningen ingår semesterlön). Om det också gäller utbetald komptid är inte utrett (TODO(legal-verify)).

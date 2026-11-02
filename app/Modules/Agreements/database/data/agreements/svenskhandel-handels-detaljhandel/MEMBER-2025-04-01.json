@@ -21,6 +21,7 @@
     "working_time": {
         "full_time_hours_per_week": "38.25",
         "calculation_period": { "max_weeks": 52, "source": "D1#§ 6.1 s. 17" },
+        "overtime_method": { "method": "PERIOD", "source": "D1#§ 6.1 s. 17; § 9.1 s. 34–35" },
         "source": "D1#§ 6.1 s. 17",
         "hourly_divisor": {
             "monthly_to_hourly": "166",
@@ -128,6 +129,8 @@
                 { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 5000, "plus_hourly_wage": true } },
                 { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500, "plus_hourly_wage": true } }
             ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
             "source": "D1#§ 9 s. 34–38"
         },
         "DH_OT_70": {
@@ -138,6 +141,8 @@
             "rates": [
                 { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000, "plus_hourly_wage": true } }
             ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
             "source": "D1#§ 9 s. 34–38"
         },
         "DH_OT_100": {
@@ -148,7 +153,131 @@
             "rates": [
                 { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000, "plus_hourly_wage": true } }
             ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
             "source": "D1#§ 9 s. 34–38"
+        },
+        "DH_MT_A": {
+            "name": "Mertid, två första timmarna",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Mertid för deltidsanställd, de två första timmarna per dag: timlön och tillägg som för övertid",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500, "plus_hourly_wage": true } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9.5 s. 37"
+        },
+        "DH_MT_70": {
+            "name": "Mertid 70 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Mertid som motsvarar övertid 70 %: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000, "plus_hourly_wage": true } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9.5 s. 37"
+        },
+        "DH_MT_100": {
+            "name": "Mertid 100 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Mertid som motsvarar övertid 100 %: timlön och tillägg",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000, "plus_hourly_wage": true } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9.5 s. 37"
+        },
+        "DH_OT_A_TL": {
+            "name": "Övertidstillägg timavlönad, två första",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 5000 } },
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9 s. 34–38"
+        },
+        "DH_OT_70_TL": {
+            "name": "Övertidstillägg timavlönad 70 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9 s. 34–38"
+        },
+        "DH_OT_100_TL": {
+            "name": "Övertidstillägg timavlönad 100 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9 s. 34–38"
+        },
+        "DH_MT_A_TL": {
+            "name": "Mertidstillägg timavlönad, två första",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 3500 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9.5 s. 37"
+        },
+        "DH_MT_70_TL": {
+            "name": "Mertidstillägg timavlönad 70 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 7000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9.5 s. 37"
+        },
+        "DH_MT_100_TL": {
+            "name": "Mertidstillägg timavlönad 100 %",
+            "kind": "OVERTIME",
+            "pay_code": "OVERTID",
+            "description": "Bara tillägget, för timavlönad vars timlön redan betalar timmen",
+            "rates": [
+                { "valid_from": "2026-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 10000 } }
+            ],
+            "vacation_basis": true,
+            "vacation_basis_source": "D1#§ 14.6 A s. 45 (semesterlöneunderlaget är lönen utom semesterlön, sjuklön och permitteringslön)",
+            "source": "D1#§ 9.5 s. 37"
+        }
+    },
+    "overtime": {
+        "hourly_paid": {
+            "supplement_codes": {
+                "DH_OT_A": "DH_OT_A_TL",
+                "DH_OT_70": "DH_OT_70_TL",
+                "DH_OT_100": "DH_OT_100_TL",
+                "DH_MT_A": "DH_MT_A_TL",
+                "DH_MT_70": "DH_MT_70_TL",
+                "DH_MT_100": "DH_MT_100_TL"
+            },
+            "source": "D1#§ 9.1 s. 34–35; § 9.5 s. 37"
         }
     },
     "sick_pay": {

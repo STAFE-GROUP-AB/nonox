@@ -200,11 +200,13 @@ final readonly class AgreementRules
 
     /**
      * The longest calculation period (beräkningsperiod) the agreement allows
-     * for averaging the ordinary weekly time, in weeks.
+     * for averaging the ordinary weekly time, in weeks; for hourly pay the
+     * agreement's own limit when it has one (Gröna Riks: 8 weeks hourly,
+     * 16 monthly).
      *
      * @return ?array{max_weeks: int, source: string}
      */
-    public function calculationPeriod(): ?array
+    public function calculationPeriod(?string $salaryForm = null): ?array
     {
         $rule = $this->rules['working_time']['calculation_period'] ?? null;
 
@@ -212,7 +214,82 @@ final readonly class AgreementRules
             return null;
         }
 
-        return ['max_weeks' => $rule['max_weeks'], 'source' => (string) ($rule['source'] ?? '')];
+        $weeks = $salaryForm === 'HOURLY' && is_int($rule['max_weeks_hourly'] ?? null) && $rule['max_weeks_hourly'] >= 1 ? $rule['max_weeks_hourly'] : $rule['max_weeks'];
+
+        return ['max_weeks' => $weeks, 'source' => (string) ($rule['source'] ?? '')];
+    }
+
+    /**
+     * How overtime and mertid are measured (A1): PERIOD against the
+     * contracted time of the calculation period (the agreement averages the
+     * ordinary time over a period), or DAILY against each day's ordinary
+     * working time (Visita–Unionen § 11.1, Handelns tjänstemannaavtal
+     * § 4.2). PERIOD when the agreement says nothing.
+     *
+     * @return array{method: string, source: string}
+     */
+    public function overtimeMethod(): array
+    {
+        $rule = $this->rules['working_time']['overtime_method'] ?? null;
+        $method = is_array($rule) ? ($rule['method'] ?? null) : null;
+
+        return [
+            'method' => $method === 'DAILY' ? 'DAILY' : 'PERIOD',
+            'source' => is_array($rule) ? (string) ($rule['source'] ?? '') : '',
+        ];
+    }
+
+    /**
+     * The overtime rounding with what it is applied to (A2): per DAY (the
+     * day's overtime before and after ordinary time added together), per
+     * OCCASION (each stretch of overtime), or per SHIFT (read as per day),
+     * and the minutes of an extension that are not overtime at all.
+     *
+     * @return ?array{unit_minutes: int, method: string, source: string, per: string, threshold_minutes: int}
+     */
+    public function overtimeRounding(): ?array
+    {
+        $rounding = $this->rounding('OVERTIME');
+
+        if ($rounding === null) {
+            return null;
+        }
+
+        $rule = (array) $this->rules['rounding']['overtime'];
+        $threshold = $rule['threshold_minutes'] ?? 0;
+
+        return [
+            ...$rounding,
+            'per' => in_array($rule['per'] ?? null, ['DAY', 'OCCASION'], true) ? (string) $rule['per'] : 'DAY',
+            'threshold_minutes' => is_int($threshold) && $threshold > 0 ? $threshold : 0,
+        ];
+    }
+
+    /**
+     * The supplement-only code an hourly-paid employee gets for an overtime
+     * or mertid code, when the agreement gives hourly-paid staff the
+     * supplement (A1; Gröna Riks § 12, Detaljhandeln § 9): the hourly pay
+     * already pays the hour, so only the supplement is added. Null when the
+     * agreement gives none for that code.
+     *
+     * @return ?array{code: string, source: string}
+     */
+    public function hourlySupplement(string $code): ?array
+    {
+        $rule = $this->rules['overtime']['hourly_paid'] ?? null;
+        $supplement = is_array($rule) ? ($rule['supplement_codes'][$code] ?? null) : null;
+
+        if (! is_string($supplement) || $this->code($supplement) === null) {
+            return null;
+        }
+
+        return ['code' => $supplement, 'source' => (string) ($rule['source'] ?? '')];
+    }
+
+    /** Whether the agreement gives hourly-paid staff overtime and mertid supplements. */
+    public function hasHourlySupplements(): bool
+    {
+        return is_array($this->rules['overtime']['hourly_paid']['supplement_codes'] ?? null);
     }
 
     /** @return array<string, mixed> the agreement's sick-pay facts (A8), empty when it has none */

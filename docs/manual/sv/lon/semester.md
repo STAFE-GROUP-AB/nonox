@@ -35,6 +35,8 @@ Hur semestern betalas beror på semesterregeln:
 - **Sammalöneregeln** (vanlig för månadsavlönade): månadslönen fortsätter som vanligt och varje betald semesterdag ger ett **Semestertillägg**.
 - **Procentregeln** (vanlig för timavlönade och de med mycket rörlig lön): varje betald dag ger **Semesterlön** beräknad på intjänandeårets semesterlönegrundande lön. En månadslön minskas för de semestertimmarna.
 
+Övertid och utbetald komptid ingår i den semesterlönegrundande lönen (semesterlagen 16 b §), och räknas som rörlig lön under sammalöneregeln. Säger kollektivavtalet att semesterlönen ingår i övertidsersättningen, som Visita–Unionen och Handelns tjänstemannaavtal, räknas avtalets övertid inte in. Bedömningen bygger på en AI-utredning den 2 november 2026; juristgranskning återstår.
+
 Tar personen ut fler dagar än saldot räcker till blir resten **Obetald semester**, och lönebeskedet får en varning om det.
 
 Procentsatserna och tilläggen står under **Lön → Regler**, med länk till semesterlagen. Ett kollektivavtal kan ge högre belopp än lagen; det räknar NONOX inte ännu (se [Det här gör Avtal inte ännu](/manual/avtal/det-har-gor-avtal-inte-annu)).

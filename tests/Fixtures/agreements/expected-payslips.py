@@ -122,6 +122,24 @@ gr.append(case("kostavdrag: 20 dagar, förmånen minskas med avdraget", GR, emp(
 g = S
 gr.append(case("hängavtal: högre omställningspremie och administrationsavgift 0,51 %", GRH, emp(ADULT, monthly_salary_ore=S, group="2"), [],
                {"lines": {"MANADSLON": S}, "gross_ore": g, "employer": {"TJANSTEPENSION": saf_lo(S, 35), "AVTALSFORSAKRING": fora_arbetare(S, True) + hu(D(S) * 51 / 10000)}, "warnings": []}))
+# Overtime and mertid supplements for hourly pay and vacation pay on them (fix-overtid, L5/A1;
+# enligt AI-utredning 2026-11-02, juristgranskning återstår): the hourly pay already pays the hour, so the
+# supplement-only code adds 35 % from 2026-04-01; both are vacation-pay basis (GR § 17 p. 1, semesterlagen 16 b §),
+# so semesterersättning with the salary is 12,72 % of hourly pay plus supplement.
+HR = 16_000
+r = percent_rate(HR, 3500)
+paid = 100 * HR + 3 * r
+pay_out = hu(D(paid) * 1272 / 10000)
+g = paid + pay_out
+gr.append(case("timavlönad: övertidstillägg a) utan timlönen igen, semesterersättning även på tillägget", GR, emp(ADULT, salary_form="HOURLY", hourly_rate_ore=HR, group="2"),
+               [{"code": "TIMLON", "quantity": "100", "date": "2026-05-04"}, inp("GR_OT_A_TL", "3", "2026-05-12")],
+               {"lines": {"TIMLON": 100 * HR, "GR_OT_A_TL": 3 * r, "SEMESTERERSATTNING": pay_out}, "gross_ore": g, "employer": arbetare_costs(g, 35), "warnings": []},
+               vacation={"rule": "PROCENTREGELN", "paid_days_earned": 0, "basis_ore": 0, "payout_with_salary": True}))
+rm = percent_rate(HR, 3500)
+g = 100 * HR + 2 * rm
+gr.append(case("timavlönad: mertidstillägg a) 35 % från 2026-04-01", GR, emp(ADULT, salary_form="HOURLY", hourly_rate_ore=HR, employment_rate_bp=5000, weekly_hours="20", group="2"),
+               [{"code": "TIMLON", "quantity": "100", "date": "2026-05-04"}, inp("GR_MT_A_TL", "2", "2026-05-13")],
+               {"lines": {"TIMLON": 100 * HR, "GR_MT_A_TL": 2 * rm}, "gross_ore": g, "employer": arbetare_costs(g, 35), "warnings": []}))
 fixtures["visita-hrf-grona-riks"] = gr
 
 # ---------------------------------------------------------------- Detaljhandel
@@ -192,6 +210,17 @@ le.append(case("semester: garantibelopp för fyllda 18 (21 år ger högre)", LE,
                absences=week(18, 2), vacation={"rule": "PROCENTREGELN", "paid_days_earned": 25, "basis_ore": 2_000_000}))
 fixtures["svenskhandel-handels-lager-ehandel"] = le
 
+# Detaljhandeln: overtime is in the vacation-pay basis (D1 § 14.6 A excludes only semesterlön, sjuklön and
+# permitteringslön), for hourly pay through the supplement-only code (fix-overtid).
+HR = 18_000
+r = percent_rate(HR, 3500)
+paid = 120 * HR + 2 * r
+pay_out = hu(D(paid) * 1300 / 10000)
+g = paid + pay_out
+dh.append(case("timavlönad: övertidstillägg 35 % och semesterersättning 13 % även på tillägget", DH, emp(ADULT, salary_form="HOURLY", hourly_rate_ore=HR, group="ALLA"),
+               [{"code": "TIMLON", "quantity": "120", "date": "2026-05-04"}, inp("DH_OT_A_TL", "2", "2026-05-12")],
+               {"lines": {"TIMLON": 120 * HR, "DH_OT_A_TL": 2 * r, "SEMESTERERSATTNING": pay_out}, "gross_ore": g, "employer": arbetare_costs(g, 35), "warnings": []},
+               vacation={"rule": "PROCENTREGELN", "paid_days_earned": 0, "basis_ore": 0, "payout_with_salary": True}))
 # ---------------------------------------------------------------- Handelns tjänstemannaavtal
 HT = "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json"
 S = 3_800_000
@@ -215,6 +244,13 @@ ht.append(case("semester: sammalöneregeln med 0,8 % per dag", HT, emp(ADULT, mo
 S2 = 6_000_000
 ht.append(case("över 7,5 inkomstbasbelopp: 30 % ITP 1 över gränsen", HT, emp(ADULT, monthly_salary_ore=S2, group="UNIONEN"), [], {"lines": {"MANADSLON": S2}, "gross_ore": S2, "employer": tjm_costs(S2, 35), "warnings": []}))
 ht.append(case("ung: 18 år, ingen ITP 1 före 25", HT, emp(YOUNG, monthly_salary_ore=2_500_000, group="UNIONEN"), [], {"lines": {"MANADSLON": 2_500_000}, "gross_ore": 2_500_000, "employer": tjm_costs(2_500_000, 18), "warnings": []}))
+# Overtime pay includes semesterlön (HT § 9.4.1): the overtime is not in the basis of semesterersättning (law's 12 %).
+r = hu(D(S) / 94)
+pay_out = hu(D(S) * 1200 / 10000)
+g = S + 2 * r + pay_out
+ht.append(case("övertid /94 ger ingen semesterersättning: semesterlönen ingår i övertidsersättningen", HT, emp(ADULT, monthly_salary_ore=S, group="UNIONEN"), [inp("HT_OT_94", "2", "2026-05-12")],
+               {"lines": {"HT_OT_94": 2 * r, "SEMESTERERSATTNING": pay_out}, "gross_ore": g, "employer": tjm_costs(g, 35), "warnings": []},
+               vacation={"rule": "SAMMALONEREGELN", "paid_days_earned": 0, "basis_ore": 0, "payout_with_salary": True}))
 fixtures["svenskhandel-unionen-tjansteman"] = ht
 
 # ---------------------------------------------------------------- Visita–Unionen
@@ -239,6 +275,13 @@ vu.append(case("kostavdrag 55 kr per dag före 1 juni 2026", VU, emp(ADULT, mont
                {"lines": {"FORMAN_EGENBETALNING": -110_000, "KOSTFORMAN_LUNCH": 248_000}, "gross_ore": g, "employer": tjm_costs(S, 35), "warnings": []}))
 vu.append(case("ung: 18 år, ingen ITP 1", VU, emp(YOUNG, monthly_salary_ore=2_500_000, group="ALLA"), [inp("VU_OB", "4", "2026-05-05")],
                {"lines": {"VU_OB": 10_672}, "gross_ore": 2_510_672, "employer": tjm_costs(2_510_672, 18), "warnings": []}))
+# Overtime pay includes semesterlön (VU § 16): not in the basis of semesterersättning (law's 12 %).
+r = hu(D(S) / 94)
+pay_out = hu(D(S) * 1200 / 10000)
+g = S + 3 * r + pay_out
+vu.append(case("övertid /94 ger ingen semesterersättning: semesterlönen ingår i övertidsersättningen", VU, emp(ADULT, monthly_salary_ore=S, group="ALLA"), [inp("VU_OT_94", "3", "2026-05-13")],
+               {"lines": {"VU_OT_94": 3 * r, "SEMESTERERSATTNING": pay_out}, "gross_ore": g, "employer": tjm_costs(g, 35), "warnings": []},
+               vacation={"rule": "SAMMALONEREGELN", "paid_days_earned": 0, "basis_ore": 0, "payout_with_salary": True}))
 fixtures["visita-unionen"] = vu
 
 # ---------------------------------------------------------------- Bageri

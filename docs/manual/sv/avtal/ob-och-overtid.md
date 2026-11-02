@@ -41,7 +41,7 @@ Varje avtalsrad visar antal timmar gånger satsen och under den en förklaring: 
 
 ## Det här händer i bokföringen
 
-Avtalets lönearter har samma skatt, arbetsgivaravgift, semestergrundande lön och konton som systemets **OB-tillägg** och **Övertid**. De bokförs med lönen i serie L, som övrig lön. Se [Lönefil till banken och bokföring av lönen](/manual/lon/lonefil-och-bokforing).
+Avtalets lönearter har samma skatt, arbetsgivaravgift och konton som systemets **OB-tillägg** och **Övertid**. Övertid är semesterlönegrundande enligt semesterlagen 16 b §, utom där avtalet säger att semesterlönen redan ingår i övertidsersättningen: Visita–Unionen (§ 16) och Handelns tjänstemannaavtal (§ 9.4.1). Gröna Riks och Detaljhandeln räknar in övertid och mertid. Bedömningen bygger på en AI-utredning den 2 november 2026; juristgranskning återstår. De bokförs med lönen i serie L, som övrig lön. Se [Lönefil till banken och bokföring av lönen](/manual/lon/lonefil-och-bokforing).
 
 ## När raden stoppar lönekörningen
 
@@ -69,7 +69,7 @@ Nej. Du kan fortfarande använda systemets **OB-tillägg** och **Övertid** med 
 Ja. Skriver du ett belopp används det, och avtalets sats räknas inte.
 
 **Räknar NONOX mertid för deltidsanställda?**
-Avtal prissätter inte mertid ännu. Med modulen Planering kan tid utöver den avtalade veckoarbetstiden skickas till lönen på en löneart för mertid som du väljer; se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen). Se också [Det här gör Avtal inte ännu](/manual/avtal/det-har-gor-avtal-inte-annu).
+Gröna Riks och Detaljhandeln ger mertidstillägg från den 1 april 2026, och de finns som avtalets lönearter, till exempel **Mertid, två första timmarna i anslutning (Gröna Riks)**. Övriga avtal prissätter inte mertid ännu. Med modulen Planering skickas tid utöver den avtalade veckoarbetstiden till lönen på den löneart för mertid som du väljer; se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen). Se också [Det här gör Avtal inte ännu](/manual/avtal/det-har-gor-avtal-inte-annu).
 
 ## Läs också
 

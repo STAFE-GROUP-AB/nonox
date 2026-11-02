@@ -2008,8 +2008,18 @@ förslag från NONOX AI (ADR-033 §6).
 - **Övertid, mertid och komptid (A7).** Övertid och mertid för
   månadsavlönade räknas per beräkningsperiod (Planering → Inställningar,
   1–52 veckor, standard 1). Längre period än avtalets
-  `calculation_period.max_weeks` ger en varning. Avtalets avrundning av
-  övertid (`rounding.overtime`) används på periodens summa. På periodens
+  `calculation_period.max_weeks` (timavlönade `max_weeks_hourly`) ger en
+  varning; utan kollektivavtal räknas högst fyra veckor oavsett inställningen
+  (arbetstidslagen 5 § andra stycket). Godkänd frånvaro och uttagen komptid
+  på schemalagda dagar räknas som arbetad tid (7 § andra stycket). Avtal med
+  `working_time.overtime_method: DAILY` (Visita–Unionen, Handels tjm) räknar
+  i stället varje dags tid utöver dagens schema, utan nettning. Avtalets
+  avrundning av övertid (`rounding.overtime`) används per dag eller per
+  tillfälle (Gröna Riks: högst 10 minuters förlängning är inte övertid),
+  aldrig på periodens summa. Timavlönade får periodens övertid och mertid
+  bara när avtalet ger dem tillägg (`overtime.hourly_paid`, Gröna Riks och
+  Detaljhandeln), på avtalets kod med bara tillägget; timlönen ändras inte.
+  Enligt AI-utredning 2026-11-02, juristgranskning återstår. På periodens
   sista dag väljer chefen per tillfälle om tiden betalas eller sparas som
   komptid; standard är anställningens uppgift om övertidsersättning.
   Komptiden blir timmar ledighet enligt avtalets faktor för lönearten
@@ -2021,6 +2031,17 @@ förslag från NONOX AI (ADR-033 §6).
   lönen. Saldot kan inte bli negativt, en attesterad månad kan inte ändras,
   och öppnas dagen igen i Planering tas den intjänade komptiden bort (vägras
   om den redan är uttagen).
+- **Semestergrund för övertid och komptid.** Lönearterna Övertid och
+  Komptid är semesterlönegrundande (semesterlagen 16 b §) och, under
+  sammalöneregeln, rörlig lön som ger 12 % vid semesterårets slut (16 a §
+  tredje stycket). Avtalskoder har `vacation_basis` med källa: Gröna Riks och
+  Detaljhandeln ja, Visita–Unionen och Handels tjm nej (semesterlönen ingår
+  i övertidsersättningen). Utbetald komptid följer flaggan på övertiden den
+  tjänades in på, äldst först, och raden bär flaggan i sin förklaring
+  (`explanation.vacation_basis`), som semesterreskontran läser före
+  lönearten. En migrering satte flaggan på befintliga systemlönearter med
+  det gamla värdet. Enligt AI-utredning 2026-11-02, juristgranskning
+  återstår.
 - **Sjuklön enligt schemat (A8).** När Avtal och Planering är på och
   anställningen följer ett avtal: en sjukdag med publicerade pass räknas med
   passens timmar. Förlorad OB på passen (avtalets fönster, avrundning och
@@ -2085,7 +2106,7 @@ förslag från NONOX AI (ADR-033 §6).
   (`expected-payslips.py`) ur avtalsfilerna; provision med garanti räknas
   mot ett syntetiskt avtal eftersom Frisöravtalets satser inte är publika.
   Pass, mertid och sjuklön med OB (A5–A8) ingår inte i dessa fall.
-- **Inte byggt ännu.** Av A7–A8: övertidstillägg för timavlönade, karens
+- **Inte byggt ännu.** Av A7–A8: övertidsarter per tillfälle och minst tre timmar, karens
   i tid enligt avtalen, avtalens egna timvärden i sjuklönen och taket 105
   dagar per 12 månader. Av A9–A11: rörlig lön och 4,6 %-regeln i
   tjänstemannaavtalens semester, garantibelopp för deltid i handeln, ITP 2,
@@ -2125,7 +2146,8 @@ Personalliggare och Avtal när de är påslagna.
   också en dag utan planerat pass ("Lägg till arbetad tid", för företag utan
   personalliggare); liggaren ändras aldrig. Övertid och mertid för
   månadsavlönade räknas per beräkningsperiod (en vecka eller ett rullande
-  schemas längd) och kan på periodens sista dag tas ut som komptid i stället
+  schemas längd, högst fyra veckor utan kollektivavtal) eller per dag när
+  avtalet säger det, och för timavlönade bara när avtalet ger tillägg; de kan på periodens sista dag tas ut som komptid i stället
   för pengar (5h, A7). Attesterade dagar blir löneunderlag: timavlönade
   får varje arbetad minut som Timlön plus OB; månadsavlönade får bara OB och
   tid utöver planen på den övertids- eller mertidsart som valts i

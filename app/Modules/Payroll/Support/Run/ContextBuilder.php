@@ -106,7 +106,13 @@ final class ContextBuilder
 
         if ($compTime->isNotEmpty()) {
             $code = $payCodes->first(fn (PayCode $code): bool => $code->code === CompTimeLedger::PAY_CODE);
-            $context = $context->withInputs([...$context->inputs, ...CompTimeLedger::payInputs($compTime, $context, $code)]);
+            // The comp time paid follows the vacation flag of the overtime it was earned on (first in, first out).
+            $history = CompTimeEntry::query()
+                ->where('employee_id', $employee->id)
+                ->whereDate('date', '<=', $periodEnd->toDateString())
+                ->get();
+            $origins = CompTimeLedger::origins($history, $payCodes->mapWithKeys(fn (PayCode $payCode): array => [$payCode->code => $payCode->is_vacation_basis])->all(), $code === null || $code->is_vacation_basis);
+            $context = $context->withInputs([...$context->inputs, ...CompTimeLedger::payInputs($compTime, $context, $code, $origins)]);
         }
 
         // Other modules that are on add their part, such as the collective agreement (ADR-033).

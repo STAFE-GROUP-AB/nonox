@@ -192,7 +192,7 @@ class CloseVacationYear
             ->join('pay_codes', 'pay_codes.id', '=', 'payslip_lines.pay_code_id')
             ->whereIn('payslips.employee_id', $employees->pluck('id'))
             ->where('pay_codes.category', 'ADDITION')
-            ->where('pay_codes.is_vacation_basis', true)
+            ->whereRaw(VacationLedger::VACATION_BASIS_SQL)
             ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
             ->whereBetween('payroll_runs.payment_date', [$from->toDateString(), $to->toDateString()])
             ->groupBy('payslips.employee_id')

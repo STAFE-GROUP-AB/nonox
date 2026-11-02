@@ -13,8 +13,9 @@ NONOX Avtal byggs steg för steg. Den här sidan säger rakt ut vad modulen inte
 ## Inte byggt ännu
 
 - **OB och övertid utan Planering.** OB från arbetspassens klockslag, övertid och mertid mot schemat, komptid och sjuklön med OB räknas när modulen [Planering](/manual/planering) är på. Utan den måste timmarna för OB och övertid redan vara uppdelade, inmatade per typ eller från en fil från schemasystemet.
-- **Övertidstillägg för timanställda.** Tid utöver schemat betalas som timlön. Ger avtalet ett övertids- eller mertidstillägg lägger du in det själv.
-- **Flera slags övertid ur schemat.** Planering skickar periodens övertid på en löneart. Övertid i anslutning till ordinarie tid och annan övertid, minst tre timmar och "förlängning högst tio minuter" skiljs inte åt.
+- **Övertidstillägg för timanställda utan Planering.** Med Planering räknas Gröna Riks och Detaljhandelns tillägg för timanställda per beräkningsperiod, se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen). Utan Planering lägger du in tillägget själv.
+- **Flera slags övertid ur schemat.** Planering skickar periodens övertid på en löneart. Övertid i anslutning till ordinarie tid och annan övertid, och minst tre timmar för övertid som inte ansluter, skiljs inte åt. Gröna Riks regel att en förlängning på högst tio minuter inte är övertid tillämpas.
+- **Helgdagar utan pass.** En helgdag utan planerat pass räknas inte som arbetad tid när övertid räknas.
 - **Komptid vid anställningens slut.** Outtagen komptid betalas inte ut av sig själv; registrera en utbetalning under **Lön → Komptid**. Detaljhandelns och Lagers komptidsfaktorer finns inte som data än.
 - **Delar av avtalets semesterregler.** Avtalets procentsats, semestertillägg och lägsta semesterlön per dag räknas (se [Semester enligt avtalet](/manual/avtal/semester-enligt-avtal)). Rörlig lön i tjänstemannaavtalen, 4,6 %-regeln, garantibeloppet för deltid i handeln, extra semesterdagar och semesterskulden räknas inte enligt avtalet.
 - **Delar av avtalets sjuklöneregler.** Sjuklön med OB enligt schemat och tjänstemännens avdrag från dag 15 räknas, se [Sjuklön med OB enligt schemat](/manual/avtal/sjuklon-med-ob). Karens räknad i timmar enligt avtalet, avtalens egna timvärden i sjuklönen och taket 105 dagar per tolv månader räknas inte.

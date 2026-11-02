@@ -220,3 +220,12 @@ Särskild löneskatt 24,26 % på pensionspremien finns redan som regel
 - Pension och försäkringar: `pension.saf_lo`, `insurance.fora.arbetare`; hängavtalet har `admin_fee_bp` 51 och hängavtalets omställningspremie 0,74 %. TODO(legal-verify): vilken TSL-rad (huvudavtal eller omställningsavtal) som gäller för HRF-området, och om administrationsavgiften tas på samma underlag som premierna.
 - Kostavdrag: kod `GR_KOST` (MEAL), 55 / 56 kr per dag, nettoavdrag mot Skatteverkets värde för lunch eller middag. TODO(legal-verify): vilket schablonvärde. Månadsbeloppet 2 913 / 3 000 kr och tilläggstabellen vid högre kostpris är inte data.
 - Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/visita-hrf-grona-riks.json`.
+
+## I NONOX: övertid, mertid och semestergrund (fix-overtid, 2026-11-02)
+
+Enligt AI-utredning 2026-11-02, juristgranskning återstår.
+
+- Beräkningsperiod i datan: `max_weeks` 16 (månadslön), `max_weeks_hourly` 8 (timlön); tidigare stod 26 för alla. 26 veckor gäller bara månadslön med minst 70 % sysselsättning och schema för hela perioden m.m. (§ 9 p. 1 s. 13) och finns inte som data.
+- Övertid räknas per period (`overtime_method: PERIOD`); avrundning uppåt till påbörjad halvtimme per tillfälle, och en förlängning på högst 10 minuter är inte övertid (`rounding.overtime.per: OCCASION`, `threshold_minutes: 10`, § 12 p. 1.2 anm. s. 19).
+- Övertid och mertid är semesterlönegrundande (`vacation_basis: true`, § 17 p. 1 s. 25: semester enligt lag, ingen undantagen övertid).
+- Mertid från 2026-04-01: `GR_MT_A/B/C` (35/70/90 % plus timlön, § 12 p. 2 s. 19–20). Timavlönade får bara tillägget på `GR_OT_*_TL` och `GR_MT_*_TL` (`overtime.hourly_paid`).
