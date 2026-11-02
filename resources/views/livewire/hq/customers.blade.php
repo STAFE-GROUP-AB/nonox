@@ -13,7 +13,7 @@
 
     <div id="hq-panel" role="tabpanel" aria-labelledby="hq-tab-{{ $tab }}" class="space-y-6">
         <x-ui.card>
-            <form class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5" x-on:submit.prevent role="search" aria-label="{{ $onCompanies ? __('Filtrera företagen') : __('Filtrera användarna') }}">
+            <form class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" x-on:submit.prevent role="search" aria-label="{{ $onCompanies ? __('Filtrera företagen') : __('Filtrera användarna') }}">
                 <div>
                     <label for="hq-customers-search" class="block text-sm font-medium text-gray-700">{{ __('Sök') }}</label>
                     <input id="hq-customers-search" type="search" wire:model.live.debounce.400ms="search" class="mt-1 {{ $input }}" placeholder="{{ $onCompanies ? __('Namn eller organisationsnummer') : __('Namn eller e-post') }}">
@@ -47,7 +47,7 @@
                         </select>
                     </div>
                 @endif
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-2 sm:col-span-2">
                     <div>
                         <label for="hq-customers-from" class="block text-sm font-medium text-gray-700">{{ __('Skapad från') }}</label>
                         <input id="hq-customers-from" type="date" wire:model.live="from" class="mt-1 {{ $input }}">

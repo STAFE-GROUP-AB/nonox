@@ -20,6 +20,7 @@ Den här policyn beskriver hur {foretag} ({orgnr}) behandlar personuppgifter i t
 | Sessionsuppgifter (IP-adress, webbläsare) | Hålla dig inloggad, säkerhet | Avtal och berättigat intresse | {session} minuter efter senaste aktivitet |
 | Behandlingshistorik: vem som gjort vad, när, IP-adress och webbläsare | Bokföringslagens krav på behandlingshistorik, säkerhet | Rättslig förpliktelse och berättigat intresse (art. 6.1 c och f) | Lika länge som den räkenskapsinformation den gäller, minst sju år |
 | Uppgifter om företaget du företräder och fakturering av tjänsten | Avtal, bokföring | Avtal och rättslig förpliktelse | Sju år efter räkenskapsårets utgång enligt bokföringslagen |
+| Översikt över kunder för driften: företagens namn, när de skapades och vilka moduler som är på, användarnas namn, e-post, roller och senaste inloggning (aldrig bokföring, belopp eller personnummer) | Driva och stödja tjänsten under betan, se vilka som använder den | Berättigat intresse (art. 6.1 f) | Så länge kontot eller företaget finns; varje gång översikten öppnas loggas det i behandlingshistoriken |
 | Kontakt med oss (e-post) | Svara på frågor och ge support | Berättigat intresse | Så länge ärendet pågår, därefter högst två år |
 
 Vi använder inte dina uppgifter för reklam, säljer dem inte och gör inga automatiserade beslut med rättsliga följder för dig.
