@@ -28,10 +28,15 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
    - **Medelantal anställda**.
    - **Ort** och **Datum för underskrift**.
    - **Underskrifter** – en per rad: namn, roll. Till exempel "Anna Andersson, Styrelseledamot".
-3. Efter stämman, fyll i **Fastställelseintyg**: **Fastställelsedag**, **Den som intygar** och **Roll** (styrelseledamot eller verkställande direktör). **Stämmans beslut om vinsten eller förlusten** kan du lämna tomt om du har bokat [resultatdispositionen](/manual/bokslut/resultatdisposition) – då skrivs beslutet ut därifrån.
-4. Klicka på **Spara**.
-5. Granska **Förhandsvisning av årsredovisningen**.
-6. Klicka på **Ladda ner PDF**.
+3. Under **Noter som du fyller i**, fyll i det som gäller företaget. Lämna resten tomt – en not utan uppgifter tas inte med.
+   - **Ställda säkerheter, kr** – till exempel en företagsinteckning som banken har som säkerhet för ett lån. För inteckningar skriver du inteckningarnas belopp, för övriga säkerheter tillgångens bokförda värde. Har företaget lån hos en bank påminner sidan om det här.
+   - **Eventualförpliktelser, kr** – summan av till exempel borgen och garantier som inte står i balansräkningen, och vad de gäller.
+   - **Åtaganden för koncern- och intresseföretag** – säkerheter, garantier och andra åtaganden för till exempel ett dotterbolag.
+   - **Väsentliga händelser efter räkenskapsårets slut** – vad som har hänt och vilken ekonomisk effekt det får. Kryssa i **Den ekonomiska effekten går inte att uppskatta** om det inte går att säga.
+4. Efter stämman, fyll i **Fastställelseintyg**: **Fastställelsedag**, **Den som intygar** och **Roll** (styrelseledamot eller verkställande direktör). **Stämmans beslut om vinsten eller förlusten** kan du lämna tomt om du har bokat [resultatdispositionen](/manual/bokslut/resultatdisposition) – då skrivs beslutet ut därifrån.
+5. Klicka på **Spara**.
+6. Granska **Förhandsvisning av årsredovisningen**.
+7. Klicka på **Ladda ner PDF**.
 
 ## Det här innehåller årsredovisningen
 
@@ -39,7 +44,7 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
 - **Förändringar i eget kapital** är en tabell med en kolumn per post (aktiekapital, reservfond, balanserat resultat och årets resultat). Den visar beloppen vid årets ingång, den utdelning och det belopp som årsstämman beslutade att balansera i ny räkning, årets resultat, övriga förändringar som en nyemission, och beloppen vid årets utgång. Utdelningen och dispositionen hämtas från [resultatdispositionen](/manual/bokslut/resultatdisposition).
 - **Resultaträkning** uppställd efter kostnadsslag, med föregående år.
 - **Balansräkning** med föregående år.
-- **Noter** om redovisningsprinciper, medelantal anställda och anläggningstillgångar.
+- **Noter** om redovisningsprinciper, medelantal anställda och anläggningstillgångar, och de noter du fyller i: ställda säkerheter, eventualförpliktelser, åtaganden för koncern- och intresseföretag och väsentliga händelser efter räkenskapsårets slut.
 - **Underskrifter**.
 - **Fastställelseintyg** sist, för kopian som skickas till Bolagsverket. Årsredovisningslagen (8 kap. 3 §) kräver att en styrelseledamot eller VD intygar att resultat- och balansräkningen har fastställts, när det skedde och vad stämman beslutade om vinsten eller förlusten. Saknas något står det streckade rader att fylla i för hand.
 

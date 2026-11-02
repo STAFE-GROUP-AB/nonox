@@ -152,8 +152,10 @@
             <tbody><tr><td>{{ __('Medelantalet anställda') }}</td><td class="num">{{ $report->average_employees }}</td></tr></tbody>
         </table>
 
+        @php($noteNumber = 2)
         @foreach($fixedAssets as $note)
-            <h3>{{ __('Not :number :label', ['number' => 3 + $loop->index, 'label' => $note['label']]) }}</h3>
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => $note['label']]) }}</h3>
             <table>
                 <thead><tr><th></th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th></tr></thead>
                 <tbody>
@@ -169,6 +171,44 @@
                 </tbody>
             </table>
         @endforeach
+
+        @if($pledged !== [])
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Ställda säkerheter')]) }}</h3>
+            <table>
+                <thead><tr><th></th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th></tr></thead>
+                <tbody>
+                    @foreach($pledged as $row)
+                        <tr><td>{{ $row['label'] }}</td><td class="num">{{ $kr($row['amount']) }}</td></tr>
+                    @endforeach
+                    <tr class="sum"><td>{{ __('Summa ställda säkerheter') }}</td><td class="num">{{ $kr(array_sum(array_column($pledged, 'amount'))) }}</td></tr>
+                </tbody>
+            </table>
+        @endif
+
+        @if($report->contingent_liabilities_ore !== null || filled($report->contingent_liabilities_text))
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Eventualförpliktelser')]) }}</h3>
+            <table>
+                <thead><tr><th></th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th></tr></thead>
+                <tbody><tr><td>{{ $report->contingent_liabilities_text ?: __('Eventualförpliktelser') }}</td><td class="num">{{ $kr($report->contingent_liabilities_ore ?? 0) }}</td></tr></tbody>
+            </table>
+        @endif
+
+        @if(filled($report->group_commitments))
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Åtaganden till förmån för koncern- och intresseföretag')]) }}</h3>
+            <p>{!! nl2br(e($report->group_commitments)) !!}</p>
+        @endif
+
+        @if(filled($report->events_after))
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Väsentliga händelser efter räkenskapsårets slut')]) }}</h3>
+            <p>{!! nl2br(e($report->events_after)) !!}</p>
+            @if($report->events_effect_unknown)
+                <p>{{ __('Den ekonomiska effekten av händelserna kan inte uppskattas.') }}</p>
+            @endif
+        @endif
 
         <h2 style="margin-top: 26pt;">{{ __('Underskrifter') }}</h2>
         <p>{{ $report->signing_place ?: '……………………' }}, {{ $report->signing_date?->toDateString() ?? '……………………' }}</p>

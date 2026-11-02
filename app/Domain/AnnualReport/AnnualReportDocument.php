@@ -23,8 +23,10 @@ use Dompdf\Options;
  * sheet, notes and signatures. Rendered as HTML and as PDF (ADR-002).
  *
  * TODO(legal-verify): the report follows ÅRL and BFNAR 2016:10 as far as
- * the books allow; the note set (only accounting principles, employees and
- * fixed assets) and the standard texts must be checked before filing.
+ * the books allow; the note set (accounting principles, employees, fixed
+ * assets, and the entered notes on ställda säkerheter, eventualförpliktelser,
+ * åtaganden for group companies and events after the year) and the standard
+ * texts must be checked before filing.
  */
 final class AnnualReportDocument
 {
@@ -58,6 +60,7 @@ final class AnnualReportDocument
                 'disposition' => ['free' => $free, 'dividend' => $dividend, 'carried' => $free - $dividend],
                 'fixedAssets' => $accounts->fixedAssetNotes(),
                 'certificate' => self::certificate($company, $fiscalYear, $report, $free),
+                'pledged' => self::pledged($report),
                 'depreciation' => self::depreciationPrinciples(),
             ];
         });
@@ -112,6 +115,28 @@ final class AnnualReportDocument
         $entry = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::DISPOSITION)->first();
 
         return $entry === null ? null : self::decisionText($company, $free, $entry->dividend_ore->ore);
+    }
+
+    /**
+     * The ställda säkerheter entered, per kind in the order of BFNAR
+     * 2016:10 p. 18.13 (#92).
+     *
+     * @return list<array{label: string, amount: int}>
+     */
+    public static function pledged(AnnualReport $report): array
+    {
+        $rows = [];
+
+        foreach (PledgedAssetKind::cases() as $kind) {
+            $amount = (int) ($report->pledged_assets[$kind->value] ?? 0);
+
+            if ($amount !== 0) {
+                $label = $kind === PledgedAssetKind::Other && filled($report->pledged_other_text) ? (string) $report->pledged_other_text : $kind->label();
+                $rows[] = ['label' => $label, 'amount' => $amount];
+            }
+        }
+
+        return $rows;
     }
 
     public static function html(Company $company, FiscalYear $fiscalYear, AnnualReport $report): string

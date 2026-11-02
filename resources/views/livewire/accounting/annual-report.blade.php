@@ -28,6 +28,29 @@
                     </div>
                     <x-ui.field for="ar_signatories" :label="__('Underskrifter')" error="signatories" :hint="__('En per rad: namn, roll. Till exempel Anna Andersson, Styrelseledamot.')"><textarea id="ar_signatories" rows="3" class="{{ $input }} mt-1" wire:model="form.signatories"></textarea></x-ui.field>
                     <fieldset class="space-y-4 border-t border-stone-200 pt-4">
+                        <legend class="text-sm font-semibold text-gray-900">{{ __('Noter som du fyller i') }}</legend>
+                        <p class="text-xs text-gray-500">{{ __('Fyll bara i det som finns. En not utan uppgifter tas inte med.') }}</p>
+                        @if($hasBankLoans)
+                            <p class="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">{{ __('Företaget har lån hos kreditinstitut. Har banken en företagsinteckning eller någon annan säkerhet ska den stå under Ställda säkerheter.') }}</p>
+                        @endif
+                        <div class="space-y-3">
+                            <p class="text-sm font-medium text-gray-900">{{ __('Ställda säkerheter, kr') }}</p>
+                            <div class="grid gap-4 sm:grid-cols-2">
+                                @foreach($pledgedKinds as $kind)
+                                    <x-ui.field for="ar_pledged_{{ $kind->value }}" :label="$kind->label()" error="pledged.{{ $kind->value }}" :hint="$kind->amountHint()"><input id="ar_pledged_{{ $kind->value }}" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.pledged.{{ $kind->value }}"></x-ui.field>
+                                @endforeach
+                            </div>
+                            <x-ui.field for="ar_pledged_other_text" :label="__('Vad är de övriga säkerheterna?')" error="pledged_other_text"><input id="ar_pledged_other_text" type="text" class="{{ $input }} mt-1" wire:model="form.pledged_other_text"></x-ui.field>
+                        </div>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <x-ui.field for="ar_contingent" :label="__('Eventualförpliktelser, kr')" error="contingent_liabilities" :hint="__('Summan av till exempel borgen och garantier som inte står i balansräkningen.')"><input id="ar_contingent" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.contingent_liabilities"></x-ui.field>
+                            <x-ui.field for="ar_contingent_text" :label="__('Vad gäller de?')" error="contingent_liabilities_text"><input id="ar_contingent_text" type="text" class="{{ $input }} mt-1" wire:model="form.contingent_liabilities_text"></x-ui.field>
+                        </div>
+                        <x-ui.field for="ar_group" :label="__('Åtaganden för koncern- och intresseföretag')" error="group_commitments" :hint="__('Säkerheter, garantier och andra åtaganden till förmån för koncernföretag, intresseföretag eller gemensamt styrda företag.')"><textarea id="ar_group" rows="2" class="{{ $input }} mt-1" wire:model="form.group_commitments"></textarea></x-ui.field>
+                        <x-ui.field for="ar_events_after" :label="__('Väsentliga händelser efter räkenskapsårets slut')" error="events_after" :hint="__('Vad som hänt och vilken ekonomisk effekt det får.')"><textarea id="ar_events_after" rows="3" class="{{ $input }} mt-1" wire:model="form.events_after"></textarea></x-ui.field>
+                        <label class="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" class="rounded border-stone-300 text-accent-600 focus:ring-accent-500" wire:model="form.events_effect_unknown"> {{ __('Den ekonomiska effekten går inte att uppskatta') }}</label>
+                    </fieldset>
+                    <fieldset class="space-y-4 border-t border-stone-200 pt-4">
                         <legend class="text-sm font-semibold text-gray-900">{{ __('Fastställelseintyg') }}</legend>
                         <p class="text-xs text-gray-500">{{ __('Fylls i efter stämman. Intyget kommer sist i PDF:en, på kopian som skickas till Bolagsverket (årsredovisningslagen 8 kap. 3 §).') }}</p>
                         <div class="grid gap-4 sm:grid-cols-2">

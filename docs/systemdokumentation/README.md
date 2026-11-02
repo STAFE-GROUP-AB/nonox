@@ -1125,6 +1125,18 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   utdelning. Fältet visar det fria egna kapitalet och påminner om
   försiktighetsregeln, som styrelsen bedömer. Enligt granskning 2026-11-02,
   juristgranskning återstår (BS-AUD-BOK-2, #84).
+- Noter som användaren fyller i (ÅRL 5 kap. 14–16, 22 §§; BFNAR 2016:10
+  p. 18.13–18.15, 18.20A): Ställda säkerheter per slag (företagsinteckningar
+  och fastighetsinteckningar med inteckningarnas belopp; tillgångar med
+  äganderättsförbehåll, belånade fordringar och övriga säkerheter med
+  tillgångens redovisade värde), Eventualförpliktelser (summa och text),
+  Åtaganden till förmån för koncern- och intresseföretag och Väsentliga
+  händelser efter räkenskapsårets slut (text, och om effekten inte kan
+  uppskattas). En not utan uppgifter tas inte med; noterna numreras i
+  ordning efter anläggningstillgångarna. Har företaget saldo på 2330–2359,
+  2410–2419 eller 2480–2489 påminner sidan om noten Ställda säkerheter.
+  Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-11,
+  #92).
 - Sist i rapporten finns fastställelseintyget (ÅRL 8 kap. 3 §): en
   styrelseledamot eller VD intygar att resultat- och balansräkningen har
   fastställts, fastställelsedagen och stämmans beslut om vinsten eller

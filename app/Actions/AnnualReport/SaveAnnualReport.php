@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\AnnualReport;
 
 use App\Domain\AnnualReport\AnnualReportDocument;
+use App\Domain\AnnualReport\PledgedAssetKind;
 use App\Domain\Closing\DividendLimit;
 use App\Models\AnnualReport;
 use App\Models\Company;
@@ -25,7 +26,7 @@ use InvalidArgumentException;
 class SaveAnnualReport
 {
     /**
-     * @param  array<string, mixed>  $input  business_description, significant_events, dividend, average_employees, signing_place, signing_date, signatories, adoption_date, adoption_decision, certifier_name, certifier_role
+     * @param  array<string, mixed>  $input  business_description, significant_events, dividend, average_employees, signing_place, signing_date, signatories, adoption_date, adoption_decision, certifier_name, certifier_role, pledged (kind => amount), pledged_other_text, contingent_liabilities, contingent_liabilities_text, group_commitments, events_after, events_effect_unknown
      */
     public function __invoke(User $user, FiscalYear $fiscalYear, array $input): AnnualReport
     {
@@ -52,6 +53,14 @@ class SaveAnnualReport
             'adoption_decision' => ['nullable', 'string', 'max:2000'],
             'certifier_name' => ['nullable', 'string', 'max:255'],
             'certifier_role' => ['nullable', 'string', 'max:100'],
+            'pledged' => ['nullable', 'array:'.implode(',', array_column(PledgedAssetKind::cases(), 'value'))],
+            'pledged.*' => ['nullable', 'string', 'max:30'],
+            'pledged_other_text' => ['nullable', 'string', 'max:2000'],
+            'contingent_liabilities' => ['nullable', 'string', 'max:30'],
+            'contingent_liabilities_text' => ['nullable', 'string', 'max:2000'],
+            'group_commitments' => ['nullable', 'string', 'max:2000'],
+            'events_after' => ['nullable', 'string', 'max:5000'],
+            'events_effect_unknown' => ['nullable', 'boolean'],
         ], [
             'adoption_date.after' => __('Stämman kan fastställa räkningarna först efter räkenskapsårets slut, :date.', ['date' => $fiscalYear->end_date->toDateString()]),
         ], [
@@ -70,7 +79,19 @@ class SaveAnnualReport
             throw ValidationException::withMessages(['dividend' => __('Utdelningen kan inte vara negativ.')]);
         }
 
-        return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $validated, $dividend): AnnualReport {
+        $pledged = [];
+
+        foreach (PledgedAssetKind::cases() as $kind) {
+            $amount = self::amount($validated['pledged'][$kind->value] ?? null, "pledged.{$kind->value}");
+
+            if ($amount !== null && $amount !== 0) {
+                $pledged[$kind->value] = $amount;
+            }
+        }
+
+        $contingent = self::amount($validated['contingent_liabilities'] ?? null, 'contingent_liabilities');
+
+        return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $validated, $dividend, $pledged, $contingent): AnnualReport {
             // ABL 17 kap. 3 §: the proposal may not distribute more than the free equity (#84).
             DividendLimit::ensureWithin($company, $fiscalYear, $dividend);
 
@@ -86,6 +107,13 @@ class SaveAnnualReport
                 'adoption_decision' => blank($validated['adoption_decision'] ?? null) ? null : trim((string) $validated['adoption_decision']),
                 'certifier_name' => blank($validated['certifier_name'] ?? null) ? null : trim((string) $validated['certifier_name']),
                 'certifier_role' => blank($validated['certifier_role'] ?? null) ? null : trim((string) $validated['certifier_role']),
+                'pledged_assets' => $pledged === [] ? null : $pledged,
+                'pledged_other_text' => blank($validated['pledged_other_text'] ?? null) ? null : trim((string) $validated['pledged_other_text']),
+                'contingent_liabilities_ore' => $contingent,
+                'contingent_liabilities_text' => blank($validated['contingent_liabilities_text'] ?? null) ? null : trim((string) $validated['contingent_liabilities_text']),
+                'group_commitments' => blank($validated['group_commitments'] ?? null) ? null : trim((string) $validated['group_commitments']),
+                'events_after' => blank($validated['events_after'] ?? null) ? null : trim((string) $validated['events_after']),
+                'events_effect_unknown' => (bool) ($validated['events_effect_unknown'] ?? false),
                 'updated_by' => $user->id,
             ]);
 
@@ -93,6 +121,26 @@ class SaveAnnualReport
 
             return $report;
         });
+    }
+
+    /** A non-negative amount in öre, or null when the field is empty. */
+    private static function amount(mixed $value, string $field): ?int
+    {
+        if (blank($value)) {
+            return null;
+        }
+
+        try {
+            $ore = Money::parse((string) $value)->ore;
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages([$field => __('Beloppet går inte att läsa. Skriv till exempel 12 500 eller 12 500,50.')]);
+        }
+
+        if ($ore < 0) {
+            throw ValidationException::withMessages([$field => __('Beloppet kan inte vara negativt.')]);
+        }
+
+        return $ore;
     }
 
     /** @return list<array{name: string, role: string}> */

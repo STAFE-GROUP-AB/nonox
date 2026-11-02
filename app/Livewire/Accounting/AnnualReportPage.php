@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Livewire\Accounting;
 
 use App\Actions\AnnualReport\SaveAnnualReport;
+use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\AnnualReportDocument;
+use App\Domain\AnnualReport\PledgedAssetKind;
 use App\Domain\Closing\DividendLimit;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
+use App\Support\Money\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
@@ -28,7 +31,7 @@ class AnnualReportPage extends Component
     #[Url(as: 'ar', except: 0)]
     public int $year = 0;
 
-    /** @var array<string, string> */
+    /** @var array<string, mixed> */
     public array $form = [];
 
     public int $version = 0;
@@ -68,7 +71,27 @@ class AnnualReportPage extends Component
             'fiscalYear' => $fiscalYear,
             'supported' => $supported,
             'freeEquity' => $supported ? DividendLimit::freeEquityOre($fiscalYear) : 0,
+            'hasBankLoans' => $supported && self::hasBankLoans($fiscalYear),
+            'pledgedKinds' => PledgedAssetKind::cases(),
         ]);
+    }
+
+    /**
+     * Loans from credit institutions at the end of the year (BAS 2330–2359,
+     * 2410–2419, 2480–2489), where a företagsinteckning is likely; the page
+     * then reminds about the note on ställda säkerheter (#92).
+     */
+    private static function hasBankLoans(FiscalYear $fiscalYear): bool
+    {
+        $accounts = AnnualAccounts::for($fiscalYear);
+
+        foreach ([[2330, 2359], [2410, 2419], [2480, 2489]] as [$from, $to]) {
+            if ($accounts->closingOf($from, $to) !== 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function loadForm(): void
@@ -91,6 +114,15 @@ class AnnualReportPage extends Component
             'adoption_decision' => (string) ($report->adoption_decision ?? ''),
             'certifier_name' => (string) ($report->certifier_name ?? ''),
             'certifier_role' => (string) ($report->certifier_role ?? ''),
+            'pledged' => collect(PledgedAssetKind::cases())->mapWithKeys(fn (PledgedAssetKind $kind): array => [
+                $kind->value => isset($report->pledged_assets[$kind->value]) ? Money::ofOre((int) $report->pledged_assets[$kind->value])->format(withCurrency: false) : '',
+            ])->all(),
+            'pledged_other_text' => (string) ($report->pledged_other_text ?? ''),
+            'contingent_liabilities' => $report?->contingent_liabilities_ore === null ? '' : Money::ofOre($report->contingent_liabilities_ore)->format(withCurrency: false),
+            'contingent_liabilities_text' => (string) ($report->contingent_liabilities_text ?? ''),
+            'group_commitments' => (string) ($report->group_commitments ?? ''),
+            'events_after' => (string) ($report->events_after ?? ''),
+            'events_effect_unknown' => (bool) ($report->events_effect_unknown ?? false),
         ];
         $this->resetErrorBag();
     }

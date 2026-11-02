@@ -202,11 +202,11 @@ it('AUD-BOK-10: includes a fastställelseintyg for the copy filed with Bolagsver
 });
 
 it('AUD-BOK-11: offers the K2 notes on ställda säkerheter, eventualförpliktelser and events after the year (ÅRL 5 kap. 14–16, 22 §; BFNAR 2016:10 p. 18.13–18.22)', function () {
-    $report = app(SaveAnnualReport::class)($this->owner, $this->year, ['average_employees' => 0, 'pledged_assets' => 'Företagsinteckning 500 000 kr']);
+    $report = app(SaveAnnualReport::class)($this->owner, $this->year, ['average_employees' => 0, 'pledged' => ['company_mortgage' => '500 000']]);
     $html = AnnualReportDocument::html($this->company, $this->year, $report);
 
     expect($html)->toContain('Ställda säkerheter');
-})->todo('AUD-BOK-11: the annual report has no way to enter or show these notes');
+});
 
 it('AUD-BOK-12: asks for a comment when net sales vary more than 30 % between years in the multi-year overview (BFNAR 2016:10 p. 5.5, BFNAR 2025:2)', function () {
     $previous = FiscalYear::create(['start_date' => '2025-01-01', 'end_date' => '2025-12-31']);

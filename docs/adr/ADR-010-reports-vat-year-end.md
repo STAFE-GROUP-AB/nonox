@@ -311,3 +311,26 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-10, #91).
 - TODO(legal-verify): Bolagsverket's form requirements (original or copy,
   digital filing, the wording of the bestyrkande), which could not be read
   (captcha).
+
+## Entered notes: ställda säkerheter, eventualförpliktelser, events after the year (2026-11-02, #92)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-11, #92).
+
+- **Rule.** ÅRL 5 kap. 1 §, 14 § (ställda säkerheter: omfattning, art och
+  form), 15 § (the sum of eventualförpliktelser), 16 § (åtaganden for group,
+  associated and jointly controlled companies), 22 § (significant events
+  after the year: art and economic effect); BFNAR 2025:2 p. 18.13 a–e (the
+  kinds), 18.14 (the mortgage amount, else the carrying value), 18.15 (the
+  definition of an eventualförpliktelse), 18.20A (say so when the effect
+  cannot be estimated). Read 2026-11-02. The notes are only required when the
+  circumstance exists.
+- **Decision.** Columns on `annual_reports`: `pledged_assets` (json, öre per
+  `PledgedAssetKind`), `pledged_other_text`, `contingent_liabilities_ore`
+  and `_text`, `group_commitments`, `events_after`,
+  `events_effect_unknown`. The figures cannot be read from the books, so the
+  person enters them; the page reminds about the pledged assets when there
+  are bank loans (2330–2359, 2410–2419, 2480–2489). A note without data is
+  left out (no "Inga" line). Notes are numbered after the fixed asset notes.
+- TODO(legal-verify): whether K2 practice expects "Inga" when there are no
+  ställda säkerheter or eventualförpliktelser; whether 5 kap. 16 § needs
+  amounts per kind.
