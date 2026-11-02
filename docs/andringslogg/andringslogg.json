@@ -2,7 +2,7 @@
   "poster": [
     {
       "id": "2026-11-02-periodisk-sammanstallning",
-      "datum": "2026-11-02T16:45:00+01:00",
+      "datum": "2026-11-02T15:33:29+01:00",
       "rubrik": "Periodisk sammanställning för rätt period och trepartshandel i ruta 38",
       "beskrivning": "Varor till företag i andra EU-länder redovisas per månad, och kvartal går bara att välja när Skatteverkets beslut om kvartal är angivet under Företagsuppgifter och varorna är värda högst 500 000 kr per kvartal. Tjänster räknas till den period de utfördes, enligt fakturans leveransdatum. Trepartshandel når ruta 38 genom att konto 3107 kopplas till rutan, eftersom BAS saknar ett eget konto för den.",
       "typ": "Rättat",
