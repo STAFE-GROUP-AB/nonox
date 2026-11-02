@@ -44,4 +44,19 @@ class InventoryPolicy
         return $user->hasTeamPermission($company, 'inventory:manage')
             || ($user->hasTeamPermission($company, 'inventory:view') && $user->hasTeamPermission($company, 'reports:view'));
     }
+
+    /** Print labels (ADR-041): handle goods, as for receiving and counting. */
+    public function printLabels(User $user, Company $company): bool
+    {
+        return $this->viewAny($user, $company) && $this->count($user, $company);
+    }
+
+    /**
+     * Put selling prices on labels: those who manage articles. Lagerpersonal
+     * prints article labels without the price, and location labels as usual.
+     */
+    public function printPrices(User $user, Company $company): bool
+    {
+        return $user->hasTeamPermission($company, 'inventory:manage');
+    }
 }

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Inventory\Http\LabelPrintController;
 use App\Modules\Inventory\Http\PickListPdfController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,3 +16,6 @@ Route::get('/lager/plocklistor/{pickList}/pdf', PickListPdfController::class)->w
 Route::view('/lager/inventering', 'inventory::counts')->name('inventory.counts');
 Route::view('/lager/rapporter', 'inventory::reports')->name('inventory.reports');
 Route::view('/lager/installningar', 'inventory::settings')->name('inventory.settings');
+Route::view('/lager/installningar/etiketter', 'inventory::labels')->name('inventory.labels');
+Route::get('/lager/installningar/etiketter/{template}/provsida', [LabelPrintController::class, 'sample'])->whereNumber('template')->name('inventory.labels.sample');
+Route::post('/lager/etiketter/utskrift', [LabelPrintController::class, 'print'])->name('inventory.labels.print');

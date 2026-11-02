@@ -7,6 +7,7 @@ namespace App\Modules\Inventory\Livewire;
 use App\Models\Article;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
+use App\Modules\Inventory\Actions\PrintLabels;
 use App\Modules\Inventory\Actions\ReceiveStock;
 use App\Modules\Inventory\Actions\SaveReceipt;
 use App\Modules\Inventory\Domain\Quantity;
@@ -15,6 +16,7 @@ use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockReceipt;
 use Carbon\CarbonImmutable;
 use Illuminate\View\View;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -22,8 +24,8 @@ use Livewire\WithPagination;
 /**
  * Lager → Inleveranser: expected and received goods. A receipt is made on
  * its own or from a supplier invoice (?leverantorsfaktura=<id>), and goods
- * are received in full or line by line. Mobile friendly: one column per
- * line on a phone.
+ * are received in full or line by line, and labels can be printed for what
+ * came in. Mobile friendly: one column per line on a phone.
  */
 class ReceiptsPage extends Component
 {
@@ -44,6 +46,9 @@ class ReceiptsPage extends Component
     public array $receive = [];
 
     public string $receiveDate = '';
+
+    /** @var ?array<int, int> article id => copies while the label print step is open */
+    public ?array $printing = null;
 
     public function mount(): void
     {
@@ -132,6 +137,43 @@ class ReceiptsPage extends Component
         }
     }
 
+    /**
+     * Opens the label print step for what came in on a receipt: one label
+     * per received unit (at most 500 per article), or one for an article
+     * counted in parts of a unit, such as kilos (ADR-041).
+     */
+    public function printLabels(int $id): void
+    {
+        abort_unless($this->can('printLabels'), 403);
+        $receipt = StockReceipt::query()->with('lines')->findOrFail($id);
+        $received = [];
+
+        foreach ($receipt->lines as $line) {
+            $received[$line->article_id] = ($received[$line->article_id] ?? 0) + $line->received_milli;
+        }
+
+        $copies = [];
+
+        foreach (array_filter($received, fn (int $milli): bool => $milli > 0) as $articleId => $milli) {
+            $copies[$articleId] = $milli % 1000 === 0 ? min(PrintLabels::MAX_COPIES, intdiv($milli, 1000)) : 1;
+        }
+
+        if ($copies === []) {
+            $this->toast(__('Inget har tagits emot på inleveransen ännu.'), 'error');
+
+            return;
+        }
+
+        $this->printing = $copies;
+    }
+
+    #[On('labels-printed')]
+    #[On('labels-closed')]
+    public function closeLabels(): void
+    {
+        $this->reset('printing');
+    }
+
     public function cancelReceipt(int $id, SaveReceipt $save): void
     {
         $this->attempt(fn () => $save->cancel($this->user(), $this->company(), StockReceipt::query()->findOrFail($id)), __('Inleveransen är makulerad.'), '');
@@ -157,6 +199,7 @@ class ReceiptsPage extends Component
                 : collect(),
             'locations' => StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name']),
             'canCount' => $this->can('count'),
+            'canPrint' => $this->can('printLabels'),
             'seesPrices' => $this->seesPrices(),
         ]);
     }

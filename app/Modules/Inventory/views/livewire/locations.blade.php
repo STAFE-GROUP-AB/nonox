@@ -1,5 +1,9 @@
 @php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-6">
+    @if($printing !== null)
+        <livewire:inventory.label-print kind="LOCATION" :items="$printing" :key="'label-print-'.md5((string) json_encode($printing))" />
+    @endif
+
     @if($editing !== null)
         <x-ui.card :title="$editing ? __('Ändra lagerställe') : __('Nytt lagerställe')">
             <form wire:submit="save" class="grid gap-5 sm:grid-cols-6">
@@ -84,6 +88,12 @@
                         </span>
                         <span class="flex flex-wrap items-center gap-3 text-sm">
                             <span class="tabular-nums text-gray-600">{{ App\Modules\Inventory\Domain\Quantity::format((int) $location->stock_milli) }} {{ __('i lager') }}</span>
+                            @if($canPrint && $location->is_active)
+                                <button type="button" wire:click="printLabels({{ $location->id }})" class="font-semibold text-accent-700 underline">{{ __('Etikett') }}</button>
+                                @if($location->type->value !== 'BIN')
+                                    <button type="button" wire:click="printLabels({{ $location->id }}, true)" class="font-semibold text-accent-700 underline">{{ __('Etiketter för allt under') }}</button>
+                                @endif
+                            @endif
                             @if($canManage)
                                 @if($location->type->value !== 'BIN' && $location->is_active)
                                     <button type="button" wire:click="create({{ $location->id }})" class="font-semibold text-accent-700 underline">{{ __('Lägg till under') }}</button>

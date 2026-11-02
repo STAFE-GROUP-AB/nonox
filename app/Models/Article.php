@@ -10,6 +10,7 @@ use App\Modules\Inventory\Models\StockLocation;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
 use App\Support\Tenancy\BelongsToCompany;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -49,6 +50,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?int $default_location_id
  * @property ?int $net_realisable_value_ore
  * @property ?string $net_realisable_value_note
+ * @property ?CarbonInterface $labels_printed_at
+ * @property int $labels_printed_count
  */
 class Article extends Model
 {
@@ -115,6 +118,8 @@ class Article extends Model
             'reorder_point_milli' => 'integer',
             'reorder_quantity_milli' => 'integer',
             'net_realisable_value_ore' => 'integer',
+            'labels_printed_at' => 'datetime',
+            'labels_printed_count' => 'integer',
         ];
     }
 

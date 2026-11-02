@@ -126,7 +126,7 @@ balance after; no costs or notes.
 
 - **Images and AI**: upload into `article_images`; AI descriptions fill
   `description`, `properties`, `colours`, `materials`.
-- **Labels and a label studio**: print `full_code` for locations and
+- **Labels and a label studio**: built in ADR-041. Print `full_code` for locations and
   `gtin`/`scanner_code`/`sku` for articles.
 - **Point-of-sale sync (Zettle, Onslip)**: post sales with
   `StockLedger::post($company, null, MovementType::PosSale, $lines, $date,

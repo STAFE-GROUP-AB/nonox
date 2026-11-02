@@ -47,3 +47,4 @@ En plats kan inte flyttas till en annan förälder. Lägg i stället upp en ny p
 
 - [Plocklista](/manual/lager/plocklista) – hur koderna styr vägen genom lagret.
 - [Artiklar i lager](/manual/lager/artiklar) – standardplats per artikel.
+- [Skriv ut etiketter](/manual/lager/etiketter) – etiketter med platskoden för en plats eller en hel hylla.

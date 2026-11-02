@@ -3,6 +3,10 @@
     $q = fn (?int $milli): string => App\Modules\Inventory\Domain\Quantity::format((int) $milli);
 @endphp
 <div class="space-y-6">
+    @if($printing !== null)
+        <livewire:inventory.label-print kind="ARTICLE" :items="$printing" :key="'label-print-'.md5((string) json_encode($printing))" />
+    @endif
+
     @if($moving !== null)
         <x-ui.card :title="match ($form['kind'] ?? '') { 'transfer' => __('Flytta varor'), 'scrap' => __('Kassera varor'), 'return_in' => __('Retur från kund'), default => __('Retur till leverantör') }">
             <form wire:submit="saveMovement" class="grid gap-5 sm:grid-cols-6">
@@ -76,9 +80,19 @@
                     <option value="lagerforda">{{ __('Lagerförda artiklar') }}</option>
                     <option value="lagt">{{ __('Under beställningspunkten') }}</option>
                     <option value="negativt">{{ __('Negativt saldo') }}</option>
+                    <option value="ej-utskrivna">{{ __('Ej utskrivna etiketter') }}</option>
                     <option value="alla">{{ __('Alla artiklar') }}</option>
                 </select>
             </label>
+            @if($canPrint)
+                <x-secondary-button type="button" wire:click="printLabels" class="min-h-11">
+                    @if(count($selected) > 0)
+                        {{ __('Skriv ut etiketter (:count valda)', ['count' => count($selected)]) }}
+                    @else
+                        {{ __('Skriv ut etiketter') }}
+                    @endif
+                </x-secondary-button>
+            @endif
         </div>
 
         @if($articles->isEmpty())
@@ -90,6 +104,9 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="border-b border-gray-200 text-left text-gray-500">
+                            @if($canPrint)
+                                <th scope="col" class="w-10 py-2 pr-2"><span class="sr-only">{{ __('Välj för etiketter') }}</span></th>
+                            @endif
                             <th class="py-2 pr-4 font-medium">{{ __('Artikel') }}</th>
                             <th class="py-2 pr-4 font-medium">{{ __('Per lagerställe') }}</th>
                             <th class="py-2 pr-4 text-right font-medium">{{ __('I lager') }}</th>
@@ -103,10 +120,16 @@
                         @foreach($articles as $article)
                             @php($low = $article->reorder_point_milli !== null && (int) $article->stock_milli <= $article->reorder_point_milli)
                             <tr wire:key="stock-article-{{ $article->id }}">
+                                @if($canPrint)
+                                    <td class="py-2 pr-2 align-top">
+                                        <input type="checkbox" wire:model.live="selected" value="{{ $article->id }}" class="mt-0.5 size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" aria-label="{{ __('Välj :name för etiketter', ['name' => $article->name]) }}">
+                                    </td>
+                                @endif
                                 <td class="py-2 pr-4">
                                     <span class="font-semibold tabular-nums">{{ $article->number }}</span> {{ $article->name }}
                                     @if($article->gtin)<span class="block text-xs text-gray-500 tabular-nums">EAN {{ $article->gtin }}</span>@endif
                                     @if(! $article->is_stock_item)<x-ui.badge>{{ __('Inte lagerförd') }}</x-ui.badge>@endif
+                                    @if($canPrint && $article->labels_printed_at === null)<x-ui.badge>{{ __('Ej utskriven') }}</x-ui.badge>@endif
                                 </td>
                                 <td class="py-2 pr-4">
                                     @forelse($article->stockLevels->sortBy(fn ($level) => $level->location?->sort_key) as $level)
@@ -129,6 +152,9 @@
                                         @if($canCount && $article->is_stock_item)
                                             <button type="button" wire:click="move({{ $article->id }})" class="text-accent-700 underline">{{ __('Flytta') }}</button>
                                             <button type="button" wire:click="move({{ $article->id }}, 'scrap')" class="text-gray-700 underline">{{ __('Kassera') }}</button>
+                                        @endif
+                                        @if($canPrint)
+                                            <button type="button" wire:click="printLabels({{ $article->id }})" class="text-accent-700 underline">{{ __('Etikett') }}</button>
                                         @endif
                                         @if($canManage)
                                             <a href="{{ route('invoicing.articles', ['redigera' => $article->id]) }}" class="text-accent-700 underline">{{ __('Ändra') }}</a>

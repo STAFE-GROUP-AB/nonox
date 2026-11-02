@@ -2771,6 +2771,30 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   Connect (`inventory:view`, `inventory:manage`); händelsen `stock.changed`.
 - Allt skrivs till behandlingshistoriken.
 
+### Etiketter (ADR-041)
+
+Etiketter ändrar inga saldon och ingen bokföring.
+
+- **Mallar** (`label_templates`) per företag och sort (artikel eller
+  plats): storlek i mm, A4-ark med rutnät (marginal till första etiketten
+  och avstånd mellan etiketterna) eller rulle, layout och vad som visas.
+  Varje sort har exakt en standardmall (unikt index) och minst en mall.
+  Två mallar skapas när Lager slås på.
+- **Pris** på etiketten = artikelns pris exklusive moms plus momsen enligt
+  artikelns momssats, avrundat halvt uppåt till öre, i heltal öre. Priset
+  skrivs bara ut av den som har `inventory:manage`; Lagerpersonal får
+  etiketter utan pris.
+- **Koder**: artiklar med giltigt EAN (kontrollsiffran kontrolleras) får
+  EAN-13 eller EAN-8, andra Code 128 av skannerkoden eller `A:` och
+  artikelnumret. Lagerställen får `L:` och hela koden i QR och Code 128,
+  samma format som skannern läser (ADR-040).
+- **Utskrift** blir en PDF (dompdf), högst 500 etiketter per artikel och
+  5 000 per utskrift. Efter utskriften stämplas artiklarna med
+  `labels_printed_at` och `labels_printed_count` utan att `updated_at`
+  ändras, om användaren vill. Varje utskrift ger en post i
+  behandlingshistoriken (`inventory.labels_printed`) med mall, antal och om
+  priser kom med; skapade, ändrade och borttagna mallar loggas också.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -3127,6 +3151,9 @@ kontrollerat dem mot källan. Särskilt:
   BAS-kontoplan.
 - Vinstmarginalbeskattning: artiklar kan markeras, men fakturor räknar ännu
   inte fram marginalen eller ruta 07.
+- Jämförpris på etiketter (Prisinformationslagen 2004:347 och
+  Konsumentverkets föreskrifter): vilka varor som kräver det och hur det ska
+  visas. I dag är det ett val i etikettmallen, inget krav.
 
 ### Kön till den öppna betan (1f)
 

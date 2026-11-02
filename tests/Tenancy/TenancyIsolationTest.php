@@ -83,6 +83,7 @@ use App\Modules\Inbox\Models\InboxMailbox;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\InboxTemplate;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
 use App\Modules\Inventory\Models\StockCount;
@@ -274,6 +275,7 @@ const COMPANY_SCOPED_MODELS = [
     StockCountLine::class => 'inventoryCountLineAttributes',
     StockValuation::class => ['valuation_date' => '2026-12-31', 'method' => 'FIFO', 'cost_value_ore' => 100, 'value_ore' => 100, 'stock_account' => 1460, 'change_account' => 4960, 'lines' => []],
     ArticleImage::class => 'inventoryImageAttributes',
+    LabelTemplate::class => ['name' => 'Hemlig etikettmall', 'kind' => 'ARTICLE', 'media' => 'ROLL', 'width_mm' => 50, 'height_mm' => 25, 'layout' => 'AUTO', 'elements' => ['name'], 'is_default' => false],
     InboxMailbox::class => 'inboxMailboxAttributes',
     AllowedSender::class => ['pattern' => '@hemlig-leverantor.example'],
     InboxTemplate::class => 'inboxTemplateAttributes',

@@ -57,4 +57,5 @@ Från listan kan du också:
 ## Läs också
 
 - [Lagerställen](/manual/lager/lagerstallen)
+- [Skriv ut etiketter](/manual/lager/etiketter) – pris- och hyllkantsetiketter med streckkod.
 - [Inleverans](/manual/lager/inleverans)
