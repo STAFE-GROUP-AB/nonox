@@ -39,6 +39,8 @@ use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\Vat\VatFileController;
+use App\Http\Controllers\WaitlistController;
+use App\Http\Middleware\EnsureHqAdmin;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\SalesDocument;
 use App\Support\Developer\Guides;
@@ -54,6 +56,8 @@ use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
 
 Route::get('/', StartController::class)->name('start');
 Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide');
+// The waiting list of the open beta (ADR-038): the way in for new users of the hosted service.
+Route::get('/ko', WaitlistController::class)->name('waitlist');
 Route::get('/integritetspolicy', LegalPageController::class)->defaults('document', 'privacy')->name('legal.privacy');
 Route::get('/villkor', LegalPageController::class)->defaults('document', 'terms')->name('legal.terms');
 Route::get('/personuppgiftsbitradesavtal', LegalPageController::class)->defaults('document', 'dpa')->name('legal.dpa');
@@ -93,10 +97,17 @@ Route::get('/varumarke/{company}/byrans-logotyp', [FirmLogoController::class, 's
 
 Route::middleware('guest')->group(function () {
     Route::view('/logga-in', 'auth.login')->name('login');
-    Route::redirect('/registrera', '/logga-in')->name('register');
+    // No self-registration (ADR-038): new users come through the waiting list or an invitation.
+    Route::redirect('/registrera', '/ko')->name('register');
 });
 
 Route::post('/logga-ut', LogoutController::class)->middleware('auth')->name('logout');
+
+// The owner's area for the waiting list (ADR-038): 404 for everyone but the HQ admins, guests included.
+Route::prefix('hq')->name('hq.')->middleware(EnsureHqAdmin::class)->group(function () {
+    Route::view('/', 'hq.waitlist')->name('waitlist');
+    Route::get('/ko/{entry}', fn (int $entry) => view('hq.entry', ['entryId' => $entry]))->whereNumber('entry')->name('waitlist.show');
+});
 // The passkey step for a signed-in session that has to pass it (RequirePasskey, ADR-029).
 Route::view('/logga-in/passkey', 'auth.passkey')->middleware('auth')->name('passkeys.challenge');
 

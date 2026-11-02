@@ -70,7 +70,7 @@
         <h1 id="in-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(40px,6.4vw,84px);line-height:0.96;letter-spacing:-0.045em;text-wrap:balance">{{ $industry['h1'] }} <span style="color:var(--accb)">{{ $industry['h1_accent'] }}</span></h1>
         <p class="in-lead">{{ $industry['lead'] }}</p>
         <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:30px">
-          <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" class="in-btn lp8" style="background:#FF5A36;color:#15171C">{{ auth()->check() ? 'Till översikten' : 'Kom igång gratis' }}</a>
+          <a href="{{ auth()->check() ? route('dashboard') : route('waitlist') }}" class="in-btn lp8" style="background:#FF5A36;color:#15171C">{{ auth()->check() ? 'Till översikten' : 'Ställ dig i kö' }}</a>
           <a href="#pris" class="in-btn" style="border:1.5px solid var(--ink);color:var(--ink);font-weight:600">Se vad det kostar</a>
         </div>
         <p style="margin:20px 0 0;font-size:14.5px;color:var(--muted)">0 kr i egen drift · {{ $kr((int) App\Support\Landing\LandingPage::PLANS[0]['price']) }}/år med drift, upp till {{ App\Support\Landing\LandingPage::PLANS[0]['max'] }} anställda · Alla moduler ingår</p>
@@ -310,7 +310,7 @@
 <section aria-labelledby="in-cta" style="padding:clamp(72px,10vw,128px) clamp(20px,4vw,40px);background:#FF5A36;color:#15171C;text-align:center">
   <h2 id="in-cta" style="margin:0 auto;max-width:900px;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(36px,6vw,80px);line-height:0.98;letter-spacing:-0.05em;text-wrap:balance">Ta tillbaka din bokföring.</h2>
   <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:36px">
-    <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" class="in-btn" style="background:#15171C;color:#F7F5F0">{{ auth()->check() ? 'Till översikten' : 'Kom igång gratis' }}</a>
+    <a href="{{ auth()->check() ? route('dashboard') : route('waitlist') }}" class="in-btn" style="background:#15171C;color:#F7F5F0">{{ auth()->check() ? 'Till översikten' : 'Ställ dig i kö' }}</a>
     <a href="{{ route('migrationGuide') }}" class="in-btn" style="border:2px solid #15171C;color:#15171C">Flyttguiden</a>
   </div>
 </section>

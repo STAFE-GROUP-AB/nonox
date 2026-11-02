@@ -21,3 +21,6 @@ Schedule::command('inbox:prune')->dailyAt('04:25')->withoutOverlapping();
 // Tasks (ADR-028): this period's recurring tasks, and the morning digest for those who asked for it.
 Schedule::command('tasks:generate-recurring')->dailyAt('05:10')->withoutOverlapping();
 Schedule::command('tasks:send-digest')->weekdays()->at('06:45')->withoutOverlapping();
+// The waiting list of the open beta (ADR-038): retention, and one summary a day for the HQ admins.
+Schedule::command('waitlist:prune')->dailyAt('04:40')->withoutOverlapping();
+Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();

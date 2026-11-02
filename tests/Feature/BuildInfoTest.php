@@ -37,7 +37,7 @@ it('shows the version and the open beta on the landing page, the sign-in page an
     $this->get('/')
         ->assertSee("Version {$version}")
         ->assertSee('Öppen beta')
-        ->assertSee('Alla kan registrera sig och börja bokföra redan i dag.')
+        ->assertSee('Ställ dig i kö så släpper vi in dig i den takt vi hinner hjälpa alla.')
         ->assertSee('b2b2b2b');
 
     $this->get(route('login'))->assertSee("NONOX Version {$version} · Öppen beta · b2b2b2b");

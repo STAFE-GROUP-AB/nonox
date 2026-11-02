@@ -19,6 +19,9 @@
 <body>
 <div class="dv">
 <a class="dv-skip" href="#main">{{ $t('skip') }}</a>
+@if($lang !== 'en')
+@include('start.partials.beta-banner')
+@endif
 <header class="dv-header">
   <div class="dv-header-inner">
     <a href="{{ url('/') }}" class="dv-brand" aria-label="NONOX, {{ $lang === 'en' ? 'home' : 'till startsidan' }}">

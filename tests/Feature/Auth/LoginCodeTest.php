@@ -7,6 +7,7 @@ use App\Actions\Auth\VerifyLoginCode;
 use App\Livewire\Auth\LoginForm;
 use App\Mail\LoginCodeMail;
 use App\Models\LoginCode;
+use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Support\LoginCodeAutofill;
 use Illuminate\Support\Facades\Mail;
@@ -148,7 +149,53 @@ it('shows a Swedish error for a wrong code and stays signed out', function () {
     $this->assertGuest();
 });
 
-it('creates a verified account for a new address and sends it to /kom-igang', function () {
+it('sends no code and creates no account for an unknown address, and answers exactly as for a known one (ADR-038)', function () {
+    User::factory()->withCompany()->create(['email' => 'finns@example.com']);
+
+    $unknown = Livewire::test(LoginForm::class)->set('email', 'okand@example.com')->call('sendCode')->assertHasNoErrors()->assertSet('step', 'code');
+    Mail::assertNothingSent();
+
+    $known = Livewire::test(LoginForm::class)->set('email', 'finns@example.com')->call('sendCode')->assertSet('step', 'code');
+    Mail::assertSentCount(1);
+
+    $neutral = fn (string $html, string $email): string => str_replace($email, 'ADRESS', preg_replace('/wire:[a-z:.]+="[^"]*"|wire:id="[^"]*"|wire:snapshot="[^"]*"|wire:effects="[^"]*"/', '', $html) ?? '');
+
+    expect($neutral($unknown->html(), 'okand@example.com'))->toBe($neutral($known->html(), 'finns@example.com'))
+        ->and($unknown->html())->toContain('har ett konto eller en inbjudan')
+        ->and($unknown->html())->toContain(route('waitlist'));
+
+    $unknown->set('code', '12345678')->call('verify')
+        ->assertHasErrors(['code' => 'Koden stämmer inte eller har slutat gälla. Kontrollera mejlet eller skicka en ny kod.']);
+
+    expect(User::query()->byEmail('okand@example.com')->exists())->toBeFalse()
+        ->and(LoginCode::query()->where('email', 'okand@example.com')->exists())->toBeFalse();
+    $this->assertGuest();
+});
+
+it('never autofills a code for an unknown address, even locally', function () {
+    app()->detectEnvironment(fn () => 'local');
+    config(['auth.login_codes.autofill' => true, 'app.url' => 'http://oss.test']);
+
+    Livewire::test(LoginForm::class)->set('email', 'okand@example.com')->call('sendCode')->assertSet('step', 'code')->assertSet('code', '')->assertNoRedirect();
+
+    expect(User::query()->byEmail('okand@example.com')->exists())->toBeFalse();
+    $this->assertGuest();
+});
+
+it('shows the way to the waiting list on the sign-in page', function () {
+    config(['app.landing.enabled' => true]);
+
+    $this->get('/logga-in')->assertOk()
+        ->assertSee('Inte godkänd än?')
+        ->assertSee(route('waitlist'), false)
+        ->assertDontSee('Är du ny skapas ett konto åt dig')
+        ->assertDontSee('Har du inget konto skapas ett när du loggar in');
+});
+
+it('creates a verified account for an invited address without a name and sends it to /kom-igang', function () {
+    $owner = User::factory()->withCompany()->create();
+    $owner->currentCompany()->teamInvitations()->create(['email' => 'ny@example.com', 'role' => 'bookkeeper']);
+
     $component = Livewire::test(LoginForm::class)
         ->set('email', 'ny@example.com')
         ->call('sendCode');
@@ -200,7 +247,43 @@ it('skips the name step when an invitation already carries the name', function (
     expect(User::where('email', 'linda@example.test')->sole()->name)->toBe('Linda Exempel');
 });
 
+it('creates no account when the invitation is withdrawn before the name step', function () {
+    $owner = User::factory()->withCompany()->create();
+    $invitation = $owner->currentCompany()->teamInvitations()->create(['email' => 'ny@example.com', 'role' => 'bookkeeper']);
+
+    $component = Livewire::test(LoginForm::class)->set('email', 'ny@example.com')->call('sendCode');
+
+    $code = null;
+    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+        $code = $mail->code;
+
+        return true;
+    });
+
+    $component->set('code', $code)->call('verify')->assertSet('step', 'name');
+
+    $invitation->delete();
+
+    $component->set('name', 'Ny Person')->call('createAccount')->assertSet('step', 'email');
+
+    expect(User::query()->byEmail('ny@example.com')->exists())->toBeFalse();
+    $this->assertGuest();
+});
+
+it('sends no code for an expired invitation', function () {
+    $owner = User::factory()->withCompany()->create();
+    $owner->currentCompany()->teamInvitations()->create(['email' => 'gammal@example.com', 'role' => 'bookkeeper']);
+    $this->travel(TeamInvitation::VALID_DAYS + 1)->days();
+
+    Livewire::test(LoginForm::class)->set('email', 'gammal@example.com')->call('sendCode')->assertSet('step', 'code');
+
+    Mail::assertNothingSent();
+});
+
 it('creates the account for the verified address even if the email field is tampered with', function () {
+    $owner = User::factory()->withCompany()->create();
+    $owner->currentCompany()->teamInvitations()->create(['email' => 'ny@example.com', 'role' => 'bookkeeper']);
+
     $component = Livewire::test(LoginForm::class)
         ->set('email', 'ny@example.com')
         ->call('sendCode');
@@ -275,7 +358,7 @@ it('sends guests to /logga-in', function () {
     $this->get(route('dashboard'))->assertRedirect(route('login'));
 
     $this->get('/logga-in')->assertOk()->assertSee('Skicka kod');
-    $this->get('/registrera')->assertRedirect('/logga-in');
+    $this->get('/registrera')->assertRedirect('/ko');
 });
 
 it('stops a session after too many wrong codes, without locking the owner out', function () {

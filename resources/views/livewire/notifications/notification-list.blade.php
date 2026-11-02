@@ -32,6 +32,10 @@
                                 'label' => __('Öppna Lön → Regler'),
                             ])
                         </div>
+                    @elseif(($data['kind'] ?? null) === App\Notifications\NewWaitlistEntry::KIND && isset($data['waitlist_entry_id']) && App\Support\Hq\HqAccess::allows(auth()->user()))
+                        <div class="shrink-0">
+                            <a href="{{ route('hq.waitlist.show', (int) $data['waitlist_entry_id']) }}" class="text-sm font-semibold text-accent-600 hover:text-accent-700">{{ __('Öppna i HQ') }}</a>
+                        </div>
                     @elseif(isset($data['company_id'], $data['task_id']) && in_array((int) $data['company_id'], $memberOf, true))
                         <div class="shrink-0">
                             @include('firm.open-in-company', [

@@ -31,8 +31,8 @@
             'done' => 'Du har en mapp med SIE-filer per år, underlagen, fakturorna och (om ni har anställda) lönefilerna.',
         ],
         [
-            'id' => 'skapa', 'time' => '5 minuter', 'title' => 'Skapa ditt företag i NONOX',
-            'lead' => 'Logga in med din e-post. Inga lösenord, du får en kod i mejlet.',
+            'id' => 'skapa', 'time' => '5 minuter', 'title' => 'Ställ dig i kö och skapa ditt företag',
+            'lead' => 'Under den öppna betan ställer du dig först i kö. När du är godkänd loggar du in med din e-post. Inga lösenord, du får en kod i mejlet.',
             'do' => [
                 'Fyll i organisationsnummer, företagsform och momsperiod.',
                 'Välj samma räkenskapsår och samma bokföringsmetod (faktura- eller kontantmetoden) som i det gamla programmet.',
@@ -320,7 +320,7 @@
     @auth
       <a href="{{ route('accounting.sieImports.index') }}" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;background:#15171C;color:#F7F5F0;text-decoration:none;font-size:17px;font-weight:700">Läs in din första SIE-fil</a>
     @else
-      <a href="{{ route('login') }}" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;background:#15171C;color:#F7F5F0;text-decoration:none;font-size:17px;font-weight:700">Skapa ditt företag i NONOX</a>
+      <a href="{{ route('waitlist') }}" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;background:#15171C;color:#F7F5F0;text-decoration:none;font-size:17px;font-weight:700">Ställ dig i kö</a>
     @endauth
     <a href="{{ $ph['contact'] }}" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;border:2px solid #15171C;color:#15171C;text-decoration:none;font-size:17px;font-weight:700">Vi hjälper dig flytta</a>
   </div>

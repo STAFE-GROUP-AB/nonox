@@ -3,6 +3,7 @@
     $home = request()->routeIs('start') ? '' : url('/');
 @endphp
 <a class="lp0" href="#main" style="position:absolute;left:-9999px;top:8px;background:#FF5A36;color:#15171C;padding:10px 14px;border-radius:8px;z-index:100">Hoppa till innehållet</a>
+@include('start.partials.beta-banner')
 
 @php
     $menus = [
@@ -59,7 +60,11 @@
         @else
           <a href="{{ route('login') }}" class="mm-login">Logga in</a>
         @endauth
-        <a class="lp8" href="{{ $home }}#kor-sjalv" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ladda ner gratis</a>
+        @guest
+          <a class="lp8" href="{{ route('waitlist') }}" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ställ dig i kö</a>
+        @else
+          <a class="lp8" href="{{ $home }}#kor-sjalv" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ladda ner gratis</a>
+        @endguest
       </div>
     </div>
     <div class="lp-mobile" style="margin-left:auto">
@@ -111,7 +116,11 @@
         @else
           <a href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Logga in</a>
         @endauth
-        <a href="{{ $home }}#kor-sjalv" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ladda ner gratis</a>
+        @guest
+          <a href="{{ route('waitlist') }}" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ställ dig i kö</a>
+        @else
+          <a href="{{ $home }}#kor-sjalv" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ladda ner gratis</a>
+        @endguest
       </div>
     </nav>
   </div>

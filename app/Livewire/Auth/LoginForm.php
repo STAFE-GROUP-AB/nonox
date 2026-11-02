@@ -23,10 +23,14 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
- * Passwordless sign-in (ADR-000): email → one-time code → signed in. A new
- * address only adds a name step, and not even that when an invitation to the
- * address already carries the name. The verified address is kept in the session,
- * never trusted from the browser.
+ * Passwordless sign-in (ADR-000): email → one-time code → signed in. Only
+ * existing users and people with a valid invitation to a company get a code
+ * (ADR-038): there is no self-registration, new users come through the
+ * waiting list. Any other address sees exactly the same next step, so the
+ * form does not tell whether an address has an account. An invited address
+ * without an account adds a name step, and not even that when the invitation
+ * carries the name. The verified address is kept in the session, never
+ * trusted from the browser.
  *
  * A user who has passkeys, or who must have one (PasskeyRequirement), passes
  * a passkey step after the code and before the session starts (ADR-029).
@@ -73,14 +77,19 @@ class LoginForm extends Component implements SpansCompanies
             return;
         }
 
-        $sendLoginCode($email, request()->ip(), InvitationBrand::forLoginCode($email));
+        $mayReceiveCode = self::mayReceiveCode($email);
+
+        // An unknown address gets no code and no account, but the same next step as everyone else.
+        if ($mayReceiveCode) {
+            $sendLoginCode($email, request()->ip(), InvitationBrand::forLoginCode($email));
+        }
 
         session()->put(self::PENDING_EMAIL, $email);
         $this->email = $email;
         $this->code = '';
         $this->step = 'code';
 
-        $autofilledCode = LoginCodeAutofill::code($email);
+        $autofilledCode = $mayReceiveCode ? LoginCodeAutofill::code($email) : null;
 
         if ($autofilledCode !== null) {
             $this->code = $autofilledCode;
@@ -139,7 +148,13 @@ class LoginForm extends Component implements SpansCompanies
             return;
         }
 
-        $invitedName = TeamInvitation::query()->whereRaw('lower(email) = ?', [$email])->whereNotNull('name')->latest()->value('name');
+        if (! self::isInvited($email)) {
+            $this->startOver();
+
+            return;
+        }
+
+        $invitedName = TeamInvitation::query()->stillValid()->whereRaw('lower(email) = ?', [$email])->whereNotNull('name')->latest()->value('name');
 
         if (is_string($invitedName) && trim($invitedName) !== '') {
             $this->signInOrAskForPasskey($this->createUser($email, $invitedName), __('Välkommen, :name!', ['name' => $invitedName]));
@@ -156,6 +171,13 @@ class LoginForm extends Component implements SpansCompanies
         $email = session()->get(self::VERIFIED_EMAIL);
 
         if (! is_string($email)) {
+            $this->startOver();
+
+            return;
+        }
+
+        // Only an invitation lets a new address in; it may have been withdrawn meanwhile.
+        if (! self::isInvited($email)) {
             $this->startOver();
 
             return;
@@ -188,6 +210,20 @@ class LoginForm extends Component implements SpansCompanies
             // Reached from an invitation to a client of an accounting firm: the firm's brand (ADR-030).
             'firmBrand' => InvitationBrand::forLoginPage(),
         ]);
+    }
+
+    /**
+     * Who gets a code: an existing user (also one approved from the waiting
+     * list, ADR-038), or someone with a valid invitation to a company.
+     */
+    public static function mayReceiveCode(string $email): bool
+    {
+        return User::query()->byEmail($email)->whereNull('anonymised_at')->exists() || self::isInvited($email);
+    }
+
+    private static function isInvited(string $email): bool
+    {
+        return TeamInvitation::query()->stillValid()->whereRaw('lower(email) = ?', [User::normaliseEmail($email)])->exists();
     }
 
     private function createUser(string $email, string $name): User
@@ -236,6 +272,11 @@ class LoginForm extends Component implements SpansCompanies
 
     private function signIn(User $user, ?string $message = null, bool $passkey = false): void
     {
+        // A user approved from the waiting list confirms the address with the first code.
+        if ($user->email_verified_at === null) {
+            $user->forceFill(['email_verified_at' => now()])->save();
+        }
+
         Auth::login($user);
 
         session()->regenerate();

@@ -25,6 +25,8 @@ Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 
 ---
 
+> **Öppen beta.** Den driftade tjänsten på [nonox.app](https://nonox.app) är i öppen beta fram till den skarpa lanseringen av version 1.0 den **1 januari 2027**. Nya användare [ställer sig i kö](https://nonox.app/ko) och släpps in när de är godkända, eller kommer in via en inbjudan från ett företag. Programmet är öppen källkod och kan laddas ner och köras själv utan kö.
+
 ## Varför NONOX
 
 - **Öppet.** All affärslogik är öppen källkod under AGPL-3.0. Vem som helst kan granska exakt hur siffrorna hanteras.
@@ -142,6 +144,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
 
 ### Företaget och din data
+- Ingen registrerar sig själv: nya användare kommer in via kön (anmälan på /ko som ägaren godkänner i /hq med passkey) eller via en inbjudan från ett företag. Inloggningen skickar bara kod till befintliga användare och inbjudna, utan att avslöja vilka adresser som har ett konto.
 - Flera företag per användare med roller: ägare, administratör, redovisningskonsult, bokförare, attestant och revisor. Ägarskap kan föras över, och ett företag kan arkiveras så att det bara kan läsas.
 - Passkey som andra steg vid inloggning för den som kan se sjukfrånvaro, lönebesked eller fullständiga personnummer. Ägaren kan kräva passkey för alla i företaget.
 - Export av allt när som helst. Arkivpaket per räkenskapsår med SIE-fil, rapporter, underlag, fakturor och behandlingshistorik, med kontrollsumma för varje fil, som går att läsa utan NONOX.

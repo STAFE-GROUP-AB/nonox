@@ -116,7 +116,7 @@ final class LandingPage
             'flytt' => ($config['migration_guide_url'] ?? null) ?: route('migrationGuide'),
             'docs' => $config['docs_url'] ?? "{$github}/tree/main/docs",
             'api' => ($config['api_url'] ?? null) ?: route('developers.home'),
-            'contact' => ($config['contact_url'] ?? null) ?: route('login'),
+            'contact' => ($config['contact_url'] ?? null) ?: route('waitlist'),
             'terms' => ($config['terms_url'] ?? null) ?: route('legal.terms'),
             'privacy' => ($config['privacy_url'] ?? null) ?: route('legal.privacy'),
             'company' => $config['company_name'] ?? 'Stafe Development AB',
@@ -141,8 +141,9 @@ final class LandingPage
             'price' => $priced ? self::kronor((int) $plan['price']) : 'Pris på förfrågan',
             'unit' => $priced ? '/år' : '',
             'priceSize' => $priced ? '40px' : '26px',
-            'cta' => $priced ? 'Kom igång' : 'Kontakta oss',
-            'href' => $ph['contact'],
+            // The hosted service is behind the waiting list during the open beta (ADR-038).
+            'cta' => $priced ? 'Ställ dig i kö' : 'Kontakta oss',
+            'href' => $priced ? route('waitlist') : $ph['contact'],
             'border' => $plan['popular'] ? '2px solid #FF5A36' : '1px solid var(--line)',
             'btnBg' => $plan['popular'] ? 'var(--ink)' : 'transparent',
             'btnFg' => $plan['popular'] ? 'var(--bg)' : 'var(--ink)',
@@ -223,6 +224,7 @@ final class LandingPage
     private static function faqs(): array
     {
         return [
+            ['q' => 'Hur kommer jag in under den öppna betan?', 'a' => 'Ställ dig i kö och svara på några frågor om ditt företag. Vi släpper in nya företag i den takt vi hinner hjälpa dem, och du får ett mejl när du är godkänd. Har ett företag bjudit in dig behöver du inte stå i kö. Skarp lansering av version 1.0 sker den 1 januari 2027, och det du lägger in under betan ligger kvar.'],
             ['q' => 'Är NONOX ett alternativ till Fortnox?', 'a' => 'Ja. NONOX har bokföring, fakturering, lön, moms, bokslut och årsredovisning, och du flyttar hela historiken från Fortnox med SIE4-filer. Skillnaden är att NONOX är öppen källkod, att alla delar ingår och att du kan köra det själv gratis.'],
             ['q' => 'Vad skiljer NONOX från Fortnox, Visma och Bokio?', 'a' => 'Funktionerna för ett svenskt småföretag är i stort sett desamma. NONOX är öppen källkod, kostar 0 kr att köra själv eller 995 kr om året med drift, och alla delar ingår utan tillval. Jämförelsen på sidan visar funktion för funktion.'],
             ['q' => 'Är NONOX verkligen gratis?', 'a' => 'Ja. Programmet är öppen källkod och gratis att ladda ner och köra själv. Du betalar bara om du vill att vi sköter driften.'],

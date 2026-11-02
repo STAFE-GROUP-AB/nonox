@@ -6,13 +6,14 @@ Den här policyn beskriver hur {foretag} ({orgnr}) behandlar personuppgifter i t
 
 ## 1. Två roller
 
-- **Personuppgiftsansvarig:** för dig som besöker webbplatsen, skapar ett konto och loggar in, och för vår egen kundrelation och fakturering är {foretag} personuppgiftsansvarig.
+- **Personuppgiftsansvarig:** för dig som besöker webbplatsen, ställer dig i kö, har ett konto och loggar in, och för vår egen kundrelation och fakturering är {foretag} personuppgiftsansvarig.
 - **Personuppgiftsbiträde:** för de uppgifter ett företag lägger in i NONOX om sina kunder, leverantörer och anställda är företaget personuppgiftsansvarigt och {foretag} personuppgiftsbiträde. Den behandlingen styrs av vårt [personuppgiftsbiträdesavtal]({pub}). Vill du utöva dina rättigheter för sådana uppgifter, till exempel som anställd hos en av våra kunder, vänder du dig i första hand till det företaget.
 
 ## 2. Vilka uppgifter, varför och med vilken rätt
 
 | Uppgifter | Ändamål | Rättslig grund | Hur länge |
 |---|---|---|---|
+| Kön till den öppna betan: namn, e-post, telefon (frivilligt), företagets namn och organisationsnummer (frivilligt; för en enskild firma är det ditt personnummer), bransch, antal anställda, nuvarande system och dina fritextsvar, när du gav samtycket, vårt beslut, IP-adressen som saltad hash och webbläsarens namn | Välja vilka vi släpper in under betan, ge dig besked och kontakta dig om anmälan | Samtycke (art. 6.1 a) och åtgärder före avtal som du begär (art. 6.1 b) | Nekade anmälningar raderas 30 dagar efter beslutet. Övriga anmälningar raderas 12 månader efter anmälan, eller 12 månader efter att du godkänts. Godkänns du får du ett konto, som sedan sparas som andra konton |
 | Namn och e-postadress för ditt konto | Ge dig tillgång till tjänsten | Avtal (art. 6.1 b) | Så länge kontot finns |
 | Engångskoder för inloggning, IP-adress | Säker inloggning, skydd mot missbruk | Avtal och berättigat intresse (art. 6.1 b och f) | Koder raderas efter ett dygn |
 | Passkeys: namn, publik nyckel och när den senast användes (aldrig fingeravtryck, ansikte eller den privata nyckeln, som stannar på din enhet) | Bekräfta inloggningen när du kan se känsliga uppgifter eller ditt företag kräver det | Berättigat intresse (art. 6.1 f), säkerhet | Tills du tar bort passkeyn eller raderar ditt konto |
@@ -43,6 +44,8 @@ Du har rätt att
 - återkalla ett samtycke.
 
 Inloggad kan du ladda ner dina kontouppgifter under **Profil → Mina uppgifter** och radera ditt konto under **Profil → Radera mitt konto**. Det du gjort i ett företags bokföring sparas då under namnet "Raderad användare", eftersom bokföringslagen kräver det. Kontakta oss på {epost} för övriga frågor. Vi svarar inom en månad.
+
+Står du i kö kan du när som helst ta tillbaka ditt samtycke och be oss ta bort anmälan. Svara på bekräftelsemejlet eller kontakta oss på {epost}, så raderar vi anmälan med alla svar.
 
 Du har också rätt att klaga till Integritetsskyddsmyndigheten (IMY), www.imy.se.
 

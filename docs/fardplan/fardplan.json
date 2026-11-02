@@ -1,6 +1,14 @@
 {
   "punkter": [
     {
+      "id": "lansering-1-0",
+      "rubrik": "Lansering av version 1.0 den 1 januari 2027",
+      "beskrivning": "NONOX är i öppen beta. Nya företag ställer sig i kö och släpps in i den takt vi hinner hjälpa dem. Den 1 januari 2027 lanseras version 1.0 skarpt, och det som lagts in under betan ligger kvar.",
+      "status": "Pågår",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-02"
+    },
+    {
       "id": "juristgranskning",
       "rubrik": "Juristgranskning av regelverket",
       "beskrivning": "Bokföring, moms, fakturering, bokslut och lön har gåtts igenom mot lagtexten med AI och en oberoende andra kontroll. Nu granskar en jurist slutsatserna.",

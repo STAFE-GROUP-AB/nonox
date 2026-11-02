@@ -234,6 +234,33 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   användare och företag, högst 50 rader. Titeln slås upp på nytt genom
   sökningen med samma behörighetskontroll innan den visas.
 
+## 1f. Tillgång under den öppna betan: kön och HQ (ADR-038)
+
+- Ingen kan skapa ett konto själv. Inloggningen skickar en kod bara till en
+  befintlig användare eller till en adress med en giltig inbjudan till ett
+  företag (14 dagar). En okänd adress får ingen kod och inget konto, men
+  samma svar på sidan som en känd, så att formuläret inte avslöjar vem som
+  har ett konto.
+- Nya användare av den driftade tjänsten ställer sig i kö på `/ko` och
+  svarar på frågor om sig och företaget. Kön är instansens data, inte ett
+  företags (`waitlist_entries`, inget `company_id`). En adress har högst en
+  levande anmälan; skickas formuläret igen uppdateras den, och svaret är
+  detsamma. IP-adressen sparas bara som en saltad hash.
+- Ägaren beslutar i `/hq`, som bara finns för adresserna i `HQ_ADMINS`
+  (annars `ADMIN_EMAIL`) och svarar 404 för alla andra. Varje beslut kräver
+  en färsk passkey-bekräftelse (fem minuter). **Godkänn** skapar användaren
+  och mejlar att hen kan logga in; sitt företag skapar användaren själv på
+  `/kom-igang` efter första inloggningen, med samma kontroller som för alla
+  företag (avsnitt 1). **Neka** och **Parkera** mejlar ingen.
+- Besluten, exporterna, raderingarna och gallringen skrivs i
+  behandlingshistoriken utan företag och utan den sökandes namn eller
+  adress (`waitlist.approved`, `waitlist.rejected`, `waitlist.parked`,
+  `waitlist.deleted`, `waitlist.exported`, `waitlist.pruned`).
+- `waitlist:prune` raderar varje natt nekade anmälningar efter 30 dagar och
+  övriga efter 12 månader. Kontot som ett godkännande skapade påverkas inte.
+- Ingen bokföring berörs: kön skapar varken företag, verifikationer eller
+  räkenskapsinformation.
+
 ## 2. Kontoplan
 
 - Ett nytt företag får en förifylld kontoplan med vanliga konton enligt BAS 2026,
@@ -3022,6 +3049,13 @@ kontrollerat dem mot källan. Särskilt:
   (väljs av företaget).
 - OB räknas över hela passet inklusive rast, eftersom liggaren inte vet när
   rasten tas; chefen kan dela upp dagens tid.
+
+### Kön till den öppna betan (1f)
+
+- Lagringstiderna: 30 dagar för nekade anmälningar och 12 månader för
+  övriga, och om samtycke eller åtgärder före avtal är rätt rättslig grund.
+- Att ett enskilt företags organisationsnummer är ägarens personnummer:
+  fältet är frivilligt, men behövs det alls i kön?
 
 ## 9. Ändringshistorik
 
