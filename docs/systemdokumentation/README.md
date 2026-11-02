@@ -1032,7 +1032,10 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   det stängda årets balansräkning (balanserat resultat och årets resultat,
   `DividendLimit`, ABL 17 kap. 3 §); en större utdelning avvisas och
   ingenting bokförs. Fältet visar det fria egna kapitalet. Enligt granskning
-  2026-11-02, juristgranskning återstår (BS-AUD-BOK-3, #85). Varje skatt-,
+  2026-11-02, juristgranskning återstår (BS-AUD-BOK-3, #85). Även efter ett
+  förlustår får utdelning bokföras ur balanserade vinstmedel så länge det fria
+  egna kapitalet räcker; 2098 tar då både förlusten och utdelningen
+  (BS-AUD-BOK-13, #86). Varje skatt-,
   resultat- och dispositionspost sparas i
   `year_end_entries`, som databasen inte låter ändra eller ta bort.
 - Bokslutet kräver behörigheten att hantera räkenskapsår.

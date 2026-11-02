@@ -2473,7 +2473,6 @@
     "Resultatet för :year är redan disponerat.": "The result for :year is already appropriated.",
     "Datumet ska ligga i räkenskapsåret :year.": "The date must be in the fiscal year :year.",
     "Det finns inget resultat att disponera på konto :account.": "There is no result to appropriate on account :account.",
-    "Året gick med förlust. Utdelning beslutas inte ur årets resultat här.": "The year made a loss. A dividend is not decided out of the year's result here.",
     "Resultatdisposition :year": "Appropriation of result :year",
     "Räkenskapsåret :year är stängt.": "The fiscal year :year is closed.",
     "Skatt som belastar årets resultat": "Tax on the year's result",

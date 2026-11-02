@@ -28,6 +28,8 @@ Efter bokslutet ligger årets resultat kvar på 2099 (eller 2019). När året ha
 - Årets resultat flyttas från **2099 Årets resultat** till **2098 Vinst eller förlust från föregående år**.
 - Beslutad utdelning bokförs som en skuld på **2898 Outtagen vinstutdelning**.
 
+Gick året med förlust går det ändå att besluta om utdelning ur tidigare års vinster, så länge det fria egna kapitalet räcker. Exempel: balanserade vinstmedel 100 000 kr och en förlust på 30 000 kr ger ett fritt eget kapital på 70 000 kr. Då får högst 70 000 kr delas ut. Förlusten och utdelningen bokförs båda mot **2098**.
+
 När utdelningen sedan betalas ut bokför du betalningen som vanligt.
 
 ## Enskild firma, handelsbolag och kommanditbolag

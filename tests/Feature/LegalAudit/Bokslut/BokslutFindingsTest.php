@@ -212,10 +212,17 @@ it('AUD-BOK-13: lets the disposition pay a dividend from retained earnings after
     $this->closing->bookTax($this->owner, $this->year, '0');
     $this->closing->bookResult($this->owner, $this->year);
     $this->closing->close($this->owner, $this->year);
-    $entry = $this->closing->dispose($this->owner, $this->year, '2027-05-20', '5 000');
 
-    expect($entry->dividend_ore->ore)->toBe(500_000);
-})->todo('AUD-BOK-13: YearEndClosing::dispose refuses any dividend when the closed year made a loss');
+    expect(fn () => $this->closing->dispose($this->owner, $this->year, '2027-05-20', '10 000,01'))->toThrow(ValidationException::class);
+
+    $entry = $this->closing->dispose($this->owner, $this->year, '2027-05-20', '5 000');
+    $rows = Voucher::query()->with('rows.account')->findOrFail($entry->voucher_id)->rows
+        ->mapWithKeys(fn ($row): array => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all();
+
+    // 2099 credit 40 000 (the loss leaves it); 2098 debit 40 000 + 5 000 = 45 000; 2898 credit 5 000 (#86).
+    expect($entry->dividend_ore->ore)->toBe(500_000)
+        ->and($rows)->toEqualCanonicalizing([2099 => -4_000_000, 2098 => 4_500_000, 2898 => -500_000]);
+});
 
 it('AUD-BOK-14: fills INK2 1.4 särskild löneskatt and INK2S 4.21 from booked pension costs (SKV INK2 / INK2S 2026P4, fields 7132 and 8022)', function () {
     Bookkeeping::post($this->owner, $this->company, 1_000_000, audBokFindingsAccount(7412)->number, 1930, '2026-06-01');

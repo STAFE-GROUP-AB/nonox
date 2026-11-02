@@ -221,7 +221,8 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-2, -3,
   dividend, or any dividend when it is negative. `SaveAnnualReport` (the
   board's proposal) uses it from #84; `YearEndClosing::dispose` (the
   meeting's decision, booked 2098/2898) uses it on the closed year's balance
-  sheet from #85.
+  sheet from #85. The earlier rule that refused every dividend after a loss
+  year is gone (#86): the limit is the free equity, not the year's result.
 - TODO(legal-verify): changes in restricted equity after the balance date,
   transfers already made since the meeting (17 kap. 4 §), and the same limit
   for ideella föreningar and stiftelser.

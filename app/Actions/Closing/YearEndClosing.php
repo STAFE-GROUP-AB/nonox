@@ -405,10 +405,9 @@ class YearEndClosing
                 throw ValidationException::withMessages(['disposition' => __('Det finns inget resultat att disponera på konto :account.', ['account' => $resultAccount->number])]);
             }
 
-            if ($dividendOre > 0 && $result > 0) {
-                throw ValidationException::withMessages(['dividend' => __('Året gick med förlust. Utdelning beslutas inte ur årets resultat här.')]);
-            }
-
+            // A loss year may still pay a dividend from retained earnings, as long
+            // as the free equity covers it (ABL 17 kap. 3 §; #86). 2098 then takes
+            // both the loss and the dividend.
             DividendLimit::ensureWithin($company, $closedYear, $dividendOre);
 
             $lines = ClosingAccounts::isOwnerTaxed($company)

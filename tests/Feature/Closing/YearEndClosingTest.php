@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Banking\BankReconciliations;
 use App\Actions\Closing\YearEndClosing;
+use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\YearResult;
@@ -140,6 +141,33 @@ it('refuses to book a dividend larger than the free equity of the closed year (A
 
     expect($voucher->rows->mapWithKeys(fn ($row) => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all())
         ->toEqualCanonicalizing([2099 => 6_352_000, 2898 => -6_352_000]);
+});
+
+it('pays a dividend from retained earnings after a loss year, within the free equity (ABL 17 kap. 3 §, #86)', function () {
+    // Retained earnings 100 000 from earlier years; this year a loss of 30 000
+    // (the profit of 80 000 less a 110 000 cost). Free equity 100 000 - 30 000 = 70 000.
+    OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => Account::query()->where('number', 1930)->value('id'), 'amount_ore' => 10_000_000]);
+    OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => Account::query()->firstOrCreate(['number' => 2091], ['name' => 'Balanserad vinst', 'type' => AccountType::LiabilityEquity])->id, 'amount_ore' => -10_000_000]);
+    Bookkeeping::post($this->owner, $this->company, 11_000_000, 5010, 1930, '2026-10-01');
+    $bank = Account::query()->where('number', 1930)->firstOrFail();
+    app(BankReconciliations::class)->save($this->owner, $this->company, $bank, '2026-12-31', '70 000', [], null);
+
+    foreach (array_keys(ClosingChecklist::MANUAL) as $key) {
+        $this->closing->check($this->owner, $this->year, $key, true);
+    }
+
+    $this->closing->bookTax($this->owner, $this->year, '0');
+    $this->closing->bookResult($this->owner, $this->year);
+    $this->closing->close($this->owner, $this->year);
+
+    expect(fn () => $this->closing->dispose($this->owner, $this->year, '2027-05-31', '70 001'))->toThrow(ValidationException::class);
+
+    $entry = $this->closing->dispose($this->owner, $this->year, '2027-05-31', '70 000');
+    $voucher = Voucher::query()->with('rows.account')->findOrFail($entry->voucher_id);
+
+    // 2099 credit 30 000; 2098 debit 30 000 + 70 000 = 100 000; 2898 credit 70 000.
+    expect($voucher->rows->mapWithKeys(fn ($row) => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all())
+        ->toEqualCanonicalizing([2099 => -3_000_000, 2098 => 10_000_000, 2898 => -7_000_000]);
 });
 
 it('moves a sole trader\'s result to the owner\'s equity, without company tax', function () {
