@@ -1220,6 +1220,27 @@ lönebeskeden låsta i databasen.
   anställningens kostnadsställe), personalskatt på 2710, arbetsgivaravgifter
   på 7510 mot 2730 och nettolönerna mot 1930. Verifikationen balanserar alltid:
   brutto − skatt ± nettoposter = netto.
+- Skatt som är större än kontantlönen (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-06, #68): skatteavdrag görs bara från
+  kontant ersättning (SFL 10 kap. 3 §). Förmåner räknas in i underlaget
+  (SFL 11 kap. 4 §), men blir skatten enligt tabell, jämkning eller SINK
+  större än kontantlönen före skatt dras bara kontantlönen. Resten är den
+  anställdas egen skatt som betalas med slutskatten; den blir ingen fordran
+  och redovisas inte som avdragen i AGI (fält 001 visar det som faktiskt
+  drogs). Lönebeskedet säger hur mycket som inte kunde dras, och
+  skatteförklaringen sparar `calculated_tax_ore`, `cash_ore` och
+  `not_withheld_ore`.
+- Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
+  av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
+  sätts den till noll, och det som inte räckte blir en fordran på den
+  anställda: en egen rad med lönearten Skuld till företaget från lön
+  (`FORDRAN_ANSTALLD`, systemets, kan inte läggas in för hand) som bokförs
+  i debet på 1680 Andra kortfristiga fordringar. Verifikationen balanserar
+  därmed. Fordran förs med ackumulatorn `negative_net_carry_ore` (summan
+  över alla år är det som är kvar) och tas tillbaka från nästa lönebeskeds
+  nettolön så långt den räcker, med samma löneart i kredit på 1680.
+  `TODO(legal-verify)`: kvittning mot lön (lagen (1970:215) om arbetsgivares
+  kvittningsrätt).
 - Frånvaro räknas med de timmar som anges per dag, men bara på dagar då den
   anställde ska arbeta enligt schemat och som inte är helgdagar. Övriga dagar
   i perioden räknas med noll timmar (en sjukperiod räknar ändå sina

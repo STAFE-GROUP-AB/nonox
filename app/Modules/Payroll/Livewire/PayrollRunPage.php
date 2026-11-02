@@ -10,6 +10,7 @@ use App\Modules\Payroll\Actions\AddPayrollAccounts;
 use App\Modules\Payroll\Actions\PayrollFileImports;
 use App\Modules\Payroll\Actions\PayrollImportSources;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayCode;
@@ -246,7 +247,7 @@ class PayrollRunPage extends Component
         return view('payroll::livewire.run-page', [
             'run' => $run,
             'employees' => Employee::query()->orderBy('employee_number')->get(['id', 'employee_number', 'first_name', 'last_name']),
-            'payCodes' => PayCode::query()->where('is_active', true)->whereNotIn('category', ['SICK', 'ABSENCE', 'VACATION', 'PENSION', 'ALLOWANCE_TAXABLE'])->orderBy('code')->get(['id', 'code', 'name_sv', 'unit']),
+            'payCodes' => PayCode::query()->where('is_active', true)->whereNotIn('category', ['SICK', 'ABSENCE', 'VACATION', 'PENSION', 'ALLOWANCE_TAXABLE'])->where('code', '!=', NetPay::CLAIM_CODE)->orderBy('code')->get(['id', 'code', 'name_sv', 'unit']),
             'inputs' => PayrollInput::query()->with(['employee:id,first_name,last_name', 'payCode:id,code,name_sv'])->where('payroll_run_id', $run->id)->orderBy('id')->get(),
             'absences' => Absence::query()->with('employee:id,first_name,last_name')->where('status', 'APPROVED')
                 ->whereDate('date_from', '<=', $run->periodEnd()->toDateString())->whereDate('date_to', '>=', $run->periodStart()->toDateString())->orderBy('date_from')->get(),

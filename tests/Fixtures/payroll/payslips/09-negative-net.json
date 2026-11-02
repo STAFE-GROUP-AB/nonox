@@ -1,5 +1,5 @@
 {
-  "description": "Net deduction larger than pay: net 0 and the rest carried forward",
+  "description": "Net deduction larger than pay: net 0, the rest a claim on the employee (#68)",
   "context": {
     "birth_date": "1990-06-15",
     "tax_residence": "SE",

@@ -79,7 +79,8 @@ Varningar stoppar inte lönen men ska läsas. Exempel:
 
 - Sjukperioden är längre än arbetsgivarperioden. Anmäl sjukfallet till Försäkringskassan.
 - Semesterdagar saknar betald semester och räknas som obetald semester.
-- Nettolönen blev negativ. Beloppet förs över som en fordran på den anställda till nästa lön.
+- Skatten blev större än kontantlönen, till exempel när den anställda har en stor förmån och lite lön. Bara kontantlönen dras i skatt. Resten är den anställdas egen skatt som hen betalar med slutskatten; den blir ingen skuld till företaget.
+- Nettolönen blev negativ, till exempel när ett förskott är större än lönen. Nettolönen blir noll, och det som inte räckte blir en skuld till företaget. Den syns som en egen rad, **Skuld till företaget från lön**, och dras automatiskt från nästa lön så långt den räcker.
 - Lönen är under kollektivavtalets minimilön (med modulen Avtal).
 
 ## Så här attesterar du

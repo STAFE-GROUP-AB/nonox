@@ -1413,7 +1413,6 @@
     "per månad": "per month",
     "Personalen på lönelistan.": "The staff on the payroll.",
     "Skattetabell och kolumn saknas för den anställda.": "The tax table and column are missing for the employee.",
-    "Nettolönen blev negativ. :amount förs över som en fordran på den anställda.": "Net pay was negative. :amount is carried forward as a claim on the employee.",
     "Månadslön": "Monthly salary",
     "Månadslön, :days av :total dagar": "Monthly salary, :days of :total days",
     "Sjukavdrag": "Sick deduction",
@@ -5872,5 +5871,11 @@
     "Riksbankens kurs :date, för leveransdagen eller fakturadatum om leveransdatum saknas. Du kan ändra den.": "Riksbanken's rate :date, for the delivery date, or the invoice date when there is none. You can change it.",
     "Tomt: samma som fakturadatum. Valutakursen tas för leveransdagen, då momsen uppstår.": "Empty: same as the invoice date. The exchange rate is taken for the delivery date, when the VAT arises.",
     "Har ansökt om beskattning i köparens land (OSS) eller är registrerat för OSS": "Has asked for taxation in the buyer's country (OSS) or is registered for OSS",
-    "Gäller försäljning av varor och elektroniska tjänster till privatpersoner i andra EU-länder. Utan ansökan tas svensk moms ut så länge försäljningen i år och i fjol är högst :amount.": "Applies to sales of goods and electronic services to consumers in other EU countries. Without it, Swedish VAT is charged as long as the sales this year and last year are at most :amount."
+    "Gäller försäljning av varor och elektroniska tjänster till privatpersoner i andra EU-länder. Utan ansökan tas svensk moms ut så länge försäljningen i år och i fjol är högst :amount.": "Applies to sales of goods and electronic services to consumers in other EU countries. Without it, Swedish VAT is charged as long as the sales this year and last year are at most :amount.",
+    "Skatten blev :calculated men kontantlönen är :cash. Bara :cash dras i skatt. Resten, :rest, dras inte och är ingen skuld till företaget: den anställda betalar den själv med slutskatten.": "The tax came to :calculated but the cash pay is :cash. Only :cash is withheld. The rest, :rest, is not withheld and is no debt to the company: the employee pays it with the final tax.",
+    "Avdrag för skuld från tidigare lön": "Deduction of debt from earlier pay",
+    "Den anställda är fortfarande skyldig :amount från tidigare lön. Det dras från nästa lön.": "The employee still owes :amount from earlier pay. It is deducted from the next pay.",
+    "Skuld till företaget, dras från nästa lön": "Debt to the company, deducted from the next pay",
+    "Nettolönen blev negativ. :amount förs över som en fordran på den anställda och dras från nästa lön.": "Net pay was negative. :amount is carried forward as a claim on the employee and deducted from the next pay.",
+    "Skulden från tidigare lön räknas fram av lönekörningen och kan inte läggas in för hand.": "The debt from earlier pay is worked out by the payroll run and cannot be entered by hand."
 }

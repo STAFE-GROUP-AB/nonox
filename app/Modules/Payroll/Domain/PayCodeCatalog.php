@@ -54,6 +54,8 @@ final class PayCodeCatalog
         'PROVISION' => ['name_sv' => 'Provision', 'name_en' => 'Commission', 'category' => 'ADDITION', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'AVTALSFORSAKRING' => ['name_sv' => 'Avtalsförsäkringar', 'name_en' => 'Agreement insurances', 'category' => 'PENSION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7570, 'credit' => 2740],
         'FORSKOTT' => ['name_sv' => 'Avdrag för förskott', 'name_en' => 'Advance deduction', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 1680],
+        // Made by the engine only (NetPay): deductions after tax larger than the pay become a claim on the employee, taken back from the next pay.
+        'FORDRAN_ANSTALLD' => ['name_sv' => 'Skuld till företaget från lön', 'name_en' => 'Employee debt from pay', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 1680, 'credit' => 1680],
         'NETTOAVDRAG' => ['name_sv' => 'Nettolöneavdrag', 'name_en' => 'Net deduction', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 2890],
     ];
 

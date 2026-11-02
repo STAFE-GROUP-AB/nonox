@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
+use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Domain\SalaryVoucher;
@@ -130,7 +131,12 @@ class PayrollRuns
 
         return CurrentCompany::run($company, fn (): PayrollInput => DB::transaction(function () use ($user, $company, $run, $validated, $amount): PayrollInput {
             Employee::query()->findOrFail((int) $validated['employee_id']);
-            PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
+            $payCode = PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
+
+            // The claim from earlier pay is kept by the engine (NetPay); a hand-entered line would not follow it.
+            if ($payCode->code === NetPay::CLAIM_CODE) {
+                throw ValidationException::withMessages(['pay_code_id' => __('Skulden från tidigare lön räknas fram av lönekörningen och kan inte läggas in för hand.')]);
+            }
 
             $input = PayrollInput::create([
                 'payroll_run_id' => $run->id,

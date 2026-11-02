@@ -1,0 +1,53 @@
+{
+  "description": "Cash 1 500 kr and a car benefit of 15 000 kr: table tax 2 540 kr is larger than the cash, so only 1 500 kr is withheld (SFL 10 kap. 3 §; #68)",
+  "context": {
+    "birth_date": "1980-08-20",
+    "tax_residence": "SE",
+    "tax_table": 33,
+    "tax_column": 1,
+    "tax_adjustment_percent_bp": null,
+    "salary_form": "HOURLY",
+    "monthly_salary_ore": null,
+    "hourly_rate_ore": 15000,
+    "employment_rate_bp": 10000,
+    "employment_start": "2025-01-01",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [
+      {
+        "code": "TIMLON",
+        "description": "Timlön",
+        "category": "SALARY",
+        "taxable": true,
+        "tax_method": "TABLE",
+        "contribution_basis": true,
+        "vacation_basis": true,
+        "quantity": "10"
+      },
+      {
+        "code": "BILFORMAN",
+        "description": "Bilförmån",
+        "category": "BENEFIT",
+        "taxable": true,
+        "tax_method": "TABLE",
+        "contribution_basis": true,
+        "vacation_basis": false,
+        "amount_ore": 1500000
+      }
+    ],
+    "accumulators": {
+      "contribution_basis_ytd": 0
+    },
+    "settings": {
+      "proration_method": "CALENDAR_DAYS"
+    }
+  },
+  "expected": {
+    "gross_ore": 1650000,
+    "tax_ore": 150000,
+    "net_ore": 0,
+    "employer_contribution_ore": 518430
+  }
+}

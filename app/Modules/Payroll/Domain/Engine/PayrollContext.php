@@ -23,6 +23,7 @@ final readonly class PayrollContext
      * @param  ?list<string>  $weekPattern  scheduled hours Monday to Sunday
      * @param  ?array{below_bp: int, above_bp: int, name: string, threshold_ibb?: string, ceiling_ibb?: ?string, from_age?: ?int, to_age_exclusive?: ?int, rule_version_id?: ?int, agreement?: array<string, mixed>}  $pension  the employment's pension plan, or the collective agreement's (NONOX Avtal): the optional keys set another threshold, a ceiling and the ages the premium is paid between
      * @param  array<string, object>  $extensions  what other modules add for their steps, by module key (for example the agreement the employment is bound by)
+     * @param  int  $employeeClaimOre  what the employee still owes from earlier payslips whose deductions after tax were larger than the pay (NetPay), over all years
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -51,6 +52,7 @@ final readonly class PayrollContext
         public ?array $pension = null,
         public array $extensions = [],
         public ?SickPayTerms $sickPayTerms = null,
+        public int $employeeClaimOre = 0,
     ) {}
 
     /**

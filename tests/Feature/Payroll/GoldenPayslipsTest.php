@@ -74,6 +74,7 @@ function payrollContextFrom(array $data): PayrollContext
         absences: array_map(fn (array $absence): AbsenceInput => new AbsenceInput($absence['type'], CarbonImmutable::parse($absence['date']), $absence['hours']), $data['absences'] ?? []),
         sickHistory: $data['sick_history'] ?? [],
         weekPattern: $data['week_pattern'] ?? null,
+        employeeClaimOre: $data['employee_claim_ore'] ?? 0,
     );
 }
 

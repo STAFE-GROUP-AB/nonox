@@ -225,3 +225,29 @@ The owner decided that the payroll run uses approved time reports.
   hours should be priced at the hourly rate in force when they were worked
   if it has changed since (the engine uses the employment's current rate,
   as for the run's own month).
+
+## Legal audit fixes (2026-11-02)
+
+Enligt granskning 2026-11-02, juristgranskning återstår. Each item names the
+finding and the GitHub issue.
+
+### Tax larger than the cash pay (AUD-LON-06, #68)
+
+- Tax is withheld only from cash pay (SFL 10 kap. 3 §). Benefits are part of
+  the basis (SFL 11 kap. 4 §), but Skatteverket: "Om du inte betalar ut någon
+  kontant ersättning kan du inte göra något skatteavdrag. Det gäller även om
+  den anställda får en skattepliktig förmån". The engine therefore withholds
+  min(calculated tax, cash before tax), for every method (table, one-off,
+  jämkning, SINK, A-SINK). The rest is not withheld, not declared in 001 and
+  not a claim on the employee; the payslip says how much and that the
+  employee pays it with the final tax.
+- Deductions after tax (advance, net deduction, own payment for a benefit)
+  larger than what is left make a claim on the employee. It is a payslip
+  line of the system pay code `FORDRAN_ANSTALLD` (debit 1680 when it arises,
+  credit 1680 when it is taken back), so the salary voucher balances. The
+  accumulator `negative_net_carry_ore` holds it; the sum over all years is
+  what is owed, and the next payslip takes it from the net pay as far as it
+  reaches. The pay code cannot be entered by hand.
+- `TODO(legal-verify)`: set-off against later pay (lag (1970:215) om
+  arbetsgivares kvittningsrätt); whether tax-free cash (allowances) counts as
+  cash to withhold from (here it does).
