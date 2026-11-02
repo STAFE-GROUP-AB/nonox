@@ -14,7 +14,6 @@ use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
-use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Support\CompTimeLedger;
@@ -259,8 +258,7 @@ it('lets only payroll staff change comp time and keeps it inside the company', f
 
 it('pays sick pay on the OB of the published shift and counts the schedule\'s OB in the karensavdrag', function () {
     avtalTidAgreement();
-    PayrollRuleVersion::create(['key' => 'prisbasbelopp', 'valid_from' => '2026-01-01', 'value' => ['ore' => 5_920_000], 'source_url' => 'https://example.test'])
-        ->forceFill(['verified_by' => 'Testperson', 'verified_at' => now()])->save();
+    // Prisbasbelopp 2026 comes verified from Payroll::agreementPremiums() in beforeEach.
     // Saturday 16–22: six hours of Gröna Riks OB at 27,59 kr.
     avtalTidShift($this->anna, '2026-11-14', '16:00', '22:00');
     avtalTidPublish('2026-11-09', '2026-11-15');

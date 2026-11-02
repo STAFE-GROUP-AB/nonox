@@ -289,31 +289,78 @@
             "expected": "december 2026",
             "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
             "note": "The table for one-off payments comes with the 2027 tax tables."
+        },
+        {
+            "key": "pension.saf_lo",
+            "authority": "Fora (avtalsparterna Svenskt Näringsliv och LO)",
+            "expected": "december 2026",
+            "source_url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf",
+            "note": "Agreement premium; the 2026 version ends 2026-12-31 and the 2027 premium had not been published on 2026-11-02."
+        },
+        {
+            "key": "pension.itp1",
+            "authority": "Collectum (avtalsparterna Svenskt Näringsliv och PTK)",
+            "expected": "december 2026",
+            "source_url": "https://collectum.se/avtal-och-faktura/faktura-och-premier/aktuella-premier-och-basbelopp",
+            "note": "Agreement premium; the 2026 version ends 2026-12-31 and the 2027 premium had not been published on 2026-11-02."
+        },
+        {
+            "key": "insurance.fora.arbetare",
+            "authority": "Fora",
+            "expected": "december 2026",
+            "source_url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf",
+            "note": "Agreement premium; the 2026 version ends 2026-12-31 and the 2027 premium had not been published on 2026-11-02."
+        },
+        {
+            "key": "insurance.fora.tjansteman",
+            "authority": "Fora",
+            "expected": "december 2026",
+            "source_url": "https://www.fora.se/foretag/kostnad-och-faktura/prislistor/prislista-2026---foretag-med-kollektivavtal/",
+            "note": "Agreement premium; the 2026 version ends 2026-12-31 and the 2027 premium had not been published on 2026-11-02."
         }
     ],
     "continued": [
         {
-            "keys": ["sick_pay.percentage", "sick_pay.karensavdrag_percent_of_weekly", "sick_pay.employer_period_days", "sick_pay.reinfection_window_days", "sick_pay.certificate_from_day"],
+            "keys": [
+                "sick_pay.percentage",
+                "sick_pay.karensavdrag_percent_of_weekly",
+                "sick_pay.employer_period_days",
+                "sick_pay.reinfection_window_days",
+                "sick_pay.certificate_from_day"
+            ],
             "source_url": "https://data.riksdagen.se/dokument/sfs-1991-1047.text",
             "note": "Lag (1991:1047) om sjuklön, ändrad t.o.m. SFS 2025:938, holds no amendment in force from 2027-01-01 (read 2026-11-02)."
         },
         {
-            "keys": ["vacation.minimum_days", "vacation.supplement_sammaloneregeln", "vacation.percent_rule", "vacation.max_saved_days", "vacation.save_years"],
+            "keys": [
+                "vacation.minimum_days",
+                "vacation.supplement_sammaloneregeln",
+                "vacation.percent_rule",
+                "vacation.max_saved_days",
+                "vacation.save_years"
+            ],
             "source_url": "https://data.riksdagen.se/dokument/sfs-1977-480.text",
             "note": "Semesterlag (1977:480), ändrad t.o.m. SFS 2014:424, holds no amendment in force from 2027-01-01 (read 2026-11-02)."
         },
         {
-            "keys": ["tax.rounding"],
+            "keys": [
+                "tax.rounding"
+            ],
             "source_url": "https://data.riksdagen.se/dokument/sfs-2011-1261.text",
             "note": "Skatteförfarandeförordningen 22 kap. 1 §, ändrad t.o.m. SFS 2026:1570, no amendment from 2027-01-01 (read 2026-11-02)."
         },
         {
-            "keys": ["a_sink.rate"],
+            "keys": [
+                "a_sink.rate"
+            ],
             "source_url": "https://data.riksdagen.se/dokument/sfs-1991-591.text",
             "note": "Lag (1991:591) 9 §, ändrad t.o.m. SFS 2013:953 (read 2026-11-02)."
         },
         {
-            "keys": ["tax.one_off_without_regular_salary", "agi.field_codes"],
+            "keys": [
+                "tax.one_off_without_regular_salary",
+                "agi.field_codes"
+            ],
             "source_url": "https://www.skatteverket.se/agbeskrivning",
             "note": "Skatteverket's guidance; no change for 2027 announced on 2026-11-02. TODO(legal-verify): check again in January 2027."
         }
