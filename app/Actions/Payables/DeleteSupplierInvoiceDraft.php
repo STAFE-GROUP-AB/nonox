@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Actions\Payables;
 
-use App\Actions\Accounting\AttachToVoucher;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\Files\StoredFiles;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Removes a draft supplier invoice and its file. A registered invoice can
@@ -31,11 +30,9 @@ class DeleteSupplierInvoiceDraft
                 ], $invoice->company_id, $user);
 
                 $invoice->delete();
-            });
 
-            if ($invoice->file_path !== null) {
-                Storage::disk(AttachToVoucher::DISK)->delete($invoice->file_path);
-            }
+                StoredFiles::deleteUnreferenced([$invoice->file_path]);
+            });
         });
     }
 }

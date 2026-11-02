@@ -9,8 +9,10 @@ use App\Modules\Inbox\Domain\MessageStatus;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\UnassignedMessage;
+use App\Support\Files\StoredFiles;
 use App\Support\Tenancy\CompanyScope;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -43,7 +45,7 @@ class PruneInboxCommand extends Command
         $disk = Storage::disk(AcceptInboundMail::DISK);
 
         // Retention runs across every company; each message's own files are removed with it.
-        $removed = CompanyScope::bypass(function () use ($disk): int {
+        $removed = CompanyScope::bypass(function (): int {
             $messages = InboxMessage::query()
                 ->where(fn ($query) => $query
                     ->where(fn ($rejected) => $rejected->where('status', MessageStatus::Rejected->value)->where('handled_at', '<', now()->subDays(self::REJECTED_DAYS)))
@@ -55,8 +57,12 @@ class PruneInboxCommand extends Command
 
             foreach ($messages as $message) {
                 $this->info("Removing inbox message `{$message->id}`...");
-                $disk->delete([$message->eml_path, ...$message->attachments->map(fn (InboxAttachment $attachment): string => $attachment->path)->all()]);
-                $message->delete();
+                DB::transaction(function () use ($message): void {
+                    $message->delete();
+
+                    // A file a voucher still refers to is underlag and stays (BFL 7 kap.).
+                    StoredFiles::deleteUnreferenced([$message->eml_path, ...$message->attachments->map(fn (InboxAttachment $attachment): string => $attachment->path)->all()]);
+                });
             }
 
             return $messages->count();

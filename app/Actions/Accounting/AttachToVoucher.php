@@ -9,9 +9,11 @@ use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Support\Audit\Audit;
 use App\Support\FileName;
+use App\Support\Files\StoredFiles;
 use App\Support\Tenancy\CurrentCompany;
 use finfo;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -100,11 +102,16 @@ class AttachToVoucher
     /**
      * Links a file already stored by the system, such as a registered
      * supplier invoice, to the voucher that books it. The caller has
-     * authorised the booking; the file is not copied.
+     * authorised the booking; the file is not copied, so several rows can
+     * share it and it is only removed when none of them is left
+     * (StoredFiles::deleteUnreferenced). The path's lock is held until the
+     * transaction commits, so a removal elsewhere cannot slip in between.
      */
     public function linkStoredFile(User $user, Voucher $voucher, string $path, string $name, string $mime, int $size, string $sha256): VoucherAttachment
     {
-        return CurrentCompany::run($voucher->company_id, function () use ($user, $voucher, $path, $name, $mime, $size, $sha256): VoucherAttachment {
+        return CurrentCompany::run($voucher->company_id, fn (): VoucherAttachment => DB::transaction(function () use ($user, $voucher, $path, $name, $mime, $size, $sha256): VoucherAttachment {
+            StoredFiles::lock($path);
+
             $attachment = VoucherAttachment::create([
                 'voucher_id' => $voucher->id,
                 'file_path' => $path,
@@ -124,6 +131,6 @@ class AttachToVoucher
             ], $voucher->company_id, $user);
 
             return $attachment;
-        });
+        }));
     }
 }

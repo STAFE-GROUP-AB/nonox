@@ -13,10 +13,10 @@ use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Support\InboxChecks;
 use App\Support\Audit\Audit;
+use App\Support\Files\StoredFiles;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -135,7 +135,7 @@ class InboxReview
         $company = $this->authorize($user, $message);
 
         CurrentCompany::run($company, function () use ($user, $company, $message): void {
-            $paths = DB::transaction(function () use ($user, $company, $message): array {
+            DB::transaction(function () use ($user, $company, $message): void {
                 /** @var InboxMessage $locked */
                 $locked = InboxMessage::query()->with('attachments')->whereKey($message->id)->lockForUpdate()->firstOrFail();
 
@@ -147,10 +147,9 @@ class InboxReview
                 Audit::record('inbox.deleted', null, ['message' => $locked->id, 'from' => $locked->from_email, 'subject' => $locked->subject, 'status' => $locked->status->value], $company, $user);
                 $locked->delete();
 
-                return $paths;
+                // A file a voucher still refers to is underlag and stays (BFL 7 kap.).
+                StoredFiles::deleteUnreferenced($paths);
             });
-
-            Storage::disk(AcceptInboundMail::DISK)->delete($paths);
         });
     }
 

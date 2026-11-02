@@ -334,6 +334,30 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Underlag kan läggas till en bokförd verifikation, till exempel ett kvitto som
   kommer senare. Verifikationen i sig ändras inte, och tillägget skrivs i
   behandlingshistoriken (se öppen fråga nedan).
+- **Delade filer.** Samma sparade fil kan vara underlag för flera poster:
+  ett mejl i inkorgen blir underlag för varje verifikation det leder till,
+  och en leverantörsfakturas fil och ett utläggskvitto kopplas till den
+  verifikation som bokför dem. Filen kopieras inte; varje post pekar på
+  samma fil med samma kontrollsumma. När ett utkast tas bort, ett underlag
+  tas bort från ett utkast, ett inkorgsmeddelande raderas eller gallras,
+  ett utkast till leverantörsfaktura tas bort eller ett utlägg gallras eller
+  raderas tas först posten bort. I samma databastransaktion, med ett lås per
+  fil, kontrolleras sedan om någon annan post – i någon tabell och i något
+  företag – fortfarande pekar på filen. Bara en fil som ingen pekar på
+  raderas från disken, och först när transaktionen har gått igenom. En fil
+  som en bokförd verifikation eller inkorgen pekar på raderas alltså aldrig.
+  Listan över kolumner som kan peka på en fil kontrolleras av ett test mot
+  databasschemat, så att en ny tabell inte kan glömmas bort. Grund: mottagen
+  uppgift ska användas som verifikation (BFL 5 kap. 6 §), mottagna
+  elektroniska handlingar bevaras i det skick de kom (BFL 7 kap. 1 § tredje
+  stycket) i sju år (7 kap. 2 §), och verifikationens uppgifter får inte
+  raderas (BFNAR 2013:2 punkt 5.4) – enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-BOK-1, #41).
+- När alla utkast från ett inkorgsmeddelande har tagits bort och inget är
+  bokfört från det går meddelandet tillbaka till **Att granska**, så att det
+  kan godkännas igen eller raderas. Det skrivs i behandlingshistoriken.
+- Den nattliga kontrollen (`ledger:verify`) rapporterar fortfarande varje
+  underlag som saknas eller har ändrats.
 
 ### 4.6 Konteringsmallar
 
@@ -1595,7 +1619,9 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   leverantörsfaktura), så numrering, kontrollkedja och oföränderlighet är
   desamma som annars. Originalmeddelandet och alla bilagor kopplas som
   underlag till varje verifikation det leder till. Ett meddelande som lett
-  till bokföring sparas lika länge som bokföringen.
+  till bokföring sparas lika länge som bokföringen. Filerna delas, inte
+  kopieras, och raderas bara när ingen post längre pekar på dem (avsnitt
+  4.5).
 - **Mallar och automatisk bokföring.** När ett förslag godkänns sparas hur
   det tolkades som en mall för avsändaren och formatet. Nästa underlag i
   samma format tolkas med mallen utan AI. Per mall kan en person slå på
