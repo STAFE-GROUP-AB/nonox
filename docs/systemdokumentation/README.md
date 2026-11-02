@@ -2720,6 +2720,57 @@ Personalliggare och Avtal när de är påslagna.
 - **Behörigheter:** `planning:view`, `planning:manage`, `planning:attest` och
   `self:schedule`; rollen Schemaläggare planerar men attesterar inte.
 
+## 5j. Lager (modul)
+
+Lagerförda artiklar, lagerställen, lagerrörelser och lagervärdet vid
+bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
+
+- **Artikelregistret utökas, det dupliceras inte.** Artiklarna får EAN/GTIN
+  (kontrollsiffran kontrolleras), SKU, skannerkod, inköpspris,
+  momshantering (vanlig eller vinstmarginalbeskattning), leverantör,
+  egenskaper, mått och lagerfälten (lagerförd, beställningspunkt,
+  standardplats, nettoförsäljningsvärde). Fakturering påverkas inte.
+- **Lagerställen** är ett träd per företag: lager, zon, hylla och fack. Varje
+  plats har en kort kod och en hel kod (till exempel HL-A-03-2) som skrivs ut
+  på plocklistor och etiketter.
+- **Lagerrörelser** (`stock_movements`) är en logg som bara kan läggas till:
+  modellen och en databastrigger stoppar ändring och borttagning. Ett fel
+  rättas med en ny rörelse. Varje rörelse har artikel, plats, antal med
+  tecken, kostnad per enhet för det som kommer in, typ (inleverans, plock,
+  flytt, inventering, kassa, retur, kassation), datum, källa och vem.
+  Saldot per artikel och plats (`stock_levels`) ändras i samma transaktion,
+  med raden låst; `php artisan inventory:verify` jämför saldona med
+  rörelserna. Antal lagras som tusendelar av enheten, aldrig som flyttal.
+  Negativt saldo stoppas om inte företaget har tillåtit det.
+- **Inleverans** registrerar varor in, helt eller i delar, med eller utan
+  koppling till en leverantörsfaktura. Ingenting bokförs; inköpet bokförs
+  med leverantörsfakturan som tidigare.
+- **Plocklista** görs från en order, en faktura eller för hand och sorteras
+  efter plats. När den klarmarkeras dras det plockade från lagret.
+- **Inventering** sparar systemets antal när den startar. Skillnaden mot det
+  räknade förs in som inventeringsrörelser med orsak när inventeringen
+  slutförs.
+- **Värdering** (underlag för varulagret): antal och värde per artikel och
+  plats på valfri dag, beräknat ur rörelserna med FIFO eller vägt
+  genomsnittspris (företagets inställning, ÅRL 4 kap. 11 §) och lägsta
+  värdets princip per artikel där ett nettoförsäljningsvärde har angetts
+  (ÅRL 4 kap. 9 §). Ingen schablon för inkurans.
+- **Bokslutssteget** (valfritt): värderingen på årets sista dag sparas
+  (`stock_valuations`, kan bara läggas till) och skillnaden mot saldot på
+  lagerkontot bokförs på årets sista dag i serie A, lagerkontot (1460 eller
+  1410) mot kontot för lagerförändring (4960 eller 4910), före årets
+  resultat. Det registreras som bokslutspost (`STOCK_VALUATION`). Punkten
+  "Varulagret är inventerat och värderat" i checklistan blir klar när
+  värderingen är sparad, eller när en person bekräftar den för hand. När
+  Lager är avstängd är punkten manuell som förut.
+- **Behörigheter:** `inventory:view`, `inventory:count`,
+  `inventory:manage`, `inventory:settings`; rollen Lagerpersonal ser och
+  hanterar varor men inte priser eller inställningar. Att bokföra
+  lagerförändringen kräver också `fiscal-years:manage`.
+- **API och webhooks:** lagret kan läsas och inleveranser skapas via NONOX
+  Connect (`inventory:view`, `inventory:manage`); händelsen `stock.changed`.
+- Allt skrivs till behandlingshistoriken.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -3065,6 +3116,17 @@ kontrollerat dem mot källan. Särskilt:
   (väljs av företaget).
 - OB räknas över hela passet inklusive rast, eftersom liggaren inte vet när
   rasten tas; chefen kan dela upp dagens tid.
+
+### Lager (5j)
+
+- Om BFNAR 2016:10 (K2) kap. 11 begränsar valet av värderingsmetod (FIFO
+  eller vägt genomsnittspris enligt ÅRL 4 kap. 11 §) för K2-företag.
+- Om K2 tillåter en schablon för inkurans i redovisningen (Skatteverkets
+  97-procentsregel gäller beskattningen); i dag finns ingen schablon.
+- Kontoparen för lagerförändringen (1460/4960 och 1410/4910) mot gällande
+  BAS-kontoplan.
+- Vinstmarginalbeskattning: artiklar kan markeras, men fakturor räknar ännu
+  inte fram marginalen eller ruta 07.
 
 ### Kön till den öppna betan (1f)
 

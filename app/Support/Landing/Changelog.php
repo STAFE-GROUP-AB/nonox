@@ -53,6 +53,7 @@ final class Changelog
         'lon' => 'Lön',
         'avtal' => 'Avtal',
         'planering' => 'Planering',
+        'lager' => 'Lager',
         'personalliggare' => 'Personalliggare',
         'bank' => 'Bank',
         'connect-api' => 'Connect/API',

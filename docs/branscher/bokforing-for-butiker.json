@@ -28,6 +28,7 @@
         "intro": "Allt nedan finns i NONOX i dag. Det som är en modul slår du på under Inställningar → Moduler.",
         "items": [
             {"title": "Schema som blir lön", "text": "Lägg schemat i Planering med lönekostnaden synlig medan du planerar och jämför den med försäljningen ur bokföringen. Personalen ser sitt schema på Min sida. Utan personalliggare räknas den planerade tiden som arbetad tills du ändrar den; med liggaren jämförs planen med in- och utcheckningarna innan tiden går till lönen.", "features": ["planning", "planning_payroll", "planning_staffing", "planning_self_service"]},
+            {"title": "Lager med hyllor, inleveranser och inventering", "text": "Slå på Lager så följs saldot per artikel och hylla. Varor tas emot med en inleverans, plockas med en plocklista sorterad efter plats och räknas vid inventeringen, där skillnaderna förs in med en orsak. Artiklarna har EAN-kod, inköpspris och beställningspunkt. Vid bokslutet räknas lagervärdet fram enligt FIFO eller vägt genomsnittspris och lagerförändringen bokförs mot 1460.", "features": ["inventory", "inventory_flow", "inventory_valuation"]},
             {"title": "Dagsrapporten bokförs med en mall", "text": "Kassasystemet mejlar dagsrapporten till butikens egen adress i NONOX. Du kopplar raderna till konton en gång, till exempel försäljning per momssats, kort, Swish, kontant, presentkort och öresavrundning. Nästa rapport i samma format tolkas med mallen och kan bokföras automatiskt när den stämmer exakt.", "features": ["inbox", "daily_reports"]},
             {"title": "Leverantörsfakturor med attest", "text": "Fakturorna kommer till inkorgen, attesteras av en annan person än den som registrerade och betalas med en betalfil till din bank. Bankens svar på filen stäms av automatiskt, så det betalda bokförs utan att du skriver in något. Kreditnotor från leverantörer hanteras också.", "features": ["supplier_invoices", "payment_files", "payment_file_matching", "inbox"]},
             {"title": "EU-inköp i rätt rutor", "text": "Inköp från andra EU-länder bokförs med momsen i rätt rutor i momsdeklarationen, som du laddar ner som fil till Skatteverket.", "features": ["eu_purchases", "vat_return"]},
@@ -39,7 +40,7 @@
     },
     "pos": {
         "heading": "Kassasystemet och NONOX.",
-        "intro": "NONOX är inget kassasystem och har ingen lagerhantering. Du behåller kassan och lagret du har, och NONOX bokför det kassan rapporterar. Försäljningen kommer in på två sätt redan i dag, och båda kontrolleras innan något bokförs.",
+        "intro": "NONOX är inget kassasystem. Du behåller kassan, och NONOX bokför det kassan rapporterar. Försäljningen kommer in på två sätt redan i dag, och båda kontrolleras innan något bokförs.",
         "items": [
             {"title": "Dagsrapporten med e-post", "text": "Ställ in kassan att mejla dagsrapporten till butikens kassaadress i NONOX. CSV, Excel, text och PDF med text fungerar. Har du flera kassor eller butiker får varje format sin egen mall, och rapporterna kan bokföras automatiskt.", "features": ["inbox", "daily_reports"]},
             {"title": "SIE-fil från kassan", "text": "Kan kassasystemet ta fram försäljningen som en SIE-fil skickar du den till samma adress. Verifikationerna i filen blir förslag i inkorgen som du granskar och godkänner.", "features": ["inbox", "sie"]},
@@ -50,7 +51,7 @@
     },
     "limits": [
         {"text": "I Planering räknas OB ur passens klockslag och övertid per vecka eller beräkningsperiod för månadsavlönade, men övertidstillägg för timanställda räknas inte ännu. Avtalets semester- och pensionsregler räknas inte per avtal ännu."},
-        {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Inventering och lagervärde sköter du utanför NONOX."},
+        {"text": "NONOX är inget kassasystem. Lagret minskar inte av sig självt när kassan säljer, eftersom kassan inte är kopplad än; dra sålda varor med en plocklista eller vid inventeringen."},
         {"text": "Import av varor från länder utanför EU är inte byggd ännu.", "feature": "non_eu_goods_import"},
         {"text": "NONOX har ett öppet API med webhooks, men inget kassasystem har ännu byggt en färdig koppling till det, så kassan kan inte kopplas direkt till NONOX än. Kassasystemen och deras integrationsplattformar kan bygga kopplingen mot API:t. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "pos_integrations"}
     ],
@@ -63,7 +64,7 @@
     "faqs": [
         {"q": "Kan NONOX bokföra dagsrapporten från min kassa?", "a": "Ja, om kassan kan mejla rapporten som CSV, Excel (XLSX), text eller PDF med text i. Du kopplar raderna till konton första gången, och sedan tolkas rapporter i samma format med samma mall. Det går också med en SIE-fil från kassan. NONOX har ett öppet API, men en färdig direktkoppling från kassasystemen finns inte ännu."},
         {"q": "Hur hanteras presentkort?", "a": "I dagsrapporten är ett inlöst presentkort ett eget betalsätt som du kopplar till ett konto i mallen. Vilket konto du använder för sålda presentkort bestämmer du i kontoplanen."},
-        {"q": "Har NONOX lagerhantering?", "a": "Nej. NONOX är ett bokförings-, faktura- och lönesystem. Lager och inventering sköts i kassasystemet eller ett lagerprogram."},
+        {"q": "Har NONOX lagerhantering?", "a": "Ja, med modulen Lager: saldo per artikel och hylla, EAN-koder, inleveranser, plocklistor, inventering och lagervärdet vid bokslutet enligt FIFO eller vägt genomsnittspris. Kassan är ännu inte kopplad till lagret, så försäljningen i kassan drar inte varor automatiskt."},
         {"q": "Kan jag bokföra inköp från leverantörer i andra EU-länder?", "a": "Ja. Inköp från andra EU-länder bokförs med momsen i rätt rutor. Import av varor från länder utanför EU är inte byggd ännu."},
         {"q": "Måste en butik ha personalliggare?", "a": "Personalliggaren i NONOX är byggd för de branscher som har krav på liggare. En butik kan använda den bara för att stämpla in och ut och få timmarna till lönen. Om din verksamhet har krav på liggare avgör Skatteverkets regler."},
         {"q": "Vad kostar NONOX för en butik?", "a": "{pris} per år med drift för upp till {max} anställda, med lön och inkorg inräknade. Kör du NONOX själv kostar det ingenting."}

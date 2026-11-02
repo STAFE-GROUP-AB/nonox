@@ -68,6 +68,12 @@ planering:
   for: foretag
   modul: planning
   ikon: clock
+lager:
+  titel: Lager
+  beskrivning: Lagerförda artiklar med EAN, lagerställen, inleveranser, plocklistor, inventering och lagervärdet vid bokslutet.
+  for: foretag
+  modul: inventory
+  ikon: box
 byra:
   titel: För redovisningsbyråer
   beskrivning: Mina företag, månadsstängning, uppgifter mellan byrå och kund och byråns varumärke.
