@@ -34,6 +34,7 @@
             </x-ui.field>
         </div>
         <div class="flex flex-wrap items-center gap-2">
+            <x-secondary-button type="button" wire:click="addDay">{{ __('Lägg till arbetad tid') }}</x-secondary-button>
             <x-secondary-button type="button" wire:click="attestClean" wire:loading.attr="disabled" :disabled="$clean === 0">
                 {{ __('Attestera alla utan avvikelser (:count)', ['count' => $clean]) }}
             </x-secondary-button>
@@ -106,6 +107,22 @@
                                     @foreach($row->allDeviations() as $deviation)
                                         <p @class(['text-red-800 font-semibold' => $deviation->blocking, 'text-amber-900' => ! $deviation->blocking && ! $deviation->informational, 'text-gray-500' => $deviation->informational])>{{ $deviation->message }}</p>
                                     @endforeach
+                                    @if($row->week?->canTakeCompTime() && $row->attestation && ! isset($row->attestation->details['week']))
+                                        <fieldset class="mt-2 rounded-lg bg-stone-50 p-2">
+                                            <legend class="text-xs font-semibold text-gray-700">{{ __('Ersättning för övertid och mertid') }}</legend>
+                                            <label class="me-4 inline-flex items-center gap-1 text-sm">
+                                                <input type="radio" name="choice-{{ $row->key() }}" value="PAY" @checked($row->week->choice === 'PAY') wire:click="chooseCompensation({{ $row->attestation->id }}, 'PAY')">
+                                                {{ __('Betala ut') }}
+                                            </label>
+                                            <label class="inline-flex items-center gap-1 text-sm">
+                                                <input type="radio" name="choice-{{ $row->key() }}" value="COMP_TIME" @checked($row->week->choice === 'COMP_TIME') wire:click="chooseCompensation({{ $row->attestation->id }}, 'COMP_TIME')">
+                                                {{ __('Komptid, :hours', ['hours' => $hours($row->week->compTimeMinutes())]) }}
+                                            </label>
+                                            @foreach($row->week->compTime as $option)
+                                                <p class="text-xs text-gray-500">{{ __(':worked min × :factor (:source)', ['worked' => $option['worked'], 'factor' => str_replace('.', ',', $option['factor']), 'source' => $option['source']]) }}</p>
+                                            @endforeach
+                                        </fieldset>
+                                    @endif
                                     @if($row->lockReason)
                                         <p class="text-amber-900">{{ $row->lockReason }}</p>
                                     @endif
@@ -137,10 +154,25 @@
     @endforeach
 
     <x-dialog-modal wire:model="showEditor" maxWidth="lg">
-        <x-slot name="title">{{ __('Ändra faktisk tid') }}</x-slot>
+        <x-slot name="title">{{ ($form['new'] ?? false) ? __('Lägg till arbetad tid') : __('Ändra faktisk tid') }}</x-slot>
         <x-slot name="content">
             <form id="actual-form" wire:submit="saveActual" class="space-y-4">
                 <p class="text-sm text-gray-600">{{ __('Tiden gäller bara attesten och lönen. Personalliggaren ändras inte; en fel in- eller utcheckning rättas där.') }}</p>
+                @if($form['new'] ?? false)
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <x-ui.field for="actual-employee" :label="__('Person')" error="employee_id">
+                            <select id="actual-employee" wire:model="form.employee_id" class="{{ $input }} mt-1">
+                                <option value="">{{ __('Välj person') }}</option>
+                                @foreach($employees as $employee)
+                                    <option value="{{ $employee->id }}">{{ $employee->first_name }} {{ $employee->last_name }}</option>
+                                @endforeach
+                            </select>
+                        </x-ui.field>
+                        <x-ui.field for="actual-date" :label="__('Datum')" error="date">
+                            <input id="actual-date" type="date" wire:model="form.date" class="{{ $input }} mt-1">
+                        </x-ui.field>
+                    </div>
+                @endif
                 <label class="flex items-center gap-2 text-sm">
                     <x-checkbox wire:model.live="form.none" />
                     {{ __('Arbetade inte den här dagen') }}

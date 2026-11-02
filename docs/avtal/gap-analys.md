@@ -124,7 +124,43 @@ Status 2026-11-01: A1–A4 är byggda (systemdokumentation §5h). A1 utan
 JSON-schema i CI utöver valideringen vid inläsning och testerna, och utan
 lokala avvikelser (`overrides` finns som kolumn men används inte ännu, G21).
 A3 prissätter redan uppdelade OB- och övertidsrader; mertid är inte data
-ännu. Kvar: A5–A12.
+ännu.
+
+Status A5–A8 (2026-11-02): se §5a. Kvar efter det: A9–A12.
+
+## 5a. A5–A8 mot modulen Planering (2026-11-02)
+
+Modulen Planering (ADR-037, systemdokumentation §5i) byggdes efter att
+byggordningen ovan skrevs, och den levererar redan mycket av A5–A7. Ingen
+andra passtabell och ingen andra passdelare byggs: `planning_shifts` är
+passen, `PlanVsActual` + attesten är vägen från klockslag till lön, och
+`Planning\Domain\ObSplitter` är `ShiftSplitter` i ADR-033 §4.
+
+| Punkt | Innehåll | Före 2026-11-02 | Byggt nu |
+|---|---|---|---|
+| A5 / G2 | Pass med klockslag till lönen | **Klart i Planering**: publicerade pass, liggarens in- och utcheckning, attest → godkända tidrapporter per löneart. `work_shifts` behövs inte. | — |
+| A5 / G2 | Manuell passinmatning utan personalliggare | **Klart i Planering**: utan liggaren är planen den faktiska tiden, och chefen kan skriva in egen tid per dag (`SaveActualTime`, två intervall), även en dag utan planerat pass. | — |
+| A6 / G3 | Passdelning i OB-fönster och dagtyper | **Klart i Planering** (`ObSplitter`: midnatt, sommartid, storhelg, `HIGHEST_ONLY`). | — |
+| A6 / G4 | Avrundning av OB- och övertidstid | Saknades | **Byggt**: `rounding` i avtalsdatan (påbörjad eller hel enhet, per pass), används på OB-minuterna per pass och på veckans övertid. |
+| A7 / G7 | Övertid och mertid mot schema | **Delvis**: månadsavlönade per kalendervecka mot veckoarbetstiden. Timavlönade får tid utöver schemat som timlön. | **Byggt**: beräkningsperiod på 1–52 veckor (inställning, högst avtalets `calculation_period`), mätt mot periodens snitt. Timavlönade: kvar (se nedan). |
+| A7 / G8 | Komptidssaldo | Saknades (`overtime_compensation = COMP_TIME` fanns men användes inte) | **Byggt**: val per tillfälle (pengar eller komptid) i attesten, faktor per avtalskod som data, saldo per anställd (`comp_time_entries`), uttag och utbetalning i Lön, saldo på lönespecen och i Min sida. |
+| A7 / G20 | Rullande scheman | **Delvis**: mallar på 1–8 veckor i Planering (rullande schema läggs ut med Mallar); lönens `work_schedules` använder bara vecka 1. | **Byggt**: övertid och mertid mäts mot beräkningsperioden (schemats längd). Lönens eget veckomönster (`work_schedules`) har fortfarande bara vecka 1 — med Planering och Avtal används i stället de publicerade passen på sjukdagar (A8). |
+| A8 / G10 | Sjuklön med OB enligt schemat | Saknades | **Byggt**: på en sjukdag med publicerade pass är de missade timmarna passens, och förlorad OB på passen, prissatt med avtalet, ger sjuklönens procent; karensavdraget räknas på en genomsnittlig vecka inklusive OB. |
+| A8 / G11 | Sjuklön dag 15–90 | Saknades | **Byggt** som avtalsdata (`sick_pay.after_employer_period`): avdrag per kalenderdag med prisbasbeloppsgräns, för Visita–Unionen och Handels tjänstemän. |
+| A8 / G12 | Karens för oregelbunden tid | Saknades (veckoarbetstid krävdes) | **Byggt**: utan veckoarbetstid räknas den genomsnittliga veckan från de publicerade passen i beräkningsperioden. |
+
+Inte byggt i A5–A8 (står kvar i §2): övertidstillägg för timavlönade
+(deras timmar betalas redan som timlön; ett avtal med `plus_hourly_wage`
+skulle betala timlönen två gånger, så det kräver att timlönen för
+övertidstimmarna flyttas till övertidsarten — `TODO`), karens i *tid* enligt
+avtalen (Detaljhandel, Gröna Riks; vi drar lagens belopp), avtalens egna
+timvärden i sjuklönen (12,2/52, 93 % av garantilön), taket 105 dagar per 12
+månader, "förlängning ≤ 10 min är inte övertid", minst 3 timmar övertid,
+komptidsfaktorer för Detaljhandeln (faktorn byter med satsen 1 april 2026,
+behöver steg per datum) och Lager (inga övertidskoder i filen ännu),
+utbetalning av komptid vid anställningens slut som avtalsregel (bara manuell
+utbetalning under Lön → Komptid), och sjukdagens timmar för timavlönade utan
+publicerade pass (lönens veckomönster gäller då som förut).
 
 ## 6. Risker
 

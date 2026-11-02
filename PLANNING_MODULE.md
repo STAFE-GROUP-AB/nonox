@@ -80,6 +80,11 @@ only, never another product's texts, layout, colours or feature names.
   against AFS 2023:2.
 - Attest tolerance: differences under N minutes (default 5) between plan and
   actual are accepted silently; rounding of check-in times (none by default).
+- Overtime and mertid (monthly-paid staff): pay codes, a calculation period
+  of 1–52 weeks from a given Monday (a rotating schedule's length; default 1
+  = per calendar week, measured against the weekly hours × the weeks), and
+  the company's own comp-time factor used when the agreement has none
+  (default 1). Added with NONOX Avtal A7 (ADR-033).
 - Sales source for labour cost %: revenue accounts (default 3000–3799) from
   the books, per day.
 
@@ -187,6 +192,19 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   picks them up unchanged.
 - Monthly-paid staff: only deviations become pay lines (OB, overtime,
   unpaid absence); planned ordinary time is not paid twice.
+- A period's overtime and mertid can instead be taken as comp time, chosen
+  per occasion on the period's last day (ChooseCompensation; default from
+  the employment): sending the day writes `comp_time_entries` in payroll
+  (factor per agreement code from the agreement data, else the company's
+  own) instead of time reports; reopening the day removes them.
+- OB minutes are rounded per shift and code when the agreement data has
+  `rounding.ob`; the overtime total by `rounding.overtime`.
+- Sick pay uses the published shifts (NONOX Avtal A8): the shift's hours and
+  lost OB on a sick day, and the schedule's average week in the
+  karensavdrag (`AgreementSickPayExtension`, reads `planning_shifts`).
+- Days without a planned shift can get worked time on "Tid att attestera"
+  (Lägg till arbetad tid), so a company without the staff ledger still
+  sends all time.
 - A day sent to payroll is locked in Planning; changes after that need
   ReopenAttestation before the run is attested, or a correction line in the
   next run.

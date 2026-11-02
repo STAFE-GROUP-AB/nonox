@@ -40,8 +40,18 @@ En vecka räknas först när den är slut och alla dess dagar är attesterade. T
 
 När veckan är klar skickas övertiden och mertiden med veckans sista dag, på lönearterna du har valt: **Löneart för övertid (månadslön, heltid)** och **Löneart för mertid (månadslön, deltid)**. Har du inte valt någon löneart skickas tiden inte, utan visas som en avvikelse som du lägger in i lönekörningen själv.
 
+Ger avtalet en avrundningsregel för övertid, till exempel att varje påbörjad halvtimme räknas, avrundas veckans övertid och mertid så.
+
+### Längre period än en vecka
+
+Har ni ett rullande schema kan övertiden räknas över hela schemats längd i stället för varje vecka. Ställ in **Beräkningsperiod för övertid och mertid (veckor)** under **Planering → Inställningar**. Se [Rullande schema och beräkningsperiod](/manual/planering/rullande-schema).
+
+### Pengar eller komptid
+
+På veckans eller periodens sista dag väljer du **Betala ut** eller **Komptid**. Med komptid blir tiden ett saldo i lönen i stället för en tidrapport, med avtalets faktor, till exempel 1,5 timmar per övertidstimme. Se [Komptid](/manual/lon/komptid).
+
 > [!IMPORTANT]
-> NONOX räknar övertid och mertid per kalendervecka. Arbetstidslagen och kollektivavtalet kan använda en längre beräkningsperiod, räkna frånvaro och helgdagar på ett annat sätt och ha flera slags övertid. Inget av det tillämpas här. Kontrollera mot ert avtal vilken löneart och vilken beräkningsperiod som gäller, eller fråga er redovisningskonsult.
+> Arbetstidslagen och kollektivavtalet kan räkna frånvaro och helgdagar på ett annat sätt än NONOX och ha flera slags övertid, till exempel i anslutning till ordinarie tid eller inte. Det tillämpas inte här. Kontrollera mot ert avtal vilken löneart och vilken beräkningsperiod som gäller, eller fråga er redovisningskonsult.
 
 ## OB
 
@@ -56,6 +66,8 @@ För att OB ska räknas krävs att:
 Har anställningen ett avtal utan kontrollerad version stoppas dagen med avvikelsen **Anställningen följer ett kollektivavtal utan kontrollerad version för dagen, så OB kan inte räknas.** Kontrollera versionen under **Lön → Avtal**. Se [Versioner och kontroll](/manual/avtal/versioner-och-kontroll).
 
 OB-tiden blir tidrapporter på avtalets OB-lönearter, och lönen prissätter dem med avtalets sats för dagen. Se [OB och övertid enligt avtalet](/manual/avtal/ob-och-overtid).
+
+Har avtalet en avrundningsregel för OB avrundas minuterna per pass och OB-typ. I Gröna Riks och Visita–Unionen räknas varje påbörjad halvtimme som hel, så tio minuter OB blir trettio. Dagen får en anteckning om det, med källan i avtalet.
 
 ### Utan kollektivavtal
 
@@ -79,3 +91,5 @@ Personalliggaren vet inte när rasten togs. Därför räknas OB på hela passet,
 - [Timlön och tidrapporter](/manual/lon/timlon-och-tidrapporter)
 - [OB och övertid enligt avtalet](/manual/avtal/ob-och-overtid)
 - [Avtal, lönegrupp och branschvana per anställd](/manual/avtal/avtal-per-anstalld)
+- [Komptid](/manual/lon/komptid)
+- [Sjuklön med OB enligt schemat](/manual/avtal/sjuklon-med-ob)

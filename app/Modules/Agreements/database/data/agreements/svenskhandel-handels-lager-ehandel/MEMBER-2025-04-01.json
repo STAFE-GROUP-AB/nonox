@@ -19,6 +19,7 @@
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
+        "calculation_period": { "max_weeks": 26, "source": "L1#§ 12.1.1 s. 33" },
         "source": "L1#§ 12.1.1 s. 33",
         "hourly_divisor": {
             "monthly_to_hourly": "174",
@@ -134,6 +135,10 @@
             ],
             "source": "L1#§ 14.1 s. 46–47"
         }
+    },
+    "sick_pay": {
+        "includes_ob": true,
+        "source": "L1#§ 15 s. 49–50"
     },
     "notes": [
         "Fönstret mån–fre 23.00–06.00 är uppdelat i 23.00–24.00 samma dag och 00.00–06.00 nästa dag, så att det inte dubbelräknas mot avtalets egna rader för måndag och lördag 00.00–06.00.",

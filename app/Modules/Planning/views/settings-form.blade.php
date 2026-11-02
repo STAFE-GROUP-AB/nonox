@@ -96,6 +96,15 @@
                 </select>
             </x-ui.field>
         @endforeach
+        <x-ui.field for="pl-period-weeks" :label="__('Beräkningsperiod för övertid och mertid (veckor)')" :hint="__('1 betyder per kalendervecka. Med ett rullande schema väljer du schemats längd: tiden jämförs med veckoarbetstiden gånger antalet veckor. Avtalet anger hur lång perioden får vara.')" error="settings.overtime_period_weeks">
+            <input id="pl-period-weeks" type="number" min="1" max="52" wire:model="settings.overtime_period_weeks" class="{{ $input }} w-28">
+        </x-ui.field>
+        <x-ui.field for="pl-period-start" :label="__('Första periodens måndag')" :hint="__('Perioderna räknas från den här måndagen. Tomt betyder 1 januari 2024.')" error="settings.overtime_period_start">
+            <input id="pl-period-start" type="date" wire:model="settings.overtime_period_start" class="{{ $input }} w-44">
+        </x-ui.field>
+        <x-ui.field for="pl-comp-factor" :label="__('Komptid per timme övertid eller mertid')" :hint="__('Gäller när avtalet inte anger någon faktor för lönearten. 1 betyder timme mot timme. Det här är företagets egen regel.')" error="settings.comp_time_factor">
+            <input id="pl-comp-factor" type="text" inputmode="decimal" wire:model="settings.comp_time_factor" class="{{ $input }} w-28">
+        </x-ui.field>
     </fieldset>
 
     <div class="grid gap-5 sm:grid-cols-2">

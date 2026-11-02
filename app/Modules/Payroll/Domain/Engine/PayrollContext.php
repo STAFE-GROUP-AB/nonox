@@ -50,7 +50,19 @@ final readonly class PayrollContext
         public ?VacationInput $vacation = null,
         public ?array $pension = null,
         public array $extensions = [],
+        public ?SickPayTerms $sickPayTerms = null,
     ) {}
+
+    /**
+     * A copy with the absences (lost supplements per sick day) and sick-pay
+     * terms another module adds (A8).
+     *
+     * @param  list<AbsenceInput>  $absences
+     */
+    public function withSickPay(array $absences, SickPayTerms $terms): self
+    {
+        return new self(...[...get_object_vars($this), 'absences' => $absences, 'sickPayTerms' => $terms]);
+    }
 
     /**
      * A copy with other inputs, for a module that prices inputs before the

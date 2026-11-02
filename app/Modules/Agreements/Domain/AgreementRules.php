@@ -157,6 +157,76 @@ final readonly class AgreementRules
         return (string) ($this->rules['working_time']['hourly_divisor']['source'] ?? '');
     }
 
+    /**
+     * How worked time of a kind (OB or OVERTIME) is rounded before it is
+     * paid (gap G4): a unit in minutes, rounded up per started unit or down
+     * to whole units, per shift. Null when the agreement has no rule.
+     *
+     * @return ?array{unit_minutes: int, method: string, source: string}
+     */
+    public function rounding(string $kind): ?array
+    {
+        $rule = $this->rules['rounding'][strtolower($kind)] ?? null;
+
+        if (! is_array($rule) || ! is_int($rule['unit_minutes'] ?? null) || $rule['unit_minutes'] < 2) {
+            return null;
+        }
+
+        return ['unit_minutes' => $rule['unit_minutes'], 'method' => (string) ($rule['method'] ?? ''), 'source' => (string) ($rule['source'] ?? '')];
+    }
+
+    /**
+     * Comp time for overtime (gap G8): hours of leave per overtime hour,
+     * per agreement code. Null when the agreement has no comp-time rule.
+     *
+     * @return ?array{hours_per_hour: array<string, string>, source: string}
+     */
+    public function compTime(): ?array
+    {
+        $rule = $this->rules['overtime']['comp_time'] ?? null;
+
+        if (! is_array($rule)) {
+            return null;
+        }
+
+        $factors = [];
+
+        foreach ((array) ($rule['hours_per_hour'] ?? []) as $code => $factor) {
+            $factors[(string) $code] = (string) $factor;
+        }
+
+        return ['hours_per_hour' => $factors, 'source' => (string) ($rule['source'] ?? '')];
+    }
+
+    /**
+     * The longest calculation period (beräkningsperiod) the agreement allows
+     * for averaging the ordinary weekly time, in weeks.
+     *
+     * @return ?array{max_weeks: int, source: string}
+     */
+    public function calculationPeriod(): ?array
+    {
+        $rule = $this->rules['working_time']['calculation_period'] ?? null;
+
+        if (! is_array($rule) || ! is_int($rule['max_weeks'] ?? null) || $rule['max_weeks'] < 1) {
+            return null;
+        }
+
+        return ['max_weeks' => $rule['max_weeks'], 'source' => (string) ($rule['source'] ?? '')];
+    }
+
+    /** @return array<string, mixed> the agreement's sick-pay facts (A8), empty when it has none */
+    public function sickPay(): array
+    {
+        return (array) ($this->rules['sick_pay'] ?? []);
+    }
+
+    /** Whether lost OB on scheduled shifts is part of the sick pay, per the agreement data. */
+    public function obInSickPay(): bool
+    {
+        return ($this->sickPay()['includes_ob'] ?? false) === true;
+    }
+
     /** @return list<string> */
     public function notes(): array
     {

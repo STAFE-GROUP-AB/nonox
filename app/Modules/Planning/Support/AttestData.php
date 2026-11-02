@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Planning\Support;
 
 use App\Models\Company;
+use App\Modules\Agreements\Domain\AgreementRules;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Employee;
@@ -17,6 +18,8 @@ use App\Modules\Planning\Domain\DayComparison;
 use App\Modules\Planning\Domain\Deviation;
 use App\Modules\Planning\Domain\PayrollBasis;
 use App\Modules\Planning\Domain\PlanVsActual;
+use App\Modules\Planning\Domain\WeekBasis;
+use App\Modules\Planning\Domain\WorkingTimeChecks;
 use App\Modules\Planning\Domain\WorkInterval;
 use App\Modules\Planning\Models\Attestation;
 use App\Modules\Planning\Models\Shift;
@@ -51,10 +54,11 @@ final class AttestData
         $today = CarbonImmutable::today($zone);
         $shownFrom = CarbonImmutable::parse($from->toDateString(), $zone);
         $shownTo = CarbonImmutable::parse($to->toDateString(), $zone)->min($today);
-        // Whole calendar weeks are read, so overtime and mertid can be counted per week.
-        $from = $shownFrom->startOfWeek(CarbonImmutable::MONDAY);
-        $to = $shownTo->endOfWeek(CarbonImmutable::SUNDAY)->startOfDay()->min($today);
         $settings = PlanningSettings::resolve($this->modules->settings(PlanningModule::KEY, $company));
+        // Whole calculation periods (calendar weeks by default) are read, so overtime and mertid can be counted per period.
+        $weeks = max(1, PlanningSettings::int($settings, 'overtime_period_weeks'));
+        $from = PlanningSettings::periodStart($settings, $shownFrom);
+        $to = PlanningSettings::periodStart($settings, $shownTo)->addWeeks($weeks)->subDay()->min($today);
         $ledgerOn = $this->modules->isEnabled(StaffLedgerModule::KEY, $company);
 
         if ($shownTo->lessThan($shownFrom)) {
@@ -145,37 +149,43 @@ final class AttestData
             }
         }
 
-        $rows = $this->withWeeks($rows, $settings, $today);
+        $rows = $this->withWeeks($rows, $settings, $today, $agreements);
         $rows = array_values(array_filter($rows, fn (AttestRow $row): bool => $row->date->greaterThanOrEqualTo($shownFrom) && $row->date->lessThanOrEqualTo($shownTo)));
 
         return ['rows' => $rows, 'employees' => $employees, 'ledger' => $ledgerOn];
     }
 
     /**
-     * Overtime and mertid of monthly-paid staff per calendar week
-     * (PayrollBasis::week), put on the week's last day. A week counts only
+     * Overtime and mertid of monthly-paid staff per calculation period
+     * (PayrollBasis::week): a calendar week, or the number of weeks in the
+     * settings (a rotating schedule's cycle), measured against the period's
+     * contracted time. Put on the period's last day. A period counts only
      * when it is over and every day in it is attested; until then the last
-     * day says the week is waiting. Hourly staff are paid every minute and
-     * get nothing here.
+     * day says the period is waiting. Hourly staff are paid every minute and
+     * get nothing here. When the employee may take comp time, the period
+     * also says what it would earn as leave, and whether it is paid or taken
+     * as comp time (chosen on the last day, else the employment's default).
      *
      * @param  list<AttestRow>  $rows
      * @param  array<string, mixed>  $settings
      * @return list<AttestRow>
      */
-    private function withWeeks(array $rows, array $settings, CarbonImmutable $today): array
+    private function withWeeks(array $rows, array $settings, CarbonImmutable $today, EmploymentAgreements $agreements): array
     {
         $rules = (array) ($settings['working_time_rules'] ?? []);
         $ordinary = (array) ($rules['ordinary_week'] ?? []);
         $fullTime = (int) (is_numeric($ordinary['value'] ?? null) ? $ordinary['value'] : 40) * 60;
         $overtimeCode = PlanningSettings::code($settings, 'overtime_pay_code');
         $extraTimeCode = PlanningSettings::code($settings, 'extra_time_pay_code');
-        $weeks = [];
+        $length = max(1, PlanningSettings::int($settings, 'overtime_period_weeks'));
+        $label = $length > 1 ? __('Perioden') : __('Veckan');
+        $periods = [];
 
         foreach ($rows as $index => $row) {
-            $weeks[$row->employee->id.'|'.$row->date->startOfWeek(CarbonImmutable::MONDAY)->toDateString()][] = $index;
+            $periods[$row->employee->id.'|'.PlanningSettings::periodStart($settings, $row->date)->toDateString()][] = $index;
         }
 
-        foreach ($weeks as $indexes) {
+        foreach ($periods as $key => $indexes) {
             $last = $indexes[array_key_last($indexes)];
             $carrier = $rows[$last];
             $employment = self::employmentOn($carrier->employee, $carrier->date);
@@ -184,7 +194,8 @@ final class AttestData
                 continue;
             }
 
-            $sunday = $carrier->date->endOfWeek(CarbonImmutable::SUNDAY)->startOfDay();
+            $periodStart = CarbonImmutable::parse(explode('|', (string) $key)[1], LocalTimestamp::ZONE);
+            $sunday = $periodStart->addWeeks($length)->subDay();
             $complete = $sunday->lessThan($today);
             $worked = 0;
             $planned = 0;
@@ -195,31 +206,86 @@ final class AttestData
                 $complete = $complete && ! $rows[$index]->isOpen();
             }
 
-            $contracted = self::contractedMinutes($employment, $fullTime);
+            $contracted = self::contractedMinutes($employment, $fullTime) * $length;
             $sent = $carrier->attestation?->details['week'] ?? null;
 
             if (is_array($sent)) {
-                $rows[$last] = $carrier->withWeek(null, [Deviation::info(Deviation::EXTRA_TIME, __('Veckans övertid och mertid är skickad till lönen med den här dagen.'))]);
+                $rows[$last] = $carrier->withWeek(null, [Deviation::info(Deviation::EXTRA_TIME, ($sent['comp_time_minutes'] ?? 0) > 0
+                    ? __(':period: övertid och mertid är sparad som komptid (:hours).', ['period' => $label, 'hours' => WorkingTimeChecks::hours($sent['comp_time_minutes'])])
+                    : ($length > 1 ? __('Periodens övertid och mertid är skickad till lönen med den här dagen.') : __('Veckans övertid och mertid är skickad till lönen med den här dagen.')))]);
 
                 continue;
             }
 
             if (! $complete) {
                 if ($worked > min($planned, $contracted)) {
-                    $rows[$last] = $carrier->withWeek(null, [Deviation::info(Deviation::WEEK_PENDING, __('Veckan: hittills :minutes min utöver schemat. Övertid och mertid räknas mot veckoarbetstiden när hela veckan är attesterad – väntar på hela veckan.', ['minutes' => $worked - min($planned, $contracted)]))]);
+                    $rows[$last] = $carrier->withWeek(null, [Deviation::info(Deviation::WEEK_PENDING, $length > 1 ? __('Perioden: hittills :minutes min utöver schemat. Övertid och mertid räknas mot veckoarbetstiden gånger periodens veckor när hela perioden är attesterad – väntar på hela perioden.', ['minutes' => $worked - min($planned, $contracted)]) : __('Veckan: hittills :minutes min utöver schemat. Övertid och mertid räknas mot veckoarbetstiden när hela veckan är attesterad – väntar på hela veckan.', ['minutes' => $worked - min($planned, $contracted)]))]);
                 }
 
                 continue;
             }
 
-            $week = PayrollBasis::week($worked, $contracted, $fullTime, $overtimeCode, $extraTimeCode, $employment->overtime_compensation === 'INCLUDED_IN_SALARY');
+            [$agreement] = $agreements->on($employment, $carrier->date);
+            $week = PayrollBasis::week($worked, $contracted, $fullTime * $length, $overtimeCode, $extraTimeCode, $employment->overtime_compensation === 'INCLUDED_IN_SALARY', $agreement?->rounding('OVERTIME'), $length);
+            $deviations = $week->deviations;
+            $maximum = $agreement?->calculationPeriod();
 
-            if ($week->deviations !== []) {
-                $rows[$last] = $carrier->withWeek($week, $week->deviations);
+            if ($length > 1 && $maximum !== null && $length > $maximum['max_weeks']) {
+                $deviations[] = new Deviation(Deviation::EXTRA_TIME, __('Beräkningsperioden är :weeks veckor, men :agreement medger högst :max veckor utan lokalt avtal (:source).', ['weeks' => $length, 'agreement' => $agreement->shortName(), 'max' => $maximum['max_weeks'], 'source' => $maximum['source']]));
+            }
+
+            if ($week->hasExtraTime() && $employment->overtime_compensation !== 'INCLUDED_IN_SALARY') {
+                $options = self::compTimeOptions($week, $agreement, $overtimeCode, $extraTimeCode, $settings);
+                $chosen = $carrier->attestation?->details['week_choice'] ?? null;
+                $choice = in_array($chosen, [WeekBasis::PAY, WeekBasis::COMP_TIME], true)
+                    ? $chosen
+                    : ($employment->overtime_compensation === 'COMP_TIME' ? WeekBasis::COMP_TIME : WeekBasis::PAY);
+                $week = $week->withCompTime($options, $choice);
+
+                if ($choice === WeekBasis::COMP_TIME) {
+                    $deviations = [Deviation::info(Deviation::EXTRA_TIME, __(':period: :worked min övertid och mertid sparas som :hours komptid när dagen skickas till lönen.', ['period' => $label, 'worked' => $week->overtimeMinutes + $week->extraTimeMinutes, 'hours' => WorkingTimeChecks::hours($week->compTimeMinutes())]))];
+                }
+            }
+
+            if ($deviations !== [] || $week->hasExtraTime()) {
+                $rows[$last] = $carrier->withWeek($week, $deviations);
             }
         }
 
         return array_values($rows);
+    }
+
+    /**
+     * What the period's overtime and mertid would earn as comp time: per
+     * kind, the minutes times the agreement's factor for the code the kind
+     * is sent on, else the company's own factor.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return list<array{kind: string, code: ?string, worked: int, factor: string, minutes: int, source: string}>
+     */
+    private static function compTimeOptions(WeekBasis $week, ?AgreementRules $agreement, ?string $overtimeCode, ?string $extraTimeCode, array $settings): array
+    {
+        $factors = $agreement?->compTime();
+        $options = [];
+
+        foreach ([['OVERTIME', $overtimeCode, $week->overtimeMinutes], ['EXTRA_TIME', $extraTimeCode, $week->extraTimeMinutes]] as [$kind, $code, $worked]) {
+            if ($worked <= 0) {
+                continue;
+            }
+
+            $fromAgreement = $code !== null && $factors !== null && isset($factors['hours_per_hour'][$code]);
+            $factor = $fromAgreement ? $factors['hours_per_hour'][$code] : PlanningSettings::compTimeFactor($settings);
+            $options[] = [
+                'kind' => $kind,
+                'code' => $code,
+                'worked' => $worked,
+                'factor' => $factor,
+                'minutes' => (int) round($worked * (float) $factor),
+                'source' => $fromAgreement ? $factors['source'] : (string) __('Företagets egen faktor (Planering → Inställningar)'),
+            ];
+        }
+
+        return $options;
     }
 
     /** The contracted weekly time: the employment's weekly hours, else the ordinary week by the employment rate. */

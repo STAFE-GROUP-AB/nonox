@@ -1560,14 +1560,50 @@ förslag från NONOX AI (ADR-033 §6).
   förslag skrivs till behandlingshistoriken, utan dokumentets innehåll.
   AI-anropet loggas som `ai.document_analyzed` med leverantör, modell och
   antal tokens.
-- **Pass med klockslag och OB ur passen** finns i modulen Planering (5i):
-  attesterad tid delas upp per OB-art med avtalets OB-fönster och dagtyper.
-- **Inte byggt ännu (A5–A12).** Avrundning av OB enligt avtalet, övertid och
-  mertid mot ordinarie arbetstid över veckan (Planering räknar mot dagens
-  plan), komptidssaldo, sjuklön med
-  OB och dag 15–90, avtalets semesterregler, pension och avtalsförsäkringar
-  per avtal med Fora-rapport, provision med garanti, fasta tillägg,
-  kostavdrag och gyllene lönespecar per avtal.
+- **Pass med klockslag och OB ur passen (A5–A6)** finns i modulen Planering
+  (5i): attesterad tid delas upp per OB-art med avtalets OB-fönster och
+  dagtyper. Har avtalet en avrundningsregel (`rounding.ob`, till exempel
+  varje påbörjad halvtimme) avrundas OB-minuterna per kod och pass, och
+  dagen säger det med källan.
+- **Övertid, mertid och komptid (A7).** Övertid och mertid för
+  månadsavlönade räknas per beräkningsperiod (Planering → Inställningar,
+  1–52 veckor, standard 1). Längre period än avtalets
+  `calculation_period.max_weeks` ger en varning. Avtalets avrundning av
+  övertid (`rounding.overtime`) används på periodens summa. På periodens
+  sista dag väljer chefen per tillfälle om tiden betalas eller sparas som
+  komptid; standard är anställningens uppgift om övertidsersättning.
+  Komptiden blir timmar ledighet enligt avtalets faktor för lönearten
+  (`overtime.comp_time.hours_per_hour`), annars företagets egen faktor.
+  Saldot förs i Lön (`comp_time_entries`: intjänad, uttagen, utbetald,
+  justering) och visas på Lön → Komptid, på lönespecen och i Min sida. En
+  utbetalning och timavlönades uttag betalas i månadens lönekörning på
+  lönearten Komptid med timvärdet av lönen; månadsavlönades uttag betalas av
+  lönen. Saldot kan inte bli negativt, en attesterad månad kan inte ändras,
+  och öppnas dagen igen i Planering tas den intjänade komptiden bort (vägras
+  om den redan är uttagen).
+- **Sjuklön enligt schemat (A8).** När Avtal och Planering är på och
+  anställningen följer ett avtal: en sjukdag med publicerade pass räknas med
+  passens timmar. Förlorad OB på passen (avtalets fönster, avrundning och
+  sats) ger sjuklönens procent som en egen rad, när avtalsdatan säger att OB
+  ingår (`sick_pay.includes_ob`) och OB inte ingår i lönen (sjuklönelagen
+  6 §: "anställningsförmåner"). Karensavdraget räknas på en genomsnittlig
+  vecka med OB, och utan veckoarbetstid (oregelbunden tid) på schemats
+  genomsnittliga vecka, båda över en referensperiod från måndagen i
+  sjukperiodens första vecka: beräkningsperioden, minst fyra veckor.
+  Tjänstemannaavtalen (Visita–Unionen, Handels tjänstemän) drar från dag 15
+  per kalenderdag enligt `sick_pay.after_employer_period`: en andel av
+  årslönen upp till 10 prisbasbelopp och en annan över, högst en dags lön,
+  till dag 90 (minst ett års anställning) eller 45. Utan Planering gäller
+  lagens beräkning med lönens veckomönster som förut.
+  TODO(legal-verify): om de publicerade passen över referensperioden är en
+  representativ period för oregelbunden tid, vilken dag som avgör
+  anställningstiden för dag 15-avdraget, och taket 105 dagar per 12 månader
+  (inte byggt).
+- **Inte byggt ännu (A9–A12, och delar av A7–A8).** Övertidstillägg för
+  timavlönade, karens i tid enligt avtalen, avtalens egna timvärden i
+  sjuklönen, avtalets semesterregler, pension och avtalsförsäkringar per
+  avtal med Fora-rapport, provision med garanti, fasta tillägg, kostavdrag
+  och gyllene lönespecar per avtal.
 
 ## 5i. Planering (modul)
 
@@ -1598,8 +1634,12 @@ Personalliggare och Avtal när de är påslagna.
   kan skapas; bara en hash av länken sparas och länken kan återkallas.
 - **Tid att attestera.** Publicerade pass jämförs med liggarens pass per
   anställd och dag (avrundning och tolerans enligt inställningarna). En
-  saknad in- eller utcheckning stoppar dagen. Chefen kan skriva in egen tid;
-  liggaren ändras aldrig. Attesterade dagar blir löneunderlag: timavlönade
+  saknad in- eller utcheckning stoppar dagen. Chefen kan skriva in egen tid,
+  också en dag utan planerat pass ("Lägg till arbetad tid", för företag utan
+  personalliggare); liggaren ändras aldrig. Övertid och mertid för
+  månadsavlönade räknas per beräkningsperiod (en vecka eller ett rullande
+  schemas längd) och kan på periodens sista dag tas ut som komptid i stället
+  för pengar (5h, A7). Attesterade dagar blir löneunderlag: timavlönade
   får varje arbetad minut som Timlön plus OB; månadsavlönade får bara OB och
   tid utöver planen på den övertids- eller mertidsart som valts i
   inställningarna. Kortare tid dras aldrig av; frånvaro hanteras i Lön. OB

@@ -49,7 +49,7 @@
         "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
     },
     "limits": [
-        {"text": "I Planering räknas OB ur passens klockslag, men övertid och mertid räknas mot dagens schema och inte mot veckans arbetstid ännu. Avtalets semester-, sjuklöne- och pensionsregler räknas inte per avtal ännu."},
+        {"text": "I Planering räknas OB ur passens klockslag och övertid per vecka eller beräkningsperiod för månadsavlönade, men övertidstillägg för timanställda räknas inte ännu. Avtalets semester- och pensionsregler räknas inte per avtal ännu."},
         {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Inventering och lagervärde sköter du utanför NONOX."},
         {"text": "Import av varor från länder utanför EU är inte byggd ännu.", "feature": "non_eu_goods_import"},
         {"text": "NONOX har ett öppet API med webhooks, men inget kassasystem har ännu byggt en färdig koppling till det, så kassan kan inte kopplas direkt till NONOX än. Kassasystemen och deras integrationsplattformar kan bygga kopplingen mot API:t. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "pos_integrations"}

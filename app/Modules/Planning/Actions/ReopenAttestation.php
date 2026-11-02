@@ -6,11 +6,17 @@ namespace App\Modules\Planning\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\ModuleManager;
+use App\Modules\Payroll\Actions\CompTimeEntries;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
 use App\Modules\Planning\Models\Attestation;
+use App\Modules\Planning\PlanningModule;
+use App\Modules\Planning\PlanningSettings;
+use App\Modules\Planning\Support\LocalTimestamp;
 use App\Support\Audit\Audit;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +33,7 @@ final class ReopenAttestation
 {
     use GuardsPlanning;
 
-    public function __construct(private readonly PayrollRuns $runs) {}
+    public function __construct(private readonly PayrollRuns $runs, private readonly CompTimeEntries $compTime, private readonly ModuleManager $modules) {}
 
     public function __invoke(User $user, Company $company, Attestation $attestation): Attestation
     {
@@ -44,7 +50,8 @@ final class ReopenAttestation
             $before = $attestation->only(['status', 'basis', 'time_report_ids']);
             $ids = $attestation->time_report_ids ?? [];
             $this->removeReports($ids);
-            $this->withdrawWeek($attestation);
+            $this->compTime->removeEarned($user, $company, CompTimeEntry::SOURCE_PLANNING, $attestation->id);
+            $this->withdrawWeek($user, $company, $attestation);
 
             $attestation->forceFill([
                 'status' => Attestation::OPEN,
@@ -97,18 +104,20 @@ final class ReopenAttestation
     }
 
     /**
-     * A week's overtime and mertid was sent with another day of the same
-     * week: reopening a day makes the week incomplete, so that is taken back
-     * too and counted again when the week is attested again.
+     * A period's overtime and mertid was sent (or saved as comp time) with
+     * another day of the same calculation period: reopening a day makes the
+     * period incomplete, so that is taken back too and counted again when
+     * the period is attested again.
      */
-    private function withdrawWeek(Attestation $attestation): void
+    private function withdrawWeek(User $user, Company $company, Attestation $attestation): void
     {
-        $monday = $attestation->date->startOfWeek(CarbonImmutable::MONDAY);
+        $settings = PlanningSettings::resolve($this->modules->settings(PlanningModule::KEY, $company));
+        $monday = PlanningSettings::periodStart($settings, CarbonImmutable::parse($attestation->date->toDateString(), LocalTimestamp::ZONE));
         $carriers = Attestation::query()
             ->where('employee_id', $attestation->employee_id)
             ->whereKeyNot($attestation->id)
             ->whereDate('date', '>=', $monday->toDateString())
-            ->whereDate('date', '<=', $monday->addDays(6)->toDateString())
+            ->whereDate('date', '<=', $monday->addWeeks(max(1, PlanningSettings::int($settings, 'overtime_period_weeks')))->subDay()->toDateString())
             ->whereNotNull('details->week')
             ->lockForUpdate()
             ->get();
@@ -117,6 +126,7 @@ final class ReopenAttestation
             $week = $carrier->details['week'] ?? ['minutes' => [], 'time_report_ids' => []];
             $ids = $week['time_report_ids'];
             $this->removeReports($ids);
+            $this->compTime->removeEarned($user, $company, CompTimeEntry::SOURCE_PLANNING, $carrier->id);
             $basis = $carrier->basis ?? [];
 
             foreach ($week['minutes'] as $code => $minutes) {

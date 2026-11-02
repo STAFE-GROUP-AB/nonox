@@ -19,6 +19,7 @@
     ],
     "working_time": {
         "full_time_hours_per_week": "38.25",
+        "calculation_period": { "max_weeks": 52, "source": "D1#§ 6.1 s. 17" },
         "source": "D1#§ 6.1 s. 17",
         "hourly_divisor": {
             "monthly_to_hourly": "166",
@@ -148,6 +149,10 @@
             ],
             "source": "D1#§ 9 s. 34–38"
         }
+    },
+    "sick_pay": {
+        "includes_ob": true,
+        "source": "D1#§ 15.4 s. 49"
     },
     "notes": [
         "OB-fönstret 70 % är lagt 20.00–24.00 mån–fre. Avtalet säger 'efter kl. 20.00' och har ingen särskild natt-OB. TODO(legal-verify): om ordinarie tid 00.00–06.00 en vardagsmorgon ska ha 70 %.",

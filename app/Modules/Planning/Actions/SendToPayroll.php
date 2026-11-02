@@ -7,12 +7,15 @@ namespace App\Modules\Planning\Actions;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Actions\CompTimeEntries;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
+use App\Modules\Planning\Domain\WeekBasis;
 use App\Modules\Planning\Models\Attestation;
 use App\Modules\Planning\Support\AttestData;
 use App\Modules\Planning\Support\AttestRow;
@@ -38,7 +41,7 @@ final class SendToPayroll
 {
     use GuardsPlanning;
 
-    public function __construct(private readonly AttestData $data, private readonly PayrollRuns $runs) {}
+    public function __construct(private readonly AttestData $data, private readonly PayrollRuns $runs, private readonly CompTimeEntries $compTime) {}
 
     /**
      * @return array{sent: int, weeks: int, reports: int, skipped: list<string>}
@@ -117,8 +120,8 @@ final class SendToPayroll
                 $months[$attestation->date->format('Y-m')] = true;
             }
 
-            foreach ($all->filter(fn (AttestRow $row): bool => $row->week !== null && $row->week->minutes !== []) as $row) {
-                $result = $this->sendWeek($user, $row, $codes);
+            foreach ($all->filter(fn (AttestRow $row): bool => $row->week !== null && ($row->week->minutes !== [] || ($row->week->choice === WeekBasis::COMP_TIME && $row->week->canTakeCompTime()))) as $row) {
+                $result = $this->sendWeek($user, $company, $row, $codes);
 
                 if (is_string($result)) {
                     $skipped[] = "{$row->employee->first_name} {$row->employee->last_name} {$row->date->toDateString()}: {$result}";
@@ -166,7 +169,7 @@ final class SendToPayroll
      *
      * @param  Collection<string, int>  $codes  pay code => id
      */
-    private function sendWeek(User $user, AttestRow $row, Collection $codes): int|string
+    private function sendWeek(User $user, Company $company, AttestRow $row, Collection $codes): int|string
     {
         /** @var Attestation $attestation */
         $attestation = Attestation::query()->whereKey($row->attestation?->id)->lockForUpdate()->firstOrFail();
@@ -184,6 +187,10 @@ final class SendToPayroll
 
         if ($closed) {
             return __('Veckans övertid och mertid skickas inte: lönen för månaden är redan attesterad. Rättelser läggs i nästa lönekörning.');
+        }
+
+        if ($week->choice === WeekBasis::COMP_TIME && $week->canTakeCompTime()) {
+            return $this->earnCompTime($user, $company, $attestation, $week);
         }
 
         $missing = array_diff(array_keys($week->minutes), $codes->keys()->all());
@@ -216,6 +223,39 @@ final class SendToPayroll
                 'extra_time_minutes' => $week->extraTimeMinutes,
                 'minutes' => $week->minutes,
                 'time_report_ids' => $ids,
+            ]],
+            'updated_by' => $user->id,
+        ])->save();
+
+        return count($ids);
+    }
+
+    /**
+     * The period's overtime and mertid taken as comp time: one balance entry
+     * per kind on the period's last day instead of time reports, recorded on
+     * the day (details.week) so it is earned once. Counted as one "report".
+     */
+    private function earnCompTime(User $user, Company $company, Attestation $attestation, WeekBasis $week): int
+    {
+        $ids = [];
+        $total = 0;
+
+        foreach ($week->compTime as $option) {
+            $entry = $this->compTime->earn($user, $company, $attestation->employee_id, CarbonImmutable::parse($attestation->date->toDateString()), $option['worked'], $option['factor'], $option['code'], CompTimeEntry::SOURCE_PLANNING, $attestation->id);
+            $ids[] = $entry->id;
+            $total += $entry->minutes;
+        }
+
+        $attestation->forceFill([
+            'details' => [...($attestation->details ?? []), 'week' => [
+                'from' => $attestation->date->startOfWeek(CarbonImmutable::MONDAY)->toDateString(),
+                'overtime_minutes' => $week->overtimeMinutes,
+                'extra_time_minutes' => $week->extraTimeMinutes,
+                'minutes' => [],
+                'time_report_ids' => [],
+                'comp_time_entry_ids' => $ids,
+                'comp_time_minutes' => $total,
+                'comp_time' => $week->compTime,
             ]],
             'updated_by' => $user->id,
         ])->save();

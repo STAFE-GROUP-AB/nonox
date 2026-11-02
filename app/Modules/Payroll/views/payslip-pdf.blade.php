@@ -233,6 +233,21 @@
             </table>
         @endif
 
+        @if($compTime !== null)
+            <table style="margin-top: 4mm">
+                <tr>
+                    <td class="card">
+                        <table>
+                            <tr>
+                                <td style="width: 30%"><div class="label">{{ __('Komptid') }}</div><div class="muted" style="font-size: 7pt">{{ __('per :date', ['date' => $run->periodEnd()->toDateString()]) }}</div></td>
+                                <td class="num"><div class="muted">{{ __('Saldo, timmar') }}</div><strong style="font-size: 11pt">{{ App\Modules\Payroll\Support\CompTimeLedger::hours($compTime) }}</strong></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        @endif
+
         @foreach($payslip->warnings as $warning)
             <div class="notice">{{ $warning }}</div>
         @endforeach

@@ -15,6 +15,7 @@ use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\PayrollModule;
+use App\Modules\Payroll\Support\CompTimeLedger;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
@@ -40,6 +41,7 @@ class MyPayslips extends Component
         return view('payroll::livewire.my-payslips', [
             'employee' => $employee,
             'vacation' => $employee === null ? null : $this->vacation($employee),
+            'compTime' => $employee !== null && CompTimeLedger::exists($employee->id) ? CompTimeLedger::balance($employee->id) : null,
             'payslips' => $employee === null ? collect() : Payslip::query()
                 ->join('payroll_runs', 'payroll_runs.id', '=', 'payslips.payroll_run_id')
                 ->where('payslips.employee_id', $employee->id)

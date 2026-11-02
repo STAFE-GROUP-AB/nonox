@@ -65,3 +65,4 @@ Inget. Pass som redan lagts ut på schemat finns kvar.
 
 - [Schemat](/manual/planering/schemat)
 - [Publicera schemat](/manual/planering/publicera-schemat)
+- [Rullande schema och beräkningsperiod](/manual/planering/rullande-schema)

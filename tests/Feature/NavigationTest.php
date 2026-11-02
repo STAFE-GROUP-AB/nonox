@@ -134,7 +134,7 @@ it('shows the pages of Lön while payroll is on', function () {
     $open = openSection($this->owner, $this->company, 'payroll.employees');
 
     expect($open?->label)->toBe('Lön')
-        ->and(pageLabels($open))->toBe(['Lönekörningar', 'Ansökningar', 'Anställda', 'Arbetsgivardeklaration', 'Rapporter', 'Semesterår', 'Semesterskuld', 'Regler', 'Flytt av lönedata', 'Kom igång'])
+        ->and(pageLabels($open))->toBe(['Lönekörningar', 'Ansökningar', 'Anställda', 'Arbetsgivardeklaration', 'Rapporter', 'Semesterår', 'Semesterskuld', 'Komptid', 'Regler', 'Flytt av lönedata', 'Kom igång'])
         ->and($open?->current()?->label)->toBe('Anställda')
         ->and(openSection($this->owner, $this->company, 'payroll.index')?->current()?->label)->toBe('Kom igång');
 

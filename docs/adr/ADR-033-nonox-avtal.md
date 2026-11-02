@@ -205,6 +205,26 @@ and steps registered by other modules) and an agreement code is its own
 pay code with `formula_ref = agreement:<code>`. Remaining: A5–A12 and
 `LocalAgreementAgent`.
 
+**A5–A8 (2026-11-02).** §4 is implemented by NONOX Planering (ADR-037)
+instead of a `work_shifts` table of this module: published shifts, the
+staff ledger or the manager's own time, attest, and `ObSplitter` as the
+shift splitter. On top of it (gap-analys §5a): the agreement's rounding of
+OB and overtime as data; overtime and mertid of monthly-paid staff over a
+calculation period of 1–52 weeks (a rotating schedule's length), with the
+agreement's maximum as a warning; comp time chosen per occasion in the
+attest with the agreement's factor per code (or the company's own),
+kept as a balance in payroll (`comp_time_entries`, Lön → Komptid, on the
+payslip and Min sida) and paid out on pay code `KOMPTID`; and sick pay by
+the published schedule (the shift's hours on a sick day, lost OB at the
+sick-pay percentage, OB and, for irregular hours, the schedule's hours in
+the karensavdrag's average week) plus the salaried agreements' deduction
+per calendar day from day 15 as data. The payroll engine gets only generic
+inputs (`SickPayTerms`, `LongSickTerms`, `AbsenceInput::lostSupplementsOre`);
+`AgreementSickPayExtension` fills them. Not built in A5–A8: overtime
+supplements for hourly-paid staff, karens counted in time, the agreements'
+own hour values in sick pay, the 105-day cap, and comp-time payout on
+termination as a rule.
+
 ## Legal questions (all `TODO(legal-verify)`)
 
 1. **Copyright in agreement texts.** A collective agreement is a private

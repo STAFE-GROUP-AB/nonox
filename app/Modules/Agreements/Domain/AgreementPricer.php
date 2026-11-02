@@ -148,6 +148,26 @@ final class AgreementPricer
     }
 
     /**
+     * The öre per hour of an agreement code on a day, for a calculation
+     * outside the pay lines (lost OB in sick pay, A8); null when the code has
+     * no rate that day or it cannot be priced for this employment.
+     */
+    public function hourlyOre(PayrollContext $context, AgreementRules $rules, string $code, CarbonImmutable $day): ?int
+    {
+        $step = $rules->rate($code, $day);
+
+        if ($step === null) {
+            return null;
+        }
+
+        try {
+            return $this->rate($context, $rules, $step['rate'], $code)[0];
+        } catch (PayrollBlockedException) {
+            return null;
+        }
+    }
+
+    /**
      * The öre per hour, and what it was calculated from.
      *
      * @param  array<string, mixed>  $rate

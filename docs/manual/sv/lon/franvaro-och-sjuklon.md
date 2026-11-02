@@ -83,3 +83,5 @@ Ja, så länge den väntar på svar.
 - [Semester](/manual/lon/semester)
 - [Min sida för de anställda](/manual/lon/min-sida-for-anstallda)
 - [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller)
+- [Sjuklön med OB enligt schemat](/manual/avtal/sjuklon-med-ob)
+- [Komptid](/manual/lon/komptid)
