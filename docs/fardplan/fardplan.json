@@ -2,11 +2,11 @@
   "punkter": [
     {
       "id": "lager",
-      "rubrik": "Lager: bilder, etiketter och kassakoppling",
-      "beskrivning": "Kärnan i Lager finns: lagerställen, inleveranser, plocklistor, inventering och lagervärdet vid bokslut. Nu byggs bilder på artiklarna med AI-beskrivningar, etiketter med streckkod för artiklar och hyllor, och en koppling till kassasystem så att sålda varor dras från lagret.",
+      "rubrik": "Lager: kassakoppling i drift",
+      "beskrivning": "Lager med bilder, AI-beskrivningar, etiketter och skannerappen Skanna finns. Kopplingen till kassasystem är byggd men inte i drift ännu: den slås på när den har provats mot en riktig kassa, så att sålda varor dras från lagret.",
       "status": "Pågår",
       "omrade": "Lager",
-      "uppdaterad": "2026-11-02"
+      "uppdaterad": "2026-11-03"
     },
     {
       "id": "lansering-1-0",
@@ -155,6 +155,14 @@
       "omrade": "Personalliggare",
       "uppdaterad": "2026-11-02",
       "kommentar": "Vi har inte bestämt oss ännu."
+    },
+    {
+      "id": "stycklistor-och-tillverkning",
+      "rubrik": "Stycklistor och tillverkning i lagret",
+      "beskrivning": "En artikel som byggs av andra artiklar, till exempel en byrå av 45 delar i flera steg. En tillverkningsorder drar delarna ur lagret och lägger in den färdiga varan, värderad efter vad delarna kostade. Satsartiklar, där delarna dras direkt när paketet säljs, hör till samma önskemål.",
+      "status": "Önskemål",
+      "omrade": "Lager",
+      "uppdaterad": "2026-11-03"
     }
   ]
 }
