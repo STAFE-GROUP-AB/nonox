@@ -2815,6 +2815,40 @@ Etiketter ändrar inga saldon och ingen bokföring.
   behandlingshistoriken (`inventory.labels_printed`) med mall, antal och om
   priser kom med; skapade, ändrade och borttagna mallar loggas också.
 
+### Skanna med mobilen (ADR-040)
+
+- **Sidan** `/lager/skanna` är en del av den installerbara appen (genväg
+  "Skanna lager" i appens manifest). Den kräver inloggning, Lager påslaget
+  och `inventory:view`; att ta emot, plocka, flytta och inventera kräver
+  `inventory:count`. Ingen uppgift om pris eller kostnad skickas till
+  telefonen, oavsett roll.
+- **Inget nytt sätt att ändra lagret.** Varje operation från telefonen körs
+  genom samma åtgärder som sidorna i NONOX: inleverans (ny eller befintlig),
+  plocklista (med orsak per rad där det fattas, sparad på raden), flytt
+  (`RecordMovement`, typ flytt) och inventering (spara räkning, avsluta).
+  Lagerrörelserna, saldona och behandlingshistoriken blir desamma som om
+  samma sak gjorts på datorn.
+- **En gång, även om telefonen skickar igen.** Telefonen ger varje operation
+  ett UUID. Första gången det kommer fram körs operationen och svaret sparas
+  i `inventory_scan_operations` (företag, användare, UUID, typ, status,
+  svar), unikt per företag och UUID. Kommer samma UUID igen returneras det
+  sparade svaret och ingenting registreras på nytt. Två samtidiga anrop med
+  samma UUID väntar på varandra i databasen. Ett UUID som redan använts av
+  en annan person avvisas. En avvisad operation sparas också; att försöka
+  igen ger ett nytt UUID.
+- **Företaget kommer alltid från inloggningen.** Telefonen skickar med
+  vilket företag kön gjordes i, men bara för att jämföra: stämmer det inte
+  med det inloggade företaget avvisas hela anropet (409) och kön väntar
+  kvar. Id:n från telefonen slås upp inom det inloggade företaget; ett annat
+  företags id ger "finns inte".
+- **Utan nät** finns sidan och dess filer i en egen service worker (scope
+  `/lager/skanna`) och referensdata (artiklarnas nummer, namn, enhet, koder
+  och standardplats, aktiva lagerställen, saldon och öppna inleveranser,
+  plocklistor och inventeringar) i telefonens IndexedDB, liksom kön av
+  operationer som väntar. Inga priser, kostnader, kunder eller personuppgifter
+  sparas i telefonen. Att starta en inventering kräver nät, eftersom
+  systemets antal sparas då.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -3174,6 +3208,8 @@ kontrollerat dem mot källan. Särskilt:
 - Jämförpris på etiketter (Prisinformationslagen 2004:347 och
   Konsumentverkets föreskrifter): vilka varor som kräver det och hur det ska
   visas. I dag är det ett val i etikettmallen, inget krav.
+- Skanna (ADR-040) ändrar inga regler: den använder lagrets åtgärder och
+  har inga egna juridiska värden.
 
 ### Kön till den öppna betan (1f)
 

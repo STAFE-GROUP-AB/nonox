@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-lager-skanna",
+      "datum": "2026-11-02T19:02:52+01:00",
+      "rubrik": "Lager: skanna med mobilen, även utan nät",
+      "beskrivning": "Under Lager → Skanna finns lagret i telefonen: ta emot, plocka i gångordning, flytta, inventera och slå upp varor med kameran, en Bluetooth-skanner eller en handskanner, och fel vara vid plock ger rött blink, ljud och vibration. Utan nät sparas allt i telefonen och skickas en gång när nätet kommer tillbaka, och det som inte går igenom visas med ett råd. Skanna visar aldrig priser.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-02-etiketter",
       "datum": "2026-11-02T19:01:54+01:00",
       "rubrik": "Lager: etiketter och etikettstudio",

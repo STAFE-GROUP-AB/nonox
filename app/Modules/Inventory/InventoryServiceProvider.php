@@ -6,6 +6,7 @@ namespace App\Modules\Inventory;
 
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\Inventory\Console\VerifyStockCommand;
+use App\Modules\Inventory\Http\ScannerController;
 use App\Modules\Inventory\Livewire\ArticlesPage;
 use App\Modules\Inventory\Livewire\CountsPage;
 use App\Modules\Inventory\Livewire\InventorySettingsForm;
@@ -19,6 +20,7 @@ use App\Modules\Inventory\Livewire\ReportsPage;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
+use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
@@ -27,7 +29,10 @@ use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Inventory\Policies\InventoryPolicy;
 use App\Modules\ModuleRegistry;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -48,7 +53,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'inventory');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class] as $model) {
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class, ScanOperation::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
 
@@ -69,5 +74,11 @@ class InventoryServiceProvider extends ServiceProvider
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.InventoryModule::KEY])
             ->group(__DIR__.'/routes/web.php');
+
+        // The scanning app sends its queue in batches of at most 100 operations.
+        RateLimiter::for('inventory-scanner', fn (Request $request): Limit => Limit::perMinute(120)->by('scanner:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
+        // The scanner's service worker holds no data and must load even when the session has ended (ADR-040).
+        Route::middleware('web')->get(ScannerController::SCOPE.'/serviceworker', [ScannerController::class, 'worker'])->name('inventory.scanner.worker');
     }
 }

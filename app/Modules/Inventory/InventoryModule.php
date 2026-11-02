@@ -105,6 +105,7 @@ final class InventoryModule implements IsNew, Module
                 'active' => 'inventory.*',
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Översikt'), 'route' => 'inventory.overview', 'active' => ['inventory.overview']],
+                    ['label' => __('Skanna'), 'route' => 'inventory.scanner', 'active' => ['inventory.scanner']],
                     ['label' => __('Artiklar'), 'route' => 'inventory.articles', 'active' => ['inventory.articles']],
                     ['label' => __('Lagerställen'), 'route' => 'inventory.locations', 'active' => ['inventory.locations']],
                     ['label' => __('Inleveranser'), 'route' => 'inventory.receipts', 'active' => ['inventory.receipts']],

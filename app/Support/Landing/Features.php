@@ -63,6 +63,7 @@ final class Features
         'planning_self_service' => ['name' => 'Mitt schema, öppna pass och byten på Min sida', 'status' => self::LIVE, 'readme' => 'Min sida visar mitt schema, lediga pass att ta, byten och kalenderlänk', 'module' => 'Planering'],
         'inventory' => ['name' => 'Lager med lagerställen och EAN', 'status' => self::LIVE, 'readme' => 'Lagerställen i lager, zoner, hyllor och fack', 'module' => 'Lager'],
         'inventory_flow' => ['name' => 'Inleveranser, plocklistor och inventering', 'status' => self::LIVE, 'readme' => 'Inventering per hylla eller hela lagret', 'module' => 'Lager'],
+        'inventory_scanner' => ['name' => 'Skanna lagret med mobilen, även utan nät', 'status' => self::LIVE, 'readme' => 'Skanna med mobilen: ta emot, plocka, flytta, inventera och slå upp varor', 'module' => 'Lager'],
         'inventory_valuation' => ['name' => 'Lagervärde vid bokslut', 'status' => self::LIVE, 'readme' => 'Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris', 'module' => 'Lager'],
         'inventory_images' => ['name' => 'Artikelbilder från mobilen och NONOX AI', 'status' => self::LIVE, 'readme' => 'Bilder på artiklarna, tagna direkt med mobilens kamera', 'module' => 'Lager'],
         'inventory_labels' => ['name' => 'Etiketter med streckkod och etikettstudio', 'status' => self::LIVE, 'readme' => 'Etiketter med pris, EAN-streckkod eller QR-kod', 'module' => 'Lager'],
