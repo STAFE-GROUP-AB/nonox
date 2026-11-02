@@ -25,7 +25,7 @@ De här punkterna bockas av av sig själva när bokföringen visar att de är kl
 | **Bank och kassa är avstämda** | Varje bank- och kassakonto med saldo eller rörelse är avstämt utan skillnad den sista dagen i året. |
 | **Avskrivningarna är bokförda** | Alla tillgångar i anläggningsregistret är avskrivna till och med årets sista månad. |
 | **Periodiseringarna är bokförda** | Alla periodiseringar är bokförda till och med årets sista månad. |
-| **Valutafordringar och valutaskulder är omvärderade** | Obetalda kund- och leverantörsfakturor i utländsk valuta är värderade till kursen den sista dagen, i steg 2. Gäller inte utan sådana fakturor eller med kontantmetoden. |
+| **Valutafordringar och valutaskulder är omvärderade** | Obetalda kund- och leverantörsfakturor i utländsk valuta är värderade till kursen den sista dagen, i steg 2. Gäller inte utan sådana fakturor eller med kontantmetoden. Punkten är en påminnelse och stoppar inte bokslutet, så att du kan bokföra omvärderingen för hand om Riksbanken saknar kurs. |
 | **Årets skatt är bokförd** | Skatten är bokförd i steg 2, eller noll angivet. Gäller inte enskild firma, handelsbolag och kommanditbolag. |
 | **Årets resultat är bokfört** | Årets resultat är bokat i steg 2. |
 
