@@ -1078,7 +1078,19 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   resultatdisposition; resultaträkning (kostnadsslagsindelad) och
   balansräkning med föregående år; noter om redovisningsprinciper,
   medelantal anställda och anläggningstillgångar; samt underskrifter.
-- Raderna bildas av BAS-kontointervall (`K2Schedule`). Årets resultat i
+- Raderna bildas av BAS-kontointervall (`K2Schedule`). Balansräkningen följer
+  K2:s uppställningsform (BFNAR 2016:10, ÅRL bilaga 1) med samma BAS-indelning
+  som INK2R: Förbättringsutgifter på annans fastighet (1120–1129) och
+  Pågående nyanläggningar och förskott (1180–1189, 1280–1289) är egna rader;
+  bland skulderna står Checkräkningskredit (2480–2489, långfristig 2330–2339),
+  Övriga skulder till kreditinstitut (2410–2419, långfristiga 2340–2359),
+  Förskott från kunder (2420–2429), Pågående arbete för annans räkning
+  (2430–2439), Fakturerad men ej upparbetad intäkt (2450–2459),
+  Leverantörsskulder (2440–2449), Skulder till koncern-, intresse- och
+  gemensamt styrda företag (2460–2469, 2860–2869), Skatteskulder och Övriga
+  skulder var för sig. Enligt granskning 2026-11-02, juristgranskning
+  återstår (BS-AUD-BOK-4, #88).
+- Årets resultat i
   balansräkningen är resultaträkningens resultat oavsett om det är bokat på
   2099; ett tidigare resultat som inte disponerats visas som balanserat
   resultat. Saknas föregående år i systemet används årets ingående balanser

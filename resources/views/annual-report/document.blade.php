@@ -107,7 +107,7 @@
 
     <div class="break">
         <h2>{{ __('Balansräkning') }}</h2>
-        @php($fixedNote = 3)
+        @php($fixedNotes = collect($fixedAssets)->pluck('key')->flip()->map(fn (int $index): int => 3 + $index))
         @php($assetsDone = false)
         <table>
             <thead><tr><th></th><th class="note">{{ __('Not') }}</th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th><th class="num">{{ $fiscalYear->start_date->subDay()->toDateString() }}</th></tr></thead>
@@ -123,7 +123,7 @@
                     @foreach($section['lines'] as $line)
                         <tr>
                             <td>{{ $line['label'] }}</td>
-                            <td class="note">@if(in_array($line['key'], ['intangible', 'buildings', 'machinery'], true) && $fixedAssets !== []){{ $fixedNote }}@endif</td>
+                            <td class="note">{{ $fixedNotes[$line['key']] ?? '' }}</td>
                             <td class="num">{{ $kr($line['amount']) }}</td>
                             <td class="num">{{ $kr($line['previous']) }}</td>
                         </tr>

@@ -40,7 +40,7 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
 - **Noter** om redovisningsprinciper, medelantal anställda och anläggningstillgångar.
 - **Underskrifter**.
 
-Raderna bildas av BAS-kontointervall. Årets resultat i balansräkningen är resultaträkningens resultat, även om det inte är bokat på 2099 än. Finns föregående år inte i NONOX används årets ingående balanser som jämförelse i balansräkningen.
+Raderna bildas av BAS-kontointervall och följer K2:s uppställning. Checkräkningskredit (konto 2480), förskott från kunder (2420) och leverantörsskulder (2440) står på egna rader, liksom förbättringsutgifter på annans fastighet (1120) och pågående nyanläggningar (1180, 1280). Indelningen är densamma som i inkomstdeklarationens räkenskapsschema (INK2R). Årets resultat i balansräkningen är resultaträkningens resultat, även om det inte är bokat på 2099 än. Finns föregående år inte i NONOX används årets ingående balanser som jämförelse i balansräkningen.
 
 ## Det här gör du utanför NONOX
 

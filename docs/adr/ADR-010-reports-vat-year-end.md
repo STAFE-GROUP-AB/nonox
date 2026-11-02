@@ -226,3 +226,24 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-2, -3,
 - TODO(legal-verify): changes in restricted equity after the balance date,
   transfers already made since the meeting (17 kap. 4 §), and the same limit
   for ideella föreningar and stiftelser.
+
+## K2 balance sheet lines (2026-11-02, #88)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-4, #88).
+
+- **Rule.** ÅRL 3 kap. 4 § and bilaga 1 (balance sheet): Skulder till
+  kreditinstitut, Förskott från kunder and Leverantörsskulder are separate
+  items. BFNAR 2016:10 (uppställningsform balansräkning, read 2026-11-02)
+  lists Checkräkningskredit and Övriga skulder till kreditinstitut as
+  separate posts under both long- and short-term liabilities, and
+  Förbättringsutgifter på annans fastighet and Pågående nyanläggningar och
+  förskott as separate tangible fixed asset posts.
+- **Decision.** `K2Schedule::BALANCE` lines are lists of BAS ranges and use
+  the same split as the INK2R codes in `Ink2Codes` (7360–7370, 7214–7217,
+  7350–7354), so the annual report and INK2R agree. Maskiner och inventarier
+  stays one line (BAS 1200–1279, 1290–1299); the obeskattade reserver and
+  avsättningar are still one line each.
+- TODO(legal-verify): whether Maskiner och andra tekniska anläggningar and
+  Inventarier, verktyg och installationer, and the kinds of obeskattade
+  reserver, must be shown separately for a K2 company; the BAS ranges
+  against the official BAS–K2 mapping.

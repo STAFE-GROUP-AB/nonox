@@ -132,17 +132,35 @@ it('AUD-BOK-3: refuses to book a dividend larger than the free equity in the dis
     expect($rows)->toEqualCanonicalizing([2099 => 6_352_000, 2098 => 5_000_000, 2898 => -11_352_000]);
 });
 
-it('AUD-BOK-4: puts 2420 Förskott från kunder and 2480 Checkräkningskredit on their own K2 balance sheet lines (ÅRL bilaga 3, BAS)', function () {
+it('AUD-BOK-4: puts 2420 Förskott från kunder and 2480 Checkräkningskredit on their own K2 balance sheet lines (BFNAR 2016:10 uppställningsform balansräkning, ÅRL bilaga 1 D, #88)', function () {
     Bookkeeping::post($this->owner, $this->company, 500_000, 1930, audBokFindingsAccount(2420)->number, '2026-12-01');
     Bookkeeping::post($this->owner, $this->company, 700_000, 1930, audBokFindingsAccount(2480)->number, '2026-12-02');
+    Bookkeeping::post($this->owner, $this->company, 300_000, 1930, audBokFindingsAccount(2440)->number, '2026-12-03');
     $short = collect(AnnualAccounts::for($this->year)->balanceSheet()['sections'])->firstWhere('key', 'short_term');
     $lines = collect($short['lines'])->keyBy('key');
 
     // 5 000 is an advance from customers, not a debt to a credit institution;
-    // 7 000 is an overdraft at a bank, not a debt to a supplier.
-    expect($lines['credit_institutions']['amount'] ?? 0)->toBe(700_000)
-        ->and($lines['trade_payables']['amount'] ?? 0)->toBe(0);
-})->todo('AUD-BOK-4: K2Schedule puts 2400–2439 under Skulder till kreditinstitut and 2440–2499 under Leverantörsskulder');
+    // 7 000 is an overdraft at a bank (K2: Checkräkningskredit), not a debt to
+    // a supplier; only 3 000 on 2440 is a trade payable. Sum 15 000.
+    expect($lines['overdraft']['amount'] ?? 0)->toBe(700_000)
+        ->and($lines['customer_advances']['amount'] ?? 0)->toBe(500_000)
+        ->and($lines['trade_payables']['amount'] ?? 0)->toBe(300_000)
+        ->and($lines->has('credit_institutions'))->toBeFalse()
+        ->and($short['amount'])->toBe(1_500_000);
+});
+
+it('#88: puts 1120 Förbättringsutgifter på annans fastighet and 1280 Pågående nyanläggningar on their own K2 lines (BFNAR 2016:10 uppställningsform balansräkning, ÅRL bilaga 1 A II)', function () {
+    Bookkeeping::post($this->owner, $this->company, 200_000, audBokFindingsAccount(1120)->number, 1930, '2026-12-01');
+    Bookkeeping::post($this->owner, $this->company, 900_000, audBokFindingsAccount(1280)->number, 1930, '2026-12-02');
+    Bookkeeping::post($this->owner, $this->company, 400_000, audBokFindingsAccount(1220)->number, 1930, '2026-12-03');
+    $fixed = collect(collect(AnnualAccounts::for($this->year)->balanceSheet()['sections'])->firstWhere('key', 'fixed')['lines'])->keyBy('key');
+
+    // 2 000 + 9 000 + 4 000 = 15 000 of fixed assets, on three lines.
+    expect($fixed['improvements']['amount'])->toBe(200_000)
+        ->and($fixed['construction_in_progress']['amount'])->toBe(900_000)
+        ->and($fixed['machinery']['amount'])->toBe(400_000)
+        ->and($fixed->sum('amount'))->toBe(1_500_000);
+});
 
 it('AUD-BOK-5: specifies every change in equity, the dividend included, in the förvaltningsberättelse (ÅRL 6 kap. 2 § andra stycket, BFNAR 2016:10 kap. 5)', function () {
     $next = audBokFindingsClose();

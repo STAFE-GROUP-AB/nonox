@@ -222,18 +222,18 @@ final class AnnualAccounts
      * The note on fixed assets per balance sheet line: acquisition values
      * (accounts not ending in 9) and accumulated depreciation (ending in 9).
      *
-     * @return list<array{label: string, acquisition: array{opening: int, additions: int, disposals: int, closing: int}, depreciation: array{opening: int, disposals: int, charge: int, closing: int}, book_value: int}>
+     * @return list<array{key: string, label: string, acquisition: array{opening: int, additions: int, disposals: int, closing: int}, depreciation: array{opening: int, disposals: int, charge: int, closing: int}, book_value: int}>
      */
     public function fixedAssetNotes(): array
     {
         $notes = [];
 
-        foreach (array_filter(K2Schedule::BALANCE, fn (array $line): bool => in_array($line['key'], ['intangible', 'buildings', 'machinery'], true)) as $line) {
+        foreach (array_filter(K2Schedule::BALANCE, fn (array $line): bool => in_array($line['key'], K2Schedule::FIXED_ASSET_LINES, true)) as $line) {
             $cost = ['opening' => 0, 'additions' => 0, 'disposals' => 0, 'closing' => 0];
             $depreciation = ['opening' => 0, 'disposals' => 0, 'charge' => 0, 'closing' => 0];
 
             foreach ($this->current as $number => $amounts) {
-                if ($number < $line['from'] || $number > $line['to']) {
+                if (! self::inRanges($number, $line['ranges'])) {
                     continue;
                 }
 
@@ -255,7 +255,7 @@ final class AnnualAccounts
             }
 
             if ($cost['opening'] !== 0 || $cost['closing'] !== 0 || $cost['additions'] !== 0) {
-                $notes[] = ['label' => __($line['label']), 'acquisition' => $cost, 'depreciation' => $depreciation, 'book_value' => $cost['closing'] - $depreciation['closing']];
+                $notes[] = ['key' => $line['key'], 'label' => __($line['label']), 'acquisition' => $cost, 'depreciation' => $depreciation, 'book_value' => $cost['closing'] - $depreciation['closing']];
             }
         }
 
@@ -276,7 +276,7 @@ final class AnnualAccounts
 
         foreach (K2Schedule::BALANCE as $line) {
             $sign = in_array($line['section'], K2Schedule::ASSET_SECTIONS, true) ? 1 : -1;
-            $columns[$line['key']] = $sign * $at($line['from'], $line['to']);
+            $columns[$line['key']] = $sign * array_sum(array_map(fn (array $range): int => $at($range[0], $range[1]), $line['ranges']));
         }
 
         // 2099 together with what the income statement has not yet moved there.
@@ -296,6 +296,18 @@ final class AnnualAccounts
         if ($amount !== 0 || $previous !== 0) {
             $lines[] = ['key' => $key, 'label' => $label, 'amount' => $amount, 'previous' => $previous];
         }
+    }
+
+    /** @param  list<array{0: int, 1: int}>  $ranges */
+    private static function inRanges(int $number, array $ranges): bool
+    {
+        foreach ($ranges as [$from, $to]) {
+            if ($number >= $from && $number <= $to) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Debit minus credit for the year on the accounts in the range. */
