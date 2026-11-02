@@ -14,6 +14,7 @@ use App\Modules\Payroll\Domain\Engine\Steps\BaseSalary;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
+use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\Expense;
@@ -27,6 +28,7 @@ use App\Modules\Payroll\Models\SalaryChange;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
+use App\Modules\Payroll\Support\CompTimeLedger;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -94,6 +96,18 @@ final class ContextBuilder
             pension: $this->pension($employment),
             vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern, $run->id),
         );
+
+        $compTime = CompTimeEntry::query()
+            ->where('employee_id', $employee->id)
+            ->whereIn('kind', [CompTimeEntry::PAID_OUT, CompTimeEntry::TAKEN])
+            ->whereDate('date', '>=', $periodStart->max($employment->start_date)->toDateString())
+            ->whereDate('date', '<=', ($employment->end_date === null ? $periodEnd : $periodEnd->min($employment->end_date))->toDateString())
+            ->get();
+
+        if ($compTime->isNotEmpty()) {
+            $code = $payCodes->first(fn (PayCode $code): bool => $code->code === CompTimeLedger::PAY_CODE);
+            $context = $context->withInputs([...$context->inputs, ...CompTimeLedger::payInputs($compTime, $context, $code)]);
+        }
 
         // Other modules that are on add their part, such as the collective agreement (ADR-033).
         return $this->extensions->extend($context, $run, $employment);

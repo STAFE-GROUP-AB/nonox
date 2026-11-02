@@ -28,6 +28,11 @@ final class AgreementFileValidator
 
     public const array AGE_REFERENCES = ['PERIOD_END', 'MONTH_OF_BIRTHDAY', 'MONTH_AFTER_BIRTHDAY'];
 
+    public const array ROUNDING_KINDS = ['ob', 'overtime'];
+
+    /** UP_PER_STARTED_UNIT: a started unit counts as whole; DOWN_TO_WHOLE_UNIT: only whole units count. */
+    public const array ROUNDING_METHODS = ['UP_PER_STARTED_UNIT', 'DOWN_TO_WHOLE_UNIT'];
+
     /** @var list<string> */
     private array $problems = [];
 
@@ -112,7 +117,83 @@ final class AgreementFileValidator
             }
         }
 
+        $this->rounding((array) ($file['rounding'] ?? []));
+        $this->overtime((array) ($file['overtime'] ?? []), $codes);
+        $this->sickPay((array) ($file['sick_pay'] ?? []));
+
         return array_values(array_unique($this->problems));
+    }
+
+    /** @param  array<string, mixed>  $rounding */
+    private function rounding(array $rounding): void
+    {
+        foreach ($rounding as $kind => $rule) {
+            $rule = (array) $rule;
+            $this->source($rule, "rounding.{$kind}");
+
+            if (! in_array($kind, self::ROUNDING_KINDS, true) || ! is_int($rule['unit_minutes'] ?? null) || $rule['unit_minutes'] < 2 || $rule['unit_minutes'] > 60
+                || ! in_array($rule['method'] ?? null, self::ROUNDING_METHODS, true) || ($rule['per'] ?? null) !== 'SHIFT') {
+                $this->problems[] = __('Avrundningen :kind har fel form (unit_minutes 2–60, method :methods, per SHIFT).', ['kind' => (string) $kind, 'methods' => implode(' eller ', self::ROUNDING_METHODS)]);
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $overtime
+     * @param  list<string>  $codes
+     */
+    private function overtime(array $overtime, array $codes): void
+    {
+        if (! isset($overtime['comp_time'])) {
+            return;
+        }
+
+        $compTime = (array) $overtime['comp_time'];
+        $this->source($compTime, 'overtime.comp_time');
+
+        foreach ((array) ($compTime['hours_per_hour'] ?? []) as $code => $factor) {
+            if (! in_array((string) $code, $codes, true) || ! self::isPositiveDecimal($factor)) {
+                $this->problems[] = __('Komptiden för :code pekar på en kod som inte finns eller har en faktor i fel form.', ['code' => (string) $code]);
+            }
+        }
+    }
+
+    /** @param  array<string, mixed>  $sickPay */
+    private function sickPay(array $sickPay): void
+    {
+        if ($sickPay === []) {
+            return;
+        }
+
+        $this->source($sickPay, 'sick_pay');
+
+        if (isset($sickPay['includes_ob']) && ! is_bool($sickPay['includes_ob'])) {
+            $this->problems[] = __('sick_pay.includes_ob måste vara true eller false.');
+        }
+
+        if (! isset($sickPay['after_employer_period'])) {
+            return;
+        }
+
+        $after = (array) $sickPay['after_employer_period'];
+        $this->source($after, 'sick_pay.after_employer_period');
+        $deduction = (array) ($after['deduction'] ?? []);
+        $durations = (array) ($after['duration'] ?? []);
+        $valid = is_int($after['from_day'] ?? null) && $after['from_day'] >= 15
+            && ($deduction['per'] ?? null) === 'CALENDAR_DAY'
+            && is_int($deduction['below_bp'] ?? null) && is_int($deduction['above_bp'] ?? null) && is_int($deduction['days_per_year'] ?? null) && $deduction['days_per_year'] > 0
+            && self::isPositiveDecimal($deduction['threshold_prisbasbelopp'] ?? null)
+            && $durations !== [];
+
+        foreach ($durations as $duration) {
+            $duration = (array) $duration;
+            $valid = $valid && is_int($duration['to_day'] ?? null) && $duration['to_day'] >= ($after['from_day'] ?? 15)
+                && (! isset($duration['min_employment_months']) || is_int($duration['min_employment_months']));
+        }
+
+        if (! $valid) {
+            $this->problems[] = __('sick_pay.after_employer_period har fel form (from_day, deduction med per CALENDAR_DAY, days_per_year, below_bp, above_bp, threshold_prisbasbelopp, och duration med to_day).');
+        }
     }
 
     /** @param  array<string, mixed>  $workingTime */
@@ -130,6 +211,15 @@ final class AgreementFileValidator
 
             if (! self::isPositiveDecimal($divisor['monthly_to_hourly'] ?? null)) {
                 $this->problems[] = __('Delaren för timlön måste vara ett positivt tal skrivet som text.');
+            }
+        }
+
+        if (isset($workingTime['calculation_period'])) {
+            $period = (array) $workingTime['calculation_period'];
+            $this->source($period, 'working_time.calculation_period');
+
+            if (! is_int($period['max_weeks'] ?? null) || $period['max_weeks'] < 1 || $period['max_weeks'] > 53) {
+                $this->problems[] = __('Beräkningsperioden måste ha max_weeks som ett heltal 1–53.');
             }
         }
     }

@@ -13,6 +13,7 @@ use App\Modules\Agreements\Livewire\AgreementsPage;
 use App\Modules\Agreements\Livewire\AgreementsSettingsForm;
 use App\Modules\Agreements\Livewire\AgreementVersionsPage;
 use App\Modules\Agreements\Support\AgreementContextExtension;
+use App\Modules\Agreements\Support\AgreementSickPayExtension;
 use App\Modules\ModuleRegistry;
 use App\Modules\Payroll\Support\Run\PayrollExtensions;
 use Illuminate\Support\Facades\Route;
@@ -31,9 +32,12 @@ class AgreementsServiceProvider extends ServiceProvider
     {
         $this->app->make(ModuleRegistry::class)->register(new AgreementsModule);
         $this->app->singleton(AgreementContextExtension::class);
+        $this->app->singleton(AgreementSickPayExtension::class);
 
         $this->callAfterResolving(PayrollExtensions::class, function (PayrollExtensions $extensions): void {
             $extensions->addContextExtension(fn (): AgreementContextExtension => $this->app->make(AgreementContextExtension::class));
+            // After the agreement is in the context: sick pay with the schedule's OB and the agreement's long-sick deduction (A8).
+            $extensions->addContextExtension(fn (): AgreementSickPayExtension => $this->app->make(AgreementSickPayExtension::class));
             $extensions->addStep(fn (): AgreementChecksStep => new AgreementChecksStep);
         });
     }

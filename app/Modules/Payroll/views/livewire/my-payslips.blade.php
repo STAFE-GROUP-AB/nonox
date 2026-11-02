@@ -14,6 +14,14 @@
         </x-ui.card>
     @endif
 
+    @if($compTime !== null)
+        <x-ui.card>
+            <p class="text-xs font-medium uppercase tracking-wide text-gray-500">{{ __('Komptid') }}</p>
+            <p class="mt-1 text-3xl font-semibold tabular-nums text-gray-900">{{ __(':hours tim', ['hours' => App\Modules\Payroll\Support\CompTimeLedger::hours($compTime)]) }}</p>
+            <p class="text-sm text-gray-600">{{ __('Övertid eller mertid som du har sparat som ledighet. Prata med din chef om när du vill ta ut den.') }}</p>
+        </x-ui.card>
+    @endif
+
 <x-ui.card>
     @if($employee === null)
         <x-ui.empty-state :title="__('Ditt konto är inte kopplat till någon anställd')">{{ __('Be din arbetsgivare koppla din inloggning till dig under Lön → Anställda. Sedan visas dina lönebesked här.') }}</x-ui.empty-state>

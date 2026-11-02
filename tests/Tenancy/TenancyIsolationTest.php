@@ -87,6 +87,7 @@ use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Benefit;
 use App\Modules\Payroll\Models\CollectiveAgreement;
+use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\Expense;
@@ -216,6 +217,7 @@ const COMPANY_SCOPED_MODELS = [
     Benefit::class => 'payrollBenefitAttributes',
     Expense::class => 'payrollExpenseAttributes',
     TimeReport::class => 'payrollTimeReportAttributes',
+    CompTimeEntry::class => 'payrollCompTimeEntryAttributes',
     PayrollRuleVerification::class => 'payrollRuleVerificationAttributes',
     AgreementRuleVerification::class => 'agreementRuleVerificationAttributes',
     AgreementDocument::class => 'agreementDocumentAttributes',
@@ -359,6 +361,11 @@ function planningAvailabilityAttributes(): array
 function planningShiftRequestAttributes(): array
 {
     return ['kind' => 'CLAIM', 'shift_id' => PlanningShift::create(planningShiftAttributes())->id, 'requested_by' => Employee::create(payrollEmployeeAttributes())->id, 'status' => 'PENDING'];
+}
+
+function payrollCompTimeEntryAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-11-10', 'kind' => 'ADJUSTMENT', 'minutes' => 90, 'note' => 'Hemlig anteckning'];
 }
 
 function planningAttestationAttributes(): array

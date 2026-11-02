@@ -1,5 +1,5 @@
 ---
-beskrivning: En ärlig lista över vad NONOX Avtal ännu inte räknar – OB från klockslag, komptid, avtalets semester- och sjuklöneregler, pension, försäkringar och lokala avtal.
+beskrivning: En ärlig lista över vad NONOX Avtal ännu inte räknar – övertid för timanställda, delar av sjuklönereglerna, semester, pension, försäkringar och lokala avtal.
 ordning: 70
 roller: [owner, admin, accountant, payroll_admin]
 modul: agreements
@@ -12,11 +12,12 @@ NONOX Avtal byggs steg för steg. Den här sidan säger rakt ut vad modulen inte
 
 ## Inte byggt ännu
 
-- **OB räknad från arbetspassens klockslag.** Timmarna för OB, natt-OB och storhelg måste redan vara uppdelade, inmatade per typ eller från en fil från schemasystemet. NONOX delar inte upp ett pass med start- och sluttid i avtalets tidsfönster, och avrundar inte OB-tid enligt avtalet.
-- **Övertid och mertid mot schemat.** NONOX räknar inte ut vilka timmar som är övertid eller mertid; du anger dem.
-- **Komptid.** Valet **Tas ut som komptid** sparas på anställningen, men det finns inget komptidssaldo.
+- **OB och övertid utan Planering.** OB från arbetspassens klockslag, övertid och mertid mot schemat, komptid och sjuklön med OB räknas när modulen [Planering](/manual/planering) är på. Utan den måste timmarna för OB och övertid redan vara uppdelade, inmatade per typ eller från en fil från schemasystemet.
+- **Övertidstillägg för timanställda.** Tid utöver schemat betalas som timlön. Ger avtalet ett övertids- eller mertidstillägg lägger du in det själv.
+- **Flera slags övertid ur schemat.** Planering skickar periodens övertid på en löneart. Övertid i anslutning till ordinarie tid och annan övertid, minst tre timmar och "förlängning högst tio minuter" skiljs inte åt.
+- **Komptid vid anställningens slut.** Outtagen komptid betalas inte ut av sig själv; registrera en utbetalning under **Lön → Komptid**. Detaljhandelns och Lagers komptidsfaktorer finns inte som data än.
 - **Avtalets semesterregler.** Semester räknas enligt semesterlagen och era löneinställningar. Ger avtalet högre semestertillägg eller en högre procentsats, lägg in skillnaden själv som en rad i lönekörningen.
-- **Avtalets sjuklöneregler.** Sjuklön räknas enligt sjuklönelagen. Sjuklön med OB, och avtalens regler för sjuklön efter arbetsgivarperioden, räknas inte.
+- **Delar av avtalets sjuklöneregler.** Sjuklön med OB enligt schemat och tjänstemännens avdrag från dag 15 räknas, se [Sjuklön med OB enligt schemat](/manual/avtal/sjuklon-med-ob). Karens räknad i timmar enligt avtalet, avtalens egna timvärden i sjuklönen och taket 105 dagar per tolv månader räknas inte.
 - **Tjänstepension och avtalsförsäkringar per avtal.** Pensionen räknas med den pensionsplan du lägger upp under **Lön → Anställda**, inte automatiskt från avtalet. Avtalsförsäkringar och rapporter till försäkringsbolagen görs inte.
 - **Provision, fasta tillägg och kostavdrag** enligt avtalet.
 - **Lokala avtal.** Ett lokalt avtal som avviker från branschavtalet, till exempel andra OB-tider, kan inte läggas in. NONOX AI läser inte lokala avtal.

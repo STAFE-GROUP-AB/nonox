@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Planning\Domain;
 
 use App\Domain\Calendar\SwedishHolidays;
+use App\Modules\Agreements\Domain\TimeRounding;
 
 /**
  * The payroll basis of an attested day (PLANNING_MODULE.md §5, §8): minutes
@@ -100,9 +101,13 @@ final class PayrollBasis
      * several weeks, a schedule period), count absence and public holidays
      * as worked or reduce the weekly time for them, and set their own
      * overtime kinds (in connection or not, first hours or later). None of
-     * that is applied here.
+     * that is applied here, except a calculation period of several weeks
+     * (the period's contracted and full-time minutes are passed in) and the
+     * agreement's rounding of overtime, applied to the period's total.
+     *
+     * @param  ?array{unit_minutes: int, method: string, source: string}  $rounding
      */
-    public static function week(int $workedMinutes, int $contractedMinutes, int $fullTimeMinutes, ?string $overtimeCode, ?string $extraTimeCode, bool $overtimeIncluded): WeekBasis
+    public static function week(int $workedMinutes, int $contractedMinutes, int $fullTimeMinutes, ?string $overtimeCode, ?string $extraTimeCode, bool $overtimeIncluded, ?array $rounding = null, int $weeks = 1): WeekBasis
     {
         $excess = $workedMinutes - $contractedMinutes;
 
@@ -110,11 +115,17 @@ final class PayrollBasis
             return new WeekBasis(0, 0, [], []);
         }
 
-        $extra = max(0, min($excess, $fullTimeMinutes - $contractedMinutes));
-        $overtime = $excess - $extra;
+        $extra = TimeRounding::round(max(0, min($excess, $fullTimeMinutes - $contractedMinutes)), $rounding);
+        $overtime = TimeRounding::round($excess - max(0, min($excess, $fullTimeMinutes - $contractedMinutes)), $rounding);
+        $excess = $extra + $overtime;
+        $period = $weeks > 1 ? __('Perioden (:weeks veckor)', ['weeks' => $weeks]) : __('Veckan');
+
+        if ($excess <= 0) {
+            return new WeekBasis(0, 0, [], []);
+        }
 
         if ($overtimeIncluded) {
-            return new WeekBasis($overtime, $extra, [], [Deviation::info(Deviation::EXTRA_TIME, __('Veckan: :minutes min utöver veckoarbetstiden. Övertid ingår i lönen enligt anställningen.', ['minutes' => $excess]))]);
+            return new WeekBasis($overtime, $extra, [], [Deviation::info(Deviation::EXTRA_TIME, __(':period: :minutes min utöver veckoarbetstiden. Övertid ingår i lönen enligt anställningen.', ['period' => $period, 'minutes' => $excess]))]);
         }
 
         $minutes = [];
@@ -127,16 +138,16 @@ final class PayrollBasis
 
             if ($code === null) {
                 $deviations[] = new Deviation(Deviation::EXTRA_TIME, $kind === 'mertid'
-                    ? __('Veckan: :minutes min mertid utöver veckoarbetstiden. Ingen löneart för mertid är vald under Planering → Inställningar; lägg in tiden i lönekörningen.', ['minutes' => $value])
-                    : __('Veckan: :minutes min övertid utöver veckoarbetstiden. Ingen löneart för övertid är vald under Planering → Inställningar; lägg in tiden i lönekörningen.', ['minutes' => $value]));
+                    ? __(':period: :minutes min mertid utöver veckoarbetstiden. Ingen löneart för mertid är vald under Planering → Inställningar; ta den som komptid eller lägg in tiden i lönekörningen.', ['period' => $period, 'minutes' => $value])
+                    : __(':period: :minutes min övertid utöver veckoarbetstiden. Ingen löneart för övertid är vald under Planering → Inställningar; ta den som komptid eller lägg in tiden i lönekörningen.', ['period' => $period, 'minutes' => $value]));
 
                 continue;
             }
 
             $minutes[$code] = ($minutes[$code] ?? 0) + $value;
             $deviations[] = new Deviation(Deviation::EXTRA_TIME, $kind === 'mertid'
-                ? __('Veckan: :minutes min mertid skickas med den här dagen (:code).', ['minutes' => $value, 'code' => $code])
-                : __('Veckan: :minutes min övertid skickas med den här dagen (:code).', ['minutes' => $value, 'code' => $code]));
+                ? __(':period: :minutes min mertid skickas med den här dagen (:code).', ['period' => $period, 'minutes' => $value, 'code' => $code])
+                : __(':period: :minutes min övertid skickas med den här dagen (:code).', ['period' => $period, 'minutes' => $value, 'code' => $code]));
         }
 
         ksort($minutes);
@@ -168,6 +179,8 @@ final class PayrollBasis
         $ob = [];
         $deviations = [];
         $withBreak = false;
+        $rounding = $terms->agreement->rounding('OB');
+        $rounded = false;
 
         foreach ($day->actual as $interval) {
             if (! $interval->isComplete() || $interval->start === null || $interval->end === null) {
@@ -177,7 +190,9 @@ final class PayrollBasis
             $split = ObSplitter::split($terms->agreement, $interval->start, $interval->end, $terms->hourlyRateOre, $terms->monthlySalaryOre);
 
             foreach ($split->minutes as $code => $value) {
-                $ob[$code] = ($ob[$code] ?? 0) + $value;
+                $paid = TimeRounding::round($value, $rounding);
+                $rounded = $rounded || $paid !== $value;
+                $ob[$code] = ($ob[$code] ?? 0) + $paid;
             }
 
             foreach ($split->notes as $note) {
@@ -190,6 +205,12 @@ final class PayrollBasis
         if ($withBreak) {
             // The ledger has no break times, so OB is counted over the whole interval, break included.
             $deviations[] = Deviation::info(Deviation::OB_WITH_BREAK, __('OB räknas på hela passet, rasten inräknad, eftersom rastens placering inte är känd. Låg rasten på OB-tid: dela upp tiden under Ändra.'));
+        }
+
+        if ($rounded && $rounding !== null) {
+            $deviations[] = Deviation::info(Deviation::OB_NOTE, $rounding['method'] === 'UP_PER_STARTED_UNIT'
+                ? __('OB är avrundad enligt avtalet: varje påbörjad period om :unit min räknas hel, per pass (:source).', ['unit' => $rounding['unit_minutes'], 'source' => $rounding['source']])
+                : __('OB är avrundad enligt avtalet: bara hela perioder om :unit min räknas, per pass (:source).', ['unit' => $rounding['unit_minutes'], 'source' => $rounding['source']]));
         }
 
         ksort($ob);

@@ -19,6 +19,7 @@
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
+        "calculation_period": { "max_weeks": 26, "source": "VU#§ 10 s. 20" },
         "source": "VU#§ 10 s. 20",
         "hourly_divisor": {
             "monthly_to_hourly": "173",
@@ -116,6 +117,54 @@
             ],
             "source": "VU#§ 11 s. 24–27"
         }
+    },
+    "rounding": {
+        "ob": {
+            "unit_minutes": 30,
+            "method": "UP_PER_STARTED_UNIT",
+            "per": "SHIFT",
+            "source": "VU#§ 21 s. 41"
+        },
+        "overtime": {
+            "unit_minutes": 30,
+            "method": "UP_PER_STARTED_UNIT",
+            "per": "SHIFT",
+            "source": "VU#§ 11 s. 24–27"
+        }
+    },
+    "overtime": {
+        "comp_time": {
+            "hours_per_hour": {
+                "VU_OT_94": "1.5",
+                "VU_OT_72": "2"
+            },
+            "requires_agreement": true,
+            "source": "VU#§ 11 s. 24–27"
+        }
+    },
+    "sick_pay": {
+        "includes_ob": true,
+        "after_employer_period": {
+            "from_day": 15,
+            "deduction": {
+                "per": "CALENDAR_DAY",
+                "days_per_year": 365,
+                "threshold_prisbasbelopp": "10",
+                "below_bp": 9000,
+                "above_bp": 1000
+            },
+            "duration": [
+                {
+                    "min_employment_months": 12,
+                    "to_day": 90
+                },
+                {
+                    "to_day": 45
+                }
+            ],
+            "source": "VU#§ 23 s. 46–48"
+        },
+        "source": "VU#§ 23.3 s. 45"
     },
     "notes": [
         "Viss nattpersonal har timlön och timavdrag 1/164 av månadslönen i stället för 1/173 (VU § 20 s. 40); ingen egen grupp här ännu.",

@@ -20,6 +20,7 @@
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
+        "calculation_period": { "max_weeks": 13, "source": "HT#bilaga 1 § 2.1–2.2 s. 60" },
         "source": "HT#bilaga 1 § 2.1–2.2 s. 60"
     },
     "groups": [
@@ -151,6 +152,48 @@
             ],
             "source": "HT#§ 4"
         }
+    },
+    "rounding": {
+        "overtime": {
+            "unit_minutes": 30,
+            "method": "DOWN_TO_WHOLE_UNIT",
+            "per": "SHIFT",
+            "source": "HT#§ 4.2.3"
+        }
+    },
+    "overtime": {
+        "comp_time": {
+            "hours_per_hour": {
+                "HT_OT_94": "1.5",
+                "HT_OT_72": "2"
+            },
+            "requires_agreement": true,
+            "source": "HT#§ 4"
+        }
+    },
+    "sick_pay": {
+        "includes_ob": true,
+        "after_employer_period": {
+            "from_day": 15,
+            "deduction": {
+                "per": "CALENDAR_DAY",
+                "days_per_year": 365,
+                "threshold_prisbasbelopp": "10",
+                "below_bp": 9000,
+                "above_bp": 1000
+            },
+            "duration": [
+                {
+                    "min_employment_months": 12,
+                    "to_day": 90
+                },
+                {
+                    "to_day": 45
+                }
+            ],
+            "source": "HT#§ 10.3.6–10.3.7 s. 34–36"
+        },
+        "source": "HT#§ 10.3.2 s. 32–33"
     },
     "notes": [
         "Minimilönerna gäller bara Unionens löneavtal (HT bilaga 3 och 4). Akademikerförbundens löneavtal (bilaga 6) har inga minimilöner; ingen grupp för dem.",

@@ -13,6 +13,7 @@ use App\Modules\Payroll\Http\Middleware\SendEmployeesToPortal;
 use App\Modules\Payroll\Listeners\LinkEmployeeLogin;
 use App\Modules\Payroll\Livewire\AbsenceRequestList;
 use App\Modules\Payroll\Livewire\AgiPage;
+use App\Modules\Payroll\Livewire\CompTimePage;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\MyAbsence;
 use App\Modules\Payroll\Livewire\MyExpenses;
@@ -105,6 +106,7 @@ class PayrollServiceProvider extends ServiceProvider
         Livewire::component('payroll.run-page', PayrollRunPage::class);
         Livewire::component('payroll.my-payslips', MyPayslips::class);
         Livewire::component('payroll.vacation-liability', VacationLiabilityReport::class);
+        Livewire::component('payroll.comp-time', CompTimePage::class);
         Livewire::component('payroll.my-absence', MyAbsence::class);
         Livewire::component('payroll.my-expenses', MyExpenses::class);
         Livewire::component('payroll.vacation-year', VacationYearPage::class);

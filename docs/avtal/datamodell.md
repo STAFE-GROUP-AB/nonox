@@ -319,3 +319,77 @@ avtalsfilen (upphovsrätt, ADR-033 fråga 1); granskaren slår upp sidan.
   sjuke skulle ha fått enligt schemat ingår i underlaget.
 - Minimilönekontrollen jämför anställningens lön med raden för grupp,
   ålder och erfarenhet och ger varning eller stopp enligt `check`.
+
+## 7. A5–A8 som byggt (2026-11-02)
+
+Planeringsmodulen (ADR-037) är passen och passdelningen: `work_shifts` och
+`ShiftSplitter` i §1 och §5 byggs **inte**. Passen är `planning_shifts`,
+attesterad tid går som tidrapporter till lönen och `Planning\Domain\ObSplitter`
+delar tiden i avtalets `ob_windows` och `day_types`. Nya, frivilliga nycklar
+i `nonox.agreement/1` (alla med `source`, alla overifierade tills en person
+har kontrollerat versionen):
+
+```jsonc
+"working_time": {
+  // … som förut, plus:
+  "calculation_period": { "max_weeks": 26, "source": "GR#§ 9 s. 13" }
+},
+"rounding": {
+  // OB per pass och övertid på periodens summa. method: UP_PER_STARTED_UNIT
+  // ("varje påbörjad halvtimme") eller DOWN_TO_WHOLE_UNIT ("endast fulla
+  // halvtimmar"). per: bara SHIFT.
+  "ob":       { "unit_minutes": 30, "method": "UP_PER_STARTED_UNIT", "per": "SHIFT", "source": "GR#§ 13 s. 21" },
+  "overtime": { "unit_minutes": 30, "method": "UP_PER_STARTED_UNIT", "per": "SHIFT", "source": "GR#§§ 11–12 s. 19" }
+},
+"overtime": {
+  "comp_time": {
+    // timmar ledighet per övertidstimme, per avtalskod (kind OVERTIME)
+    "hours_per_hour": { "GR_OT_A": "1.5", "GR_OT_B": "1.5", "GR_OT_C": "2" },
+    "requires_agreement": true,          // beskrivande: komptid kräver överenskommelse
+    "source": "GR#§§ 11–12 s. 18–20"
+  }
+},
+"sick_pay": {
+  "includes_ob": true,                   // förlorad OB på schemalagda pass ingår i sjuklönen
+  "after_employer_period": {             // tjänstemannaavtalen: avdrag per kalenderdag efter dag 14
+    "from_day": 15,
+    "deduction": {
+      "per": "CALENDAR_DAY",
+      "days_per_year": 365,
+      "threshold_prisbasbelopp": "10",   // gränsen i prisbasbelopp per år (lönereglernas prisbasbelopp)
+      "below_bp": 9000,                  // andel av årslönen upp till gränsen, per kalenderdag / days_per_year
+      "above_bp": 1000                   // andel av årslönen över gränsen
+    },
+    "duration": [                        // första raden som anställningstiden uppfyller gäller
+      { "min_employment_months": 12, "to_day": 90 },
+      { "to_day": 45 }
+    ],
+    "source": "VU#§ 23 s. 46–48"
+  },
+  "source": "VU#§ 23.3 s. 45"
+}
+```
+
+`AgreementFileValidator` kontrollerar formen och källorna, `AgreementRules`
+läser dem (`rounding()`, `compTime()`, `calculationPeriod()`, `sickPay()`,
+`obInSickPay()`). Data finns i Gröna Riks (båda varianterna),
+Visita–Unionen, Handels tjänstemän, Detaljhandeln och Lager (de två
+sista bara `calculation_period` och `sick_pay.includes_ob`).
+
+Utanför avtalsfilen:
+
+- **Komptid** är en egen tabell i Lön, `comp_time_entries` (per företag):
+  `employee_id`, `date`, `kind` EARNED | TAKEN | PAID_OUT | ADJUSTMENT,
+  `minutes` (+ för EARNED, − för TAKEN och PAID_OUT, ± för ADJUSTMENT),
+  `worked_minutes`, `factor`, `pay_code`, `source_type`/`source_id`
+  (attesten i Planering), `note` (krypterad). Saldot är summan. Löneart
+  `KOMPTID` betalar utbetalningar och timavlönades uttag.
+- **Beräkningsperiod** och **egen komptidsfaktor** är Planerings inställningar
+  (`overtime_period_weeks`, `overtime_period_start`, `comp_time_factor`).
+  Avtalets `calculation_period.max_weeks` ger en varning när perioden är
+  längre.
+- **Sjuklön**: lönemotorn får `SickPayTerms` (genomsnittlig OB per vecka,
+  genomsnittlig veckoarbetstid vid oregelbunden tid, `LongSickTerms`) och per
+  sjukdag `AbsenceInput::lostSupplementsOre`. Det är generiska fält; det är
+  `AgreementSickPayExtension` i Avtal som fyller dem från publicerade pass och
+  avtalet.

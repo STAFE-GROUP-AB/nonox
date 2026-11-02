@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\Planning;
 
+use Carbon\CarbonImmutable;
+
 /**
  * Planering's settings per company (PLANNING_MODULE.md §3), kept in
  * company_modules.settings. The working-time and minors' rules are data with
@@ -15,6 +17,8 @@ final class PlanningSettings
     public const array VIEWS = ['week', 'day'];
 
     public const array TIME_STEPS = [5, 10, 15, 30, 60];
+
+    public const string DEFAULT_PERIOD_ANCHOR = '2024-01-01';
 
     /** @var array<string, mixed> */
     public const array DEFAULTS = [
@@ -36,6 +40,12 @@ final class PlanningSettings
         // Pay codes for monthly-paid staff's time beyond the plan; null = not sent, shown as a deviation. TODO(legal-verify): see PayrollBasis.
         'overtime_pay_code' => null,
         'extra_time_pay_code' => null,
+        // Overtime and mertid of monthly-paid staff are measured over a calculation period of this many weeks (a rotating schedule's cycle), against its average. 1 = per calendar week.
+        'overtime_period_weeks' => 1,
+        // The Monday the first calculation period starts; null = 2024-01-01 (a Monday), so periods are stable.
+        'overtime_period_start' => null,
+        // Hours of comp time per hour of overtime or mertid when the agreement gives no factor; the company's own rule, not a legal value.
+        'comp_time_factor' => '1',
         // Sales for labour cost %: posted rows on these revenue accounts, per day.
         'sales_account_from' => 3000,
         'sales_account_to' => 3799,
@@ -99,6 +109,7 @@ final class PlanningSettings
         'publish_ahead_days' => [0, 90],
         'attest_tolerance_minutes' => [0, 60],
         'check_in_rounding_minutes' => [0, 30],
+        'overtime_period_weeks' => [1, 52],
         'sales_account_from' => [1000, 9999],
         'sales_account_to' => [1000, 9999],
     ];
@@ -139,6 +150,48 @@ final class PlanningSettings
     public static function bool(array $settings, string $key): bool
     {
         return (bool) ($settings[$key] ?? self::DEFAULTS[$key]);
+    }
+
+    /**
+     * The first day (a Monday) of the calculation period a day falls in.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public static function periodStart(array $settings, CarbonImmutable $day): CarbonImmutable
+    {
+        $weeks = max(1, self::int($settings, 'overtime_period_weeks'));
+        $monday = CarbonImmutable::create($day->year, $day->month, $day->day, 0, 0, 0, $day->getTimezone())?->startOfWeek(CarbonImmutable::MONDAY) ?? $day;
+
+        if ($weeks === 1) {
+            return $monday;
+        }
+
+        $anchor = self::periodAnchor($settings, $day->getTimezone()->getName());
+        $offset = intdiv((int) round(($monday->getTimestamp() - $anchor->getTimestamp()) / 86400), 7);
+        $periods = intdiv($offset, $weeks) - ($offset % $weeks < 0 ? 1 : 0);
+
+        return $anchor->addWeeks($periods * $weeks);
+    }
+
+    /** @param  array<string, mixed>  $settings */
+    public static function periodAnchor(array $settings, string $zone = 'Europe/Stockholm'): CarbonImmutable
+    {
+        $start = $settings['overtime_period_start'] ?? null;
+        $anchor = is_string($start) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $start) === 1 ? $start : self::DEFAULT_PERIOD_ANCHOR;
+
+        return CarbonImmutable::parse($anchor, $zone)->startOfWeek(CarbonImmutable::MONDAY);
+    }
+
+    /**
+     * The comp-time factor of the company's own rule, as a decimal string.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public static function compTimeFactor(array $settings): string
+    {
+        $value = $settings['comp_time_factor'] ?? null;
+
+        return is_string($value) && preg_match('/^\d(\.\d{1,2})?$/', $value) === 1 && (float) $value > 0 ? $value : '1';
     }
 
     /** @param  array<string, mixed>  $settings */

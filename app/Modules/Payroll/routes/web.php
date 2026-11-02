@@ -20,6 +20,7 @@ Route::view('/lon/ansokningar', 'payroll::absence-requests')->name('payroll.requ
 Route::get('/lon/utlagg/{expense}/kvitto', ExpenseReceiptController::class)->whereNumber('expense')->name('payroll.expenses.receipt');
 Route::view('/lon/semesterar', 'payroll::vacation-year')->name('payroll.vacationYear');
 Route::view('/lon/semesterskuld', 'payroll::vacation-liability')->name('payroll.vacationLiability');
+Route::view('/lon/komptid', 'payroll::comp-time')->name('payroll.compTime');
 Route::view('/lon/korningar', 'payroll::runs')->name('payroll.runs.index');
 Route::get('/lon/korningar/{run}', PayrollRunController::class)->whereNumber('run')->name('payroll.runs.show');
 Route::get('/lon/korningar/{run}/lonefil', SalaryPaymentFileController::class)->whereNumber('run')->name('payroll.runs.payment-file');

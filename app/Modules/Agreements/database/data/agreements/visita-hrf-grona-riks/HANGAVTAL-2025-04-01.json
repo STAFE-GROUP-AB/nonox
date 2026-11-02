@@ -21,6 +21,7 @@
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
+        "calculation_period": { "max_weeks": 26, "source": "GR#§ 9 s. 13" },
         "source": "GR#§ 9 s. 13",
         "hourly_divisor": {
             "monthly_to_hourly": "173",
@@ -171,6 +172,35 @@
             ],
             "source": "GR#§§ 11–12 s. 18–20"
         }
+    },
+    "rounding": {
+        "ob": {
+            "unit_minutes": 30,
+            "method": "UP_PER_STARTED_UNIT",
+            "per": "SHIFT",
+            "source": "GR#§ 13 s. 21"
+        },
+        "overtime": {
+            "unit_minutes": 30,
+            "method": "UP_PER_STARTED_UNIT",
+            "per": "SHIFT",
+            "source": "GR#§§ 11–12 s. 19"
+        }
+    },
+    "overtime": {
+        "comp_time": {
+            "hours_per_hour": {
+                "GR_OT_A": "1.5",
+                "GR_OT_B": "1.5",
+                "GR_OT_C": "2"
+            },
+            "requires_agreement": true,
+            "source": "GR#§§ 11–12 s. 18–20"
+        }
+    },
+    "sick_pay": {
+        "includes_ob": true,
+        "source": "GR#§ 20 p. 4.3.2 s. 31"
     },
     "notes": [
         "Hängavtalet har samma allmänna villkor som Gröna Riks för Visitas medlemmar (GH löneavtal § 1–2 s. 52–53). OB, storhelg, övertid, dagtyper och arbetstid är därför desamma som i MEMBER-versionen och hänvisar till GR.",

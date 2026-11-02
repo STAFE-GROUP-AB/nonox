@@ -98,7 +98,8 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Företaget väljer avtal och om det är bundet som medlem eller genom hängavtal; varje anställning får avtal, lönegrupp och branschvana.
 - Redan uppdelade timmar för OB och övertid, inmatade eller från en löneunderlagsfil, prissätts med avtalets sats för arbetsdagen, och lönebeskedet visar version och källa. Minimilönen kontrolleras per lönegrupp, ålder och branschvana och ger en varning på lönekörningen. Avtalskalender med aftnar och storhelger.
 - Med NONOX AI påslaget läses hängavtal och anställningsavtal som text där personnummer, bankuppgifter och adresser är dolda, och AI:n föreslår avtal, lönegrupp och andra uppgifter med citat och sida. Inget förs in förrän en person godkänner det.
-- Inte byggt ännu: OB räknat direkt från passens klockslag, övertid mot schemat, komptid, avtalets semester- och sjuklöneregler, pension och avtalsförsäkringar per avtal.
+- Med Planering: OB avrundas enligt avtalet, övertid och mertid räknas per vecka eller per beräkningsperiod för rullande scheman, och övertiden kan tas ut som komptid med avtalets faktor. Komptidssaldot förs i lönen och syns på lönespecen och i Min sida. Sjuklönen räknas från det publicerade schemat med OB, karensavdraget med schemats genomsnittliga vecka, och tjänstemännens sjukavdrag från dag 15 enligt avtalet.
+- Inte byggt ännu: övertidstillägg för timanställda, karens i tid och avtalens egna timvärden i sjuklönen, avtalets semesterregler, pension och avtalsförsäkringar per avtal.
 
 ### Personalliggare (modul)
 - Lokaler och personal med in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet, med kod, personlig QR-kod eller mobil incheckning.
@@ -108,7 +109,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Planering (modul) – ny
 - Schema med lönekostnad: veckovy och dagvy där passen dras på plats, mallar och kopierade veckor, öppna pass, avdelningar och kompetenser. Lönekostnaden räknas medan du planerar, med OB enligt kollektivavtalet, och varningar för dygnsvila, veckovila, raster och minderåriga.
 - Schemat publiceras med besked i appen och via e-post. Min sida visar mitt schema, lediga pass att ta, byten och kalenderlänk.
-- Schema och personalliggare blir löneunderlag: planen jämförs med in- och utcheckningarna, chefen attesterar avvikelserna och tiden blir tidrapporter med timlön, OB per OB-art enligt avtalet och övertid, direkt i lönekörningen.
+- Schema och personalliggare blir löneunderlag: planen jämförs med in- och utcheckningarna, chefen attesterar avvikelserna och tiden blir tidrapporter med timlön, OB per OB-art enligt avtalet och övertid eller komptid, direkt i lönekörningen. Utan personalliggare kan chefen skriva in arbetad tid, även en dag utan planerat pass.
 - Bemanning och kostnad: planerad och faktisk tid och lönekostnad i procent av försäljningen ur bokföringen, dag för dag.
 
 ### Inkorg (modul)

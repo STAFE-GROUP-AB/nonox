@@ -9,8 +9,10 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Support\CompTimeLedger;
 use App\Modules\Planning\PlanningModule;
 use App\Modules\Planning\PlanningSettings;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -32,7 +34,7 @@ class PlanningSettingsForm extends Component
     public const string NAME = 'planning.settings-form';
 
     /** Settings that change what is sent to payroll: planning:attest only. */
-    public const array PAYROLL_FIELDS = ['attest_tolerance_minutes', 'check_in_rounding_minutes', 'overtime_pay_code', 'extra_time_pay_code'];
+    public const array PAYROLL_FIELDS = ['attest_tolerance_minutes', 'check_in_rounding_minutes', 'overtime_pay_code', 'extra_time_pay_code', 'overtime_period_weeks', 'overtime_period_start', 'comp_time_factor'];
 
     #[Locked]
     public int $companyId;
@@ -80,6 +82,9 @@ class PlanningSettingsForm extends Component
             $rules["settings.{$key}"] = ['nullable', 'string', Rule::in(array_keys(self::payCodes()))];
         }
 
+        $rules['settings.overtime_period_start'] = ['nullable', 'date_format:Y-m-d'];
+        $rules['settings.comp_time_factor'] = ['required', 'regex:/^\\d([.,]\\d{1,2})?$/'];
+
         foreach (['working_time_rules' => PlanningSettings::WORKING_TIME_RULES, 'minors_rules' => PlanningSettings::MINORS_RULES] as $set => $defaults) {
             foreach ($defaults as $key => $default) {
                 $rules["settings.{$set}.{$key}.enabled"] = ['boolean'];
@@ -96,7 +101,22 @@ class PlanningSettingsForm extends Component
             'settings.sales_account_to' => __('Sista intäktskonto'),
             'settings.publish_ahead_days' => __('Publicera i förväg'),
             'settings.attest_tolerance_minutes' => __('Tolerans vid attest'),
-        ])->validate()['settings'];
+            'settings.overtime_period_weeks' => __('Beräkningsperiod'),
+            'settings.overtime_period_start' => __('Första periodens måndag'),
+            'settings.comp_time_factor' => __('Komptid per timme'),
+        ])->after(function ($validator): void {
+            $start = $this->settings['overtime_period_start'] ?? null;
+
+            if (is_string($start) && preg_match('/^\\d{4}-\\d{2}-\\d{2}$/', $start) === 1 && ! CarbonImmutable::parse($start)->isMonday()) {
+                $validator->errors()->add('settings.overtime_period_start', __('Perioden ska börja en måndag.'));
+            }
+
+            $factor = (float) str_replace(',', '.', (string) ($this->settings['comp_time_factor'] ?? '1'));
+
+            if ($factor <= 0 || $factor > 3) {
+                $validator->errors()->add('settings.comp_time_factor', __('Ange en faktor mellan 0,01 och 3.'));
+            }
+        })->validate()['settings'];
 
         $store = [
             'default_view' => $validated['default_view'],
@@ -114,6 +134,9 @@ class PlanningSettingsForm extends Component
         foreach (['overtime_pay_code', 'extra_time_pay_code'] as $key) {
             $store[$key] = PlanningSettings::code($validated, $key);
         }
+
+        $store['overtime_period_start'] = filled($validated['overtime_period_start'] ?? null) ? (string) $validated['overtime_period_start'] : null;
+        $store['comp_time_factor'] = rtrim(rtrim(number_format((float) str_replace(',', '.', (string) $validated['comp_time_factor']), 2, '.', ''), '0'), '.');
 
         foreach (['working_time_rules' => PlanningSettings::WORKING_TIME_RULES, 'minors_rules' => PlanningSettings::MINORS_RULES] as $set => $defaults) {
             foreach ($defaults as $key => $default) {
@@ -149,7 +172,7 @@ class PlanningSettingsForm extends Component
      */
     private static function payCodes(): array
     {
-        return PayCode::query()->where('unit', 'HOURS')->where('category', 'ADDITION')->where('is_active', true)->orderBy('code')->pluck('name_sv', 'code')->all();
+        return PayCode::query()->where('unit', 'HOURS')->where('category', 'ADDITION')->where('is_active', true)->where('code', '<>', CompTimeLedger::PAY_CODE)->orderBy('code')->pluck('name_sv', 'code')->all();
     }
 
     /** @return array<string, string> */

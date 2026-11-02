@@ -9,9 +9,11 @@ use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Planning\Actions\AttestDay;
 use App\Modules\Planning\Actions\AttestPeriod;
+use App\Modules\Planning\Actions\ChooseCompensation;
 use App\Modules\Planning\Actions\ReopenAttestation;
 use App\Modules\Planning\Actions\SaveActualTime;
 use App\Modules\Planning\Actions\SendToPayroll;
+use App\Modules\Planning\Domain\WeekBasis;
 use App\Modules\Planning\Models\Attestation;
 use App\Modules\Planning\Support\AttestData;
 use App\Modules\Planning\Support\AttestRow;
@@ -53,8 +55,8 @@ class AttestPage extends Component
 
     public bool $showEditor = false;
 
-    /** @var array{employee_id: ?int, date: string, intervals: list<array{start: string, end: string, break_minutes: int|string}>, note: string, none: bool} */
-    public array $form = ['employee_id' => null, 'date' => '', 'intervals' => [], 'note' => '', 'none' => false];
+    /** @var array{employee_id: ?int, date: string, intervals: list<array{start: string, end: string, break_minutes: int|string}>, note: string, none: bool, new: bool} */
+    public array $form = ['employee_id' => null, 'date' => '', 'intervals' => [], 'note' => '', 'none' => false, 'new' => false];
 
     public function mount(): void
     {
@@ -121,6 +123,33 @@ class AttestPage extends Component
         });
     }
 
+    public function chooseCompensation(int $attestationId, string $choice, ChooseCompensation $choose): void
+    {
+        $this->run(function () use ($attestationId, $choice, $choose): string {
+            $choose($this->user(), $this->company(), Attestation::query()->findOrFail($attestationId), $choice);
+
+            return $choice === WeekBasis::COMP_TIME
+                ? __('Övertiden sparas som komptid när dagen skickas till lönen.')
+                : __('Övertiden betalas ut när dagen skickas till lönen.');
+        });
+    }
+
+    /** Opens the editor for a day that has no row yet: work without a planned shift, for example when the staff ledger is not used. */
+    public function addDay(): void
+    {
+        abort_unless($this->allowed('planning:attest'), 403);
+        $this->resetErrorBag();
+        $this->form = [
+            'employee_id' => $this->person,
+            'date' => CarbonImmutable::today(LocalTimestamp::ZONE)->min(self::date($this->to) ?? CarbonImmutable::today(LocalTimestamp::ZONE))->toDateString(),
+            'intervals' => [['start' => '', 'end' => '', 'break_minutes' => 0]],
+            'note' => '',
+            'none' => false,
+            'new' => true,
+        ];
+        $this->showEditor = true;
+    }
+
     public function edit(int $employeeId, string $date, AttestData $data): void
     {
         abort_unless($this->allowed('planning:attest'), 403);
@@ -145,6 +174,7 @@ class AttestPage extends Component
             'intervals' => $intervals === [] ? [['start' => '', 'end' => '', 'break_minutes' => 0]] : array_slice($intervals, 0, SaveActualTime::MAX_INTERVALS),
             'note' => $row instanceof AttestRow ? (string) $row->attestation?->note : '',
             'none' => false,
+            'new' => false,
         ];
         $this->showEditor = true;
     }
