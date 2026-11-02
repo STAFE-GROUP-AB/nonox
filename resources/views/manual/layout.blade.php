@@ -79,6 +79,29 @@
         </ul>
       </nav>
     </aside>
+    {{-- Runs before the first paint: the menu opens where the reader left it, and the current page is always in sight. --}}
+    <script>
+      (function () {
+        var side = document.getElementById('mn-side');
+        var key = 'nonox-manual-side';
+        if (!side) { return; }
+        try {
+          var saved = parseInt(sessionStorage.getItem(key), 10);
+          if (saved > 0) { side.scrollTop = saved; }
+        } catch (e) {}
+        var current = side.querySelector('a[aria-current=page]');
+        if (current) {
+          var box = side.getBoundingClientRect();
+          var link = current.getBoundingClientRect();
+          if (link.top < box.top + 80 || link.bottom > box.bottom - 24) {
+            side.scrollTop += link.top - box.top - box.height / 3;
+          }
+        }
+        var save = function () { try { sessionStorage.setItem(key, String(side.scrollTop)); } catch (e) {} };
+        side.addEventListener('click', function (event) { if (event.target.closest('a')) { save(); } });
+        window.addEventListener('pagehide', save);
+      })();
+    </script>
   @endunless
 
   <main id="main" class="mn-main" tabindex="-1" @if($wide) style="padding:0" @endif>

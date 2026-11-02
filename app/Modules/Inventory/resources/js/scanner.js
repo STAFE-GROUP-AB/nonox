@@ -31,7 +31,7 @@ const lockedToScanning = (() => {
 
         return standalone && sessionStorage.getItem('nonox-skanna-app') === '1';
     } catch {
-        return false;
+        return standalone && new URLSearchParams(location.search).get('app') === 'skanna';
     }
 })();
 const SYNC_MS = 20000;

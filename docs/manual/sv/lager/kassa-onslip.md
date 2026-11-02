@@ -1,6 +1,6 @@
 ---
 beskrivning: Koppla Onslip 360 till NONOX. Kvittona hämtas in och dras från lagret, artiklarna läggs upp i rätt varugrupp och varje dag blir ett verifikationsutkast i serie K.
-ordning: 90
+ordning: 72
 roller: [owner, admin, accountant, bookkeeper, auditor, stock_clerk]
 modul: pos
 rutter: [pos.index]
@@ -8,6 +8,9 @@ sokord: [Onslip, Onslip 360, kassa, kassasystem, kvitto, varugrupp, försäljnin
 ---
 
 # Kassa: Onslip
+
+> [!NOTE]
+> Kopplingen är byggd men ännu inte öppen för alla. Den slås på när den har provats mot en riktig kassa, och då står det i [ändringsloggen](/andringslogg).
 
 Med modulen **Kassakopplingar** kopplar du Onslip 360 till NONOX. Modulen kräver Lager. Slå på den under **Inställningar → Moduler**. Du hittar kassan under **Kassa** i menyn.
 

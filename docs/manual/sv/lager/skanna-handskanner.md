@@ -1,6 +1,6 @@
 ---
 beskrivning: Skanna med telefonens kamera, en Bluetooth-skanner eller en handskanner med sladd, och vilka streckkoder Skanna läser.
-ordning: 86
+ordning: 58
 roller: [owner, admin, accountant, bookkeeper, stock_clerk]
 modul: inventory
 rutter: [inventory.scanner]

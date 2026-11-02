@@ -57,7 +57,12 @@ the page the user is stuck on, and must work on a phone for employees.
    otherwise `TechArticle`. Every page is in the sitemap. Share images exist
    for the start page and for every section in `avsnitt.yaml`; an article
    uses its section's image (`ShareCards::imageFor` walks up the path).
-8. `NONOX_MANUAL_PATH` can point the manual at another folder (a fork's own
+8. **The sidebar keeps its place.** It scrolls on its own, so a small inline
+   script after it (it runs before the first paint) restores its scroll
+   position from `sessionStorage` and, if the current article is out of
+   sight, scrolls it into view. On a phone, opening the menu scrolls to the
+   current article (`manual.js`).
+9. `NONOX_MANUAL_PATH` can point the manual at another folder (a fork's own
    manual, or the fixture manual for a local preview). The tests use
    `tests/Fixtures/manual`, and also validate the real articles: front
    matter, existing roles, modules and routes, every section has an

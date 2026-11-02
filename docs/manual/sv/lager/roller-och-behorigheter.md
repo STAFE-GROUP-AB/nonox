@@ -1,6 +1,6 @@
 ---
 beskrivning: Vem som får se lagret, ta emot, plocka och räkna, ändra artiklar och priser, och vad rollen Lagerpersonal får göra.
-ordning: 70
+ordning: 90
 roller: [owner, admin]
 modul: inventory
 sokord: [lagerpersonal, lagerarbetare, behörighet lager, roll, vem får se priser, plockare]

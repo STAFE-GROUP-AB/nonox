@@ -1,6 +1,6 @@
 ---
 beskrivning: Ta emot varor med mobilen – skanna det som kommit, ange antal och hylla, och lägg in det i lagret med ett tryck.
-ordning: 81
+ordning: 53
 roller: [owner, admin, accountant, bookkeeper, stock_clerk]
 modul: inventory
 rutter: [inventory.scanner]

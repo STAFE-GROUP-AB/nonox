@@ -334,6 +334,12 @@ function setupMenu() {
         side.classList.toggle('is-open', open);
         button.setAttribute('aria-expanded', String(open));
         document.body.style.overflow = open ? 'hidden' : '';
+
+        // The menu covers the page on a phone: open it at the page being read, not at the top.
+        const current = open ? side.querySelector('a[aria-current=page]') : null;
+        if (current) {
+            side.scrollTop += current.getBoundingClientRect().top - side.getBoundingClientRect().top - side.clientHeight / 3;
+        }
     };
 
     button.addEventListener('click', () => openMenu(!side.classList.contains('is-open')));

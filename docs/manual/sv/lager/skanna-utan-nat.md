@@ -1,6 +1,6 @@
 ---
 beskrivning: Skanna fungerar utan nät i lagret – det du gör sparas i telefonen och skickas sedan. Så ser du vad som väntar och vad du gör om något inte gick igenom.
-ordning: 85
+ordning: 57
 roller: [owner, admin, accountant, bookkeeper, stock_clerk]
 modul: inventory
 rutter: [inventory.scanner]

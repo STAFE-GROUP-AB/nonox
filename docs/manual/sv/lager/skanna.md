@@ -1,6 +1,6 @@
 ---
 beskrivning: Skanna med mobilen – ta emot, plocka, flytta, inventera och slå upp varor med telefonens kamera eller en handskanner, även utan nät.
-ordning: 80
+ordning: 52
 roller: [owner, admin, accountant, bookkeeper, auditor, stock_clerk]
 modul: inventory
 rutter: [inventory.scanner]

@@ -1,6 +1,6 @@
 ---
 beskrivning: Inventera med mobilen – skanna hyllan och varje vara på den, se skillnaderna direkt och avsluta med orsak.
-ordning: 84
+ordning: 56
 roller: [owner, admin, accountant, bookkeeper, stock_clerk]
 modul: inventory
 rutter: [inventory.scanner]

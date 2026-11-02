@@ -1,6 +1,6 @@
 ---
 beskrivning: Gör egna etikettmallar för artiklar och lagerställen, för A4-etikettark eller etikettskrivare, och se direkt hur etiketten blir.
-ordning: 75
+ordning: 62
 roller: [owner, admin, accountant]
 modul: inventory
 rutter: [inventory.labels]

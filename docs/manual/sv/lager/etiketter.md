@@ -1,6 +1,6 @@
 ---
 beskrivning: Skriv ut pris- och hyllkantsetiketter för artiklar, etiketter för det som kom in med en leverans och etiketter med koden på hyllor och fack.
-ordning: 35
+ordning: 60
 roller: [owner, admin, accountant, bookkeeper, stock_clerk]
 modul: inventory
 rutter: [inventory.articles, inventory.locations, inventory.receipts]

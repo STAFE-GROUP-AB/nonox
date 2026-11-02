@@ -1,6 +1,6 @@
 ---
 beskrivning: Underlaget för varulagret vid bokslutet – lagervärde enligt FIFO eller vägt genomsnittspris, lägsta värdets princip och bokföring av lagerförändringen.
-ordning: 60
+ordning: 80
 roller: [owner, admin, accountant, bookkeeper, auditor]
 modul: inventory
 rutter: [inventory.reports]

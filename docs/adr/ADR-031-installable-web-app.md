@@ -33,7 +33,19 @@ chrome.
    ledger kiosk, whose own worker and sealed roster (ADR on the kiosk) are
    designed for it and registered for the narrower scope
    `/personalliggare/kiosk/`, which takes precedence there.
-4. **Public comparison.** `docs/migration/jamforelse.json` gets the value
+4. **The installed app does not zoom the page** (`resources/js/zoom-lock.js`,
+   loaded by the app and by Skanna). Only when the page runs standalone
+   (`display-mode: standalone` or iOS `navigator.standalone`) it adds
+   `maximum-scale=1, user-scalable=no` to the viewport, which also stops
+   iOS zooming into a focused field, and cancels iOS `gesturestart`/
+   `gesturechange` and two-finger `touchmove`, since iOS ignores
+   `user-scalable=no`. Pictures worth zooming (invoices, receipts, article
+   pictures) carry `data-zoom` and open in a full-screen viewer that scales
+   the picture itself with pointer events (pinch, pan, double tap, Esc). A PDF
+   in an iframe is its own document and keeps its zoom; a page that did zoom
+   can always zoom back out. A browser tab is unchanged, so zoom as an
+   accessibility aid stays where it is needed most.
+5. **Public comparison.** `docs/migration/jamforelse.json` gets the value
    `web` ("Webbapp att installera (PWA)") for NONOX on the "Mobilapp" row,
    instead of "yes": other programs on that row have apps in App Store and
    Google Play, which NONOX does not. A separate row states that the staff

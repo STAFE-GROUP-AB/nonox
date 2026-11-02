@@ -1,6 +1,6 @@
 ---
 beskrivning: Koppla Zettle till NONOX. Försäljningen dras från lagret, lagersaldot skickas till kassan som ändringar, artiklarna läggs upp i Zettle och varje dag blir ett verifikationsutkast i serie K.
-ordning: 80
+ordning: 70
 roller: [owner, admin, accountant, bookkeeper, auditor, stock_clerk]
 modul: pos
 rutter: [pos.index]
@@ -8,6 +8,9 @@ sokord: [Zettle, kassa, kassasystem, kortterminal, försäljning, dagsrapport, Z
 ---
 
 # Kassa: Zettle
+
+> [!NOTE]
+> Kopplingen är byggd men ännu inte öppen för alla. Den slås på när den har provats mot en riktig kassa, och då står det i [ändringsloggen](/andringslogg).
 
 Med modulen **Kassakopplingar** kopplar du Zettle till NONOX. Modulen kräver Lager. Slå på den under **Inställningar → Moduler**. Du hittar kassan under **Kassa** i menyn.
 

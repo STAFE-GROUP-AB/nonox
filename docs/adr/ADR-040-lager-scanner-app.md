@@ -20,7 +20,15 @@ Bluetooth or corded hand scanners that type a code and press Enter.
 `/lager/skanna` is a standalone, phone-first page (its own Vite entry,
 `app/Modules/Inventory/resources/js/scanner.js`, and CSS), linked from the
 Lager menu as **Skanna** and from the app manifest as the shortcut **Skanna
-lager**. It links the normal app manifest; there is no store app (ADR-031).
+lager**. It has its own manifest, `public/skanna.webmanifest` (id
+`/lager/skanna`, start `/lager/skanna?app=skanna`, own icons
+`public/brand/skanna-*`, home-screen title "Skanna"), so warehouse staff can
+install it as a separate app; there is no store app (ADR-031). Opened from
+that app (the `?app=skanna` mark, kept in the window's `sessionStorage`, and
+running standalone) the page has no link to the full app; in a browser or
+from the NONOX app the link stays. This is no access boundary: what a user
+may do is still decided by the role. The sign-in link after an expired
+session goes through `/lager/skanna`, so signing in returns to Skanna.
 On a computer it shows a QR code of its own URL (bacon/bacon-qr-code via the
 existing `QrSvg`) and a button to continue there.
 

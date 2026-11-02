@@ -1,6 +1,6 @@
 ---
 beskrivning: Flytta varor mellan hyllor och slå upp vad en vara eller hylla är med mobilen.
-ordning: 83
+ordning: 55
 roller: [owner, admin, accountant, bookkeeper, auditor, stock_clerk]
 modul: inventory
 rutter: [inventory.scanner]

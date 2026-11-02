@@ -1,6 +1,6 @@
 ---
 beskrivning: Plocka med mobilen – gå raderna i gångordning, skanna hyllan och varan och få ett tydligt fel om du tar fel vara.
-ordning: 82
+ordning: 54
 roller: [owner, admin, accountant, bookkeeper, stock_clerk]
 modul: inventory
 rutter: [inventory.scanner]

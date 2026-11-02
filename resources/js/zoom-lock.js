@@ -91,29 +91,62 @@ function openViewer(source) {
     const pointers = new Map();
     let gesture = null;
     let lastTap = 0;
+    let moved = false;
+
+    // The picture's untransformed place and size on screen.
+    const base = () => {
+        const rect = img.getBoundingClientRect();
+
+        return { left: rect.left - x, top: rect.top - y, width: rect.width / scale, height: rect.height / scale };
+    };
+
+    // Keep the picture on screen: it covers the screen where it is larger, and is centred where it is not.
+    const clamp = (b) => {
+        const fit = (offset, start, size, room) => (size <= room
+            ? (room - size) / 2 - start
+            : Math.min(-start, Math.max(room - start - size, offset)));
+        x = scale === 1 ? 0 : fit(x, b.left, b.width * scale, box.clientWidth);
+        y = scale === 1 ? 0 : fit(y, b.top, b.height * scale, box.clientHeight);
+    };
 
     const apply = () => {
         img.style.transform = `translate(${x}px, ${y}px) scale(${scale})`;
     };
 
-    // Zoom around a point on screen, so the spot under the fingers stays put.
-    const zoomAt = (next, clientX, clientY) => {
-        const rect = img.getBoundingClientRect();
-        const originX = rect.left - x;
-        const originY = rect.top - y;
-        const pointX = (clientX - originX - x) / scale;
-        const pointY = (clientY - originY - y) / scale;
+    // Zoom so that the picture point under (clientX, clientY) at the start stays under the fingers' point now.
+    const zoomTo = (next, b, pointX, pointY, clientX, clientY) => {
         scale = next;
-        x = scale === 1 ? 0 : clientX - originX - pointX * scale;
-        y = scale === 1 ? 0 : clientY - originY - pointY * scale;
+        x = clientX - b.left - pointX * scale;
+        y = clientY - b.top - pointY * scale;
+        clamp(b);
         apply();
     };
 
     const startGesture = () => {
-        const [a, b] = [...pointers.values()];
-        gesture = b
-            ? { distance: Math.hypot(a.x - b.x, a.y - b.y), scale, midX: (a.x + b.x) / 2, midY: (a.y + b.y) / 2, x, y }
-            : { panX: a.x, panY: a.y, x, y };
+        const [a, c] = [...pointers.values()];
+
+        if (c) {
+            const b = base();
+            const midX = (a.x + c.x) / 2;
+            const midY = (a.y + c.y) / 2;
+            gesture = { distance: Math.hypot(a.x - c.x, a.y - c.y), scale, b, pointX: (midX - b.left - x) / scale, pointY: (midY - b.top - y) / scale };
+
+            return;
+        }
+
+        gesture = { panX: a.x, panY: a.y, x, y, b: base() };
+    };
+
+    const onKey = (event) => {
+        if (event.key === 'Escape') {
+            shut();
+        }
+
+        // The close button is the only control: Tab stays in the viewer.
+        if (event.key === 'Tab') {
+            event.preventDefault();
+            close.focus();
+        }
     };
 
     const shut = () => {
@@ -121,12 +154,6 @@ function openViewer(source) {
         viewer = null;
         document.removeEventListener('keydown', onKey);
         returnFocus?.focus?.();
-    };
-
-    const onKey = (event) => {
-        if (event.key === 'Escape') {
-            shut();
-        }
     };
 
     box.addEventListener('pointerdown', (event) => {
@@ -138,16 +165,28 @@ function openViewer(source) {
         box.setPointerCapture?.(event.pointerId);
         startGesture();
 
-        if (pointers.size === 1) {
-            const now = Date.now();
+        if (pointers.size > 1) {
+            lastTap = 0;
+            moved = true;
 
-            if (now - lastTap < 300) {
-                zoomAt(scale > 1 ? 1 : 2.5, event.clientX, event.clientY);
-                startGesture();
-            }
-
-            lastTap = now;
+            return;
         }
+
+        moved = false;
+        const now = Date.now();
+
+        if (now - lastTap < 300) {
+            const b = base();
+            const next = scale > 1 ? 1 : 2.5;
+            zoomTo(next, b, (event.clientX - b.left - x) / scale, (event.clientY - b.top - y) / scale, event.clientX, event.clientY);
+            startGesture();
+            lastTap = 0;
+            moved = true;
+
+            return;
+        }
+
+        lastTap = now;
     });
 
     box.addEventListener('pointermove', (event) => {
@@ -155,12 +194,14 @@ function openViewer(source) {
             return;
         }
 
+        const previous = pointers.get(event.pointerId);
+        moved ||= Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 6;
         pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
-        const [a, b] = [...pointers.values()];
+        const [a, c] = [...pointers.values()];
 
-        if (b && gesture.distance) {
-            const next = pinchScale(gesture.scale, gesture.distance, Math.hypot(a.x - b.x, a.y - b.y));
-            zoomAt(next, (a.x + b.x) / 2, (a.y + b.y) / 2);
+        if (c && gesture.distance) {
+            const next = pinchScale(gesture.scale, gesture.distance, Math.hypot(a.x - c.x, a.y - c.y));
+            zoomTo(next, gesture.b, gesture.pointX, gesture.pointY, (a.x + c.x) / 2, (a.y + c.y) / 2);
 
             return;
         }
@@ -168,6 +209,7 @@ function openViewer(source) {
         if (gesture.panX !== undefined && scale > 1) {
             x = gesture.x + (a.x - gesture.panX);
             y = gesture.y + (a.y - gesture.panY);
+            clamp(gesture.b);
             apply();
         }
     });
@@ -178,6 +220,18 @@ function openViewer(source) {
 
         if (pointers.size > 0) {
             startGesture();
+
+            return;
+        }
+
+        // A tap on the dark background, outside the picture, closes the viewer.
+        if (!moved && event.type === 'pointerup' && event.target === box && scale === 1) {
+            const rect = img.getBoundingClientRect();
+            const outside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+
+            if (outside) {
+                shut();
+            }
         }
     };
 
@@ -203,8 +257,9 @@ export function lockZoomWhenInstalled() {
     }
 
     // iPhone ignores user-scalable=no, so its pinch gestures are stopped here.
+    // Inside the viewer the page never zooms either: the viewer zooms the picture with pointer events.
     const block = (event) => {
-        if (!insideViewer(event.target) && !zoomedIn()) {
+        if (insideViewer(event.target) || !zoomedIn()) {
             event.preventDefault();
         }
     };
@@ -228,5 +283,31 @@ export function lockZoomWhenInstalled() {
 
         event.preventDefault();
         openViewer(source);
+    });
+
+    // The pictures are buttons here, so the viewer can be opened from the keyboard too.
+    const label = document.documentElement.lang === 'en' ? 'Show larger' : 'Visa större';
+    const mark = (root) => {
+        root.querySelectorAll?.('img[data-zoom]:not([tabindex])').forEach((img) => {
+            img.setAttribute('tabindex', '0');
+            img.setAttribute('role', 'button');
+            img.setAttribute('aria-label', img.alt ? `${label}: ${img.alt}` : label);
+        });
+    };
+
+    mark(document);
+    new MutationObserver((records) => records.forEach((record) => record.addedNodes.forEach((node) => {
+        if (node instanceof Element) {
+            mark(node.parentElement ?? node);
+        }
+    }))).observe(document.body, { childList: true, subtree: true });
+
+    document.addEventListener('keydown', (event) => {
+        const source = event.target instanceof Element ? event.target.closest('img[data-zoom]') : null;
+
+        if (source !== null && !insideViewer(source) && (event.key === 'Enter' || event.key === ' ')) {
+            event.preventDefault();
+            openViewer(source);
+        }
     });
 }

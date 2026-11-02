@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-manualens-meny-stannar",
+      "datum": "2026-11-03T00:22:11+01:00",
+      "rubrik": "Manualens meny stannar där du är",
+      "beskrivning": "När du klickar på en artikel i manualens meny hoppar menyn inte längre upp till början, och artikeln du läser syns alltid i menyn, också i mobilen. Lagers artiklar ligger nu i en ordning som följer arbetet, med Skanna, etiketter och kassorna samlade.",
+      "typ": "Förbättrat",
+      "omrade": "Manual"
+    },
+    {
       "id": "2026-11-02-appen-zoomar-inte",
       "datum": "2026-11-02T23:43:49+01:00",
       "rubrik": "Installerad app zoomar inte längre av misstag",
