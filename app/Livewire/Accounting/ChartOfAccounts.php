@@ -7,6 +7,7 @@ namespace App\Livewire\Accounting;
 use App\Actions\Accounting\CreateAccount;
 use App\Actions\Accounting\UpdateAccount;
 use App\Domain\Accounting\AccountClass;
+use App\Domain\AnnualReport\K2Schedule;
 use App\Domain\Vat\VatBoxes;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
@@ -127,6 +128,23 @@ class ChartOfAccounts extends Component
         $this->toast($active
             ? __('Konto :number är aktiverat igen.', ['number' => $account->number])
             : __('Konto :number är inaktiverat. Det syns inte längre när du bokför.', ['number' => $account->number]));
+    }
+
+    /**
+     * Marks a purchase account (BAS 4000–4899) as goods for resale, so it is
+     * reported as Handelsvaror in the annual report and INK2R 3.6, or back
+     * as raw materials and consumables (#89).
+     */
+    public function toggleGoodsForResale(int $accountId, UpdateAccount $updateAccount): void
+    {
+        $account = Account::findOrFail($accountId);
+        $resale = $account->sru_code !== K2Schedule::GOODS_FOR_RESALE_SRU;
+
+        $updateAccount($this->user(), $account, ['sru_code' => $resale ? K2Schedule::GOODS_FOR_RESALE_SRU : null]);
+
+        $this->toast($resale
+            ? __('Konto :number räknas nu som handelsvaror i årsredovisningen och deklarationen.', ['number' => $account->number])
+            : __('Konto :number räknas nu som råvaror och förnödenheter i årsredovisningen och deklarationen.', ['number' => $account->number]));
     }
 
     public function mount(): void

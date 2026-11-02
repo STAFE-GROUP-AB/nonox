@@ -62,15 +62,24 @@
                 <tr><td>{{ __('Soliditet (%)') }}</td>@foreach($multiYear as $row)<td class="num">{{ $row['solidity'] === null ? '–' : number_format($row['solidity'], 1, ',', '') }}</td>@endforeach</tr>
             </tbody>
         </table>
+        @foreach($netSalesVariations as $variation)
+            <p>{{ __('Nettoomsättningen har förändrats med mer än 30 procent, från :from kr :fromYear till :to kr :toYear.', ['from' => $kr($variation['from_amount']), 'fromYear' => $variation['from'], 'to' => $kr($variation['to_amount']), 'toYear' => $variation['to']]) }}</p>
+        @endforeach
+        @if(filled($report->net_sales_comment))
+            <p>{!! nl2br(e($report->net_sales_comment)) !!}</p>
+        @endif
 
         <h3>{{ __('Förändringar i eget kapital') }}</h3>
         <table>
-            <thead><tr><th></th><th class="num">{{ __('Vid årets början') }}</th><th class="num">{{ __('Vid årets slut') }}</th></tr></thead>
+            <thead><tr><th></th>@foreach($equityColumns as $column)<th class="num">{{ $column['label'] }}</th>@endforeach<th class="num">{{ __('Totalt') }}</th></tr></thead>
             <tbody>
                 @foreach($equityChanges as $row)
-                    <tr><td>{{ $row['label'] }}</td><td class="num">{{ $kr($row['opening']) }}</td><td class="num">{{ $kr($row['closing']) }}</td></tr>
+                    <tr @class(['sum' => $row['key'] === 'closing'])>
+                        <td>{{ $row['label'] }}</td>
+                        @foreach($equityColumns as $column)<td class="num">{{ $row['amounts'][$column['key']] === 0 && ! in_array($row['key'], ['opening', 'closing'], true) ? '' : $kr($row['amounts'][$column['key']]) }}</td>@endforeach
+                        <td class="num">{{ $kr($row['total']) }}</td>
+                    </tr>
                 @endforeach
-                <tr class="sum"><td>{{ __('Summa eget kapital') }}</td><td class="num">{{ $kr(array_sum(array_column($equityChanges, 'opening'))) }}</td><td class="num">{{ $kr(array_sum(array_column($equityChanges, 'closing'))) }}</td></tr>
             </tbody>
         </table>
 
@@ -107,7 +116,7 @@
 
     <div class="break">
         <h2>{{ __('Balansräkning') }}</h2>
-        @php($fixedNote = 3)
+        @php($fixedNotes = collect($fixedAssets)->pluck('key')->flip()->map(fn (int $index): int => 3 + $index))
         @php($assetsDone = false)
         <table>
             <thead><tr><th></th><th class="note">{{ __('Not') }}</th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th><th class="num">{{ $fiscalYear->start_date->subDay()->toDateString() }}</th></tr></thead>
@@ -123,7 +132,7 @@
                     @foreach($section['lines'] as $line)
                         <tr>
                             <td>{{ $line['label'] }}</td>
-                            <td class="note">@if(in_array($line['key'], ['intangible', 'buildings', 'machinery'], true) && $fixedAssets !== []){{ $fixedNote }}@endif</td>
+                            <td class="note">{{ $fixedNotes[$line['key']] ?? '' }}</td>
                             <td class="num">{{ $kr($line['amount']) }}</td>
                             <td class="num">{{ $kr($line['previous']) }}</td>
                         </tr>
@@ -149,8 +158,10 @@
             <tbody><tr><td>{{ __('Medelantalet anställda') }}</td><td class="num">{{ $report->average_employees }}</td></tr></tbody>
         </table>
 
+        @php($noteNumber = 2)
         @foreach($fixedAssets as $note)
-            <h3>{{ __('Not :number :label', ['number' => 3 + $loop->index, 'label' => $note['label']]) }}</h3>
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => $note['label']]) }}</h3>
             <table>
                 <thead><tr><th></th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th></tr></thead>
                 <tbody>
@@ -167,6 +178,44 @@
             </table>
         @endforeach
 
+        @if($pledged !== [])
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Ställda säkerheter')]) }}</h3>
+            <table>
+                <thead><tr><th></th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th></tr></thead>
+                <tbody>
+                    @foreach($pledged as $row)
+                        <tr><td>{{ $row['label'] }}</td><td class="num">{{ $kr($row['amount']) }}</td></tr>
+                    @endforeach
+                    <tr class="sum"><td>{{ __('Summa ställda säkerheter') }}</td><td class="num">{{ $kr(array_sum(array_column($pledged, 'amount'))) }}</td></tr>
+                </tbody>
+            </table>
+        @endif
+
+        @if($report->contingent_liabilities_ore !== null || filled($report->contingent_liabilities_text))
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Eventualförpliktelser')]) }}</h3>
+            <table>
+                <thead><tr><th></th><th class="num">{{ $fiscalYear->end_date->toDateString() }}</th></tr></thead>
+                <tbody><tr><td>{{ $report->contingent_liabilities_text ?: __('Eventualförpliktelser') }}</td><td class="num">{{ $kr($report->contingent_liabilities_ore ?? 0) }}</td></tr></tbody>
+            </table>
+        @endif
+
+        @if(filled($report->group_commitments))
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Åtaganden till förmån för koncern- och intresseföretag')]) }}</h3>
+            <p>{!! nl2br(e($report->group_commitments)) !!}</p>
+        @endif
+
+        @if(filled($report->events_after))
+            @php($noteNumber++)
+            <h3>{{ __('Not :number :label', ['number' => $noteNumber, 'label' => __('Väsentliga händelser efter räkenskapsårets slut')]) }}</h3>
+            <p>{!! nl2br(e($report->events_after)) !!}</p>
+            @if($report->events_effect_unknown)
+                <p>{{ __('Den ekonomiska effekten av händelserna kan inte uppskattas.') }}</p>
+            @endif
+        @endif
+
         <h2 style="margin-top: 26pt;">{{ __('Underskrifter') }}</h2>
         <p>{{ $report->signing_place ?: '……………………' }}, {{ $report->signing_date?->toDateString() ?? '……………………' }}</p>
         <table class="signatures">
@@ -178,6 +227,19 @@
                         @endforeach
                     </tr>
                 @endforeach
+            </tbody>
+        </table>
+    </div>
+
+    <div class="break">
+        <h2>{{ __('Fastställelseintyg') }}</h2>
+        <p>{{ __('Undertecknad :role intygar att resultaträkningen och balansräkningen i denna årsredovisning för :company har fastställts av :meeting den :date.', ['role' => mb_strtolower($certificate['role'] ?: __('styrelseledamot')), 'company' => $company->legal_name ?: $company->name, 'meeting' => mb_strtolower($certificate['meeting']), 'date' => $certificate['date'] ?? '……………………']) }}</p>
+        <p>{{ $certificate['decision'] ?: __(':meeting beslutade om vinsten eller förlusten enligt följande:', ['meeting' => $certificate['meeting']]).' ……………………………………………………………………' }}</p>
+        <p>{{ __('Jag intygar att innehållet i denna kopia överensstämmer med originalet.') }}</p>
+        <p class="muted">{{ __('Årsredovisningslagen 8 kap. 3 §') }}</p>
+        <table class="signatures">
+            <tbody>
+                <tr><td><span class="line">{{ $certificate['name'] ?? '' }}</span><span class="muted">{{ $certificate['role'] ?: __('Styrelseledamot eller verkställande direktör') }}</span></td><td></td></tr>
             </tbody>
         </table>
     </div>

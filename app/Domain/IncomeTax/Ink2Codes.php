@@ -14,8 +14,7 @@ namespace App\Domain\IncomeTax;
  *
  * TODO(legal-verify): the BAS ranges behind each code follow the BAS
  * account groups and must be checked against the official BAS–INK2 mapping,
- * especially 4000–4999 (råvaror or handelsvaror), group items and
- * appropriations.
+ * especially 4900–4999 (stock changes), group items and appropriations.
  */
 final class Ink2Codes
 {
@@ -88,33 +87,39 @@ final class Ink2Codes
 
     /**
      * Income statement (INK2R 3.1–3.25): code for a credit (income) and for
-     * a debit (cost) result of the range, each reported as a positive
-     * amount. Null where the form has only one side.
+     * a debit (cost) result of the ranges, each reported as a positive
+     * amount. Null where the form has only one side. `resale` moves the
+     * purchase accounts marked as goods for resale (K2Schedule::PURCHASES
+     * with SRU 7512) out of 3.5 and into 3.6. The stock change of products
+     * in progress and finished goods (BAS 4940–4959, 4970–4979) is 3.2,
+     * 7411 when it adds to the result and 7510 when it reduces it (#89).
      *
-     * @var list<array{range: array{0: int, 1: int}, income: ?int, cost: ?int}>
+     * @var list<array{ranges: list<array{0: int, 1: int}>, income: ?int, cost: ?int, resale?: 'include'|'exclude'}>
      */
     public const array INCOME = [
-        ['range' => [3000, 3799], 'income' => 7410, 'cost' => null],
-        ['range' => [3800, 3899], 'income' => 7412, 'cost' => null],
-        ['range' => [3900, 3999], 'income' => 7413, 'cost' => null],
-        ['range' => [4000, 4999], 'income' => null, 'cost' => 7511],
-        ['range' => [5000, 6999], 'income' => null, 'cost' => 7513],
-        ['range' => [7000, 7699], 'income' => null, 'cost' => 7514],
-        ['range' => [7700, 7899], 'income' => null, 'cost' => 7515],
-        ['range' => [7900, 7999], 'income' => null, 'cost' => 7517],
-        ['range' => [8000, 8099], 'income' => 7414, 'cost' => 7518],
-        ['range' => [8100, 8199], 'income' => 7415, 'cost' => 7519],
-        ['range' => [8200, 8299], 'income' => 7416, 'cost' => 7520],
-        ['range' => [8300, 8399], 'income' => 7417, 'cost' => null],
-        ['range' => [8400, 8799], 'income' => null, 'cost' => 7522],
-        ['range' => [8810, 8819], 'income' => 7420, 'cost' => 7525],
-        ['range' => [8820, 8829], 'income' => 7419, 'cost' => null],
-        ['range' => [8830, 8839], 'income' => null, 'cost' => 7524],
-        ['range' => [8850, 8859], 'income' => 7421, 'cost' => 7526],
-        ['range' => [8800, 8809], 'income' => 7422, 'cost' => 7527],
-        ['range' => [8840, 8849], 'income' => 7422, 'cost' => 7527],
-        ['range' => [8860, 8899], 'income' => 7422, 'cost' => 7527],
-        ['range' => [8900, 8989], 'income' => null, 'cost' => 7528],
+        ['ranges' => [[3000, 3799]], 'income' => 7410, 'cost' => null],
+        ['ranges' => [[4940, 4959], [4970, 4979]], 'income' => 7411, 'cost' => 7510],
+        ['ranges' => [[3800, 3899]], 'income' => 7412, 'cost' => null],
+        ['ranges' => [[3900, 3999]], 'income' => 7413, 'cost' => null],
+        ['ranges' => [[4000, 4939], [4980, 4999]], 'income' => null, 'cost' => 7511, 'resale' => 'exclude'],
+        ['ranges' => [[4960, 4969]], 'income' => null, 'cost' => 7512, 'resale' => 'include'],
+        ['ranges' => [[5000, 6999]], 'income' => null, 'cost' => 7513],
+        ['ranges' => [[7000, 7699]], 'income' => null, 'cost' => 7514],
+        ['ranges' => [[7700, 7899]], 'income' => null, 'cost' => 7515],
+        ['ranges' => [[7900, 7999]], 'income' => null, 'cost' => 7517],
+        ['ranges' => [[8000, 8099]], 'income' => 7414, 'cost' => 7518],
+        ['ranges' => [[8100, 8199]], 'income' => 7415, 'cost' => 7519],
+        ['ranges' => [[8200, 8299]], 'income' => 7416, 'cost' => 7520],
+        ['ranges' => [[8300, 8399]], 'income' => 7417, 'cost' => null],
+        ['ranges' => [[8400, 8799]], 'income' => null, 'cost' => 7522],
+        ['ranges' => [[8810, 8819]], 'income' => 7420, 'cost' => 7525],
+        ['ranges' => [[8820, 8829]], 'income' => 7419, 'cost' => null],
+        ['ranges' => [[8830, 8839]], 'income' => null, 'cost' => 7524],
+        ['ranges' => [[8850, 8859]], 'income' => 7421, 'cost' => 7526],
+        ['ranges' => [[8800, 8809]], 'income' => 7422, 'cost' => 7527],
+        ['ranges' => [[8840, 8849]], 'income' => 7422, 'cost' => 7527],
+        ['ranges' => [[8860, 8899]], 'income' => 7422, 'cost' => 7527],
+        ['ranges' => [[8900, 8989]], 'income' => null, 'cost' => 7528],
     ];
 
     public const int PROFIT = 7450;
@@ -266,6 +271,9 @@ final class Ink2Codes
         7420 => 'Återföring av periodiseringsfond',
         7421 => 'Förändring av överavskrivningar (+)',
         7422 => 'Övriga bokslutsdispositioner (+)',
+        7411 => 'Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning (+)',
+        7510 => 'Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning (−)',
+        7512 => 'Handelsvaror',
         7450 => 'Årets resultat, vinst',
         7511 => 'Råvaror och förnödenheter',
         7513 => 'Övriga externa kostnader',

@@ -40,6 +40,12 @@ final class BuildInfo
         return $sha === null ? null : substr($sha, 0, 7);
     }
 
+    /** The whole commit hash, for the audit trail. */
+    public static function fullSha(): ?string
+    {
+        return self::read()['sha'];
+    }
+
     public static function builtAt(): ?string
     {
         return self::read()['built_at'];

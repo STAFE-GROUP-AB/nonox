@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property AccountType $type
  * @property bool $is_active
+ * @property ?string $sru_code
  * @property ?int $vat_box the VAT return box the account is tied to, null to follow its number (VatBoxes)
  */
 class Account extends Model

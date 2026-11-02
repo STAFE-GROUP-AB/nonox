@@ -74,6 +74,9 @@
                                         @unless($account->is_active)
                                             <x-ui.badge class="ms-2">{{ __('Inaktivt') }}</x-ui.badge>
                                         @endunless
+                                        @if($account->sru_code === \App\Domain\AnnualReport\K2Schedule::GOODS_FOR_RESALE_SRU && $account->number >= \App\Domain\AnnualReport\K2Schedule::PURCHASES[0] && $account->number <= \App\Domain\AnnualReport\K2Schedule::PURCHASES[1])
+                                            <x-ui.badge class="ms-2">{{ __('Handelsvaror') }}</x-ui.badge>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="py-2.5 pr-4 hidden sm:table-cell text-gray-600">{{ $account->type->label() }}</td>
@@ -111,6 +114,12 @@
                                             <button type="button" class="text-sm font-medium text-gray-600 hover:text-gray-900" wire:click="toggleActive({{ $account->id }})">
                                                 {{ $account->is_active ? __('Inaktivera') : __('Aktivera') }}
                                             </button>
+                                            @if($account->number >= \App\Domain\AnnualReport\K2Schedule::PURCHASES[0] && $account->number <= \App\Domain\AnnualReport\K2Schedule::PURCHASES[1])
+                                                <span class="text-gray-300 mx-1" aria-hidden="true">·</span>
+                                                <button type="button" class="text-sm font-medium text-gray-600 hover:text-gray-900" wire:click="toggleGoodsForResale({{ $account->id }})">
+                                                    {{ $account->sru_code === \App\Domain\AnnualReport\K2Schedule::GOODS_FOR_RESALE_SRU ? __('Räkna som råvaror') : __('Räkna som handelsvaror') }}
+                                                </button>
+                                            @endif
                                         @endif
                                     </td>
                                 @endif

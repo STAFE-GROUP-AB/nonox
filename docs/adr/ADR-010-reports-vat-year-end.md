@@ -307,3 +307,128 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-2, -3,
 - TODO(legal-verify): changes in restricted equity after the balance date,
   transfers already made since the meeting (17 kap. 4 §), and the same limit
   for ideella föreningar and stiftelser.
+
+## K2 balance sheet lines (2026-11-02, #88)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-4, #88).
+
+- **Rule.** ÅRL 3 kap. 4 § and bilaga 1 (balance sheet): Skulder till
+  kreditinstitut, Förskott från kunder and Leverantörsskulder are separate
+  items. BFNAR 2016:10 (uppställningsform balansräkning, read 2026-11-02)
+  lists Checkräkningskredit and Övriga skulder till kreditinstitut as
+  separate posts under both long- and short-term liabilities, and
+  Förbättringsutgifter på annans fastighet and Pågående nyanläggningar och
+  förskott as separate tangible fixed asset posts.
+- **Decision.** `K2Schedule::BALANCE` lines are lists of BAS ranges and use
+  the same split as the INK2R codes in `Ink2Codes` (7360–7370, 7214–7217,
+  7350–7354), so the annual report and INK2R agree. Maskiner och inventarier
+  stays one line (BAS 1200–1279, 1290–1299); the obeskattade reserver and
+  avsättningar are still one line each.
+- TODO(legal-verify): whether Maskiner och andra tekniska anläggningar and
+  Inventarier, verktyg och installationer, and the kinds of obeskattade
+  reserver, must be shown separately for a K2 company; the BAS ranges
+  against the official BAS–K2 mapping.
+
+## Stock changes and goods for resale (2026-11-02, #89)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-9, #89).
+
+- **Rule.** SKV field table INK2R_SKV2002-34-01-26-04 (read 2026-11-02): 3.2
+  Förändring av lager av produkter i arbete, färdiga varor och pågående
+  arbete för annans räkning, + 7411 and − 7510; 3.5 Råvaror och
+  förnödenheter 7511; 3.6 Handelsvaror 7512. BFNAR 2016:10, uppställningsform
+  resultaträkning: the stock change of products is an operating income item;
+  Handelsvaror is the cost of goods sold (purchases ± the change in stock of
+  goods for resale); Råvaror och förnödenheter includes legoarbeten and
+  underentreprenader.
+- **Decision.** `K2Schedule::INCOME` and `Ink2Codes::INCOME` use the same
+  ranges: 4940–4959 and 4970–4979 → stock change; 4960–4969 → Handelsvaror;
+  the rest of 4000–4999 → Råvaror och förnödenheter. Whether a purchase is
+  raw material or goods for resale depends on the business, so it is set per
+  account: an account in 4000–4899 with `sru_code` 7512 counts as
+  Handelsvaror. The chart of accounts has a toggle for it and SIE #SRU sets
+  it on an account created by a SIE import. Without the marking, purchases stay on 3.5 as before. A
+  one-sided field that turns negative is still written with its sign, but
+  the income tax page warns.
+- TODO(legal-verify): 4900–4939 (semi-finished goods) and 4980–4999; whether
+  a negative 3.5/3.6 should move to another field.
+
+## Specification of changes in equity (2026-11-02, #90)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-5, #90).
+
+- **Rule.** ÅRL 6 kap. 2 § andra stycket (Lag 2024:347): companies other
+  than HB and EF specify the changes in equity compared with the previous
+  year's balance sheet, in the förvaltningsberättelse. BFNAR 2016:10/2025:2
+  (uppställningsform förvaltningsberättelse) puts it under the heading
+  Förändringar i eget kapital; p. 20.11 adds a row per correction of the
+  opening equity.
+- **Decision.** `AnnualAccounts::equityChanges()` returns the rows (opening,
+  dividend, carried forward, the year's result, other changes, closing) with
+  an amount per column of `equityColumns()` and a total. The dividend and the
+  amount carried forward come from the DISPOSITION entry of the previous
+  year whose voucher lies in this year; other changes are the residual, so
+  every column reconciles by construction.
+- TODO(legal-verify): whether a new issue, a bonus issue or a shareholder
+  contribution must be named on its own row instead of "Övriga
+  förändringar"; corrections of errors under BFNAR 2016:10 p. 20.11.
+
+## Fastställelseintyg (2026-11-02, #91)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-10, #91).
+
+- **Rule.** ÅRL 8 kap. 3 § p. 1 (aktiebolag) and p. 2 (ekonomiska
+  föreningar), read 2026-11-02: certified copies reach Bolagsverket within a
+  month of the adoption; on the copy a board member or the managing director
+  certifies that the balance sheet and income statement have been adopted,
+  gives the day, and the meeting's decision on the profit or loss.
+- **Decision.** Four nullable columns on `annual_reports` (adoption_date,
+  adoption_decision, certifier_name, certifier_role) and a last page in the
+  PDF. The decision defaults to a sentence built from the booked DISPOSITION
+  entry of the year; the meeting is "årsstämman" for an AB and
+  "föreningsstämman" for an ekonomisk förening. The page is always printed,
+  with dotted lines for what is missing, so the same PDF can be signed by
+  hand.
+- TODO(legal-verify): Bolagsverket's form requirements (original or copy,
+  digital filing, the wording of the bestyrkande), which could not be read
+  (captcha).
+
+## Entered notes: ställda säkerheter, eventualförpliktelser, events after the year (2026-11-02, #92)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-11, #92).
+
+- **Rule.** ÅRL 5 kap. 1 §, 14 § (ställda säkerheter: omfattning, art och
+  form), 15 § (the sum of eventualförpliktelser), 16 § (åtaganden for group,
+  associated and jointly controlled companies), 22 § (significant events
+  after the year: art and economic effect); BFNAR 2025:2 p. 18.13 a–e (the
+  kinds), 18.14 (the mortgage amount, else the carrying value), 18.15 (the
+  definition of an eventualförpliktelse), 18.20A (say so when the effect
+  cannot be estimated). Read 2026-11-02. The notes are only required when the
+  circumstance exists.
+- **Decision.** Columns on `annual_reports`: `pledged_assets` (json, öre per
+  `PledgedAssetKind`), `pledged_other_text`, `contingent_liabilities_ore`
+  and `_text`, `group_commitments`, `events_after`,
+  `events_effect_unknown`. The figures cannot be read from the books, so the
+  person enters them; the page reminds about the pledged assets when there
+  are bank loans (2330–2359, 2410–2419, 2480–2489). A note without data is
+  left out (no "Inga" line). Notes are numbered after the fixed asset notes.
+- TODO(legal-verify): whether K2 practice expects "Inga" when there are no
+  ställda säkerheter or eventualförpliktelser; whether 5 kap. 16 § needs
+  amounts per kind.
+
+## Comment on a net sales variation over 30 % (2026-11-02, #93)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-12, #93).
+
+- **Rule.** BFNAR 2016:10 p. 5.5 andra stycket (also in the 2016 base
+  version, and kept in BFNAR 2025:2): "Varierar nettoomsättningen mer än 30
+  procent mellan åren ska företaget kommentera detta." BFNAR 2025:2 exempts a
+  company with an abbreviated income statement, which NONOX does not make.
+- **Decision.** `AnnualAccounts::netSalesVariations()` compares every pair of
+  consecutive years in the multi-year overview in integer öre: a variation
+  is |new − old| × 100 > 30 × |old|, and any change from 0. Exactly 30 % is
+  not a variation. `SaveAnnualReport` refuses to save without
+  `net_sales_comment` when there is a variation; the document prints a
+  factual sentence per pair and the comment.
+- TODO(legal-verify): whether every pair in the overview needs a comment or
+  only the latest year against the one before.

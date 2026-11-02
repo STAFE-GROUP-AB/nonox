@@ -329,7 +329,7 @@ it('AUD-BOK-7: shows the year\'s result on the overview also after it has been b
     $result = collect($kpis)->first(fn (array $kpi): bool => str_starts_with($kpi['label'], 'Resultat hittills'));
 
     expect($result['value']->ore)->toBe(26_161_500);
-})->todo('AUD-BOK-7: BusinessKpis::RESULT is 3000–8999, so 8999 cancels the result to 0 once it is booked');
+});
 
 it('#83: adds the schablonintäkt on the periodiseringsfond at the start of the year to INK2S 4.6 a and 4.15 (IL 30 kap. 6 a §, SKV INK2S 2026P4 field 7654)', function () {
     // Move 50 000 of the opening retained earnings to a periodiseringsfond (2125).

@@ -75,11 +75,15 @@ final class ReportTable
                 return $rows;
 
             case 'verifikationer':
-                $rows = [[$this->label('Ver'), $this->label('Datum'), $this->label('Text'), $this->label('Konto'), $this->label('Kostnadsställe'), $this->label('Projekt'), $this->label('Debet'), $this->label('Kredit')]];
+                // BFL 5 kap. 5 §: every line of a corrected voucher names its correction, and the other way round (#42).
+                $rows = [[$this->label('Ver'), $this->label('Datum'), $this->label('Text'), $this->label('Konto'), $this->label('Kostnadsställe'), $this->label('Projekt'), $this->label('Debet'), $this->label('Kredit'), $this->label('Rättad av'), $this->label('Rättar')]];
 
                 foreach ($this->reports->voucherList($query) as $voucher) {
+                    $correctedBy = $voucher->linkedReference($voucher->correctedBy);
+                    $corrects = $voucher->linkedReference($voucher->corrects);
+
                     foreach ($voucher->rows as $row) {
-                        $rows[] = [$voucher->reference(), $voucher->voucher_date->toDateString(), $voucher->description, (int) $row->account?->number, (string) $row->costCenter?->code, (string) $row->project?->code, $kr($row->debit_ore->ore), $kr($row->credit_ore->ore)];
+                        $rows[] = [$voucher->reference(), $voucher->voucher_date->toDateString(), $voucher->description, (int) $row->account?->number, (string) $row->costCenter?->code, (string) $row->project?->code, $kr($row->debit_ore->ore), $kr($row->credit_ore->ore), $correctedBy, $corrects];
                     }
                 }
 

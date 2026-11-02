@@ -30,14 +30,14 @@ Paketet innehåller en mapp med företagets organisationsnummer och årets datum
 | Mapp | Innehåll |
 |---|---|
 | `sie/` | Årets SIE4-fil, samma som SIE-exporten. |
-| `rapporter/` | Saldobalans, resultatrapport, balansrapport, huvudbok och verifikationslista för hela året, som CSV och PDF. Långa rapporter delas i flera PDF-filer. |
+| `rapporter/` | Saldobalans, resultatrapport, balansrapport, huvudbok och verifikationslista för hela året, som CSV och PDF. Långa rapporter delas i flera PDF-filer. Verifikationslistan visar för varje rättad verifikation vilken verifikation som rättade den, och tvärtom. |
 | `verifikationer/` | Underlagen till varje bokförd verifikation, under sina ursprungliga namn. |
 | `kundfakturor/` | Utfärdade kund- och kreditfakturor med fakturadatum under året, som PDF. |
 | `leverantorsfakturor/` | Leverantörsfakturorna med fakturadatum under året, som de laddades upp. |
 | `moms/` | Rutor och belopp för varje redovisad momsperiod och filen till Skatteverket. |
 | `lon/` | Lönebesked för attesterade lönekörningar med utbetalning under året, lönebesked från ett tidigare lönesystem och arbetsgivardeklarationerna. |
 | `behandlingshistorik/` | Allt som gjorts i företaget från årets första dag till dess paketet skapades, som CSV och JSON. |
-| `systemdokumentation/` | NONOX systemdokumentation i den version som gällde när paketet skapades. |
+| `systemdokumentation/` | NONOX systemdokumentation i den version som gällde när paketet skapades. Under `versioner/` ligger de versioner som var i bruk under räkenskapsåret, och `versioner.txt` säger när varje version togs i bruk. |
 
 Dessutom:
 

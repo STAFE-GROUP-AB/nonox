@@ -132,17 +132,35 @@ it('AUD-BOK-3: refuses to book a dividend larger than the free equity in the dis
     expect($rows)->toEqualCanonicalizing([2099 => 6_352_000, 2098 => 5_000_000, 2898 => -11_352_000]);
 });
 
-it('AUD-BOK-4: puts 2420 Förskott från kunder and 2480 Checkräkningskredit on their own K2 balance sheet lines (ÅRL bilaga 3, BAS)', function () {
+it('AUD-BOK-4: puts 2420 Förskott från kunder and 2480 Checkräkningskredit on their own K2 balance sheet lines (BFNAR 2016:10 uppställningsform balansräkning, ÅRL bilaga 1 D, #88)', function () {
     Bookkeeping::post($this->owner, $this->company, 500_000, 1930, audBsFindingsAccount(2420)->number, '2026-12-01');
     Bookkeeping::post($this->owner, $this->company, 700_000, 1930, audBsFindingsAccount(2480)->number, '2026-12-02');
+    Bookkeeping::post($this->owner, $this->company, 300_000, 1930, audBsFindingsAccount(2440)->number, '2026-12-03');
     $short = collect(AnnualAccounts::for($this->year)->balanceSheet()['sections'])->firstWhere('key', 'short_term');
     $lines = collect($short['lines'])->keyBy('key');
 
     // 5 000 is an advance from customers, not a debt to a credit institution;
-    // 7 000 is an overdraft at a bank, not a debt to a supplier.
-    expect($lines['credit_institutions']['amount'] ?? 0)->toBe(700_000)
-        ->and($lines['trade_payables']['amount'] ?? 0)->toBe(0);
-})->todo('AUD-BOK-4: K2Schedule puts 2400–2439 under Skulder till kreditinstitut and 2440–2499 under Leverantörsskulder');
+    // 7 000 is an overdraft at a bank (K2: Checkräkningskredit), not a debt to
+    // a supplier; only 3 000 on 2440 is a trade payable. Sum 15 000.
+    expect($lines['overdraft']['amount'] ?? 0)->toBe(700_000)
+        ->and($lines['customer_advances']['amount'] ?? 0)->toBe(500_000)
+        ->and($lines['trade_payables']['amount'] ?? 0)->toBe(300_000)
+        ->and($lines->has('credit_institutions'))->toBeFalse()
+        ->and($short['amount'])->toBe(1_500_000);
+});
+
+it('#88: puts 1120 Förbättringsutgifter på annans fastighet and 1280 Pågående nyanläggningar on their own K2 lines (BFNAR 2016:10 uppställningsform balansräkning, ÅRL bilaga 1 A II)', function () {
+    Bookkeeping::post($this->owner, $this->company, 200_000, audBsFindingsAccount(1120)->number, 1930, '2026-12-01');
+    Bookkeeping::post($this->owner, $this->company, 900_000, audBsFindingsAccount(1280)->number, 1930, '2026-12-02');
+    Bookkeeping::post($this->owner, $this->company, 400_000, audBsFindingsAccount(1220)->number, 1930, '2026-12-03');
+    $fixed = collect(collect(AnnualAccounts::for($this->year)->balanceSheet()['sections'])->firstWhere('key', 'fixed')['lines'])->keyBy('key');
+
+    // 2 000 + 9 000 + 4 000 = 15 000 of fixed assets, on three lines.
+    expect($fixed['improvements']['amount'])->toBe(200_000)
+        ->and($fixed['construction_in_progress']['amount'])->toBe(900_000)
+        ->and($fixed['machinery']['amount'])->toBe(400_000)
+        ->and($fixed->sum('amount'))->toBe(1_500_000);
+});
 
 it('AUD-BOK-5: specifies every change in equity, the dividend included, in the förvaltningsberättelse (ÅRL 6 kap. 2 § andra stycket, BFNAR 2016:10 kap. 5)', function () {
     $next = audBsFindingsClose();
@@ -150,7 +168,7 @@ it('AUD-BOK-5: specifies every change in equity, the dividend included, in the f
     $labels = collect(AnnualAccounts::for($next)->equityChanges())->pluck('label')->implode(' ');
 
     expect(mb_strtolower($labels))->toContain('utdelning');
-})->todo('AUD-BOK-5: AnnualAccounts::equityChanges shows only opening and closing per line, not the changes (utdelning, disposition, årets resultat)');
+});
 
 it('AUD-BOK-6: rounds amounts to whole kronor rather than cutting the öre off (BFNAR 2016:10 p. 3.9)', function () {
     Bookkeeping::post($this->owner, $this->company, 99, 1930, 3001, '2026-05-01');
@@ -175,20 +193,20 @@ it('AUD-BOK-9: reports a change of stock of finished goods on INK2R 3.2 (7411/75
 
     expect(Ink2::for($this->company, $this->year, null)->ink2r())->toHaveKey(7411)
         ->and(Ink2::for($this->company, $this->year, null)->ink2r())->not->toHaveKey(7511);
-})->todo('AUD-BOK-9: Ink2Codes maps 4000–4999 to 7511 and K2Schedule to Råvaror och förnödenheter; 3.2 (7411/7510) and 3.6 Handelsvaror (7512) are never used');
+});
 
 it('AUD-BOK-10: includes a fastställelseintyg for the copy filed with Bolagsverket (ÅRL 8 kap. 3 §)', function () {
     $html = AnnualReportDocument::html($this->company, $this->year, new AnnualReport(['fiscal_year_id' => $this->year->id, 'signatories' => [], 'average_employees' => 0, 'dividend_ore' => 0]));
 
     expect($html)->toContain('Fastställelseintyg');
-})->todo('AUD-BOK-10: the annual report document has no fastställelseintyg');
+});
 
 it('AUD-BOK-11: offers the K2 notes on ställda säkerheter, eventualförpliktelser and events after the year (ÅRL 5 kap. 14–16, 22 §; BFNAR 2016:10 p. 18.13–18.22)', function () {
-    $report = app(SaveAnnualReport::class)($this->owner, $this->year, ['average_employees' => 0, 'pledged_assets' => 'Företagsinteckning 500 000 kr']);
+    $report = app(SaveAnnualReport::class)($this->owner, $this->year, ['average_employees' => 0, 'pledged' => ['company_mortgage' => '500 000']]);
     $html = AnnualReportDocument::html($this->company, $this->year, $report);
 
     expect($html)->toContain('Ställda säkerheter');
-})->todo('AUD-BOK-11: the annual report has no way to enter or show these notes');
+});
 
 it('AUD-BOK-12: asks for a comment when net sales vary more than 30 % between years in the multi-year overview (BFNAR 2016:10 p. 5.5, BFNAR 2025:2)', function () {
     $previous = FiscalYear::create(['start_date' => '2025-01-01', 'end_date' => '2025-12-31']);
@@ -197,7 +215,7 @@ it('AUD-BOK-12: asks for a comment when net sales vary more than 30 % between ye
     // 2025 had no sales and 2026 has 100 000: the variation is over 30 %.
     expect($previous->exists)->toBeTrue()
         ->and($html)->toContain('Nettoomsättningen har förändrats');
-})->todo('AUD-BOK-12: no comment or warning for a net sales variation over 30 % (applies to fiscal years starting after 2025-12-31)');
+});
 
 it('AUD-BOK-13: lets the disposition pay a dividend from retained earnings after a loss year (ABL 17 kap. 3 §, 18 kap. 1 §)', function () {
     Bookkeeping::post($this->owner, $this->company, 12_000_000, 5010, 1930, '2026-11-01');

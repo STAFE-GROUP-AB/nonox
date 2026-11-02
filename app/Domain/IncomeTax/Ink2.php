@@ -97,7 +97,7 @@ final class Ink2
         $fields[Ink2Codes::FREE_EQUITY] = self::kronor(-$this->accounts->closingOf(2090, 2099) - $this->accounts->movementOf(3000, 8999));
 
         foreach (Ink2Codes::INCOME as $line) {
-            $amount = -$this->accounts->movementOf($line['range'][0], $line['range'][1]);
+            $amount = -$this->accounts->movementOfRanges($line['ranges'], $line['resale'] ?? null);
             $code = $amount >= 0 ? $line['income'] : $line['cost'];
 
             if ($code === null) {
@@ -247,6 +247,17 @@ final class Ink2
 
         if ($this->valueOf(Ink2Codes::S_PENSION_COSTS) > 0 && $basis === 0) {
             $warnings[] = __('Pensionskostnader redovisas i punkt 4.21, men underlaget för särskild löneskatt (punkt 1.4 eller 1.5) är tomt. Kontrollera underlaget.');
+        }
+
+        // A field with only one side on the form (e.g. 3.5 Råvaror och förnödenheter) may not be negative.
+        $fields = $this->ink2r();
+
+        foreach (Ink2Codes::INCOME as $line) {
+            $code = $line['income'] ?? $line['cost'];
+
+            if (($line['income'] === null || $line['cost'] === null) && is_int($fields[$code] ?? null) && $fields[$code] < 0) {
+                $warnings[] = __('Fält :code (:label) blir negativt, :amount kr. Det fältet har bara en sida på blanketten. Kontrollera kontona, till exempel om en lagerförändring ska ligga på ett annat konto.', ['code' => $code, 'label' => __(Ink2Codes::LABELS[$code]), 'amount' => $fields[$code]]);
+            }
         }
 
         return $warnings;

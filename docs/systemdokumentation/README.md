@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.15
-- Datum: 2026-10-30
+- Version: 0.85
+- Datum: 2026-11-02
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -114,6 +114,10 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   verifikationerna. Fliken Statistik och prognos visar diagram med samma
   siffror som tabeller ([ADR-027](../adr/ADR-027-overview.md)).
 - Översikten läser bara. Den bokför, ändrar och loggar ingenting.
+- Nyckeltalet Resultat hittills (överst i verifikationslistan) är årets
+  rörelse på 3000–8989, samma avgränsning som resultaträkningen. 8999 Årets
+  resultat räknas inte med, så resultatet står kvar när det bokats mot 2099
+  i bokslutet (#94).
 - "Att göra" bygger på samma regler som Mina företag (1a) för det valda
   företaget, plus bankposter som inte är kopplade till en faktura, företags-
   kontot som inte är avstämt till och med förra månadens slut, underlag i
@@ -241,6 +245,10 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   aldrig bort.
 - Varje tillagt eller ändrat konto loggas i behandlingshistoriken med värdet före
   och efter.
+- Ett inköpskonto (4000–4899) kan markeras som handelsvaror. Det sparas som
+  kontots SRU-kod 7512 (INK2R 3.6) och följer med i SIE-filens #SRU; en SIE-fil
+  med #SRU 7512 på ett inköpskonto som läggs till vid inläsningen ger samma
+  markering (#89).
 
 ## 3. Räkenskapsår
 
@@ -330,6 +338,11 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   felaktiga verifikationen och kan samtidigt bokföra rätt rader.
 - Rättelsen hänvisar till originalet och originalet till rättelsen. En orsak
   måste anges. En verifikation kan rättas en gång.
+- Verifikationslistan (rapporten, CSV, PDF och arkivpaketet) har kolumnerna
+  Rättad av och Rättar på varje rad, så att rättelsen syns när den rättade
+  posten granskas (BFL 5 kap. 5 §). Ligger den andra verifikationen i ett
+  annat räkenskapsår står året inom parentes, till exempel "A1 (2027)".
+  Enligt granskning 2026-11-02, juristgranskning återstår (AUD-BOK-3, #42).
 
 ### 4.5 Underlag
 
@@ -1184,11 +1197,48 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   resultatdisposition; resultaträkning (kostnadsslagsindelad) och
   balansräkning med föregående år; noter om redovisningsprinciper,
   medelantal anställda och anläggningstillgångar; samt underskrifter.
-- Raderna bildas av BAS-kontointervall (`K2Schedule`). Årets resultat i
+- Raderna bildas av BAS-kontointervall (`K2Schedule`). Balansräkningen följer
+  K2:s uppställningsform (BFNAR 2016:10, ÅRL bilaga 1) med samma BAS-indelning
+  som INK2R: Förbättringsutgifter på annans fastighet (1120–1129) och
+  Pågående nyanläggningar och förskott (1180–1189, 1280–1289) är egna rader;
+  bland skulderna står Checkräkningskredit (2480–2489, långfristig 2330–2339),
+  Övriga skulder till kreditinstitut (2410–2419, långfristiga 2340–2359),
+  Förskott från kunder (2420–2429), Pågående arbete för annans räkning
+  (2430–2439), Fakturerad men ej upparbetad intäkt (2450–2459),
+  Leverantörsskulder (2440–2449), Skulder till koncern-, intresse- och
+  gemensamt styrda företag (2460–2469, 2860–2869), Skatteskulder och Övriga
+  skulder var för sig. Enligt granskning 2026-11-02, juristgranskning
+  återstår (BS-AUD-BOK-4, #88).
+- Resultaträkningen delar 4000–4999 efter K2 och INK2R: lagerförändring av
+  produkter i arbete, färdiga varor och pågående arbete (4940–4959,
+  4970–4979) är en rörelseintäkt (INK2R 3.2, 7411 när den ökar resultatet och
+  7510 när den minskar det); förändring av lager av handelsvaror (4960–4969)
+  och inköpskonton markerade som handelsvaror är Handelsvaror (3.6, 7512);
+  övriga inköp, legoarbeten och 4900–4939, 4980–4999 är Råvaror och
+  förnödenheter (3.5, 7511). Blir ett fält som bara har en sida på blanketten
+  negativt visar inkomstdeklarationen en varning. Enligt granskning
+  2026-11-02, juristgranskning återstår (BS-AUD-BOK-9, #89).
+- Årets resultat i
   balansräkningen är resultaträkningens resultat oavsett om det är bokat på
   2099; ett tidigare resultat som inte disponerats visas som balanserat
   resultat. Saknas föregående år i systemet används årets ingående balanser
   som jämförelse för balansräkningen.
+- Varierar nettoomsättningen mer än 30 procent mellan två år i
+  flerårsöversikten (en ökning från 0 räknas) visar sidan en varning, och
+  årsredovisningen kan inte sparas utan en kommentar (`net_sales_comment`).
+  Dokumentet skriver under flerårsöversikten en mening om förändringen per
+  sådant årspar, och kommentaren. BFNAR 2016:10 och 2025:2 punkt 5.5. Enligt
+  granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-12, #93).
+- Förändringar i eget kapital specificeras som en tabell med en kolumn per
+  post (aktiekapital, reservfond, balanserat resultat, årets resultat) och
+  totalt, och raderna Belopp vid årets ingång (föregående års
+  balansräkning), Utdelning och Balanseras i ny räkning (ur årsstämmans
+  disposition av föregående års resultat, `year_end_entries` DISPOSITION
+  med verifikation i året), Årets resultat, Övriga förändringar (allt annat
+  på 2080–2099, t.ex. nyemission eller aktieägartillskott) och Belopp vid
+  årets utgång. Raderna summerar per kolumn. ÅRL 6 kap. 2 § andra stycket.
+  Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-5,
+  #90).
 - Föreslagen utdelning får inte vara större än det fria egna kapitalet
   (balanserat resultat och årets resultat, `DividendLimit`); en större
   utdelning avvisas med hänvisning till ABL 17 kap. 3 § (ekonomisk förening:
@@ -1196,8 +1246,29 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   utdelning. Fältet visar det fria egna kapitalet och påminner om
   försiktighetsregeln, som styrelsen bedömer. Enligt granskning 2026-11-02,
   juristgranskning återstår (BS-AUD-BOK-2, #84).
-- Rapporten visas som sida och laddas ner som PDF. Revisionsberättelse och
-  fastställelseintyg läggs till utanför systemet. Digital inlämning till
+- Noter som användaren fyller i (ÅRL 5 kap. 14–16, 22 §§; BFNAR 2016:10
+  p. 18.13–18.15, 18.20A): Ställda säkerheter per slag (företagsinteckningar
+  och fastighetsinteckningar med inteckningarnas belopp; tillgångar med
+  äganderättsförbehåll, belånade fordringar och övriga säkerheter med
+  tillgångens redovisade värde), Eventualförpliktelser (summa och text),
+  Åtaganden till förmån för koncern- och intresseföretag och Väsentliga
+  händelser efter räkenskapsårets slut (text, och om effekten inte kan
+  uppskattas). En not utan uppgifter tas inte med; noterna numreras i
+  ordning efter anläggningstillgångarna. Har företaget saldo på 2330–2359,
+  2410–2419 eller 2480–2489 påminner sidan om noten Ställda säkerheter.
+  Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-11,
+  #92).
+- Sist i rapporten finns fastställelseintyget (ÅRL 8 kap. 3 §): en
+  styrelseledamot eller VD intygar att resultat- och balansräkningen har
+  fastställts, fastställelsedagen och stämmans beslut om vinsten eller
+  förlusten, samt att kopian överensstämmer med originalet. Fälten
+  fastställelsedag (efter räkenskapsårets slut), beslut, namn och roll sparas
+  i `annual_reports`. Är beslutet tomt skrivs det ur den bokförda
+  resultatdispositionen; finns ingen lämnas tomma rader. Bolagsverkets
+  formkrav har inte kunnat läsas. Enligt granskning 2026-11-02,
+  juristgranskning återstår (BS-AUD-BOK-10, #91).
+- Rapporten visas som sida och laddas ner som PDF. Revisionsberättelsen
+  läggs till utanför systemet. Digital inlämning till
   Bolagsverket (iXBRL) finns ännu inte.
 - Kräver behörigheten att hantera räkenskapsår.
 
@@ -2431,6 +2502,14 @@ Personalliggare och Avtal när de är påslagna.
   och värden före och efter.
 - Tabellen går bara att lägga till i. Databasen själv vägrar ändringar och
   borttagningar.
+- När en ny programversion tas i bruk skrivs en post `system.version_deployed`
+  med version, byggnummer, commit (SHA), byggtid, systemdokumentationens
+  version och föregående version. Den skrivs en gång per ny version eller
+  commit, efter `php artisan migrate`, vid `nonox:build-info`, med
+  `nonox:record-version` och varje timme från schemaläggaren. Posten hör inte
+  till något företag men tas med i varje företags behandlingshistorik i
+  arkivpaketet (BFNAR 2013:2 punkt 9.16 andra stycket). Enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-BOK-8, #43).
 
 ## 7a. Arkivpaket
 
@@ -2459,12 +2538,23 @@ Personalliggare och Avtal när de är påslagna.
     till dess paketet skapas, som CSV och JSON, med användarens namn och
     e-post.
   - `systemdokumentation/`: den här dokumentationen i den version som gällde
-    när paketet skapades.
+    när paketet skapades, varje version som var i bruk under räkenskapsåret
+    (`versioner/<version>-<kontrollsumma>.md`) och `versioner.txt` som anger
+    när varje version togs i bruk och med vilken programversion.
   - `LASMIG.txt` som förklarar paketet på svenska, `manifest.json` med storlek
     och SHA-256 för varje fil och `SHA256SUMS.txt` som kan kontrolleras med
     `shasum -a 256 -c` eller `sha256sum -c`.
 - Paketets egen SHA-256 sparas och skrivs i behandlingshistoriken när paketet
   skapas, och varje nedladdning loggas. Filerna går att läsa utan NONOX.
+- Varje ny text av systemdokumentationen sparas oföränderligt
+  (`system_documentation_versions`, med version, datum, SHA-256, programversion
+  och tidpunkten den togs i bruk) efter varje `php artisan migrate`, vid
+  `nonox:build-info`, med `nonox:record-version` och en gång i timmen från
+  schemaläggaren. En ersatt version finns alltså kvar under hela
+  arkiveringstiden (BFNAR 2013:2, kommentaren till punkt 9.1). Huvudet anger
+  senaste versionen i ändringshistoriken, som står i stigande ordning; ett
+  test i CI kontrollerar båda. Version 0.60 användes aldrig. Enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-BOK-9, #44).
 
 ## 7b. Ändringslogg och färdplan
 
@@ -2773,15 +2863,15 @@ kontrollerat dem mot källan. Särskilt:
 | 0.29 | 2026-11-01 | Omvänd betalningsskyldighet för byggtjänster på kundfakturor, konto 3231 och momsruta 41. |
 | 0.30 | 2026-11-01 | ROT- och RUT-avdrag på kundfakturor, delad fordran på 1513 och Skatteverkets betalning. |
 | 0.31 | 2026-11-01 | Resultat per projekt och kostnadsställe i registren. |
+| 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |
+| 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
+| 0.34 | 2026-11-01 | Flytt från Fortnox via API: anslutning med OAuth2 och PKCE, bokföring per år som SIE4 genom den vanliga granskningen, register, underlag och avstämning av obetalda fakturor. |
 | 0.35 | 2026-11-01 | Säkerhetsgranskning och GDPR: företagsbindning av sidor, härdad inloggning och sessioner, säkerhetsrubriker, skydd av hälsouppgifter och bankkonton i lönen, registerutdrag, radering och anonymisering, gallring, cookies, integritetspolicy, villkor och personuppgiftsbiträdesavtal. |
 | 0.36 | 2026-11-01 | Begränsad behandling (GDPR art. 18) för kunder och leverantörer: inga nya fakturor, offerter, avtal eller leverantörsfakturor medan begränsningen gäller. Radering av anställda inom lagringstiden för lönebesked. Samma organisationsnummer kan finnas i flera konton i den driftade tjänsten. Inbjudningar gäller 14 dagar. Tak per timme för SIE-uppladdning, VIES, arkivpaket och bankfiler. Säkerhetskopior krypteras och lagras bara i Sverige i 7 dagar. |
+| 0.37 | 2026-11-02 | Personalliggare (modul): lokaler, personal, kiosk som fungerar utan internet, personlig QR-kod, mobil incheckning med platskontroll, liggare med hashkedja och rättelser, kontrollbesök med export och förslag till tidrapport i lönen. |
 | 0.38 | 2026-11-02 | Inkorg (modul): egen e-postadress per företag och en gemensam adress, lista över godkända avsändare, SPF/DKIM/DMARC och spärr av farliga bilagor före all tolkning, originalet som `.eml` kopplat som underlag, SIE4, Peppol och dagsrapporter från kassasystem med mallar, NONOX AI, varningar för bedrägeri och dubbletter, och automatisk bokföring bara med en mall som en person godkänt. |
 | 0.39 | 2026-11-01 | Inkorg: dagsrapporter som PDF läses ur PDF-filens text och kan få en mall, så nästa rapport tolkas utan AI. Varning när mejlet nämner en bilaga som saknas. Inkommande mejl kan läsas igen och raderas så länge de inte blivit bokföring eller utkast; raderingen loggas. Personalliggare: verksamheten Övrig för lokaler som bara använder tidsredovisning. Leverantörsfakturor i utländsk valuta från inkorgen räknas om till kronor med Riksbankens mittkurs på fakturadatumet (eller en kurs som personen skriver), och originalbeloppet och kursen skrivs i fakturans text. |
 | 0.40 | 2026-11-01 | Betalfiler godkänns av någon med rätt att godkänna betalningar innan de kan laddas ned eller markeras som betalda, och inte av den som skapade filen så länge företaget kräver att någon annan attesterar. |
-| 0.34 | 2026-11-01 | Flytt från Fortnox via API: anslutning med OAuth2 och PKCE, bokföring per år som SIE4 genom den vanliga granskningen, register, underlag och avstämning av obetalda fakturor. |
-| 0.33 | 2026-11-01 | Trepartshandel (3107, ruta 38), OSS för privatpersoner i andra EU-länder (köparlandets moms på 2619, utanför momsdeklarationen), VIES-kontroll av momsregistreringsnummer och EU-rapporter: periodisk sammanställning med fil och OSS-underlag. |
-| 0.32 | 2026-11-01 | Försäljning till andra EU-länder och export: kundens land, konton 3108/3308/3105/3305, momsrutorna 35/39/36/40 och fakturatexter. Ruta 35 matas av 3108 i stället för 3106. |
-| 0.37 | 2026-11-02 | Personalliggare (modul): lokaler, personal, kiosk som fungerar utan internet, personlig QR-kod, mobil incheckning med platskontroll, liggare med hashkedja och rättelser, kontrollbesök med export och förslag till tidrapport i lönen. |
 | 0.41 | 2026-11-01 | Dataskydd: "Radera mitt konto" på profilen (art. 17). Nekas så länge användaren äger ett företag som inte är arkiverat. Medlemskap, sessioner, API-nycklar, inloggningskoder, väntande inbjudningar och profilbild tas bort; kontot raderas om inget längre hänvisar till det, annars pseudonymiseras det ("Raderad användare", en adress på .invalid, ingen inloggning) så att verifikationer och behandlingshistorik fortfarande visar vem som gjorde vad. Registerutdrag för en person i personalliggaren och för en avsändare till inkorgen (JSON, för inkorgen även CSV), loggade. |
 | 0.42 | 2026-11-01 | Säkerhetsgranskning: bokföring och periodlås väntar in varandra (bokföringen håller ett delat lås på företagets rad, periodlåset ett uppdateringslås), så en verifikation kan inte hamna i en period som låses samtidigt. Belopp från Fortnox, inkorgens tolkning och utlägg läses exakt till hela ören (8,155 kr blir 816 öre). Personalliggare: mobil incheckning markeras som självrapporterad position och begränsas per person, kontrollbesök som kiosken rapporterar från offlineläge loggas bara för aktiva chefer och som ej verifierade, och exporten gäller högst 13 månader. Tak per timme för PDF:er och rapportfiler. |
 | 0.43 | 2026-11-01 | Lön: lönekörningen betalar godkända tidrapporter som timlön (timmar × timlön) för anställda med timlön, varje tidrapport knuten till den körning som betalar den och låst när körningen attesteras. Lönekörningens sida visar timmar som väntar på godkännande. |
@@ -2801,6 +2891,7 @@ kontrollerat dem mot källan. Särskilt:
 | 0.57 | 2026-11-01 | Utvecklarwebben för NONOX Connect under `/utvecklare` (svenska, engelska med `?lang=en`): guider från `docs/api/guider`, en referens som genereras på servern från `docs/api/openapi.yaml`, kodexempel, ändringslogg (`docs/api/CHANGELOG.md`) och specifikationen som YAML och JSON. Ändrar ingen bokföring: sidorna läser bara specifikationen och inställningarna för gränser. |
 | 0.58 | 2026-11-01 | Avtal (modul, ADR-033): kollektivavtalens värden som versionerad data med källa, inläst okontrollerad och använd först efter en namngiven kontroll (installationen eller företaget), skyddad mot ändring när den är kontrollerad. Företagets bindning (medlem eller hängavtal) och anställningens avtal, lönegrupp och branschvana. Lönekörningen stoppas utan kontrollerad version; redan uppdelade OB- och övertidstimmar prissätts med avtalets sats med version och källa på raden; avtalskalender med aftnar och storhelger; minimilönekontroll med varning. NONOX AI föreslår avtal och anställningsuppgifter ur maskerad text, med citat och sida, och inget förs in utan en person. |
 | 0.59 | 2026-11-01 | NONOX Connect: kundfakturor, leverantörsfakturor med attest av någon annan, betalningar, artiklar, kostnadsställen och projekt, rapporter, momsdeklaration per period, periodernas låsning och SIE-export i API:t, med samma funktioner som appen; ett anrop som bokför kräver behörighet att bokföra. Signerade webhooks som skickas efter att bokföringen sparats, med skydd mot anrop till interna nät och avstängning efter ett dygns fel. Appar kan återkalla sin egen anslutning. Testföretag med exempeldata, tydligt märkta och utan utskick. |
+| 0.60 | 2026-11-01 | Versionsnumret användes inte; ingen ändring hör till det. Tabellen ordnades i stigande versionsordning 2026-11-02 (#44). |
 | 0.61 | 2026-11-01 | Verifikationens rader i ordningen konto, kostnadsställe, projekt, radtext, debet, kredit och kontosaldo, i inmatningen, på verifikationen och i verifikationslistan. Kontosaldo (ingående balans plus bokförda verifikationer, aldrig utkast) visas när ett konto väljs och efter varje rad, på kontots normala sida; bara information, bokföringen ändras inte. Konton i rapporterna och på verifikationen leder till huvudboken för kontot (kontoanalys) med samma filter. Underlag kan fotograferas med mobilen, och NONOX AI läser det direkt efter uppladdningen när modulen är påslagen; AI:n fyller bara i formuläret. |
 | 0.62 | 2026-11-01 | Anläggningstillgång direkt från inköpet: en rad i debet på ett anskaffningskonto i en verifikation eller leverantörsfaktura kan bli en tillgång i registret. Förslaget sparas med utkastet, och tillgången skapas i samma transaktion som bokföringen eller registreringen, länkad till verifikationen och raden. Anskaffningskonton och gräns för inventarier av mindre värde är företagets egna inställningar. |
 | 0.63 | 2026-11-01 | Företagsuppgifter från Bolagsverket (ADR-035): namn, adress, postnummer, ort och företagsform hämtas med organisationsnumret i formulären för nytt företag, företagsinställningar, kunder och leverantörer. Numret kontrolleras med Luhn först, svaret är ett förslag som bara fyller tomma fält och ändrar inget användaren skrivit utan att fråga, och inget sparas förrän formuläret sparas. VIES-kontroll av leverantörens momsregistreringsnummer, loggad i behandlingshistoriken. Ändrar ingen bokföring. |

@@ -29,10 +29,11 @@ use Carbon\CarbonImmutable;
 final class BusinessKpis
 {
     /**
-     * Account ranges read from the ledger (BAS): revenue and expenses, cash
-     * and bank, and the VAT accounts.
+     * Account ranges read from the ledger (BAS): revenue and expenses up to
+     * 8989 (8999 Årets resultat moves the booked result to 2099 and would
+     * cancel it, #94), cash and bank, and the VAT accounts.
      */
-    private const array RESULT = [3000, 8999];
+    private const array RESULT = [3000, 8989];
 
     private const array REVENUE = [3000, 3999];
 

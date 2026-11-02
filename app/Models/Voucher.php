@@ -162,6 +162,25 @@ class Voucher extends Model
         return $this->belongsTo(FiscalYear::class);
     }
 
+    /**
+     * The other voucher of a correction as a reference, with its fiscal year
+     * when that differs from this voucher's, e.g. "A5" or "A1 (2027)". BFL 5
+     * kap. 5 §: the correction must be easy to find from the corrected entry
+     * (#42). Load the relation with series and fiscalYear first.
+     */
+    public function linkedReference(?self $other): string
+    {
+        if ($other === null) {
+            return '';
+        }
+
+        $reference = $other->reference();
+
+        return $other->fiscal_year_id === $this->fiscal_year_id || $other->fiscalYear === null
+            ? $reference
+            : "{$reference} ({$other->fiscalYear->label()})";
+    }
+
     /** @return BelongsTo<Voucher, $this> */
     public function corrects(): BelongsTo
     {

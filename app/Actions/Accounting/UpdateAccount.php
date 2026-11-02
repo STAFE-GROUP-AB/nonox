@@ -15,9 +15,10 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Renames, retypes, activates or deactivates an account, or ties it to a box
- * of the VAT return (vat_box, #64). The account number never changes.
- * Accounts are deactivated, never deleted (AGENTS.md §6.1).
+ * Renames, retypes, activates or deactivates an account, ties it to a box of
+ * the VAT return (vat_box, #64) or sets its SRU code (e.g. 7512 for purchases
+ * of goods for resale, #89). The account number never changes. Accounts are
+ * deactivated, never deleted (AGENTS.md §6.1).
  */
 class UpdateAccount
 {
@@ -33,6 +34,7 @@ class UpdateAccount
             'type' => ['sometimes', 'required', Rule::enum(AccountType::class)],
             'is_active' => ['sometimes', 'required', 'boolean'],
             'vat_box' => ['sometimes', 'nullable', 'integer', Rule::in(VatBoxes::ACCOUNT_BOXES)],
+            'sru_code' => ['sometimes', 'nullable', 'string', 'regex:/^\d{3,4}$/'],
         ], [
             'vat_box.in' => __('Välj en ruta för försäljning eller inköp.'),
         ], [
@@ -68,6 +70,7 @@ class UpdateAccount
             'type' => $account->type->value,
             'is_active' => $account->is_active,
             'vat_box' => $account->vat_box,
+            'sru_code' => $account->sru_code,
         ];
     }
 }

@@ -24,28 +24,36 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
 2. Under **Texter och underskrifter**, fyll i:
    - **Allmänt om verksamheten** – vad företaget gör och var det har sitt säte.
    - **Väsentliga händelser under året** – lämna tomt om inget särskilt har hänt.
+   - **Kommentar till nettoomsättningen** – visas när omsättningen har ändrats med mer än 30 procent mellan två år i flerårsöversikten. K2 kräver då en kommentar, och du kan inte spara utan den. Förklara kort varför, till exempel en ny stor kund eller ett avtal som upphört.
    - **Föreslagen utdelning, kr** – högst det fria egna kapitalet, som står under fältet. Det är balanserade vinstmedel plus årets resultat. Försöker du föreslå mer får du ett felmeddelande, eftersom aktiebolagslagen (17 kap. 3 §) inte tillåter det. Utdelningen ska också vara försvarlig med hänsyn till bolagets behov av eget kapital och likviditet (försiktighetsregeln). Det bedömer styrelsen – NONOX kan inte räkna fram det.
    - **Medelantal anställda**.
    - **Ort** och **Datum för underskrift**.
    - **Underskrifter** – en per rad: namn, roll. Till exempel "Anna Andersson, Styrelseledamot".
-3. Klicka på **Spara**.
-4. Granska **Förhandsvisning av årsredovisningen**.
-5. Klicka på **Ladda ner PDF**.
+3. Under **Noter som du fyller i**, fyll i det som gäller företaget. Lämna resten tomt – en not utan uppgifter tas inte med.
+   - **Ställda säkerheter, kr** – till exempel en företagsinteckning som banken har som säkerhet för ett lån. För inteckningar skriver du inteckningarnas belopp, för övriga säkerheter tillgångens bokförda värde. Har företaget lån hos en bank påminner sidan om det här.
+   - **Eventualförpliktelser, kr** – summan av till exempel borgen och garantier som inte står i balansräkningen, och vad de gäller.
+   - **Åtaganden för koncern- och intresseföretag** – säkerheter, garantier och andra åtaganden för till exempel ett dotterbolag.
+   - **Väsentliga händelser efter räkenskapsårets slut** – vad som har hänt och vilken ekonomisk effekt det får. Kryssa i **Den ekonomiska effekten går inte att uppskatta** om det inte går att säga.
+4. Efter stämman, fyll i **Fastställelseintyg**: **Fastställelsedag**, **Den som intygar** och **Roll** (styrelseledamot eller verkställande direktör). **Stämmans beslut om vinsten eller förlusten** kan du lämna tomt om du har bokat [resultatdispositionen](/manual/bokslut/resultatdisposition) – då skrivs beslutet ut därifrån.
+5. Klicka på **Spara**.
+6. Granska **Förhandsvisning av årsredovisningen**.
+7. Klicka på **Ladda ner PDF**.
 
 ## Det här innehåller årsredovisningen
 
 - **Förvaltningsberättelse** med dina texter, en flerårsöversikt (nettoomsättning, resultat efter finansiella poster och soliditet, för upp till fyra år), förändringar i eget kapital och förslag till resultatdisposition.
+- **Förändringar i eget kapital** är en tabell med en kolumn per post (aktiekapital, reservfond, balanserat resultat och årets resultat). Den visar beloppen vid årets ingång, den utdelning och det belopp som årsstämman beslutade att balansera i ny räkning, årets resultat, övriga förändringar som en nyemission, och beloppen vid årets utgång. Utdelningen och dispositionen hämtas från [resultatdispositionen](/manual/bokslut/resultatdisposition).
 - **Resultaträkning** uppställd efter kostnadsslag, med föregående år.
 - **Balansräkning** med föregående år.
-- **Noter** om redovisningsprinciper, medelantal anställda och anläggningstillgångar.
+- **Noter** om redovisningsprinciper, medelantal anställda och anläggningstillgångar, och de noter du fyller i: ställda säkerheter, eventualförpliktelser, åtaganden för koncern- och intresseföretag och väsentliga händelser efter räkenskapsårets slut.
 - **Underskrifter**.
+- **Fastställelseintyg** sist, för kopian som skickas till Bolagsverket. Årsredovisningslagen (8 kap. 3 §) kräver att en styrelseledamot eller VD intygar att resultat- och balansräkningen har fastställts, när det skedde och vad stämman beslutade om vinsten eller förlusten. Saknas något står det streckade rader att fylla i för hand.
 
-Raderna bildas av BAS-kontointervall. Årets resultat i balansräkningen är resultaträkningens resultat, även om det inte är bokat på 2099 än. Finns föregående år inte i NONOX används årets ingående balanser som jämförelse i balansräkningen.
+Raderna bildas av BAS-kontointervall och följer K2:s uppställning. Checkräkningskredit (konto 2480), förskott från kunder (2420) och leverantörsskulder (2440) står på egna rader, liksom förbättringsutgifter på annans fastighet (1120) och pågående nyanläggningar (1180, 1280). Indelningen är densamma som i inkomstdeklarationens räkenskapsschema (INK2R). I resultaträkningen är en förändring av lager av egna produkter och pågående arbeten (4940–4959, 4970–4979) en rörelseintäkt. Förändring av lager av handelsvaror (4960–4969) och inköpskonton som du markerat som handelsvaror i [kontoplanen](/manual/bokforing/kontoplan) står under Handelsvaror. Övriga inköp står under Råvaror och förnödenheter. Årets resultat i balansräkningen är resultaträkningens resultat, även om det inte är bokat på 2099 än. Finns föregående år inte i NONOX används årets ingående balanser som jämförelse i balansräkningen.
 
 ## Det här gör du utanför NONOX
 
 - **Revisionsberättelse** – har företaget revisor läggs den till utanför systemet.
-- **Fastställelseintyg** – skrivs efter årsstämman och läggs till utanför systemet.
 - **Inlämning till Bolagsverket** – digital inlämning (iXBRL) är på väg. Tills vidare lämnar du årsredovisningen på det sätt Bolagsverket anvisar.
 
 > [!NOTE]

@@ -29,11 +29,14 @@ use App\Models\VoucherAttachment;
 use App\Modules\Inbox\Actions\ApproveInboxMessage;
 use App\Modules\Inbox\InboxModule;
 use App\Modules\ModuleManager;
+use App\Support\Build\BuildInfo;
 use App\Support\Sie\Cp437;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Events\NoPendingMigrations;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -373,7 +376,7 @@ describe('rapporter stämmer mot huvudboken (BFL 5 kap. 1 §, BFNAR punkterna 2.
 
         // The archive package must be readable without NONOX; the original's lines must point to A5.
         expect($original->flatten()->implode(' '))->toContain('A5');
-    })->todo('AUD-BOK-3: verifikationslistan i arkivpaketet och CSV visar inte att A2 rättats av A5');
+    });
 
     it('shows the year\'s result in the income statement also after the result is booked to equity (8999/2099)', function () {
         audBokYear($this->owner, $this->company, $this->year);
@@ -476,8 +479,12 @@ describe('bevarande i sju år (BFL 7 kap. 2 §) och behandlingshistorik (BFNAR p
     })->todo('AUD-BOK-5: inget "får förstöras från"-datum per räkenskapsår (AGENTS.md §10); inget raderas, så ingen laglig risk i dag');
 
     it('logs in the audit trail when a new program version is taken into use (BFNAR punkt 9.16 andra stycket)', function () {
-        expect(AuditLog::query()->where('action', 'like', 'system.%')->exists())->toBeTrue();
-    })->todo('AUD-BOK-8: nya programversioner skrivs inte i behandlingshistoriken med datum');
+        BuildInfo::fake(['build' => 4321, 'sha' => str_repeat('a', 40), 'built_at' => '2026-10-29T09:00:00+01:00']);
+        Event::dispatch(new NoPendingMigrations('up'));
+        BuildInfo::fake(null);
+
+        expect(AuditLog::query()->where('action', 'system.version_deployed')->latest('id')->first()?->payload)->toMatchArray(['build' => 4321, 'sha' => str_repeat('a', 40)]);
+    });
 
     it('logs a new account in the audit trail (BFNAR punkt 9.16 andra stycket)', function () {
         app(CreateAccount::class)($this->owner, $this->company, ['number' => 6993, 'name' => 'Lämnade bidrag och gåvor']);
@@ -492,5 +499,5 @@ describe('bevarande i sju år (BFL 7 kap. 2 §) och behandlingshistorik (BFNAR p
         $latest = collect($table[1])->sortBy(fn (string $version): int => (int) explode('.', $version)[1])->last();
 
         expect($header[1] ?? null)->toBe($latest);
-    })->todo('AUD-BOK-9: systemdokumentationen säger "Version: 0.15" men tabellen går till 0.43 och raderna ligger i fel ordning');
+    });
 });

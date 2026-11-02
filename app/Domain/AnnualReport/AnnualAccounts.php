@@ -8,7 +8,9 @@ use App\Domain\Accounting\VoucherStatus;
 use App\Models\Account;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
+use App\Models\Voucher;
 use App\Models\VoucherRow;
+use App\Models\YearEndEntry;
 use Illuminate\Support\Collection;
 
 /**
@@ -17,7 +19,8 @@ use Illuminate\Support\Collection;
  * overview, changes in equity, the free equity at the meeting's disposal
  * and the note on fixed assets. Amounts are öre, shown the way the report
  * shows them: income and assets positive, costs negative, equity and
- * liabilities positive. Three queries per year.
+ * liabilities positive. Three queries per year and one for the purchase
+ * accounts marked as goods for resale.
  */
 final class AnnualAccounts
 {
@@ -27,12 +30,19 @@ final class AnnualAccounts
     /** @var ?array<int, array{opening: int, debit: int, credit: int}> */
     private ?array $previous;
 
+    /** @var array<int, int> purchase accounts marked as goods for resale (K2Schedule::PURCHASES) */
+    private array $resale;
+
     public function __construct(
         public readonly FiscalYear $fiscalYear,
         public readonly ?FiscalYear $previousYear,
     ) {
         $this->current = self::ledger($fiscalYear);
         $this->previous = $previousYear === null ? null : self::ledger($previousYear);
+        $this->resale = Account::query()
+            ->whereBetween('number', K2Schedule::PURCHASES)
+            ->where('sru_code', K2Schedule::GOODS_FOR_RESALE_SRU)
+            ->pluck('number')->map(fn (mixed $number): int => (int) $number)->values()->all();
     }
 
     public static function for(FiscalYear $fiscalYear): self
@@ -51,8 +61,8 @@ final class AnnualAccounts
         $values = ['current' => [], 'previous' => []];
 
         foreach (K2Schedule::INCOME as $line) {
-            $amount = -$this->movement($this->current, $line['from'], $line['to']);
-            $previous = $this->previous === null ? null : -$this->movement($this->previous, $line['from'], $line['to']);
+            $amount = -$this->lineMovement($this->current, $line['ranges'], $line['resale'] ?? null);
+            $previous = $this->previous === null ? null : -$this->lineMovement($this->previous, $line['ranges'], $line['resale'] ?? null);
             $values['current'][$line['key']] = $amount;
             $values['previous'][$line['key']] = $previous ?? 0;
 
@@ -168,6 +178,36 @@ final class AnnualAccounts
         return $rows;
     }
 
+    /**
+     * The pairs of consecutive years in the multi-year overview whose net
+     * sales differ by more than 30 %, newest first. A change from 0 counts.
+     * BFNAR 2016:10 and 2025:2 p. 5.5: such a variation must be commented
+     * on in the förvaltningsberättelse (#93).
+     *
+     * TODO(legal-verify): whether "mellan åren" means every pair shown in
+     * the overview or only this year against the previous one.
+     *
+     * @param  list<array{label: string, net_sales: int, after_financial: int, solidity: ?float}>|null  $rows  multiYear(), if already computed
+     * @return list<array{from: string, to: string, from_amount: int, to_amount: int}>
+     */
+    public function netSalesVariations(?array $rows = null): array
+    {
+        $rows ??= $this->multiYear();
+        $variations = [];
+
+        for ($i = 0; $i + 1 < count($rows); $i++) {
+            $newer = $rows[$i]['net_sales'];
+            $older = $rows[$i + 1]['net_sales'];
+            $varies = $older === 0 ? $newer !== 0 : abs($newer - $older) * 100 > 30 * abs($older);
+
+            if ($varies) {
+                $variations[] = ['from' => $rows[$i + 1]['label'], 'to' => $rows[$i]['label'], 'from_amount' => $older, 'to_amount' => $newer];
+            }
+        }
+
+        return $variations;
+    }
+
     /** The free equity at the annual meeting's disposal: retained earnings and the year's result. */
     public function freeEquity(): int
     {
@@ -196,44 +236,133 @@ final class AnnualAccounts
     }
 
     /**
-     * Changes in equity during the year, per line: the balance at the start
-     * and at the end of the year.
+     * The columns of the specification of changes in equity: the equity
+     * lines of the balance sheet (aktiekapital, reservfond, balanserat
+     * resultat, årets resultat) that have an amount in either year, or that
+     * the disposition of the previous year's result moves.
      *
-     * @return list<array{label: string, opening: int, closing: int}>
+     * @return list<array{key: string, label: string}>
+     */
+    public function equityColumns(): array
+    {
+        return array_map(fn (array $column): array => ['key' => $column['key'], 'label' => $column['label']], array_values($this->equityLines()));
+    }
+
+    /**
+     * The specification of changes in equity compared with the previous
+     * year's balance sheet (ÅRL 6 kap. 2 § andra stycket): the amounts at
+     * the start of the year, the disposition decided by the annual meeting
+     * (dividend, carried forward), other changes (e.g. a new issue or a
+     * shareholder contribution), the year's result and the amounts at the
+     * end of the year, per column of equityColumns() and in total. The rows
+     * add up: start + changes = end, per column (#90).
+     *
+     * @return list<array{key: string, label: string, amounts: array<string, int>, total: int}>
      */
     public function equityChanges(): array
     {
-        $rows = [];
+        $lines = $this->equityLines();
+        $keys = array_keys($lines);
+        $row = function (string $key, string $label, array $amounts) use ($keys): array {
+            $amounts = array_map(fn (string $column): int => (int) ($amounts[$column] ?? 0), array_combine($keys, $keys));
 
-        foreach ($this->balanceSheet()['sections'] as $section) {
-            if (! in_array($section['key'], ['restricted', 'free'], true)) {
-                continue;
+            return ['key' => $key, 'label' => $label, 'amounts' => $amounts, 'total' => array_sum($amounts)];
+        };
+
+        $opening = $row('opening', __('Belopp vid årets ingång'), array_map(fn (array $line): int => $line['previous'], $lines));
+        $closing = $row('closing', __('Belopp vid årets utgång'), array_map(fn (array $line): int => $line['amount'], $lines));
+        $changes = [];
+        $disposition = $this->disposition();
+
+        if ($disposition !== null) {
+            [$disposed, $dividend] = $disposition;
+
+            if ($dividend !== 0) {
+                $changes[] = $row('dividend', __('Utdelning'), ['year_result' => -$dividend]);
             }
 
-            foreach ($section['lines'] as $line) {
-                $rows[] = ['label' => $line['label'], 'opening' => $line['previous'], 'closing' => $line['amount']];
+            $changes[] = $row('carried_forward', __('Balanseras i ny räkning'), ['retained' => $disposed - $dividend, 'year_result' => -($disposed - $dividend)]);
+        }
+
+        $changes[] = $row('year_result', __('Årets resultat'), ['year_result' => $closing['amounts']['year_result'] ?? 0]);
+
+        $other = [];
+
+        foreach ($keys as $key) {
+            $other[$key] = $closing['amounts'][$key] - $opening['amounts'][$key] - array_sum(array_map(fn (array $change): int => $change['amounts'][$key], $changes));
+        }
+
+        if (array_filter($other) !== []) {
+            $changes[] = $row('other', __('Övriga förändringar'), $other);
+        }
+
+        return [$opening, ...$changes, $closing];
+    }
+
+    /**
+     * The equity lines of the balance sheet by key, with retained earnings
+     * and the year's result always present when the year has a disposition.
+     *
+     * @return array<string, array{key: string, label: string, amount: int, previous: int}>
+     */
+    private function equityLines(): array
+    {
+        $lines = [];
+
+        foreach ($this->balanceSheet()['sections'] as $section) {
+            if (in_array($section['key'], ['restricted', 'free'], true)) {
+                foreach ($section['lines'] as $line) {
+                    $lines[$line['key']] = $line;
+                }
             }
         }
 
-        return $rows;
+        $lines['retained'] ??= ['key' => 'retained', 'label' => __('Balanserat resultat'), 'amount' => 0, 'previous' => 0];
+        $lines['year_result'] ??= ['key' => 'year_result', 'label' => __('Årets resultat'), 'amount' => 0, 'previous' => 0];
+
+        $order = array_flip(['share_capital', 'reserve', 'retained', 'year_result']);
+        uksort($lines, fn (string $a, string $b): int => ($order[$a] ?? 9) <=> ($order[$b] ?? 9));
+
+        return $lines;
+    }
+
+    /**
+     * The previous year's result disposed of by the annual meeting in this
+     * year, and the dividend: [result, dividend] in öre, or null.
+     *
+     * @return ?array{0: int, 1: int}
+     */
+    private function disposition(): ?array
+    {
+        if ($this->previousYear === null) {
+            return null;
+        }
+
+        $entry = YearEndEntry::query()
+            ->where('fiscal_year_id', $this->previousYear->id)
+            ->where('type', YearEndEntry::DISPOSITION)
+            ->whereIn('voucher_id', Voucher::query()->select('id')->where('fiscal_year_id', $this->fiscalYear->id))
+            ->first();
+
+        return $entry === null ? null : [$entry->amount_ore->ore, $entry->dividend_ore->ore];
     }
 
     /**
      * The note on fixed assets per balance sheet line: acquisition values
      * (accounts not ending in 9) and accumulated depreciation (ending in 9).
      *
-     * @return list<array{label: string, acquisition: array{opening: int, additions: int, disposals: int, closing: int}, depreciation: array{opening: int, disposals: int, charge: int, closing: int}, book_value: int}>
+     * @return list<array{key: string, label: string, acquisition: array{opening: int, additions: int, disposals: int, closing: int}, depreciation: array{opening: int, disposals: int, charge: int, closing: int}, book_value: int}>
      */
     public function fixedAssetNotes(): array
     {
         $notes = [];
 
-        foreach (array_filter(K2Schedule::BALANCE, fn (array $line): bool => in_array($line['key'], ['intangible', 'buildings', 'machinery'], true)) as $line) {
+        foreach (array_filter(K2Schedule::BALANCE, fn (array $line): bool => in_array($line['key'], K2Schedule::FIXED_ASSET_LINES, true)) as $line) {
             $cost = ['opening' => 0, 'additions' => 0, 'disposals' => 0, 'closing' => 0];
             $depreciation = ['opening' => 0, 'disposals' => 0, 'charge' => 0, 'closing' => 0];
 
             foreach ($this->current as $number => $amounts) {
-                if ($number < $line['from'] || $number > $line['to']) {
+                if (! self::inRanges($number, $line['ranges'])) {
                     continue;
                 }
 
@@ -255,7 +384,7 @@ final class AnnualAccounts
             }
 
             if ($cost['opening'] !== 0 || $cost['closing'] !== 0 || $cost['additions'] !== 0) {
-                $notes[] = ['label' => __($line['label']), 'acquisition' => $cost, 'depreciation' => $depreciation, 'book_value' => $cost['closing'] - $depreciation['closing']];
+                $notes[] = ['key' => $line['key'], 'label' => __($line['label']), 'acquisition' => $cost, 'depreciation' => $depreciation, 'book_value' => $cost['closing'] - $depreciation['closing']];
             }
         }
 
@@ -276,7 +405,7 @@ final class AnnualAccounts
 
         foreach (K2Schedule::BALANCE as $line) {
             $sign = in_array($line['section'], K2Schedule::ASSET_SECTIONS, true) ? 1 : -1;
-            $columns[$line['key']] = $sign * $at($line['from'], $line['to']);
+            $columns[$line['key']] = $sign * array_sum(array_map(fn (array $range): int => $at($range[0], $range[1]), $line['ranges']));
         }
 
         // 2099 together with what the income statement has not yet moved there.
@@ -296,6 +425,51 @@ final class AnnualAccounts
         if ($amount !== 0 || $previous !== 0) {
             $lines[] = ['key' => $key, 'label' => $label, 'amount' => $amount, 'previous' => $previous];
         }
+    }
+
+    /** @param  list<array{0: int, 1: int}>  $ranges */
+    private static function inRanges(int $number, array $ranges): bool
+    {
+        foreach ($ranges as [$from, $to]) {
+            if ($number >= $from && $number <= $to) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Debit minus credit for the year on the accounts in the ranges, with
+     * the purchase accounts for goods for resale moved out of or into them.
+     *
+     * @param  list<array{0: int, 1: int}>  $ranges
+     * @param  'include'|'exclude'|null  $resale
+     */
+    public function movementOfRanges(array $ranges, ?string $resale = null): int
+    {
+        return $this->lineMovement($this->current, $ranges, $resale);
+    }
+
+    /**
+     * @param  array<int, array{opening: int, debit: int, credit: int}>  $ledger
+     * @param  list<array{0: int, 1: int}>  $ranges
+     * @param  'include'|'exclude'|null  $resale
+     */
+    private function lineMovement(array $ledger, array $ranges, ?string $resale): int
+    {
+        $total = 0;
+
+        foreach ($ledger as $number => $amounts) {
+            $inRanges = self::inRanges($number, $ranges);
+            $isResale = in_array($number, $this->resale, true);
+
+            if (($inRanges && ! ($isResale && $resale === 'exclude')) || ($isResale && $resale === 'include')) {
+                $total += $amounts['debit'] - $amounts['credit'];
+            }
+        }
+
+        return $total;
     }
 
     /** Debit minus credit for the year on the accounts in the range. */

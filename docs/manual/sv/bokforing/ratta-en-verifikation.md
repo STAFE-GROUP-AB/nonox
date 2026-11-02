@@ -35,6 +35,7 @@ Rättelsen tar bort hela den gamla verifikationen ur bokföringen. Var bara en d
 - Varje rad i originalet kommer tillbaka med debet och kredit omvända, med samma konton, kostnadsställen och projekt. Summan på varje konto blir alltså noll.
 - Texten blir "Rättelse av A12:" följt av din förklaring.
 - Originalet får märket **Rättad** i listan, och på dess sida står **Den här verifikationen är rättad med** och rättelsens nummer. Den länken är det enda i en bokförd verifikation som någonsin fylls i efteråt.
+- I verifikationslistan under **Rapporter**, i CSV-filen och i [arkivpaketet](/manual/bokslut/arkivpaket) står rättelsens nummer i kolumnen **Rättad av** på originalets rader, och originalets nummer i kolumnen **Rättar** på rättelsens rader. Ligger rättelsen i ett annat räkenskapsår står året inom parentes, till exempel **A1 (2027)**. Så syns rättelsen även för den som läser bokföringen utan NONOX.
 - Rättelsen och anledningen skrivs i [behandlingshistoriken](/manual/bokforing/behandlingshistorik).
 
 ## Därför går en bokförd verifikation inte att ändra

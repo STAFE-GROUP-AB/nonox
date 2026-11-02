@@ -24,6 +24,18 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $signing_place
  * @property ?CarbonImmutable $signing_date
  * @property list<array{name: string, role: string}> $signatories
+ * @property ?CarbonImmutable $adoption_date
+ * @property ?string $adoption_decision
+ * @property ?string $certifier_name
+ * @property ?string $certifier_role
+ * @property ?array<string, int> $pledged_assets öre per PledgedAssetKind value
+ * @property ?string $pledged_other_text
+ * @property ?int $contingent_liabilities_ore
+ * @property ?string $contingent_liabilities_text
+ * @property ?string $group_commitments
+ * @property ?string $events_after
+ * @property bool $events_effect_unknown
+ * @property ?string $net_sales_comment
  * @property int $updated_by
  */
 class AnnualReport extends Model
@@ -41,6 +53,18 @@ class AnnualReport extends Model
         'signing_place',
         'signing_date',
         'signatories',
+        'adoption_date',
+        'adoption_decision',
+        'certifier_name',
+        'certifier_role',
+        'pledged_assets',
+        'pledged_other_text',
+        'contingent_liabilities_ore',
+        'contingent_liabilities_text',
+        'group_commitments',
+        'events_after',
+        'events_effect_unknown',
+        'net_sales_comment',
         'updated_by',
     ];
 
@@ -52,6 +76,10 @@ class AnnualReport extends Model
             'average_employees' => 'integer',
             'signing_date' => 'immutable_date',
             'signatories' => 'array',
+            'adoption_date' => 'immutable_date',
+            'pledged_assets' => 'array',
+            'contingent_liabilities_ore' => 'integer',
+            'events_effect_unknown' => 'boolean',
         ];
     }
 }

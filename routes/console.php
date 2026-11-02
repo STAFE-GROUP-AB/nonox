@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Schedule;
 
+// The systemdokumentation in use, when it has changed (#44), for installations without a deploy script.
+Schedule::command('nonox:record-version')->hourlyAt(7)->withoutOverlapping();
 // Nightly integrity check of every company's ledger (AGENTS.md §6.4).
 Schedule::command('ledger:verify --all')->dailyAt('03:15')->withoutOverlapping();
 Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlapping();
