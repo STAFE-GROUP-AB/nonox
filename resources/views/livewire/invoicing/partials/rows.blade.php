@@ -19,7 +19,7 @@
     ]]);
 @endphp
 
-<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }})">
+<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }})">
     <datalist id="article-options">
         @foreach($articles as $article)
             <option value="{{ $article->number }}">{{ $article->name }}</option>
@@ -113,12 +113,12 @@
 
         <div class="mt-6 flex justify-end">
             <dl class="w-full max-w-xs space-y-1 text-sm tabular-nums">
-                <div class="flex justify-between"><dt class="text-gray-600">{{ __('Summa exkl. moms') }}</dt><dd x-text="format(totals.net) + ' kr'"></dd></div>
+                <div class="flex justify-between"><dt class="text-gray-600">{{ __('Summa exkl. moms') }}</dt><dd x-text="money(totals.net)"></dd></div>
                 <template x-for="group in totals.vatByRate.filter((group) => group.vat !== 0)" :key="group.rate">
-                    <div class="flex justify-between"><dt class="text-gray-600" x-text="'{{ __('Moms') }} ' + (group.rate / 100) + ' %'"></dt><dd x-text="format(group.vat) + ' kr'"></dd></div>
+                    <div class="flex justify-between"><dt class="text-gray-600" x-text="'{{ __('Moms') }} ' + (group.rate / 100) + ' %'"></dt><dd x-text="money(group.vat)"></dd></div>
                 </template>
-                <div class="flex justify-between" x-show="totals.rounding !== 0"><dt class="text-gray-600">{{ __('Öresavrundning') }}</dt><dd x-text="format(totals.rounding) + ' kr'"></dd></div>
-                <div class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold"><dt>{{ $negative ? __('Att kreditera') : __('Att betala') }}</dt><dd x-text="format(totals.total) + ' kr'"></dd></div>
+                <div class="flex justify-between" x-show="totals.rounding !== 0"><dt class="text-gray-600">{{ __('Öresavrundning') }}</dt><dd x-text="money(totals.rounding)"></dd></div>
+                <div class="flex justify-between border-t border-gray-200 pt-2 text-base font-semibold"><dt>{{ $negative ? __('Att kreditera') : __('Att betala') }}</dt><dd x-text="money(totals.total)"></dd></div>
             </dl>
         </div>
     </x-ui.card>

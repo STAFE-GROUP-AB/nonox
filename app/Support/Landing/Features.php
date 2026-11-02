@@ -78,13 +78,13 @@ final class Features
         'installable_app' => ['name' => 'App på hemskärmen', 'status' => self::LIVE, 'readme' => 'NONOX installeras som app på hemskärmen'],
         'passkeys' => ['name' => 'Passkey för känsliga uppgifter', 'status' => self::LIVE, 'readme' => 'Passkey som andra steg vid inloggning'],
         'foreign_currency_purchases' => ['name' => 'Leverantörsfakturor i utländsk valuta', 'status' => self::LIVE, 'readme' => 'kursvinst eller kursförlust bokförs när fakturan betalas'],
+        'foreign_currency_sales' => ['name' => 'Kundfakturor i utländsk valuta', 'status' => self::LIVE, 'readme' => 'Kundfakturor i utländsk valuta'],
         'sie' => ['name' => 'SIE4 in och ut', 'status' => self::LIVE, 'readme' => 'inläsning av SIE4 i två steg med avstämning'],
         'fortnox_import' => ['name' => 'Direkt flytt från Fortnox', 'status' => self::LIVE, 'readme' => 'direkt flytt från Fortnox via deras API'],
         'archive' => ['name' => 'Arkivpaket per räkenskapsår', 'status' => self::LIVE, 'readme' => 'Arkivpaket per räkenskapsår'],
         'audit_log' => ['name' => 'Behandlingshistorik', 'status' => self::LIVE, 'readme' => 'Behandlingshistorik över allt som görs'],
         'branding' => ['name' => 'Egen logga och färger', 'status' => self::LIVE, 'readme' => 'Eget varumärke: logga och färger'],
         'payment_file_matching' => ['name' => 'Automatisk avstämning av betalfiler', 'status' => self::SOON, 'readme' => 'Automatisk avstämning av betalfiler mot bankens svar'],
-        'foreign_currency_sales' => ['name' => 'Kundfakturor i utländsk valuta', 'status' => self::SOON, 'readme' => 'betalfiler och kundfakturor i utländsk valuta'],
         'non_eu_goods_import' => ['name' => 'Import av varor från länder utanför EU', 'status' => self::SOON, 'readme' => 'Import av varor från länder utanför EU'],
         'ixbrl' => ['name' => 'Digital inlämning av årsredovisningen', 'status' => self::SOON, 'readme' => 'Digital inlämning av årsredovisningen till Bolagsverket (iXBRL)'],
         'public_api' => ['name' => 'Öppet API med webhooks', 'status' => self::LIVE, 'readme' => 'webhooks som signeras', 'module' => 'NONOX Connect'],
@@ -99,7 +99,6 @@ final class Features
      */
     private const array SOON_PHRASES = [
         'payment_file_matching' => ['avstämning av betalfiler'],
-        'foreign_currency_sales' => ['kundfakturor i utländsk valuta', 'fakturera i euro', 'fakturor i euro'],
         'non_eu_goods_import' => ['import av varor'],
         'ixbrl' => ['iXBRL', 'digital inlämning av årsredovisningen'],
         'pos_integrations' => ['direktkoppling', 'kopplas direkt'],

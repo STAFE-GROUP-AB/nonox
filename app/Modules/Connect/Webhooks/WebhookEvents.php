@@ -105,6 +105,9 @@ final class WebhookEvents
             'customer_id' => $invoice->customer_id,
             'total_ore' => $invoice->total_ore->ore,
             'currency' => 'SEK',
+            'invoice_currency' => $invoice->invoice_currency,
+            'foreign_total_minor' => $invoice->foreign_total_minor,
+            'exchange_rate_micros' => $invoice->exchange_rate_micros,
             'invoice_date' => $invoice->invoice_date->toDateString(),
             'due_date' => $invoice->due_date->toDateString(),
             'ocr' => $invoice->ocr,
@@ -128,7 +131,13 @@ final class WebhookEvents
             'total_ore' => $invoice->total_ore->ore,
             'paid_ore' => $invoice->paid_ore->ore,
             'currency' => 'SEK',
+            'invoice_currency' => $invoice->invoice_currency,
+            'foreign_total_minor' => $invoice->foreign_total_minor,
+            'foreign_paid_minor' => $invoice->isForeign() ? $invoice->foreign_paid_minor : null,
             'payment_id' => $payment->id,
+            'amount_ore' => $payment->amount_ore->ore,
+            'foreign_amount_minor' => $payment->foreign_amount_minor,
+            'exchange_difference_ore' => $payment->exchange_difference_ore,
             'paid_on' => $payment->paid_on->toDateString(),
         ];
     }

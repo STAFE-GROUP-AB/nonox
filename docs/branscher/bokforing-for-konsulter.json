@@ -28,7 +28,7 @@
         "intro": "Allt nedan finns i NONOX i dag, och allt ingår i priset. Lön är en modul som du slår på under Inställningar → Moduler.",
         "items": [
             {"title": "Avtalsfakturor som skickas själva", "text": "Lägg upp ett avtal med kunden, så skapas fakturan varje månad, kvartal, halvår eller år. Den får OCR-nummer, går ut som PDF med e-post och betalningen matchas på OCR-numret när du läser in bankens fil.", "features": ["recurring_invoices", "invoices", "incoming_payments"]},
-            {"title": "EU-kunder med rätt text och rapport", "text": "Fakturor till företag i andra EU-länder får rätt konto, momsruta och fakturatext. Kundens momsregistreringsnummer kan kontrolleras mot EU:s register, och den periodiska sammanställningen blir en fil till Skatteverket.", "features": ["eu_invoices", "eu_reports"]},
+            {"title": "EU-kunder med rätt text och rapport", "text": "Fakturor till företag i andra EU-länder får rätt konto, momsruta och fakturatext, i kronor eller i kundens valuta. Kundens momsregistreringsnummer kan kontrolleras mot EU:s register, och den periodiska sammanställningen blir en fil till Skatteverket.", "features": ["eu_invoices", "eu_reports", "foreign_currency_sales"]},
             {"title": "Lön till dig, även om du är ensam", "text": "Månadslön med Skatteverkets skattetabeller, arbetsgivaravgifter, lönebesked som PDF, lönefil till banken och arbetsgivardeklarationen som fil.", "features": ["payroll", "agi", "payment_files"]},
             {"title": "Utlägg, milersättning och traktamente", "text": "Skicka utlägget med kvitto från Min sida i mobilen. Milersättning och traktamente räknas i lönen. Med NONOX AI påslagen föreslås konto och belopp från kvittot.", "features": ["travel_expenses", "employee_portal", "ai"]},
             {"title": "Moms med ett klick", "text": "Momsdeklarationen räknas fram ur rörelserna på momskontona och laddas ner som fil till Skatteverket.", "features": ["vat_return"]},
@@ -36,7 +36,6 @@
         ]
     },
     "limits": [
-        {"text": "Kundfakturor i utländsk valuta finns inte ännu. Fakturor till EU-kunder skrivs i kronor.", "feature": "foreign_currency_sales"},
         {"text": "Årsredovisningen blir en PDF. Digital inlämning till Bolagsverket är inte byggd ännu.", "feature": "ixbrl"},
         {"text": "NONOX har ingen tidrapportering mot kund, och bokslutet räknar inte fram skatten åt dig."}
     ],
@@ -48,7 +47,7 @@
     "comparison_features": ["Bokslut och årsredovisning", "Inkomstdeklaration (SRU)", "Alla moduler ingår i priset"],
     "faqs": [
         {"q": "Kan jag fakturera samma kund automatiskt varje månad?", "a": "Ja. Med avtalsfakturering skapas fakturan varje månad, kvartal, halvår eller år från samma avtal. Fakturan kan skapas som utkast eller skickas direkt."},
-        {"q": "Klarar NONOX fakturor till kunder i andra EU-länder?", "a": "Ja, i kronor. Fakturan får rätt konto, momsruta och text, kundens momsregistreringsnummer kan kontrolleras mot EU:s register och den periodiska sammanställningen blir en fil. Kundfakturor i utländsk valuta finns inte ännu."},
+        {"q": "Klarar NONOX fakturor till kunder i andra EU-länder?", "a": "Ja, i kronor eller i kundens valuta, till exempel euro. Fakturan får rätt konto, momsruta och text, kundens momsregistreringsnummer kan kontrolleras mot EU:s register och den periodiska sammanställningen blir en fil. En faktura i euro bokförs i kronor med Riksbankens kurs, och kursvinst eller kursförlust bokförs när kunden betalar."},
         {"q": "Ingår bokslut och årsredovisning?", "a": "Ja. Bokslut med checklista, årsredovisning enligt K2 som PDF och inkomstdeklaration 2 som SRU-filer ingår i priset. Digital inlämning av årsredovisningen till Bolagsverket finns inte ännu."},
         {"q": "Kan jag betala ut lön till mig själv?", "a": "Ja. Lönemodulen fungerar lika bra för en anställd som för många, med skattetabeller, arbetsgivaravgifter, lönefil och arbetsgivardeklaration."},
         {"q": "Kan min redovisningskonsult arbeta i samma system?", "a": "Ja. Bjud in konsulten med rollen redovisningskonsult, så arbetar ni i samma bokföring, utan filer fram och tillbaka."},

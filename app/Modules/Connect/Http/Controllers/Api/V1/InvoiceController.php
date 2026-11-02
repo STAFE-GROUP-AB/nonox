@@ -18,6 +18,7 @@ use App\Modules\Connect\Http\Resources\ApiPresenter;
 use App\Modules\Connect\Http\Resources\CursorList;
 use App\Modules\Connect\Support\ApiInput;
 use App\Modules\Connect\Support\Problem;
+use App\Support\Currency\ExchangeRate;
 use App\Support\Money\Money;
 use App\Support\WorkQuota;
 use Carbon\CarbonImmutable;
@@ -26,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Customer invoices over the API (ADR-032), through the same Actions as the
@@ -36,6 +38,12 @@ use Illuminate\Support\Facades\Validator;
  *
  * Amounts are whole öre; row prices exclude VAT; VAT rates and discounts
  * are basis points (2500 is 25 %, 1050 is 10.5 %).
+ *
+ * An invoice in another currency (invoice_currency, ADR-025) takes its row
+ * prices as unit_price_minor, hundredths of that currency, and is booked in
+ * kronor at exchange_rate_micros (default: Riksbanken's rate on the invoice
+ * date). Its payments give the foreign amount paid (foreign_amount_minor,
+ * default what remains) and amount_ore, the kronor that reached the bank.
  */
 final class InvoiceController
 {
@@ -43,7 +51,7 @@ final class InvoiceController
 
     private const array RELATIONS = ['rows.account', 'rows.article', 'payments.account', 'customer'];
 
-    private const array FIELDS = ['customer_id', 'invoice_date', 'due_date', 'delivery_date', 'your_reference', 'our_reference', 'notes', 'reverse_charge', 'foreign_sale', 'tax_reduction', 'property_designation'];
+    private const array FIELDS = ['customer_id', 'invoice_date', 'due_date', 'delivery_date', 'your_reference', 'our_reference', 'notes', 'reverse_charge', 'foreign_sale', 'tax_reduction', 'property_designation', 'invoice_currency'];
 
     public function index(Request $request): JsonResponse
     {
@@ -125,7 +133,8 @@ final class InvoiceController
             'paid_on' => ['required', 'date_format:Y-m-d'],
             'amount_ore' => ['required', 'integer', 'min:1'],
             'account' => ['nullable', 'integer', 'between:1900,1999'],
-        ], [], ['paid_on' => __('betaldag'), 'amount_ore' => __('belopp')])->validate();
+            'foreign_amount_minor' => ['nullable', 'integer', 'min:1'],
+        ], [], ['paid_on' => __('betaldag'), 'amount_ore' => __('belopp'), 'foreign_amount_minor' => __('belopp i valuta')])->validate();
 
         $payment = $register(
             $this->user(),
@@ -133,6 +142,7 @@ final class InvoiceController
             CarbonImmutable::createFromFormat('!Y-m-d', (string) $input['paid_on']) ?: CarbonImmutable::today(),
             Money::ofOre((int) $input['amount_ore']),
             (int) ($input['account'] ?? InvoiceBooking::BANK),
+            isset($input['foreign_amount_minor']) ? (int) $input['foreign_amount_minor'] : null,
         );
 
         return CursorList::one(ApiPresenter::invoicePayment($payment->load('account')), 201);
@@ -163,6 +173,21 @@ final class InvoiceController
     private function input(array $body): array
     {
         $input = array_intersect_key($body, array_flip(self::FIELDS));
+        $currency = strtoupper(is_string($body['invoice_currency'] ?? null) ? $body['invoice_currency'] : 'SEK');
+        $foreign = $currency !== 'SEK';
+        unset($input['invoice_currency']);
+        $input['currency'] = $currency;
+
+        if (isset($body['exchange_rate_micros'])) {
+            $micros = $body['exchange_rate_micros'];
+
+            if (! is_int($micros) || $micros <= 0) {
+                throw ValidationException::withMessages(['exchange_rate_micros' => __('Skriv kursen i miljondelar av en krona per enhet, till exempel 11234500 för 11,2345.')]);
+            }
+
+            $input['exchange_rate'] = intdiv($micros, ExchangeRate::SCALE).','.str_pad((string) ($micros % ExchangeRate::SCALE), 6, '0', STR_PAD_LEFT);
+        }
+
         $rows = is_array($body['rows'] ?? null) ? array_values($body['rows']) : ($body['rows'] ?? null);
 
         if (! is_array($rows)) {
@@ -172,7 +197,7 @@ final class InvoiceController
         $numbers = array_filter(array_map(fn (mixed $row): string => is_array($row) ? trim((string) ($row['article'] ?? '')) : '', $rows));
         $articles = Article::query()->whereIn('number', $numbers)->get()->keyBy('number');
 
-        $input['rows'] = array_map(function (mixed $row, int $index) use ($articles): array {
+        $input['rows'] = array_map(function (mixed $row, int $index) use ($articles, $foreign): array {
             $row = is_array($row) ? $row : [];
             $article = $articles->get(trim((string) ($row['article'] ?? '')));
 
@@ -181,7 +206,10 @@ final class InvoiceController
                 'description' => $row['description'] ?? $article?->name,
                 'quantity' => ApiInput::quantity($row['quantity'] ?? 1, "rows.{$index}.quantity"),
                 'unit' => $row['unit'] ?? $article?->unit,
-                'price' => ApiInput::kronor($row['unit_price_ore'] ?? $article?->price_ore->ore ?? 0, "rows.{$index}.unit_price_ore"),
+                // Article prices are kronor, so an invoice in another currency needs its own price.
+                'price' => $foreign
+                    ? ApiInput::kronor($row['unit_price_minor'] ?? 0, "rows.{$index}.unit_price_minor")
+                    : ApiInput::kronor($row['unit_price_ore'] ?? $row['unit_price_minor'] ?? $article?->price_ore->ore ?? 0, "rows.{$index}.unit_price_ore"),
                 'discount' => ApiInput::percent($row['discount_bp'] ?? 0, "rows.{$index}.discount_bp"),
                 'vat_rate' => $row['vat_rate'] ?? ($article === null ? 2500 : $article->vat_rate),
                 'account' => $row['account'] ?? null,

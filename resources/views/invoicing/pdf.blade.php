@@ -3,6 +3,10 @@
 
     $customer = $invoice->customer_snapshot ?? $invoice->customer?->snapshot() ?? [];
     $kr = fn (int $ore): string => Money::ofOre($ore)->format(withCurrency: false);
+    $foreign = $invoice->isForeign();
+    // An invoice in another currency shows its rows in that currency; kronor are shown below the totals.
+    $price = fn ($row): string => $foreign ? $kr((int) $row->foreign_unit_price_minor) : $row->unit_price_ore->format(withCurrency: false);
+    $rowNet = fn ($row): string => $foreign ? $kr((int) $row->foreign_net_minor) : $row->net_ore->format(withCurrency: false);
     $qty = fn (string $quantity): string => rtrim(rtrim(str_replace('.', ',', $quantity), '0'), ',');
 @endphp
 <!doctype html>
@@ -51,6 +55,9 @@
                     @if($invoice->credits)
                         <tr><td class="muted">{{ __('Krediterar faktura') }}</td><td class="right">{{ $invoice->credits->number }}</td></tr>
                     @endif
+                    @if($foreign)
+                        <tr><td class="muted">{{ __('Valuta') }}</td><td class="right">{{ $invoice->invoice_currency }}</td></tr>
+                    @endif
                 </table>
             </td>
         </tr>
@@ -89,10 +96,10 @@
                 <tr>
                     <td>{{ $row->description }}</td>
                     <td class="right">{{ $qty($row->quantity) }} {{ $row->unit }}</td>
-                    <td class="right">{{ $row->unit_price_ore->format(withCurrency: false) }}</td>
+                    <td class="right">{{ $price($row) }}</td>
                     <td class="right">{{ $row->discount_bp ? str_replace('.', ',', (string) ($row->discount_bp / 100)).' %' : '' }}</td>
                     <td class="right">{{ $row->vat_rate / 100 }} %</td>
-                    <td class="right">{{ $row->net_ore->format(withCurrency: false) }}</td>
+                    <td class="right">{{ $rowNet($row) }}</td>
                 </tr>
             @endforeach
         </tbody>
@@ -114,8 +121,20 @@
                         <tr><td class="muted">{{ __('Summa inkl. moms') }}</td><td class="right">{{ $kr($invoice->total_ore->ore + $invoice->tax_reduction_ore->ore) }}</td></tr>
                         <tr><td class="muted">{{ __('Avgår :type', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)]) }}</td><td class="right">{{ $kr(-$invoice->tax_reduction_ore->ore) }}</td></tr>
                     @endif
-                    <tr class="total"><td>{{ $invoice->isCredit() ? __('Att kreditera') : __('Att betala') }}</td><td class="right">{{ $invoice->total_ore->format() }}</td></tr>
+                    <tr class="total"><td>{{ $invoice->isCredit() ? __('Att kreditera') : __('Att betala') }}</td><td class="right">{{ $foreign ? $invoice->formatForeign((int) $invoice->foreign_total_minor) : $invoice->total_ore->format() }}</td></tr>
                 </table>
+                @if($foreign && $kronor !== null)
+                    <table class="sum" style="margin-top: 4mm">
+                        <tr><td colspan="2"><strong>{{ __('I svenska kronor') }}</strong></td></tr>
+                        @foreach($kronor['vat_by_rate'] as $rate => $group)
+                            <tr><td class="muted">{{ __('Moms :rate % på :base kr', ['rate' => $rate / 100, 'base' => $kr($group['base'])]) }}</td><td class="right">{{ $kr($group['vat']) }} kr</td></tr>
+                        @endforeach
+                        <tr><td class="muted">{{ __('Summa inkl. moms') }}</td><td class="right">{{ $invoice->total_ore->format() }}</td></tr>
+                        <tr><td class="muted" colspan="2">{{ $invoice->exchange_rate_source === 'riksbank'
+                            ? __('Kurs :rate kr per :currency, Riksbankens mittkurs :date.', ['rate' => $invoice->bookingRate()?->format(), 'currency' => $invoice->invoice_currency, 'date' => $invoice->exchange_rate_date?->toDateString()])
+                            : __('Kurs :rate kr per :currency.', ['rate' => $invoice->bookingRate()?->format(), 'currency' => $invoice->invoice_currency]) }}</td></tr>
+                    </table>
+                @endif
             </td>
         </tr>
     </table>
@@ -144,6 +163,7 @@
     @unless($invoice->isCredit())
         <div class="box">
             <strong>{{ __('Betalning') }}</strong><br>
+            @if($foreign && $company->iban){{ __('IBAN') }} {{ $company->iban }} · @if($company->bic){{ __('BIC') }} {{ $company->bic }} · @endif @endif
             @if($company->bankgiro){{ __('Bankgiro') }} {{ $company->bankgiro }} · @endif
             @if($company->plusgiro){{ __('Plusgiro') }} {{ $company->plusgiro }} · @endif
             {{ __('Ange OCR-nummer :ocr', ['ocr' => $invoice->ocr ?? '–']) }} · {{ __('Senast :date', ['date' => $invoice->due_date->toDateString()]) }}

@@ -159,7 +159,7 @@ final class LandingPage
     {
         return [
             ['t' => 'Bokföring', 'key' => 'vouchers', 'b' => 'Verifikationer som aldrig kan ändras, kontosaldot medan du konterar, konteringsmallar och alla rapporter med klickbara konton. SIE4 in och ut.', 'd' => 'M4 4h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H4zM20 4h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z'],
-            ['t' => 'Fakturering', 'key' => 'invoices', 'b' => 'Fakturor med OCR, offerter, order, avtalsfakturor och påminnelser, med din egen logga och färg.', 'd' => 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5'],
+            ['t' => 'Fakturering', 'key' => 'invoices', 'b' => 'Fakturor med OCR, offerter, order, avtalsfakturor och påminnelser, i kronor eller kundens valuta, med din egen logga och färg.', 'd' => 'M6 3h9l4 4v14H6zM14 3v5h5M9 12h7M9 16h5'],
             ['t' => 'Leverantörsfakturor', 'key' => 'supplier_invoices', 'b' => 'Attest, kreditnotor, utländsk valuta med kursdifferenser och betalfiler till alla stora svenska banker.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5'],
             ['t' => 'Bank', 'key' => 'bank_reconciliation', 'b' => 'Inbetalningar läses in från bankens fil och matchas mot OCR. Bankavstämning per konto.', 'd' => 'M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18'],
             ['t' => 'Moms och EU', 'key' => 'vat_return', 'b' => 'Momsdeklaration som fil, EU- och exportfakturor, periodisk sammanställning, OSS och VIES-kontroll.', 'd' => 'M19 5L5 19M7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z'],

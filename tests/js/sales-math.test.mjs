@@ -47,3 +47,10 @@ test('the screenshot row: 45 hours at 1 450 kr less 10 % with 25 % VAT', () => {
 test('a credit invoice has negative totals', () => {
     assert.equal(totals([{ quantity: '12', price: '119,00', vat_rate: '1200' }], true).total, -159900);
 });
+
+test('an invoice in another currency is not rounded to whole units', () => {
+    const result = totals([{ quantity: '45', price: '1450', discount: '10', vat_rate: '2500' }], false, false);
+
+    assert.equal(result.rounding, 0);
+    assert.equal(result.total, 7340625);
+});

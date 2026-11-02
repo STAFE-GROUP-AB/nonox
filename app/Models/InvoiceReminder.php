@@ -21,6 +21,7 @@ use LogicException;
  * @property Money $remaining_ore
  * @property string $sent_to
  * @property int $created_by
+ * @property ?int $foreign_remaining_minor what remained in the invoice's currency, when it is not kronor
  */
 class InvoiceReminder extends Model
 {
@@ -36,6 +37,7 @@ class InvoiceReminder extends Model
         'remaining_ore',
         'sent_to',
         'created_by',
+        'foreign_remaining_minor',
     ];
 
     /** @return array<string, string> */
@@ -46,6 +48,7 @@ class InvoiceReminder extends Model
             'sent_on' => 'immutable_date',
             'pay_by' => 'immutable_date',
             'remaining_ore' => MoneyCast::class,
+            'foreign_remaining_minor' => 'integer',
         ];
     }
 

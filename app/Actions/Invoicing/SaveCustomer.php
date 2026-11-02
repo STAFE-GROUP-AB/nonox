@@ -58,7 +58,9 @@ class SaveCustomer
             'reverse_charge_construction' => ['sometimes', 'boolean'],
             'country' => ['nullable', 'string', 'regex:/^[A-Za-z]{2}$/'],
             'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
+            'currency' => ['nullable', 'string', 'regex:/^[A-Za-z]{3}$/'],
         ], [
+            'currency.regex' => __('Valutan skrivs med tre bokstäver, till exempel SEK, EUR eller USD.'),
             'country.regex' => __('Ange landet som en landskod med två bokstäver, till exempel SE, DE eller US.'),
             'vat_number.regex' => __('Momsregistreringsnumret ska börja med landskoden, till exempel SE556677889901.'),
         ], [
@@ -71,6 +73,10 @@ class SaveCustomer
 
         if (array_key_exists('reverse_charge_construction', $attributes)) {
             $attributes['reverse_charge_construction'] = (bool) $attributes['reverse_charge_construction'];
+        }
+
+        if (array_key_exists('currency', $attributes)) {
+            $attributes['currency'] = strtoupper((string) ($attributes['currency'] ?? 'SEK'));
         }
 
         if (array_key_exists('country', $attributes)) {

@@ -92,6 +92,7 @@ class IssueInvoice
                 'issued_at' => CarbonImmutable::now(),
                 'issued_by' => $user->id,
                 'paid_ore' => $invoice->isCredit() ? $invoice->total_ore->ore : 0,
+                'foreign_paid_minor' => $invoice->isCredit() ? (int) $invoice->foreign_total_minor : 0,
             ]);
 
             if ($company->accounting_method === AccountingMethod::Fakturametoden) {
@@ -99,7 +100,9 @@ class IssueInvoice
                     $user,
                     $company,
                     $invoice->invoice_date,
-                    "{$invoice->title()}, {$customer->name}",
+                    $invoice->isForeign()
+                        ? __(':title, :customer, :amount till kurs :rate', ['title' => $invoice->title(), 'customer' => $customer->name, 'amount' => $invoice->formatForeign((int) $invoice->foreign_total_minor), 'rate' => $invoice->bookingRate()?->format()])
+                        : "{$invoice->title()}, {$customer->name}",
                     'B',
                     InvoiceBooking::issue($invoice, $invoice->rows),
                     VoucherSource::Invoice,
@@ -111,7 +114,7 @@ class IssueInvoice
 
             $invoice->save();
 
-            $original?->forceFill(['status' => InvoiceStatus::Credited, 'paid_ore' => $original->total_ore->ore])->save();
+            $original?->forceFill(['status' => InvoiceStatus::Credited, 'paid_ore' => $original->total_ore->ore, 'foreign_paid_minor' => (int) $original->foreign_total_minor])->save();
 
             Audit::record('invoice.issued', $invoice, [
                 'number' => $number,
@@ -119,7 +122,13 @@ class IssueInvoice
                 'customer' => $customer->name,
                 'total_ore' => $invoice->total_ore->ore,
                 'credits' => $original?->number,
-            ], $company, $user);
+            ] + ($invoice->isForeign() ? [
+                'currency' => $invoice->invoice_currency,
+                'foreign_total_minor' => $invoice->foreign_total_minor,
+                'exchange_rate_micros' => $invoice->exchange_rate_micros,
+                'exchange_rate_date' => $invoice->exchange_rate_date?->toDateString(),
+                'exchange_rate_source' => $invoice->exchange_rate_source,
+            ] : []), $company, $user);
 
             return $invoice;
         }));

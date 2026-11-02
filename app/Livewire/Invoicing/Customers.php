@@ -38,7 +38,7 @@ class Customers extends Component
     use ShowsToasts;
     use WithPagination;
 
-    public const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'payment_terms_days'];
+    public const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'currency', 'payment_terms_days'];
 
     #[Url(as: 'sok', except: '')]
     public string $search = '';
@@ -79,6 +79,7 @@ class Customers extends Component
         $this->form = array_fill_keys(self::FIELDS, '');
         $this->form['payment_terms_days'] = '30';
         $this->form['country'] = 'SE';
+        $this->form['currency'] = 'SEK';
         $this->reverseCharge = false;
         $this->foreignSale = '';
         $this->showForm = true;

@@ -13,6 +13,7 @@
         'postal_code' => [__('Postnummer'), ''],
         'city' => [__('Ort'), ''],
         'country' => [__('Land (landskod, t.ex. SE, DE, US)'), ''],
+        'currency' => [__('Valuta för fakturor (t.ex. SEK, EUR, USD)'), ''],
     ];
 @endphp
 

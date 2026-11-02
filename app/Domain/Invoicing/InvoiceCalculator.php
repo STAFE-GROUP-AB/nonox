@@ -13,6 +13,9 @@ use Brick\Math\RoundingMode;
  * rounded to öre. VAT is calculated per rate on the sum of the rows at that
  * rate, so rows never add up to a rounding difference. The total is rounded
  * to whole kronor (öresavrundning), and the difference is kept separately.
+ *
+ * The same arithmetic works on hundredths of another currency; an invoice in
+ * another currency is not rounded to whole units ($roundToKronor false).
  */
 final class InvoiceCalculator
 {
@@ -34,7 +37,7 @@ final class InvoiceCalculator
      * @param  array<int, array{net: int, vat_rate: int}>  $rows  net in öre
      * @return array{net: int, vat: int, rounding: int, total: int, vat_by_rate: array<int, array{base: int, vat: int}>}
      */
-    public static function totals(array $rows): array
+    public static function totals(array $rows, bool $roundToKronor = true): array
     {
         $byRate = [];
 
@@ -51,7 +54,7 @@ final class InvoiceCalculator
 
         $net = array_sum(array_column($byRate, 'base'));
         $vat = array_sum(array_column($byRate, 'vat'));
-        $total = Money::ofOre($net + $vat)->roundedToKronor()->ore;
+        $total = $roundToKronor ? Money::ofOre($net + $vat)->roundedToKronor()->ore : $net + $vat;
 
         return [
             'net' => $net,

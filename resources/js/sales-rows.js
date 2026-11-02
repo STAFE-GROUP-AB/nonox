@@ -13,12 +13,18 @@ function blankRow() {
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false) => ({
+    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false, currency = () => 'SEK') => ({
         rows,
         articles,
         negative,
         // Omvänd betalningsskyldighet or a sale abroad: the invoice carries no VAT, whatever the rows say.
         vatFree,
+        // An invoice in another currency is written in it, and its total is not rounded to whole kronor.
+        currency,
+
+        get currencyCode() {
+            return String(this.currency() || 'SEK').toUpperCase();
+        },
 
         init() {
             if (this.rows.length === 0) {
@@ -30,7 +36,7 @@ document.addEventListener('alpine:init', () => {
             const vatFree = typeof this.vatFree === 'function' ? this.vatFree() : this.vatFree;
             const rows = vatFree ? this.rows.map((row) => ({ ...row, vat_rate: '0' })) : this.rows;
 
-            return totals(rows, this.negative);
+            return totals(rows, this.negative, this.currencyCode === 'SEK');
         },
 
         net(row) {
@@ -41,6 +47,11 @@ document.addEventListener('alpine:init', () => {
 
         format(ore) {
             return formatOre(ore);
+        },
+
+        /** An amount with its currency: "1 250,00 kr" or "1 250,00 EUR". */
+        money(minor) {
+            return formatOre(minor) + (this.currencyCode === 'SEK' ? ' kr' : ' ' + this.currencyCode);
         },
 
         addRow() {
@@ -67,7 +78,8 @@ document.addEventListener('alpine:init', () => {
 
             row.description = article.name;
             row.unit = article.unit;
-            row.price = formatOre(article.price);
+            // Article prices are kronor; in another currency the price is left for the person to write.
+            row.price = this.currencyCode === 'SEK' ? formatOre(article.price) : row.price;
             row.vat_rate = String(article.vat_rate);
             row.account = '';
 

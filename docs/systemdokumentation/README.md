@@ -543,6 +543,67 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   betalningar och utskick (modell och databastrigger).
 - En kreditfaktura krediterar även avdraget.
 
+### 5.3 Kundfakturor i utländsk valuta
+
+([ADR-025](../adr/ADR-025-exchange-differences.md))
+
+- En kund har en valuta (ISO 4217, standard SEK) som nya fakturor börjar i;
+  den kan ändras per faktura. En faktura i annan valuta skrivs i den valutan:
+  priserna och fakturans summor är hundradelar av valutan och avrundas inte
+  till hela enheter (öresavrundning bara i kronor).
+- **Kurs.** Fakturan bokförs till en kurs i kronor per enhet (miljondelar,
+  `exchange_rate_micros`). Förvald är Riksbankens mittkurs (SWEA,
+  `SEK{valuta}PMI`) på fakturadatumet eller senaste bankdag före; användaren
+  kan skriva en egen. Kursen, dess datum och källa (`riksbank` eller
+  `manual`) sparas på fakturan.
+- **Belopp i kronor.** Varje rad räknas om till kronor med kursen (halvt
+  uppåt). Momsen i kronor räknas per momssats på radernas kronor, och
+  fakturans kronor (`net_ore`, `vat_ore`, `total_ore`) är det som bokförs och
+  det som alla rapporter, momsdeklarationen, SIE-filen och kundreskontrans
+  summor visar. Valutabeloppen sparas bredvid (`foreign_*_minor`, även per
+  rad).
+- **Fakturan** visar rader och summor i valutan, och under summan momsen per
+  sats och summan i kronor, med kursen och dess källa. Företagets IBAN och
+  BIC visas i betalningsrutan.
+- **Bokföring** som en faktura i kronor: fakturametoden i serie B när
+  fakturan skapas (verifikationstexten anger valutabelopp och kurs),
+  kontantmetoden vid betalning.
+- **Betalning** registreras i valutan: hur mycket av valutabeloppet som
+  betalas (förifyllt med det som återstår) och hur många kronor som kom in på
+  banken (förifyllt med Riksbankens kurs på betaldagen, att rätta mot
+  kontoutdraget). Betalningen minskar fordran med sin andel av fakturans
+  kronor (`kronor × betalt i valuta / valutabelopp`, halvt uppåt); den
+  betalning som gör valutabeloppet fullt betalt tar exakt det som återstår,
+  så 1510 slutar på noll. Skillnaden mot kronorna på banken bokförs i samma
+  verifikation i serie C: kursvinst kredit 3960, kursförlust debet 7960
+  (läggs till med BAS-namn vid behov). Enligt kontantmetoden bokförs intäkter
+  och moms med sin andel av fakturans kronor, alltså till fakturans kurs, och
+  skillnaden mot banken på 3960/7960. Betalningen sparar valutabeloppet och
+  kursdifferensen (`invoice_payments.foreign_amount_minor`,
+  `exchange_difference_ore`, positiv vinst). Mer än det som återstår i
+  valutan avvisas, liksom ett valutabelopp på en faktura i kronor.
+- **Bankens fil** (camt.054): skiljer sig det överförda beloppets valuta
+  (`InstdAmt`) från kontots sparas valutan och beloppet på inbetalningen
+  (`bank_transactions.foreign_currency`, `foreign_amount_minor`), och det
+  bokförda beloppet i kontots valuta används som kronor. En faktura i valuta
+  föreslås på OCR-numret när valutabeloppet ryms i det som återstår; saknar
+  filen valutabelopp räknas inbetalningen som betalning av hela det som
+  återstår i valutan. Konton i annan valuta än kronor stöds inte.
+- **Kreditfaktura** får alltid originalets valuta och kurs (även om utkastet
+  sparas med något annat), så den tar ut fordran exakt.
+- **Påminnelse** gäller det som återstår i valutan, som sparas på
+  påminnelsen (`invoice_reminders.foreign_remaining_minor`).
+- ROT- och RUT-avdrag kräver kronor. Offerter, order och avtalsfakturor är i
+  kronor.
+- Valuta och kurs ändras aldrig efter att fakturan skapats: modellen och
+  databastriggern släpper bara igenom status, betalt i kronor och i valuta,
+  Skatteverkets ROT/RUT-betalning och utskick. En kontroll i databasen kräver
+  valutabelopp och positiv kurs när valutan inte är SEK.
+- Behandlingshistoriken får valuta, valutabelopp och kurs när fakturan skapas
+  (`invoice.issued`) och valutabelopp, avräknade kronor och kursdifferens vid
+  betalning (`invoice.payment_registered`).
+- API och webhooks: se 5f; beloppen i `*_ore` är alltid kronor.
+
 ## 5a. Leverantörsfakturor
 
 - Leverantörer finns i ett eget register med löpnummer. Bankgiro och plusgiro
@@ -761,6 +822,19 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   nästa år (som skapas vid behov), året får status stängt med tid och person,
   och bokföringen låses till och med årets sista dag. Det går inte att ångra;
   inget kan bokföras i ett stängt år.
+- **Omvärdering av valutafordringar och valutaskulder** (ADR-025, gäller
+  fakturametoden): kund- och leverantörsfakturor i utländsk valuta som är
+  obetalda den sista dagen (betalningar och krediteringar till och med den
+  dagen räknas av) värderas till Riksbankens kurs den dagen. Skillnaden mot
+  de bokförda kronorna bokförs den sista dagen i serie A: 1510 och 2440 mot
+  3960 (vinst) och 7960 (förlust), och återförs med en omvänd verifikation
+  första dagen i nästa år (som måste finnas), så att en senare betalning
+  fortfarande räknas mot fakturans egen kurs. Bokförs en gång per år, före
+  årets resultat, efter årets sista dag; sparas i `year_end_entries` (typ
+  `CURRENCY_REVALUATION`, beloppet är nettovinsten). Checklistan har en
+  punkt för det: klar när den är bokförd eller kursen inte ger någon
+  skillnad, gäller inte utan obetalda fakturor i valuta eller med
+  kontantmetoden. Saknar Riksbanken kurs bokförs omvärderingen för hand.
 - **Resultatdisposition** bokförs i nästa år på datum för årsstämman: årets
   resultat flyttas från 2099 till 2098, med beslutad utdelning på 2898. För
   enskild firma, handelsbolag och kommanditbolag flyttas resultatet från 2019
@@ -1406,6 +1480,13 @@ företaget.
   likadant i API:t som i appen. Rapporter, momsdeklarationen per period och
   SIE-exporten räknas fram av samma kod som i appen; momsen bokförs och
   perioder låses bara i appen.
+- **Fakturor i utländsk valuta** (5.3). En kundfaktura får valutan i
+  `invoice_currency`, radpriserna i `unit_price_minor` (hundradelar av
+  valutan) och eventuellt en egen kurs i `exchange_rate_micros`; utan kurs
+  används Riksbankens. En betalning anger `foreign_amount_minor` (förvalt det
+  som återstår) och `amount_ore`, kronorna som kom in. Alla `*_ore` är
+  kronor; svaren har valutabeloppen bredvid. Webhooks för mejlad och betald
+  faktura har med valuta, valutabelopp och kursdifferens.
 - **Webhooks.** En ägare eller administratör kan, med passkey, låta företaget
   skicka händelser (bokförd verifikation, mejlad faktura, betald faktura,
   attesterad leverantörsfaktura) till en https-adress på internet. Händelsen
@@ -1744,6 +1825,15 @@ Personalliggare och Avtal när de är påslagna.
   leverantörsskulder hör hemma på 3960/7960; hur orealiserade
   kursdifferenser på obetalda skulder ska värderas vid bokslutet (K2 punkt
   10.7, K3 kap. 30) och om det ska göras även enligt kontantmetoden.
+- Kundfakturor i utländsk valuta: att Riksbankens mittkurs på fakturadatumet
+  duger som kurs för momsens beskattningsunderlag (ML 8 kap. 21 §; rådets
+  direktiv 2006/112/EG art. 91); vilken paragraf i ML 17 kap. som motsvarar
+  direktivets art. 230 om att momsbeloppet ska anges i kronor på en faktura i
+  annan valuta, och om även summan i kronor krävs; att realiserade
+  kursdifferenser på kundfordringar hör hemma på 3960/7960; omvärderingen
+  till balansdagens kurs (Riksbankens mittkurs på årets sista dag, med
+  återföring första dagen i nästa år) enligt K2 och K3; och OSS-försäljning i
+  annan valuta (OSS-deklarationen görs i euro).
 - Inlästa verifikationer bokförs med en behandlingshistorikpost per inläsning,
   inte en per verifikation. Varje verifikations ursprung finns i tabellen
   `imported_vouchers`. Är det tillräckligt som behandlingshistorik enligt

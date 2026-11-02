@@ -67,7 +67,7 @@ Under fakturametoden bokförs fakturan i serie B med 1510 Kundfordringar i debet
 ## Vanliga frågor
 
 **Kan jag fakturera i euro?**
-Inte än. Fakturor skrivs i kronor; kundfakturor i utländsk valuta är på väg.
+Ja. Fakturan skrivs i euro och bokförs i kronor med Riksbankens kurs. Läs [Faktura i utländsk valuta](/manual/fakturering/faktura-i-utlandsk-valuta).
 
 **Kan jag ha ROT, RUT eller omvänd betalningsskyldighet för byggtjänster på samma faktura?**
 Nej, välj det ena eller det andra.
@@ -79,5 +79,6 @@ Det gör du utanför NONOX, med till exempel fraktsedlar. Spara dem som underlag
 
 - [Kunder](/manual/fakturering/kunder)
 - [Skapa en faktura](/manual/fakturering/skapa-en-faktura)
+- [Faktura i utländsk valuta](/manual/fakturering/faktura-i-utlandsk-valuta)
 - [Momsdeklarationen](/manual/moms/momsdeklaration)
 - [Moms och EU](/manual/moms)

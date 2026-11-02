@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $account_id
  * @property Money $net_ore
  * @property int $position
+ * @property ?int $foreign_unit_price_minor the price in the invoice's currency, when it is not kronor
+ * @property ?int $foreign_net_minor
  */
 class InvoiceRow extends Model
 {
@@ -48,6 +50,8 @@ class InvoiceRow extends Model
         'net_ore',
         'position',
         'is_labour',
+        'foreign_unit_price_minor',
+        'foreign_net_minor',
     ];
 
     /** @return array<string, string> */
@@ -60,6 +64,8 @@ class InvoiceRow extends Model
             'discount_bp' => 'integer',
             'vat_rate' => 'integer',
             'position' => 'integer',
+            'foreign_unit_price_minor' => 'integer',
+            'foreign_net_minor' => 'integer',
         ];
     }
 

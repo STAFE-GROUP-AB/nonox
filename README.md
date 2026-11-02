@@ -63,6 +63,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Offerter och order som blir fakturor utan att något skrivs två gånger, och avtalsfakturering varje månad, kvartal, halvår eller år.
 - Inbetalningar och delbetalningar, kreditfakturor och påminnelser. Bankens fil med inbetalningar (ISO 20022 camt.054) läses in och matchas på OCR-numret.
 - ROT- och RUT-avdrag, omvänd betalningsskyldighet för byggtjänster, och fakturor till andra EU-länder och export med rätt konto, momsruta och fakturatext.
+- Kundfakturor i utländsk valuta (euro, dollar, pund, norska och danska kronor med flera): fakturan skrivs i kundens valuta och bokförs i kronor med Riksbankens kurs på fakturadatumet. Momsen och summan i kronor står på fakturan. Inbetalningen registreras i valutan, för hand eller från bankens fil, och kursvinst eller kursförlust bokförs. Kreditfakturan får samma kurs, och påminnelsen gäller beloppet i valutan.
 
 ### Inköp
 - Leverantörsfakturor som PDF eller bild, kontering per kostnadsställe och attest av en annan person än den som registrerade. Fakturor i utländsk valuta räknas om med Riksbankens kurs, och kursvinst eller kursförlust bokförs när fakturan betalas.
@@ -77,7 +78,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Bokföring
 - **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag som kan fotograferas med mobilen. Kontosaldot syns direkt när du väljer konto och efter varje rad. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar (tillgången kan skapas direkt när inköpet bokförs), och inläsning av SIE4 i två steg med avstämning.
 - **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok, kontoanalys och verifikationslista per period och kostnadsställe, som PDF och CSV. Klicka på ett konto för att se dess huvudbok och vidare till verifikationen. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS och VIES-kontroll.
-- **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
+- **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, omvärdering av obetalda kund- och leverantörsfakturor i utländsk valuta till balansdagens kurs, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
 - **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 
@@ -139,7 +140,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
 
 ### På väg
-- Automatisk avstämning av betalfiler mot bankens svar, och betalfiler och kundfakturor i utländsk valuta.
+- Automatisk avstämning av betalfiler mot bankens svar, och betalfiler i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.

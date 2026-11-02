@@ -14,7 +14,8 @@ use LogicException;
  * A closing entry of a fiscal year: TAX (the year's income tax, possibly
  * zero and then without a voucher), RESULT (the year's result moved to
  * equity) or DISPOSITION (the result disposed of in the next year, with the
- * dividend). Append-only: the model refuses changes and a database trigger
+ * dividend) or CURRENCY_REVALUATION (open invoices in another currency
+ * valued at the closing rate, ADR-025). Append-only: the model refuses changes and a database trigger
  * backs it up.
  *
  * @property int $id
@@ -35,6 +36,9 @@ class YearEndEntry extends Model
     public const string RESULT = 'RESULT';
 
     public const string DISPOSITION = 'DISPOSITION';
+
+    /** Invoices in another currency valued at the closing rate; amount_ore is the net gain (negative a loss). */
+    public const string CURRENCY_REVALUATION = 'CURRENCY_REVALUATION';
 
     /** @var list<string> */
     protected $fillable = [
