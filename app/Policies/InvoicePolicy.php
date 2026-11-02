@@ -67,12 +67,25 @@ class InvoicePolicy
         return $invoice->status === InvoiceStatus::Issued && $this->can($user, $invoice, 'payments:create');
     }
 
-    /** Skatteverket's ROT or RUT payment can come before or after the customer has paid. */
+    /**
+     * Skatteverket's ROT or RUT payment can come before or after the customer
+     * has paid, for what is still claimed after any credits.
+     */
     public function registerTaxReductionPayment(User $user, Invoice $invoice): bool
     {
         return in_array($invoice->status, [InvoiceStatus::Issued, InvoiceStatus::Paid], true)
             && $invoice->tax_reduction !== null
-            && $invoice->tax_reduction_paid_ore->ore < $invoice->tax_reduction_ore->ore
+            && ! $invoice->isCredit()
+            && $invoice->taxReductionClaimable()->ore > 0
+            && $this->can($user, $invoice, 'payments:create');
+    }
+
+    /** Paying back to Skatteverket a deduction a credit invoice took back from the buyer. */
+    public function registerTaxReductionRepayment(User $user, Invoice $invoice): bool
+    {
+        return $invoice->isCredit()
+            && ! $invoice->isDraft()
+            && $invoice->taxReductionRepaymentLeft()->ore > 0
             && $this->can($user, $invoice, 'payments:create');
     }
 

@@ -118,6 +118,26 @@
         </x-ui.card>
     @endif
 
+    @if($invoice->tax_reduction !== null && $invoice->isCredit())
+        <x-ui.card :title="__(':type hos Skatteverket', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)])">
+            <p class="text-sm text-gray-700">{{ __('Kreditfakturan tar tillbaka :amount av avdraget.', ['amount' => $invoice->tax_reduction_ore->negated()->format()]) }}</p>
+            @if($invoice->tax_reduction_repayable_ore->isZero())
+                <p class="mt-1 text-xs text-gray-500">{{ __('Skatteverket hade inte betalat ut den delen, så den har tagits bort från fordran på 1513. Har du redan begärt utbetalningen i Skatteverkets e-tjänst, ändra eller dra tillbaka begäran.') }}</p>
+            @else
+                <p class="mt-2 text-sm font-medium text-gray-900">{{ __('Skatteverket har redan betalat ut :amount av det. Det är nu en skuld till Skatteverket på konto 2890.', ['amount' => $invoice->tax_reduction_repayable_ore->format()]) }}</p>
+                <p class="mt-1 text-sm text-gray-700">{{ __('Anmäl ändringen till Skatteverket utan dröjsmål när kunden har fått pengarna tillbaka. Skatteverket beslutar sedan om återbetalning. Registrera betalningen här när du har betalat.') }}</p>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Återbetalt :repaid av :repayable.', ['repaid' => $invoice->tax_reduction_repaid_ore->format(), 'repayable' => $invoice->tax_reduction_repayable_ore->format()]) }}</p>
+                @if($canTaxRepay)
+                    <form wire:submit="registerTaxReductionRepayment" class="mt-4 grid grid-cols-2 gap-4">
+                        <x-ui.field for="repay_paid_on" :label="__('Betaldag')"><input id="repay_paid_on" type="date" class="{{ $input }} mt-1" wire:model="repayPaidOn"></x-ui.field>
+                        <x-ui.field for="repay_amount" :label="__('Belopp')" error="repay_amount"><input id="repay_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="repayAmount"></x-ui.field>
+                        <div class="col-span-2"><x-button wire:loading.attr="disabled">{{ __('Registrera återbetalningen') }}</x-button></div>
+                    </form>
+                @endif
+            @endif
+        </x-ui.card>
+    @endif
+
     @if($invoice->tax_reduction !== null && ! $invoice->isCredit())
         <x-ui.card :title="__(':type hos Skatteverket', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)])">
             <p class="text-sm text-gray-700">{{ __('Begärt :claimed, mottaget :paid.', ['claimed' => $invoice->tax_reduction_ore->format(), 'paid' => $invoice->tax_reduction_paid_ore->format()]) }}</p>
@@ -153,6 +173,9 @@
 
     @if($canCredit)
         <x-ui.card :title="__('Kreditera')">
+            @if($invoice->tax_reduction !== null && ! $invoice->tax_reduction_paid_ore->isZero())
+                <p class="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{{ __('Skatteverket har betalat ut :amount i :type för fakturan. Krediterar du avdraget blir den delen en skuld till Skatteverket, och du ska anmäla ändringen till Skatteverket utan dröjsmål.', ['amount' => $invoice->tax_reduction_paid_ore->format(), 'type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)]) }}</p>
+            @endif
             <p class="text-sm text-gray-700">{{ __('Blev något fel kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras.') }}</p>
             <div class="mt-3" x-data="{ confirming: false }">
                 <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = true">{{ __('Kreditera fakturan') }}</button>

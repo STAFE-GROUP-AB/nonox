@@ -381,9 +381,15 @@ it('ROT credit: an invoice whose deduction Skatteverket has paid cannot be credi
     ], ['tax_reduction' => 'ROT', 'property_designation' => 'Uppsala Kåbo 1:25']));
     app(RegisterTaxReductionPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-20'), $invoice->tax_reduction_ore);
 
-    expect(fn () => app(IssueInvoice::class)($this->owner, app(CreditInvoice::class)($this->owner, $invoice->fresh())))
-        ->toThrow(ValidationException::class);
-})->todo('AUD-FAKT-9: a ROT invoice already paid by Skatteverket can be credited in full, which leaves 1513 negative (a claim on Skatteverket that does not exist)');
+    // AUD-FAKT-9 fixed (#49), as the verifier recommended: the credit is allowed, and the 1 875 kr
+    // Skatteverket paid becomes a debt to Skatteverket on 2890 (lag 2009:194 13-14 §§) instead of a negative 1513.
+    $credit = app(IssueInvoice::class)($this->owner, app(CreditInvoice::class)($this->owner, $invoice->fresh()));
+
+    expect($credit->tax_reduction_repayable_ore->ore)->toBe(187_500)
+        ->and(audFaktBalance(1513))->toBe(0)
+        ->and(audFaktBalance(2890))->toBe(-187_500)
+        ->and(audFaktBalance(1510))->toBe(audFaktReceivablesLedger());
+});
 
 /* ---------------------------------------------------------------------------
  | Kundreskontra reconciles with 1510 (BFL 4 kap. 1 §, 5 kap. 1 §)

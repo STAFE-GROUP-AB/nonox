@@ -28,6 +28,8 @@ use LogicException;
  * @property ?string $tax_reduction ROT or RUT
  * @property Money $tax_reduction_ore
  * @property Money $tax_reduction_paid_ore
+ * @property Money $tax_reduction_repayable_ore on a credit invoice: the part of its deduction Skatteverket had already paid, a debt on 2890
+ * @property Money $tax_reduction_repaid_ore on a credit invoice: how much of that debt has been paid back
  * @property ?string $property_designation
  * @property string $id
  * @property int $company_id
@@ -76,7 +78,7 @@ class Invoice extends Model
     public const string CREDIT = 'CREDIT';
 
     /** Columns that may change after the invoice is issued. */
-    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'credited_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'sent_at', 'sent_to', 'updated_at'];
+    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'credited_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'tax_reduction_repaid_ore', 'sent_at', 'sent_to', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -109,6 +111,8 @@ class Invoice extends Model
         'credited_ore' => 0,
         'invoice_currency' => 'SEK',
         'foreign_paid_minor' => 0,
+        'tax_reduction_repayable_ore' => 0,
+        'tax_reduction_repaid_ore' => 0,
     ];
 
     /** @return array<string, string> */
@@ -120,6 +124,8 @@ class Invoice extends Model
             'swedish_vat_under_threshold' => 'boolean',
             'tax_reduction_ore' => MoneyCast::class,
             'tax_reduction_paid_ore' => MoneyCast::class,
+            'tax_reduction_repayable_ore' => MoneyCast::class,
+            'tax_reduction_repaid_ore' => MoneyCast::class,
             'number' => 'integer',
             'status' => InvoiceStatus::class,
             'invoice_date' => 'immutable_date',
@@ -175,6 +181,33 @@ class Invoice extends Model
     public function remaining(): Money
     {
         return $this->total_ore->minus($this->paid_ore);
+    }
+
+    /**
+     * What is still claimed from Skatteverket on 1513 for a ROT or RUT
+     * invoice: the deduction, less what Skatteverket has paid and what
+     * issued credit invoices took off the claim (the rest of their
+     * deduction is a debt to Skatteverket, not a smaller claim).
+     */
+    public function taxReductionClaimable(): Money
+    {
+        if ($this->tax_reduction === null || $this->isCredit()) {
+            return Money::zero();
+        }
+
+        $credits = $this->relationLoaded('creditInvoices')
+            ? $this->creditInvoices->filter(fn (Invoice $credit): bool => ! $credit->isDraft())
+            : $this->creditInvoices()->where('status', '<>', InvoiceStatus::Draft->value)->get(['tax_reduction_ore', 'tax_reduction_repayable_ore']);
+
+        $offClaim = (int) $credits->sum(fn (Invoice $credit): int => -$credit->tax_reduction_ore->ore - $credit->tax_reduction_repayable_ore->ore);
+
+        return Money::ofOre(max(0, $this->tax_reduction_ore->ore - $this->tax_reduction_paid_ore->ore - $offClaim));
+    }
+
+    /** On a credit invoice: what is still owed back to Skatteverket for its ROT or RUT deduction. */
+    public function taxReductionRepaymentLeft(): Money
+    {
+        return $this->tax_reduction_repayable_ore->minus($this->tax_reduction_repaid_ore);
     }
 
     /**

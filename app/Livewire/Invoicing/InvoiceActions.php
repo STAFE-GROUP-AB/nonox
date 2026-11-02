@@ -7,6 +7,7 @@ namespace App\Livewire\Invoicing;
 use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\RegisterPayment;
 use App\Actions\Invoicing\RegisterTaxReductionPayment;
+use App\Actions\Invoicing\RegisterTaxReductionRepayment;
 use App\Actions\Invoicing\SendInvoice;
 use App\Actions\Invoicing\SendReminder;
 use App\Domain\Invoicing\InvoiceBooking;
@@ -58,7 +59,9 @@ class InvoiceActions extends Component
         $this->paidOn = now()->toDateString();
         $this->resetAmounts($invoice);
         $this->taxPaidOn = now()->toDateString();
-        $this->taxAmount = Money::ofOre($invoice->tax_reduction_ore->ore - $invoice->tax_reduction_paid_ore->ore)->format(withCurrency: false);
+        $this->taxAmount = $invoice->taxReductionClaimable()->format(withCurrency: false);
+        $this->repayPaidOn = now()->toDateString();
+        $this->repayAmount = $invoice->isCredit() ? $invoice->taxReductionRepaymentLeft()->format(withCurrency: false) : '';
     }
 
     public function send(SendInvoice $send): void
@@ -134,9 +137,28 @@ class InvoiceActions extends Component
         }
 
         $invoice = $register($this->user(), $this->invoice(), $date, $amount);
-        $left = Money::ofOre($invoice->tax_reduction_ore->ore - $invoice->tax_reduction_paid_ore->ore);
+        $left = $invoice->taxReductionClaimable();
         $this->taxAmount = $left->isZero() ? '' : $left->format(withCurrency: false);
         $this->toast(__('Skatteverkets betalning på :amount är registrerad.', ['amount' => $amount->format()]));
+    }
+
+    public string $repayPaidOn = '';
+
+    public string $repayAmount = '';
+
+    public function registerTaxReductionRepayment(RegisterTaxReductionRepayment $register): void
+    {
+        try {
+            $amount = Money::parse($this->repayAmount);
+            $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->repayPaidOn) ?: throw new InvalidArgumentException;
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['repay_amount' => __('Skriv datum och belopp, till exempel 1 250,00.')]);
+        }
+
+        $invoice = $register($this->user(), $this->invoice(), $date, $amount);
+        $left = $invoice->taxReductionRepaymentLeft();
+        $this->repayAmount = $left->isZero() ? '' : $left->format(withCurrency: false);
+        $this->toast(__('Återbetalningen till Skatteverket på :amount är registrerad.', ['amount' => $amount->format()]));
     }
 
     public function credit(CreditInvoice $credit): void
@@ -156,6 +178,7 @@ class InvoiceActions extends Component
             'canSend' => $this->user()->can('send', $invoice),
             'canPay' => $this->user()->can('registerPayment', $invoice),
             'canTaxPay' => $this->user()->can('registerTaxReductionPayment', $invoice),
+            'canTaxRepay' => $this->user()->can('registerTaxReductionRepayment', $invoice),
             'canRemind' => $this->user()->can('remind', $invoice),
             'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->doesntContain(fn (Invoice $credit): bool => $credit->isDraft()),
             'exchangePreview' => $this->exchangePreview($invoice),

@@ -615,6 +615,24 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   exakt originalets 1510 och 1513 (enligt granskning 2026-11-02,
   juristgranskning återstår (AUD-FAKT-1, #48); ML 17 kap. 22 §, lag
   (2009:194) 7 §).
+- Krediteras avdraget efter att Skatteverket har betalat ut det, kan den
+  utbetalda delen inte tas bort från fordran: företaget ska anmäla
+  ändringen till Skatteverket, som beslutar om återbetalning (lag
+  (2009:194) 13–16 §§). Kreditfakturan tar därför först av det som
+  fortfarande begärs på 1513, och resten bokförs som en skuld till
+  Skatteverket på 2890 Övriga kortfristiga skulder (läggs till vid behov),
+  i stället för som en negativ fordran på 1513. Beloppet sparas på
+  kreditfakturan (`tax_reduction_repayable_ore`), och återbetalningen
+  registreras på den: 2890 mot bankkontot i serie C
+  (`tax_reduction_repaid_ore`, det enda som får ändras på en utfärdad
+  kreditfaktura utöver status, betalningar och utskick). Kreditfakturans
+  sida påminner om anmälan, och originalets sida varnar innan
+  krediteringen. En kredit före utbetalningen visar att en redan gjord
+  begäran ska ändras eller dras tillbaka. Det som begärs av Skatteverket
+  minskar med krediterade avdrag, så en betalning från Skatteverket kan
+  inte registreras för en krediterad del (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-9, #49)). TODO(legal-verify): 2890
+  som konto för skulden.
 
 ### 5.3 Kundfakturor i utländsk valuta
 

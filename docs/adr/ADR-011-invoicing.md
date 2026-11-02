@@ -46,6 +46,16 @@
   credits the last of the labour takes the rest, and none takes more than
   is left (enligt granskning 2026-11-02, juristgranskning återstår
   (AUD-FAKT-1, #48); ML 17 kap. 22 §, lag (2009:194) 7 §).
+- **ROT and RUT already paid by Skatteverket.** A credit takes its
+  deduction off what is still claimed on 1513 first; the rest, which
+  Skatteverket has paid, is a debt (lag (2009:194) 13-16 §§: notify,
+  Skatteverket decides repayment) booked on 2890 and kept on the credit
+  invoice (`tax_reduction_repayable_ore`). The repayment is registered on
+  the credit invoice (`RegisterTaxReductionRepayment`, 2890 against the
+  bank in series C, `tax_reduction_repaid_ore`). The UI warns before the
+  credit and reminds the user to notify Skatteverket (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-9, #49)).
+  TODO(legal-verify): 2890 as the account.
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

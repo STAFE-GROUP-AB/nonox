@@ -14,18 +14,23 @@ declare(strict_types=1);
 use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\RegisterPayment;
+use App\Actions\Invoicing\RegisterTaxReductionPayment;
+use App\Actions\Invoicing\RegisterTaxReductionRepayment;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Livewire\Invoicing\InvoiceActions;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 
 beforeEach(function () {
@@ -247,4 +252,75 @@ it('reverses a share of the deduction on a partial credit, and the last credit t
         // The paint is left: 2 500 kr, on 1510 and in the ledger.
         ->and(kredBalance(1510))->toBe(250_000)
         ->and(kredLedger())->toBe(250_000);
+});
+
+/*
+ * A credit after Skatteverket has paid the deduction (#49): the paid part
+ * is a debt to Skatteverket, which the company must notify and which
+ * Skatteverket reclaims (lag (2009:194) 13-16 §§). It goes on 2890, not as
+ * a negative 1513.
+ */
+
+/** Labour 10 × 500 kr + 25 % = 6 250 kr; 30 % ROT = 1 875 kr; material 2 500 kr. Customer pays 8 750 − 1 875 = 6 875 kr. */
+function kredRotInvoice(): Invoice
+{
+    return app(IssueInvoice::class)(test()->owner, kredDraft(kredHousehold(), [
+        ['description' => 'Badrum, arbete', 'quantity' => '10', 'price' => '500', 'vat_rate' => 2500, 'labour' => true],
+        ['description' => 'Kakel', 'quantity' => '1', 'price' => '2 000', 'vat_rate' => 2500, 'labour' => false],
+    ], ['tax_reduction' => 'ROT', 'property_designation' => 'Uppsala Kåbo 1:25']));
+}
+
+it('books what Skatteverket has paid as a debt on 2890 when the invoice is credited, and registers the repayment (#49)', function () {
+    $invoice = kredRotInvoice();
+    expect($invoice->tax_reduction_ore->ore)->toBe(187_500)->and($invoice->total_ore->ore)->toBe(687_500);
+
+    app(RegisterTaxReductionPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-20'), Money::ofOre(187_500));
+    $credit = kredCredit($invoice);
+
+    // Credit: 1510 −6 875, 2890 −1 875 (debt), 1513 untouched by the credit; revenue and VAT reversed.
+    expect($credit->tax_reduction_repayable_ore->ore)->toBe(187_500)
+        ->and(kredBalance(1513))->toBe(0)
+        ->and(kredBalance(2890))->toBe(-187_500)
+        ->and(kredBalance(1930))->toBe(187_500)
+        ->and(kredBalance(1510))->toBe(0)
+        ->and(kredLedger())->toBe(0)
+        ->and($invoice->fresh()->taxReductionClaimable()->ore)->toBe(0);
+
+    Livewire::test(InvoiceActions::class, ['invoice' => $credit])
+        ->assertSee('Det är nu en skuld till Skatteverket på konto 2890.')
+        ->assertSee('Anmäl ändringen till Skatteverket utan dröjsmål')
+        ->set('repayPaidOn', '2026-05-29')
+        ->set('repayAmount', '1 875,00')
+        ->call('registerTaxReductionRepayment')
+        ->assertHasNoErrors();
+
+    expect(kredBalance(2890))->toBe(0)
+        ->and(kredBalance(1930))->toBe(0)
+        ->and($credit->fresh()->tax_reduction_repaid_ore->ore)->toBe(187_500)
+        ->and(fn () => app(RegisterTaxReductionRepayment::class)($this->owner, $credit->fresh(), CarbonImmutable::parse('2026-05-30'), Money::ofOre(100)))
+        ->toThrow(AuthorizationException::class);
+});
+
+it('takes a credit off the unpaid claim first and books only the paid rest as a debt (#49)', function () {
+    $invoice = kredRotInvoice();
+    $this->actingAs($this->owner);
+
+    expect(Livewire::test(InvoiceActions::class, ['invoice' => $invoice])->html())->not->toContain('Skatteverket har betalat ut');
+
+    // Skatteverket has paid 1 000 of the 1 875 kr; 875 kr is still claimed.
+    app(RegisterTaxReductionPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-20'), Money::ofOre(100_000));
+    Livewire::test(InvoiceActions::class, ['invoice' => $invoice->fresh()])->assertSee('i ROT-avdrag för fakturan. Krediterar du avdraget blir den delen en skuld till Skatteverket');
+
+    $credit = kredCredit($invoice);
+
+    // 875 kr comes off the claim on 1513 and 1 000 kr becomes a debt.
+    expect($credit->tax_reduction_repayable_ore->ore)->toBe(100_000)
+        ->and(kredBalance(1513))->toBe(0)
+        ->and(kredBalance(2890))->toBe(-100_000)
+        ->and(kredBalance(1510))->toBe(0)
+        // Nothing is left to claim, so no further payment from Skatteverket can be registered.
+        ->and(fn () => app(RegisterTaxReductionPayment::class)($this->owner, $invoice->fresh(), CarbonImmutable::parse('2026-04-01'), Money::ofOre(87_500)))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => app(RegisterTaxReductionRepayment::class)($this->owner, $credit, CarbonImmutable::parse('2026-05-30'), Money::ofOre(100_001)))
+        ->toThrow(ValidationException::class);
 });

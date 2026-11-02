@@ -5876,5 +5876,14 @@
     "En kreditfaktura ska ha ett belopp under noll.": "A credit invoice must have an amount below zero.",
     "Kreditfakturan är större än det som återstår av :title, :remaining.": "The credit invoice is larger than what remains of :title, :remaining.",
     "Krediterat": "Credited",
-    "Blev något fel kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras.": "If something is wrong the invoice can be credited, in full or in part. A credit invoice reduces it by its amount. Change the rows in the draft to credit only part of it."
+    "Blev något fel kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras.": "If something is wrong the invoice can be credited, in full or in part. A credit invoice reduces it by its amount. Change the rows in the draft to credit only part of it.",
+    "Återbetalningen till Skatteverket på :amount är registrerad.": "The repayment of :amount to Skatteverket is registered.",
+    "Återbetalning av :type till Skatteverket, :title": "Repayment of :type to Skatteverket, :title",
+    "Kreditfakturan tar tillbaka :amount av avdraget.": "The credit invoice takes back :amount of the deduction.",
+    "Skatteverket hade inte betalat ut den delen, så den har tagits bort från fordran på 1513. Har du redan begärt utbetalningen i Skatteverkets e-tjänst, ändra eller dra tillbaka begäran.": "Skatteverket had not paid that part, so it has been taken off the claim on 1513. If you have already requested the payment in Skatteverket's e-service, change or withdraw the request.",
+    "Skatteverket har redan betalat ut :amount av det. Det är nu en skuld till Skatteverket på konto 2890.": "Skatteverket has already paid :amount of it. It is now a debt to Skatteverket on account 2890.",
+    "Anmäl ändringen till Skatteverket utan dröjsmål när kunden har fått pengarna tillbaka. Skatteverket beslutar sedan om återbetalning. Registrera betalningen här när du har betalat.": "Notify Skatteverket of the change without delay once the customer has been repaid. Skatteverket then decides on repayment. Register the payment here once you have paid.",
+    "Återbetalt :repaid av :repayable.": "Repaid :repaid of :repayable.",
+    "Registrera återbetalningen": "Register the repayment",
+    "Skatteverket har betalat ut :amount i :type för fakturan. Krediterar du avdraget blir den delen en skuld till Skatteverket, och du ska anmäla ändringen till Skatteverket utan dröjsmål.": "Skatteverket has paid :amount in :type for the invoice. If you credit the deduction, that part becomes a debt to Skatteverket, and you must notify Skatteverket of the change without delay."
 }

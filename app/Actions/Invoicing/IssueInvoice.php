@@ -84,6 +84,10 @@ class IssueInvoice
                 $this->ensureTaxReduction($company, $invoice);
             }
 
+            if ($invoice->tax_reduction !== null && $original instanceof Invoice) {
+                $this->splitCreditedDeduction($invoice, $original);
+            }
+
             if ($invoice->foreign_sale !== null) {
                 $this->ensureForeignSale($company, $customer, $invoice->foreign_sale);
             }
@@ -130,13 +134,18 @@ class IssueInvoice
                 $this->settle($invoice, $original);
             }
 
+            $credit = $original instanceof Invoice ? array_filter([
+                'credit_settled_ore' => -$invoice->paid_ore->ore,
+                'tax_reduction_repayable_ore' => $invoice->tax_reduction_repayable_ore->ore,
+            ]) : [];
+
             Audit::record('invoice.issued', $invoice, [
                 'number' => $number,
                 'kind' => $invoice->kind,
                 'customer' => $customer->name,
                 'total_ore' => $invoice->total_ore->ore,
                 'credits' => $original?->number,
-            ] + ($original instanceof Invoice ? ['credit_settled_ore' => -$invoice->paid_ore->ore] : []) + ($invoice->isForeign() ? [
+            ] + $credit + ($invoice->isForeign() ? [
                 'currency' => $invoice->invoice_currency,
                 'foreign_total_minor' => $invoice->foreign_total_minor,
                 'exchange_rate_micros' => $invoice->exchange_rate_micros,
@@ -205,6 +214,31 @@ class IssueInvoice
             'foreign_paid_minor' => -$foreign,
             'status' => $creditClosed ? InvoiceStatus::Paid : InvoiceStatus::Issued,
         ])->save();
+    }
+
+    /**
+     * The deduction a credit takes back comes off what is still claimed from
+     * Skatteverket on 1513. What Skatteverket has already paid cannot come
+     * off the claim: once the buyer is repaid, the company must notify
+     * Skatteverket, which decides on repayment (lag (2009:194) om
+     * förfarandet vid skattereduktion för hushållsarbete 13-14 §§), so that
+     * part is a debt on 2890 (enligt granskning 2026-11-02, juristgranskning
+     * återstår (AUD-FAKT-9, #49)).
+     */
+    private function splitCreditedDeduction(Invoice $credit, Invoice $original): void
+    {
+        $credited = -$credit->tax_reduction_ore->ore;
+        $offClaim = min($credited, $original->taxReductionClaimable()->ore);
+        $repayable = max(0, $credited - $offClaim);
+
+        $credit->forceFill(['tax_reduction_repayable_ore' => $repayable]);
+
+        if ($repayable > 0) {
+            Account::query()->firstOrCreate(['number' => TaxReduction::REPAYABLE], [
+                'name' => __('Övriga kortfristiga skulder'),
+                'type' => AccountType::LiabilityEquity,
+            ]);
+        }
     }
 
     /**
