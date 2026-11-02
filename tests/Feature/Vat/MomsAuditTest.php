@@ -411,9 +411,10 @@ it('places a sale by its VAT rate, not only by the revenue account chosen', func
 
     $boxes = VatReturn::calculate($this->year, CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-03-31'))->boxes();
 
+    // Fält 42: sales exempt from VAT that belong in no other box; a sale without VAT is not taxable (AUD-MOMS-4, #62).
     expect($boxes[5])->toBe(0)
         ->and($boxes[42])->toBe(1_000);
-})->todo('AUD-MOMS-4: a row at 0 % may be booked on 3001 (and a 25 % row on 3004); the box follows the account, so the sale lands in box 05 (or 42) against its VAT rate. No validation ties rate to account.');
+});
 
 it('uses 6 % for food from 2026-04-01 to 2027-12-31 and 12 % for restaurant service', function () {
     // An article sold as food (livsmedel) on 2026-05-01 must carry 6 %; the same food served at a restaurant 12 %.

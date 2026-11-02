@@ -108,10 +108,18 @@ final class VatReturn
     }
 
     /**
-     * Places one voucher's sales that the account alone does not settle
-     * (#61): a credit on a revenue account without a box, such as 3990,
-     * counts in box 05 as far as the voucher's output VAT on sales in Sweden
-     * (SALE_VAT) explains it, after the sales already on box 05 accounts.
+     * Places one voucher's sales that the account alone does not settle.
+     *
+     * - A credit on a revenue account without a box, such as 3990, counts in
+     *   box 05 as far as the voucher's output VAT on sales in Sweden
+     *   (SALE_VAT) explains it, after the sales already on box 05 accounts
+     *   (#61).
+     * - A voucher whose only sales are on box 05 accounts (3001 and the
+     *   like; 3700–3799 rounding and corrections aside) and that books no
+     *   output VAT at all is a sale without VAT: it goes to box 42, not 05,
+     *   because a sale cannot be taxable and carry no VAT (#62). A voucher
+     *   that also moves another revenue account, such as a reclassification
+     *   from 3001 to 3990, is left by account.
      * Returns the base, in öre, that the output VAT implies but no revenue
      * row on the voucher carries, beyond what rounding the VAT to whole
      * kronor can explain.
@@ -130,8 +138,23 @@ final class VatReturn
         $tolerance = BigDecimal::zero();
         $taxable = 0;
         $other = [];
+        $taxableRows = [];
+        $outputVat = false;
+        $onlyTaxableAccounts = true;
 
         foreach ($rows as $row) {
+            if ($row['net'] !== 0 && VatBoxes::isVatAccount($row['number'])) {
+                $outputVat = true;
+            }
+
+            if ($row['net'] !== 0 && $row['number'] >= 3000 && ($row['number'] < 3700 || $row['number'] > 3799)) {
+                if (VatBoxes::boxFor($row['number']) === VatBoxes::TAXABLE_SALES) {
+                    $taxableRows[] = $row;
+                } else {
+                    $onlyTaxableAccounts = false;
+                }
+            }
+
             if (isset(VatBoxes::SALE_VAT[$row['number']])) {
                 $rate = VatBoxes::SALE_VAT[$row['number']];
                 $base = $base->plus(BigDecimal::of($row['net'])->multipliedBy(10_000)->dividedBy($rate, 4, RoundingMode::HalfUp));
@@ -144,6 +167,16 @@ final class VatReturn
         }
 
         $implied = $base->toScale(0, RoundingMode::HalfUp)->toInt();
+
+        // A sale on a box 05 account with no output VAT at all on its voucher is not taxable: box 42 (#62).
+        if (! $outputVat && $onlyTaxableAccounts) {
+            foreach ($taxableRows as $row) {
+                self::addSource($exact, $sources, VatBoxes::TAXABLE_SALES, $row['number'], $row['name'], -$row['net']);
+                self::addSource($exact, $sources, VatBoxes::EXEMPT_SALES, $row['number'], $row['name'], $row['net']);
+            }
+
+            return 0;
+        }
 
         if ($implied === 0) {
             return 0;

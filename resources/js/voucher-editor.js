@@ -5,14 +5,17 @@
 
 import { balanceBefore, balancesAfterRows } from './account-balance.js';
 import { formatOre, parseOre } from './money.js';
+import { voucherVatWarnings } from './vat-rate-check.js';
 
 function isBlank(row) {
     return !row.account && !row.debit && !row.credit && !row.description;
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('voucherEditor', (rows, canPost, balances, signs) => ({
+    window.Alpine.data('voucherEditor', (rows, canPost, balances, signs, vatRules = {}) => ({
         rows,
+        // Sales accounts and the output VAT they expect (App\Domain\Vat\SalesVatRules, #62).
+        vatRules,
         canPost,
         // Posted balances at the voucher date (account number => öre, debit positive), from the server.
         balances,
@@ -53,6 +56,11 @@ document.addEventListener('alpine:init', () => {
 
         get balanced() {
             return !this.hasInvalidAmount && !this.missingAccount && this.filledRows >= 2 && this.debit > 0 && this.difference === 0;
+        },
+
+        /** Sales accounts whose output VAT the voucher does not book: a warning, not a block. */
+        get vatWarnings() {
+            return voucherVatWarnings(this.rows, this.vatRules);
         },
 
         /** Kontosaldo after each row, in the order of the rows. */

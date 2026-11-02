@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace App\Livewire\Invoicing\Concerns;
 
+use App\Domain\Vat\SalesVatRules;
+use App\Models\Account;
+use App\Models\Article;
+use Illuminate\Database\Eloquent\Collection;
 use Livewire\Component;
 
 /**
@@ -18,6 +22,27 @@ trait EditsSalesRows
 {
     /** @var array<int, array<string, string>> */
     public array $rows = [];
+
+    /**
+     * The active articles for the rows, with their revenue account, so the
+     * browser can warn when a row's VAT rate does not fit it (#62).
+     *
+     * @return Collection<int, Article>
+     */
+    protected function rowArticles(): Collection
+    {
+        return Article::query()->where('is_active', true)->with('account:id,number')->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate', 'account_id']);
+    }
+
+    /**
+     * The revenue accounts' VAT rules for the browser (SalesVatRules).
+     *
+     * @return array<int, array{rates: list<int>, vat: ?list<int>}>
+     */
+    protected function salesVatRules(): array
+    {
+        return SalesVatRules::forAccounts(Account::query()->whereBetween('number', [3000, 3999])->get(['id', 'number']));
+    }
 
     /**
      * The filled rows as input for the save action.

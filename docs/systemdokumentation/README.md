@@ -484,6 +484,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   inget intäktskonto bär underlaget för (till exempel en såld inventarie)
   visas som en varning med det saknade underlaget (enligt granskning
   2026-11-02, juristgranskning återstår, AUD-MOMS-3, #61).
+- En verifikation som bokför försäljning bara på konton för ruta 05
+  (öresutjämning och intäktskorrigeringar 3700–3799 undantagna) men ingen
+  utgående moms alls (2610–2639) redovisas i ruta 42, inte 05: en
+  momspliktig försäljning kan inte sakna moms. Omföringar mellan
+  intäktskonton räknas efter konto. Verifikations-, faktura- och
+  artikelformulären varnar när momssats eller moms inte passar
+  intäktskontot (3001 25 %, 3002 12 %, 3003 6 %, 3004 0 %); varningen
+  stoppar inte bokföringen (enligt granskning 2026-11-02, juristgranskning
+  återstår, AUD-MOMS-4, #62).
 - Momsen bokförs med en verifikation i serie M per period: momskontona som
   hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
   ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören

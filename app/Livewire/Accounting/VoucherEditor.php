@@ -11,6 +11,7 @@ use App\Actions\Accounting\SaveDraftVoucher;
 use App\Actions\Assets\AssetProposals;
 use App\Domain\Accounting\AccountBalances;
 use App\Domain\Accounting\VoucherTemplate;
+use App\Domain\Vat\SalesVatRules;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Payables\SupplierInvoiceEditor;
 use App\Models\Account;
@@ -347,6 +348,7 @@ class VoucherEditor extends Component
                 ? collect()
                 : VoucherAttachment::query()->where('voucher_id', $this->voucherId)->orderBy('id')->get(),
             'accounts' => $accounts,
+            'vatRules' => SalesVatRules::forAccounts($accounts),
             'accountSigns' => $accounts->mapWithKeys(fn (Account $account): array => [$account->number => AccountBalances::sign($account->type)])->all(),
             'seriesOptions' => VoucherSeries::query()->orderBy('code')->get(['code', 'name']),
             'aiAvailable' => AnalyzeDocument::availableFor($this->user(), $this->company()),

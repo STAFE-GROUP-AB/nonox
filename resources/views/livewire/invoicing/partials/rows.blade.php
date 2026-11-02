@@ -16,10 +16,11 @@
         'unit' => $article->unit,
         'price' => $article->price_ore->ore,
         'vat_rate' => $article->vat_rate,
+        'account' => $article->account?->number,
     ]]);
 @endphp
 
-<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }})">
+<div x-data="salesRows($wire.entangle('rows'), @js($articleMap), @js($negative), {{ isset($reverseCharge) ? "() => \$wire.reverseCharge || (\$wire.foreignSale !== '' && \$wire.foreignSale !== 'EU_CONSUMER_OSS')" : 'false' }}, {{ isset($withCurrency) ? '() => $wire.currency' : "() => 'SEK'" }}, @js($vatRules ?? []))">
     <datalist id="article-options">
         @foreach($articles as $article)
             <option value="{{ $article->number }}">{{ $article->name }}</option>
@@ -110,6 +111,14 @@
                 @endforeach
             @endif
         @endforeach
+
+        <template x-if="vatWarnings.length > 0">
+            <div class="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status" aria-live="polite" data-vat-warning>
+                <template x-for="warning in vatWarnings" :key="warning.line">
+                    <p x-text="@js(__('Rad :line: konto :account är för försäljning med :expected moms, men raden har :rate. Momsdeklarationen följer momsen, så kontrollera kontot på artikeln eller raden.')).replace(':line', warning.line).replace(':account', warning.account).replace(':expected', warning.rates.map((rate) => percent(rate)).join(', ')).replace(':rate', percent(warning.rate))"></p>
+                </template>
+            </div>
+        </template>
 
         <div class="mt-6 flex justify-end">
             <dl class="w-full max-w-xs space-y-1 text-sm tabular-nums">

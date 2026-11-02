@@ -43,6 +43,18 @@
   base; a difference within rounding the VAT to whole kronor per voucher is
   ignored. One extra grouped query per period. Enligt granskning 2026-11-02,
   juristgranskning återstår (AUD-MOMS-3, #61).
+- **A sale without VAT is not taxable** (#62): a voucher whose only sales
+  rows are on box 05 accounts (3700–3799 aside) and that books no output VAT
+  at all (2610–2639) moves those rows to box 42. A voucher that also moves
+  another revenue account (a reclassification) is left by account. Rows are
+  still booked per account, so an invoice that mixes a 25 % and a 0 % row on
+  the same account is reported by its VAT only as far as rule #61 goes; the
+  editors therefore warn (`SalesVatRules`, `resources/js/vat-rate-check.js`)
+  when a row's rate or a voucher's output VAT does not fit the account
+  (3001 25 %, 3002 12 %, 3003 6 %, 3004 0 % after their BAS 2026 names; any
+  other box 05 account 25/12/6 %, box 42 0 %). Warnings, not validation, so
+  imports and unusual cases still post. Enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-MOMS-4, #62).
 - Periods follow the company's redovisningsperiod: calendar month, calendar
   quarter or the beskattningsår (= the fiscal year for a company), SFL 26
   kap. 10, 11 and 26 §§. Months and quarters are never cut at a fiscal year

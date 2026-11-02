@@ -28,6 +28,15 @@ Finns det utgående moms på försäljning som inget intäktskonto bär underlag
 > [!NOTE]
 > Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-3, #61).
 
+### Försäljning utan moms på ett momskonto
+
+En försäljning kan inte vara momspliktig och samtidigt sakna moms. Bokförs försäljning på 3001–3003 eller ett annat konto för ruta 05 på en verifikation som inte har någon utgående moms alls, räknas den till **ruta 42** som momsfri försäljning. Det gäller till exempel en fakturarad med 0 % moms på konto 3001. Omföringar mellan intäktskonton, till exempel från 3001 till 3990, räknas fortfarande efter kontot.
+
+När du bokför för hand, lägger upp en artikel eller skriver en faktura varnar NONOX om kontot och momssatsen inte passar ihop.
+
+> [!NOTE]
+> Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-4, #62).
+
 ## Inköp och ingående moms
 
 Ingående moms på 2640–2647 och 2649 räknas till **ruta 48**, Ingående moms att dra av. En vanlig svensk leverantörsfaktura bokför momsen på 2641. Konto 2648 Vilande ingående moms räknas inte med, se nedan.
