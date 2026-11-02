@@ -9,6 +9,8 @@ sokord: [resultatrapport, resultaträkning, vinst, förlust, rörelseresultat, i
 
 Resultatrapporten svarar på frågan "går vi med vinst?". Den visar periodens intäkter och kostnader, konto för konto, och vad som blir kvar. Använd den varje månad för att följa hur det går, och jämför med samma period förra året för att se om det går åt rätt håll.
 
+![Resultatrapporten för en butik.](/manual/bilder/rapporter/resultatrapport.webp)
+
 ## Så här tar du fram den
 
 1. Gå till **Bokföring → Rapporter**.

@@ -12,6 +12,8 @@ En maskin, en dator eller en bil som används i flera år kostnadsförs inte på
 
 Registret finns under **Bokföring → Anläggningar**.
 
+![Anläggningsregistret med bokfört värde och månadens avskrivning.](/manual/bilder/bokslut/anlaggningstillgangar.webp)
+
 ## Så fungerar det
 
 - **Inköpet** bokförs som vanligt när tillgången köps, på ett tillgångskonto som 1220 Inventarier och verktyg. Det kan du göra med en leverantörsfaktura eller en verifikation – och då kan tillgången skapas i registret samtidigt. Läs [Anläggningstillgång direkt från inköpet](/manual/bokslut/tillgang-fran-inkop).

@@ -9,6 +9,8 @@ sokord: [serie, verifikationsserie, verifikationsnummer, löpnummer, numrering, 
 
 Varje bokförd verifikation får ett nummer i en serie: A1, A2, A3 och så vidare. Serien visar varifrån verifikationen kommer – en manuell verifikation, en kundfaktura, en löneutbetalning. Du ser företagets serier under **Bokföring → Verifikationsserier**.
 
+![Verifikationsserierna, från A Manuell till M Moms.](/manual/bilder/bokforing/verifikationsserier.webp)
+
 ## Serierna och vad som bokförs i dem
 
 Varje företag får de här serierna när det skapas:

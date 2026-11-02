@@ -9,6 +9,8 @@ sokord: [kundreskontra, reskontra, obetalda fakturor, kundfordringar, 1510, för
 
 Kundreskontran är listan över vad dina kunder är skyldiga dig. NONOX har ingen separat reskontrasida; i stället syns det obetalda på flera ställen, var och ett med en länk vidare till fakturan.
 
+![Fakturalistan filtrerad på obetalda fakturor, med förfallodag och status.](/manual/bilder/fakturering/obetalda-fakturor.webp)
+
 ## Var du ser det obetalda
 
 - **Översikt** – nyckeltalet **Obetalda kundfakturor** visar hur många som är obetalda och hur många som har förfallit. Under **Att göra** står *… kundfakturor har förfallit* med summan, eller en enskild förfallen faktura med kund och belopp.

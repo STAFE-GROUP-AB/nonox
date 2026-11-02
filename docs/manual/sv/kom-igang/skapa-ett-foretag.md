@@ -11,6 +11,8 @@ Allt i NONOX hör till ett företag: verifikationer, fakturor, kunder och instä
 
 Har du många företag, till exempel som redovisningskonsult, skapar du dem på samma sätt ett i taget. Varje företag är helt skilt från de andra.
 
+![Formuläret Nytt företag. Uppgifterna kan hämtas från Bolagsverket med organisationsnumret.](/manual/bilder/kom-igang/skapa-ett-foretag.webp)
+
 ## Innan du börjar
 
 Ha organisationsnumret till hands, och gärna besluten från Skatteverket om moms och F-skatt. Uppgifterna står på registreringsbeviset från Bolagsverket eller på verksamt.se.

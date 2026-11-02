@@ -12,6 +12,8 @@ Aktiebolag och ekonomiska föreningar ska upprätta en årsredovisning. I NONOX 
 
 Sidan finns under **Bokföring → Årsredovisning**.
 
+![Årsredovisningen: texterna och underskrifterna till vänster, förhandsvisningen till höger.](/manual/bilder/bokslut/arsredovisning.webp)
+
 ## Innan du börjar
 
 Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Checklistan för bokslutet](/manual/bokslut/checklistan). Siffrorna läses om ur bokföringen varje gång årsredovisningen visas, så den är alltid i takt med det som är bokfört.

@@ -12,6 +12,8 @@ I leverantörsregistret har du alla du köper av: grossisten, hyresvärden, elbo
 
 Registret finns under **Register → Leverantörer**. För varje leverantör ser du vad ni köpt för i år och vad som är obetalt just nu.
 
+![Leverantörsregistret med bankgiro, konto, köpt i år och obetalt.](/manual/bilder/leverantorer/leverantorsregistret.webp)
+
 ## Så här lägger du till en leverantör
 
 1. Gå till **Register → Leverantörer** och klicka på **Ny leverantör**. Formuläret visar vilket nummer leverantören får.

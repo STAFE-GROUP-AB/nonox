@@ -11,6 +11,8 @@ Profilen gäller dig som person, inte företaget. Det du ändrar här följer me
 
 Du hittar profilen längst ner i menyn: klicka på **Profil** under ditt namn.
 
+![Din profil med namn, e-postadress och passkeys.](/manual/bilder/kom-igang/din-profil.webp)
+
 ## Det här finns på profilen
 
 **Dina uppgifter** – ditt namn, som visas för kollegor och i behandlingshistoriken. Ändra det och klicka på **Spara**. E-postadressen är den du loggar in med och går inte att ändra här ännu.

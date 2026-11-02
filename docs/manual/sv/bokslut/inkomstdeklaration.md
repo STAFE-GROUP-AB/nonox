@@ -12,6 +12,8 @@ Aktiebolag och ekonomiska föreningar lämnar Inkomstdeklaration 2 (INK2) med r�
 
 Sidan finns under **Bokföring → Inkomstdeklaration**.
 
+![Inkomstdeklarationen med skattemässiga justeringar och deklarationen fält för fält.](/manual/bilder/bokslut/inkomstdeklaration.webp)
+
 ## Så här gör du
 
 1. Gör bokslutet först. Läs [Checklistan för bokslutet](/manual/bokslut/checklistan).

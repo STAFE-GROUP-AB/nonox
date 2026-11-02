@@ -11,6 +11,8 @@ sokord: [semester, semesterlön, semestertillägg, semesterersättning, semester
 
 NONOX håller reda på varje anställds semester enligt semesterlagen: hur många betalda dagar personen har tjänat in, hur många som är uttagna, vad semestern ska kosta och vad som händer med dagarna som är kvar när semesteråret tar slut.
 
+![Semesteråret, där sparade dagar sparas eller betalas ut.](/manual/bilder/lon/semester.webp)
+
 ## Saldot räknas fram, det lagras inte
 
 Antalet betalda semesterdagar räknas fram ur anställningen, frånvaron och de attesterade lönebeskeden. Det finns inget saldo som kan glida isär från underlaget. Du ser saldot:

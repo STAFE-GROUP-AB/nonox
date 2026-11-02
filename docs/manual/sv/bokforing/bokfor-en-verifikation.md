@@ -10,6 +10,8 @@ sokord: [ny verifikation, verifikat, kontera, bokföringsorder, manuell verifika
 
 En [verifikation](/manual/ordlista/ordlista#verifikation) är en bokförd affärshändelse: ett köp, en försäljning, en bankavgift. Den består av minst två rader, där summan av allt i debet är lika stor som summan av allt i kredit. Här lägger du in en verifikation för hand. Fakturor, inbetalningar, leverantörsfakturor, lön och moms bokförs av sig själva när du arbetar i de delarna av NONOX, så dem behöver du inte lägga in här.
 
+![En ny verifikation: datum, vad den gäller, serie och raderna med konto, debet och kredit.](/manual/bilder/bokforing/bokfor-en-verifikation.webp)
+
 ## Så här gör du
 
 1. Gå till **Bokföring → Verifikationer** och välj **Ny verifikation**.

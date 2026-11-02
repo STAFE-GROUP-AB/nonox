@@ -12,6 +12,8 @@ Bokslutet görs under **Bokföring → Bokslut**, ett räkenskapsår i taget, i 
 
 Överst på sidan väljer du räkenskapsår och ser **Resultat före skatt**, hur många punkter som är klara i **Checklistan** och om året är **Öppet** eller **Stängt**.
 
+![Bokslutets checklista med resultatet före skatt och det som återstår.](/manual/bilder/bokslut/checklistan.webp)
+
 ## Punkterna NONOX kontrollerar själv
 
 De här punkterna bockas av av sig själva när bokföringen visar att de är klara. Är en punkt inte klar finns länken **Gå dit** till sidan där du åtgärdar den.

@@ -10,6 +10,8 @@ sokord: [attestera, godkänna faktura, attestant, dualitet, fyraögonsprincipen,
 
 Att [attestera](/manual/ordlista/ordlista#attest) en faktura är att intyga att den stämmer: att varorna eller tjänsterna är levererade och att beloppet är rätt. I NONOX måste varje registrerad leverantörsfaktura attesteras innan den kan betalas – både när du registrerar en betalning för hand och när den ska med i en betalfil.
 
+![En leverantörsfaktura som väntar på attest, med betalningsuppgifter och kontering.](/manual/bilder/leverantorer/attest.webp)
+
 ## Så här attesterar du
 
 1. Gå till **Inköp → Leverantörsfakturor** och välj **Att attestera**.

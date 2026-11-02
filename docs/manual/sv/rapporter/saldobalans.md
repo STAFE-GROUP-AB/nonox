@@ -9,6 +9,8 @@ sokord: [saldobalans, råbalans, provbalans, kontosaldon, trial balance, avstäm
 
 [Saldobalansen](/manual/ordlista/ordlista#saldobalans) är en lista över alla konton som har ett saldo eller har rört sig under perioden. Den är den rapport redovisningskonsulter och revisorer oftast börjar med, eftersom den visar hela bokföringen på en sida. Det är också den rapport som öppnas först under **Bokföring → Rapporter**.
 
+![Saldobalansen med ingående saldo, debet, kredit och utgående saldo per konto.](/manual/bilder/rapporter/saldobalans.webp)
+
 ## Så här tar du fram den
 
 1. Gå till **Bokföring → Rapporter**. **Saldobalans** är vald från början.

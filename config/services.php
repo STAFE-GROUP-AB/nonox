@@ -124,4 +124,9 @@ return [
         'url' => env('VIES_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api/'),
     ],
 
+    // Google Chrome for the manual's screenshots (manual:screenshots), on a developer's computer.
+    'chrome' => [
+        'path' => env('CHROME_PATH', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
+    ],
+
 ];

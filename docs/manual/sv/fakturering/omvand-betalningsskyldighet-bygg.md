@@ -12,6 +12,8 @@ När ett byggföretag köper byggtjänster av dig är det ofta köparen som ska 
 > [!IMPORTANT]
 > Vilka tjänster och vilka köpare som omfattas avgörs av Mervärdesskattelagen och Skatteverkets vägledning, inte av NONOX. Är du osäker, kontrollera med Skatteverket eller din redovisningskonsult innan du fakturerar.
 
+![En faktura till ett byggföretag med omvänd betalningsskyldighet.](/manual/bilder/fakturering/omvand-betalningsskyldighet-bygg.webp)
+
 ## Innan du börjar
 
 - Ditt företag måste vara momsregistrerat. Under **Inställningar för företaget** ska **Momsredovisning** vara något annat än *Inte momsregistrerad*; då räknar NONOX fram företagets momsregistreringsnummer från organisationsnumret.

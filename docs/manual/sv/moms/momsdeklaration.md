@@ -12,6 +12,8 @@ Momsdeklarationen räknas fram ur bokföringen för varje redovisningsperiod. Du
 
 Sidan finns under **Bokföring → Moms**.
 
+![Momsdeklarationen för en månad, ruta för ruta, med länkar till kontona bakom varje ruta.](/manual/bilder/moms/momsdeklaration.webp)
+
 ## Så här gör du varje period
 
 1. Bokför allt som hör till perioden: fakturor, leverantörsfakturor, kvitton och dagsrapporter. Stäm gärna av banken.

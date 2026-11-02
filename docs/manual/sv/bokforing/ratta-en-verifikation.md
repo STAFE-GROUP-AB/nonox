@@ -9,6 +9,8 @@ sokord: [rätta, rättelse, rättelseverifikation, ändra verifikation, ta bort 
 
 En bokförd verifikation kan aldrig ändras eller tas bort – inte av dig, inte av en administratör och inte ens direkt i databasen. Har det blivit fel rättar du det i stället med en [rättelseverifikation](/manual/ordlista/ordlista#rattelseverifikation): en ny verifikation som vänder alla rader i den gamla. Båda finns kvar och pekar på varandra, så att alla i efterhand kan se vad som hände.
 
+![En bokförd verifikation med konton, belopp, vem som bokförde den och kontrollsumman.](/manual/bilder/bokforing/ratta-en-verifikation.webp)
+
 ## Så här rättar du
 
 1. Öppna verifikationen under **Bokföring → Verifikationer**.

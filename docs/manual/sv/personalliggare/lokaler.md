@@ -11,6 +11,8 @@ sokord: [lokal, arbetsplats, verksamhetslokal, restaurang, salong, adress, koord
 
 En lokal är platsen där personalen arbetar och där liggaren förs, till exempel restaurangen eller salongen. Varje lokal har en egen adress, en verksamhet och egna regler för hur personalen checkar in. Kiosker kopplas alltid till en lokal.
 
+![En lokal med sina sätt att checka in och sina kiosker.](/manual/bilder/personalliggare/lokaler.webp)
+
 ## Så här gör du
 
 1. Gå till **Personalliggare → Lokaler och kiosker**.

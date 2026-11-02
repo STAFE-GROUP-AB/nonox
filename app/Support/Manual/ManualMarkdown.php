@@ -18,6 +18,9 @@ use Symfony\Component\Yaml\Yaml;
  * - a numbered list right under a heading that starts with "Så här" is
  *   shown as steps, and its items are the steps of the page's HowTo data;
  * - headings get ids and anchors, and the h2s make the table of contents;
+ * - an image alone in a paragraph is a screenshot: a figure with its alt
+ *   text as caption, its size read from the file in public/ so the page
+ *   does not jump while it loads, and loaded lazily;
  * - tables scroll sideways inside their own box on a narrow screen;
  * - links to other sites get rel="noopener", root-relative links get this
  *   installation's address.
@@ -77,6 +80,7 @@ final class ManualMarkdown
         $steps = [];
         $html = self::steps($html, $steps);
 
+        $html = self::figures($html);
         $html = (string) preg_replace('#<table>(.*?)</table>#s', '<div class="mn-table" role="region" aria-label="Tabell" tabindex="0"><table>$1</table></div>', $html);
         $html = (string) preg_replace_callback('/<a href="([^"]*)"/', fn (array $match): string => self::link(html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5)), $html);
 
@@ -140,6 +144,21 @@ final class ManualMarkdown
             }
 
             return $match[1].'<ol class="mn-steps">'.$match[3].'</ol>';
+        }, $html);
+    }
+
+    /** A screenshot alone in its paragraph as a figure with a caption. */
+    private static function figures(string $html): string
+    {
+        return (string) preg_replace_callback('#<p>\s*<img src="([^"]+)" alt="([^"]*)"\s*/?>\s*</p>#', function (array $match): string {
+            $src = html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5);
+            $size = str_starts_with($src, '/') ? @getimagesize(public_path(ltrim($src, '/'))) : false;
+            $dimensions = $size === false ? '' : ' width="'.$size[0].'" height="'.$size[1].'"';
+            $tall = $size !== false && $size[1] > $size[0] ? ' mn-shot-tall' : '';
+            $source = str_starts_with($src, '/') && ! str_starts_with($src, '//') ? url($src) : $src;
+
+            return '<figure class="mn-shot'.$tall.'"><img src="'.e($source).'" alt="'.$match[2].'"'.$dimensions.' loading="lazy" decoding="async">'
+                .($match[2] === '' ? '' : '<figcaption>'.$match[2].'</figcaption>').'</figure>';
         }, $html);
     }
 

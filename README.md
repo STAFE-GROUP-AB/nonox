@@ -357,7 +357,20 @@ DB_DATABASE=nonox_demo php artisan migrate --force
 DB_DATABASE=nonox_demo php artisan db:seed --class=IndustryDemoSeeder --force
 ```
 
-Seedern tar ett par minuter och lägger bara till: ett företag som redan finns hoppas över. Den vägrar köra i produktion. Du loggar in med `ADMIN_EMAIL`, som äger företagen och är administratör i byråerna. Byråerna ägs av `redovisningsbyra@example.test` och `ekonomikonsult@example.test`. Alla namn och organisations- och personnummer är påhittade; datan finns i `database/seeders/Demo/DemoIndustries.php`.
+Seedern tar ett par minuter och lägger bara till: ett företag som redan finns hoppas över. Den vägrar köra i produktion. Företagen ägs av den påhittade Anna Andersson (`anna.andersson@example.test`), som också syns i manualens skärmbilder. Du loggar in med `ADMIN_EMAIL`, som läggs till som administratör i alla demoföretag. Byråerna ägs av `redovisningsbyra@example.test` och `ekonomikonsult@example.test`. Alla namn och organisations- och personnummer är påhittade; datan finns i `database/seeders/Demo/DemoIndustries.php`.
+
+### Skärmbilder till manualen
+
+Bilderna i manualen tas från demoföretagen, aldrig från riktiga data. Vilka sidor som fotograferas står i `docs/manual/skarmbilder.yaml`. Kör appen mot demodatabasen med en egen cache, och ta bilderna i ett annat fönster:
+
+```bash
+cd public && DB_DATABASE=nonox_demo CACHE_STORE=array APP_URL=http://127.0.0.1:8123 PHP_CLI_SERVER_WORKERS=6 \
+  php -S 127.0.0.1:8123 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
+DB_DATABASE=nonox_demo php artisan manual:screenshots              # alla
+DB_DATABASE=nonox_demo php artisan manual:screenshots --only=lon/  # bara ett avsnitt
+```
+
+Använd `php -S` och inte `php artisan serve`, som inte för vidare `DB_DATABASE` till webbservern. En bild sparas bara om demoföretagets namn står på sidan och din `ADMIN_EMAIL` inte gör det. Bilderna hamnar i `public/manual/bilder` som WebP. Kommandot behöver Google Chrome (eller `CHROME_PATH`) och Node.
 
 ### Kvalitetskontroll
 

@@ -9,6 +9,8 @@ sokord: [verifikationslista, sök verifikation, kopiera verifikation, grundbok, 
 
 Under **Bokföring → Verifikationer** finns allt som har bokförts i företaget, med den senaste först. Härifrån söker du upp en verifikation, läser den rad för rad med underlaget bredvid och kopierar den när samma sak ska bokföras igen.
 
+![Verifikationerna för ett café, med årets resultat, pengar på bank och kassa och kontrollen av bokföringen överst.](/manual/bilder/bokforing/verifikationer.webp)
+
 ## Listan
 
 Överst på sidan visas några nyckeltal för den som får se rapporterna: **Resultat hittills** i år, **Pengar på bank och kassa** och momsen på momskontona. Under dem står resultatet av den senaste [kontrollen av bokföringen](/manual/bokforing/kontroll-av-bokforingen).

@@ -11,6 +11,8 @@ sokord: [Skatteverket är här, kontrollbesök, oannonserat besök, revision, ex
 
 Skatteverket kan komma på oannonserat kontrollbesök och be att få se personalliggaren. Då ska det gå fort. I NONOX finns knappen **Skatteverket är här** på två ställen: på kiosken vid entrén och överst på varje sida i personalliggaren. Båda visar vem som är incheckad just nu och liggaren, med fullständiga personnummer.
 
+![Sidan för kontrollbesök: vem som är incheckad och liggaren att ladda ner.](/manual/bilder/personalliggare/kontrollbesok.webp)
+
 ## Så här gör du på kiosken
 
 Det här fungerar även utan internet.

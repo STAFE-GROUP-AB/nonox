@@ -134,6 +134,10 @@
 .mn-callout-warning{border-left-color:var(--mn-warn-line);background:var(--mn-warn-bg)}
 .mn-callout-warning .mn-callout-title{color:var(--mn-warn-ink)}
 
+.mn-shot{margin:24px 0}
+.mn-shot img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 1px 2px rgb(0 0 0 / .04),0 8px 24px -12px rgb(0 0 0 / .18)}
+.mn-shot-tall img{max-width:300px;margin-inline:auto;border-radius:22px}
+.mn-shot figcaption{margin-top:9px;font-size:14px;line-height:1.5;color:var(--muted);text-align:center}
 .mn-table{overflow-x:auto;margin:20px 0;border:1px solid var(--line);border-radius:14px;background:var(--card)}
 .mn-table table{width:100%;border-collapse:collapse;font-size:15px}
 .mn-table th,.mn-table td{padding:11px 14px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);line-height:1.5}

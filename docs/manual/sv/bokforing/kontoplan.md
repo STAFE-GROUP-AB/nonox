@@ -9,6 +9,8 @@ sokord: [kontoplan, BAS, konto, kontonummer, kontoklass, nytt konto, inaktivera 
 
 Kontoplanen är listan över de konton du bokför på, till exempel 1930 för företagskontot och 6110 för kontorsmaterial. I NONOX är den förifylld med de vanligaste kontona enligt BAS, den kontoplan som nästan alla svenska företag använder, och du kan lägga till de konton du behöver utöver dem. Du hittar den under **Bokföring → Kontoplan**.
 
+![Kontoplanen, där du lägger till, byter namn på och inaktiverar konton.](/manual/bilder/bokforing/kontoplan.webp)
+
 ## Vilka konton du får från början
 
 När företaget skapas får det de vanligaste kontona ur BAS 2026, cirka hundra stycken. Vilka det blir beror på företagets redovisningsregelverk: ett aktiebolag med K2 eller K3 får aktiebolagets konton för eget kapital (till exempel 2081 Aktiekapital och 2099 Årets resultat), en enskild firma med K1 får eget kapital för en ägare (till exempel 2010 Eget kapital och 2019 Årets resultat).

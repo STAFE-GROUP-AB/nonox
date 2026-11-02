@@ -11,6 +11,8 @@ sokord: [personal, anställd, personalkort, skattetabell, kolumn, SINK, bankkont
 
 Varje person som ska få lön läggs upp under **Lön → Anställda**. Där samlas allt lönekörningen behöver veta: vem personen är, hur hen ska beskattas, vart lönen ska betalas och vilka villkor anställningen har.
 
+![De anställda med lön, befattning och anställningsform.](/manual/bilder/lon/anstallda.webp)
+
 ## Så här lägger du upp en anställd
 
 1. Öppna **Lön → Anställda** och klicka på **Ny anställd**.

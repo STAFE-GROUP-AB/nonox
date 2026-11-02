@@ -12,6 +12,8 @@ En periodisering ser till att en kostnad eller intäkt hamnar i den månad den h
 
 Du lägger in periodiseringen en gång, och sedan bokför NONOX varje månad med ett klick. Sidan finns under **Bokföring → Periodiseringar**.
 
+![Periodiseringarna och månadens bokföring av dem.](/manual/bilder/bokslut/periodiseringar.webp)
+
 ## De fyra slagen
 
 | Slag | Exempel | Så bokförs det |

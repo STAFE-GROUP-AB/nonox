@@ -13,6 +13,8 @@ Lönen räknas med en lång rad satser och belopp som ändras varje år: arbetsg
 
 NONOX levererar reglerna, men använder dem inte förrän en namngiven person har jämfört värdet med källan och markerat det som kontrollerat. Det är din försäkran om att lönen räknas med rätt siffror, och det är därför en lönekörning kan stoppas med beskedet att regler inte är kontrollerade.
 
+![Reglerna för lön. En regel som inte är kontrollerad stoppar lönekörningen.](/manual/bilder/lon/regler-och-skattetabeller.webp)
+
 ## Så här kontrollerar du reglerna
 
 1. Öppna **Lön → Regler**.

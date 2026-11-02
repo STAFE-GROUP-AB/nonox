@@ -9,6 +9,8 @@ sokord: [huvudbok, kontoanalys, kontoutdrag, kontospecifikation, transaktioner p
 
 [Huvudboken](/manual/ordlista/ordlista#huvudbok) visar allt som har hänt på kontona, rad för rad, med saldot efter varje rad. Kontoanalysen är huvudboken för ett enda konto. Det är här du tar reda på *varför* ett konto har det saldo det har – vilka verifikationer som bygger upp beloppet, och var en felbokning finns.
 
+![Kontoanalysen för konto 1930 med varje transaktion och löpande saldo.](/manual/bilder/rapporter/kontoanalys-och-huvudbok.webp)
+
 ## Från vilken rapport som helst till kontoanalysen
 
 Varje konto i rapporterna är en länk. Välj kontot i **Saldobalans**, **Resultatrapport**, **Balansrapport**, **Huvudbok** eller **Verifikationslista**, så öppnas kontoanalysen för det kontot med:

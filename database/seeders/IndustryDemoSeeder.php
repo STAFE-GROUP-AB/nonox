@@ -27,9 +27,11 @@ use RuntimeException;
  * running it again does nothing. Synthetic data only, and never on a server
  * that is reachable from the internet.
  *
- * Logins: the demo user (ADMIN_EMAIL, else demo@example.com) owns the
- * companies and is an administrator in the firms; each firm is owned by
- * its own consultant, who is Redovisningskonsult in the firm's clients.
+ * Logins: Anna Andersson (anna.andersson@example.test, made up, so she can
+ * be in the manual's screenshots) owns the companies and is an
+ * administrator in the firms; each firm is owned by its own consultant,
+ * who is Redovisningskonsult in the firm's clients. ADMIN_EMAIL, when set,
+ * becomes an administrator in every demo company, to sign in locally.
  */
 class IndustryDemoSeeder extends Seeder
 {
@@ -38,6 +40,8 @@ class IndustryDemoSeeder extends Seeder
         'for-redovisningsbyraer' => ['name' => 'Maria Konsult', 'email' => 'redovisningsbyra@example.test'],
         'for-ekonomikonsulter' => ['name' => 'Eva Ekonomikonsult', 'email' => 'ekonomikonsult@example.test'],
     ];
+
+    public const array OWNER = ['name' => 'Anna Andersson', 'email' => 'anna.andersson@example.test'];
 
     public function run(DemoCompanyBuilder $builder): void
     {
@@ -67,8 +71,9 @@ class IndustryDemoSeeder extends Seeder
             throw new RuntimeException('No demo company for the industry pages: '.implode(', ', $missing).'. Add them to DemoIndustries.');
         }
 
-        $owner = $this->user('Demo Användare', config('app.admin_email') ?: 'demo@example.com');
+        $owner = $this->user(self::OWNER['name'], self::OWNER['email']);
         $current = $owner->current_team_id;
+        $companies = [];
         $warn = fn (string $level, string $message) => $this->command?->warn("  {$message}");
 
         /** @var array<string, list<Company>> $clients */
@@ -88,6 +93,7 @@ class IndustryDemoSeeder extends Seeder
             $isFirm = $demo['is_firm'] ?? false;
             $user = $isFirm ? $this->user(self::FIRM_OWNERS[$slug]['name'], self::FIRM_OWNERS[$slug]['email']) : $owner;
             $company = $builder->build($user, $demo, $isFirm ? ($clients[$slug] ?? []) : [], $warn);
+            $companies[] = $company;
 
             if (! $isFirm) {
                 if (isset($demo['firm'])) {
@@ -102,6 +108,35 @@ class IndustryDemoSeeder extends Seeder
 
         // Creating a company switches to it; the owner comes back to where they were.
         $owner->forceFill(['current_team_id' => $current ?? $owner->ownedTeams()->orderBy('id')->value('id')])->save();
+
+        $this->addAdministrator($companies);
+    }
+
+    /**
+     * ADMIN_EMAIL as an administrator in the demo companies, so the person
+     * who runs the seeder can sign in to them.
+     *
+     * @param  list<Company>  $companies
+     */
+    private function addAdministrator(array $companies): void
+    {
+        $email = config('app.admin_email');
+
+        if (! is_string($email) || $email === '' || $email === self::OWNER['email'] || $companies === []) {
+            return;
+        }
+
+        $admin = $this->user('Administratör', $email);
+
+        foreach ($companies as $company) {
+            if ($company->user_id !== $admin->id) {
+                $company->users()->syncWithoutDetaching([$admin->id => ['role' => 'admin']]);
+            }
+        }
+
+        if ($admin->current_team_id === null) {
+            $admin->forceFill(['current_team_id' => $companies[0]->id])->save();
+        }
     }
 
     /** @param  list<Company>  $clients */

@@ -1,0 +1,71 @@
+# The manual's screenshots, taken by `php artisan manual:screenshots` from
+# the demo companies of IndustryDemoSeeder (never from real data).
+#
+# Each key is the image's path under public/manual/bilder, without .webp,
+# and the article that shows it is usually the one with the same path.
+#   foretag    the demo company: restaurang, cafe, butik, frisor,
+#              hantverkare, konsult, byra or ekonomikonsult
+#   rutt       the route name in the app
+#   modell     what fills the route's parameter: voucher, invoice,
+#              rot_invoice, reverse_charge_invoice, supplier_invoice_to_approve
+#              or company (the demo company itself)
+#   fraga      the query string, as a map
+#   enhet      dator (1280 × 800, the default) or mobil (390 × 844)
+#   del        a CSS selector: crop the image to that element
+
+kom-igang/oversikten: { foretag: restaurang, rutt: dashboard }
+kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create }
+kom-igang/din-profil: { foretag: konsult, rutt: profile.show }
+kom-igang/oversikten-mobil: { foretag: cafe, rutt: dashboard, enhet: mobil }
+
+bokforing/verifikationer: { foretag: cafe, rutt: accounting.vouchers.index }
+bokforing/bokfor-en-verifikation: { foretag: cafe, rutt: accounting.vouchers.create }
+bokforing/ratta-en-verifikation: { foretag: cafe, rutt: accounting.vouchers.show, modell: voucher }
+bokforing/kontoplan: { foretag: cafe, rutt: accounting.accounts }
+bokforing/verifikationsserier: { foretag: cafe, rutt: accounting.voucherSeries }
+bokforing/rakenskapsar: { foretag: cafe, rutt: accounting.fiscalYears }
+bokforing/sie: { foretag: cafe, rutt: accounting.sieImports.index }
+
+fakturering/skapa-en-faktura: { foretag: konsult, rutt: invoicing.invoices.create }
+fakturering/skicka-en-faktura: { foretag: konsult, rutt: invoicing.invoices.show, modell: invoice }
+fakturering/obetalda-fakturor: { foretag: hantverkare, rutt: invoicing.invoices.index, fraga: { visa: obetalda } }
+fakturering/kunder: { foretag: hantverkare, rutt: invoicing.customers }
+fakturering/artiklar: { foretag: hantverkare, rutt: invoicing.articles }
+fakturering/rot-och-rut: { foretag: hantverkare, rutt: invoicing.invoices.show, modell: rot_invoice }
+fakturering/omvand-betalningsskyldighet-bygg: { foretag: hantverkare, rutt: invoicing.invoices.show, modell: reverse_charge_invoice }
+fakturering/inbetalningar: { foretag: hantverkare, rutt: invoicing.incomingPayments }
+
+leverantorer/registrera-en-leverantorsfaktura: { foretag: restaurang, rutt: payables.invoices.index }
+leverantorer/attest: { foretag: restaurang, rutt: payables.invoices.show, modell: supplier_invoice_to_approve }
+leverantorer/leverantorsregistret: { foretag: restaurang, rutt: payables.suppliers }
+
+bank/bankavstamning: { foretag: butik, rutt: accounting.bankReconciliation }
+
+moms/momsdeklaration: { foretag: restaurang, rutt: vat.index }
+
+rapporter/saldobalans: { foretag: butik, rutt: accounting.reports }
+rapporter/resultatrapport: { foretag: butik, rutt: accounting.reports, fraga: { rapport: resultat } }
+rapporter/balansrapport: { foretag: butik, rutt: accounting.reports, fraga: { rapport: balans } }
+rapporter/kontoanalys-och-huvudbok: { foretag: butik, rutt: accounting.reports, fraga: { rapport: huvudbok, konto: '1930' } }
+rapporter/verifikationslista: { foretag: butik, rutt: accounting.reports, fraga: { rapport: verifikationer } }
+
+bokslut/checklistan: { foretag: konsult, rutt: accounting.closing }
+bokslut/periodiseringar: { foretag: konsult, rutt: accounting.accruals }
+bokslut/anlaggningstillgangar: { foretag: konsult, rutt: accounting.fixedAssets }
+bokslut/arsredovisning: { foretag: konsult, rutt: accounting.annualReport }
+bokslut/inkomstdeklaration: { foretag: konsult, rutt: accounting.incomeTax }
+
+lon/sla-pa-lon: { foretag: restaurang, rutt: payroll.index }
+lon/anstallda: { foretag: restaurang, rutt: payroll.employees }
+lon/regler-och-skattetabeller: { foretag: restaurang, rutt: payroll.rules }
+lon/semester: { foretag: restaurang, rutt: payroll.vacationYear }
+
+personalliggare/oversikten-och-avvikelser: { foretag: restaurang, rutt: staff-ledger.overview }
+personalliggare/lagg-till-personal: { foretag: restaurang, rutt: staff-ledger.people }
+personalliggare/lokaler: { foretag: restaurang, rutt: staff-ledger.locations }
+personalliggare/kontrollbesok: { foretag: restaurang, rutt: staff-ledger.control-visit }
+
+byra/mina-foretag: { foretag: byra, rutt: companies.overview }
+
+installningar/foretagets-uppgifter: { foretag: konsult, rutt: teams.show, modell: company }
+

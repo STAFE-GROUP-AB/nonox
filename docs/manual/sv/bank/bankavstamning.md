@@ -12,6 +12,8 @@ En bankavstämning visar att saldot på bankkontot i bokföringen är detsamma s
 
 Avstämningen finns under **Bokföring → Bankavstämning**. Den fungerar för alla bank- och kassakonton i kontoplanen mellan 1900 och 1999.
 
+![Bankavstämningen för företagskontot 1930: saldot enligt kontoutdraget mot bokföringen.](/manual/bilder/bank/bankavstamning.webp)
+
 ## Det du behöver
 
 - Kontoutdraget från banken, eller saldot per den sista dagen i månaden. Med [bankkopplingen](/manual/bank/bankkoppling) behövs inget kontoutdrag – NONOX har bankens saldo.

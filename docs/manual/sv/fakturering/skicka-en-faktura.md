@@ -10,6 +10,8 @@ sokord: [skicka faktura, mejla faktura, e-faktura, PDF, OCR, OCR-nummer, faktura
 
 När du har skapat en faktura kommer du till fakturans sida. Till vänster ser du fakturan precis som kunden ser den. Till höger finns allt du kan göra med den: skicka den, registrera betalningar, skicka påminnelser och kreditera.
 
+![En utställd faktura med PDF:en, OCR-numret, verifikationen och utskicket med e-post.](/manual/bilder/fakturering/skicka-en-faktura.webp)
+
 ## Så här skickar du fakturan med e-post
 
 1. Öppna fakturan under **Försäljning → Fakturor**.

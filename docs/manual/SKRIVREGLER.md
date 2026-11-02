@@ -64,7 +64,15 @@ GitHub-flavoured Markdown, plus:
 - **Links to the public site**: `/flytta-hit`, `/sakerhet`, `/utvecklare/…`.
 - No links into the logged-in app (the address differs on a self-hosted
   NONOX). Name the menu path instead.
-- No images yet. Do not write placeholders for images.
+- **Screenshots**: `![Bildtext.](/manual/bilder/<avsnitt>/<artikel>.webp)`
+  on a line of its own, usually after the first paragraph. The alt text is
+  shown as the caption: one sentence in Swedish that says what the picture
+  shows. Screenshots are never made by hand: list the page in
+  `docs/manual/skarmbilder.yaml` and take it with `php artisan
+  manual:screenshots` from the demo companies (see README, "Skärmbilder
+  till manualen"), so they only ever show made-up data and can be taken
+  again when the app changes. A test checks that every image exists, is in
+  the list and is shown by an article.
 
 ## Writing
 

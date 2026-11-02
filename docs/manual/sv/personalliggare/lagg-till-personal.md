@@ -11,6 +11,8 @@ sokord: [personal, anställd, inhyrd personal, bemanning, pinkod, kod, QR-kort, 
 
 Alla som arbetar i lokalen ska finnas i personalliggaren, även inhyrd personal och de som bara jobbar extra ibland. Varje person får en egen kod med fyra siffror för kiosken och ett personligt QR-kort. Personalen läggs upp en gång för hela företaget och kan checka in i alla företagets lokaler.
 
+![Personalen i personalliggaren med kod, QR-kort och foto för kiosken.](/manual/bilder/personalliggare/lagg-till-personal.webp)
+
 ## Så här gör du
 
 1. Gå till **Personalliggare → Personal**.

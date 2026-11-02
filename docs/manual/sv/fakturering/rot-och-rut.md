@@ -12,6 +12,8 @@ När du utför ROT- eller RUT-arbete åt en privatperson betalar kunden bara en 
 > [!IMPORTANT]
 > Vilket arbete som ger rätt till avdrag, hur stort det är och vilka tak som gäller bestäms av Skatteverket. NONOX räknar i dag med 30 % av arbetskostnaden för ROT och 50 % för RUT, och med ett tak på 50 000 kr för ROT och 75 000 kr för ROT och RUT tillsammans per person och år. Kontrollera alltid aktuella regler hos Skatteverket eller med din redovisningskonsult innan du fakturerar.
 
+![En faktura med ROT-avdrag till en privatperson.](/manual/bilder/fakturering/rot-och-rut.webp)
+
 ## Innan du börjar
 
 - Kunden behöver ett **Personnummer (privatperson)** i kundregistret. Läs [Kunder](/manual/fakturering/kunder).

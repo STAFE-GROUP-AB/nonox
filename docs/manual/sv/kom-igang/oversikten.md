@@ -9,6 +9,8 @@ sokord: [startsida, dashboard, översikt, att göra, nyckeltal, prognos, statist
 
 **Översikt** är det första du ser efter inloggningen. Den svarar på två frågor: hur går det för företaget just nu, och vad behöver jag göra? Allt du ser beror på din roll; den som inte får se rapporter ser till exempel inte statistiken.
 
+![Översikten för en restaurang: pengar på banken, obetalda fakturor, att betala, momsen och det som behöver göras.](/manual/bilder/kom-igang/oversikten.webp)
+
 ## Nyckeltal
 
 Överst finns fyra nyckeltal. Var och en visas bara för den som får se underlaget bakom den.
