@@ -110,6 +110,36 @@ return [
      * application's RSA private key: keep the .pem file outside the
      * repository, readable only by the web server user.
      */
+    /*
+     * Kassakopplingar (ADR-042). Each installation registers its own app
+     * with the till provider; nothing here is shared between
+     * installations. Without a client id the till shows "Inte konfigurerad
+     * på den här servern" and cannot be connected. Redirect URLs to
+     * register: APP_URL/anslutningar/kassa/zettle/klar and
+     * APP_URL/anslutningar/kassa/onslip/klar.
+     */
+    'zettle' => [
+        'client_id' => env('ZETTLE_CLIENT_ID'),
+        'client_secret' => env('ZETTLE_CLIENT_SECRET'),
+        // Zettle e-mails this address about problems with the webhook.
+        'contact_email' => env('ZETTLE_CONTACT_EMAIL'),
+        'urls' => [
+            'oauth' => 'https://oauth.zettle.com',
+            'products' => 'https://products.izettle.com',
+            'purchase' => 'https://purchase.izettle.com',
+            'inventory' => 'https://inventory.izettle.com',
+            'pusher' => 'https://pusher.izettle.com',
+            'finance' => 'https://finance.izettle.com',
+        ],
+    ],
+
+    'onslip' => [
+        // The alias of the Integration registered in Onslip.
+        'client_id' => env('ONSLIP_CLIENT_ID'),
+        // 'test' uses Onslip's sandbox (test.onslip360.com).
+        'environment' => env('ONSLIP_ENVIRONMENT', 'prod'),
+    ],
+
     'banking' => [
         'driver' => env('NONOX_BANKING_DRIVER'),
         'enable_banking' => [

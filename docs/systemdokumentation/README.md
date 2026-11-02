@@ -334,7 +334,10 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 
 - Varje företag har serierna A Manuell, B Kundfakturor, C Kundinbetalningar,
   D Leverantörsfakturor, E Leverantörsbetalningar, L Lön, M Moms och
-  I Ingående balanser/import.
+  I Ingående balanser/import. Serien K Kassa läggs till när modulen
+  Kassakopplingar slås på eller en kassa kopplas (ADR-042), inte för alla
+  företag, så att en SIE-fil med en egen serie K läses in som förut. Inga
+  befintliga serier eller verifikationer ändras.
 - En verifikation får sitt nummer när den bokförs, inte när den skapas. Numret är
   löpande och utan luckor per serie och räkenskapsår och börjar på 1 varje år.
 - Numret sätts medan räkenskapsårets rad i databasen är låst, så två samtidiga
@@ -2848,6 +2851,50 @@ Etiketter ändrar inga saldon och ingen bokföring.
   operationer som väntar. Inga priser, kostnader, kunder eller personuppgifter
   sparas i telefonen. Att starta en inventering kräver nät, eftersom
   systemets antal sparas då.
+
+## 5k. Kassakopplingar (modul)
+
+Kopplingar till kassor (Zettle och Onslip 360), ADR-042. Modulen kräver Lager.
+Den föreslår verifikationer men bokför aldrig själv.
+
+- **Koppling:** OAuth hos kassaleverantören (Onslip med PKCE). Tillståndet
+  (state) gäller en gång, för samma användare, företag och kassa, i femton
+  minuter. Nycklar och signeringsnycklar sparas krypterade och raderas när
+  kassan kopplas bort. Ett kassakonto kan bara vara kopplat till ett företag
+  åt gången. Utan installationens app-uppgifter visas kassan som "Inte
+  konfigurerad på den här servern".
+- **Försäljning in:** Zettle skickar varje köp till en webhook som kontrolleras
+  med HMAC-SHA256 över tidsstämpel och innehåll; Onslips kvitton hämtas varje
+  timme. `pos:reconcile-sales` hämtar dessutom varje natt den senaste veckan.
+  Varje köp sparas i `pos_sales` med kassans id som unik nyckel, och raden
+  sparas först i transaktionen, så att samma köp aldrig dras från lagret två
+  gånger. Kassans eget underlag sparas oförändrat med SHA-256 (räkenskaps-
+  information när det har bokförts).
+- **Lager:** varje rad kopplas till en lagerförd artikel (kassans produkt,
+  EAN, skannerkod, SKU eller artikelnummer) och blir en lagerrörelse av typen
+  kassa. En rad som inte kan kopplas, eller där lagret inte räcker, väntar
+  under Omatchade rader tills en person med `inventory:manage` kopplar den.
+- **Lager till kassan:** lagerrörelser för kopplade artiklar skickas till
+  Zettle som ändringar, en gång per rörelse och med samma id vid varje försök.
+  Kassans egna försäljningar skickas inte tillbaka. Onslip har inget
+  lager-API och får inget saldo.
+- **Dagens verifikation:** `CreateDailyDraft` gör ett utkast i serie K per
+  företag och dag av all försäljning och alla avgifter som inte redan finns i
+  en verifikation: försäljning och utgående moms per momssats i kredit, varje
+  betalsätt i debet, dricks, kortavgifter (Zettle) och öresutjämning upp till
+  en krona per försäljning. Går beloppen inte ihop skapas inget utkast.
+  Försäljningen markeras med utkastet; tas utkastet bort kan dagen föreslås
+  igen. Utkastet bokförs av en person med `PostVoucher`, som alla andra.
+  Kontona är inställningar med BAS-förslag. Varje morgon kl. 05.20 skapas
+  utkasten för tidigare dagar i namnet på den som kopplade kassan, om den
+  fortfarande får skapa verifikationer.
+- **Behörigheter:** koppla och koppla bort kräver `settings:manage`, sidan och
+  loggen `inventory:view`, omatchade rader `inventory:manage`, utkastet
+  `vouchers:create`.
+- Allt skrivs till behandlingshistoriken (`pos.*`).
+- `TODO(legal-verify)`: om kassans Z-rapport måste vara underlaget, kontona
+  för kortfordran, presentkort och dricks, och momsen på kortavgifter
+  (se ADR-042).
 
 ## 6. Belopp
 

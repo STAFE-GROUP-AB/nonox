@@ -85,6 +85,10 @@ Vill du eller en utvecklare prova API:t utan att röra den riktiga bokföringen?
 - Stänger du av modulen kopplas alla appar bort, alla nycklar (också SFTP-nycklar) återkallas och alla webhooks och SFTP stängs av. Slår du på den igen måste apparna godkännas på nytt och nya nycklar skapas.
 - Kör ditt företag NONOX själv behöver den som driftar servern förbereda modulen och registrera apparna innan de kan anslutas.
 
+## Kassa
+
+Zettle och Onslip kopplar du utan API-nycklar, med modulen Kassakopplingar under **Kassa** i menyn. Se [Kassa: Zettle](/manual/lager/kassa-zettle) och [Kassa: Onslip](/manual/lager/kassa-onslip).
+
 ## Läs också
 
 - [Utvecklare: API-nycklar](/utvecklare/api-nycklar)

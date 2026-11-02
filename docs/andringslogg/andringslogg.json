@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-kassakopplingar",
+      "datum": "2026-11-02T18:52:15+01:00",
+      "rubrik": "Kassakopplingar för Zettle och Onslip",
+      "beskrivning": "Den nya modulen Kassakopplingar kopplar Zettle eller Onslip till NONOX. Varje köp sparas en gång och dras från lagret, rader som inte hittar en artikel väntar under Omatchade tills någon kopplar dem, lagerändringar skickas till Zettle som ändringar och artiklarna läggs upp i kassan. Varje dags försäljning blir ett verifikationsutkast i den nya serien K som du stämmer av mot kassans dagsrapport och bokför, när den som driftar NONOX har registrerat en app hos kassaleverantören.",
+      "typ": "Nytt",
+      "omrade": "Connect/API"
+    },
+    {
       "id": "2026-11-02-lager-skanna",
       "datum": "2026-11-02T19:02:52+01:00",
       "rubrik": "Lager: skanna med mobilen, även utan nät",

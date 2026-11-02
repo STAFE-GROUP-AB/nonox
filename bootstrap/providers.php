@@ -12,6 +12,7 @@ use App\Modules\Inventory\InventoryServiceProvider;
 use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
 use App\Modules\Planning\PlanningServiceProvider;
+use App\Modules\Pos\PosServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
@@ -28,6 +29,7 @@ return [
     StaffLedgerServiceProvider::class,
     PlanningServiceProvider::class,
     InventoryServiceProvider::class,
+    PosServiceProvider::class,
     InboxServiceProvider::class,
     ConnectServiceProvider::class,
     BankingServiceProvider::class,
