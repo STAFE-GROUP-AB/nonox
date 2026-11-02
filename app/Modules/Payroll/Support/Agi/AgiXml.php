@@ -33,6 +33,8 @@ final class AgiXml
         'RedovisningsPeriod' => '006',
         'SummaArbAvgSlf' => '487',
         'SummaSkatteavdr' => '497',
+        'UlagRegionaltStod' => '471',
+        'AvdragRegionaltStod' => '476',
         'BetalningsmottagarId' => '215',
         'Fodelsetid' => '222',
         'Fornamn' => '216',
@@ -78,6 +80,7 @@ final class AgiXml
      * @param  array{program: string, name: string, phone: string, email: string}  $contact
      * @param  list<array{payee: AgiPayee, individual: AgiIndividual}>  $individuals
      * @param  list<array{payee: AgiPayee, specification: int}>  $removals
+     * @param  ?array{basis: int, deduction: int}  $regionalSupport  rutor 471 and 476 in whole kronor, always together (#78)
      */
     public function write(
         string $employerId,
@@ -88,6 +91,7 @@ final class AgiXml
         array $individuals,
         array $removals,
         CarbonImmutable $created,
+        ?array $regionalSupport = null,
     ): string {
         $this->document = new DOMDocument('1.0', 'UTF-8');
         $this->document->formatOutput = true;
@@ -115,6 +119,11 @@ final class AgiXml
         $this->field($hu, 'RedovisningsPeriod', $redovisningsperiod);
         $this->field($hu, 'SummaArbAvgSlf', (string) $contributionsKronor);
         $this->field($hu, 'SummaSkatteavdr', (string) $taxKronor);
+
+        if ($regionalSupport !== null) {
+            $this->field($hu, 'UlagRegionaltStod', (string) $regionalSupport['basis']);
+            $this->field($hu, 'AvdragRegionaltStod', (string) $regionalSupport['deduction']);
+        }
 
         foreach ($individuals as $entry) {
             $individual = $entry['individual'];

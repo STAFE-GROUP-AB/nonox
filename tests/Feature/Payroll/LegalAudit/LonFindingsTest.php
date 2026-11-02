@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Actions\SaveEmployee;
@@ -9,6 +10,7 @@ use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiXml;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -396,8 +398,14 @@ it('books the employee\'s own payment for a benefit without leaving a liability 
     expect(LonSupport::voucherLines($posted))->not->toHaveKey(2890);
 })->todo('AUD-LON-13: FORMAN_EGENBETALNING credits 2890 Övriga kortfristiga skulder; a debt that does not exist builds up');
 
-it('applies regional support where the company has chosen it (lag 2001:1170 5 §)')
-    ->todo('AUD-LON-14: employer_contribution.regional_support is required data but never applied; eligible companies overpay up to 7 100 kr per month');
+it('applies regional support where the company has chosen it (lag 2001:1170 5 §)', function () {
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['regional_support' => true]);
+    LonSupport::employee($this->owner, $this->company, '19900615');
+    $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+    // 32 000 × 31,42 % = 10 054,40 kr less 10 % of 32 000 = 3 200 kr: 6 854,40 kr.
+    expect(Payslip::query()->sole()->employer_contribution_ore->ore)->toBe(685_440);
+});
 
 it('declares a payee without a Swedish personal or coordination number by födelsetid (fältkod 222, 077, 078)', function () {
     $piotr = LonSupport::employee($this->owner, $this->company, '19850314', [

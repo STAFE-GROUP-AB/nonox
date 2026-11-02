@@ -30,6 +30,7 @@ final class PayrollSettings
         'agi_submission_mode' => ['FILE', 'API'],
         'agi_deadline_group' => ['TURNOVER_UP_TO_40_MSEK', 'TURNOVER_OVER_40_MSEK'],
         'holiday_calendar' => ['SE'],
+        'regional_support' => null,
     ];
 
     /** @var array<string, mixed> */
@@ -57,5 +58,7 @@ final class PayrollSettings
         // Skatteverket's declaration days depend on the company's taxable turnover.
         'agi_deadline_group' => 'TURNOVER_UP_TO_40_MSEK',
         'holiday_calendar' => 'SE',
+        // Lag (2001:1170) om regionalt stöd: the company confirms a fast driftställe in the stödområde and the conditions in 2–4 §§ (#78).
+        'regional_support' => false,
     ];
 }

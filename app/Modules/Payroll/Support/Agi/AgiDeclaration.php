@@ -50,6 +50,8 @@ final class AgiDeclaration
         public readonly int $taxOre,
         public readonly int $contributionsOre,
         public readonly array $runIds,
+        public readonly int $regionalSupportBasisOre = 0,
+        public readonly int $regionalSupportOre = 0,
     ) {}
 
     /**
@@ -94,6 +96,9 @@ final class AgiDeclaration
             (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->tax_ore->ore),
             (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->employer_contribution_ore->ore),
             array_values($runs->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()),
+            // Rutor 471 and 476: the basis and the deduction for regional support (#78).
+            (int) $payslips->sum(fn (Payslip $payslip): int => (int) ($payslip->contribution_explanation['regional_support']['basis_ore'] ?? 0)),
+            (int) $payslips->sum(fn (Payslip $payslip): int => (int) ($payslip->contribution_explanation['regional_support']['deduction_ore'] ?? 0)),
         );
     }
 
@@ -105,6 +110,16 @@ final class AgiDeclaration
     public function contributionsKronor(): int
     {
         return intdiv($this->contributionsOre, self::ORE_PER_KRONA);
+    }
+
+    /** @return array{basis: int, deduction: int}|null the regional support in whole kronor, or null when none was claimed */
+    public function regionalSupportKronor(): ?array
+    {
+        if ($this->regionalSupportBasisOre <= 0) {
+            return null;
+        }
+
+        return ['basis' => intdiv($this->regionalSupportBasisOre, self::ORE_PER_KRONA), 'deduction' => intdiv($this->regionalSupportOre, self::ORE_PER_KRONA)];
     }
 
     /**

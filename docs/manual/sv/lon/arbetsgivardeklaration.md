@@ -48,6 +48,7 @@ Vilken dag deklarationen ska vara inne beror på företagets omsättning. Välj 
 - **Huvuduppgiften**: summan av arbetsgivaravgifterna och den avdragna skatten för månaden.
 - **En individuppgift per anställd**: kontant lön, förmåner, avdragen skatt (eller SINK och A-SINK), och kryss för milersättning och traktamente.
 - **Personer utan svenskt nummer**: de redovisas med födelsetid (ruta 222), födelseort (077), födelseland (078), medborgarskap (081), namn (216, 217) och adress (218–220, med landskod i 221). En adress utan postnummer skrivs som fri adress (230). Saknas något av det på personalkortet går deklarationen inte att skapa.
+- **Regionalt stöd**: när företaget har valt det står underlaget i ruta 471 och avdraget i ruta 476 i huvuduppgiften, och summan av arbetsgivaravgifterna är efter avdraget.
 - **A-SINK**: med skatten i ruta 275 står verksamhetens art i ruta 112. Saknas den på personalkortet går deklarationen inte att skapa förrän du har fyllt i den.
 - **Lön utan arbetsgivaravgift**: så länge en persons ersättning under året är under 1 000 kronor redovisas lönen i ruta 131 (förmåner i 132–134) i stället för 011. Den månad årets ersättning når 1 000 kronor läggs de tidigare beloppen till i ruta 011 och anges i ruta 010, och avgiften tas på hela beloppet. Se [Arbetsgivaravgifter och tjänstepension](/manual/lon/arbetsgivaravgifter-och-pension).
 - **Avdragen skatt** är den skatt som faktiskt drogs. Var skatten större än kontantlönen redovisas bara det som drogs.

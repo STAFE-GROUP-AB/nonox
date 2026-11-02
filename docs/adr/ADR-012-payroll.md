@@ -433,3 +433,34 @@ finding and the GitHub issue.
   code of its own without vacation basis. No shipped agreement excludes
   bonus (Visita–Unionen and Handelns tjänstemannaavtal list it as
   variable pay).
+
+### Regional support (AUD-LON-14, #78)
+
+- Lag (2001:1170) 5 §: "avdrag göras med 10 procent av avgiftsunderlaget",
+  not below the ålderspensionsavgift, "Sammanlagt får avdrag göras med
+  högst 7 100 kronor"; Skatteverket: "högst 7 100 kronor per månad", not
+  for employees who "vid årets ingång är 67 år eller äldre", reported in
+  rutor 471 and 476 of the huvuduppgift (technical description: "högst
+  7 100 kr per redovisningsperiod"). The rule
+  `employer_contribution.regional_support` already held these values.
+- Eligibility (fast driftställe in the stödområde, the exclusions in 3–4 §§)
+  is the company's own statement: a boolean payroll setting
+  `regional_support`, off by default, explained in the settings form. It
+  applies to all employees; per-employee or per-workplace choice is left
+  out.
+- The cap is per company and month, but payslips are calculated one at a
+  time. PayrollRuns::calculate reads once what other approved runs paid in
+  the month have deducted (`regionalSupportInMonth`, one query) and passes
+  the running total in the context (`regionalSupportUsedOre`); the
+  EmployerContributions step deducts min(10 %, cap left, contributions −
+  floor). The other runs' total is kept on each payslip, and approve()
+  refuses when it has changed, like the youth cap (#70).
+- The payslip's employer contribution is after the deduction, so the
+  salary voucher books the lower 7510/2730 without a separate line. AGI
+  sums `basis_ore` and `deduction_ore` into 471/476; 487 is after the
+  deduction. Checked against the component schema 1.1 (`UlagRegionaltStod`,
+  `AvdragRegionaltStod` in HU).
+- `TODO(legal-verify)`: whether 487 should be before or after the
+  deduction; the floor per payslip rather than per period; FoU-avdrag
+  first (7 §) is not built; the 20 % of labour costs aid ceiling (6 b §)
+  is not checked.

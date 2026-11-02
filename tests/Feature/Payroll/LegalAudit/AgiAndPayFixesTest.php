@@ -2,15 +2,20 @@
 
 declare(strict_types=1);
 
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Livewire\PayrollRunPage;
+use App\Modules\Payroll\Livewire\PayrollSettingsForm;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
+use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiXml;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -337,5 +342,114 @@ describe('bonus as vacation-pay basis (#77)', function () {
         // 12 % × (30 000 + 5 000) = 4 200 kr.
         expect($payout->amount_ore->ore)->toBe(420_000)
             ->and($payout->explanation['basis_ore'])->toBe(3_500_000);
+    });
+});
+
+function regionalSupportOn(mixed $owner, mixed $company): void
+{
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $company, $owner, ['regional_support' => true]);
+}
+
+describe('regional support (#78)', function () {
+    it('deducts 10 % of the basis from the contributions, books the lower amount and declares 471 and 476 (lag 2001:1170 5 §)', function () {
+        regionalSupportOn($this->owner, $this->company);
+        LonSupport::employee($this->owner, $this->company, '19900615');
+        $posted = LonSupport::postRun($this->owner, $this->admin, $this->runs->create($this->owner, $this->company, '2026-04'));
+        $payslip = Payslip::query()->sole();
+
+        // 32 000 × 31,42 % = 10 054,40 kr; 10 % of 32 000 = 3 200 kr; floor 32 000 × 10,21 % = 3 267,20 kr is not reached.
+        // Contributions 10 054,40 − 3 200 = 6 854,40 kr.
+        expect($payslip->employer_contribution_ore->ore)->toBe(685_440)
+            ->and($payslip->contribution_explanation['regional_support'])->toMatchArray(['basis_ore' => 3_200_000, 'deduction_ore' => 320_000])
+            ->and(LonSupport::voucherLines($posted))->toMatchArray([7510 => 685_440, 2730 => -685_440])
+            ->and(array_sum(LonSupport::voucherLines($posted)))->toBe(0);
+
+        $field = fixAgiField(app(AgiSubmissions::class)->generate($this->owner, $this->company, '2026-04'));
+
+        expect($field('//agd:HU/agd:UlagRegionaltStod[@faltkod="471"]'))->toBe('32000')
+            ->and($field('//agd:HU/agd:AvdragRegionaltStod[@faltkod="476"]'))->toBe('3200')
+            ->and($field('//agd:HU/agd:SummaArbAvgSlf[@faltkod="487"]'))->toBe('6854');
+    });
+
+    it('caps the deduction at 7 100 kr for the company per month, over every run paid in it', function () {
+        regionalSupportOn($this->owner, $this->company);
+        LonSupport::employee($this->owner, $this->company, '19900615');
+        LonSupport::employee($this->owner, $this->company, '19850101', ['first_name' => 'Bo']);
+        // March's pay, paid 2 April, and April's pay, paid 24 April: one month for the cap.
+        $march = $this->runs->create($this->owner, $this->company, '2026-03', CarbonImmutable::parse('2026-04-02'));
+        LonSupport::postRun($this->owner, $this->admin, $march);
+        $april = $this->runs->create($this->owner, $this->company, '2026-04');
+        $this->runs->calculate($this->owner, $april);
+        $deductions = fn (PayrollRun $run): array => Payslip::query()->where('payroll_run_id', $run->id)->orderBy('id')->get()
+            ->map(fn (Payslip $payslip): int => (int) $payslip->contribution_explanation['regional_support']['deduction_ore'])->all();
+
+        // March run: 3 200 + 3 200 = 6 400 kr. April run: 700 kr left of 7 100, then nothing.
+        expect($deductions($march))->toBe([320_000, 320_000])
+            ->and($deductions($april))->toBe([70_000, 0]);
+
+        $this->runs->approve($this->admin, $april->fresh());
+        $field = fixAgiField(app(AgiSubmissions::class)->generate($this->owner, $this->company, '2026-04'));
+
+        // 471 is the whole eligible basis, 4 × 32 000 = 128 000 kr; 476 is the cap.
+        expect($field('//agd:HU/agd:UlagRegionaltStod'))->toBe('128000')
+            ->and($field('//agd:HU/agd:AvdragRegionaltStod'))->toBe('7100');
+    });
+
+    it('asks for a new calculation when another run in the month was attested after this one was calculated', function () {
+        regionalSupportOn($this->owner, $this->company);
+        // Anna leaves at the end of March and Bo starts in April: the runs share no person, only the company's cap.
+        $anna = LonSupport::employee($this->owner, $this->company, '19900615');
+        Employment::query()->where('employee_id', $anna->id)->update(['end_date' => '2026-03-31']);
+        LonSupport::employee($this->owner, $this->company, '19850101', ['first_name' => 'Bo', 'start_date' => '2026-04-01']);
+        $march = $this->runs->create($this->owner, $this->company, '2026-03', CarbonImmutable::parse('2026-04-02'));
+        $april = $this->runs->create($this->owner, $this->company, '2026-04');
+        $this->runs->calculate($this->owner, $march);
+        $this->runs->calculate($this->owner, $april);
+        $this->runs->approve($this->admin, $march->fresh());
+
+        expect(fn () => $this->runs->approve($this->admin, $april->fresh()))->toThrow(ValidationException::class, 'regionalt stöd');
+    });
+
+    it('gives no deduction for someone 67 or older at the start of the year, and does for 66', function () {
+        regionalSupportOn($this->owner, $this->company);
+        LonSupport::employee($this->owner, $this->company, '19580601', ['first_name' => 'Gun']);
+        LonSupport::employee($this->owner, $this->company, '19590302', ['first_name' => 'Per']);
+        $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
+        $gun = Payslip::query()->whereHas('employee', fn ($query) => $query->where('first_name', 'Gun'))->sole();
+        $per = Payslip::query()->whereHas('employee', fn ($query) => $query->where('first_name', 'Per'))->sole();
+
+        // Gun, born 1958, pays only ålderspensionsavgift: 32 000 × 10,21 % = 3 267,20 kr, no deduction.
+        // Per, 66 on 1 January 2026: 10 054,40 − 3 200 = 6 854,40 kr.
+        expect($gun->employer_contribution_ore->ore)->toBe(326_720)
+            ->and($gun->contribution_explanation)->not->toHaveKey('regional_support.deduction_ore')
+            ->and($per->employer_contribution_ore->ore)->toBe(685_440);
+    });
+
+    it('never takes the contributions below the ålderspensionsavgift', function () {
+        regionalSupportOn($this->owner, $this->company);
+        // A synthetic rule with a 25 % deduction, only to reach the floor: 32 000 × 25 % = 8 000 kr > 10 054,40 − 3 267,20.
+        PayrollRuleVersion::create(['key' => 'employer_contribution.regional_support', 'valid_from' => '2026-04-01', 'value' => ['deduction_bp' => 2500, 'monthly_cap_ore' => 710_000, 'not_from_age' => 67, 'floor_bp' => 1021], 'source_url' => 'https://example.test'])
+            ->forceFill(['verified_by' => 'Testperson', 'verified_at' => now()])->save();
+        LonSupport::employee($this->owner, $this->company, '19900615');
+        $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+        expect(Payslip::query()->sole()->employer_contribution_ore->ore)->toBe(326_720);
+    });
+
+    it('is off unless the company chooses it', function () {
+        LonSupport::employee($this->owner, $this->company, '19900615');
+        $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+        expect(Payslip::query()->sole()->employer_contribution_ore->ore)->toBe(1_005_440);
+    });
+
+    it('is a setting in the payroll settings', function () {
+        Livewire::test(PayrollSettingsForm::class, ['company' => $this->company])
+            ->assertSee(__('Regionalt stöd (nedsatta arbetsgivaravgifter i stödområdet)'))
+            ->set('settings.regional_support', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect(app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company)['regional_support'])->toBeTrue();
     });
 });

@@ -1466,6 +1466,25 @@ lönebeskeden låsta i databasen.
   inte. Semesterskulden och öppna intjänandeår läser flaggan; stängda
   semesterår behåller sina belopp. `TODO(legal-verify)`: vinstdelning som
   inte är lön för arbete, och avtal som säger annat.
+- Regionalt stöd (enligt granskning 2026-11-02, juristgranskning
+  återstår, AUD-LON-14, #78): löneinställningen `regional_support` (av som
+  standard) betyder att företaget har fast driftställe i stödområdet och
+  uppfyller villkoren i lag (2001:1170) 2–4 §§. Då drar steget
+  arbetsgivaravgifter regelns `deduction_bp` (10 %) av avgiftsunderlaget
+  från avgifterna (5 §), högst `monthly_cap_ore` (7 100 kr) per
+  utbetalningsmånad för hela företaget, inte under `floor_bp`
+  (ålderspensionsavgiften 10,21 %) och inte för den som var
+  `not_from_age` (67) år eller äldre vid årets ingång. Taket delas av alla
+  lönebesked med utbetalning i månaden: körningen läser vad andra
+  attesterade körningar redan dragit och räknar av lönebesked för
+  lönebesked; attesten vägrar om en annan körning i månaden attesterats
+  sedan beräkningen. Avdraget sparas i `contribution_explanation.
+  regional_support`, och lönebeskedets arbetsgivaravgift (och 2730/7510 i
+  verifikationen) är efter avdrag. AGI-huvuduppgiften skriver 471
+  (underlag) och 476 (avdrag) tillsammans, och 487 är efter avdrag.
+  `TODO(legal-verify)`: att 487 ska vara efter avdraget; golvet och
+  avrundningen per lönebesked; ett företag med flera driftställen (här
+  gäller inställningen alla anställda).
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

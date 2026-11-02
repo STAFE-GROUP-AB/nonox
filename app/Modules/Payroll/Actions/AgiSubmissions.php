@@ -87,6 +87,7 @@ class AgiSubmissions
                 array_values(array_map(fn (AgiIndividual $individual): array => ['payee' => AgiPayee::for($employees->get($individual->employeeId)), 'individual' => $individual], $declaration->individuals)),
                 array_map(fn (int $employeeId): array => ['payee' => AgiPayee::for($employees->get($employeeId)), 'specification' => (int) ($reported?->individuals[$employeeId]['specification'] ?? $employeeId)], $removed),
                 CarbonImmutable::now(),
+                $declaration->regionalSupportKronor(),
             );
             $this->validateSchema($xml);
 

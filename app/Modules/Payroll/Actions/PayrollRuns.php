@@ -38,6 +38,7 @@ use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
+use App\Modules\Payroll\Support\Agi\AgiDeclaration;
 use App\Modules\Payroll\Support\RulePresenter;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
 use App\Modules\Payroll\Support\Run\PayrollExtensions;
@@ -307,6 +308,9 @@ class PayrollRuns
             $this->extensions->prepare($run, $employments);
             /** @var array<int, array<string, int>> $runDeltas */
             $runDeltas = [];
+            // Regional support is capped per month for the whole company (lag 2001:1170 5 §, #78).
+            $regionalOtherRuns = self::regionalSupportInMonth($run);
+            $regionalUsed = $regionalOtherRuns;
 
             foreach ($employments as $employment) {
                 $employee = $employment->employee ?? throw new LogicException("Employment {$employment->id} has no employee.");
@@ -333,7 +337,8 @@ class PayrollRuns
                         $context = $context->withAccumulators(self::addDeltas($context->accumulators, $runDeltas[$employee->id]));
                     }
 
-                    $result = $this->calculator->calculate($context);
+                    $result = $this->calculator->calculate($context->withRegionalSupportUsed($regionalUsed, $regionalOtherRuns));
+                    $regionalUsed += (int) ($result->contributionExplanation['regional_support']['deduction_ore'] ?? 0);
                     $runDeltas[$employee->id] = self::addDeltas($runDeltas[$employee->id] ?? [], $result->accumulatorDeltas);
                     $results[] = [$employment, $result];
                 } catch (MissingTaxTableException $exception) {
@@ -561,6 +566,16 @@ class PayrollRuns
                 throw ValidationException::withMessages(['run' => [__('Beräkna lönekörningen igen innan du attesterar. En annan lönekörning för :names har attesterats sedan den här beräknades, och arbetsgivaravgifterna beror på den.', ['names' => implode(', ', array_unique($stale))])]]);
             }
 
+            // The regional support cap is shared by every run paid in the month (#78).
+            $regionalRead = Payslip::query()->where('payroll_run_id', $run->id)->get(['contribution_explanation'])
+                ->map(fn (Payslip $payslip): ?int => isset($payslip->contribution_explanation['regional_support']['other_runs_ore']) ? (int) $payslip->contribution_explanation['regional_support']['other_runs_ore'] : null)
+                ->filter(fn (?int $value): bool => $value !== null)
+                ->first();
+
+            if ($regionalRead !== null && $regionalRead !== self::regionalSupportInMonth($run)) {
+                throw ValidationException::withMessages(['run' => [__('Beräkna lönekörningen igen innan du attesterar. En annan lönekörning i samma månad har attesterats sedan den här beräknades, och taket för regionalt stöd delas av hela månaden.')]]);
+            }
+
             // Vacation pay from a closed semesterår is paid once: the run that carries it claims it.
             $closingIds = PayslipLine::query()
                 ->whereIn('payslip_id', Payslip::query()->where('payroll_run_id', $run->id)->select('id'))
@@ -761,6 +776,23 @@ class PayrollRuns
         if ($updated !== count($ids)) {
             throw ValidationException::withMessages(['run' => [__('Tidrapporterna ändrades medan lönen räknades. Beräkna lönekörningen igen.')]]);
         }
+    }
+
+    /**
+     * The regional support deduction made by the other approved runs paid
+     * in the same month as this one, in öre (#78).
+     */
+    private static function regionalSupportInMonth(PayrollRun $run): int
+    {
+        $month = $run->payment_date;
+        $runs = PayrollRun::query()
+            ->whereKeyNot($run->id)
+            ->whereBetween('payment_date', [$month->startOfMonth()->toDateString(), $month->endOfMonth()->toDateString()])
+            ->whereIn('status', AgiDeclaration::DECLARED_STATUSES)
+            ->select('id');
+
+        return (int) Payslip::query()->whereIn('payroll_run_id', $runs)->get(['contribution_explanation'])
+            ->sum(fn (Payslip $payslip): int => (int) ($payslip->contribution_explanation['regional_support']['deduction_ore'] ?? 0));
     }
 
     /** A change to inputs or absence makes the calculation out of date. */
