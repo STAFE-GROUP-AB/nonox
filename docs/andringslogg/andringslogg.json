@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-fakturering",
+      "datum": "2026-11-02T16:05:00+01:00",
+      "rubrik": "Fakturor enligt mervärdesskattelagen, kundförluster och reskontra per datum",
+      "beskrivning": "Fakturor får rätt innehåll: undantagstext på rader utan moms, köparens adress när den krävs och skydd mot moms från företag som inte är momsregistrerade. Med kontantmetoden bokförs EU-handel i fakturans period och sista delbetalningen tar resten. Kundförluster kan skrivas av med minskad moms, och kund- och leverantörsreskontran kan stämmas av mot bokföringen på valfri dag.",
+      "typ": "Rättat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-02-arsredovisning",
       "datum": "2026-11-02T15:35:00+01:00",
       "rubrik": "Årsredovisning med fastställelseintyg, noter och rätt uppställning",
