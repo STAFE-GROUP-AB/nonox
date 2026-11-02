@@ -22,6 +22,10 @@ use App\Models\VatReport;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Models\YearEndEntry;
+use App\Modules\Inventory\InventoryModule;
+use App\Modules\Inventory\Models\StockValuation;
+use App\Modules\ModuleManager;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 
 /**
@@ -95,6 +99,12 @@ final class ClosingChecklist
             $items[] = self::currency($company, $fiscalYear, $entries, $checks);
 
             foreach (self::MANUAL as $key => [$label, $detail]) {
+                if ($key === 'inventory' && ($stock = self::stock($company, $fiscalYear, $checks)) !== null) {
+                    $items[] = $stock;
+
+                    continue;
+                }
+
                 $items[] = [
                     ...self::item($key, __($label), __($detail), in_array($key, $checks, true) ? self::OK : self::TODO, null, manual: true),
                     // The ledger on the last day, to compare with 1510 and 2440 (#57).
@@ -152,6 +162,32 @@ final class ClosingChecklist
             $open === [] => __('Alla konton stämmer mot kontoutdraget den :date.', ['date' => $fiscalYear->end_date->toDateString()]),
             default => __('Stäm av :accounts per :date utan skillnad.', ['accounts' => implode(', ', $open), 'date' => $fiscalYear->end_date->toDateString()]),
         }, $used->isEmpty() ? self::NOT_APPLICABLE : ($open === [] ? self::OK : self::TODO), 'accounting.bankReconciliation');
+    }
+
+    /**
+     * "Varulagret är inventerat och värderat" when Lager is on (ADR-039): done
+     * when the year-end valuation is booked from Lager's report, or when a
+     * person confirms it by hand as before. Null while Lager is off, so the
+     * manual point stays as it was.
+     *
+     * @param  array<mixed>  $checks  confirmed checklist keys
+     * @return ?array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string, url: string, link_label: string}
+     */
+    private static function stock(Company $company, FiscalYear $fiscalYear, array $checks): ?array
+    {
+        if (! app(ModuleManager::class)->isEnabled(InventoryModule::KEY, $company)) {
+            return null;
+        }
+
+        $label = __('Varulagret är inventerat och värderat');
+        $valuation = StockValuation::query()->where('fiscal_year_id', $fiscalYear->id)->latest('id')->first();
+        $item = match (true) {
+            $valuation instanceof StockValuation => self::item('inventory', $label, __('Lagret är värderat till :value den :date och förändringen är bokförd.', ['value' => Money::ofOre($valuation->value_ore)->format(), 'date' => $valuation->valuation_date->toDateString()]), self::OK, 'inventory.reports'),
+            in_array('inventory', $checks, true) => self::item('inventory', $label, __('Bekräftat för hand att lagret är inventerat och värderat.'), self::OK, 'inventory.reports', manual: true),
+            default => self::item('inventory', $label, __('Inventera lagret och bokför lagerförändringen under Lager → Rapporter, eller bekräfta här att det är gjort för hand.'), self::TODO, 'inventory.reports', manual: true),
+        };
+
+        return [...$item, 'url' => route('inventory.reports', ['rapport' => 'bokslut', 'ar' => $fiscalYear->id]), 'link_label' => __('Visa lagervärdet')];
     }
 
     /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string} */

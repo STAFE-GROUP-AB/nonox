@@ -56,6 +56,7 @@ final class StoredFiles
         'supplier_payment_batches' => 'file_path',
         'archive_packages' => 'file_path',
         'teams' => 'logo_path',
+        'article_images' => 'path',
         'staff_ledger_people' => 'photo_path',
     ];
 

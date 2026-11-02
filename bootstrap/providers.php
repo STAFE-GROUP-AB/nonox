@@ -8,6 +8,7 @@ use App\Modules\Ai\AiServiceProvider;
 use App\Modules\Banking\BankingServiceProvider;
 use App\Modules\Connect\ConnectServiceProvider;
 use App\Modules\Inbox\InboxServiceProvider;
+use App\Modules\Inventory\InventoryServiceProvider;
 use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
 use App\Modules\Planning\PlanningServiceProvider;
@@ -26,6 +27,7 @@ return [
     AiServiceProvider::class,
     StaffLedgerServiceProvider::class,
     PlanningServiceProvider::class,
+    InventoryServiceProvider::class,
     InboxServiceProvider::class,
     ConnectServiceProvider::class,
     BankingServiceProvider::class,
