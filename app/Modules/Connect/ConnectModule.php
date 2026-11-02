@@ -49,7 +49,7 @@ final class ConnectModule implements Module
 
     public function description(): string
     {
-        return __('Ett öppet API för andra program: appar som du godkänner med passkey, API-nycklar för egna skript och webhooks som berättar när något händer. Varje anslutning gäller ett företag och bara det du har gett den rätt till.');
+        return __('Ett öppet API för andra program: appar som du godkänner med passkey, API-nycklar för egna skript, webhooks som berättar när något händer och SFTP för SIE-filer. Varje anslutning gäller ett företag och bara det du har gett den rätt till.');
     }
 
     public function icon(): string
@@ -116,7 +116,7 @@ final class ConnectModule implements Module
     public function canDisable(Company $company): ModuleCheck
     {
         return new ModuleCheck(warnings: [
-            __('Alla anslutna appar kopplas bort, alla API-nycklar återkallas och alla webhooks stängs av. Slår du på modulen igen måste apparna godkännas på nytt och nya nycklar skapas.'),
+            __('Alla anslutna appar kopplas bort, alla API-nycklar och SFTP-nycklar återkallas och alla webhooks och SFTP stängs av. Slår du på modulen igen måste apparna godkännas på nytt och nya nycklar skapas.'),
         ]);
     }
 
@@ -147,6 +147,17 @@ final class ConnectModule implements Module
                 ->where('company_id', CurrentCompany::id())
                 ->where('status', ConnectWebhookDelivery::PENDING)
                 ->update(['status' => ConnectWebhookDelivery::CANCELLED, 'next_attempt_at' => null, 'updated_at' => now()]);
+
+            // SFTP (ADR-032): the drop is turned off and its keys revoked; the upload log is kept.
+            DB::table('connect_sftp_accounts')
+                ->where('company_id', CurrentCompany::id())
+                ->where('is_enabled', true)
+                ->update(['is_enabled' => false, 'disabled_at' => now(), 'updated_at' => now()]);
+
+            DB::table('connect_sftp_keys')
+                ->where('company_id', CurrentCompany::id())
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => now(), 'revoked_by' => $by->id, 'updated_at' => now()]);
         });
     }
 

@@ -1,0 +1,93 @@
+{
+  "common": {
+    "idle_timeout": 15,
+    "upload_mode": 1,
+    "actions": {
+      "execute_on": ["upload"],
+      "execute_sync": ["upload"],
+      "hook": "https://nonox.example.se/hooks/sftpgo/upload"
+    },
+    "setstat_mode": 1,
+    "rename_mode": 0,
+    "temp_path": "",
+    "max_total_connections": 200,
+    "max_per_host_connections": 10,
+    "allowlist_status": 0,
+    "umask": "007",
+    "server_version": "",
+    "defender": {
+      "enabled": true,
+      "driver": "memory",
+      "ban_time": 30,
+      "ban_time_increment": 50,
+      "threshold": 15,
+      "score_invalid": 2,
+      "score_valid": 1,
+      "score_limit_exceeded": 3,
+      "score_no_auth": 0,
+      "observation_time": 30,
+      "entries_soft_limit": 100,
+      "entries_hard_limit": 150
+    }
+  },
+  "sftpd": {
+    "bindings": [
+      {
+        "port": 2022,
+        "address": "",
+        "apply_proxy_config": false
+      }
+    ],
+    "max_auth_tries": 3,
+    "host_keys": ["/etc/sftpgo/ssh_host_ed25519_key", "/etc/sftpgo/ssh_host_rsa_key"],
+    "host_certificates": [],
+    "trusted_user_ca_keys": [],
+    "enabled_ssh_commands": [],
+    "keyboard_interactive_authentication": false,
+    "password_authentication": false
+  },
+  "ftpd": {
+    "bindings": [
+      {
+        "port": 0
+      }
+    ]
+  },
+  "webdavd": {
+    "bindings": [
+      {
+        "port": 0
+      }
+    ]
+  },
+  "httpd": {
+    "bindings": [
+      {
+        "port": 0
+      }
+    ]
+  },
+  "telemetry": {
+    "bind_port": 0
+  },
+  "data_provider": {
+    "driver": "sqlite",
+    "name": "/var/lib/sftpgo/sftpgo.db",
+    "users_base_dir": "/srv/sftpgo/users",
+    "external_auth_hook": "https://nonox.example.se/hooks/sftpgo/auth",
+    "external_auth_scope": 2,
+    "create_default_admin": false,
+    "naming_rules": 5,
+    "backups_path": "/var/lib/sftpgo/backups"
+  },
+  "http": {
+    "timeout": 10,
+    "retry_wait_min": 1,
+    "retry_wait_max": 5,
+    "retry_max": 2,
+    "ca_certificates": [],
+    "certificates": [],
+    "skip_tls_verify": false,
+    "headers": []
+  }
+}

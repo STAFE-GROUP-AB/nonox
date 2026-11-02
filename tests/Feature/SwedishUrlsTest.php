@@ -14,7 +14,8 @@ use Illuminate\Support\Facades\Route;
 // utvecklare/openapi.yaml and .json keep the names API tools and code generators look for.
 // manual/sokindex.json is the search index the manual's search box fetches (ADR-036).
 // planering/kalender/ is the iCal feed calendar apps subscribe to; they need the .ics ending.
-const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json', 'planering/kalender/'];
+// hooks/ is called only by the installation's own SFTP server (SFTPGo), never by a person (ADR-032, "SFTP").
+const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json', 'planering/kalender/', 'hooks/'];
 
 const ENGLISH_WORDS = [
     'login', 'logout', 'register', 'user', 'profile', 'team', 'teams', 'dashboard', 'password',

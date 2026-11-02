@@ -9,6 +9,7 @@ use App\Models\InvoicePayment;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
+use App\Modules\Connect\Models\ConnectSftpUpload;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Models\Publication;
 
@@ -31,6 +32,7 @@ final class WebhookEvents
         'supplier_invoice.approved' => ['supplier-invoices:create', 'supplier-invoices:approve'],
         'planning.published' => ['planning:view'],
         'planning.attested' => ['planning:attest'],
+        'sie.uploaded' => ['import:sie'],
     ];
 
     /** @return array<string, string> event => Swedish description */
@@ -43,6 +45,7 @@ final class WebhookEvents
             'supplier_invoice.approved' => __('En leverantörsfaktura har attesterats'),
             'planning.published' => __('En period av schemat har publicerats (Planering)'),
             'planning.attested' => __('Tid i schemat har attesterats (Planering)'),
+            'sie.uploaded' => __('En SIE-fil har kommit in via SFTP och granskats'),
         ];
     }
 
@@ -190,6 +193,36 @@ final class WebhookEvents
             'attestation_ids' => $event->attestationIds,
             'employee_ids' => $event->employeeIds,
             'attested_minutes' => $event->attestedMinutes,
+        ];
+    }
+
+    /**
+     * Must run inside the company. The file name is left out (it is free
+     * text chosen by the sender); the receiver fetches the import's report
+     * in NONOX.
+     *
+     * @return ?array<string, mixed>
+     */
+    public static function sieUploaded(string $uploadId): ?array
+    {
+        $upload = ConnectSftpUpload::query()->with('sieImport')->find($uploadId);
+
+        if (! $upload instanceof ConnectSftpUpload) {
+            return null;
+        }
+
+        $import = $upload->sieImport;
+
+        return [
+            'upload_id' => $upload->id,
+            'status' => $upload->status,
+            'size' => $upload->size,
+            'sha256' => $upload->sha256,
+            'received_at' => $upload->created_at->toAtomString(),
+            'sie_import_id' => $upload->sie_import_id,
+            'can_be_confirmed' => $import?->canBeConfirmed() ?? false,
+            'vouchers' => $import === null ? null : (int) ($import->report['vouchers'] ?? 0),
+            'blockers' => $import === null ? null : count($import->blockers()),
         ];
     }
 }

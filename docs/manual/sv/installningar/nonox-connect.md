@@ -4,7 +4,7 @@ ordning: 40
 roller: [owner, admin]
 modul: connect
 rutter: [connect.index, connect.authorize]
-sokord: [API, integration, koppla, ansluta app, API-nyckel, token, webhook, kassasystem, e-handel, OAuth, Anslutningar]
+sokord: [API, integration, koppla, ansluta app, API-nyckel, token, webhook, kassasystem, e-handel, OAuth, Anslutningar, SFTP]
 ---
 
 # NONOX Connect
@@ -13,13 +13,14 @@ NONOX Connect är NONOX öppna API. Med det kan andra program läsa och skriva i
 
 Du behöver inte vara utvecklare för att använda det här. Den här artikeln beskriver det du gör i NONOX: slår på modulen, godkänner appar, skapar nycklar och lägger till webhooks. Hur API:t anropas står på utvecklarwebben, [/utvecklare](/utvecklare).
 
-## Tre sätt att ansluta
+## Fyra sätt att ansluta
 
 | | Vad det är | För vem |
 |---|---|---|
 | **Anslutna appar** | Ett program som du godkänner. Appen skickar dig till NONOX, du väljer företag och godkänner med passkey. | Färdiga program, till exempel ett kassasystem. |
 | **API-nycklar** | En nyckel för egna skript och integrationer, med de behörigheter du väljer och ett slutdatum. | Den som skriver en egen koppling. |
 | **Webhooks** | NONOX meddelar ett annat program när något händer, till exempel att en faktura har betalats. | Program som ska reagera på händelser. |
+| **SFTP** | Ett annat program lämnar SIE-filer i en egen mapp. Filen granskas och väntar på att någon bekräftar. | Kassasystem och byråer som skickar filer. Se [SFTP för SIE-filer](/manual/installningar/sftp-for-sie-filer). |
 
 ## Så här kommer du igång
 
@@ -81,12 +82,13 @@ Vill du eller en utvecklare prova API:t utan att röra den riktiga bokföringen?
 
 - Varje anslutning gäller ett företag. Har du flera företag ansluter du appen till vart och ett.
 - Allt en app eller nyckel skriver i bokföringen sparas i behandlingshistoriken.
-- Stänger du av modulen kopplas alla appar bort, alla nycklar återkallas och alla webhooks stängs av. Slår du på den igen måste apparna godkännas på nytt och nya nycklar skapas.
+- Stänger du av modulen kopplas alla appar bort, alla nycklar (också SFTP-nycklar) återkallas och alla webhooks och SFTP stängs av. Slår du på den igen måste apparna godkännas på nytt och nya nycklar skapas.
 - Kör ditt företag NONOX själv behöver den som driftar servern förbereda modulen och registrera apparna innan de kan anslutas.
 
 ## Läs också
 
 - [Utvecklare: API-nycklar](/utvecklare/api-nycklar)
 - [Utvecklare: Webhooks](/utvecklare/webhooks)
+- [SFTP för SIE-filer](/manual/installningar/sftp-for-sie-filer)
 - [Moduler](/manual/installningar/moduler)
 - [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar)

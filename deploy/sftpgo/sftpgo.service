@@ -1,0 +1,44 @@
+# SFTPGo for NONOX Connect (ADR-032, "SFTP"). Based on the unit in
+# SFTPGo v2.7.6 (init/sftpgo.service), with the file system narrowed to the
+# directories SFTPGo needs. Install as /etc/systemd/system/sftpgo.service.
+[Unit]
+Description=SFTPGo Server (NONOX SFTP for SIE files)
+After=network.target
+
+[Service]
+User=sftpgo
+Group=sftpgo
+# The users' homes are shared with NONOX through this group (see README.md).
+SupplementaryGroups=nonox-sftp
+UMask=0007
+Type=simple
+WorkingDirectory=/etc/sftpgo
+RuntimeDirectory=sftpgo
+StateDirectory=sftpgo
+Environment=SFTPGO_CONFIG_DIR=/etc/sftpgo/
+Environment=SFTPGO_LOG_FILE_PATH=
+EnvironmentFile=/etc/sftpgo/sftpgo.env
+ExecStart=/usr/bin/sftpgo serve
+ExecReload=/bin/kill -s HUP $MAINPID
+LimitNOFILE=8192
+KillMode=mixed
+PrivateTmp=true
+Restart=always
+RestartSec=10s
+NoNewPrivileges=yes
+PrivateDevices=yes
+DevicePolicy=closed
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/srv/sftpgo/users /var/lib/sftpgo
+ReadOnlyPaths=/etc/sftpgo
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictSUIDSGID=yes
+LockPersonality=yes
+AmbientCapabilities=
+
+[Install]
+WantedBy=multi-user.target

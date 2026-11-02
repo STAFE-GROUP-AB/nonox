@@ -11,7 +11,7 @@ Den publika utvecklarwebben finns på [nonox.app/utvecklare](https://nonox.app/u
 - Token: `https://nonox.app/oauth/token`
 - Återkalla token: `https://nonox.app/oauth/revoke`
 - Metadata: `https://nonox.app/.well-known/oauth-authorization-server`
-- I appen: **Anslutningar** (`/anslutningar`) visar anslutna appar, API-nycklar, webhooks och testföretag
+- I appen: **Anslutningar** (`/anslutningar`) visar anslutna appar, API-nycklar, webhooks, SFTP och testföretag
 - Ändringar i API:t: [CHANGELOG.md](CHANGELOG.md)
 
 ## 1. Slå på modulen
@@ -276,6 +276,7 @@ En webhook berättar för ert program när något händer, så att ni slipper fr
 | `supplier_invoice.approved` | En leverantörsfaktura har attesterats |
 | `planning.published` | En period av schemat har publicerats (Planering) |
 | `planning.attested` | Tid i schemat har attesterats (Planering; webhooken kräver `planning:attest`) |
+| `sie.uploaded` | En SIE-fil har kommit in via SFTP och granskats (webhooken kräver `import:sie`; se SFTP nedan) |
 
 Händelser skickas först när ändringen är sparad (efter commit), aldrig för något som sedan ångrades. De är tunna: id, nummer, datum och belopp, inga personuppgifter. Behöver ni mer hämtar ni posten med API:t.
 
@@ -321,3 +322,14 @@ För att prova API:t utan att röra riktig bokföring finns testföretag: egna f
 - En ägare eller administratör: **Anslutningar → Testföretag för API:t**. Högst tre per person.
 
 Ett testföretag har en gul banderoll på varje sida, ett organisationsnummer som börjar med `00` (en grupp som inget riktigt företag har), mejlar aldrig fakturor, påminnelser eller offerter till någon och räknas inte med i statistik eller debitering. Det är ett vanligt företag i övrigt, helt skilt från andra företags data. Skapa en API-nyckel i testföretaget och börja anropa.
+
+## 16. SFTP för SIE-filer
+
+Program som hellre lämnar filer än anropar ett API, till exempel kassasystem och redovisningsbyråers verktyg, kan lämna SIE-filer i företagets egen SFTP-mapp. Servern är [SFTPGo](https://github.com/drakkan/sftpgo) (AGPL-3.0), som frågar NONOX vid varje inloggning och varje uppladdning. Hur den sätts upp står i `deploy/sftpgo/README.md`; hur ett program använder den står i guiden [SFTP för SIE-filer](/utvecklare/sftp).
+
+- En ägare eller administratör som själv får läsa in SIE-filer slår på SFTP under **Anslutningar** och blir ansvarig för filerna som kommer in. Användarnamnet skapas slumpvis (`nnx` och 13 tecken) och säger ingenting om företaget.
+- Inloggning bara med SSH-nyckel: ed25519, eller RSA med minst 3072 bitar. Nycklar läggs till med passkey; lösenord, FTP, WebDAV och SFTPGo:s webbklient är avstängda. En lista med tillåtna adresser (CIDR) kan sättas, också den med passkey.
+- `/in` tar emot `.se`, `.si` och `.sie`, högst 50 MB per fil och högst 30 SIE-filer i timmen (tillsammans med uppladdningar i webbläsaren). Filen kan inte skrivas över, döpas om eller tas bort.
+- Varje fil granskas som när den laddas upp i webbläsaren och blir en SIE-inläsning som väntar på att en person läser rapporten och bekräftar. **Ingenting bokförs automatiskt.** Filen tas sedan bort ur mappen; den krypterade kopian följer SIE-inläsningen.
+- `/ut`: en ägare eller administratör kan lägga en SIE4-fil för innevarande räkenskapsår där. Den tas bort efter sju dagar.
+- Webhooken `sie.uploaded` berättar att en fil har granskats.

@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Modules\Connect\ConnectModule;
 use App\Modules\Connect\Models\ConnectWebhook;
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
+use App\Modules\Connect\Sftp\SieFileUploaded;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\ModuleManager;
 use App\Modules\Planning\Events\PeriodAttested;
@@ -63,6 +64,11 @@ final class WebhookDispatcher
     public function planningAttested(PeriodAttested $event): void
     {
         $this->dispatch($event->companyId, 'planning.attested', fn (): array => WebhookEvents::planningAttested($event));
+    }
+
+    public function sieUploaded(SieFileUploaded $event): void
+    {
+        $this->dispatch($event->companyId, 'sie.uploaded', fn (): ?array => WebhookEvents::sieUploaded($event->uploadId));
     }
 
     /**

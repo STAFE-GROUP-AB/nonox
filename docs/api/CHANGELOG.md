@@ -13,6 +13,26 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-02: v1.3.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-02: v1.3.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **SFTP för SIE-filer**: varje företag kan få en egen SFTP-mapp där ett annat program lämnar SIE-filer, med inloggning bara med SSH-nyckel. Filen granskas som en vanlig SIE-inläsning och väntar på att en person bekräftar. Se [SFTP för SIE-filer](/utvecklare/sftp).
+- **Webhook**: `sie.uploaded` (en SIE-fil har kommit in via SFTP och granskats; webhooken kräver `import:sie`).
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **SFTP for SIE files**: each company can get its own SFTP drop where another program delivers SIE files, logging in with an SSH key only. The file is checked like an ordinary SIE import and waits for a person to confirm it. See [SFTP for SIE files](/utvecklare/sftp?lang=en).
+- **Webhook**: `sie.uploaded` (a SIE file arrived over SFTP and was checked; the webhook needs `import:sie`).
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-02: v1.2.0
 <!-- /lang -->
 <!-- lang:en -->

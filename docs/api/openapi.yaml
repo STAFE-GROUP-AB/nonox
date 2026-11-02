@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.2.0
+  version: 1.3.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -6834,6 +6834,67 @@ webhooks:
       responses:
         2XX:
           description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  sie.uploaded:
+    post:
+      operationId: sieUploaded
+      summary: 'A SIE file arrived over SFTP and was checked'
+      x-sv-summary: 'En SIE-fil har kommit in via SFTP och granskats'
+      description: "Sent after a SIE file that arrived in the company's SFTP drop has been checked. `status` is `analysed` (a SIE import with a report waits for a person to read it and confirm it in NONOX; nothing has been booked) or `rejected` (the file was not taken in). `can_be_confirmed` is false when the report lists problems that must be fixed first. The file name is not included. The webhook needs import:sie. Sent as an HTTPS POST to every active webhook of the company that subscribes to `sie.uploaded`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas med HTTPS POST till varje webhook som prenumererar på `sie.uploaded`, när en SIE-fil som kommit in via SFTP har granskats. Ingenting är bokfört: en person måste läsa rapporten och bekräfta i NONOX. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: sie.uploaded
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 0f6a2b1c-3d4e-4f5a-8b9c-0d1e2f3a4b5c
+                  type: sie.uploaded
+                  created_at: '2026-11-04T06:15:02+01:00'
+                  company_id: 42
+                  data:
+                    upload_id: 9b2f4c6e-8a1d-4e3f-b5c7-d9e1f3a5b7c9
+                    status: analysed
+                    size: 18432
+                    sha256: 3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b
+                    received_at: '2026-11-04T06:15:00+01:00'
+                    sie_import_id: 118
+                    can_be_confirmed: true
+                    vouchers: 31
+                    blockers: 0
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
 components:
   securitySchemes:
     oauth2:
@@ -9682,6 +9743,7 @@ components:
             - supplier_invoice.approved
             - planning.published
             - planning.attested
+            - sie.uploaded
           description: 'Open enum: new event types may be added within v1.'
         created_at:
           type: string
