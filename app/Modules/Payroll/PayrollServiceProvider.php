@@ -42,6 +42,7 @@ use App\Modules\Payroll\Support\Run\TimeReportPay;
 use App\Support\Search\SearchAction;
 use App\Support\Search\SearchActions;
 use App\Support\Search\SearchRegistry;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
@@ -86,6 +87,11 @@ class PayrollServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([ImportPayrollRulesCommand::class, VerifyPayrollRuleCommand::class, ImportTaxTablesCommand::class]);
         }
+
+        $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
+            // Every year's rule file into the database, unverified; checked versions are never touched (PAYROLL_MODULE.md B.6).
+            $schedule->command('payroll:import-rules')->dailyAt('03:40')->withoutOverlapping();
+        });
 
         Gate::policy(Employee::class, EmployeePolicy::class);
         Gate::policy(PayrollRun::class, PayrollRunPolicy::class);

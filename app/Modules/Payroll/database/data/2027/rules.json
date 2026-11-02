@@ -1,0 +1,321 @@
+{
+    "year": 2027,
+    "note": "Researched from the cited primary sources on 2026-11-02. Every version is imported unverified (TODO(legal-verify)); each company checks it against its source in Lön → Regler before use. The budget bill for 2027 (prop. 2026/27:1) had not been presented on 2026-11-02 (due 12 November 2026, election year), so values set by law are taken from the law text in force with the amendments already decided for 2027-01-01; check them again after the Riksdag's December decision. Keys under \"pending\" are left out on purpose: the authority has not published the 2027 value yet. Keys under \"continued\" have an open-ended earlier version (valid_to null) that already covers 2027.",
+    "rules": [
+        {
+            "key": "employer_contribution.full",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "bp": 3142,
+                "components_bp": {
+                    "sjukforsakringsavgift": 355,
+                    "foraldraforsakringsavgift": 200,
+                    "alderspensionsavgift": 1021,
+                    "efterlevandepensionsavgift": 30,
+                    "arbetsmarknadsavgift": 264,
+                    "arbetsskadeavgift": 10,
+                    "allman_loneavgift": 1262
+                }
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2000-980.text",
+            "source_quote": "Socialavgiftslagen 2 kap. 26 § (ändrad t.o.m. SFS 2026:493): arbetsgivaravgifterna är 18,80 procent; lag (1994:1920) om allmän löneavgift 3 §: 12,62 procent.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "employer_contribution.reduced_by_birthyear",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "bands": [
+                    {
+                        "born_to": 1937,
+                        "bp": 0
+                    },
+                    {
+                        "born_from": 1938,
+                        "born_to": 1959,
+                        "bp": 1021
+                    }
+                ]
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2000-980.text",
+            "source_quote": "2 kap. 27 §: vid årets ingång har fyllt 67 år ska bara ålderspensionsavgiften betalas (10,21 %); övergångsbestämmelse 5: född 1937 eller tidigare, inga avgifter.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "employer_contribution.youth_reduction",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-09-30",
+            "value": {
+                "applies": true,
+                "born_from": 2004,
+                "born_to": 2008,
+                "bp": 2081,
+                "monthly_cap_ore": 2500000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2026-100.text",
+            "source_quote": "Lag (2026:100) 2 §: vid årets ingång fyllt 18 men inte 23 år; hälften av avgifterna utom ålderspensionsavgiften; högst 25 000 kronor per kalendermånad.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "employer_contribution.youth_reduction",
+            "valid_from": "2027-10-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "applies": false
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2026-100.text",
+            "source_quote": "Övergångsbestämmelse 3: Lagen upphör att gälla vid utgången av september 2027.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "employer_contribution.min_annual_basis",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 100000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2000-980.text",
+            "source_quote": "2 kap. 14 §: En ersättning till en person är avgiftsfri om ersättningen till den personen under året understigit 1 000 kronor.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "employer_contribution.regional_support",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "deduction_bp": 1000,
+                "monthly_cap_ore": 710000,
+                "not_from_age": 67,
+                "floor_bp": 1021
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2001-1170.text",
+            "source_quote": "Lag (2001:1170) 5 §: avdrag med 10 procent av avgiftsunderlaget, inte under ålderspensionsavgiften, högst 7 100 kronor; 2 §: inte för 67 år och äldre.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "special_payroll_tax.pension",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "bp": 2426
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1991-687.text",
+            "source_quote": "Lag (1991:687) 1 §: särskild löneskatt med 24,26 procent på kostnaden för pensionsutfästelsen (ändrad t.o.m. SFS 2019:874).",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "sink.rate",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "bp": 2000,
+                "seafarers_bp": 1500
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1991-586.text",
+            "source_quote": "7 § i lydelse SFS 2025:1356, i kraft 2027-01-01, på inkomster som tas emot efter 2026-12-31: 20 procent; sjöinkomst 15 procent.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "prisbasbelopp",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 5960000
+            },
+            "source_url": "https://www.regeringen.se/pressmeddelanden/2026/09/prisbasbeloppfor-2027-faststallt/",
+            "source_quote": "Regeringen har fastställt prisbasbeloppet till 59 600 kronor för år 2027. (Förordning SFS 2026:1779, 24 september 2026.)",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "per_diem.domestic.full",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 30000,
+                "after_three_months_ore": 21000,
+                "after_two_years_ore": 15000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 11 §: maximibeloppet är 0,5 procent av prisbasbeloppet, avrundat till tiotal kronor (300 kr); 21 §: 70 respektive 50 procent.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "per_diem.domestic.half",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 15000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 16 §: för varje halv dag ett halvt maximibelopp vid tjänsteresa i Sverige (maximibelopp 2027: 300 kr).",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "per_diem.domestic.night",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "ore": 15000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 12 kap. 13 §: ett halvt maximibelopp per natt vid tjänsteresa i Sverige (maximibelopp 2027: 300 kr).",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "vacation.qualifying_absence_days",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "SICK": 180,
+                "PARENTAL": 120,
+                "VAB": 120,
+                "MILITARY": 60
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1977-480.text",
+            "source_quote": "Semesterlagen 17 §: sjukdom högst 180 dagar; 17 a §: 120 dagar (ensamstående 180); 17 b §: grundutbildning högst 60 dagar. Ändrad t.o.m. SFS 2014:424.",
+            "source_read_on": "2026-11-02"
+        },
+        {
+            "key": "agi.schema_version",
+            "valid_from": "2027-01-01",
+            "valid_to": "2027-12-31",
+            "value": {
+                "version": "1.1",
+                "instance": "http://xmls.skatteverket.se/se/skatteverket/da/arbetsgivardeklaration/arbetsgivardeklaration_1.1.xsd",
+                "component": "http://xmls.skatteverket.se/se/skatteverket/da/arbetsgivardeklaration/arbetsgivardeklaration_component_1.1.xsd"
+            },
+            "source_url": "https://www.skatteverket.se/foretag/etjansterochblanketter/allaetjanster/schemalagerxml.4.dfe345a107ebcc9baf80006452.html",
+            "source_quote": "Schemalagret listar den 2 november 2026 endast Arbetsgivardeklaration – XML-schema version 1.1; ingen ny version är aviserad för 2027.",
+            "source_read_on": "2026-11-02"
+        }
+    ],
+    "pending": [
+        {
+            "key": "inkomstbasbelopp",
+            "authority": "Regeringen",
+            "expected": "november 2026",
+            "source_url": "https://www.regeringen.se/artiklar/2025/11/inkomstbasbelopp-och-inkomstindex-for-ar-2026-faststallt/",
+            "note": "Pensionsmyndigheten has published a calculation; the government had not decided the 2027 amount on 2026-11-02."
+        },
+        {
+            "key": "benefit.meal.free_day",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/kostforman.4.3016b5d91791bf546791816.html",
+            "note": "Set each year by Skatteverket (IL 61 kap. 3 §); no 2027 value published on 2026-11-02."
+        },
+        {
+            "key": "benefit.meal.breakfast",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/kostforman.4.3016b5d91791bf546791816.html",
+            "note": "Set each year by Skatteverket; no 2027 value published on 2026-11-02."
+        },
+        {
+            "key": "benefit.meal.lunch_or_dinner",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/kostforman.4.3016b5d91791bf546791816.html",
+            "note": "Set each year by Skatteverket; no 2027 value published on 2026-11-02."
+        },
+        {
+            "key": "benefit.car.formula",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "note": "IL 61 kap. 5 § uses the statslåneränta at the end of November 2026, which is not known until then."
+        },
+        {
+            "key": "per_diem.domestic.meal_reductions",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "note": "Skatteverket's page Belopp och procent for 2027 was not published on 2026-11-02."
+        },
+        {
+            "key": "per_diem.foreign.by_country",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/traktamente.4.dfe345a107ebcc9baf80006547.html",
+            "note": "Normalbelopp per country are published yearly; not researched for 2026 either."
+        },
+        {
+            "key": "mileage.own_car_tax_free_per_mil",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "note": "The legal basis for the amount was not found in the law text; wait for Belopp och procent 2027."
+        },
+        {
+            "key": "mileage.company_car_fossil",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "note": "Wait for Belopp och procent 2027."
+        },
+        {
+            "key": "mileage.company_car_electric",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "note": "Wait for Belopp och procent 2027."
+        },
+        {
+            "key": "gift.tax_free_limits",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://skatteverket.se/foretag/skatterochavdrag/beloppochprocent/2026.106.1522bf3f19aea8075ba3294.html",
+            "note": "Christmas and anniversary gift limits are Skatteverket's yearly amounts; the memorial gift limit (15 000 kr) is in IL 11 kap. 14 §."
+        },
+        {
+            "key": "wellness.tax_free_limit",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lonochersattning/formaner/personalvardsformanmotionochfriskvard.4.3016b5d91791bf546791431.html",
+            "note": "The 5 000 kr limit is Skatteverket's guidance, not law; confirm it for 2027."
+        },
+        {
+            "key": "agi.deadlines",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://www.skatteverket.se/foretag/arbetsgivare/lamnaarbetsgivardeklaration/narskajaglamnaarbetsgivardeklaration.4.361dc8c15312eff6fd13c11.html",
+            "note": "On 2026-11-02 only 18 January 2027 (period December 2026) was published; it is in the 2026 version."
+        },
+        {
+            "key": "tax.one_off",
+            "authority": "Skatteverket",
+            "expected": "december 2026",
+            "source_url": "https://www.skatteverket.se/privat/skatter/arbeteochinkomst/askattsedelochskattetabeller/engangsbelopp.4.70ac421612e2a997f85800014872.html",
+            "note": "The table for one-off payments comes with the 2027 tax tables."
+        }
+    ],
+    "continued": [
+        {
+            "keys": ["sick_pay.percentage", "sick_pay.karensavdrag_percent_of_weekly", "sick_pay.employer_period_days", "sick_pay.reinfection_window_days", "sick_pay.certificate_from_day"],
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1991-1047.text",
+            "note": "Lag (1991:1047) om sjuklön, ändrad t.o.m. SFS 2025:938, holds no amendment in force from 2027-01-01 (read 2026-11-02)."
+        },
+        {
+            "keys": ["vacation.minimum_days", "vacation.supplement_sammaloneregeln", "vacation.percent_rule", "vacation.max_saved_days", "vacation.save_years"],
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1977-480.text",
+            "note": "Semesterlag (1977:480), ändrad t.o.m. SFS 2014:424, holds no amendment in force from 2027-01-01 (read 2026-11-02)."
+        },
+        {
+            "keys": ["tax.rounding"],
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2011-1261.text",
+            "note": "Skatteförfarandeförordningen 22 kap. 1 §, ändrad t.o.m. SFS 2026:1570, no amendment from 2027-01-01 (read 2026-11-02)."
+        },
+        {
+            "keys": ["a_sink.rate"],
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1991-591.text",
+            "note": "Lag (1991:591) 9 §, ändrad t.o.m. SFS 2013:953 (read 2026-11-02)."
+        },
+        {
+            "keys": ["tax.one_off_without_regular_salary", "agi.field_codes"],
+            "source_url": "https://www.skatteverket.se/agbeskrivning",
+            "note": "Skatteverket's guidance; no change for 2027 announced on 2026-11-02. TODO(legal-verify): check again in January 2027."
+        }
+    ]
+}

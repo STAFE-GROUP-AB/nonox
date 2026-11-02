@@ -21,6 +21,7 @@ Avsnittet är för dig som sköter lönerna i ett företag: ägaren, en löneadm
 
 - [Slå på lönemodulen och kom igång](/manual/lon/sla-pa-lon)
 - [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller)
+- [Inför ett nytt löneår](/manual/lon/infor-nytt-lonear)
 - [Anställda](/manual/lon/anstallda)
 - [Flytta lönedata från ett annat lönesystem](/manual/lon/flytt-av-lonedata)
 

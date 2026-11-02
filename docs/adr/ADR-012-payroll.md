@@ -132,6 +132,30 @@ HTML only) and the tax table file layout (SKV 433, edition 36).
 - Engångsbelopp are published only as HTML; column 1 for 2026 is in
   rules.json as `tax.one_off`, columns 2–6 must be added before use.
 
+## A new payment year (2027, 2026-11-02)
+
+- `data/2027/rules.json` holds the 2027 values decided on 2026-11-02, each
+  with source, date read and a short quote. Values not yet published are
+  listed under `pending` (authority, expected date) and left out; keys an
+  open-ended earlier version covers are listed under `continued`. Nothing
+  is guessed or copied from 2026.
+- `payroll:import-rules` without a year imports every year's file and runs
+  nightly from the scheduler, so a new file reaches every installation
+  after deploy. It never changes a version verified for the installation or
+  by any company (previously a company's check did not protect a version).
+- Lön → Regler starts with a year view (`Support/YearReadiness`) for the
+  next payment year: rules verified, unverified, not published or missing,
+  and whether the tax tables are imported, with verification in place.
+- `payroll:import-tax-tables {year} --download` reads the same tables from
+  Skatteverket's open data (RowStore), converted to the record layout and
+  checked like a file; on 2026-11-02 the 2026 open data matched the
+  official text file line for line. No automatic import: an imported year
+  cannot be replaced.
+- Without tables for the payment year a run is blocked once with
+  "Skattetabellerna för {år} är inte inlästa ännu". `TODO(legal-verify)`:
+  SFL 10 kap. 16 § allows January withholding by the table last applied the
+  year before.
+
 ## Rounding, one-off tax and A-SINK (2026-10-30)
 
 - `tax.rounding` = DOWN_TO_KRONA: "Belopp som avser skatt eller avgift enligt

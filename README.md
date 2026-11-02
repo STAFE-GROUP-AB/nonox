@@ -87,6 +87,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Löneunderlag från schemasystem som PAXml eller CSV: timmar, OB och tillägg blir förslag i lönekörningen, koderna kopplas till lönearter en gång per system, och en person godkänner raderna innan de kommer med i lönen.
 - Semester enligt semesterlagen, förmåner, traktamente och milersättning, tjänstepension, utlägg med kvitto, lönerevision och slutlön.
 - Arbetsgivardeklaration (AGI) som XML enligt Skatteverkets schema, och ett lönearkiv som finns kvar när modulen stängs av.
+- Inför ett nytt löneår: årets satser med källa läses in varje natt som okontrollerade, och Lön → Regler visar för nästa utbetalningsår vilka regler som är kontrollerade, väntar på kontroll eller inte är publicerade ännu, och om skattetabellerna är inlästa (från Skatteverkets fil eller öppna data). Lön för december som betalas i januari räknas med det nya årets värden.
 - Min sida för anställda: lönebesked, sjukanmälan, vård av barn, semesteransökan och utlägg.
 
 ### Avtal (modul)

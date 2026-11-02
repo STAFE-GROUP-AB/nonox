@@ -28,7 +28,7 @@ final class TaxTableLookup
             ->first(['value_type', 'value', 'income_from', 'income_to']);
 
         if ($row === null) {
-            throw new MissingTaxTableException("No tax table {$table}, column {$column} for {$year} ({$period}).");
+            throw new MissingTaxTableException($year, $table, $column, ! self::imported($year, $period));
         }
 
         return [
@@ -37,5 +37,13 @@ final class TaxTableLookup
             'income_from' => (int) $row->income_from,
             'income_to' => $row->income_to === null ? null : (int) $row->income_to,
         ];
+    }
+
+    /**
+     * Whether Skatteverket's tables for the year are imported.
+     */
+    public static function imported(int $year, string $period = 'MONTH'): bool
+    {
+        return DB::table('tax_table_imports')->where('year', $year)->where('period_type', $period)->exists();
     }
 }
