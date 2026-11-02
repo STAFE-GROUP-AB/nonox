@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-momsrutor",
+      "datum": "2026-11-02T15:10:00+01:00",
+      "rubrik": "Rätt momsruta för all försäljning",
+      "beskrivning": "Momspliktig försäljning på alla intäktskonton kommer med i ruta 05, och försäljning utan moms hamnar i ruta 42. NONOX varnar när momssatsen inte passar kontot. Rutorna för uttag, vinstmarginalbeskattning, frivillig moms på uthyrning och trepartshandel finns nu, och ett konto kan knytas till en momsruta.",
+      "typ": "Rättat",
+      "omrade": "Moms"
+    },
+    {
       "id": "2026-11-02-loneskatt",
       "datum": "2026-11-02T14:50:00+01:00",
       "rubrik": "Skatteavdrag, jämkning och arbetsgivaravgifter enligt lagen",
