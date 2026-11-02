@@ -9,8 +9,8 @@
 .wl-intro p{font-size:17.5px;line-height:1.6;color:var(--muted);text-wrap:pretty}
 .wl-intro strong{color:var(--ink)}
 .wl-facts{list-style:none;margin:28px 0 0;padding:0;display:grid;gap:14px}
-.wl-facts li{display:flex;gap:12px;font-size:16px;line-height:1.5}
-.wl-facts li::before{content:"";flex:none;width:9px;height:9px;margin-top:8px;border-radius:50%;background:var(--acc)}
+.wl-facts li{position:relative;padding-left:21px;font-size:16px;line-height:1.5}
+.wl-facts li::before{content:"";position:absolute;left:0;top:8px;width:9px;height:9px;border-radius:50%;background:var(--acc)}
 .wl-card{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:clamp(22px,4vw,40px);box-shadow:0 30px 60px -40px rgba(21,23,28,.35)}
 .wl-fieldset{border:0;margin:0 0 8px;padding:0;min-width:0}
 .wl-legend{padding:0;margin:0 0 14px;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:20px;letter-spacing:-0.02em}
