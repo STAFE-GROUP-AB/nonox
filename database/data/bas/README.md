@@ -18,5 +18,7 @@ Only commonly used accounts are included. Users add the rest themselves.
 2. Check every number and name here against the official BAS 2026 chart. They
    were written from general knowledge of BAS, not copied from the published
    chart.
-3. Partnerships (HB/KB) and associations on K2/K3 currently get limited-company
-   equity accounts and need their own equity block.
+3. Sole traders and partnerships (EF/HB/KB) get the owner equity block
+   (2010–2019) whatever their framework (`SeedChartOfAccounts`). Ekonomisk
+   förening, ideell förening and stiftelse still get the framework's block and
+   need their own.

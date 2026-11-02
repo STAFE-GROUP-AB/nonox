@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 use App\Actions\Accounting\CreateAccount;
 use App\Actions\Accounting\InitialiseBookkeeping;
+use App\Actions\Accounting\SeedChartOfAccounts;
 use App\Actions\Accounting\UpdateAccount;
+use App\Domain\Company\LegalForm;
+use App\Domain\Company\ReportingFramework;
 use App\Livewire\Accounting\ChartOfAccounts;
 use App\Models\Account;
 use App\Models\AuditLog;
@@ -160,4 +163,15 @@ it('cannot touch another company\'s accounts', function () {
         ->assertNotFound();
 
     expect(CurrentCompany::run($other, fn () => $foreign->fresh()->is_active))->toBeTrue();
+});
+
+it('gives a partnership or sole trader owner equity accounts, never Aktiekapital, whatever the framework', function () {
+    $seed = app(SeedChartOfAccounts::class);
+    $equity = fn (array $accounts): array => array_values(array_map(fn (array $account): int => $account['number'], array_filter($accounts, fn (array $account): bool => $account['number'] >= 2000 && $account['number'] < 2100)));
+
+    expect($equity($seed->template(ReportingFramework::K2, LegalForm::Hb)))->toBe([2010, 2013, 2018, 2019])
+        ->and($equity($seed->template(ReportingFramework::K3, LegalForm::Kb)))->toBe([2010, 2013, 2018, 2019])
+        ->and($equity($seed->template(ReportingFramework::K2, LegalForm::Ef)))->toBe([2010, 2013, 2018, 2019])
+        ->and($equity($seed->template(ReportingFramework::K2, LegalForm::Ab)))->toContain(2081)->not->toContain(2010)
+        ->and(count($seed->template(ReportingFramework::K2, LegalForm::Hb)))->toBe(count($seed->template(ReportingFramework::K2)) - 5 + 4);
 });
