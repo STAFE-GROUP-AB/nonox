@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-momsavrakning",
+      "datum": "2026-11-02T14:30:00+01:00",
+      "rubrik": "Momsavräkning, momskvartal och förfallodag för årsmoms",
+      "beskrivning": "Momsavräkningen rör bara de konton som hör till deklarationen, så vilande moms hamnar inte längre som intäkt. Momskvartal delas inte vid brutet räkenskapsår, årsmomsen har rätt förfallodag och en sen verifikation i en avräknad period ger en kompletterande avräkning.",
+      "typ": "Rättat",
+      "omrade": "Moms"
+    },
+    {
       "id": "2026-11-02-kreditfakturor",
       "datum": "2026-11-02T14:10:00+01:00",
       "rubrik": "Kreditfakturor stämmer mot kundreskontran",
