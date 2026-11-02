@@ -5951,5 +5951,14 @@
     "Checkräkningskredit": "Bank overdraft",
     "Övriga skulder till kreditinstitut": "Other liabilities to credit institutions",
     "Skulder till koncern-, intresse- och gemensamt styrda företag": "Liabilities to group, associated and jointly controlled companies",
-    "Pågående arbete för annans räkning": "Work in progress on behalf of others"
+    "Pågående arbete för annans räkning": "Work in progress on behalf of others",
+    "Handelsvaror": "Goods for resale",
+    "Räkna som råvaror": "Count as raw materials",
+    "Räkna som handelsvaror": "Count as goods for resale",
+    "Konto :number räknas nu som handelsvaror i årsredovisningen och deklarationen.": "Account :number now counts as goods for resale in the annual report and the tax return.",
+    "Konto :number räknas nu som råvaror och förnödenheter i årsredovisningen och deklarationen.": "Account :number now counts as raw materials and consumables in the annual report and the tax return.",
+    "Fält :code (:label) blir negativt, :amount kr. Det fältet har bara en sida på blanketten. Kontrollera kontona, till exempel om en lagerförändring ska ligga på ett annat konto.": "Field :code (:label) is negative, :amount kr. That field has only one side on the form. Check the accounts, for example whether a stock change belongs on another account.",
+    "Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning": "Change in stock of work in progress, finished goods and work on behalf of others",
+    "Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning (+)": "Change in stock of work in progress, finished goods and work on behalf of others (+)",
+    "Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning (−)": "Change in stock of work in progress, finished goods and work on behalf of others (−)"
 }

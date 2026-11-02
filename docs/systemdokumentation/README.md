@@ -233,6 +233,10 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   aldrig bort.
 - Varje tillagt eller ändrat konto loggas i behandlingshistoriken med värdet före
   och efter.
+- Ett inköpskonto (4000–4899) kan markeras som handelsvaror. Det sparas som
+  kontots SRU-kod 7512 (INK2R 3.6) och följer med i SIE-filens #SRU; en SIE-fil
+  med #SRU 7512 på ett inköpskonto som läggs till vid inläsningen ger samma
+  markering (#89).
 
 ## 3. Räkenskapsår
 
@@ -1090,6 +1094,15 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   gemensamt styrda företag (2460–2469, 2860–2869), Skatteskulder och Övriga
   skulder var för sig. Enligt granskning 2026-11-02, juristgranskning
   återstår (BS-AUD-BOK-4, #88).
+- Resultaträkningen delar 4000–4999 efter K2 och INK2R: lagerförändring av
+  produkter i arbete, färdiga varor och pågående arbete (4940–4959,
+  4970–4979) är en rörelseintäkt (INK2R 3.2, 7411 när den ökar resultatet och
+  7510 när den minskar det); förändring av lager av handelsvaror (4960–4969)
+  och inköpskonton markerade som handelsvaror är Handelsvaror (3.6, 7512);
+  övriga inköp, legoarbeten och 4900–4939, 4980–4999 är Råvaror och
+  förnödenheter (3.5, 7511). Blir ett fält som bara har en sida på blanketten
+  negativt visar inkomstdeklarationen en varning. Enligt granskning
+  2026-11-02, juristgranskning återstår (BS-AUD-BOK-9, #89).
 - Årets resultat i
   balansräkningen är resultaträkningens resultat oavsett om det är bokat på
   2099; ett tidigare resultat som inte disponerats visas som balanserat

@@ -49,6 +49,12 @@ Ett konto kan aldrig tas bort, men du kan stänga av det:
 
 Ett inaktiverat konto syns inte längre i listan när du bokför, och en verifikation med kontot kan inte bokföras. Det som redan är bokfört på kontot finns kvar och syns i rapporterna. Vill du använda kontot igen väljer du **Aktivera** – kryssa först i **Visa inaktiva konton** så att det syns.
 
+## Inköp av handelsvaror
+
+Inköpskonton (4000–4899) räknas som råvaror och förnödenheter i årsredovisningen och inkomstdeklarationen. Köper företaget varor för att sälja dem vidare, välj **Räkna som handelsvaror** på kontots rad. Då hamnar inköpen under Handelsvaror i resultaträkningen och i punkt 3.6 i räkenskapsschemat (INK2R). Kontot får märket **Handelsvaror**. Välj **Räkna som råvaror** för att ändra tillbaka.
+
+Läser du in en SIE-fil och ett nytt inköpskonto läggs till med SRU-kod 7512, blir kontot markerat på samma sätt.
+
 ## Vem får göra vad
 
 Alla som arbetar i bokföringen kan se kontoplanen. Ägare, administratörer och redovisningskonsulter kan lägga till, byta namn på och inaktivera konton. Ändringarna skrivs i [behandlingshistoriken](/manual/bokforing/behandlingshistorik).

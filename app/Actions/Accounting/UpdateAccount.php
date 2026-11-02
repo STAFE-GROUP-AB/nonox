@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 /**
- * Renames, retypes, activates or deactivates an account. The account number
+ * Renames, retypes, activates or deactivates an account, or sets its SRU
+ * code (e.g. 7512 for purchases of goods for resale, #89). The account number
  * never changes. Accounts are deactivated, never deleted (AGENTS.md §6.1).
  */
 class UpdateAccount
@@ -29,6 +30,7 @@ class UpdateAccount
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'type' => ['sometimes', 'required', Rule::enum(AccountType::class)],
             'is_active' => ['sometimes', 'required', 'boolean'],
+            'sru_code' => ['sometimes', 'nullable', 'string', 'regex:/^\d{3,4}$/'],
         ], attributes: [
             'name' => __('kontonamn'),
         ])->validate();
@@ -57,6 +59,7 @@ class UpdateAccount
             'name' => $account->name,
             'type' => $account->type->value,
             'is_active' => $account->is_active,
+            'sru_code' => $account->sru_code,
         ];
     }
 }

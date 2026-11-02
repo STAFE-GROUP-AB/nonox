@@ -247,3 +247,27 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-4, #88).
   Inventarier, verktyg och installationer, and the kinds of obeskattade
   reserver, must be shown separately for a K2 company; the BAS ranges
   against the official BAS–K2 mapping.
+
+## Stock changes and goods for resale (2026-11-02, #89)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-9, #89).
+
+- **Rule.** SKV field table INK2R_SKV2002-34-01-26-04 (read 2026-11-02): 3.2
+  Förändring av lager av produkter i arbete, färdiga varor och pågående
+  arbete för annans räkning, + 7411 and − 7510; 3.5 Råvaror och
+  förnödenheter 7511; 3.6 Handelsvaror 7512. BFNAR 2016:10, uppställningsform
+  resultaträkning: the stock change of products is an operating income item;
+  Handelsvaror is the cost of goods sold (purchases ± the change in stock of
+  goods for resale); Råvaror och förnödenheter includes legoarbeten and
+  underentreprenader.
+- **Decision.** `K2Schedule::INCOME` and `Ink2Codes::INCOME` use the same
+  ranges: 4940–4959 and 4970–4979 → stock change; 4960–4969 → Handelsvaror;
+  the rest of 4000–4999 → Råvaror och förnödenheter. Whether a purchase is
+  raw material or goods for resale depends on the business, so it is set per
+  account: an account in 4000–4899 with `sru_code` 7512 counts as
+  Handelsvaror. The chart of accounts has a toggle for it and SIE #SRU sets
+  it on an account created by a SIE import. Without the marking, purchases stay on 3.5 as before. A
+  one-sided field that turns negative is still written with its sign, but
+  the income tax page warns.
+- TODO(legal-verify): 4900–4939 (semi-finished goods) and 4980–4999; whether
+  a negative 3.5/3.6 should move to another field.

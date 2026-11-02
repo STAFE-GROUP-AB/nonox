@@ -193,7 +193,7 @@ it('AUD-BOK-9: reports a change of stock of finished goods on INK2R 3.2 (7411/75
 
     expect(Ink2::for($this->company, $this->year, null)->ink2r())->toHaveKey(7411)
         ->and(Ink2::for($this->company, $this->year, null)->ink2r())->not->toHaveKey(7511);
-})->todo('AUD-BOK-9: Ink2Codes maps 4000–4999 to 7511 and K2Schedule to Råvaror och förnödenheter; 3.2 (7411/7510) and 3.6 Handelsvaror (7512) are never used');
+});
 
 it('AUD-BOK-10: includes a fastställelseintyg for the copy filed with Bolagsverket (ÅRL 8 kap. 3 §)', function () {
     $html = AnnualReportDocument::html($this->company, $this->year, new AnnualReport(['fiscal_year_id' => $this->year->id, 'signatories' => [], 'average_employees' => 0, 'dividend_ore' => 0]));

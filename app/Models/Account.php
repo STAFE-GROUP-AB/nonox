@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property AccountType $type
  * @property bool $is_active
+ * @property ?string $sru_code
  */
 class Account extends Model
 {

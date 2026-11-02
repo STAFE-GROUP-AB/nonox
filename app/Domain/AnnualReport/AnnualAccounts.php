@@ -17,7 +17,8 @@ use Illuminate\Support\Collection;
  * overview, changes in equity, the free equity at the meeting's disposal
  * and the note on fixed assets. Amounts are öre, shown the way the report
  * shows them: income and assets positive, costs negative, equity and
- * liabilities positive. Three queries per year.
+ * liabilities positive. Three queries per year and one for the purchase
+ * accounts marked as goods for resale.
  */
 final class AnnualAccounts
 {
@@ -27,12 +28,19 @@ final class AnnualAccounts
     /** @var ?array<int, array{opening: int, debit: int, credit: int}> */
     private ?array $previous;
 
+    /** @var array<int, int> purchase accounts marked as goods for resale (K2Schedule::PURCHASES) */
+    private array $resale;
+
     public function __construct(
         public readonly FiscalYear $fiscalYear,
         public readonly ?FiscalYear $previousYear,
     ) {
         $this->current = self::ledger($fiscalYear);
         $this->previous = $previousYear === null ? null : self::ledger($previousYear);
+        $this->resale = Account::query()
+            ->whereBetween('number', K2Schedule::PURCHASES)
+            ->where('sru_code', K2Schedule::GOODS_FOR_RESALE_SRU)
+            ->pluck('number')->map(fn (mixed $number): int => (int) $number)->values()->all();
     }
 
     public static function for(FiscalYear $fiscalYear): self
@@ -51,8 +59,8 @@ final class AnnualAccounts
         $values = ['current' => [], 'previous' => []];
 
         foreach (K2Schedule::INCOME as $line) {
-            $amount = -$this->movement($this->current, $line['from'], $line['to']);
-            $previous = $this->previous === null ? null : -$this->movement($this->previous, $line['from'], $line['to']);
+            $amount = -$this->lineMovement($this->current, $line['ranges'], $line['resale'] ?? null);
+            $previous = $this->previous === null ? null : -$this->lineMovement($this->previous, $line['ranges'], $line['resale'] ?? null);
             $values['current'][$line['key']] = $amount;
             $values['previous'][$line['key']] = $previous ?? 0;
 
@@ -308,6 +316,39 @@ final class AnnualAccounts
         }
 
         return false;
+    }
+
+    /**
+     * Debit minus credit for the year on the accounts in the ranges, with
+     * the purchase accounts for goods for resale moved out of or into them.
+     *
+     * @param  list<array{0: int, 1: int}>  $ranges
+     * @param  'include'|'exclude'|null  $resale
+     */
+    public function movementOfRanges(array $ranges, ?string $resale = null): int
+    {
+        return $this->lineMovement($this->current, $ranges, $resale);
+    }
+
+    /**
+     * @param  array<int, array{opening: int, debit: int, credit: int}>  $ledger
+     * @param  list<array{0: int, 1: int}>  $ranges
+     * @param  'include'|'exclude'|null  $resale
+     */
+    private function lineMovement(array $ledger, array $ranges, ?string $resale): int
+    {
+        $total = 0;
+
+        foreach ($ledger as $number => $amounts) {
+            $inRanges = self::inRanges($number, $ranges);
+            $isResale = in_array($number, $this->resale, true);
+
+            if (($inRanges && ! ($isResale && $resale === 'exclude')) || ($isResale && $resale === 'include')) {
+                $total += $amounts['debit'] - $amounts['credit'];
+            }
+        }
+
+        return $total;
     }
 
     /** Debit minus credit for the year on the accounts in the range. */

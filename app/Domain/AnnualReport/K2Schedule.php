@@ -9,35 +9,56 @@ namespace App\Domain\AnnualReport;
  * balance sheet, with the BAS accounts that make up each line: a list of
  * inclusive ranges of account numbers.
  *
- * TODO(legal-verify): check the line set against ÅRL bilaga 2 and 3 and
+ * TODO(legal-verify): check the line set against ÅRL bilaga 1 and 2 and
  * BFNAR 2016:10, and the BAS ranges against the official BAS–K2 mapping,
- * especially 4000–4999 (raw materials versus goods for resale and stock
- * changes) and 8000–8799.
+ * especially 8000–8799.
  */
 final class K2Schedule
 {
-    /** @var list<array{key: string, label: string, from: int, to: int}> */
+    /**
+     * BAS 4000–4899 holds the purchases. They count as Råvaror och
+     * förnödenheter unless the account carries the SRU code of INK2R 3.6
+     * Handelsvaror (7512), set in the chart of accounts or read from a SIE
+     * file's #SRU (#89).
+     */
+    public const array PURCHASES = [4000, 4899];
+
+    public const string GOODS_FOR_RESALE_SRU = '7512';
+
+    /**
+     * The income statement lines in the order of the K2 layout (BFNAR
+     * 2016:10, uppställningsform resultaträkning; ÅRL bilaga 2). `resale`
+     * moves the purchase accounts marked as goods for resale out of
+     * (exclude) or into (include) a line.
+     *
+     * TODO(legal-verify): BAS 4900–4939 (raw materials, consumables and
+     * semi-finished goods) and 4980–4999 stay with Råvaror och förnödenheter.
+     *
+     * @var list<array{key: string, label: string, ranges: list<array{0: int, 1: int}>, resale?: 'include'|'exclude'}>
+     */
     public const array INCOME = [
-        ['key' => 'net_sales', 'label' => 'Nettoomsättning', 'from' => 3000, 'to' => 3799],
-        ['key' => 'capitalised_work', 'label' => 'Aktiverat arbete för egen räkning', 'from' => 3800, 'to' => 3899],
-        ['key' => 'other_operating_income', 'label' => 'Övriga rörelseintäkter', 'from' => 3900, 'to' => 3999],
-        ['key' => 'raw_materials', 'label' => 'Råvaror och förnödenheter', 'from' => 4000, 'to' => 4999],
-        ['key' => 'other_external', 'label' => 'Övriga externa kostnader', 'from' => 5000, 'to' => 6999],
-        ['key' => 'personnel', 'label' => 'Personalkostnader', 'from' => 7000, 'to' => 7699],
-        ['key' => 'depreciation', 'label' => 'Av- och nedskrivningar av materiella och immateriella anläggningstillgångar', 'from' => 7700, 'to' => 7899],
-        ['key' => 'other_operating_expenses', 'label' => 'Övriga rörelsekostnader', 'from' => 7900, 'to' => 7999],
-        ['key' => 'group_shares', 'label' => 'Resultat från andelar i koncernföretag', 'from' => 8000, 'to' => 8099],
-        ['key' => 'associated_shares', 'label' => 'Resultat från andelar i intresseföretag och gemensamt styrda företag', 'from' => 8100, 'to' => 8199],
-        ['key' => 'other_financial_assets', 'label' => 'Resultat från övriga finansiella anläggningstillgångar', 'from' => 8200, 'to' => 8299],
-        ['key' => 'interest_income', 'label' => 'Övriga ränteintäkter och liknande resultatposter', 'from' => 8300, 'to' => 8399],
-        ['key' => 'interest_expense', 'label' => 'Räntekostnader och liknande resultatposter', 'from' => 8400, 'to' => 8799],
-        ['key' => 'appropriations', 'label' => 'Bokslutsdispositioner', 'from' => 8800, 'to' => 8899],
-        ['key' => 'tax', 'label' => 'Skatt på årets resultat', 'from' => 8900, 'to' => 8989],
+        ['key' => 'net_sales', 'label' => 'Nettoomsättning', 'ranges' => [[3000, 3799]]],
+        ['key' => 'stock_change', 'label' => 'Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning', 'ranges' => [[4940, 4959], [4970, 4979]]],
+        ['key' => 'capitalised_work', 'label' => 'Aktiverat arbete för egen räkning', 'ranges' => [[3800, 3899]]],
+        ['key' => 'other_operating_income', 'label' => 'Övriga rörelseintäkter', 'ranges' => [[3900, 3999]]],
+        ['key' => 'raw_materials', 'label' => 'Råvaror och förnödenheter', 'ranges' => [[4000, 4939], [4980, 4999]], 'resale' => 'exclude'],
+        ['key' => 'goods_for_resale', 'label' => 'Handelsvaror', 'ranges' => [[4960, 4969]], 'resale' => 'include'],
+        ['key' => 'other_external', 'label' => 'Övriga externa kostnader', 'ranges' => [[5000, 6999]]],
+        ['key' => 'personnel', 'label' => 'Personalkostnader', 'ranges' => [[7000, 7699]]],
+        ['key' => 'depreciation', 'label' => 'Av- och nedskrivningar av materiella och immateriella anläggningstillgångar', 'ranges' => [[7700, 7899]]],
+        ['key' => 'other_operating_expenses', 'label' => 'Övriga rörelsekostnader', 'ranges' => [[7900, 7999]]],
+        ['key' => 'group_shares', 'label' => 'Resultat från andelar i koncernföretag', 'ranges' => [[8000, 8099]]],
+        ['key' => 'associated_shares', 'label' => 'Resultat från andelar i intresseföretag och gemensamt styrda företag', 'ranges' => [[8100, 8199]]],
+        ['key' => 'other_financial_assets', 'label' => 'Resultat från övriga finansiella anläggningstillgångar', 'ranges' => [[8200, 8299]]],
+        ['key' => 'interest_income', 'label' => 'Övriga ränteintäkter och liknande resultatposter', 'ranges' => [[8300, 8399]]],
+        ['key' => 'interest_expense', 'label' => 'Räntekostnader och liknande resultatposter', 'ranges' => [[8400, 8799]]],
+        ['key' => 'appropriations', 'label' => 'Bokslutsdispositioner', 'ranges' => [[8800, 8899]]],
+        ['key' => 'tax', 'label' => 'Skatt på årets resultat', 'ranges' => [[8900, 8989]]],
     ];
 
     /** Subtotals after a line: the label and the lines they add up. */
     public const array INCOME_SUBTOTALS = [
-        'other_operating_expenses' => ['key' => 'operating_result', 'label' => 'Rörelseresultat', 'lines' => ['net_sales', 'capitalised_work', 'other_operating_income', 'raw_materials', 'other_external', 'personnel', 'depreciation', 'other_operating_expenses']],
+        'other_operating_expenses' => ['key' => 'operating_result', 'label' => 'Rörelseresultat', 'lines' => ['net_sales', 'stock_change', 'capitalised_work', 'other_operating_income', 'raw_materials', 'goods_for_resale', 'other_external', 'personnel', 'depreciation', 'other_operating_expenses']],
         'interest_expense' => ['key' => 'after_financial', 'label' => 'Resultat efter finansiella poster', 'lines' => ['operating_result', 'group_shares', 'associated_shares', 'other_financial_assets', 'interest_income', 'interest_expense']],
         'appropriations' => ['key' => 'before_tax', 'label' => 'Resultat före skatt', 'lines' => ['after_financial', 'appropriations']],
         'tax' => ['key' => 'year_result', 'label' => 'Årets resultat', 'lines' => ['before_tax', 'tax']],
