@@ -215,7 +215,7 @@ it('AUD-BOK-12: asks for a comment when net sales vary more than 30 % between ye
     // 2025 had no sales and 2026 has 100 000: the variation is over 30 %.
     expect($previous->exists)->toBeTrue()
         ->and($html)->toContain('Nettoomsättningen har förändrats');
-})->todo('AUD-BOK-12: no comment or warning for a net sales variation over 30 % (applies to fiscal years starting after 2025-12-31)');
+});
 
 it('AUD-BOK-13: lets the disposition pay a dividend from retained earnings after a loss year (ABL 17 kap. 3 §, 18 kap. 1 §)', function () {
     Bookkeeping::post($this->owner, $this->company, 12_000_000, 5010, 1930, '2026-11-01');

@@ -178,6 +178,36 @@ final class AnnualAccounts
         return $rows;
     }
 
+    /**
+     * The pairs of consecutive years in the multi-year overview whose net
+     * sales differ by more than 30 %, newest first. A change from 0 counts.
+     * BFNAR 2016:10 and 2025:2 p. 5.5: such a variation must be commented
+     * on in the förvaltningsberättelse (#93).
+     *
+     * TODO(legal-verify): whether "mellan åren" means every pair shown in
+     * the overview or only this year against the previous one.
+     *
+     * @param  list<array{label: string, net_sales: int, after_financial: int, solidity: ?float}>|null  $rows  multiYear(), if already computed
+     * @return list<array{from: string, to: string, from_amount: int, to_amount: int}>
+     */
+    public function netSalesVariations(?array $rows = null): array
+    {
+        $rows ??= $this->multiYear();
+        $variations = [];
+
+        for ($i = 0; $i + 1 < count($rows); $i++) {
+            $newer = $rows[$i]['net_sales'];
+            $older = $rows[$i + 1]['net_sales'];
+            $varies = $older === 0 ? $newer !== 0 : abs($newer - $older) * 100 > 30 * abs($older);
+
+            if ($varies) {
+                $variations[] = ['from' => $rows[$i + 1]['label'], 'to' => $rows[$i]['label'], 'from_amount' => $older, 'to_amount' => $newer];
+            }
+        }
+
+        return $variations;
+    }
+
     /** The free equity at the annual meeting's disposal: retained earnings and the year's result. */
     public function freeEquity(): int
     {

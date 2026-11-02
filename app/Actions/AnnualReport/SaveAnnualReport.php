@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\AnnualReport;
 
+use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\AnnualReport\PledgedAssetKind;
 use App\Domain\Closing\DividendLimit;
@@ -26,7 +27,7 @@ use InvalidArgumentException;
 class SaveAnnualReport
 {
     /**
-     * @param  array<string, mixed>  $input  business_description, significant_events, dividend, average_employees, signing_place, signing_date, signatories, adoption_date, adoption_decision, certifier_name, certifier_role, pledged (kind => amount), pledged_other_text, contingent_liabilities, contingent_liabilities_text, group_commitments, events_after, events_effect_unknown
+     * @param  array<string, mixed>  $input  business_description, significant_events, dividend, average_employees, signing_place, signing_date, signatories, adoption_date, adoption_decision, certifier_name, certifier_role, pledged (kind => amount), pledged_other_text, contingent_liabilities, contingent_liabilities_text, group_commitments, events_after, events_effect_unknown, net_sales_comment
      */
     public function __invoke(User $user, FiscalYear $fiscalYear, array $input): AnnualReport
     {
@@ -61,6 +62,7 @@ class SaveAnnualReport
             'group_commitments' => ['nullable', 'string', 'max:2000'],
             'events_after' => ['nullable', 'string', 'max:5000'],
             'events_effect_unknown' => ['nullable', 'boolean'],
+            'net_sales_comment' => ['nullable', 'string', 'max:2000'],
         ], [
             'adoption_date.after' => __('Stämman kan fastställa räkningarna först efter räkenskapsårets slut, :date.', ['date' => $fiscalYear->end_date->toDateString()]),
         ], [
@@ -95,6 +97,13 @@ class SaveAnnualReport
             // ABL 17 kap. 3 §: the proposal may not distribute more than the free equity (#84).
             DividendLimit::ensureWithin($company, $fiscalYear, $dividend);
 
+            // BFNAR 2016:10 p. 5.5: a net sales variation over 30 % must be commented on (#93).
+            $variation = AnnualAccounts::for($fiscalYear)->netSalesVariations()[0] ?? null;
+
+            if ($variation !== null && blank($validated['net_sales_comment'] ?? null)) {
+                throw ValidationException::withMessages(['net_sales_comment' => __('Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. Kommentera förändringen (BFNAR 2016:10 punkt 5.5).', ['from' => $variation['from'], 'to' => $variation['to']])]);
+            }
+
             $report = AnnualReport::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id], [
                 'business_description' => blank($validated['business_description'] ?? null) ? null : $validated['business_description'],
                 'significant_events' => blank($validated['significant_events'] ?? null) ? null : $validated['significant_events'],
@@ -114,6 +123,7 @@ class SaveAnnualReport
                 'group_commitments' => blank($validated['group_commitments'] ?? null) ? null : trim((string) $validated['group_commitments']),
                 'events_after' => blank($validated['events_after'] ?? null) ? null : trim((string) $validated['events_after']),
                 'events_effect_unknown' => (bool) ($validated['events_effect_unknown'] ?? false),
+                'net_sales_comment' => blank($validated['net_sales_comment'] ?? null) ? null : trim((string) $validated['net_sales_comment']),
                 'updated_by' => $user->id,
             ]);
 

@@ -6015,5 +6015,10 @@
     "Summa ställda säkerheter": "Total pledged assets",
     "Eventualförpliktelser": "Contingent liabilities",
     "Åtaganden till förmån för koncern- och intresseföretag": "Commitments in favour of group and associated companies",
-    "Den ekonomiska effekten av händelserna kan inte uppskattas.": "The economic effect of the events cannot be estimated."
+    "Den ekonomiska effekten av händelserna kan inte uppskattas.": "The economic effect of the events cannot be estimated.",
+    "Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. Kommentera förändringen (BFNAR 2016:10 punkt 5.5).": "Net sales changed by more than 30 percent between :from and :to. Comment on the change (BFNAR 2016:10 point 5.5).",
+    "Nettoomsättningen har förändrats med mer än 30 procent, från :from kr :fromYear till :to kr :toYear.": "Net sales changed by more than 30 percent, from :from kr in :fromYear to :to kr in :toYear.",
+    "Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. K2 kräver att du kommenterar det i förvaltningsberättelsen.": "Net sales changed by more than 30 percent between :from and :to. K2 requires a comment in the directors' report.",
+    "Kommentar till nettoomsättningen": "Comment on net sales",
+    "Förklara varför omsättningen har ändrats, till exempel en ny kund eller ett förlorat avtal.": "Explain why net sales changed, for example a new customer or a lost contract."
 }

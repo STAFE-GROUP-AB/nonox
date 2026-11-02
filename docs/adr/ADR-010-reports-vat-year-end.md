@@ -334,3 +334,20 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-11, #92).
 - TODO(legal-verify): whether K2 practice expects "Inga" when there are no
   ställda säkerheter or eventualförpliktelser; whether 5 kap. 16 § needs
   amounts per kind.
+
+## Comment on a net sales variation over 30 % (2026-11-02, #93)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-12, #93).
+
+- **Rule.** BFNAR 2016:10 p. 5.5 andra stycket (also in the 2016 base
+  version, and kept in BFNAR 2025:2): "Varierar nettoomsättningen mer än 30
+  procent mellan åren ska företaget kommentera detta." BFNAR 2025:2 exempts a
+  company with an abbreviated income statement, which NONOX does not make.
+- **Decision.** `AnnualAccounts::netSalesVariations()` compares every pair of
+  consecutive years in the multi-year overview in integer öre: a variation
+  is |new − old| × 100 > 30 × |old|, and any change from 0. Exactly 30 % is
+  not a variation. `SaveAnnualReport` refuses to save without
+  `net_sales_comment` when there is a variation; the document prints a
+  factual sentence per pair and the comment.
+- TODO(legal-verify): whether every pair in the overview needs a comment or
+  only the latest year against the one before.

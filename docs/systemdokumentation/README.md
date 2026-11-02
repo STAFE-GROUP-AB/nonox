@@ -1108,6 +1108,12 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   2099; ett tidigare resultat som inte disponerats visas som balanserat
   resultat. Saknas föregående år i systemet används årets ingående balanser
   som jämförelse för balansräkningen.
+- Varierar nettoomsättningen mer än 30 procent mellan två år i
+  flerårsöversikten (en ökning från 0 räknas) visar sidan en varning, och
+  årsredovisningen kan inte sparas utan en kommentar (`net_sales_comment`).
+  Dokumentet skriver under flerårsöversikten en mening om förändringen per
+  sådant årspar, och kommentaren. BFNAR 2016:10 och 2025:2 punkt 5.5. Enligt
+  granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-12, #93).
 - Förändringar i eget kapital specificeras som en tabell med en kolumn per
   post (aktiekapital, reservfond, balanserat resultat, årets resultat) och
   totalt, och raderna Belopp vid årets ingång (föregående års

@@ -20,6 +20,12 @@
                 <form wire:submit="save" class="space-y-4">
                     <x-ui.field for="ar_business" :label="__('Allmänt om verksamheten')" error="business_description" :hint="__('Vad företaget gör och var det har sitt säte.')"><textarea id="ar_business" rows="4" class="{{ $input }} mt-1" wire:model="form.business_description"></textarea></x-ui.field>
                     <x-ui.field for="ar_events" :label="__('Väsentliga händelser under året')" error="significant_events" :hint="__('Lämna tomt om inget särskilt har hänt.')"><textarea id="ar_events" rows="3" class="{{ $input }} mt-1" wire:model="form.significant_events"></textarea></x-ui.field>
+                    @if($netSalesVariations !== [] || filled($form['net_sales_comment'] ?? ''))
+                        @foreach($netSalesVariations as $variation)
+                            <p class="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">{{ __('Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. K2 kräver att du kommenterar det i förvaltningsberättelsen.', ['from' => $variation['from'], 'to' => $variation['to']]) }}</p>
+                        @endforeach
+                        <x-ui.field for="ar_net_sales_comment" :label="__('Kommentar till nettoomsättningen')" error="net_sales_comment" :hint="__('Förklara varför omsättningen har ändrats, till exempel en ny kund eller ett förlorat avtal.')"><textarea id="ar_net_sales_comment" rows="3" class="{{ $input }} mt-1" wire:model="form.net_sales_comment"></textarea></x-ui.field>
+                    @endif
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-ui.field for="ar_dividend" :label="__('Föreslagen utdelning, kr')" error="dividend" :hint="__('Högst det fria egna kapitalet, :free. Utdelningen ska också vara försvarlig med hänsyn till bolagets behov av eget kapital och likviditet (försiktighetsregeln) – det bedömer styrelsen.', ['free' => \App\Support\Money\Money::ofOre(max($freeEquity, 0))->format()])"><input id="ar_dividend" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.dividend" placeholder="0"></x-ui.field>
                         <x-ui.field for="ar_employees" :label="__('Medelantal anställda')" error="average_employees"><input id="ar_employees" type="number" min="0" class="{{ $input }} mt-1" wire:model="form.average_employees"></x-ui.field>

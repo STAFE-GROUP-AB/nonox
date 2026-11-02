@@ -62,6 +62,12 @@
                 <tr><td>{{ __('Soliditet (%)') }}</td>@foreach($multiYear as $row)<td class="num">{{ $row['solidity'] === null ? '–' : number_format($row['solidity'], 1, ',', '') }}</td>@endforeach</tr>
             </tbody>
         </table>
+        @foreach($netSalesVariations as $variation)
+            <p>{{ __('Nettoomsättningen har förändrats med mer än 30 procent, från :from kr :fromYear till :to kr :toYear.', ['from' => $kr($variation['from_amount']), 'fromYear' => $variation['from'], 'to' => $kr($variation['to_amount']), 'toYear' => $variation['to']]) }}</p>
+        @endforeach
+        @if(filled($report->net_sales_comment))
+            <p>{!! nl2br(e($report->net_sales_comment)) !!}</p>
+        @endif
 
         <h3>{{ __('Förändringar i eget kapital') }}</h3>
         <table>

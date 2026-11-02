@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $group_commitments
  * @property ?string $events_after
  * @property bool $events_effect_unknown
+ * @property ?string $net_sales_comment
  * @property int $updated_by
  */
 class AnnualReport extends Model
@@ -63,6 +64,7 @@ class AnnualReport extends Model
         'group_commitments',
         'events_after',
         'events_effect_unknown',
+        'net_sales_comment',
         'updated_by',
     ];
 

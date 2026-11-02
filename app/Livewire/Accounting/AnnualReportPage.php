@@ -72,6 +72,7 @@ class AnnualReportPage extends Component
             'supported' => $supported,
             'freeEquity' => $supported ? DividendLimit::freeEquityOre($fiscalYear) : 0,
             'hasBankLoans' => $supported && self::hasBankLoans($fiscalYear),
+            'netSalesVariations' => $supported ? AnnualAccounts::for($fiscalYear)->netSalesVariations() : [],
             'pledgedKinds' => PledgedAssetKind::cases(),
         ]);
     }
@@ -123,6 +124,7 @@ class AnnualReportPage extends Component
             'group_commitments' => (string) ($report->group_commitments ?? ''),
             'events_after' => (string) ($report->events_after ?? ''),
             'events_effect_unknown' => (bool) ($report->events_effect_unknown ?? false),
+            'net_sales_comment' => (string) ($report->net_sales_comment ?? ''),
         ];
         $this->resetErrorBag();
     }
