@@ -43,6 +43,7 @@ class DemoCompanySeeder extends Seeder
             'vat_registered' => true,
             'vat_period' => 'QUARTERLY',
             'reporting_framework' => 'K2',
+            'framework_confirmed' => true,
             'f_skatt' => true,
             'employer_registered' => false,
         ]);

@@ -118,6 +118,7 @@ final class DemoCompanyBuilder
             'vat_registered' => true,
             'vat_period' => $demo['vat_period'],
             'reporting_framework' => 'K2',
+            'framework_confirmed' => true,
             'f_skatt' => true,
             'employer_registered' => $demo['employees'] !== [],
             'accept_agreement' => true,
@@ -259,6 +260,12 @@ final class DemoCompanyBuilder
         foreach ($clients as $client) {
             $inputs[] = ['name' => $client->name, 'org_number' => $client->org_number, 'city' => (string) $client->city, 'payment_terms_days' => 15];
         }
+
+        // An invoice to a company over 4 000 kr needs the buyer's address, so every demo customer gets one.
+        $inputs = array_map(fn (array $input, int $index): array => $input + [
+            'address_line1' => 'Kundvägen '.($index + 1),
+            'postal_code' => '582 '.str_pad((string) (20 + $index), 2, '0', STR_PAD_LEFT),
+        ], $inputs, array_keys($inputs));
 
         return array_map(fn (array $input): Customer => app(SaveCustomer::class)($this->user, $this->company, $input), $inputs);
     }

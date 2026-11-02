@@ -220,6 +220,7 @@ final class PayrollExtras extends DemoExtra
                 'fiscal_year_start_month' => $company->fiscal_year_start_month,
                 'accounting_method' => $company->accounting_method->value,
                 'reporting_framework' => $company->reporting_framework->value,
+                'framework_confirmed' => true,
                 'f_skatt' => (bool) $company->f_skatt,
                 'employer_registered' => true,
             ]);
