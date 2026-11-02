@@ -28,6 +28,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\PayslipPdf;
 use App\Support\Build\SystemDocumentation;
+use App\Support\Build\VersionRecorder;
 use App\Support\Csv;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -334,7 +335,8 @@ final class ArchivePackageBuilder
         $first = true;
 
         AuditLog::query()
-            ->forCompany($company)
+            // The company's own entries and the program versions taken into use (BFNAR 2013:2 p. 9.16; #43).
+            ->where(fn ($query) => $query->where('company_id', $company->id)->orWhere(fn ($query) => $query->whereNull('company_id')->where('action', VersionRecorder::ACTION)))
             ->where('created_at', '>=', $fiscalYear->start_date->startOfDay())
             ->orderBy('id')
             ->each(function (AuditLog $entry) use ($users, $csv, $json, &$first): void {

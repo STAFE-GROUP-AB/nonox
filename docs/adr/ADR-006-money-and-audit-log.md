@@ -74,3 +74,23 @@ Enligt granskning 2026-11-02, juristgranskning återstår (AUD-BOK-9, #44).
   checks the order.
 - **Note for whoever adds a version row:** update `- Version:` and
   `- Datum:` in the header to the new last row, or the test fails.
+
+## Program versions in the audit log (2026-11-02, #43)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (AUD-BOK-8, #43).
+
+- **Rule.** BFNAR 2013:2 p. 9.16 andra stycket with comment: the
+  behandlingshistorik also describes changes to the system that affect how
+  entries are processed and when they were made, e.g. when new program
+  versions are taken into use. It may form part of other
+  räkenskapsinformation and is archived.
+- **Decision.** `VersionRecorder::recordProgram()` writes
+  `system.version_deployed` (company_id and user_id null) when the running
+  `BuildInfo::version()` or commit differs from the last such entry, with
+  version, build, full SHA, build time, the systemdokumentation version and
+  the previous version. It runs with the documentation recorder (#44): after
+  every migrate, from `nonox:build-info`, `nonox:record-version` and hourly.
+  The archive package's Behandlingshistorik includes these entries for every
+  company; other companyless entries (sign-ins) stay out.
+- A local installation without `bootstrap/cache/build.json` records the
+  bare config version (e.g. 0.9) and no SHA.

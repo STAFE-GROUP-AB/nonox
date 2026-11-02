@@ -21,7 +21,8 @@ Varje händelse sparas med vem som gjorde den, tidpunkt, vad det gällde och, n�
 - varje [kontroll av bokföringen](/manual/bokforing/kontroll-av-bokforingen), med resultatet,
 - varje granskad och inläst SIE-fil och varje nedladdad SIE-fil,
 - ändringar av företagets uppgifter, inbjudningar och medlemmar och deras roller,
-- in- och utloggningar.
+- in- och utloggningar,
+- när en ny version av NONOX tas i bruk, med versionsnummer och datum. Den raden gäller alla företag i installationen och följer med i varje företags [arkivpaket](/manual/bokslut/arkivpaket).
 
 Det mesta som bokförs automatiskt – fakturor, betalningar, lön, moms – skrivs också, eftersom det bokförs på samma sätt som det du bokför för hand.
 

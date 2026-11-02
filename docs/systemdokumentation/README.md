@@ -2330,6 +2330,14 @@ Personalliggare och Avtal när de är påslagna.
   och värden före och efter.
 - Tabellen går bara att lägga till i. Databasen själv vägrar ändringar och
   borttagningar.
+- När en ny programversion tas i bruk skrivs en post `system.version_deployed`
+  med version, byggnummer, commit (SHA), byggtid, systemdokumentationens
+  version och föregående version. Den skrivs en gång per ny version eller
+  commit, efter `php artisan migrate`, vid `nonox:build-info`, med
+  `nonox:record-version` och varje timme från schemaläggaren. Posten hör inte
+  till något företag men tas med i varje företags behandlingshistorik i
+  arkivpaketet (BFNAR 2013:2 punkt 9.16 andra stycket). Enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-BOK-8, #43).
 
 ## 7a. Arkivpaket
 
