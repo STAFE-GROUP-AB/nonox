@@ -127,6 +127,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Inleveranser från leverantörer, hela eller i delar, med eller utan koppling till leverantörsfakturan. Plocklistor från order, faktura eller för hand, sorterade efter plats, i mobilen eller som PDF.
 - Inventering per hylla eller hela lagret, där skillnaderna förs in med en orsak. Varje lagerrörelse sparas och kan aldrig ändras.
 - Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförd mot 1460 med ett klick. Rollen Lagerpersonal ser saldon men inga priser.
+- Kassakopplingar (modul, ADR-042) för Zettle och Onslip 360: varje köp sparas en gång och dras från lagret, rader utan artikel väntar på att kopplas, lagerändringar skickas till Zettle som ändringar, artiklarna läggs upp i kassan och varje dag blir ett verifikationsutkast i serie K. Kräver att den som driftar registrerar en egen app hos kassaleverantören (se `.env.example`); öppnas på webbplatsen när det är gjort.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.

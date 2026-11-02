@@ -136,6 +136,14 @@ use App\Modules\Planning\Models\ShiftRequest as PlanningShiftRequest;
 use App\Modules\Planning\Models\Skill as PlanningSkill;
 use App\Modules\Planning\Models\Template as PlanningTemplate;
 use App\Modules\Planning\Models\TemplateShift as PlanningTemplateShift;
+use App\Modules\Pos\Models\PosConnection;
+use App\Modules\Pos\Models\PosFee;
+use App\Modules\Pos\Models\PosLogEntry;
+use App\Modules\Pos\Models\PosProductLink;
+use App\Modules\Pos\Models\PosSale;
+use App\Modules\Pos\Models\PosSaleRow;
+use App\Modules\Pos\Models\PosStockPush;
+use App\Modules\Pos\Models\PosWebhookMessage;
 use App\Modules\StaffLedger\Models\Device as StaffLedgerDevice;
 use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
 use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
@@ -274,6 +282,14 @@ const COMPANY_SCOPED_MODELS = [
     StockCountLine::class => 'inventoryCountLineAttributes',
     StockValuation::class => ['valuation_date' => '2026-12-31', 'method' => 'FIFO', 'cost_value_ore' => 100, 'value_ore' => 100, 'stock_account' => 1460, 'change_account' => 4960, 'lines' => []],
     ArticleImage::class => 'inventoryImageAttributes',
+    PosConnection::class => 'posConnectionAttributes',
+    PosProductLink::class => 'posProductLinkAttributes',
+    PosSale::class => 'posSaleAttributes',
+    PosSaleRow::class => 'posSaleRowAttributes',
+    PosFee::class => 'posFeeAttributes',
+    PosStockPush::class => 'posStockPushAttributes',
+    PosWebhookMessage::class => 'posWebhookMessageAttributes',
+    PosLogEntry::class => 'posLogEntryAttributes',
     InboxMailbox::class => 'inboxMailboxAttributes',
     AllowedSender::class => ['pattern' => '@hemlig-leverantor.example'],
     InboxTemplate::class => 'inboxTemplateAttributes',
@@ -1229,7 +1245,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [VoucherAttachment::class];
+const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
@@ -1392,3 +1408,54 @@ it('lists every model that uses BelongsToCompany', function () {
 
     expect($usingTrait)->toBe($registered, 'Every model using BelongsToCompany must be listed in COMPANY_SCOPED_MODELS.');
 });
+
+function posConnectionAttributes(): array
+{
+    return [
+        'provider' => 'zettle', 'status' => 'ACTIVE', 'external_org_id' => 'hemlig-org-'.random_int(1, 1_000_000),
+        'credentials' => ['access_token' => 'hemlig-token'], 'webhook_token' => Str::random(48),
+        'settings' => [], 'connected_by' => User::factory()->create()->id, 'connected_at' => now(),
+    ];
+}
+
+function posProductLinkAttributes(): array
+{
+    return ['pos_connection_id' => PosConnection::create(posConnectionAttributes())->id, 'article_id' => Article::create(articleAttributes())->id, 'external_product_id' => 'hemlig-produkt'];
+}
+
+function posSaleAttributes(): array
+{
+    return [
+        'pos_connection_id' => PosConnection::create(posConnectionAttributes())->id, 'provider' => 'zettle', 'external_id' => 'hemligt-kop-'.random_int(1, 1_000_000),
+        'source' => 'WEBHOOK', 'sold_at' => now(), 'business_date' => '2026-03-10', 'currency' => 'SEK', 'total_ore' => 12500, 'vat_ore' => 2500,
+        'vat_totals' => ['2500' => ['net' => 10000, 'vat' => 2500]], 'payments' => ['CARD' => 12500], 'payload' => ['hemlig' => true], 'payload_hash' => str_repeat('a', 64),
+    ];
+}
+
+function posSaleRowAttributes(): array
+{
+    return ['pos_sale_id' => PosSale::create(posSaleAttributes())->id, 'line_no' => 1, 'name' => 'Hemlig vara', 'quantity_milli' => 1000, 'status' => 'UNMATCHED'];
+}
+
+function posFeeAttributes(): array
+{
+    return ['pos_connection_id' => PosConnection::create(posConnectionAttributes())->id, 'external_id' => 'hemlig-avgift', 'type' => 'PAYMENT_FEE', 'business_date' => '2026-03-10', 'amount_ore' => 175, 'payload' => []];
+}
+
+function posStockPushAttributes(): array
+{
+    return [
+        'pos_connection_id' => PosConnection::create(posConnectionAttributes())->id, 'stock_movement_id' => StockMovement::create(inventoryMovementAttributes())->id,
+        'article_id' => Article::create(articleAttributes())->id, 'delta_milli' => 1000, 'status' => 'PENDING', 'external_uuid' => (string) Str::uuid(),
+    ];
+}
+
+function posWebhookMessageAttributes(): array
+{
+    return ['pos_connection_id' => PosConnection::create(posConnectionAttributes())->id, 'message_id' => 'hemligt-meddelande', 'event_name' => 'PurchaseCreated', 'body' => '{}'];
+}
+
+function posLogEntryAttributes(): array
+{
+    return ['pos_connection_id' => PosConnection::create(posConnectionAttributes())->id, 'level' => 'info', 'message' => 'Hemlig händelse', 'created_at' => now()];
+}
