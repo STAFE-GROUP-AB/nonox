@@ -464,3 +464,16 @@ finding and the GitHub issue.
   deduction; the floor per payslip rather than per period; FoU-avdrag
   first (7 §) is not built; the 20 % of labour costs aid ceiling (6 b §)
   is not checked.
+
+### A nought in 012 and 013 (AUD-LON-12, #79)
+
+- Skatteverket (agbeskrivning, ruta 012): "Om värdet blir noll (0) efter
+  avdrag ska du fylla i en nolla (0) i ruta 012"; the same for 013, and
+  for 018 "även om värdet av bilförmånen är noll (0) kr" 013 must be
+  filled in. AgiDeclaration records whether an other benefit or a car
+  benefit line (positive value, in the contribution basis) existed for the
+  payee in the month (`hadOtherBenefit`, `hadCarBenefit`, also stored in
+  the submission's individuals); AgiXml writes 012/013 as 0 then, and 013
+  whenever 018 has an amount. Valid under the schema (BELOPP6/7 allow 0).
+- `TODO(legal-verify)`: whether the avgiftsfri variants (132, 133) also
+  want a nought; not written.

@@ -453,3 +453,46 @@ describe('regional support (#78)', function () {
         expect(app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company)['regional_support'])->toBeTrue();
     });
 });
+
+describe('a nought in 012 and 013 (#79)', function () {
+    it('declares 012 as 0 when the employee paid the whole benefit, in a file that follows the schema', function () {
+        $dan = LonSupport::employee($this->owner, $this->company, '19750505');
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        // 10 lunches × 124 kr = 1 240 kr benefit, all paid by the employee: value 0.
+        LonSupport::input($this->owner, $run, $dan, 'KOSTFORMAN_LUNCH', ['quantity' => '10']);
+        LonSupport::input($this->owner, $run, $dan, 'FORMAN_EGENBETALNING', ['amount' => '1 240']);
+        $field = fixAgiField(fixAgiSubmission($this->runs, $this->owner, $this->admin, $this->company, $run));
+
+        expect($field('//agd:IU/agd:SkatteplOvrigaFormanerUlagAG[@faltkod="012"]'))->toBe('0')
+            ->and($field('//agd:IU/agd:SkatteplBilformanUlagAG'))->toBe('');
+    });
+
+    it('declares 013 as 0 when the employee paid the whole car benefit', function () {
+        $dan = LonSupport::employee($this->owner, $this->company, '19750505');
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        LonSupport::input($this->owner, $run, $dan, 'BILFORMAN', ['amount' => '3 000']);
+        LonSupport::input($this->owner, $run, $dan, 'FORMAN_EGENBETALNING', ['amount' => '3 000']);
+        $field = fixAgiField(fixAgiSubmission($this->runs, $this->owner, $this->admin, $this->company, $run));
+
+        expect($field('//agd:IU/agd:SkatteplBilformanUlagAG[@faltkod="013"]'))->toBe('0')
+            ->and($field('//agd:IU/agd:SkatteplOvrigaFormanerUlagAG'))->toBe('');
+    });
+
+    it('writes 013 with a fuel benefit even when the car benefit is 0 (Skatteverket, ruta 018)', function () {
+        $dan = LonSupport::employee($this->owner, $this->company, '19750505');
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        LonSupport::input($this->owner, $run, $dan, 'DRIVMEDELSFORMAN', ['amount' => '1 200']);
+        $field = fixAgiField(fixAgiSubmission($this->runs, $this->owner, $this->admin, $this->company, $run));
+
+        expect($field('//agd:IU/agd:DrivmVidBilformanUlagAG[@faltkod="018"]'))->toBe('1200')
+            ->and($field('//agd:IU/agd:SkatteplBilformanUlagAG[@faltkod="013"]'))->toBe('0');
+    });
+
+    it('leaves 012 and 013 out when there was no benefit', function () {
+        LonSupport::employee($this->owner, $this->company, '19750505');
+        $field = fixAgiField(fixAgiSubmission($this->runs, $this->owner, $this->admin, $this->company, $this->runs->create($this->owner, $this->company, '2026-04')));
+
+        expect($field('//agd:IU/agd:SkatteplOvrigaFormanerUlagAG'))->toBe('')
+            ->and($field('//agd:IU/agd:SkatteplBilformanUlagAG'))->toBe('');
+    });
+});

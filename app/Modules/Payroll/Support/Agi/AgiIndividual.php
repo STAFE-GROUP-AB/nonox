@@ -14,6 +14,12 @@ namespace App\Modules\Payroll\Support\Agi;
  * 275 goes with verksamhetens art in 112 (Skatteverket, ruta 275: "Om du
  * har redovisat i den här rutan ska du också fylla i ruta 112"; enligt
  * granskning 2026-11-02, juristgranskning återstår, AUD-LON-05, #73).
+ *
+ * A benefit that existed in the month is declared even when the employee's
+ * own payment takes its value to 0: "Om värdet blir noll (0) efter avdrag
+ * ska du fylla i en nolla (0) i ruta 012", the same for 013, and 013 always
+ * goes with a fuel benefit in 018 (Skatteverket, agbeskrivning; AUD-LON-12,
+ * #79).
  */
 final readonly class AgiIndividual
 {
@@ -40,6 +46,8 @@ final readonly class AgiIndividual
         public int $freeFuelBenefitKronor = 0,
         public int $earlierFreeKronor = 0,
         public ?string $activityType = null,
+        public bool $hadOtherBenefit = false,
+        public bool $hadCarBenefit = false,
     ) {}
 
     /** @return array<string, int|bool|string> */
@@ -61,6 +69,8 @@ final readonly class AgiIndividual
             'free_fuel_benefit' => $this->freeFuelBenefitKronor,
             'earlier_free' => $this->earlierFreeKronor,
             'activity_type' => (string) $this->activityType,
+            'had_other_benefit' => $this->hadOtherBenefit,
+            'had_car_benefit' => $this->hadCarBenefit,
         ];
     }
 }

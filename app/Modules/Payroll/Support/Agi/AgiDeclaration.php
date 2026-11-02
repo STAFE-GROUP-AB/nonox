@@ -153,6 +153,8 @@ final class AgiDeclaration
     {
         $amounts = ['cash' => 0, 'other' => 0, 'car' => 0, 'fuel' => 0];
         $free = $amounts;
+        // Which benefits existed in the month, also when the employee's own payment takes the value to 0 (ruta 012/013, #79).
+        $had = ['other' => false, 'car' => false];
         $mileage = false;
         $perDiem = false;
         // The payslip that took the year to the 1 000 kr threshold carried the earlier avgiftsfri pay into its basis (SAL 2 kap. 24 § fjärde stycket).
@@ -192,6 +194,10 @@ final class AgiDeclaration
                     $free[$field] += $amount;
 
                     continue;
+                }
+
+                if (isset($had[$field]) && $amount > 0) {
+                    $had[$field] = true;
                 }
 
                 $amounts[$field] += $amount;
@@ -240,6 +246,8 @@ final class AgiDeclaration
             freeFuelBenefitKronor: intdiv($free['fuel'], self::ORE_PER_KRONA),
             earlierFreeKronor: intdiv($earlierMonths, self::ORE_PER_KRONA),
             activityType: $employee->tax_residence === 'NON_RESIDENT_A_SINK' ? $employee->activity_type : null,
+            hadOtherBenefit: $had['other'],
+            hadCarBenefit: $had['car'],
         );
     }
 }

@@ -385,7 +385,7 @@ it('declares a benefit fully paid by the employee as 0 in field 012 (Skatteverke
     $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $run);
 
     expect($field('//agd:IU/agd:SkatteplOvrigaFormanerUlagAG[@faltkod="012"]'))->toBe('0');
-})->todo('AUD-LON-12: AgiXml leaves out zero amounts, also 012 where Skatteverket asks for 0');
+});
 
 it('books the employee\'s own payment for a benefit without leaving a liability on 2890 (BFL 4 kap. 2 §, god redovisningssed)', function () {
     $dan = LonSupport::employee($this->owner, $this->company, '19750505');

@@ -1485,6 +1485,13 @@ lönebeskeden låsta i databasen.
   `TODO(legal-verify)`: att 487 ska vara efter avdraget; golvet och
   avrundningen per lönebesked; ett företag med flera driftställen (här
   gäller inställningen alla anställda).
+- Noll i 012 och 013 (enligt granskning 2026-11-02, juristgranskning
+  återstår, AUD-LON-12, #79): Skatteverket: "Om värdet blir noll (0) efter
+  avdrag ska du fylla i en nolla (0) i ruta 012", detsamma för 013, och 013
+  ska fyllas i med 018 även när bilförmånen är 0. Individuppgiften minns om
+  en övrig förmån eller bilförmån fanns i månaden (i avgiftsunderlaget) och
+  skriver då 012 respektive 013 även när värdet efter egen betalning är 0.
+  Fälten 131–134 för avgiftsfri ersättning skrivs som förut bara med belopp.
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

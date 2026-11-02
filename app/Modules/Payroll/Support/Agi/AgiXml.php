@@ -130,8 +130,8 @@ final class AgiXml
             $iu = $this->individual($root, $employerId, $redovisningsperiod, $entry['payee'], $individual->specificationNumber);
 
             $this->amount($iu, 'KontantErsattningUlagAG', $individual->cashKronor);
-            $this->amount($iu, 'SkatteplOvrigaFormanerUlagAG', $individual->otherBenefitsKronor);
-            $this->amount($iu, 'SkatteplBilformanUlagAG', $individual->carBenefitKronor);
+            $this->amount($iu, 'SkatteplOvrigaFormanerUlagAG', $individual->otherBenefitsKronor, $individual->hadOtherBenefit);
+            $this->amount($iu, 'SkatteplBilformanUlagAG', $individual->carBenefitKronor, $individual->hadCarBenefit || $individual->fuelBenefitKronor > 0);
             $this->amount($iu, 'DrivmVidBilformanUlagAG', $individual->fuelBenefitKronor);
             $this->amount($iu, 'AvrakningAvgiftsfriErs', $individual->earlierFreeKronor);
             $this->amount($iu, 'KontantErsattningEjUlagSA', $individual->freeCashKronor);
@@ -275,9 +275,10 @@ final class AgiXml
         $this->add($parent, 'Epostadress', $contact['email']);
     }
 
-    private function amount(DOMElement $parent, string $name, int $kronor): void
+    /** An amount above 0, or 0 when Skatteverket asks for a nought (012 and 013 for a benefit that existed, #79). */
+    private function amount(DOMElement $parent, string $name, int $kronor, bool $evenWhenZero = false): void
     {
-        if ($kronor > 0) {
+        if ($kronor > 0 || ($evenWhenZero && $kronor === 0)) {
             $this->field($parent, $name, (string) $kronor);
         }
     }
