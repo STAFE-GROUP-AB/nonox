@@ -8,6 +8,7 @@ use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Vat\EuTrade;
 use App\Domain\Vat\VatDeadlines;
 use App\Domain\Vat\VatPeriods;
 use App\Models\BankTransaction;
@@ -131,18 +132,19 @@ final class CompanyOverview
             $reported = VatReport::query()->whereIn('company_id', $ids)->get(['company_id', 'period_start'])
                 ->groupBy('company_id')->map(fn (Collection $rows): array => $rows->map(fn (VatReport $report): string => $report->period_start->toDateString())->all())->all();
             $payroll = $this->payroll(array_values(array_filter($ids, fn (int $id): bool => $this->enabled($id, PayrollModule::KEY))));
+            $euTrade = EuTrade::years($this->yearlyVat($companies));
             $profiles = ClientProfile::query()->whereIn('company_id', $ids)->get()->keyBy('company_id');
             $consultants = DB::table('team_user')->join('users', 'users.id', '=', 'team_user.user_id')
                 ->whereIn('team_user.team_id', $ids)->where('team_user.role', ClientProfile::FIRM_ROLE)
                 ->orderBy('users.name')->get(['team_user.team_id', 'users.id', 'users.name'])
                 ->groupBy('team_id')->map(fn (Collection $rows): array => $rows->mapWithKeys(fn (object $row): array => [(int) $row->id => (string) $row->name])->all())->all();
 
-            $rows = $companies->map(function (Company $company) use ($drafts, $toApprove, $toPay, $overdue, $lastPosted, $years, $reported, $payroll, $today, $profiles, $consultants): array {
+            $rows = $companies->map(function (Company $company) use ($drafts, $toApprove, $toPay, $overdue, $lastPosted, $years, $reported, $payroll, $today, $profiles, $consultants, $euTrade): array {
                 $id = $company->id;
                 /** @var Collection<int, FiscalYear> $companyYears */
                 $companyYears = $years->get($id, collect());
                 $tasks = array_values(array_filter([
-                    $this->task($id, 'vat:prepare', 'vat', ...$this->vat($company, $companyYears, $reported[$id] ?? [], $today)),
+                    $this->task($id, 'vat:prepare', 'vat', ...$this->vat($company, $companyYears, $reported[$id] ?? [], $today, $euTrade)),
                     $this->task($id, 'payroll:agi-submit', 'agi', count($payroll['agi'][$id] ?? []), __('AGI att lämna, äldsta :month', ['month' => $payroll['agi'][$id][0] ?? '']), true, $this->agiDeadline($id, $payroll['agi'][$id][0] ?? null)),
                     $this->task($id, 'fiscal-years:manage', 'fiscal-years', $companyYears->filter(fn (FiscalYear $year): bool => $year->status === FiscalYearStatus::Open && $year->end_date->lessThan($today))->count(), __('Räkenskapsår att stänga'), false),
                     $this->task($id, 'invoices:view', 'invoices', $overdue[$id] ?? 0, __('Förfallna kundfakturor'), true),
@@ -176,14 +178,42 @@ final class CompanyOverview
     }
 
     /**
+     * The companies that report VAT once a year: only their EU trade moves
+     * a deadline.
+     *
+     * @param  Collection<int, Company>  $companies
+     * @return list<int>
+     */
+    private function yearlyVat(Collection $companies): array
+    {
+        return array_values($companies->filter(fn (Company $company): bool => $company->vat_period === VatPeriod::Yearly)->pluck('id')->all());
+    }
+
+    /**
+     * @param  array{start: CarbonImmutable, end: CarbonImmutable}  $period
+     * @param  list<string>  $euTrade  EuTrade::years()
+     */
+    private function vatDeadline(Company $company, array $period, array $euTrade): ?CarbonImmutable
+    {
+        return VatDeadlines::for(
+            $company->vat_period,
+            $period['end'],
+            $company->turnover_over_40_msek,
+            $company->legal_form,
+            in_array(EuTrade::key($company->id, $period['start']->toDateString()), $euTrade, true),
+        );
+    }
+
+    /**
      * VAT periods that have ended without a return in the company's open
      * fiscal years: how many, and the oldest in the label.
      *
      * @param  Collection<int, FiscalYear>  $years
      * @param  array<int, string>  $reported  period start dates
+     * @param  list<string>  $euTrade  EuTrade::years()
      * @return array{0: int, 1: string, 2: bool, 3: ?CarbonImmutable}
      */
-    private function vat(Company $company, Collection $years, array $reported, CarbonImmutable $today): array
+    private function vat(Company $company, Collection $years, array $reported, CarbonImmutable $today, array $euTrade): array
     {
         if (! $company->vat_registered) {
             return [0, '', false, null];
@@ -211,7 +241,7 @@ final class CompanyOverview
             count($missing),
             __('Moms att redovisa, äldsta :from – :to', ['from' => $missing[0]['start']->toDateString(), 'to' => $missing[0]['end']->toDateString()]),
             true,
-            VatDeadlines::for($company->vat_period, $missing[0]['end'], $company->turnover_over_40_msek),
+            $this->vatDeadline($company, $missing[0], $euTrade),
         ];
     }
 
@@ -317,8 +347,9 @@ final class CompanyOverview
                 ->map(fn (PayrollRun $run): string => "{$run->company_id}:{$run->getAttribute('month')}")->all();
             $declared = $payrollIds === [] ? [] : AgiSubmission::query()->whereIn('company_id', $payrollIds)->whereIn('status', AgiSubmission::REPORTED)
                 ->select('company_id', 'period')->distinct()->get()->map(fn (AgiSubmission $submission): string => "{$submission->company_id}:{$submission->period}")->all();
+            $euTrade = EuTrade::years($this->yearlyVat($companies));
 
-            $rows = $companies->map(function (Company $company) use ($months, $posted, $postedUntil, $bank, $hasBank, $receivables, $years, $reported, $paid, $declared, $today, $payrollIds): array {
+            $rows = $companies->map(function (Company $company) use ($months, $posted, $postedUntil, $bank, $hasBank, $receivables, $years, $reported, $paid, $declared, $today, $payrollIds, $euTrade): array {
                 $id = $company->id;
                 $seesLedger = $this->may($id, 'reports:view');
                 $seesInvoices = $this->may($id, 'invoices:view');
@@ -346,7 +377,7 @@ final class CompanyOverview
                     $owed += $receivables["{$id}:{$month}"] ?? 0;
 
                     $period = $vatPeriods[$month] ?? null;
-                    $vatDue = $period === null ? null : VatDeadlines::for($company->vat_period, $period['end'], $company->turnover_over_40_msek);
+                    $vatDue = $period === null ? null : $this->vatDeadline($company, $period, $euTrade);
                     $agiDue = $seesPayroll && in_array("{$id}:{$month}", $paid, true) ? $this->agiDeadline($id, $month) : null;
                     $monthEnd = CarbonImmutable::parse("{$month}-01")->endOfMonth()->startOfDay();
 

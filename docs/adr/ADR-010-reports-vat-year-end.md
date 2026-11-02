@@ -64,6 +64,16 @@
   together with the voucher. A period is posted once. VAT vouchers are left
   out when a period is calculated, so the report reads the same before and
   after; if something is posted in the period later, the page says so.
+- **Deadlines** (`VatDeadlines`): month and quarter per SFL 26 kap. 26 §;
+  yearly VAT (#60) per 33, 33 a and 33 b §§ from the legal form, EU trade in
+  the year (`EuTrade`: a posted row on an account feeding box 20, 21, 35,
+  37, 38 or 39, one query for many companies) and electronic filing
+  (assumed, since the return is filed in Skatteverket's e-service): sole
+  trader 12 May the year after; other legal persons by the fiscal year's
+  last month as Skatteverket groups 33 b §; HB/KB and EU trade the 26th of
+  the second month (27 December). Not handled: 33 c § decisions,
+  byråanstånd, dödsbon, juridiska personer without an income tax return.
+  Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-9).
 - **Locking**: after the VAT is declared the period can be locked
   (`companies.locked_until_date`, permission `periods:lock`). A lock only
   moves forward.

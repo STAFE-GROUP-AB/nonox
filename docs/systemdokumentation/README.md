@@ -71,7 +71,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   eller den 26:e i månaden efter (den 27:e i december) för företag med
   omsättning över 40 miljoner kronor, vilket anges i företagets inställningar;
   kvartalsmoms den 12:e i andra månaden efter kvartalet (den 17:e i augusti).
-  En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
+  Helårsmoms enligt SFL 26 kap. 33, 33 a och 33 b §§: enskild firma den 12
+  maj året efter; aktiebolag, ekonomisk och ideell förening och stiftelse
+  efter räkenskapsårets sista månad och digital inlämning (januari–april 12
+  december, maj–juni 17 januari, juli–augusti 12 april, september–december
+  17 augusti); handels- och kommanditbolag och alla med EU-handel under året
+  den 26:e i andra månaden efter året (den 27:e i december). EU-handel läses
+  ur bokföringen: en bokförd rad på ett konto till ruta 20, 21, 35, 38 eller
+  39 (enligt granskning 2026-11-02, juristgranskning återstår, AUD-MOMS-9,
+  #60). En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
   kommer från den kontrollerade regeln `agi.deadlines`; utan kontrollerad
   regel visas ingen dag.
 - Fliken Månad för månad (Byråvy) visar alla företag för en vald månad,

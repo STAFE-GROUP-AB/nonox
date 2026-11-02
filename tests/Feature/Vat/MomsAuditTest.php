@@ -27,6 +27,7 @@ use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
 use App\Actions\Payables\SaveSupplierInvoice;
 use App\Actions\Vat\SettleVat;
+use App\Domain\Company\LegalForm;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Vat\EskdFile;
@@ -339,8 +340,11 @@ it('gives the deadlines Skatteverket publishes, moved to the next weekday', func
 ]);
 
 it('gives the yearly deadline (12 maj / 26 feb with EU trade for enskild firma)', function () {
-    expect(VatDeadlines::for(VatPeriod::Yearly, CarbonImmutable::parse('2026-12-31'), false)?->toDateString())->toBe('2027-05-12');
-})->todo('AUD-MOMS-9: VatDeadlines returns null for yearly VAT; Skatteverket gives 12 maj (EF utan EU-handel), 26 feb (EF med EU-handel) and the 26th of the second month (AB med EU-handel).');
+    // SFL 26 kap. 33 a §; with EU trade 33 § (AUD-MOMS-9, #60). More cases in tests/Unit/Vat/VatDeadlinesTest.php.
+    expect(VatDeadlines::for(VatPeriod::Yearly, CarbonImmutable::parse('2026-12-31'), false, LegalForm::Ef)?->toDateString())->toBe('2027-05-12')
+        ->and(VatDeadlines::for(VatPeriod::Yearly, CarbonImmutable::parse('2026-12-31'), false, LegalForm::Ef, euTrade: true)?->toDateString())->toBe('2027-02-26')
+        ->and(VatDeadlines::for(VatPeriod::Yearly, CarbonImmutable::parse('2026-12-31'), false, LegalForm::Ab, euTrade: true)?->toDateString())->toBe('2027-02-26');
+});
 
 it('keeps vilande moms out of the declaration and the settlement', function () {
     // Output VAT parked on 2618 until payment (e.g. kontantmetoden a-conto) is not yet due.

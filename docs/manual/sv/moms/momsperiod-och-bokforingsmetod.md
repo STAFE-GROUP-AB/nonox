@@ -65,7 +65,18 @@ Med kontantmetoden visas på en registrerad leverantörsfaktura **Vid betalning 
 Inställningen går att ändra, men den påverkar bara fakturor som bokförs efter bytet. Om och när ett företag får byta metod avgör reglerna, inte NONOX. Prata med din redovisningskonsult först.
 
 **Vilka deklarationsdagar gäller för oss?**
-Översikten visar sista dag för månads- och kvartalsmoms. Kryssrutan för omsättning över 40 miljoner kronor ändrar vilka dagar som visas. För helårsmoms visas ingen dag.
+Översikten visar sista dag för alla momsperioder. Kryssrutan för omsättning över 40 miljoner kronor ändrar dagarna för månadsmoms. För helårsmoms beror dagen på bolagsformen och på om företaget har haft EU-handel under året:
+
+| Företag | Sista dag |
+|---|---|
+| Enskild firma utan EU-handel | 12 maj året efter |
+| Aktiebolag, ekonomisk förening, ideell förening och stiftelse utan EU-handel | Efter räkenskapsårets sista månad: januari–april 12 december, maj–juni 17 januari, juli–augusti 12 april, september–december 17 augusti |
+| Handelsbolag och kommanditbolag, och alla med EU-handel | Den 26:e i andra månaden efter året (den 27:e i december) – efter kalenderår den 26 februari |
+
+Dagarna för aktiebolag och föreningar gäller när deklarationen lämnas digitalt. EU-handel betyder här att något har bokförts på ett konto för inköp eller försäljning av varor eller tjänster med andra EU-länder (rutorna 20, 21, 35, 38 och 39). En dag som infaller på en helg flyttas till nästa vardag.
+
+> [!NOTE]
+> Har din deklarationshjälp byråanstånd, eller har Skatteverket beslutat om en annan dag, gäller den dagen. Det ser inte NONOX. Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-9, #60).
 
 ## Läs också
 

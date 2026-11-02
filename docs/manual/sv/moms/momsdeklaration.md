@@ -81,7 +81,7 @@ Momsen var redan bokförd när någon bokförde mer i perioden. Rutorna på sida
 Antingen är perioden redan bokförd, eller så finns det ingen moms att redovisa i perioden, eller så saknar du rätt att bokföra.
 
 **När ska deklarationen vara inne?**
-För månads- och kvartalsmoms visar översikten momsen för den period som står på tur och sista dagen att deklarera och betala den. För helårsmoms beror dagen på bolagsform, EU-handel och hur inkomstdeklarationen lämnas, så den visas inte. Kontrollera med Skatteverket.
+Översikten visar momsen för den period som står på tur och sista dagen att deklarera och betala den. För helårsmoms beror dagen på bolagsform och EU-handel under året. Läs [Momsperiod och bokföringsmetod](/manual/moms/momsperiod-och-bokforingsmetod).
 
 **Påverkar momsen bokslutet?**
 Ja. Bokslutets checklista kräver att alla momsperioder som slutar i året är bokförda. Läs [Checklistan för bokslutet](/manual/bokslut/checklistan).
