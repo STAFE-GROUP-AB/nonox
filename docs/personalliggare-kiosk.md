@@ -41,7 +41,7 @@ varje kiosk hör till ett enda företag.
    personen har samtyckt. Fotot är frivilligt och kan tas bort när som helst.
 6. Skriv ut **QR-kortet** om personen vill checka in med QR-kod, eller låt
    personen öppna **Min incheckning** i mobilen (kräver en inloggning med
-   rollen *Personal i personalliggaren*).
+   rollen *Personal i personalliggaren*, *Anställd* eller *Schemaläggare*).
 7. Markera minst en person som **Chef**. Chefens kod öppnar
    kontrollbesöksvyn på kiosken.
 

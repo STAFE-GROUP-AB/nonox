@@ -31,6 +31,8 @@ dataset('roles', [
     'auditor' => ['auditor', ['view']],
     'staff ledger manager' => ['staff_ledger_manager', ['view', 'manage', 'sensitive', 'control']],
     'staff ledger staff' => ['staff_ledger_staff', ['self']],
+    'employee' => ['employee', ['self']],
+    'scheduler' => ['scheduler', ['self']],
 ]);
 
 it('allows and denies per role', function (string $role, array $allowed) {

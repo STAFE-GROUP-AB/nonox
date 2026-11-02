@@ -87,6 +87,9 @@ final class StaffLedgerModule implements Module, ProvidesTodos
             'auditor' => ['staff-ledger:view'],
             'staff_ledger_manager' => self::MANAGER,
             'staff_ledger_staff' => ['staff-ledger:self'],
+            // A person has one role per company: employees and schedulers check in from their own phone too.
+            'employee' => ['staff-ledger:self'],
+            'scheduler' => ['staff-ledger:self'],
         ];
     }
 

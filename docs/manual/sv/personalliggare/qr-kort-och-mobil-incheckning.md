@@ -36,7 +36,7 @@ Med mobil incheckning öppnar personen **Min incheckning** i NONOX i sin mobil o
 1. Gå till **Personalliggare → Lokaler och kiosker** och välj **Ändra** på lokalen.
 2. Kryssa i **Mobil med platskontroll (kräver koordinater)**.
 3. Fyll i **Latitud**, **Longitud** och **Radie i meter**, och välj **Spara**.
-4. Bjud in personen till företaget med rollen **Personal i personalliggaren**. Se [Bjud in en användare](/manual/kom-igang/bjud-in-en-anvandare).
+4. Bjud in personen till företaget med rollen **Personal i personalliggaren**, **Anställd** eller **Schemaläggare**. Alla tre kan checka in i mobilen. Se [Bjud in en användare](/manual/kom-igang/bjud-in-en-anvandare).
 5. När personen har gått med: gå till **Personalliggare → Personal**, välj **Ändra** på personen och välj hens användare under **Inloggning (för mobil incheckning)**.
 6. Välj **Spara**.
 
@@ -60,11 +60,11 @@ NONOX sparar aldrig var personen var, bara avståndet till lokalen i meter.
 |---|---|
 | Namn och kod på kiosken | En kod under **Personal**. |
 | QR-kort på kiosken | Att QR är påslaget för lokalen. Kortet skrivs ut under **Personal**. |
-| QR-kod i mobilen | En inloggning med rollen **Personal i personalliggaren**, kopplad till personen. |
+| QR-kod i mobilen | En inloggning med rollen **Personal i personalliggaren**, **Anställd** eller **Schemaläggare**, kopplad till personen. |
 | Mobil incheckning | Samma inloggning, och mobil incheckning påslagen för lokalen. |
 
 > [!NOTE]
-> Den som har rollen **Anställd** och använder Min sida för lönebesked kan inte öppna **Min incheckning**. En person har en roll per företag. Anställda med Min sida checkar därför in med kod eller utskrivet QR-kort på kiosken.
+> En person har en roll per företag. Därför kan även rollerna **Anställd** (Min sida i Lön) och **Schemaläggare** (Planering) öppna **Min incheckning**. Samma inloggning ger då lönebesked och schema på Min sida och incheckning i mobilen.
 
 ## Läs också
 

@@ -1267,7 +1267,11 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   kan inte kontrolleras av servern. Varje sådan post markeras därför
   "Position uppgiven av telefonen, ej verifierad" i liggaren och i
   kontrollbesökets export, och försöken begränsas till tio per person och
-  tio minuter.
+  tio minuter. Behörigheten `staff-ledger:self` har rollerna Personal i
+  personalliggaren, Anställd (Lön) och Schemaläggare (Planering), eftersom
+  en person har en roll per företag (beslut 2026-11-02, issue #15).
+  Incheckningen kräver dessutom att inloggningen är kopplad till personen
+  och att lokalen har mobil incheckning påslagen.
 - **Kod (PIN):** koden sparas aldrig, bara ett kontrollvärde (PBKDF2) som
   kiosken kan pröva mot utan nät. Fem fel låser personen på kiosken i fem
   minuter.
@@ -1915,3 +1919,4 @@ Personalliggare och Avtal när de är påslagna.
 | 0.63 | 2026-11-01 | Företagsuppgifter från Bolagsverket (ADR-035): namn, adress, postnummer, ort och företagsform hämtas med organisationsnumret i formulären för nytt företag, företagsinställningar, kunder och leverantörer. Numret kontrolleras med Luhn först, svaret är ett förslag som bara fyller tomma fält och ändrar inget användaren skrivit utan att fråga, och inget sparas förrän formuläret sparas. VIES-kontroll av leverantörens momsregistreringsnummer, loggad i behandlingshistoriken. Ändrar ingen bokföring. |
 | 0.64 | 2026-11-01 | Manualen för användare under `/manual` (ADR-036): artiklar i Markdown från `docs/manual/sv`, sök i webbläsaren och en knapp **Hjälp** i appen och på Min sida som öppnar artikeln om sidan man står på. Visas när de publika sidorna är påslagna. Ändrar ingen bokföring: sidorna läser bara textfilerna. |
 | 0.65 | 2026-11-02 | Modulen Planering (5i, ADR-037): schema med publicering, Min sida, attest av tid mot personalliggaren och löneunderlag. Lönekörningen betalar nu också godkända tidrapporter på tilläggsarter i timmar (OB, övertid, mertid), även för månadsavlönade, prissatta dag för dag av Avtal. Avtalets dagtyper sätter klockslag som väggklocka, så OB-gränserna är rätt på dagarna då sommartiden ändras. |
+| 0.66 | 2026-11-02 | Personalliggare: rollerna Anställd och Schemaläggare får checka in och ut i sin egen mobil (`staff-ledger:self`), på lokaler med mobil incheckning och med inloggningen kopplad till personen. Ändrar ingen bokföring. |
