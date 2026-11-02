@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $quantity_milli
  * @property ?int $picked_milli
  * @property int $position
+ * @property ?string $short_reason
  */
 class PickListLine extends Model
 {
@@ -32,7 +33,22 @@ class PickListLine extends Model
         'quantity_milli',
         'picked_milli',
         'position',
+        'short_reason',
     ];
+
+    /** Why less than asked was picked (the scanning app, ADR-040). */
+    public const array SHORT_REASONS = ['MISSING', 'DAMAGED', 'WRONG_LOCATION', 'OTHER'];
+
+    /** @return array<string, string> */
+    public static function shortReasonLabels(): array
+    {
+        return [
+            'MISSING' => __('Saknas på platsen'),
+            'DAMAGED' => __('Skadad vara'),
+            'WRONG_LOCATION' => __('Ligger på fel plats'),
+            'OTHER' => __('Annat'),
+        ];
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

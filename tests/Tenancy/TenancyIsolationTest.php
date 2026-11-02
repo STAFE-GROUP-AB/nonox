@@ -85,6 +85,7 @@ use App\Modules\Inbox\Models\InboxTemplate;
 use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\PickListLine;
+use App\Modules\Inventory\Models\ScanOperation;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockCountLine;
 use App\Modules\Inventory\Models\StockLevel;
@@ -265,6 +266,7 @@ const COMPANY_SCOPED_MODELS = [
     PlanningAttestation::class => 'planningAttestationAttributes',
     StockLocation::class => 'inventoryLocationAttributes',
     StockMovement::class => 'inventoryMovementAttributes',
+    ScanOperation::class => 'inventoryScanOperationAttributes',
     StockLevel::class => 'inventoryLevelAttributes',
     StockReceipt::class => 'inventoryReceiptAttributes',
     StockReceiptLine::class => 'inventoryReceiptLineAttributes',
@@ -1186,6 +1188,11 @@ function inventoryCountAttributes(): array
 function inventoryImageAttributes(): array
 {
     return ['article_id' => Article::create(articleAttributes())->id, 'path' => 'bilder/hemlig.webp', 'position' => 0, 'alt' => 'Hemlig bild'];
+}
+
+function inventoryScanOperationAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'uuid' => (string) Str::uuid(), 'kind' => 'move', 'status' => 'OK', 'result' => ['status' => 'OK']];
 }
 
 function inventoryMovementAttributes(): array

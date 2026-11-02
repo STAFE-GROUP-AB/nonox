@@ -100,9 +100,14 @@ class PickLists
         return CurrentCompany::run($company, fn (): PickList => $this->make($user, $company, $wanted, null, null, null, $note));
     }
 
-    public function pick(User $user, Company $company, PickListLine $line, string $picked): PickListLine
+    /** A short pick may carry its reason (PickListLine::SHORT_REASONS). */
+    public function pick(User $user, Company $company, PickListLine $line, string $picked, ?string $shortReason = null): PickListLine
     {
         $this->guard($user, $company, 'count');
+
+        if ($shortReason !== null && $shortReason !== '' && ! in_array($shortReason, PickListLine::SHORT_REASONS, true)) {
+            throw ValidationException::withMessages(['reason' => __('Välj en orsak i listan.')]);
+        }
 
         if (PickList::query()->whereKey($line->pick_list_id)->value('status') !== PickList::OPEN) {
             throw ValidationException::withMessages(['picked' => __('Plocklistan är redan klar.')]);
@@ -118,8 +123,8 @@ class PickLists
             throw ValidationException::withMessages(['picked' => __('Antalet kan inte vara negativt.')]);
         }
 
-        return CurrentCompany::run($company, function () use ($line, $quantity): PickListLine {
-            $line->update(['picked_milli' => $quantity]);
+        return CurrentCompany::run($company, function () use ($line, $quantity, $shortReason): PickListLine {
+            $line->update(['picked_milli' => $quantity, 'short_reason' => $quantity < $line->quantity_milli && $shortReason !== '' ? $shortReason : null]);
 
             return $line;
         });

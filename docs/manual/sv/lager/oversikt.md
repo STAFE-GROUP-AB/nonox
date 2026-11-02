@@ -36,6 +36,7 @@ Under **Lager → Översikt** ser du:
 - [Plocklista](/manual/lager/plocklista) – hämta varor till en order eller faktura.
 - [Inventering](/manual/lager/inventering) – räkna det som finns på hyllan.
 - [Lagervärde vid bokslut](/manual/lager/lagervarde-vid-bokslut) – underlaget för varulagret och lagerförändringen.
+- [Skanna med mobilen](/manual/lager/skanna) – ta emot, plocka, flytta och inventera med telefonen, även utan nät.
 - [Roller och behörigheter](/manual/lager/roller-och-behorigheter) – vem som får göra vad.
 
 > [!NOTE]
