@@ -73,7 +73,7 @@ function momsAuditAccount(int $number, string $name, string $type): void
 /** @param  array<string, mixed>  $attributes */
 function momsAuditCustomer(User $user, Company $company, array $attributes): Customer
 {
-    return app(SaveCustomer::class)($user, $company, [...$attributes, 'payment_terms_days' => 30]);
+    return app(SaveCustomer::class)($user, $company, ['address_line1' => 'Testgatan 1', 'postal_code' => '111 22', 'city' => 'Stockholm', ...$attributes, 'payment_terms_days' => 30]);
 }
 
 /** @param  list<array<string, mixed>>  $rows */

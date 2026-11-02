@@ -20,7 +20,7 @@ Kundregistret är listan över dem du fakturerar. Uppgifterna du skriver här ha
 4. Är kunden en privatperson fyller du i **Personnummer (privatperson)** i stället för organisationsnummer. Personnumret behövs för ROT- och RUT-avdrag.
 5. Skriv **E-post för fakturor**. Dit föreslås fakturan gå när du skickar den.
 6. Kontrollera **Betalningsvillkor, dagar**. Det är 30 dagar från början och kan vara mellan 0 och 365.
-7. Fyll i adress, **Postnummer**, **Ort** och **Land (landskod, t.ex. SE, DE, US)**. Landet skrivs som en kod med två bokstäver.
+7. Fyll i adress, **Postnummer**, **Ort** och **Land (landskod, t.ex. SE, DE, US)**. Landet skrivs som en kod med två bokstäver. Ett företag behöver adressen för fakturor över 4 000 kronor och för alla fakturor till andra EU-länder; annars går fakturan inte att skapa.
 8. Välj under **Försäljning utomlands** om kunden finns i ett annat land, och bocka i **Omvänd betalningsskyldighet för byggtjänster** om kunden är ett byggföretag som själv redovisar momsen. Läs mer längre ned.
 9. Tryck på **Spara**. Du ser meddelandet *Kund 1001 Café Hörnet är tillagd.*
 

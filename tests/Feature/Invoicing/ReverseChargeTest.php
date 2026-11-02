@@ -27,7 +27,7 @@ beforeEach(function () {
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
     $this->builder = app(SaveCustomer::class)($this->owner, $this->company, [
-        'name' => 'Byggfirman AB', 'org_number' => '5563343689', 'vat_number' => 'SE556334368901',
+        'name' => 'Byggfirman AB', 'org_number' => '5563343689', 'vat_number' => 'SE556334368901', 'address_line1' => 'Testgatan 1', 'postal_code' => '111 22', 'city' => 'Stockholm',
         'payment_terms_days' => 30, 'reverse_charge_construction' => true,
     ]);
 });

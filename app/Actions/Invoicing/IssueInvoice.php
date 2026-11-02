@@ -9,6 +9,7 @@ use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\ForeignSale;
+use App\Domain\Invoicing\FullInvoice;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
@@ -82,6 +83,11 @@ class IssueInvoice
 
             if (! $invoice->isCredit()) {
                 $this->ensureVatAllowed($company, $invoice);
+            }
+
+            // ML 17 kap. 24 § p. 6: a full invoice carries the buyer's full name and address (#55).
+            if (FullInvoice::requiresBuyerAddress($company, $invoice, $customer) && ! FullInvoice::hasFullAddress($customer)) {
+                throw ValidationException::withMessages(['invoice' => __(':customer saknar fullständig adress. En faktura till ett företag över :limit, eller till ett företag i ett annat EU-land, ska ha köparens namn och adress (17 kap. 24 § mervärdesskattelagen). Fyll i gatuadress, postnummer och ort på kunden.', ['customer' => $customer->name, 'limit' => Money::ofOre(FullInvoice::SIMPLIFIED_LIMIT_ORE)->format()])]);
             }
 
             if ($invoice->reverse_charge) {

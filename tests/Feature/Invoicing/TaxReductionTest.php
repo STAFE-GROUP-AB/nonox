@@ -25,7 +25,7 @@ beforeEach(function () {
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
     $this->household = app(SaveCustomer::class)($this->owner, $this->company, [
-        'name' => 'Anna Andersson', 'personal_number' => '19121212-1212', 'payment_terms_days' => 30,
+        'name' => 'Anna Andersson', 'personal_number' => '19121212-1212', 'payment_terms_days' => 30, 'address_line1' => 'Testgatan 1', 'postal_code' => '111 22', 'city' => 'Stockholm',
     ]);
 });
 

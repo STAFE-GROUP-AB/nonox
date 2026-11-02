@@ -6032,5 +6032,6 @@
     "Utanför momsen, till exempel utlägg": "Outside the scope of VAT, for example an outlay",
     "Skäl till 0 % moms, rad": "Reason for 0 % VAT, row",
     "Utan moms": "Without VAT",
-    "Underlag :base.": "Base :base."
+    "Underlag :base.": "Base :base.",
+    ":customer saknar fullständig adress. En faktura till ett företag över :limit, eller till ett företag i ett annat EU-land, ska ha köparens namn och adress (17 kap. 24 § mervärdesskattelagen). Fyll i gatuadress, postnummer och ort på kunden.": ":customer has no complete address. An invoice to a business over :limit, or to a business in another EU country, must carry the buyer's name and address (Chapter 17, Section 24 of the VAT Act). Fill in the street address, postcode and city on the customer."
 }

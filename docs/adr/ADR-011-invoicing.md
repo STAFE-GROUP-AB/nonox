@@ -96,6 +96,16 @@
   table; the reasons are an enum with the texts. A company not registered
   for VAT whose own exemption is printed (#51) needs no row reason.
   TODO(legal-verify): the wording, and articles do not yet carry a reason.
+- **The buyer's address** (2026-11-02, AUD-FAKT-7, #55). Issuing refuses a
+  full invoice whose customer lacks street, postcode or city
+  (`FullInvoice`): a buyer with an organisation or VAT number, a reverse
+  charge or EU business sale, or a ROT invoice, when the total including
+  VAT (and the deduction) is over 4 000 kr (ML 17 kap. 24 § p. 6, 26 § p. 1),
+  or whatever the amount for an EU supply of goods or a supply where the
+  buyer in another EU country is liable (27 §). Credit notes and a company
+  under the small-business exemption may use simplified invoices (26 §
+  p. 3-4). TODO(legal-verify): a customer without any number counts as a
+  private person; ROT counts as construction.
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

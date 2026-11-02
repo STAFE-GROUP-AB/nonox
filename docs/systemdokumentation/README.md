@@ -536,6 +536,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   undantagstext sparad när den skapas (`vat_exemption_text`, 17 kap. 24 §
   p. 13 och 28 § p. 6) och PDF:en skriver ut den (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-5, #51)).
+- Köparens adress: en fullständig faktura (över 4 000 kr inklusive moms,
+  eller alltid vid varuförsäljning till ett annat EU-land och tjänster där
+  köparen i ett annat EU-land är skyldig att betala momsen) till ett
+  företag (organisations- eller momsnummer, omvänd betalningsskyldighet)
+  eller med ROT-avdrag kan inte skapas utan kundens gatuadress, postnummer
+  och ort (ML 17 kap. 24 § p. 6, 26–27 §§). Kreditfakturor och företag med
+  undantag för liten omsättning får använda förenklad faktura (26 § p. 3–4)
+  (enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-7,
+  #55)).
 - En rad som säljs i Sverige med 0 % moms (inte omvänd betalningsskyldighet
   eller försäljning utomlands) får ett skäl (`invoice_rows.vat_exemption`):
   en bestämmelse i ML 10 kap. (sjukvård 6 §, social omsorg 14 §,

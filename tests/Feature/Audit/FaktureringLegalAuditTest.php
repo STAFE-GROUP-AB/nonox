@@ -301,7 +301,7 @@ it('ML 17 kap. 24 § p. 6: an invoice to a business needs the buyer\'s full addr
     expect(fn () => app(IssueInvoice::class)($this->owner, audFaktDraft($noAddress, [
         ['description' => 'Konsulttimme', 'quantity' => '50', 'price' => '1 000', 'vat_rate' => 2500],
     ])))->toThrow(ValidationException::class);
-})->todo('AUD-FAKT-7: a full invoice (over 4 000 kr, ML 17 kap. 26 §) is issued to a business without the buyer\'s address');
+}); // AUD-FAKT-7 fixed (#55): a full invoice to a business needs the buyer's address.
 
 it('ML 17 kap. 24 § p. 13: a domestic row at 0 % must refer to the exemption', function () {
     $invoice = app(IssueInvoice::class)($this->owner, audFaktDraft($this->customer, [
