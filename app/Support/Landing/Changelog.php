@@ -258,6 +258,11 @@ final class Changelog
                 continue;
             }
 
+            // A phase of work outside the code reads as a story, oldest first; everything else newest first.
+            if ($phaseEntries !== [] && array_filter($phaseEntries, fn (array $entry): bool => ! self::isPeriod($entry)) === []) {
+                $phaseEntries = array_reverse($phaseEntries);
+            }
+
             $result[] = ['phase' => $phase, 'count' => count($phaseEntries), 'months' => self::byMonth($phaseEntries)];
         }
 

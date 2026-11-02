@@ -18,7 +18,7 @@
     {
       "id": "forberedelser",
       "namn": "Förberedelser",
-      "beskrivning": "Mellan grunden och bygget i full skala gjordes arbetet utanför koden: arbetssättet och agenterna utformades, funktionslistan togs fram, namn, sidor och information skrevs, och vi pratade med caféer, restauranger och andra företag. De exakta datumen finns inte nedskrivna, så posterna visar perioden.",
+      "beskrivning": "Mellan grunden och bygget i full skala gjordes arbetet utanför koden: samtal med caféer, restauranger och andra företag, funktionslistan, arbetssättet och agenterna, namn, sidor och information, och planen för bygget. Arbetet är inte daterat på dagen, så posterna visar månaden.",
       "fran": "2026-02-01",
       "till": "2026-10-28"
     },
@@ -1764,39 +1764,19 @@
       "version": "623d435"
     },
     {
-      "id": "forberedelser-5-samtal-med-foretag",
-      "datum": "2026-02-01T00:00:00+01:00",
-      "period": "februari–september 2026",
+      "id": "forberedelser-1-plan-for-bygget",
+      "datum": "2026-09-01T00:00:00+02:00",
+      "period": "september 2026",
       "utanfor_koden": true,
-      "rubrik": "Samtal med caféer, restauranger och andra företag",
-      "beskrivning": "Vi pratade med caféer, restauranger och andra små företag om vad de behöver av bokföring, kassa, personalliggare, schema och lön. Samtalen styr vilka funktioner som kommer först.",
-      "typ": "Utredning",
-      "omrade": "Kvalitet"
-    },
-    {
-      "id": "forberedelser-4-funktionslistan",
-      "datum": "2026-02-01T00:00:00+01:00",
-      "period": "februari–september 2026",
-      "utanfor_koden": true,
-      "rubrik": "Funktionslistan",
-      "beskrivning": "Vi listade vilka funktioner svenska småföretag och redovisningsbyråer behöver och jämförde med vad de etablerade programmen erbjuder. Listan blev underlaget för färdplanen.",
-      "typ": "Utredning",
-      "omrade": "Kvalitet"
-    },
-    {
-      "id": "forberedelser-3-agenterna-och-arbetssattet",
-      "datum": "2026-02-01T00:00:00+01:00",
-      "period": "februari–september 2026",
-      "utanfor_koden": true,
-      "rubrik": "Agenterna och arbetssättet",
-      "beskrivning": "Vi bestämde roller och namn för de agenter som bygger, granskar mot lagen och kontrollerar varandras arbete. Vi bestämde också hur människor styr arbetet och godkänner det innan något levereras.",
+      "rubrik": "Plan för bygget",
+      "beskrivning": "Vi bestämde i vilken ordning modulerna skulle byggas och hur arkitekturen skulle se ut inför bygget i full skala.",
       "typ": "Utredning",
       "omrade": "Kvalitet"
     },
     {
       "id": "forberedelser-2-namn-sidor-och-information",
-      "datum": "2026-02-01T00:00:00+01:00",
-      "period": "februari–september 2026",
+      "datum": "2026-08-01T00:00:00+02:00",
+      "period": "augusti 2026",
       "utanfor_koden": true,
       "rubrik": "Namn, sidor och information",
       "beskrivning": "Vi valde produktens namn och skrev innehållet till webbplatsen och dess sidor.",
@@ -1804,12 +1784,32 @@
       "omrade": "Kvalitet"
     },
     {
-      "id": "forberedelser-1-plan-for-bygget",
-      "datum": "2026-02-01T00:00:00+01:00",
-      "period": "februari–september 2026",
+      "id": "forberedelser-3-agenterna-och-arbetssattet",
+      "datum": "2026-04-01T00:00:00+02:00",
+      "period": "april–maj 2026",
       "utanfor_koden": true,
-      "rubrik": "Plan för bygget",
-      "beskrivning": "Vi bestämde i vilken ordning modulerna skulle byggas och hur arkitekturen skulle se ut inför bygget i full skala.",
+      "rubrik": "Agenterna och arbetssättet",
+      "beskrivning": "Vi bestämde roller och namn för de agenter som bygger, granskar mot lagen och kontrollerar varandras arbete. Vi bestämde också hur människor styr arbetet och godkänner det innan något levereras.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet"
+    },
+    {
+      "id": "forberedelser-4-funktionslistan",
+      "datum": "2026-03-01T00:00:00+01:00",
+      "period": "mars 2026",
+      "utanfor_koden": true,
+      "rubrik": "Funktionslistan",
+      "beskrivning": "Vi listade vilka funktioner svenska småföretag och redovisningsbyråer behöver och jämförde med vad de etablerade programmen erbjuder. Listan blev underlaget för färdplanen.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet"
+    },
+    {
+      "id": "forberedelser-5-samtal-med-foretag",
+      "datum": "2026-02-01T00:00:00+01:00",
+      "period": "februari 2026",
+      "utanfor_koden": true,
+      "rubrik": "Samtal med caféer, restauranger och andra företag",
+      "beskrivning": "Vi pratade med caféer, restauranger och andra små företag om vad de behöver av bokföring, kassa, personalliggare, schema och lön. Samtalen styr vilka funktioner som kommer först.",
       "typ": "Utredning",
       "omrade": "Kvalitet"
     },

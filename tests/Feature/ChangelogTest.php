@@ -152,10 +152,10 @@ it('has the preparation work outside the code as period entries', function () {
     expect($period)->toHaveCount(5);
 
     foreach ($period as $entry) {
-        expect($entry['period'])->toBe('februari–september 2026')
+        expect($entry['period'])->toBeIn(['februari 2026', 'mars 2026', 'april–maj 2026', 'augusti 2026', 'september 2026'])
             ->and($entry['utanfor_koden'])->toBeTrue()
             ->and($entry['typ'])->toBe('Utredning')
-            ->and($entry['datum'])->toBe('2026-02-01T00:00:00+01:00');
+            ->and(substr($entry['datum'], 0, 7))->toBeIn(['2026-02', '2026-03', '2026-04', '2026-08', '2026-09']);
     }
 });
 
@@ -186,13 +186,18 @@ it('shows the period of work outside the code, never a made-up date or time', fu
     $html = $this->get('/andringslogg')->assertOk()->getContent();
     $phase = pagePart($html, 'aria-labelledby="fas-forberedelser"', 'aria-labelledby="fas-grund"');
 
-    expect($phase)->toContain('<h3 id="manad-februari-september-2026" class="cl-month">Februari–september 2026 <span>· 5 ändringar</span></h3>')
+    expect($phase)->toContain('<h3 id="manad-februari-2026" class="cl-month">Februari 2026 <span>· 1 ändring</span></h3>')
+        ->and($phase)->toContain('<h3 id="manad-april-maj-2026" class="cl-month">April–maj 2026 <span>· 1 ändring</span></h3>')
+        ->and(strpos($phase, 'Samtal med caféer'))->toBeLessThan(strpos($phase, 'Funktionslistan'))
+        ->and(strpos($phase, 'Funktionslistan'))->toBeLessThan(strpos($phase, 'Agenterna och arbetssättet'))
+        ->and(strpos($phase, 'Namn, sidor och information'))->toBeLessThan(strpos($phase, 'Plan för bygget'))
         ->and(substr_count($phase, 'class="cl-entry"'))->toBe(count($period))
         ->and(substr_count($phase, 'Arbete utanför koden'))->toBe(count($period))
         ->and($phase)->not->toContain('<time')
         ->and($phase)->not->toContain('kl. ')
         ->and($phase)->not->toContain('1 februari 2026</strong>')
-        ->and($html)->not->toContain('2026-02-01T00:00:00+01:00');
+        ->and($html)->not->toContain('2026-02-01T00:00:00+01:00')
+        ->and($html)->not->toContain('2026-09-01T00:00:00+02:00');
 
     foreach ($period as $entry) {
         expect($phase)->toContain('<li id="'.$entry['id'].'" class="cl-entry">')
@@ -246,7 +251,7 @@ it('groups the changes by phase under the background, with the goal first', func
             'aria-labelledby="fas-forberedelser"',
             '1 februari 2026 – 28 oktober 2026',
             'Förberedelser',
-            'De exakta datumen finns inte nedskrivna',
+            'så posterna visar månaden',
             'aria-labelledby="fas-grund"',
             '11 januari 2026',
         ], false)
@@ -278,7 +283,8 @@ it('never shows a month heading without changes', function () {
         }
     }
 
-    foreach (['Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September'] as $quiet) {
+    // The preparation work has its months; the months without any work get no heading.
+    foreach (['April', 'Maj', 'Juni', 'Juli'] as $quiet) {
         expect($html)->not->toContain(">{$quiet} 2026 <span>");
     }
 
