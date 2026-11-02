@@ -6,7 +6,9 @@ namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\RegisterPayment;
+use App\Actions\Invoicing\RegisterRefund;
 use App\Actions\Invoicing\RegisterTaxReductionPayment;
+use App\Actions\Invoicing\RegisterTaxReductionRepayment;
 use App\Actions\Invoicing\SendInvoice;
 use App\Actions\Invoicing\SendReminder;
 use App\Domain\Invoicing\InvoiceBooking;
@@ -58,7 +60,11 @@ class InvoiceActions extends Component
         $this->paidOn = now()->toDateString();
         $this->resetAmounts($invoice);
         $this->taxPaidOn = now()->toDateString();
-        $this->taxAmount = Money::ofOre($invoice->tax_reduction_ore->ore - $invoice->tax_reduction_paid_ore->ore)->format(withCurrency: false);
+        $this->taxAmount = $invoice->taxReductionClaimable()->format(withCurrency: false);
+        $this->repayPaidOn = now()->toDateString();
+        $this->refundPaidOn = now()->toDateString();
+        $this->resetRefund($invoice);
+        $this->repayAmount = $invoice->isCredit() ? $invoice->taxReductionRepaymentLeft()->format(withCurrency: false) : '';
     }
 
     public function send(SendInvoice $send): void
@@ -134,9 +140,55 @@ class InvoiceActions extends Component
         }
 
         $invoice = $register($this->user(), $this->invoice(), $date, $amount);
-        $left = Money::ofOre($invoice->tax_reduction_ore->ore - $invoice->tax_reduction_paid_ore->ore);
+        $left = $invoice->taxReductionClaimable();
         $this->taxAmount = $left->isZero() ? '' : $left->format(withCurrency: false);
         $this->toast(__('Skatteverkets betalning på :amount är registrerad.', ['amount' => $amount->format()]));
+    }
+
+    public string $repayPaidOn = '';
+
+    public string $repayAmount = '';
+
+    public function registerTaxReductionRepayment(RegisterTaxReductionRepayment $register): void
+    {
+        try {
+            $amount = Money::parse($this->repayAmount);
+            $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->repayPaidOn) ?: throw new InvalidArgumentException;
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['repay_amount' => __('Skriv datum och belopp, till exempel 1 250,00.')]);
+        }
+
+        $invoice = $register($this->user(), $this->invoice(), $date, $amount);
+        $left = $invoice->taxReductionRepaymentLeft();
+        $this->repayAmount = $left->isZero() ? '' : $left->format(withCurrency: false);
+        $this->toast(__('Återbetalningen till Skatteverket på :amount är registrerad.', ['amount' => $amount->format()]));
+    }
+
+    public string $refundPaidOn = '';
+
+    /** Kronor that left the bank. */
+    public string $refundAmount = '';
+
+    /** For a credit in another currency: how much is paid back, in that currency. */
+    public string $refundForeignAmount = '';
+
+    public function registerRefund(RegisterRefund $register): void
+    {
+        try {
+            $amount = Money::parse($this->refundAmount);
+            $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->refundPaidOn) ?: throw new InvalidArgumentException;
+            $foreign = $this->invoice()->isForeign() ? Money::parse($this->refundForeignAmount)->ore : null;
+        } catch (InvalidArgumentException) {
+            throw ValidationException::withMessages(['refund_amount' => __('Skriv datum och belopp, till exempel 1 250,00.')]);
+        }
+
+        $register($this->user(), $this->invoice(), $date, $amount, foreignAmount: $foreign);
+        $invoice = $this->invoice();
+
+        $this->resetRefund($invoice);
+        $this->toast($invoice->status === InvoiceStatus::Paid
+            ? __('Återbetalningen är registrerad. Kunden har inget kvar att få tillbaka på :title.', ['title' => $invoice->title()])
+            : __('Återbetalningen är registrerad. Kvar att betala tillbaka: :remaining.', ['remaining' => $this->refundLeft($invoice)]));
     }
 
     public function credit(CreditInvoice $credit): void
@@ -156,8 +208,11 @@ class InvoiceActions extends Component
             'canSend' => $this->user()->can('send', $invoice),
             'canPay' => $this->user()->can('registerPayment', $invoice),
             'canTaxPay' => $this->user()->can('registerTaxReductionPayment', $invoice),
+            'canTaxRepay' => $this->user()->can('registerTaxReductionRepayment', $invoice),
+            'canRefund' => $this->user()->can('registerRefund', $invoice),
+            'refundLeft' => $invoice->isCredit() && $invoice->remaining()->isNegative() ? $this->refundLeft($invoice) : null,
             'canRemind' => $this->user()->can('remind', $invoice),
-            'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->isEmpty(),
+            'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->doesntContain(fn (Invoice $credit): bool => $credit->isDraft()),
             'exchangePreview' => $this->exchangePreview($invoice),
         ]);
     }
@@ -191,12 +246,34 @@ class InvoiceActions extends Component
         return ['settled' => $settled, 'difference' => $received - $settled];
     }
 
+    /** What a credit invoice has left to pay back, as the customer sees it. */
+    private function refundLeft(Invoice $invoice): string
+    {
+        $foreign = $invoice->foreignRemaining();
+
+        return $foreign === null ? $invoice->remaining()->negated()->format() : $invoice->formatForeign(-$foreign);
+    }
+
+    /** What a credit invoice has left to pay back, prefilled; in kronor at the booking rate for another currency. */
+    private function resetRefund(Invoice $invoice): void
+    {
+        if (! $invoice->isCredit() || ! $invoice->remaining()->isNegative()) {
+            $this->refundAmount = '';
+            $this->refundForeignAmount = '';
+
+            return;
+        }
+
+        $this->refundAmount = $invoice->remaining()->negated()->format(withCurrency: false);
+        $this->refundForeignAmount = $invoice->isForeign() ? Money::ofOre(-(int) $invoice->foreignRemaining())->format(withCurrency: false) : '';
+    }
+
     /** What is left, in kronor, or for an invoice in another currency in that currency with the kronor prefilled. */
     private function resetAmounts(Invoice $invoice): void
     {
-        $this->amount = $invoice->remaining()->format(withCurrency: false);
+        $this->amount = $invoice->isCredit() ? '' : $invoice->remaining()->format(withCurrency: false);
 
-        if (! $invoice->isForeign()) {
+        if ($invoice->isCredit() || ! $invoice->isForeign()) {
             return;
         }
 

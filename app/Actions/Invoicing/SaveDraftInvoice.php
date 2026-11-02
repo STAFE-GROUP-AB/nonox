@@ -167,7 +167,8 @@ class SaveDraftInvoice
                 }
             }
 
-            $taxReduction = $validated['tax_reduction'] ?? null;
+            // A credit invoice follows the invoice it credits: same ROT or RUT, or none.
+            $taxReduction = $original instanceof Invoice ? $original->tax_reduction : ($validated['tax_reduction'] ?? null);
 
             foreach ($rows as $index => $row) {
                 $rows[$index]['is_labour'] = $taxReduction !== null && (bool) ($rowInput[$index]['labour'] ?? false);
@@ -199,7 +200,11 @@ class SaveDraftInvoice
 
             $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows), roundToKronor: $bookingRate === null);
 
-            $deduction = $taxReduction === null ? 0 : $this->deduction($taxReduction, $rows, $customer, $invoiceDate, $reverseCharge, $draft);
+            $deduction = match (true) {
+                $taxReduction === null => 0,
+                $original instanceof Invoice => $this->creditedDeduction($rows, $original, $draft),
+                default => $this->deduction($taxReduction, $rows, $customer, $invoiceDate, $reverseCharge, $draft),
+            };
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
             $invoice->fill([
@@ -286,6 +291,63 @@ class SaveDraftInvoice
         $delivery = (string) ($input['delivery_date'] ?? '');
 
         return preg_match('/^\d{4}-\d{2}-\d{2}$/', $delivery) === 1 ? $delivery : (string) $input['invoice_date'];
+    }
+
+    /**
+     * The ROT or RUT deduction on a credit invoice: the credited share of
+     * the deduction on the invoice it credits, never recomputed at the
+     * credit's date, rate or ceiling. A credit note changes the original by
+     * what it credits (Mervärdesskattelag (2023:200) 17 kap. 22 §), and
+     * Skatteverket pays the difference between what was charged and what
+     * the buyer paid (lag (2009:194) om förfarandet vid skattereduktion för
+     * hushållsarbete 7 §), so the deduction is reversed in proportion to
+     * the labour credited (labour including VAT, rounded down to whole
+     * kronor). The credit that credits the last of the labour takes the
+     * rest of the deduction, and no credit takes more than is left of it
+     * (enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-1,
+     * #48)).
+     *
+     * @param  list<array<string, mixed>>  $rows
+     */
+    private function creditedDeduction(array $rows, Invoice $original, ?Invoice $draft): int
+    {
+        $gross = function (iterable $labourRows): int {
+            $totals = InvoiceCalculator::totals(array_values(array_map(fn (array $row): array => ['net' => (int) $row['net_ore'], 'vat_rate' => (int) $row['vat_rate']], [...$labourRows])), roundToKronor: false);
+
+            return $totals['net'] + $totals['vat'];
+        };
+
+        $credited = -$gross(array_filter($rows, fn (array $row): bool => (bool) $row['is_labour']));
+
+        if ($credited <= 0) {
+            return 0;
+        }
+
+        $original->loadMissing(['rows', 'creditInvoices.rows']);
+        $labour = $gross($original->rows->where('is_labour', true)->map(fn (InvoiceRow $row): array => ['net_ore' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all());
+        $deductionLeft = $original->tax_reduction_ore->ore;
+        $labourLeft = $labour;
+
+        foreach ($original->creditInvoices as $earlier) {
+            if ($earlier->isDraft() || ($draft !== null && $earlier->id === $draft->id)) {
+                continue;
+            }
+
+            $deductionLeft += $earlier->tax_reduction_ore->ore;
+            $labourLeft -= -$gross($earlier->rows->where('is_labour', true)->map(fn (InvoiceRow $row): array => ['net_ore' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all());
+        }
+
+        if ($deductionLeft <= 0 || $labour <= 0) {
+            return 0;
+        }
+
+        if ($credited >= $labourLeft) {
+            return -$deductionLeft;
+        }
+
+        $share = intdiv(intdiv($original->tax_reduction_ore->ore * $credited, $labour), 100) * 100;
+
+        return -min($share, $deductionLeft);
     }
 
     /**

@@ -23,6 +23,7 @@ use App\Models\NumberSeries;
 use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Support\Audit\Audit;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -35,8 +36,16 @@ use Illuminate\Validation\ValidationException;
  * now, and under fakturametoden a voucher in series B. After this the
  * invoice never changes.
  *
- * A credit invoice settles the invoice it credits: both are closed, and the
- * receivable nets to zero.
+ * A credit invoice settles the invoice it credits by its own amount
+ * (Mervärdesskattelag (2023:200) 17 kap. 22-23 §§: a credit note changes
+ * the original by what it credits). A partial credit leaves the rest of
+ * the original open to be paid; the original is closed only when nothing
+ * remains. A paid or part-paid invoice can be credited too: what the
+ * customer has already paid of the credit is a credit balance on the credit
+ * invoice, paid back with RegisterRefund. A credit larger than what is not
+ * credited yet is refused, so the customer ledger always agrees with 1510
+ * (BFL 4 kap. 1 §, 5 kap. 1 §) (enligt granskning 2026-11-02,
+ * juristgranskning återstår (AUD-FAKT-13, #47; AUD-FAKT-8, #53)).
  */
 class IssueInvoice
 {
@@ -67,8 +76,8 @@ class IssueInvoice
 
             $original = $invoice->isCredit() ? Invoice::query()->whereKey($invoice->credits_invoice_id)->lockForUpdate()->first() : null;
 
-            if ($invoice->isCredit() && ($original === null || $original->status !== InvoiceStatus::Issued || ! $original->paid_ore->isZero())) {
-                throw ValidationException::withMessages(['invoice' => __('Bara en obetald faktura kan krediteras.')]);
+            if ($invoice->isCredit()) {
+                $this->ensureCreditFits($invoice, $original);
             }
 
             if ($invoice->reverse_charge) {
@@ -77,6 +86,10 @@ class IssueInvoice
 
             if ($invoice->tax_reduction !== null) {
                 $this->ensureTaxReduction($company, $invoice);
+            }
+
+            if ($invoice->tax_reduction !== null && $original instanceof Invoice) {
+                $this->splitCreditedDeduction($invoice, $original);
             }
 
             if ($invoice->foreign_sale !== null) {
@@ -98,8 +111,8 @@ class IssueInvoice
                 'customer_snapshot' => $customer->snapshot(),
                 'issued_at' => CarbonImmutable::now(),
                 'issued_by' => $user->id,
-                'paid_ore' => $invoice->isCredit() ? $invoice->total_ore->ore : 0,
-                'foreign_paid_minor' => $invoice->isCredit() ? (int) $invoice->foreign_total_minor : 0,
+                'paid_ore' => 0,
+                'foreign_paid_minor' => 0,
             ]);
 
             if ($company->accounting_method === AccountingMethod::Fakturametoden) {
@@ -121,7 +134,14 @@ class IssueInvoice
 
             $invoice->save();
 
-            $original?->forceFill(['status' => InvoiceStatus::Credited, 'paid_ore' => $original->total_ore->ore, 'foreign_paid_minor' => (int) $original->foreign_total_minor])->save();
+            if ($original instanceof Invoice) {
+                $this->settle($invoice, $original);
+            }
+
+            $credit = $original instanceof Invoice ? array_filter([
+                'credit_settled_ore' => -$invoice->paid_ore->ore,
+                'tax_reduction_repayable_ore' => $invoice->tax_reduction_repayable_ore->ore,
+            ]) : [];
 
             Audit::record('invoice.issued', $invoice, [
                 'number' => $number,
@@ -129,7 +149,7 @@ class IssueInvoice
                 'customer' => $customer->name,
                 'total_ore' => $invoice->total_ore->ore,
                 'credits' => $original?->number,
-            ] + ($invoice->isForeign() ? [
+            ] + $credit + ($invoice->isForeign() ? [
                 'currency' => $invoice->invoice_currency,
                 'foreign_total_minor' => $invoice->foreign_total_minor,
                 'exchange_rate_micros' => $invoice->exchange_rate_micros,
@@ -139,6 +159,97 @@ class IssueInvoice
 
             return $invoice;
         }));
+    }
+
+    /**
+     * A credit invoice credits an issued invoice, unpaid or paid (ML 17 kap.
+     * 22-23 §§, 7 kap. 46 §), by an amount below zero and no larger than
+     * what is not credited yet.
+     */
+    private function ensureCreditFits(Invoice $credit, ?Invoice $original): void
+    {
+        if ($original === null || $original->isCredit() || ! in_array($original->status, [InvoiceStatus::Issued, InvoiceStatus::Paid], true)) {
+            throw ValidationException::withMessages(['invoice' => __('Bara en skapad faktura som inte är helt krediterad kan krediteras.')]);
+        }
+
+        if ($credit->total_ore->ore >= 0) {
+            throw ValidationException::withMessages(['invoice' => __('En kreditfaktura ska ha ett belopp under noll.')]);
+        }
+
+        $creditable = $original->creditable();
+
+        if (-$credit->total_ore->ore > $creditable['kronor'] || ($creditable['foreign'] !== null && -(int) $credit->foreign_total_minor > $creditable['foreign'])) {
+            $left = $creditable['foreign'] !== null ? $original->formatForeign($creditable['foreign']) : Money::ofOre($creditable['kronor'])->format();
+
+            throw ValidationException::withMessages(['invoice' => __('Kreditfakturan är större än det som går att kreditera av :title, :left.', ['title' => $original->title(), 'left' => $left])]);
+        }
+    }
+
+    /**
+     * The credit settles the original by its own amount, in kronor and in
+     * the invoice's currency, as far as anything remains to pay. The original
+     * is closed when nothing remains: credited when only credits settled it,
+     * paid when payments did too. What the customer has already paid of the
+     * credited amount is left open on the credit invoice as a credit balance
+     * (negative on 1510) to pay back (RegisterRefund) (enligt granskning
+     * 2026-11-02, juristgranskning återstår (AUD-FAKT-8, #53)).
+     */
+    private function settle(Invoice $credit, Invoice $original): void
+    {
+        $foreignRemaining = $original->foreignRemaining();
+        $foreign = $foreignRemaining === null ? 0 : min(-(int) $credit->foreign_total_minor, $foreignRemaining);
+        // When the credit clears the currency, it clears the kronor too, so no öre is left behind on 1510.
+        $kronor = $foreignRemaining !== null && $foreign === $foreignRemaining
+            ? $original->remaining()->ore
+            : min(-$credit->total_ore->ore, $original->remaining()->ore);
+
+        $paid = $original->paid_ore->ore + $kronor;
+        $credited = $original->credited_ore->ore + $kronor;
+        $closed = $foreignRemaining === null ? $paid >= $original->total_ore->ore : $original->foreign_paid_minor + $foreign >= (int) $original->foreign_total_minor;
+
+        $original->forceFill([
+            'paid_ore' => $paid,
+            'credited_ore' => $credited,
+            'foreign_paid_minor' => $original->foreign_paid_minor + $foreign,
+            'status' => match (true) {
+                ! $closed => InvoiceStatus::Issued,
+                $credited >= $original->total_ore->ore => InvoiceStatus::Credited,
+                default => InvoiceStatus::Paid,
+            },
+        ])->save();
+
+        $creditClosed = $foreignRemaining === null ? $kronor >= -$credit->total_ore->ore : $foreign >= -(int) $credit->foreign_total_minor;
+
+        $credit->forceFill([
+            'paid_ore' => -$kronor,
+            'foreign_paid_minor' => -$foreign,
+            'status' => $creditClosed ? InvoiceStatus::Paid : InvoiceStatus::Issued,
+        ])->save();
+    }
+
+    /**
+     * The deduction a credit takes back comes off what is still claimed from
+     * Skatteverket on 1513. What Skatteverket has already paid cannot come
+     * off the claim: once the buyer is repaid, the company must notify
+     * Skatteverket, which decides on repayment (lag (2009:194) om
+     * förfarandet vid skattereduktion för hushållsarbete 13-14 §§), so that
+     * part is a debt on 2890 (enligt granskning 2026-11-02, juristgranskning
+     * återstår (AUD-FAKT-9, #49)).
+     */
+    private function splitCreditedDeduction(Invoice $credit, Invoice $original): void
+    {
+        $credited = -$credit->tax_reduction_ore->ore;
+        $offClaim = min($credited, $original->taxReductionClaimable()->ore);
+        $repayable = max(0, $credited - $offClaim);
+
+        $credit->forceFill(['tax_reduction_repayable_ore' => $repayable]);
+
+        if ($repayable > 0) {
+            Account::query()->firstOrCreate(['number' => TaxReduction::REPAYABLE], [
+                'name' => __('Övriga kortfristiga skulder'),
+                'type' => AccountType::LiabilityEquity,
+            ]);
+        }
     }
 
     /**

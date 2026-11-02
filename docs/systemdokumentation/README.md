@@ -489,8 +489,32 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   B (1510 mot intäktskonton, utgående moms och 3740). Betalning: serie C,
   1930 mot 1510. Enligt kontantmetoden bokförs intäkt och moms först vid
   betalning.
-- En kreditfaktura tar ut hela den obetalda fakturan och vänder dess
-  verifikation.
+- En kreditfaktura krediterar hela fakturan eller en del av den (raderna i
+  utkastet kan ändras). Den minskar originalet med sitt eget belopp
+  (`credited_ore` och `paid_ore`, i kronor och i fakturans valuta) och
+  vänder den krediterade delen av verifikationen. Originalet står öppet för
+  resten och kan betalas; det stängs först när inget återstår (Krediterad
+  om bara kreditfakturor reglerade det, annars Betald). En kreditfaktura
+  som är större än det som återstår, eller inte är under noll, avvisas.
+  Kundreskontran stämmer därmed alltid mot 1510 (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47); ML 17 kap.
+  22–23 §§, BFL 4 kap. 1 §, 5 kap. 1 §).
+- Även en betald eller delvis betald faktura kan krediteras (ML 17 kap.
+  22–23 §§, 7 kap. 46 §). Kreditfakturan reglerar först det som återstår av
+  originalet; det kunden redan har betalat av det krediterade beloppet
+  står öppet på kreditfakturan som ett tillgodohavande för kunden (status
+  ISSUED, visas som "Att återbetala", negativt kvar och kredit på 1510).
+  En kreditfaktura får inte vara större än det som ännu inte är krediterat
+  av originalet. Återbetalningen registreras på kreditfakturan
+  (`RegisterRefund`) som en betalning med negativt belopp i serie C: 1510
+  mot bankkontot under fakturametoden, återbetalningens del av intäkt och
+  moms mot bankkontot under kontantmetoden; i utländsk valuta i valutan med
+  kursdifferens på 3960/7960. Kundreskontran per dag (`OpenInvoices`)
+  räknar med kreditfakturornas återbetalningar, och vid bokslut med
+  kontantmetoden bokförs ett tillgodohavande som kreditfakturans andel.
+  En kreditfaktura med tillgodohavande förfaller aldrig och syns inte
+  bland förfallna fakturor (enligt granskning 2026-11-02, juristgranskning
+  återstår (AUD-FAKT-8, #53)).
 - Inbetalningar kan läsas in från bankens fil (ISO 20022 camt.054,
   [ADR-015](../adr/ADR-015-incoming-payment-files.md)). Systemet föreslår
   faktura efter OCR-numret; användaren kontrollerar och bokför. En inbetalning
@@ -622,7 +646,33 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   registreras det på fakturan: bankkontot mot 1513 i serie C. Det mottagna
   beloppet är det enda på en utfärdad faktura som får ändras utöver status,
   betalningar och utskick (modell och databastrigger).
-- En kreditfaktura krediterar även avdraget.
+- En kreditfaktura krediterar även avdraget. Avdraget räknas inte om med
+  kreditdagens andel eller tak: kreditfakturan tar originalets avdrag i
+  proportion till den arbetskostnad (inklusive moms) den krediterar,
+  avrundat nedåt till hela kronor, och den kreditfaktura som krediterar
+  det sista av arbetet tar resten av avdraget. En kreditfaktura tar aldrig
+  mer avdrag än vad som är kvar av originalets. En hel kredit vänder därmed
+  exakt originalets 1510 och 1513 (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-1, #48); ML 17 kap. 22 §, lag
+  (2009:194) 7 §).
+- Krediteras avdraget efter att Skatteverket har betalat ut det, kan den
+  utbetalda delen inte tas bort från fordran: företaget ska anmäla
+  ändringen till Skatteverket, som beslutar om återbetalning (lag
+  (2009:194) 13–16 §§). Kreditfakturan tar därför först av det som
+  fortfarande begärs på 1513, och resten bokförs som en skuld till
+  Skatteverket på 2890 Övriga kortfristiga skulder (läggs till vid behov),
+  i stället för som en negativ fordran på 1513. Beloppet sparas på
+  kreditfakturan (`tax_reduction_repayable_ore`), och återbetalningen
+  registreras på den: 2890 mot bankkontot i serie C
+  (`tax_reduction_repaid_ore`, det enda som får ändras på en utfärdad
+  kreditfaktura utöver status, betalningar och utskick). Kreditfakturans
+  sida påminner om anmälan, och originalets sida varnar innan
+  krediteringen. En kredit före utbetalningen visar att en redan gjord
+  begäran ska ändras eller dras tillbaka. Det som begärs av Skatteverket
+  minskar med krediterade avdrag, så en betalning från Skatteverket kan
+  inte registreras för en krediterad del (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-9, #49)). TODO(legal-verify): 2890
+  som konto för skulden.
 
 ### 5.3 Kundfakturor i utländsk valuta
 

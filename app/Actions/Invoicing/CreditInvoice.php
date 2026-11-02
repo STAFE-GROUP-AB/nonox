@@ -13,8 +13,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Starts a credit invoice for the whole of an unpaid invoice: a draft with
- * the same rows and negative quantities. It takes effect when issued.
+ * Starts a credit invoice for an issued invoice, unpaid or paid: a draft
+ * with the same rows and negative quantities, which can be changed to
+ * credit only part of it. It takes effect when issued (IssueInvoice).
  */
 class CreditInvoice
 {

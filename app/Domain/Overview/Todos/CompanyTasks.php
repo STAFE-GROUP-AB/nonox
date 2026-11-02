@@ -149,6 +149,7 @@ final class CompanyTasks implements TodoProvider
         if ($count > self::SINGLE_INVOICES) {
             $total = (int) Invoice::query()
                 ->where('status', InvoiceStatus::Issued->value)
+                ->where('kind', Invoice::INVOICE)
                 ->whereDate('due_date', '<', $today->toDateString())
                 ->sum(DB::raw('total_ore - paid_ore'));
 
@@ -165,6 +166,7 @@ final class CompanyTasks implements TodoProvider
         $invoices = Invoice::query()
             ->join('customers', 'customers.id', '=', 'invoices.customer_id')
             ->where('invoices.status', InvoiceStatus::Issued->value)
+            ->where('invoices.kind', Invoice::INVOICE)
             ->whereDate('invoices.due_date', '<', $today->toDateString())
             ->orderBy('invoices.due_date')
             ->orderBy('invoices.number')

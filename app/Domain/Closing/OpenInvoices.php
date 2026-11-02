@@ -41,12 +41,16 @@ final class OpenInvoices
             ->whereNotNull('number')
             ->whereDate('invoice_date', '<=', $date)
             ->when($foreignOnly, fn ($query) => $query->where('invoice_currency', '<>', 'SEK'))
-            // Settled invoices count only when the settling came after the day; a credited one may have a rest.
+            // Settled invoices count only when the settling came after the day; a credited one may have a rest,
+            // and a credit of a paid invoice leaves a credit balance until it is paid back.
             ->where(fn ($query) => $query->whereIn('status', [InvoiceStatus::Issued->value, InvoiceStatus::Credited->value])
-                ->orWhereHas('payments', fn ($payments) => $payments->whereDate('paid_on', '>', $date)))
+                ->orWhereHas('payments', fn ($payments) => $payments->whereDate('paid_on', '>', $date))
+                ->orWhereHas('creditInvoices', fn ($credit) => $credit->where(fn ($open) => $open->where('status', InvoiceStatus::Issued->value)
+                    ->orWhereHas('payments', fn ($payments) => $payments->whereDate('paid_on', '>', $date)))))
             ->with([
                 'payments' => fn ($query) => $query->whereDate('paid_on', '<=', $date),
                 'creditInvoices' => $credits,
+                'creditInvoices.payments' => fn ($query) => $query->whereDate('paid_on', '<=', $date),
                 ...($withRows ? ['rows.account', 'creditInvoices.rows.account'] : []),
             ])
             ->orderBy('number')
@@ -55,10 +59,12 @@ final class OpenInvoices
         $open = [];
 
         foreach ($invoices as $invoice) {
-            $settled = (int) $invoice->payments->sum(fn (InvoicePayment $payment): int => $payment->amount_ore->ore - (int) $payment->exchange_difference_ore);
+            // Refunds of credit balances are negative payments on the credit invoices.
+            $payments = $invoice->payments->concat($invoice->creditInvoices->flatMap(fn (Invoice $credit) => $credit->payments));
+            $settled = (int) $payments->sum(fn (InvoicePayment $payment): int => $payment->amount_ore->ore - (int) $payment->exchange_difference_ore);
             $kronor = $invoice->total_ore->ore + (int) $invoice->creditInvoices->sum(fn (Invoice $credit): int => $credit->total_ore->ore) - $settled;
             $foreign = $invoice->isForeign()
-                ? (int) $invoice->foreign_total_minor + (int) $invoice->creditInvoices->sum(fn (Invoice $credit): int => (int) $credit->foreign_total_minor) - (int) $invoice->payments->sum(fn (InvoicePayment $payment): int => (int) $payment->foreign_amount_minor)
+                ? (int) $invoice->foreign_total_minor + (int) $invoice->creditInvoices->sum(fn (Invoice $credit): int => (int) $credit->foreign_total_minor) - (int) $payments->sum(fn (InvoicePayment $payment): int => (int) $payment->foreign_amount_minor)
                 : null;
 
             if (($foreign ?? $kronor) !== 0) {

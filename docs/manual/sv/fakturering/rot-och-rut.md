@@ -72,7 +72,13 @@ Bocka i **Arbete** på minst en rad.
 Nej. Avdragen gäller arbete i Sverige åt privatpersoner.
 
 **Fakturan blev fel. Hur krediterar jag?**
-Som vanligt, så länge kunden inte har betalat. Kreditfakturan tar ut både kundens del och avdraget. Läs [Kreditera en faktura](/manual/fakturering/kreditfaktura).
+Som vanligt. Kreditfakturan tar ut både kundens del och avdraget. Avdraget räknas inte om: krediterar du hela fakturan tas exakt det avdrag bort som stod på fakturan, även om taket begränsade det. Krediterar du en del av arbetet tas samma andel av avdraget bort. Läs [Kreditera en faktura](/manual/fakturering/kreditfaktura).
+
+**Skatteverket har redan betalat ut avdraget, och nu ska fakturan krediteras.**
+Det går att kreditera. Den del som Skatteverket redan har betalat blir en skuld till Skatteverket, på konto 2890. Du ska anmäla ändringen till Skatteverket utan dröjsmål när kunden har fått tillbaka pengarna. Skatteverket beslutar sedan om återbetalning. NONOX påminner om det på fakturans sida innan du krediterar, och på kreditfakturans sida efteråt. När du har betalat tillbaka registrerar du betalningen på kreditfakturan, under **ROT-avdrag hos Skatteverket**.
+
+**Jag har begärt utbetalning men inte fått pengarna, och nu krediterar jag.**
+Då minskar kreditfakturan det du begär av Skatteverket på 1513. Ändra eller dra tillbaka begäran i Skatteverkets e-tjänst Rot och rut.
 
 ## Läs också
 
