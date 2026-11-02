@@ -194,10 +194,14 @@ final class CompanyOverview
         foreach ($years->filter(fn (FiscalYear $year): bool => $year->status === FiscalYearStatus::Open) as $year) {
             foreach (VatPeriods::of($year, $company->vat_period) as $period) {
                 if ($period['end']->lessThan($today) && ! in_array($period['start']->toDateString(), $reported, true)) {
-                    $missing[] = $period;
+                    // Keyed by start: a quarter that straddles two open fiscal years is one period (#59).
+                    $missing[$period['start']->toDateString()] = $period;
                 }
             }
         }
+
+        ksort($missing);
+        $missing = array_values($missing);
 
         if ($missing === []) {
             return [0, '', false, null];

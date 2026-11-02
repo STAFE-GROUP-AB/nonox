@@ -32,8 +32,21 @@
   (`VatBoxes`). There are no VAT codes on rows yet; the mapping covers the
   BAS VAT accounts. `TODO(legal-verify)` on the mapping, on dropping öre per
   box, and on boxes without accounts (06, 07, 08, 37, 38, 41).
-- Periods follow the company's redovisningsperiod: month, calendar quarter or
-  fiscal year.
+- Periods follow the company's redovisningsperiod: calendar month, calendar
+  quarter or the beskattningsår (= the fiscal year for a company), SFL 26
+  kap. 10, 11 and 26 §§. Months and quarters are never cut at a fiscal year
+  edge (#59): with a broken fiscal year, a quarter that straddles the year
+  end is one period, listed under both fiscal years, calculated by date
+  across both (`VatReturn` reads posted vouchers by date for the company, not
+  per fiscal year; opening balances are not vouchers, so nothing is counted
+  twice), declared once (eSKD `Period` = the quarter's last month, deadline
+  from the quarter's end) and settled once. Its settlement voucher is dated
+  the quarter's last day and so lands in the fiscal year that day belongs
+  to; the VAT of the months before the year end reaches that year through
+  the carried-forward opening balance on the VAT accounts. The closing
+  checklist of a year only requires periods that end in it, and the archive
+  package puts a period in the year of its last day. Enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-MOMS-6, #59).
 - Each box can be opened to show the accounts behind it.
 - **File for Skatteverket**: eSKDUpload 6.0 XML, ISO-8859-1. Element names
   are taken from published documentation, not from Skatteverket's DTD itself,

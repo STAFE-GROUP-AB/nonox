@@ -436,6 +436,14 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Momsdeklarationens rutor räknas fram ur rörelserna på momskonton och
   försäljnings- och inköpskonton enligt BAS, per redovisningsperiod. Beloppen
   anges i hela kronor.
+- Redovisningsperioden är kalendermånad, kalenderkvartal eller beskattningsår
+  (räkenskapsåret) enligt SFL 26 kap. 10 och 11 §§. Månader och kvartal delas
+  aldrig vid ett brutet räkenskapsårs gräns: ett kvartal som spänner över två
+  räkenskapsår är en deklaration, räknas fram ur de bokförda verifikationerna
+  efter datum i båda åren och avräknas en gång med en verifikation på
+  kvartalets sista dag, i det räkenskapsår den dagen hör till. Bokslutets
+  checklista kräver bara perioder som slutar i året (enligt granskning
+  2026-11-02, juristgranskning återstår, AUD-MOMS-6, #59).
 - Momsen bokförs med en verifikation i serie M per period: momskontona som
   hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
   ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören

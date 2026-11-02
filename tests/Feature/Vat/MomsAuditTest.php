@@ -418,8 +418,10 @@ it('reports a calendar quarter as one return when the fiscal year is broken', fu
     $year = new FiscalYear(['start_date' => '2026-05-01', 'end_date' => '2027-04-30']);
     $periods = array_map(fn (array $p): string => $p['start']->toDateString().'/'.$p['end']->toDateString(), VatPeriods::of($year, VatPeriod::Quarterly));
 
-    expect($periods[0])->toBe('2026-04-01/2026-06-30');
-})->todo('AUD-MOMS-6: with a broken fiscal year VatPeriods cuts the calendar quarter at the fiscal-year boundary (2026-05-01–06-30 and 2027-04-01–04-30), so Q2 is calculated, filed (eSKD Period 202704 / 202606) and settled in two parts. SFL 26 kap. 10 §: the period is the calendar quarter.');
+    // SFL 26 kap. 11 §: the period is the calendar quarter (AUD-MOMS-6, #59).
+    expect($periods[0])->toBe('2026-04-01/2026-06-30')
+        ->and(end($periods))->toBe('2027-04-01/2027-06-30');
+});
 
 it('settles VAT booked in a period after it was settled', function () {
     momsAuditBook($this->owner, $this->company, '2026-01-16', [

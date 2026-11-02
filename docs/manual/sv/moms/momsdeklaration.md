@@ -84,7 +84,7 @@ Antingen är perioden redan bokförd, eller så finns det ingen moms att redovis
 För månads- och kvartalsmoms visar översikten momsen för den period som står på tur och sista dagen att deklarera och betala den. För helårsmoms beror dagen på bolagsform, EU-handel och hur inkomstdeklarationen lämnas, så den visas inte. Kontrollera med Skatteverket.
 
 **Påverkar momsen bokslutet?**
-Ja. Bokslutets checklista kräver att alla momsperioder i året är bokförda. Läs [Checklistan för bokslutet](/manual/bokslut/checklistan).
+Ja. Bokslutets checklista kräver att alla momsperioder som slutar i året är bokförda. Läs [Checklistan för bokslutet](/manual/bokslut/checklistan).
 
 ## Läs också
 

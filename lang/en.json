@@ -2484,7 +2484,7 @@
     ":count verifikationer är utkast. Bokför eller ta bort dem.": ":count vouchers are drafts. Post or delete them.",
     "Momsen är redovisad": "VAT is reported",
     "Företaget redovisar inte moms.": "The company does not report VAT.",
-    "Alla momsperioder i året är bokförda.": "All VAT periods in the year are booked.",
+    "Alla momsperioder som slutar i året är bokförda.": "All VAT periods that end in the year are booked.",
     "Kvar: :periods.": "Left: :periods.",
     "Årets skatt är bokförd": "The year's tax is booked",
     "Skatten är bokförd på 8910 och 2512.": "The tax is booked on 8910 and 2512.",

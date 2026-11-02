@@ -247,7 +247,8 @@ final class ArchivePackageBuilder
     private function vatReturns(Company $company, FiscalYear $fiscalYear): int
     {
         $reports = VatReport::query()
-            ->whereDate('period_start', '>=', $fiscalYear->start_date->toDateString())
+            // A period belongs to the year its settlement voucher is in: the year of its last day (#59).
+            ->whereDate('period_end', '>=', $fiscalYear->start_date->toDateString())
             ->whereDate('period_end', '<=', $fiscalYear->end_date->toDateString())
             ->orderBy('period_start')
             ->get();

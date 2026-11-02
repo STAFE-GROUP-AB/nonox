@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Domain\Vat;
 
-use App\Domain\Accounting\Reports\LedgerQuery;
+use App\Domain\Accounting\VoucherSource;
+use App\Domain\Accounting\VoucherStatus;
 use App\Models\Account;
 use App\Models\FiscalYear;
+use App\Models\VoucherRow;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 /**
  * The momsdeklaration for one period, calculated from the posted ledger
@@ -35,10 +38,14 @@ final class VatReturn
         public readonly array $unsettled = [],
     ) {}
 
+    /**
+     * The fiscal year only names the company: the period is read by date
+     * across fiscal years, because a calendar quarter can straddle a broken
+     * fiscal year and is still one declaration (SFL 26 kap. 11 §, #59).
+     */
     public static function calculate(FiscalYear $fiscalYear, CarbonImmutable $start, CarbonImmutable $end): self
     {
-        $query = new LedgerQuery($fiscalYear, $start, $end, excludeVatSettlements: true);
-        $movements = $query->movements();
+        $movements = self::movements($fiscalYear->company_id, $start, $end);
         $accounts = Account::query()->whereIn('id', $movements->keys())->get()->keyBy('id');
 
         $exact = array_fill_keys(array_keys(VatBoxes::BOXES), 0);
@@ -87,6 +94,30 @@ final class VatReturn
         usort($unsettled, fn (array $a, array $b): int => $a['number'] <=> $b['number']);
 
         return new self($start, $end, $exact, $sources, $vatAccounts, $unsettled);
+    }
+
+    /**
+     * Debit and credit per account id over the period, from the company's
+     * posted vouchers in any fiscal year, VAT settlements left out. Opening
+     * balances are not vouchers, so nothing is counted twice at a year end.
+     *
+     * @return Collection<int, array{debit: int, credit: int}>
+     */
+    private static function movements(int $companyId, CarbonImmutable $start, CarbonImmutable $end): Collection
+    {
+        return VoucherRow::query()
+            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+            ->where('vouchers.company_id', $companyId)
+            ->where('vouchers.status', VoucherStatus::Posted->value)
+            ->where('vouchers.source', '<>', VoucherSource::Vat->value)
+            ->whereBetween('vouchers.voucher_date', [$start->toDateString(), $end->toDateString()])
+            ->groupBy('voucher_rows.account_id')
+            ->selectRaw('voucher_rows.account_id, SUM(voucher_rows.debit_ore) AS debit, SUM(voucher_rows.credit_ore) AS credit')
+            ->get()
+            ->mapWithKeys(fn (VoucherRow $row): array => [(int) $row->account_id => [
+                'debit' => (int) $row->getAttribute('debit'),
+                'credit' => (int) $row->getAttribute('credit'),
+            ]]);
     }
 
     /**
