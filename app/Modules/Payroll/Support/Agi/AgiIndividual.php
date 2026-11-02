@@ -7,6 +7,10 @@ namespace App\Modules\Payroll\Support\Agi;
 /**
  * One payee's individuppgift for a period, in whole kronor. The tax goes in
  * the field for the employee's tax form: preliminary tax, SINK or A-SINK.
+ * Pay that is avgiftsfri under the 1 000 kr rule goes in the "ej underlag
+ * för socialavgifter" fields (131–134); in the month the year passes the
+ * threshold, pay declared that way in earlier months is added to 011 and
+ * stated in 010 (Skatteverket, ruta 010, AUD-LON-02, #71).
  */
 final readonly class AgiIndividual
 {
@@ -27,6 +31,11 @@ final readonly class AgiIndividual
         public string $taxForm,
         public bool $mileage,
         public bool $perDiem,
+        public int $freeCashKronor = 0,
+        public int $freeOtherBenefitsKronor = 0,
+        public int $freeCarBenefitKronor = 0,
+        public int $freeFuelBenefitKronor = 0,
+        public int $earlierFreeKronor = 0,
     ) {}
 
     /** @return array<string, int|bool|string> */
@@ -42,6 +51,11 @@ final readonly class AgiIndividual
             'tax_form' => $this->taxForm,
             'mileage' => $this->mileage,
             'per_diem' => $this->perDiem,
+            'free_cash' => $this->freeCashKronor,
+            'free_other_benefits' => $this->freeOtherBenefitsKronor,
+            'free_car_benefit' => $this->freeCarBenefitKronor,
+            'free_fuel_benefit' => $this->freeFuelBenefitKronor,
+            'earlier_free' => $this->earlierFreeKronor,
         ];
     }
 }

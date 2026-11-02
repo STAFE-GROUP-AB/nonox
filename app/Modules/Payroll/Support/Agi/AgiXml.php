@@ -39,6 +39,11 @@ final class AgiXml
         'SkatteplOvrigaFormanerUlagAG' => '012',
         'SkatteplBilformanUlagAG' => '013',
         'DrivmVidBilformanUlagAG' => '018',
+        'AvrakningAvgiftsfriErs' => '010',
+        'KontantErsattningEjUlagSA' => '131',
+        'SkatteplOvrigaFormanerEjUlagSA' => '132',
+        'SkatteplBilformanEjUlagSA' => '133',
+        'DrivmVidBilformanEjUlagSA' => '134',
         'AvdrPrelSkatt' => '001',
         'AvdrSkattSINK' => '274',
         'AvdrSkattASINK' => '275',
@@ -105,6 +110,11 @@ final class AgiXml
             $this->amount($iu, 'SkatteplOvrigaFormanerUlagAG', $individual->otherBenefitsKronor);
             $this->amount($iu, 'SkatteplBilformanUlagAG', $individual->carBenefitKronor);
             $this->amount($iu, 'DrivmVidBilformanUlagAG', $individual->fuelBenefitKronor);
+            $this->amount($iu, 'AvrakningAvgiftsfriErs', $individual->earlierFreeKronor);
+            $this->amount($iu, 'KontantErsattningEjUlagSA', $individual->freeCashKronor);
+            $this->amount($iu, 'SkatteplOvrigaFormanerEjUlagSA', $individual->freeOtherBenefitsKronor);
+            $this->amount($iu, 'SkatteplBilformanEjUlagSA', $individual->freeCarBenefitKronor);
+            $this->amount($iu, 'DrivmVidBilformanEjUlagSA', $individual->freeFuelBenefitKronor);
             $this->field($iu, self::TAX_ELEMENTS[$individual->taxForm], (string) $individual->taxKronor);
 
             if ($individual->mileage) {

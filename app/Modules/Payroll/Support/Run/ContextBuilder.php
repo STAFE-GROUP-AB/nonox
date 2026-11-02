@@ -11,6 +11,7 @@ use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
 use App\Modules\Payroll\Domain\Engine\Steps\Additions;
 use App\Modules\Payroll\Domain\Engine\Steps\BaseSalary;
+use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
@@ -61,13 +62,15 @@ final class ContextBuilder
         $periodStart = $run->periodStart();
         $periodEnd = $run->periodEnd();
         $weekPattern = $this->weekPattern($employment);
+        // Skatteverket's jämkning decision is followed for payments on the days it is in force (SFL 11 kap. 27 §).
+        $adjustment = $employee->taxAdjustmentOn($run->payment_date);
 
         $context = new PayrollContext(
             birthDate: $employee->birth_date,
             taxResidence: $employee->tax_residence,
             taxTable: $employee->tax_table,
             taxColumn: $employee->tax_column,
-            taxAdjustmentPercentBp: null,
+            taxAdjustmentPercentBp: $adjustment === 'PERCENT' ? $employee->tax_adjustment_value : null,
             salaryForm: $employment->salary_form,
             monthlySalaryOre: $this->salaryAt($employment, $periodStart),
             hourlyRateOre: $employment->hourly_rate_ore?->ore,
@@ -99,6 +102,15 @@ final class ContextBuilder
             weekPattern: $weekPattern,
             pension: $this->pension($employment),
             vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern, $run->id),
+            // A claim from deductions larger than the pay is owed until taken back, also across the turn of the year.
+            employeeClaimOre: max(0, (int) Accumulator::query()
+                ->where('employee_id', $employee->id)
+                ->where('scope', 'CALENDAR_YEAR')
+                ->where('key', NetPay::CLAIM_KEY)
+                ->sum('value')),
+            taxAdjustmentTable: $adjustment === 'TABLE' ? $employee->tax_adjustment_table : null,
+            taxAdjustmentColumn: $adjustment === 'TABLE' ? $employee->tax_adjustment_column : null,
+            taxAdjustmentAmountOre: $adjustment === 'AMOUNT' ? $employee->tax_adjustment_value : null,
         );
 
         $compTime = CompTimeEntry::query()

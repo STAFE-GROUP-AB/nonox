@@ -1,0 +1,32 @@
+{
+  "description": "Jämkning decision of 20 %: 32 000 × 20 % = 6 400 kr instead of the table's 6 381 kr (SFL 11 kap. 27 §; #69)",
+  "context": {
+    "birth_date": "1990-06-15",
+    "tax_residence": "SE",
+    "tax_table": 33,
+    "tax_column": 1,
+    "tax_adjustment_percent_bp": 2000,
+    "salary_form": "MONTHLY",
+    "monthly_salary_ore": 3200000,
+    "hourly_rate_ore": null,
+    "employment_rate_bp": 10000,
+    "employment_start": "2025-01-01",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [],
+    "accumulators": {
+      "contribution_basis_ytd": 9600000
+    },
+    "settings": {
+      "proration_method": "CALENDAR_DAYS"
+    }
+  },
+  "expected": {
+    "gross_ore": 3200000,
+    "tax_ore": 640000,
+    "net_ore": 2560000,
+    "employer_contribution_ore": 1005440
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "description": "600 kr avgiftsfri earlier in the year, 600 kr now: the year reaches 1 000 kr, so the basis is 1 200 kr and 1 200 × 31,42 % = 377,04 kr (SAL 2 kap. 14 §, 24 § fjärde stycket; #71)",
+  "context": {
+    "birth_date": "1995-07-07",
+    "tax_residence": "SE",
+    "tax_table": 33,
+    "tax_column": 1,
+    "tax_adjustment_percent_bp": null,
+    "salary_form": "HOURLY",
+    "monthly_salary_ore": null,
+    "hourly_rate_ore": 15000,
+    "employment_rate_bp": 10000,
+    "employment_start": "2025-01-01",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [
+      {
+        "code": "TIMLON",
+        "description": "Timlön",
+        "category": "SALARY",
+        "taxable": true,
+        "tax_method": "TABLE",
+        "contribution_basis": true,
+        "vacation_basis": true,
+        "quantity": "4"
+      }
+    ],
+    "accumulators": {
+      "contribution_basis_ytd": 60000,
+      "contribution_free_basis_ytd": 60000
+    },
+    "settings": {
+      "proration_method": "CALENDAR_DAYS"
+    }
+  },
+  "expected": {
+    "gross_ore": 60000,
+    "tax_ore": 0,
+    "net_ore": 60000,
+    "employer_contribution_ore": 37704
+  }
+}

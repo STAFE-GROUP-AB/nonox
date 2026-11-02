@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
+use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Domain\SalaryVoucher;
@@ -131,7 +132,12 @@ class PayrollRuns
 
         return CurrentCompany::run($company, fn (): PayrollInput => DB::transaction(function () use ($user, $company, $run, $validated, $amount): PayrollInput {
             Employee::query()->findOrFail((int) $validated['employee_id']);
-            PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
+            $payCode = PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
+
+            // The claim from earlier pay is kept by the engine (NetPay); a hand-entered line would not follow it.
+            if ($payCode->code === NetPay::CLAIM_CODE) {
+                throw ValidationException::withMessages(['pay_code_id' => __('Skulden från tidigare lön räknas fram av lönekörningen och kan inte läggas in för hand.')]);
+            }
 
             $input = PayrollInput::create([
                 'payroll_run_id' => $run->id,
@@ -273,6 +279,8 @@ class PayrollRuns
             }
 
             $this->extensions->prepare($run, $employments);
+            /** @var array<int, array<string, int>> $runDeltas */
+            $runDeltas = [];
 
             foreach ($employments as $employment) {
                 $employee = $employment->employee ?? throw new LogicException("Employment {$employment->id} has no employee.");
@@ -293,7 +301,15 @@ class PayrollRuns
 
                 try {
                     $context = $this->contexts->build($run, $employee, $employment, $inputs->get($employee->id, collect()), $payCodes, $settings, $rules, $reports, $late);
-                    $results[] = [$employment, $this->calculator->calculate($context)];
+
+                    // A second payslip to the same person in the run sees what the first added (the year's pay, the youth cap used).
+                    if (isset($runDeltas[$employee->id])) {
+                        $context = $context->withAccumulators(self::addDeltas($context->accumulators, $runDeltas[$employee->id]));
+                    }
+
+                    $result = $this->calculator->calculate($context);
+                    $runDeltas[$employee->id] = self::addDeltas($runDeltas[$employee->id] ?? [], $result->accumulatorDeltas);
+                    $results[] = [$employment, $result];
                 } catch (MissingTaxTableException $exception) {
                     // Without the year's tables at all, one line says so for the whole run.
                     $blockers[] = $exception->yearMissing ? $exception->getMessage() : "{$name}: {$exception->getMessage()}";
@@ -486,11 +502,37 @@ class PayrollRuns
                 throw ValidationException::withMessages(['run' => [__('Lönekörningen är inte beräknad.')]]);
             }
 
-            foreach (Payslip::query()->where('payroll_run_id', $run->id)->get() as $payslip) {
+            $payslips = Payslip::query()->with('employee')->where('payroll_run_id', $run->id)->orderBy('id')->get();
+            $values = Accumulator::query()
+                ->whereIn('employee_id', $payslips->pluck('employee_id')->unique()->values())
+                ->where('scope', 'CALENDAR_YEAR')
+                ->where('year', $run->payment_date->year)
+                ->get()
+                ->groupBy('employee_id')
+                ->map(fn ($rows): array => $rows->pluck('value', 'key')->map(fn (mixed $value): int => (int) $value)->all());
+            $stale = [];
+
+            foreach ($payslips as $payslip) {
+                // Employer contributions read the year's and the month's totals (the 1 000 kr threshold, the youth cap); another run for the person attested since then changes them.
+                $current = $values->get($payslip->employee_id, []);
+
+                foreach ((array) ($payslip->contribution_explanation['accumulators_read'] ?? []) as $key => $read) {
+                    if ((int) ($current[$key] ?? 0) !== (int) $read) {
+                        $stale[] = "{$payslip->employee?->first_name} {$payslip->employee?->last_name}";
+                    }
+                }
+
                 foreach ($payslip->accumulator_deltas as $key => $delta) {
                     $accumulator = Accumulator::query()->firstOrNew(['employee_id' => $payslip->employee_id, 'scope' => 'CALENDAR_YEAR', 'year' => $run->payment_date->year, 'key' => $key]);
                     $accumulator->forceFill(['value' => (int) $accumulator->value + (int) $delta])->save();
+                    $current[$key] = (int) $accumulator->value;
                 }
+
+                $values->put($payslip->employee_id, $current);
+            }
+
+            if ($stale !== []) {
+                throw ValidationException::withMessages(['run' => [__('Beräkna lönekörningen igen innan du attesterar. En annan lönekörning för :names har attesterats sedan den här beräknades, och arbetsgivaravgifterna beror på den.', ['names' => implode(', ', array_unique($stale))])]]);
             }
 
             // Vacation pay from a closed semesterår is paid once: the run that carries it claims it.
@@ -696,6 +738,20 @@ class PayrollRuns
     }
 
     /** A change to inputs or absence makes the calculation out of date. */
+    /**
+     * @param  array<string, int>  $values
+     * @param  array<string, int>  $deltas
+     * @return array<string, int>
+     */
+    private static function addDeltas(array $values, array $deltas): array
+    {
+        foreach ($deltas as $key => $delta) {
+            $values[$key] = ($values[$key] ?? 0) + $delta;
+        }
+
+        return $values;
+    }
+
     public function backToDraft(PayrollRun $run): void
     {
         $this->deletePayslips($run);

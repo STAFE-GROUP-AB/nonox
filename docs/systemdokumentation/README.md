@@ -1360,6 +1360,70 @@ lönebeskeden låsta i databasen.
   anställningens kostnadsställe), personalskatt på 2710, arbetsgivaravgifter
   på 7510 mot 2730 och nettolönerna mot 1930. Verifikationen balanserar alltid:
   brutto − skatt ± nettoposter = netto.
+- Jämkning (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-LON-01, #69): Skatteverkets beslut om särskild beräkningsgrund sparas
+  på den anställda (`tax_adjustment_type` PERCENT, TABLE eller AMOUNT, med
+  `tax_adjustment_value` i baspunkter eller öre, `tax_adjustment_table` och
+  `tax_adjustment_column`, och giltighet `tax_adjustment_valid_from`–
+  `tax_adjustment_valid_to`). Lönekörningen följer beslutet för
+  utbetalningsdagar inom giltigheten (SFL 11 kap. 27 §): en procentsats på
+  all skattepliktig lön (även engångsbelopp), en annan tabell och kolumn
+  (engångsbelopp med beslutets kolumn) eller ett belopp per utbetalning.
+  Utanför giltigheten används skattetabellen. Skatteförklaringen visar
+  metoden. `TODO(legal-verify)`: Skatteverkets information till
+  arbetsgivare beskriver bara en procentsats; tabell och belopp är
+  oprövade.
+- Ungdomsnedsättningens tak per kalendermånad (enligt granskning
+  2026-11-02, juristgranskning återstår, AUD-LON-03, #70): den nedsatta
+  avgiften gäller högst 25 000 kr (regeln
+  `employer_contribution.youth_reduction`) av det som betalas ut till
+  personen under en kalendermånad (lag 2026:100 2 § andra stycket, SAL
+  2 kap. 24 §), sammanlagt för alla lönebesked med utbetalningsdag i
+  månaden. Ackumulatorn `youth_reduced_basis_mMM` (MM = utbetalningsmånaden)
+  håller det som tidigare attesterade lönebesked i månaden har använt;
+  nästa lönebesked får bara det som är kvar. Två lönebesked till samma
+  person i samma körning (två anställningar) räknas i tur och ordning.
+- 1 000 kr-gränsen för arbetsgivaravgifter (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-02, #71): ersättning är avgiftsfri så
+  länge personens ersättning under året understiger 1 000 kr (SAL 2 kap.
+  14 §). Avgiftsfritt avgiftsunderlag samlas i ackumulatorn
+  `contribution_free_basis_ytd`. Det lönebesked som tar årets ersättning
+  till gränsen får också den tidigare avgiftsfria ersättningen i sitt
+  avgiftsunderlag (SAL 2 kap. 24 § fjärde stycket), och ackumulatorn
+  nollställs. I AGI redovisas avgiftsfri ersättning i 131 (förmåner i
+  132–134), inte i 011. I månaden då gränsen passeras läggs det som tidigare
+  månader redovisat som avgiftsfritt till i 011 och anges i 010
+  (Skatteverkets alternativ att redovisa i den period det blir känt); är den
+  avgiftsfria ersättningen utbetald samma månad redovisas allt i 011.
+  Flyttad lönedata: avgiftsunderlag utan arbetsgivaravgifter i det tidigare
+  systemet räknas som avgiftsfritt. `TODO(legal-verify)`: tidigare
+  avgiftsfria förmåner läggs i 011 tillsammans med kontant ersättning.
+- Inaktuell beräkning (#70, #71): lönebeskedet sparar de ackumulatorer som
+  avgifterna byggde på när de kan ändras av en annan körning
+  (`contribution_explanation.accumulators_read`). Har en annan körning för
+  samma person attesterats sedan dess vägrar attesten med "Beräkna
+  lönekörningen igen innan du attesterar" och personens namn.
+- Skatt som är större än kontantlönen (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-06, #68): skatteavdrag görs bara från
+  kontant ersättning (SFL 10 kap. 3 §). Förmåner räknas in i underlaget
+  (SFL 11 kap. 4 §), men blir skatten enligt tabell, jämkning eller SINK
+  större än kontantlönen före skatt dras bara kontantlönen. Resten är den
+  anställdas egen skatt som betalas med slutskatten; den blir ingen fordran
+  och redovisas inte som avdragen i AGI (fält 001 visar det som faktiskt
+  drogs). Lönebeskedet säger hur mycket som inte kunde dras, och
+  skatteförklaringen sparar `calculated_tax_ore`, `cash_ore` och
+  `not_withheld_ore`.
+- Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
+  av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
+  sätts den till noll, och det som inte räckte blir en fordran på den
+  anställda: en egen rad med lönearten Skuld till företaget från lön
+  (`FORDRAN_ANSTALLD`, systemets, kan inte läggas in för hand) som bokförs
+  i debet på 1680 Andra kortfristiga fordringar. Verifikationen balanserar
+  därmed. Fordran förs med ackumulatorn `negative_net_carry_ore` (summan
+  över alla år är det som är kvar) och tas tillbaka från nästa lönebeskeds
+  nettolön så långt den räcker, med samma löneart i kredit på 1680.
+  `TODO(legal-verify)`: kvittning mot lön (lagen (1970:215) om arbetsgivares
+  kvittningsrätt).
 - Frånvaro räknas med de timmar som anges per dag, men bara på dagar då den
   anställde ska arbeta enligt schemat och som inte är helgdagar. Övriga dagar
   i perioden räknas med noll timmar (en sjukperiod räknar ändå sina
@@ -1551,7 +1615,9 @@ lönebeskeden låsta i databasen.
   enligt Skatteverkets schema version 1.1 av alla attesterade lönekörningar
   med utbetalning i månaden. Huvuduppgiften har summa arbetsgivaravgifter
   (fält 487) och avdragen skatt (497); varje anställd får en individuppgift
-  med kontant ersättning (011), förmåner (012, 013, 018), avdragen skatt
+  med kontant ersättning (011), förmåner (012, 013, 018), avgiftsfri
+  ersättning under 1 000 kr-gränsen (131, och förmåner i 132, 133, 134),
+  avräkning av tidigare avgiftsfri ersättning (010, #71), avdragen skatt
   (001, eller 274/275 för SINK och A-SINK), kryss för milersättning (050)
   och traktamente (051). Specifikationsnumret är den anställdes nummer, så
   att en rättelse ersätter rätt uppgift. Belopp anges i hela kronor utan
