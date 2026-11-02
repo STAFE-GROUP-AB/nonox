@@ -1420,6 +1420,22 @@ lönebeskeden låsta i databasen.
   den tekniska beskrivningen, fältkod 112, element `VerksamhetensArt`).
   Individuppgiften skriver 112 när 275 skrivs, och AGI stoppas med ett
   meddelande om en A-SINK-mottagare saknar uppgiften.
+- Betalningsmottagare utan svenskt person- eller samordningsnummer (enligt
+  granskning 2026-11-02, juristgranskning återstår, AUD-LON-15, #74): för
+  SINK och A-SINK får `personal_number` vara tomt. Då sparas
+  födelsedatum, `birth_place`, `birth_country`, `citizenship`, adress med
+  landskod (`country`) och vid behov `foreign_tin` (krypterat) med
+  `foreign_tin_country`. Individuppgiften identifierar personen med
+  födelsetid (222, `ÅÅÅÅMMDDnnn` där nnn är anställningsnumret modulo 1 000,
+  stabilt mellan rättelser) i stället för 215, och skriver förnamn och
+  efternamn (216, 217), födelseort (077), landskod födelseort (078),
+  medborgarskap (081), adress (218–220 och 221 utomlands, eller fri adress
+  230 med 221 när postnummer saknas) samt TIN (252, 076) när det finns
+  (SFF 6 kap. 1 § andra stycket och 2 §). Medborgarskap och TIN skrivs även
+  för SINK/A-SINK med svenskt nummer när de finns. AGI stoppas om
+  uppgifterna saknas. Registerutdraget och anonymiseringen omfattar de nya
+  fälten. `TODO(legal-verify)`: om TIN ska krävas för alla begränsat
+  skattskyldiga (SFF 6 kap. 2 § har undantag; här är det frivilligt).
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

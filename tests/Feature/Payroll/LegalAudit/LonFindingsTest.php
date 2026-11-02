@@ -382,5 +382,27 @@ it('books the employee\'s own payment for a benefit without leaving a liability 
 it('applies regional support where the company has chosen it (lag 2001:1170 5 §)')
     ->todo('AUD-LON-14: employer_contribution.regional_support is required data but never applied; eligible companies overpay up to 7 100 kr per month');
 
-it('declares a payee without a Swedish personal or coordination number by födelsetid (fältkod 222, 077, 078)')
-    ->todo('AUD-LON-15: SaveEmployee requires a personal number; SINK/A-SINK payees without one cannot be declared');
+it('declares a payee without a Swedish personal or coordination number by födelsetid (fältkod 222, 077, 078)', function () {
+    $piotr = LonSupport::employee($this->owner, $this->company, '19850314', [
+        'identity_type' => 'BIRTH', 'personal_number' => '', 'first_name' => 'Piotr', 'last_name' => 'Nowak',
+        'birth_date' => '1985-03-14', 'birth_place' => 'Gdansk', 'birth_country' => 'PL', 'citizenship' => 'PL',
+        'address' => 'ul. Dluga 1', 'postal_code' => '80-827', 'city' => 'Gdansk', 'country' => 'PL',
+        'tax_residence' => 'NON_RESIDENT_SINK', 'tax_table' => null, 'tax_column' => null, 'salary' => '20 000',
+    ]);
+    $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+    // SFF 6 kap. 1 § andra st.: födelsedatum, födelseort och medborgarskap; födelsetid is ÅÅÅÅMMDD + three free digits (here the employee number).
+    expect($field('//agd:IU//agd:Fodelsetid[@faltkod="222"]'))->toBe('19850314'.str_pad((string) $piotr->employee_number, 3, '0', STR_PAD_LEFT))
+        ->and($field('//agd:IU//agd:BetalningsmottagarId'))->toBe('')
+        ->and($field('//agd:IU//agd:Fodelseort[@faltkod="077"]'))->toBe('Gdansk')
+        ->and($field('//agd:IU//agd:LandskodFodelseort[@faltkod="078"]'))->toBe('PL')
+        ->and($field('//agd:IU//agd:LandskodMedborgare[@faltkod="081"]'))->toBe('PL')
+        ->and($field('//agd:IU//agd:Fornamn[@faltkod="216"]'))->toBe('Piotr')
+        ->and($field('//agd:IU//agd:Efternamn[@faltkod="217"]'))->toBe('Nowak')
+        ->and($field('//agd:IU//agd:Gatuadress[@faltkod="218"]'))->toBe('ul. Dluga 1')
+        ->and($field('//agd:IU//agd:Postnummer[@faltkod="219"]'))->toBe('80-827')
+        ->and($field('//agd:IU//agd:Postort[@faltkod="220"]'))->toBe('Gdansk')
+        ->and($field('//agd:IU//agd:LandskodPostort[@faltkod="221"]'))->toBe('PL')
+        // SINK 22,5 % of 20 000 kr = 4 500 kr (rules.json 2026, sink.rate).
+        ->and($field('//agd:IU/agd:AvdrSkattSINK[@faltkod="274"]'))->toBe('4500');
+});

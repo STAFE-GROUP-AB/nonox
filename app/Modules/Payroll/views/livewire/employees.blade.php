@@ -1,5 +1,4 @@
 @php
-    use App\Modules\Payroll\Domain\PersonalNumber;
 
     $input = 'block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
     $types = ['TILLSVIDARE' => __('Tillsvidare'), 'ALLMAN_VISSTID' => __('Allmän visstid'), 'VIKARIAT' => __('Vikariat'), 'SASONG' => __('Säsong'), 'PROVANSTALLNING' => __('Provanställning'), 'TIMANSTALLD' => __('Timanställd')];
@@ -16,7 +15,9 @@
                 <div class="grid gap-4 sm:grid-cols-2">
                     <x-ui.field for="employee_first_name" :label="__('Förnamn')" error="first_name"><input id="employee_first_name" type="text" class="{{ $input }} mt-1" wire:model="form.first_name"></x-ui.field>
                     <x-ui.field for="employee_last_name" :label="__('Efternamn')" error="last_name"><input id="employee_last_name" type="text" class="{{ $input }} mt-1" wire:model="form.last_name"></x-ui.field>
-                    <x-ui.field for="employee_personal_number" :label="__('Personnummer')" error="personal_number" :hint="__('Tolv siffror, ÅÅÅÅMMDD-NNNN. Sparas krypterat.')"><input id="employee_personal_number" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.personal_number" autocomplete="off" @if($editing) placeholder="{{ PersonalNumber::masked($editing->personal_number) }} ({{ __('tomt behåller') }})" @endif></x-ui.field>
+                    @if(($form['identity_type'] ?? 'SWEDISH') !== 'BIRTH')
+                        <x-ui.field for="employee_personal_number" :label="__('Personnummer')" error="personal_number" :hint="__('Tolv siffror, ÅÅÅÅMMDD-NNNN. Sparas krypterat.')"><input id="employee_personal_number" type="text" inputmode="numeric" class="{{ $input }} mt-1 tabular-nums" wire:model="form.personal_number" autocomplete="off" @if($editing) placeholder="{{ $editing->maskedIdentity() }} ({{ __('tomt behåller') }})" @endif></x-ui.field>
+                    @endif
                     <x-ui.field for="employee_email" :label="__('E-post')" error="email"><input id="employee_email" type="email" class="{{ $input }} mt-1" wire:model="form.email"></x-ui.field>
                     <x-ui.field for="employee_address" :label="__('Adress')" error="address" class="sm:col-span-2"><input id="employee_address" type="text" class="{{ $input }} mt-1" wire:model="form.address"></x-ui.field>
                     <x-ui.field for="employee_postal_code" :label="__('Postnummer')" error="postal_code"><input id="employee_postal_code" type="text" class="{{ $input }} mt-1" wire:model="form.postal_code"></x-ui.field>
@@ -43,6 +44,24 @@
                     @if(($form['tax_residence'] ?? 'SE') === 'SE')
                         <x-ui.field for="employee_tax_table" :label="__('Skattetabell')" error="tax_table" :hint="__('Från den anställdes skattebesked.')"><input id="employee_tax_table" type="number" class="{{ $input }} mt-1" wire:model="form.tax_table"></x-ui.field>
                         <x-ui.field for="employee_tax_column" :label="__('Kolumn')" error="tax_column"><input id="employee_tax_column" type="number" class="{{ $input }} mt-1" wire:model="form.tax_column"></x-ui.field>
+                    @endif
+                    @if(($form['tax_residence'] ?? 'SE') !== 'SE')
+                        <x-ui.field for="employee_identity_type" :label="__('Svenskt person- eller samordningsnummer')" error="identity_type" class="sm:col-span-3">
+                            <select id="employee_identity_type" class="{{ $input }} mt-1" wire:model.live="form.identity_type">
+                                <option value="SWEDISH">{{ __('Har svenskt person- eller samordningsnummer') }}</option>
+                                <option value="BIRTH">{{ __('Saknar svenskt nummer – redovisas med födelsedata') }}</option>
+                            </select>
+                        </x-ui.field>
+                        @if(($form['identity_type'] ?? 'SWEDISH') === 'BIRTH')
+                            <p class="text-xs text-gray-500 sm:col-span-3">{{ __('Utan svenskt nummer redovisas personen i arbetsgivardeklarationen med födelsedatum, födelseort, medborgarskap, namn och adress. Fyll i adressen ovan, med landskod.') }}</p>
+                            <x-ui.field for="employee_birth_date" :label="__('Födelsedatum')" error="birth_date"><input id="employee_birth_date" type="date" class="{{ $input }} mt-1" wire:model="form.birth_date"></x-ui.field>
+                            <x-ui.field for="employee_birth_place" :label="__('Födelseort')" error="birth_place"><input id="employee_birth_place" type="text" maxlength="50" class="{{ $input }} mt-1" wire:model="form.birth_place"></x-ui.field>
+                            <x-ui.field for="employee_birth_country" :label="__('Födelseland (landskod)')" error="birth_country" :hint="__('Två bokstäver, till exempel DE.')"><input id="employee_birth_country" type="text" maxlength="2" class="{{ $input }} mt-1 uppercase" wire:model="form.birth_country"></x-ui.field>
+                            <x-ui.field for="employee_country" :label="__('Adressens land (landskod)')" error="country"><input id="employee_country" type="text" maxlength="2" class="{{ $input }} mt-1 uppercase" wire:model="form.country"></x-ui.field>
+                        @endif
+                        <x-ui.field for="employee_citizenship" :label="__('Medborgarskap (landskod)')" error="citizenship" :hint="__('Två bokstäver, till exempel PL.')"><input id="employee_citizenship" type="text" maxlength="2" class="{{ $input }} mt-1 uppercase" wire:model="form.citizenship"></x-ui.field>
+                        <x-ui.field for="employee_foreign_tin" :label="__('Utländskt skatteregistreringsnummer (TIN)')" error="foreign_tin" :hint="__('Sparas krypterat.')"><input id="employee_foreign_tin" type="text" maxlength="20" class="{{ $input }} mt-1" wire:model="form.foreign_tin" autocomplete="off" @if($editing?->foreign_tin) placeholder="{{ __('tomt behåller') }}" @endif></x-ui.field>
+                        <x-ui.field for="employee_foreign_tin_country" :label="__('TIN utfärdat av (landskod)')" error="foreign_tin_country"><input id="employee_foreign_tin_country" type="text" maxlength="2" class="{{ $input }} mt-1 uppercase" wire:model="form.foreign_tin_country"></x-ui.field>
                     @endif
                     @if(($form['tax_residence'] ?? 'SE') === 'NON_RESIDENT_A_SINK')
                         <x-ui.field for="employee_activity_type" :label="__('Verksamhetens art')" error="activity_type" class="sm:col-span-3" :hint="__('Vilken sorts verksamhet ersättningen gäller, till exempel konsert eller cirkus. Står i arbetsgivardeklarationen (ruta 112).')"><input id="employee_activity_type" type="text" maxlength="50" class="{{ $input }} mt-1" wire:model="form.activity_type"></x-ui.field>
@@ -156,7 +175,7 @@
                         <span class="w-12 flex-none font-semibold tabular-nums text-gray-900">{{ $employee->employee_number }}</span>
                         <span class="min-w-0 flex-1 basis-48">
                             <span class="block font-medium text-gray-900">{{ $employee->first_name }} {{ $employee->last_name }}</span>
-                            <span class="block text-sm text-gray-600 tabular-nums">{{ collect([PersonalNumber::masked($employee->personal_number), $employment?->position_title, $employment ? $types[$employment->employment_type] ?? null : null])->filter()->implode(' · ') }}</span>
+                            <span class="block text-sm text-gray-600 tabular-nums">{{ collect([$employee->maskedIdentity(), $employment?->position_title, $employment ? $types[$employment->employment_type] ?? null : null])->filter()->implode(' · ') }}</span>
                         </span>
                         @if($employment)
                             <span class="text-right text-sm tabular-nums">

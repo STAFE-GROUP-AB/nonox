@@ -40,6 +40,20 @@ Under **Skatt** väljer du ett av tre alternativ:
 - **Bosatt i Sverige (skattetabell)** – skatten dras enligt Skatteverkets skattetabell. **Skattetabell** och **Kolumn** måste fyllas i; de står på personens skattebesked. NONOX gissar aldrig tabellen.
 - **Bosatt utomlands, SINK** och **Bosatt utomlands, A-SINK** – särskild inkomstskatt med en fast procentsats enligt reglerna. Ingen tabell behövs.
 
+### Utan svenskt personnummer
+
+En person som beskattas med SINK eller A-SINK och inte har något svenskt person- eller samordningsnummer kan ändå få lön:
+
+1. Välj **Bosatt utomlands, SINK** eller **Bosatt utomlands, A-SINK** under **Skatt**.
+2. Välj **Saknar svenskt nummer – redovisas med födelsedata** under **Svenskt person- eller samordningsnummer**. Fältet för personnummer försvinner.
+3. Fyll i **Födelsedatum**, **Födelseort**, **Födelseland (landskod)** och **Medborgarskap (landskod)**. Landskoder skrivs med två bokstäver, till exempel PL för Polen.
+4. Fyll i adressen i hemlandet: **Adress**, **Postnummer**, **Ort** och **Adressens land (landskod)**. Har adressen inget postnummer lämnar du det tomt.
+5. Har personen ett skatteregistreringsnummer från hemlandet fyller du i **Utländskt skatteregistreringsnummer (TIN)** och vilket land som har utfärdat det.
+
+I arbetsgivardeklarationen redovisas personen då med födelsedatum, födelseort, medborgarskap, namn och adress i stället för personnummer. I listan står **född** och datumet där personnumret annars står.
+
+Medborgarskap och TIN kan du fylla i även för den som har ett svenskt samordningsnummer och beskattas med SINK eller A-SINK. De skickas då med i deklarationen.
+
 Väljer du **Bosatt utomlands, A-SINK** fyller du också i **Verksamhetens art**: vilken sorts verksamhet ersättningen gäller, till exempel konsert eller cirkus. Skatteverket vill ha den i arbetsgivardeklarationen (ruta 112) när A-SINK-skatten redovisas.
 
 Är du osäker på vilken skatt som gäller, fråga Skatteverket eller er redovisningskonsult.

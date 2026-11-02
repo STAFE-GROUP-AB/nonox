@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Models;
 
 use App\Models\User;
+use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -22,8 +23,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $first_name
  * @property string $last_name
  * @property ?string $email
- * @property string $personal_number
+ * @property ?string $personal_number null for a SINK or A-SINK payee without a Swedish number (#74)
  * @property CarbonImmutable $birth_date
+ * @property ?string $birth_place
+ * @property ?string $birth_country ISO 3166-1 alpha-2
+ * @property ?string $citizenship ISO 3166-1 alpha-2
+ * @property ?string $foreign_tin
+ * @property ?string $foreign_tin_country ISO 3166-1 alpha-2
+ * @property ?string $address
+ * @property ?string $postal_code
+ * @property ?string $city
+ * @property string $country
  * @property ?string $bank_clearing
  * @property ?string $bank_account
  * @property string $tax_residence
@@ -49,7 +59,7 @@ class Employee extends Model
 
     /** Never serialised: personal number, bank details and private notes. */
     /** @var list<string> */
-    protected $hidden = ['personal_number', 'bank_clearing', 'bank_account', 'iban', 'bic', 'emergency_contact', 'notes', 'pending_bank'];
+    protected $hidden = ['personal_number', 'foreign_tin', 'bank_clearing', 'bank_account', 'iban', 'bic', 'emergency_contact', 'notes', 'pending_bank'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -60,6 +70,11 @@ class Employee extends Model
         'last_name',
         'personal_number',
         'birth_date',
+        'birth_place',
+        'birth_country',
+        'citizenship',
+        'foreign_tin',
+        'foreign_tin_country',
         'address',
         'postal_code',
         'city',
@@ -95,6 +110,7 @@ class Employee extends Model
             'employee_number' => 'integer',
             'personal_number' => 'encrypted',
             'birth_date' => 'immutable_date',
+            'foreign_tin' => 'encrypted',
             'bank_clearing' => 'encrypted',
             'bank_account' => 'encrypted',
             'iban' => 'encrypted',
@@ -135,6 +151,20 @@ class Employee extends Model
         }
 
         return $this->tax_adjustment_type;
+    }
+
+    /** Whether the employee has a Swedish personal or coordination number; otherwise AGI uses the birth date (#74). */
+    public function hasSwedishNumber(): bool
+    {
+        return filled($this->personal_number);
+    }
+
+    /** The personal number masked for lists and payslips, or the birth date when there is none. */
+    public function maskedIdentity(): string
+    {
+        return $this->hasSwedishNumber()
+            ? PersonalNumber::masked((string) $this->personal_number)
+            : __('född :date', ['date' => $this->birth_date->toDateString()]);
     }
 
     public function hasPendingBankChange(): bool

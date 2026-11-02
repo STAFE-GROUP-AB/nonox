@@ -93,6 +93,8 @@ class EraseEmployee
                     'first_name' => __('Anonymiserad'),
                     'last_name' => __('anställd :number', ['number' => $employee->employee_number]),
                     'personal_number' => '',
+                    'birth_place' => null,
+                    'foreign_tin' => null,
                     'birth_date' => $employee->birth_date->startOfYear(),
                 ] : []),
             ])->save();

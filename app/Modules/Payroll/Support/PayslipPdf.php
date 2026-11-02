@@ -7,7 +7,6 @@ namespace App\Modules\Payroll\Support;
 use App\Models\Company;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayslipLineResult;
-use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\Employee;
@@ -82,7 +81,7 @@ final class PayslipPdf
             'run' => $run,
             'company' => $company,
             'employee' => $employee,
-            'personalNumber' => PersonalNumber::masked((string) $employee->personal_number),
+            'personalNumber' => $employee->maskedIdentity(),
             'salary' => self::salary($employment),
             'preview' => $run->isOpen(),
             'earnings' => $earnings->map(fn (PayslipLine $line): array => self::row($line, (string) ($codes[$line->pay_code_id] ?? '')))->values()->all(),

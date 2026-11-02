@@ -358,3 +358,28 @@ finding and the GitHub issue.
   individuppgift; AgiDeclaration refuses to build the declaration when an
   A-SINK payee has none (an older employee card). Checked against the
   component schema 1.1.
+
+### Payees without a Swedish personal or coordination number (AUD-LON-15, #74)
+
+- SFF 6 kap. 1 § andra stycket: "Om personnummer eller samordningsnummer
+  saknas för betalningsmottagaren, ska uppgift om personens födelsedatum,
+  födelseort och medborgarskap anges." Skatteverket's agbeskrivning adds
+  222 (födelsetid, `ÅÅÅÅMMDDnnn`, "nnn kan vara vilket heltal som helst
+  mellan 000 - 999"), 077 födelseort (always with 222), 078 its country,
+  216/217 name, 218–220 address, 221 its country abroad, or 230 fri adress
+  with 221. SFF 6 kap. 2 § adds the foreign TIN (252 with 076) and
+  citizenship (081) for payees with limited tax liability.
+- `employees.personal_number` becomes nullable; new columns
+  `birth_place`, `birth_country`, `citizenship`, `foreign_tin` (encrypted),
+  `foreign_tin_country`. The employee form offers "Saknar svenskt nummer"
+  only for SINK and A-SINK (someone taxed by the table has a Swedish
+  number); then birth data, citizenship and an address of at most 50
+  characters per field (TEXT50) are required.
+- AgiPayee builds the identity: 215, or `Fodelsetid` in
+  `BetalningsmottagareIDChoice` plus the other fields in
+  `BetalningsmottagareIUGROUP` (element order free, `xs:all`). The three
+  free digits are the employee number modulo 1 000, so a correction
+  resends the same födelsetid. Validated against the component schema 1.1.
+- `TODO(legal-verify)`: whether the foreign TIN must be required for every
+  SINK/A-SINK payee (optional here, as SFF 6 kap. 2 § has exceptions);
+  whether Skatteverket expects a particular use of the three free digits.

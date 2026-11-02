@@ -99,6 +99,8 @@ final class DataSubjectExport
             'anstalld' => [
                 ...$employee->only(['employee_number', 'first_name', 'last_name', 'email', 'phone', 'address', 'postal_code', 'city', 'country', 'tax_residence', 'tax_table', 'tax_column', 'church_member', 'status']),
                 'personnummer' => $employee->personal_number,
+                ...$employee->only(['birth_date', 'birth_place', 'birth_country', 'citizenship', 'foreign_tin_country']),
+                'utlandskt_skatteregistreringsnummer' => $employee->foreign_tin,
                 'clearingnummer' => $employee->bank_clearing,
                 'kontonummer' => $employee->bank_account,
                 'iban' => $employee->getAttribute('iban'),
