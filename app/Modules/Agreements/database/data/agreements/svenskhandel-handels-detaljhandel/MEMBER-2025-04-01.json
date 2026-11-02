@@ -15,7 +15,8 @@
     "valid_to": "2027-03-31",
     "validity_source": "D1#§ 18.1 s. 54",
     "sources": [
-        { "id": "D1", "title": "Kollektivavtal Detaljhandeln 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf", "edition": "HA2025-110, 2025-05", "retrieved_at": "2026-11-01" }
+        { "id": "D1", "title": "Kollektivavtal Detaljhandeln 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/da110.pdf", "edition": "HA2025-110, 2025-05", "retrieved_at": "2026-11-01" },
+        { "id": "P26", "title": "Premier 2026, arbetsgivare med kollektivavtal – arbetare (Svenskt Näringsliv–LO)", "publisher": "Avtalat (Fora/AFA/AMF/Svenskt Näringsliv/LO)", "url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf", "edition": "2025-12-22", "retrieved_at": "2026-11-02" }
     ],
     "working_time": {
         "full_time_hours_per_week": "38.25",
@@ -161,7 +162,56 @@
         "Anställningstidstillägg efter 5 år i företaget (155 kr/mån eller 0,93 kr/tim 2025, 160 kr eller 0,96 kr/tim 2026, D1 § 7.2 E s. 26) utges utöver minimilönen och är inte data ännu.",
         "Deltid med månadslön räknas som timmar/vecka × timlön × 166 / 38,25 (D1 § 7.3 B.4 s. 28); den formeln är inte data ännu.",
         "Mertid från 2026-04-01 ersätts som övertid (D1 § 9.5 s. 37) och övertid på fridag ger minst 3 timmar (§ 9.1); inte data ännu.",
-        "Frånvaroavdrag 4,6 % per dag, semester 13 % med garantibelopp, sjuklön och restid är inte data i den här versionen ännu.",
+        "Frånvaroavdrag 4,6 % per dag, sjuklön och restid är inte data i den här versionen ännu.",
         "TODO(legal-verify): hängavtalets namn och eventuell avgift har inte hittats; ingen HANGAVTAL-variant finns."
-    ]
+    ],
+    "vacation": {
+        "rule_monthly": "PROCENTREGELN",
+        "percent_bp": 1300,
+        "minimum_daily": {
+            "min_employment_months": 3,
+            "part_time": "FULL_TIME_ONLY",
+            "steps": [
+                {
+                    "valid_from": "2025-04-01",
+                    "rows": [
+                        {
+                            "age_min": 18,
+                            "ore": 147000
+                        },
+                        {
+                            "age_min": 18,
+                            "experience_months_min": 36,
+                            "ore": 174000
+                        }
+                    ]
+                },
+                {
+                    "valid_from": "2026-04-01",
+                    "rows": [
+                        {
+                            "age_min": 18,
+                            "ore": 151500
+                        },
+                        {
+                            "age_min": 18,
+                            "experience_months_min": 36,
+                            "ore": 179000
+                        }
+                    ]
+                }
+            ],
+            "source": "D1#§ 14.6 B.1 s. 45"
+        },
+        "source": "D1#§ 14.6 A s. 45",
+        "note": "Semester (A9): 13 % och garantibelopp per dag för heltid; för deltid (semesterlönefaktor 1 796) varnar NONOX i stället för att räkna. Förstärkt pensionsavsättning (§ 17.14): sats ej hittad, TODO(legal-verify)."
+    },
+    "pension": {
+        "rule_key": "pension.saf_lo",
+        "source": "D1#§ 17.2 s. 52; P26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.arbetare",
+        "source": "D1#§ 17.2 s. 52; P26"
+    }
 }

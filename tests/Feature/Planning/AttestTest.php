@@ -44,6 +44,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
+use Tests\Support\Payroll;
 use Tests\Support\Planning;
 use Tests\Support\StaffLedger;
 
@@ -108,6 +109,8 @@ function attestAgreement(): void
         $setup->saveEmployment($owner, $company, Employment::query()->where('employee_id', $employee->id)->sole(), ['collective_agreement_id' => $binding->id, 'agreement_group' => '2']);
     }
 
+    // A run with a bound agreement needs the verified pension and insurance premiums (ADR-033 A10).
+    Payroll::agreementPremiums();
     AgreementRuleVersion::query()->where('agreement_key', 'visita-hrf-grona-riks')->where('variant', 'MEMBER')->sole()->forceFill(['verified_by' => 'Granskare', 'verified_at' => now()])->save();
 }
 

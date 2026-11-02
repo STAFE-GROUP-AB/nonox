@@ -155,3 +155,9 @@ Samma lista och samma premier 2026 som Detaljhandelsavtalet (§ 19.2 s. 57;
 P26), se `detaljhandelsavtalet.md`. Förstärkt pensionsavsättning (§ 19.9):
 sats ej hittad → `TODO(legal-verify)`. Extra SAF-LO-premie från tidbanken
 (ovan) ska bokföras som pensionspremie, inte lön.
+
+## I NONOX: semester, pension, försäkringar och tillägg (A9–A12, 2026-11-02)
+
+- Semester: 13 %, garantibelopp per dag 1 470 kr från 18 år och 1 740 kr från 21 år (2025-04-01), 1 515 / 1 790 kr (2026-04-01), för heltid; deltid ger en varning.
+- Pension och försäkringar: `pension.saf_lo`, `insurance.fora.arbetare`. Förstärkt pensionsavsättning (§ 19.9) och extra SAF-LO från tidbanken räknas inte.
+- Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/svenskhandel-handels-lager-ehandel.json`.

@@ -1,0 +1,402 @@
+{
+  "agreement": "svenskhandel-handels-lager-ehandel",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "dag",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 3100000
+        },
+        "gross_ore": 3100000,
+        "employer": {
+          "TJANSTEPENSION": 139500,
+          "AVTALSFORSAKRING": 13950
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "morgon: OB 40 % 06–07",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "LE_OB_40",
+          "quantity": "5",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "LE_OB_40": 35630
+        },
+        "gross_ore": 3135630,
+        "employer": {
+          "TJANSTEPENSION": 141103,
+          "AVTALSFORSAKRING": 14111
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "kväll: OB 40 % 18–23",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "LE_OB_40",
+          "quantity": "10",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "LE_OB_40": 71260
+        },
+        "gross_ore": 3171260,
+        "employer": {
+          "TJANSTEPENSION": 142707,
+          "AVTALSFORSAKRING": 14270
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "natt: OB 70 % 23–06",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "LE_OB_70",
+          "quantity": "7",
+          "date": "2026-05-06"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "LE_OB_70": 87297
+        },
+        "gross_ore": 3187297,
+        "employer": {
+          "TJANSTEPENSION": 143428,
+          "AVTALSFORSAKRING": 14343
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helg: OB 40 % lördag",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "LE_OB_40",
+          "quantity": "8",
+          "date": "2026-05-09"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "LE_OB_40": 57008
+        },
+        "gross_ore": 3157008,
+        "employer": {
+          "TJANSTEPENSION": 142065,
+          "AVTALSFORSAKRING": 14207
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helgdag: OB 100 % Kristi himmelsfärd",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "LE_OB_100",
+          "quantity": "8",
+          "date": "2026-05-14"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "LE_OB_100": 142528
+        },
+        "gross_ore": 3242528,
+        "employer": {
+          "TJANSTEPENSION": 145914,
+          "AVTALSFORSAKRING": 14592
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "ung: 18 år timlön under minimilönen med natt-OB",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 15500,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "100",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "LE_OB_70",
+          "quantity": "4",
+          "date": "2026-05-07"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TIMLON": 1550000,
+          "LE_OB_70": 43400
+        },
+        "gross_ore": 1593400,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 7170
+        },
+        "warnings": [
+          "under minimilönen"
+        ]
+      }
+    },
+    {
+      "name": "deltid 75 %: OB på heltidslönens timlön (deltidsformeln är inte data)",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 7500,
+        "weekly_hours": "30",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "LE_OB_40",
+          "quantity": "6",
+          "date": "2026-05-11"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "LE_OB_40": 42756
+        },
+        "gross_ore": 2367756,
+        "employer": {
+          "TJANSTEPENSION": 106549,
+          "AVTALSFORSAKRING": 10655
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "semester: 13 %",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3100000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 967200,
+          "SEMESTERAVDRAG": -715385
+        },
+        "gross_ore": 3351815,
+        "employer": {
+          "TJANSTEPENSION": 150832,
+          "AVTALSFORSAKRING": 15083
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-20",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-21",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-22",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 37200000
+      }
+    },
+    {
+      "name": "semester: garantibelopp för fyllda 18 (21 år ger högre)",
+      "agreement": "svenskhandel-handels-lager-ehandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 16400,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "LAGER",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "60",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 303000
+        },
+        "gross_ore": 1287000,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 5792
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 2000000
+      }
+    }
+  ]
+}

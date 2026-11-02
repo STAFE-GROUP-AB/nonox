@@ -9,7 +9,9 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Agreements\Agents\AgreementIdentificationAgent;
 use App\Modules\Agreements\Agents\EmploymentTermsAgent;
+use App\Modules\Agreements\Agents\LocalAgreementAgent;
 use App\Modules\Agreements\AgreementsModule;
+use App\Modules\Agreements\Domain\LocalOverrides;
 use App\Modules\Agreements\Models\AgreementDocument;
 use App\Modules\Agreements\Models\AgreementProposal;
 use App\Modules\Agreements\Models\AgreementRuleVersion;
@@ -60,6 +62,7 @@ class AgreementAi
         private readonly ModuleManager $modules,
         private readonly AnalyzeDocument $analyze,
         private readonly AgreementSetup $setup,
+        private readonly LocalAgreements $local,
     ) {}
 
     public static function availableFor(User $user, Company $company): bool
@@ -159,6 +162,10 @@ class AgreementAi
                 throw ValidationException::withMessages(['document' => [__('Det här är en anställds dokument. Analysera det under Analysera all personal.')]]);
             }
 
+            if ($document->document_type === 'LOCAL_AGREEMENT') {
+                return $this->analyzeLocalAgreement($user, $company, $document);
+            }
+
             [$text, $masked] = $this->text($document);
             $answer = $this->analyze->text($user, $company, new AgreementIdentificationAgent, 'agreement_identification', $this->catalogContext($company), $text);
             $keys = AgreementVersions::agreements()->keys()->all();
@@ -185,6 +192,62 @@ class AgreementAi
             }
 
             return $this->store($user, $company, $document, AgreementProposal::IDENTIFICATION, null, null, $proposals, $text, $masked);
+        });
+    }
+
+    /**
+     * Where a local agreement deviates from the central agreement
+     * (LocalAgreementAgent, ADR-033 §6): one proposal per deviation, as a
+     * path LocalOverrides allows with the value the document states.
+     * Proposals for an agreement the company is not bound by, or whose
+     * value does not fit the path, are left out.
+     *
+     * @return int proposals made
+     *
+     * @throws AiAnalysisException
+     */
+    public function analyzeLocalAgreement(User $user, Company $company, AgreementDocument $document): int
+    {
+        $this->authorize($user, $company);
+
+        return CurrentCompany::run($company, function () use ($user, $company, $document): int {
+            $document = AgreementDocument::query()->findOrFail($document->id);
+            $bindings = CollectiveAgreement::query()->whereNotNull('agreement_key')->get();
+
+            if ($bindings->isEmpty()) {
+                throw ValidationException::withMessages(['document' => [__('Lägg till avtalet som företaget är bundet av innan det lokala avtalet läses.')]]);
+            }
+
+            [$text, $masked] = $this->text($document);
+            $answer = $this->analyze->text($user, $company, new LocalAgreementAgent, 'local_agreement', $this->localContext($bindings), $text);
+            $proposals = [];
+
+            foreach ((array) ($answer['deviations'] ?? []) as $found) {
+                $found = (array) $found;
+                $binding = $bindings->firstWhere('agreement_key', (string) ($found['agreement_key'] ?? ''));
+                $path = (string) ($found['path'] ?? '');
+                $rules = $binding instanceof CollectiveAgreement ? LocalAgreements::rules($binding) : null;
+
+                if (! $binding instanceof CollectiveAgreement || $rules === null || ! LocalOverrides::allowed($path)) {
+                    continue;
+                }
+
+                $entered = array_map(fn (mixed $item): string => (string) $item, array_intersect_key($found, array_flip(['amount_kr', 'percent', 'divisor', 'weeks', 'hours', 'text'])));
+                $value = LocalOverrides::valueFrom($path, $entered, $rules);
+
+                if ($value === null || LocalOverrides::problem($path, $value, $rules) !== null) {
+                    continue;
+                }
+
+                $proposals[] = [
+                    'field' => 'override',
+                    'value' => ['binding_id' => $binding->id, 'agreement_key' => $binding->agreement_key, 'path' => $path, 'value' => $value, 'description' => mb_substr((string) ($found['description'] ?? ''), 0, 500)],
+                    'quote' => (string) ($found['quote'] ?? ''),
+                    'page' => (int) ($found['page'] ?? 0),
+                ];
+            }
+
+            return $this->store($user, $company, $document, AgreementProposal::LOCAL_AGREEMENT, null, null, $proposals, $text, $masked);
         });
     }
 
@@ -344,6 +407,14 @@ class AgreementAi
     /** What is registered today for a proposal's field, to compare with. */
     public static function registered(AgreementProposal $proposal, ?Employment $employment): ?string
     {
+        if ($proposal->field === 'override') {
+            $proposed = (array) $proposal->value;
+            $binding = CollectiveAgreement::query()->find((int) ($proposed['binding_id'] ?? 0));
+            $current = $binding === null ? null : (((array) $binding->overrides)[(string) ($proposed['path'] ?? '')]['value'] ?? null);
+
+            return $current === null ? __('Centrala avtalet') : LocalOverrides::describe((string) $proposed['path'], $current);
+        }
+
         if ($employment === null) {
             return null;
         }
@@ -378,12 +449,19 @@ class AgreementAi
             'start_date' => __('Anställd från'),
             'industry_experience_from' => __('Branschvana från'),
             'deviation' => __('Avvikelse från avtalet'),
+            'override' => __('Lokal avvikelse'),
             default => $field,
         };
     }
 
     private function apply(User $user, Company $company, AgreementProposal $proposal, mixed $value): void
     {
+        if ($proposal->field === 'override') {
+            $this->applyOverride($user, $company, $proposal, $value);
+
+            return;
+        }
+
         if ($proposal->field === 'binding') {
             $value = (array) $value;
 
@@ -432,6 +510,26 @@ class AgreementAi
                 : throw ValidationException::withMessages(['proposal' => [__('Veckoarbetstiden måste vara ett antal timmar.')]])]),
             default => throw ValidationException::withMessages(['proposal' => [__('Uppgiften kan inte föras in härifrån.')]]),
         };
+    }
+
+    /**
+     * Records an accepted local deviation (unverified): as proposed, or with
+     * the value the person typed ("30", "35 %", "/600").
+     */
+    private function applyOverride(User $user, Company $company, AgreementProposal $proposal, mixed $value): void
+    {
+        $proposed = (array) $proposal->value;
+        $binding = CollectiveAgreement::query()->find((int) ($proposed['binding_id'] ?? 0))
+            ?? throw ValidationException::withMessages(['proposal' => [__('Företaget är inte längre bundet av avtalet.')]]);
+        $path = (string) ($proposed['path'] ?? '');
+        $decided = $proposed['value'] ?? null;
+
+        if (is_string($value)) {
+            $rules = LocalAgreements::rules($binding) ?? throw ValidationException::withMessages(['proposal' => [__('Det finns ingen avtalsdata för bindningen.')]]);
+            $decided = LocalOverrides::valueFrom($path, LocalOverrides::parseEntered($path, $value), $rules);
+        }
+
+        $this->local->record($user, $company, $binding, $path, $decided, ['document_id' => $proposal->agreement_document_id, 'page' => $proposal->page, 'origin' => 'AI', 'description' => isset($proposed['description']) ? (string) $proposed['description'] : null]);
     }
 
     /** @param  array<string, mixed>  $changes */
@@ -501,6 +599,27 @@ class AgreementAi
         $legalForm = (string) $company->legal_form->value;
 
         return "Agreements (key | name | parties | collective):\n{$lines}\n\nCompany legal form: {$legalForm}";
+    }
+
+    /**
+     * The company's bound agreements with their codes (no values), and the
+     * deviations NONOX can record, for the local agreement agent.
+     *
+     * @param  Collection<int, CollectiveAgreement>  $bindings
+     */
+    private function localContext(Collection $bindings): string
+    {
+        $lines = $bindings->map(function (CollectiveAgreement $binding): string {
+            $rules = LocalAgreements::rules($binding);
+            $codes = $rules === null ? '' : collect($rules->codes())
+                ->map(fn (array $code, string $key): string => "  - {$key}: {$code['name']} (".($code['kind'] ?? '').') '.($code['description'] ?? ''))
+                ->implode("\n");
+
+            return "{$binding->agreement_key} ({$binding->name})\n{$codes}";
+        })->implode("\n");
+        $paths = collect(array_keys(LocalOverrides::PATHS))->map(fn (string $path): string => "  - {$path}: ".LocalOverrides::label($path))->implode("\n");
+
+        return "Agreements the company is bound by, with their codes:\n{$lines}\n\nDeviations NONOX can record (path):\n{$paths}";
     }
 
     /** The company's bound agreements with their pay groups, for the employment agent. */

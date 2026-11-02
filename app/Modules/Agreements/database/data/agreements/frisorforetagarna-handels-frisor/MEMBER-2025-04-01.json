@@ -17,7 +17,8 @@
     "validity_source": "HS#lönesteg 1 april 2025 och 1 april 2026",
     "sources": [
         { "id": "HS", "title": "Handels sammanfattning av Frisöravtalet 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/avtalsrorelse/avtal-frisor/", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
-        { "id": "F23", "title": "Frisöravtalet 2023–2025 (fulltext)", "publisher": "Frisörföretagarna/Handels", "url": "https://frisor.se/media/ohnjlatu/ha2023-200-friso-r-inlaga.pdf", "edition": "2023-04-01", "retrieved_at": "2026-11-01" }
+        { "id": "F23", "title": "Frisöravtalet 2023–2025 (fulltext)", "publisher": "Frisörföretagarna/Handels", "url": "https://frisor.se/media/ohnjlatu/ha2023-200-friso-r-inlaga.pdf", "edition": "2023-04-01", "retrieved_at": "2026-11-01" },
+        { "id": "P26", "title": "Premier 2026, arbetsgivare med kollektivavtal – arbetare (Svenskt Näringsliv–LO)", "publisher": "Avtalat (Fora/AFA/AMF/Svenskt Näringsliv/LO)", "url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf", "edition": "2025-12-22", "retrieved_at": "2026-11-02" }
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
@@ -72,5 +73,19 @@
         "Delaren 173 och deltidsfaktorn 4,325 kommer från 2023-texten och måste bekräftas mot 2025-texten. TODO(legal-verify).",
         "Receptionister och servicebiträden har timlönetabeller vars belopp för 2025/26 inte hittats; ingen grupp för dem.",
         "All lön, även provision och OB, betalas månaden efter arbetet (2023-text); det är inte data ännu."
-    ]
+    ],
+    "vacation": {
+        "percent_bp": 1300,
+        "unverified": true,
+        "source": "F23#§ 10 mom 2 s. 38",
+        "note": "Semester (A9): 13 % inklusive provision enligt 2023 års text, overifierat. Provision med garanti (A11): satsen och garantin finns inte i någon publik 2025-text och ligger därför inte här; företaget anger dem som lokal avvikelse eller manuell rad. Frisörbranschens extra pension 0,500 % (Fora) räknas inte ännu, TODO(legal-verify) åldersgränsen."
+    },
+    "pension": {
+        "rule_key": "pension.saf_lo",
+        "source": "F23#§ 20 mom 1; P26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.arbetare",
+        "source": "F23#§ 20 mom 1; P26"
+    }
 }

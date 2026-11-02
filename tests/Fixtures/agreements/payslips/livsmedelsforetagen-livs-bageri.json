@@ -1,0 +1,437 @@
+{
+  "agreement": "livsmedelsforetagen-livs-bageri",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "dag: timlön",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {},
+        "gross_ore": 2880000,
+        "employer": {
+          "TJANSTEPENSION": 129600,
+          "AVTALSFORSAKRING": 12960
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "natt och kväll mån–tor: OB 1",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "BG_OB_1",
+          "quantity": "10",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "BG_OB_1": 50890
+        },
+        "gross_ore": 2930890,
+        "employer": {
+          "TJANSTEPENSION": 131890,
+          "AVTALSFORSAKRING": 13189
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "fredag kväll: OB 2",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "BG_OB_2",
+          "quantity": "6",
+          "date": "2026-05-08"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "BG_OB_2": 59322
+        },
+        "gross_ore": 2939322,
+        "employer": {
+          "TJANSTEPENSION": 132269,
+          "AVTALSFORSAKRING": 13227
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helg: OB 3 lördag dag",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "BG_OB_3",
+          "quantity": "8",
+          "date": "2026-05-09"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "BG_OB_3": 124072
+        },
+        "gross_ore": 3004072,
+        "employer": {
+          "TJANSTEPENSION": 135183,
+          "AVTALSFORSAKRING": 13518
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helgdag: Kristi himmelsfärdsdag",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "BG_OB_HELGDAG",
+          "quantity": "8",
+          "date": "2026-05-14"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "BG_OB_HELGDAG": 182512
+        },
+        "gross_ore": 3062512,
+        "employer": {
+          "TJANSTEPENSION": 137813,
+          "AVTALSFORSAKRING": 13782
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "förskjuten tid",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "BG_FORSKJUTEN",
+          "quantity": "12",
+          "date": "2026-05-11"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "BG_FORSKJUTEN": 44484
+        },
+        "gross_ore": 2924484,
+        "employer": {
+          "TJANSTEPENSION": 131602,
+          "AVTALSFORSAKRING": 13159
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "ung: 18 år med timlön under minimilönen",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 16000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "BG_OB_1",
+          "quantity": "4",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "BG_OB_1": 20356
+        },
+        "gross_ore": 2580356,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 11611
+        },
+        "warnings": [
+          "under minimilönen"
+        ]
+      }
+    },
+    {
+      "name": "semester: 13,2 %",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 422400
+        },
+        "gross_ore": 3302400,
+        "employer": {
+          "TJANSTEPENSION": 148608,
+          "AVTALSFORSAKRING": 14860
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 40000000
+      }
+    },
+    {
+      "name": "semester: lägsta semesterlön per dag",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 357800
+        },
+        "gross_ore": 3237800,
+        "employer": {
+          "TJANSTEPENSION": 145701,
+          "AVTALSFORSAKRING": 14571
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 5000000
+      }
+    },
+    {
+      "name": "deltid 50 %: lägsta semesterlön i proportion",
+      "agreement": "livsmedelsforetagen-livs-bageri/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 5000,
+        "weekly_hours": "20",
+        "group": "BAGERI",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "160",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 178900
+        },
+        "gross_ore": 3058900,
+        "employer": {
+          "TJANSTEPENSION": 137651,
+          "AVTALSFORSAKRING": 13765
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 2000000
+      }
+    }
+  ]
+}

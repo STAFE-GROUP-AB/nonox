@@ -36,6 +36,12 @@ use Carbon\CarbonImmutable;
  *
  * Saved days are paid at this year's value. TODO(legal-verify): the value of
  * saved days under procentregeln.
+ *
+ * A collective agreement (NONOX Avtal, ADR-033 A9) can give a higher
+ * percentage, a higher semestertillägg and a lowest vacation pay per day
+ * (VacationInput::withAgreementTerms); the line then names the agreement.
+ * Year-end payouts and pay when the employment ends are still the law's
+ * values (VacationLedger).
  */
 final class Vacation implements Step
 {
@@ -98,14 +104,14 @@ final class Vacation implements Step
     private function supplement(PayrollContext $context, PayslipDraft $draft, int $days): void
     {
         $rule = (array) $context->rules->get('vacation.supplement_sammaloneregeln');
-        $percentBp = (int) $rule['bp_of_monthly_salary_per_day'];
+        $percentBp = $context->vacation->supplementBp ?? (int) $rule['bp_of_monthly_salary_per_day'];
         $monthly = BigDecimal::of((int) $context->monthlySalaryOre)->multipliedBy($context->employmentRateBp)->dividedBy(Units::BASIS_POINTS, Units::SCALE, RoundingMode::HalfUp);
         $perDay = $monthly->multipliedBy($percentBp)->dividedBy(Units::BASIS_POINTS, Units::SCALE, RoundingMode::HalfUp);
 
         $draft->add(new PayslipLineResult('SEMESTERTILLAGG', __('Semestertillägg'), $perDay->multipliedBy($days)->toScale(0, RoundingMode::HalfUp)->toInt(), PayslipLineResult::TAX_TABLE, true, false,
             (string) $days, $perDay->toScale(0, RoundingMode::HalfUp)->toInt(),
             ruleVersionId: $context->rules->version('vacation.supplement_sammaloneregeln')->id,
-            explanation: ['days' => $days, 'bp_of_monthly_salary_per_day' => $percentBp, 'monthly_salary_ore' => (string) $monthly->toScale(0, RoundingMode::HalfUp)]));
+            explanation: ['days' => $days, 'bp_of_monthly_salary_per_day' => $percentBp, 'monthly_salary_ore' => (string) $monthly->toScale(0, RoundingMode::HalfUp), ...self::agreement($context, $context->vacation?->supplementBp !== null)]));
     }
 
     /**
@@ -119,9 +125,15 @@ final class Vacation implements Step
             return;
         }
 
-        $percentBp = (int) ((array) $context->rules->get('vacation.percent_rule'))['bp'];
+        $percentBp = $vacation->percentBp ?? (int) ((array) $context->rules->get('vacation.percent_rule'))['bp'];
         $perDay = BigDecimal::of($vacation->basisOre)->multipliedBy($percentBp)->dividedBy(Units::BASIS_POINTS, Units::SCALE, RoundingMode::HalfUp)
             ->dividedBy($vacation->paidDaysEarned, Units::SCALE, RoundingMode::HalfUp);
+        $minimumUsed = $vacation->minimumDailyOre !== null && $perDay->isLessThan($vacation->minimumDailyOre);
+
+        if ($minimumUsed) {
+            $perDay = BigDecimal::of((int) $vacation->minimumDailyOre);
+        }
+
         $days = count($paid);
 
         if ($monthly) {
@@ -135,7 +147,7 @@ final class Vacation implements Step
         $draft->add(new PayslipLineResult('SEMESTERLON', __('Semesterlön'), $perDay->multipliedBy($days)->toScale(0, RoundingMode::HalfUp)->toInt(), PayslipLineResult::TAX_TABLE, true, false,
             (string) $days, $perDay->toScale(0, RoundingMode::HalfUp)->toInt(),
             ruleVersionId: $context->rules->version('vacation.percent_rule')->id,
-            explanation: ['days' => $days, 'basis_ore' => $vacation->basisOre, 'paid_days_earned' => $vacation->paidDaysEarned, 'bp' => $percentBp]));
+            explanation: ['days' => $days, 'basis_ore' => $vacation->basisOre, 'paid_days_earned' => $vacation->paidDaysEarned, 'bp' => $percentBp, ...($minimumUsed ? ['minimum_daily_ore' => $vacation->minimumDailyOre] : []), ...self::agreement($context, $vacation->percentBp !== null || $minimumUsed)]));
     }
 
     private function payout(PayrollContext $context, PayslipDraft $draft): void
@@ -146,15 +158,27 @@ final class Vacation implements Step
             return;
         }
 
-        $percentBp = (int) ((array) $context->rules->get('vacation.percent_rule'))['bp'];
+        $percentBp = $context->vacation->percentBp ?? (int) ((array) $context->rules->get('vacation.percent_rule'))['bp'];
 
         // TODO(legal-verify): semesterersättning paid with every salary; Skatteverket calls semesterersättning an
         // engångsbelopp but taxes regular payments by the table. The company chooses (setting vacation_payout_tax).
         $tax = $context->vacation?->payoutTax === 'ONE_OFF' ? PayslipLineResult::TAX_ONE_OFF : PayslipLineResult::TAX_TABLE;
-        $draft->add(new PayslipLineResult('SEMESTERERSATTNING', __('Semesterersättning :percent %', ['percent' => $percentBp / Units::ORE]),
+        $draft->add(new PayslipLineResult('SEMESTERERSATTNING', __('Semesterersättning :percent %', ['percent' => str_replace('.', ',', (string) ($percentBp / Units::ORE))]),
             BigDecimal::of($basis)->multipliedBy($percentBp)->dividedBy(Units::BASIS_POINTS, 0, RoundingMode::HalfUp)->toInt(), $tax, true, false,
             ruleVersionId: $context->rules->version('vacation.percent_rule')->id,
-            explanation: ['basis_ore' => $basis, 'bp' => $percentBp]));
+            explanation: ['basis_ore' => $basis, 'bp' => $percentBp, ...self::agreement($context, $context->vacation?->percentBp !== null)]));
+    }
+
+    /**
+     * The agreement a vacation line follows, for its explanation.
+     *
+     * @return array<string, mixed>
+     */
+    private static function agreement(PayrollContext $context, bool $used): array
+    {
+        $agreement = $context->vacation->agreement ?? [];
+
+        return $used && $agreement !== [] ? ['agreement' => $agreement] : [];
     }
 
     /**

@@ -17,7 +17,8 @@
     "sources": [
         { "id": "GH", "title": "Visita Gröna Riks Hängavtal 2025–2027", "publisher": "HRF", "url": "https://www.hrf.net/app/uploads/2026/03/Visita-Grona-riks-Hangavtal-2025-2027.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
         { "id": "GR", "title": "Gröna Riksavtalet 2025–2027", "publisher": "Visita/HRF", "url": "https://www.hrf.net/app/uploads/2025/05/Grona-riksen-2025-2027-1.pdf", "edition": "2025-04-01", "retrieved_at": "2026-11-01" },
-        { "id": "HRF25", "title": "HRF-folder 2025 (kontroll av OB)", "publisher": "HRF", "url": "https://www.hrf.net/app/uploads/2025/05/HRF-folder20250430_himmel_uppslagsvis.pdf", "edition": "2025-04-30", "retrieved_at": "2026-11-01" }
+        { "id": "HRF25", "title": "HRF-folder 2025 (kontroll av OB)", "publisher": "HRF", "url": "https://www.hrf.net/app/uploads/2025/05/HRF-folder20250430_himmel_uppslagsvis.pdf", "edition": "2025-04-30", "retrieved_at": "2026-11-01" },
+        { "id": "P26", "title": "Premier 2026, arbetsgivare med kollektivavtal – arbetare (Svenskt Näringsliv–LO)", "publisher": "Avtalat (Fora/AFA/AMF/Svenskt Näringsliv/LO)", "url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf", "edition": "2025-12-22", "retrieved_at": "2026-11-02" }
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
@@ -170,15 +171,88 @@
                 { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_HOURLY", "bp": 9000, "plus_hourly_wage": true } }
             ],
             "source": "GR#§§ 11–12 s. 18–20"
+        },
+        "GR_KOST": {
+            "name": "Kostavdrag",
+            "kind": "MEAL",
+            "pay_code": "FORMAN_EGENBETALNING",
+            "benefit_code": "KOSTFORMAN_LUNCH",
+            "description": "Nettoavdrag per arbetsdag för personalmåltid; förmånsvärdet minskas med avdraget",
+            "rates": [
+                {
+                    "valid_from": "2025-04-01",
+                    "rate": {
+                        "type": "ORE",
+                        "ore": 5500
+                    }
+                },
+                {
+                    "valid_from": "2026-04-01",
+                    "rate": {
+                        "type": "ORE",
+                        "ore": 5600
+                    }
+                }
+            ],
+            "source": "GR#§ 18 s. 27; bilaga 5 s. 45"
         }
     },
     "notes": [
         "Hängavtalet har samma allmänna villkor som Gröna Riks för Visitas medlemmar (GH löneavtal § 1–2 s. 52–53). OB, storhelg, övertid, dagtyper och arbetstid är därför desamma som i MEMBER-versionen och hänvisar till GR.",
         "Skillnader mot MEMBER: högre minimilöner, endast generell lönehöjning (1 030 kr 2025, 935 kr 2026, minimilönerna höjs lika mycket) och ingen bilaga om årsarbetstid (GH s. 52; GR löneavtal § 7 s. 61).",
-        "Administrationsavgift 0,51 % av premieunderlaget för hängavtalsföretag (GH/GR § 28 s. 35) är inte data i den här versionen ännu.",
+        "Administrationsavgift 0,51 % av premieunderlaget för hängavtalsföretag (GH/GR § 28 s. 35) ligger under insurances.admin_fee_bp.",
         "Grupp 1N (nattreceptionist i lönegrupp 1) har bara timlön i tabellen; ingen månadslön anges. TODO(legal-verify): exakt vilka anställningar som räknas som nattreceptionist i hängavtalets tabell, och hur den förhåller sig till regeln om minimitimlön × 1,055 för viss nattpersonal (GR § 9 p. 1 st. 2).",
         "Avrundning av OB och övertid till påbörjad halvtimme tillämpas när pass delas upp (A6), inte på redan uppdelade timmar. TODO(legal-verify): per pass eller per period.",
-        "Mertid, röda dagar, kostavdrag, semester 12,72 %, sjuklön med OB och avtalsförsäkringar är inte data i den här versionen ännu (A7–A11).",
+        "Mertid, röda dagar och sjuklön med OB är inte data i den här versionen ännu (A5–A8).",
         "Ett erfarenhetsår räknas om man arbetat minst 75 % eller 1 300 timmar (GR s. 60). NONOX räknar från datumet för branschvana som anges på anställningen."
-    ]
+    ],
+    "vacation": {
+        "percent_bp": 1272,
+        "saved_day_percent_bp": 50,
+        "minimum_daily": {
+            "min_employment_months": 3,
+            "part_time": "PRO_RATA",
+            "steps": [
+                {
+                    "valid_from": "2025-04-01",
+                    "rows": [
+                        {
+                            "age_min": 20,
+                            "ore": 162000
+                        },
+                        {
+                            "age_max_exclusive": 20,
+                            "ore": 122700
+                        }
+                    ]
+                },
+                {
+                    "valid_from": "2026-04-01",
+                    "rows": [
+                        {
+                            "age_min": 20,
+                            "ore": 167500
+                        },
+                        {
+                            "age_max_exclusive": 20,
+                            "ore": 126900
+                        }
+                    ]
+                }
+            ],
+            "source": "GR#§ 17 s. 25"
+        },
+        "source": "GR#§ 17 s. 25",
+        "note": "Semester (A9): 12,72 % och lägsta semesterlön per dag; steget för semesteråret från 2027-04-01 ligger utanför versionens giltighet och kommer med nästa version. Kostavdrag (A11) räknas mot Skatteverkets värde för lunch eller middag, TODO(legal-verify): vilket schablonvärde som gäller. Mertid, röda dagar och sjuklön med OB är inte data i den här versionen ännu (A5–A8). Hängavtalets administrationsavgift 0,51 % tas på samma underlag som premierna, TODO(legal-verify)."
+    },
+    "pension": {
+        "rule_key": "pension.saf_lo",
+        "source": "GR#§ 28 s. 35; P26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.arbetare",
+        "source": "GR#§ 28 s. 35; P26",
+        "admin_fee_bp": 51,
+        "admin_fee_source": "GH#§ 28 s. 35"
+    }
 }

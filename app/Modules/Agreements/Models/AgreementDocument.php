@@ -34,7 +34,7 @@ class AgreementDocument extends Model
     use BelongsToCompany;
 
     /** Company documents: what the company is bound by. */
-    public const array COMPANY_TYPES = ['HANGAVTAL', 'MEMBERSHIP', 'PAYROLL_REPORT', 'OTHER'];
+    public const array COMPANY_TYPES = ['HANGAVTAL', 'MEMBERSHIP', 'PAYROLL_REPORT', 'LOCAL_AGREEMENT', 'OTHER'];
 
     /** An employee's documents: the terms of one employment. */
     public const array EMPLOYEE_TYPES = ['EMPLOYMENT_CONTRACT', 'PAYSLIP'];
@@ -83,6 +83,7 @@ class AgreementDocument extends Model
             'PAYROLL_REPORT' => __('Lönebesked eller lönerapport'),
             'EMPLOYMENT_CONTRACT' => __('Anställningsavtal'),
             'PAYSLIP' => __('Lönebesked'),
+            'LOCAL_AGREEMENT' => __('Lokalt avtal'),
             default => __('Annat dokument'),
         };
     }

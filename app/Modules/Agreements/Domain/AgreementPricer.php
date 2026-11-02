@@ -103,6 +103,11 @@ final class AgreementPricer
         $code = $rules->code($input->code)
             ?? throw new PayrollBlockedException(__('Lönearten :code hör inte till :agreement, som anställningen är knuten till.', ['code' => $input->code, 'agreement' => $rules->shortName()]));
 
+        // Commission and meal deductions are not hours at a rate: AgreementPayTerms turns them into pay lines.
+        if (in_array($code['kind'] ?? null, AgreementPayTerms::TRANSFORMED_KINDS, true)) {
+            return $input;
+        }
+
         if (($code['kind'] ?? null) === 'OB' && $agreement->obCompensation === self::INCLUDED) {
             throw new PayrollBlockedException(__(':item: OB ingår i lönen enligt anställningens avtalsuppgifter. Ta bort raden eller ändra uppgiften under Lön → Avtal.', ['item' => $input->description]));
         }
@@ -156,7 +161,7 @@ final class AgreementPricer
     private function rate(PayrollContext $context, AgreementRules $rules, array $rate, string $item): array
     {
         return match ($rate['type'] ?? null) {
-            'ORE_PER_HOUR' => [(int) $rate['ore'], ['type' => 'fixed']],
+            'ORE_PER_HOUR', 'ORE' => [(int) $rate['ore'], ['type' => 'fixed']],
             'PERCENT_OF_HOURLY' => $this->percentOfHourly($context, $rules, $rate, $item),
             'DIVISOR_OF_MONTHLY' => $this->divisorOfMonthly($context, $rate, $item),
             default => throw new PayrollBlockedException(__(':item: avtalets sats har en form som NONOX inte räknar ännu.', ['item' => $item])),

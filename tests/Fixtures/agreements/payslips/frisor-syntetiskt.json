@@ -1,0 +1,258 @@
+{
+  "agreement": "frisor-syntetiskt",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "provision över garantin",
+      "agreement": "synthetic:synthetic-frisor.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 2000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "SYNT",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "SY_PROV",
+          "quantity": "80000",
+          "date": "2026-05-31"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SY_PROV": 800000
+        },
+        "gross_ore": 2800000,
+        "employer": {
+          "TJANSTEPENSION": 126000,
+          "AVTALSFORSAKRING": 12600
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "provision under garantin: bara garantilönen",
+      "agreement": "synthetic:synthetic-frisor.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 2000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "SYNT",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "SY_PROV",
+          "quantity": "40000",
+          "date": "2026-05-31"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SY_PROV": 0
+        },
+        "gross_ore": 2000000,
+        "employer": {
+          "TJANSTEPENSION": 90000,
+          "AVTALSFORSAKRING": 9000
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "provision utan garanti",
+      "agreement": "synthetic:synthetic-frisor-none.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 2000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "SYNT",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "SY_PROV",
+          "quantity": "40000",
+          "date": "2026-05-31"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SY_PROV": 1400000
+        },
+        "gross_ore": 3400000,
+        "employer": {
+          "TJANSTEPENSION": 153000,
+          "AVTALSFORSAKRING": 15300
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "timlön som garanti",
+      "agreement": "synthetic:synthetic-frisor.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 15000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "SYNT",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "100",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "SY_PROV",
+          "quantity": "60000",
+          "date": "2026-05-31"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SY_PROV": 600000
+        },
+        "gross_ore": 2100000,
+        "employer": {
+          "TJANSTEPENSION": 94500,
+          "AVTALSFORSAKRING": 9450
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "lokalt avtal: högre provisionssats",
+      "agreement": "synthetic:synthetic-frisor.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 2000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "SYNT",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "SY_PROV",
+          "quantity": "90000",
+          "date": "2026-05-31"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SY_PROV": 1600000
+        },
+        "gross_ore": 3600000,
+        "employer": {
+          "TJANSTEPENSION": 162000,
+          "AVTALSFORSAKRING": 16200
+        },
+        "warnings": []
+      },
+      "local_overrides": {
+        "codes.SY_PROV.rate": {
+          "value": {
+            "type": "PERCENT_OF_TURNOVER",
+            "bp": 4000
+          },
+          "source": "LOKALT#s. 1",
+          "verified_at": "2026-05-01T00:00:00+02:00"
+        }
+      }
+    },
+    {
+      "name": "semester: 13 % även på provision (syntetiskt)",
+      "agreement": "synthetic:synthetic-frisor.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 2000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "SYNT",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 780000,
+          "SEMESTERAVDRAG": -461538
+        },
+        "gross_ore": 2318462,
+        "employer": {
+          "TJANSTEPENSION": 104331,
+          "AVTALSFORSAKRING": 10433
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-20",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-21",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-22",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 30000000
+      }
+    }
+  ]
+}

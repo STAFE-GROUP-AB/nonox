@@ -129,3 +129,9 @@ s. 2). Premier 2026 som `detaljhandelsavtalet.md` (P26): SAF-LO 4,50 % /
 30,0 % från 22 år; TFA 0,01 %; TGL 0,10 %; TSL 0,34 % / 0,74 % (hängavtal,
 moms tillkommer på hängavtalsavgiften enligt Livsmedelsföretagens cirkulär
 fotnot 7).
+
+## I NONOX: semester, pension, försäkringar och tillägg (A9–A12, 2026-11-02)
+
+- Semester: 13,2 %, lägsta semesterlön per dag 1 739 kr (2025-04-01) och 1 789 kr (2026-04-01) efter 6 månader, i proportion för deltid. Sparad dag 0,53 % sparas men räknas inte; avdraget 1/21,75 per semesterdag för månadsavlönade räknas inte (NONOX drar timmar enligt schemat).
+- Pension och försäkringar: `pension.saf_lo`, `insurance.fora.arbetare`. Moms på hängavtalsavgiften är inte data.
+- Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/livsmedelsforetagen-livs-bageri.json`.

@@ -278,6 +278,7 @@ agi_submissions                        — B.13
 
 ### B.5 System pay codes (seeded on enable, editable mapping)
 Monthly salary, hourly salary, overtime (simple/qualified), OB, bonus, commission, retroactive pay, vacation pay, vacation supplement, vacation compensation (payout), unpaid vacation, sick pay, karensavdrag, sick deduction, VAB deduction, parental leave deduction, unpaid leave, car benefit, fuel benefit, meal benefit, housing benefit, benefit co-payment (net), per diem tax-free / taxable, mileage tax-free / taxable, outlay repayment, advance, garnishment, salary exchange (gross deduction), pension premium, correction ±.
+As built for NONOX Avtal: `AVTALSTILLAGG` (supplement under an agreement, 7010), `PROVISION` (commission, 7010, vacation basis) and `AVTALSFORSAKRING` (agreement insurances, the employer's cost, 7570/2740).
 
 ### B.6 Versioned rules (`payroll_rule_versions`)
 Columns: `key`, `valid_from`, `valid_to`, `value jsonb`, `source_url`, `verified_by`, `verified_at`.
@@ -349,6 +350,8 @@ Rounding: tax per Skatteverket rules; net per setting; contribution rounding lev
 
 **Extension points (ADR-033).** `Support/Run/PayrollExtensions` lets another module plug into a run without agreement logic in the engine: a `ContextExtension` is prepared once per run (`prepare`) and adds to each employment's `PayrollContext` (`extensions`, `withInputs`); it may throw `PayrollBlockedException`, which lands on the run's checklist. Registered steps run after the engine's own. NONOX Avtal uses this to block a run without a verified agreement version, to price inputs whose pay code has `formula_ref = agreement:<code>` with the agreement's rate on the work date (`payroll_inputs.date_from`, else the period's first day), and to add minimum wage warnings. Without the module, an input of such a pay code is never priced at the hourly rate (Additions blocks it).
 
+**Agreement terms before the calculation (ADR-033 A9–A11).** NONOX Avtal's context extension may also replace the employment's vacation terms (`PayrollContext::withVacation`, `VacationInput::withAgreementTerms`: the agreement's percentage for procentregeln and semesterersättning, semestertillägg per day under sammalöneregeln, lowest vacation pay per day; the Vacation step uses them instead of `vacation.percent_rule` and `vacation.supplement_sammaloneregeln` and puts the agreement in the line's explanation) and, when the employment has no pension plan of its own, its pension plan (`PayrollContext::withPension`). A pension plan array may carry `threshold_ibb` (default 7.5), `ceiling_ibb` (no premium on pay above it), `from_age`/`to_age_exclusive` (age on the last day of the period) and `rule_version_id`; plans without them work as before. Commission (turnover × rate, less the guaranteed salary) and meal deductions (meal benefit at Skatteverket's value plus the employee's payment as a net deduction) become ordinary inputs before the steps run. The registered step `AgreementCostsStep` adds the agreement insurances as `EMPLOYER` lines (pay code `AVTALSFORSAKRING`) on the same cash basis as the pension premium. The premiums themselves are payroll rules (`pension.saf_lo`, `pension.itp1`, `insurance.fora.arbetare`, `insurance.fora.tjansteman`), not required keys: only a run with a bound employment needs them, and a missing verified version blocks that employment with the rule's name.
+
 ### B.10 Payroll run workflow
 ```
 DRAFT ──calculate──▶ CALCULATED ──approve──▶ APPROVED ──▶ PAID ──▶ POSTED ──▶ REPORTED
@@ -383,6 +386,7 @@ Default BAS mapping (configurable per pay code, verified against the company's c
 7519         Sociala avgifter på semester- och löneskulder D/K
 2710         Personalskatt                                 K
 2730         Lagstadgade sociala avgifter och särskild löneskatt K
+7570         Premier för arbetsmarknadsförsäkringar (avtalsförsäkringar, NONOX Avtal) D
 2740         Avtalade sociala avgifter                     K
 2920         Upplupna semesterlöner                        K/D
 2940         Upplupna lagstadgade sociala avgifter         K/D

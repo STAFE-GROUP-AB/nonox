@@ -48,6 +48,8 @@ class AgreementProposal extends Model
 
     public const string EMPLOYMENT_TERMS = 'EMPLOYMENT_TERMS';
 
+    public const string LOCAL_AGREEMENT = 'LOCAL_AGREEMENT';
+
     /** @var list<string> */
     protected $fillable = [
         'company_id',

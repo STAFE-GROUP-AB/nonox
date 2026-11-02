@@ -47,6 +47,10 @@ final class PayCodeCatalog
         'UTLAGG' => ['name_sv' => 'Utlägg', 'name_en' => 'Outlay repayment', 'category' => 'EXPENSE', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 2890, 'credit' => null],
         'TJANSTEPENSION' => ['name_sv' => 'Tjänstepension', 'name_en' => 'Occupational pension', 'category' => 'PENSION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7410, 'credit' => 2740],
         'SARSKILD_LONESKATT' => ['name_sv' => 'Särskild löneskatt på pension', 'name_en' => 'Special payroll tax on pension', 'category' => 'PENSION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7530, 'credit' => 2514],
+        // Collective agreements (NONOX Avtal, ADR-033 A10–A11): fixed supplements, commission and the agreement insurances.
+        'AVTALSTILLAGG' => ['name_sv' => 'Tillägg enligt avtal', 'name_en' => 'Supplement under agreement', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
+        'PROVISION' => ['name_sv' => 'Provision', 'name_en' => 'Commission', 'category' => 'ADDITION', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
+        'AVTALSFORSAKRING' => ['name_sv' => 'Avtalsförsäkringar', 'name_en' => 'Agreement insurances', 'category' => 'PENSION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7570, 'credit' => 2740],
         'FORSKOTT' => ['name_sv' => 'Avdrag för förskott', 'name_en' => 'Advance deduction', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 1680],
         'NETTOAVDRAG' => ['name_sv' => 'Nettolöneavdrag', 'name_en' => 'Net deduction', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 2890],
     ];
@@ -81,5 +85,7 @@ final class PayCodeCatalog
         7510 => 'Arbetsgivaravgifter',
         7519 => 'Sociala avgifter för semester- och löneskulder',
         7530 => 'Särskild löneskatt',
+        // TODO(legal-verify): BAS 2026 name of 7570, checked against the BAS chart before release.
+        7570 => 'Premier för arbetsmarknadsförsäkringar',
     ];
 }

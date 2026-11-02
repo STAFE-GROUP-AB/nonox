@@ -16,7 +16,9 @@
     "validity_source": "HT#§ 17 s. 58",
     "sources": [
         { "id": "HT", "title": "Handelns tjänstemannaavtal 2025–2027", "publisher": "Svensk Handel/Unionen/Akademikerförbunden (publicerad av Akavia)", "url": "https://www.akavia.se/siteassets/03-rad-och-stod/kollektivavtal-privat-sektor/svensk-handel/svensk-handel--tjanstemannaavtalet-2025-2027.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
-        { "id": "UN", "title": "Handelns tjänstemannaavtal, hängavtalsnytt 2025", "publisher": "Unionen", "url": "https://www.unionen.se/sites/default/files/files/Handelns_tjmavtal_Svensk%20Handel_H%C3%A4ngavtalsnytt2025.pdf", "edition": "2025", "retrieved_at": "2026-11-01" }
+        { "id": "UN", "title": "Handelns tjänstemannaavtal, hängavtalsnytt 2025", "publisher": "Unionen", "url": "https://www.unionen.se/sites/default/files/files/Handelns_tjmavtal_Svensk%20Handel_H%C3%A4ngavtalsnytt2025.pdf", "edition": "2025", "retrieved_at": "2026-11-01" },
+        { "id": "ITP26", "title": "Aktuella premier och basbelopp (ITP)", "publisher": "Collectum", "url": "https://collectum.se/avtal-och-faktura/faktura-och-premier/aktuella-premier-och-basbelopp", "edition": "2026", "retrieved_at": "2026-11-02" },
+        { "id": "F26", "title": "Prislista 2026 – företag med kollektivavtal", "publisher": "Fora", "url": "https://www.fora.se/foretag/kostnad-och-faktura/prislistor/prislista-2026---foretag-med-kollektivavtal/", "edition": "2026", "retrieved_at": "2026-11-02" }
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
@@ -163,6 +165,21 @@
         "Löneavdrag per timme är 1/167 av månadslönen (HT § 11.3 s. 40; UN s. 3). Den delaren är inte satt som timlönedelare här eftersom avtalet anger den för löneavdrag, inte som timlön. TODO(legal-verify).",
         "Övertid: deltid räknas upp till heltidslön; endast fulla halvtimmar; övertid som inte ansluter ger minst 3 timmar; anspråk inom 3 månader (HT § 4.2.3, 4.2.4, 4.2.7). Inte data ännu.",
         "Mertid har utmönstrats 2025: deltidsanställda får övertidsersättning för tid utöver sin ordinarie tid (UN s. 3).",
-        "Arbetstidsförkortning från 2026-01-01, semester (0,8 % och 0,5 %, 4,6 %) och sjuklön är inte data i den här versionen ännu."
-    ]
+        "Arbetstidsförkortning från 2026-01-01, semesterns 4,6 %-regel och sjuklön är inte data i den här versionen ännu."
+    ],
+    "vacation": {
+        "rule_monthly": "SAMMALONEREGELN",
+        "supplement_bp_per_day": 80,
+        "variable_pay_percent_bp": 50,
+        "source": "HT#§ 9.4.1 s. 27–28",
+        "note": "Semester (A9): semestertillägg 0,8 % per dag; 0,5 % av rörlig lön och 4,6 %-regeln räknas inte ännu. Extra semesterdagar enligt § 4 (+3 eller +5): villkoren är inte data ännu."
+    },
+    "pension": {
+        "rule_key": "pension.itp1",
+        "source": "HT#s. 6; ITP26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.tjansteman",
+        "source": "HT#s. 6; F26"
+    }
 }

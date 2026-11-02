@@ -15,7 +15,9 @@
     "valid_to": "2027-05-31",
     "validity_source": "VU#§ 30 s. 55",
     "sources": [
-        { "id": "VU", "title": "Besöksnäringens tjänstemannaavtal Visita–Unionen 2025–2027", "publisher": "Visita/Unionen", "url": "https://visita.se/app/uploads/2025/07/Visita-Unionen-2025-2027.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" }
+        { "id": "VU", "title": "Besöksnäringens tjänstemannaavtal Visita–Unionen 2025–2027", "publisher": "Visita/Unionen", "url": "https://visita.se/app/uploads/2025/07/Visita-Unionen-2025-2027.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
+        { "id": "ITP26", "title": "Aktuella premier och basbelopp (ITP)", "publisher": "Collectum", "url": "https://collectum.se/avtal-och-faktura/faktura-och-premier/aktuella-premier-och-basbelopp", "edition": "2026", "retrieved_at": "2026-11-02" },
+        { "id": "F26", "title": "Prislista 2026 – företag med kollektivavtal", "publisher": "Fora", "url": "https://www.fora.se/foretag/kostnad-och-faktura/prislistor/prislista-2026---foretag-med-kollektivavtal/", "edition": "2026", "retrieved_at": "2026-11-02" }
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
@@ -115,6 +117,199 @@
                 { "valid_from": "2025-06-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "72" } }
             ],
             "source": "VU#§ 11 s. 24–27"
+        },
+        "VU_RESTID": {
+            "name": "Restidsersättning",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": false,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "240"
+                    }
+                }
+            ],
+            "source": "VU#§ 24"
+        },
+        "VU_RESTID_HELG": {
+            "name": "Restidsersättning fre 18 – mån 06 och helg",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": false,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "190"
+                    }
+                }
+            ],
+            "source": "VU#§ 24"
+        },
+        "VU_JOUR": {
+            "name": "Jour",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "600"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 3"
+        },
+        "VU_JOUR_FRE": {
+            "name": "Jour fre 18 – lör 07",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "400"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 3"
+        },
+        "VU_JOUR_HELG": {
+            "name": "Jour lör 07 – sön 24",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "300"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 3"
+        },
+        "VU_JOUR_STORH": {
+            "name": "Jour storhelg",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "150"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 3"
+        },
+        "VU_BERED": {
+            "name": "Beredskap",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "1400"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 4"
+        },
+        "VU_BERED_FRE": {
+            "name": "Beredskap fre 18 – lör 07",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "1000"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 4"
+        },
+        "VU_BERED_HELG": {
+            "name": "Beredskap lör 07 – sön 24",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "700"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 4"
+        },
+        "VU_BERED_STORH": {
+            "name": "Beredskap storhelg",
+            "kind": "SUPPLEMENT",
+            "pay_code": "AVTALSTILLAGG",
+            "unit": "HOUR",
+            "vacation_basis": true,
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "DIVISOR_OF_MONTHLY",
+                        "divisor": "350"
+                    }
+                }
+            ],
+            "source": "VU#bilaga 4"
+        },
+        "VU_KOST": {
+            "name": "Kostavdrag",
+            "kind": "MEAL",
+            "pay_code": "FORMAN_EGENBETALNING",
+            "benefit_code": "KOSTFORMAN_LUNCH",
+            "rates": [
+                {
+                    "valid_from": "2025-06-01",
+                    "rate": {
+                        "type": "ORE",
+                        "ore": 5500
+                    }
+                },
+                {
+                    "valid_from": "2026-06-01",
+                    "rate": {
+                        "type": "ORE",
+                        "ore": 5600
+                    }
+                }
+            ],
+            "source": "VU#§ 17 s. 39; bilaga 2 s. 64"
         }
     },
     "notes": [
@@ -125,7 +320,29 @@
         "Avtalet har ingen storhelgsregel motsvarande Gröna Riks § 14.",
         "Övertid: månadslönen är aktuell fast månadslön, deltid räknas upp till heltidslön; varje påbörjad halvtimme tas med; övertid som inte ansluter ger minst 3 timmar (VU § 11). Avrundning och minimitid är inte data ännu.",
         "Mertid har ingen avtalsregel; arbetstidslagens regler gäller.",
-        "Kost, restid, jour, beredskap, arbetstidsförkortning, semester (sammalöneregeln 0,8 % och 12,72 %) och sjuklön är inte data i den här versionen ännu.",
+        "Arbetstidsförkortning, semesterns 12,72 % på rörlig lön och sjuklön är inte data i den här versionen ännu.",
         "TODO(legal-verify): Unionens hängavtalsinformation för 2025 har inte hittats; ingen HANGAVTAL-variant finns."
-    ]
+    ],
+    "vacation": {
+        "rule_monthly": "SAMMALONEREGELN",
+        "supplement_bp_per_day": 80,
+        "variable_pay_percent_bp": 1272,
+        "extra_days": [
+            {
+                "when": "OVERTIME_INCLUDED_IN_SALARY",
+                "days": 5,
+                "source": "VU#§ 16 s. 33"
+            }
+        ],
+        "source": "VU#§ 16 s. 33–38",
+        "note": "Semester (A9): semestertillägg 0,8 % per dag; 12,72 % av rörlig lön och 4,6 %-regeln räknas inte ännu. Jour och beredskap (A11): minsta antal timmar (8 respektive 4) kontrolleras inte. Kostavdrag mot Skatteverkets värde för lunch eller middag, TODO(legal-verify)."
+    },
+    "pension": {
+        "rule_key": "pension.itp1",
+        "source": "VU#bilaga 1 s. 63; ITP26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.tjansteman",
+        "source": "VU#bilaga 1 s. 63; F26"
+    }
 }

@@ -1,5 +1,5 @@
 ---
-beskrivning: En ärlig lista över vad NONOX Avtal ännu inte räknar – OB från klockslag, komptid, avtalets semester- och sjuklöneregler, pension, försäkringar och lokala avtal.
+beskrivning: En ärlig lista över vad NONOX Avtal ännu inte räknar – OB från klockslag, komptid, delar av avtalets semester- och sjuklöneregler, ITP 2 och lokala OB-tider.
 ordning: 70
 roller: [owner, admin, accountant, payroll_admin]
 modul: agreements
@@ -15,11 +15,11 @@ NONOX Avtal byggs steg för steg. Den här sidan säger rakt ut vad modulen inte
 - **OB räknad från arbetspassens klockslag.** Timmarna för OB, natt-OB och storhelg måste redan vara uppdelade, inmatade per typ eller från en fil från schemasystemet. NONOX delar inte upp ett pass med start- och sluttid i avtalets tidsfönster, och avrundar inte OB-tid enligt avtalet.
 - **Övertid och mertid mot schemat.** NONOX räknar inte ut vilka timmar som är övertid eller mertid; du anger dem.
 - **Komptid.** Valet **Tas ut som komptid** sparas på anställningen, men det finns inget komptidssaldo.
-- **Avtalets semesterregler.** Semester räknas enligt semesterlagen och era löneinställningar. Ger avtalet högre semestertillägg eller en högre procentsats, lägg in skillnaden själv som en rad i lönekörningen.
+- **Delar av avtalets semesterregler.** Avtalets procentsats, semestertillägg och lägsta semesterlön per dag räknas (se [Semester enligt avtalet](/manual/avtal/semester-enligt-avtal)). Rörlig lön i tjänstemannaavtalen, 4,6 %-regeln, garantibeloppet för deltid i handeln, extra semesterdagar och semesterskulden räknas inte enligt avtalet.
 - **Avtalets sjuklöneregler.** Sjuklön räknas enligt sjuklönelagen. Sjuklön med OB, och avtalens regler för sjuklön efter arbetsgivarperioden, räknas inte.
-- **Tjänstepension och avtalsförsäkringar per avtal.** Pensionen räknas med den pensionsplan du lägger upp under **Lön → Anställda**, inte automatiskt från avtalet. Avtalsförsäkringar och rapporter till försäkringsbolagen görs inte.
-- **Provision, fasta tillägg och kostavdrag** enligt avtalet.
-- **Lokala avtal.** Ett lokalt avtal som avviker från branschavtalet, till exempel andra OB-tider, kan inte läggas in. NONOX AI läser inte lokala avtal.
+- **Delar av pension och försäkringar.** SAF-LO, ITP 1 och avtalsförsäkringarna räknas (se [Pension och avtalsförsäkringar](/manual/avtal/pension-och-forsakringar)). ITP 2, sjukpension och premiebefrielse i ITP 1, TGL för tjänstemän och frisörbranschens extra pension räknas inte. NONOX skickar inget till Fora eller Collectum; du laddar ner ett underlag.
+- **Provision i Frisöravtalet.** Satserna finns inte i någon publik text. Provision, jour, beredskap, restid och kostavdrag räknas när avtalet har dem som data; se [Provision, tillägg och kostavdrag](/manual/avtal/provision-tillagg-och-kost).
+- **Lokala avtal om OB-tider och arbetstid.** Avvikande satser kan läggas in och används efter kontroll ([Lokala avtal](/manual/avtal/lokala-avtal)), men andra OB-tider, en annan beräkningsperiod eller komptid sparas bara och räknas inte.
 - **Vila och arbetstid.** Modulen kontrollerar inte dygns- och veckovila eller arbetstidslagens regler.
 
 ## Avtal och varianter som saknas

@@ -1,0 +1,399 @@
+{
+  "agreement": "svenskhandel-unionen-tjansteman",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "dag: ITP 1 och tjänstemännens försäkringar",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 3800000
+        },
+        "gross_ore": 3800000,
+        "employer": {
+          "TJANSTEPENSION": 171000,
+          "AVTALSFORSAKRING": 15960
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "kväll: förskjuten tid /600",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "HT_FT_600",
+          "quantity": "6",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "HT_FT_600": 37998
+        },
+        "gross_ore": 3837998,
+        "employer": {
+          "TJANSTEPENSION": 172710,
+          "AVTALSFORSAKRING": 16120
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "natt: förskjuten tid /400",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "HT_FT_400",
+          "quantity": "5",
+          "date": "2026-05-06"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "HT_FT_400": 47500
+        },
+        "gross_ore": 3847500,
+        "employer": {
+          "TJANSTEPENSION": 173138,
+          "AVTALSFORSAKRING": 16160
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helg: förskjuten tid /300 lördag",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "HT_FT_300",
+          "quantity": "8",
+          "date": "2026-05-09"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "HT_FT_300": 101336
+        },
+        "gross_ore": 3901336,
+        "employer": {
+          "TJANSTEPENSION": 175560,
+          "AVTALSFORSAKRING": 16385
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helgdag: /300 Kristi himmelsfärd",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "HT_FT_HELG_300",
+          "quantity": "8",
+          "date": "2026-05-14"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "HT_FT_HELG_300": 101336
+        },
+        "gross_ore": 3901336,
+        "employer": {
+          "TJANSTEPENSION": 175560,
+          "AVTALSFORSAKRING": 16385
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "storhelg: /150 pingstafton",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "HT_FT_150",
+          "quantity": "8",
+          "date": "2026-05-23"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "HT_FT_150": 202664
+        },
+        "gross_ore": 4002664,
+        "employer": {
+          "TJANSTEPENSION": 180120,
+          "AVTALSFORSAKRING": 16812
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "övertid /94",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "HT_OT_94",
+          "quantity": "4",
+          "date": "2026-05-12"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "HT_OT_94": 161704
+        },
+        "gross_ore": 3961704,
+        "employer": {
+          "TJANSTEPENSION": 178277,
+          "AVTALSFORSAKRING": 16639
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "övertid /72",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "HT_OT_72",
+          "quantity": "3",
+          "date": "2026-05-16"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "HT_OT_72": 158334
+        },
+        "gross_ore": 3958334,
+        "employer": {
+          "TJANSTEPENSION": 178125,
+          "AVTALSFORSAKRING": 16625
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "semester: sammalöneregeln med 0,8 % per dag",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SEMESTERTILLAGG": 152000
+        },
+        "gross_ore": 3952000,
+        "employer": {
+          "TJANSTEPENSION": 177840,
+          "AVTALSFORSAKRING": 16598
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-20",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-21",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-22",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "SAMMALONEREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 45600000
+      }
+    },
+    {
+      "name": "över 7,5 inkomstbasbelopp: 30 % ITP 1 över gränsen",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 6000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 6000000
+        },
+        "gross_ore": 6000000,
+        "employer": {
+          "TJANSTEPENSION": 470813,
+          "AVTALSFORSAKRING": 25200
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "ung: 18 år, ingen ITP 1 före 25",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 2500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 2500000
+        },
+        "gross_ore": 2500000,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 10500
+        },
+        "warnings": []
+      }
+    }
+  ]
+}

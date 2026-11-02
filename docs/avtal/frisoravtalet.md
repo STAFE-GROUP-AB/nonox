@@ -156,3 +156,10 @@ exakt hur garantin justeras för frånvaro och mertid i 2025-texten.
   TSL 0,15 % (medlem i Svenskt Näringsliv) / 0,55 % (övriga).
 - Friskvårdsbidrag 3 200 kr (2025), 3 400 kr (2026) (HS) — skattefri förmån
   inom gränsen `wellness.tax_free_limit`.
+
+## I NONOX: semester, pension, försäkringar och tillägg (A9–A12, 2026-11-02)
+
+- Semester: 13 % som `unverified` (2023 års text), så versionen kan fortfarande inte kontrolleras.
+- Pension och försäkringar: `pension.saf_lo`, `insurance.fora.arbetare`. Branschens extra pension 0,500 % räknas inte (TODO(legal-verify) åldersgränsen).
+- Provision med garanti: mekaniken finns (kodsort COMMISSION), men satserna och garantin finns inte i någon publik 2025-text och ligger därför **inte** i avtalsfilen. De gyllene lönespecarna räknar provision mot ett syntetiskt avtal (`tests/Fixtures/agreements/synthetic-frisor.json`). Ett företag med ett lokalt avtal om provision kan inte lägga in satsen förrän avtalet har en provisionskod.
+- Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/frisor-syntetiskt.json`.

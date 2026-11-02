@@ -8,7 +8,10 @@ use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\Agreements\Console\ImportAgreementsCommand;
 use App\Modules\Agreements\Console\VerifyAgreementCommand;
 use App\Modules\Agreements\Domain\AgreementChecksStep;
+use App\Modules\Agreements\Domain\AgreementCostsStep;
 use App\Modules\Agreements\Livewire\AgreementAiPage;
+use App\Modules\Agreements\Livewire\AgreementLocalPage;
+use App\Modules\Agreements\Livewire\AgreementReportsPage;
 use App\Modules\Agreements\Livewire\AgreementsPage;
 use App\Modules\Agreements\Livewire\AgreementsSettingsForm;
 use App\Modules\Agreements\Livewire\AgreementVersionsPage;
@@ -35,6 +38,7 @@ class AgreementsServiceProvider extends ServiceProvider
         $this->callAfterResolving(PayrollExtensions::class, function (PayrollExtensions $extensions): void {
             $extensions->addContextExtension(fn (): AgreementContextExtension => $this->app->make(AgreementContextExtension::class));
             $extensions->addStep(fn (): AgreementChecksStep => new AgreementChecksStep);
+            $extensions->addStep(fn (): AgreementCostsStep => new AgreementCostsStep);
         });
     }
 
@@ -51,6 +55,8 @@ class AgreementsServiceProvider extends ServiceProvider
         Livewire::component('agreements.page', AgreementsPage::class);
         Livewire::component('agreements.versions', AgreementVersionsPage::class);
         Livewire::component('agreements.ai', AgreementAiPage::class);
+        Livewire::component('agreements.local', AgreementLocalPage::class);
+        Livewire::component('agreements.reports', AgreementReportsPage::class);
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.AgreementsModule::KEY])
             ->group(__DIR__.'/routes/web.php');

@@ -15,7 +15,8 @@
     "valid_to": "2027-03-31",
     "validity_source": "L1#§ 20.1 s. 58",
     "sources": [
-        { "id": "L1", "title": "Kollektivavtal Lager och E-handel 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/le130.pdf", "edition": "HA2025-112, 2025-05", "retrieved_at": "2026-11-01" }
+        { "id": "L1", "title": "Kollektivavtal Lager och E-handel 2025–2027", "publisher": "Handels", "url": "https://www.handels.se/globalassets/avtalsrorelsen/ag-hang/le130.pdf", "edition": "HA2025-112, 2025-05", "retrieved_at": "2026-11-01" },
+        { "id": "P26", "title": "Premier 2026, arbetsgivare med kollektivavtal – arbetare (Svenskt Näringsliv–LO)", "publisher": "Avtalat (Fora/AFA/AMF/Svenskt Näringsliv/LO)", "url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf", "edition": "2025-12-22", "retrieved_at": "2026-11-02" }
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
@@ -146,7 +147,53 @@
         "Raden '20 år + 6 mån' bygger på branschvana: fyllda 20 år efter 6 månaders anställning i företaget (L1 § 6.2 D s. 19). tenure_months_min räknar från anställningsdatum.",
         "Anställningstidstillägg efter 5 år (162 kr/mån eller 0,93 kr/tim 2025, 167 kr eller 0,96 kr/tim 2026), släpvagnstillägg, frysrumstillägg och skiftformstillägg är inte data ännu.",
         "Deltid med månadslön räknar timlön som 40 × (månadslön + fasta tillägg) / 174 / timmar per vecka (L1 § 7.2 B); den formeln är inte data ännu.",
-        "Mertid från 2026-04-01 ersätts som övertid (L1 § 13.4 s. 44). Tidbank, helglön, semester 13 % och sjuklön är inte data i den här versionen ännu.",
+        "Mertid från 2026-04-01 ersätts som övertid (L1 § 13.4 s. 44). Tidbank, helglön och sjuklön är inte data i den här versionen ännu.",
         "TODO(legal-verify): hängavtalets namn och eventuell avgift har inte hittats; ingen HANGAVTAL-variant finns."
-    ]
+    ],
+    "vacation": {
+        "percent_bp": 1300,
+        "minimum_daily": {
+            "min_employment_months": 3,
+            "part_time": "FULL_TIME_ONLY",
+            "steps": [
+                {
+                    "valid_from": "2025-04-01",
+                    "rows": [
+                        {
+                            "age_min": 18,
+                            "ore": 147000
+                        },
+                        {
+                            "age_min": 21,
+                            "ore": 174000
+                        }
+                    ]
+                },
+                {
+                    "valid_from": "2026-04-01",
+                    "rows": [
+                        {
+                            "age_min": 18,
+                            "ore": 151500
+                        },
+                        {
+                            "age_min": 21,
+                            "ore": 179000
+                        }
+                    ]
+                }
+            ],
+            "source": "L1#§ 18.6 s. 54–55"
+        },
+        "source": "L1#§ 18.6 A s. 54",
+        "note": "Semester (A9): 13 % och garantibelopp per dag för heltid; deltid (faktor 1 796) räknas inte. Förstärkt pensionsavsättning (§ 19.9): sats ej hittad, TODO(legal-verify)."
+    },
+    "pension": {
+        "rule_key": "pension.saf_lo",
+        "source": "L1#§ 19.2 s. 57; P26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.arbetare",
+        "source": "L1#§ 19.2 s. 57; P26"
+    }
 }

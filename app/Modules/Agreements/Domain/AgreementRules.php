@@ -188,6 +188,114 @@ final readonly class AgreementRules
         return null;
     }
 
+    /**
+     * The agreement's vacation rules (ADR-033 A9, datamodell §6.1), or an
+     * empty array when the version has none.
+     *
+     * @return array<string, mixed>
+     */
+    public function vacation(): array
+    {
+        return (array) ($this->rules['vacation'] ?? []);
+    }
+
+    /**
+     * The lowest vacation pay per paid day for an age on a day, from the
+     * step in force (the latest from that day or earlier), or null.
+     *
+     * @return ?array{ore: int, valid_from: string, row: array<string, mixed>}
+     */
+    public function minimumDailyVacationPay(int $age, CarbonImmutable $day, int $experienceMonths = 0): ?array
+    {
+        $chosen = null;
+
+        foreach ((array) ($this->vacation()['minimum_daily']['steps'] ?? []) as $step) {
+            $step = (array) $step;
+
+            if ((string) ($step['valid_from'] ?? '') <= $day->toDateString()) {
+                $chosen = $step;
+            }
+        }
+
+        if ($chosen === null) {
+            return null;
+        }
+
+        $best = null;
+
+        // The highest amount among the rows the person meets (age, branschvana).
+        foreach ((array) ($chosen['rows'] ?? []) as $row) {
+            $row = (array) $row;
+            $matches = $age >= (int) ($row['age_min'] ?? 0)
+                && (! isset($row['age_max_exclusive']) || $age < (int) $row['age_max_exclusive'])
+                && $experienceMonths >= (int) ($row['experience_months_min'] ?? 0);
+
+            if ($matches && ($best === null || (int) $row['ore'] > $best['ore'])) {
+                $best = ['ore' => (int) $row['ore'], 'valid_from' => (string) $chosen['valid_from'], 'row' => $row];
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Which pension the agreement gives: the key of the payroll rule with
+     * the premiums (pension.saf_lo, pension.itp1), or an empty array.
+     *
+     * @return array<string, mixed>
+     */
+    public function pension(): array
+    {
+        return (array) ($this->rules['pension'] ?? []);
+    }
+
+    /**
+     * The agreement insurances: the key of the payroll rule with the
+     * premiums, and a fee of the agreement's own (the hängavtal fee).
+     *
+     * @return array<string, mixed>
+     */
+    public function insurances(): array
+    {
+        return (array) ($this->rules['insurances'] ?? []);
+    }
+
+    /** @return array<string, array<string, mixed>> the agreement's codes of one kind */
+    public function codesOfKind(string $kind): array
+    {
+        return array_filter($this->codes(), fn (array $code): bool => ($code['kind'] ?? null) === $kind);
+    }
+
+    /**
+     * A copy with the company's verified local overrides (a lokalt avtal,
+     * ADR-033 §3) laid over the central values. Only paths LocalOverrides
+     * allows are used; the source of each changed value becomes the local
+     * agreement.
+     *
+     * @param  array<string, array<string, mixed>>  $overrides  path => {value, source, ...}
+     */
+    public function withOverrides(array $overrides): self
+    {
+        $rules = $this->rules;
+        $sources = $this->sources;
+
+        foreach ($overrides as $path => $override) {
+            $value = $override['value'] ?? null;
+
+            if ($value === null || ! LocalOverrides::allowed((string) $path)) {
+                continue;
+            }
+
+            $rules = LocalOverrides::set($rules, (string) $path, $value, (string) ($override['source'] ?? LocalOverrides::SOURCE_ID));
+        }
+
+        if ($overrides !== [] && ! in_array(LocalOverrides::SOURCE_ID, array_column($sources, 'id'), true)) {
+            $sources[] = ['id' => LocalOverrides::SOURCE_ID, 'title' => __('Lokalt avtal'), 'url' => ''];
+        }
+
+        return new self($rules, $sources);
+    }
+
     private static function containsUnverified(mixed $value): bool
     {
         if (! is_array($value)) {
