@@ -56,8 +56,25 @@
                         <a href="{{ route('accounting.vouchers.show', $report->voucher_id) }}" class="font-semibold underline">{{ $report->voucher?->reference() }}</a>.
                         @if($report->boxes != $boxes)
                             <span class="block mt-1 text-accent-800">{{ __('Något har bokförts i perioden efteråt, så rutorna nedan skiljer sig från det som bokfördes. Kontrollera och rätta deklarationen hos Skatteverket.') }}</span>
+                        @elseif($report->version > 1)
+                            <span class="block mt-1">{{ __('Ett tillägg har bokförts efter en sen bokföring i perioden. Rutorna nedan är den rättade deklarationen. Har du inte redan gjort det: lämna en rättad momsdeklaration för hela perioden hos Skatteverket.') }}</span>
                         @endif
                     </p>
+                @endif
+
+                @if($supplement && $canSettle)
+                    <div class="mt-4 rounded-lg bg-amber-50 p-4 text-sm text-amber-950 print:hidden" role="status">
+                        <p class="font-semibold">{{ __('Bokför tillägget till momsen') }}</p>
+                        <p class="mt-1">{{ __('Momsen för perioden är redan bokförd, men något har bokförts i perioden efteråt och ligger kvar på momskontona. Tillägget blir en ny verifikation i serie M som för skillnaden till 2650. Lämna sedan en rättad momsdeklaration för hela perioden hos Skatteverket, med rutorna nedan.') }}</p>
+                        <div class="mt-3" x-data="{ confirming: false }">
+                            <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Bokför tillägget') }}</x-button>
+                            <div x-show="confirming" x-cloak class="flex flex-wrap items-center gap-4">
+                                <x-button type="button" wire:click="settle" wire:loading.attr="disabled">{{ __('Ja, bokför tillägget') }}</x-button>
+                                <button type="button" class="text-sm text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
+                            </div>
+                            <x-input-error for="period" class="mt-2" />
+                        </div>
+                    </div>
                 @endif
 
                 <div class="mt-5 overflow-x-auto">

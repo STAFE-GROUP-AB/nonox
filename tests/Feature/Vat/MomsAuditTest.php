@@ -442,12 +442,15 @@ it('settles VAT booked in a period after it was settled', function () {
         ['account' => 2611, 'credit_ore' => 2_500],
     ]);
 
-    // Either the posting is refused, or a later settlement moves the 25 kr to 2650: 2611 ends at zero.
+    // A supplementary settlement moves the 25 kr to 2650: 2611 ends at zero (AUD-MOMS-5, #63).
+    $supplement = app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
     $account = Account::query()->where('number', 2611)->sole();
     $balance = (int) DB::table('voucher_rows')->where('account_id', $account->id)->sum(DB::raw('debit_ore - credit_ore'));
 
-    expect($balance)->toBe(0);
-})->todo('AUD-MOMS-5: after SettleVat a voucher dated in the settled period is accepted (unless the period is locked by hand); the page warns, but no supplementary settlement exists, so its VAT stays on 2611 and is never moved to 2650 or declared by NONOX.');
+    expect($balance)->toBe(0)
+        ->and($supplement->version)->toBe(2)
+        ->and($supplement->boxes[49])->toBe(275);
+});
 
 it('lets a company choose yearly VAT only with a taxable base up to 1 million kronor', function () {})->todo('AUD-MOMS-8: vat_period YEARLY is accepted for any company; Skatteverket allows yearly only up to 1 mkr and quarterly up to 40 mkr (SFL 26 kap. 10–11 §§). Low impact: Skatteverket decides the period at registration.');
 

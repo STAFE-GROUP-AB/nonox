@@ -251,26 +251,32 @@ final class ArchivePackageBuilder
             ->whereDate('period_end', '>=', $fiscalYear->start_date->toDateString())
             ->whereDate('period_end', '<=', $fiscalYear->end_date->toDateString())
             ->orderBy('period_start')
+            ->orderBy('version')
             ->get();
 
         if ($reports->isEmpty()) {
             return 0;
         }
 
-        $rows = [[__('Period från'), __('Period till'), __('Ruta'), __('Belopp, kronor')]];
+        // Every version of a return is kept; a period booked again after a late posting has more than one (#63).
+        $rows = [[__('Period från'), __('Period till'), __('Version'), __('Ruta'), __('Belopp, kronor')]];
 
         foreach ($reports as $report) {
             foreach ($report->boxes as $box => $amount) {
-                $rows[] = [$report->period_start->toDateString(), $report->period_end->toDateString(), (string) $box, (string) $amount];
+                $rows[] = [$report->period_start->toDateString(), $report->period_end->toDateString(), (string) $report->version, (string) $box, (string) $amount];
             }
+        }
 
+        $periods = $reports->unique(fn (VatReport $report): string => $report->period_start->toDateString());
+
+        foreach ($periods as $report) {
             $return = VatReturn::calculate($fiscalYear, $report->period_start, $report->period_end);
             $this->put('moms/'.self::safe(EskdFile::filename($company, $return)), (string) mb_convert_encoding(EskdFile::render($company, $return), 'ISO-8859-1', 'UTF-8'));
         }
 
         $this->csv('moms/Momsdeklarationer.csv', $rows);
 
-        return $reports->count() + 1;
+        return $periods->count() + 1;
     }
 
     /**

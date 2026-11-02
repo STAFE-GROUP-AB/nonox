@@ -61,9 +61,24 @@
   lists it as a warning. Box 48 reads 2640–2647 and 2649, not 2648 (ML 7
   kap. 14 and 31 §§; enligt granskning 2026-11-02, juristgranskning återstår,
   AUD-MOMS-1, #58). The boxes are stored in `vat_reports` (append-only, database trigger)
-  together with the voucher. A period is posted once. VAT vouchers are left
-  out when a period is calculated, so the report reads the same before and
-  after; if something is posted in the period later, the page says so.
+  together with the voucher. VAT vouchers are left out when a period is
+  calculated, so the report reads the same before and after.
+- **Supplementary settlement** (#63): if something is posted in a settled
+  period later, the page says so and offers a supplement: a new voucher in
+  series M with only the difference on the VAT accounts that feed a box,
+  2650 (corrected box 49 minus what 2650 already got) and 3740 (the rest),
+  so all the period's settlement vouchers together book it as one. It is
+  dated the period's last day, or today when that day is locked or its
+  fiscal year closed. The corrected boxes are stored as a new version of the
+  return (`vat_reports.version`, unique per company, period start and
+  version; earlier versions are never changed); the highest version is the
+  current one, and the archive package lists every version. The page tells
+  the user to file a corrected return for the whole period at Skatteverket
+  (Skatteverket, "Rätta en momsdeklaration"); NONOX does not file it. A
+  late posting that only changes base boxes (05, 20–24, 35–42, 50) moves no
+  VAT account, so there is nothing to book, but the page still says the
+  boxes differ. Enligt granskning 2026-11-02, juristgranskning återstår
+  (AUD-MOMS-5).
 - **Deadlines** (`VatDeadlines`): month and quarter per SFL 26 kap. 26 §;
   yearly VAT (#60) per 33, 33 a and 33 b §§ from the legal form, EU trade in
   the year (`EuTrade`: a posted row on an account feeding box 20, 21, 35,

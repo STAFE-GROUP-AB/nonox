@@ -60,6 +60,14 @@ class VatReturns extends Component
 
         $report = $settle($this->user(), $fiscalYear, $period['start']);
 
+        if ($report->version > 1) {
+            $this->toast(__('Tillägget är bokfört på :reference. Lämna en rättad momsdeklaration för perioden hos Skatteverket.', [
+                'reference' => $report->voucher()->firstOrFail()->reference(),
+            ]));
+
+            return;
+        }
+
         $this->toast(__('Momsen är bokförd på :reference. Att betala: :amount kr.', [
             'reference' => $report->voucher()->firstOrFail()->reference(),
             'amount' => number_format($report->boxes[VatBoxes::PAYABLE] ?? 0, 0, ',', ' '),
@@ -88,7 +96,12 @@ class VatReturns extends Component
             $periods = VatPeriods::of($fiscalYear, $company->vat_period);
         }
 
-        $reports = VatReport::query()->with('voucher.series')->get()->keyBy(fn (VatReport $report): string => $report->period_start->toDateString());
+        // Ordered by version, so the key holds each period's latest return.
+        $reports = VatReport::query()->with('voucher.series')->orderBy('version')->get()->keyBy(fn (VatReport $report): string => $report->period_start->toDateString());
+        $report = $period === null ? null : $reports->get($period['start']->toDateString());
+        $return = $fiscalYear === null || $period === null ? null : VatReturn::calculate($fiscalYear, $period['start'], $period['end']);
+        $supplement = $report instanceof VatReport && $return instanceof VatReturn
+            && $return->needsSupplement(VatReport::bookedRows(VatReport::query()->whereDate('period_start', $report->period_start)->with('voucher.rows.account')->get()));
 
         return view('livewire.vat.vat-returns', [
             'company' => $company,
@@ -98,8 +111,9 @@ class VatReturns extends Component
             'periods' => $periods,
             'selected' => $period,
             'reports' => $reports,
-            'report' => $period === null ? null : $reports->get($period['start']->toDateString()),
-            'return' => $fiscalYear === null || $period === null ? null : VatReturn::calculate($fiscalYear, $period['start'], $period['end']),
+            'report' => $report,
+            'return' => $return,
+            'supplement' => $supplement,
             'canSettle' => $this->user()->hasTeamPermission($company, 'vouchers:post'),
             'canLock' => $this->user()->hasTeamPermission($company, 'periods:lock'),
         ]);

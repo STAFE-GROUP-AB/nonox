@@ -456,7 +456,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
   ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören
   som rutorna i hela kronor inte tar med till 3740. Rutorna sparas med
-  verifikationen och kan inte ändras. En period bokförs en gång.
+  verifikationen och kan inte ändras.
+- Bokförs något i en period vars moms redan är bokförd visar momssidan det
+  och erbjuder ett tillägg: en ny verifikation i serie M med bara skillnaden
+  på momskontona, 2650 och 3740, daterad periodens sista dag (eller dagens
+  datum om den dagen är låst eller räkenskapsåret stängt). De rättade rutorna
+  sparas som en ny version av deklarationen; tidigare versioner ändras
+  aldrig. Användaren uppmanas lämna en rättad deklaration för hela perioden
+  hos Skatteverket (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-MOMS-5, #63).
 - Vilande moms (2618, 2628, 2638 och 2648) och andra konton mellan 2610 och
   2649 utan ruta ingår inte i deklarationen och flyttas inte till 2650; de
   visas som en varning på momssidan. Ruta 48 läser 2640–2647 och 2649, inte

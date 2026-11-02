@@ -138,6 +138,19 @@ final class VatReturn
         return $this->boxes()[VatBoxes::PAYABLE];
     }
 
+    /**
+     * Whether a VAT account that feeds a box has moved since the period was
+     * booked: then a supplementary settlement is needed (#63).
+     *
+     * @param  array<int, int>  $booked  VatReport::bookedRows()
+     */
+    public function needsSupplement(array $booked): bool
+    {
+        $rows = $this->settlementRows($booked);
+
+        return array_filter($rows, fn (int $amount, int $number): bool => VatBoxes::isSettled($number) && $amount !== 0, ARRAY_FILTER_USE_BOTH) !== [];
+    }
+
     public function isEmpty(): bool
     {
         return array_filter($this->exact) === [] && $this->vatAccounts === [];
@@ -150,9 +163,14 @@ final class VatReturn
      * Accounts without a box are not touched, so 3740 only ever holds the
      * rounding of the boxes: less than one krona per box.
      *
+     * With $booked, what earlier settlement vouchers of the period booked,
+     * the rows are only the difference: a supplementary settlement after a
+     * late posting (#63). Together the vouchers then book the period as one.
+     *
+     * @param  array<int, int>  $booked  account number => signed öre, VatReport::bookedRows()
      * @return array<int, int> account number => amount
      */
-    public function settlementRows(): array
+    public function settlementRows(array $booked = []): array
     {
         $rows = [];
 
@@ -160,10 +178,16 @@ final class VatReturn
             $rows[$number] = -$change;
         }
 
-        $settlement = -$this->payable() * 100;
+        foreach ($booked as $number => $amount) {
+            if (VatBoxes::isSettled($number)) {
+                $rows[$number] = ($rows[$number] ?? 0) - $amount;
+            }
+        }
+
+        $settlement = -$this->payable() * 100 - ($booked[VatBoxes::SETTLEMENT_ACCOUNT] ?? 0);
         $rounding = -(array_sum($rows) + $settlement);
 
-        $rows[VatBoxes::SETTLEMENT_ACCOUNT] = ($rows[VatBoxes::SETTLEMENT_ACCOUNT] ?? 0) + $settlement;
+        $rows[VatBoxes::SETTLEMENT_ACCOUNT] = $settlement;
 
         if ($rounding !== 0) {
             $rows[VatBoxes::ROUNDING_ACCOUNT] = $rounding;
