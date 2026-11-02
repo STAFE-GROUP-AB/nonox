@@ -119,7 +119,7 @@
                                 <th class="px-3 py-3">{{ __('Konton') }}</th>
                                 <th class="px-3 py-3 text-right">{{ __('Belopp') }}</th>
                                 <th class="px-3 py-3 text-right">{{ __('Kvar') }}</th>
-                                <th class="px-3 py-3"></th>
+                                <th scope="col" class="px-3 py-3"><span class="sr-only">{{ __('Åtgärder') }}</span></th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-stone-200">

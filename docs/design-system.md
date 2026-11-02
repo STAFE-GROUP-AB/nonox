@@ -128,3 +128,28 @@ record, a page or a new thing.
   focus stays in the dialog. Transitions only with `motion-safe`.
 - **Words.** Swedish throughout: "Sök eller gå till …", "Inget hittades"
   with examples of what can be typed, "Visa alla 23".
+
+## Accessibility (WCAG 2.2 AA)
+
+The audit and the list of known gaps are in `docs/tillganglighet.md`. What
+every view gets from the shared layout, and what a new view must keep:
+
+- **Title and landmarks.** The app layout adds the skip link, wraps the page
+  heading and the page in `<main id="main">`, and names the page after its
+  first `h1` (`App\Support\Accessibility\PageTitle`). Every page has one
+  `h1`, normally `<x-ui.page-heading>`; pass `<x-slot name="title">` only when
+  the heading is not a good title (Översikt greets the user).
+- **Text colour.** Small text is `text-gray-500` or darker; `gray-400` and
+  `gray-500` are tuned to 4.5:1 on white, paper and the accent tints. Field
+  borders are darkened to 3:1 in `app.css`.
+- **Fields.** Use `<x-ui.field for label hint error>`: the error gets
+  `role="alert"` and `resources/js/accessibility.js` links it and the hint
+  to the input (`aria-invalid`, `aria-describedby`). A bare
+  `<x-input-error :for="key" :field="inputId">` works too. After a sent
+  form with errors, focus moves to the first one and the count is read out.
+- **Dialogs and menus.** Use `x-dialog-modal`/`x-confirmation-modal`
+  (`role="dialog"`, named by the title, focus trapped and returned) and
+  `x-dropdown` (`aria-expanded`, Esc).
+- **Focus.** Never remove the outline without a `focus-visible:ring`. Sticky
+  bars carry `data-sticky-bar` so focused elements are kept below them.
+- **Targets.** Icon buttons are at least 24 px (32 px for row actions).

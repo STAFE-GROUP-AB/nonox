@@ -41,8 +41,8 @@
             <div class="field">
                 <label for="passkeyName">{{ __('Namn på enheten') }}</label>
                 <input id="passkeyName" type="text" wire:model="passkeyName" maxlength="60" placeholder="{{ __('Till exempel MacBook eller iPhone') }}" autocomplete="off" autofocus>
-                @error('passkeyName') <div class="error">{{ $message }}</div> @enderror
-                @error('name') <div class="error">{{ $message }}</div> @enderror
+                @error('passkeyName') <div class="error" role="alert">{{ $message }}</div> @enderror
+                @error('name') <div class="error" role="alert">{{ $message }}</div> @enderror
             </div>
             <div class="actions">
                 <button class="button wide" type="submit" x-bind:disabled="busy">

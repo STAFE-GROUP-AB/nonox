@@ -589,7 +589,7 @@ function pinScreen(title) {
     return el('main', { class: 'k-main k-center k-pin' },
         el('h2', { class: 'k-lead' }, title),
         el('p', { class: 'k-sub' }, state.screen === 'manager-pin' ? t('manager_pin') : t('enter_pin')),
-        el('div', { class: 'k-dots', 'aria-label': `${state.pin.length} / 4` }, [0, 1, 2, 3].map((i) => el('span', { class: i < state.pin.length ? 'k-dot k-filled' : 'k-dot' }))),
+        el('div', { class: 'k-dots', role: 'img', 'aria-label': `${state.pin.length} / 4` }, [0, 1, 2, 3].map((i) => el('span', { class: i < state.pin.length ? 'k-dot k-filled' : 'k-dot' }))),
         // Always there, so a message never pushes the keypad down.
         el('p', { class: 'k-error', role: 'alert' }, state.message ?? ''),
         keypad());

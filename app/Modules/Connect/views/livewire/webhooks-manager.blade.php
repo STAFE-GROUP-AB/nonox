@@ -138,7 +138,7 @@
                 @foreach($choosableEvents as $event => $label)
                     <label class="flex items-start gap-2 text-sm" wire:key="event-{{ $event }}"><input type="checkbox" value="{{ $event }}" wire:model="events" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500"><span>{{ $label }} <span class="font-mono text-xs text-gray-500">{{ $event }}</span></span></label>
                 @endforeach
-                @error('events') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
+                @error('events') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
             </fieldset>
             @if(! $hasPasskey && ! $skipPasskey)
                 <p class="text-sm text-red-700">{{ __('Du behöver en passkey för att lägga till webhooks. Lägg till en under Profil.') }}</p>

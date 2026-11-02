@@ -111,10 +111,11 @@ Lönen berör också skatteförfarandelagen: arbetsgivardeklaration på individn
 
 **Gäller:** troligen inte. Lagen omfattar vissa tjänster till konsumenter. NONOX säljs till företag. Mikroföretag som tillhandahåller tjänster är dessutom undantagna.
 
-**Det här gör NONOX:** målet är WCAG 2.2 nivå AA (AGENTS.md §11.1). Se [tillgänglighetsredogörelsen](../tillganglighet.md).
+**Det här gör NONOX:** målet är WCAG 2.2 nivå AA (AGENTS.md §11.1). En första egen granskning gjordes 2026-11-02 (automatisk kontroll med axe-core av 100 sidor plus manuell granskning av huvudflödena). Resultatet och kända brister står i [granskningsrapporten](../tillganglighet.md) och i den publika [tillgänglighetsredogörelsen](tillganglighet.md) på /tillganglighet.
 
 **Det här saknas:**
-- Granskning av tillgängligheten.
+- En granskning av någon utomstående och test med användare av hjälpmedel.
+- Granskning av de PDF-filer tjänsten skapar.
 - Bedömning av om någon del riktar sig till konsumenter, till exempel Min sida för anställda eller den publika webbplatsen. TODO(legal-verify).
 
 ## 8. Cyberresiliensförordningen (EU) 2024/2847 (CRA)

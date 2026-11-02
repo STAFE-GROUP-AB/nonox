@@ -95,10 +95,10 @@
                         <x-button wire:loading.attr="disabled" :disabled="$selected === []">{{ __('Skapa betalfil') }}</x-button>
                     </div>
                 </form>
-                @error('batch') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+                @error('batch') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
                 @foreach($errors->get('batch.*') as $messages)
                     @foreach((array) $messages as $message)
-                        <p class="mt-1 text-sm text-accent-700">{{ $message }}</p>
+                        <p class="mt-1 text-sm text-accent-700" role="alert">{{ $message }}</p>
                     @endforeach
                 @endforeach
             @endif

@@ -35,7 +35,7 @@
                         x-bind:tabindex="tab === '{{ $key }}' ? 0 : -1"
                         x-on:keydown.right.prevent="show('{{ $key === 'oversikt' ? 'statistik' : 'oversikt' }}'); $nextTick(() => document.getElementById('tab-{{ $key === 'oversikt' ? 'statistik' : 'oversikt' }}').focus())"
                         x-on:keydown.left.prevent="show('{{ $key === 'oversikt' ? 'statistik' : 'oversikt' }}'); $nextTick(() => document.getElementById('tab-{{ $key === 'oversikt' ? 'statistik' : 'oversikt' }}').focus())"
-                        class="-mb-px border-b-2 pb-3 focus:outline-hidden focus-visible:text-ink"
+                        class="-mb-px border-b-2 pb-3 focus-visible:text-ink"
                         x-bind:class="tab === '{{ $key }}' ? 'border-accent-600 text-accent-700' : 'border-transparent text-gray-600 hover:text-gray-900'">{{ $label }}</button>
             @endforeach
         </div>

@@ -35,7 +35,7 @@
 
                         @if ($companies->count() > 5)
                             <div class="px-4 pb-2">
-                                <input type="search" x-model="search" x-on:click.stop x-on:keydown.stop placeholder="{{ __('Sök företag') }}"
+                                <input type="search" x-model="search" x-on:click.stop x-on:keydown.stop placeholder="{{ __('Sök företag') }}" aria-label="{{ __('Sök företag') }}"
                                        class="w-full rounded-lg border-gray-300 text-sm shadow-xs focus:border-accent-500 focus:ring-accent-500" />
                             </div>
                         @endif
@@ -107,7 +107,8 @@
             </span>
             @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
         </div>
-        <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm">
+        {{-- At least 24 px high, so each link is easy to hit (WCAG 2.5.8). --}}
+        <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm [&_a]:inline-block [&_a]:py-1 [&_button]:py-1">
             @include('navigation.help', ['helpClass' => 'rounded text-stone-300 hover:text-white', 'helpLabel' => true])
             <a href="{{ route('profile.show') }}" class="text-stone-300 hover:text-white">{{ __('Profile') }}</a>
             @if (Laravel\Jetstream\Jetstream::hasApiFeatures())

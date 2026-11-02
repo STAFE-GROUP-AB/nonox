@@ -5369,5 +5369,15 @@
     "Veckan: hittills :minutes min utöver schemat. Övertid och mertid räknas mot veckoarbetstiden när hela veckan är attesterad – väntar på hela veckan.": "The week: so far :minutes min beyond the schedule. Overtime and extra time are counted against the weekly working time when the whole week is approved – waiting for the whole week.",
     "Veckans övertid och mertid skickas inte: lönen för månaden är redan attesterad. Rättelser läggs i nästa lönekörning.": "The week's overtime and extra time is not sent: payroll for the month is already approved. Corrections go into the next payroll run.",
     "Tid utöver veckoarbetstiden räknas per kalendervecka av attesterade dagar och skickas på lönearten när hela veckan är attesterad. Utan löneart visas den som avvikelse och läggs in i lönekörningen för hand.": "Time beyond the weekly working time is counted per calendar week of approved days and sent on the pay code when the whole week is approved. Without a pay code it is shown as a deviation and added to the payroll run by hand.",
-    "Mertid är tiden upp till heltid; tid därutöver är övertid. Kontrollera mot avtalet vilken övertidsart och vilken beräkningsperiod som gäller.": "Extra time is the time up to full time; time beyond that is overtime. Check against the agreement which kind of overtime and which reference period apply."
+    "Mertid är tiden upp till heltid; tid därutöver är övertid. Kontrollera mot avtalet vilken övertidsart och vilken beräkningsperiod som gäller.": "Extra time is the time up to full time; time beyond that is overtime. Check against the agreement which kind of overtime and which reference period apply.",
+    "Hoppa till innehållet": "Skip to content",
+    "Sidor": "Pages",
+    "Visar :first–:last av :total": "Showing :first–:last of :total",
+    "Föregående sida": "Previous page",
+    "Nästa sida": "Next page",
+    "Sida": "Page",
+    "(valt företag)": "(selected company)",
+    "Formuläret har ett fel. Rätta det och skicka igen.": "The form has one error. Correct it and send again.",
+    "Formuläret har :count fel. Rätta dem och skicka igen.": "The form has :count errors. Correct them and send again.",
+    "Tillgänglighet": "Accessibility"
 }

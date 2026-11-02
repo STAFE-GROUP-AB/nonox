@@ -64,7 +64,7 @@
                             <th class="py-2 pr-4 font-medium">{{ __('Moms') }}</th>
                             <th class="py-2 pr-4 font-medium">{{ __('Konto') }}</th>
                             <th class="py-2 pr-4 text-right font-medium">{{ __('Sålt :year', ['year' => $year]) }}</th>
-                            <th></th>
+                            <th scope="col"><span class="sr-only">{{ __('Åtgärder') }}</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">

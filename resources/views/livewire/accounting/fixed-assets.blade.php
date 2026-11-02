@@ -113,7 +113,7 @@
                             <th class="px-3 py-3 text-right">{{ __('Anskaffningsvärde') }}</th>
                             <th class="px-3 py-3 text-right">{{ __('Avskrivet') }}</th>
                             <th class="px-3 py-3 text-right">{{ __('Bokfört värde') }}</th>
-                            <th class="px-3 py-3"></th>
+                            <th scope="col" class="px-3 py-3"><span class="sr-only">{{ __('Åtgärder') }}</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-stone-200">

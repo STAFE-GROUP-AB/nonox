@@ -843,7 +843,13 @@ personalliggare, inkorg och AI, incidentrutin, lagringstider,
 säkerhetskopiering) och `docs/juridik/` (integritetspolicy, villkor,
 personuppgiftsbiträdesavtal, underbiträden, AI i NONOX, regelverk, frågor
 till jurist). Säkerhetsrapporter: `SECURITY.md`. Tillgänglighet:
-`docs/tillganglighet.md`.
+`docs/tillganglighet.md` (granskning mot WCAG 2.2 AA, kriterium för
+kriterium) och den publika redogörelsen `docs/juridik/tillganglighet.md`
+på /tillganglighet. De delade layouterna ger varje inloggad sida en
+hopplänk, ett `main`-landmärke, en sidtitel från sidans rubrik och en
+uppläsningsyta; `resources/js/accessibility.js` kopplar fältfel till sina
+fält och flyttar fokus till första felet. Strukturen skyddas av
+`tests/Feature/AccessibilityTest.php`.
 
 - **Återställningstest:** `scripts/restore-test.sh` återställer en
   säkerhetskopia i ett tillfälligt PostgreSQL-kluster och kör

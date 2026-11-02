@@ -35,7 +35,7 @@
                        aria-describedby="spotlight-help"
                        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" maxlength="200"
                        placeholder="{{ __('Sök eller gå till …') }}" aria-label="{{ __('Sök eller gå till') }}"
-                       class="min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-ink placeholder:text-stone-400 focus:ring-0 sm:text-lg" />
+                       class="min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-ink placeholder:text-stone-500 focus:ring-0 sm:text-lg" />
                 <span x-show="loading" class="size-4 shrink-0 rounded-full border-2 border-stone-200 border-t-accent-500 motion-safe:animate-spin" aria-hidden="true"></span>
                 <kbd class="hidden rounded-md border border-stone-200 px-1.5 py-0.5 font-sans text-[11px] font-medium text-stone-500 sm:inline">Esc</kbd>
                 <button type="button" x-on:click="close()" class="rounded-lg px-2 py-1 text-sm font-medium text-accent-700 hover:bg-stone-100 sm:hidden">{{ __('Stäng') }}</button>

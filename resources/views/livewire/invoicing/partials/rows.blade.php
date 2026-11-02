@@ -94,7 +94,7 @@
                                 </td>
                             @endif
                             <td class="absolute top-2 right-2 lg:static lg:table-cell lg:py-1 lg:text-center">
-                                <button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 lg:inline lg:size-auto lg:text-sm" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button>
+                                <button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 lg:size-8 lg:text-sm" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button>
                             </td>
                         </tr>
                     </template>
@@ -106,7 +106,7 @@
         @foreach($errors->getMessages() as $key => $messages)
             @if(str_starts_with($key, 'rows'))
                 @foreach($messages as $message)
-                    <p class="mt-2 text-sm text-accent-700">{{ $message }}</p>
+                    <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p>
                 @endforeach
             @endif
         @endforeach

@@ -128,8 +128,8 @@
                     @foreach($scopeLabels as $scope => $label)
                         <label class="flex items-start gap-2 text-sm" wire:key="scope-{{ $scope }}"><input type="checkbox" value="{{ $scope }}" wire:model="keyScopes" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500"><span>{{ $label }} <span class="font-mono text-xs text-gray-500">{{ $scope }}</span></span></label>
                     @endforeach
-                    @error('scopes') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
-                    @error('scopes.0') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
+                    @error('scopes') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+                    @error('scopes.0') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                 </fieldset>
                 <x-ui.field for="connect_key_expires" :label="__('Gäller till och med')" error="expires_on">
                     <input id="connect_key_expires" type="date" class="{{ $input }} mt-1" wire:model="keyExpiresOn">

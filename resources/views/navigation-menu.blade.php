@@ -25,7 +25,7 @@
 
 <div x-data="{ open: false }" x-on:keydown.escape.window="open = false">
     {{-- Phones and tablets: a dark bar with the company and the menu button. --}}
-    <div class="sticky top-0 z-40 flex items-center justify-between gap-3 bg-ink px-4 py-3 text-white lg:hidden">
+    <div data-sticky-bar class="sticky top-0 z-40 flex items-center justify-between gap-3 bg-ink px-4 py-3 text-white lg:hidden">
         <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
             @if($firmBrand?->logoUrl())
                 <span class="flex h-9 w-14 shrink-0 items-center justify-center rounded-lg bg-white p-1" aria-hidden="true"><img src="{{ $firmBrand->logoUrl() }}" alt="" class="max-h-7 max-w-full object-contain"></span>

@@ -20,7 +20,7 @@ class SitemapController
     public function sitemap(): Response
     {
         $urls = config('app.landing.enabled')
-            ? [url('/'), route('migrationGuide'), route('security'), route('legal.selfHosting'), route('industries'), ...array_map(fn (string $slug): string => route('industry', $slug), Industries::slugs()), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others()), ...DeveloperPortal::pages(), ...array_map(fn (string $page): string => DeveloperPortal::localized($page, 'en'), DeveloperPortal::pages()), ...Manual::pages()]
+            ? [url('/'), route('migrationGuide'), route('security'), route('legal.selfHosting'), route('legal.accessibility'), route('industries'), ...array_map(fn (string $slug): string => route('industry', $slug), Industries::slugs()), ...array_map(fn (string $slug): string => route('alternative', $slug), Comparison::others()), ...DeveloperPortal::pages(), ...array_map(fn (string $page): string => DeveloperPortal::localized($page, 'en'), DeveloperPortal::pages()), ...Manual::pages()]
             : [];
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";

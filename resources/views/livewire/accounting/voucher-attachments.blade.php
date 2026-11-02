@@ -51,6 +51,6 @@
             <input id="attachment_uploads" type="file" class="sr-only" wire:model="uploads" multiple accept="application/pdf,image/jpeg,image/png,image/webp">
             <p class="mt-1 text-xs text-gray-500" wire:loading wire:target="uploads">{{ __('Laddar upp…') }}</p>
         </div>
-        @error('uploads') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+        @error('uploads') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
     @endif
 </x-ui.card>
