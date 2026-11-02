@@ -14,27 +14,45 @@ use App\Models\Article;
 use App\Models\Company;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Modules\Ai\Support\AiAnalysisException;
+use App\Modules\Inventory\Actions\ArticleImages;
+use App\Modules\Inventory\Actions\SuggestArticleDetails;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\InventoryModule;
+use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Support\ArticlePhoto;
+use App\Modules\Inventory\Support\ArticleSuggestion;
 use App\Modules\ModuleManager;
+use App\Support\Files\StoredFiles;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 /**
  * Articles: what the company sells, with price, VAT rate and revenue account
  * (tab Enkel), and the codes, measures, purchase price, supplier and, with
- * Lager on, the stock fields (tab Avancerad, ADR-039).
+ * Lager on, the stock fields and the pictures (tab Avancerad, ADR-039).
+ * With NONOX AI on, "Fyll i med NONOX AI" proposes the descriptive fields
+ * from the pictures and the person ticks which to use. ?ny=1&kamera=1
+ * opens a new article with the camera first (Snabbregistrera med kamera).
  */
 class Articles extends Component
 {
     use OpensFormFromLink;
     use ShowsToasts;
+    use WithFileUploads;
+
+    /** The browser event that starts NONOX AI after a photo in the camera flow. */
+    public const string AI_EVENT = 'nonox-article-ai';
 
     public bool $showForm = false;
 
@@ -45,6 +63,24 @@ class Articles extends Component
 
     /** enkel or avancerad (ADR-039). */
     public string $tab = 'enkel';
+
+    /** @var array<int, mixed> pictures just chosen or photographed */
+    public array $upload = [];
+
+    /** @var list<TemporaryUploadedFile> pictures of an article not saved yet, stored when it is */
+    public array $pending = [];
+
+    /** @var array<int, string> alt texts being edited, per image id */
+    public array $alts = [];
+
+    /** Opened from Snabbregistrera med kamera: the camera comes first and NONOX AI reads the photo at once. */
+    public bool $camera = false;
+
+    /** @var ?array<string, mixed> NONOX AI's cleaned proposal, until used or closed */
+    public ?array $aiSuggestion = null;
+
+    /** @var list<string> the proposed fields the person has ticked */
+    public array $aiChosen = [];
 
     /** The advanced fields the form edits, besides the stock fields. */
     private const array ADVANCED = ['sku', 'gtin', 'scanner_code', 'brand', 'model', 'description', 'colours', 'materials', 'weight_grams', 'length_mm', 'width_mm', 'height_mm', 'purchase_price', 'vat_treatment', 'default_supplier_id', 'supplier_article_number'];
@@ -57,6 +93,11 @@ class Articles extends Component
         abort_unless($this->user()->can('viewAny', [Article::class, $this->company()]), 403);
 
         $this->openFormFromLink(Article::class);
+
+        if ($this->showForm && $this->editingId === null && request()->boolean('kamera') && ArticleImages::enabledFor($this->company())) {
+            $this->camera = true;
+            $this->form['is_stock_item'] = true;
+        }
     }
 
     public function create(): void
@@ -71,6 +112,7 @@ class Articles extends Component
             'properties' => [],
         ];
         $this->tab = 'enkel';
+        $this->reset('upload', 'pending', 'alts', 'aiSuggestion', 'aiChosen', 'camera');
         $this->showForm = true;
         $this->resetErrorBag();
     }
@@ -112,6 +154,8 @@ class Articles extends Component
             'net_realisable_value' => $article->net_realisable_value_ore === null ? '' : Money::ofOre($article->net_realisable_value_ore)->format(withCurrency: false),
             'net_realisable_value_note' => (string) $article->net_realisable_value_note,
         ];
+        $this->reset('upload', 'pending', 'aiSuggestion', 'aiChosen', 'camera');
+        $this->alts = ArticleImage::query()->where('article_id', $article->id)->pluck('alt', 'id')->map(fn (?string $alt): string => (string) $alt)->all();
         $this->showForm = true;
         $this->resetErrorBag();
     }
@@ -128,9 +172,120 @@ class Articles extends Component
         $this->form['properties'] = array_values($properties);
     }
 
+    /**
+     * Pictures chosen or photographed: stored at once on a saved article,
+     * kept until the save on a new one. In the camera flow NONOX AI reads
+     * the photo straight away.
+     */
+    public function updatedUpload(ArticleImages $images): void
+    {
+        $files = array_values(array_filter($this->upload, fn (mixed $file): bool => $file instanceof TemporaryUploadedFile));
+        $this->upload = [];
+        $added = 0;
+
+        foreach ($files as $file) {
+            try {
+                if ($this->editingId === null) {
+                    $this->keepPending($file);
+                } else {
+                    $image = $images->add($this->user(), $this->company(), $this->editedArticle(), $file);
+                    $this->alts[$image->id] = '';
+                }
+
+                $added++;
+            } catch (ValidationException $exception) {
+                $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+            }
+        }
+
+        if ($added > 0) {
+            $this->toast($this->editingId === null
+                ? trans_choice('{1} Bilden sparas med artikeln.|[2,*] :count bilder sparas med artikeln.', $added, ['count' => $added])
+                : trans_choice('{1} Bilden är tillagd.|[2,*] :count bilder är tillagda.', $added, ['count' => $added]));
+        }
+
+        if ($added > 0 && $this->camera && $this->aiSuggestion === null && SuggestArticleDetails::availableFor($this->user(), $this->company())) {
+            $this->dispatch(self::AI_EVENT);
+        }
+    }
+
+    public function removePending(int $index): void
+    {
+        $this->pending = array_values(array_filter($this->pending, fn (int $key): bool => $key !== $index, ARRAY_FILTER_USE_KEY));
+    }
+
+    /** wire:sort and the move buttons: the image to its new place, 0 = main image. */
+    public function moveImage(int $imageId, int $position, ArticleImages $images): void
+    {
+        $this->attemptImage(fn () => $images->move($this->user(), $this->company(), $this->editedArticle(), $imageId, $position), __('Ordningen är sparad.'));
+    }
+
+    public function saveAlt(int $imageId, ArticleImages $images): void
+    {
+        $image = ArticleImage::query()->where('article_id', $this->editingId)->findOrFail($imageId);
+        $this->attemptImage(fn () => $images->describe($this->user(), $this->company(), $image, (string) ($this->alts[$imageId] ?? '')), __('Bildtexten är sparad.'));
+    }
+
+    public function deleteImage(int $imageId, ArticleImages $images): void
+    {
+        $image = ArticleImage::query()->where('article_id', $this->editingId)->findOrFail($imageId);
+
+        if ($this->attemptImage(fn () => $images->delete($this->user(), $this->company(), $image), __('Bilden är borttagen.'))) {
+            unset($this->alts[$imageId]);
+        }
+    }
+
+    /**
+     * NONOX AI looks at the pictures and proposes the descriptive fields.
+     * Nothing changes in the form until the person ticks and uses them.
+     */
+    public function suggestWithAi(SuggestArticleDetails $suggest): void
+    {
+        $article = $this->editingId === null ? null : $this->editedArticle();
+
+        try {
+            $suggestion = $suggest($this->user(), $this->company(), $article, $this->photosForAi($article));
+        } catch (AiAnalysisException $exception) {
+            $this->toast($exception->getMessage(), 'error');
+
+            return;
+        }
+
+        $rows = ArticleSuggestion::rows($suggestion, $this->form);
+
+        if ($rows === []) {
+            $this->toast(__('NONOX AI hittade inget att lägga till utöver det som redan står i formuläret.'));
+
+            return;
+        }
+
+        $this->aiSuggestion = $suggestion;
+        $this->aiChosen = array_values(array_map(fn (array $row): string => $row['field'], array_filter($rows, fn (array $row): bool => $row['checked'])));
+    }
+
+    public function applySuggestion(): void
+    {
+        if ($this->aiSuggestion === null) {
+            return;
+        }
+
+        $count = count(array_intersect(ArticleSuggestion::FIELDS, $this->aiChosen));
+        $this->form = ArticleSuggestion::apply($this->form, $this->aiSuggestion, $this->aiChosen);
+        $this->reset('aiSuggestion', 'aiChosen');
+
+        $this->toast($count === 0
+            ? __('Inget är ändrat.')
+            : trans_choice('{1} En uppgift är ifylld. Kontrollera den och spara artikeln.|[2,*] :count uppgifter är ifyllda. Kontrollera dem och spara artikeln.', $count, ['count' => $count]));
+    }
+
+    public function dismissSuggestion(): void
+    {
+        $this->reset('aiSuggestion', 'aiChosen');
+    }
+
     public function cancel(): void
     {
-        $this->reset('showForm', 'editingId', 'form', 'tab');
+        $this->reset('showForm', 'editingId', 'form', 'tab', 'upload', 'pending', 'alts', 'aiSuggestion', 'aiChosen', 'camera');
     }
 
     public function save(SaveArticle $save, ModuleManager $modules): void
@@ -161,6 +316,7 @@ class Articles extends Component
         $saved = $this->editingId === null
             ? __('Artikel :number :name är tillagd.', ['number' => $article->number, 'name' => $article->name])
             : __('Artikeln :name är sparad.', ['name' => $article->name]);
+        $saved = $this->storePending($article, $saved);
         $mismatch = SalesVatRules::mismatch((int) $article->account?->number, $article->vat_rate, $article->account?->vat_box);
 
         $this->toast($mismatch === null ? $saved : "{$saved} {$mismatch}");
@@ -176,7 +332,7 @@ class Articles extends Component
 
         return view('livewire.invoicing.articles', [
             'articles' => Article::query()
-                ->with('account')
+                ->with(['account', ...($inventory ? ['mainImage'] : [])])
                 ->withSum(['invoiceRows as sold_this_year' => fn (Builder $query) => $query->whereHas('invoice', fn (Builder $invoice) => $invoice
                     ->where('status', '<>', InvoiceStatus::Draft->value)
                     ->whereBetween('invoice_date', [$year->toDateString(), $year->endOfYear()->toDateString()]))], 'net_ore')
@@ -191,7 +347,88 @@ class Articles extends Component
             'inventory' => $inventory,
             'suppliers' => $advanced ? Supplier::query()->orderBy('name')->get(['id', 'name']) : collect(),
             'locations' => $advanced && $inventory ? StockLocation::query()->where('is_active', true)->orderBy('sort_key')->get(['id', 'full_code', 'name']) : collect(),
+            'images' => $inventory && $this->showForm && $this->editingId !== null
+                ? ArticleImage::query()->where('article_id', $this->editingId)->orderBy('position')->orderBy('id')->get()
+                : collect(),
+            'aiAvailable' => $inventory && $this->showForm && SuggestArticleDetails::availableFor($this->user(), $this->company()),
+            'aiRows' => $this->aiSuggestion === null ? [] : ArticleSuggestion::rows($this->aiSuggestion, $this->form),
         ]);
+    }
+
+    /**
+     * A picture for an article not saved yet: checked now, so a wrong file
+     * is said at once, and stored with the article.
+     */
+    private function keepPending(TemporaryUploadedFile $file): void
+    {
+        if (count($this->pending) >= ArticleImages::MAX_IMAGES) {
+            throw ValidationException::withMessages(['photo' => __('En artikel kan ha högst :max bilder. Ta bort en bild först.', ['max' => ArticleImages::MAX_IMAGES])]);
+        }
+
+        ArticlePhoto::fromUpload($file);
+        $this->pending[] = $file;
+    }
+
+    /**
+     * The pictures NONOX AI looks at, main picture first: the stored ones of
+     * a saved article, else the ones waiting for the save.
+     *
+     * @return list<string> JPEGs
+     */
+    private function photosForAi(?Article $article): array
+    {
+        if ($article === null) {
+            return array_map(fn (TemporaryUploadedFile $file): string => ArticlePhoto::fromUpload($file), array_slice($this->pending, 0, SuggestArticleDetails::MAX_PHOTOS));
+        }
+
+        return array_values(ArticleImage::query()->where('article_id', $article->id)->orderBy('position')->orderBy('id')->limit(SuggestArticleDetails::MAX_PHOTOS)->pluck('path')
+            ->map(fn (string $path): string => (string) Storage::disk(StoredFiles::DISK)->get($path))
+            ->filter(fn (string $jpeg): bool => $jpeg !== '')
+            ->all());
+    }
+
+    /**
+     * The pictures taken before a new article was saved. One that cannot be
+     * stored is reported; the article is saved anyway.
+     */
+    private function storePending(Article $article, string $saved): string
+    {
+        if ($this->pending === [] || ! ArticleImages::enabledFor($this->company())) {
+            return $saved;
+        }
+
+        $failed = 0;
+
+        foreach ($this->pending as $file) {
+            try {
+                app(ArticleImages::class)->add($this->user(), $this->company(), $article, $file);
+            } catch (ValidationException) {
+                $failed++;
+            }
+        }
+
+        return $failed === 0 ? $saved : $saved.' '.trans_choice('{1} En bild gick inte att spara.|[2,*] :count bilder gick inte att spara.', $failed, ['count' => $failed]);
+    }
+
+    /** @param  Closure(): mixed  $action */
+    private function attemptImage(Closure $action, string $success): bool
+    {
+        try {
+            $action();
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return false;
+        }
+
+        $this->toast($success);
+
+        return true;
+    }
+
+    private function editedArticle(): Article
+    {
+        return Article::query()->findOrFail((int) $this->editingId);
     }
 
     private function user(): User

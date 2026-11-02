@@ -11,6 +11,7 @@ NONOX AI är en modul som läser underlag och fyller i förslag. Den är avstän
 | Leverantörsfaktura | Fakturan (PDF eller bild) | Leverantör, fakturanummer, datum, belopp, moms, betalningsuppgifter och konton |
 | Verifikation från underlag | Kvitto eller annat underlag | En hel verifikation med konton ur er kontoplan |
 | Utlägg från anställda | Kvittot som den anställda skickar från Min sida, bara om ni särskilt har valt det | Datum, säljare, belopp, moms och kostnadskonto |
+| Artikel i Lager | Bilder på varan som ni har lagt till på artikeln | Benämning, beskrivning, varumärke, modell, färger, material, egenskaper, mått och EAN-kod om streckkoden går att läsa. Aldrig pris eller konto |
 | Inkorgen | Dokument som kommit med e-post, bara om ni valt AI i inkorgens inställningar och ingen mall redan känner igen dokumentet | Vad dokumentet är, och för dagsrapporter från kassasystem vad varje belopp är och vilket konto det hör till |
 
 ## Vad AI:n inte gör

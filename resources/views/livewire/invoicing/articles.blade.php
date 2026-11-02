@@ -11,8 +11,15 @@
                     <button type="button" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" wire:click="$set('tab', '{{ $key }}')" @class(['min-h-11 rounded-full px-4 py-2 text-sm font-semibold sm:min-h-0', 'bg-ink text-white' => $tab === $key, 'bg-white text-gray-700 ring-1 ring-stone-200 hover:ring-stone-300' => $tab !== $key])>{{ $label }}</button>
                 @endforeach
             </div>
+            @if($aiRows !== [])
+                @include('livewire.invoicing.partials.article-ai-suggestion')
+            @endif
             <form wire:submit="save" class="grid gap-4 sm:grid-cols-6">
                 @if($tab === 'enkel')
+                    @if($inventory && $camera)
+                        <p class="text-sm text-gray-700 sm:col-span-6">{{ __('Ta ett foto av varan. NONOX AI föreslår benämning och beskrivning, och du väljer vad som ska användas. Fyll sedan i nummer och pris och spara.') }}</p>
+                        @include('livewire.invoicing.partials.article-images', ['compact' => true])
+                    @endif
                     <x-ui.field for="article_number" :label="__('Artikelnummer')" error="number" class="sm:col-span-2">
                         <input id="article_number" type="text" class="{{ $input }} mt-1" wire:model="form.number" maxlength="30">
                     </x-ui.field>
@@ -40,7 +47,13 @@
                             @endforeach
                         </select>
                     </x-ui.field>
+                    @if($inventory && ! $camera)
+                        @include('livewire.invoicing.partials.article-images', ['compact' => true])
+                    @endif
                 @else
+                    @if($inventory)
+                        @include('livewire.invoicing.partials.article-images', ['compact' => false])
+                    @endif
                     @include('livewire.invoicing.partials.article-advanced')
                 @endif
                 <div class="flex items-center gap-4 sm:col-span-6">
@@ -80,7 +93,16 @@
                         @foreach($articles as $article)
                             <tr wire:key="article-{{ $article->id }}">
                                 <td class="py-2 pr-4 font-semibold tabular-nums">{{ $article->number }}</td>
-                                <td class="py-2 pr-4">{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}</span></td>
+                                <td class="py-2 pr-4">
+                                    <span class="flex items-center gap-3">
+                                        @if($inventory && $article->mainImage)
+                                            <img src="{{ route('inventory.articleImages.show', ['article' => $article->id, 'image' => $article->mainImage->id, 'storlek' => 'liten']) }}" alt="" class="size-10 shrink-0 rounded-md object-cover ring-1 ring-stone-200" loading="lazy">
+                                        @elseif($inventory)
+                                            <span class="size-10 shrink-0 rounded-md bg-stone-100" aria-hidden="true"></span>
+                                        @endif
+                                        <span>{{ $article->name }} <span class="text-gray-500">/ {{ $article->unit }}</span></span>
+                                    </span>
+                                </td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="$article->price_ore" /></td>
                                 <td class="py-2 pr-4">{{ $rates[$article->vat_rate] ?? '' }}</td>
                                 <td class="py-2 pr-4 tabular-nums">{{ $article->account?->number }}</td>

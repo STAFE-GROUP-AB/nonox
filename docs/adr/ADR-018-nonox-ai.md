@@ -53,6 +53,13 @@ pictures of objects and refused documents.
   settings page says so.
 - An analysis runs in the web request (up to two minutes); the page shows a
   countdown. Moving it to a queued job is a later improvement.
+- `AnalyzeDocument::images()` (added 2026-11-02 for NONOX Lager) sends
+  several JPEG pictures in one prompt, with a context the caller gives
+  instead of the chart of accounts, through the same provider, key, model
+  choice, error messages and audit entry as the other readers.
+  `AnalyzeDocument::configuredFor()` tells whether a provider and key are
+  set, without decrypting the key, so a button is only shown when it can
+  work.
 
 ## AI Act classification (added 2026-11-01)
 
@@ -100,6 +107,7 @@ on them.
 | `ExpenseReceiptAgent` | `app/Modules/Ai/Agents` | Reads the receipt of an employee's outlay (utlägg). Proposes date, seller, amounts and a cost account, and writes notes. | The employee sending an outlay from Min sida. Only when the company has chosen `read_employee_receipts`. | **Uncertain, see below** | Its notes are shown to the person who approves the employee's claim. |
 | `InboxClassifierAgent` | `app/Modules/Inbox/Agents` | Says what an e-mailed document is (daily report, supplier invoice, receipt, bank statement, authority letter, contract, other). | No person: the company's inbox, when the company allowed AI in the inbox settings | Minimal risk | Routing of business documents. |
 | `DailyReportAgent` | `app/Modules/Inbox/Agents` | Says what each amount on a cash register's daily report is, with account and side. NONOX builds and checks the voucher itself (`DailyReportVoucher`). | No person: the company's inbox | Minimal risk | Mapping of sales and payment totals. No natural persons are evaluated. |
+| `ArticleAgent` | `app/Modules/Inventory/Agents` | Looks at up to four photos of one article and proposes its register fields: name, a factual description, brand, model, colours, materials, attributes, measures when printed and a GTIN only when the barcode is readable (check digit verified). Never prices or accounts (ADR-039). | A user with `ai:use` who may change articles, with Lager on | Minimal risk | Describes goods, not people. Product photos can show a person by accident; the instructions describe only the product. |
 | `AgreementIdentificationAgent` | `app/Modules/Agreements/Agents` | Reads a company's hängavtal, membership confirmation or payslip as masked text and proposes which collective agreement and variant bind the company, with quote and page (ADR-033 §6). | A user with `ai:use` and `agreements:manage`, with NONOX AI and Avtal on | Minimal risk | Facts about the company's agreement. No natural person is evaluated. |
 | `EmploymentTermsAgent` | `app/Modules/Agreements/Agents` | Reads one employee's employment contract or payslip as masked text (personal numbers, bank details, addresses, e-mail and phone removed) and proposes the employment's agreement, lönegrupp, title, form, weekly hours and stated branschvana, with quote and page. Never computes pay or age, never judges the person. A person accepts, edits or rejects every field. | A user with `ai:use` and `agreements:manage` ("Analysera all personal") | **Uncertain** | Proposing a pay group is close to Annex III 4(b) ("decisions affecting terms of work-related relationships"). Kept to reading recorded facts with a person deciding each field and agreement values out of reach. TODO(legal-verify), see ADR-033 §6. `LocalAgreementAgent` (local agreements) is not built. |
 

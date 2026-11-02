@@ -154,11 +154,34 @@ class AnalyzeDocument
     }
 
     /**
-     * @param  ?User  $user  null when the company's inbox asks (see inboxDocument)
-     * @param  ?string  $context  what the agent is told before the text; the company's chart of accounts when null
+     * Asks an agent about pictures (NONOX Lager, ADR-039): JPEG photos of an
+     * article. No chart of accounts is sent, only the given context.
+     *
+     * @param  list<string>  $jpegs
      * @return array<string, mixed>
      */
-    private function ask(?User $user, Company $company, Agent $agent, ?string $path, ?string $mime, string $kind, string $permission = 'ai:use', string $text = '', ?string $context = null): array
+    public function images(User $user, Company $company, Agent $agent, string $kind, array $jpegs, string $context): array
+    {
+        return $this->ask($user, $company, $agent, null, null, $kind, 'ai:use', '', $context, $jpegs);
+    }
+
+    /** Whether the company has chosen a provider and given its key, without reading the key. */
+    public static function configuredFor(Company $company): bool
+    {
+        $settings = app(ModuleManager::class)->settings(AiModule::KEY, $company);
+        $provider = AiProvider::tryFrom((string) ($settings['provider'] ?? ''));
+        $key = $provider === null ? null : (((array) ($settings['api_keys'] ?? []))[$provider->value] ?? null);
+
+        return is_string($key) && $key !== '';
+    }
+
+    /**
+     * @param  ?User  $user  null when the company's inbox asks (see inboxDocument)
+     * @param  ?string  $context  what the agent is told before the text; the company's chart of accounts when null
+     * @param  list<string>  $images  JPEG pictures sent instead of a file at $path
+     * @return array<string, mixed>
+     */
+    private function ask(?User $user, Company $company, Agent $agent, ?string $path, ?string $mime, string $kind, string $permission = 'ai:use', string $text = '', ?string $context = null, array $images = []): array
     {
         $this->modules->ensureEnabled(AiModule::KEY, $company);
 
@@ -168,12 +191,12 @@ class AnalyzeDocument
 
         [$provider, $choice, $custom, $key] = self::providerFor($company);
 
-        $files = $path === null ? [] : [match (true) {
+        $files = $images !== [] ? array_map(fn (string $jpeg): Image => Image::fromBase64(base64_encode($jpeg), 'image/jpeg'), $images) : ($path === null ? [] : [match (true) {
             $mime === 'application/pdf' => Document::fromPath($path),
             in_array($mime, self::IMAGE_TYPES, true) => Image::fromPath($path, (string) $mime),
             HeicImage::is((string) $mime) => Image::fromBase64(HeicImage::toJpegBase64($path), 'image/jpeg'),
             default => throw new AiAnalysisException(__('Filen går inte att analysera. Använd PDF eller en bild i JPEG, PNG, WebP eller HEIC.')),
-        }];
+        }]);
 
         $built = Ai::build(['name' => "nonox_ai_company_{$company->id}", 'driver' => $provider->driver(), 'key' => $key]);
         $model = $built instanceof TextProvider ? self::modelFor($built, $choice, $custom) : $custom;

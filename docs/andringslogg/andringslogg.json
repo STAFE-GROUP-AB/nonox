@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-lager-bilder-ai",
+      "datum": "2026-11-02T18:48:52+01:00",
+      "rubrik": "Lager: bilder på artiklarna och Fyll i med NONOX AI",
+      "beskrivning": "Artiklar kan nu ha bilder, tagna direkt med mobilens kamera eller valda från datorn, med huvudbild i listorna, på plocklistan och i API:t, och en ny vara kan snabbregistreras med kameran. Med NONOX AI föreslås benämning, beskrivning, varumärke, egenskaper och EAN-kod från bilderna, varje förslag visas bredvid formulärets värde och bara det du bockar i fylls i. Pris och konto föreslås aldrig.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-02-lager",
       "datum": "2026-11-02T18:05:00+01:00",
       "rubrik": "Lager: lagerställen, inleveranser, plocklistor, inventering och lagervärdet vid bokslut",

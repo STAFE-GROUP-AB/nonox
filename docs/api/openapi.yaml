@@ -6569,6 +6569,11 @@ paths:
                             - location_id: 5
                               code: HL-A-02
                               quantity: '2'
+                        images:
+                          - id: 31
+                            position: 0
+                            alt: Framsidan
+                            url: 'https://nonox.app/api/v1/inventory/articles/12/images/31/content'
                         updated_at: '2026-11-02T09:00:00+01:00'
                     meta:
                       limit: 50
@@ -6578,6 +6583,64 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         403:
           $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/inventory/articles/{article}/images/{image}/content':
+    get:
+      operationId: downloadInventoryArticleImage
+      tags:
+        - Lager
+      summary: 'Download an article picture'
+      description: 'One picture of an article as a JPEG (at most 1600 pixels on the longest side). The url field in the images list of an article points here. Needs inventory:view.'
+      x-sv-summary: 'Hämta en artikelbild'
+      x-sv-description: 'En bild på en artikel som JPEG. Fältet url i artikelns bildlista pekar hit.'
+      security:
+        - oauth2:
+            - 'inventory:view'
+        - apiKey:
+            - 'inventory:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'inventory:view'
+      parameters:
+        - name: article
+          in: path
+          required: true
+          description: 'Article id.'
+          schema:
+            type: integer
+          example: 12
+        - name: image
+          in: path
+          required: true
+          description: 'Picture id.'
+          schema:
+            type: integer
+          example: 31
+      responses:
+        200:
+          description: 'The picture.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
         429:
           $ref: '#/components/responses/TooManyRequests'
   /inventory/locations:
@@ -10256,6 +10319,23 @@ components:
                     type: string
                   quantity:
                     type: string
+        images:
+          type: array
+          description: 'The pictures in order; the first is the main picture. Fetch one from url with the same token.'
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              position:
+                type: integer
+              alt:
+                type:
+                  - string
+                  - 'null'
+              url:
+                type: string
+                format: uri
         updated_at:
           type: string
           format: date-time

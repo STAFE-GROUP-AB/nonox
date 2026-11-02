@@ -34,8 +34,8 @@ Turning it off hides it and keeps every row.
   a manual net realisable value per unit with a note. The article form gets
   the tabs Enkel (today's fields) and Avancerad; invoicing and the API keep
   working unchanged. "Utgången" is the existing `is_active = false`.
-- **`article_images`** (path, position, alt) exists for the next agents
-  (upload and AI); nothing writes it yet.
+- **`article_images`** (path, position, alt): the article's pictures, see
+  "Article pictures and NONOX AI" below.
 - **Stock locations** (`stock_locations`): one tree per company, a type per
   node (WAREHOUSE → ZONE → SHELF → BIN; a level may be skipped), a short
   code, the printable `full_code` (the codes from the warehouse down,
@@ -122,10 +122,49 @@ immediate receipt). Webhook `stock.changed` (needs `inventory:view` of the
 webhook's creator, like every event) with ids, signed quantities and the
 balance after; no costs or notes.
 
+## Article pictures and NONOX AI (implemented 2026-11-02)
+
+- **Pictures.** Up to 12 per article (`ArticleImages`), in `position` order;
+  the first is the main image (`Article::mainImage`, eager-loaded in every
+  list). An upload (JPG, PNG, WebP, or HEIC where the server's Imagick
+  reads it; at most 12 MB, Livewire's own upload limit) is decoded with GD,
+  turned upright from the EXIF orientation, scaled to at most 1600 px on the
+  longest side and stored as JPEG (quality 82) with a random name under
+  `inventory/articles/{company}/` on the private, encrypted disk. Only the
+  pixels are copied, so camera metadata such as the GPS position is not
+  kept. Pictures of an article not saved yet wait in the form and are
+  stored on save. Removal goes through `StoredFiles::deleteUnreferenced`.
+  Every change is audited (`inventory.article_image_*`).
+- **Who.** Adding, ordering, alt text and removal follow
+  `ArticlePolicy::update` and need Lager on; Lagerpersonal cannot. Viewing
+  needs the article register or `inventory:view`; another company's
+  picture answers 404.
+- **Where shown.** The article form (a full editor on Avancerad with drag
+  and drop through Livewire's `wire:sort` plus arrow buttons for keyboard
+  users, and a compact strip on Enkel), the article lists, Lager →
+  Artiklar and the pick list. A 240 px copy is made on request
+  (`?storlek=liten`, cached privately by the browser); no second file is
+  stored.
+- **API.** `GET /inventory/articles` returns `images` (id, position, alt,
+  url); `GET /inventory/articles/{article}/images/{image}/content` returns
+  the JPEG with the same `inventory:view` scope, so no public URL exists.
+- **Fyll i med NONOX AI.** `SuggestArticleDetails` sends the first four
+  pictures to the company's own provider through `AnalyzeDocument::images`
+  (ADR-018) with `ArticleAgent`. No chart of accounts is sent. The answer
+  is cleaned (lengths, lists, measures > 0) and a GTIN is kept only when
+  its GS1 check digit is right. The form shows each proposed field next to
+  the current value; empty fields are ticked by default, attributes are
+  only ever added under names the article lacks, and nothing changes until
+  the person clicks "Använd valda" and then saves. Prices, purchase prices
+  and accounts are never proposed. The analysis runs in the web request,
+  like the other NONOX AI readers (no queued job).
+- **Snabbregistrera med kamera.** `/artiklar?ny=1&kamera=1` (linked from
+  Lager → Artiklar) opens a new stocked article with the camera first; with
+  NONOX AI the photo is read at once, and the person ticks the proposals,
+  fills in number and price and saves.
+
 ## Deferred (built by the next agents on this model)
 
-- **Images and AI**: upload into `article_images`; AI descriptions fill
-  `description`, `properties`, `colours`, `materials`.
 - **Labels and a label studio**: print `full_code` for locations and
   `gtin`/`scanner_code`/`sku` for articles.
 - **Point-of-sale sync (Zettle, Onslip)**: post sales with

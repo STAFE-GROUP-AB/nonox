@@ -11,15 +11,19 @@ use App\Modules\Connect\Support\ApiInput;
 use App\Modules\Inventory\Actions\ReceiveStock;
 use App\Modules\Inventory\Actions\SaveReceipt;
 use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Models\ArticleImage;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockLocation;
 use App\Modules\Inventory\Models\StockReceipt;
 use App\Modules\Inventory\Models\StockReceiptLine;
+use App\Support\Files\StoredFiles;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -37,7 +41,7 @@ final class InventoryController
     public function articles(Request $request): JsonResponse
     {
         $prices = $this->seesPrices();
-        $query = Article::query()->where('is_stock_item', true)->with(['stockLevels' => fn ($levels) => $levels->where('quantity_milli', '<>', 0)->with('location:id,full_code')]);
+        $query = Article::query()->where('is_stock_item', true)->with(['stockLevels' => fn ($levels) => $levels->where('quantity_milli', '<>', 0)->with('location:id,full_code'), 'images']);
 
         if ($request->filled('gtin')) {
             $query->where('gtin', (string) $request->query('gtin'));
@@ -48,6 +52,21 @@ final class InventoryController
         }
 
         return CursorList::respond($request, $query, fn (Article $article): array => self::present($article, $prices));
+    }
+
+    /**
+     * An article's picture as stored: a JPEG. The same token that may list
+     * the articles may fetch it; another company's picture answers 404.
+     */
+    public function image(int $article, int $image): Response
+    {
+        $model = ArticleImage::query()->where('article_id', $article)->findOrFail($image);
+
+        return response((string) Storage::disk(StoredFiles::DISK)->get($model->path), 200, [
+            'Content-Type' => 'image/jpeg',
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function locations(Request $request): JsonResponse
@@ -188,6 +207,12 @@ final class InventoryController
                     'quantity' => Quantity::decimal($level->quantity_milli),
                 ])->values()->all(),
             ],
+            'images' => $article->images->map(fn (ArticleImage $image): array => [
+                'id' => $image->id,
+                'position' => $image->position,
+                'alt' => $image->alt,
+                'url' => route('connect.api.inventory.articles.images.content', ['article' => $article->id, 'image' => $image->id]),
+            ])->values()->all(),
             'updated_at' => self::time($article->updated_at),
         ];
     }

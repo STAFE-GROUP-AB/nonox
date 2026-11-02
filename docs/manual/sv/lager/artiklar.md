@@ -28,6 +28,7 @@ Artikelnummer, benämning, pris exklusive moms, enhet, moms och intäktskonto. D
 - **Inköpspris** – används som kostnad när inget annat pris anges vid inleveransen.
 - **Momshantering** – vanlig moms eller vinstmarginalbeskattning (VMB) för begagnade varor.
 - **Leverantör och leverantörens artikelnummer.**
+- **Bilder** – fota varan med mobilen eller välj bilder. NONOX AI kan föreslå uppgifterna från bilderna. Se [Bilder och NONOX AI](/manual/lager/bilder-och-ai).
 
 > [!IMPORTANT]
 > Vinstmarginalbeskattning går att markera på artikeln, men fakturorna räknar ännu inte fram marginalen eller ruta 07 i momsdeklarationen. Det kommer i en senare version. Fram till dess bokför du marginalen som du gör i dag.
@@ -56,5 +57,6 @@ Från listan kan du också:
 
 ## Läs också
 
+- [Bilder och NONOX AI](/manual/lager/bilder-och-ai)
 - [Lagerställen](/manual/lager/lagerstallen)
 - [Inleverans](/manual/lager/inleverans)

@@ -2769,7 +2769,27 @@ bokslutet (ADR-039). Modulen ändrar bokföringen bara i bokslutssteget nedan.
   lagerförändringen kräver också `fiscal-years:manage`.
 - **API och webhooks:** lagret kan läsas och inleveranser skapas via NONOX
   Connect (`inventory:view`, `inventory:manage`); händelsen `stock.changed`.
-- Allt skrivs till behandlingshistoriken.
+- **Artikelbilder** (`article_images`): högst 12 per artikel, i ordning där
+  den första är huvudbild. En uppladdad bild (JPG, PNG, WebP eller HEIC,
+  högst 12 MB) läses om till en JPEG på högst 1 600 pixlar, vänd rätt efter
+  kamerans orientering och utan kamerans metadata, och sparas med ett
+  slumpat namn på den privata, krypterade disken. Bilden visas bara genom
+  en inloggad sökväg för den som ser artikelregistret eller Lager, och via
+  API:t med samma behörighet (`inventory:view`); ett annat företags bild
+  svarar 404. Den som får ändra artikeln får lägga till, ordna, ge
+  bildtext och ta bort; borttagning går genom `StoredFiles`. Bilderna är
+  inte räkenskapsinformation.
+- **Fyll i med NONOX AI** (ADR-018): de första fyra bilderna skickas till
+  företagets egen AI-leverantör, utan kontoplan. Svaret är ett förslag på
+  benämning, beskrivning, varumärke, modell, färger, material, egenskaper,
+  mått och EAN; en EAN-kod med fel kontrollsiffra tas bort. Personen ser
+  varje förslag bredvid formulärets värde och bockar i vad som ska
+  användas (tomma fält är förbockade, egenskaper läggs bara till).
+  Ingenting sparas förrän personen sparar artikeln, och pris och konto
+  föreslås aldrig. Analysen loggas som `ai.document_analyzed` med typen
+  `article`, leverantör, modell och tokens, aldrig bilderna eller svaret.
+- Allt skrivs till behandlingshistoriken, även bilder som läggs till,
+  ordnas, får bildtext eller tas bort.
 
 ## 6. Belopp
 
