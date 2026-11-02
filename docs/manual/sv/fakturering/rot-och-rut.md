@@ -72,7 +72,7 @@ Bocka i **Arbete** på minst en rad.
 Nej. Avdragen gäller arbete i Sverige åt privatpersoner.
 
 **Fakturan blev fel. Hur krediterar jag?**
-Som vanligt, så länge kunden inte har betalat. Kreditfakturan tar ut både kundens del och avdraget. Läs [Kreditera en faktura](/manual/fakturering/kreditfaktura).
+Som vanligt. Kreditfakturan tar ut både kundens del och avdraget. Avdraget räknas inte om: krediterar du hela fakturan tas exakt det avdrag bort som stod på fakturan, även om taket begränsade det. Krediterar du en del av arbetet tas samma andel av avdraget bort. Läs [Kreditera en faktura](/manual/fakturering/kreditfaktura).
 
 ## Läs också
 

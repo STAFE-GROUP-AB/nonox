@@ -39,6 +39,13 @@
   voucher reverses the credited part of the original's (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47); ML 17 kap.
   22-23 §§, BFL 4 kap. 1 §, 5 kap. 1 §).
+- **ROT and RUT on a credit invoice.** The credit takes the original's
+  type and deduction, never recomputed at the credit's date, rate or
+  ceiling: the original's deduction in proportion to the labour (including
+  VAT) the credit credits, rounded down to whole kronor; the credit that
+  credits the last of the labour takes the rest, and none takes more than
+  is left (enligt granskning 2026-11-02, juristgranskning återstår
+  (AUD-FAKT-1, #48); ML 17 kap. 22 §, lag (2009:194) 7 §).
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

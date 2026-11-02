@@ -606,7 +606,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   registreras det på fakturan: bankkontot mot 1513 i serie C. Det mottagna
   beloppet är det enda på en utfärdad faktura som får ändras utöver status,
   betalningar och utskick (modell och databastrigger).
-- En kreditfaktura krediterar även avdraget.
+- En kreditfaktura krediterar även avdraget. Avdraget räknas inte om med
+  kreditdagens andel eller tak: kreditfakturan tar originalets avdrag i
+  proportion till den arbetskostnad (inklusive moms) den krediterar,
+  avrundat nedåt till hela kronor, och den kreditfaktura som krediterar
+  det sista av arbetet tar resten av avdraget. En kreditfaktura tar aldrig
+  mer avdrag än vad som är kvar av originalets. En hel kredit vänder därmed
+  exakt originalets 1510 och 1513 (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-1, #48); ML 17 kap. 22 §, lag
+  (2009:194) 7 §).
 
 ### 5.3 Kundfakturor i utländsk valuta
 

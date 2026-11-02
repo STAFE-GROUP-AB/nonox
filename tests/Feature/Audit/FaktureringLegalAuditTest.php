@@ -367,8 +367,9 @@ it('ROT credit: crediting an invoice whose deduction was capped by the ceiling l
     app(IssueInvoice::class)($this->owner, app(CreditInvoice::class)($this->owner, $invoice));
 
     expect(audFaktBalance(1513))->toBe(0)
+        ->and(audFaktBalance(1510))->toBe(0)
         ->and(audFaktBalance(1510))->toBe(audFaktReceivablesLedger());
-})->todo('AUD-FAKT-1: the credit invoice recomputes the deduction without the ceiling (60 000 instead of 50 000), so 1510 keeps 10 000 kr and 1513 −10 000 kr while both invoices are closed');
+}); // AUD-FAKT-1 fixed (#48): the credit takes the original's deduction, not a recomputed one.
 
 it('ROT credit: an invoice whose deduction Skatteverket has paid cannot be credited as if it were unpaid', function () {
     $household = app(SaveCustomer::class)($this->owner, $this->company, [
