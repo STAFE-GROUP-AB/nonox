@@ -557,7 +557,76 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Bokföring enligt fakturametoden: när fakturan skapas, verifikation i serie
   B (1510 mot intäktskonton, utgående moms och 3740). Betalning: serie C,
   1930 mot 1510. Enligt kontantmetoden bokförs intäkt och moms först vid
-  betalning.
+  betalning. En delbetalning bokför sin andel av varje rad (avrundad
+  halvt uppåt); betalningen som reglerar fakturan bokför det som återstår
+  av varje rad efter tidigare betalningar och kreditfakturor, så att
+  betalningarna tillsammans bokför exakt fakturans intäkt och moms (ML
+  7 kap. 16 §, 17 kap. 24 § p. 11; enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-3, #52)).
+- Företag som inte är momsregistrerade (momsredovisning "Inte
+  momsregistrerad"): inställningarna sparar varför (`vat_exemption`: liten
+  omsättning enligt ML 18 kap. 4 §, bara momsfri försäljning enligt 10 kap.,
+  eller registrering på gång). En faktura med moms kan då bara skapas om
+  utkastet har en uttrycklig bekräftelse (`unregistered_vat_confirmed`),
+  eftersom moms som tas ut på en faktura ska betalas in (16 kap. 23 §); den
+  bokförs som vanligt på 2611/2621/2631, och momssidan visar beloppet med
+  en uppmaning att betala in det. En faktura utan moms får företagets
+  undantagstext sparad när den skapas (`vat_exemption_text`, 17 kap. 24 §
+  p. 13 och 28 § p. 6) och PDF:en skriver ut den (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-5, #51)).
+- Kundförlust: det obetalda på en skapad faktura kan skrivas bort som
+  konstaterad kundförlust med datum och skäl (`WriteOffInvoice`, behörighet
+  `invoices:credit`). Står fakturan på 1510 bokförs en verifikation i serie
+  B: 1510 kredit med det obetalda, den delens andel av utgående moms debet
+  (ML 8 kap. 16 §, 7 kap. 43–44 §§) och resten på 6351 debet. Med
+  kontantmetoden bokförs inget. Fakturan får status WRITTEN_OFF och
+  räknas som öppen i reskontran bara före bortskrivningsdagen. En senare
+  inbetalning är en återvinning (`recovery`): momsen redovisas igen och
+  förlusten minskar i samma proportion, 1510 berörs inte. Reskontran per
+  dag (`LedgerReconciliation`, Bokföring → Reskontra) jämför kund- eller
+  leverantörsreskontran med 1510 respektive 2440 och visar differensen;
+  bokslutets checklista länkar dit för årets sista dag (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-12, #57)).
+- ROT och RUT: procentsatsen och taket per år följer året då kunden
+  betalar (IL 67 kap. 12 § p. 1, 19 §; lag 2009:194 7–8 §§). Fakturan
+  räknar preliminärt med förfallodagen som betaldag: satsen den dagen och
+  det som återstår av taket det året efter kundens andra fakturor från
+  företaget (betalda det året, eller med förfallodag det året om de är
+  obetalda). Betalningen som reglerar fakturan kontrollerar avdraget mot
+  den faktiska betaldagen; avviker det skrivs det i behandlingshistoriken
+  och fakturasidan visar hur mycket som högst kan begäras (enligt
+  granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-10, #56)).
+- Köparens adress: en fullständig faktura (över 4 000 kr inklusive moms,
+  eller alltid vid varuförsäljning till ett annat EU-land och tjänster där
+  köparen i ett annat EU-land är skyldig att betala momsen) till ett
+  företag (organisations- eller momsnummer, omvänd betalningsskyldighet)
+  eller med ROT-avdrag kan inte skapas utan kundens gatuadress, postnummer
+  och ort (ML 17 kap. 24 § p. 6, 26–27 §§). Kreditfakturor och företag med
+  undantag för liten omsättning får använda förenklad faktura (26 § p. 3–4)
+  (enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-7,
+  #55)).
+- En rad som säljs i Sverige med 0 % moms (inte omvänd betalningsskyldighet
+  eller försäljning utomlands) får ett skäl (`invoice_rows.vat_exemption`):
+  en bestämmelse i ML 10 kap. (sjukvård 6 §, social omsorg 14 §,
+  utbildning 15–18 §§, idrott 28 §, kultur 30 §, försäkring 32 §, bank och
+  finans 33 §, fastighet 35 §), ett allmänt undantag eller utanför
+  momsens tillämpningsområde (till exempel utlägg). Utan val blir det det
+  allmänna undantaget (17 kap. 24 § p. 13 c). Texten sparas på raden när
+  utkastet sparas (`vat_exemption_text`) och skrivs ut på fakturan med
+  underlaget per undantag (24 § p. 9) (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-6, #54)).
+- Undantag från kontantmetoden: försäljning av varor till ett annat EU-land
+  (ML 7 kap. 29 §) och tjänster som tas upp i periodisk sammanställning
+  (7 kap. 30 §) redovisas för fakturans period oavsett metod. Sådana
+  fakturor (och deras kreditfakturor) bokförs därför när de skapas som
+  enligt fakturametoden, även hos ett företag med kontantmetoden, och
+  betalningen flyttar bara beloppet från 1510 till banken. De tas inte med
+  bland obetalda fakturor vid årets slut, eftersom de redan står på 1510.
+  Ruta 35/39 och den periodiska sammanställningen följer då samma period
+  (`InvoiceBooking::bookedAtIssue`, `ForeignSale::isReportedWhenInvoiced`;
+  enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-4,
+  #50)). Trepartshandel (ruta 38) bokförs tills vidare vid betalning
+  (TODO(legal-verify)).
 - En kreditfaktura krediterar hela fakturan eller en del av den (raderna i
   utkastet kan ändras). Den minskar originalet med sitt eget belopp
   (`credited_ore` och `paid_ore`, i kronor och i fakturans valuta) och
@@ -831,7 +900,19 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   på fakturadatum (kostnadskonton och 2641 ingående moms debet, 2440
   leverantörsskulder kredit) med fakturan som underlag. Betalning: serie E,
   2440 mot 1930. Enligt kontantmetoden bokförs kostnad och moms först vid
-  betalning, med fakturan som underlag på den första betalningen.
+  betalning, med fakturan som underlag på den första betalningen. Den
+  betalning (eller kvittning) som reglerar fakturan bokför det som återstår
+  av varje rad, så att kostnader och ingående moms tillsammans blir exakt
+  fakturans (ML 7 kap. 33 §; enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-3, #52)).
+- Undantag från kontantmetoden: unionsinterna förvärv av varor (ML 7 kap.
+  26 och 40 §§; kontantmetoden i 7 kap. 16 § andra st. omfattar bara 16 kap.
+  6 och 8–16 §§) bokförs vid registreringen som enligt fakturametoden, med
+  4515–4517, 2614/2624/2634 och 2645 mot 2440, och betalningen flyttar bara
+  beloppet från 2440 till banken. Inköp av tjänster från EU och andra
+  förvärv med omvänd betalningsskyldighet bokförs fortfarande vid betalning
+  (`SupplierInvoiceBooking::bookedAtRegistration`; enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-4, #50)).
 - Attest: en registrerad faktura måste attesteras innan den kan betalas.
   Den som registrerade fakturan får inte attestera den, om inte företaget har
   stängt av kravet (för företag med en person). Ändringen av kravet skrivs

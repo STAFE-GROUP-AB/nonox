@@ -28,7 +28,7 @@ beforeEach(function () {
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
     $this->german = app(SaveCustomer::class)($this->owner, $this->company, [
-        'name' => 'Muster GmbH', 'vat_number' => 'DE123456789', 'country' => 'de',
+        'name' => 'Muster GmbH', 'vat_number' => 'DE123456789', 'country' => 'de', 'address_line1' => 'Testgatan 1', 'postal_code' => '111 22', 'city' => 'Stockholm',
         'payment_terms_days' => 30, 'foreign_sale' => ForeignSale::EuServices->value,
     ]);
     $this->american = app(SaveCustomer::class)($this->owner, $this->company, [

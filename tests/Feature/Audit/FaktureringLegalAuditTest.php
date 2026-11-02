@@ -273,7 +273,7 @@ it('ML 15 kap. 16 §: under kontantmetoden part payments together book exactly t
     expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid)
         ->and(audFaktBalance(2611))->toBe(-2_500)
         ->and(audFaktRange(3000, 3999))->toBe(-10_000);
-})->todo('AUD-FAKT-3: kontantmetoden rounds each part payment\'s VAT share on its own; the last payment does not take the rest, so declared VAT can differ from the invoice by öre');
+}); // AUD-FAKT-3 fixed (#52): the payment that settles the invoice takes what is left of each line.
 
 it('ML 15 kap. 29 §: an intra-Community supply of goods is reported for the period the invoice is issued, also under kontantmetoden', function () {
     $this->company->forceFill(['accounting_method' => AccountingMethod::Kontantmetoden])->save();
@@ -289,7 +289,7 @@ it('ML 15 kap. 29 §: an intra-Community supply of goods is reported for the per
 
     // The sale (box 35 / periodisk sammanställning) belongs to March even though nothing is paid yet.
     expect(audFaktBalance(3108))->toBe(-1_000_000);
-})->todo('AUD-FAKT-4: under kontantmetoden EU sales (ML 15 kap. 29-30 §§) are booked only when paid, so box 35/39 and the periodisk sammanställning land in the wrong period');
+}); // AUD-FAKT-4 fixed (#50): EU sales are booked at issue under kontantmetoden too (ML 2023:200 7 kap. 29-30 §§).
 
 /* ---------------------------------------------------------------------------
  | Invoice content deviations
@@ -301,7 +301,7 @@ it('ML 17 kap. 24 § p. 6: an invoice to a business needs the buyer\'s full addr
     expect(fn () => app(IssueInvoice::class)($this->owner, audFaktDraft($noAddress, [
         ['description' => 'Konsulttimme', 'quantity' => '50', 'price' => '1 000', 'vat_rate' => 2500],
     ])))->toThrow(ValidationException::class);
-})->todo('AUD-FAKT-7: a full invoice (over 4 000 kr, ML 17 kap. 26 §) is issued to a business without the buyer\'s address');
+}); // AUD-FAKT-7 fixed (#55): a full invoice to a business needs the buyer's address.
 
 it('ML 17 kap. 24 § p. 13: a domestic row at 0 % must refer to the exemption', function () {
     $invoice = app(IssueInvoice::class)($this->owner, audFaktDraft($this->customer, [
@@ -309,7 +309,7 @@ it('ML 17 kap. 24 § p. 13: a domestic row at 0 % must refer to the exemption', 
     ]));
 
     expect(InvoicePdf::html($invoice))->toMatch('/undantag|10 kap\.|artikel 13[0-9]/i');
-})->todo('AUD-FAKT-6: a domestic invoice with 0 % VAT carries no reference to the exemption (ML 17 kap. 24 § p. 13)');
+}); // AUD-FAKT-6 fixed (#54): a domestic row at 0 % prints its exemption (ML 17 kap. 24 § p. 13).
 
 it('ML 17 kap. 28 § p. 6 and 16 kap.: a company that is not VAT registered cannot charge VAT on its invoices', function () {
     $this->company->forceFill(['vat_registered' => false, 'vat_number' => null])->save();
@@ -317,7 +317,7 @@ it('ML 17 kap. 28 § p. 6 and 16 kap.: a company that is not VAT registered cann
     expect(fn () => app(IssueInvoice::class)($this->owner, audFaktDraft($this->customer, [
         ['description' => 'Konsulttimme', 'quantity' => '1', 'price' => '1 000', 'vat_rate' => 2500],
     ])))->toThrow(ValidationException::class);
-})->todo('AUD-FAKT-5: a company without VAT registration issues invoices with 25 % VAT (felaktigt debiterad moms, ML 2 kap. 12 §) and without the exemption reference');
+}); // AUD-FAKT-5 fixed (#51): VAT needs an explicit confirmation (ML 16 kap. 23 §), and the exemption is printed.
 
 it('ML 17 kap. 22-23 §§: a price reduction after payment is made with a credit note referring to the paid invoice', function () {
     $invoice = app(IssueInvoice::class)($this->owner, audFaktDraft($this->customer, [
@@ -475,7 +475,7 @@ it('ML 15 kap. 26 §: VAT on an intra-Community acquisition of goods is reported
     // Unpaid, but box 20/30/48 belong to March: 2614 −2 500, 2645 +2 500.
     expect(audFaktBalance(2614))->toBe(-250_000)
         ->and(audFaktBalance(2645))->toBe(250_000);
-})->todo('AUD-FAKT-4: under kontantmetoden the VAT on EU acquisitions of goods is booked only when the invoice is paid (ML 15 kap. 26 §)');
+}); // AUD-FAKT-4 fixed (#50): EU acquisitions of goods are booked at registration under kontantmetoden too (ML 2023:200 7 kap. 26, 40 §§).
 
 it('ML 15 kap. 16 §/31 §: under kontantmetoden part payments of a supplier invoice together book exactly its input VAT', function () {
     $this->company->forceFill(['separate_supplier_approval' => false, 'accounting_method' => AccountingMethod::Kontantmetoden])->save();
@@ -492,4 +492,4 @@ it('ML 15 kap. 16 §/31 §: under kontantmetoden part payments of a supplier inv
 
     expect(audFaktBalance(2641))->toBe(2_500)
         ->and(audFaktBalance(4010))->toBe(10_000);
-})->todo('AUD-FAKT-3: kontantmetoden rounds each part payment\'s share of a supplier invoice on its own, so input VAT can differ from the invoice by öre');
+}); // AUD-FAKT-3 fixed (#52): the payment that settles the supplier invoice takes what is left of each row.

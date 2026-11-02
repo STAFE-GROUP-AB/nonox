@@ -33,7 +33,7 @@ beforeEach(function () {
     $this->company->forceFill(['vat_number' => 'SE556334368901', 'phone' => '08-123456', 'oss_elected' => true])->save();
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
-    $customer = fn (array $attributes) => app(SaveCustomer::class)($this->owner, $this->company, [...$attributes, 'payment_terms_days' => 30]);
+    $customer = fn (array $attributes) => app(SaveCustomer::class)($this->owner, $this->company, ['address_line1' => 'Testgatan 1', 'postal_code' => '111 22', 'city' => 'Stockholm', ...$attributes, 'payment_terms_days' => 30]);
     $this->danish = $customer(['name' => 'Eksempel ApS', 'vat_number' => 'DK31283522', 'country' => 'DK']);
     $this->finnish = $customer(['name' => 'Esimerkki Oy', 'vat_number' => 'FI01409351', 'country' => 'FI']);
     $this->consumer = $customer(['name' => 'Hans Muster', 'country' => 'DE']);

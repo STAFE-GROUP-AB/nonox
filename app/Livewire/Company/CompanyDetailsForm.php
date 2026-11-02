@@ -10,6 +10,7 @@ use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\ReportingFrameworkRules;
+use App\Domain\Company\VatExemption;
 use App\Domain\Company\VatPeriod;
 use App\Livewire\Concerns\LooksUpCompanies;
 use App\Livewire\Concerns\ShowsToasts;
@@ -46,6 +47,7 @@ class CompanyDetailsForm extends Component
             'bankgiro' => $company->bankgiro,
             'plusgiro' => $company->plusgiro,
             'vat_period' => $company->vat_period->value,
+            'vat_exemption' => (string) $company->vat_exemption?->value,
             'fiscal_year_start_month' => $company->fiscal_year_start_month,
             'accounting_method' => $company->accounting_method->value,
             'reporting_framework' => $company->reporting_framework->value,
@@ -121,6 +123,7 @@ class CompanyDetailsForm extends Component
             'canUpdate' => $this->user()->can('update', $company),
             'accountingMethods' => AccountingMethod::cases(),
             'vatPeriods' => VatPeriod::cases(),
+            'vatExemptions' => VatExemption::cases(),
             'frameworks' => ReportingFramework::cases(),
             'months' => array_combine(range(1, 12), [
                 __('januari'), __('februari'), __('mars'), __('april'), __('maj'), __('juni'),

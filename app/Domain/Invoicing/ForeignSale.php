@@ -121,6 +121,22 @@ enum ForeignSale: string
         };
     }
 
+    /**
+     * Whether the sale is reported for the period the invoice is issued even
+     * under kontantmetoden: an intra-Community supply of goods (ML 2023:200
+     * 7 kap. 29 §) and services that go into the periodisk sammanställning
+     * (7 kap. 30 §, the taxable event, which is the invoice date here).
+     * Kontantmetoden (7 kap. 16 §) covers neither (enligt granskning
+     * 2026-11-02, juristgranskning återstår (AUD-FAKT-4, #50)).
+     *
+     * TODO(legal-verify): whether the intermediary's sale in triangulation
+     * (box 38) follows the same rule; it is booked at payment until then.
+     */
+    public function isReportedWhenInvoiced(): bool
+    {
+        return $this === self::EuGoods || $this === self::EuServices;
+    }
+
     public static function isEuCountry(?string $country): bool
     {
         return in_array(strtoupper((string) $country), self::EU_COUNTRIES, true);

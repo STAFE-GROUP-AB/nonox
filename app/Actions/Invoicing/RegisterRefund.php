@@ -6,7 +6,6 @@ namespace App\Actions\Invoicing;
 
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\VoucherSource;
-use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Models\Account;
@@ -95,7 +94,7 @@ class RegisterRefund
                 $paidOn,
                 __('Återbetalning :invoice, :customer', ['invoice' => $credit->title(), 'customer' => $credit->customer_snapshot['name'] ?? '']),
                 'C',
-                InvoiceBooking::payment($credit, $credit->rows, -$settled, $bankAccount, $company->accounting_method === AccountingMethod::Kontantmetoden, -$amount->ore),
+                InvoiceBooking::payment($credit, $credit->rows, -$settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($credit, $company->accounting_method), -$amount->ore),
                 VoucherSource::Payment,
                 $credit,
             );

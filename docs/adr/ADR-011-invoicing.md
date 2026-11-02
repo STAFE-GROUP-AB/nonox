@@ -24,7 +24,13 @@
   for rounding. A payment posts 1930 against 1510 in series C. Under
   *kontantmetoden* nothing is posted when issuing; each payment posts its
   share of revenue, VAT and rounding against 1930, with the öre left over on
-  the largest line. Vouchers are made through `BookVoucher`, which uses the
+  the largest line; the payment that settles the invoice books what is left
+  of each line after earlier payments and credits, so the payments add up
+  to the invoice exactly (2026-11-02, AUD-FAKT-3, #52). Exception (2026-11-02, AUD-FAKT-4, #50): EU sales of
+  goods and services in the periodisk sammanställning are reported for the
+  invoice's period whatever the method (ML 2023:200 7 kap. 29-30 §§), so
+  they are booked at issue under kontantmetoden too, and their payment only
+  clears 1510 (`InvoiceBooking::bookedAtIssue`). Vouchers are made through `BookVoucher`, which uses the
   same SaveDraftVoucher and PostVoucher as manual vouchers, and point back to
   the invoice (`source_type`, `source_id`; `source_id` became text because
   invoices have UUIDs).
@@ -68,6 +74,65 @@
   credit and reminds the user to notify Skatteverket (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-9, #49)).
   TODO(legal-verify): 2890 as the account.
+- **Companies not registered for VAT** (2026-11-02, AUD-FAKT-5, #51). The
+  company settings keep why a company is not registered (`teams.vat_exemption`:
+  the small-business exemption in ML 2023:200 18 kap. 4 §, only exempt
+  supplies under 10 kap., or a registration that is pending). Such a company
+  cannot issue an invoice with VAT unless the draft carries an explicit
+  confirmation (`invoices.unregistered_vat_confirmed`), since VAT charged
+  wrongly must be paid to the state (16 kap. 23 §). An invoice without VAT
+  keeps the exemption wording in `invoices.vat_exemption_text` when issued
+  (17 kap. 24 § p. 13, 28 § p. 6) and the PDF prints it. The VAT page of an
+  unregistered company shows any output VAT on 2611/2621/2631 with the
+  16 kap. 23 § note. TODO(legal-verify): the wording, and how such VAT is
+  reported and paid.
+- **Rows at 0 % in Sweden** (2026-11-02, AUD-FAKT-6, #54). A row sold in
+  Sweden at 0 % (not reverse charge, not a sale abroad) carries why:
+  `invoice_rows.vat_exemption` (`VatExemptionReason`: an ML 10 kap.
+  provision, a general exemption, or outside the scope of VAT) and the text
+  kept with it when the draft is saved, `vat_exemption_text`. Without a
+  choice the row gets the general statement 17 kap. 24 § p. 13 c allows.
+  The PDF prints each text with its base (24 § p. 9). There is no VAT code
+  table; the reasons are an enum with the texts. A company not registered
+  for VAT whose own exemption is printed (#51) needs no row reason.
+  TODO(legal-verify): the wording, and articles do not yet carry a reason.
+- **The buyer's address** (2026-11-02, AUD-FAKT-7, #55). Issuing refuses a
+  full invoice whose customer lacks street, postcode or city
+  (`FullInvoice`): a buyer with an organisation or VAT number, a reverse
+  charge or EU business sale, or a ROT invoice, when the total including
+  VAT (and the deduction) is over 4 000 kr (ML 17 kap. 24 § p. 6, 26 § p. 1),
+  or whatever the amount for an EU supply of goods or a supply where the
+  buyer in another EU country is liable (27 §). Credit notes and a company
+  under the small-business exemption may use simplified invoices (26 §
+  p. 3-4). TODO(legal-verify): a customer without any number counts as a
+  private person; ROT counts as construction.
+- **ROT and RUT follow the year of payment** (2026-11-02, AUD-FAKT-10,
+  #56). The share and the yearly ceiling are those of the day the buyer
+  pays (IL 67 kap. 12 § p. 1, 19 §; lag 2009:194 7-8 §§). The draft uses
+  its due date as the expected day: the rate on that day, and the room left
+  after the buyer's other invoices from this company whose last payment (or
+  due date while unpaid) falls in that year; a credit counts in its
+  original's year (`TaxReduction::allowed`, `used`). The invoice never
+  changes; the payment that settles it re-checks against the actual day
+  (`TaxReduction::recheck`), writes the result to the audit log and the
+  invoice page tells how much to claim at most.
+- **Customer losses and the ledger as of a date** (2026-11-02,
+  AUD-FAKT-12, #57). `WriteOffInvoice` closes the open part of an issued
+  invoice as a confirmed loss (status WRITTEN_OFF, `written_off_ore`,
+  `written_off_on`, the reason): when the invoice is on 1510 a voucher in
+  series B credits 1510, debits the open part's share of the output VAT
+  (of the invoice and its credits together) and the rest on 6351
+  (ML 8 kap. 16 §, 7 kap. 43-44 §§); under kontantmetoden nothing is
+  booked. Money afterwards is a recovery (`invoice_payments.recovery`,
+  `recovered_ore`): it reverses the write-off's lines in proportion, the
+  last one takes the rest, and 1510 is untouched. Requires
+  `invoices:credit`; ROT/RUT invoices cannot be written off yet; expected
+  losses (6352) are booked by hand. `OpenInvoices` treats a written-off
+  invoice as open until its write-off date and ignores recoveries, and
+  `LedgerReconciliation` (Bokföring → Reskontra, `/reskontra`) compares the
+  customer or supplier ledger on any day with 1510 or 2440; the closing
+  checklist links there for the last day. TODO(legal-verify): 6351, and
+  when a loss counts as confirmed.
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

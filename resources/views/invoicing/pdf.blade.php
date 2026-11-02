@@ -156,6 +156,19 @@
             <span class="muted">@if($company->vat_number){{ __('Säljarens momsreg.nr :seller', ['seller' => $company->vat_number]) }}@endif @if(filled($customer['vat_number'] ?? null)) · {{ __('Köparens momsreg.nr :buyer', ['buyer' => $customer['vat_number']]) }}@endif</span></p>
     @endif
 
+    @php($exemptRows = $invoice->rows->filter(fn ($row) => filled($row->vat_exemption_text))->groupBy('vat_exemption_text'))
+    @if($exemptRows->isNotEmpty())
+        <p style="margin-top: 8mm"><strong>{{ __('Utan moms') }}</strong>
+            @foreach($exemptRows as $text => $group)
+                <br>{{ $text }} {{ __('Underlag :base.', ['base' => $kr((int) $group->sum(fn ($row) => $foreign ? (int) $row->foreign_net_minor : $row->net_ore->ore))]) }}
+            @endforeach
+        </p>
+    @endif
+
+    @if($invoice->vat_exemption_text)
+        <p style="margin-top: 8mm"><strong>{{ $invoice->vat_exemption_text }}</strong></p>
+    @endif
+
     @if($invoice->notes)
         <p style="margin-top: 8mm">{!! nl2br(e($invoice->notes)) !!}</p>
     @endif

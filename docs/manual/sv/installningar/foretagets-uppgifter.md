@@ -37,6 +37,7 @@ Alla i företaget kan se uppgifterna, men bara ägare och administratörer kan �
 | Uppgift | Vad den styr |
 |---|---|
 | **Momsredovisning** | Hur ofta ni redovisar moms: **Varje månad**, **Varje kvartal**, **En gång per år**, eller **Inte momsregistrerad**. Styr perioderna i [momsdeklarationen](/manual/moms/momsdeklaration). Väljer du en period räknar NONOX ut momsregistreringsnumret från organisationsnumret. |
+| **Varför företaget inte är momsregistrerat** | Visas när du väljer **Inte momsregistrerad**. **Liten omsättning** (högst 120 000 kronor om året) skriver ut *Undantagen från skatteplikt enligt 18 kap. 4 § mervärdesskattelagen* på fakturorna. **Bara momsfri försäljning** skriver ut att omsättningen är undantagen från moms. **Momsregistreringen är på gång** skriver inte ut någon text, eftersom momsen ska betalas ändå. |
 | **Räkenskapsåret börjar** | Den första dagen i företagets räkenskapsår. En enskild firma ska ha januari. |
 | **Bokföringsmetod** | [Fakturametoden](/manual/ordlista/ordlista#fakturametoden) eller [kontantmetoden](/manual/ordlista/ordlista#kontantmetoden): om kund- och leverantörsfakturor bokförs när de skickas och tas emot, eller när de betalas. |
 | **Regelverk för årsbokslut** | K1, K2 eller K3. Styr bland annat [årsredovisningen](/manual/bokslut/arsredovisning). Vilka företag som får välja vad står i [Skapa ett företag](/manual/kom-igang/skapa-ett-foretag#vad-uppgifterna-betyder). |

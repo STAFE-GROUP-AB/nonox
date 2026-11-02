@@ -58,6 +58,8 @@ Momsen:
 
 Saknas något av kontona i kontoplanen läggs det till med sitt BAS-namn. Verifikationen blir som vanligt en verifikation i serie D (fakturametoden) eller bokförs vid betalning (kontantmetoden).
 
+Undantag: **varor från ett annat EU-land** bokförs alltid när fakturan registreras, även med kontantmetoden. Momsen på sådana inköp ska redovisas för den månad fakturan är utfärdad (mervärdesskattelagen 7 kap. 26 och 40 §§). När du betalar flyttas bara beloppet från 2440 till banken.
+
 ## Det här går inte än
 
 - **Import av varor från länder utanför EU.** Momsen på import räknas på tullvärdet från Tullverket, inte på leverantörens faktura, och det är inte byggt ännu.

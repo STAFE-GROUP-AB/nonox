@@ -107,13 +107,26 @@
         <div class="grid gap-5 sm:grid-cols-2">
             <div>
                 <x-label for="details_vat_period" value="{{ __('Momsredovisning') }}" />
-                <select id="details_vat_period" class="{{ $field }}" wire:model="state.vat_period" @disabled(! $canUpdate)>
+                <select id="details_vat_period" class="{{ $field }}" wire:model.live="state.vat_period" @disabled(! $canUpdate)>
                     @foreach($vatPeriods as $period)
                         <option value="{{ $period->value }}">{{ $period->label() }}</option>
                     @endforeach
                 </select>
                 <x-input-error for="vat_period" class="mt-2" />
             </div>
+            @if(($state['vat_period'] ?? '') === App\Domain\Company\VatPeriod::None->value)
+                <div>
+                    <x-label for="details_vat_exemption" value="{{ __('Varför företaget inte är momsregistrerat') }}" />
+                    <select id="details_vat_exemption" class="{{ $field }}" wire:model="state.vat_exemption" @disabled(! $canUpdate)>
+                        <option value="">{{ __('Inte angivet') }}</option>
+                        @foreach($vatExemptions as $exemption)
+                            <option value="{{ $exemption->value }}">{{ $exemption->label() }}</option>
+                        @endforeach
+                    </select>
+                    <p class="mt-1 text-xs text-gray-500">{{ __('Skrivs ut på fakturor utan moms. En faktura med moms kan bara skapas om du bekräftar det på fakturan, eftersom moms som tas ut ska betalas in.') }}</p>
+                    <x-input-error for="vat_exemption" class="mt-2" />
+                </div>
+            @endif
             <div>
                 <x-label for="details_fiscal_year" value="{{ __('Räkenskapsåret börjar') }}" />
                 <select id="details_fiscal_year" class="{{ $field }}" wire:model.live="state.fiscal_year_start_month" @disabled(! $canUpdate)>

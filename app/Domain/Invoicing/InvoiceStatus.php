@@ -10,6 +10,7 @@ enum InvoiceStatus: string
     case Issued = 'ISSUED';
     case Paid = 'PAID';
     case Credited = 'CREDITED';
+    case WrittenOff = 'WRITTEN_OFF';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum InvoiceStatus: string
             self::Issued => __('Obetald'),
             self::Paid => __('Betald'),
             self::Credited => __('Krediterad'),
+            self::WrittenOff => __('Kundförlust'),
         };
     }
 }

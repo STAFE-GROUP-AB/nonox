@@ -9,6 +9,7 @@ use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\ForeignSale;
+use App\Domain\Invoicing\FullInvoice;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
@@ -80,6 +81,15 @@ class IssueInvoice
                 $this->ensureCreditFits($invoice, $original);
             }
 
+            if (! $invoice->isCredit()) {
+                $this->ensureVatAllowed($company, $invoice);
+            }
+
+            // ML 17 kap. 24 § p. 6: a full invoice carries the buyer's full name and address (#55).
+            if (FullInvoice::requiresBuyerAddress($company, $invoice, $customer) && ! FullInvoice::hasFullAddress($customer)) {
+                throw ValidationException::withMessages(['invoice' => __(':customer saknar fullständig adress. En faktura till ett företag över :limit, eller till ett företag i ett annat EU-land, ska ha köparens namn och adress (17 kap. 24 § mervärdesskattelagen). Fyll i gatuadress, postnummer och ort på kunden.', ['customer' => $customer->name, 'limit' => Money::ofOre(FullInvoice::SIMPLIFIED_LIMIT_ORE)->format()])]);
+            }
+
             if ($invoice->reverse_charge) {
                 $this->ensureReverseCharge($company, $customer);
             }
@@ -113,9 +123,10 @@ class IssueInvoice
                 'issued_by' => $user->id,
                 'paid_ore' => 0,
                 'foreign_paid_minor' => 0,
+                'vat_exemption_text' => self::exemptionText($company, $invoice),
             ]);
 
-            if ($company->accounting_method === AccountingMethod::Fakturametoden) {
+            if (InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method)) {
                 $voucher = ($this->bookVoucher)(
                     $user,
                     $company,
@@ -250,6 +261,37 @@ class IssueInvoice
                 'type' => AccountType::LiabilityEquity,
             ]);
         }
+    }
+
+    /**
+     * A company that is not registered for VAT may not charge VAT without
+     * saying so explicitly: VAT charged wrongly on an invoice must be paid
+     * to the state (Mervärdesskattelag (2023:200) 16 kap. 23 §). A company
+     * whose registration is pending owes the VAT anyway and needs the same
+     * confirmation (enligt granskning 2026-11-02, juristgranskning återstår
+     * (AUD-FAKT-5, #51)).
+     */
+    private function ensureVatAllowed(Company $company, Invoice $invoice): void
+    {
+        if ($company->isVatRegistered() || $invoice->vat_ore->ore === 0 || $invoice->unregistered_vat_confirmed) {
+            return;
+        }
+
+        throw ValidationException::withMessages(['invoice' => __('Företaget är inte momsregistrerat. Sätt momsen till 0 % på raderna, eller bekräfta att momsen ska tas ut. Moms som tas ut på en faktura ska betalas in till Skatteverket (16 kap. 23 § mervärdesskattelagen).')]);
+    }
+
+    /**
+     * The exemption wording of a company that is not registered for VAT,
+     * kept on the invoice as it was when issued; none when VAT is charged
+     * or the company is registered (ML 17 kap. 24 § p. 13, 28 § p. 6).
+     */
+    private static function exemptionText(Company $company, Invoice $invoice): ?string
+    {
+        if ($company->isVatRegistered() || $invoice->vat_ore->ore !== 0 || $invoice->bookedForeignSale() !== null || $invoice->reverse_charge) {
+            return null;
+        }
+
+        return $company->vat_exemption?->invoiceText();
     }
 
     /**

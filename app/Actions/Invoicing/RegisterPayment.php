@@ -7,9 +7,9 @@ namespace App\Actions\Invoicing;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
-use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Events\InvoicePaid;
 use App\Models\Account;
@@ -17,6 +17,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
 use App\Models\User;
+use App\Models\Voucher;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -49,6 +50,10 @@ class RegisterPayment
             $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
             $invoice->load('rows.account');
             $company = Company::query()->findOrFail($invoice->company_id);
+
+            if ($invoice->status === InvoiceStatus::WrittenOff) {
+                return $this->recover($user, $company, $invoice, $paidOn, $amount, $bankAccount);
+            }
 
             if ($invoice->status !== InvoiceStatus::Issued) {
                 throw ValidationException::withMessages(['amount' => __('Fakturan är inte obetald.')]);
@@ -97,7 +102,7 @@ class RegisterPayment
                 $paidOn,
                 __('Inbetalning :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']),
                 'C',
-                InvoiceBooking::payment($invoice, $invoice->rows, $settled, $bankAccount, $company->accounting_method === AccountingMethod::Kontantmetoden, $amount->ore),
+                InvoiceBooking::payment($invoice, $invoice->rows, $settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method), $amount->ore),
                 VoucherSource::Payment,
                 $invoice,
             );
@@ -122,6 +127,9 @@ class RegisterPayment
                 'status' => $settledAll ? InvoiceStatus::Paid : InvoiceStatus::Issued,
             ])->save();
 
+            // ROT/RUT: the year the buyer actually paid decides the share and the ceiling (#56).
+            $recheck = $invoice->status === InvoiceStatus::Paid ? TaxReduction::recheck($invoice, $paidOn) : null;
+
             Audit::record('invoice.payment_registered', $invoice, array_filter([
                 'number' => $invoice->number,
                 'amount_ore' => $amount->ore,
@@ -131,6 +139,7 @@ class RegisterPayment
                 'foreign_amount_minor' => $foreignRemaining === null ? null : $foreignAmount,
                 'settled_ore' => $foreignRemaining === null ? null : $settled,
                 'exchange_difference_ore' => $foreignRemaining === null ? null : $difference,
+                'tax_reduction_recheck' => $recheck,
             ], fn (mixed $value): bool => $value !== null), $company, $user);
 
             if ($invoice->status === InvoiceStatus::Paid) {
@@ -139,6 +148,95 @@ class RegisterPayment
 
             return $payment;
         }));
+    }
+
+    /**
+     * Money for an invoice written off as a customer loss (#57): the VAT
+     * reduced at the write-off is reported again, in proportion (ML 2023:200
+     * 7 kap. 43 §), and the rest reverses the loss on 6351; the recovery
+     * that takes the last of the written-off amount books what is left of
+     * each line. Under kontantmetoden, when nothing was booked, it books its
+     * share of the revenue and VAT like any payment. The receivable is
+     * already closed, so 1510 is not touched (enligt granskning 2026-11-02,
+     * juristgranskning återstår (AUD-FAKT-12, #57)).
+     */
+    private function recover(User $user, Company $company, Invoice $invoice, CarbonImmutable $paidOn, Money $amount, int $bankAccount): InvoicePayment
+    {
+        $left = $invoice->written_off_ore->ore - $invoice->recovered_ore->ore;
+
+        if ($amount->ore <= 0) {
+            throw ValidationException::withMessages(['amount' => __('Skriv ett belopp större än noll.')]);
+        }
+
+        if ($amount->ore > $left) {
+            throw ValidationException::withMessages(['amount' => __('Beloppet är större än det som skrevs bort och ännu inte har kommit in, :left.', ['left' => Money::ofOre($left)->format()])]);
+        }
+
+        $account = Account::query()->where('number', $bankAccount)->first()
+            ?? throw ValidationException::withMessages(['account' => __('Konto :number finns inte i kontoplanen.', ['number' => $bankAccount])]);
+
+        $loss = [];
+
+        if ($invoice->write_off_voucher_id !== null) {
+            foreach (Voucher::query()->with('rows.account')->findOrFail($invoice->write_off_voucher_id)->rows as $row) {
+                $number = $row->account instanceof Account ? $row->account->number : 0;
+
+                if ($number !== InvoiceBooking::RECEIVABLES) {
+                    // Negated: the recovery credits what the write-off debited.
+                    $loss[$number] = ($loss[$number] ?? 0) - ($row->debit_ore->ore - $row->credit_ore->ore);
+                }
+            }
+        } else {
+            $loss = InvoiceBooking::revenue($invoice, $invoice->rows);
+        }
+
+        $base = $invoice->write_off_voucher_id !== null ? $invoice->written_off_ore->ore : $invoice->total_ore->ore;
+        $lines = InvoiceBooking::cashShare($loss, $amount->ore, $base);
+
+        if ($amount->ore === $left && $invoice->write_off_voucher_id !== null) {
+            // The last recovery takes the rest of each line.
+            $lines = $loss;
+            $earlier = InvoicePayment::query()->where('invoice_id', $invoice->id)->where('recovery', true)->pluck('amount_ore');
+
+            foreach ($earlier as $paid) {
+                foreach (InvoiceBooking::cashShare($loss, $paid instanceof Money ? $paid->ore : (int) $paid, $base) as $number => $share) {
+                    $lines[$number] -= $share;
+                }
+            }
+        }
+
+        $voucher = ($this->bookVoucher)(
+            $user,
+            $company,
+            $paidOn,
+            __('Inbetalning efter kundförlust :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']),
+            'C',
+            [$bankAccount => $amount->ore] + array_filter($lines),
+            VoucherSource::Payment,
+            $invoice,
+        );
+
+        $payment = InvoicePayment::create([
+            'invoice_id' => $invoice->id,
+            'paid_on' => $paidOn,
+            'amount_ore' => $amount->ore,
+            'account_id' => $account->id,
+            'voucher_id' => $voucher->id,
+            'created_by' => $user->id,
+            'exchange_difference_ore' => 0,
+            'recovery' => true,
+        ]);
+
+        $invoice->forceFill(['recovered_ore' => $invoice->recovered_ore->ore + $amount->ore])->save();
+
+        Audit::record('invoice.loss_recovered', $invoice, [
+            'number' => $invoice->number,
+            'amount_ore' => $amount->ore,
+            'paid_on' => $paidOn->toDateString(),
+            'voucher' => $voucher->reference(),
+        ], $company, $user);
+
+        return $payment;
     }
 
     /**

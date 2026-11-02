@@ -51,6 +51,9 @@
                             {{ $item['confirm'] }}
                         </label>
                     @elseif($item['manual'] && $fiscalYear->isOpen())
+                        @if(($item['url'] ?? null) !== null)
+                            <a href="{{ $item['url'] }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Visa reskontran') }}</a>
+                        @endif
                         <label class="ml-10 flex min-h-11 items-center gap-2 text-sm text-gray-800 sm:ml-0 sm:min-h-0">
                             <input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
                             {{ __('Klart eller gäller inte') }}

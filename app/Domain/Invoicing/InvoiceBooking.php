@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Invoicing;
 
+use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Vat\OssRates;
 use App\Models\Account;
@@ -21,7 +22,15 @@ use Illuminate\Support\Collection;
  *   account and the output VAT per rate credit, öresavrundning on 3740.
  *   A payment then moves the amount from 1510 to the bank account.
  * - Kontantmetoden: nothing when issued. A payment books its share of the
- *   revenue, VAT and rounding directly against the bank account.
+ *   revenue, VAT and rounding directly against the bank account. The
+ *   payment that settles the invoice books what is left of each line, so
+ *   the payments together book exactly the invoice's revenue and VAT
+ *   (ML 2023:200 7 kap. 16 §, 17 kap. 24 § p. 11) (enligt granskning
+ *   2026-11-02, juristgranskning återstår (AUD-FAKT-3, #52)).
+ * - Except EU sales reported for the invoice's period (ForeignSale::
+ *   isReportedWhenInvoiced, ML 7 kap. 29-30 §§): they are booked as under
+ *   fakturametoden whatever the method, and a payment only clears 1510
+ *   (enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-4, #50)).
  *
  * A sale abroad (ForeignSale) is booked on the account for that kind of
  * sale instead of the rows' accounts, without VAT. A sale to a consumer in
@@ -45,6 +54,13 @@ final class InvoiceBooking
     public const int RECEIVABLES = 1510;
 
     public const int ROUNDING = 3740;
+
+    /**
+     * BAS: Konstaterade förluster på kundfordringar.
+     *
+     * TODO(legal-verify): the account against BAS 2026.
+     */
+    public const int CUSTOMER_LOSS = 6351;
 
     public const int BANK = 1930;
 
@@ -99,7 +115,17 @@ final class InvoiceBooking
     }
 
     /**
-     * The voucher rows when an invoice is issued under fakturametoden.
+     * Whether the invoice is booked when issued (on 1510) rather than when
+     * paid: always under fakturametoden, and under kontantmetoden for the
+     * EU sales the law ties to the invoice's period.
+     */
+    public static function bookedAtIssue(Invoice $invoice, AccountingMethod $method): bool
+    {
+        return $method === AccountingMethod::Fakturametoden || $invoice->bookedForeignSale()?->isReportedWhenInvoiced() === true;
+    }
+
+    /**
+     * The voucher rows when an invoice is booked at issue (bookedAtIssue).
      *
      * @param  Collection<int, InvoiceRow>  $rows
      * @return array<int, int>
@@ -138,14 +164,27 @@ final class InvoiceBooking
         }
 
         $revenue = self::revenue($invoice, $rows);
-        $total = $invoice->total_ore->ore;
+        $lines = ($amount === $invoice->remaining()->ore ? self::cashRest($invoice, $revenue, $amount) : null)
+            ?? self::cashShare($revenue, $amount, $invoice->total_ore->ore);
+
+        return [$bankAccount => $received] + array_filter($lines) + $exchange;
+    }
+
+    /**
+     * Kontantmetoden: a part payment's share of each line, rounded half up,
+     * with the rounding remainder on the largest line so the voucher balances.
+     *
+     * @param  array<int, int>  $revenue
+     * @return array<int, int>
+     */
+    public static function cashShare(array $revenue, int $amount, int $total): array
+    {
         $lines = [];
 
         foreach ($revenue as $account => $value) {
             $lines[$account] = BigDecimal::of($value)->multipliedBy($amount)->dividedBy($total, 0, RoundingMode::HalfUp)->toInt();
         }
 
-        // The rounding remainder of the shares goes to the largest line, so the voucher balances.
         $remainder = -$amount - array_sum($lines);
 
         if ($remainder !== 0 && $lines !== []) {
@@ -153,7 +192,85 @@ final class InvoiceBooking
             $lines[$largest] += $remainder;
         }
 
-        return [$bankAccount => $received] + array_filter($lines) + $exchange;
+        return $lines;
+    }
+
+    /**
+     * Kontantmetoden: the lines of the payment that settles the invoice. It
+     * books what is left of each line after the earlier payments, so that
+     * together they book exactly the invoice's revenue and VAT, less what
+     * its credit invoices took off (ML 2023:200 7 kap. 16 §, 17 kap. 24 §
+     * p. 11; enligt granskning 2026-11-02, juristgranskning återstår
+     * (AUD-FAKT-3, #52)). Null for a credit invoice, or when the earlier
+     * payments do not add up to the rest (then the payment is shared
+     * pro rata as before).
+     *
+     * @param  array<int, int>  $revenue
+     * @return array<int, int>|null
+     */
+    private static function cashRest(Invoice $invoice, array $revenue, int $amount): ?array
+    {
+        if ($invoice->isCredit()) {
+            return null;
+        }
+
+        $target = $revenue;
+        $credits = $invoice->creditInvoices()->whereNotNull('number')->with('rows.account')->get();
+
+        foreach ($credits as $credit) {
+            foreach (self::revenue($credit, $credit->rows) as $account => $value) {
+                $target[$account] = ($target[$account] ?? 0) + $value;
+            }
+        }
+
+        foreach ($invoice->payments()->get() as $payment) {
+            $settled = $payment->amount_ore->ore - (int) $payment->exchange_difference_ore;
+
+            foreach (self::cashShare($revenue, $settled, $invoice->total_ore->ore) as $account => $value) {
+                $target[$account] = ($target[$account] ?? 0) - $value;
+            }
+        }
+
+        return array_sum($target) === -$amount ? $target : null;
+    }
+
+    /**
+     * The voucher rows of a confirmed customer loss of $amount öre, the open
+     * part of the invoice: 1510 credit, and the open part's share of the
+     * output VAT debit, which reduces the VAT already reported (ML 2023:200
+     * 8 kap. 16 §, 7 kap. 43-44 §§); the rest is the loss on 6351. The share
+     * is taken of the invoice and its credit invoices together, so it is the
+     * VAT of what is actually still owed (enligt granskning 2026-11-02,
+     * juristgranskning återstår (AUD-FAKT-12, #57)).
+     *
+     * @param  Collection<int, InvoiceRow>  $rows
+     * @param  Collection<int, Invoice>  $credits  issued credit invoices, with rows and accounts
+     * @return array<int, int>
+     */
+    public static function writeOff(Invoice $invoice, Collection $rows, Collection $credits, int $amount): array
+    {
+        $lines = self::revenue($invoice, $rows);
+        $base = $invoice->total_ore->ore;
+
+        foreach ($credits as $credit) {
+            foreach (self::revenue($credit, $credit->rows) as $account => $value) {
+                $lines[$account] = ($lines[$account] ?? 0) + $value;
+            }
+
+            $base += $credit->total_ore->ore;
+        }
+
+        $shares = $base === $amount ? array_filter($lines) : self::cashShare(array_filter($lines), $amount, $base);
+        $vatAccounts = [...array_values(self::OUTPUT_VAT), OssRates::VAT_ACCOUNT];
+        $vat = [];
+
+        foreach ($shares as $account => $share) {
+            if (in_array($account, $vatAccounts, true)) {
+                $vat[$account] = -$share;
+            }
+        }
+
+        return array_filter([self::RECEIVABLES => -$amount, self::CUSTOMER_LOSS => $amount - array_sum($vat)] + $vat);
     }
 
     /**

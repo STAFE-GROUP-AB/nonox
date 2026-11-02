@@ -82,6 +82,36 @@
         </x-ui.card>
     @endif
 
+    @if($invoice->status === App\Domain\Invoicing\InvoiceStatus::WrittenOff)
+        <x-ui.card :title="__('Kundförlust')">
+            <p class="text-sm text-gray-700">{{ __('Skrevs bort :date med :amount: :reason', ['date' => $invoice->written_off_on?->toDateString(), 'amount' => $invoice->written_off_ore->format(), 'reason' => $invoice->write_off_reason]) }}</p>
+            @if(! $invoice->recovered_ore->isZero())
+                <p class="mt-1 text-sm text-gray-700">{{ __('Inbetalt efteråt: :amount. Momsen på det redovisas igen.', ['amount' => $invoice->recovered_ore->format()]) }}</p>
+            @endif
+        </x-ui.card>
+    @endif
+
+    @if($canWriteOff)
+        <x-ui.card :title="__('Kundförlust')" :description="__('Kommer fakturan inte att betalas, till exempel efter en konkurs, skriv bort det som återstår. Momsen på det minskas och resten bokförs som förlust på 6351.')">
+            <form wire:submit="writeOff" class="grid gap-4 sm:grid-cols-2" x-data="{ confirming: false }">
+                <x-ui.field for="write_off_on" :label="__('Bokförs den')" error="written_off_on">
+                    <input id="write_off_on" type="date" class="{{ $input }} mt-1" wire:model="writeOffOn">
+                </x-ui.field>
+                <x-ui.field for="write_off_reason" :label="__('Varför fordringen är förlorad')" error="reason">
+                    <input id="write_off_reason" type="text" class="{{ $input }} mt-1" wire:model="writeOffReason" maxlength="500">
+                </x-ui.field>
+                <div class="sm:col-span-2 flex flex-wrap items-center gap-3">
+                    <button type="button" class="text-sm font-medium text-accent-700 underline" x-show="! confirming" x-on:click="confirming = true">{{ __('Skriv bort :amount', ['amount' => $invoice->remaining()->format()]) }}</button>
+                    <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3 text-sm">
+                        <span class="text-gray-700">{{ __('Fakturan stängs som kundförlust och kan inte längre betalas som vanligt. Det går inte att ångra.') }}</span>
+                        <x-button wire:loading.attr="disabled">{{ __('Ja, skriv bort') }}</x-button>
+                        <button type="button" class="text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
+                    </span>
+                </div>
+            </form>
+        </x-ui.card>
+    @endif
+
     @if($canPay)
         <x-ui.card :title="__('Registrera betalning')">
             <form wire:submit="registerPayment" class="grid grid-cols-2 gap-4">
@@ -142,6 +172,9 @@
         <x-ui.card :title="__(':type hos Skatteverket', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)])">
             <p class="text-sm text-gray-700">{{ __('Begärt :claimed, mottaget :paid.', ['claimed' => $invoice->tax_reduction_ore->format(), 'paid' => $invoice->tax_reduction_paid_ore->format()]) }}</p>
             <p class="mt-1 text-xs text-gray-500">{{ __('Begär utbetalningen i Skatteverkets e-tjänst Rot och rut när kunden har betalat sin del. Registrera Skatteverkets betalning här när den kommer.') }}</p>
+            @if($taxRecheck !== null)
+                <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">{{ __('Kunden betalade :year. Med det årets procentsats och tak blir avdraget :allowed, inte :invoiced som på fakturan. Begär högst :allowed hos Skatteverket; mellanskillnaden betalar kunden.', ['year' => $taxRecheck['year'], 'allowed' => App\Support\Money\Money::ofOre($taxRecheck['allowed'])->format(), 'invoiced' => App\Support\Money\Money::ofOre($taxRecheck['invoiced'])->format()]) }}</p>
+            @endif
             @if($canTaxPay)
                 <form wire:submit="registerTaxReductionPayment" class="mt-4 grid grid-cols-2 gap-4">
                     <x-ui.field for="tax_paid_on" :label="__('Betaldag')"><input id="tax_paid_on" type="date" class="{{ $input }} mt-1" wire:model="taxPaidOn"></x-ui.field>

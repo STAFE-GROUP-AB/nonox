@@ -44,7 +44,7 @@ final class ClosingChecklist
     /** Points a person confirms, with what to check. */
     public const array MANUAL = [
         'cash_count' => ['Kassan är inventerad', 'Räkna kontanterna den sista dagen och jämför med kassakontot. Gäller inte företag utan kontanter.'],
-        'receivables' => ['Kundfordringar stämmer', 'Obetalda kundfakturor den sista dagen ska vara lika med saldot på 1510. Skriv bort fordringar som inte kommer att betalas.'],
+        'receivables' => ['Kundfordringar stämmer', 'Obetalda kundfakturor den sista dagen ska vara lika med saldot på 1510. Skriv bort fordringar som inte kommer att betalas som kundförlust på fakturan.'],
         'payables' => ['Leverantörsskulder stämmer', 'Obetalda leverantörsfakturor den sista dagen ska vara lika med saldot på 2440.'],
         'tax_account' => ['Skattekontot är avstämt', 'Saldot på 1630 ska vara lika med skattekontot hos Skatteverket den sista dagen.'],
         'payroll' => ['Löner och semesterskuld är bokförda', 'Löner, skatter, avgifter och semesterlöneskuld för året är bokförda. Gäller inte företag utan anställda.'],
@@ -95,7 +95,15 @@ final class ClosingChecklist
             $items[] = self::currency($company, $fiscalYear, $entries, $checks);
 
             foreach (self::MANUAL as $key => [$label, $detail]) {
-                $items[] = self::item($key, __($label), __($detail), in_array($key, $checks, true) ? self::OK : self::TODO, null, manual: true);
+                $items[] = [
+                    ...self::item($key, __($label), __($detail), in_array($key, $checks, true) ? self::OK : self::TODO, null, manual: true),
+                    // The ledger on the last day, to compare with 1510 and 2440 (#57).
+                    'url' => match ($key) {
+                        'receivables' => route('accounting.ledgers', ['typ' => LedgerReconciliation::CUSTOMERS, 'datum' => $fiscalYear->end_date->toDateString()]),
+                        'payables' => route('accounting.ledgers', ['typ' => LedgerReconciliation::SUPPLIERS, 'datum' => $fiscalYear->end_date->toDateString()]),
+                        default => null,
+                    },
+                ];
             }
 
             $result = YearResult::of($fiscalYear);

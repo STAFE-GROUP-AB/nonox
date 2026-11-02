@@ -21,7 +21,9 @@ use Illuminate\Database\Eloquent\Builder;
  * of a fiscal year stays the same when the next year's payments come in.
  *
  * A customer invoice with a credit invoice for part of it is open for the
- * rest (ADR-025). The same rules hold under fakturametoden and kontantmetoden;
+ * rest (ADR-025). An invoice written off as a customer loss is open until
+ * the day of the write-off; money recovered after it never counts as a
+ * payment of the receivable (#57). The same rules hold under fakturametoden and kontantmetoden;
  * the kronor are the kronor the invoice is, or would be, booked at.
  *
  * A constant number of queries for each side, whatever the number of invoices.
@@ -44,11 +46,12 @@ final class OpenInvoices
             // Settled invoices count only when the settling came after the day; a credited one may have a rest,
             // and a credit of a paid invoice leaves a credit balance until it is paid back.
             ->where(fn ($query) => $query->whereIn('status', [InvoiceStatus::Issued->value, InvoiceStatus::Credited->value])
-                ->orWhereHas('payments', fn ($payments) => $payments->whereDate('paid_on', '>', $date))
+                ->orWhere(fn ($writtenOff) => $writtenOff->where('status', InvoiceStatus::WrittenOff->value)->whereDate('written_off_on', '>', $date))
+                ->orWhereHas('payments', fn ($payments) => $payments->where('recovery', false)->whereDate('paid_on', '>', $date))
                 ->orWhereHas('creditInvoices', fn ($credit) => $credit->where(fn ($open) => $open->where('status', InvoiceStatus::Issued->value)
                     ->orWhereHas('payments', fn ($payments) => $payments->whereDate('paid_on', '>', $date)))))
             ->with([
-                'payments' => fn ($query) => $query->whereDate('paid_on', '<=', $date),
+                'payments' => fn ($query) => $query->where('recovery', false)->whereDate('paid_on', '<=', $date),
                 'creditInvoices' => $credits,
                 'creditInvoices.payments' => fn ($query) => $query->whereDate('paid_on', '<=', $date),
                 ...($withRows ? ['rows.account', 'creditInvoices.rows.account'] : []),
@@ -59,6 +62,10 @@ final class OpenInvoices
         $open = [];
 
         foreach ($invoices as $invoice) {
+            if ($invoice->status === InvoiceStatus::WrittenOff && $invoice->written_off_on !== null && $invoice->written_off_on->toDateString() <= $date) {
+                continue;
+            }
+
             // Refunds of credit balances are negative payments on the credit invoices.
             $payments = $invoice->payments->concat($invoice->creditInvoices->flatMap(fn (Invoice $credit) => $credit->payments));
             $settled = (int) $payments->sum(fn (InvoicePayment $payment): int => $payment->amount_ore->ore - (int) $payment->exchange_difference_ore);

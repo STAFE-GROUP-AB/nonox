@@ -10,6 +10,8 @@ sokord: [kontantmetoden, bokslutsmetoden, obetalda fakturor, kundfordringar, lev
 
 Med kontantmetoden bokförs en faktura när den betalas. Men den sista dagen i räkenskapsåret ska alla kund- och leverantörsfakturor som fortfarande är obetalda bokföras, så att fordringar och skulder finns med i bokslutet. Det står i bokföringslagen (5 kap. 2 §).
 
+Fakturor till och från andra EU-länder som redan bokfördes när de skapades (försäljning till EU-företag och inköp av varor från EU) står redan på 1510 och 2440 och tas inte med här.
+
 NONOX gör det i ett steg under **Bokföring → Bokslut**, i **2. Bokslutsverifikationer**. Steget visas bara för företag med kontantmetoden som har obetalda fakturor den sista dagen.
 
 ## Vad räknas som obetalt?

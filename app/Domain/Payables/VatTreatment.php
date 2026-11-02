@@ -62,6 +62,19 @@ enum VatTreatment: string
         };
     }
 
+    /**
+     * Whether the VAT is reported for the period the invoice is issued even
+     * under kontantmetoden: an intra-Community acquisition of goods (ML
+     * 2023:200 7 kap. 26 and 40 §§). Kontantmetoden (7 kap. 16 § andra st.)
+     * covers only 16 kap. 6 and 8-16 §§, not the acquisition under 16 kap.
+     * 17 § (enligt granskning 2026-11-02, juristgranskning återstår
+     * (AUD-FAKT-4, #50)).
+     */
+    public function isReportedWhenInvoiced(): bool
+    {
+        return $this === self::EuGoods;
+    }
+
     /** Whether the buyer, not the supplier, accounts for the VAT. */
     public function buyerIsLiable(): bool
     {

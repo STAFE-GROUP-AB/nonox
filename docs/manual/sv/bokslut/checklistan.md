@@ -35,7 +35,7 @@ De här punkterna bockas av av sig själva när bokföringen visar att de är kl
 De här kan NONOX inte se själv. Kryssa i **Klart eller gäller inte** när punkten är gjord – eller när den inte gäller företaget.
 
 - **Kassan är inventerad** – räkna kontanterna den sista dagen och jämför med kassakontot.
-- **Kundfordringar stämmer** – obetalda kundfakturor den sista dagen ska vara lika med saldot på 1510. Skriv bort fordringar som inte kommer att betalas.
+- **Kundfordringar stämmer** – obetalda kundfakturor den sista dagen ska vara lika med saldot på 1510. **Visa reskontran** öppnar reskontran för den sista dagen med saldot och differensen. Skriv bort fordringar som inte kommer att betalas som kundförlust på fakturan; läs [Obetalda fakturor och kundreskontran](/manual/fakturering/obetalda-fakturor).
 - **Leverantörsskulder stämmer** – obetalda leverantörsfakturor den sista dagen ska vara lika med saldot på 2440.
 - **Skattekontot är avstämt** – saldot på 1630 ska vara lika med skattekontot hos Skatteverket den sista dagen.
 - **Löner och semesterskuld är bokförda** – löner, skatter, avgifter och semesterlöneskuld för året.

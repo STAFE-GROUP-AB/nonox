@@ -8,6 +8,7 @@ use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
+use App\Domain\Invoicing\VatExemptionReason;
 use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssThreshold;
 use App\Models\Company;
@@ -88,6 +89,7 @@ class SaveDraftInvoice
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'reverse_charge' => ['nullable', 'boolean'],
+            'unregistered_vat_confirmed' => ['nullable', 'boolean'],
             'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
             'tax_reduction' => ['nullable', Rule::in([TaxReduction::ROT, TaxReduction::RUT])],
             'property_designation' => ['nullable', 'string', 'max:255'],
@@ -174,6 +176,18 @@ class SaveDraftInvoice
                 $rows[$index]['is_labour'] = $taxReduction !== null && (bool) ($rowInput[$index]['labour'] ?? false);
             }
 
+            // A row sold in Sweden at 0 % says why, unless the company's own exemption covers the invoice (#54, #51).
+            $domestic = ! $reverseCharge && $foreignSale === null;
+            $companyExempt = ! $company->isVatRegistered() && $company->vat_exemption?->invoiceText() !== null;
+
+            foreach ($rows as $index => $row) {
+                $reason = $domestic && ! $companyExempt && $row['vat_rate'] === 0
+                    ? (VatExemptionReason::tryFrom((string) ($rowInput[$index]['vat_exemption'] ?? '')) ?? VatExemptionReason::Other)
+                    : null;
+                $rows[$index]['vat_exemption'] = $reason?->value;
+                $rows[$index]['vat_exemption_text'] = $reason?->invoiceText();
+            }
+
             if ($taxReduction !== null && $foreignSale !== null) {
                 throw ValidationException::withMessages(['tax_reduction' => __('ROT- och RUT-avdrag gäller arbete i Sverige och kan inte kombineras med försäljning utomlands.')]);
             }
@@ -203,7 +217,7 @@ class SaveDraftInvoice
             $deduction = match (true) {
                 $taxReduction === null => 0,
                 $original instanceof Invoice => $this->creditedDeduction($rows, $original, $draft),
-                default => $this->deduction($taxReduction, $rows, $customer, $invoiceDate, $reverseCharge, $draft),
+                default => $this->deduction($taxReduction, $rows, $customer, $dueDate, $reverseCharge, $draft),
             };
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
@@ -234,6 +248,7 @@ class SaveDraftInvoice
                 'foreign_vat_minor' => $foreignTotals['vat'] ?? null,
                 'foreign_total_minor' => $foreignTotals['total'] ?? null,
                 'swedish_vat_under_threshold' => $swedishVat,
+                'unregistered_vat_confirmed' => (bool) ($validated['unregistered_vat_confirmed'] ?? ($draft !== null && $draft->exists && $draft->unregistered_vat_confirmed)),
             ])->save();
 
             InvoiceRow::query()->where('invoice_id', $invoice->id)->delete();
@@ -367,9 +382,6 @@ class SaveDraftInvoice
             throw ValidationException::withMessages(['tax_reduction' => __('ROT och RUT gäller privatpersoner. Fyll i kundens personnummer.')]);
         }
 
-        $rate = TaxReduction::rate($type, $date)
-            ?? throw ValidationException::withMessages(['tax_reduction' => __('Det finns ingen regel för :type på fakturadatumet.', ['type' => TaxReduction::label($type)])]);
-
         $labour = array_values(array_filter($rows, fn (array $row): bool => (bool) $row['is_labour']));
 
         if ($labour === []) {
@@ -377,17 +389,9 @@ class SaveDraftInvoice
         }
 
         $labourTotals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => (int) $row['net_ore'], 'vat_rate' => (int) $row['vat_rate']], $labour));
-        $used = Invoice::query()->where('customer_id', $customer->id)->whereNotNull('tax_reduction')
-            ->whereYear('invoice_date', $date->year)->where('status', '<>', 'DRAFT')
-            ->when($draft !== null && $draft->exists, fn ($query) => $query->whereKeyNot($draft?->id))
-            ->selectRaw('tax_reduction, SUM(tax_reduction_ore) AS used')->groupBy('tax_reduction')->pluck('used', 'tax_reduction')
-            ->map(fn (mixed $used): int => (int) $used);
-        $room = TaxReduction::CEILINGS['TOTAL'] - $used->sum();
 
-        if ($type === TaxReduction::ROT) {
-            $room = min($room, TaxReduction::CEILINGS[TaxReduction::ROT] - (int) ($used[TaxReduction::ROT] ?? 0));
-        }
-
-        return TaxReduction::amount($labourTotals['net'] + $labourTotals['vat'], $rate, $room);
+        // The year the buyer pays decides the share and the ceiling; the due date is the expected day (#56).
+        return TaxReduction::allowed($type, $labourTotals['net'] + $labourTotals['vat'], $customer, $date, $draft?->exists === true ? $draft->id : null)
+            ?? throw ValidationException::withMessages(['tax_reduction' => __('Det finns ingen regel för :type på förfallodagen.', ['type' => TaxReduction::label($type)])]);
     }
 }

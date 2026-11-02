@@ -59,6 +59,9 @@ final class UnpaidInvoices
         $customer = CurrentCompany::run($company, fn (): array => OpenInvoices::customer($fiscalYear->end_date, withRows: $withRows));
         /** @var list<array{invoice: SupplierInvoice, open: int, foreign: ?int}> $supplier */
         $supplier = CurrentCompany::run($company, fn (): array => OpenInvoices::supplier($fiscalYear->end_date, withRows: $withRows));
+        // EU sales and acquisitions of goods are already on 1510 and 2440 since issue (AUD-FAKT-4, #50).
+        $customer = array_values(array_filter($customer, fn (array $item): bool => ! InvoiceBooking::bookedAtIssue($item['invoice'], $company->accounting_method)));
+        $supplier = array_values(array_filter($supplier, fn (array $item): bool => ! SupplierInvoiceBooking::bookedAtRegistration($item['invoice'], $company->accounting_method)));
         $customerLines = [];
         $supplierLines = [];
 

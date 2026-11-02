@@ -40,12 +40,14 @@ class InvoicePayment extends Model
         'created_by',
         'foreign_amount_minor',
         'exchange_difference_ore',
+        'recovery',
     ];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
+            'recovery' => 'boolean',
             'paid_on' => 'immutable_date',
             'amount_ore' => MoneyCast::class,
             'foreign_amount_minor' => 'integer',

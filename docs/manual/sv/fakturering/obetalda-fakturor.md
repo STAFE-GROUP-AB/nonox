@@ -7,7 +7,7 @@ sokord: [kundreskontra, reskontra, obetalda fakturor, kundfordringar, 1510, för
 
 # Obetalda fakturor och kundreskontran
 
-Kundreskontran är listan över vad dina kunder är skyldiga dig. NONOX har ingen separat reskontrasida; i stället syns det obetalda på flera ställen, var och ett med en länk vidare till fakturan.
+Kundreskontran är listan över vad dina kunder är skyldiga dig. Det obetalda syns på flera ställen, var och ett med en länk vidare till fakturan, och under **Bokföring → Reskontra** ser du reskontran en viss dag jämförd med konto 1510.
 
 ![Fakturalistan filtrerad på obetalda fakturor, med förfallodag och status.](/bilder/manual/fakturering/obetalda-fakturor.webp)
 
@@ -28,26 +28,35 @@ Kundreskontran är listan över vad dina kunder är skyldiga dig. NONOX har inge
 
 Med fakturametoden ska saldot på konto 1510 Kundfordringar vara lika med summan av det som är obetalt på dina fakturor (ROT- och RUT-delen ligger för sig på 1513). Det är en bra kontroll inför ett momsbokslut eller ett årsbokslut.
 
-1. Öppna **Bokföring → Rapporter** och ta fram kontoanalysen för konto 1510 per det datum du vill kontrollera. Läs [Kontoanalys och huvudbok](/manual/rapporter/kontoanalys-och-huvudbok).
-2. Jämför saldot med **Obetalt hos kunder**.
-3. Stämmer det inte, leta efter verifikationer på 1510 som inte kommer från en faktura eller inbetalning, till exempel en betalning som bokförts för hand.
+1. Öppna **Bokföring → Reskontra**, välj **Kundreskontra (1510)** och dagen du vill kontrollera. Sidan visar fakturorna som var obetalda den dagen, summan, saldot på 1510 samma dag och differensen. Leverantörsreskontran mot 2440 väljer du i samma lista.
+2. Står det *Reskontran stämmer med kontot* är du klar.
+3. Stämmer det inte, leta efter verifikationer på 1510 som inte kommer från en faktura eller inbetalning, till exempel en betalning som bokförts för hand. Läs [Kontoanalys och huvudbok](/manual/rapporter/kontoanalys-och-huvudbok).
+
+Reskontran byggs upp från fakturans datum och datumen för betalningar, kreditfakturor och kundförluster, så den visar samma sak för ett datum även när senare betalningar har kommit in.
 
 Med kontantmetoden finns inga kundfordringar i bokföringen under året, bara i fakturalistan.
 
 ## När en kund inte betalar
 
-NONOX har ingen inkassofunktion och ingen knapp för att skriva bort en faktura som kundförlust.
+NONOX har ingen inkassofunktion. **Inkasso** sköter du med ett inkassobolag utanför NONOX.
 
-- **Inkasso** sköter du med ett inkassobolag utanför NONOX.
-- **En faktura som aldrig kommer att betalas** ska inte krediteras – en kreditfaktura betyder att kunden aldrig var skyldig något. En konstaterad kundförlust bokför du i stället med en vanlig verifikation, och fakturan står kvar som obetald i NONOX.
+**En faktura som aldrig kommer att betalas** ska inte krediteras – en kreditfaktura betyder att kunden aldrig var skyldig något. Skriv i stället bort den som kundförlust:
+
+1. Öppna fakturan och gå till **Kundförlust**.
+2. Fyll i **Bokförs den** och **Varför fordringen är förlorad**, till exempel *Kunden försatt i konkurs*.
+3. Tryck på **Skriv bort** och bekräfta.
+
+NONOX bokför en verifikation i serie B: 1510 Kundfordringar minskar med det som var obetalt, momsen på den delen dras tillbaka från utgående moms (till exempel 2611), och resten bokförs som förlust på 6351 Konstaterade förluster på kundfordringar. Fakturan får status *Kundförlust* och räknas inte längre som obetald, så reskontran fortsätter att stämma med 1510. Med kontantmetoden bokförs ingenting, eftersom varken intäkten eller momsen var bokförd; fakturan stängs bara.
+
+Betalar kunden ändå senare, registrerar du betalningen på fakturan som vanligt. Momsen på det som kommer in redovisas då igen, och resten minskar förlusten på 6351.
 
 > [!IMPORTANT]
-> När en fordran räknas som en konstaterad kundförlust, och när momsen på den får dras av, bestäms av Mervärdesskattelagen och Skatteverkets regler. Kontrollera alltid med din redovisningskonsult innan du bokför en kundförlust. Läs [Bokför en verifikation](/manual/bokforing/bokfor-en-verifikation).
+> När en fordran räknas som en konstaterad kundförlust bestäms av god redovisningssed och Skatteverkets regler (mervärdesskattelagen 8 kap. 16 § och 7 kap. 43–44 §§). Befarade förluster, som ännu inte är konstaterade, bokför du för hand. Kontrollera alltid med din redovisningskonsult. Funktionen är kontrollerad enligt en granskning 2026-11-02; juristgranskning återstår.
 
 ## Vanliga frågor
 
 **Kan jag ta ut en lista över alla obetalda fakturor per ett visst datum?**
-Filtret **Obetalda** visar läget just nu. För ett tidigare datum använder du kontoanalysen för 1510.
+Ja, under **Bokföring → Reskontra**. Välj dagen, så visas fakturorna som var obetalda då.
 
 **Fakturan står som obetald fast kunden har betalat.**
 Betalningen är inte registrerad. Registrera den på fakturan eller läs in bankens fil. Läs [Inbetalningar](/manual/fakturering/inbetalningar).

@@ -29,6 +29,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $position
  * @property ?int $foreign_unit_price_minor the price in the invoice's currency, when it is not kronor
  * @property ?int $foreign_net_minor
+ * @property ?string $vat_exemption why a row sold in Sweden carries 0 % VAT (VatExemptionReason, #54)
+ * @property ?string $vat_exemption_text the exemption printed on the invoice
  */
 class InvoiceRow extends Model
 {
@@ -52,6 +54,8 @@ class InvoiceRow extends Model
         'is_labour',
         'foreign_unit_price_minor',
         'foreign_net_minor',
+        'vat_exemption',
+        'vat_exemption_text',
     ];
 
     /** @return array<string, string> */

@@ -8,7 +8,6 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
-use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\Account;
@@ -52,7 +51,7 @@ class PaySupplierInvoice
             $invoice = SupplierInvoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
             $invoice->load('rows.account', 'rows.costCenter', 'rows.project');
             $company = Company::query()->findOrFail($invoice->company_id);
-            $cashMethod = $company->accounting_method === AccountingMethod::Kontantmetoden;
+            $cashMethod = ! SupplierInvoiceBooking::bookedAtRegistration($invoice, $company->accounting_method);
 
             if ($invoice->status !== SupplierInvoiceStatus::Approved) {
                 throw ValidationException::withMessages(['amount' => __('Fakturan är inte attesterad och obetald.')]);

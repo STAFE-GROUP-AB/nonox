@@ -6,7 +6,6 @@ namespace App\Actions\Payables;
 
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\VoucherSource;
-use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\Account;
@@ -61,14 +60,13 @@ class OffsetSupplierCredit
             }
 
             $amount = min(-$credit->remaining()->ore, $invoice->remaining()->ore);
-            $cashMethod = $company->accounting_method === AccountingMethod::Kontantmetoden;
             $payables = Account::query()->where('number', SupplierInvoiceBooking::PAYABLES)->firstOrFail();
 
             // The two payments meet in the bank line, which cancels out and is left out.
             $rows = array_values(array_filter(
                 [
-                    ...SupplierInvoiceBooking::payment($invoice, $invoice->rows, $amount, SupplierInvoiceBooking::BANK, $cashMethod),
-                    ...SupplierInvoiceBooking::payment($credit, $credit->rows, -$amount, SupplierInvoiceBooking::BANK, $cashMethod),
+                    ...SupplierInvoiceBooking::payment($invoice, $invoice->rows, $amount, SupplierInvoiceBooking::BANK, ! SupplierInvoiceBooking::bookedAtRegistration($invoice, $company->accounting_method)),
+                    ...SupplierInvoiceBooking::payment($credit, $credit->rows, -$amount, SupplierInvoiceBooking::BANK, ! SupplierInvoiceBooking::bookedAtRegistration($credit, $company->accounting_method)),
                 ],
                 fn (array $row): bool => $row['account'] !== SupplierInvoiceBooking::BANK,
             ));
