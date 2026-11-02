@@ -15,8 +15,12 @@ namespace App\Domain\Vat;
  * Boxes 06 (3401–3403 Egna uttag momspliktiga) and 08 (3913 Frivilligt
  * momspliktiga hyresintäkter) follow their BAS 2026 accounts. Box 07 has no
  * account: its base is derived from the VMB VAT on 2616, 2626 and 2636
- * (VatReturn). Box 37 has no BAS account; a company ties an account of its
- * own to it (accounts.vat_box, #64).
+ * (VatReturn). Boxes 37 and 38 (mellanmans inköp and försäljning vid
+ * trepartshandel) have no BAS account: BAS 2026 v1.1 has only 3105, 3106
+ * and 3108 in group 3100, and Skatteverket's description of the boxes names
+ * no account. A company ties an account of its own to them
+ * (accounts.vat_box, #64); invoices for triangulation create 3107 tied to
+ * box 38 (ForeignSale, #97).
  *
  * TODO(legal-verify): the account-to-box mapping follows the BAS 2026
  * chart's names. Confirm it against the current BAS momsrapport and
@@ -58,7 +62,7 @@ final class VatBoxes
         35 => ['label' => 'Försäljning av varor till ett annat EU-land', 'element' => 'ForsVaruAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3108, 3108]]],
         36 => ['label' => 'Försäljning av varor utanför EU', 'element' => 'ForsVaruUtomEg', 'side' => self::CREDIT, 'accounts' => [[3105, 3105]]],
         37 => ['label' => 'Mellanmans inköp av varor vid trepartshandel', 'element' => 'InkopVaruMellan3p', 'side' => self::DEBIT, 'accounts' => []],
-        38 => ['label' => 'Mellanmans försäljning av varor vid trepartshandel', 'element' => 'ForsVaruMellan3p', 'side' => self::CREDIT, 'accounts' => [[3107, 3107]]],
+        38 => ['label' => 'Mellanmans försäljning av varor vid trepartshandel', 'element' => 'ForsVaruMellan3p', 'side' => self::CREDIT, 'accounts' => []],
         39 => ['label' => 'Försäljning av tjänster till näringsidkare i ett annat EU-land', 'element' => 'ForsTjSkskAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3308, 3308]]],
         40 => ['label' => 'Övrig försäljning av tjänster omsatta utanför Sverige', 'element' => 'ForsTjOvrUtomEg', 'side' => self::CREDIT, 'accounts' => [[3305, 3305]]],
         41 => ['label' => 'Försäljning när köparen är betalningsskyldig i Sverige', 'element' => 'ForsKopareSkskSverige', 'side' => self::CREDIT, 'accounts' => [[3231, 3231]]],

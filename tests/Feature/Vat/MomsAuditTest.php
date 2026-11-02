@@ -284,7 +284,7 @@ it('maps the BAS VAT and sales accounts to Skatteverket\'s boxes', function (int
     'import varor → 50' => [4545, 50],
     'varor EU momsfri → 35' => [3108, 35],
     'varor export → 36' => [3105, 36],
-    'trepartshandel mellanman → 38' => [3107, 38],
+    'trepartshandel mellanman: inget BAS-konto (#97)' => [3107, null],
     'tjänster EU → 39' => [3308, 39],
     'tjänster utanför EU → 40' => [3305, 40],
     'bygg omvänd försäljning → 41' => [3231, 41],

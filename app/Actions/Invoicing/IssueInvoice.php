@@ -363,10 +363,17 @@ class IssueInvoice
             throw ValidationException::withMessages(['invoice' => __('Kunden ska ha ett land utanför EU för export.')]);
         }
 
-        Account::query()->firstOrCreate(['number' => $sale->account()], [
+        $account = Account::query()->firstOrCreate(['number' => $sale->account()], [
             'name' => __($sale->accountName()),
             'type' => AccountType::Revenue,
+            'vat_box' => $sale->vatBox(),
         ]);
+
+        // An account the company made itself before, with no box: the sale must still reach its box (#97).
+        if ($sale->vatBox() !== null && $account->vat_box === null) {
+            $account->forceFill(['vat_box' => $sale->vatBox()])->save();
+            Audit::record('account.updated', $account, ['number' => $account->number, 'before' => ['vat_box' => null], 'after' => ['vat_box' => $sale->vatBox()]], $company);
+        }
     }
 
     /**

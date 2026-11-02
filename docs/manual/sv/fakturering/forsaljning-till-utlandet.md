@@ -27,7 +27,7 @@ Välj i fältet **Försäljning utomlands**, på kunden eller på fakturan:
 | **Trepartshandel inom EU, som mellanman** | 3107 | 38 | Trepartshandel, köparen redovisar momsen. |
 | **Privatperson i annat EU-land (OSS)** | 3106 | – | Moms enligt köparlandets regler, redovisas via OSS. |
 
-Texten skrivs på fakturan på svenska och engelska. Kontot läggs till i kontoplanen om det saknas.
+Texten skrivs på fakturan på svenska och engelska. Kontot läggs till i kontoplanen om det saknas. BAS har inget eget konto för trepartshandel, så 3107 läggs upp kopplat till ruta 38. Läs [Moms och konton](/manual/moms/moms-och-konton).
 
 ## Så här ställer du in kunden
 

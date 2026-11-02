@@ -14,10 +14,16 @@ namespace App\Domain\Invoicing;
  * Shop, which carries the buyer country's VAT (OssRates) and is reported in
  * the OSS return, not in the Swedish momsdeklaration.
  *
- * TODO(legal-verify): the accounts (BAS 3108, 3308, 3105, 3305; 3107 for
- * triangulation and 3106 with VAT on 2619 for OSS are not confirmed against
- * BAS), the boxes (35, 39, 36, 40, 38), the invoice wording required by ML
- * 17 kap., and that a sale of services outside the EU is reported in box 40.
+ * BAS 2026 has no account for triangulation (group 3100 has only 3105, 3106
+ * and 3108, and 3108 feeds box 35), so the intermediary's sale is booked on
+ * 3107, a free number in the group, created with a tie to box 38
+ * (vatBox(), accounts.vat_box). Enligt granskning 2026-11-02,
+ * juristgranskning återstår (#97).
+ *
+ * TODO(legal-verify): the accounts (BAS 3108, 3308, 3105, 3305; 3106 with
+ * VAT on 2619 for OSS), the boxes (35, 39, 36, 40, 38), the invoice wording
+ * required by ML 17 kap., and that a sale of services outside the EU is
+ * reported in box 40.
  */
 enum ForeignSale: string
 {
@@ -44,6 +50,15 @@ enum ForeignSale: string
             self::EuTriangular => 3107,
             self::EuConsumerOss => 3106,
         };
+    }
+
+    /**
+     * The VAT return box the account is tied to when it is created, for an
+     * account BAS does not give a box (VatBoxes); null to follow its number.
+     */
+    public function vatBox(): ?int
+    {
+        return $this === self::EuTriangular ? 38 : null;
     }
 
     public function accountName(): string

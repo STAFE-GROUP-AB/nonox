@@ -7,13 +7,17 @@ use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
+use App\Domain\Accounting\AccountType;
 use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Vat\EuSalesList;
 use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssReport;
+use App\Domain\Vat\VatBoxes;
 use App\Domain\Vat\VatReturn;
 use App\Livewire\Invoicing\Customers;
 use App\Livewire\Vat\EuReports;
+use App\Models\Account;
+use App\Models\AuditLog;
 use App\Models\Customer;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
@@ -66,9 +70,42 @@ function euMarch(): VatReturn
 it('books triangulation on 3107 without VAT and reports it in box 38', function () {
     $invoice = euInvoice($this->danish, ForeignSale::EuTriangular);
 
+    // BAS 2026 has no account for box 38, so 3107 is created tied to it (#97).
     expect($invoice->vat_ore->ore)->toBe(0)
         ->and(euLines($invoice))->toEqualCanonicalizing([1510 => 100_000, 3107 => -100_000])
-        ->and(euMarch()->boxes()[38])->toBe(1_000);
+        ->and(Account::query()->where('number', 3107)->value('vat_box'))->toBe(38)
+        ->and(euMarch()->boxes()[38])->toBe(1_000)
+        ->and(euMarch()->boxes()[35] ?? 0)->toBe(0);
+});
+
+it('reads box 38 only from accounts tied to it, since BAS 2026 has no account for it (#97)', function () {
+    // Skatteverket, fält 38: mellanmans försäljning till en momsregistrerad köpare i ett annat EU-land.
+    // BAS 2026 v1.1 group 3100 has 3105, 3106 and 3108 only; 3108 feeds box 35.
+    expect(VatBoxes::BOXES[38]['accounts'])->toBe([])
+        ->and(VatBoxes::boxFor(3107))->toBeNull()
+        ->and(VatBoxes::boxFor(3107, 38))->toBe(38)
+        ->and(VatBoxes::boxFor(3109, 38))->toBe(38)
+        ->and(VatBoxes::boxFor(3108))->toBe(35);
+});
+
+it('ties a 3107 the company made itself without a box to box 38 when a triangulation invoice is issued', function () {
+    Account::query()->create(['number' => 3107, 'name' => 'Eget konto', 'type' => AccountType::Revenue]);
+
+    euInvoice($this->danish, ForeignSale::EuTriangular, '2 500');
+
+    // 2 500 kr in box 38, whole kronor.
+    expect(Account::query()->where('number', 3107)->value('vat_box'))->toBe(38)
+        ->and(Account::query()->where('number', 3107)->value('name'))->toBe('Eget konto')
+        ->and(euMarch()->boxes()[38])->toBe(2_500)
+        ->and(AuditLog::query()->where('action', 'account.updated')->latest('id')->first()?->payload['after'])->toBe(['vat_box' => 38]);
+});
+
+it('leaves a 3107 tied to another box alone', function () {
+    Account::query()->create(['number' => 3107, 'name' => 'Eget konto', 'type' => AccountType::Revenue, 'vat_box' => 35]);
+
+    euInvoice($this->danish, ForeignSale::EuTriangular);
+
+    expect(Account::query()->where('number', 3107)->value('vat_box'))->toBe(35);
 });
 
 it('charges the buyer country\'s VAT under OSS on 2619 and keeps it out of the Swedish return', function () {

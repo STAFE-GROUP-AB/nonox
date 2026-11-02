@@ -31,8 +31,8 @@
 - Boxes are calculated from account movements, mapped by BAS account number
   (`VatBoxes`). There are no VAT codes on rows yet; the mapping covers the
   BAS VAT accounts. `TODO(legal-verify)` on the mapping, on dropping öre per
-  box, and on the BAS accounts read for boxes 06, 07, 08 and 38 (box 37 has
-  no BAS account and is reached through `accounts.vat_box`, #64).
+  box, and on the BAS accounts read for boxes 06, 07 and 08 (boxes 37 and 38
+  have no BAS account and are reached through `accounts.vat_box`, #64, #97).
 - **Box 05 by the VAT, not only the account** (#61): box 05 reads
   3000–3003, 3005–3099 and 3914 by account, and also, per voucher, the credit
   on a revenue account without a box (3990, 3500–3699 and the like; not
@@ -70,6 +70,18 @@
   an account in an imported chart stays a VAT account without a box and is
   listed as not declared. Enligt granskning 2026-11-02, juristgranskning
   återstår (AUD-MOMS-7, #64).
+- **Box 38 has no BAS account** (#97): box 38 read 3107 by its number, but
+  BAS 2026 v1.1 has only 3105, 3106 and 3108 in group 3100 (3108 feeds box
+  35), and Skatteverket's description of fält 38 (mellanmans försäljning
+  till en momsregistrerad köpare i ett annat EU-land, also reported as
+  trepartshandel in the periodisk sammanställning) names no account. Box 38
+  therefore reads no account by number, like box 37. Invoices for
+  triangulation still book on 3107, a free number in BAS group 3100, and
+  create it tied to box 38 (`ForeignSale::vatBox()`); an existing 3107
+  without a box is tied when such an invoice is issued (audited as
+  `account.updated`), and a migration ties every existing 3107 without a box,
+  so earlier returns are unchanged. A 3107 tied to another box is left
+  alone. Enligt granskning 2026-11-02, juristgranskning återstår (#97).
 - Periods follow the company's redovisningsperiod: calendar month, calendar
   quarter or the beskattningsår (= the fiscal year for a company), SFL 26
   kap. 10, 11 and 26 §§. Months and quarters are never cut at a fiscal year

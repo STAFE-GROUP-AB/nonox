@@ -697,7 +697,12 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   ett eget. Vid export måste kunden ha ett land utanför EU. Fakturan visar en
   text på svenska och engelska och båda momsregistreringsnumren.
 - **Trepartshandel som mellanman:** konto 3107, ruta 38, ingen moms; kräver
-  köparens momsregistreringsnummer som övrig EU-försäljning.
+  köparens momsregistreringsnummer som övrig EU-försäljning. BAS 2026 har
+  inget konto för trepartshandel, så 3107 (ett ledigt nummer i BAS-gruppen
+  3100) skapas med kopplingen `vat_box = 38`; ruta 38 läser inget konto efter
+  nummer. Ett befintligt 3107 utan ruta kopplas till ruta 38 när en faktura
+  för trepartshandel skapas, och en migrering kopplade alla befintliga 3107
+  utan ruta (enligt granskning 2026-11-02, juristgranskning återstår, #97).
 - **Privatperson i annat EU-land (OSS):** fakturan får köparlandets
   normalskattesats (`OssRates`, per land och från-datum), försäljningen
   bokförs på 3106 och momsen på 2619. Konto 2619 räknas inte in i någon ruta
@@ -2887,8 +2892,9 @@ Personalliggare och Avtal när de är påslagna.
   fakturatexterna ska kontrolleras mot mervärdesskattelagen (17 kap.) och
   BAS. Momsregistreringsnumret kontrolleras inte mot VIES, och systemet
   hanterar inte bevis för att varor lämnat Sverige.
-- Trepartshandel: konto 3107 och fakturatexten är inte bekräftade mot BAS och
-  ML; ruta 37 (mellanmans inköp) bokförs inte automatiskt.
+- Trepartshandel: BAS 2026 har inget konto för rutorna 37 och 38; NONOX
+  använder 3107 kopplat till ruta 38 (#97). Fakturatexten är inte bekräftad
+  mot ML; ruta 37 (mellanmans inköp) bokförs inte automatiskt.
 - OSS: konto 3106/2619 är inte bekräftade mot BAS. Momssatserna i `OssRates`
   ska kontrolleras mot EU-kommissionens databas (TEDB); reducerade satser
   hanteras inte. Tröskelvärdet 99 680 kr (ML 6 kap. 62 §): att året tas från
