@@ -84,7 +84,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 
 ### Lön (modul)
-- Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag och arbetsgivaravgifter med sänkningen för unga. Timlön räknas från godkända tidrapporter, även från personalliggaren. Godkända timmar från tidigare månader som ingen lönekörning betalat blir en fråga i nästa lönekörning: ta med dem nu eller inte än.
+- Anställda, Skatteverkets skattetabeller, månads- och timlön, frånvaro, sjuklön med karensavdrag per sjukperiod (rest förs vidare till nästa månad och vid återinsjuknande) och arbetsgivaravgifter med sänkningen för unga. Timlön räknas från godkända tidrapporter, även från personalliggaren. Godkända timmar från tidigare månader som ingen lönekörning betalat blir en fråga i nästa lönekörning: ta med dem nu eller inte än.
 - Lönekörning med attest, lönebesked som PDF, lönefil till banken och bokföring i serie L.
 - Löneunderlag från schemasystem som PAXml eller CSV: timmar, OB och tillägg blir förslag i lönekörningen, koderna kopplas till lönearter en gång per system, och en person godkänner raderna innan de kommer med i lönen.
 - Semester enligt semesterlagen, förmåner, traktamente och milersättning, tjänstepension, utlägg med kvitto, lönerevision och slutlön.
@@ -98,11 +98,12 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Företaget väljer avtal och om det är bundet som medlem eller genom hängavtal; varje anställning får avtal, lönegrupp och branschvana.
 - Redan uppdelade timmar för OB och övertid, inmatade eller från en löneunderlagsfil, prissätts med avtalets sats för arbetsdagen, och lönebeskedet visar version och källa. Minimilönen kontrolleras per lönegrupp, ålder och branschvana och ger en varning på lönekörningen. Avtalskalender med aftnar och storhelger.
 - Med NONOX AI påslaget läses hängavtal och anställningsavtal som text där personnummer, bankuppgifter och adresser är dolda, och AI:n föreslår avtal, lönegrupp och andra uppgifter med citat och sida. Inget förs in förrän en person godkänner det.
-- Med Planering: OB avrundas enligt avtalet, övertid och mertid räknas per vecka eller per beräkningsperiod för rullande scheman, och övertiden kan tas ut som komptid med avtalets faktor. Komptidssaldot förs i lönen och syns på lönespecen och i Min sida. Sjuklönen räknas från det publicerade schemat med OB, karensavdraget med schemats genomsnittliga vecka, och tjänstemännens sjukavdrag från dag 15 enligt avtalet.
+- Med Planering: OB avrundas enligt avtalet, övertid och mertid räknas per vecka eller per beräkningsperiod för rullande scheman, och övertiden kan tas ut som komptid med avtalets faktor. Komptidssaldot förs i lönen och syns på lönespecen och i Min sida. Sjuklönen räknas från det publicerade schemat med OB, och karensavdraget vid oregelbunden tid på den attesterade tiden före sjukperioden (annars schemat).
 - Avtalets semester (procentsats, semestertillägg och lägsta semesterlön per dag), tjänstepension (SAF-LO, ITP 1) och avtalsförsäkringar räknas och bokförs med lönen, och underlaget till Fora och Collectum laddas ner per månad. Provision med garanti, jour, beredskap, restid och kostavdrag räknas med avtalets satser.
 - Lokala avtal: företagets avvikelser från branschavtalet läggs in för hand eller läses av NONOX AI, och används i lönen först när en behörig person har kontrollerat dem.
 - Gyllene lönespecar för varje avtal, uträknade för hand ur avtalsfilerna, körs i testerna.
-- Inte byggt ännu: övertidstillägg för timanställda, karens i tid och avtalens egna timvärden i sjuklönen, ITP 2, och Foras och Collectums egna filformat.
+- Avtalets sjuklön, även utan Planering: avtalets timvärde (12/52, 12,2/52, månadens arbetstimmar, 4,6 % per dag), karens i tid, och tjänstemännens sjukavdrag från dag 15 med taket 105 dagar på tolv månader, direkt övergång och fasta tillägg och rörlig lön i månadslönen.
+- Inte byggt ännu: övertidstillägg för timanställda, kost och bostad i avtalets månadslön vid sjukdom, ITP 2, och Foras och Collectums egna filformat.
 
 ### Personalliggare (modul)
 - Lokaler och personal med in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet, med kod, personlig QR-kod eller mobil incheckning.

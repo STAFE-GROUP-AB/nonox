@@ -13,6 +13,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\PayrollFileImports;
 use App\Modules\Payroll\Actions\PayrollImportSources;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Actions\SeedPayCodes;
 use App\Modules\Payroll\Livewire\PayrollRunPage;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
@@ -328,4 +329,45 @@ describe('the module', function () {
 
         $this->get(route('payroll.runs.index'))->assertDontSee('/lon/avtal');
     });
+});
+
+it('records the facts for sick pay from day 15 on the employment, with a toast', function () {
+    Livewire::test(AgreementsPage::class)
+        ->call('editEmployment', $this->employment->id)
+        ->set('terms.fixed_supplements', 'tusen')
+        ->call('saveEmployment')
+        ->assertHasErrors('fixed_supplements')
+        ->set('terms.fixed_supplements', '1 500')
+        ->set('terms.sick_pay_direct_transfer', true)
+        ->call('saveEmployment')
+        ->assertDispatched('toast', message: 'Avtalsuppgifterna för Anna Kock är sparade.');
+
+    expect($this->employment->fresh())
+        ->sick_pay_direct_transfer->toBeTrue()
+        ->and($this->employment->fresh()->fixed_supplements_ore?->ore)->toBe(150_000)
+        ->and(AuditLog::query()->where('action', 'agreements.employment_terms_saved')->latest('id')->first()->payload['after']['fixed_supplements_ore'])->toBe(150_000);
+});
+
+it('deducts per calendar day from day 15 by the agreement without Planering, with the monthly average of variable pay from approved payslips', function () {
+    $binding = $this->setup->saveBinding($this->owner, $this->company, ['agreement_key' => 'visita-unionen', 'variant' => 'MEMBER', 'bound_from' => '2025-01-01']);
+    AgreementRuleVersion::query()->where('agreement_key', 'visita-unionen')->sole()->forceFill(['verified_by' => 'Granskare', 'verified_at' => now()])->save();
+    $this->setup->saveEmployment($this->owner, $this->company, $this->employment, ['collective_agreement_id' => $binding->id, 'agreement_group' => 'ALLA']);
+    app(SeedPayCodes::class)($this->company);
+    $admin = Bookkeeping::member($this->company, 'admin');
+
+    // 12 000 kr commission paid in March: 1 000 kr a month over the twelve months before April.
+    $march = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-03');
+    app(PayrollRuns::class)->addInput($this->owner, $march, ['employee_id' => $this->anna->id, 'pay_code_id' => PayCode::query()->where('code', 'PROVISION')->value('id'), 'amount' => '12 000']);
+    app(PayrollRuns::class)->calculate($this->owner, $march);
+    app(PayrollRuns::class)->approve($admin, $march->fresh());
+
+    app(PayrollRuns::class)->recordAbsence($this->owner, $this->run, ['employee_id' => $this->anna->id, 'type' => 'SICK', 'date_from' => '2026-04-01', 'date_to' => '2026-04-20', 'hours' => '8']);
+    app(PayrollRuns::class)->calculate($this->owner, $this->run);
+    $line = Payslip::query()->with('lines')->where('payroll_run_id', $this->run->id)->sole()->lines->firstWhere('description', 'Sjukavdrag dag 15–90 enligt avtal, 6 kalenderdagar');
+
+    // (32 000 + 1 000) × 12 = 396 000 kr, under 10 prisbasbelopp: 90 % / 365 = 976,44 kr per calendar day, 15–20 April.
+    expect($line)->not->toBeNull()
+        ->and($line->amount_ore->ore)->toBe(-6 * 97_644)
+        ->and($line->explanation['variable_monthly_ore'])->toBe(100_000)
+        ->and($line->explanation['max_days_12_months'])->toBe(105);
 });

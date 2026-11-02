@@ -180,6 +180,18 @@
     },
     "sick_pay": {
         "includes_ob": true,
+        "hour_value": {
+            "method": "MONTHLY_PER_WEEK",
+            "months_per_year": "12.2",
+            "weeks_per_year": "52",
+            "source": "HT#§ 10.3.2 s. 32–33"
+        },
+        "karens": {
+            "unit": "HOURS",
+            "percent_of_weekly_hours_bp": 2000,
+            "weekly_hours": "AVERAGE",
+            "source": "HT#§ 10.3.2 s. 32–33, § 10.3.4 s. 33"
+        },
         "after_employer_period": {
             "from_day": 15,
             "deduction": {
@@ -192,13 +204,19 @@
             "duration": [
                 {
                     "min_employment_months": 12,
-                    "to_day": 90
+                    "or_direct_transfer": true,
+                    "to_day": 90,
+                    "max_days_12_months": 105
                 },
                 {
-                    "to_day": 45
+                    "to_day": 45,
+                    "max_days_12_months": 45
                 }
             ],
-            "source": "HT#§ 10.3.6–10.3.7 s. 34–36"
+            "monthly_salary_includes": ["FIXED_SUPPLEMENTS", "VARIABLE_AVERAGE", "BENEFITS"],
+            "cap_includes": ["FIXED_SUPPLEMENTS"],
+            "variable_pay_codes": ["PROVISION", "BONUS"],
+            "source": "HT#§ 10.1.1, § 10.3.5–10.3.7 s. 34–36"
         },
         "source": "HT#§ 10.3.2 s. 32–33"
     },

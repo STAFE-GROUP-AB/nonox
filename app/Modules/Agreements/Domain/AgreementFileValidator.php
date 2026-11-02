@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Agreements\Domain;
 
 use App\Modules\Agreements\Models\AgreementRuleVersion;
+use App\Modules\Payroll\Domain\Engine\SickHourValue;
+use App\Modules\Payroll\Domain\PayCodeCatalog;
 
 /**
  * Checks an agreement data file against nonox.agreement/1 before it is
@@ -211,6 +213,20 @@ final class AgreementFileValidator
             $this->problems[] = __('sick_pay.includes_ob måste vara true eller false.');
         }
 
+        if (isset($sickPay['hour_value'])) {
+            $this->sickHourValue((array) $sickPay['hour_value']);
+        }
+
+        if (isset($sickPay['karens'])) {
+            $karens = (array) $sickPay['karens'];
+            $this->source($karens, 'sick_pay.karens');
+
+            if (($karens['unit'] ?? null) !== 'HOURS' || ! is_int($karens['percent_of_weekly_hours_bp'] ?? null) || $karens['percent_of_weekly_hours_bp'] <= 0 || $karens['percent_of_weekly_hours_bp'] > 10000
+                || ! in_array($karens['weekly_hours'] ?? null, ['AVERAGE', 'AGREED'], true)) {
+                $this->problems[] = __('sick_pay.karens har fel form (unit HOURS, percent_of_weekly_hours_bp och weekly_hours AVERAGE eller AGREED).');
+            }
+        }
+
         if (! isset($sickPay['after_employer_period'])) {
             return;
         }
@@ -228,11 +244,36 @@ final class AgreementFileValidator
         foreach ($durations as $duration) {
             $duration = (array) $duration;
             $valid = $valid && is_int($duration['to_day'] ?? null) && $duration['to_day'] >= ($after['from_day'] ?? 15)
-                && (! isset($duration['min_employment_months']) || is_int($duration['min_employment_months']));
+                && (! isset($duration['min_employment_months']) || is_int($duration['min_employment_months']))
+                && (! isset($duration['max_days_12_months']) || (is_int($duration['max_days_12_months']) && $duration['max_days_12_months'] > 0))
+                && (! isset($duration['or_direct_transfer']) || is_bool($duration['or_direct_transfer']));
+        }
+
+        foreach (['monthly_salary_includes' => ['FIXED_SUPPLEMENTS', 'VARIABLE_AVERAGE', 'BENEFITS'], 'cap_includes' => ['FIXED_SUPPLEMENTS'], 'variable_pay_codes' => array_keys(PayCodeCatalog::CODES)] as $key => $allowed) {
+            if (isset($after[$key]) && (! is_array($after[$key]) || array_diff($after[$key], $allowed) !== [])) {
+                $this->problems[] = __('sick_pay.after_employer_period.:key innehåller okända värden.', ['key' => $key]);
+            }
         }
 
         if (! $valid) {
             $this->problems[] = __('sick_pay.after_employer_period har fel form (from_day, deduction med per CALENDAR_DAY, days_per_year, below_bp, above_bp, threshold_prisbasbelopp, och duration med to_day).');
+        }
+    }
+
+    /** @param  array<string, mixed>  $value */
+    private function sickHourValue(array $value): void
+    {
+        $this->source($value, 'sick_pay.hour_value');
+        $method = $value['method'] ?? null;
+        $valid = match ($method) {
+            SickHourValue::MONTHLY_PER_WEEK => self::isPositiveDecimal($value['months_per_year'] ?? null) && self::isPositiveDecimal($value['weeks_per_year'] ?? null),
+            SickHourValue::MONTH_WORKING_HOURS => true,
+            SickHourValue::DAY_PERCENT => is_int($value['day_bp'] ?? null) && $value['day_bp'] > 0 && self::isPositiveDecimal($value['hour_divisor'] ?? null),
+            default => false,
+        };
+
+        if (! $valid) {
+            $this->problems[] = __('sick_pay.hour_value har fel form (method MONTHLY_PER_WEEK med months_per_year och weeks_per_year, MONTH_WORKING_HOURS, eller DAY_PERCENT med day_bp och hour_divisor).');
         }
     }
 

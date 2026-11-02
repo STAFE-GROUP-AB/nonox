@@ -36,6 +36,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?CarbonImmutable $industry_experience_from
  * @property ?string $overtime_compensation
  * @property ?string $ob_compensation
+ * @property bool $sick_pay_direct_transfer came directly from an employment with sick pay to day 90 (the agreement's 90-day group)
+ * @property ?Money $fixed_supplements_ore fixed monthly supplements that count in the agreement's "månadslön" for sick pay from day 15
  */
 class Employment extends Model
 {
@@ -70,6 +72,8 @@ class Employment extends Model
         'industry_experience_from',
         'overtime_compensation',
         'ob_compensation',
+        'sick_pay_direct_transfer',
+        'fixed_supplements_ore',
     ];
 
     /** @return array<string, string> */
@@ -87,6 +91,8 @@ class Employment extends Model
             'payment_day' => 'integer',
             'collective_agreement_id' => 'integer',
             'industry_experience_from' => 'immutable_date',
+            'sick_pay_direct_transfer' => 'boolean',
+            'fixed_supplements_ore' => MoneyCast::class,
         ];
     }
 

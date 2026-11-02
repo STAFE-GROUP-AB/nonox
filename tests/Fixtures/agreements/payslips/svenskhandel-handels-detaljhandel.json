@@ -514,6 +514,57 @@
         "basis_ore": 0,
         "payout_with_salary": true
       }
+    },
+    {
+      "name": "sjuk: 4,6 % per hel dag och 1/166 per timme",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01",
+        "week_pattern": [
+          "8",
+          "8",
+          "8",
+          "8",
+          "8",
+          "0",
+          "0"
+        ]
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SJUKAVDRAG": -210289,
+          "SJUKLON": 168231,
+          "KARENSAVDRAG": -115663
+        },
+        "gross_ore": 2842279,
+        "employer": {},
+        "warnings": [
+          "1/166"
+        ]
+      },
+      "absences": [
+        {
+          "type": "SICK",
+          "date": "2026-05-06",
+          "hours": "8"
+        },
+        {
+          "type": "SICK",
+          "date": "2026-05-07",
+          "hours": "4"
+        }
+      ]
     }
   ]
 }

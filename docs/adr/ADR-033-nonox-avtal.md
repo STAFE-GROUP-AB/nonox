@@ -270,6 +270,42 @@ L5, A1, A2):
   `threshold_minutes`; never on the period total. OB rounding per shift and
   code is unchanged and uncertain (the agreements do not say per what).
 
+**A8 sick pay, corrected (2026-11-02, enligt AI-utredning, juristgranskning
+återstår).** The verification of the sick pay (L1, L2, L4) found deviations;
+now built:
+
+- *Agreement hour value and karens in time* (sjuklönelagen 2 § andra
+  stycket lets a central agreement set the calculation): new data keys
+  `sick_pay.hour_value` (`MONTHLY_PER_WEEK` with months/weeks per year:
+  Visita–Unionen 12/52 § 23.3, Handels tjänstemän 12,2/52 § 10.3.2;
+  `MONTH_WORKING_HOURS`: Gröna Riks § 20 p. 4.3.1, the month's hours from
+  the published shifts or the weekly pattern; `DAY_PERCENT`: Detaljhandeln
+  § 13.1, 4,6 % per full day and 1/166 per hour) and `sick_pay.karens`
+  (`HOURS`, 20 % of the weekly hours, `AVERAGE` or `AGREED` — Detaljhandeln
+  § 15.4 uses the hours agreed in advance). What the format cannot express
+  yet is a payslip note, never a silent other method: Detaljhandeln's karens
+  time valued per hour, fixed supplements in its day base, more than 22
+  scheduled days.
+- *Average week* (prop. 2017/18:96 s. 68): attested time and OB in up to 13
+  calendar weeks before the sick period's first week, from the first week
+  with attested time, leaving out weeks with nothing but absence; without
+  history the published schedule from the period's first week, averaged
+  over the weeks that have shifts; without either and without weekly hours
+  the run is blocked with a Swedish message.
+- *Day 15–90*: duration rows get `max_days_12_months` (105 / 45, VU § 23.3,
+  HT § 10.3.7) and `or_direct_transfer`; `monthly_salary_includes`
+  (`FIXED_SUPPLEMENTS`, `VARIABLE_AVERAGE`, `BENEFITS`), `cap_includes` and
+  `variable_pay_codes`. The employment gets `sick_pay_direct_transfer` and
+  `fixed_supplements_ore` (Lön → Avtal). The variable average is the codes'
+  sum on approved payslips in the twelve months before the period's month,
+  over the months employed. Kost/bostad and part-time sick leave from day
+  15 are payslip notes, `TODO(legal-verify)`.
+- The agreement version and the duration group follow the sick period's
+  first day; the agreement part works without Planering (before, all of A8
+  needed both modules).
+- Karens per sjuklöneperiod and its carry across runs are in the payroll
+  engine (ADR-012, `sick_pay_periods`).
+
 ## Legal questions (all `TODO(legal-verify)`)
 
 1. **Copyright in agreement texts.** A collective agreement is a private

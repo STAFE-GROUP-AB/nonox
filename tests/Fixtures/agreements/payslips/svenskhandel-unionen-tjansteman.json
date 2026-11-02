@@ -436,6 +436,174 @@
         "basis_ore": 0,
         "payout_with_salary": true
       }
+    },
+    {
+      "name": "sjuk: timvärde 12,2/52 och karens i tid",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SJUKAVDRAG": -356615,
+          "SJUKLON": 285292,
+          "KARENSAVDRAG": -142646
+        },
+        "gross_ore": 3586031,
+        "employer": {},
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "SICK",
+          "date": "2026-05-06",
+          "hours": "8"
+        },
+        {
+          "type": "SICK",
+          "date": "2026-05-07",
+          "hours": "8"
+        }
+      ]
+    },
+    {
+      "name": "sjuk dag 15+: fasta tillägg och rörligt snitt i månadslönen",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01",
+        "fixed_supplements_ore": 200000
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SJUKAVDRAG": -381699
+        },
+        "gross_ore": 3418301,
+        "employer": {},
+        "warnings": [
+          "kost- och bostadsförmån",
+          "Försäkringskassan"
+        ]
+      },
+      "absences": [
+        {
+          "type": "SICK",
+          "date": "2026-05-01",
+          "hours": "0"
+        },
+        {
+          "type": "SICK",
+          "date": "2026-05-02",
+          "hours": "0"
+        },
+        {
+          "type": "SICK",
+          "date": "2026-05-03",
+          "hours": "0"
+        }
+      ],
+      "sick_history": {
+        "spells": [
+          {
+            "from": "2026-04-17",
+            "to": "2026-04-30"
+          }
+        ],
+        "periods": {
+          "2026-04-17": {
+            "full": 0,
+            "deducted": 0
+          }
+        }
+      },
+      "sick_facts": {
+        "variable_monthly_ore": 300000
+      }
+    },
+    {
+      "name": "sjuk dag 15+: taket per dag är den fasta lönen",
+      "agreement": "svenskhandel-unionen-tjansteman/MEMBER-2025-05-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3800000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "UNIONEN",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01",
+        "fixed_supplements_ore": 200000
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SJUKAVDRAG": -394521
+        },
+        "gross_ore": 3405479,
+        "employer": {},
+        "warnings": [
+          "kost- och bostadsförmån",
+          "Försäkringskassan"
+        ]
+      },
+      "absences": [
+        {
+          "type": "SICK",
+          "date": "2026-05-01",
+          "hours": "0"
+        },
+        {
+          "type": "SICK",
+          "date": "2026-05-02",
+          "hours": "0"
+        },
+        {
+          "type": "SICK",
+          "date": "2026-05-03",
+          "hours": "0"
+        }
+      ],
+      "sick_history": {
+        "spells": [
+          {
+            "from": "2026-04-17",
+            "to": "2026-04-30"
+          }
+        ],
+        "periods": {
+          "2026-04-17": {
+            "full": 0,
+            "deducted": 0
+          }
+        }
+      },
+      "sick_facts": {
+        "variable_monthly_ore": 1000000
+      }
     }
   ]
 }

@@ -270,7 +270,8 @@ it('pays sick pay on the OB of the published shift and counts the schedule\'s OB
     $ob = $lines->firstWhere('description', 'Sjuklön 80 % av OB enligt schemat');
     $karens = $lines->first(fn ($line) => $line->description === 'Karensavdrag');
 
-    // 6 h × 27,59 kr = 165,54 kr OB lost; 80 % = 132,43 kr. The four-week reference period has only this shift: 41,39 kr a week.
+    // 6 h × 27,59 kr = 165,54 kr OB lost; 80 % = 132,43 kr. No attested time before the sick period, so the published schedule
+    // from its first week is the average week; only the one week with a published shift counts (an empty week is not 0 h): 165,54 kr.
     $sickPay = $lines->first(fn ($line) => str_starts_with($line->description, 'Sjuklön 80 %,'));
 
     // Saturday is not in the payroll's weekly pattern, but the published shift says six hours were missed: 6 h × 150 kr × 80 %.
@@ -278,8 +279,9 @@ it('pays sick pay on the OB of the published shift and counts the schedule\'s OB
         ->and($sickPay->amount_ore->ore)->toBe(72_000)
         ->and($ob)->not->toBeNull()
         ->and($ob->amount_ore->ore)->toBe(13_243)
-        ->and($ob->explanation['reference_period']['weeks'])->toBe(4)
-        ->and($karens->explanation['average_weekly_supplements_ore'])->toBe(4_139);
+        ->and($ob->explanation['reference_period']['weeks'])->toBe(1)
+        ->and($ob->explanation['average_weekly_hours_source'])->toBe('SCHEDULE')
+        ->and($karens->explanation['average_weekly_supplements_ore'])->toBe(16_554);
 });
 
 it('adds worked time on a day without a planned shift, so time still reaches payroll without the staff ledger', function () {
@@ -297,4 +299,56 @@ it('adds worked time on a day without a planned shift, so time still reaches pay
     app(AttestPeriod::class)($this->owner, $this->company, $this->from, $this->to);
 
     expect(Attestation::query()->where('employee_id', $this->anna->id)->sole()->basis)->toBe(['TIMLON' => 240]);
+});
+
+/** An attested day in "Tid att attestera", written as the attest step leaves it. */
+function avtalTidAttested(Employee $employee, string $date, int $minutes): void
+{
+    CurrentCompany::run(test()->company, function () use ($employee, $date, $minutes): void {
+        (new Attestation(['employee_id' => $employee->id, 'date' => $date]))
+            ->forceFill(['status' => Attestation::ATTESTED, 'planned_minutes' => $minutes, 'actual_minutes' => $minutes, 'details' => ['ob' => []]])
+            ->save();
+    });
+}
+
+/** Bertil on irregular hours: no weekly hours on the employment, sick on Tuesday 17 November. */
+function avtalTidIrregularSick(): void
+{
+    avtalTidAgreement();
+    CurrentCompany::run(test()->company, function (): void {
+        Employment::query()->where('employee_id', test()->bertil->id)->update(['weekly_hours' => null]);
+        Absence::create(['employee_id' => test()->bertil->id, 'type' => 'SICK', 'date_from' => '2026-11-17', 'date_to' => '2026-11-17', 'extent_bp' => 10000, 'hours' => '8', 'status' => 'APPROVED']);
+    });
+}
+
+it('takes the average week for the karensavdrag from the attested time before the sick period, not counting weeks without a record or with only absence', function () {
+    avtalTidIrregularSick();
+
+    // 26–29 October and 9–12 November: 4 × 8 h. 2–6 November is vacation and nothing worked. Weeks before 26 October have no record.
+    foreach (['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12'] as $date) {
+        avtalTidAttested($this->bertil, $date, 480);
+    }
+
+    CurrentCompany::run($this->company, fn () => Absence::create(['employee_id' => $this->bertil->id, 'type' => 'VACATION', 'date_from' => '2026-11-02', 'date_to' => '2026-11-06', 'extent_bp' => 10000, 'hours' => '8', 'status' => 'APPROVED']));
+    // A published shift after the sick day: the schedule ahead is not used while there is history.
+    avtalTidShift($this->bertil, '2026-11-24', '08:00', '12:00');
+    avtalTidPublish('2026-11-23', '2026-11-29');
+
+    $run = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-11');
+    app(PayrollRuns::class)->calculate($this->owner, $run);
+    $karens = Payslip::query()->with('lines')->where('payroll_run_id', $run->id)->where('employee_id', $this->bertil->id)->sole()->lines->firstWhere('description', 'Karensavdrag');
+
+    // Two weeks of 32 h: 32 h a week; the karens time is 20 % of it.
+    expect($karens->explanation['average_weekly_hours'])->toBe('32.00')
+        ->and($karens->explanation['average_weekly_hours_source'])->toBe('HISTORY')
+        ->and($karens->explanation['karens_hours'])->toStartWith('6.4')
+        ->and($karens->explanation['weekly_hours_source'])->toBe('AVERAGE');
+});
+
+it('blocks the karensavdrag on irregular hours when there is neither attested time before the sick period nor a published schedule', function () {
+    avtalTidIrregularSick();
+    $run = app(PayrollRuns::class)->create($this->owner, $this->company, '2026-11');
+
+    expect(fn () => app(PayrollRuns::class)->calculate($this->owner, $run))
+        ->toThrow(ValidationException::class, 'det finns varken attesterad tid före sjukperioden eller publicerade pass');
 });

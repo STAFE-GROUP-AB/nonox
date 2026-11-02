@@ -31,6 +31,15 @@ final class PayslipDraft
     /** @var array<string, int> calendar-year accumulator changes */
     public array $accumulatorDeltas = [];
 
+    /**
+     * What the payslip did in each sjuklöneperiod it touched, stored with
+     * the payslip (sick_pay_periods) so the next run can carry the rest of
+     * a karensavdrag and count occasions and days from day 15.
+     *
+     * @var list<array{period_start: string, last_day: string, day_count: int, karens_full_ore: int, karens_deducted_ore: int, long_sick_dates: list<string>}>
+     */
+    public array $sickPeriods = [];
+
     public function add(PayslipLineResult $line): void
     {
         $this->lines[] = $line;

@@ -146,13 +146,15 @@ passen, `PlanVsActual` + attesten är vägen från klockslag till lön, och
 | A7 / G8 | Komptidssaldo | Saknades (`overtime_compensation = COMP_TIME` fanns men användes inte) | **Byggt**: val per tillfälle (pengar eller komptid) i attesten, faktor per avtalskod som data, saldo per anställd (`comp_time_entries`), uttag och utbetalning i Lön, saldo på lönespecen och i Min sida. |
 | A7 / G20 | Rullande scheman | **Delvis**: mallar på 1–8 veckor i Planering (rullande schema läggs ut med Mallar); lönens `work_schedules` använder bara vecka 1. | **Byggt**: övertid och mertid mäts mot beräkningsperioden (schemats längd). Lönens eget veckomönster (`work_schedules`) har fortfarande bara vecka 1 — med Planering och Avtal används i stället de publicerade passen på sjukdagar (A8). |
 | A8 / G10 | Sjuklön med OB enligt schemat | Saknades | **Byggt**: på en sjukdag med publicerade pass är de missade timmarna passens, och förlorad OB på passen, prissatt med avtalet, ger sjuklönens procent; karensavdraget räknas på en genomsnittlig vecka inklusive OB. |
-| A8 / G11 | Sjuklön dag 15–90 | Saknades | **Byggt** som avtalsdata (`sick_pay.after_employer_period`): avdrag per kalenderdag med prisbasbeloppsgräns, för Visita–Unionen och Handels tjänstemän. |
-| A8 / G12 | Karens för oregelbunden tid | Saknades (veckoarbetstid krävdes) | **Byggt**: utan veckoarbetstid räknas den genomsnittliga veckan från de publicerade passen i beräkningsperioden. |
+| A8 / G11 | Sjuklön dag 15–90 | Saknades | **Byggt** som avtalsdata (`sick_pay.after_employer_period`): avdrag per kalenderdag med prisbasbeloppsgräns, för Visita–Unionen och Handels tjänstemän. Rättat 2026-11-02 (L4): taket 105/45 dagar på tolv månader (`max_days_12_months`), grupp 1 även vid direkt övergång (`or_direct_transfer`, ruta på anställningen), gruppen och avtalsversionen på sjukperiodens första dag, månadslön med fasta tillägg och snitt av rörlig lön (`monthly_salary_includes`), taket per dag på den fasta lönen (`cap_includes`). Kost/bostad och deltid från dag 15: notering, `TODO(legal-verify)`. |
+| A8 / G12 | Karens för oregelbunden tid | Saknades (veckoarbetstid krävdes) | **Byggt**: utan veckoarbetstid räknas den genomsnittliga veckan från de publicerade passen i beräkningsperioden. Rättat 2026-11-02 (L1): i första hand attesterad tid 1–3 månader *före* sjukperioden (prop. 2017/18:96 s. 68), schemat bara utan historik och då bara över veckor med pass; utan båda stoppas körningen. Karens i tid och avtalens timvärden byggda som data (`sick_pay.karens`, `sick_pay.hour_value`): Visita–Unionen 12/52, Handels tjänstemän 12,2/52, Gröna Riks månadslön/månadens arbetstimmar, Detaljhandeln 4,6 % per dag och 1/166 per timme med överenskommen veckotid. |
+| L2 | Karensavdrag per sjuklöneperiod | Ett tak per lönespec, rest tappades, tillfällen = frånvaroposter räknade från körningens start | **Byggt** (2026-11-02, enligt AI-utredning, juristgranskning återstår): tak per sjuklöneperiod, rest förs till periodens senare sjuklönedagar (även nästa körning och efter återinsjuknande), tillfällen = gjorda avdrag räknade från den nya periodens första dag, dagnummer genom hela kedjan. Tillstånd i `sick_pay_periods`. |
 
-Inte byggt i A5–A8 (står kvar i §2): karens i *tid* enligt
-avtalen (Detaljhandel, Gröna Riks; vi drar lagens belopp), avtalens egna
-timvärden i sjuklönen (12,2/52, 93 % av garantilön), taket 105 dagar per 12
-månader, minst 3 timmar övertid som inte ansluter, övertidsarter per tillfälle (i anslutning, två första timmarna),
+Inte byggt i A5–A8 (står kvar i §2): frisöravtalets 93 % av garantilön i
+sjuklönen (inga publika satser), Detaljhandelns karenstid per hel dag och
+dagsavdrag vid fler än 22 schemadagar (notering på lönespecen), minst 3 timmar
+övertid som inte ansluter, övertidsarter per tillfälle (i anslutning, två
+första timmarna),
 komptidsfaktorer för Detaljhandeln (faktorn byter med satsen 1 april 2026,
 behöver steg per datum) och Lager (inga övertidskoder i filen ännu),
 utbetalning av komptid vid anställningens slut som avtalsregel (bara manuell

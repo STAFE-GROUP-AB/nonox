@@ -18,6 +18,7 @@ use App\Modules\Payroll\Models\CollectiveAgreement;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayCode;
 use App\Support\Audit\Audit;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -122,7 +123,7 @@ class AgreementSetup
     /**
      * Saves an employment's agreement facts.
      *
-     * @param  array<string, mixed>  $input  collective_agreement_id, agreement_group, industry_experience_from, overtime_compensation, ob_compensation
+     * @param  array<string, mixed>  $input  collective_agreement_id, agreement_group, industry_experience_from, overtime_compensation, ob_compensation, sick_pay_direct_transfer, fixed_supplements (kronor as typed)
      */
     public function saveEmployment(User $user, Company $company, Employment $employment, array $input): Employment
     {
@@ -136,13 +137,25 @@ class AgreementSetup
                 'industry_experience_from' => ['nullable', 'date_format:Y-m-d'],
                 'overtime_compensation' => ['nullable', Rule::in(self::OVERTIME_COMPENSATION)],
                 'ob_compensation' => ['nullable', Rule::in(self::OB_COMPENSATION)],
+                'sick_pay_direct_transfer' => ['nullable', 'boolean'],
+                'fixed_supplements' => ['nullable', 'string', 'max:20'],
             ], [], [
                 'collective_agreement_id' => __('avtal'),
                 'agreement_group' => __('lönegrupp'),
                 'industry_experience_from' => __('branschvana från'),
+                'fixed_supplements' => __('fasta tillägg per månad'),
             ])->validate();
 
             $validated['collective_agreement_id'] = isset($validated['collective_agreement_id']) ? (int) $validated['collective_agreement_id'] : null;
+
+            if (array_key_exists('sick_pay_direct_transfer', $validated)) {
+                $validated['sick_pay_direct_transfer'] = (bool) $validated['sick_pay_direct_transfer'];
+            }
+
+            if (array_key_exists('fixed_supplements', $validated)) {
+                $validated['fixed_supplements_ore'] = $this->fixedSupplements($validated['fixed_supplements']);
+                unset($validated['fixed_supplements']);
+            }
 
             if ($validated['collective_agreement_id'] === null) {
                 $validated = [...$validated, 'agreement_group' => null, 'industry_experience_from' => null, 'overtime_compensation' => null, 'ob_compensation' => null];
@@ -155,12 +168,36 @@ class AgreementSetup
 
             Audit::record('agreements.employment_terms_saved', $employment, [
                 'employee_id' => $employment->employee_id,
-                'before' => array_map(fn (mixed $value): mixed => $value instanceof \DateTimeInterface ? $value->format('Y-m-d') : $value, $before),
-                'after' => array_map(fn (mixed $value): mixed => $value instanceof \DateTimeInterface ? $value->format('Y-m-d') : $value, $employment->only(array_keys($validated))),
+                'before' => array_map(fn (mixed $value): mixed => $value instanceof \DateTimeInterface ? $value->format('Y-m-d') : ($value instanceof Money ? $value->ore : $value), $before),
+                'after' => array_map(fn (mixed $value): mixed => $value instanceof \DateTimeInterface ? $value->format('Y-m-d') : ($value instanceof Money ? $value->ore : $value), $employment->only(array_keys($validated))),
             ], $company, $user);
 
             return $employment;
         });
+    }
+
+    /**
+     * The fixed monthly supplements typed in kronor, in öre; null when empty.
+     *
+     * @throws ValidationException when the amount cannot be read or is negative
+     */
+    private function fixedSupplements(mixed $value): ?int
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+
+        try {
+            $ore = Money::parse((string) $value)->ore;
+        } catch (\InvalidArgumentException) {
+            throw ValidationException::withMessages(['fixed_supplements' => [__('Beloppet går inte att läsa. Skriv till exempel 1 500 eller 1 500,50.')]]);
+        }
+
+        if ($ore < 0) {
+            throw ValidationException::withMessages(['fixed_supplements' => [__('Fasta tillägg kan inte vara negativa.')]]);
+        }
+
+        return $ore;
     }
 
     /**

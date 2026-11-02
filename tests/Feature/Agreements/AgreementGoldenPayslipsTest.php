@@ -6,6 +6,7 @@ use App\Modules\Agreements\Domain\AgreementContext;
 use App\Modules\Agreements\Domain\AgreementFileValidator;
 use App\Modules\Agreements\Domain\AgreementRules;
 use App\Modules\Agreements\Support\AgreementContextExtension;
+use App\Modules\Agreements\Support\AgreementSickPayExtension;
 use App\Modules\Payroll\Domain\Engine\AbsenceInput;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
@@ -28,10 +29,14 @@ use Tests\Support\Payroll;
  * synthetic agreement where no public value exists, as for the
  * hairdressers' commission) and the 2026 premium rules. The engine reads the
  * agreement exactly as a run does (AgreementContextExtension::applyAgreement,
- * then the payroll calculator with the agreement's steps). Shifts and sick
- * pay with OB (A5–A8) are not covered here yet. Overtime and mertid
- * supplements for hourly pay and the vacation-pay basis of overtime per
- * agreement are (fix-overtid; enligt AI-utredning 2026-11-02,
+ * then the payroll calculator with the agreement's steps). Sick pay goes
+ * through AgreementSickPayExtension::applyTerms as a run does without
+ * Planering: the agreement's hour value, karens in time and deduction from
+ * day 15, with the sick history (sick_history) the run would read and the
+ * facts it would find (sick_facts). Overtime and mertid supplements for
+ * hourly pay and the vacation-pay basis of overtime per agreement are covered
+ * too. Shifts, mertid and sick pay with OB from the schedule (A5–A8) are
+ * covered in AgreementTimeTest (enligt AI-utredning 2026-11-02,
  * juristgranskning återstår).
  */
 
@@ -80,6 +85,8 @@ function goldenAgreementContext(array $case): array
         employmentStart: CarbonImmutable::parse($employment['start']),
         overtimeCompensation: null,
         obCompensation: null,
+        sickPayDirectTransfer: (bool) ($employment['sick_pay_direct_transfer'] ?? false),
+        fixedSupplementsOre: $employment['fixed_supplements_ore'] ?? null,
     );
 
     $inputs = array_map(function (array $input) use ($rules): PayInput {
@@ -120,7 +127,9 @@ function goldenAgreementContext(array $case): array
         settings: [],
         rules: RuleSet::for(CarbonImmutable::parse($case['payment_date'])),
         weeklyHours: $employment['weekly_hours'],
-        absences: array_map(fn (array $absence): AbsenceInput => new AbsenceInput($absence['type'], CarbonImmutable::parse($absence['date']), $absence['hours']), $case['absences'] ?? []),
+        absences: array_map(fn (array $absence): AbsenceInput => new AbsenceInput($absence['type'], CarbonImmutable::parse($absence['date']), $absence['hours'], extentBp: $absence['extent_bp'] ?? 10000), $case['absences'] ?? []),
+        sickHistory: $case['sick_history'] ?? [],
+        weekPattern: $employment['week_pattern'] ?? null,
         vacation: $vacation,
     );
 
@@ -143,7 +152,8 @@ dataset('agreement golden payslips', function (): array {
 
 it('calculates the agreement\'s golden payslip from the data file', function (array $case) {
     [$context, $agreement] = goldenAgreementContext($case);
-    $draft = app(PayrollCalculator::class)->calculate(app(AgreementContextExtension::class)->applyAgreement($context, $agreement));
+    $context = app(AgreementContextExtension::class)->applyAgreement($context, $agreement);
+    $draft = app(PayrollCalculator::class)->calculate(app(AgreementSickPayExtension::class)->applyTerms($context, $agreement, $case['sick_facts'] ?? []));
     $sum = fn (string $code): int => array_sum(array_map(fn (PayslipLineResult $line): int => $line->amountOre, array_values(array_filter($draft->lines, fn (PayslipLineResult $line): bool => $line->code === $code))));
     $expected = $case['expected'];
 
@@ -161,6 +171,10 @@ it('calculates the agreement\'s golden payslip from the data file', function (ar
 
     foreach ($expected['warnings'] as $index => $warning) {
         expect($draft->warnings[$index])->toContain($warning);
+    }
+
+    foreach ($expected['sick_periods'] ?? [] as $index => $period) {
+        expect(array_intersect_key($draft->sickPeriods[$index] ?? [], $period))->toBe($period, "sick period {$index}");
     }
 })->with('agreement golden payslips');
 

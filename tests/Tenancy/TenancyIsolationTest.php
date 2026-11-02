@@ -108,6 +108,7 @@ use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\Models\RecurringInput;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Payroll\Models\SickPayPeriod;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationOpeningBalance;
@@ -212,6 +213,7 @@ const COMPANY_SCOPED_MODELS = [
     RecurringInput::class => 'payrollRecurringInputAttributes',
     Payslip::class => 'payrollPayslipAttributes',
     PayslipLine::class => 'payrollPayslipLineAttributes',
+    SickPayPeriod::class => 'payrollSickPayPeriodAttributes',
     Accumulator::class => 'payrollAccumulatorAttributes',
     Absence::class => 'payrollAbsenceAttributes',
     Benefit::class => 'payrollBenefitAttributes',
@@ -956,6 +958,13 @@ function payrollPayslipAttributes(): array
 function payrollPayslipLineAttributes(): array
 {
     return ['payslip_id' => Payslip::create(payrollPayslipAttributes())->id, 'pay_code_id' => PayCode::create(payrollPayCodeAttributes())->id, 'description' => 'Månadslön', 'amount_ore' => 100, 'tax_effect' => 'TABLE', 'explanation' => []];
+}
+
+function payrollSickPayPeriodAttributes(): array
+{
+    $payslip = Payslip::create(payrollPayslipAttributes());
+
+    return ['payroll_run_id' => $payslip->payroll_run_id, 'payslip_id' => $payslip->id, 'employee_id' => $payslip->employee_id, 'period_start' => '2026-03-02', 'last_day' => '2026-03-03', 'day_count' => 2, 'karens_full_ore' => 100, 'karens_deducted_ore' => 100, 'long_sick_dates' => []];
 }
 
 function payrollAccumulatorAttributes(): array

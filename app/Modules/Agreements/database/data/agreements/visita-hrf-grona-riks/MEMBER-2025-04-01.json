@@ -347,6 +347,16 @@
     },
     "sick_pay": {
         "includes_ob": true,
+        "hour_value": {
+            "method": "MONTH_WORKING_HOURS",
+            "source": "GR#§ 20 p. 4.3.1 s. 31"
+        },
+        "karens": {
+            "unit": "HOURS",
+            "percent_of_weekly_hours_bp": 2000,
+            "weekly_hours": "AVERAGE",
+            "source": "GR#§ 20 p. 4.2 s. 31"
+        },
         "source": "GR#§ 20 p. 4.3.2 s. 31"
     },
     "notes": [

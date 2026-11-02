@@ -157,6 +157,16 @@
                                                     <option value="INCLUDED">{{ __('Ingår i lönen (skriftligt avtal)') }}</option>
                                                 </select>
                                             </x-ui.field>
+                                            <x-ui.field for="terms_fixed_supplements" :label="__('Fasta tillägg per månad')" :hint="__('Räknas in i månadslönen för avtalets sjukavdrag från dag 15. Lämna tomt om det inte finns några.')" error="fixed_supplements">
+                                                <input id="terms_fixed_supplements" type="text" inputmode="decimal" wire:model="terms.fixed_supplements" class="{{ $select }}">
+                                            </x-ui.field>
+                                            <div class="flex items-start gap-2 sm:col-span-2">
+                                                <input id="terms_direct_transfer" type="checkbox" wire:model="terms.sick_pay_direct_transfer" class="mt-1 rounded border-gray-300">
+                                                <label for="terms_direct_transfer" class="text-sm text-gray-700">
+                                                    {{ __('Kom direkt från en anställning med sjuklön till dag 90') }}
+                                                    <span class="block text-xs text-gray-500">{{ __('Då gäller avtalets längre sjuklönetid redan första året.') }}</span>
+                                                </label>
+                                            </div>
                                             <div class="flex items-end gap-3">
                                                 <x-button type="submit">{{ __('Spara') }}</x-button>
                                                 <button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>

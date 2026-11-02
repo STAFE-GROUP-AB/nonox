@@ -44,8 +44,8 @@ class AgreementsPage extends Component
     #[Locked]
     public ?int $editingEmployment = null;
 
-    /** @var array{collective_agreement_id: string, agreement_group: string, industry_experience_from: string, overtime_compensation: string, ob_compensation: string} */
-    public array $terms = ['collective_agreement_id' => '', 'agreement_group' => '', 'industry_experience_from' => '', 'overtime_compensation' => '', 'ob_compensation' => ''];
+    /** @var array{collective_agreement_id: string, agreement_group: string, industry_experience_from: string, overtime_compensation: string, ob_compensation: string, fixed_supplements: string, sick_pay_direct_transfer: bool} */
+    public array $terms = ['collective_agreement_id' => '', 'agreement_group' => '', 'industry_experience_from' => '', 'overtime_compensation' => '', 'ob_compensation' => '', 'fixed_supplements' => '', 'sick_pay_direct_transfer' => false];
 
     public function mount(): void
     {
@@ -91,6 +91,8 @@ class AgreementsPage extends Component
             'industry_experience_from' => (string) $employment->industry_experience_from?->toDateString(),
             'overtime_compensation' => (string) $employment->overtime_compensation,
             'ob_compensation' => (string) $employment->ob_compensation,
+            'fixed_supplements' => $employment->fixed_supplements_ore === null ? '' : $employment->fixed_supplements_ore->format(false),
+            'sick_pay_direct_transfer' => $employment->sick_pay_direct_transfer,
         ];
     }
 
