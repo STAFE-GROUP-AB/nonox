@@ -26,6 +26,7 @@ use App\Modules\Connect\Http\Middleware\RequireScope;
 use App\Modules\Connect\Livewire\ConnectionsManager;
 use App\Modules\Connect\Livewire\ConnectSettingsForm;
 use App\Modules\Connect\Livewire\ConsentScreen;
+use App\Modules\Connect\Livewire\SftpManager;
 use App\Modules\Connect\Livewire\TestCompanyPanel;
 use App\Modules\Connect\Livewire\WebhooksManager;
 use App\Modules\Connect\Models\ConnectApp;
@@ -33,6 +34,10 @@ use App\Modules\Connect\OAuth\ConnectAccessTokenRepository;
 use App\Modules\Connect\OAuth\ConnectAuthCodeRepository;
 use App\Modules\Connect\OAuth\ConnectRefreshTokenRepository;
 use App\Modules\Connect\OAuth\GrantContext;
+use App\Modules\Connect\Sftp\Http\AuthenticateSftpGo;
+use App\Modules\Connect\Sftp\Http\AuthHookController;
+use App\Modules\Connect\Sftp\Http\UploadHookController;
+use App\Modules\Connect\Sftp\SieFileUploaded;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Connect\Support\ConnectScopes;
 use App\Modules\Connect\Webhooks\WebhookDispatcher;
@@ -90,6 +95,7 @@ class ConnectServiceProvider extends ServiceProvider
         Event::listen(SupplierInvoiceApproved::class, [WebhookDispatcher::class, 'supplierInvoiceApproved']);
         Event::listen(PeriodPublished::class, [WebhookDispatcher::class, 'planningPublished']);
         Event::listen(PeriodAttested::class, [WebhookDispatcher::class, 'planningAttested']);
+        Event::listen(SieFileUploaded::class, [WebhookDispatcher::class, 'sieUploaded']);
 
         $this->configurePassport();
 
@@ -98,6 +104,7 @@ class ConnectServiceProvider extends ServiceProvider
         Livewire::component(ConnectSettingsForm::NAME, ConnectSettingsForm::class);
         Livewire::component(WebhooksManager::NAME, WebhooksManager::class);
         Livewire::component(TestCompanyPanel::NAME, TestCompanyPanel::class);
+        Livewire::component(SftpManager::NAME, SftpManager::class);
 
         $this->registerRateLimits();
         $this->registerRoutes();
@@ -123,6 +130,8 @@ class ConnectServiceProvider extends ServiceProvider
         // Before authentication, per address: guessing keys or tokens is slow.
         RateLimiter::for('connect-ip', fn (Request $request): Limit => Limit::perMinute((int) config('services.connect.rate_limit_per_ip', 600))->by('connect-ip:'.$request->ip()));
         RateLimiter::for('connect-token', fn (Request $request): Limit => Limit::perMinute((int) config('services.connect.rate_limit_token_endpoint', 30))->by('connect-token:'.$request->ip()));
+        // The SFTP hooks are called by the installation's SFTPGo only, at most once per login or upload.
+        RateLimiter::for('connect-sftpgo', fn (Request $request): Limit => Limit::perMinute((int) config('services.connect.sftp.rate_limit_per_ip', 600))->by('connect-sftpgo:'.$request->ip()));
     }
 
     private function registerRoutes(): void
@@ -144,6 +153,15 @@ class ConnectServiceProvider extends ServiceProvider
         Route::post('/oauth/token', TokenController::class)->middleware('throttle:connect-token')->name('connect.token');
         Route::post('/oauth/revoke', RevokeController::class)->middleware('throttle:connect-token')->name('connect.revoke');
         Route::get('/.well-known/oauth-authorization-server', MetadataController::class)->name('connect.metadata');
+
+        // Called by the installation's SFTPGo (ADR-032, "SFTP"): technical paths, no session, no cookies, no CSRF; a shared secret instead.
+        Route::prefix('hooks/sftpgo')
+            ->name('connect.sftpgo.')
+            ->middleware(['throttle:connect-sftpgo', AuthenticateSftpGo::class])
+            ->group(function (): void {
+                Route::post('/auth', AuthHookController::class)->name('auth');
+                Route::post('/upload', UploadHookController::class)->name('upload');
+            });
 
         Route::prefix('api/v1')
             ->name('connect.api.')

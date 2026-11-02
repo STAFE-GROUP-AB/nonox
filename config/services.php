@@ -78,6 +78,28 @@ return [
         'idempotency_hours' => 24,
         // Seconds a passkey confirmation counts as fresh for granting access or creating an API key.
         'step_up_seconds' => 300,
+        /*
+         * SFTP for SIE files (ADR-032, "SFTP"; deploy/sftpgo/README.md).
+         * SFTPGo sends hook_secret as "Authorization: Bearer …" on every
+         * hook call (its http.headers setting); at least 32 characters, or
+         * SFTP stays off. hook_ips: addresses or CIDR ranges the hooks may
+         * be called from, comma-separated (empty: any). root: the users'
+         * homes as NONOX sees them; home_root: as SFTPGo sees them (only
+         * when it differs, e.g. in a container).
+         */
+        'sftp' => [
+            'hook_secret' => env('NONOX_SFTPGO_HOOK_SECRET'),
+            'hook_ips' => env('NONOX_SFTPGO_HOOK_IPS', ''),
+            'host' => env('NONOX_SFTP_HOST', ''),
+            'port' => (int) env('NONOX_SFTP_PORT', 2022),
+            'host_fingerprints' => env('NONOX_SFTP_HOST_FINGERPRINTS', ''),
+            'root' => env('NONOX_SFTP_ROOT', ''),
+            'home_root' => env('NONOX_SFTP_HOME_ROOT', ''),
+            'export_days' => (int) env('NONOX_SFTP_EXPORT_DAYS', 7),
+            'rate_limit_per_ip' => (int) env('NONOX_SFTPGO_HOOK_RATE_LIMIT', 600),
+            // The SFTPGo release the server runs, for the source link its licence asks for (AGPL-3.0 §7, its NOTICE file).
+            'sftpgo_version' => env('NONOX_SFTPGO_VERSION', 'v2.7.6'),
+        ],
     ],
 
     /*

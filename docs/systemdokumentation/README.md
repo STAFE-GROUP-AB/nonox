@@ -1638,6 +1638,45 @@ företaget.
   webhooken och mejlar ägaren. Leveransloggen sparar tid, försök och
   statuskod, aldrig mottagarens svar, och rensas efter 30 dagar. Att lägga
   till, ändra hemlighet, stänga av och ta bort loggas.
+- **SFTP för SIE-filer.** Ett företag kan få en egen SFTP-mapp där ett
+  annat program lämnar SIE-filer (ADR-032, avsnittet "SFTP"). SFTP-servern
+  (SFTPGo) driftas bredvid NONOX och frågar NONOX vid varje inloggning och
+  varje uppladdning; den har inga egna användare. Uppsättningen beskrivs i
+  `deploy/sftpgo/README.md`.
+  - *Dataflöde.* Programmet loggar in med en SSH-nyckel och lägger filen i
+    `/in`. SFTP-servern frågar NONOX om filen får tas emot; svarar NONOX nej
+    tar servern bort filen direkt. Annars läser NONOX filen i bakgrunden,
+    kontrollerar den (vanlig textfil, börjar med `#FLAGGA`, högst 50 MB)
+    och granskar den med samma funktion som en SIE-fil som laddas upp i
+    webbläsaren. Resultatet är en SIE-inläsning som väntar på att en person
+    med behörighet att läsa in SIE-filer läser rapporten och bekräftar.
+    **Ingenting bokförs utan den bekräftelsen**; det finns inget
+    automatiskt läge. Granskningen görs i den ansvariga personens namn (den
+    som slog på SFTP), som måste ha kvar både behörigheten att hantera
+    anslutningar och att läsa in SIE-filer. Ansvarig person och ägare får en
+    notis, och en webhook `sie.uploaded` kan skickas.
+  - *Säkerhet.* Bara inloggning med nyckel (ed25519, eller RSA med minst
+    3072 bitar); lösenord, FTP, WebDAV och SFTP-serverns webbgränssnitt är
+    avstängda. Nycklar och listan med tillåtna adresser ändras bara av ägare
+    eller administratör med passkey. Användarnamnet är slumpat och säger
+    inget om företaget. Företaget hittas bara från användarnamnet, och
+    nyckeln måste vara en av just det företagets nycklar, så en nyckel kan
+    aldrig ge åtkomst till ett annat företags mapp. SFTP-servern och NONOX
+    delar en hemlighet som kontrolleras vid varje anrop; utan den är SFTP
+    avstängt. Stängs SFTP eller NONOX Connect av, eller förlorar den
+    ansvariga personen sin behörighet, nekas nästa inloggning.
+  - *Gallring av filer.* Filen ligger okrypterad i SFTP-mappen bara tills
+    NONOX har läst den (sekunder) och tas sedan alltid bort, inläst eller
+    inte. NONOX krypterade kopia följer SIE-inläsningen och sparas som
+    räkenskapsinformation. En fil som NONOX lägger i `/ut` (SIE-export för
+    innevarande år) tas bort efter sju dagar; något som blivit kvar i `/in`
+    tas bort efter ett dygn (`connect:prune`). Uppladdningsloggen (namn,
+    storlek, kontrollsumma, adress, status och skäl, aldrig innehållet) och
+    nycklarna, också borttagna, sparas med företaget.
+  - *Behandlingshistorik.* Påslagning och avstängning, tillagda och
+    borttagna nycklar, ändrade adresser, inloggningar och nekade
+    inloggningar (högst en gång per tio minuter per konto, adress och slag),
+    mottagna, avvisade och granskade filer och utlagda exporter loggas.
 - **Återkallelse.** En app kan själv återkalla sin anslutning (RFC 7009);
   det loggas som en återkallelse av appen.
 - **Testföretag.** Ett testföretag är ett eget företag med påhittade

@@ -1,6 +1,6 @@
 # ADR-032: Public API and NONOX Connect
 
-- Status: Proposed (waiting for the project owner's approval), 2026-11-01
+- Status: Proposed (waiting for the project owner's approval), 2026-11-01; SFTP for SIE files added 2026-11-02 (implemented on the NONOX side, server not installed)
 - Relates to: AGENTS.md §1.2, §1.3, §4, §12, §13; ADR-005 (tenancy), ADR-006
   (audit log), ADR-007 (vouchers), ADR-017 (modules), ADR-024 (archived
   companies), ADR-029 (passkeys)
@@ -334,13 +334,145 @@ event fires, so integrators can test webhooks); `Company::withoutTestCompanies()
 is the scope for statistics and billing. Otherwise it is an ordinary tenant
 under every rule above.
 
+### SFTP for SIE files
+
+Some systems (cash registers, accounting firms' tools) deliver files rather
+than call an API. Each company can turn on an SFTP drop for SIE files under
+Anslutningar. Decided after research on 2026-11-01; implemented 2026-11-02.
+
+**Server: SFTPGo** (AGPL-3.0 with additional terms under section 7; v2.7.6
+was the latest stable release when this was written). It is not a PHP
+package and not bundled: the operator installs it (`deploy/sftpgo/`). It
+keeps no users of its own; NONOX is the only source of truth through two
+hooks. The contracts below were read from SFTPGo's documentation
+(docs.sftpgo.com/latest/external-auth/, /custom-actions/, /config-file/,
+/env-vars/) and checked against the release's `openapi/openapi.yaml` (the
+`User` and `BaseUserFilters` schemas) and `internal/dataprovider` source
+(`getExternalAuthResponse`, `doExternalAuth`), not from memory.
+
+- **External authentication hook** `POST /hooks/sftpgo/auth`. SFTPGo sends
+  `{username, ip, protocol, password, public_key, keyboard_interactive,
+  tls_cert, user?}`; `public_key` is the presented key in authorized_keys
+  form (`ssh.MarshalAuthorizedKey`). 200 with a user object lets the person
+  in; any other status refuses. `external_auth_scope` 2 (public keys only).
+  NONOX accepts only `protocol` SSH with a public key and empty password,
+  keyboard-interactive and certificate; finds the account from the user name
+  alone (`nnx` + 13 random lowercase characters, unrelated to the
+  organisation number); requires the key's fingerprint and exact key to be
+  one of that account's active keys; and checks the account
+  (`SftpAccess`): SFTP on, company not archived, Connect on, the
+  responsible person still a member with `connect:manage` and `import:sie`,
+  and the client address inside the account's allowlist. The answer
+  (`SftpUser`) is the whole virtual user: `home_dir`, `public_keys` (only
+  the presented key, since SFTPGo appends it to the stored user anyway),
+  permissions `/` list, `/in` list+upload, `/ut` list+download,
+  `filters.allowed_ip` (CIDR; single addresses become /32 or /128),
+  `denied_login_methods` (every method except `publickey`),
+  `denied_protocols` FTP, DAV, HTTP, `file_patterns` (`*.se`, `*.si`,
+  `*.sie` in `/in`), `max_upload_file_size` 50 MB, `max_sessions` 2,
+  `external_auth_cache_time` 0 (every login asks again, so removing a key
+  or turning SFTP off takes effect at the next login).
+- **Upload action** `POST /hooks/sftpgo/upload`, configured with
+  `execute_on` and `execute_sync` = `upload`. SFTPGo sends `{action,
+  username, path, virtual_path, file_size, status, protocol, ip,
+  session_id, timestamp, …}`. Because the hook is synchronous, a non-200
+  answer makes SFTPGo delete the file and return an error to the client.
+  NONOX ignores anything but a successful (`status` 1) `upload`; trusts
+  only the file name in `virtual_path`, which must be directly in `/in`
+  with a SIE ending; checks the size and the account again; deduplicates
+  on SHA-256 of user name, path, size, timestamp and session (SFTPGo's HTTP
+  client retries), with a unique index as the last word; takes one unit of
+  the company's hourly `sie_upload` WorkQuota (shared with the browser);
+  stores the upload and queues `ProcessSftpUpload` with the company id.
+- **Authentication of the hooks.** SFTPGo cannot sign a body, so it sends a
+  shared secret (`NONOX_SFTPGO_HOOK_SECRET`, ≥ 32 characters) as
+  `Authorization: Bearer` through its `http.headers` setting, limited to the
+  hook URL prefix. `AuthenticateSftpGo` compares it with `hash_equals`,
+  optionally limits the caller to `NONOX_SFTPGO_HOOK_IPS`, refuses bodies
+  over 64 kB and non-JSON, and sets `no-store`. Without a configured
+  secret, host and directory, both hooks answer 404 and SFTP cannot be
+  turned on (fail closed). The hooks are technical paths outside the
+  Swedish URL rule (`hooks/` in the exemption list), with no session,
+  cookies or CSRF, and their own per-IP rate limit
+  (`NONOX_SFTPGO_HOOK_RATE_LIMIT`, 600/min).
+
+**The file never bypasses the two-step SIE import.** `ProcessSftpUpload`
+checks the account again, requires a plain file directly in the company's
+own `/in` (no link, `realpath` inside the inbox), not empty, at most 50 MB,
+no NUL bytes in the first 64 kB and `#FLAGGA` first (a UTF-8 BOM is
+tolerated). Then `AnalyseSieFile::fromPath` runs the same analysis as a
+browser upload, in the responsible person's name (the `import:sie` policy
+is evaluated for them): it stores an encrypted copy and the report, and
+**books nothing**. A person with `import:sie` must read the report and
+confirm under Importera SIE. There is no automatic mode: the existing
+import has none, and posting unattended from a file drop would let whoever
+holds a key write irreversible vouchers. The file is always deleted from the
+drop afterwards, read in or not. The responsible person and the owner get a
+database notice; `sie.uploaded` is dispatched after commit for webhooks.
+
+**Who and what.** Turning SFTP on, adding and removing keys and the
+allowlist need `connect:manage`. Whoever turns it on becomes the responsible
+person and must also hold `import:sie`; if they later lose either, logins
+and uploads are refused until someone else turns it on again. Adding a key
+and changing the allowlist (both can widen access) consume a fresh passkey
+confirmation (`PasskeyStepUp`), like API keys and webhooks. Keys: ed25519, or
+RSA from 3072 to 8192 bits, parsed from the key's own wire encoding; DSA,
+ECDSA, certificates and security-key types are refused; at most ten active
+keys per company; only the public key and its OpenSSH SHA256 fingerprint
+are stored. Allowlist: at most 20 addresses or CIDR ranges, `/0` refused
+(say "empty" instead). Turning Connect off turns SFTP off and revokes every
+key. Audit entries: `connect.sftp.enabled`, `.disabled`, `.key_added`,
+`.key_removed`, `.allowlist_changed`, `.login` and `.login_refused` (at most
+once per ten minutes per account, address and kind), `.upload_received`,
+`.upload_refused`, `.upload_analysed`, `.upload_rejected`,
+`.export_published`.
+
+**Webhook `sie.uploaded`** (permission `import:sie`): `upload_id`, `status`
+(`analysed` or `rejected`), `size`, `sha256`, `received_at`,
+`sie_import_id`, `can_be_confirmed`, `vouchers`, `blockers`. The file name
+is left out (free text chosen by the sender).
+
+**Download folder.** An owner or administrator who may also export SIE
+(`ExportSie` authorises) can put a SIE 4 export of the current fiscal year
+in `/ut`; it is written under a temporary name and renamed, and removed
+after `NONOX_SFTP_EXPORT_DAYS` (7) by `connect:prune`, which also removes
+anything left in `/in` for more than a day.
+
+**Quota.** SFTPGo's own `quota_size`/`quota_files` are not used: NONOX
+deletes files outside SFTPGo, which SFTPGo's used-quota counter never sees
+("quota is updated if files are added/removed via SFTPGo otherwise a quota
+scan or a manual quota update is needed", User schema), so the counter would
+only grow until every upload was refused. The limits are NONOX's: 50 MB per
+file (SFTPGo's `max_upload_file_size` and the job), 30 SIE files per hour
+per company (WorkQuota, shared with the browser), two sessions.
+
+**Licence.** SFTPGo's NOTICE (AGPL-3.0 §7.3(b), §13.1) requires a frontend
+that configures it to credit the project and its authors, imply no
+endorsement and link to the Corresponding Source of the version in use. The
+SFTP panel shows that line with a link built from `NONOX_SFTPGO_VERSION`.
+SFTPGo's web admin, web client and REST API are switched off; its theme is
+never reused.
+
+**Retention.** Files in the drop are not encrypted and live seconds (in) or
+days (out). The encrypted copy follows the SIE import as räkenskapsinformation
+(BFL 7 kap). The upload log (`connect_sftp_uploads`: name, size, hash,
+address, status, reason, never contents) and the keys (revoked ones kept)
+are kept with the company like the audit log.
+
+Implementation: `app/Modules/Connect/Sftp/`, actions `SetSftpEnabled`,
+`AddSftpKey`, `RemoveSftpKey`, `SaveSftpAllowlist`, `PutSftpExport`,
+Livewire `SftpManager`, tables `connect_sftp_accounts`, `connect_sftp_keys`,
+`connect_sftp_uploads`, tests `tests/Feature/Connect/SftpTest.php` and the
+tenancy suite. Server side: `deploy/sftpgo/` (not installed anywhere yet).
+
 ## Deliberately excluded (for now)
 
 - Quotes and orders, recurring invoices, reminders, VAT settlement, period
   locking and SIE import over the API. SIE import is a two-step flow
   (analysis, then a confirmed background job) that also creates accounts;
   exposing it safely needs its own design (upload size, the confirmation
-  step as two calls, progress) and is next.
+  step as two calls, progress) and is next. Files can be delivered over
+  SFTP instead (above), which ends in the same confirmation step.
 - Token introspection (RFC 7662).
 - Client registration by companies or dynamic registration (RFC 7591):
   apps are registered by the operator.
@@ -370,3 +502,7 @@ under every rule above.
    beyond owner/administrator?
 4. Customer personal numbers: never in the API (current), or a dedicated
    scope with every read logged?
+5. SFTP: should an owner be told by e-mail when an SFTP key is added (as
+   for API keys and webhooks)? Not done yet; the audit log records it.
+6. SFTP: install SFTPGo on the production server (deploy/sftpgo), and on
+   which host name and port?

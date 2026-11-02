@@ -82,9 +82,12 @@
                 "E-post räknas som äkta bara när avsändardomänen bekräftas av mottagande server.",
                 "NONOX AI har inga verktyg och kan inte bokföra själv. En person godkänner alltid.",
                 "Inkorgens IMAP-anslutning når bara publika adresser på port 143 eller 993 med giltigt certifikat.",
-                "Bilagor i Peppol-fakturor virussöks, och filer visas i en sandlåda."
+                "Bilagor i Peppol-fakturor virussöks, och filer visas i en sandlåda.",
+                "SFTP för SIE-filer släpper bara in SSH-nycklar (ed25519 eller RSA från 3072 bitar) som ägare eller administratör har lagt till med passkey. Företaget avgörs av ett slumpat användarnamn, aldrig av det klienten skickar, och filen granskas men bokförs aldrig utan att en person bekräftar."
             ],
-            "open": [],
+            "open": [
+                "SFTP-servern (SFTPGo) är inte installerad eller testad i drift än. Filer ligger okrypterade i SFTP-mappen tills NONOX har läst dem, vilket tar sekunder."
+            ],
             "law": []
         },
         {

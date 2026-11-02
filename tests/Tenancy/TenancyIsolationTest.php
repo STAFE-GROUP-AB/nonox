@@ -71,6 +71,9 @@ use App\Modules\Banking\Models\BankFeedBalance;
 use App\Modules\Banking\Models\BankFeedTransaction;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\ConnectGrant;
+use App\Modules\Connect\Models\ConnectSftpAccount;
+use App\Modules\Connect\Models\ConnectSftpKey;
+use App\Modules\Connect\Models\ConnectSftpUpload;
 use App\Modules\Connect\Models\ConnectWebhook;
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Connect\Models\IdempotencyRecord;
@@ -265,6 +268,9 @@ const COMPANY_SCOPED_MODELS = [
     IdempotencyRecord::class => 'connectIdempotencyAttributes',
     ConnectWebhook::class => 'connectWebhookAttributes',
     ConnectWebhookDelivery::class => 'connectWebhookDeliveryAttributes',
+    ConnectSftpAccount::class => 'connectSftpAccountAttributes',
+    ConnectSftpKey::class => 'connectSftpKeyAttributes',
+    ConnectSftpUpload::class => 'connectSftpUploadAttributes',
 ];
 
 function taskAttributes(): array
@@ -426,6 +432,27 @@ function connectWebhookDeliveryAttributes(): array
     $webhook = ConnectWebhook::create(connectWebhookAttributes());
 
     return ['webhook_id' => $webhook->id, 'event_id' => (string) Str::uuid(), 'event_type' => 'voucher.posted', 'body' => '{"hemlig":true}', 'status' => 'pending', 'next_attempt_at' => now()];
+}
+
+function connectSftpAccountAttributes(): array
+{
+    return ['username' => 'nnx'.Str::lower(Str::random(13)), 'is_enabled' => true, 'responsible_user_id' => User::factory()->create()->id];
+}
+
+/** The company's one SFTP account, made when missing (there is at most one per company). */
+function connectSftpAccountId(): int
+{
+    return (ConnectSftpAccount::query()->first() ?? ConnectSftpAccount::create(connectSftpAccountAttributes()))->id;
+}
+
+function connectSftpKeyAttributes(): array
+{
+    return ['account_id' => connectSftpAccountId(), 'name' => 'Hemlig nyckel', 'algorithm' => 'ssh-ed25519', 'bits' => 256, 'public_key' => 'ssh-ed25519 hemlig', 'fingerprint' => 'SHA256:'.bin2hex(random_bytes(8)), 'created_by' => User::factory()->create()->id];
+}
+
+function connectSftpUploadAttributes(): array
+{
+    return ['account_id' => connectSftpAccountId(), 'event_key' => hash('sha256', (string) random_int(1, PHP_INT_MAX)), 'file_name' => 'hemlig.se', 'size' => 10, 'status' => 'received'];
 }
 
 function inboxMailboxAttributes(): array

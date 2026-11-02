@@ -26,6 +26,8 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 - **Betalning i valuta**: `foreign_amount_minor` på `POST /invoices/{id}/payments`; `amount_ore` är kronorna som kom in. Betalningen svarar med `foreign_amount_minor` och `exchange_difference_ore`.
 - **Kunder**: `currency`.
 - **Webhooks**: `invoice.sent` och `invoice.paid` har med `invoice_currency` och valutabeloppen; `invoice.paid` även betalningens belopp och kursdifferens.
+- **SFTP för SIE-filer**: varje företag kan få en egen SFTP-mapp där ett annat program lämnar SIE-filer, med inloggning bara med SSH-nyckel. Filen granskas som en vanlig SIE-inläsning och väntar på att en person bekräftar. Se [SFTP för SIE-filer](/utvecklare/sftp).
+- **Webhook**: `sie.uploaded` (en SIE-fil har kommit in via SFTP och granskats; webhooken kräver `import:sie`).
 <!-- /lang -->
 <!-- lang:en -->
 ### Added
@@ -34,6 +36,8 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 - **Payment in currency**: `foreign_amount_minor` on `POST /invoices/{id}/payments`; `amount_ore` is the kronor received. The payment answers with `foreign_amount_minor` and `exchange_difference_ore`.
 - **Customers**: `currency`.
 - **Webhooks**: `invoice.sent` and `invoice.paid` carry `invoice_currency` and the foreign amounts; `invoice.paid` also the payment's amount and exchange difference.
+- **SFTP for SIE files**: each company can get its own SFTP drop where another program delivers SIE files, logging in with an SSH key only. The file is checked like an ordinary SIE import and waits for a person to confirm it. See [SFTP for SIE files](/utvecklare/sftp?lang=en).
+- **Webhook**: `sie.uploaded` (a SIE file arrived over SFTP and was checked; the webhook needs `import:sie`).
 <!-- /lang -->
 
 <!-- lang:sv -->

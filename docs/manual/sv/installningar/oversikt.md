@@ -21,6 +21,7 @@ De flesta företagsinställningar kan bara ändras av ägare och administratöre
 - [Moduler](/manual/installningar/moduler) – slå på och av lön, personalliggare, inkorg, bank, AI och API.
 - [NONOX AI](/manual/installningar/nonox-ai) – låt AI läsa fakturor och kvitton med företagets egen nyckel.
 - [NONOX Connect](/manual/installningar/nonox-connect) – appar, API-nycklar och webhooks för andra program.
+- [SFTP för SIE-filer](/manual/installningar/sftp-for-sie-filer) – låt ett annat program lämna SIE-filer som du sedan bekräftar.
 - [Bankmodulen](/manual/installningar/bankmodulen) – vad bankkopplingen gör och hur den ställs in.
 
 ## Säkerhet och personuppgifter

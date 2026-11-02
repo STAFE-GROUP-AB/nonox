@@ -98,6 +98,9 @@ Kontrollera att du inte har bokfört samma affärer här som finns i filen, anna
 **Filen har andra dimensioner än kostnadsställen och projekt.**
 NONOX har kostnadsställen (dimension 1) och projekt (dimension 6). Rader med andra dimensioner läses in utan dem, och rapporten säger hur många.
 
+**Kan ett annat program skicka SIE-filer direkt?**
+Ja, med SFTP. Filen granskas och väntar här tills någon läser rapporten och bekräftar. Se [SFTP för SIE-filer](/manual/installningar/sftp-for-sie-filer).
+
 **Kan jag läsa in en fil igen om det blev fel?**
 En fil som har lästs in kan inte läsas in igen; det hindras för att inget ska bokföras dubbelt. Misslyckades inläsningen har ingenting ändrats, och du kan ladda upp filen igen när felet är rättat.
 

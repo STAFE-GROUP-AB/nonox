@@ -49,6 +49,10 @@ final class Guides
             'sv' => ['Webhooks', 'Händelser som skickas till din server när något bokförs, och hur signaturen kontrolleras i PHP, JavaScript och Python.'],
             'en' => ['Webhooks', 'Events sent to your server when something is booked, and how to verify the signature in PHP, JavaScript and Python.'],
         ],
+        'sftp' => [
+            'sv' => ['SFTP för SIE-filer', 'Lämna SIE-filer i företagets SFTP-mapp med en SSH-nyckel: anslutning, mappar, gränser och vad som händer med filen.'],
+            'en' => ['SFTP for SIE files', "Deliver SIE files to the company's SFTP drop with an SSH key: connecting, folders, limits and what happens to the file."],
+        ],
         'egen-drift' => [
             'sv' => ['Egen drift', 'API:t på en NONOX som du driftar själv: adresser, nycklar för signering, appar och gränser.'],
             'en' => ['Self-hosting', 'The API on a NONOX you run yourself: addresses, signing keys, apps and limits.'],
