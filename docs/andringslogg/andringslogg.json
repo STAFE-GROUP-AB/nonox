@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-kreditfakturor",
+      "datum": "2026-11-02T14:10:00+01:00",
+      "rubrik": "Kreditfakturor stämmer mot kundreskontran",
+      "beskrivning": "En delkreditering lämnar resten av fakturan obetald och betalbar. ROT- och RUT-avdrag krediteras i rätt andel, och det Skatteverket redan har betalat blir en skuld att betala tillbaka. Betalda fakturor kan nu krediteras och pengarna betalas tillbaka.",
+      "typ": "Rättat",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-02-9cac61e",
       "datum": "2026-11-02T13:22:04+01:00",
       "rubrik": "Schablonintäkt, pensionsunderlag och spärr mot för stor utdelning",
