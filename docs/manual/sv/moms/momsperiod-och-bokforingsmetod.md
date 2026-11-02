@@ -34,8 +34,16 @@ När företaget är momsregistrerat bildar NONOX momsregistreringsnumret av orga
 
 Byter du momsperiod gäller den nya indelningen för perioderna på sidan **Moms**. Perioder som redan är bokförda behåller sina rutor.
 
+### Brutet räkenskapsår
+
+Månader och kvartal är alltid hela kalendermånader och kalenderkvartal, även när räkenskapsåret är brutet. Börjar räkenskapsåret den 1 maj blir april–juni ett kvartal som hör till båda räkenskapsåren. Det är **en** deklaration, med kvartalets sista dag i deklarationsdagen och i filen till Skatteverket.
+
+Kvartalet syns under båda räkenskapsåren på sidan **Moms**, med samma rutor. När du bokför momsen hamnar verifikationen på kvartalets sista dag, alltså i det räkenskapsår som den dagen hör till. Bokslutets checklista för det första året kräver inte kvartalet, eftersom det slutar efter årets slut; momsen för årets sista månad ligger kvar som en skuld på momskontot vid bokslutet.
+
+Med **En gång per år** följer perioden räkenskapsåret, eftersom det är företagets beskattningsår.
+
 > [!NOTE]
-> Har företaget brutet räkenskapsår delas kvartalen ändå in i kalenderkvartal, och det första och sista kvartalet kan bli kortare. Hur ett sådant kvartal ska redovisas är inte juridiskt kontrollerat i NONOX – fråga din redovisningskonsult.
+> Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-6, #59).
 
 ## Fakturametoden och kontantmetoden
 
@@ -57,7 +65,18 @@ Med kontantmetoden visas på en registrerad leverantörsfaktura **Vid betalning 
 Inställningen går att ändra, men den påverkar bara fakturor som bokförs efter bytet. Om och när ett företag får byta metod avgör reglerna, inte NONOX. Prata med din redovisningskonsult först.
 
 **Vilka deklarationsdagar gäller för oss?**
-Översikten visar sista dag för månads- och kvartalsmoms. Kryssrutan för omsättning över 40 miljoner kronor ändrar vilka dagar som visas. För helårsmoms visas ingen dag.
+Översikten visar sista dag för alla momsperioder. Kryssrutan för omsättning över 40 miljoner kronor ändrar dagarna för månadsmoms. För helårsmoms beror dagen på bolagsformen och på om företaget har haft EU-handel under året:
+
+| Företag | Sista dag |
+|---|---|
+| Enskild firma utan EU-handel | 12 maj året efter |
+| Aktiebolag, ekonomisk förening, ideell förening och stiftelse utan EU-handel | Efter räkenskapsårets sista månad: januari–april 12 december, maj–juni 17 januari, juli–augusti 12 april, september–december 17 augusti |
+| Handelsbolag och kommanditbolag, och alla med EU-handel | Den 26:e i andra månaden efter året (den 27:e i december) – efter kalenderår den 26 februari |
+
+Dagarna för aktiebolag och föreningar gäller när deklarationen lämnas digitalt. EU-handel betyder här att något har bokförts på ett konto för inköp eller försäljning av varor eller tjänster med andra EU-länder (rutorna 20, 21, 35, 38 och 39). En dag som infaller på en helg flyttas till nästa vardag.
+
+> [!NOTE]
+> Har din deklarationshjälp byråanstånd, eller har Skatteverket beslutat om en annan dag, gäller den dagen. Det ser inte NONOX. Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-9, #60).
 
 ## Läs också
 

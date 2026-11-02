@@ -54,13 +54,23 @@ final class VatBoxes
         40 => ['label' => 'Övrig försäljning av tjänster omsatta utanför Sverige', 'element' => 'ForsTjOvrUtomEg', 'side' => self::CREDIT, 'accounts' => [[3305, 3305]]],
         41 => ['label' => 'Försäljning när köparen är betalningsskyldig i Sverige', 'element' => 'ForsKopareSkskSverige', 'side' => self::CREDIT, 'accounts' => [[3231, 3231]]],
         42 => ['label' => 'Övrig försäljning m.m.', 'element' => 'ForsOvrigt', 'side' => self::CREDIT, 'accounts' => [[3004, 3004]]],
-        48 => ['label' => 'Ingående moms att dra av', 'element' => 'MomsIngAvdr', 'side' => self::DEBIT, 'accounts' => [[2640, 2649]]],
+        // 2648 Vilande ingående moms is not deductible yet (ML 7 kap. 31 §), so it is not in box 48.
+        48 => ['label' => 'Ingående moms att dra av', 'element' => 'MomsIngAvdr', 'side' => self::DEBIT, 'accounts' => [[2640, 2647], [2649, 2649]]],
     ];
 
     /** Output VAT boxes, summed against box 48 into box 49. */
     public const array OUTPUT_VAT = [10, 11, 12, 30, 31, 32, 60, 61, 62];
 
-    /** The VAT accounts that the settlement moves to 2650. */
+    /**
+     * The BAS group of VAT accounts (2610–2649). Only the accounts in it that
+     * feed an output VAT box or box 48 are moved to 2650 by the settlement;
+     * the rest, such as vilande moms on 2618, 2628, 2638 and 2648, stay where
+     * they are and are shown as a warning (ADR-010, #58).
+     *
+     * TODO(legal-verify): 2649 Ingående moms, blandad verksamhet is read into
+     * box 48 as in the BAS chart; confirm that its balance is the deductible
+     * share and not an amount still to be apportioned.
+     */
     public const array VAT_ACCOUNTS = [2610, 2649];
 
     public const int SETTLEMENT_ACCOUNT = 2650;
@@ -69,6 +79,22 @@ final class VatBoxes
 
     /** The element of box 49, "Moms att betala eller få tillbaka". */
     public const string PAYABLE_ELEMENT = 'MomsBetala';
+
+    /**
+     * Whether the settlement moves this account to 2650: it is a VAT account
+     * that feeds an output VAT box (10–12, 30–32, 60–62) or box 48.
+     */
+    public static function isSettled(int $account): bool
+    {
+        $box = self::boxFor($account);
+
+        return $box !== null && ($box === self::INPUT_VAT || in_array($box, self::OUTPUT_VAT, true));
+    }
+
+    public static function isVatAccount(int $account): bool
+    {
+        return $account >= self::VAT_ACCOUNTS[0] && $account <= self::VAT_ACCOUNTS[1];
+    }
 
     public static function boxFor(int $account): ?int
     {

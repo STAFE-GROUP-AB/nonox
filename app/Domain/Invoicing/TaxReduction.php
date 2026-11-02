@@ -27,6 +27,15 @@ final class TaxReduction
     /** Kundfordringar – delad faktura: what Skatteverket is asked to pay. */
     public const int RECEIVABLE = 1513;
 
+    /**
+     * Övriga kortfristiga skulder: a deduction Skatteverket has paid and that
+     * a credit invoice has taken back from the buyer, owed back to
+     * Skatteverket (lag (2009:194) 13-14 §§).
+     *
+     * TODO(legal-verify): 2890 as the account for this debt (#49).
+     */
+    public const int REPAYABLE = 2890;
+
     /** @var array<string, list<array{from: string, rate: int}>> share in basis points from a date */
     public const array RATES = [
         self::ROT => [['from' => '2026-01-01', 'rate' => 3000]],

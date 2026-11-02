@@ -16,7 +16,7 @@ NONOX gör det i ett steg under **Bokföring → Bokslut**, i **2. Bokslutsverif
 
 En faktura är obetald för det belopp som återstår den sista dagen: fakturans belopp minus betalningar och kreditfakturor till och med den dagen. En betalning som kommer efter årsskiftet räknas inte av – fakturan var obetald den sista dagen.
 
-En faktura som är delvis krediterad är obetald för resten.
+En faktura som är delvis krediterad är obetald för resten. En kreditfaktura för en betald faktura, där kunden ännu inte har fått pengarna tillbaka, bokförs som en skuld till kunden: kredit på 1510 och kreditfakturans del av försäljningen och momsen tillbaka.
 
 ## Så här bokför du de obetalda fakturorna
 

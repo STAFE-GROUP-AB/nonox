@@ -24,15 +24,21 @@ Vilken avgift som gäller beror på den anställdas ålder, räknad från födel
 - **Lägre avgift för äldre**, där bara en del av avgiften betalas, och ingen avgift alls för de äldsta.
 - **Sänkt avgift för unga** – en tillfällig nedsättning för anställda födda vissa år, upp till ett visst belopp per månad. Den gäller under den tid riksdagen har bestämt.
 
-NONOX väljer avgiften av sig själv utifrån födelseåret och utbetalningsdagen. Nedsättningen för unga gäller bara upp till månadstaket; lön över taket får full avgift.
+NONOX väljer avgiften av sig själv utifrån födelseåret och utbetalningsdagen. Nedsättningen för unga gäller bara upp till månadstaket; lön över taket får full avgift. Taket gäller allt som betalas ut till personen under en kalendermånad. Får personen två löner samma månad, till exempel en sen lön och månadens lön, delar de på taket: den som attesteras först använder det först, och den andra får bara det som är kvar.
 
-Ingen avgift tas ut så länge en persons ersättning under året stannar under Skatteverkets gräns för avgiftsplikt.
+Har en annan lönekörning för samma person attesterats efter att din körning beräknades kan avgifterna i din körning vara fel. NONOX säger då **Beräkna lönekörningen igen innan du attesterar**. Klicka på **Beräkna** och attestera sedan.
+
+Ingen avgift tas ut så länge en persons ersättning under året stannar under 1 000 kronor, Skatteverkets gräns för avgiftsplikt. När årets ersättning når gränsen tas avgift på hela årets ersättning, även på det som betalades ut tidigare utan avgift. Det läggs på den lön som tar personen över gränsen.
+
+Exempel: en timanställd får 600 kronor i mars och 600 kronor i april. Mars ger ingen avgift. I april är årets ersättning 1 200 kronor, och aprillönen får avgift på hela 1 200 kronor.
+
+I arbetsgivardeklarationen redovisas lön utan avgift i en egen ruta (131). Den månad gränsen passeras läggs det tidigare beloppet till i ruta 011 och anges också i ruta 010. Se [Arbetsgivardeklaration](/manual/lon/arbetsgivardeklaration).
 
 > [!IMPORTANT]
 > Procentsatser, födelseår, månadstak och datum står under **Lön → Regler**, med länk till Skatteverket, och används först när de är kontrollerade. NONOX skriver inga siffror i koden. Se [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller).
 
 > [!NOTE]
-> Några delar räknar NONOX inte ännu: regionalt stöd (avdrag för företag i vissa delar av landet) dras inte av, och har en person passerat gränsen för avgiftsplikt sent på året räknas inte avgift för tidigare månader om. Prata med er redovisningskonsult om något av det gäller er.
+> En del räknar NONOX inte ännu: regionalt stöd (avdrag för företag i vissa delar av landet) dras inte av. Prata med er redovisningskonsult om det gäller er.
 
 ### Det här händer i bokföringen
 

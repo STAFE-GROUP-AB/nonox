@@ -10,6 +10,7 @@ use App\Domain\Company\VatPeriod;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Overview\Todos\BankTodos;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Domain\Vat\EuTrade;
 use App\Domain\Vat\VatDeadlines;
 use App\Domain\Vat\VatPeriods;
 use App\Domain\Vat\VatReturn;
@@ -202,7 +203,9 @@ final class OverviewKpis
         }
 
         [$year, $period] = $chosen;
-        $due = VatDeadlines::for($company->vat_period, $period['end'], $company->turnover_over_40_msek);
+        $euTrade = $company->vat_period === VatPeriod::Yearly
+            && in_array(EuTrade::key($company->id, $period['start']->toDateString()), EuTrade::years([$company->id]), true);
+        $due = VatDeadlines::for($company->vat_period, $period['end'], $company->turnover_over_40_msek, $company->legal_form, $euTrade);
         $ended = $period['end']->lessThan($today);
         $payable = VatReturn::calculate($year, $period['start'], $period['end'])->payable() * 100;
 

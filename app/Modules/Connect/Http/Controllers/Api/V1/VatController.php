@@ -28,7 +28,8 @@ final class VatController
     public function periods(Request $request): JsonResponse
     {
         $year = $this->fiscalYear($request);
-        $reports = VatReport::query()->get()->keyBy(fn (VatReport $report): string => $report->period_start->toDateString());
+        // Ordered by version, so the key holds each period's latest return (#63).
+        $reports = VatReport::query()->orderBy('version')->get()->keyBy(fn (VatReport $report): string => $report->period_start->toDateString());
 
         $periods = array_map(function (array $period) use ($reports): array {
             $report = $reports->get($period['start']->toDateString());
@@ -59,7 +60,7 @@ final class VatController
 
         $return = VatReturn::calculate($year, $period['start'], $period['end']);
         $boxes = $return->boxes();
-        $report = VatReport::query()->whereDate('period_start', $period['start'])->first();
+        $report = VatReport::query()->whereDate('period_start', $period['start'])->orderByDesc('version')->first();
 
         return new JsonResponse(['data' => [
             'fiscal_year_id' => $year->id,

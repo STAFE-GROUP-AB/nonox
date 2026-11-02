@@ -61,7 +61,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Försäljning
 - Fakturor med OCR-nummer, PDF och utskick via e-post, bokförda automatiskt enligt fakturametoden eller kontantmetoden.
 - Offerter och order som blir fakturor utan att något skrivs två gånger, och avtalsfakturering varje månad, kvartal, halvår eller år.
-- Inbetalningar och delbetalningar, kreditfakturor och påminnelser. Bankens fil med inbetalningar (ISO 20022 camt.054) läses in och matchas på OCR-numret.
+- Inbetalningar och delbetalningar, kreditfakturor och påminnelser. En faktura kan krediteras helt eller delvis, även när den är betald; det kunden ska ha tillbaka står i kundreskontran tills återbetalningen är registrerad. Bankens fil med inbetalningar (ISO 20022 camt.054) läses in och matchas på OCR-numret.
 - ROT- och RUT-avdrag, omvänd betalningsskyldighet för byggtjänster, och fakturor till andra EU-länder och export med rätt konto, momsruta och fakturatext.
 - Kundfakturor i utländsk valuta (euro, dollar, pund, norska och danska kronor med flera): fakturan skrivs i kundens valuta och bokförs i kronor med Riksbankens kurs på leveransdagen (eller fakturadatumet), då momsen uppstår. Momsen och summan i kronor står på fakturan. Inbetalningen registreras i valutan, för hand eller från bankens fil, och kursvinst eller kursförlust bokförs. Kreditfakturan får samma kurs, och påminnelsen gäller beloppet i valutan.
 
@@ -154,6 +154,8 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
+
+Det som pågår, är planerat eller önskat står på färdplanen på webbplatsen (`/fardplan`), och allt som har levererats står med datum och klockslag i ändringsloggen (`/andringslogg`, med RSS-flöde). Båda skrivs på vanlig svenska för den som inte läser koden; posterna finns i `docs/andringslogg` och `docs/fardplan` och hålls aktuella enligt [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 

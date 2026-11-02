@@ -2,7 +2,7 @@
 beskrivning: NONOX har inga separata momskoder. Momsen följer kontona enligt BAS, och här ser du vilka konton som blir vilken ruta i momsdeklarationen.
 ordning: 30
 roller: [owner, admin, accountant]
-sokord: [momskod, momskoder, momskonton, momsrutor, 2611, 2621, 2631, 2641, 3740, bas-konton, momssats, 25 procent, 12 procent, 6 procent]
+sokord: [momskod, momskoder, momskonton, momsrutor, 2611, 2621, 2631, 2641, 3740, vilande moms, 2618, 2648, bas-konton, momssats, 25 procent, 12 procent, 6 procent]
 ---
 
 # Hur momsen hamnar i rätt ruta
@@ -23,7 +23,7 @@ Momspliktig försäljning på 3000–3099 (utom 3004) räknas till **ruta 05**.
 
 ## Inköp och ingående moms
 
-All ingående moms på 2640–2649 räknas till **ruta 48**, Ingående moms att dra av. En vanlig svensk leverantörsfaktura bokför momsen på 2641.
+Ingående moms på 2640–2647 och 2649 räknas till **ruta 48**, Ingående moms att dra av. En vanlig svensk leverantörsfaktura bokför momsen på 2641. Konto 2648 Vilande ingående moms räknas inte med, se nedan.
 
 ## Försäljning utan svensk moms
 
@@ -68,6 +68,17 @@ Ruta 49 räknas fram: utgående moms (rutorna 10–12, 30–32 och 60–62) minu
 ## Konto 2619 – OSS
 
 Moms på försäljning till privatpersoner i andra EU-länder bokförs på 2619 när den redovisas via OSS. Under tröskelvärdet 99 680 kronor får sådan försäljning svensk moms och bokförs som vanlig försäljning. Den räknas inte in i någon ruta och flyttas inte till 2650 när momsen bokförs, eftersom den redovisas i OSS-deklarationen. Läs [OSS](/manual/moms/oss).
+
+## Vilande moms – 2618, 2628, 2638 och 2648
+
+Moms som ännu inte ska redovisas kan parkeras på ett konto för vilande moms: utgående moms på 2618, 2628 och 2638 (25, 12 och 6 %) och ingående moms på 2648. Det används till exempel när momsen ska redovisas först när kunden betalar eller när fakturan betalas.
+
+Kontona hör inte till någon ruta. Momsdeklarationen tar inte med dem, och när du bokför momsen flyttas de inte till 2650 – saldot ligger kvar. Sidan Moms visar dem under **Momskonton som inte ingår i deklarationen**, så att du ser att det finns vilande moms. När momsen ska redovisas flyttar du beloppet till det vanliga kontot, till exempel från 2618 till 2611, med en verifikation daterad i den perioden. Då kommer det med i den periodens deklaration.
+
+Samma sak gäller andra momskonton mellan 2610 och 2649 som inte hör till någon ruta: de visas som en varning och lämnas orörda.
+
+> [!NOTE]
+> Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-1, #58).
 
 ## Bra att veta
 

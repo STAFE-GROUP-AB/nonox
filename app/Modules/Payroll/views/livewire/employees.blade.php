@@ -46,6 +46,33 @@
                     @endif
                 </div>
 
+                @if(($form['tax_residence'] ?? 'SE') === 'SE')
+                    <fieldset class="grid gap-4 sm:grid-cols-3">
+                        <legend class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ __('Jämkning') }}</legend>
+                        <p class="text-xs text-gray-500 sm:col-span-3">{{ __('Har den anställda fått ett beslut om jämkning från Skatteverket? Fyll i det som står i beslutet. Följ beslutet senast två veckor efter att ni fick det.') }}</p>
+                        <x-ui.field for="employee_tax_adjustment_type" :label="__('Beslut')" error="tax_adjustment_type" class="sm:col-span-3">
+                            <select id="employee_tax_adjustment_type" class="{{ $input }} mt-1" wire:model.live="form.tax_adjustment_type">
+                                <option value="NONE">{{ __('Inget beslut om jämkning') }}</option>
+                                <option value="PERCENT">{{ __('Skatteavdrag med en procentsats') }}</option>
+                                <option value="TABLE">{{ __('Skatteavdrag enligt en annan tabell och kolumn') }}</option>
+                                <option value="AMOUNT">{{ __('Skatteavdrag med ett fast belopp per utbetalning') }}</option>
+                            </select>
+                        </x-ui.field>
+                        @if(($form['tax_adjustment_type'] ?? 'NONE') === 'PERCENT')
+                            <x-ui.field for="employee_tax_adjustment_percent" :label="__('Procent')" error="tax_adjustment_percent"><input id="employee_tax_adjustment_percent" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.tax_adjustment_percent" placeholder="{{ __('Till exempel 20') }}"></x-ui.field>
+                        @elseif(($form['tax_adjustment_type'] ?? 'NONE') === 'TABLE')
+                            <x-ui.field for="employee_tax_adjustment_table" :label="__('Tabell enligt beslutet')" error="tax_adjustment_table"><input id="employee_tax_adjustment_table" type="number" class="{{ $input }} mt-1" wire:model="form.tax_adjustment_table"></x-ui.field>
+                            <x-ui.field for="employee_tax_adjustment_column" :label="__('Kolumn enligt beslutet')" error="tax_adjustment_column"><input id="employee_tax_adjustment_column" type="number" class="{{ $input }} mt-1" wire:model="form.tax_adjustment_column"></x-ui.field>
+                        @elseif(($form['tax_adjustment_type'] ?? 'NONE') === 'AMOUNT')
+                            <x-ui.field for="employee_tax_adjustment_amount" :label="__('Skatt per utbetalning')" error="tax_adjustment_amount"><input id="employee_tax_adjustment_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="form.tax_adjustment_amount"></x-ui.field>
+                        @endif
+                        @if(($form['tax_adjustment_type'] ?? 'NONE') !== 'NONE')
+                            <x-ui.field for="employee_tax_adjustment_from" :label="__('Gäller från')" error="tax_adjustment_valid_from" :hint="__('Utbetalningar från och med den här dagen.')"><input id="employee_tax_adjustment_from" type="date" class="{{ $input }} mt-1" wire:model="form.tax_adjustment_valid_from"></x-ui.field>
+                            <x-ui.field for="employee_tax_adjustment_to" :label="__('Gäller till och med')" error="tax_adjustment_valid_to" :hint="__('Lämna tomt om beslutet inte har något slutdatum.')"><input id="employee_tax_adjustment_to" type="date" class="{{ $input }} mt-1" wire:model="form.tax_adjustment_valid_to"></x-ui.field>
+                        @endif
+                    </fieldset>
+                @endif
+
                 <div class="grid gap-4 sm:grid-cols-3">
                     <x-ui.field for="employee_start" :label="__('Anställd från')" error="start_date"><input id="employee_start" type="date" class="{{ $input }} mt-1" wire:model="form.start_date"></x-ui.field>
                     <x-ui.field for="employee_type" :label="__('Anställningsform')" error="employment_type">

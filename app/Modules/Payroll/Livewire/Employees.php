@@ -66,6 +66,8 @@ class Employees extends Component
             'first_name' => '', 'last_name' => '', 'personal_number' => '', 'email' => '', 'phone' => '',
             'address' => '', 'postal_code' => '', 'city' => '', 'bank_clearing' => '', 'bank_account' => '',
             'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1',
+            'tax_adjustment_type' => 'NONE', 'tax_adjustment_percent' => '', 'tax_adjustment_amount' => '', 'tax_adjustment_table' => '', 'tax_adjustment_column' => '',
+            'tax_adjustment_valid_from' => '', 'tax_adjustment_valid_to' => '',
             'start_date' => now()->toDateString(), 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY',
             'salary' => '', 'employment_rate' => '100', 'weekly_hours' => '40', 'position_title' => '', 'cost_center' => '', 'user_id' => '',
             'vacation_rule' => '', 'vacation_days_per_year' => '25', 'vacation_payout_with_salary' => false, 'pension_plan_id' => '',
@@ -87,6 +89,7 @@ class Employees extends Component
             // Personal number and bank details never go into the page state; empty means "keep".
             ...$employee->only(['first_name', 'last_name', 'email', 'phone', 'address', 'postal_code', 'city', 'tax_residence', 'tax_table', 'tax_column', 'user_id']),
             'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '',
+            ...SaveEmployee::taxAdjustmentForm($employee),
             'start_date' => $employment?->start_date->toDateString(),
             'employment_type' => $employment === null ? 'TILLSVIDARE' : $employment->employment_type,
             'salary_form' => $employment === null ? 'MONTHLY' : $employment->salary_form,

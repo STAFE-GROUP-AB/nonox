@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.81
+- Version: 0.85
 - Datum: 2026-11-02
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -71,7 +71,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   eller den 26:e i månaden efter (den 27:e i december) för företag med
   omsättning över 40 miljoner kronor, vilket anges i företagets inställningar;
   kvartalsmoms den 12:e i andra månaden efter kvartalet (den 17:e i augusti).
-  En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
+  Helårsmoms enligt SFL 26 kap. 33, 33 a och 33 b §§: enskild firma den 12
+  maj året efter; aktiebolag, ekonomisk och ideell förening och stiftelse
+  efter räkenskapsårets sista månad och digital inlämning (januari–april 12
+  december, maj–juni 17 januari, juli–augusti 12 april, september–december
+  17 augusti); handels- och kommanditbolag och alla med EU-handel under året
+  den 26:e i andra månaden efter året (den 27:e i december). EU-handel läses
+  ur bokföringen: en bokförd rad på ett konto till ruta 20, 21, 35, 38 eller
+  39 (enligt granskning 2026-11-02, juristgranskning återstår, AUD-MOMS-9,
+  #60). En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
   kommer från den kontrollerade regeln `agi.deadlines`; utan kontrollerad
   regel visas ingen dag.
 - Fliken Månad för månad (Byråvy) visar alla företag för en vald månad,
@@ -473,9 +481,32 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Momsdeklarationens rutor räknas fram ur rörelserna på momskonton och
   försäljnings- och inköpskonton enligt BAS, per redovisningsperiod. Beloppen
   anges i hela kronor.
-- Momsen bokförs med en verifikation i serie M per period: momskontona
-  nollställs, beloppet förs till 2650 och öresavrundningen till 3740. Rutorna
-  sparas med verifikationen och kan inte ändras. En period bokförs en gång.
+- Redovisningsperioden är kalendermånad, kalenderkvartal eller beskattningsår
+  (räkenskapsåret) enligt SFL 26 kap. 10 och 11 §§. Månader och kvartal delas
+  aldrig vid ett brutet räkenskapsårs gräns: ett kvartal som spänner över två
+  räkenskapsår är en deklaration, räknas fram ur de bokförda verifikationerna
+  efter datum i båda åren och avräknas en gång med en verifikation på
+  kvartalets sista dag, i det räkenskapsår den dagen hör till. Bokslutets
+  checklista kräver bara perioder som slutar i året (enligt granskning
+  2026-11-02, juristgranskning återstår, AUD-MOMS-6, #59).
+- Momsen bokförs med en verifikation i serie M per period: momskontona som
+  hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
+  ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören
+  som rutorna i hela kronor inte tar med till 3740. Rutorna sparas med
+  verifikationen och kan inte ändras.
+- Bokförs något i en period vars moms redan är bokförd visar momssidan det
+  och erbjuder ett tillägg: en ny verifikation i serie M med bara skillnaden
+  på momskontona, 2650 och 3740, daterad periodens sista dag (eller dagens
+  datum om den dagen är låst eller räkenskapsåret stängt). De rättade rutorna
+  sparas som en ny version av deklarationen; tidigare versioner ändras
+  aldrig. Användaren uppmanas lämna en rättad deklaration för hela perioden
+  hos Skatteverket (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-MOMS-5, #63).
+- Vilande moms (2618, 2628, 2638 och 2648) och andra konton mellan 2610 och
+  2649 utan ruta ingår inte i deklarationen och flyttas inte till 2650; de
+  visas som en varning på momssidan. Ruta 48 läser 2640–2647 och 2649, inte
+  2648 (ML 7 kap. 14 och 31 §§; enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-MOMS-1, #58).
 - Efter deklarationen kan bokföringen låsas till och med periodens sista dag.
   Låset kan bara flyttas framåt.
 
@@ -502,8 +533,32 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   B (1510 mot intäktskonton, utgående moms och 3740). Betalning: serie C,
   1930 mot 1510. Enligt kontantmetoden bokförs intäkt och moms först vid
   betalning.
-- En kreditfaktura tar ut hela den obetalda fakturan och vänder dess
-  verifikation.
+- En kreditfaktura krediterar hela fakturan eller en del av den (raderna i
+  utkastet kan ändras). Den minskar originalet med sitt eget belopp
+  (`credited_ore` och `paid_ore`, i kronor och i fakturans valuta) och
+  vänder den krediterade delen av verifikationen. Originalet står öppet för
+  resten och kan betalas; det stängs först när inget återstår (Krediterad
+  om bara kreditfakturor reglerade det, annars Betald). En kreditfaktura
+  som är större än det som återstår, eller inte är under noll, avvisas.
+  Kundreskontran stämmer därmed alltid mot 1510 (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47); ML 17 kap.
+  22–23 §§, BFL 4 kap. 1 §, 5 kap. 1 §).
+- Även en betald eller delvis betald faktura kan krediteras (ML 17 kap.
+  22–23 §§, 7 kap. 46 §). Kreditfakturan reglerar först det som återstår av
+  originalet; det kunden redan har betalat av det krediterade beloppet
+  står öppet på kreditfakturan som ett tillgodohavande för kunden (status
+  ISSUED, visas som "Att återbetala", negativt kvar och kredit på 1510).
+  En kreditfaktura får inte vara större än det som ännu inte är krediterat
+  av originalet. Återbetalningen registreras på kreditfakturan
+  (`RegisterRefund`) som en betalning med negativt belopp i serie C: 1510
+  mot bankkontot under fakturametoden, återbetalningens del av intäkt och
+  moms mot bankkontot under kontantmetoden; i utländsk valuta i valutan med
+  kursdifferens på 3960/7960. Kundreskontran per dag (`OpenInvoices`)
+  räknar med kreditfakturornas återbetalningar, och vid bokslut med
+  kontantmetoden bokförs ett tillgodohavande som kreditfakturans andel.
+  En kreditfaktura med tillgodohavande förfaller aldrig och syns inte
+  bland förfallna fakturor (enligt granskning 2026-11-02, juristgranskning
+  återstår (AUD-FAKT-8, #53)).
 - Inbetalningar kan läsas in från bankens fil (ISO 20022 camt.054,
   [ADR-015](../adr/ADR-015-incoming-payment-files.md)). Systemet föreslår
   faktura efter OCR-numret; användaren kontrollerar och bokför. En inbetalning
@@ -635,7 +690,33 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   registreras det på fakturan: bankkontot mot 1513 i serie C. Det mottagna
   beloppet är det enda på en utfärdad faktura som får ändras utöver status,
   betalningar och utskick (modell och databastrigger).
-- En kreditfaktura krediterar även avdraget.
+- En kreditfaktura krediterar även avdraget. Avdraget räknas inte om med
+  kreditdagens andel eller tak: kreditfakturan tar originalets avdrag i
+  proportion till den arbetskostnad (inklusive moms) den krediterar,
+  avrundat nedåt till hela kronor, och den kreditfaktura som krediterar
+  det sista av arbetet tar resten av avdraget. En kreditfaktura tar aldrig
+  mer avdrag än vad som är kvar av originalets. En hel kredit vänder därmed
+  exakt originalets 1510 och 1513 (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-1, #48); ML 17 kap. 22 §, lag
+  (2009:194) 7 §).
+- Krediteras avdraget efter att Skatteverket har betalat ut det, kan den
+  utbetalda delen inte tas bort från fordran: företaget ska anmäla
+  ändringen till Skatteverket, som beslutar om återbetalning (lag
+  (2009:194) 13–16 §§). Kreditfakturan tar därför först av det som
+  fortfarande begärs på 1513, och resten bokförs som en skuld till
+  Skatteverket på 2890 Övriga kortfristiga skulder (läggs till vid behov),
+  i stället för som en negativ fordran på 1513. Beloppet sparas på
+  kreditfakturan (`tax_reduction_repayable_ore`), och återbetalningen
+  registreras på den: 2890 mot bankkontot i serie C
+  (`tax_reduction_repaid_ore`, det enda som får ändras på en utfärdad
+  kreditfaktura utöver status, betalningar och utskick). Kreditfakturans
+  sida påminner om anmälan, och originalets sida varnar innan
+  krediteringen. En kredit före utbetalningen visar att en redan gjord
+  begäran ska ändras eller dras tillbaka. Det som begärs av Skatteverket
+  minskar med krediterade avdrag, så en betalning från Skatteverket kan
+  inte registreras för en krediterad del (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-9, #49)). TODO(legal-verify): 2890
+  som konto för skulden.
 
 ### 5.3 Kundfakturor i utländsk valuta
 
@@ -1350,6 +1431,70 @@ lönebeskeden låsta i databasen.
   anställningens kostnadsställe), personalskatt på 2710, arbetsgivaravgifter
   på 7510 mot 2730 och nettolönerna mot 1930. Verifikationen balanserar alltid:
   brutto − skatt ± nettoposter = netto.
+- Jämkning (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-LON-01, #69): Skatteverkets beslut om särskild beräkningsgrund sparas
+  på den anställda (`tax_adjustment_type` PERCENT, TABLE eller AMOUNT, med
+  `tax_adjustment_value` i baspunkter eller öre, `tax_adjustment_table` och
+  `tax_adjustment_column`, och giltighet `tax_adjustment_valid_from`–
+  `tax_adjustment_valid_to`). Lönekörningen följer beslutet för
+  utbetalningsdagar inom giltigheten (SFL 11 kap. 27 §): en procentsats på
+  all skattepliktig lön (även engångsbelopp), en annan tabell och kolumn
+  (engångsbelopp med beslutets kolumn) eller ett belopp per utbetalning.
+  Utanför giltigheten används skattetabellen. Skatteförklaringen visar
+  metoden. `TODO(legal-verify)`: Skatteverkets information till
+  arbetsgivare beskriver bara en procentsats; tabell och belopp är
+  oprövade.
+- Ungdomsnedsättningens tak per kalendermånad (enligt granskning
+  2026-11-02, juristgranskning återstår, AUD-LON-03, #70): den nedsatta
+  avgiften gäller högst 25 000 kr (regeln
+  `employer_contribution.youth_reduction`) av det som betalas ut till
+  personen under en kalendermånad (lag 2026:100 2 § andra stycket, SAL
+  2 kap. 24 §), sammanlagt för alla lönebesked med utbetalningsdag i
+  månaden. Ackumulatorn `youth_reduced_basis_mMM` (MM = utbetalningsmånaden)
+  håller det som tidigare attesterade lönebesked i månaden har använt;
+  nästa lönebesked får bara det som är kvar. Två lönebesked till samma
+  person i samma körning (två anställningar) räknas i tur och ordning.
+- 1 000 kr-gränsen för arbetsgivaravgifter (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-02, #71): ersättning är avgiftsfri så
+  länge personens ersättning under året understiger 1 000 kr (SAL 2 kap.
+  14 §). Avgiftsfritt avgiftsunderlag samlas i ackumulatorn
+  `contribution_free_basis_ytd`. Det lönebesked som tar årets ersättning
+  till gränsen får också den tidigare avgiftsfria ersättningen i sitt
+  avgiftsunderlag (SAL 2 kap. 24 § fjärde stycket), och ackumulatorn
+  nollställs. I AGI redovisas avgiftsfri ersättning i 131 (förmåner i
+  132–134), inte i 011. I månaden då gränsen passeras läggs det som tidigare
+  månader redovisat som avgiftsfritt till i 011 och anges i 010
+  (Skatteverkets alternativ att redovisa i den period det blir känt); är den
+  avgiftsfria ersättningen utbetald samma månad redovisas allt i 011.
+  Flyttad lönedata: avgiftsunderlag utan arbetsgivaravgifter i det tidigare
+  systemet räknas som avgiftsfritt. `TODO(legal-verify)`: tidigare
+  avgiftsfria förmåner läggs i 011 tillsammans med kontant ersättning.
+- Inaktuell beräkning (#70, #71): lönebeskedet sparar de ackumulatorer som
+  avgifterna byggde på när de kan ändras av en annan körning
+  (`contribution_explanation.accumulators_read`). Har en annan körning för
+  samma person attesterats sedan dess vägrar attesten med "Beräkna
+  lönekörningen igen innan du attesterar" och personens namn.
+- Skatt som är större än kontantlönen (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-06, #68): skatteavdrag görs bara från
+  kontant ersättning (SFL 10 kap. 3 §). Förmåner räknas in i underlaget
+  (SFL 11 kap. 4 §), men blir skatten enligt tabell, jämkning eller SINK
+  större än kontantlönen före skatt dras bara kontantlönen. Resten är den
+  anställdas egen skatt som betalas med slutskatten; den blir ingen fordran
+  och redovisas inte som avdragen i AGI (fält 001 visar det som faktiskt
+  drogs). Lönebeskedet säger hur mycket som inte kunde dras, och
+  skatteförklaringen sparar `calculated_tax_ore`, `cash_ore` och
+  `not_withheld_ore`.
+- Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
+  av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
+  sätts den till noll, och det som inte räckte blir en fordran på den
+  anställda: en egen rad med lönearten Skuld till företaget från lön
+  (`FORDRAN_ANSTALLD`, systemets, kan inte läggas in för hand) som bokförs
+  i debet på 1680 Andra kortfristiga fordringar. Verifikationen balanserar
+  därmed. Fordran förs med ackumulatorn `negative_net_carry_ore` (summan
+  över alla år är det som är kvar) och tas tillbaka från nästa lönebeskeds
+  nettolön så långt den räcker, med samma löneart i kredit på 1680.
+  `TODO(legal-verify)`: kvittning mot lön (lagen (1970:215) om arbetsgivares
+  kvittningsrätt).
 - Frånvaro räknas med de timmar som anges per dag, men bara på dagar då den
   anställde ska arbeta enligt schemat och som inte är helgdagar. Övriga dagar
   i perioden räknas med noll timmar (en sjukperiod räknar ändå sina
@@ -1541,7 +1686,9 @@ lönebeskeden låsta i databasen.
   enligt Skatteverkets schema version 1.1 av alla attesterade lönekörningar
   med utbetalning i månaden. Huvuduppgiften har summa arbetsgivaravgifter
   (fält 487) och avdragen skatt (497); varje anställd får en individuppgift
-  med kontant ersättning (011), förmåner (012, 013, 018), avdragen skatt
+  med kontant ersättning (011), förmåner (012, 013, 018), avgiftsfri
+  ersättning under 1 000 kr-gränsen (131, och förmåner i 132, 133, 134),
+  avräkning av tidigare avgiftsfri ersättning (010, #71), avdragen skatt
   (001, eller 274/275 för SINK och A-SINK), kryss för milersättning (050)
   och traktamente (051). Specifikationsnumret är den anställdes nummer, så
   att en rättelse ersätter rätt uppgift. Belopp anges i hela kronor utan
@@ -2384,6 +2531,27 @@ Personalliggare och Avtal när de är påslagna.
   test i CI kontrollerar båda. Version 0.60 användes aldrig. Enligt granskning
   2026-11-02, juristgranskning återstår (AUD-BOK-9, #44).
 
+## 7b. Ändringslogg och färdplan
+
+- Den publika ändringsloggen på `/andringslogg` (med RSS-flöde på
+  `/andringslogg/rss.xml`) visar varje levererad ändring med datum, klockslag,
+  typ (Nytt, Förbättrat, Rättat, Säkerhet) och område, på vanlig svenska.
+  Posterna finns i `docs/andringslogg/andringslogg.json` och versioneras med
+  koden de beskriver. Den första versionen togs fram ur hela
+  versionshistoriken från 2026-01-11.
+- Varje ändring som levereras får en post i samma ändring av koden
+  (CONTRIBUTING.md). Ett test jämför den senaste posten med den senaste
+  `feat`- eller `fix`-ändringen i versionshistoriken och fallerar när loggen
+  ligger mer än ett dygn efter. Utan historik (en grund utcheckning i CI)
+  hoppas kontrollen över.
+- Färdplanen på `/fardplan` läses ur `docs/fardplan/fardplan.json`: det som
+  pågår, det som är planerat och önskemål från kunder och partner. Buggar och
+  små rättelser står inte där. En punkt som blir klar tas bort och syns i
+  stället under Klart nyligen, som är de senaste posterna av typen Nytt eller
+  Förbättrat i ändringsloggen.
+- Sidorna påverkar inte bokföringen och är ingen behandlingshistorik enligt
+  BFNAR 2013:2; den beskrivs i avsnitt 7, och systemets versioner i avsnitt 9.
+
 ## 8. Öppna frågor (TODO legal-verify)
 
 - Avtal (ADR-033): upphovsrätt till en sammanställning av ett avtals
@@ -2720,3 +2888,7 @@ kontrollerat dem mot källan. Särskilt:
 | 0.79 | 2026-11-02 | Underlag (enligt granskning 2026-11-02, juristgranskning återstår; AUD-BOK-1, issue #41): en lagrad fil raderas bara när ingen rad i någon tabell hänvisar till den (kontrolleras under lås i samma transaktion, filen tas bort först efter commit). Tidigare kunde ett raderat utkast ta med sig underlaget till en bokförd verifikation från samma mejl. När alla utkast från ett mejl raderas återgår mejlet till Att granska. |
 | 0.80 | 2026-11-02 | Övertid och semesterlön (enligt AI-utredning 2026-11-02, juristgranskning återstår; issue #34, #35, #36): övertid och komptid är semesterlönegrundande enligt semesterlagen 16 b § om inte avtalet säger annat (Visita–Unionen och Handels tjänstemän: nej); godkänd frånvaro på ordinarie tid räknas som arbetad tid (ATL 7 §); utan kollektivavtal högst 4 veckors beräkningsperiod (ATL 5 §); övertid per dag där avtalet säger det; tillägg för timavlönade enligt avtal; övertid avrundas per dag eller tillfälle, aldrig på periodens summa. |
 | 0.81 | 2026-11-02 | Sjuklön och karens (enligt AI-utredning 2026-11-02, juristgranskning återstår; issue #31, #32, #33): karensavdraget har tak per sjuklöneperiod och rest förs vidare inom perioden och vid återinsjuknande inom fem dagar; tio avdrag räknas som gjorda avdrag tolv månader bakåt från periodens första dag (sjuklönelagen 6–7 §§); genomsnittsveckan bygger på attesterad tid 1–3 månader före sjukperioden (prop. 2017/18:96); avtalens timvärden och karens i tid som data; avtalssjuklön dag 15–90 med tak 105/45 dagar, dagstak och direkt övergång. Avtalets sjuklönedel gäller nu också utan Planering. |
+| 0.82 | 2026-11-02 | Inkomstdeklaration och utdelning (enligt granskning 2026-11-02, juristgranskning återstår; issue #83–#87): schablonintäkt på periodiseringsfonder (INK2S 4.6a, fält 7654) föreslås som ingående fonder × statslåneräntan i november året före, minst 0,5 % (IL 30 kap. 6 a §), och når 4.15 och SRU-filen; underlag för särskild löneskatt på pensionskostnader (7132/7133, 8022) föreslås från 74xx; utdelning större än fritt eget kapital stoppas i årsredovisningen och i resultatdispositionen (ABL 17 kap. 3 §, LEF 12 kap. 3 §); utdelning efter ett förlustår tillåts inom fritt eget kapital. |
+| 0.83 | 2026-11-02 | Öppen ändringslogg (/andringslogg, med RSS) och färdplan (/fardplan) på webbplatsen, länkade från sidfoten under Resurser tillsammans med manualen, API för utvecklare och Säkerhet och regelverk. Varje ändring som går live får en post med datum och klockslag på svenska (§7b). Ändrar ingen bokföring. |
+| 0.84 | 2026-11-02 | Kreditfakturor (enligt granskning 2026-11-02, juristgranskning återstår; issue #47, #48, #49, #53): en delkreditering minskar originalet med kreditens belopp och resten går att betala; ROT/RUT-avdraget krediteras i proportion till krediterat arbete och aldrig mer än det som finns kvar; det Skatteverket redan betalat ut blir en skuld (2890) i stället för en negativ fordran, med påminnelse om att anmäla till Skatteverket; betalda fakturor kan krediteras och kreditbalansen återbetalas. Kundreskontran stämmer mot 1510 i alla fall. |
+| 0.85 | 2026-11-02 | Momsavräkning och momsperioder (enligt granskning 2026-11-02, juristgranskning återstår; issue #58, #59, #60, #63): avräkningen flyttar bara konton som hör till en ruta, vilande moms (2618/2628/2638/2648) och omappade 26xx-konton lämnas orörda med varning, ruta 48 utan 2648, och bara verkliga ören går till 3740; momsperioder är hela kalendermånader och kvartal även vid brutet räkenskapsår (SFL 26 kap. 11 §); förfallodag för årsmoms (SFL 26 kap. 33–33 b §§); en verifikation i en redan avräknad period ger en kompletterande avräkning och en ny version av deklarationen. |

@@ -10,6 +10,7 @@ use App\Models\NumberSeries;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\PersonalNumber;
+use App\Modules\Payroll\Domain\Units;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PensionPlan;
@@ -18,6 +19,7 @@ use App\Modules\Payroll\PayrollModule;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
+use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Support\Facades\DB;
@@ -73,6 +75,13 @@ class SaveEmployee
             'tax_residence' => ['required', Rule::in(['SE', 'NON_RESIDENT_SINK', 'NON_RESIDENT_A_SINK'])],
             'tax_table' => ['nullable', 'integer', 'between:1,99'],
             'tax_column' => ['nullable', 'integer', 'between:1,9'],
+            'tax_adjustment_type' => ['nullable', Rule::in(['NONE', 'PERCENT', 'TABLE', 'AMOUNT'])],
+            'tax_adjustment_percent' => ['nullable', 'required_if:tax_adjustment_type,PERCENT', 'regex:/^\d{1,3}([.,]\d{1,2})?$/'],
+            'tax_adjustment_table' => ['nullable', 'required_if:tax_adjustment_type,TABLE', 'integer', 'between:1,99'],
+            'tax_adjustment_column' => ['nullable', 'required_if:tax_adjustment_type,TABLE', 'integer', 'between:1,9'],
+            'tax_adjustment_amount' => ['nullable', 'required_if:tax_adjustment_type,AMOUNT', 'string'],
+            'tax_adjustment_valid_from' => ['nullable', 'required_unless:tax_adjustment_type,NONE,null', 'date_format:Y-m-d'],
+            'tax_adjustment_valid_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:tax_adjustment_valid_from'],
             'start_date' => ['required', 'date_format:Y-m-d'],
             'employment_type' => ['required', Rule::in(['TILLSVIDARE', 'ALLMAN_VISSTID', 'VIKARIAT', 'SASONG', 'PROVANSTALLNING', 'TIMANSTALLD'])],
             'salary_form' => ['required', Rule::in(['MONTHLY', 'HOURLY'])],
@@ -112,8 +121,10 @@ class SaveEmployee
         }
 
         $personal = PersonalNumber::tryFrom((string) $validated['personal_number']);
+        // Without the field (an import, an older caller) the stored decision is kept.
+        $adjustment = array_key_exists('tax_adjustment_type', $input) ? self::taxAdjustment($validated) : [];
 
-        return CurrentCompany::run($company, fn (): Employee => DB::transaction(function () use ($user, $company, $validated, $employee, $salary, $personal): Employee {
+        return CurrentCompany::run($company, fn (): Employee => DB::transaction(function () use ($user, $company, $validated, $employee, $salary, $personal, $adjustment): Employee {
             $costCenterId = null;
 
             if (filled($validated['cost_center'] ?? null)) {
@@ -143,6 +154,7 @@ class SaveEmployee
                 'tax_table' => $validated['tax_table'] ?? null,
                 'tax_column' => $validated['tax_column'] ?? null,
                 'user_id' => $linkedUserId,
+                ...$adjustment,
             ]);
             $bankRequested = $this->setBankAccount($user, $employee, $isNew, $validated['bank_clearing'] ?? null, $validated['bank_account'] ?? null);
             $changed = array_keys(array_diff_key($employee->getDirty(), array_flip(self::SENSITIVE)));
@@ -223,6 +235,75 @@ class SaveEmployee
         ]);
 
         return ['old' => self::mask($employee->bank_account), 'new' => self::mask($account)];
+    }
+
+    /**
+     * Skatteverket's jämkning decision as stored on the employee (SFL 11
+     * kap. 27 §, AUD-LON-01, #69): a percentage in basis points, another
+     * table and column, or an amount in öre per payment, with the days it
+     * applies to. A decision is only stored with a first day.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private static function taxAdjustment(array $validated): array
+    {
+        $type = blank($validated['tax_adjustment_type'] ?? null) ? 'NONE' : (string) $validated['tax_adjustment_type'];
+
+        if ($type === 'NONE') {
+            return ['tax_adjustment_type' => 'NONE', 'tax_adjustment_value' => null, 'tax_adjustment_table' => null, 'tax_adjustment_column' => null, 'tax_adjustment_valid_from' => null, 'tax_adjustment_valid_to' => null];
+        }
+
+        $value = null;
+
+        if ($type === 'PERCENT') {
+            $value = BigDecimal::of(str_replace(',', '.', (string) $validated['tax_adjustment_percent']))->multipliedBy(100)->toInt();
+
+            if ($value > Units::BASIS_POINTS) {
+                throw ValidationException::withMessages(['tax_adjustment_percent' => __('Procentsatsen kan vara högst 100.')]);
+            }
+        }
+
+        if ($type === 'AMOUNT') {
+            try {
+                $value = Money::parse((string) $validated['tax_adjustment_amount'])->ore;
+            } catch (InvalidArgumentException) {
+                throw ValidationException::withMessages(['tax_adjustment_amount' => __('Beloppet går inte att läsa.')]);
+            }
+
+            if ($value < 0) {
+                throw ValidationException::withMessages(['tax_adjustment_amount' => __('Beloppet kan inte vara negativt.')]);
+            }
+        }
+
+        return [
+            'tax_adjustment_type' => $type,
+            'tax_adjustment_value' => $value,
+            'tax_adjustment_table' => $type === 'TABLE' ? (int) $validated['tax_adjustment_table'] : null,
+            'tax_adjustment_column' => $type === 'TABLE' ? (int) $validated['tax_adjustment_column'] : null,
+            'tax_adjustment_valid_from' => $validated['tax_adjustment_valid_from'],
+            'tax_adjustment_valid_to' => blank($validated['tax_adjustment_valid_to'] ?? null) ? null : $validated['tax_adjustment_valid_to'],
+        ];
+    }
+
+    /**
+     * The stored jämkning decision as the employee form shows it.
+     *
+     * @return array<string, string>
+     */
+    public static function taxAdjustmentForm(Employee $employee): array
+    {
+        $type = $employee->tax_adjustment_type ?? 'NONE';
+
+        return [
+            'tax_adjustment_type' => $type,
+            'tax_adjustment_percent' => $type === 'PERCENT' && $employee->tax_adjustment_value !== null ? rtrim(rtrim(number_format($employee->tax_adjustment_value / 100, 2, ',', ''), '0'), ',') : '',
+            'tax_adjustment_amount' => $type === 'AMOUNT' && $employee->tax_adjustment_value !== null ? Money::ofOre($employee->tax_adjustment_value)->format(withCurrency: false) : '',
+            'tax_adjustment_table' => (string) $employee->tax_adjustment_table,
+            'tax_adjustment_column' => (string) $employee->tax_adjustment_column,
+            'tax_adjustment_valid_from' => (string) $employee->tax_adjustment_valid_from?->toDateString(),
+            'tax_adjustment_valid_to' => (string) $employee->tax_adjustment_valid_to?->toDateString(),
+        ];
     }
 
     public static function mask(?string $account): string

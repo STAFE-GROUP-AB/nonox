@@ -56,8 +56,25 @@
                         <a href="{{ route('accounting.vouchers.show', $report->voucher_id) }}" class="font-semibold underline">{{ $report->voucher?->reference() }}</a>.
                         @if($report->boxes != $boxes)
                             <span class="block mt-1 text-accent-800">{{ __('Något har bokförts i perioden efteråt, så rutorna nedan skiljer sig från det som bokfördes. Kontrollera och rätta deklarationen hos Skatteverket.') }}</span>
+                        @elseif($report->version > 1)
+                            <span class="block mt-1">{{ __('Ett tillägg har bokförts efter en sen bokföring i perioden. Rutorna nedan är den rättade deklarationen. Har du inte redan gjort det: lämna en rättad momsdeklaration för hela perioden hos Skatteverket.') }}</span>
                         @endif
                     </p>
+                @endif
+
+                @if($supplement && $canSettle)
+                    <div class="mt-4 rounded-lg bg-amber-50 p-4 text-sm text-amber-950 print:hidden" role="status">
+                        <p class="font-semibold">{{ __('Bokför tillägget till momsen') }}</p>
+                        <p class="mt-1">{{ __('Momsen för perioden är redan bokförd, men något har bokförts i perioden efteråt och ligger kvar på momskontona. Tillägget blir en ny verifikation i serie M som för skillnaden till 2650. Lämna sedan en rättad momsdeklaration för hela perioden hos Skatteverket, med rutorna nedan.') }}</p>
+                        <div class="mt-3" x-data="{ confirming: false }">
+                            <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Bokför tillägget') }}</x-button>
+                            <div x-show="confirming" x-cloak class="flex flex-wrap items-center gap-4">
+                                <x-button type="button" wire:click="settle" wire:loading.attr="disabled">{{ __('Ja, bokför tillägget') }}</x-button>
+                                <button type="button" class="text-sm text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
+                            </div>
+                            <x-input-error for="period" class="mt-2" />
+                        </div>
+                    </div>
                 @endif
 
                 <div class="mt-5 overflow-x-auto">
@@ -100,6 +117,18 @@
                 </div>
                 <p class="mt-3 text-xs text-gray-500">{{ __('Beloppen är i hela kronor; ören tas inte med. Rutor utan belopp visas inte.') }}</p>
 
+                @if($return->unsettled !== [])
+                    <div class="mt-4 rounded-lg bg-amber-50 p-4 text-sm text-amber-950" role="status">
+                        <p class="font-semibold">{{ __('Momskonton som inte ingår i deklarationen') }}</p>
+                        <p class="mt-1">{{ __('De här kontona hör inte till någon ruta, till exempel vilande moms som ska redovisas först när kunden betalar. De tas inte med i deklarationen och flyttas inte till 2650 när momsen bokförs. Flytta beloppet till rätt momskonto i den period momsen ska redovisas.') }}</p>
+                        <ul class="mt-2 space-y-0.5">
+                            @foreach($return->unsettled as $account)
+                                <li class="flex justify-between gap-4"><span><span class="tabular-nums">{{ $account['number'] }}</span> {{ $account['name'] }}</span><x-ui.amount :money="Money::ofOre($account['amount'])" /></li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <div class="mt-6 flex flex-wrap items-center gap-4 print:hidden">
                     <a href="{{ route('vat.file', ['fiscalYear' => $fiscalYear, 'period' => $selected['start']->toDateString()]) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ner fil till Skatteverket') }}</a>
                     <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" x-on:click="window.print()">{{ __('Skriv ut eller spara som PDF') }}</button>
@@ -108,7 +137,7 @@
 
             @if(! $report && $canSettle && ! $return->isEmpty())
                 <x-ui.card :title="__('Bokför momsen')" class="print:hidden">
-                    <p class="text-gray-700">{{ __('När deklarationen är lämnad bokförs momsen: momskontona nollställs och beloppet förs till 2650 Redovisningskonto för moms, med ören på 3740. Det blir en verifikation i serie M som inte kan ändras.') }}</p>
+                    <p class="text-gray-700">{{ __('När deklarationen är lämnad bokförs momsen: momskontona som ingår i deklarationen nollställs och beloppet förs till 2650 Redovisningskonto för moms, med ören på 3740. Vilande moms och andra momskonton utan ruta lämnas orörda. Det blir en verifikation i serie M som inte kan ändras.') }}</p>
                     <div class="mt-4" x-data="{ confirming: false }">
                         <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Bokför momsen') }}</x-button>
                         <div x-show="confirming" x-cloak class="flex flex-wrap items-center gap-4">

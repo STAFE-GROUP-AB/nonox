@@ -8,7 +8,9 @@
     $tax = $payslip->tax_explanation ?? [];
     $regular = $tax['regular'] ?? $tax;
     $taxNote = match ($regular['method'] ?? null) {
-        'table' => __('Tabell :table, kolumn :column', ['table' => $regular['table'], 'column' => $regular['column']]),
+        'table' => __('Tabell :table, kolumn :column', ['table' => $regular['table'], 'column' => $regular['column']]).(($regular['adjustment'] ?? false) ? ' '.__('enligt jämkningsbeslut') : ''),
+        'adjustment_percent' => __('Jämkning :percent', ['percent' => $percent((int) $regular['rate_bp'])]),
+        'adjustment_amount' => __('Jämkning med fast belopp'),
         default => null,
     };
     $month = ucfirst($run->periodStart()->locale('sv')->translatedFormat('F Y'));

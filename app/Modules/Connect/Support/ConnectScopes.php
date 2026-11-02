@@ -49,7 +49,7 @@ final class ConnectScopes
             'invoices:view' => __('Läsa kunder, artiklar, kundfakturor och inbetalningar'),
             'invoices:create' => __('Lägga till och ändra kunder, artiklar och utkast till kundfakturor'),
             'invoices:send' => __('Skapa kundfakturor av utkast (bokförs, går inte att ändra efteråt) och mejla dem till kunden'),
-            'invoices:credit' => __('Kreditera obetalda kundfakturor'),
+            'invoices:credit' => __('Kreditera kundfakturor'),
             'payments:create' => __('Registrera inbetalningar på kundfakturor och betalningar av attesterade leverantörsfakturor'),
             'supplier-invoices:create' => __('Läsa leverantörer och leverantörsfakturor, lägga till leverantörer och registrera leverantörsfakturor'),
             'supplier-invoices:approve' => __('Läsa och attestera leverantörsfakturor (aldrig sådana som personen själv har registrerat, om företaget kräver attest av någon annan)'),

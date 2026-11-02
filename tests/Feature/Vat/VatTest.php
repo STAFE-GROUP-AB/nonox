@@ -11,6 +11,7 @@ use App\Domain\Vat\EskdFile;
 use App\Domain\Vat\VatPeriods;
 use App\Domain\Vat\VatReturn;
 use App\Livewire\Vat\VatReturns;
+use App\Models\Account;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -172,6 +173,81 @@ it('warns when something was booked in the period afterwards', function () {
     Livewire::test(VatReturns::class, [])->set('period', '2026-01-01')->assertSee('rutorna nedan skiljer sig');
 });
 
+/*
+ * A posting in a period whose VAT is already booked (AUD-MOMS-5, #63). ML 7 kap.
+ * 14 §: the VAT belongs to the period it is booked in. Skatteverket "Rätta en
+ * momsdeklaration" (read 2026-11-02): the whole return for the period is filed
+ * again. Enligt granskning 2026-11-02, juristgranskning återstår.
+ */
+it('books a supplement for VAT posted in a settled period and keeps the corrected return as a new version', function () {
+    januaryAtTheRestaurant($this->owner, $this->company);
+    $first = app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+    book($this->owner, $this->company, '2026-01-30', [['account' => 1930, 'debit_ore' => 12_500], ['account' => 3001, 'credit_ore' => 10_000], ['account' => 2611, 'credit_ore' => 2_500]]);
+
+    $report = app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+    $voucher = $report->voucher()->with('rows.account')->sole();
+
+    // 2611 is now 275,60 kr: box 10 = 275, box 49 = 275 + 120 − 200 = 195 (was 170). The supplement moves the 25 kr to 2650.
+    expect($first->version)->toBe(1)
+        ->and($report->version)->toBe(2)
+        ->and($report->boxes[49])->toBe(195)
+        ->and($voucher->reference())->toBe('M2')
+        ->and($voucher->source)->toBe(VoucherSource::Vat)
+        ->and($voucher->voucher_date->toDateString())->toBe('2026-01-31')
+        ->and($voucher->description)->toBe('Kompletterande momsredovisning Januari 2026')
+        ->and($voucher->rows->mapWithKeys(fn ($row) => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all())->toBe([2611 => 2_500, 2650 => -2_500])
+        ->and(AuditLog::forCompany($this->company)->where('action', 'vat.supplemented')->sole()->payload)->toMatchArray(['payable' => 195, 'previously_payable' => 170, 'version' => 2, 'voucher' => 'M2'])
+        ->and(fn () => app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01')))->toThrow(ValidationException::class, 'redan bokförd');
+
+    // January's VAT accounts are back at zero (2611 keeps February's 25 kr, not settled yet); 2650 holds the corrected box 49.
+    $balances = DB::table('voucher_rows')->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+        ->where('voucher_rows.company_id', $this->company->id)->whereIn('accounts.number', [2611, 2621, 2641, 2650])
+        ->groupBy('accounts.number')->selectRaw('accounts.number, SUM(debit_ore - credit_ore) AS balance')->pluck('balance', 'number')->map(fn ($b) => (int) $b)->all();
+
+    expect($balances)->toEqual([2611 => -2_500, 2621 => 0, 2641 => 0, 2650 => -19_500]);
+});
+
+it('puts only the öre on 3740 when a late posting does not change the declared kronor', function () {
+    januaryAtTheRestaurant($this->owner, $this->company);
+    app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+    // 0,30 kr more on 2611: 250,90 kr, still 250 in box 10, so box 49 stays 170.
+    book($this->owner, $this->company, '2026-01-30', [['account' => 1930, 'debit_ore' => 150], ['account' => 3001, 'credit_ore' => 120], ['account' => 2611, 'credit_ore' => 30]]);
+
+    $report = app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+
+    expect($report->boxes[49])->toBe(170)
+        ->and($report->voucher()->with('rows.account')->sole()->rows->mapWithKeys(fn ($row) => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all())
+        ->toBe([2611 => 30, 3740 => -30]);
+});
+
+it('dates the supplement today when the period has been locked since', function () {
+    januaryAtTheRestaurant($this->owner, $this->company);
+    app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+    book($this->owner, $this->company, '2026-01-30', [['account' => 1930, 'debit_ore' => 12_500], ['account' => 3001, 'credit_ore' => 10_000], ['account' => 2611, 'credit_ore' => 2_500]]);
+    $this->company->forceFill(['locked_until_date' => '2026-01-31'])->save();
+
+    $report = app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+
+    expect($report->voucher()->sole()->voucher_date->toDateString())->toBe('2026-02-15')
+        ->and($report->period_end->toDateString())->toBe('2026-01-31');
+
+    // The February return does not read the January supplement: VAT settlements are left out.
+    expect(VatReturn::calculate($this->year, CarbonImmutable::parse('2026-02-01'), CarbonImmutable::parse('2026-02-28'))->vatAccounts)->toBe([2611 => -2_500]);
+});
+
+it('offers the supplement on the page and says the return must be corrected at Skatteverket', function () {
+    januaryAtTheRestaurant($this->owner, $this->company);
+    app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+    book($this->owner, $this->company, '2026-01-30', [['account' => 1930, 'debit_ore' => 12_500], ['account' => 3001, 'credit_ore' => 10_000], ['account' => 2611, 'credit_ore' => 2_500]]);
+
+    Livewire::test(VatReturns::class)->set('period', '2026-01-01')
+        ->assertSee('Bokför tillägget till momsen')
+        ->call('settle')
+        ->assertDispatched('toast', message: 'Tillägget är bokfört på M2. Lämna en rättad momsdeklaration för perioden hos Skatteverket.')
+        ->assertDontSee('Bokför tillägget till momsen')
+        ->assertSee('Ett tillägg har bokförts efter en sen bokföring i perioden');
+});
+
 it('keeps VAT to those who prepare it', function () {
     $this->actingAs(Bookkeeping::member($this->company, 'bookkeeper'));
 
@@ -183,4 +259,34 @@ it('explains when the company is not VAT registered', function () {
     $this->company->forceFill(['vat_period' => VatPeriod::None])->save();
 
     Livewire::test(VatReturns::class)->assertSee('Företaget är inte momsregistrerat');
+});
+
+it('settles only the VAT accounts that feed a box and lists the others (AUD-MOMS-1, #58)', function () {
+    // ML 7 kap. 14 och 31 §§: vilande moms is reported when the customer pays or the invoice is paid.
+    // Hand computation: 2611 −250,60 kr is declared in box 10 (250), 2641 +200 in box 48 (200), box 49 = 50.
+    // 2618 −250 kr and 2648 +100 kr are in no box: the settlement leaves them, so 3740 only takes the 0,60 kr dropped from box 10.
+    Account::create(['number' => 2618, 'name' => 'Vilande utgående moms, 25 %', 'type' => 'LIABILITY_EQUITY']);
+    Account::create(['number' => 2648, 'name' => 'Vilande ingående moms', 'type' => 'ASSET']);
+    book($this->owner, $this->company, '2026-01-10', [['account' => 1510, 'debit_ore' => 125_000], ['account' => 3001, 'credit_ore' => 100_000], ['account' => 2618, 'credit_ore' => 25_000]]);
+    book($this->owner, $this->company, '2026-01-11', [['account' => 4010, 'debit_ore' => 40_000], ['account' => 2648, 'debit_ore' => 10_000], ['account' => 2440, 'credit_ore' => 50_000]]);
+    book($this->owner, $this->company, '2026-01-12', [['account' => 1930, 'debit_ore' => 125_060], ['account' => 3001, 'credit_ore' => 100_000], ['account' => 2611, 'credit_ore' => 25_060]]);
+    book($this->owner, $this->company, '2026-01-13', [['account' => 4010, 'debit_ore' => 80_000], ['account' => 2641, 'debit_ore' => 20_000], ['account' => 1930, 'credit_ore' => 100_000]]);
+
+    $return = VatReturn::calculate($this->year, CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-01-31'));
+
+    expect($return->boxes()[48])->toBe(200)
+        ->and($return->boxes()[49])->toBe(50)
+        ->and($return->unsettled)->toBe([
+            ['number' => 2618, 'name' => 'Vilande utgående moms, 25 %', 'amount' => -25_000],
+            ['number' => 2648, 'name' => 'Vilande ingående moms', 'amount' => 10_000],
+        ]);
+
+    Livewire::test(VatReturns::class)->set('period', '2026-01-01')
+        ->assertSee('Momskonton som inte ingår i deklarationen')
+        ->assertSee('Vilande ingående moms');
+
+    $report = app(SettleVat::class)($this->owner, $this->year, CarbonImmutable::parse('2026-01-01'));
+
+    expect($report->voucher()->with('rows.account')->sole()->rows->mapWithKeys(fn ($row) => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all())
+        ->toBe([2611 => 25_060, 2641 => -20_000, 2650 => -5_000, 3740 => -60]);
 });

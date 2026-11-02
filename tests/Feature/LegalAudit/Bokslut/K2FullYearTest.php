@@ -61,16 +61,16 @@ use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 
-function audBokAccount(int $number): Account
+function audBsAccount(int $number): Account
 {
     return Account::query()->firstOrCreate(['number' => $number], ['name' => "Konto {$number}", 'type' => AccountType::forNumber($number)]);
 }
 
 /** @param  array<int, int>  $rows  account => öre, debit positive */
-function audBokPost(User $user, Company $company, string $date, string $text, array $rows): Voucher
+function audBsPost(User $user, Company $company, string $date, string $text, array $rows): Voucher
 {
     foreach (array_keys($rows) as $number) {
-        audBokAccount($number);
+        audBsAccount($number);
     }
 
     $draft = app(SaveDraftVoucher::class)($user, $company, [
@@ -83,36 +83,36 @@ function audBokPost(User $user, Company $company, string $date, string $text, ar
     return app(PostVoucher::class)($user, $draft);
 }
 
-function audBokOpening(FiscalYear $year, int $number, int $ore): void
+function audBsOpening(FiscalYear $year, int $number, int $ore): void
 {
-    OpeningBalance::create(['fiscal_year_id' => $year->id, 'account_id' => audBokAccount($number)->id, 'amount_ore' => $ore]);
+    OpeningBalance::create(['fiscal_year_id' => $year->id, 'account_id' => audBsAccount($number)->id, 'amount_ore' => $ore]);
 }
 
 /** @param  list<array{key: string, amount: int}>  $lines */
-function audBokLine(array $lines, string $key): ?int
+function audBsLine(array $lines, string $key): ?int
 {
     return collect($lines)->firstWhere('key', $key)['amount'] ?? null;
 }
 
 /** Books the whole year up to, but not including, the tax and the result. */
-function audBokBookYear(User $owner, Company $company, FiscalYear $year): void
+function audBsBookYear(User $owner, Company $company, FiscalYear $year): void
 {
-    audBokOpening($year, 1930, 20_000_000);
-    audBokOpening($year, 2081, -2_500_000);
-    audBokOpening($year, 2091, -17_500_000);
+    audBsOpening($year, 1930, 20_000_000);
+    audBsOpening($year, 2081, -2_500_000);
+    audBsOpening($year, 2091, -17_500_000);
 
-    audBokPost($owner, $company, '2026-01-15', 'Dator', [1250 => 3_600_000, 2640 => 900_000, 1930 => -4_500_000]);
-    audBokPost($owner, $company, '2026-03-15', 'Försäljning', [1510 => 62_500_000, 3001 => -50_000_000, 2611 => -12_500_000]);
-    audBokPost($owner, $company, '2026-04-15', 'Inbetalning', [1930 => 62_500_000, 1510 => -62_500_000]);
-    audBokPost($owner, $company, '2026-05-10', 'Varuinköp', [4010 => 10_000_000, 2640 => 2_500_000, 2440 => -12_500_000]);
-    audBokPost($owner, $company, '2026-05-30', 'Betalning leverantör', [2440 => 12_500_000, 1930 => -12_500_000]);
-    audBokPost($owner, $company, '2026-06-25', 'Lön juni', [7010 => 3_000_000, 7510 => 942_600, 2710 => -900_000, 2731 => -942_600, 1930 => -2_100_000]);
-    audBokPost($owner, $company, '2026-08-01', 'Ej avdragsgill kostnad', [6992 => 200_000, 1930 => -200_000]);
-    audBokPost($owner, $company, '2026-10-01', 'Hyra okt 2026–sep 2027', [5010 => 6_000_000, 1930 => -6_000_000]);
-    audBokPost($owner, $company, '2026-11-30', 'Ränta', [1930 => 143_300, 8310 => -143_300]);
+    audBsPost($owner, $company, '2026-01-15', 'Dator', [1250 => 3_600_000, 2640 => 900_000, 1930 => -4_500_000]);
+    audBsPost($owner, $company, '2026-03-15', 'Försäljning', [1510 => 62_500_000, 3001 => -50_000_000, 2611 => -12_500_000]);
+    audBsPost($owner, $company, '2026-04-15', 'Inbetalning', [1930 => 62_500_000, 1510 => -62_500_000]);
+    audBsPost($owner, $company, '2026-05-10', 'Varuinköp', [4010 => 10_000_000, 2640 => 2_500_000, 2440 => -12_500_000]);
+    audBsPost($owner, $company, '2026-05-30', 'Betalning leverantör', [2440 => 12_500_000, 1930 => -12_500_000]);
+    audBsPost($owner, $company, '2026-06-25', 'Lön juni', [7010 => 3_000_000, 7510 => 942_600, 2710 => -900_000, 2731 => -942_600, 1930 => -2_100_000]);
+    audBsPost($owner, $company, '2026-08-01', 'Ej avdragsgill kostnad', [6992 => 200_000, 1930 => -200_000]);
+    audBsPost($owner, $company, '2026-10-01', 'Hyra okt 2026–sep 2027', [5010 => 6_000_000, 1930 => -6_000_000]);
+    audBsPost($owner, $company, '2026-11-30', 'Ränta', [1930 => 143_300, 8310 => -143_300]);
 
     // The fixed asset register: 36 000 kr over 36 months from January.
-    audBokAccount(7835);
+    audBsAccount(7835);
     app(FixedAssets::class)->save($owner, $company, [
         'name' => 'Dator', 'category' => AssetCategory::Computers->value, 'acquired_on' => '2026-01-15',
         'acquisition' => '36 000', 'life_months' => 36, 'depreciation_start' => '2026-01-01',
@@ -124,7 +124,7 @@ function audBokBookYear(User $owner, Company $company, FiscalYear $year): void
     }
 
     // Accruals: the prepaid rent and December's electricity.
-    audBokAccount(5020);
+    audBsAccount(5020);
     $accruals = app(Accruals::class);
     $accruals->save($owner, $company, ['name' => 'Hyra', 'kind' => AccrualKind::PrepaidExpense->value, 'total' => '60 000', 'balance_account' => 1790, 'result_account' => 5010, 'start_month' => '2026-10', 'months' => 12, 'move_from_result' => true]);
     $accruals->save($owner, $company, ['name' => 'El december', 'kind' => AccrualKind::AccruedExpense->value, 'total' => '3 000', 'balance_account' => 2990, 'result_account' => 5020, 'start_month' => '2026-12', 'months' => 1]);
@@ -156,7 +156,7 @@ beforeEach(function () {
     $this->year = FiscalYear::query()->whereDate('start_date', '2026-01-01')->firstOrFail();
     $this->closing = app(YearEndClosing::class);
 
-    audBokBookYear($this->owner, $this->company, $this->year);
+    audBsBookYear($this->owner, $this->company, $this->year);
 });
 
 it('computes INK2S taxable income as book result plus tax plus non-deductible costs (INK2S 4.1–4.15, SKV field table INK2S_SKV2002-34-01-26-04)', function () {
@@ -223,16 +223,16 @@ it('builds the K2 income statement and balance sheet that tie to the ledger (ÅR
     $accounts = AnnualAccounts::for($this->year);
     $income = $accounts->incomeStatement();
 
-    expect(audBokLine($income, 'net_sales'))->toBe(50_000_000)
-        ->and(audBokLine($income, 'raw_materials'))->toBe(-10_000_000)
-        ->and(audBokLine($income, 'other_external'))->toBe(-2_000_000)
-        ->and(audBokLine($income, 'personnel'))->toBe(-3_942_600)
-        ->and(audBokLine($income, 'depreciation'))->toBe(-1_200_000)
-        ->and(audBokLine($income, 'operating_result'))->toBe(32_857_400)
-        ->and(audBokLine($income, 'interest_income'))->toBe(143_300)
-        ->and(audBokLine($income, 'after_financial'))->toBe(33_000_700)
-        ->and(audBokLine($income, 'tax'))->toBe(-6_839_200)
-        ->and(audBokLine($income, 'year_result'))->toBe(26_161_500)
+    expect(audBsLine($income, 'net_sales'))->toBe(50_000_000)
+        ->and(audBsLine($income, 'raw_materials'))->toBe(-10_000_000)
+        ->and(audBsLine($income, 'other_external'))->toBe(-2_000_000)
+        ->and(audBsLine($income, 'personnel'))->toBe(-3_942_600)
+        ->and(audBsLine($income, 'depreciation'))->toBe(-1_200_000)
+        ->and(audBsLine($income, 'operating_result'))->toBe(32_857_400)
+        ->and(audBsLine($income, 'interest_income'))->toBe(143_300)
+        ->and(audBsLine($income, 'after_financial'))->toBe(33_000_700)
+        ->and(audBsLine($income, 'tax'))->toBe(-6_839_200)
+        ->and(audBsLine($income, 'year_result'))->toBe(26_161_500)
         ->and($accounts->yearResult())->toBe(26_161_500);
 
     $sheet = $accounts->balanceSheet();
@@ -241,15 +241,15 @@ it('builds the K2 income statement and balance sheet that tie to the ledger (ÅR
     expect($sheet['assets'])->toBe(64_243_300)
         ->and($sheet['equity_liabilities'])->toBe(64_243_300)
         ->and($sheet['equity'])->toBe(46_161_500)
-        ->and(audBokLine($sections['fixed']['lines'], 'machinery'))->toBe(2_400_000)
-        ->and(audBokLine($sections['current']['lines'], 'prepaid'))->toBe(4_500_000)
-        ->and(audBokLine($sections['current']['lines'], 'cash'))->toBe(57_343_300)
-        ->and(audBokLine($sections['restricted']['lines'], 'share_capital'))->toBe(2_500_000)
-        ->and(audBokLine($sections['free']['lines'], 'retained'))->toBe(17_500_000)
-        ->and(audBokLine($sections['free']['lines'], 'year_result'))->toBe(26_161_500)
-        ->and(audBokLine($sections['short_term']['lines'], 'tax_liabilities'))->toBe(6_839_200)
-        ->and(audBokLine($sections['short_term']['lines'], 'other_liabilities'))->toBe(10_942_600)
-        ->and(audBokLine($sections['short_term']['lines'], 'accrued'))->toBe(300_000)
+        ->and(audBsLine($sections['fixed']['lines'], 'machinery'))->toBe(2_400_000)
+        ->and(audBsLine($sections['current']['lines'], 'prepaid'))->toBe(4_500_000)
+        ->and(audBsLine($sections['current']['lines'], 'cash'))->toBe(57_343_300)
+        ->and(audBsLine($sections['restricted']['lines'], 'share_capital'))->toBe(2_500_000)
+        ->and(audBsLine($sections['free']['lines'], 'retained'))->toBe(17_500_000)
+        ->and(audBsLine($sections['free']['lines'], 'year_result'))->toBe(26_161_500)
+        ->and(audBsLine($sections['short_term']['lines'], 'tax_liabilities'))->toBe(6_839_200)
+        ->and(audBsLine($sections['short_term']['lines'], 'other_liabilities'))->toBe(10_942_600)
+        ->and(audBsLine($sections['short_term']['lines'], 'accrued'))->toBe(300_000)
         ->and($accounts->freeEquity())->toBe(43_661_500)
         // BFNAR 2016:10 p. 5.5: soliditet = justerat eget kapital / balansomslutning.
         ->and($accounts->solidity())->toBe(71.9);
@@ -333,8 +333,8 @@ it('AUD-BOK-7: shows the year\'s result on the overview also after it has been b
 
 it('#83: adds the schablonintäkt on the periodiseringsfond at the start of the year to INK2S 4.6 a and 4.15 (IL 30 kap. 6 a §, SKV INK2S 2026P4 field 7654)', function () {
     // Move 50 000 of the opening retained earnings to a periodiseringsfond (2125).
-    OpeningBalance::query()->where('fiscal_year_id', $this->year->id)->where('account_id', audBokAccount(2091)->id)->update(['amount_ore' => -12_500_000]);
-    audBokOpening($this->year, 2125, -5_000_000);
+    OpeningBalance::query()->where('fiscal_year_id', $this->year->id)->where('account_id', audBsAccount(2091)->id)->update(['amount_ore' => -12_500_000]);
+    audBsOpening($this->year, 2125, -5_000_000);
     $ink2 = Ink2::for($this->company, $this->year, IncomeTaxReturn::query()->sole());
 
     // 50 000 × 2,55 % (end of November 2025) × 12/12 = 1 275.
@@ -347,8 +347,8 @@ it('#83: adds the schablonintäkt on the periodiseringsfond at the start of the 
 it('#87: reports the pension costs in INK2S 4.21 and the basis for särskild löneskatt in INK2 1.4 (lag 1991:687, SKV INK2/INK2S 2026P4 fields 7132 and 8022)', function () {
     // A tjänstepension premium of 6 000 in December and its särskild löneskatt
     // 6 000 × 24,26 % = 1 455,60 on 7533/2514.
-    audBokPost($this->owner, $this->company, '2026-12-20', 'Tjänstepension', [7412 => 600_000, 1930 => -600_000]);
-    audBokPost($this->owner, $this->company, '2026-12-31', 'Särskild löneskatt', [7533 => 145_560, 2514 => -145_560]);
+    audBsPost($this->owner, $this->company, '2026-12-20', 'Tjänstepension', [7412 => 600_000, 1930 => -600_000]);
+    audBsPost($this->owner, $this->company, '2026-12-31', 'Särskild löneskatt', [7533 => 145_560, 2514 => -145_560]);
     $ink2 = Ink2::for($this->company, $this->year, IncomeTaxReturn::query()->sole());
 
     // 3.8: 39 426 + 6 000 + 1 455,60 = 46 881,60 → 46 882.

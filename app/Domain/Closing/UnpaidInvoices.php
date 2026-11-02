@@ -95,8 +95,9 @@ final class UnpaidInvoices
      */
     private static function customerLines(Invoice $invoice, int $open): array
     {
-        $lines = InvoiceBooking::revenue($invoice, $invoice->rows);
-        $base = $invoice->total_ore->ore;
+        // A credit balance (a credit of an invoice the customer had paid) is a share of the credits alone.
+        $lines = $open < 0 ? [] : InvoiceBooking::revenue($invoice, $invoice->rows);
+        $base = $open < 0 ? 0 : $invoice->total_ore->ore;
 
         foreach ($invoice->creditInvoices as $credit) {
             foreach (InvoiceBooking::revenue($credit, $credit->rows) as $account => $amount) {

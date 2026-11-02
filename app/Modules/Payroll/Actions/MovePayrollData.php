@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Domain\Engine\Steps\EmployerContributions;
 use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\Employee;
@@ -174,6 +175,10 @@ class MovePayrollData
                 foreach ($values as $key => $value) {
                     Accumulator::query()->updateOrCreate(['employee_id' => $employeeId, 'scope' => 'CALENDAR_YEAR', 'year' => $migration->year, 'key' => $key], ['value' => $value]);
                 }
+
+                // Pay that carried no contributions in the earlier system was avgiftsfri; it joins the basis once the year passes the threshold (SAL 2 kap. 24 § fjärde stycket, #71).
+                $free = ($values['contributions_ytd'] ?? 0) === 0 ? max(0, $values['contribution_basis_ytd'] ?? 0) : 0;
+                Accumulator::query()->updateOrCreate(['employee_id' => $employeeId, 'scope' => 'CALENDAR_YEAR', 'year' => $migration->year, 'key' => EmployerContributions::FREE_BASIS_YTD], ['value' => $free]);
             }
 
             $migration->forceFill(['report' => [...$migration->report, 'year_to_date' => $totals]])->save();

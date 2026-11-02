@@ -22,7 +22,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property Money $gross_ore
  * @property Money $tax_ore
  * @property Money $net_ore
+ * @property Money $contribution_basis_ore
  * @property Money $employer_contribution_ore
+ * @property array<string, mixed> $contribution_explanation
  * @property array<string, int> $accumulator_deltas
  * @property list<string> $warnings
  */

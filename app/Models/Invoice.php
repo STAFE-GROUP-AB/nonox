@@ -28,6 +28,8 @@ use LogicException;
  * @property ?string $tax_reduction ROT or RUT
  * @property Money $tax_reduction_ore
  * @property Money $tax_reduction_paid_ore
+ * @property Money $tax_reduction_repayable_ore on a credit invoice: the part of its deduction Skatteverket had already paid, a debt on 2890
+ * @property Money $tax_reduction_repaid_ore on a credit invoice: how much of that debt has been paid back
  * @property ?string $property_designation
  * @property string $id
  * @property int $company_id
@@ -47,7 +49,8 @@ use LogicException;
  * @property Money $vat_ore
  * @property Money $rounding_ore
  * @property Money $total_ore
- * @property Money $paid_ore
+ * @property Money $paid_ore what is settled: payments and the credit invoices that settle it
+ * @property Money $credited_ore the part of paid_ore that credit invoices settled
  * @property ?string $ocr
  * @property ?string $voucher_id
  * @property ?CarbonImmutable $issued_at
@@ -75,7 +78,7 @@ class Invoice extends Model
     public const string CREDIT = 'CREDIT';
 
     /** Columns that may change after the invoice is issued. */
-    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'sent_at', 'sent_to', 'updated_at'];
+    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'credited_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'tax_reduction_repaid_ore', 'sent_at', 'sent_to', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -105,8 +108,11 @@ class Invoice extends Model
         'rounding_ore' => 0,
         'total_ore' => 0,
         'paid_ore' => 0,
+        'credited_ore' => 0,
         'invoice_currency' => 'SEK',
         'foreign_paid_minor' => 0,
+        'tax_reduction_repayable_ore' => 0,
+        'tax_reduction_repaid_ore' => 0,
     ];
 
     /** @return array<string, string> */
@@ -118,6 +124,8 @@ class Invoice extends Model
             'swedish_vat_under_threshold' => 'boolean',
             'tax_reduction_ore' => MoneyCast::class,
             'tax_reduction_paid_ore' => MoneyCast::class,
+            'tax_reduction_repayable_ore' => MoneyCast::class,
+            'tax_reduction_repaid_ore' => MoneyCast::class,
             'number' => 'integer',
             'status' => InvoiceStatus::class,
             'invoice_date' => 'immutable_date',
@@ -129,6 +137,7 @@ class Invoice extends Model
             'rounding_ore' => MoneyCast::class,
             'total_ore' => MoneyCast::class,
             'paid_ore' => MoneyCast::class,
+            'credited_ore' => MoneyCast::class,
             'issued_at' => 'immutable_datetime',
             'sent_at' => 'immutable_datetime',
             'exchange_rate_micros' => 'integer',
@@ -175,6 +184,33 @@ class Invoice extends Model
     }
 
     /**
+     * What is still claimed from Skatteverket on 1513 for a ROT or RUT
+     * invoice: the deduction, less what Skatteverket has paid and what
+     * issued credit invoices took off the claim (the rest of their
+     * deduction is a debt to Skatteverket, not a smaller claim).
+     */
+    public function taxReductionClaimable(): Money
+    {
+        if ($this->tax_reduction === null || $this->isCredit()) {
+            return Money::zero();
+        }
+
+        $credits = $this->relationLoaded('creditInvoices')
+            ? $this->creditInvoices->filter(fn (Invoice $credit): bool => ! $credit->isDraft())
+            : $this->creditInvoices()->where('status', '<>', InvoiceStatus::Draft->value)->get(['tax_reduction_ore', 'tax_reduction_repayable_ore']);
+
+        $offClaim = (int) $credits->sum(fn (Invoice $credit): int => -$credit->tax_reduction_ore->ore - $credit->tax_reduction_repayable_ore->ore);
+
+        return Money::ofOre(max(0, $this->tax_reduction_ore->ore - $this->tax_reduction_paid_ore->ore - $offClaim));
+    }
+
+    /** On a credit invoice: what is still owed back to Skatteverket for its ROT or RUT deduction. */
+    public function taxReductionRepaymentLeft(): Money
+    {
+        return $this->tax_reduction_repayable_ore->minus($this->tax_reduction_repaid_ore);
+    }
+
+    /**
      * The kind of foreign sale the invoice is booked and reported as. A sale
      * to a consumer in another EU country under the OSS threshold carries
      * Swedish VAT and is booked like a sale in Sweden, so it has none.
@@ -218,9 +254,33 @@ class Invoice extends Model
         return $foreign === null ? $this->remaining()->format() : $this->formatForeign($foreign);
     }
 
+    /** A credit invoice with money left to repay to the customer is not overdue; only an unpaid invoice is. */
     public function isOverdue(?CarbonImmutable $today = null): bool
     {
-        return $this->status === InvoiceStatus::Issued && $this->due_date->lessThan($today ?? CarbonImmutable::today());
+        return ! $this->isCredit() && $this->status === InvoiceStatus::Issued && $this->due_date->lessThan($today ?? CarbonImmutable::today());
+    }
+
+    /** "Obetald", or for an open credit invoice "Att återbetala": the customer has money to get back. */
+    public function statusLabel(): string
+    {
+        return $this->isCredit() && $this->status === InvoiceStatus::Issued ? __('Att återbetala') : $this->status->label();
+    }
+
+    /**
+     * What may still be credited: the total less every issued credit
+     * invoice, whether it settled the invoice or became a credit balance.
+     * In kronor, and for an invoice in another currency in that currency.
+     *
+     * @return array{kronor: int, foreign: ?int}
+     */
+    public function creditable(): array
+    {
+        $credits = $this->creditInvoices()->where('status', '<>', InvoiceStatus::Draft->value)->get(['total_ore', 'foreign_total_minor']);
+
+        return [
+            'kronor' => $this->total_ore->ore + (int) $credits->sum(fn (Invoice $credit): int => $credit->total_ore->ore),
+            'foreign' => $this->isForeign() ? (int) $this->foreign_total_minor + (int) $credits->sum(fn (Invoice $credit): int => (int) $credit->foreign_total_minor) : null,
+        ];
     }
 
     /**

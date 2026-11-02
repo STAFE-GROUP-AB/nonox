@@ -15,7 +15,8 @@ use Illuminate\Support\Facades\Route;
 // manual/sokindex.json is the search index the manual's search box fetches (ADR-036).
 // planering/kalender/ is the iCal feed calendar apps subscribe to; they need the .ics ending.
 // hooks/ is called only by the installation's own SFTP server (SFTPGo), never by a person (ADR-032, "SFTP").
-const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json', 'planering/kalender/', 'hooks/'];
+// andringslogg/rss.xml is the changelog's feed; feed readers subscribe to it and expect the .xml ending.
+const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json', 'planering/kalender/', 'hooks/', 'andringslogg/rss.xml'];
 
 const ENGLISH_WORDS = [
     'login', 'logout', 'register', 'user', 'profile', 'team', 'teams', 'dashboard', 'password',

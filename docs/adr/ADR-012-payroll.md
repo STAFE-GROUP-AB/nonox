@@ -258,3 +258,91 @@ agreements (Handels tjänstemän § 10.3.2 anm. and § 10.3.4, Visita–Unionen
 - `TODO(legal-verify)`: the whole of the above, and whether a run that is
   calculated but not approved should block the next month's sick pay rather
   than add a note.
+
+## Legal audit fixes (2026-11-02)
+
+Enligt granskning 2026-11-02, juristgranskning återstår. Each item names the
+finding and the GitHub issue.
+
+### Tax larger than the cash pay (AUD-LON-06, #68)
+
+- Tax is withheld only from cash pay (SFL 10 kap. 3 §). Benefits are part of
+  the basis (SFL 11 kap. 4 §), but Skatteverket: "Om du inte betalar ut någon
+  kontant ersättning kan du inte göra något skatteavdrag. Det gäller även om
+  den anställda får en skattepliktig förmån". The engine therefore withholds
+  min(calculated tax, cash before tax), for every method (table, one-off,
+  jämkning, SINK, A-SINK). The rest is not withheld, not declared in 001 and
+  not a claim on the employee; the payslip says how much and that the
+  employee pays it with the final tax.
+- Deductions after tax (advance, net deduction, own payment for a benefit)
+  larger than what is left make a claim on the employee. It is a payslip
+  line of the system pay code `FORDRAN_ANSTALLD` (debit 1680 when it arises,
+  credit 1680 when it is taken back), so the salary voucher balances. The
+  accumulator `negative_net_carry_ore` holds it; the sum over all years is
+  what is owed, and the next payslip takes it from the net pay as far as it
+  reaches. The pay code cannot be entered by hand.
+- `TODO(legal-verify)`: set-off against later pay (lag (1970:215) om
+  arbetsgivares kvittningsrätt); whether tax-free cash (allowances) counts as
+  cash to withhold from (here it does).
+
+### Jämkning decisions (AUD-LON-01, #69)
+
+- "En utbetalare ska följa ett beslut om särskild beräkningsgrund enligt
+  55 kap. 9 § senast två veckor efter det att utbetalaren fick del av det"
+  (SFL 11 kap. 27 §). The employee card stores the decision: kind
+  (PERCENT, TABLE, AMOUNT), the percentage (basis points) or amount (öre),
+  the table and column (new columns `tax_adjustment_table`,
+  `tax_adjustment_column`), and the first and last payment day it applies
+  to. The person entering it chooses the first day, no later than two
+  weeks after receiving it; the form says so.
+- The context builder passes the decision when the payment date is inside
+  the validity. A percentage applies to all taxable pay, one-off payments
+  included (as before). TABLE replaces the table and column, also for the
+  one-off column. AMOUNT withholds the amount per payment with taxable pay.
+  The cash cap (#68) applies to all of them.
+- `TODO(legal-verify)`: Skatteverket's employer guidance describes a
+  percentage only ("göra skatteavdrag enligt den procentsats som beslutet
+  säger"); whether table and amount decisions occur, and how an amount
+  decision treats one-off payments, is unverified.
+
+### The youth reduction's monthly cap (AUD-LON-03, #70)
+
+- "Första stycket gäller endast till den del den avgiftspliktiga
+  ersättningen uppgår till högst 25 000 kronor per kalendermånad" (lag
+  2026:100 2 §), and the basis is the pay "utgett under en kalendermånad"
+  (SAL 2 kap. 24 §). The cap is therefore shared by all payslips to the
+  person with a payment date in the month, not applied per payslip.
+- Each payslip adds the youth-reduced basis it used to the calendar-year
+  accumulator `youth_reduced_basis_mMM` (the payment month); a later
+  payslip in the month gets cap − used. A second payslip to the same
+  person in one run sees the first one's deltas (PayrollRuns::calculate).
+- Accumulators are written at attestation, so a run calculated before
+  another run for the person was attested may be out of date. The payslip
+  keeps the values it read where they matter (`accumulators_read`), and
+  attestation refuses until the run is calculated again.
+
+### Pay that becomes contributable when the year passes 1 000 kr (AUD-LON-02, #71)
+
+- "En ersättning till en person är avgiftsfri om ersättningen till den
+  personen under året understigit 1 000 kronor" (SAL 2 kap. 14 §), and "I
+  avgiftsunderlaget ska också ingå tidigare under året utgiven avgiftsfri
+  ersättning som sammanräknad med en ersättning som utgetts under
+  kalendermånaden blir avgiftspliktig" (SAL 2 kap. 24 § fjärde stycket).
+- Avgiftsfri basis is kept in the calendar-year accumulator
+  `contribution_free_basis_ytd`. The payslip that takes the year to the
+  threshold adds it to its basis (`earlier_free_basis_ore` in the
+  contribution explanation) and clears it; that month's rates apply to it.
+- AGI: Skatteverket (agbeskrivning, ruta 010) lets the employer declare the
+  earlier avgiftsfri pay in the period it becomes known: 011 holds the
+  month's pay plus what earlier periods declared as avgiftsfri, and 010
+  that earlier amount. Avgiftsfri pay is declared in 131 (benefits 132–134)
+  rather than 011, element names from the component schema 1.1
+  (`KontantErsattningEjUlagSA`, `SkatteplOvrigaFormanerEjUlagSA`,
+  `SkatteplBilformanEjUlagSA`, `DrivmVidBilformanEjUlagSA`,
+  `AvrakningAvgiftsfriErs`), checked against the schema files. This also
+  covers the field-131 part of AUD-LON-04, which #71 depends on.
+- Migration of year-to-date totals: a basis with no contributions paid in
+  the earlier system is taken as avgiftsfri.
+- `TODO(legal-verify)`: earlier avgiftsfri benefits are added to 011 with
+  the cash (Skatteverket's example shows cash only); correcting each earlier
+  period instead (Skatteverket's other option) is not offered.

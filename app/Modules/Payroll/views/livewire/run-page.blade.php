@@ -244,7 +244,11 @@
                                 @endforeach
                                 <tr><td class="py-1 pr-4 text-gray-600">{{ __('Skatt') }}
                                     @if(($payslip->tax_explanation['method'] ?? null) === 'table')
-                                        <span class="block text-xs text-gray-500">{{ __('Tabell :table, kolumn :column, inkomst :income kr', ['table' => $payslip->tax_explanation['table'], 'column' => $payslip->tax_explanation['column'], 'income' => number_format((int) $payslip->tax_explanation['income_kronor'], 0, ',', ' ')]) }}</span>
+                                        <span class="block text-xs text-gray-500">{{ __('Tabell :table, kolumn :column, inkomst :income kr', ['table' => $payslip->tax_explanation['table'], 'column' => $payslip->tax_explanation['column'], 'income' => number_format((int) $payslip->tax_explanation['income_kronor'], 0, ',', ' ')]) }}@if($payslip->tax_explanation['adjustment'] ?? false) {{ __('enligt jämkningsbeslut') }}@endif</span>
+                                    @elseif(($payslip->tax_explanation['method'] ?? null) === 'adjustment_percent')
+                                        <span class="block text-xs text-gray-500">{{ __('Jämkning :percent', ['percent' => rtrim(rtrim(number_format(((int) $payslip->tax_explanation['rate_bp']) / 100, 2, ',', ''), '0'), ',').' %']) }}</span>
+                                    @elseif(($payslip->tax_explanation['method'] ?? null) === 'adjustment_amount')
+                                        <span class="block text-xs text-gray-500">{{ __('Jämkning med fast belopp') }}</span>
                                     @endif
                                 </td><td class="py-1 text-right"><x-ui.amount :money="$payslip->tax_ore->negated()" /></td></tr>
                             </tbody>

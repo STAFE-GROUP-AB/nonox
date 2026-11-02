@@ -52,7 +52,7 @@
                                     @if($invoice->isOverdue($today))
                                         <span class="inline-flex rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">{{ __('Förfallen') }}</span>
                                     @else
-                                        <x-ui.badge :tone="$invoice->status === InvoiceStatus::Paid ? 'success' : 'neutral'">{{ $invoice->status->label() }}</x-ui.badge>
+                                        <x-ui.badge :tone="$invoice->status === InvoiceStatus::Paid ? 'success' : 'neutral'">{{ $invoice->statusLabel() }}</x-ui.badge>
                                     @endif
                                 </td>
                             </tr>

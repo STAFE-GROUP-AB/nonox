@@ -141,7 +141,7 @@ Varje scope är samma behörighet som rollerna i NONOX använder.
 | `invoices:view` | Läsa kunder, artiklar, kundfakturor (med PDF) och inbetalningar |
 | `invoices:create` | Lägga till och ändra kunder, artiklar och fakturautkast |
 | `invoices:send` | Skapa fakturor av utkast och mejla dem |
-| `invoices:credit` | Kreditera obetalda fakturor |
+| `invoices:credit` | Kreditera fakturor, även betalda |
 | `payments:create` | Registrera inbetalningar och betalningar av leverantörsfakturor |
 | `supplier-invoices:create` | Läsa och lägga till leverantörer och leverantörsfakturor, registrera fakturor |
 | `supplier-invoices:approve` | Läsa och attestera leverantörsfakturor |

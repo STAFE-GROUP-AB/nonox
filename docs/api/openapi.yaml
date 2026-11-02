@@ -3930,7 +3930,7 @@ paths:
         - name: status
           in: query
           required: false
-          description: 'DRAFT, ISSUED (unpaid), PAID or CREDITED.'
+          description: 'DRAFT, ISSUED (unpaid; on a credit invoice: money left to pay back to the customer), PAID or CREDITED.'
           schema:
             type: string
             enum:
@@ -4776,7 +4776,7 @@ paths:
       tags:
         - Kundfakturor
       summary: 'Start a credit invoice'
-      description: 'Creates a draft credit invoice for the whole of an unpaid invoice, with the same rows and negative quantities. It takes effect when issued with /issue, which closes both. Same Action as the app (CreditInvoice).'
+      description: 'Creates a draft credit invoice for an issued invoice, unpaid or paid, with the same rows and negative quantities; change the rows to credit part of it. It takes effect when issued with /issue: it settles what remains of the invoice by its own amount, and what the customer had already paid is left open on the credit invoice as a credit balance to pay back. A credit larger than what is not credited yet is refused. Same Actions as the app (CreditInvoice, IssueInvoice).'
       x-sv-summary: 'Kreditera en faktura'
       x-sv-description: 'Skapar ett utkast till kreditfaktura för hela den obetalda fakturan; den gäller när den skapas.'
       security:
@@ -6917,7 +6917,7 @@ components:
             'invoices:view': 'Read customers, articles, customer invoices and incoming payments'
             'invoices:create': 'Create and change customers, articles and draft customer invoices'
             'invoices:send': 'Issue customer invoices (with vouchers:create and vouchers:post) and e-mail them'
-            'invoices:credit': 'Credit unpaid customer invoices'
+            'invoices:credit': 'Credit customer invoices'
             'payments:create': 'Register incoming payments and supplier payments (with vouchers:create and vouchers:post)'
             'supplier-invoices:create': 'Read suppliers and supplier invoices, create suppliers and draft and register supplier invoices'
             'supplier-invoices:approve': 'Read and approve supplier invoices (never ones the same person registered, while the company requires separate approval)'
@@ -6935,7 +6935,7 @@ components:
         'invoices:view': 'Läsa kunder, artiklar, kundfakturor och inbetalningar'
         'invoices:create': 'Lägga till och ändra kunder och artiklar och skapa utkast till kundfakturor'
         'invoices:send': 'Skapa kundfakturor (med vouchers:create och vouchers:post) och mejla dem'
-        'invoices:credit': 'Kreditera obetalda kundfakturor'
+        'invoices:credit': 'Kreditera kundfakturor'
         'payments:create': 'Registrera inbetalningar och betalningar till leverantörer (med vouchers:create och vouchers:post)'
         'supplier-invoices:create': 'Läsa leverantörer och leverantörsfakturor, lägga till leverantörer och skapa och registrera leverantörsfakturor'
         'supplier-invoices:approve': 'Läsa och attestera leverantörsfakturor (aldrig sådana samma person registrerat, när företaget kräver separat attest)'
@@ -9625,11 +9625,12 @@ components:
             - string
             - 'null'
           format: uuid
+          description: 'The latest settlement voucher of the period: the supplementary one when the period was booked again after a late posting.'
         payable_sek:
           type:
             - integer
             - 'null'
-          description: 'Box 49 in whole kronor, when settled.'
+          description: 'Box 49 in whole kronor, when settled, from the latest booked version of the return.'
     VatReturn:
       type: object
       properties:
@@ -9648,6 +9649,7 @@ components:
             - string
             - 'null'
           format: uuid
+          description: 'The latest settlement voucher of the period: the supplementary one when the period was booked again after a late posting.'
         boxes:
           type: array
           items:

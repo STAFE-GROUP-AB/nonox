@@ -49,12 +49,26 @@ class InvoicePolicy
         return ! $invoice->isDraft() && $this->can($user, $invoice, 'invoices:send');
     }
 
+    /**
+     * An unpaid, part-paid or paid invoice can be credited while some of it
+     * is not credited yet (Mervärdesskattelag (2023:200) 17 kap. 22-23 §§,
+     * 7 kap. 46 §).
+     */
     public function credit(User $user, Invoice $invoice): bool
     {
         return ! $invoice->isCredit()
-            && $invoice->status === InvoiceStatus::Issued
-            && $invoice->paid_ore->isZero()
+            && in_array($invoice->status, [InvoiceStatus::Issued, InvoiceStatus::Paid], true)
+            && $invoice->creditable()['kronor'] > 0
             && $this->can($user, $invoice, 'invoices:credit');
+    }
+
+    /** A credit invoice that left the customer a credit balance can be paid back. */
+    public function registerRefund(User $user, Invoice $invoice): bool
+    {
+        return $invoice->isCredit()
+            && $invoice->status === InvoiceStatus::Issued
+            && $invoice->remaining()->isNegative()
+            && $this->can($user, $invoice, 'payments:create');
     }
 
     public function remind(User $user, Invoice $invoice): bool
@@ -64,15 +78,28 @@ class InvoicePolicy
 
     public function registerPayment(User $user, Invoice $invoice): bool
     {
-        return $invoice->status === InvoiceStatus::Issued && $this->can($user, $invoice, 'payments:create');
+        return ! $invoice->isCredit() && $invoice->status === InvoiceStatus::Issued && $this->can($user, $invoice, 'payments:create');
     }
 
-    /** Skatteverket's ROT or RUT payment can come before or after the customer has paid. */
+    /**
+     * Skatteverket's ROT or RUT payment can come before or after the customer
+     * has paid, for what is still claimed after any credits.
+     */
     public function registerTaxReductionPayment(User $user, Invoice $invoice): bool
     {
         return in_array($invoice->status, [InvoiceStatus::Issued, InvoiceStatus::Paid], true)
             && $invoice->tax_reduction !== null
-            && $invoice->tax_reduction_paid_ore->ore < $invoice->tax_reduction_ore->ore
+            && ! $invoice->isCredit()
+            && $invoice->taxReductionClaimable()->ore > 0
+            && $this->can($user, $invoice, 'payments:create');
+    }
+
+    /** Paying back to Skatteverket a deduction a credit invoice took back from the buyer. */
+    public function registerTaxReductionRepayment(User $user, Invoice $invoice): bool
+    {
+        return $invoice->isCredit()
+            && ! $invoice->isDraft()
+            && $invoice->taxReductionRepaymentLeft()->ore > 0
             && $this->can($user, $invoice, 'payments:create');
     }
 

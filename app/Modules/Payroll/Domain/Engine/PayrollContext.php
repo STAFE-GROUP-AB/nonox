@@ -23,6 +23,9 @@ final readonly class PayrollContext
      * @param  ?list<string>  $weekPattern  scheduled hours Monday to Sunday
      * @param  ?array{below_bp: int, above_bp: int, name: string, threshold_ibb?: string, ceiling_ibb?: ?string, from_age?: ?int, to_age_exclusive?: ?int, rule_version_id?: ?int, agreement?: array<string, mixed>}  $pension  the employment's pension plan, or the collective agreement's (NONOX Avtal): the optional keys set another threshold, a ceiling and the ages the premium is paid between
      * @param  array<string, object>  $extensions  what other modules add for their steps, by module key (for example the agreement the employment is bound by)
+     * @param  int  $employeeClaimOre  what the employee still owes from earlier payslips whose deductions after tax were larger than the pay (NetPay), over all years
+     * @param  ?int  $taxAdjustmentTable  a jämkning decision that names another table (with $taxAdjustmentColumn); like $taxAdjustmentPercentBp and $taxAdjustmentAmountOre only set while the decision is in force on the payment date
+     * @param  ?int  $taxAdjustmentAmountOre  a jämkning decision that names an amount of tax per payment
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -51,6 +54,10 @@ final readonly class PayrollContext
         public ?array $pension = null,
         public array $extensions = [],
         public ?SickPayTerms $sickPayTerms = null,
+        public int $employeeClaimOre = 0,
+        public ?int $taxAdjustmentTable = null,
+        public ?int $taxAdjustmentColumn = null,
+        public ?int $taxAdjustmentAmountOre = null,
     ) {}
 
     /**
@@ -93,6 +100,18 @@ final readonly class PayrollContext
     public function withPension(?array $pension): self
     {
         return new self(...[...get_object_vars($this), 'pension' => $pension]);
+    }
+
+    /**
+     * A copy with other calendar-year values, for a second payslip to the
+     * same person in one run (another employment): it sees what the first
+     * one added.
+     *
+     * @param  array<string, int>  $accumulators
+     */
+    public function withAccumulators(array $accumulators): self
+    {
+        return new self(...[...get_object_vars($this), 'accumulators' => $accumulators]);
     }
 
     /** A copy with what a module adds for its own steps. */

@@ -40,7 +40,7 @@ class RegisterTaxReductionPayment
             /** @var Invoice $invoice */
             $invoice = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
             $company = Company::query()->findOrFail($invoice->company_id);
-            $left = $invoice->tax_reduction_ore->ore - $invoice->tax_reduction_paid_ore->ore;
+            $left = $invoice->taxReductionClaimable()->ore;
 
             if ($invoice->tax_reduction === null || $invoice->status === InvoiceStatus::Draft || $invoice->isCredit()) {
                 throw ValidationException::withMessages(['amount' => __('Fakturan har inget ROT- eller RUT-avdrag att få betalt för.')]);

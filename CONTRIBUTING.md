@@ -39,6 +39,16 @@ Allt ska vara grönt. CI kör samma kontroller på varje pull request.
 - Commit-meddelanden följer [Conventional Commits](https://www.conventionalcommits.org): `feat(vouchers): post voucher with gapless numbering`.
 - Beskriv vad och varför, bifoga skärmbilder för ändringar i gränssnittet och lista eventuella `TODO(legal-verify)`.
 
+## Ändringslogg och färdplan
+
+Den publika ändringsloggen på `/andringslogg` och färdplanen på `/fardplan` är till för dem som aldrig öppnar koden. Håll dem ärliga:
+
+- Varje ändring som levereras (`feat`, `fix`, `perf` eller en säkerhetsrättelse) får en post i `docs/andringslogg/andringslogg.json` i samma pull request. Skriv rubriken och en till tre meningar på vanlig svenska, ur användarens perspektiv. Ange `datum` (ISO 8601 med tidszon, Europe/Stockholm), `typ` (Nytt, Förbättrat, Rättat eller Säkerhet), `omrade` och gärna `version` (den korta commit-hashen). Små ändringar samma dag som hör ihop blir en post.
+- Skriv aldrig namn på personer eller kunder, hemligheter eller länkar till kodförrådet i posterna.
+- Ren städning, tester, kodstil och stavfel i dokumentationen får ingen post.
+- När något på färdplanen (`docs/fardplan/fardplan.json`) blir klart tar du bort punkten där. Den syns sedan under Klart nyligen, som läses ur ändringsloggen. Färdplanen tar bara upp större funktioner och önskemål, aldrig buggar eller små rättelser.
+- `tests/Feature/ChangelogTest.php` kontrollerar båda filerna och fallerar när den senaste posten är mer än ett dygn äldre än den senaste `feat`- eller `fix`-commiten.
+
 ## Versioner och releaser
 
 Varje version taggas `vMAJOR.MINOR.PATCH` enligt [semantisk versionering](https://semver.org) och publiceras som en [release](https://github.com/STAFE-GROUP-AB/nonox/releases) med en beskrivning av vad som ändrats. Releaser skapas av projektets team.
