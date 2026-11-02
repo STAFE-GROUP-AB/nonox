@@ -1233,6 +1233,21 @@ lönebeskeden låsta i databasen.
   metoden. `TODO(legal-verify)`: Skatteverkets information till
   arbetsgivare beskriver bara en procentsats; tabell och belopp är
   oprövade.
+- Ungdomsnedsättningens tak per kalendermånad (enligt granskning
+  2026-11-02, juristgranskning återstår, AUD-LON-03, #70): den nedsatta
+  avgiften gäller högst 25 000 kr (regeln
+  `employer_contribution.youth_reduction`) av det som betalas ut till
+  personen under en kalendermånad (lag 2026:100 2 § andra stycket, SAL
+  2 kap. 24 §), sammanlagt för alla lönebesked med utbetalningsdag i
+  månaden. Ackumulatorn `youth_reduced_basis_mMM` (MM = utbetalningsmånaden)
+  håller det som tidigare attesterade lönebesked i månaden har använt;
+  nästa lönebesked får bara det som är kvar. Två lönebesked till samma
+  person i samma körning (två anställningar) räknas i tur och ordning.
+- Inaktuell beräkning (#70, #71): lönebeskedet sparar de ackumulatorer som
+  avgifterna byggde på när de kan ändras av en annan körning
+  (`contribution_explanation.accumulators_read`). Har en annan körning för
+  samma person attesterats sedan dess vägrar attesten med "Beräkna
+  lönekörningen igen innan du attesterar" och personens namn.
 - Skatt som är större än kontantlönen (enligt granskning 2026-11-02,
   juristgranskning återstår, AUD-LON-06, #68): skatteavdrag görs bara från
   kontant ersättning (SFL 10 kap. 3 §). Förmåner räknas in i underlaget

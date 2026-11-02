@@ -271,3 +271,19 @@ finding and the GitHub issue.
   percentage only ("göra skatteavdrag enligt den procentsats som beslutet
   säger"); whether table and amount decisions occur, and how an amount
   decision treats one-off payments, is unverified.
+
+### The youth reduction's monthly cap (AUD-LON-03, #70)
+
+- "Första stycket gäller endast till den del den avgiftspliktiga
+  ersättningen uppgår till högst 25 000 kronor per kalendermånad" (lag
+  2026:100 2 §), and the basis is the pay "utgett under en kalendermånad"
+  (SAL 2 kap. 24 §). The cap is therefore shared by all payslips to the
+  person with a payment date in the month, not applied per payslip.
+- Each payslip adds the youth-reduced basis it used to the calendar-year
+  accumulator `youth_reduced_basis_mMM` (the payment month); a later
+  payslip in the month gets cap − used. A second payslip to the same
+  person in one run sees the first one's deltas (PayrollRuns::calculate).
+- Accumulators are written at attestation, so a run calculated before
+  another run for the person was attested may be out of date. The payslip
+  keeps the values it read where they matter (`accumulators_read`), and
+  attestation refuses until the run is calculated again.

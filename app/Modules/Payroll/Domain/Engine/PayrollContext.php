@@ -102,6 +102,18 @@ final readonly class PayrollContext
         return new self(...[...get_object_vars($this), 'pension' => $pension]);
     }
 
+    /**
+     * A copy with other calendar-year values, for a second payslip to the
+     * same person in one run (another employment): it sees what the first
+     * one added.
+     *
+     * @param  array<string, int>  $accumulators
+     */
+    public function withAccumulators(array $accumulators): self
+    {
+        return new self(...[...get_object_vars($this), 'accumulators' => $accumulators]);
+    }
+
     /** A copy with what a module adds for its own steps. */
     public function withExtension(string $key, object $value): self
     {

@@ -24,7 +24,9 @@ Vilken avgift som gäller beror på den anställdas ålder, räknad från födel
 - **Lägre avgift för äldre**, där bara en del av avgiften betalas, och ingen avgift alls för de äldsta.
 - **Sänkt avgift för unga** – en tillfällig nedsättning för anställda födda vissa år, upp till ett visst belopp per månad. Den gäller under den tid riksdagen har bestämt.
 
-NONOX väljer avgiften av sig själv utifrån födelseåret och utbetalningsdagen. Nedsättningen för unga gäller bara upp till månadstaket; lön över taket får full avgift.
+NONOX väljer avgiften av sig själv utifrån födelseåret och utbetalningsdagen. Nedsättningen för unga gäller bara upp till månadstaket; lön över taket får full avgift. Taket gäller allt som betalas ut till personen under en kalendermånad. Får personen två löner samma månad, till exempel en sen lön och månadens lön, delar de på taket: den som attesteras först använder det först, och den andra får bara det som är kvar.
+
+Har en annan lönekörning för samma person attesterats efter att din körning beräknades kan avgifterna i din körning vara fel. NONOX säger då **Beräkna lönekörningen igen innan du attesterar**. Klicka på **Beräkna** och attestera sedan.
 
 Ingen avgift tas ut så länge en persons ersättning under året stannar under Skatteverkets gräns för avgiftsplikt.
 

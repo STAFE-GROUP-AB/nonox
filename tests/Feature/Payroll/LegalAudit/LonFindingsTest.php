@@ -164,13 +164,33 @@ it('charges contributions on the whole year\'s pay once it reaches 1 000 kr (SAL
 it('caps the youth reduction at 25 000 kr per calendar month across all payslips paid in it (lag 2026:100 2 §)', function () {
     $ung = LonSupport::employee($this->owner, $this->company, '20050301');
     // March's salary paid late, on 1 April, and April's salary on 24 April: both paid in April.
-    $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-03', CarbonImmutable::parse('2026-04-01')));
+    $march = $this->runs->create($this->owner, $this->company, '2026-03', CarbonImmutable::parse('2026-04-01'));
+    $this->runs->calculate($this->owner, $march);
+    $this->runs->approve($this->admin, $march->fresh());
     $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
 
     // 64 000 kr paid in April: 25 000 × 20,81 % = 5 202,50 + 39 000 × 31,42 % = 12 253,80 → 17 456,30 kr.
-    // The code applies the cap per payslip: 2 × 7 401,90 = 14 803,80 kr.
-    expect((int) Payslip::query()->where('employee_id', $ung->id)->sum('employer_contribution_ore'))->toBe(1_745_630);
-})->todo('AUD-LON-03: the youth cap is applied per payslip, not per calendar month');
+    // March's payslip: 5 202,50 + 7 000 × 31,42 % = 7 401,90; April's: no room left, 32 000 × 31,42 % = 10 054,40.
+    expect((int) Payslip::query()->where('employee_id', $ung->id)->sum('employer_contribution_ore'))->toBe(1_745_630)
+        ->and(Payslip::query()->where('employee_id', $ung->id)->orderBy('id')->pluck('employer_contribution_ore')->map(fn ($money) => $money->ore)->all())->toBe([740_190, 1_005_440]);
+});
+
+it('asks for a new calculation when another run paid in the same month was attested after it was calculated (#70)', function () {
+    LonSupport::employee($this->owner, $this->company, '20050301');
+    $march = $this->runs->create($this->owner, $this->company, '2026-03', CarbonImmutable::parse('2026-04-01'));
+    $april = $this->runs->create($this->owner, $this->company, '2026-04');
+    $this->runs->calculate($this->owner, $march);
+    $this->runs->calculate($this->owner, $april);
+    $this->runs->approve($this->admin, $march->fresh());
+
+    // April was calculated with the whole cap free; March has used it since.
+    expect(fn () => $this->runs->approve($this->admin, $april->fresh()))->toThrow(ValidationException::class, 'Beräkna lönekörningen igen');
+
+    $this->runs->calculate($this->owner, $april->fresh());
+    $this->runs->approve($this->admin, $april->fresh());
+
+    expect(Payslip::query()->where('payroll_run_id', $april->id)->sole()->employer_contribution_ore->ore)->toBe(1_005_440);
+});
 
 it('declares pay without contributions in field 131, not 011 (Skatteverket, fältkod 131)', function () {
     $tim = LonSupport::employee($this->owner, $this->company, '19950707', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD']);

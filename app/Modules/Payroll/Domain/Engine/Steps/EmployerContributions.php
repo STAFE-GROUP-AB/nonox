@@ -14,9 +14,20 @@ use Brick\Math\RoundingMode;
 /**
  * Step 11: employer contributions on the contribution basis, by the
  * employee's birth year (rules employer_contribution.*): full rate, the
- * reduced rate for older employees, and the temporary youth reduction up to
- * its monthly cap. Nothing is due while the year's basis stays below the
- * annual threshold.
+ * reduced rate for older employees, and the temporary youth reduction.
+ * Nothing is due while the year's basis stays below the annual threshold.
+ *
+ * The youth reduction covers at most the monthly cap of the pay paid out in
+ * a calendar month (lag 2026:100 2 § andra stycket; SAL 2 kap. 24 § första
+ * stycket), over all the person's payslips paid in that month: the
+ * accumulator youth_reduced_basis_mMM holds what earlier payslips paid in
+ * the month used (enligt granskning 2026-11-02, juristgranskning återstår,
+ * AUD-LON-03, #70).
+ *
+ * The accumulators a payslip read are kept in its explanation
+ * (accumulators_read) when they could change its result, so attesting a run
+ * after another run for the same person was attested stops and asks for a
+ * new calculation (PayrollRuns::approve).
  *
  * TODO(legal-verify): rounding of contributions per payslip (here half up
  * to öre; AGI reports totals), contributions owed for earlier months once
@@ -24,6 +35,13 @@ use Brick\Math\RoundingMode;
  */
 final class EmployerContributions implements Step
 {
+    public const string BASIS_YTD = 'contribution_basis_ytd';
+
+    public static function youthKey(int $month): string
+    {
+        return sprintf('youth_reduced_basis_m%02d', $month);
+    }
+
     public function apply(PayrollContext $context, PayslipDraft $draft): void
     {
         $basis = $draft->contributionBasis();
@@ -31,7 +49,7 @@ final class EmployerContributions implements Step
         $born = $context->birthDate->year;
         $fullBp = (int) ((array) $rules->get('employer_contribution.full'))['bp'];
         $threshold = (int) ((array) $rules->get('employer_contribution.min_annual_basis'))['ore'];
-        $ytd = $context->accumulators['contribution_basis_ytd'] ?? 0;
+        $ytd = $context->accumulators[self::BASIS_YTD] ?? 0;
 
         if ($basis <= 0 || $ytd + $basis < $threshold) {
             $draft->employerContributionOre = 0;
@@ -53,8 +71,12 @@ final class EmployerContributions implements Step
         $youth = (array) $rules->get('employer_contribution.youth_reduction');
 
         if (($youth['applies'] ?? false) && $born >= (int) $youth['born_from'] && $born <= (int) $youth['born_to']) {
-            $capped = min($basis, (int) $youth['monthly_cap_ore']);
-            $this->charge($draft, [[$capped, (int) $youth['bp']], [$basis - $capped, $fullBp]], ['rule' => 'youth_reduction', 'born' => $born, 'cap_ore' => (int) $youth['monthly_cap_ore']]);
+            $key = self::youthKey($context->paymentDate->month);
+            $used = max(0, $context->accumulators[$key] ?? 0);
+            $cap = (int) $youth['monthly_cap_ore'];
+            $capped = min($basis, max(0, $cap - $used));
+            $draft->accumulatorDeltas[$key] = ($draft->accumulatorDeltas[$key] ?? 0) + $capped;
+            $this->charge($draft, [[$capped, (int) $youth['bp']], [$basis - $capped, $fullBp]], ['rule' => 'youth_reduction', 'born' => $born, 'cap_ore' => $cap, 'cap_used_before_ore' => $used, 'accumulators_read' => [$key => $used]]);
 
             return;
         }
