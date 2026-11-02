@@ -1,0 +1,44 @@
+{
+    "name": "NONOX Skanna",
+    "short_name": "Skanna",
+    "description": "Skanna varor in och ut ur lagret, plocka och inventera med mobilen.",
+    "lang": "sv",
+    "dir": "ltr",
+    "id": "/lager/skanna",
+    "start_url": "/lager/skanna",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#15171C",
+    "theme_color": "#15171C",
+    "categories": [
+        "business",
+        "productivity"
+    ],
+    "icons": [
+        {
+            "src": "/brand/skanna-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/brand/skanna-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/brand/skanna-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/brand/skanna-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ]
+}

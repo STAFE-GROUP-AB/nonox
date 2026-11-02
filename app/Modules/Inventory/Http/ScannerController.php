@@ -59,7 +59,8 @@ class ScannerController
                     'operations' => route('inventory.scanner.operations', absolute: false),
                     'lookup' => route('inventory.scanner.lookup', absolute: false),
                     'app' => route('inventory.overview', absolute: false),
-                    'login' => route('login', absolute: false),
+                    // Through the page itself, so signing in returns to Skanna and not to the full app.
+                    'login' => route('inventory.scanner', absolute: false),
                 ],
             ],
         ])->header('Permissions-Policy', self::PERMISSIONS)->header('Cache-Control', 'no-cache, private');

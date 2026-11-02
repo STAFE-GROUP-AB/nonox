@@ -6,7 +6,8 @@
         <meta name="robots" content="noindex">
         <meta name="color-scheme" content="light dark">
         <title>{{ __('Skanna lager') }} – NONOX</title>
-        @include('partials.favicon')
+        {{-- Its own manifest and icon, so Skanna installs as a separate app on the phone's home screen. --}}
+        @include('partials.favicon', ['manifest' => 'skanna.webmanifest', 'icon' => 'brand/skanna-icon.svg', 'touchIcon' => 'brand/skanna-touch-icon.png', 'appTitle' => 'Skanna'])
         <script type="application/json" id="scanner-config">{!! json_encode($config, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_THROW_ON_ERROR) !!}</script>
         @vite([App\Modules\Inventory\Http\ScannerController::ENTRY_JS])
     </head>

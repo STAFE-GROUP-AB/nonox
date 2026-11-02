@@ -45,7 +45,19 @@ it('describes installable apps whose start pages and icons exist', function (str
 })->with([
     'the app' => ['app.webmanifest', 'dashboard'],
     'Min sida' => ['anstalld.webmanifest', 'payroll.portal.home'],
+    'Skanna' => ['skanna.webmanifest', 'inventory.scanner'],
 ]);
+
+it('gives Skanna its own manifest so it installs as a separate app', function () {
+    expect(manifest('skanna.webmanifest')['id'])->not->toBe(manifest('app.webmanifest')['id'])
+        ->and(public_path('brand/skanna-touch-icon.png'))->toBeFile();
+
+    $view = (string) view('partials.favicon', ['manifest' => 'skanna.webmanifest', 'touchIcon' => 'brand/skanna-touch-icon.png', 'appTitle' => 'Skanna']);
+
+    expect($view)->toContain('href="'.asset('skanna.webmanifest').'"')
+        ->and($view)->toContain(asset('brand/skanna-touch-icon.png'))
+        ->and($view)->toContain('content="Skanna"');
+});
 
 it('keeps the service worker to an offline page and caches no data', function () {
     $worker = (string) file_get_contents(public_path('sw.js'));

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-skanna-som-egen-app",
+      "datum": "2026-11-02T23:28:53+01:00",
+      "rubrik": "Skanna kan läggas på hemskärmen som en egen app",
+      "beskrivning": "Lägger du till Skanna på hemskärmen blir den en egen app med egen ikon och namnet Skanna, och den öppnas direkt i skanningsläget. Lagerpersonalen behöver alltså bara Skanna på telefonen, och loggar man in på nytt hamnar man tillbaka i Skanna.",
+      "typ": "Förbättrat",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-02-lager-pa-startsidan-och-i-manualen",
       "datum": "2026-11-02T19:31:08+01:00",
       "rubrik": "Lager syns på startsidan och i manualen med skärmbilder",

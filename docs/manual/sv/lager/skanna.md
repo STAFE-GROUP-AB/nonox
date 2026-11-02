@@ -24,6 +24,10 @@ Skanna är en del av NONOX. Du laddar inte ner något från App Store eller Goog
 3. **iPhone:** tryck på dela-knappen i Safari och välj **Lägg till på hemskärmen**.
    **Android:** öppna menyn i Chrome och välj **Installera app** eller **Lägg till på startskärmen**.
 
+Skanna blir en egen app på hemskärmen, med en egen ikon och namnet **Skanna**, bredvid NONOX om du har lagt till den också. Den öppnas direkt i skanningsläget. Lagerpersonalen behöver alltså bara Skanna på sin telefon.
+
+Första gången du öppnar appen loggar du in i den. Hemskärmsappar på iPhone sparar sin inloggning separat från Safari.
+
 Öppnar du Skanna på en dator visas en QR-kod. Skanna den med telefonens kamera så öppnas sidan i telefonen.
 
 > [!TIP]

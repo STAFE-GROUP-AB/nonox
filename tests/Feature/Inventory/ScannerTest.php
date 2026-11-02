@@ -59,6 +59,8 @@ it('shows the scanning page with the camera allowed and the desktop QR code', fu
         ->assertSee('Öppna Skanna på mobilen')
         ->assertSee('scanner-config', false)
         ->assertSee('<svg', false)
+        ->assertSee('rel="manifest" href="'.asset('skanna.webmanifest').'"', false)
+        ->assertSee('<meta name="apple-mobile-web-app-title" content="Skanna">', false)
         ->assertHeader('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');
 });
 
