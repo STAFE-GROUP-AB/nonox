@@ -19,6 +19,12 @@ use Illuminate\Support\Collection;
  * - A run pays the approved reports with the hourly pay code dated in its
  *   month, for employments paid by the hour. Monthly-paid employments are
  *   not affected: their hours are covered by the monthly salary.
+ * - Reports on a supplement pay code (an hours-based addition such as OB
+ *   or overtime, written by Planering's attest) are paid in the run of
+ *   their month for any employment in force on the day, monthly-paid too:
+ *   they are what the salary does not cover. They are not part of the
+ *   question about earlier months (late()); a correction for an attested
+ *   month goes into the next run by hand.
  * - The run that pays a report claims it (time_reports.payroll_run_id), so
  *   it is never paid twice; a recalculation releases and claims again, and
  *   an approved run freezes its reports (database trigger).
@@ -65,10 +71,12 @@ final class TimeReportPay
         }
 
         $start = $run->periodStart()->toDateString();
+        $supplements = self::supplementCodes()->keys()->all();
 
         return TimeReport::query()
             ->whereIn('employee_id', $employeeIds->unique()->values())
-            ->where('pay_code_id', $payCodeId)
+            ->where(fn ($query) => $query->where('pay_code_id', $payCodeId)
+                ->orWhere(fn ($supplement) => $supplement->whereIn('pay_code_id', $supplements)->whereDate('date', '>=', $start)))
             ->where('status', 'APPROVED')
             ->whereDate('date', '<=', $run->periodEnd()->toDateString())
             ->where(fn ($query) => $query->whereDate('date', '>=', $start)
@@ -82,21 +90,36 @@ final class TimeReportPay
     }
 
     /**
-     * The reports that belong to one employment: the employee's, paid by the
-     * hour, and dated while it was in force.
+     * The reports that belong to one employment: the employee's, dated
+     * while it was in force, and either the employment is paid by the hour
+     * or the report is on a supplement pay code (anything but
+     * $hourlyPayCodeId).
      *
      * @param  Collection<int, TimeReport>  $reports  the run's claimable reports
      * @return Collection<int, TimeReport>
      */
-    public static function forEmployment(Collection $reports, Employment $employment): Collection
+    public static function forEmployment(Collection $reports, Employment $employment, ?int $hourlyPayCodeId = null): Collection
     {
-        if ($employment->salary_form !== 'HOURLY') {
-            return collect();
-        }
-
         return $reports->filter(fn (TimeReport $report): bool => $report->employee_id === $employment->employee_id
+            && ($employment->salary_form === 'HOURLY' || ($hourlyPayCodeId !== null && $report->pay_code_id !== $hourlyPayCodeId))
             && $report->date->greaterThanOrEqualTo($employment->start_date)
             && ($employment->end_date === null || $report->date->lessThanOrEqualTo($employment->end_date)))->values();
+    }
+
+    /**
+     * Pay codes whose approved time reports a run pays besides hourly pay:
+     * hours-based additions (OB, overtime). By id.
+     *
+     * @return Collection<int, PayCode>
+     */
+    public static function supplementCodes(): Collection
+    {
+        return PayCode::query()
+            ->where('code', '<>', self::PAY_CODE)
+            ->where('unit', 'HOURS')
+            ->where('category', 'ADDITION')
+            ->get()
+            ->keyBy('id');
     }
 
     /**

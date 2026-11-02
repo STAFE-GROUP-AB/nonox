@@ -1004,6 +1004,15 @@ lönebeskeden låsta i databasen.
   dess tidrapporter. Tidrapporter som inte är godkända räknas inte i lönen;
   lönekörningens sida visar hur många timmar i perioden som väntar på
   godkännande (inskickade tidrapporter och personalliggarens förslag).
+- Tidrapporter med tillägg (ADR-037): godkända tidrapporter på löne­arter
+  som räknas i timmar och är tillägg (OB, övertid, mertid och avtalets
+  OB- och övertidsarter) betalas i körningen för sin egen månad, även för
+  månadsavlönade. De blir en rad per löneart, "<löneart> enligt tidrapport",
+  med timmarna ihoplagda. En avtalsprissatt löneart prissätts av Avtal
+  dag för dag med den avtalsversion och det prissteg som gällde den dagen;
+  annars används timlönen, och saknas den stoppas körningen. Sådana
+  tidrapporter skapas bara av Planering (se 5i); timlön, sena tidrapporter
+  och inlästa löneunderlag räknas som förut.
 - Sena tidrapporter: en godkänd tidrapport med Timlön som är daterad före
   körningens månad och som ingen körning har betalat (den godkändes efter
   att dess månads körning attesterades) betalas aldrig automatiskt. En
@@ -1551,11 +1560,65 @@ förslag från NONOX AI (ADR-033 §6).
   förslag skrivs till behandlingshistoriken, utan dokumentets innehåll.
   AI-anropet loggas som `ai.document_analyzed` med leverantör, modell och
   antal tokens.
-- **Inte byggt ännu (A5–A12).** Pass med klockslag, OB räknad ur passen
-  med avrundning, övertid och mertid mot schemat, komptidssaldo, sjuklön med
+- **Pass med klockslag och OB ur passen** finns i modulen Planering (5i):
+  attesterad tid delas upp per OB-art med avtalets OB-fönster och dagtyper.
+- **Inte byggt ännu (A5–A12).** Avrundning av OB enligt avtalet, övertid och
+  mertid mot ordinarie arbetstid över veckan (Planering räknar mot dagens
+  plan), komptidssaldo, sjuklön med
   OB och dag 15–90, avtalets semesterregler, pension och avtalsförsäkringar
   per avtal med Fora-rapport, provision med garanti, fasta tillägg,
   kostavdrag och gyllene lönespecar per avtal.
+
+## 5i. Planering (modul)
+
+Schema för personalen (ADR-037, `PLANNING_MODULE.md`). Kräver Lön; läser
+Personalliggare och Avtal när de är påslagna.
+
+- **Schemat skriver aldrig i personalliggaren.** Liggaren ska föras när
+  passet faktiskt börjar och slutar; Planering läser den bara.
+- **Pass** (`planning_shifts`) planeras per anställd och avdelning, eller som
+  öppna pass utan anställd. Ett pass är utkast tills perioden publiceras;
+  publiceringen sparar passet som det publicerades (`published_snapshot`)
+  och aviserar de berörda i appen och med e-post. Ett publicerat pass som tas
+  bort ställs in och den anställde får besked. Allt skrivs till
+  behandlingshistoriken.
+- **Lönekostnad** per pass är en uppskattning: timlön, eller månadslön
+  omräknad med veckoarbetstiden, plus OB enligt avtalet. Semesterlön och
+  arbetsgivaravgifter räknas bara med kontrollerade löneregler; det som inte
+  kan prissättas visas som saknat. Försäljningen hämtas ur bokförda
+  verifikationer på intäktskontona i inställningarna (standard 3000–3799).
+- **Arbetstidsregler och minderåriga** är data med källa i inställningarna
+  och varnar bara; de stoppar aldrig ett schema (TODO(legal-verify), se 8).
+- **Helgdagar** räknas fram i `App\Domain\Calendar\SwedishHolidays` enligt
+  lagen (1989:253) om allmänna helgdagar, plus aftnarna som avtalen använder.
+  Klockslag sätts som väggklocka, så sommartidsbytena räknas rätt.
+- **Min sida:** den anställde ser sitt publicerade schema, kan ta öppna pass,
+  be om att byta eller lämna ett pass och ange när den kan arbeta. Chefen
+  beslutar; arbetstidsreglerna körs igen vid beslutet. En kalenderlänk (iCal)
+  kan skapas; bara en hash av länken sparas och länken kan återkallas.
+- **Tid att attestera.** Publicerade pass jämförs med liggarens pass per
+  anställd och dag (avrundning och tolerans enligt inställningarna). En
+  saknad in- eller utcheckning stoppar dagen. Chefen kan skriva in egen tid;
+  liggaren ändras aldrig. Attesterade dagar blir löneunderlag: timavlönade
+  får varje arbetad minut som Timlön plus OB; månadsavlönade får bara OB och
+  tid utöver planen på den övertids- eller mertidsart som valts i
+  inställningarna. Kortare tid dras aldrig av; frånvaro hanteras i Lön. OB
+  delas upp med avtalets OB-fönster och dagtyper och räknas inte när OB ingår
+  i lönen; ett avtal utan kontrollerad version stoppar dagen.
+- **Skicka till lönen** skriver en godkänd tidrapport per dag och löneart
+  (timmar med två decimaler). Att skicka igen ändrar inget. En dag hoppas
+  över med en förklaring om en annan tidrapport redan täcker den eller om
+  månadens lönekörning är attesterad; rättelsen görs då i nästa körning. En
+  dag kan öppnas igen bara medan lönekörningen som betalar den inte är
+  attesterad. Medan Planering är påslagen skapar personalliggaren inga egna
+  tidrapportförslag.
+- **Bemanning och kostnad** visar planerad och faktisk tid och kostnad mot
+  försäljningen per dag och vecka; allt där är uppskattningar och ändrar
+  ingen bokföring.
+- **API och webhooks:** schemat kan läsas via NONOX Connect
+  (`planning:view`); händelserna `planning.published` och `planning.attested`.
+- **Behörigheter:** `planning:view`, `planning:manage`, `planning:attest` och
+  `self:schedule`; rollen Schemaläggare planerar men attesterar inte.
 
 ## 6. Belopp
 
@@ -1770,6 +1833,20 @@ förslag från NONOX AI (ADR-033 §6).
   transaktioner som hämtats från banken är räkenskapsinformation i sig och
   ska ingå i arkivpaketet (ADR-034).
 
+### Planering (5i)
+
+- Arbetstidslagens gränser i Planerings standardregler (5, 8, 10, 10 b, 13,
+  14 och 15 §§) och hur kollektivavtalen avviker från dem.
+- Gränserna för minderåriga enligt AFS 2023:2.
+- Helgdagskalendern mot gällande lagtext.
+- Övertid och mertid räknas mot dagens plan; lagen och avtalen räknar mot
+  ordinarie arbetstid över en vecka eller längre.
+- Om timavlönade ska ha övertids- eller mertidstillägg för tid utöver
+  schemat (i dag Timlön), och vilken av avtalets övertidsarter som gäller
+  (väljs av företaget).
+- OB räknas över hela passet inklusive rast, eftersom liggaren inte vet när
+  rasten tas; chefen kan dela upp dagens tid.
+
 ## 9. Ändringshistorik
 
 | Version | Datum | Ändring |
@@ -1837,3 +1914,4 @@ förslag från NONOX AI (ADR-033 §6).
 | 0.62 | 2026-11-01 | Anläggningstillgång direkt från inköpet: en rad i debet på ett anskaffningskonto i en verifikation eller leverantörsfaktura kan bli en tillgång i registret. Förslaget sparas med utkastet, och tillgången skapas i samma transaktion som bokföringen eller registreringen, länkad till verifikationen och raden. Anskaffningskonton och gräns för inventarier av mindre värde är företagets egna inställningar. |
 | 0.63 | 2026-11-01 | Företagsuppgifter från Bolagsverket (ADR-035): namn, adress, postnummer, ort och företagsform hämtas med organisationsnumret i formulären för nytt företag, företagsinställningar, kunder och leverantörer. Numret kontrolleras med Luhn först, svaret är ett förslag som bara fyller tomma fält och ändrar inget användaren skrivit utan att fråga, och inget sparas förrän formuläret sparas. VIES-kontroll av leverantörens momsregistreringsnummer, loggad i behandlingshistoriken. Ändrar ingen bokföring. |
 | 0.64 | 2026-11-01 | Manualen för användare under `/manual` (ADR-036): artiklar i Markdown från `docs/manual/sv`, sök i webbläsaren och en knapp **Hjälp** i appen och på Min sida som öppnar artikeln om sidan man står på. Visas när de publika sidorna är påslagna. Ändrar ingen bokföring: sidorna läser bara textfilerna. |
+| 0.65 | 2026-11-02 | Modulen Planering (5i, ADR-037): schema med publicering, Min sida, attest av tid mot personalliggaren och löneunderlag. Lönekörningen betalar nu också godkända tidrapporter på tilläggsarter i timmar (OB, övertid, mertid), även för månadsavlönade, prissatta dag för dag av Avtal. Avtalets dagtyper sätter klockslag som väggklocka, så OB-gränserna är rätt på dagarna då sommartiden ändras. |

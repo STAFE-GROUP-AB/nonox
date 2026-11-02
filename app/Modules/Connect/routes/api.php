@@ -8,6 +8,7 @@ use App\Modules\Connect\Http\Controllers\Api\V1\DimensionController;
 use App\Modules\Connect\Http\Controllers\Api\V1\FiscalYearController;
 use App\Modules\Connect\Http\Controllers\Api\V1\InvoiceController;
 use App\Modules\Connect\Http\Controllers\Api\V1\PaymentController;
+use App\Modules\Connect\Http\Controllers\Api\V1\PlanningController;
 use App\Modules\Connect\Http\Controllers\Api\V1\ReferenceController;
 use App\Modules\Connect\Http\Controllers\Api\V1\ReportController;
 use App\Modules\Connect\Http\Controllers\Api\V1\SupplierController;
@@ -128,3 +129,10 @@ Route::middleware('connect.scope:supplier-invoices:create')->group(function () u
 Route::post('/supplier-invoices/{supplierInvoice}/register', [SupplierInvoiceController::class, 'register'])->whereUuid('supplierInvoice')->middleware(['connect.scope:supplier-invoices:create'.$books, $idempotent])->name('supplier-invoices.register');
 Route::post('/supplier-invoices/{supplierInvoice}/approve', [SupplierInvoiceController::class, 'approve'])->whereUuid('supplierInvoice')->middleware(['connect.scope:supplier-invoices:approve', $idempotent])->name('supplier-invoices.approve');
 Route::post('/supplier-invoices/{supplierInvoice}/payments', [SupplierInvoiceController::class, 'pay'])->whereUuid('supplierInvoice')->middleware(['connect.scope:payments:create'.$books, $idempotent])->name('supplier-invoices.payments.store');
+
+// Planering (PLANNING_MODULE.md §9): read only. planning:view is false while the module is off.
+Route::middleware('connect.scope:planning:view')->group(function (): void {
+    Route::get('/planning/shifts', [PlanningController::class, 'shifts'])->name('planning.shifts.index');
+    Route::get('/planning/areas', [PlanningController::class, 'areas'])->name('planning.areas.index');
+    Route::get('/planning/publications', [PlanningController::class, 'publications'])->name('planning.publications.index');
+});

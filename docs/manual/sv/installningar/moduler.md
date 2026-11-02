@@ -62,6 +62,7 @@ Klicka på **Inställningar** på en påslagen modul för att ändra hur den fun
 - **NONOX AI:** AI-leverantör, modell och API-nyckel.
 - **NONOX Connect:** vilka appar som får be om åtkomst och vilka IP-adresser API:t tar emot anrop från.
 - **Avtal:** varning när en lön är under avtalets minimilön.
+- **Planering:** aviseringar till personalen, vad personalen får göra på Min sida, arbetstidsregler, tolerans vid attest och vilka konton som räknas som försäljning. Se [Kom igång och inställningar](/manual/planering/kom-igang#modulens-installningar).
 
 Varje modul beskrivs i detalj i sitt eget avsnitt i manualen.
 

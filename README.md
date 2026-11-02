@@ -102,6 +102,12 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Liggaren skrivs bara till, med en kedja av kontrollsummor och rättelser som syns bredvid originalet. Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren.
 - Kiosken sparar aldrig koderna. Personnummer för kontrollbesöket utan internet sparas bara krypterade och öppnas med en chefs kod.
 
+### Planering (modul) – ny
+- Schema med lönekostnad: veckovy och dagvy där passen dras på plats, mallar och kopierade veckor, öppna pass, avdelningar och kompetenser. Lönekostnaden räknas medan du planerar, med OB enligt kollektivavtalet, och varningar för dygnsvila, veckovila, raster och minderåriga.
+- Schemat publiceras med besked i appen och via e-post. Min sida visar mitt schema, lediga pass att ta, byten och kalenderlänk.
+- Schema och personalliggare blir löneunderlag: planen jämförs med in- och utcheckningarna, chefen attesterar avvikelserna och tiden blir tidrapporter med timlön, OB per OB-art enligt avtalet och övertid, direkt i lönekörningen.
+- Bemanning och kostnad: planerad och faktisk tid och lönekostnad i procent av försäljningen ur bokföringen, dag för dag.
+
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
 - Bara post från godkända avsändare tolkas; annat väntar i karantän tills någon godkänner avsändaren.

@@ -160,3 +160,17 @@ avtal/ob-och-overtid: { foretag: restaurang, rutt: payroll.runs.show, modell: { 
 
 leverantorer/inkorgen: { foretag: restaurang, rutt: inbox.index, klick: ['text=Utkast klara (1)'] }
 bank/bankkoppling: { foretag: restaurang, rutt: banking.index }
+
+# Planering (PlanningExtras). vecka is the Monday of the week.
+planering/schema: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '2026-11-02' } }
+planering/schema-avdelningar: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '2026-11-09', rader: avdelningar } }
+planering/schema-dag: { foretag: restaurang, rutt: planning.schedule, fraga: { vy: dag, dag: '2026-11-07' } }
+planering/schema-utkast: { foretag: restaurang, rutt: planning.schedule, fraga: { vecka: '2026-11-23' } }
+planering/mallar: { foretag: restaurang, rutt: planning.templates }
+planering/installningar: { foretag: restaurang, rutt: planning.settings }
+planering/forfragningar: { foretag: restaurang, rutt: planning.requests }
+planering/attest: { foretag: cafe, rutt: planning.attest, fraga: { fran: '2026-10-19', till: '2026-11-01' } }
+planering/attest-avvikelser: { foretag: cafe, rutt: planning.attest, fraga: { fran: '2026-10-12', till: '2026-11-01', visa: avvikelser } }
+planering/attest-restaurang: { foretag: restaurang, rutt: planning.attest, fraga: { fran: '2026-10-12', till: '2026-10-18' } }
+planering/bemanning: { foretag: restaurang, rutt: planning.staffing, fraga: { fran: '2026-10-12', till: '2026-11-08' } }
+planering/min-sida-schema: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home }

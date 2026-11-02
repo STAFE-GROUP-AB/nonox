@@ -107,6 +107,17 @@ use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationOpeningBalance;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
+use App\Modules\Planning\Models\Area as PlanningArea;
+use App\Modules\Planning\Models\Attestation as PlanningAttestation;
+use App\Modules\Planning\Models\Availability as PlanningAvailability;
+use App\Modules\Planning\Models\EmployeeSkill as PlanningEmployeeSkill;
+use App\Modules\Planning\Models\IcalToken as PlanningIcalToken;
+use App\Modules\Planning\Models\Publication as PlanningPublication;
+use App\Modules\Planning\Models\Shift as PlanningShift;
+use App\Modules\Planning\Models\ShiftRequest as PlanningShiftRequest;
+use App\Modules\Planning\Models\Skill as PlanningSkill;
+use App\Modules\Planning\Models\Template as PlanningTemplate;
+use App\Modules\Planning\Models\TemplateShift as PlanningTemplateShift;
 use App\Modules\StaffLedger\Models\Device as StaffLedgerDevice;
 use App\Modules\StaffLedger\Models\Entry as StaffLedgerEntry;
 use App\Modules\StaffLedger\Models\Location as StaffLedgerLocation;
@@ -219,6 +230,17 @@ const COMPANY_SCOPED_MODELS = [
     StaffLedgerDevice::class => 'staffLedgerDeviceAttributes',
     StaffLedgerEntry::class => 'staffLedgerEntryAttributes',
     StaffLedgerTimeProposal::class => 'staffLedgerTimeProposalAttributes',
+    PlanningArea::class => ['name' => 'Hemligt kök', 'colour' => '#e4572e'],
+    PlanningSkill::class => ['name' => 'Hemlig kompetens'],
+    PlanningEmployeeSkill::class => 'planningEmployeeSkillAttributes',
+    PlanningShift::class => 'planningShiftAttributes',
+    PlanningTemplate::class => ['name' => 'Hemlig mall', 'weeks' => 1],
+    PlanningTemplateShift::class => 'planningTemplateShiftAttributes',
+    PlanningPublication::class => ['from' => '2026-11-09', 'to' => '2026-11-15', 'published_at' => '2026-11-04 10:00:00+01:00', 'shift_count' => 1],
+    PlanningAvailability::class => 'planningAvailabilityAttributes',
+    PlanningShiftRequest::class => 'planningShiftRequestAttributes',
+    PlanningIcalToken::class => 'planningIcalTokenAttributes',
+    PlanningAttestation::class => 'planningAttestationAttributes',
     InboxMailbox::class => 'inboxMailboxAttributes',
     AllowedSender::class => ['pattern' => '@hemlig-leverantor.example'],
     InboxTemplate::class => 'inboxTemplateAttributes',
@@ -302,6 +324,41 @@ function staffLedgerEntryAttributes(): array
         'flags' => [],
         'hash' => str_repeat('a', 64),
     ];
+}
+
+function planningEmployeeSkillAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'skill_id' => PlanningSkill::create(['name' => 'Hemlig kompetens '.random_int(1, 999999)])->id];
+}
+
+function planningShiftAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'starts_at' => '2026-11-10 08:00', 'ends_at' => '2026-11-10 16:00', 'status' => 'DRAFT'];
+}
+
+function planningTemplateShiftAttributes(): array
+{
+    return ['template_id' => PlanningTemplate::create(['name' => 'Hemlig mall', 'weeks' => 1])->id, 'week_index' => 0, 'weekday' => 1, 'start' => '08:00', 'end' => '16:00'];
+}
+
+function planningAvailabilityAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'weekday' => 3, 'kind' => 'UNAVAILABLE', 'note' => 'Hemlig anledning'];
+}
+
+function planningShiftRequestAttributes(): array
+{
+    return ['kind' => 'CLAIM', 'shift_id' => PlanningShift::create(planningShiftAttributes())->id, 'requested_by' => Employee::create(payrollEmployeeAttributes())->id, 'status' => 'PENDING'];
+}
+
+function planningAttestationAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'date' => '2026-11-10', 'note' => 'Hemlig anteckning'];
+}
+
+function planningIcalTokenAttributes(): array
+{
+    return ['employee_id' => Employee::create(payrollEmployeeAttributes())->id, 'token_hash' => hash('sha256', Str::random(48))];
 }
 
 function staffLedgerTimeProposalAttributes(): array

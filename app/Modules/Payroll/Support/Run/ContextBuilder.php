@@ -175,13 +175,78 @@ final class ContextBuilder
     /**
      * Approved time reports as one hourly pay line: the hours of the period
      * at the employment's hourly rate (the Additions step prices it), taxed
-     * and earning vacation pay as the pay code says.
+     * and earning vacation pay as the pay code says. Reports on supplement
+     * pay codes (OB, overtime, from Planering) follow as one line per pay
+     * code (supplementReports).
      *
      * @param  Collection<int, TimeReport>  $reports
      * @param  Collection<int, PayCode>  $payCodes  by id
      * @return list<PayInput>
      */
     private function timeReports(Collection $reports, Collection $payCodes): array
+    {
+        $hourlyId = $payCodes->first(fn (PayCode $code): bool => $code->code === TimeReportPay::PAY_CODE)?->id;
+        $hourly = fn (TimeReport $report): bool => $hourlyId === null || $report->pay_code_id === $hourlyId;
+
+        return [...$this->hourlyReports($reports->filter($hourly)->values(), $payCodes), ...$this->supplementReports($reports->reject($hourly)->values(), $payCodes)];
+    }
+
+    /**
+     * Approved reports on supplement pay codes (TimeReportPay::supplementCodes),
+     * one line per pay code with the hours of the period. A pay code the
+     * collective agreement prices is priced by it per work date (the hours
+     * per date go along, so a new rate step mid-period is respected);
+     * otherwise the Additions step takes the hourly rate, or blocks.
+     *
+     * @param  Collection<int, TimeReport>  $reports
+     * @param  Collection<int, PayCode>  $payCodes  by id
+     * @return list<PayInput>
+     */
+    private function supplementReports(Collection $reports, Collection $payCodes): array
+    {
+        $inputs = [];
+
+        foreach ($reports->groupBy('pay_code_id') as $codeId => $own) {
+            $code = $payCodes->get($codeId) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
+            $byDate = [];
+
+            foreach ($own->sortBy(fn (TimeReport $report): string => $report->date->toDateString()) as $report) {
+                $date = $report->date->toDateString();
+                $byDate[$date] = (string) BigDecimal::of($byDate[$date] ?? '0')->plus((string) $report->hours);
+            }
+
+            $inputs[] = new PayInput(
+                $code->code,
+                __(':name enligt tidrapport', ['name' => $code->name_sv]),
+                $code->category,
+                $code->is_taxable,
+                $code->tax_method,
+                $code->is_contribution_basis,
+                $code->is_vacation_basis,
+                quantity: (string) TimeReportPay::hours($own),
+                explanation: [
+                    'source' => 'time_report',
+                    'days' => count($byDate),
+                    'time_report_ids' => $own->pluck('id')->values()->all(),
+                    ...($code->isAgreementPriced() ? [
+                        Additions::AGREEMENT_PRICED => true,
+                        'date_from' => array_key_first($byDate),
+                        'date_to' => array_key_last($byDate),
+                        'hours_by_date' => $byDate,
+                    ] : []),
+                ],
+            );
+        }
+
+        return $inputs;
+    }
+
+    /**
+     * @param  Collection<int, TimeReport>  $reports  the hourly pay code's reports
+     * @param  Collection<int, PayCode>  $payCodes  by id
+     * @return list<PayInput>
+     */
+    private function hourlyReports(Collection $reports, Collection $payCodes): array
     {
         if ($reports->isEmpty()) {
             return [];

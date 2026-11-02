@@ -27,6 +27,7 @@
         "heading": "Det här gör NONOX åt din butik.",
         "intro": "Allt nedan finns i NONOX i dag. Det som är en modul slår du på under Inställningar → Moduler.",
         "items": [
+            {"title": "Schema som blir lön", "text": "Lägg schemat i Planering med lönekostnaden synlig medan du planerar och jämför den med försäljningen ur bokföringen. Personalen ser sitt schema på Min sida. Utan personalliggare räknas den planerade tiden som arbetad tills du ändrar den; med liggaren jämförs planen med in- och utcheckningarna innan tiden går till lönen.", "features": ["planning", "planning_payroll", "planning_staffing", "planning_self_service"]},
             {"title": "Dagsrapporten bokförs med en mall", "text": "Kassasystemet mejlar dagsrapporten till butikens egen adress i NONOX. Du kopplar raderna till konton en gång, till exempel försäljning per momssats, kort, Swish, kontant, presentkort och öresavrundning. Nästa rapport i samma format tolkas med mallen och kan bokföras automatiskt när den stämmer exakt.", "features": ["inbox", "daily_reports"]},
             {"title": "Leverantörsfakturor med attest", "text": "Fakturorna kommer till inkorgen, attesteras av en annan person än den som registrerade och betalas med en betalfil till din bank. Kreditnotor från leverantörer hanteras också.", "features": ["supplier_invoices", "payment_files", "inbox"]},
             {"title": "EU-inköp i rätt rutor", "text": "Inköp från andra EU-länder bokförs med momsen i rätt rutor i momsdeklarationen, som du laddar ner som fil till Skatteverket.", "features": ["eu_purchases", "vat_return"]},
@@ -48,10 +49,9 @@
         "tip": "Fråga din kassaleverantör om kassan kan mejla dagsrapporten automatiskt eller ta fram en SIE-fil. Kraven på certifierat kassaregister och kontrollenhet gäller kassan, inte bokföringsprogrammet; Skatteverket beskriver dem."
     },
     "limits": [
-        {"text": "OB räknas ännu inte direkt från passens klockslag. Timmarna per OB-sort kommer inmatade eller från schemasystemets löneunderlag, och avtalets semester-, sjuklöne- och pensionsregler räknas inte per avtal ännu."},
+        {"text": "I Planering räknas OB ur passens klockslag, men övertid och mertid räknas mot dagens schema och inte mot veckans arbetstid ännu. Avtalets semester-, sjuklöne- och pensionsregler räknas inte per avtal ännu."},
         {"text": "NONOX är inget kassasystem och har ingen lagerhantering. Inventering och lagervärde sköter du utanför NONOX."},
         {"text": "Import av varor från länder utanför EU är inte byggd ännu.", "feature": "non_eu_goods_import"},
-        {"text": "NONOX har inget personalschema. Timmarna kommer från personalliggaren eller från tidrapporter."},
         {"text": "NONOX har ett öppet API med webhooks, men inget kassasystem har ännu byggt en färdig koppling till det, så kassan kan inte kopplas direkt till NONOX än. Kassasystemen och deras integrationsplattformar kan bygga kopplingen mot API:t. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "pos_integrations"}
     ],
     "pricing": {

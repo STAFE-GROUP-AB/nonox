@@ -23,7 +23,7 @@ När företaget är bundet av ett avtal i NONOX finns avtalets egna lönearter f
 Timmarna kan också komma från en fil från ert schemasystem. Koppla då filens OB- och övertidskoder till avtalets lönearter, så prissätts raderna på samma sätt med radens eget datum. Se [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem).
 
 > [!IMPORTANT]
-> Timmarna måste redan vara uppdelade per typ: så många timmar OB, så många timmar natt-OB och så vidare. NONOX räknar ännu inte ut OB från arbetspassens klockslag. Det gör många schemasystem, och då är filen det enklaste sättet.
+> Timmarna måste redan vara uppdelade per typ: så många timmar OB, så många timmar natt-OB och så vidare. Lönekörningen räknar inte ut OB från arbetspassens klockslag. Det gör modulen Planering när du attesterar tiden: den delar upp den faktiska tiden enligt avtalets OB-tider och skickar timmarna till lönen på avtalets lönearter. Se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen). Annars är en fil från ert schemasystem det enklaste sättet.
 
 ## Så räknas beloppet
 
@@ -69,11 +69,12 @@ Nej. Du kan fortfarande använda systemets **OB-tillägg** och **Övertid** med 
 Ja. Skriver du ett belopp används det, och avtalets sats räknas inte.
 
 **Räknar NONOX mertid för deltidsanställda?**
-Inte ännu. Se [Det här gör Avtal inte ännu](/manual/avtal/det-har-gor-avtal-inte-annu).
+Avtal prissätter inte mertid ännu. Med modulen Planering kan tid utöver den avtalade veckoarbetstiden skickas till lönen på en löneart för mertid som du väljer; se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen). Se också [Det här gör Avtal inte ännu](/manual/avtal/det-har-gor-avtal-inte-annu).
 
 ## Läs också
 
 - [Gör en lönekörning](/manual/lon/lonekorning)
 - [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem)
+- [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen) – OB från schemat och personalliggaren i Planering.
 - [Versioner och kontroll av avtalets värden](/manual/avtal/versioner-och-kontroll)
 - [Avtal, lönegrupp och branschvana per anställd](/manual/avtal/avtal-per-anstalld)

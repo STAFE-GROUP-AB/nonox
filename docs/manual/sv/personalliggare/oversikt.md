@@ -31,6 +31,8 @@ Avsnittet är för dig som ansvarar för personalliggaren i företaget: ägaren,
 - [Liggaren och rättelser](/manual/personalliggare/liggaren-och-rattelser) – registrera en glömd utcheckning och rätta fel utan att något tas bort.
 - [Tidrapporter från liggaren](/manual/personalliggare/tidrapporter-fran-liggaren) – föreslå timmar till lönen från avslutade pass.
 
+Har ni även modulen [Planering](/manual/planering) jämförs liggarens tid med schemat och attesteras där i stället, under [Tid att attestera](/manual/planering/tid-att-attestera). Planering läser bara liggaren och ändrar aldrig i den.
+
 ## När Skatteverket kommer
 
 - [Kontrollbesök](/manual/personalliggare/kontrollbesok) – visa liggaren och ladda ner den, på kiosken eller i NONOX.

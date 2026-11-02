@@ -37,6 +37,8 @@ use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Connect\Support\ConnectScopes;
 use App\Modules\Connect\Webhooks\WebhookDispatcher;
 use App\Modules\ModuleRegistry;
+use App\Modules\Planning\Events\PeriodAttested;
+use App\Modules\Planning\Events\PeriodPublished;
 use DateInterval;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -86,6 +88,8 @@ class ConnectServiceProvider extends ServiceProvider
         Event::listen(InvoiceSent::class, [WebhookDispatcher::class, 'invoiceSent']);
         Event::listen(InvoicePaid::class, [WebhookDispatcher::class, 'invoicePaid']);
         Event::listen(SupplierInvoiceApproved::class, [WebhookDispatcher::class, 'supplierInvoiceApproved']);
+        Event::listen(PeriodPublished::class, [WebhookDispatcher::class, 'planningPublished']);
+        Event::listen(PeriodAttested::class, [WebhookDispatcher::class, 'planningAttested']);
 
         $this->configurePassport();
 

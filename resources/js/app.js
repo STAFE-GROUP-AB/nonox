@@ -6,6 +6,7 @@ import './asset-proposals';
 import './passkeys';
 import './overview-charts';
 import './spotlight';
+import './planning-schedule';
 import './pwa';
 
 // Alpine is provided and started by Livewire 3. Starting a second copy here

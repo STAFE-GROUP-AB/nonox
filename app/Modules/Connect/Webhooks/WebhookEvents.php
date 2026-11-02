@@ -9,6 +9,8 @@ use App\Models\InvoicePayment;
 use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
+use App\Modules\Planning\Events\PeriodAttested;
+use App\Modules\Planning\Models\Publication;
 
 /**
  * The events a webhook can subscribe to (ADR-032) and what each one says.
@@ -27,6 +29,8 @@ final class WebhookEvents
         'invoice.sent' => ['invoices:view'],
         'invoice.paid' => ['invoices:view'],
         'supplier_invoice.approved' => ['supplier-invoices:create', 'supplier-invoices:approve'],
+        'planning.published' => ['planning:view'],
+        'planning.attested' => ['planning:attest'],
     ];
 
     /** @return array<string, string> event => Swedish description */
@@ -37,6 +41,8 @@ final class WebhookEvents
             'invoice.sent' => __('En kundfaktura har skickats till kunden'),
             'invoice.paid' => __('En kundfaktura har blivit helt betald'),
             'supplier_invoice.approved' => __('En leverantörsfaktura har attesterats'),
+            'planning.published' => __('En period av schemat har publicerats (Planering)'),
+            'planning.attested' => __('Tid i schemat har attesterats (Planering)'),
         ];
     }
 
@@ -145,6 +151,45 @@ final class WebhookEvents
             'currency' => 'SEK',
             'invoice_currency' => $invoice->invoice_currency,
             'due_date' => $invoice->due_date->toDateString(),
+        ];
+    }
+
+    /**
+     * Must run inside the company. Who was told is not included: fetch the
+     * shifts for the period with planning:view.
+     *
+     * @return ?array<string, mixed>
+     */
+    public static function planningPublished(int $publicationId): ?array
+    {
+        $publication = Publication::query()->find($publicationId);
+
+        if (! $publication instanceof Publication) {
+            return null;
+        }
+
+        return [
+            'publication_id' => $publication->id,
+            'from' => $publication->from->toDateString(),
+            'to' => $publication->to->toDateString(),
+            'published_at' => $publication->published_at->toAtomString(),
+            'shift_count' => $publication->shift_count,
+        ];
+    }
+
+    /**
+     * Built from the event alone: dates, ids and the attested minutes.
+     *
+     * @return array<string, mixed>
+     */
+    public static function planningAttested(PeriodAttested $event): array
+    {
+        return [
+            'from' => $event->from,
+            'to' => $event->to,
+            'attestation_ids' => $event->attestationIds,
+            'employee_ids' => $event->employeeIds,
+            'attested_minutes' => $event->attestedMinutes,
         ];
     }
 }

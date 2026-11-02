@@ -62,6 +62,12 @@ personalliggare:
   for: foretag
   modul: staff_ledger
   ikon: clipboard
+planering:
+  titel: Planering
+  beskrivning: Schemat med lönekostnaden synlig, mallar, öppna pass och byten, attest av tid mot personalliggaren och OB till lönen.
+  for: foretag
+  modul: planning
+  ikon: clock
 byra:
   titel: För redovisningsbyråer
   beskrivning: Mina företag, månadsstängning, uppgifter mellan byrå och kund och byråns varumärke.

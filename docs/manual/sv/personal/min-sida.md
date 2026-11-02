@@ -44,6 +44,7 @@ Enklast är att [lägga Min sida som en app i mobilen](/manual/personal/installe
 
 ## Det här finns på Min sida
 
+- **Mitt schema** – [dina pass, öppna pass, byten och kalenderlänk](/manual/personal/mitt-schema), om din arbetsgivare använder Planering.
 - **Frånvaro** – [sjukanmälan, vård av barn](/manual/personal/sjukanmalan) och [semester](/manual/personal/semester).
 - **Utlägg** – [lägg in ett kvitto](/manual/personal/utlagg) för något du har köpt åt jobbet.
 - **Semester** – hur många semesterdagar du har kvar.

@@ -330,3 +330,12 @@ it('refuses webhooks to those who may not manage Connect, and events the person 
     expect(fn () => app(CreateWebhook::class)($bookkeeper, $company, ['url' => 'https://hooks.example.com/x', 'events' => ['voucher.posted']]))
         ->toThrow(AuthorizationException::class);
 });
+
+it('offers only the events the person may receive', function () {
+    [$owner] = Connect::company();
+
+    Livewire::actingAs($owner)->test(WebhooksManager::class)
+        ->assertViewHas('choosableEvents', fn (array $events): bool => array_key_exists('voucher.posted', $events)
+            && ! array_key_exists('planning.published', $events)
+            && ! array_key_exists('planning.attested', $events));
+});

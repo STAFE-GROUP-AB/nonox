@@ -58,3 +58,27 @@ it('has a Swedish and an English version of every text', function () {
 
     expect($missing)->toBe([], 'Add these to lang/en.json (Swedish source) or lang/sv.json (English source).');
 });
+
+it('has a Swedish entry for every plural text, or trans_choice shows the English one', function () {
+    $swedish = json_decode((string) file_get_contents(lang_path('sv.json')), true);
+    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path(), FilesystemIterator::SKIP_DOTS));
+    $missing = [];
+
+    foreach ($files as $file) {
+        if (! str_ends_with($file->getFilename(), '.php')) {
+            continue;
+        }
+
+        preg_match_all("/trans_choice\\(\\s*'((?:[^'\\\\]|\\\\.)*)'/", (string) file_get_contents($file->getPathname()), $matches);
+
+        foreach ($matches[1] as $key) {
+            $key = str_replace("\\'", "'", $key);
+
+            if (! array_key_exists($key, $swedish)) {
+                $missing[] = "{$file->getFilename()}: {$key}";
+            }
+        }
+    }
+
+    expect($missing)->toBe([]);
+});

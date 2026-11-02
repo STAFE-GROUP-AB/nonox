@@ -271,7 +271,7 @@ class PayrollRuns
                 $name = "{$employee->first_name} {$employee->last_name}";
 
                 // One report is paid once, also when the employee has two employments in the month.
-                $reports = TimeReportPay::forEmployment($timeReports, $employment)
+                $reports = TimeReportPay::forEmployment($timeReports, $employment, $codeIds->get(TimeReportPay::PAY_CODE))
                     ->reject(fn (TimeReport $report): bool => in_array($report->id, $claimed, true))
                     ->values();
                 $claimed = [...$claimed, ...array_map(fn (TimeReport $report): int => $report->id, $reports->all())];

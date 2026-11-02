@@ -135,7 +135,7 @@
             </x-ui.field>
             <fieldset class="space-y-1">
                 <legend class="text-sm font-medium text-gray-700">{{ __('Händelser') }}</legend>
-                @foreach($eventLabels as $event => $label)
+                @foreach($choosableEvents as $event => $label)
                     <label class="flex items-start gap-2 text-sm" wire:key="event-{{ $event }}"><input type="checkbox" value="{{ $event }}" wire:model="events" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500"><span>{{ $label }} <span class="font-mono text-xs text-gray-500">{{ $event }}</span></span></label>
                 @endforeach
                 @error('events') <p class="text-sm text-red-700">{{ $message }}</p> @enderror

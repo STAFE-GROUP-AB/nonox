@@ -13,6 +13,9 @@ Har företaget även lönemodulen kan NONOX föreslå tidrapporter från persona
 
 Sidan **Tidrapporter** finns under **Personalliggare** när lönemodulen är påslagen och du får hantera personalliggaren.
 
+> [!NOTE]
+> Är modulen Planering på går det inte att föreslå tidrapporter här. Tiden jämförs då med schemat och attesteras under **Planering → Tid att attestera**, så att ingen dag rapporteras två gånger. Förslag som redan finns kan fortfarande godkännas eller avslås. Se [Tid att attestera](/manual/planering/tid-att-attestera).
+
 ![Föreslå tidrapport från liggarens pass, och godkänn förslagen.](/bilder/manual/lon/timlon-och-tidrapporter.webp)
 
 ## Innan du börjar
@@ -40,7 +43,7 @@ Passet har troligen ingen utcheckning, eller så är personen inte kopplad till 
 En dag kan bara finnas i en godkänd tidrapport. Avslå förslaget och föreslå en period som inte överlappar.
 
 **Räknas OB och övertid?**
-Nej. Förslaget innehåller arbetade timmar per dag med lönearten Timlön.
+Nej. Förslaget innehåller arbetade timmar per dag med lönearten Timlön. Med modulen Planering räknas OB enligt avtalet när tiden attesteras. Se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen).
 
 ## Läs också
 

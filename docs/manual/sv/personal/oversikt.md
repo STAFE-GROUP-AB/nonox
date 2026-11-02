@@ -10,7 +10,7 @@ Välkommen! Din arbetsgivare använder NONOX. Här får du veta hur du använder
 
 Det finns två saker du kan möta:
 
-- **Min sida** – din egen sida för lönebesked, utlägg, sjukanmälan och semester. Du loggar in med en kod som du får i mejlet.
+- **Min sida** – din egen sida för lönebesked, utlägg, sjukanmälan och semester, och ditt schema om din arbetsgivare använder Planering. Du loggar in med en kod som du får i mejlet.
 - **Personalliggaren** – där du checkar in när du kommer till jobbet och checkar ut när du går, oftast på en surfplatta vid entrén.
 
 Din arbetsgivare bestämmer vad ni använder. Ser du inte något som står här, fråga din chef.
@@ -19,10 +19,11 @@ Din arbetsgivare bestämmer vad ni använder. Ser du inte något som står här,
 
 1. [Min sida och hur du loggar in](/manual/personal/min-sida)
 2. [Lägg Min sida som en app i mobilen](/manual/personal/installera-appen)
-3. [Dina lönebesked](/manual/personal/lonebesked)
-4. [Lägg in ett utlägg](/manual/personal/utlagg)
-5. [Sjukanmälan och vård av barn](/manual/personal/sjukanmalan)
-6. [Ansök om semester](/manual/personal/semester)
+3. [Mitt schema](/manual/personal/mitt-schema)
+4. [Dina lönebesked](/manual/personal/lonebesked)
+5. [Lägg in ett utlägg](/manual/personal/utlagg)
+6. [Sjukanmälan och vård av barn](/manual/personal/sjukanmalan)
+7. [Ansök om semester](/manual/personal/semester)
 
 ## Checka in och ut
 

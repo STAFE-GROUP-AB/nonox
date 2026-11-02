@@ -51,3 +51,17 @@ test('lays the largest customers and costs on their side, and VAT as output, inp
     assert.deepEqual(chartConfig('vat', stats, labels).data.datasets[2].data, [1250, -500, null]);
     assert.throws(() => chartConfig('pie', stats, labels));
 });
+
+test('draws Bemanning och kostnad: cost bars, sales line, last year dashed, shares in percent', () => {
+    const staffing = { labels: ['v. 45', 'v. 46'], planned: [88314, 0], actual: [90000, null], sales: [1399900, null], lastYearSales: [1000000, 900000], plannedPercent: [6.3, null], actualPercent: [6.4, null], lastYearPercent: null };
+    const names = { planned: 'Planerad', actual: 'Faktisk', sales: 'Försäljning', lastYearSales: 'Försäljning förra året', lastYear: 'Förra året' };
+    const cost = chartConfig('staffing', { staffing }, names);
+
+    assert.deepEqual(cost.data.datasets.map((set) => [set.type, set.label, set.borderDash ?? null]), [['bar', 'Planerad', null], ['bar', 'Faktisk', null], ['line', 'Försäljning', []], ['line', 'Försäljning förra året', [6, 4]]]);
+    assert.deepEqual(cost.data.datasets[0].data, [883, 0]);
+
+    const share = chartConfig('staffing-percent', { staffing }, names);
+    assert.equal(share.data.datasets.length, 2);
+    assert.deepEqual(share.data.datasets[0].data, [6.3, null]);
+    assert.equal(share.options.scales.y.ticks.callback(10), '10 %');
+});

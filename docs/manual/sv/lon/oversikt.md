@@ -54,6 +54,10 @@ Avsnittet är för dig som sköter lönerna i ett företag: ägaren, en löneadm
 
 Är företaget bundet av ett kollektivavtal kan du slå på modulen Avtal, som kontrollerar minimilönen och prissätter OB och övertid enligt avtalet. Läs mer under [Kollektivavtal](/manual/avtal).
 
+## Schema
+
+Med modulen Planering lägger du personalens schema, attesterar tiden mot personalliggaren och skickar den till lönekörningen med OB uppdelad enligt avtalet. Läs mer under [Planering](/manual/planering).
+
 ## Läs också
 
 - [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter)

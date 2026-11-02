@@ -83,6 +83,7 @@ class TimeProposalsPage extends Component
     public function render(): View
     {
         return view('staff-ledger::livewire.proposals', [
+            'planning' => TimeProposals::replacedByPlanning($this->company()),
             'proposals' => TimeProposal::query()->with('employee:id,first_name,last_name,employee_number')->latest('id')->limit(50)->get(),
         ]);
     }

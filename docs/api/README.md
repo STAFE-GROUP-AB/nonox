@@ -145,6 +145,7 @@ Varje scope är samma behörighet som rollerna i NONOX använder.
 | `payments:create` | Registrera inbetalningar och betalningar av leverantörsfakturor |
 | `supplier-invoices:create` | Läsa och lägga till leverantörer och leverantörsfakturor, registrera fakturor |
 | `supplier-invoices:approve` | Läsa och attestera leverantörsfakturor |
+| `planning:view` | Läsa schemat i Planering: pass per period, avdelningar och publiceringar |
 
 `GET /company` kräver ingen särskild behörighet.
 
@@ -257,6 +258,7 @@ De hamnar i `storage/oauth-private.key` och `storage/oauth-public.key` (aldrig i
 | Betalningar | `GET /payments` (inbetalningar), `GET /supplier-payments` (utbetalningar) |
 | Rapporter | `/reports/trial-balance`, `/reports/general-ledger`, `/reports/balance-sheet`, `/reports/income-statement` med `fiscal_year_id`, `from`, `to`, `cost_center`, `project` |
 | Moms | `/vat-periods?fiscal_year_id=…`, `/vat-return?fiscal_year_id=…&period_start=…` |
+| Planering | `/planning/shifts?from=…&to=…` (publicerat schema, högst 93 dagar; `include_drafts=true` för planen som den är nu), `/planning/areas`, `/planning/publications`. Kräver modulen Planering. Kostnadsuppskattningar ingår inte. |
 
 Belopp in och ut är hela öre. Momssatser och rabatter anges i hundradels procent: `2500` är 25 %, `1000` är 10 %. Antal skickas som heltal eller som text med högst tre decimaler (`"1.5"`); decimaltal i JSON avvisas, eftersom de inte är exakta. Momsdeklarationens rutor är hela kronor (`amount_sek`), precis som på blanketten.
 
@@ -272,6 +274,8 @@ En webhook berättar för ert program när något händer, så att ni slipper fr
 | `invoice.sent` | En kundfaktura har mejlats till kunden |
 | `invoice.paid` | En kundfaktura är helt betald |
 | `supplier_invoice.approved` | En leverantörsfaktura har attesterats |
+| `planning.published` | En period av schemat har publicerats (Planering) |
+| `planning.attested` | Tid i schemat har attesterats (Planering; webhooken kräver `planning:attest`) |
 
 Händelser skickas först när ändringen är sparad (efter commit), aldrig för något som sedan ångrades. De är tunna: id, nummer, datum och belopp, inga personuppgifter. Behöver ni mer hämtar ni posten med API:t.
 

@@ -13,6 +13,28 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-02: v1.2.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-02: v1.2.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Planering**: `GET /planning/shifts?from=…&to=…` (det publicerade schemat, så som de anställda fick se det, högst 93 dagar; `include_drafts=true` för planen som den är nu), `GET /planning/areas`, `GET /planning/publications`.
+- **Scope**: `planning:view`. Ingen har den när modulen Planering är avstängd.
+- **Webhooks**: `planning.published` (en period av schemat har publicerats) och `planning.attested` (tid har attesterats; kräver `planning:attest`).
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Scheduling (Planering)**: `GET /planning/shifts?from=…&to=…` (the published schedule as the employees were shown it, at most 93 days; `include_drafts=true` for the plan as it stands now), `GET /planning/areas`, `GET /planning/publications`.
+- **Scope**: `planning:view`. No one has it while the Planering module is off.
+- **Webhooks**: `planning.published` (a period of the schedule was published) and `planning.attested` (time was attested; needs `planning:attest`).
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-01: v1.1.0
 <!-- /lang -->
 <!-- lang:en -->

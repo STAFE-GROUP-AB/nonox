@@ -15,6 +15,8 @@ use App\Modules\Connect\Models\ConnectWebhook;
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\ModuleManager;
+use App\Modules\Planning\Events\PeriodAttested;
+use App\Modules\Planning\Events\PeriodPublished;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -51,6 +53,16 @@ final class WebhookDispatcher
     public function supplierInvoiceApproved(SupplierInvoiceApproved $event): void
     {
         $this->dispatch($event->companyId, 'supplier_invoice.approved', fn (): ?array => WebhookEvents::supplierInvoiceApproved($event->supplierInvoiceId));
+    }
+
+    public function planningPublished(PeriodPublished $event): void
+    {
+        $this->dispatch($event->companyId, 'planning.published', fn (): ?array => WebhookEvents::planningPublished($event->publicationId));
+    }
+
+    public function planningAttested(PeriodAttested $event): void
+    {
+        $this->dispatch($event->companyId, 'planning.attested', fn (): array => WebhookEvents::planningAttested($event));
     }
 
     /**

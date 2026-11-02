@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.1.0
+  version: 1.2.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -96,6 +96,10 @@ tags:
     x-en-name: Payments
     description: 'Incoming and outgoing payments, read-only.'
     x-sv-description: 'In- och utbetalningar.'
+  - name: Planering
+    x-en-name: Scheduling
+    description: 'The staff schedule (Planering), read-only: shifts per period, areas and publications. Needs the Planering module.'
+    x-sv-description: 'Personalschemat i Planering: pass per period, avdelningar och publiceringar.'
 security:
   - oauth2: []
   - apiKey: []
@@ -6208,6 +6212,268 @@ paths:
           $ref: '#/components/responses/NotFound'
         429:
           $ref: '#/components/responses/TooManyRequests'
+  /planning/shifts:
+    get:
+      operationId: listPlanningShifts
+      tags:
+        - Planering
+      summary: 'List the schedule for a period'
+      description: "The shifts of the schedule (Planering) starting on the days from–to, at most 93 days, oldest first. By default the published schedule: what the employees were shown, so a shift changed since it was published is given as it was published (`has_unpublished_changes` is true) and a draft never published is left out. With `include_drafts=true` the plan as it stands now. Cancelled shifts are never listed. Times are ISO 8601 with the offset of Europe/Stockholm. Labour cost estimates are not part of the API. Needs planning:view, which no one has while the module is off."
+      x-sv-summary: 'Lista schemat för en period'
+      x-sv-description: 'Passen i schemat som börjar dag från–till, högst 93 dagar. Som standard det publicerade schemat, så som de anställda fick se det; med include_drafts=true planen som den ser ut nu. Inställda pass visas aldrig, och kostnadsuppskattningar ingår inte.'
+      security:
+        - oauth2:
+            - 'planning:view'
+        - apiKey:
+            - 'planning:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'planning:view'
+      parameters:
+        - name: from
+          in: query
+          required: true
+          description: 'First day, YYYY-MM-DD.'
+          schema:
+            type: string
+            format: date
+          example: '2026-11-09'
+        - name: to
+          in: query
+          required: true
+          description: 'Last day, YYYY-MM-DD; at most 93 days after from, counting both.'
+          schema:
+            type: string
+            format: date
+          example: '2026-11-15'
+        - name: employee_id
+          in: query
+          required: false
+          description: "Only this employee's shifts."
+          schema:
+            type: integer
+        - name: area_id
+          in: query
+          required: false
+          description: 'Only shifts in this area (avdelning).'
+          schema:
+            type: integer
+        - name: include_drafts
+          in: query
+          required: false
+          description: 'true for the plan as it stands now, drafts included; false (default) for the published schedule.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'The shifts of the period.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlanningShift'
+                  meta:
+                    type: object
+                    properties:
+                      from:
+                        type: string
+                        format: date
+                      to:
+                        type: string
+                        format: date
+                      include_drafts:
+                        type: boolean
+                      count:
+                        type: integer
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 9b1e2c4d-5f6a-4b7c-8d9e-0f1a2b3c4d5e
+                        day: '2026-11-10'
+                        employee_id: 7
+                        employee_name: 'Anna Kock'
+                        area_id: 2
+                        skill_id: null
+                        starts_at: '2026-11-10T08:00:00+01:00'
+                        ends_at: '2026-11-10T16:00:00+01:00'
+                        break_minutes: 30
+                        worked_minutes: 450
+                        note: null
+                        is_open: false
+                        status: published
+                        has_unpublished_changes: false
+                        published_at: '2026-11-04T10:00:00+01:00'
+                    meta:
+                      from: '2026-11-09'
+                      to: '2026-11-15'
+                      include_drafts: false
+                      count: 1
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+  /planning/areas:
+    get:
+      operationId: listPlanningAreas
+      tags:
+        - Planering
+      summary: 'List areas'
+      description: 'The areas (avdelningar) of the schedule, such as kitchen or bar, with their colour and staff-ledger location. Needs planning:view.'
+      x-sv-summary: 'Lista avdelningar'
+      x-sv-description: 'Schemats avdelningar, till exempel kök eller bar.'
+      security:
+        - oauth2:
+            - 'planning:view'
+        - apiKey:
+            - 'planning:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'planning:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        200:
+          description: 'A page of areas.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlanningArea'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 2
+                        name: Kök
+                        colour: '#2e86ab'
+                        location_id: null
+                        sort: 0
+                        is_archived: false
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /planning/publications:
+    get:
+      operationId: listPlanningPublications
+      tags:
+        - Planering
+      summary: 'List publications of the schedule'
+      description: 'Every time a period of the schedule was published: the period, when, how many shifts and how many people were told. The planning.published webhook carries the same id. Needs planning:view.'
+      x-sv-summary: 'Lista publiceringar av schemat'
+      x-sv-description: 'Varje gång en period av schemat har publicerats: perioden, när, hur många pass och hur många som fick besked.'
+      security:
+        - oauth2:
+            - 'planning:view'
+        - apiKey:
+            - 'planning:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'planning:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        200:
+          description: 'A page of publications.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlanningPublication'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 5
+                        from: '2026-11-09'
+                        to: '2026-11-15'
+                        published_at: '2026-11-04T10:00:00+01:00'
+                        shift_count: 24
+                        notified_count: 6
+                        created_at: '2026-11-04T10:00:00+01:00'
+                        updated_at: '2026-11-04T10:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
 webhooks:
   voucher.posted:
     post:
@@ -6451,6 +6717,123 @@ webhooks:
       responses:
         2XX:
           description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  planning.published:
+    post:
+      operationId: planningPublished
+      summary: 'A period of the schedule was published'
+      x-sv-summary: 'En period av schemat har publicerats'
+      description: "Sent after a period of the schedule (Planering) is published: its new and changed shifts became visible to the employees. Fetch the shifts with `GET /planning/shifts` for the period (planning:view), as an HTTPS POST to every active webhook of the company that subscribes to `planning.published`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas med HTTPS POST till varje webhook som prenumererar på `planning.published`, efter att ändringen har sparats. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: planning.published
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: c2d4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f
+                  type: planning.published
+                  created_at: '2026-11-04T10:00:01+01:00'
+                  company_id: 42
+                  data:
+                    publication_id: 5
+                    from: '2026-11-09'
+                    to: '2026-11-15'
+                    published_at: '2026-11-04T10:00:00+01:00'
+                    shift_count: 24
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  planning.attested:
+    post:
+      operationId: planningAttested
+      summary: 'Time in the schedule was attested'
+      x-sv-summary: 'Tid i schemat har attesterats'
+      description: "Sent after a manager attests time in the schedule (Planering): planned and actual time compared and approved as the payroll basis. The webhook needs planning:attest. `attested_minutes` is the attested time in total; amounts are not included, as an HTTPS POST to every active webhook of the company that subscribes to `planning.attested`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas med HTTPS POST till varje webhook som prenumererar på `planning.attested`, efter att ändringen har sparats. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: planning.attested
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: c2d4e6f8-1a3b-4c5d-8e7f-9a0b1c2d3e4f
+                  type: planning.attested
+                  created_at: '2026-11-04T10:00:01+01:00'
+                  company_id: 42
+                  data:
+                    from: '2026-11-02'
+                    to: '2026-11-08'
+                    attestation_ids:
+                      - 311
+                      - 312
+                    employee_ids:
+                      - 7
+                    attested_minutes: 960
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
 components:
   securitySchemes:
     oauth2:
@@ -6477,6 +6860,7 @@ components:
             'payments:create': 'Register incoming payments and supplier payments (with vouchers:create and vouchers:post)'
             'supplier-invoices:create': 'Read suppliers and supplier invoices, create suppliers and draft and register supplier invoices'
             'supplier-invoices:approve': 'Read and approve supplier invoices (never ones the same person registered, while the company requires separate approval)'
+            'planning:view': 'Read the schedule in Planering: shifts per period, areas and publications'
           x-revocationUrl: 'https://nonox.app/oauth/revoke'
       x-sv-scopes:
         'vouchers:view': 'Läsa verifikationer, underlag, kontoplan, räkenskapsår och perioder, kostnadsställen, projekt, verifikationsserier och momskoder'
@@ -6494,6 +6878,7 @@ components:
         'payments:create': 'Registrera inbetalningar och betalningar till leverantörer (med vouchers:create och vouchers:post)'
         'supplier-invoices:create': 'Läsa leverantörer och leverantörsfakturor, lägga till leverantörer och skapa och registrera leverantörsfakturor'
         'supplier-invoices:approve': 'Läsa och attestera leverantörsfakturor (aldrig sådana samma person registrerat, när företaget kräver separat attest)'
+        'planning:view': 'Läsa schemat i Planering: pass per period, avdelningar och publiceringar'
     apiKey:
       type: http
       scheme: bearer
@@ -9168,6 +9553,113 @@ components:
                 description: 'The whole month is locked: nothing can be posted in it.'
               partly_locked:
                 type: boolean
+    PlanningShift:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        day:
+          type: string
+          format: date
+          description: 'The day the shift belongs to: the day it starts, in Sweden.'
+        employee_id:
+          type:
+            - integer
+            - 'null'
+          description: 'Null for an open shift.'
+        employee_name:
+          type:
+            - string
+            - 'null'
+        area_id:
+          type:
+            - integer
+            - 'null'
+        skill_id:
+          type:
+            - integer
+            - 'null'
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        break_minutes:
+          type: integer
+        worked_minutes:
+          type: integer
+          description: 'From start to end less the break, in real minutes (also across a summer-time change).'
+        note:
+          type:
+            - string
+            - 'null'
+        is_open:
+          type: boolean
+        status:
+          type: string
+          enum:
+            - published
+            - draft
+        has_unpublished_changes:
+          type: boolean
+          description: 'The shift was changed after it was published. In the published schedule it is given as published.'
+        published_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+    PlanningArea:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        colour:
+          type: string
+          example: '#2e86ab'
+        location_id:
+          type:
+            - integer
+            - 'null'
+          description: 'The staff-ledger location the area is tied to, if any.'
+        sort:
+          type: integer
+        is_archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PlanningPublication:
+      type: object
+      properties:
+        id:
+          type: integer
+        from:
+          type: string
+          format: date
+        to:
+          type: string
+          format: date
+        published_at:
+          type: string
+          format: date-time
+        shift_count:
+          type: integer
+        notified_count:
+          type: integer
+          description: 'How many employees were sent their schedule.'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     WebhookEvent:
       type: object
       required:
@@ -9188,6 +9680,8 @@ components:
             - invoice.sent
             - invoice.paid
             - supplier_invoice.approved
+            - planning.published
+            - planning.attested
           description: 'Open enum: new event types may be added within v1.'
         created_at:
           type: string

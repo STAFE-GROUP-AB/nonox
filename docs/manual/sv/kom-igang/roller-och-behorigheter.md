@@ -32,6 +32,7 @@ När företaget har slagit på en modul kan det finnas fler roller att välja me
 - **Anställd** (modulen Lön) har bara tillgång till Min sida: lönebesked, sjukanmälan, semesteransökan och utlägg. Se [För anställda](/manual/personal).
 - **Personalansvarig** (modulen Personalliggare) sköter personalliggaren, lokalerna och kioskerna.
 - **Personal i personalliggaren** (modulen Personalliggare) kan checka in och ut. Se [Checka in och ut](/manual/personal/checka-in-och-ut).
+- **Schemaläggare** (modulen Planering) lägger och publicerar schemat men attesterar inte tid till lönen. Se [Roller och behörigheter i Planering](/manual/planering/roller-och-behorigheter).
 
 Modulerna ger också de vanliga rollerna behörigheter. En redovisningskonsult kan till exempel bokföra lönekörningar, och en bokförare kan arbeta i inkorgen. Vem som får hantera en modul står i modulens eget avsnitt i manualen.
 

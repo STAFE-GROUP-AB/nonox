@@ -1,11 +1,16 @@
 @php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 <div class="space-y-8">
     <x-ui.card :title="__('Föreslå tidrapport')" :description="__('Timmar per dag räknas från avslutade arbetspass för personal som är kopplad till en anställd i lönen. Pass utan utcheckning tas inte med; rätta dem först.')">
-        <form wire:submit="propose" class="flex flex-wrap items-end gap-4">
-            <x-ui.field for="tp-from" :label="__('Från')"><input id="tp-from" type="date" wire:model="from" class="{{ $input }}"></x-ui.field>
-            <x-ui.field for="tp-to" :label="__('Till')"><input id="tp-to" type="date" wire:model="to" class="{{ $input }}"></x-ui.field>
-            <x-button type="submit">{{ __('Föreslå') }}</x-button>
-        </form>
+        @if($planning)
+            <p class="text-sm text-gray-700">{{ __('Planering är på. Tiden jämförs med schemat och attesteras under Tid att attestera, och skickas till lönen därifrån, så att ingen dag rapporteras två gånger.') }}</p>
+            <a href="{{ route('planning.attest') }}" class="mt-3 inline-block text-sm font-semibold text-accent-700 hover:underline">{{ __('Gå till Tid att attestera') }}</a>
+        @else
+            <form wire:submit="propose" class="flex flex-wrap items-end gap-4">
+                <x-ui.field for="tp-from" :label="__('Från')"><input id="tp-from" type="date" wire:model="from" class="{{ $input }}"></x-ui.field>
+                <x-ui.field for="tp-to" :label="__('Till')"><input id="tp-to" type="date" wire:model="to" class="{{ $input }}"></x-ui.field>
+                <x-button type="submit">{{ __('Föreslå') }}</x-button>
+            </form>
+        @endif
     </x-ui.card>
 
     <x-ui.card :title="__('Förslag')">

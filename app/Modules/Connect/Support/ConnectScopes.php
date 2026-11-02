@@ -31,6 +31,7 @@ final class ConnectScopes
         'payments:create',
         'supplier-invoices:create',
         'supplier-invoices:approve',
+        'planning:view',
     ];
 
     /** @return array<string, string> scope => Swedish description, for the consent screen and API keys */
@@ -52,6 +53,7 @@ final class ConnectScopes
             'payments:create' => __('Registrera inbetalningar på kundfakturor och betalningar av attesterade leverantörsfakturor'),
             'supplier-invoices:create' => __('Läsa leverantörer och leverantörsfakturor, lägga till leverantörer och registrera leverantörsfakturor'),
             'supplier-invoices:approve' => __('Läsa och attestera leverantörsfakturor (aldrig sådana som personen själv har registrerat, om företaget kräver attest av någon annan)'),
+            'planning:view' => __('Läsa schemat i Planering: pass per period, avdelningar och publiceringar'),
         ];
     }
 

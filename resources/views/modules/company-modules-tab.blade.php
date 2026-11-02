@@ -15,6 +15,9 @@
                     <h3 class="flex items-center gap-3 text-base font-semibold text-gray-900">
                         {{ $module->name() }}
                         <x-ui.badge :tone="$card['enabled'] ? 'success' : 'neutral'">{{ $card['enabled'] ? __('Aktiv') : __('Inaktiv') }}</x-ui.badge>
+                        @if($module instanceof \App\Modules\Contracts\IsNew && now()->lessThan($module->newUntil()))
+                            <x-ui.badge tone="accent">{{ __('Ny') }}</x-ui.badge>
+                        @endif
                     </h3>
                     <p class="mt-1 text-sm text-gray-600">{{ $module->description() }}</p>
                     @if($card['dependencies'] !== [])

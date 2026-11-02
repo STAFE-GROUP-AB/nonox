@@ -10,6 +10,7 @@ use App\Modules\Connect\ConnectServiceProvider;
 use App\Modules\Inbox\InboxServiceProvider;
 use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
+use App\Modules\Planning\PlanningServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
 use App\Providers\AppServiceProvider;
 use App\Providers\FortifyServiceProvider;
@@ -24,6 +25,7 @@ return [
     AgreementsServiceProvider::class,
     AiServiceProvider::class,
     StaffLedgerServiceProvider::class,
+    PlanningServiceProvider::class,
     InboxServiceProvider::class,
     ConnectServiceProvider::class,
     BankingServiceProvider::class,

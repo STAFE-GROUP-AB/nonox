@@ -44,6 +44,8 @@ Godkända tidrapporter daterade i lönekörningens månad läggs ihop till en ra
 
 Att godkänna förslag kräver både rätt att hantera personalliggaren och rätt att attestera lön. Läs mer under [Personalliggare](/manual/personalliggare).
 
+Har ni modulen Planering jämförs tiden i stället med schemat under **Planering → Tid att attestera**, och de attesterade dagarna blir tidrapporter med timlön, OB och övertid. Se [Tid att attestera](/manual/planering/tid-att-attestera).
+
 > [!NOTE]
 > Varje tidrapport betalas en gång. När lönekörningen räknas knyts tidrapporterna till den, och när den är attesterad kan de inte ändras. En dag som redan finns i en tidrapport föreslås aldrig igen.
 
@@ -81,4 +83,5 @@ Ja, antingen som semesterersättning med varje lön, om det är valt på anstäl
 - [Gör en lönekörning](/manual/lon/lonekorning)
 - [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem)
 - [Personalliggare](/manual/personalliggare)
+- [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen) – tid från schemat i Planering.
 - [Anställda](/manual/lon/anstallda)

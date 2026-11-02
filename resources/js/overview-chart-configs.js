@@ -40,6 +40,11 @@ export function formatAxis(value) {
     return formatKronor(value);
 }
 
+/** "31,4 %" as people in Sweden write it. */
+export function formatPercent(value) {
+    return `${decimalFormat.format(value)} %`;
+}
+
 function bars(label, data, color) {
     return { type: 'bar', label, data: data.map(kronor), backgroundColor: color, borderRadius: 4, maxBarThickness: 18, borderSkipped: 'start' };
 }
@@ -80,7 +85,7 @@ function options(horizontal = false) {
 /**
  * The Chart.js configuration of one chart.
  *
- * @param {string} kind revenue | result | liquidity | customers | accounts | vat
+ * @param {string} kind revenue | result | liquidity | customers | accounts | vat | staffing | staffing-percent
  * @param {object} data the figures from App\Domain\Overview\Statistics
  * @param {object} labels the series names, translated on the server
  */
@@ -138,6 +143,42 @@ export function chartConfig(kind, data, labels) {
                 },
                 options: options(),
             };
+        }
+        case 'staffing': {
+            // Planering → Bemanning och kostnad: estimated labour cost (planned, actual) as bars, sales from the books as a line.
+            const datasets = [bars(labels.planned, data.staffing.planned, COLORS.first)];
+
+            if (data.staffing.actual) {
+                datasets.push(bars(labels.actual, data.staffing.actual, COLORS.second));
+            }
+
+            datasets.push(line(labels.sales, data.staffing.sales, COLORS.third));
+
+            if (data.staffing.lastYearSales) {
+                datasets.push(line(labels.lastYearSales, data.staffing.lastYearSales, COLORS.third, true));
+            }
+
+            return { type: 'bar', data: { labels: data.staffing.labels, datasets }, options: options() };
+        }
+        case 'staffing-percent': {
+            // Days without sales have no share; points keep a lone day visible.
+            const percentLine = (label, values, color, dashed = false) => ({ ...line(label, [], color, dashed), data: values, pointRadius: 3 });
+            const datasets = [percentLine(labels.planned, data.staffing.plannedPercent, COLORS.first)];
+
+            if (data.staffing.actualPercent) {
+                datasets.push(percentLine(labels.actual, data.staffing.actualPercent, COLORS.second));
+            }
+
+            if (data.staffing.lastYearPercent) {
+                datasets.push(percentLine(labels.lastYear, data.staffing.lastYearPercent, COLORS.first, true));
+            }
+
+            const config = options();
+            config.scales.y.ticks.callback = (value) => formatPercent(value);
+            config.scales.y.beginAtZero = true;
+            config.plugins.tooltip.callbacks.label = (context) => `${context.dataset.label}: ${context.parsed.y === null ? '–' : formatPercent(context.parsed.y)}`;
+
+            return { type: 'line', data: { labels: data.staffing.labels, datasets }, options: config };
         }
         default:
             throw new Error(`Unknown chart ${kind}`);

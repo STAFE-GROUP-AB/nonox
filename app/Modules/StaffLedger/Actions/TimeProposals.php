@@ -10,6 +10,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\PayrollModule;
+use App\Modules\Planning\PlanningModule;
 use App\Modules\StaffLedger\Domain\LedgerQuery;
 use App\Modules\StaffLedger\Domain\Shift;
 use App\Modules\StaffLedger\Models\Person;
@@ -27,6 +28,8 @@ use Illuminate\Validation\ValidationException;
  * which writes approved time reports with the hourly pay code; or rejects
  * it. The ledger itself is never touched and stays separate from payroll.
  * Shifts without a check-out are left out and must be corrected first.
+ * While Planering is on, its attest replaces proposing; proposals already
+ * made can still be approved or rejected.
  */
 final class TimeProposals
 {
@@ -36,6 +39,11 @@ final class TimeProposals
     public function propose(User $user, Company $company, CarbonImmutable $from, CarbonImmutable $to): array
     {
         $this->authorize($user, $company);
+
+        // With Planering on, time is attested against the schedule there; one source, so no day is reported twice.
+        if (self::replacedByPlanning($company)) {
+            throw ValidationException::withMessages(['period' => __('Planering är på: tiden attesteras mot schemat under Planering → Tid att attestera och skickas till lönen därifrån.')]);
+        }
 
         if ($to < $from || $from->diffInDays($to) > 62) {
             throw ValidationException::withMessages(['period' => __('Välj en period på högst två månader.')]);
@@ -155,6 +163,12 @@ final class TimeProposals
         }
 
         return (string) $hours;
+    }
+
+    /** Planering's attest replaces the proposals while that module is on (PLANNING_MODULE.md §6). */
+    public static function replacedByPlanning(Company $company): bool
+    {
+        return app(ModuleManager::class)->isEnabled(PlanningModule::KEY, $company);
     }
 
     private function ensurePending(TimeProposal $proposal): void

@@ -123,6 +123,8 @@ class WebhooksManager extends Component
                 ->orderBy('created_at')
                 ->get(),
             'eventLabels' => WebhookEvents::labels(),
+            // Only the events this person may receive themselves (CreateWebhook refuses the others).
+            'choosableEvents' => array_filter(WebhookEvents::labels(), fn (string $event): bool => CreateWebhook::mayReceive($user, $company, $event), ARRAY_FILTER_USE_KEY),
             'canManage' => $user->hasTeamPermission($company, 'connect:manage'),
             'hasPasskey' => $user->hasPasskeysEnabled(),
             'skipPasskey' => PasskeySession::skippedLocally(),

@@ -35,7 +35,59 @@ final class AgreementPricer
      */
     public function price(PayrollContext $context, AgreementContext $agreement): array
     {
-        return array_map(fn (PayInput $input): PayInput => $this->priceOne($context, $agreement, $input), $context->inputs);
+        $priced = [];
+
+        foreach ($context->inputs as $input) {
+            foreach ($this->byRateStep($agreement, $input) as $part) {
+                $priced[] = $this->priceOne($context, $agreement, $part);
+            }
+        }
+
+        return $priced;
+    }
+
+    /**
+     * A line that carries its hours per work date (time reports from
+     * Planering) is split into one line per agreement version and rate step
+     * in force on those dates, so hours on both sides of a new rate are each
+     * priced at their own. Any other line is left as it is.
+     *
+     * @return list<PayInput>
+     */
+    private function byRateStep(AgreementContext $agreement, PayInput $input): array
+    {
+        $byDate = $input->explanation['hours_by_date'] ?? null;
+
+        if (($input->explanation[Additions::AGREEMENT_PRICED] ?? false) !== true || ! is_array($byDate) || count($byDate) < 2 || $input->amountOre !== null || $input->rateOre !== null) {
+            return [$input];
+        }
+
+        $groups = [];
+
+        foreach ($byDate as $date => $hours) {
+            $day = CarbonImmutable::parse((string) $date);
+            $version = $agreement->versionOn($day);
+            $step = $version === null ? null : $version['rules']->rate($input->code, $day);
+            $groups[($version['id'] ?? 'none').'|'.($step['valid_from'] ?? 'none')][(string) $date] = (string) $hours;
+        }
+
+        if (count($groups) === 1) {
+            return [$input];
+        }
+
+        return array_values(array_map(fn (array $dates): PayInput => new PayInput(
+            $input->code,
+            $input->description,
+            $input->category,
+            $input->taxable,
+            $input->taxMethod,
+            $input->contributionBasis,
+            $input->vacationBasis,
+            (string) array_reduce($dates, fn (BigDecimal $sum, string $hours): BigDecimal => $sum->plus($hours), BigDecimal::zero()),
+            null,
+            null,
+            [...$input->explanation, 'date_from' => (string) array_key_first($dates), 'date_to' => (string) array_key_last($dates), 'hours_by_date' => $dates],
+        ), $groups));
     }
 
     private function priceOne(PayrollContext $context, AgreementContext $agreement, PayInput $input): PayInput

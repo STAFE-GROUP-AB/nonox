@@ -32,6 +32,8 @@ En ZIP-fil per räkenskapsår med årets SIE-fil, rapporter, underlag, fakturor,
 
 Ett godkännande av att en leverantörsfaktura eller en betalning är riktig och får betalas. I NONOX attesterar som standard någon annan än den som registrerade fakturan. Se [Attest](/manual/leverantorer/attest).
 
+I Planering betyder attest av tid att en chef godkänner den arbetade tiden mot schemat innan den går till lönen. Se [Tid att attestera](/manual/planering/tid-att-attestera).
+
 ### Avskrivning
 
 Den del av en [anläggningstillgångs](#anlaggningstillgang) värde som bokförs som kostnad varje år eller månad, så att kostnaden fördelas över tiden den används. Se [Anläggningstillgångar](/manual/bokslut/anlaggningstillgangar).
@@ -196,6 +198,10 @@ Att räkna, attestera, betala och bokföra lönen för en period. Se [Lönekörn
 
 ## M
 
+### Mertid
+
+Tid som en deltidsanställd arbetar utöver sin avtalade arbetstid. Hur den räknas och ersätts står i arbetstidslagen och i kollektivavtalet. Se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen).
+
 ### Moms
 
 Mervärdesskatt, en skatt på försäljning av varor och tjänster. Företaget tar ut moms av kunden och betalar den vidare till staten, efter avdrag för momsen på sina egna inköp. Reglerna finns i mervärdesskattelagen. Se [Moms och EU](/manual/moms).
@@ -213,6 +219,10 @@ Hur ofta företaget redovisar moms: varje månad, varje kvartal eller en gång p
 Företagets nummer för moms, som behövs på fakturor och i handel med andra EU-länder. För svenska företag är det SE, organisationsnumret och 01. Kallas också VAT-nummer.
 
 ## O
+
+### OB
+
+OB, ersättning för obekväm arbetstid, är ett tillägg för arbete på kvällar, nätter, helger och storhelger. Vilka tider som ger OB och hur mycket bestäms av kollektivavtalet. Se [OB och övertid enligt avtalet](/manual/avtal/ob-och-overtid).
 
 ### OCR-nummer
 
@@ -232,6 +242,10 @@ One Stop Shop, ett EU-system där ett företag som säljer till konsumenter i an
 
 ## P
 
+### Pass
+
+Ett arbetspass: en tid då en person ska arbeta, med start, slut och rast. Passen läggs i schemat i Planering. Se [Schemat](/manual/planering/schemat).
+
 ### Passkey
 
 En inloggningsnyckel som sparas i din telefon eller dator och låses upp med fingeravtryck, ansiktsigenkänning eller skärmlås. Se [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar).
@@ -243,6 +257,10 @@ Att bokföra en intäkt eller kostnad i den period den hör till, i stället fö
 ### Periodisk sammanställning
 
 En rapport till Skatteverket över försäljning av varor och tjänster till momsregistrerade köpare i andra EU-länder. Se [Moms och EU](/manual/moms).
+
+### Personalkostnad i procent av försäljningen
+
+Vad personalen kostar delat med vad företaget säljer, samma dag, vecka eller period. Ett vanligt mått i restauranger och butiker. Se [Bemanning och kostnad](/manual/planering/bemanning-och-kostnad).
 
 ### Personalliggare
 
@@ -287,6 +305,10 @@ En ny verifikation som rättar en bokförd verifikation som blev fel. Den bokfö
 ### Saldobalans
 
 En lista över alla konton med ingående saldo, rörelsen under perioden och utgående saldo. Ett bra sätt att stämma av bokföringen. Se [Rapporter](/manual/rapporter).
+
+### Schema
+
+Planen för vem som arbetar när. I NONOX läggs det i modulen Planering och blir synligt för personalen när det publiceras. Se [Planering](/manual/planering).
 
 ### Semesterlöneskuld
 
@@ -370,6 +392,14 @@ När ett räkenskapsår slutar och nästa börjar. De utgående balanserna förs
 
 ## Ö
 
+### Öppet pass
+
+Ett pass i schemat som ingen har ännu. Personalen kan be om att få det på Min sida. Se [Öppna pass och byten](/manual/planering/oppna-pass-och-byten).
+
 ### Öresavrundning
 
 Att avrunda fakturans totalbelopp till hela kronor. Skillnaden bokförs på konto 3740 Öres- och kronutjämning. Se [Skapa en faktura](/manual/fakturering/skapa-en-faktura).
+
+### Övertid
+
+Arbete utöver den ordinarie arbetstiden. Hur mycket som är tillåtet står i arbetstidslagen, och kollektivavtalet kan ha egna regler och ersättningar. Se [OB och övertid i lönen](/manual/planering/ob-och-overtid-i-lonen).

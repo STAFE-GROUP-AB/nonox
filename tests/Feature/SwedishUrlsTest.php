@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Route;
 // oauth/ and .well-known/ are called by apps, with paths fixed by RFC 6749 and RFC 8414 (ADR-032).
 // utvecklare/openapi.yaml and .json keep the names API tools and code generators look for.
 // manual/sokindex.json is the search index the manual's search box fetches (ADR-036).
-const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json'];
+// planering/kalender/ is the iCal feed calendar apps subscribe to; they need the .ics ending.
+const TECHNICAL_PREFIXES = ['up', 'sitemap.xml', 'robots.txt', 'livewire', 'api/', 'sanctum/', 'storage/', '_', 'herd-studio', 'oauth/', '.well-known/', 'utvecklare/openapi.', 'manual/sokindex.json', 'planering/kalender/'];
 
 const ENGLISH_WORDS = [
     'login', 'logout', 'register', 'user', 'profile', 'team', 'teams', 'dashboard', 'password',

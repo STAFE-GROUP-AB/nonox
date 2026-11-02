@@ -153,7 +153,7 @@ final class LandingPage
      * What NONOX does today, and what is coming soon (soon: true). Each card
      * names its entry in Features, the single list of what is built.
      *
-     * @return list<array{t: string, key: string, b: string, d: string, mod?: bool, soon?: bool}>
+     * @return list<array{t: string, key: string, b: string, d: string, mod?: bool, soon?: bool, new?: bool}>
      */
     private static function features(): array
     {
@@ -172,6 +172,7 @@ final class LandingPage
             ['t' => 'Översikt och sök', 'key' => 'search', 'b' => 'Det som brådskar först, statistik med prognos och en sökning med ⌘K som hittar allt på ett ögonblick.', 'd' => 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4'],
             ['t' => 'Byrå och kund', 'key' => 'tasks', 'b' => 'Uppgifter som delegeras mellan byrån och kunden, månadsstängning per klient och alla klienter på en sida.', 'd' => 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9'],
             ['t' => 'Arkiv och export', 'key' => 'archive', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
+            ['t' => 'Planering', 'key' => 'planning', 'mod' => true, 'new' => true, 'b' => 'Schema med lönekostnad och OB enligt avtalet medan du planerar. Planen möter personalliggaren, avvikelserna attesteras och tiden går rakt in i lönen.', 'd' => 'M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8 13h3M13 13h3M8 16h3'],
             ['t' => 'Personalliggare', 'key' => 'staff_ledger', 'mod' => true, 'b' => 'Elektronisk personalliggare med incheckning via PIN eller QR-kod på en surfplatta, även utan internet.', 'd' => 'M9 4h6M8 2v4M16 2v4M4 6h16v15H4zM8 11h8M8 15h5'],
             ['t' => 'Inkorg', 'key' => 'inbox', 'mod' => true, 'b' => 'En egen e-postadress för fakturor, kvitton och kassarapporter. Bara post från avsändare du godkänt tolkas, resten väntar i karantän.', 'd' => 'M3 13l3-8h12l3 8v6H3zM3 13h5l1 2h6l1-2h5M12 8v3'],
         ];
