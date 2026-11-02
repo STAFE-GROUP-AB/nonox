@@ -230,7 +230,7 @@ accounts
 ### 6.2 Fiscal years, periods, voucher series
 ```
 fiscal_years      id, company_id, start_date, end_date, status enum(OPEN, CLOSED), closed_at, closed_by
-                  — length 12 months normally; first/changed year may be 6–18 months (BFL 3 kap)
+                  — length 12 months normally; a first or changed year may be shorter (no minimum) or at most 18 months (BFL 3 kap. 3 §); natural persons (EF) use the calendar year (3 kap. 1 §)
 periods           derived (monthly), lock via companies.locked_until_date + per-period lock table
 voucher_series    id, company_id, code (A, B, ...), name, is_default
 voucher_number_counters  company_id, fiscal_year_id, series_id, next_number  (row-locked at posting)
