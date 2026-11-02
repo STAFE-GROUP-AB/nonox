@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Domain\Engine\Steps;
 
 use App\Modules\Payroll\Domain\Engine\PayInput;
+use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
 use App\Modules\Payroll\Domain\Engine\PayslipDraft;
 use App\Modules\Payroll\Domain\Engine\PayslipLineResult;
@@ -18,6 +19,13 @@ use Brick\Math\RoundingMode;
  * mileage and domestic per diem, tax-free up to the rule and taxable above
  * it. The rates come from the rules; a paid rate above the tax-free limit
  * splits into a tax-free and a taxable line.
+ *
+ * An allowance always needs its number of mil or days: the tax-free part is
+ * the rule times that number (IL 12 kap. 5 §; Skatteverket, ruta 050/051:
+ * the excess is pay). The agreed pay can be given as a rate per unit or as
+ * the whole amount; an amount without a number blocks the payslip instead
+ * of paying nothing (enligt granskning 2026-11-02, juristgranskning
+ * återstår, AUD-LON-09, #76).
  *
  * TODO(legal-verify): per diem conditions (overnight stay, more than 50 km,
  * reduced amounts after three months and two years) and meal reductions on
@@ -74,6 +82,17 @@ final class Allowances implements Step
     {
         [$rule, $taxableCode] = self::TAX_FREE[$input->code];
         $limit = (int) ((array) $context->rules->get($rule))['ore'];
+
+        if ($input->quantity === null || BigDecimal::of($input->quantity)->isLessThanOrEqualTo(0)) {
+            throw new PayrollBlockedException(__(':item behöver antal mil eller dagar. Det skattefria beloppet räknas per mil eller dag; skriv antalet och vid behov hela ersättningen.', ['item' => $input->description]));
+        }
+
+        if ($input->amountOre !== null) {
+            $this->allowanceAmount($context, $draft, $input, $rule, $taxableCode, $limit);
+
+            return;
+        }
+
         $rate = $input->rateOre ?? $limit;
         $taxFreeRate = min($rate, $limit);
 
@@ -84,6 +103,30 @@ final class Allowances implements Step
         if ($rate > $limit) {
             $draft->add(new PayslipLineResult($taxableCode, __(':item, över skattefria beloppet', ['item' => $input->description]), $this->times($input, $rate - $limit), PayslipLineResult::TAX_TABLE, true, false, $input->quantity, $rate - $limit,
                 explanation: ['source' => 'input', 'category' => 'ALLOWANCE_TAXABLE', 'limit_ore' => $limit, 'paid_rate_ore' => $rate]));
+        }
+    }
+
+    /**
+     * The whole agreed allowance as an amount with its number of mil or
+     * days: tax-free up to the rule times the number, the rest taxable pay.
+     */
+    private function allowanceAmount(PayrollContext $context, PayslipDraft $draft, PayInput $input, string $rule, string $taxableCode, int $limit): void
+    {
+        $paid = (int) $input->amountOre;
+
+        if ($paid < 0) {
+            throw new PayrollBlockedException(__(':item kan inte vara negativ.', ['item' => $input->description]));
+        }
+
+        $taxFree = min($paid, $this->times($input, $limit));
+
+        $draft->add(new PayslipLineResult($input->code, $input->description, $taxFree, PayslipLineResult::NET, false, false, $input->quantity, null,
+            ruleVersionId: $context->rules->version($rule)->id,
+            explanation: ['source' => 'input', 'category' => 'ALLOWANCE_TAX_FREE', 'tax_free' => true, 'limit_ore' => $limit, 'paid_ore' => $paid]));
+
+        if ($paid > $taxFree) {
+            $draft->add(new PayslipLineResult($taxableCode, __(':item, över skattefria beloppet', ['item' => $input->description]), $paid - $taxFree, PayslipLineResult::TAX_TABLE, true, false,
+                explanation: ['source' => 'input', 'category' => 'ALLOWANCE_TAXABLE', 'limit_ore' => $limit, 'paid_ore' => $paid]));
         }
     }
 

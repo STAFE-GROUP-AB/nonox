@@ -26,7 +26,9 @@ final class PayCodeCatalog
         // Comp time paid out, or taken as leave by an hourly-paid employee (CompTimeLedger): vacation basis like the overtime it came from.
         'KOMPTID' => ['name_sv' => 'Komptid', 'name_en' => 'Comp time', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'OBTILLAGG' => ['name_sv' => 'OB-tillägg', 'name_en' => 'Unsocial hours supplement', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
-        'BONUS' => ['name_sv' => 'Bonus', 'name_en' => 'Bonus', 'category' => 'ADDITION', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'ONE_OFF', 'contribution' => true, 'vacation' => false, 'pension' => true, 'debit' => 7010, 'credit' => null],
+        // A bonus is förfallen lön and so vacation-pay basis (semesterlagen 16 b §, 16 a § tredje stycket); enligt granskning 2026-11-02, juristgranskning återstår (#77).
+        // TODO(legal-verify): a profit share not paid for work (vinstdelning) may fall outside; an agreement may also say otherwise.
+        'BONUS' => ['name_sv' => 'Bonus', 'name_en' => 'Bonus', 'category' => 'ADDITION', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'ONE_OFF', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'RETROLON' => ['name_sv' => 'Retroaktiv lön', 'name_en' => 'Retroactive pay', 'category' => 'ADDITION', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'ONE_OFF', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'SJUKLON' => ['name_sv' => 'Sjuklön', 'name_en' => 'Sick pay', 'category' => 'SICK', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7081, 'credit' => null],
         'SJUKAVDRAG' => ['name_sv' => 'Sjukavdrag', 'name_en' => 'Sick deduction', 'category' => 'SICK', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
@@ -43,7 +45,8 @@ final class PayCodeCatalog
         'BILFORMAN' => ['name_sv' => 'Bilförmån', 'name_en' => 'Car benefit', 'category' => 'BENEFIT', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => null],
         'DRIVMEDELSFORMAN' => ['name_sv' => 'Drivmedelsförmån', 'name_en' => 'Fuel benefit', 'category' => 'BENEFIT', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => null],
         'OVRIG_FORMAN' => ['name_sv' => 'Övrig förmån', 'name_en' => 'Other benefit', 'category' => 'BENEFIT', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => null],
-        'FORMAN_EGENBETALNING' => ['name_sv' => 'Egen betalning för förmån', 'name_en' => 'Employee payment for benefit', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 2890],
+        // The employee's payment recovers the benefit's cost (FAR: "konto 7388 Anställdas ersättning för erhållna förmåner"), not a debt on 2890 (#80).
+        'FORMAN_EGENBETALNING' => ['name_sv' => 'Egen betalning för förmån', 'name_en' => 'Employee payment for benefit', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 7388],
         'MILERSATTNING' => ['name_sv' => 'Milersättning, egen bil', 'name_en' => 'Mileage allowance, own car', 'category' => 'ALLOWANCE_TAX_FREE', 'unit' => 'QUANTITY', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7331, 'credit' => null],
         'MIL_SKATTEPLIKTIG' => ['name_sv' => 'Milersättning, skattepliktig del', 'name_en' => 'Mileage allowance, taxable part', 'category' => 'ALLOWANCE_TAXABLE', 'unit' => 'QUANTITY', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => 7332, 'credit' => null],
         'TRAKTAMENTE_HEL' => ['name_sv' => 'Traktamente, hel dag', 'name_en' => 'Per diem, full day', 'category' => 'ALLOWANCE_TAX_FREE', 'unit' => 'DAYS', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7321, 'credit' => null],
@@ -87,6 +90,8 @@ final class PayCodeCatalog
         7322 => 'Skattepliktiga traktamenten, Sverige',
         7331 => 'Skattefria bilersättningar',
         7332 => 'Skattepliktiga bilersättningar',
+        // TODO(legal-verify): BAS 2026 name of 7388, from FAR's guidance (#80).
+        7388 => 'Anställdas ersättning för erhållna förmåner',
         7410 => 'Pensionsförsäkringspremier',
         7210 => 'Löner till tjänstemän',
         7281 => 'Sjuklöner till tjänstemän',

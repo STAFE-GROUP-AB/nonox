@@ -56,8 +56,8 @@ class PayrollRunPage extends Component
 
     public string $newSourceName = '';
 
-    /** @var array{employee_id: string, pay_code_id: string, quantity: string, amount: string, note: string} */
-    public array $input = ['employee_id' => '', 'pay_code_id' => '', 'quantity' => '', 'amount' => '', 'note' => ''];
+    /** @var array{employee_id: string, pay_code_id: string, quantity: string, amount: string, rate: string, note: string} */
+    public array $input = ['employee_id' => '', 'pay_code_id' => '', 'quantity' => '', 'amount' => '', 'rate' => '', 'note' => ''];
 
     /** @var array{employee_id: string, type: string, date_from: string, date_to: string, hours: string} */
     public array $absence = ['employee_id' => '', 'type' => 'SICK', 'date_from' => '', 'date_to' => '', 'hours' => '8'];
@@ -81,7 +81,7 @@ class PayrollRunPage extends Component
     {
         $runs->addInput($this->user(), $this->run(), $this->input);
 
-        $this->input = ['employee_id' => $this->input['employee_id'], 'pay_code_id' => '', 'quantity' => '', 'amount' => '', 'note' => ''];
+        $this->input = ['employee_id' => $this->input['employee_id'], 'pay_code_id' => '', 'quantity' => '', 'amount' => '', 'rate' => '', 'note' => ''];
         $this->toast(__('Raden är tillagd. Beräkna lönekörningen igen.'));
     }
 

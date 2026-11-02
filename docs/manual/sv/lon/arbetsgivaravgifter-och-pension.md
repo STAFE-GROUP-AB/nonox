@@ -3,7 +3,7 @@ beskrivning: Hur NONOX räknar arbetsgivaravgifter efter ålder, med den tillfä
 ordning: 130
 roller: [owner, payroll_admin]
 modul: payroll
-sokord: [arbetsgivaravgift, sociala avgifter, ungdomsrabatt, sänkt arbetsgivaravgift unga, äldre, tjänstepension, pensionsplan, ITP, SAF-LO, särskild löneskatt]
+sokord: [arbetsgivaravgift, sociala avgifter, ungdomsrabatt, sänkt arbetsgivaravgift unga, äldre, tjänstepension, pensionsplan, ITP, SAF-LO, särskild löneskatt, regionalt stöd, stödområde]
 ---
 
 # Arbetsgivaravgifter och tjänstepension
@@ -43,6 +43,25 @@ I arbetsgivardeklarationen redovisas lön utan avgift i en egen ruta (131). Den 
 ### Det här händer i bokföringen
 
 Arbetsgivaravgifterna bokförs med lönen: 7510 Arbetsgivaravgifter i debet och 2730 Lagstadgade sociala avgifter och särskild löneskatt i kredit. När Skatteverket drar dem från skattekontot bokför du det från lönekörningen. Se [Lönefil till banken och bokföring av lönen](/manual/lon/lonefil-och-bokforing).
+
+## Regionalt stöd
+
+Har företaget ett fast driftställe i stödområdet (delar av Norrbotten, Västerbotten, Jämtland, Västernorrland, Gävleborg, Dalarna och Värmland) kan det få göra avdrag från arbetsgivaravgifterna enligt lagen om regionalt stöd (2001:1170). Vissa verksamheter får inte avdraget, till exempel finans och försäkring, transport, stål och kol, kommuner och statliga myndigheter.
+
+1. Öppna **Moduler** och löneinställningarna.
+2. Kryssa i **Regionalt stöd (nedsatta arbetsgivaravgifter i stödområdet)**.
+3. Klicka på **Spara löneinställningarna**.
+
+Lönekörningen drar då 10 procent av avgiftsunderlaget från arbetsgivaravgifterna:
+
+- Högst 7 100 kronor per månad för hela företaget, sammanlagt för alla lönekörningar som betalas ut i månaden.
+- Avgifterna blir aldrig lägre än ålderspensionsavgiften (10,21 procent).
+- Inget avdrag för den som var 67 år eller äldre vid årets början.
+
+Exempel: en månadslön på 32 000 kronor ger 10 054,40 kronor i arbetsgivaravgift. Avdraget är 3 200 kronor, så avgiften blir 6 854,40 kronor. Bokföringen får den lägre avgiften, och i arbetsgivardeklarationen står underlaget i ruta 471 och avdraget i ruta 476.
+
+> [!IMPORTANT]
+> Inställningen gäller alla anställda. Kryssa bara i den om alla arbetar vid driftstället i stödområdet och företaget uppfyller villkoren. Kontrollera med Skatteverket eller er redovisningskonsult om ni är osäkra.
 
 ## Tjänstepension
 

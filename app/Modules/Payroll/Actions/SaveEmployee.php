@@ -37,7 +37,15 @@ use InvalidArgumentException;
  */
 class SaveEmployee
 {
-    private const array SENSITIVE = ['personal_number', 'bank_clearing', 'bank_account', 'iban', 'bic', 'emergency_contact', 'notes'];
+    public const string WITHHOLDING_TABLE = 'TABLE';
+
+    public const string WITHHOLDING_SIDE_INCOME = 'SIDE_INCOME';
+
+    public const string IDENTITY_SWEDISH = 'SWEDISH';
+
+    public const string IDENTITY_BIRTH = 'BIRTH';
+
+    private const array SENSITIVE = ['personal_number', 'foreign_tin', 'bank_clearing', 'bank_account', 'iban', 'bic', 'emergency_contact', 'notes'];
 
     /**
      * @param  array<string, mixed>  $input
@@ -47,10 +55,12 @@ class SaveEmployee
         app(ModuleManager::class)->ensureEnabled(PayrollModule::KEY, $company);
         Gate::forUser($user)->authorize('manage', [Employee::class, $company]);
 
-        // The form never receives the stored personal number or bank details (they stay out of the
-        // browser); an empty field when editing means "keep what is saved".
+        $foreign = ($input['identity_type'] ?? self::IDENTITY_SWEDISH) === self::IDENTITY_BIRTH;
+
+        // The form never receives the stored personal number, foreign TIN or bank details (they stay
+        // out of the browser); an empty field when editing means "keep what is saved".
         if ($employee !== null) {
-            foreach (['personal_number', 'bank_clearing', 'bank_account'] as $field) {
+            foreach (['personal_number', 'foreign_tin', 'bank_clearing', 'bank_account'] as $field) {
                 if (blank($input[$field] ?? null)) {
                     $input[$field] = (string) $employee->{$field};
                 }
@@ -60,7 +70,8 @@ class SaveEmployee
         $validated = Validator::make($input, [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'personal_number' => ['required', 'string', function (string $attribute, mixed $value, Closure $fail): void {
+            'identity_type' => ['nullable', Rule::in([self::IDENTITY_SWEDISH, self::IDENTITY_BIRTH])],
+            'personal_number' => $foreign ? ['nullable'] : ['required', 'string', function (string $attribute, mixed $value, Closure $fail): void {
                 if (PersonalNumber::tryFrom((string) $value) === null) {
                     $fail(__('Skriv personnumret med tolv siffror, ÅÅÅÅMMDD-NNNN, och kontrollera siffrorna.'));
                 }
@@ -75,6 +86,10 @@ class SaveEmployee
             'tax_residence' => ['required', Rule::in(['SE', 'NON_RESIDENT_SINK', 'NON_RESIDENT_A_SINK'])],
             'tax_table' => ['nullable', 'integer', 'between:1,99'],
             'tax_column' => ['nullable', 'integer', 'between:1,9'],
+            // SFL 11 kap. 20 § första stycket 1: 30 % when the pay is not the employee's main income (#75).
+            'withholding_basis' => ['nullable', Rule::in([self::WITHHOLDING_TABLE, self::WITHHOLDING_SIDE_INCOME])],
+            // Skatteverket, ruta 112: free text, 1–50 characters, required with A-SINK tax in 275 (AUD-LON-05, #73).
+            'activity_type' => ['nullable', 'required_if:tax_residence,NON_RESIDENT_A_SINK', 'string', 'max:50', 'regex:/\S/', 'not_regex:/[<>]/'],
             'tax_adjustment_type' => ['nullable', Rule::in(['NONE', 'PERCENT', 'TABLE', 'AMOUNT'])],
             'tax_adjustment_percent' => ['nullable', 'required_if:tax_adjustment_type,PERCENT', 'regex:/^\d{1,3}([.,]\d{1,2})?$/'],
             'tax_adjustment_table' => ['nullable', 'required_if:tax_adjustment_type,TABLE', 'integer', 'between:1,99'],
@@ -100,17 +115,43 @@ class SaveEmployee
                     $fail(__('Användaren är inte medlem i företaget.'));
                 }
             }],
+            // SFF 6 kap. 2 §: citizenship and a foreign tax number for a payee with limited tax liability (#74).
+            'citizenship' => ['nullable', 'string', 'regex:/^[A-Za-z]{2}$/'],
+            'foreign_tin' => ['nullable', 'string', 'max:20', 'not_regex:/[<>]/'],
+            'foreign_tin_country' => ['nullable', 'required_with:foreign_tin', 'string', 'regex:/^[A-Za-z]{2}$/'],
+            ...($foreign ? self::foreignIdentityRules() : []),
         ], [
             'bank_clearing.regex' => __('Clearingnumret har fyra eller fem siffror.'),
+            'birth_country.regex' => __('Skriv landskoden med två bokstäver, till exempel DE eller PL.'),
+            'citizenship.regex' => __('Skriv landskoden med två bokstäver, till exempel DE eller PL.'),
+            'country.regex' => __('Skriv landskoden med två bokstäver, till exempel DE eller PL.'),
+            'foreign_tin_country.regex' => __('Skriv landskoden med två bokstäver, till exempel DE eller PL.'),
             'bank_account.regex' => __('Kontonumret ska bara innehålla siffror.'),
         ], [
             'first_name' => __('förnamn'),
             'last_name' => __('efternamn'),
             'start_date' => __('anställningens startdag'),
             'vacation_days_per_year' => __('semesterdagar per år'),
+            'activity_type' => __('verksamhetens art'),
+            'birth_date' => __('födelsedatum'),
+            'birth_place' => __('födelseort'),
+            'birth_country' => __('födelseland'),
+            'citizenship' => __('medborgarskap'),
+            'country' => __('land'),
+            'address' => __('adress'),
+            'city' => __('ort'),
+            'foreign_tin' => __('utländskt skatteregistreringsnummer'),
+            'foreign_tin_country' => __('landet som utfärdat skatteregistreringsnumret'),
         ])->validate();
 
-        if ($validated['tax_residence'] === 'SE' && (blank($validated['tax_table'] ?? null) || blank($validated['tax_column'] ?? null))) {
+        // SFF 6 kap. 1 § andra stycket: a payee without a Swedish number is declared by birth data; NONOX allows it for SINK and A-SINK (#74).
+        if ($foreign && $validated['tax_residence'] === 'SE') {
+            throw ValidationException::withMessages(['identity_type' => __('Den som är bosatt i Sverige och beskattas enligt skattetabell behöver ett svenskt person- eller samordningsnummer. Utan svenskt nummer går det bara med SINK eller A-SINK.')]);
+        }
+
+        $sideIncome = $validated['tax_residence'] === 'SE' && ($validated['withholding_basis'] ?? null) === self::WITHHOLDING_SIDE_INCOME;
+
+        if ($validated['tax_residence'] === 'SE' && ! $sideIncome && (blank($validated['tax_table'] ?? null) || blank($validated['tax_column'] ?? null))) {
             throw ValidationException::withMessages(['tax_table' => __('Fyll i skattetabell och kolumn från den anställdes skattebesked.')]);
         }
 
@@ -120,11 +161,19 @@ class SaveEmployee
             throw ValidationException::withMessages(['salary' => __('Lönen går inte att läsa. Skriv till exempel 32 000 eller 165,50.')]);
         }
 
-        $personal = PersonalNumber::tryFrom((string) $validated['personal_number']);
+        $personal = $foreign ? null : PersonalNumber::tryFrom((string) $validated['personal_number']);
+        $identity = $foreign ? self::foreignIdentity($validated) : [
+            'personal_number' => $personal?->digits,
+            'birth_date' => $personal?->birthDate,
+            'birth_place' => null,
+            'birth_country' => null,
+            ...(array_key_exists('citizenship', $validated) ? ['citizenship' => self::countryCode($validated['citizenship'] ?? null)] : []),
+            ...(array_key_exists('foreign_tin', $validated) ? ['foreign_tin' => blank($validated['foreign_tin'] ?? null) ? null : trim((string) $validated['foreign_tin']), 'foreign_tin_country' => self::countryCode($validated['foreign_tin_country'] ?? null)] : []),
+        ];
         // Without the field (an import, an older caller) the stored decision is kept.
         $adjustment = array_key_exists('tax_adjustment_type', $input) ? self::taxAdjustment($validated) : [];
 
-        return CurrentCompany::run($company, fn (): Employee => DB::transaction(function () use ($user, $company, $validated, $employee, $salary, $personal, $adjustment): Employee {
+        return CurrentCompany::run($company, fn (): Employee => DB::transaction(function () use ($user, $company, $validated, $employee, $salary, $identity, $adjustment, $sideIncome): Employee {
             $costCenterId = null;
 
             if (filled($validated['cost_center'] ?? null)) {
@@ -143,16 +192,17 @@ class SaveEmployee
             $employee->fill([
                 'first_name' => $validated['first_name'],
                 'last_name' => $validated['last_name'],
-                'personal_number' => $personal?->digits,
-                'birth_date' => $personal?->birthDate,
+                ...$identity,
                 'email' => $validated['email'] ?? null,
                 'phone' => $validated['phone'] ?? null,
                 'address' => $validated['address'] ?? null,
                 'postal_code' => $validated['postal_code'] ?? null,
                 'city' => $validated['city'] ?? null,
                 'tax_residence' => $validated['tax_residence'],
-                'tax_table' => $validated['tax_table'] ?? null,
-                'tax_column' => $validated['tax_column'] ?? null,
+                'tax_table' => blank($validated['tax_table'] ?? null) ? null : (int) $validated['tax_table'],
+                'tax_column' => blank($validated['tax_column'] ?? null) ? null : (int) $validated['tax_column'],
+                ...(array_key_exists('withholding_basis', $validated) || $validated['tax_residence'] !== 'SE' ? ['withholding_basis' => $sideIncome ? self::WITHHOLDING_SIDE_INCOME : self::WITHHOLDING_TABLE] : []),
+                'activity_type' => $validated['tax_residence'] === 'NON_RESIDENT_A_SINK' ? trim((string) $validated['activity_type']) : null,
                 'user_id' => $linkedUserId,
                 ...$adjustment,
             ]);
@@ -304,6 +354,58 @@ class SaveEmployee
             'tax_adjustment_valid_from' => (string) $employee->tax_adjustment_valid_from?->toDateString(),
             'tax_adjustment_valid_to' => (string) $employee->tax_adjustment_valid_to?->toDateString(),
         ];
+    }
+
+    /**
+     * What Skatteverket needs for a payee without a Swedish personal or
+     * coordination number (AUD-LON-15, #74): birth date, birthplace and
+     * citizenship (SFF 6 kap. 1 § andra stycket; rutor 222, 077, 078, 081),
+     * name (216, 217) and an address (218–220 with 221 abroad, or a free
+     * address in 230 with 221). The AGI fields take at most 50 characters.
+     *
+     * @return array<string, mixed>
+     */
+    private static function foreignIdentityRules(): array
+    {
+        $country = ['required', 'string', 'regex:/^[A-Za-z]{2}$/'];
+
+        return [
+            'first_name' => ['required', 'string', 'max:50'],
+            'last_name' => ['required', 'string', 'max:50'],
+            'birth_date' => ['required', 'date_format:Y-m-d', 'after:1900-01-01', 'before_or_equal:today'],
+            'birth_place' => ['required', 'string', 'max:50', 'regex:/\S/', 'not_regex:/[<>]/'],
+            'birth_country' => $country,
+            'citizenship' => $country,
+            'address' => ['required', 'string', 'max:50', 'not_regex:/[<>]/'],
+            'postal_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9 -]{1,9}$/'],
+            'city' => ['required', 'string', 'max:50', 'not_regex:/[<>]/'],
+            'country' => $country,
+            'foreign_tin' => ['nullable', 'string', 'max:20', 'not_regex:/[<>]/'],
+            'foreign_tin_country' => ['nullable', 'required_with:foreign_tin', 'string', 'regex:/^[A-Za-z]{2}$/'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private static function foreignIdentity(array $validated): array
+    {
+        return [
+            'personal_number' => null,
+            'birth_date' => $validated['birth_date'],
+            'birth_place' => trim((string) $validated['birth_place']),
+            'birth_country' => self::countryCode($validated['birth_country']),
+            'citizenship' => self::countryCode($validated['citizenship']),
+            'country' => self::countryCode($validated['country']),
+            'foreign_tin' => blank($validated['foreign_tin'] ?? null) ? null : trim((string) $validated['foreign_tin']),
+            'foreign_tin_country' => self::countryCode($validated['foreign_tin_country'] ?? null),
+        ];
+    }
+
+    private static function countryCode(mixed $code): ?string
+    {
+        return blank($code) ? null : strtoupper(trim((string) $code));
     }
 
     public static function mask(?string $account): string

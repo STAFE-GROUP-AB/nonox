@@ -1590,6 +1590,95 @@ lönebeskeden låsta i databasen.
   drogs). Lönebeskedet säger hur mycket som inte kunde dras, och
   skatteförklaringen sparar `calculated_tax_ore`, `cash_ore` och
   `not_withheld_ore`.
+- A-SINK och verksamhetens art (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-05, #73): Skatteverket: "Om du har
+  redovisat i den här rutan [275] ska du också fylla i ruta 112". En
+  anställd med A-SINK måste ha `activity_type` (fritext, 1–50 tecken enligt
+  den tekniska beskrivningen, fältkod 112, element `VerksamhetensArt`).
+  Individuppgiften skriver 112 när 275 skrivs, och AGI stoppas med ett
+  meddelande om en A-SINK-mottagare saknar uppgiften.
+- Betalningsmottagare utan svenskt person- eller samordningsnummer (enligt
+  granskning 2026-11-02, juristgranskning återstår, AUD-LON-15, #74): för
+  SINK och A-SINK får `personal_number` vara tomt. Då sparas
+  födelsedatum, `birth_place`, `birth_country`, `citizenship`, adress med
+  landskod (`country`) och vid behov `foreign_tin` (krypterat) med
+  `foreign_tin_country`. Individuppgiften identifierar personen med
+  födelsetid (222, `ÅÅÅÅMMDDnnn` där nnn är anställningsnumret modulo 1 000,
+  stabilt mellan rättelser) i stället för 215, och skriver förnamn och
+  efternamn (216, 217), födelseort (077), landskod födelseort (078),
+  medborgarskap (081), adress (218–220 och 221 utomlands, eller fri adress
+  230 med 221 när postnummer saknas) samt TIN (252, 076) när det finns
+  (SFF 6 kap. 1 § andra stycket och 2 §). Medborgarskap och TIN skrivs även
+  för SINK/A-SINK med svenskt nummer när de finns. AGI stoppas om
+  uppgifterna saknas. Registerutdraget och anonymiseringen omfattar de nya
+  fälten. `TODO(legal-verify)`: om TIN ska krävas för alla begränsat
+  skattskyldiga (SFF 6 kap. 2 § har undantag; här är det frivilligt).
+- Sidoinkomst (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-LON-11, #75): `employees.withholding_basis` är TABLE (huvudinkomst,
+  skattetabell) eller SIDE_INCOME. För en anställd bosatt i Sverige med
+  SIDE_INCOME dras regeln `tax.side_income` (30 %, SFL 11 kap. 20 § första
+  stycket 1) på all skattepliktig lön, även engångsbelopp, utan tabell;
+  ett jämkningsbeslut i kraft gäller före. Taket mot kontantlönen (#68)
+  gäller. SINK och A-SINK påverkas inte. Det förhöjda skatteavdraget i
+  11 kap. 21 § (tabellen för utbetalarens ort plus 10 %) är inte byggt;
+  en huvudinkomst utan tabell stoppas som förut (`TODO(legal-verify)`).
+- Milersättning och traktamente som belopp (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-09, #76): en rad för
+  `MILERSATTNING` eller `TRAKTAMENTE_*` kräver antal mil eller dagar.
+  Den kan dessutom ha hela den avtalade ersättningen som belopp eller en
+  ersättning per enhet (`rate_ore`, nytt fält i lönekörningen). Skattefritt
+  är regelns belopp gånger antalet (IL 12 kap. 5 §, traktamente 12 kap.);
+  resten blir en skattepliktig rad (`MIL_SKATTEPLIKTIG` 7332,
+  `TRAKT_SKATTEPLIKTIG` 7322) som redovisas som lön i 011. Ett belopp utan
+  antal vägras när raden läggs in, och stoppar lönebeskedet om det kommer
+  på annat sätt, i stället för att betalas som 0 kr. Kryssen 050/051 sätts
+  bara när en skattefri ersättning faktiskt betalats.
+- Bonus som semesterlönegrundande lön (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-10, #77): systemlönearten `BONUS`
+  har `is_vacation_basis` = true (semesterlagen 16 b §: tolv procent av
+  förfallen lön, bara semesterlön, ersättning för semesterlönegrundande
+  frånvaro och viss permitteringslön undantas; 16 a § tredje stycket för
+  rörliga lönedelar). En migrering ändrar en befintlig systemkod som
+  fortfarande har det gamla värdet; egna koder och avtalens koder rörs
+  inte. Semesterskulden och öppna intjänandeår läser flaggan; stängda
+  semesterår behåller sina belopp. `TODO(legal-verify)`: vinstdelning som
+  inte är lön för arbete, och avtal som säger annat.
+- Regionalt stöd (enligt granskning 2026-11-02, juristgranskning
+  återstår, AUD-LON-14, #78): löneinställningen `regional_support` (av som
+  standard) betyder att företaget har fast driftställe i stödområdet och
+  uppfyller villkoren i lag (2001:1170) 2–4 §§. Då drar steget
+  arbetsgivaravgifter regelns `deduction_bp` (10 %) av avgiftsunderlaget
+  från avgifterna (5 §), högst `monthly_cap_ore` (7 100 kr) per
+  utbetalningsmånad för hela företaget, inte under `floor_bp`
+  (ålderspensionsavgiften 10,21 %) och inte för den som var
+  `not_from_age` (67) år eller äldre vid årets ingång. Taket delas av alla
+  lönebesked med utbetalning i månaden: körningen läser vad andra
+  attesterade körningar redan dragit och räknar av lönebesked för
+  lönebesked; attesten vägrar om en annan körning i månaden attesterats
+  sedan beräkningen. Avdraget sparas i `contribution_explanation.
+  regional_support`, och lönebeskedets arbetsgivaravgift (och 2730/7510 i
+  verifikationen) är efter avdrag. AGI-huvuduppgiften skriver 471
+  (underlag) och 476 (avdrag) tillsammans, och 487 är efter avdrag.
+  `TODO(legal-verify)`: att 487 ska vara efter avdraget; golvet och
+  avrundningen per lönebesked; ett företag med flera driftställen (här
+  gäller inställningen alla anställda).
+- Noll i 012 och 013 (enligt granskning 2026-11-02, juristgranskning
+  återstår, AUD-LON-12, #79): Skatteverket: "Om värdet blir noll (0) efter
+  avdrag ska du fylla i en nolla (0) i ruta 012", detsamma för 013, och 013
+  ska fyllas i med 018 även när bilförmånen är 0. Individuppgiften minns om
+  en övrig förmån eller bilförmån fanns i månaden (i avgiftsunderlaget) och
+  skriver då 012 respektive 013 även när värdet efter egen betalning är 0.
+  Fälten 131–134 för avgiftsfri ersättning skrivs som förut bara med belopp.
+- Egen betalning för förmån (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-13, #80): lönearten
+  `FORMAN_EGENBETALNING` krediteras 7388 Anställdas ersättning för
+  erhållna förmåner (FAR:s vägledning: kostnadskontot eller 7388), inte
+  2890 Övriga kortfristiga skulder, så ingen skuld byggs upp. En migrering
+  lägger till 7388 och flyttar systemlönearten för företag där den
+  fortfarande pekar på 2890; ett annat valt konto behålls. Bokförda
+  verifikationer ändras inte: ett saldo som redan finns på 2890 rättas med
+  en egen verifikation. `TODO(legal-verify)`: BAS 2026-namnet på 7388 och
+  utgående moms på personalmåltider som den anställda betalar.
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

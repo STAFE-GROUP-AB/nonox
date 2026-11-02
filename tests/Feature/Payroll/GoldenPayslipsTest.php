@@ -36,6 +36,8 @@ beforeEach(function () {
         'sick_pay.reinfection_window_days' => ['days' => 5],
         'a_sink.rate' => ['bp' => 1500],
         'tax.one_off_without_regular_salary' => ['bp' => 3000],
+        'tax.side_income' => ['bp' => 3000],
+        'mileage.own_car_tax_free_per_mil' => ['ore' => 2500],
         'tax.one_off' => ['columns' => ['1' => [[0, 25041, 0], [25042, 82800, 1000], [82801, 192000, 2100], [192001, 477600, 2600], [477601, 660000, 3400], [660001, null, 5400]]]],
     ] as $key => $value) {
         PayrollRuleVersion::create(['key' => $key, 'valid_from' => '2026-01-01', 'value' => $value, 'source_url' => 'https://example.test'])
@@ -78,6 +80,7 @@ function payrollContextFrom(array $data): PayrollContext
         taxAdjustmentTable: $data['tax_adjustment_table'] ?? null,
         taxAdjustmentColumn: $data['tax_adjustment_column'] ?? null,
         taxAdjustmentAmountOre: $data['tax_adjustment_amount_ore'] ?? null,
+        sideIncome: $data['side_income'] ?? false,
     );
 }
 
@@ -124,6 +127,8 @@ it('blocks instead of guessing', function (array $change, string $message) {
     'no tax table' => [['tax_table' => null], 'Skattetabell och kolumn saknas'],
     'part month by schedule without a schedule' => [['employment_start' => '2026-04-16', 'settings' => ['proration_method' => 'WORK_SCHEDULE']], 'Arbetsschema saknas'],
     'hours without a rate on a monthly salary' => [['inputs' => [['code' => 'OVERTID', 'description' => 'Övertid', 'category' => 'ADDITION', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution_basis' => true, 'vacation_basis' => false, 'quantity' => '2']]], 'saknar belopp eller timpris'],
+    // #76: an allowance as an amount without mil or days was paid as 0 kr; now it stops.
+    'mileage as an amount without mil' => [['inputs' => [['code' => 'MILERSATTNING', 'description' => 'Milersättning', 'category' => 'ALLOWANCE_TAX_FREE', 'taxable' => false, 'tax_method' => 'NONE', 'contribution_basis' => false, 'vacation_basis' => false, 'amount_ore' => 125_000]]], 'behöver antal mil eller dagar'],
 ]);
 
 it('explains tax and contributions', function () {

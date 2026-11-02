@@ -19,6 +19,7 @@
         'agi_submission_mode' => __('Arbetsgivardeklaration'),
         'agi_deadline_group' => __('Deklarationsdag för arbetsgivardeklarationen'),
         'holiday_calendar' => __('Helgdagskalender'),
+        'regional_support' => __('Regionalt stöd (nedsatta arbetsgivaravgifter i stödområdet)'),
     ];
     $values = [
         'MONTHLY_CURRENT' => __('Innevarande månad'), 'MONTHLY_ARREARS' => __('Efterskott'),
@@ -56,6 +57,9 @@
                 <input id="payroll_{{ $key }}" type="number" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
             @else
                 <label class="mt-2 flex items-center gap-2 text-sm"><input id="payroll_{{ $key }}" type="checkbox" class="rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="settings.{{ $key }}"> {{ __('Ja') }}</label>
+                @if($key === 'regional_support')
+                    <p class="mt-1 text-xs text-gray-500">{{ __('Kryssa bara i om de anställda arbetar vid ett fast driftställe i stödområdet och företaget uppfyller villkoren i lagen om regionalt stöd (till exempel inte finans, försäkring, transport eller stål). Avdraget är 10 procent av avgiftsunderlaget, högst 7 100 kronor per månad, inte för den som fyllt 67 vid årets början.') }}</p>
+                @endif
             @endif
         </x-ui.field>
     @endforeach

@@ -50,6 +50,8 @@ final class AgiDeclaration
         public readonly int $taxOre,
         public readonly int $contributionsOre,
         public readonly array $runIds,
+        public readonly int $regionalSupportBasisOre = 0,
+        public readonly int $regionalSupportOre = 0,
     ) {}
 
     /**
@@ -94,6 +96,9 @@ final class AgiDeclaration
             (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->tax_ore->ore),
             (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->employer_contribution_ore->ore),
             array_values($runs->pluck('id')->map(fn (mixed $id): int => (int) $id)->all()),
+            // Rutor 471 and 476: the basis and the deduction for regional support (#78).
+            (int) $payslips->sum(fn (Payslip $payslip): int => (int) ($payslip->contribution_explanation['regional_support']['basis_ore'] ?? 0)),
+            (int) $payslips->sum(fn (Payslip $payslip): int => (int) ($payslip->contribution_explanation['regional_support']['deduction_ore'] ?? 0)),
         );
     }
 
@@ -105,6 +110,16 @@ final class AgiDeclaration
     public function contributionsKronor(): int
     {
         return intdiv($this->contributionsOre, self::ORE_PER_KRONA);
+    }
+
+    /** @return array{basis: int, deduction: int}|null the regional support in whole kronor, or null when none was claimed */
+    public function regionalSupportKronor(): ?array
+    {
+        if ($this->regionalSupportBasisOre <= 0) {
+            return null;
+        }
+
+        return ['basis' => intdiv($this->regionalSupportBasisOre, self::ORE_PER_KRONA), 'deduction' => intdiv($this->regionalSupportOre, self::ORE_PER_KRONA)];
     }
 
     /**
@@ -138,6 +153,8 @@ final class AgiDeclaration
     {
         $amounts = ['cash' => 0, 'other' => 0, 'car' => 0, 'fuel' => 0];
         $free = $amounts;
+        // Which benefits existed in the month, also when the employee's own payment takes the value to 0 (ruta 012/013, #79).
+        $had = ['other' => false, 'car' => false];
         $mileage = false;
         $perDiem = false;
         // The payslip that took the year to the 1 000 kr threshold carried the earlier avgiftsfri pay into its basis (SAL 2 kap. 24 § fjärde stycket).
@@ -158,8 +175,9 @@ final class AgiDeclaration
                 $code = (string) ($codes[$line->pay_code_id] ?? '');
                 $amount = $line->amount_ore->ore;
 
-                $mileage = $mileage || in_array($code, self::MILEAGE, true);
-                $perDiem = $perDiem || in_array($code, self::PER_DIEM, true);
+                // Ruta 050/051: a cross when a tax-free allowance was paid (#76).
+                $mileage = $mileage || (in_array($code, self::MILEAGE, true) && $amount > 0);
+                $perDiem = $perDiem || (in_array($code, self::PER_DIEM, true) && $amount > 0);
 
                 if (! in_array($line->tax_effect, [PayslipLineResult::TAX_TABLE, PayslipLineResult::TAX_ONE_OFF], true)) {
                     continue;
@@ -176,6 +194,10 @@ final class AgiDeclaration
                     $free[$field] += $amount;
 
                     continue;
+                }
+
+                if (isset($had[$field]) && $amount > 0) {
+                    $had[$field] = true;
                 }
 
                 $amounts[$field] += $amount;
@@ -198,6 +220,11 @@ final class AgiDeclaration
             return null;
         }
 
+        // Ruta 275 needs ruta 112, verksamhetens art (AUD-LON-05, #73).
+        if ($employee->tax_residence === 'NON_RESIDENT_A_SINK' && blank($employee->activity_type)) {
+            throw ValidationException::withMessages(['period' => [__('Verksamhetens art saknas för :name, som beskattas med A-SINK. Skatteverket vill ha den i ruta 112. Fyll i den under Lön → Anställda.', ['name' => "{$employee->first_name} {$employee->last_name}"])]]);
+        }
+
         return new AgiIndividual(
             employeeId: $employee->id,
             specificationNumber: max(1, (int) $employee->employee_number),
@@ -218,6 +245,9 @@ final class AgiDeclaration
             freeCarBenefitKronor: intdiv($free['car'], self::ORE_PER_KRONA),
             freeFuelBenefitKronor: intdiv($free['fuel'], self::ORE_PER_KRONA),
             earlierFreeKronor: intdiv($earlierMonths, self::ORE_PER_KRONA),
+            activityType: $employee->tax_residence === 'NON_RESIDENT_A_SINK' ? $employee->activity_type : null,
+            hadOtherBenefit: $had['other'],
+            hadCarBenefit: $had['car'],
         );
     }
 }

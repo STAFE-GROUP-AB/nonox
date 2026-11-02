@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Actions\SaveEmployee;
@@ -9,6 +10,7 @@ use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiXml;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -246,13 +248,13 @@ it('declares pay without contributions in field 131, not 011 (Skatteverket, fäl
 });
 
 it('declares the activity (field 112) with A-SINK (Skatteverket, fältkod 275)', function () {
-    $artist = LonSupport::employee($this->owner, $this->company, '19800101', ['tax_residence' => 'NON_RESIDENT_A_SINK', 'tax_table' => null, 'tax_column' => null, 'salary' => '20 000']);
+    $artist = LonSupport::employee($this->owner, $this->company, '19800101', ['tax_residence' => 'NON_RESIDENT_A_SINK', 'tax_table' => null, 'tax_column' => null, 'salary' => '20 000', 'activity_type' => 'Konsert']);
     $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $this->runs->create($this->owner, $this->company, '2026-04'));
 
     // "Om du använder rutan [275] ska du också fylla i 112."
     expect($field('//agd:IU/agd:AvdrSkattASINK[@faltkod="275"]'))->toBe('3000')
-        ->and($field('//agd:IU/agd:*[@faltkod="112"]'))->not->toBe('');
-})->todo('AUD-LON-05: A-SINK is declared without field 112; Skatteverket rejects or questions the individuppgift');
+        ->and($field('//agd:IU/agd:*[@faltkod="112"]'))->toBe('Konsert');
+});
 
 it('never withholds more tax than the cash paid, and books a balanced voucher (SFL 10–11 kap.; BFL 5 kap.)', function () {
     $bo = LonSupport::employee($this->owner, $this->company, '19800820', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD']);
@@ -335,13 +337,16 @@ it('computes the car benefit from the car\'s data (IL 61 kap. 5, 8 a, 9 §§)')
 it('pays a mileage allowance entered as an amount (IL 12 kap. 5 §, Skatteverket 25 kr/mil)', function () {
     $dan = LonSupport::employee($this->owner, $this->company, '19750505');
     $run = $this->runs->create($this->owner, $this->company, '2026-04');
-    LonSupport::input($this->owner, $run, $dan, 'MILERSATTNING', ['amount' => '1 250']);
+    // An amount alone cannot be split into tax-free and taxable parts: it is refused instead of paid as 0 kr.
+    expect(fn () => LonSupport::input($this->owner, $run, $dan, 'MILERSATTNING', ['amount' => '1 250']))
+        ->toThrow(ValidationException::class, 'antal mil eller dagar');
+
+    LonSupport::input($this->owner, $run, $dan, 'MILERSATTNING', ['quantity' => '50', 'amount' => '1 250']);
     $this->runs->calculate($this->owner, $run);
 
-    // 1 250 kr agreed mileage pay must reach the employee (and be split tax-free/taxable by the number of mil).
-    // The code ignores the amount: quantity null × 25 kr = 0 kr.
+    // 1 250 kr agreed mileage pay for 50 mil reaches the employee: 50 × 25 kr = 1 250 kr, all tax-free.
     expect(Payslip::query()->sole()->net_ore->ore)->toBe(2_561_900 + 125_000);
-})->todo('AUD-LON-09: an amount on MILERSATTNING/TRAKTAMENTE_* is silently paid as 0 kr; only a quantity works, and a rate above the limit cannot be entered');
+});
 
 it('counts a bonus in the vacation-pay basis under procentregeln (semesterlagen 16 b §: tolv procent av förfallen lön)', function () {
     $erik = LonSupport::employee($this->owner, $this->company, '19920310', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD', 'vacation_payout_with_salary' => true]);
@@ -353,10 +358,24 @@ it('counts a bonus in the vacation-pay basis under procentregeln (semesterlagen 
 
     // 12 % × (15 000 + 1 000) = 1 920 kr.
     expect($payout->amount_ore->ore)->toBe(192_000);
-})->todo('AUD-LON-10: BONUS is seeded without vacation basis; confidence medium — a bonus that is not pay for work (vinstdelning) may be excluded');
+});
 
-it('withholds 30 % when the company is not the main employer or has no tax information (SFL 11 kap.)')
-    ->todo('AUD-LON-11: no option for sidoinkomst/30 %; missing tax table blocks the run instead (legal paragraph to verify)');
+it('withholds 30 % when the company is not the main employer (SFL 11 kap. 20 § första stycket 1)', function () {
+    LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'SIDE_INCOME', 'tax_table' => null, 'tax_column' => null]);
+    $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $this->runs->create($this->owner, $this->company, '2026-04'));
+    $payslip = Payslip::query()->sole();
+
+    // 32 000 kr × 30 % = 9 600 kr (the table would give 6 381 kr); field 001 declares it.
+    expect($payslip->tax_ore->ore)->toBe(960_000)
+        ->and($payslip->tax_explanation['method'])->toBe('side_income')
+        ->and($field('//agd:IU/agd:AvdrPrelSkatt[@faltkod="001"]'))->toBe('9600');
+});
+
+it('does not guess a table for a main income without tax information (SFL 11 kap. 21 §, raised withholding not built)', function () {
+    // 21 § (table of the payer's locality plus 10 %) is a separate rule, not 30 %: until it is built, a main income needs the table.
+    expect(fn () => LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'TABLE', 'tax_table' => null, 'tax_column' => null]))
+        ->toThrow(ValidationException::class, 'skattetabell');
+});
 
 it('declares a benefit fully paid by the employee as 0 in field 012 (Skatteverket: "Om värdet blir noll ska du fylla i noll")', function () {
     $dan = LonSupport::employee($this->owner, $this->company, '19750505');
@@ -366,7 +385,7 @@ it('declares a benefit fully paid by the employee as 0 in field 012 (Skatteverke
     $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $run);
 
     expect($field('//agd:IU/agd:SkatteplOvrigaFormanerUlagAG[@faltkod="012"]'))->toBe('0');
-})->todo('AUD-LON-12: AgiXml leaves out zero amounts, also 012 where Skatteverket asks for 0');
+});
 
 it('books the employee\'s own payment for a benefit without leaving a liability on 2890 (BFL 4 kap. 2 §, god redovisningssed)', function () {
     $dan = LonSupport::employee($this->owner, $this->company, '19750505');
@@ -377,10 +396,38 @@ it('books the employee\'s own payment for a benefit without leaving a liability 
 
     // The 1 240 kr the employee paid is the company's income (or a reduced cost), not a debt to anyone.
     expect(LonSupport::voucherLines($posted))->not->toHaveKey(2890);
-})->todo('AUD-LON-13: FORMAN_EGENBETALNING credits 2890 Övriga kortfristiga skulder; a debt that does not exist builds up');
+});
 
-it('applies regional support where the company has chosen it (lag 2001:1170 5 §)')
-    ->todo('AUD-LON-14: employer_contribution.regional_support is required data but never applied; eligible companies overpay up to 7 100 kr per month');
+it('applies regional support where the company has chosen it (lag 2001:1170 5 §)', function () {
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['regional_support' => true]);
+    LonSupport::employee($this->owner, $this->company, '19900615');
+    $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
 
-it('declares a payee without a Swedish personal or coordination number by födelsetid (fältkod 222, 077, 078)')
-    ->todo('AUD-LON-15: SaveEmployee requires a personal number; SINK/A-SINK payees without one cannot be declared');
+    // 32 000 × 31,42 % = 10 054,40 kr less 10 % of 32 000 = 3 200 kr: 6 854,40 kr.
+    expect(Payslip::query()->sole()->employer_contribution_ore->ore)->toBe(685_440);
+});
+
+it('declares a payee without a Swedish personal or coordination number by födelsetid (fältkod 222, 077, 078)', function () {
+    $piotr = LonSupport::employee($this->owner, $this->company, '19850314', [
+        'identity_type' => 'BIRTH', 'personal_number' => '', 'first_name' => 'Piotr', 'last_name' => 'Nowak',
+        'birth_date' => '1985-03-14', 'birth_place' => 'Gdansk', 'birth_country' => 'PL', 'citizenship' => 'PL',
+        'address' => 'ul. Dluga 1', 'postal_code' => '80-827', 'city' => 'Gdansk', 'country' => 'PL',
+        'tax_residence' => 'NON_RESIDENT_SINK', 'tax_table' => null, 'tax_column' => null, 'salary' => '20 000',
+    ]);
+    $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+    // SFF 6 kap. 1 § andra st.: födelsedatum, födelseort och medborgarskap; födelsetid is ÅÅÅÅMMDD + three free digits (here the employee number).
+    expect($field('//agd:IU//agd:Fodelsetid[@faltkod="222"]'))->toBe('19850314'.str_pad((string) $piotr->employee_number, 3, '0', STR_PAD_LEFT))
+        ->and($field('//agd:IU//agd:BetalningsmottagarId'))->toBe('')
+        ->and($field('//agd:IU//agd:Fodelseort[@faltkod="077"]'))->toBe('Gdansk')
+        ->and($field('//agd:IU//agd:LandskodFodelseort[@faltkod="078"]'))->toBe('PL')
+        ->and($field('//agd:IU//agd:LandskodMedborgare[@faltkod="081"]'))->toBe('PL')
+        ->and($field('//agd:IU//agd:Fornamn[@faltkod="216"]'))->toBe('Piotr')
+        ->and($field('//agd:IU//agd:Efternamn[@faltkod="217"]'))->toBe('Nowak')
+        ->and($field('//agd:IU//agd:Gatuadress[@faltkod="218"]'))->toBe('ul. Dluga 1')
+        ->and($field('//agd:IU//agd:Postnummer[@faltkod="219"]'))->toBe('80-827')
+        ->and($field('//agd:IU//agd:Postort[@faltkod="220"]'))->toBe('Gdansk')
+        ->and($field('//agd:IU//agd:LandskodPostort[@faltkod="221"]'))->toBe('PL')
+        // SINK 22,5 % of 20 000 kr = 4 500 kr (rules.json 2026, sink.rate).
+        ->and($field('//agd:IU/agd:AvdrSkattSINK[@faltkod="274"]'))->toBe('4500');
+});

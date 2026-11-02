@@ -56,6 +56,7 @@ final class RulePresenter
         'tax.rounding' => 'Avrundning av skatt',
         'tax.one_off' => 'Skatt på engångsbelopp',
         'tax.one_off_without_regular_salary' => 'Skatt på engångsbelopp utan fast lön',
+        'tax.side_income' => 'Skatt på sidoinkomst',
     ];
 
     /**

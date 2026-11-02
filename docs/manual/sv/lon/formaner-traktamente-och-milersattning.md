@@ -18,9 +18,9 @@ En förmån är något den anställda får i stället för pengar, till exempel 
 
 | Löneart | Så här lägger du in den |
 |---|---|
-| **Kostförmån, hel dag** | Antal dagar i **Antal timmar**. Värdet hämtas från reglerna. |
-| **Kostförmån, lunch eller middag** | Antal måltider i **Antal timmar**. |
-| **Kostförmån, frukost** | Antal frukostar i **Antal timmar**. |
+| **Kostförmån, hel dag** | Antal dagar i **Antal timmar, mil eller dagar**. Värdet hämtas från reglerna. |
+| **Kostförmån, lunch eller middag** | Antal måltider i **Antal timmar, mil eller dagar**. |
+| **Kostförmån, frukost** | Antal frukostar i **Antal timmar, mil eller dagar**. |
 | **Bilförmån** | Förmånsvärdet för månaden i **eller belopp**. |
 | **Drivmedelsförmån** | Förmånsvärdet för månaden i **eller belopp**. |
 | **Övrig förmån** | Förmånsvärdet i **eller belopp**. |
@@ -32,7 +32,7 @@ Betalar den anställda något för förmånen, till exempel för personalmaten, 
 
 ### Det här händer i bokföringen
 
-Förmånsvärdet bokförs inte som en egen kostnad. Den verkliga kostnaden bokfördes när företaget köpte maten eller betalade bilen; lönen lägger bara till skatten och arbetsgivaravgiften på förmånen (arbetsgivaravgiften på 7510). Den anställdas egen betalning bokförs mot 2890.
+Förmånsvärdet bokförs inte som en egen kostnad. Den verkliga kostnaden bokfördes när företaget köpte maten eller betalade bilen; lönen lägger bara till skatten och arbetsgivaravgiften på förmånen (arbetsgivaravgiften på 7510). Den anställdas egen betalning minskar företagets kostnad för förmånen och bokförs i kredit på 7388 Anställdas ersättning för erhållna förmåner. Den blir alltså ingen skuld. Exempel: tio luncher à 124 kronor som den anställda betalar själv ger 1 240 kronor i kredit på 7388, och förmånsvärdet blir 0.
 
 ## Traktamente
 
@@ -40,7 +40,7 @@ Traktamente är ersättning för ökade levnadskostnader vid tjänsteresa med ö
 
 | Löneart | Så här lägger du in den |
 |---|---|
-| **Traktamente, hel dag** | Antal hela dagar i **Antal timmar**. |
+| **Traktamente, hel dag** | Antal hela dagar i **Antal timmar, mil eller dagar**. |
 | **Traktamente, halv dag** | Antal halva dagar. |
 | **Nattraktamente** | Antal nätter. |
 
@@ -54,12 +54,17 @@ NONOX betalar Skatteverkets skattefria belopp per dag från reglerna. Traktament
 Milersättning betalas när den anställda kör sin egen bil i tjänsten.
 
 1. Välj lönearten **Milersättning, egen bil**.
-2. Skriv antal mil i **Antal timmar**.
-3. Klicka på **Lägg till**.
+2. Skriv antal mil i **Antal timmar, mil eller dagar**.
+3. Betalar ni mer än det skattefria beloppet: skriv antingen hela ersättningen i **eller belopp**, eller ersättningen per mil i **Ersättning per mil eller dag (frivilligt)**.
+4. Klicka på **Lägg till**.
 
 NONOX betalar Skatteverkets skattefria belopp per mil från reglerna. Ersättningen betalas med nettolönen och bokförs på 7331 Skattefria bilersättningar.
 
-När du skriver in antal mil betalar NONOX det skattefria beloppet. Kommer raden från en lönefil med ett högre pris per mil (se [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem)) räknar NONOX ut den skattepliktiga delen som en egen rad, **Milersättning, skattepliktig del**, som beskattas och ger arbetsgivaravgift (bokförs på 7332). Samma sak gäller traktamente över det skattefria beloppet (7322).
+När du bara skriver in antal mil betalar NONOX det skattefria beloppet. Skriver du också ett belopp eller en ersättning per mil som är högre, eller kommer raden från en lönefil med ett högre pris per mil (se [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem)), räknar NONOX ut den skattepliktiga delen som en egen rad, **Milersättning, skattepliktig del**, som beskattas och ger arbetsgivaravgift (bokförs på 7332). Samma sak gäller traktamente över det skattefria beloppet (7322).
+
+Exempel: 40 mil och 1 500 kronor. Skattefritt är 40 × 25 kronor = 1 000 kronor. Resten, 500 kronor, är lön.
+
+Milersättning och traktamente går inte att lägga in med bara ett belopp, eftersom det skattefria beloppet räknas per mil eller dag. Skriv alltid antalet.
 
 ## I arbetsgivardeklarationen
 
@@ -70,8 +75,8 @@ Förmåner redovisas per anställd i arbetsgivardeklarationen. Har en anställd 
 **Kan vi ge friskvårdsbidrag eller gåvor?**
 Gränserna för skattefria gåvor och friskvård finns som regler, men det finns ingen egen löneart för dem i lönen ännu. Fråga er redovisningskonsult hur ni ska hantera dem.
 
-**Varför heter fältet "Antal timmar" när jag skriver in mil?**
-Fältet används för antalet i alla lönearter. Skriv det antal lönearten räknar i: mil, dagar eller måltider.
+**Varför står det timmar, mil eller dagar i samma fält?**
+Fältet används för antalet i alla lönearter. Skriv det antal lönearten räknar i: timmar, mil, dagar eller måltider.
 
 **Hur betalar jag tillbaka ett utlägg?**
 Det sker automatiskt när utlägget är godkänt. Se [Utlägg med kvitto](/manual/lon/utlagg).

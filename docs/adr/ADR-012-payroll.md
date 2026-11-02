@@ -346,3 +346,152 @@ finding and the GitHub issue.
 - `TODO(legal-verify)`: earlier avgiftsfri benefits are added to 011 with
   the cash (Skatteverket's example shows cash only); correcting each earlier
   period instead (Skatteverket's other option) is not offered.
+
+### Verksamhetens art with A-SINK (AUD-LON-05, #73)
+
+- Skatteverket (agbeskrivning, ruta 275): "Om du har redovisat i den här
+  rutan ska du också fylla i ruta 112." The technical description gives
+  112 as free text, 1–50 characters ("t.ex. konsert, cirkus"), with no
+  code list, so the employee card stores `activity_type` (string(50)) and
+  requires it for `NON_RESIDENT_A_SINK`.
+- AgiXml writes `VerksamhetensArt` (faltkod 112) for every A-SINK
+  individuppgift; AgiDeclaration refuses to build the declaration when an
+  A-SINK payee has none (an older employee card). Checked against the
+  component schema 1.1.
+
+### Payees without a Swedish personal or coordination number (AUD-LON-15, #74)
+
+- SFF 6 kap. 1 § andra stycket: "Om personnummer eller samordningsnummer
+  saknas för betalningsmottagaren, ska uppgift om personens födelsedatum,
+  födelseort och medborgarskap anges." Skatteverket's agbeskrivning adds
+  222 (födelsetid, `ÅÅÅÅMMDDnnn`, "nnn kan vara vilket heltal som helst
+  mellan 000 - 999"), 077 födelseort (always with 222), 078 its country,
+  216/217 name, 218–220 address, 221 its country abroad, or 230 fri adress
+  with 221. SFF 6 kap. 2 § adds the foreign TIN (252 with 076) and
+  citizenship (081) for payees with limited tax liability.
+- `employees.personal_number` becomes nullable; new columns
+  `birth_place`, `birth_country`, `citizenship`, `foreign_tin` (encrypted),
+  `foreign_tin_country`. The employee form offers "Saknar svenskt nummer"
+  only for SINK and A-SINK (someone taxed by the table has a Swedish
+  number); then birth data, citizenship and an address of at most 50
+  characters per field (TEXT50) are required.
+- AgiPayee builds the identity: 215, or `Fodelsetid` in
+  `BetalningsmottagareIDChoice` plus the other fields in
+  `BetalningsmottagareIUGROUP` (element order free, `xs:all`). The three
+  free digits are the employee number modulo 1 000, so a correction
+  resends the same födelsetid. Validated against the component schema 1.1.
+- `TODO(legal-verify)`: whether the foreign TIN must be required for every
+  SINK/A-SINK payee (optional here, as SFF 6 kap. 2 § has exceptions);
+  whether Skatteverket expects a particular use of the three free digits.
+
+### Side income, 30 % (AUD-LON-11, #75)
+
+- SFL 11 kap. 20 §: "skatteavdrag göras med 30 procent av underlaget, om
+  ersättningen 1. inte är mottagarens huvudinkomst". The employee card
+  gets `withholding_basis` (TABLE or SIDE_INCOME, default TABLE). With
+  SIDE_INCOME (residence SE only) the engine withholds the rule
+  `tax.side_income` (bp 3000, rules.json 2026 with the statute as source,
+  valid until changed) on all taxable pay, one-off included, and needs no
+  table. A jämkning decision in force wins (SFL 11 kap. 27 §): percent and
+  amount were already checked first, and a TABLE decision is used instead
+  of the 30 %.
+- SFL 11 kap. 21 § (förhöjt skatteavdrag when the payer has no tax
+  information, the employee has shown no A-skatt decision, and the pay is
+  the main income) is a different rule: the table for the payer's locality
+  plus 10 %. It is not built; a main income without a table is refused as
+  before. `TODO(legal-verify)`: the other cases of 20 § (work shorter than
+  a week, förenklad arbetsgivardeklaration, 10 kap. 6 and 13 §§) are not
+  offered as choices.
+
+### Mileage and per diem given as an amount (AUD-LON-09, #76)
+
+- The tax-free part of an allowance is per unit (IL 12 kap. 5 §: "2 kronor
+  och 50 öre för varje kilometer"; per diem per day), and Skatteverket
+  (ruta 050/051) has the excess reported as pay. An amount alone cannot be
+  split, so `PayrollRuns::addInput` requires the number of mil or days for
+  `Allowances::TAX_FREE` codes and accepts with it either the whole agreed
+  amount or a rate per unit (new `rate` input, stored in the existing
+  `payroll_inputs.rate_ore`). Other pay codes keep "quantity or amount".
+- The engine prices amount + quantity as tax-free min(amount, quantity ×
+  rule) and taxable the rest; rate + quantity as before. An allowance
+  without a quantity (an old row, another source) throws
+  PayrollBlockedException instead of pricing it at 0 kr.
+
+### Bonus in the vacation-pay basis (AUD-LON-10, #77)
+
+- Semesterlagen 16 b §: "tolv procent av arbetstagarens förfallna lön i en
+  anställning under intjänandeåret", excluding only semesterlön, pay for
+  semesterlönegrundande frånvaro and certain permitteringslön; 16 a §
+  tredje stycket gives 12 % of "sammanlagda förfallna rörliga lön" under
+  sammalöneregeln. A bonus is not excluded, so PayCodeCatalog seeds
+  `BONUS` with vacation basis, and a migration (like the overtime fix,
+  #34) flips a system BONUS still at the old value. A company's own code
+  and an agreement's codes (which carry their own `vacation_basis` in the
+  agreement file) keep theirs.
+- `TODO(legal-verify)`: a profit share not paid for work (vinstdelning)
+  may fall outside förfallen lön; a company paying one should use a pay
+  code of its own without vacation basis. No shipped agreement excludes
+  bonus (Visita–Unionen and Handelns tjänstemannaavtal list it as
+  variable pay).
+
+### Regional support (AUD-LON-14, #78)
+
+- Lag (2001:1170) 5 §: "avdrag göras med 10 procent av avgiftsunderlaget",
+  not below the ålderspensionsavgift, "Sammanlagt får avdrag göras med
+  högst 7 100 kronor"; Skatteverket: "högst 7 100 kronor per månad", not
+  for employees who "vid årets ingång är 67 år eller äldre", reported in
+  rutor 471 and 476 of the huvuduppgift (technical description: "högst
+  7 100 kr per redovisningsperiod"). The rule
+  `employer_contribution.regional_support` already held these values.
+- Eligibility (fast driftställe in the stödområde, the exclusions in 3–4 §§)
+  is the company's own statement: a boolean payroll setting
+  `regional_support`, off by default, explained in the settings form. It
+  applies to all employees; per-employee or per-workplace choice is left
+  out.
+- The cap is per company and month, but payslips are calculated one at a
+  time. PayrollRuns::calculate reads once what other approved runs paid in
+  the month have deducted (`regionalSupportInMonth`, one query) and passes
+  the running total in the context (`regionalSupportUsedOre`); the
+  EmployerContributions step deducts min(10 %, cap left, contributions −
+  floor). The other runs' total is kept on each payslip, and approve()
+  refuses when it has changed, like the youth cap (#70).
+- The payslip's employer contribution is after the deduction, so the
+  salary voucher books the lower 7510/2730 without a separate line. AGI
+  sums `basis_ore` and `deduction_ore` into 471/476; 487 is after the
+  deduction. Checked against the component schema 1.1 (`UlagRegionaltStod`,
+  `AvdragRegionaltStod` in HU).
+- `TODO(legal-verify)`: whether 487 should be before or after the
+  deduction; the floor per payslip rather than per period; FoU-avdrag
+  first (7 §) is not built; the 20 % of labour costs aid ceiling (6 b §)
+  is not checked.
+
+### A nought in 012 and 013 (AUD-LON-12, #79)
+
+- Skatteverket (agbeskrivning, ruta 012): "Om värdet blir noll (0) efter
+  avdrag ska du fylla i en nolla (0) i ruta 012"; the same for 013, and
+  for 018 "även om värdet av bilförmånen är noll (0) kr" 013 must be
+  filled in. AgiDeclaration records whether an other benefit or a car
+  benefit line (positive value, in the contribution basis) existed for the
+  payee in the month (`hadOtherBenefit`, `hadCarBenefit`, also stored in
+  the submission's individuals); AgiXml writes 012/013 as 0 then, and 013
+  whenever 018 has an amount. Valid under the schema (BELOPP6/7 allow 0).
+- `TODO(legal-verify)`: whether the avgiftsfri variants (132, 133) also
+  want a nought; not written.
+
+### The employee's own payment for a benefit (AUD-LON-13, #80)
+
+- The payment reduces the benefit's taxable value (IL 61 kap. 11 §, already
+  handled) and is, for the company, a recovery of what the benefit cost; it
+  is not a debt. FAR's guidance on förmåner: when the employee pays through
+  a net deduction the cost account may be credited, "Alternativt krediteras
+  konto 7388 Anställdas ersättning för erhållna förmåner". NONOX cannot
+  know the cost account of each benefit, so `FORMAN_EGENBETALNING` credits
+  7388 (added to PayCodeCatalog::ACCOUNTS); the voucher otherwise stays as
+  it was and balances (golden payslip in AgiAndPayFixesTest).
+- Migration `2026_11_16_140000_book_own_benefit_payment_on_7388` moves a
+  system pay code still on 2890 and creates 7388 when missing. Posted
+  vouchers are immutable; an existing 2890 balance is the company's to
+  correct.
+- `TODO(legal-verify)`: the BAS 2026 name of 7388 (read in FAR's guidance,
+  not in the BAS chart itself); output VAT on staff meals the employee pays
+  for (Mervärdesskattelagen) is not handled.

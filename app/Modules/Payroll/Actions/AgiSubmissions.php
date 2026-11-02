@@ -9,7 +9,6 @@ use App\Domain\Company\LegalForm;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
-use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -18,6 +17,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiDeclaration;
 use App\Modules\Payroll\Support\Agi\AgiIndividual;
+use App\Modules\Payroll\Support\Agi\AgiPayee;
 use App\Modules\Payroll\Support\Agi\AgiXml;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -84,9 +84,10 @@ class AgiSubmissions
                 $contact,
                 $declaration->contributionsKronor(),
                 $declaration->taxKronor(),
-                array_values(array_map(fn (AgiIndividual $individual): array => ['personal_number' => $this->personalNumber($employees->get($individual->employeeId)), 'individual' => $individual], $declaration->individuals)),
-                array_map(fn (int $employeeId): array => ['personal_number' => $this->personalNumber($employees->get($employeeId)), 'specification' => (int) ($reported?->individuals[$employeeId]['specification'] ?? $employeeId)], $removed),
+                array_values(array_map(fn (AgiIndividual $individual): array => ['payee' => AgiPayee::for($employees->get($individual->employeeId)), 'individual' => $individual], $declaration->individuals)),
+                array_map(fn (int $employeeId): array => ['payee' => AgiPayee::for($employees->get($employeeId)), 'specification' => (int) ($reported?->individuals[$employeeId]['specification'] ?? $employeeId)], $removed),
                 CarbonImmutable::now(),
+                $declaration->regionalSupportKronor(),
             );
             $this->validateSchema($xml);
 
@@ -229,17 +230,6 @@ class AgiSubmissions
             'phone' => mb_substr((string) $company->phone, 0, 20),
             'email' => $user->email,
         ];
-    }
-
-    private function personalNumber(?Employee $employee): string
-    {
-        $number = $employee === null ? null : PersonalNumber::tryFrom((string) $employee->personal_number);
-
-        if ($number === null) {
-            throw ValidationException::withMessages(['period' => [__('Personnummer saknas eller är fel för :name. Rätta det under Lön → Anställda.', ['name' => $employee === null ? '' : "{$employee->first_name} {$employee->last_name}"])]]);
-        }
-
-        return $number->digits;
     }
 
     private function validateSchema(string $xml): void

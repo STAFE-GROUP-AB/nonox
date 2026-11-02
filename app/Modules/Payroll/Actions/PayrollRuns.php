@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
+use App\Modules\Payroll\Domain\Engine\Steps\Allowances;
 use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
@@ -37,6 +38,7 @@ use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Policies\PayrollRunPolicy;
+use App\Modules\Payroll\Support\Agi\AgiDeclaration;
 use App\Modules\Payroll\Support\RulePresenter;
 use App\Modules\Payroll\Support\Run\ContextBuilder;
 use App\Modules\Payroll\Support\Run\PayrollExtensions;
@@ -103,7 +105,11 @@ class PayrollRuns
     }
 
     /**
-     * @param  array{employee_id: int|string, pay_code_id: int|string, quantity?: ?string, amount?: ?string, note?: ?string, date_from?: ?string, date_to?: ?string}  $input
+     * Mileage and per diem (Allowances::TAX_FREE) need the number of mil or
+     * days, and may carry the whole agreed amount or a rate per unit with
+     * it (#76).
+     *
+     * @param  array{employee_id: int|string, pay_code_id: int|string, quantity?: ?string, amount?: ?string, rate?: ?string, note?: ?string, date_from?: ?string, date_to?: ?string}  $input
      */
     public function addInput(User $user, PayrollRun $run, array $input): PayrollInput
     {
@@ -114,25 +120,45 @@ class PayrollRuns
             'pay_code_id' => ['required', 'integer'],
             'quantity' => ['nullable', 'regex:/^\d{1,6}([.,]\d{1,3})?$/'],
             'amount' => ['nullable', 'string'],
+            'rate' => ['nullable', 'string'],
             'note' => ['nullable', 'string', 'max:255'],
             // The work date, used by NONOX Avtal to choose the agreement's rate step.
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
         ], ['quantity.regex' => __('Skriv antal timmar eller enheter, till exempel 12,5.')])->validate();
 
-        if (blank($validated['quantity'] ?? null) === blank($validated['amount'] ?? null)) {
-            throw ValidationException::withMessages(['amount' => __('Skriv antingen antal eller belopp.')]);
-        }
-
         try {
             $amount = blank($validated['amount'] ?? null) ? null : Money::parse((string) $validated['amount']);
+            $rate = blank($validated['rate'] ?? null) ? null : Money::parse((string) $validated['rate']);
         } catch (InvalidArgumentException) {
             throw ValidationException::withMessages(['amount' => __('Beloppet går inte att läsa.')]);
         }
 
-        return CurrentCompany::run($company, fn (): PayrollInput => DB::transaction(function () use ($user, $company, $run, $validated, $amount): PayrollInput {
+        return CurrentCompany::run($company, fn (): PayrollInput => DB::transaction(function () use ($user, $company, $run, $validated, $amount, $rate): PayrollInput {
             Employee::query()->findOrFail((int) $validated['employee_id']);
             $payCode = PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
+            $allowance = isset(Allowances::TAX_FREE[$payCode->code]);
+
+            // An allowance is tax-free per mil or day, so the number is needed; an amount alone would be paid as nothing (#76).
+            if ($allowance && blank($validated['quantity'] ?? null)) {
+                throw ValidationException::withMessages(['quantity' => __('Skriv antal mil eller dagar. Har ni avtalat en högre ersättning, skriv också hela beloppet eller ersättningen per mil eller dag.')]);
+            }
+
+            if ($allowance && $amount !== null && $rate !== null) {
+                throw ValidationException::withMessages(['amount' => __('Skriv antingen hela beloppet eller ersättningen per mil eller dag, inte båda.')]);
+            }
+
+            if (! $allowance && $rate !== null) {
+                throw ValidationException::withMessages(['rate' => __('Ersättning per mil eller dag gäller bara milersättning och traktamente.')]);
+            }
+
+            if (! $allowance && blank($validated['quantity'] ?? null) === blank($validated['amount'] ?? null)) {
+                throw ValidationException::withMessages(['amount' => __('Skriv antingen antal eller belopp.')]);
+            }
+
+            if (($amount !== null && $amount->ore < 0 && $allowance) || ($rate !== null && $rate->ore < 0)) {
+                throw ValidationException::withMessages(['amount' => __('Beloppet kan inte vara negativt.')]);
+            }
 
             // The claim from earlier pay is kept by the engine (NetPay); a hand-entered line would not follow it.
             if ($payCode->code === NetPay::CLAIM_CODE) {
@@ -145,6 +171,7 @@ class PayrollRuns
                 'pay_code_id' => (int) $validated['pay_code_id'],
                 'quantity' => blank($validated['quantity'] ?? null) ? null : str_replace(',', '.', (string) $validated['quantity']),
                 'amount_ore' => $amount?->ore,
+                'rate_ore' => $rate?->ore,
                 'note' => $validated['note'] ?? null,
                 'date_from' => $validated['date_from'] ?? null,
                 'date_to' => $validated['date_to'] ?? ($validated['date_from'] ?? null),
@@ -281,6 +308,9 @@ class PayrollRuns
             $this->extensions->prepare($run, $employments);
             /** @var array<int, array<string, int>> $runDeltas */
             $runDeltas = [];
+            // Regional support is capped per month for the whole company (lag 2001:1170 5 §, #78).
+            $regionalOtherRuns = self::regionalSupportInMonth($run);
+            $regionalUsed = $regionalOtherRuns;
 
             foreach ($employments as $employment) {
                 $employee = $employment->employee ?? throw new LogicException("Employment {$employment->id} has no employee.");
@@ -307,7 +337,8 @@ class PayrollRuns
                         $context = $context->withAccumulators(self::addDeltas($context->accumulators, $runDeltas[$employee->id]));
                     }
 
-                    $result = $this->calculator->calculate($context);
+                    $result = $this->calculator->calculate($context->withRegionalSupportUsed($regionalUsed, $regionalOtherRuns));
+                    $regionalUsed += (int) ($result->contributionExplanation['regional_support']['deduction_ore'] ?? 0);
                     $runDeltas[$employee->id] = self::addDeltas($runDeltas[$employee->id] ?? [], $result->accumulatorDeltas);
                     $results[] = [$employment, $result];
                 } catch (MissingTaxTableException $exception) {
@@ -535,6 +566,16 @@ class PayrollRuns
                 throw ValidationException::withMessages(['run' => [__('Beräkna lönekörningen igen innan du attesterar. En annan lönekörning för :names har attesterats sedan den här beräknades, och arbetsgivaravgifterna beror på den.', ['names' => implode(', ', array_unique($stale))])]]);
             }
 
+            // The regional support cap is shared by every run paid in the month (#78).
+            $regionalRead = Payslip::query()->where('payroll_run_id', $run->id)->get(['contribution_explanation'])
+                ->map(fn (Payslip $payslip): ?int => isset($payslip->contribution_explanation['regional_support']['other_runs_ore']) ? (int) $payslip->contribution_explanation['regional_support']['other_runs_ore'] : null)
+                ->filter(fn (?int $value): bool => $value !== null)
+                ->first();
+
+            if ($regionalRead !== null && $regionalRead !== self::regionalSupportInMonth($run)) {
+                throw ValidationException::withMessages(['run' => [__('Beräkna lönekörningen igen innan du attesterar. En annan lönekörning i samma månad har attesterats sedan den här beräknades, och taket för regionalt stöd delas av hela månaden.')]]);
+            }
+
             // Vacation pay from a closed semesterår is paid once: the run that carries it claims it.
             $closingIds = PayslipLine::query()
                 ->whereIn('payslip_id', Payslip::query()->where('payroll_run_id', $run->id)->select('id'))
@@ -735,6 +776,23 @@ class PayrollRuns
         if ($updated !== count($ids)) {
             throw ValidationException::withMessages(['run' => [__('Tidrapporterna ändrades medan lönen räknades. Beräkna lönekörningen igen.')]]);
         }
+    }
+
+    /**
+     * The regional support deduction made by the other approved runs paid
+     * in the same month as this one, in öre (#78).
+     */
+    private static function regionalSupportInMonth(PayrollRun $run): int
+    {
+        $month = $run->payment_date;
+        $runs = PayrollRun::query()
+            ->whereKeyNot($run->id)
+            ->whereBetween('payment_date', [$month->startOfMonth()->toDateString(), $month->endOfMonth()->toDateString()])
+            ->whereIn('status', AgiDeclaration::DECLARED_STATUSES)
+            ->select('id');
+
+        return (int) Payslip::query()->whereIn('payroll_run_id', $runs)->get(['contribution_explanation'])
+            ->sum(fn (Payslip $payslip): int => (int) ($payslip->contribution_explanation['regional_support']['deduction_ore'] ?? 0));
     }
 
     /** A change to inputs or absence makes the calculation out of date. */

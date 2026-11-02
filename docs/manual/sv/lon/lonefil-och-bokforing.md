@@ -59,6 +59,7 @@ Lönens verifikation i serie L innehåller:
 | Arbetsgivaravgifter att betala | 2730 | Kredit |
 | Tjänstepension och särskild löneskatt, om anställningen har en pensionsplan | 7410 mot 2740, 7530 mot 2514 | Debet / kredit |
 | Utlägg som betalas tillbaka | 2890 | Debet |
+| Den anställdas egen betalning för en förmån | 7388 | Kredit |
 | Förskott som dras av | 1680 | Kredit |
 | Skuld till företaget när avdragen är större än lönen, och samma skuld när den dras från nästa lön | 1680 | Debet / kredit |
 | Utbetalda nettolöner | 1930 | Kredit |

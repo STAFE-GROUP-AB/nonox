@@ -31,13 +31,13 @@ Under **Timmar och tillägg** lägger du in allt som inte är fast månadslön: 
 
 1. Välj **Anställd**.
 2. Välj **Löneart**, till exempel **Timlön**, **Övertid**, **OB-tillägg** eller **Bonus**.
-3. Skriv **Antal timmar** eller **eller belopp**, inte båda.
+3. Skriv **Antal timmar, mil eller dagar** eller **eller belopp**, inte båda. Milersättning och traktamente är undantaget: där skriver du alltid antal mil eller dagar, och kan också skriva hela ersättningen eller **Ersättning per mil eller dag (frivilligt)**.
 4. Klicka på **Lägg till**.
 
 Raderna visas under formuläret. Klicka på **×** för att ta bort en rad. Timmar utan belopp prissätts med anställningens timlön.
 
 > [!TIP]
-> Fältet **Antal timmar** används för alla lönearter som räknas i antal: dagar för traktamente, mil för milersättning och antal måltider för kostförmån. Se [Förmåner, traktamente och milersättning](/manual/lon/formaner-traktamente-och-milersattning).
+> Fältet **Antal timmar, mil eller dagar** används för alla lönearter som räknas i antal: dagar för traktamente, mil för milersättning och antal måltider för kostförmån. Se [Förmåner, traktamente och milersättning](/manual/lon/formaner-traktamente-och-milersattning).
 
 Timanställdas timmar kan också komma av sig själva, från godkända tidrapporter och från personalliggaren, eller från en fil från ert schemasystem. Se [Timlön och tidrapporter](/manual/lon/timlon-och-tidrapporter) och [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem).
 

@@ -33,7 +33,22 @@ final class AgiXml
         'RedovisningsPeriod' => '006',
         'SummaArbAvgSlf' => '487',
         'SummaSkatteavdr' => '497',
+        'UlagRegionaltStod' => '471',
+        'AvdragRegionaltStod' => '476',
         'BetalningsmottagarId' => '215',
+        'Fodelsetid' => '222',
+        'Fornamn' => '216',
+        'Efternamn' => '217',
+        'Gatuadress' => '218',
+        'Postnummer' => '219',
+        'Postort' => '220',
+        'LandskodPostort' => '221',
+        'FriAdress' => '230',
+        'Fodelseort' => '077',
+        'LandskodFodelseort' => '078',
+        'LandskodMedborgare' => '081',
+        'TIN' => '252',
+        'LandskodTIN' => '076',
         'Specifikationsnummer' => '570',
         'KontantErsattningUlagAG' => '011',
         'SkatteplOvrigaFormanerUlagAG' => '012',
@@ -47,6 +62,7 @@ final class AgiXml
         'AvdrPrelSkatt' => '001',
         'AvdrSkattSINK' => '274',
         'AvdrSkattASINK' => '275',
+        'VerksamhetensArt' => '112',
         'Bilersattning' => '050',
         'Traktamente' => '051',
         'Borttag' => '205',
@@ -62,8 +78,9 @@ final class AgiXml
 
     /**
      * @param  array{program: string, name: string, phone: string, email: string}  $contact
-     * @param  list<array{personal_number: string, individual: AgiIndividual}>  $individuals
-     * @param  list<array{personal_number: string, specification: int}>  $removals
+     * @param  list<array{payee: AgiPayee, individual: AgiIndividual}>  $individuals
+     * @param  list<array{payee: AgiPayee, specification: int}>  $removals
+     * @param  ?array{basis: int, deduction: int}  $regionalSupport  rutor 471 and 476 in whole kronor, always together (#78)
      */
     public function write(
         string $employerId,
@@ -74,6 +91,7 @@ final class AgiXml
         array $individuals,
         array $removals,
         CarbonImmutable $created,
+        ?array $regionalSupport = null,
     ): string {
         $this->document = new DOMDocument('1.0', 'UTF-8');
         $this->document->formatOutput = true;
@@ -102,13 +120,18 @@ final class AgiXml
         $this->field($hu, 'SummaArbAvgSlf', (string) $contributionsKronor);
         $this->field($hu, 'SummaSkatteavdr', (string) $taxKronor);
 
+        if ($regionalSupport !== null) {
+            $this->field($hu, 'UlagRegionaltStod', (string) $regionalSupport['basis']);
+            $this->field($hu, 'AvdragRegionaltStod', (string) $regionalSupport['deduction']);
+        }
+
         foreach ($individuals as $entry) {
             $individual = $entry['individual'];
-            $iu = $this->individual($root, $employerId, $redovisningsperiod, $entry['personal_number'], $individual->specificationNumber);
+            $iu = $this->individual($root, $employerId, $redovisningsperiod, $entry['payee'], $individual->specificationNumber);
 
             $this->amount($iu, 'KontantErsattningUlagAG', $individual->cashKronor);
-            $this->amount($iu, 'SkatteplOvrigaFormanerUlagAG', $individual->otherBenefitsKronor);
-            $this->amount($iu, 'SkatteplBilformanUlagAG', $individual->carBenefitKronor);
+            $this->amount($iu, 'SkatteplOvrigaFormanerUlagAG', $individual->otherBenefitsKronor, $individual->hadOtherBenefit);
+            $this->amount($iu, 'SkatteplBilformanUlagAG', $individual->carBenefitKronor, $individual->hadCarBenefit || $individual->fuelBenefitKronor > 0);
             $this->amount($iu, 'DrivmVidBilformanUlagAG', $individual->fuelBenefitKronor);
             $this->amount($iu, 'AvrakningAvgiftsfriErs', $individual->earlierFreeKronor);
             $this->amount($iu, 'KontantErsattningEjUlagSA', $individual->freeCashKronor);
@@ -116,6 +139,10 @@ final class AgiXml
             $this->amount($iu, 'SkatteplBilformanEjUlagSA', $individual->freeCarBenefitKronor);
             $this->amount($iu, 'DrivmVidBilformanEjUlagSA', $individual->freeFuelBenefitKronor);
             $this->field($iu, self::TAX_ELEMENTS[$individual->taxForm], (string) $individual->taxKronor);
+
+            if ($individual->taxForm === AgiIndividual::TAX_A_SINK) {
+                $this->field($iu, 'VerksamhetensArt', (string) $individual->activityType);
+            }
 
             if ($individual->mileage) {
                 $this->field($iu, 'Bilersattning', '1');
@@ -127,7 +154,7 @@ final class AgiXml
         }
 
         foreach ($removals as $removal) {
-            $iu = $this->individual($root, $employerId, $redovisningsperiod, $removal['personal_number'], $removal['specification']);
+            $iu = $this->individual($root, $employerId, $redovisningsperiod, $removal['payee'], $removal['specification']);
             $this->field($iu, 'Borttag', '1');
         }
 
@@ -172,15 +199,72 @@ final class AgiXml
         return $this->add($form, 'Blankettinnehall');
     }
 
-    private function individual(DOMElement $root, string $employerId, string $period, string $personalNumber, int $specification): DOMElement
+    private function individual(DOMElement $root, string $employerId, string $period, AgiPayee $payee, int $specification): DOMElement
     {
         $iu = $this->add($this->form($root, $employerId, $period), 'IU');
         $this->field($this->add($iu, 'ArbetsgivareIUGROUP'), 'AgRegistreradId', $employerId);
-        $this->field($this->add($this->add($iu, 'BetalningsmottagareIUGROUP'), 'BetalningsmottagareIDChoice'), 'BetalningsmottagarId', $personalNumber);
+        $this->payee($this->add($iu, 'BetalningsmottagareIUGROUP'), $payee);
         $this->field($iu, 'RedovisningsPeriod', $period);
         $this->field($iu, 'Specifikationsnummer', (string) $specification);
 
         return $iu;
+    }
+
+    /**
+     * The payee's identity: the Swedish number (215), or födelsetid (222)
+     * with name, birthplace and address (#74). Citizenship and a foreign tax
+     * number go with either when known.
+     */
+    private function payee(DOMElement $group, AgiPayee $payee): void
+    {
+        $choice = $this->add($group, 'BetalningsmottagareIDChoice');
+
+        if ($payee->personalNumber !== null) {
+            $this->field($choice, 'BetalningsmottagarId', $payee->personalNumber);
+        } else {
+            $this->field($choice, 'Fodelsetid', (string) $payee->birthTime);
+            $this->optional($group, 'Fornamn', $payee->firstName);
+            $this->optional($group, 'Efternamn', $payee->lastName);
+            $this->optional($group, 'Fodelseort', $payee->birthPlace);
+            $this->optional($group, 'LandskodFodelseort', $payee->birthCountry);
+            $this->address($group, $payee);
+        }
+
+        $this->optional($group, 'LandskodMedborgare', $payee->citizenship);
+        $this->optional($group, 'TIN', $payee->tin);
+        $this->optional($group, 'LandskodTIN', $payee->tinCountry);
+    }
+
+    /**
+     * Gatuadress, postnummer and postort (218–220), with the country (221)
+     * when abroad. An address without a postal code goes in Fri adress (230),
+     * which Skatteverket says must always come with 221.
+     */
+    private function address(DOMElement $group, AgiPayee $payee): void
+    {
+        $abroad = $payee->addressCountry !== null && $payee->addressCountry !== 'SE';
+
+        if ($payee->postalCode === null) {
+            $this->optional($group, 'FriAdress', mb_substr(implode(', ', array_filter([$payee->street, $payee->city])), 0, 200));
+            $this->optional($group, 'LandskodPostort', $payee->addressCountry ?? 'SE');
+
+            return;
+        }
+
+        $this->optional($group, 'Gatuadress', $payee->street);
+        $this->optional($group, 'Postnummer', $payee->postalCode);
+        $this->optional($group, 'Postort', $payee->city);
+
+        if ($abroad) {
+            $this->field($group, 'LandskodPostort', (string) $payee->addressCountry);
+        }
+    }
+
+    private function optional(DOMElement $parent, string $name, ?string $value): void
+    {
+        if ($value !== null && trim($value) !== '') {
+            $this->field($parent, $name, $value);
+        }
     }
 
     /** @param array{name: string, phone: string, email: string} $contact */
@@ -191,9 +275,10 @@ final class AgiXml
         $this->add($parent, 'Epostadress', $contact['email']);
     }
 
-    private function amount(DOMElement $parent, string $name, int $kronor): void
+    /** An amount above 0, or 0 when Skatteverket asks for a nought (012 and 013 for a benefit that existed, #79). */
+    private function amount(DOMElement $parent, string $name, int $kronor, bool $evenWhenZero = false): void
     {
-        if ($kronor > 0) {
+        if ($kronor > 0 || ($evenWhenZero && $kronor === 0)) {
             $this->field($parent, $name, (string) $kronor);
         }
     }

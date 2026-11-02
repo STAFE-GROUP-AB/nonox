@@ -34,8 +34,19 @@ use Brick\Math\RoundingMode;
  * after another run for the same person was attested stops and asks for a
  * new calculation (PayrollRuns::approve).
  *
+ * Regional support (lag (2001:1170) 5 §; enligt granskning 2026-11-02,
+ * juristgranskning återstår, AUD-LON-14, #78): when the company has chosen
+ * it, 10 % of the contribution basis is deducted from the contributions,
+ * at most the monthly cap for the whole company (Skatteverket: "högst
+ * 7 100 kronor per månad"; per redovisningsperiod in AGI), never below the
+ * ålderspensionsavgift, and not for a person who was 67 or older at the
+ * start of the year (Skatteverket: "vid årets ingång är 67 år eller
+ * äldre") or who only pays ålderspensionsavgift (2 §).
+ *
  * TODO(legal-verify): rounding of contributions per payslip (here half up
- * to öre; AGI reports totals), and regional support (not applied).
+ * to öre; AGI reports totals); regional support per payslip in öre with the
+ * floor per payslip, where the law speaks of the period's total; the
+ * company setting covers all employees (one fast driftställe in the area).
  */
 final class EmployerContributions implements Step
 {
@@ -100,11 +111,51 @@ final class EmployerContributions implements Step
             $this->delta($draft, $key, $capped);
             $explanation['accumulators_read'] = [...$read, $key => $used];
             $this->charge($draft, [[$capped, (int) $youth['bp']], [$basis - $capped, $fullBp]], [...$explanation, 'rule' => 'youth_reduction', 'born' => $born, 'cap_ore' => $cap, 'cap_used_before_ore' => $used]);
+            $this->regionalSupport($context, $draft, $basis);
 
             return;
         }
 
         $this->charge($draft, [[$basis, $fullBp]], [...$explanation, 'rule' => 'full', 'born' => $born]);
+        $this->regionalSupport($context, $draft, $basis);
+    }
+
+    /**
+     * Lag (2001:1170) 5 §: 10 % of the basis off the contributions, within
+     * the company's monthly cap and not below the ålderspensionsavgift.
+     */
+    private function regionalSupport(PayrollContext $context, PayslipDraft $draft, int $basis): void
+    {
+        if (! (bool) ($context->settings['regional_support'] ?? false) || $basis <= 0) {
+            return;
+        }
+
+        $rule = (array) $context->rules->get('employer_contribution.regional_support');
+        $yearStart = $context->paymentDate->startOfYear();
+        $ageAtYearStart = $yearStart->year - $context->birthDate->year - ($context->birthDate->format('md') > $yearStart->format('md') ? 1 : 0);
+
+        if ($ageAtYearStart >= (int) $rule['not_from_age']) {
+            $draft->contributionExplanation = [...$draft->contributionExplanation, 'regional_support' => ['excluded' => 'age', 'age_at_year_start' => $ageAtYearStart]];
+
+            return;
+        }
+
+        $cap = (int) $rule['monthly_cap_ore'];
+        $used = max(0, $context->regionalSupportUsedOre);
+        $floor = BigDecimal::of($basis)->multipliedBy((int) $rule['floor_bp'])->dividedBy(Units::BASIS_POINTS, 0, RoundingMode::HalfUp)->toInt();
+        $tenPercent = BigDecimal::of($basis)->multipliedBy((int) $rule['deduction_bp'])->dividedBy(Units::BASIS_POINTS, 0, RoundingMode::HalfUp)->toInt();
+        $deduction = max(0, min($tenPercent, $cap - $used, $draft->employerContributionOre - $floor));
+
+        $draft->employerContributionOre -= $deduction;
+        $draft->contributionExplanation = [...$draft->contributionExplanation, 'regional_support' => [
+            'basis_ore' => $basis,
+            'deduction_ore' => $deduction,
+            'cap_ore' => $cap,
+            'used_before_ore' => $used,
+            'other_runs_ore' => $context->regionalSupportOtherRunsOre,
+            'floor_ore' => $floor,
+            'rule' => $context->rules->version('employer_contribution.regional_support')->id,
+        ]];
     }
 
     private function delta(PayslipDraft $draft, string $key, int $amount): void

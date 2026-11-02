@@ -26,6 +26,9 @@ final readonly class PayrollContext
      * @param  int  $employeeClaimOre  what the employee still owes from earlier payslips whose deductions after tax were larger than the pay (NetPay), over all years
      * @param  ?int  $taxAdjustmentTable  a jämkning decision that names another table (with $taxAdjustmentColumn); like $taxAdjustmentPercentBp and $taxAdjustmentAmountOre only set while the decision is in force on the payment date
      * @param  ?int  $taxAdjustmentAmountOre  a jämkning decision that names an amount of tax per payment
+     * @param  bool  $sideIncome  the pay is not the employee's main income: 30 % is withheld instead of the table (SFL 11 kap. 20 §)
+     * @param  int  $regionalSupportUsedOre  the regional support deduction already made in the payment month for the whole company, by earlier payslips (lag 2001:1170 5 §)
+     * @param  int  $regionalSupportOtherRunsOre  the part of it made by other approved runs, kept so attestation can see when it changed
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -58,7 +61,19 @@ final readonly class PayrollContext
         public ?int $taxAdjustmentTable = null,
         public ?int $taxAdjustmentColumn = null,
         public ?int $taxAdjustmentAmountOre = null,
+        public bool $sideIncome = false,
+        public int $regionalSupportUsedOre = 0,
+        public int $regionalSupportOtherRunsOre = 0,
     ) {}
+
+    /**
+     * A copy with what earlier payslips in the month have used of the
+     * company's regional support cap.
+     */
+    public function withRegionalSupportUsed(int $usedOre, int $otherRunsOre): self
+    {
+        return new self(...[...get_object_vars($this), 'regionalSupportUsedOre' => $usedOre, 'regionalSupportOtherRunsOre' => $otherRunsOre]);
+    }
 
     /**
      * A copy with the absences (lost supplements per sick day) and sick-pay

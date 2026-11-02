@@ -599,6 +599,16 @@
             "source_quote": "Om du inte har tidsbestämd lön ska arbetsgivaren dra av 30 procent i skatt på engångsbeloppet."
         },
         {
+            "key": "tax.side_income",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "bp": 3000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2011-1244.text",
+            "source_quote": "11 kap. 20 §: skatteavdrag göras med 30 procent av underlaget, om ersättningen 1. inte är mottagarens huvudinkomst"
+        },
+        {
             "key": "a_sink.rate",
             "valid_from": "2026-01-01",
             "valid_to": null,

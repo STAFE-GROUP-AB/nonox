@@ -65,7 +65,8 @@ class Employees extends Component
         $this->form = [
             'first_name' => '', 'last_name' => '', 'personal_number' => '', 'email' => '', 'phone' => '',
             'address' => '', 'postal_code' => '', 'city' => '', 'bank_clearing' => '', 'bank_account' => '',
-            'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1',
+            'tax_residence' => 'SE', 'withholding_basis' => SaveEmployee::WITHHOLDING_TABLE, 'tax_table' => '', 'tax_column' => '1', 'activity_type' => '',
+            'identity_type' => SaveEmployee::IDENTITY_SWEDISH, 'birth_date' => '', 'birth_place' => '', 'birth_country' => '', 'citizenship' => '', 'country' => 'SE', 'foreign_tin' => '', 'foreign_tin_country' => '',
             'tax_adjustment_type' => 'NONE', 'tax_adjustment_percent' => '', 'tax_adjustment_amount' => '', 'tax_adjustment_table' => '', 'tax_adjustment_column' => '',
             'tax_adjustment_valid_from' => '', 'tax_adjustment_valid_to' => '',
             'start_date' => now()->toDateString(), 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY',
@@ -87,8 +88,11 @@ class Employees extends Component
         $this->editingId = $employee->id;
         $this->form = array_map(fn (mixed $value): string => (string) $value, [
             // Personal number and bank details never go into the page state; empty means "keep".
-            ...$employee->only(['first_name', 'last_name', 'email', 'phone', 'address', 'postal_code', 'city', 'tax_residence', 'tax_table', 'tax_column', 'user_id']),
-            'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '',
+            ...$employee->only(['first_name', 'last_name', 'email', 'phone', 'address', 'postal_code', 'city', 'tax_residence', 'withholding_basis', 'tax_table', 'tax_column', 'activity_type', 'user_id']),
+            'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '', 'foreign_tin' => '',
+            ...$employee->only(['birth_place', 'birth_country', 'citizenship', 'country', 'foreign_tin_country']),
+            'identity_type' => $employee->hasSwedishNumber() ? SaveEmployee::IDENTITY_SWEDISH : SaveEmployee::IDENTITY_BIRTH,
+            'birth_date' => $employee->hasSwedishNumber() ? '' : $employee->birth_date->toDateString(),
             ...SaveEmployee::taxAdjustmentForm($employee),
             'start_date' => $employment?->start_date->toDateString(),
             'employment_type' => $employment === null ? 'TILLSVIDARE' : $employment->employment_type,
