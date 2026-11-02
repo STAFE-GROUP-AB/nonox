@@ -155,6 +155,8 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
 
+Det som pågår, är planerat eller önskat står på färdplanen på webbplatsen (`/fardplan`), och allt som har levererats står med datum och klockslag i ändringsloggen (`/andringslogg`, med RSS-flöde). Båda skrivs på vanlig svenska för den som inte läser koden; posterna finns i `docs/andringslogg` och `docs/fardplan` och hålls aktuella enligt [CONTRIBUTING.md](CONTRIBUTING.md).
+
 Hela planen och alla regler finns i [AGENTS.md](AGENTS.md).
 
 ### Juridiska krav (Sverige)

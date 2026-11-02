@@ -2294,6 +2294,27 @@ Personalliggare och Avtal när de är påslagna.
 - Paketets egen SHA-256 sparas och skrivs i behandlingshistoriken när paketet
   skapas, och varje nedladdning loggas. Filerna går att läsa utan NONOX.
 
+## 7b. Ändringslogg och färdplan
+
+- Den publika ändringsloggen på `/andringslogg` (med RSS-flöde på
+  `/andringslogg/rss.xml`) visar varje levererad ändring med datum, klockslag,
+  typ (Nytt, Förbättrat, Rättat, Säkerhet) och område, på vanlig svenska.
+  Posterna finns i `docs/andringslogg/andringslogg.json` och versioneras med
+  koden de beskriver. Den första versionen togs fram ur hela
+  versionshistoriken från 2026-01-11.
+- Varje ändring som levereras får en post i samma ändring av koden
+  (CONTRIBUTING.md). Ett test jämför den senaste posten med den senaste
+  `feat`- eller `fix`-ändringen i versionshistoriken och fallerar när loggen
+  ligger mer än ett dygn efter. Utan historik (en grund utcheckning i CI)
+  hoppas kontrollen över.
+- Färdplanen på `/fardplan` läses ur `docs/fardplan/fardplan.json`: det som
+  pågår, det som är planerat och önskemål från kunder och partner. Buggar och
+  små rättelser står inte där. En punkt som blir klar tas bort och syns i
+  stället under Klart nyligen, som är de senaste posterna av typen Nytt eller
+  Förbättrat i ändringsloggen.
+- Sidorna påverkar inte bokföringen och är ingen behandlingshistorik enligt
+  BFNAR 2013:2; den beskrivs i avsnitt 7, och systemets versioner i avsnitt 9.
+
 ## 8. Öppna frågor (TODO legal-verify)
 
 - Avtal (ADR-033): upphovsrätt till en sammanställning av ett avtals

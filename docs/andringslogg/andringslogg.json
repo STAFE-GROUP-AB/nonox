@@ -1,0 +1,1110 @@
+{
+  "poster": [
+    {
+      "id": "2026-11-02-andringslogg-och-fardplan",
+      "datum": "2026-11-02T13:20:00+01:00",
+      "rubrik": "Ändringslogg och färdplan",
+      "beskrivning": "Allt vi levererar står nu med datum och klockslag i ändringsloggen, som också går att följa med RSS. Färdplanen visar det som pågår, det som är planerat och önskemålen, och manualen, API:t och säkerhetssidan har flyttat till sidfoten.",
+      "typ": "Nytt",
+      "omrade": "Webbplats"
+    },
+    {
+      "id": "2026-11-02-9696b54",
+      "datum": "2026-11-02T12:44:47+01:00",
+      "rubrik": "Delade underlag raderas aldrig av misstag",
+      "beskrivning": "En sparad fil tas bara bort när ingenting längre hänvisar till den.",
+      "typ": "Rättat",
+      "omrade": "Bokföring",
+      "version": "9696b54"
+    },
+    {
+      "id": "2026-11-02-3a20bbc",
+      "datum": "2026-11-02T12:43:01+01:00",
+      "rubrik": "Valutakurs och OSS i momsen",
+      "beskrivning": "Momsen i utländsk valuta räknas med kursen på rätt dag, och OSS redovisas i euro med tröskeln inräknad.",
+      "typ": "Rättat",
+      "omrade": "Moms",
+      "version": "3a20bbc"
+    },
+    {
+      "id": "2026-11-02-cc07665",
+      "datum": "2026-11-02T12:28:17+01:00",
+      "rubrik": "Räkenskapsår och kontoplan per företagsform",
+      "beskrivning": "Räkenskapsårets längd och kalenderår följer företagsformen, och enskilda firmor och handelsbolag får rätt konton för eget kapital.",
+      "typ": "Rättat",
+      "omrade": "Bokföring",
+      "version": "cc07665"
+    },
+    {
+      "id": "2026-11-02-cd98cb8",
+      "datum": "2026-11-02T12:21:21+01:00",
+      "rubrik": "Obetalda fakturor vid årsskiftet med kontantmetoden",
+      "beskrivning": "Med kontantmetoden bokförs obetalda kund- och leverantörsfakturor vid årets slut och återförs nästa år.",
+      "typ": "Rättat",
+      "omrade": "Bokslut",
+      "version": "cd98cb8"
+    },
+    {
+      "id": "2026-11-02-d15f9d8",
+      "datum": "2026-11-02T12:18:28+01:00",
+      "rubrik": "Personalliggaren per räkenskapsår",
+      "beskrivning": "Liggaren sparas per räkenskapsår och godtar identitetsnummer från andra länder.",
+      "typ": "Rättat",
+      "omrade": "Personalliggare",
+      "version": "d15f9d8"
+    },
+    {
+      "id": "2026-11-02-5a2990c",
+      "datum": "2026-11-02T11:57:17+01:00",
+      "rubrik": "Juridisk genomgång med AI och en andra kontroll",
+      "beskrivning": "Bokföring, moms, fakturering, bokslut och lön har gåtts igenom mot lagtexten, med en oberoende andra kontroll. Juristgranskning återstår och avvikelserna rättas en i taget.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt",
+      "version": "5a2990c"
+    },
+    {
+      "id": "2026-11-02-86fff63",
+      "datum": "2026-11-02T10:56:54+01:00",
+      "rubrik": "Skattetabellerna hämtas automatiskt",
+      "beskrivning": "Skattetabellerna hämtas varje natt från Skatteverkets öppna data så snart de publiceras, och alla som sköter lönen får en notis.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "86fff63"
+    },
+    {
+      "id": "2026-11-02-f8a7f08",
+      "datum": "2026-11-02T10:41:04+01:00",
+      "rubrik": "Löneåret 2027 förbereds",
+      "beskrivning": "Reglerna för 2027 finns som data med källa och väntar på kontroll. Värden som inte är publicerade ännu är markerade som väntande.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "f8a7f08"
+    },
+    {
+      "id": "2026-11-02-b93bfe1",
+      "datum": "2026-11-02T10:32:00+01:00",
+      "rubrik": "Omvärdering av valuta påminner",
+      "beskrivning": "Omvärdering av fordringar och skulder i utländsk valuta påminner dig i bokslutet.",
+      "typ": "Förbättrat",
+      "omrade": "Bokslut",
+      "version": "b93bfe1"
+    },
+    {
+      "id": "2026-11-02-126a132",
+      "datum": "2026-11-02T10:31:49+01:00",
+      "rubrik": "Mer av kollektivavtalen",
+      "beskrivning": "OB och övertid avrundas enligt avtalet, komptid med saldo, sjuklön efter schemat, avtalets semester, tjänstepension, avtalsförsäkringar, provision och lokala avtal.",
+      "typ": "Nytt",
+      "omrade": "Avtal",
+      "version": "126a132"
+    },
+    {
+      "id": "2026-11-02-9a4fb24",
+      "datum": "2026-11-02T10:22:47+01:00",
+      "rubrik": "Checka in från den egna mobilen",
+      "beskrivning": "Anställda och schemaläggare kan checka in och ut i personalliggaren från sin egen telefon, utan tillgång till bokföringen.",
+      "typ": "Nytt",
+      "omrade": "Personalliggare",
+      "version": "9a4fb24"
+    },
+    {
+      "id": "2026-11-02-71f4cf6",
+      "datum": "2026-11-02T10:21:08+01:00",
+      "rubrik": "SIE-filer via SFTP",
+      "beskrivning": "Skicka SIE-filer till NONOX över SFTP. En inläst fil väntar alltid på att en person bekräftar den.",
+      "typ": "Nytt",
+      "omrade": "Connect/API",
+      "version": "71f4cf6"
+    },
+    {
+      "id": "2026-11-02-cc7debb",
+      "datum": "2026-11-02T10:18:33+01:00",
+      "rubrik": "Kundfakturor i utländsk valuta",
+      "beskrivning": "Fakturera i andra valutor med kurs och kursdifferens vid betalning, och värdera om fordringarna vid årsskiftet.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "cc7debb"
+    },
+    {
+      "id": "2026-11-02-7f3f686",
+      "datum": "2026-11-02T10:15:52+01:00",
+      "rubrik": "Bankens svar på betalfiler matchas automatiskt",
+      "beskrivning": "När banken svarar på en betalfil matchas betalningarna automatiskt och bokförs.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer",
+      "version": "7f3f686"
+    },
+    {
+      "id": "2026-11-02-353bf43",
+      "datum": "2026-11-02T10:13:36+01:00",
+      "rubrik": "Tillgänglighet enligt WCAG 2.2 AA",
+      "beskrivning": "Appen och webbplatsen är granskade mot WCAG 2.2 AA med bättre fokusmarkering, kontrast och felmeddelanden som läses upp. Tillgänglighetsredogörelsen finns på webbplatsen.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt",
+      "version": "353bf43"
+    },
+    {
+      "id": "2026-11-02-76fd829",
+      "datum": "2026-11-02T09:54:33+01:00",
+      "rubrik": "NONOX Planering",
+      "beskrivning": "Schemaläggning med publicering, schema på Min sida och attest av tid som går vidare till lönen.",
+      "typ": "Nytt",
+      "omrade": "Planering",
+      "version": "76fd829"
+    },
+    {
+      "id": "2026-11-02-5821f17",
+      "datum": "2026-11-02T03:07:13+01:00",
+      "rubrik": "Skärmbilder i manualen",
+      "beskrivning": "De flesta artiklar i manualen har skärmbilder från demoföretagen.",
+      "typ": "Förbättrat",
+      "omrade": "Manual",
+      "version": "5821f17"
+    },
+    {
+      "id": "2026-11-02-710ed30",
+      "datum": "2026-11-02T03:06:41+01:00",
+      "rubrik": "EU-rapporten visar rätt period",
+      "beskrivning": "Rapporten för EU-försäljning visar den period den räknar på, och OB-tider behåller klockslagen.",
+      "typ": "Rättat",
+      "omrade": "Moms",
+      "version": "710ed30"
+    },
+    {
+      "id": "2026-11-02-20fad5a",
+      "datum": "2026-11-02T00:58:13+01:00",
+      "rubrik": "Demoföretag för varje bransch",
+      "beskrivning": "Ett påhittat demoföretag per bransch visar hur NONOX ser ut med riktiga siffror.",
+      "typ": "Nytt",
+      "omrade": "Webbplats",
+      "version": "20fad5a"
+    },
+    {
+      "id": "2026-11-01-2bd75ac",
+      "datum": "2026-11-01T23:23:19+01:00",
+      "rubrik": "Manualen",
+      "beskrivning": "En manual på vanlig svenska med sök, för företag, byråer och anställda. Knappen Hjälp i appen öppnar artikeln om sidan du står på.",
+      "typ": "Nytt",
+      "omrade": "Manual",
+      "version": "2bd75ac"
+    },
+    {
+      "id": "2026-11-01-bd47fe6",
+      "datum": "2026-11-01T21:30:34+01:00",
+      "rubrik": "Företagsuppgifter från Bolagsverket",
+      "beskrivning": "Skriv organisationsnumret så fylls namn, adress och företagsform i automatiskt för företag, kunder och leverantörer.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "bd47fe6"
+    },
+    {
+      "id": "2026-11-01-9f31567",
+      "datum": "2026-11-01T21:29:19+01:00",
+      "rubrik": "Kontosaldo när du bokför",
+      "beskrivning": "Raderna på en verifikation visar konto, kostnadsställe, projekt, radtext, debet, kredit och kontots saldo. Kontona länkar till huvudboken.",
+      "typ": "Förbättrat",
+      "omrade": "Bokföring",
+      "version": "9f31567"
+    },
+    {
+      "id": "2026-11-01-91a486d",
+      "datum": "2026-11-01T21:29:19+01:00",
+      "rubrik": "Fotografera underlag med mobilen",
+      "beskrivning": "Ta en bild på kvittot med telefonen, så analyseras det direkt när det är uppladdat.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "91a486d"
+    },
+    {
+      "id": "2026-11-01-4cb0225",
+      "datum": "2026-11-01T21:25:14+01:00",
+      "rubrik": "Anläggningstillgång direkt från inköpet",
+      "beskrivning": "När du bokför ett inköp av en inventarie kan den läggas in i anläggningsregistret i samma steg.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "4cb0225"
+    },
+    {
+      "id": "2026-11-01-bd8aa8d",
+      "datum": "2026-11-01T20:28:19+01:00",
+      "rubrik": "Kollektivavtal i lönen",
+      "beskrivning": "Kollektivavtalens värden som data med källa, prissättning och kontroll av lägstalön. NONOX AI hjälper till att ställa in vilket avtal som gäller.",
+      "typ": "Nytt",
+      "omrade": "Avtal",
+      "version": "bd8aa8d"
+    },
+    {
+      "id": "2026-11-01-2149b5f",
+      "datum": "2026-11-01T20:28:14+01:00",
+      "rubrik": "Webbplats för utvecklare",
+      "beskrivning": "Guider, en fullständig referens och kodexempel för API:t på svenska och engelska.",
+      "typ": "Nytt",
+      "omrade": "Connect/API",
+      "version": "2149b5f"
+    },
+    {
+      "id": "2026-11-01-79e0f2d",
+      "datum": "2026-11-01T20:25:31+01:00",
+      "rubrik": "NONOX Connect: öppet API",
+      "beskrivning": "Ett öppet API med inloggning via OAuth 2.0, signerade webhooks och testföretag med exempeldata. Bokföring, fakturor, leverantörsfakturor, betalningar, rapporter, moms och SIE finns i API:t.",
+      "typ": "Nytt",
+      "omrade": "Connect/API",
+      "version": "79e0f2d"
+    },
+    {
+      "id": "2026-11-01-7013595",
+      "datum": "2026-11-01T20:03:51+01:00",
+      "rubrik": "Bankkoppling",
+      "beskrivning": "Koppla bankkonton med BankID och hämta transaktioner och saldon automatiskt. NONOX kan bara läsa, aldrig flytta pengar.",
+      "typ": "Nytt",
+      "omrade": "Bank",
+      "version": "7013595"
+    },
+    {
+      "id": "2026-11-01-0a769e1",
+      "datum": "2026-11-01T19:40:04+01:00",
+      "rubrik": "Delningsbilder för varje sida",
+      "beskrivning": "Varje publik sida har en egen bild när länken delas.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats",
+      "version": "0a769e1"
+    },
+    {
+      "id": "2026-11-01-0f50fda",
+      "datum": "2026-11-01T19:39:37+01:00",
+      "rubrik": "Löneunderlag från schemasystem",
+      "beskrivning": "Filer från schemasystem läses in i en öppen lönekörning som förslag som du granskar.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "0f50fda"
+    },
+    {
+      "id": "2026-11-01-7b8df54",
+      "datum": "2026-11-01T18:37:02+01:00",
+      "rubrik": "Installera NONOX på hemskärmen",
+      "beskrivning": "Appen kan läggas på telefonens hemskärm. Inga uppgifter sparas i enheten.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "7b8df54"
+    },
+    {
+      "id": "2026-11-01-6a1aef5",
+      "datum": "2026-11-01T18:26:20+01:00",
+      "rubrik": "Raderat konto lämnar inga spår",
+      "beskrivning": "När ett konto raderas försvinner också dess passkeys och senaste sökningar.",
+      "typ": "Rättat",
+      "omrade": "Övrigt",
+      "version": "6a1aef5"
+    },
+    {
+      "id": "2026-11-01-e404d6e",
+      "datum": "2026-11-01T18:21:21+01:00",
+      "rubrik": "Återställningstest av säkerhetskopior",
+      "beskrivning": "Säkerhetskopian återställs regelbundet på prov och kontrolleras, och varje version får en förteckning över alla ingående programdelar.",
+      "typ": "Säkerhet",
+      "omrade": "Övrigt",
+      "version": "e404d6e"
+    },
+    {
+      "id": "2026-11-01-35af029",
+      "datum": "2026-11-01T17:00:39+01:00",
+      "rubrik": "Byråns varumärke hos kunderna",
+      "beskrivning": "En redovisningsbyrå kan visa sin logga och sina färger för sina kunder i appen och på Min sida.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "35af029"
+    },
+    {
+      "id": "2026-11-01-b730610",
+      "datum": "2026-11-01T16:51:48+01:00",
+      "rubrik": "Sidor för varje bransch",
+      "beskrivning": "Sidor för caféer, restauranger, butiker, frisörer, hantverkare, konsulter och redovisningsbyråer, med priser räknade ur jämförelsen.",
+      "typ": "Nytt",
+      "omrade": "Webbplats",
+      "version": "b730610"
+    },
+    {
+      "id": "2026-11-01-a94af49",
+      "datum": "2026-11-01T16:28:40+01:00",
+      "rubrik": "Sök i hela NONOX",
+      "beskrivning": "Tryck ⌘K eller Ctrl+K och sök bland verifikationer, fakturor, kunder, leverantörer och anställda på ett ställe.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "a94af49"
+    },
+    {
+      "id": "2026-11-01-251dd4a",
+      "datum": "2026-11-01T16:24:27+01:00",
+      "rubrik": "Byråns arbetsyta och uppgifter",
+      "beskrivning": "En gemensam att göra-lista för alla företag, månadsstängning per klient och uppgifter som byrå och kund kan ge varandra.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "251dd4a"
+    },
+    {
+      "id": "2026-11-01-e15b01b",
+      "datum": "2026-11-01T16:09:06+01:00",
+      "rubrik": "Profilbilder ritas lokalt",
+      "beskrivning": "Standardbilden för en profil skapas i NONOX i stället för att hämtas från en annan tjänst.",
+      "typ": "Rättat",
+      "omrade": "Övrigt",
+      "version": "e15b01b"
+    },
+    {
+      "id": "2026-11-01-8ada26b",
+      "datum": "2026-11-01T16:07:37+01:00",
+      "rubrik": "Ny översikt med prognos",
+      "beskrivning": "Översikten visar nyckeltal, vad som väntar, de senaste verifikationerna och en prognos med diagram.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "8ada26b"
+    },
+    {
+      "id": "2026-11-01-996fc49",
+      "datum": "2026-11-01T15:59:16+01:00",
+      "rubrik": "Passkeys",
+      "beskrivning": "Den som kan se känsliga uppgifter loggar in med en passkey som andra steg efter e-postkoden.",
+      "typ": "Säkerhet",
+      "omrade": "Övrigt",
+      "version": "996fc49"
+    },
+    {
+      "id": "2026-11-01-7541f36",
+      "datum": "2026-11-01T15:57:57+01:00",
+      "rubrik": "Alla sidor fungerar i mobilen",
+      "beskrivning": "Varje sida i appen får plats på en telefonskärm utan att du behöver scrolla i sidled.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt",
+      "version": "7541f36"
+    },
+    {
+      "id": "2026-11-01-4a4e1a2",
+      "datum": "2026-11-01T15:49:00+01:00",
+      "rubrik": "Arkivera och överlåta företag",
+      "beskrivning": "Ägaren kan överlåta företaget till en annan medlem och arkivera det. Ett arkiverat företag kan bara läsas.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "4a4e1a2"
+    },
+    {
+      "id": "2026-11-01-ea43123",
+      "datum": "2026-11-01T15:48:56+01:00",
+      "rubrik": "Leverantörsfakturor i utländsk valuta",
+      "beskrivning": "Valuta, valutabelopp och kurs sparas på fakturan, och kursdifferensen bokförs när fakturan betalas.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer",
+      "version": "ea43123"
+    },
+    {
+      "id": "2026-11-01-5c58976",
+      "datum": "2026-11-01T15:48:38+01:00",
+      "rubrik": "Tidrapporter blir timlön",
+      "beskrivning": "Godkända tidrapporter betalas som timlön i lönekörningen. Tidrapporter från tidigare månader blir en fråga i nästa körning, och samma dag kan aldrig godkännas två gånger.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "5c58976"
+    },
+    {
+      "id": "2026-11-01-33bd3fa",
+      "datum": "2026-11-01T15:31:08+01:00",
+      "rubrik": "Kvittoläsaren bedömer inte köpet",
+      "beskrivning": "NONOX AI läser bara uppgifterna på kvittot. Bedömningen av köpet gör alltid en människa.",
+      "typ": "Rättat",
+      "omrade": "Lön",
+      "version": "33bd3fa"
+    },
+    {
+      "id": "2026-11-01-9863ce0",
+      "datum": "2026-11-01T15:16:38+01:00",
+      "rubrik": "Gallring i inkorgen",
+      "beskrivning": "Avvisad post gallras efter 7 dagar och ohanterad efter 90. Skräppost från okända avsändare sparas aldrig.",
+      "typ": "Förbättrat",
+      "omrade": "Bokföring",
+      "version": "9863ce0"
+    },
+    {
+      "id": "2026-11-01-f3e3a18",
+      "datum": "2026-11-01T13:48:48+01:00",
+      "rubrik": "Källkoden publiceras öppet",
+      "beskrivning": "All källkod finns öppet under licensen AGPL-3.0, med en guide för den som vill bidra.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "f3e3a18"
+    },
+    {
+      "id": "2026-11-01-b2eaacc",
+      "datum": "2026-11-01T13:31:24+01:00",
+      "rubrik": "Härdad inkorg",
+      "beskrivning": "E-postservrar kontrolleras, bilder i e-fakturor genomsöks och filer visas i en skyddad miljö. Modulsidorna använder samma inloggning som resten av appen.",
+      "typ": "Säkerhet",
+      "omrade": "Bokföring",
+      "version": "b2eaacc"
+    },
+    {
+      "id": "2026-11-01-0c64346",
+      "datum": "2026-11-01T13:31:10+01:00",
+      "rubrik": "Betalfiler kräver godkännande",
+      "beskrivning": "En betalfil måste godkännas innan den kan laddas ned eller markeras som betald. NONOX hittar en befintlig leverantör i stället för att lägga till den igen.",
+      "typ": "Rättat",
+      "omrade": "Leverantörer",
+      "version": "0c64346"
+    },
+    {
+      "id": "2026-11-01-850607f",
+      "datum": "2026-11-01T13:30:56+01:00",
+      "rubrik": "Periodlås, belopp och export",
+      "beskrivning": "En verifikation kan inte längre hamna i en period som låses samtidigt. Belopp tolkas exakt, och export har en gräns per användare.",
+      "typ": "Säkerhet",
+      "omrade": "Bokföring",
+      "version": "850607f"
+    },
+    {
+      "id": "2026-11-01-e2b1e7f",
+      "datum": "2026-11-01T13:28:43+01:00",
+      "rubrik": "Radera konto och registerutdrag",
+      "beskrivning": "Personer i personalliggaren och avsändare till inkorgen kan få registerutdrag och få sina uppgifter raderade.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "e2b1e7f"
+    },
+    {
+      "id": "2026-11-01-26c274c",
+      "datum": "2026-11-01T13:26:14+01:00",
+      "rubrik": "Inbjudningar och e-postadresser",
+      "beskrivning": "Inbjudningar dras tillbaka när den som skickade dem tas bort, och e-postadresser jämförs utan hänsyn till stora och små bokstäver.",
+      "typ": "Rättat",
+      "omrade": "Övrigt",
+      "version": "26c274c"
+    },
+    {
+      "id": "2026-11-01-5ee3945",
+      "datum": "2026-11-01T13:20:26+01:00",
+      "rubrik": "Säkerhet och regelverk, öppet redovisat",
+      "beskrivning": "En publik sida visar den senaste granskningen med betyg per område och det som återstår.",
+      "typ": "Nytt",
+      "omrade": "Webbplats",
+      "version": "5ee3945"
+    },
+    {
+      "id": "2026-11-01-f0769e2",
+      "datum": "2026-11-01T13:04:54+01:00",
+      "rubrik": "Längre inloggningskoder och skärpt innehållspolicy",
+      "beskrivning": "Inloggningskoden har åtta siffror och webbläsaren får bara köra kod från NONOX egen server.",
+      "typ": "Säkerhet",
+      "omrade": "Övrigt",
+      "version": "f0769e2"
+    },
+    {
+      "id": "2026-11-01-09be86b",
+      "datum": "2026-11-01T12:57:47+01:00",
+      "rubrik": "Undermenyer i sidomenyn",
+      "beskrivning": "Den andra nivån av menyn ligger nu i sidomenyn, så du ser var du är och når allt med ett klick.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt",
+      "version": "09be86b"
+    },
+    {
+      "id": "2026-11-01-29a6724",
+      "datum": "2026-11-01T12:56:34+01:00",
+      "rubrik": "Inkorgen håller isär företagen",
+      "beskrivning": "Mejl kan inte hamna hos fel företag, förfalskade avsändare stoppas och gammal behörighet i öppna sidor gäller inte längre.",
+      "typ": "Säkerhet",
+      "omrade": "Bokföring",
+      "version": "29a6724"
+    },
+    {
+      "id": "2026-11-01-1395457",
+      "datum": "2026-11-01T12:46:27+01:00",
+      "rubrik": "Personnummer döljs i personalliggaren",
+      "beskrivning": "Personnummer visas bara när du väljer att visa dem och lämnas aldrig ut till en kiosk på enbart dess nyckel. Kiosker kan tas bort.",
+      "typ": "Säkerhet",
+      "omrade": "Personalliggare",
+      "version": "1395457"
+    },
+    {
+      "id": "2026-11-01-54e3e61",
+      "datum": "2026-11-01T12:24:44+01:00",
+      "rubrik": "Uppladdningar fungerar med krypterad lagring",
+      "beskrivning": "Tillfälliga filer vid uppladdning sparas på ett vanligt lagringsutrymme så att uppladdningen inte avbryts.",
+      "typ": "Rättat",
+      "omrade": "Övrigt",
+      "version": "54e3e61"
+    },
+    {
+      "id": "2026-11-01-21118d5",
+      "datum": "2026-11-01T12:18:56+01:00",
+      "rubrik": "Stabilare kiosk",
+      "beskrivning": "Kiosken godtar en PIN som ändrats sedan den senaste hämtningen, hela knappsatsen får plats på skärmen och en utcheckning sparas tills den har skickats.",
+      "typ": "Rättat",
+      "omrade": "Personalliggare",
+      "version": "21118d5"
+    },
+    {
+      "id": "2026-11-01-c949644",
+      "datum": "2026-11-01T03:45:06+01:00",
+      "rubrik": "Kiosken ansluter igen utan krångel",
+      "beskrivning": "En kiosk som redan är kopplad frågar aldrig efter en ny kod, och en spärrad kiosk ber om den nya.",
+      "typ": "Rättat",
+      "omrade": "Personalliggare",
+      "version": "c949644"
+    },
+    {
+      "id": "2026-11-01-2f5c68e",
+      "datum": "2026-11-01T03:35:15+01:00",
+      "rubrik": "PDF och bilder visas i appen igen",
+      "beskrivning": "Säkerhetsinställningarna blockerade förhandsvisningen av underlag. Nu får appens egna sidor visa dem.",
+      "typ": "Rättat",
+      "omrade": "Övrigt",
+      "version": "2f5c68e"
+    },
+    {
+      "id": "2026-11-01-3498530",
+      "datum": "2026-11-01T03:26:14+01:00",
+      "rubrik": "Leverantörsfakturor i utländsk valuta från inkorgen",
+      "beskrivning": "Inkorgen känner igen fakturor i andra valutor och för över valutan till leverantörsfakturan.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer",
+      "version": "3498530"
+    },
+    {
+      "id": "2026-11-01-1e0efd4",
+      "datum": "2026-11-01T03:04:02+01:00",
+      "rubrik": "Dagsrapporter som PDF i inkorgen",
+      "beskrivning": "Dagsrapporter från kassan läses direkt ur PDF-filens text. Inkommande mejl kan läsas igen eller raderas så länge de inte blivit bokföring.",
+      "typ": "Förbättrat",
+      "omrade": "Bokföring",
+      "version": "1e0efd4"
+    },
+    {
+      "id": "2026-11-01-e9ac43c",
+      "datum": "2026-11-01T02:37:55+01:00",
+      "rubrik": "Personalliggare och inkorg på webbplatsen",
+      "beskrivning": "Startsidan och jämförelsen visar att personalliggaren och inkorgen finns, med kortare texter om modulerna.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats",
+      "version": "e9ac43c"
+    },
+    {
+      "id": "2026-10-31-d990426",
+      "datum": "2026-10-31T15:49:22+01:00",
+      "rubrik": "Inkorg för underlag",
+      "beskrivning": "Varje företag får en egen e-postadress. Fakturor, kvitton och dagsrapporter som skickas dit blir förslag till bokföring som du godkänner.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "d990426"
+    },
+    {
+      "id": "2026-10-31-37636a3",
+      "datum": "2026-10-31T15:48:31+01:00",
+      "rubrik": "Personalliggare",
+      "beskrivning": "En elektronisk personalliggare med kiosk som fungerar utan internet, personlig QR-kod och en liggare som inte kan ändras i efterhand. Kontrollbesök kan exporteras och tiden kan bli förslag till tidrapport.",
+      "typ": "Nytt",
+      "omrade": "Personalliggare",
+      "version": "37636a3"
+    },
+    {
+      "id": "2026-10-31-ef7a9bb",
+      "datum": "2026-10-31T14:26:47+01:00",
+      "rubrik": "Dataskydd enligt GDPR",
+      "beskrivning": "Registerutdrag, radering och begränsad behandling, gallring när lagringstiden gått ut och dokumentation av behandlingen. Inbjudningar slutar gälla efter en tid.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "ef7a9bb"
+    },
+    {
+      "id": "2026-10-31-2520dd1",
+      "datum": "2026-10-31T14:19:35+01:00",
+      "rubrik": "Versionsnummer och öppen beta",
+      "beskrivning": "Varje sida visar vilken version av NONOX som körs, och startsidan berättar att NONOX är i öppen beta.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "2520dd1"
+    },
+    {
+      "id": "2026-10-31-cd46eb5",
+      "datum": "2026-10-31T13:49:37+01:00",
+      "rubrik": "Cookie-rutan går att stänga på alla sidor",
+      "beskrivning": "Rutan om cookies stängs nu även på sidor utan webbplatsens vanliga stilmall.",
+      "typ": "Rättat",
+      "omrade": "Webbplats",
+      "version": "cd46eb5"
+    },
+    {
+      "id": "2026-10-31-4a553e1",
+      "datum": "2026-10-31T13:45:32+01:00",
+      "rubrik": "Krypterade filer",
+      "beskrivning": "Underlag och andra privata filer sparas krypterade.",
+      "typ": "Säkerhet",
+      "omrade": "Övrigt",
+      "version": "4a553e1"
+    },
+    {
+      "id": "2026-10-31-9e986f4",
+      "datum": "2026-10-31T13:25:12+01:00",
+      "rubrik": "Säkerhetsgranskning: företag, inloggning och lönedata",
+      "beskrivning": "Varje sida är bunden till det företag den visades för. Inloggning, sessioner och svarshuvuden är härdade, och hälsouppgifter, bankkonton och personaluppgifter i lönen skyddas extra.",
+      "typ": "Säkerhet",
+      "omrade": "Övrigt",
+      "version": "9e986f4"
+    },
+    {
+      "id": "2026-10-31-579124c",
+      "datum": "2026-10-31T12:51:36+01:00",
+      "rubrik": "Integritetspolicy, villkor och cookies",
+      "beskrivning": "Integritetspolicy, villkor, personuppgiftsbiträdesavtal och lista över underbiträden. Cookies bara efter samtycke och typsnitt från vår egen server.",
+      "typ": "Nytt",
+      "omrade": "Webbplats",
+      "version": "579124c"
+    },
+    {
+      "id": "2026-10-31-d7a6154",
+      "datum": "2026-10-31T12:39:47+01:00",
+      "rubrik": "Hjälp när en SIE-fil hör till ett annat företag",
+      "beskrivning": "NONOX säger till om organisationsnumret i en SIE-fil inte stämmer med företaget du läser in den i.",
+      "typ": "Förbättrat",
+      "omrade": "Bokföring",
+      "version": "d7a6154"
+    },
+    {
+      "id": "2026-10-31-826092f",
+      "datum": "2026-10-31T12:35:56+01:00",
+      "rubrik": "Flytta hit via det gamla programmets API",
+      "beskrivning": "Hämta bokföringen år för år, register, underlag och obetalda fakturor direkt från det gamla programmet. Allt stäms av innan flytten räknas som klar.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "826092f"
+    },
+    {
+      "id": "2026-10-31-46e975f",
+      "datum": "2026-10-31T12:27:39+01:00",
+      "rubrik": "Flyttguide, jämförelse och priser",
+      "beskrivning": "En flyttguide steg för steg, priser per år och en jämförelse med andra program, funktion för funktion. Funktionerna beskrivs som de är i dag.",
+      "typ": "Nytt",
+      "omrade": "Webbplats",
+      "version": "46e975f"
+    },
+    {
+      "id": "2026-10-31-f9a2bf8",
+      "datum": "2026-10-31T11:32:50+01:00",
+      "rubrik": "Den publika webbplatsen",
+      "beskrivning": "En startsida för den som inte är inloggad, med meny, funktioner och priser. Det som inte är klart är märkt som på väg.",
+      "typ": "Nytt",
+      "omrade": "Webbplats",
+      "version": "f9a2bf8"
+    },
+    {
+      "id": "2026-10-31-a16236b",
+      "datum": "2026-10-31T10:28:12+01:00",
+      "rubrik": "EU-moms: periodisk sammanställning, OSS och VIES",
+      "beskrivning": "Periodisk sammanställning med fil, OSS för försäljning till privatpersoner i andra EU-länder, kontroll av momsregistreringsnummer och trepartshandel.",
+      "typ": "Nytt",
+      "omrade": "Moms",
+      "version": "a16236b"
+    },
+    {
+      "id": "2026-10-31-c0f418d",
+      "datum": "2026-10-31T09:54:52+01:00",
+      "rubrik": "Försäljning till andra EU-länder och export",
+      "beskrivning": "Fakturor till kunder i andra EU-länder och utanför EU får rätt konton, momsrutor och fakturatexter.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "c0f418d"
+    },
+    {
+      "id": "2026-10-31-0ea1a7f",
+      "datum": "2026-10-31T02:00:23+01:00",
+      "rubrik": "Resultat per projekt och kostnadsställe",
+      "beskrivning": "Se intäkter, kostnader och resultat för varje projekt och kostnadsställe.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "0ea1a7f"
+    },
+    {
+      "id": "2026-10-31-5a56c48",
+      "datum": "2026-10-31T01:57:24+01:00",
+      "rubrik": "ROT- och RUT-avdrag",
+      "beskrivning": "Fakturor med ROT- eller RUT-avdrag delar upp fordran mellan kunden och Skatteverket och bokför Skatteverkets betalning.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "5a56c48"
+    },
+    {
+      "id": "2026-10-31-e7081f2",
+      "datum": "2026-10-31T01:51:07+01:00",
+      "rubrik": "Omvänd betalningsskyldighet för byggtjänster",
+      "beskrivning": "Fakturor för byggtjänster får rätt text, konto och momsruta när köparen ska redovisa momsen.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "e7081f2"
+    },
+    {
+      "id": "2026-10-31-56aa62f",
+      "datum": "2026-10-31T01:45:42+01:00",
+      "rubrik": "Inkomstdeklaration 2 som SRU-fil",
+      "beskrivning": "Siffrorna till aktiebolagets inkomstdeklaration hämtas ur bokföringen och sparas som filer att lämna till Skatteverket.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "56aa62f"
+    },
+    {
+      "id": "2026-10-31-97449a4",
+      "datum": "2026-10-31T01:37:45+01:00",
+      "rubrik": "Årsredovisning enligt K2",
+      "beskrivning": "Årsredovisningen tas fram ur bokföringen, som sida och som PDF.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "97449a4"
+    },
+    {
+      "id": "2026-10-31-aae63b8",
+      "datum": "2026-10-31T01:28:43+01:00",
+      "rubrik": "Bokslut steg för steg",
+      "beskrivning": "En checklista för bokslutet, verifikationer för skatt och årets resultat, stängning av året och resultatdisposition.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "aae63b8"
+    },
+    {
+      "id": "2026-10-31-3c96af8",
+      "datum": "2026-10-31T01:17:22+01:00",
+      "rubrik": "Bankavstämning",
+      "beskrivning": "Stäm av varje bankkonto mot kontoutdraget. Poster som ännu inte nått banken följer med till nästa avstämning.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "3c96af8"
+    },
+    {
+      "id": "2026-10-31-91d3203",
+      "datum": "2026-10-31T00:33:55+01:00",
+      "rubrik": "Periodiseringar",
+      "beskrivning": "Förutbetalda och upplupna kostnader och intäkter fördelas månad för månad och återförs automatiskt.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "91d3203"
+    },
+    {
+      "id": "2026-10-30-9dc2692",
+      "datum": "2026-10-30T21:14:05+01:00",
+      "rubrik": "Nyckeltal på lönesidorna",
+      "beskrivning": "Varje sida i lönen visar de siffror som är viktigast just där.",
+      "typ": "Förbättrat",
+      "omrade": "Lön",
+      "version": "9dc2692"
+    },
+    {
+      "id": "2026-10-30-e254d1e",
+      "datum": "2026-10-30T21:10:48+01:00",
+      "rubrik": "Anläggningsregister",
+      "beskrivning": "Inventarier och andra anläggningstillgångar med avskrivningar enligt plan, avyttring och utrangering.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "e254d1e"
+    },
+    {
+      "id": "2026-10-30-dd1c2c7",
+      "datum": "2026-10-30T20:25:59+01:00",
+      "rubrik": "Nytt utseende",
+      "beskrivning": "En ny, lugn design med mörk sidomeny som följer företagets egen färg och använder hela skärmens bredd.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "dd1c2c7"
+    },
+    {
+      "id": "2026-10-30-34e61ad",
+      "datum": "2026-10-30T20:07:13+01:00",
+      "rubrik": "Mina företag för byråer och ägare med flera bolag",
+      "beskrivning": "En översikt över alla företag med vad som väntar, sista dag för moms och arbetsgivardeklaration och status månad för månad. Byrån kan sätta ansvarig konsult och anteckningar, och kunden ser vad byrån har gjort.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "34e61ad"
+    },
+    {
+      "id": "2026-10-30-1fa573e",
+      "datum": "2026-10-30T19:33:25+01:00",
+      "rubrik": "Arkivpaket per räkenskapsår",
+      "beskrivning": "Ett paket med SIE-fil, rapporter, underlag, fakturor och behandlingshistorik för varje räkenskapsår. Varje fil har en kontrollsumma och paketet går att läsa utan NONOX.",
+      "typ": "Nytt",
+      "omrade": "Bokslut",
+      "version": "1fa573e"
+    },
+    {
+      "id": "2026-10-30-2d01059",
+      "datum": "2026-10-30T19:08:16+01:00",
+      "rubrik": "Utlägg med bara kvittot",
+      "beskrivning": "Anställda skickar bara en bild på kvittot. NONOX AI läser uppgifterna och den som godkänner kontrollerar och rättar.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "2d01059"
+    },
+    {
+      "id": "2026-10-30-85e0842",
+      "datum": "2026-10-30T15:29:28+01:00",
+      "rubrik": "Lönerevision, slutlön, rapporter och flytt av lönedata",
+      "beskrivning": "Lönehistorik med retroaktiv lön, slutlön med underlag till arbetsgivarintyg, lönerapporter och årsskifte för lönen. Lönedata från ett tidigare system kan flyttas in och allt sparas i ett lönearkiv.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "85e0842"
+    },
+    {
+      "id": "2026-10-30-3a7ce50",
+      "datum": "2026-10-30T14:53:57+01:00",
+      "rubrik": "Arbetsgivardeklaration (AGI)",
+      "beskrivning": "Arbetsgivardeklarationen tas fram per utbetalningsmånad, med uppgifter för varje anställd.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "3a7ce50"
+    },
+    {
+      "id": "2026-10-30-399bc20",
+      "datum": "2026-10-30T14:38:21+01:00",
+      "rubrik": "Lönefil och skattekontot",
+      "beskrivning": "Lönerna betalas med en fil till banken och skatten och avgifterna bokförs mot skattekontot.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "399bc20"
+    },
+    {
+      "id": "2026-10-30-abb0742",
+      "datum": "2026-10-30T14:31:59+01:00",
+      "rubrik": "Förmåner, traktamente, pension och utlägg",
+      "beskrivning": "Förmåner, skattefria ersättningar och pension i lönen. Anställda skickar in utlägg med kvitto från Min sida.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "abb0742"
+    },
+    {
+      "id": "2026-10-30-b6069b4",
+      "datum": "2026-10-30T14:18:34+01:00",
+      "rubrik": "Semester enligt semesterlagen",
+      "beskrivning": "Intjänande och uttag av semester, sparade dagar, semesterskuld som bokförs varje månad och semesterårets slut. Deltidsanställdas semesterdagar räknas rätt och du väljer hur semesterersättning beskattas.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "b6069b4"
+    },
+    {
+      "id": "2026-10-30-132cfc3",
+      "datum": "2026-10-30T14:13:46+01:00",
+      "rubrik": "Min sida fungerar för alla anställda",
+      "beskrivning": "Företagets logga syns på Min sida och alla knappar svarar som de ska.",
+      "typ": "Rättat",
+      "omrade": "Lön",
+      "version": "132cfc3"
+    },
+    {
+      "id": "2026-10-30-0268345",
+      "datum": "2026-10-30T14:01:54+01:00",
+      "rubrik": "NONOX AI läser dina underlag",
+      "beskrivning": "Ladda upp ett kvitto eller en faktura så föreslår NONOX AI hur den ska bokföras, och en obetald leverantörsfaktura lämnas över till leverantörsfakturorna. Du använder företagets egen nyckel hos den AI-leverantör du väljer, och du godkänner alltid själv.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "0268345"
+    },
+    {
+      "id": "2026-10-30-b695173",
+      "datum": "2026-10-30T12:45:16+01:00",
+      "rubrik": "Sjukanmälan och semesteransökan från Min sida",
+      "beskrivning": "Anställda anmäler sjukdom och söker semester själva. Den som ansvarar för lönen godkänner.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "b695173"
+    },
+    {
+      "id": "2026-10-30-47e7017",
+      "datum": "2026-10-30T11:55:33+01:00",
+      "rubrik": "Logga och företagets eget utseende",
+      "beskrivning": "NONOX får sin logga i appen, och fakturor och andra dokument visar företagets egen logga.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "47e7017"
+    },
+    {
+      "id": "2026-10-30-d3d2ea3",
+      "datum": "2026-10-30T11:18:33+01:00",
+      "rubrik": "Lönebesked och Min sida",
+      "beskrivning": "Lönebeskedet finns som PDF med en förhandsvisning innan lönen attesteras. Reglerna visas så att de går att läsa, och de anställda får en egen sida.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "d3d2ea3"
+    },
+    {
+      "id": "2026-10-30-55b4223",
+      "datum": "2026-10-30T11:13:44+01:00",
+      "rubrik": "Tydligare besked när en lönekörning stoppas",
+      "beskrivning": "Alla regler som inte är kontrollerade listas med namn, och det framgår var du ändrar inställningen för attest. Frånvaro måste ligga inom lönekörningens månad.",
+      "typ": "Rättat",
+      "omrade": "Lön",
+      "version": "55b4223"
+    },
+    {
+      "id": "2026-10-30-90148e4",
+      "datum": "2026-10-30T11:07:08+01:00",
+      "rubrik": "Inbjudan till Min sida",
+      "beskrivning": "Anställda bjuds in till Min sida via e-post och behöver inte fylla i sitt namn igen.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "90148e4"
+    },
+    {
+      "id": "2026-10-30-202ecf1",
+      "datum": "2026-10-30T10:27:58+01:00",
+      "rubrik": "Skattetabeller och skatteavdrag",
+      "beskrivning": "Skatteverkets skattetabeller, skatt på engångsbelopp och särskild inkomstskatt för den som bor utomlands, med Skatteverkets avrundning.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "202ecf1"
+    },
+    {
+      "id": "2026-10-30-39b9a4c",
+      "datum": "2026-10-30T10:26:03+01:00",
+      "rubrik": "Kontroll av regler per företag och lön för delar av månader",
+      "beskrivning": "Reglerna kan kontrolleras direkt i appen för varje företag, och en anställning som börjar eller slutar mitt i månaden räknas på arbetsdagar.",
+      "typ": "Förbättrat",
+      "omrade": "Lön",
+      "version": "39b9a4c"
+    },
+    {
+      "id": "2026-10-30-91dd14f",
+      "datum": "2026-10-30T10:16:44+01:00",
+      "rubrik": "Lönekörningar från utkast till bokföring",
+      "beskrivning": "En lönekörning går från utkast till attest. När lönen är betald bokförs den på en egen verifikation.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "91dd14f"
+    },
+    {
+      "id": "2026-10-30-21a2535",
+      "datum": "2026-10-30T10:05:56+01:00",
+      "rubrik": "Löneberäkning med frånvaro och sjuklön",
+      "beskrivning": "Lönen räknas fram steg för steg med avdrag för frånvaro och sjuklön, och kontrolleras mot färdiga exempel på lönebesked.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "21a2535"
+    },
+    {
+      "id": "2026-10-30-7582405",
+      "datum": "2026-10-30T09:26:27+01:00",
+      "rubrik": "Lönemodulen tar form",
+      "beskrivning": "Anställda, lönearter och regler för löneåret. Varje regel och belopp har en källa och används först när någon har kontrollerat den.",
+      "typ": "Nytt",
+      "omrade": "Lön",
+      "version": "7582405"
+    },
+    {
+      "id": "2026-10-30-59cc143",
+      "datum": "2026-10-30T09:11:21+01:00",
+      "rubrik": "Moduler",
+      "beskrivning": "Delar som inte alla behöver, som lön, slås på och av per företag under fliken Moduler.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "59cc143"
+    },
+    {
+      "id": "2026-10-30-b695c96",
+      "datum": "2026-10-30T08:34:29+01:00",
+      "rubrik": "Betalfiler till banken",
+      "beskrivning": "Attesterade leverantörsfakturor blir en betalfil i standardformatet ISO 20022 som du laddar upp i banken. Filen finns anpassad för flera svenska banker.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer",
+      "version": "b695c96"
+    },
+    {
+      "id": "2026-10-30-ca9f06d",
+      "datum": "2026-10-30T08:20:52+01:00",
+      "rubrik": "Kreditnotor och omvänd moms på inköp",
+      "beskrivning": "Kreditnotor från leverantörer och inköp där du som köpare redovisar momsen bokförs med rätt konton och momsrutor.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer",
+      "version": "ca9f06d"
+    },
+    {
+      "id": "2026-10-30-a5d2070",
+      "datum": "2026-10-30T08:12:47+01:00",
+      "rubrik": "Avtalsfakturering",
+      "beskrivning": "Återkommande fakturor skapas automatiskt efter avtalet, till exempel varje månad eller kvartal.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "a5d2070"
+    },
+    {
+      "id": "2026-10-30-cbed768",
+      "datum": "2026-10-30T08:02:34+01:00",
+      "rubrik": "Nyckeltal under varje flik",
+      "beskrivning": "Varje del av programmet visar de nyckeltal som hör till just den, och registren har en egen flik.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "cbed768"
+    },
+    {
+      "id": "2026-10-30-53c29eb",
+      "datum": "2026-10-30T07:59:34+01:00",
+      "rubrik": "Läs in inbetalningar från banken",
+      "beskrivning": "Bankens fil med inbetalningar läses in och NONOX föreslår vilken faktura varje betalning hör till efter OCR-numret.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "53c29eb"
+    },
+    {
+      "id": "2026-10-30-090ff3f",
+      "datum": "2026-10-30T07:43:26+01:00",
+      "rubrik": "Leverantörer och leverantörsfakturor",
+      "beskrivning": "Leverantörsregister och leverantörsfakturor med underlag, attest och betalningar, bokförda i egna serier.",
+      "typ": "Nytt",
+      "omrade": "Leverantörer",
+      "version": "090ff3f"
+    },
+    {
+      "id": "2026-10-30-6e030b8",
+      "datum": "2026-10-30T07:28:51+01:00",
+      "rubrik": "Dölj guiden Kom igång",
+      "beskrivning": "Panelen som hjälper dig komma igång på översikten går att dölja och ta fram igen.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt",
+      "version": "6e030b8"
+    },
+    {
+      "id": "2026-10-29-09b11ec",
+      "datum": "2026-10-29T18:32:40+01:00",
+      "rubrik": "Fakturaraderna räknar rätt direkt",
+      "beskrivning": "Summan uppdateras när du lämnar ett fält och varje rad visar sitt belopp. Påminnelser finns nu också, och betalningsformuläret är lättare att läsa.",
+      "typ": "Rättat",
+      "omrade": "Fakturering",
+      "version": "09b11ec"
+    },
+    {
+      "id": "2026-10-29-33bb8e5",
+      "datum": "2026-10-29T18:15:55+01:00",
+      "rubrik": "Offerter och order",
+      "beskrivning": "Skriv en offert, gör om den till en order och sedan till en faktura utan att skriva något två gånger.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "33bb8e5"
+    },
+    {
+      "id": "2026-10-29-56cf6df",
+      "datum": "2026-10-29T18:08:37+01:00",
+      "rubrik": "Kunder, artiklar och kundfakturor",
+      "beskrivning": "Kundregister, artiklar och kundfakturor med OCR-nummer och PDF. Betalningar och kreditfakturor bokförs automatiskt.",
+      "typ": "Nytt",
+      "omrade": "Fakturering",
+      "version": "56cf6df"
+    },
+    {
+      "id": "2026-10-29-623d435",
+      "datum": "2026-10-29T17:54:10+01:00",
+      "rubrik": "Bokföringens kärna",
+      "beskrivning": "Företag, BAS-kontoplan, räkenskapsår och verifikationsserier. Verifikationer bokförs med obruten numrering, kan aldrig ändras i efterhand och rättas med en ny verifikation. Rapporter, SIE4 in och ut, kostnadsställen, projekt, momsrapport och årsskifte finns från start.",
+      "typ": "Nytt",
+      "omrade": "Bokföring",
+      "version": "623d435"
+    },
+    {
+      "id": "2026-01-11-e70d9c8",
+      "datum": "2026-01-11T01:20:44+01:00",
+      "rubrik": "Projektet startar",
+      "beskrivning": "Den första grunden läggs: en kravbild för ett svenskt ekonomisystem med öppen källkod och ett första skelett med företag, konton och exempeldata.",
+      "typ": "Nytt",
+      "omrade": "Övrigt",
+      "version": "e70d9c8"
+    }
+  ]
+}

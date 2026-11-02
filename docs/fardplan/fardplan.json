@@ -1,0 +1,144 @@
+{
+  "punkter": [
+    {
+      "id": "juristgranskning",
+      "rubrik": "Juristgranskning av regelverket",
+      "beskrivning": "Bokföring, moms, fakturering, bokslut och lön har gåtts igenom mot lagtexten med AI och en oberoende andra kontroll. Nu granskar en jurist slutsatserna.",
+      "status": "Pågår",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-02",
+      "kommentar": "Avvikelserna rättas en i taget och syns i ändringsloggen när de är klara."
+    },
+    {
+      "id": "loneaar-2027",
+      "rubrik": "Löneåret 2027",
+      "beskrivning": "Reglerna för 2027 finns redan som data. Varje värde kontrolleras mot källan när Skatteverket och andra myndigheter har publicerat det.",
+      "status": "Pågår",
+      "omrade": "Lön",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "peppol-accesspunkt",
+      "rubrik": "Skicka e-faktura via Peppol",
+      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-accesspunkt, så att kunden får fakturan direkt i sitt eget system.",
+      "status": "Planerat",
+      "omrade": "Fakturering",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "kassa-och-ehandel",
+      "rubrik": "Färdiga kopplingar till kassasystem och e-handel",
+      "beskrivning": "Försäljningen från kassan och webbutiken kommer in i bokföringen av sig själv, direkt eller via de integrationsplattformar som programmen redan använder.",
+      "status": "Planerat",
+      "omrade": "Connect/API",
+      "uppdaterad": "2026-11-02",
+      "kommentar": "API:t och webhooks finns redan. Kopplingarna byggs mot dem."
+    },
+    {
+      "id": "skatteverket-direkt",
+      "rubrik": "Direktkoppling till Skatteverket",
+      "beskrivning": "Lämna momsdeklaration och arbetsgivardeklaration och läs av skattekontot direkt från NONOX, utan att ladda upp filer.",
+      "status": "Planerat",
+      "omrade": "Moms",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "ixbrl",
+      "rubrik": "Digital inlämning av årsredovisningen",
+      "beskrivning": "Skicka årsredovisningen digitalt till Bolagsverket i det format de tar emot (iXBRL).",
+      "status": "Planerat",
+      "omrade": "Bokslut",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "bankkoppling-i-drift",
+      "rubrik": "Bankkoppling i drift",
+      "beskrivning": "Bankkopplingen med BankID finns redan för den som kör NONOX själv. I den tjänst vi driftar slås den på när de juridiska frågorna är besvarade.",
+      "status": "Planerat",
+      "omrade": "Bank",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "import-utanfor-eu",
+      "rubrik": "Import av varor från länder utanför EU",
+      "beskrivning": "Bokför import av varor med tull och importmoms rätt, från fakturan till momsdeklarationen.",
+      "status": "Planerat",
+      "omrade": "Moms",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "ink4-ne",
+      "rubrik": "Deklaration för handelsbolag och enskild firma",
+      "beskrivning": "Inkomstdeklaration 4 för handelsbolag och NE-bilagan för enskild näringsidkare, med siffrorna hämtade ur bokföringen.",
+      "status": "Planerat",
+      "omrade": "Bokslut",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "lonegrupp-ai",
+      "rubrik": "Riskbedömning av AI-förslag om lönegrupp",
+      "beskrivning": "NONOX AI kan föreslå vilken lönegrupp en anställd hör till. Innan förslaget används bedömer vi om det räknas som hög risk enligt EU:s AI-förordning.",
+      "status": "Planerat",
+      "omrade": "Avtal",
+      "uppdaterad": "2026-11-02",
+      "kommentar": "Förslaget används inte förrän bedömningen är gjord."
+    },
+    {
+      "id": "betalfiler-valuta",
+      "rubrik": "Betalfiler i utländsk valuta",
+      "beskrivning": "Betala leverantörsfakturor i andra valutor med samma betalfil som i dag.",
+      "status": "Planerat",
+      "omrade": "Leverantörer",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "docker",
+      "rubrik": "Färdigt Docker-paket",
+      "beskrivning": "Kör NONOX på egen server med ett färdigt paket, utan att installera PHP och databasen för hand.",
+      "status": "Planerat",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "datorprogram",
+      "rubrik": "Program för Windows, Mac och Linux",
+      "beskrivning": "Kör NONOX lokalt på datorn som ett vanligt program.",
+      "status": "Planerat",
+      "omrade": "Övrigt",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "bilforman",
+      "rubrik": "Bilförmån räknas ut automatiskt",
+      "beskrivning": "Ange bilens nybilspris och övriga uppgifter, så räknar NONOX ut förmånsvärdet i stället för att du skriver in det själv.",
+      "status": "Planerat",
+      "omrade": "Lön",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "varning-livsmedelsmoms",
+      "rubrik": "Varning vid tillfälligt ändrad livsmedelsmoms",
+      "beskrivning": "NONOX säger till när en momssats på livsmedel gäller bara under en viss tid, så att fakturor och kassarapporter får rätt moms före och efter.",
+      "status": "Planerat",
+      "omrade": "Moms",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "varning-ingaende-balanser",
+      "rubrik": "Varning när ingående balanser blivit inaktuella",
+      "beskrivning": "Bokför du något i förra året efter att det nya året öppnats, påminner NONOX om att föra över de nya saldona.",
+      "status": "Planerat",
+      "omrade": "Bokföring",
+      "uppdaterad": "2026-11-02"
+    },
+    {
+      "id": "wallet-pass",
+      "rubrik": "Personalliggarens QR-kod i mobilens plånbok",
+      "beskrivning": "Spara den personliga QR-koden för incheckning i mobilens plånbok, så att den alltid finns till hands.",
+      "status": "Önskemål",
+      "omrade": "Personalliggare",
+      "uppdaterad": "2026-11-02",
+      "kommentar": "Vi har inte bestämt oss ännu."
+    }
+  ]
+}

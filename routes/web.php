@@ -12,6 +12,7 @@ use App\Http\Controllers\Accounting\VoucherController;
 use App\Http\Controllers\Accounting\VoucherSeriesController;
 use App\Http\Controllers\AlternativeController;
 use App\Http\Controllers\Auth\LogoutController;
+use App\Http\Controllers\ChangelogController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyInvitationController;
 use App\Http\Controllers\CompanyLogoController;
@@ -30,6 +31,7 @@ use App\Http\Controllers\MigrationGuideController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
+use App\Http\Controllers\RoadmapController;
 use App\Http\Controllers\Search\RecentItemController;
 use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\SecurityPageController;
@@ -60,6 +62,10 @@ Route::get('/egen-drift', LegalPageController::class)->defaults('document', 'sel
 Route::get('/tillganglighet', LegalPageController::class)->defaults('document', 'accessibility')->name('legal.accessibility');
 Route::get('/sakerhet', SecurityPageController::class)->name('security');
 Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->name('cookies');
+// What has shipped and what is coming, for people who never open the code repository. The feed keeps the .xml ending feed readers expect.
+Route::get('/andringslogg', [ChangelogController::class, 'index'])->name('changelog');
+Route::get('/andringslogg/rss.xml', [ChangelogController::class, 'feed'])->name('changelog.feed');
+Route::get('/fardplan', RoadmapController::class)->name('roadmap');
 Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');
 Route::get('/branscher', [IndustryController::class, 'index'])->name('industries');
 Route::get('/{industry}', [IndustryController::class, 'show'])->where('industry', implode('|', array_map(fn (string $slug): string => preg_quote($slug, '#'), Industries::slugs())))->name('industry');
