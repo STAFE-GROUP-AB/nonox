@@ -10,6 +10,8 @@ sokord: [QR-kod, QR-kort, mobil incheckning, checka in med mobilen, platskontrol
 
 Förutom namn och kod på kiosken finns två sätt att checka in: med ett personligt QR-kort som kioskens kamera läser, och i personens egen mobil när den är nära lokalen. Du väljer per lokal vilka sätt som gäller, under **Personalliggare → Lokaler och kiosker**.
 
+![Personalen med kod, QR-kort och foto för kiosken.](/bilder/manual/personalliggare/lagg-till-personal.webp)
+
 ## QR-kort
 
 QR-kortet är snabbast: personen trycker på **Skanna QR-kod** på kiosken och håller upp kortet. Ingen kod behöver skrivas.

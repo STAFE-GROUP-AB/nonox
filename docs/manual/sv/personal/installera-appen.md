@@ -8,6 +8,8 @@ sokord: [app, ladda ner app, installera, hemskärmen, iPhone, Android, genväg, 
 
 Min sida finns inte i App Store eller Google Play. Du lägger den på hemskärmen direkt från webbläsaren. Då får den en egen ikon, öppnas i helskärm och startar på Min sida.
 
+![Min sida som app på hemskärmen.](/bilder/manual/personal/min-sida.webp)
+
 ## Så här gör du på iPhone
 
 1. Öppna Min sida i **Safari** och logga in.

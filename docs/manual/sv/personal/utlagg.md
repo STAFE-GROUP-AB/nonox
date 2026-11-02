@@ -8,6 +8,8 @@ sokord: [utlägg, kvitto, ersättning, fota kvitto, betalat själv, tillbaka med
 
 Ett utlägg är när du har betalat något åt jobbet med dina egna pengar, till exempel citroner till baren eller en parkering. Du skickar kvittot från Min sida. När din arbetsgivare har godkänt utlägget får du pengarna tillbaka med lönen.
 
+![Utlägg med status: väntar på svar, godkänt eller utbetalt.](/bilder/manual/personal/utlagg.webp)
+
 ## Så här gör du
 
 1. Logga in på [Min sida](/manual/personal/min-sida).

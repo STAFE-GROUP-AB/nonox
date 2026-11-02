@@ -18,6 +18,8 @@ Oavsett väg räknas timmarna gånger anställningens timlön, och raden beskatt
 
 Månadsavlönade påverkas inte av tidrapporter: deras timmar ingår i månadslönen.
 
+![Tidrapporter föreslagna från personalliggaren, godkända och väntande.](/bilder/manual/lon/timlon-och-tidrapporter.webp)
+
 ## Förutsättningen: timlön på anställningen
 
 Under **Lön → Anställda** ska personen ha **Lön per** satt till **Timme** och timlönen i **Lön, kronor**. Se [Anställda](/manual/lon/anstallda).

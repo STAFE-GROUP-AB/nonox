@@ -10,6 +10,8 @@ Du loggar in i NONOX med en kod i mejlet. En **passkey** gör inloggningen säkr
 
 En passkey sparas i din enhet, inte i NONOX. NONOX sparar bara en offentlig nyckel som inte kan användas för att logga in, och enhetens namn.
 
+![Passkeys och utloggning från andra enheter under din profil.](/bilder/manual/installningar/passkeys-och-inloggningar.webp)
+
 ## Vem måste ha en passkey
 
 - Den som kan se sjukfrånvaro, lönebesked eller fullständiga personnummer, i något av sina företag. Det följer av rollen; se [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter#passkey-for-kansliga-uppgifter).

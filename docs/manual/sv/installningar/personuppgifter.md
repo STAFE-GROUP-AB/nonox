@@ -8,6 +8,8 @@ sokord: [GDPR, dataskydd, personuppgifter, registerutdrag, radera, anonymisera, 
 
 Ditt företag har personuppgifter i NONOX: om kunder och leverantörer som är privatpersoner eller enskilda firmor, om anställda och om de personer som använder systemet. Dataskyddsförordningen (GDPR) ger de här personerna rätt att få ut sina uppgifter och i vissa fall få dem raderade. Samtidigt kräver bokföringslagen att räkenskapsinformation sparas. NONOX hjälper dig att göra båda.
 
+![Ladda ner mina uppgifter under din profil.](/bilder/manual/installningar/personuppgifter.webp)
+
 ## Det som inte kan raderas
 
 Räkenskapsinformation ska sparas i sju år efter utgången av det kalenderår då räkenskapsåret avslutades (bokföringslagen 7 kap.). Det gäller bland annat verifikationer, fakturor, underlag, lönebesked, arbetsgivardeklarationer och behandlingshistoriken. NONOX låter därför ingen radera sådant, varken du eller den registrerade.

@@ -11,6 +11,8 @@ Månadsstängningen visar hur långt varje klient har kommit med en månad. Det 
 
 Du hittar den under **Mina företag**, fliken **Månadsstängning**.
 
+![Månadsstängningen per klient: bank, leverantörsfakturor, kundfakturor, moms, lön och periodiseringar.](/bilder/manual/byra/manadsstangning.webp)
+
 ## Stegen
 
 | Steg | Klart när |

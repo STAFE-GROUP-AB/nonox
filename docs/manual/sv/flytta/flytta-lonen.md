@@ -15,6 +15,8 @@ Det görs under **Lön → Flytt av lönedata**, med en tom mall för varje steg
 > [!IMPORTANT]
 > Medan flytten pågår kan ingen lönekörning räknas. Läs också in bokföringen för året som SIE-fil först, eftersom lönedatan stäms av mot den.
 
+![Flytt av lönedata från ett annat lönesystem.](/bilder/manual/flytta/flytta-lonen.webp)
+
 ## Om filerna
 
 Filerna är semikolonseparerade CSV-filer med kolumnnamnen på första raden. Klicka på **Hämta mall** vid varje steg för att få en tom mall. Belopp skrivs i kronor, till exempel 32 000,00. En fil läses in bara när alla rader är rätt, och samma fil kan läsas in igen efter rättning.

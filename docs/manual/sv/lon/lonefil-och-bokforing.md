@@ -11,6 +11,8 @@ sokord: [lönefil, betalfil lön, pain.001, utbetalning lön, bokföra lön, lö
 
 När lönekörningen är attesterad återstår tre saker: betala ut nettolönerna, bokföra lönen och, när Skatteverket har dragit skatten och avgifterna, bokföra den dragningen. Allt görs från lönekörningens sida under **Lön → Lönekörningar**.
 
+![Lönekörningen med verifikationen i serie L och bokföringen mot skattekontot. Beloppen är demodata.](/bilder/manual/lon/lonekorning.webp)
+
 ## Innan du börjar: bankuppgifterna
 
 Lönefilen använder samma bankuppgifter som betalfilerna för leverantörsfakturor. Har du inte gjort det än: välj bank och fyll i IBAN och avtals-id under **Leverantörer → Betalningar**. Se [Betalfiler](/manual/leverantorer/betalfiler).

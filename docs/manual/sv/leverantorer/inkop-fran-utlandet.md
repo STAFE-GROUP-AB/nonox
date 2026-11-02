@@ -11,6 +11,8 @@ Ibland är det du som köpare, inte leverantören, som ska redovisa momsen. Det 
 
 NONOX gör det åt dig när du väljer rätt alternativ under **Vem redovisar momsen?** på fakturan.
 
+![Ett inköp av tjänster från ett företag i ett annat EU-land, där du själv redovisar momsen.](/bilder/manual/leverantorer/utlandsk-valuta.webp)
+
 ## Alternativen
 
 | Välj | Används för |

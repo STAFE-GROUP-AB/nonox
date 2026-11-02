@@ -8,6 +8,8 @@ sokord: [radera konto, ta bort konto, avsluta konto, säga upp, glömma mig, GDP
 
 Du kan radera ditt eget konto när som helst. Ditt namn, din e-postadress, dina inloggningar, dina passkeys och dina medlemskap i företag tas bort, och du kan inte logga in med kontot igen.
 
+![Radera mitt konto. En ägare måste först lämna över eller arkivera sina företag.](/bilder/manual/installningar/radera-ditt-konto.webp)
+
 ## Det här finns kvar
 
 Det du har bokfört, attesterat eller ändrat finns kvar i företagens bokföring och behandlingshistorik, eftersom bokföringslagen kräver att det sparas. Där står det då **Raderad användare** i stället för ditt namn.

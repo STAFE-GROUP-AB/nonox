@@ -11,6 +11,8 @@ När en period är klar – momsen är deklarerad, månaden är avstämd – lå
 
 I NONOX låser du bokföringen *till och med ett datum*. Allt på eller före datumet är låst, allt efter är öppet.
 
+![Under momsdeklarationen kan perioden låsas när momsen är bokförd.](/bilder/manual/bokforing/las-en-period.webp)
+
 ## Så här låser du en period
 
 Du låser från momsdeklarationen, där perioden redan är vald:

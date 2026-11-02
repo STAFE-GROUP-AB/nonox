@@ -10,6 +10,10 @@ sokord: [arbetsgivaravgift, sociala avgifter, ungdomsrabatt, sänkt arbetsgivara
 
 Utöver lönen betalar arbetsgivaren arbetsgivaravgifter till Skatteverket och, för många anställda, tjänstepension. Båda räknas automatiskt i lönekörningen och syns på lönebeskedet under **Arbetsgivaren betalar också**, så att den anställda ser vad lönen kostar totalt.
 
+![Pensionsrapporten med premie och särskild löneskatt. Beloppen är demodata.](/bilder/manual/lon/arbetsgivaravgifter-och-pension.webp)
+
+![Lönejournalen med bruttolön, skatt och arbetsgivaravgift per anställd. Beloppen är demodata.](/bilder/manual/lon/rapporter-och-lonearsskifte.webp)
+
 ## Arbetsgivaravgifter
 
 Arbetsgivaravgiften räknas på avgiftsunderlaget: kontant lön och förmåner. Skattefria ersättningar som traktamente och milersättning inom Skatteverkets belopp, och utlägg, ger ingen avgift.

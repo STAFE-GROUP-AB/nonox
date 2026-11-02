@@ -3,7 +3,11 @@
 // manual:screenshots`, which signs in the demo user and writes the plan:
 //
 //   { "chrome": "/path/to/chrome", "cookies": [{ name, value, url }],
-//     "shots": [{ "url", "file", "width", "height", "scale", "mobile", "selector", "expect", "forbid" }] }
+//     "shots": [{ "url", "file", "width", "height", "scale", "mobile", "selector", "clicks", "reveal", "expect", "forbid" }] }
+//
+// `clicks` are CSS selectors (or text=… for a button or link with exactly
+// that text) clicked in order before the shot, `reveal` one
+// scrolled to the top of the window.
 //
 // A shot is saved only when its page shows `expect`, the demo company's name,
 // and none of `forbid` (the local administrator's address, for one).
@@ -135,6 +139,55 @@ try {
             returnByValue: true,
         }, sessionId);
         const page = JSON.parse(result.value);
+
+        // Open a dialog, a tab or a menu first; each click waits for what it loads.
+        let clickFailed = null;
+
+        for (const selector of shot.clicks ?? []) {
+            const settled = networkIdle(sessionId, 500, 8_000);
+            const { result: clicked } = await send('Runtime.evaluate', {
+                expression: `JSON.stringify((() => { const wanted = ${JSON.stringify(selector)}; const nodes = wanted.startsWith('text=') ? [...document.querySelectorAll('button, a, [role=tab], summary, label')].filter((node) => node.textContent.trim() === wanted.slice(5)) : [...document.querySelectorAll(wanted)]; const el = nodes.find((node) => node.getClientRects().length > 0 && node.getBoundingClientRect().width > 0); if (!el) return null; el.scrollIntoView({ block: 'center' }); const b = el.getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; })())`,
+                returnByValue: true,
+            }, sessionId);
+            const point = JSON.parse(clicked.value);
+
+            // A real mouse click on the first visible match, as a person makes it: Alpine and Livewire see every event.
+            if (point) {
+                for (const type of ['mouseMoved', 'mousePressed', 'mouseReleased']) {
+                    await send('Input.dispatchMouseEvent', { type, x: point.x, y: point.y, button: 'left', clickCount: 1 }, sessionId);
+                }
+            }
+
+            if (!point) {
+                clickFailed = selector;
+                break;
+            }
+
+            await settled;
+            await sleep(400);
+        }
+
+        if (clickFailed) {
+            failures++;
+            console.log(`✗ ${shot.file}: nothing to click at ${clickFailed}`);
+
+            continue;
+        }
+
+        if (shot.reveal) {
+            await send('Runtime.evaluate', {
+                expression: `(() => { const wanted = ${JSON.stringify(shot.reveal)}; const el = wanted.startsWith('text=') ? [...document.querySelectorAll('h1, h2, h3, h4, legend, summary, p, span, div')].find((node) => node.childElementCount === 0 && node.textContent.trim() === wanted.slice(5) && node.getClientRects().length > 0) : document.querySelector(wanted); el?.scrollIntoView({ block: 'start' }); window.scrollBy(0, -24); })()`,
+            }, sessionId);
+            await sleep(300);
+        }
+
+        if (shot.selector) {
+            const { result: box } = await send('Runtime.evaluate', {
+                expression: `JSON.stringify((() => { const b = document.querySelector(${JSON.stringify(shot.selector)})?.getBoundingClientRect(); return b ? { x: b.x, y: b.y + window.scrollY, width: b.width, height: b.height } : null; })())`,
+                returnByValue: true,
+            }, sessionId);
+            page.clip = JSON.parse(box.value);
+        }
         const { result: text } = await send('Runtime.evaluate', { expression: 'document.body.innerText', returnByValue: true }, sessionId);
 
         // Only the demo company may be on the page: anything else means the app is reading other data.
@@ -147,7 +200,8 @@ try {
             continue;
         }
 
-        if (!text.value.includes(shot.expect)) {
+        // innerText follows text-transform, so a name set in capitals is compared without case.
+        if (!text.value.toLowerCase().includes(shot.expect.toLowerCase())) {
             failures++;
             console.log(`✗ ${shot.file}: "${shot.expect}" is not on the page; not saved. Page starts: ${text.value.slice(0, 160).replace(/\s+/g, " ")}`);
 

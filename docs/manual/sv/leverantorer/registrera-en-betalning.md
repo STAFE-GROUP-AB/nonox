@@ -11,6 +11,8 @@ Betalar du en leverantörsfaktura direkt i internetbanken – i stället för me
 
 Fakturan måste vara [attesterad](/manual/leverantorer/attest) först.
 
+![En betald leverantörsfaktura med betalningen och det som återstår att betala.](/bilder/manual/leverantorer/utlandsk-valuta.webp)
+
 ## Så här gör du
 
 1. Gå till **Inköp → Leverantörsfakturor** och välj **Att betala**.

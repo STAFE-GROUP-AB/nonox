@@ -15,6 +15,8 @@ Ett kollektivavtal är ett avtal mellan en arbetsgivarorganisation och ett fackf
 
 Avtalet bestämmer bland annat minimilöner per lönegrupp och ålder, OB-tillägg för kvällar, nätter och helger, övertidsersättning, semester, sjuklön och pension. Allt det som avtalet säger mer än lagen ska lönen följa.
 
+![Lönekörningen räknar OB och övertid enligt avtalet.](/bilder/manual/avtal/ob-och-overtid.webp)
+
 ## Vad Avtal gör i dag
 
 - **Avtalets värden som data med källa.** Minimilöner, OB- och övertidssatser, lönegrupper och avtalets dagtyper (till exempel storhelg) levereras som versionerad data. Varje värde har en källa: dokument och sida i parternas publicerade text. NONOX innehåller aldrig själva avtalstexten.

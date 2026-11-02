@@ -13,6 +13,8 @@ Under **Lön → Rapporter** finns rapporterna över de löner som har betalats 
 
 Överst på alla lönesidor visas dessutom nyckeltal för den som får se lönerna: månadens lönekostnad, nästa löneutbetalning, skatt och avgifter som ännu inte är bokförda mot skattekontot, arbetsgivardeklarationer att lämna, semesterlöneskulden och antal anställda.
 
+![Lönejournalen per lönekörning och anställd.](/bilder/manual/lon/rapporter-och-lonearsskifte.webp)
+
 ## Rapporterna
 
 | Rapport | Vad den visar |

@@ -8,6 +8,8 @@ sokord: [semester, ledighet, semesteransökan, ledig, semesterdagar, sparade dag
 
 Du ansöker om semester på Min sida. Din arbetsgivare godkänner eller svarar nej, och du ser svaret direkt i listan.
 
+![Ansök om semester på Min sida.](/bilder/manual/personal/min-sida.webp)
+
 ## Så här gör du
 
 1. Logga in på [Min sida](/manual/personal/min-sida).

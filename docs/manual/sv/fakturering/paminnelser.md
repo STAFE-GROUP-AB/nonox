@@ -9,6 +9,8 @@ sokord: [påminnelse, betalningspåminnelse, förfallen faktura, påminnelseavgi
 
 När en faktura har passerat förfallodagen utan att vara betald räknas den som **Förfallen**. Då kan du skicka en påminnelse till kunden direkt från fakturan.
 
+![Förfallna fakturor. Härifrån skickar du en påminnelse.](/bilder/manual/fakturering/paminnelser.webp)
+
 ## Så här skickar du en påminnelse
 
 1. Gå till **Försäljning → Fakturor** och välj filtret **Förfallna**.

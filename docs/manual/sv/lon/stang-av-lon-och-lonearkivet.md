@@ -11,6 +11,8 @@ sokord: [stänga av lön, avaktivera lön, lönearkiv, gamla lönebesked, sluta 
 
 Har företaget inte längre några anställda kan ni stänga av lönemodulen. Ingenting tas bort: lönekörningar, lönebesked, arbetsgivardeklarationer och rapporter finns kvar i **Lönearkivet** så länge bokföringslagen kräver det, och lönens verifikationer finns kvar i bokföringen som vanligt.
 
+![En lönekörning som är beräknad och väntar på attest.](/bilder/manual/lon/lonekorning-pagaende.webp)
+
 ## Det här hindrar att modulen stängs av
 
 Modulen kan inte stängas av så länge något är halvfärdigt:

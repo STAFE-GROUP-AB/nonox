@@ -96,7 +96,7 @@ final class DemoCompanyBuilder
      * @param  list<Company>  $clients  for a firm: the companies it invoices
      * @param  Closure(string, string): void  $warn  level and message
      */
-    public function build(User $user, array $demo, array $clients, Closure $warn): Company
+    public function build(string $slug, User $user, array $demo, array $clients, Closure $warn): Company
     {
         $this->user = $user;
         $this->warn = $warn;
@@ -123,7 +123,7 @@ final class DemoCompanyBuilder
             'accept_agreement' => true,
         ]);
 
-        CurrentCompany::run($this->company, function () use ($demo, $clients): void {
+        CurrentCompany::run($this->company, function () use ($slug, $demo, $clients): void {
             mt_srand((int) crc32($demo['name']));
 
             app(SetSupplierApprovalRule::class)($this->user, $this->company, false);
@@ -152,13 +152,43 @@ final class DemoCompanyBuilder
             $this->costs($demo, $start, $end);
             $this->salaries($demo, $start, $end);
             $this->vat($fiscalYear, $end);
+            $this->employees($demo, $start);
+
+            $context = $this->context($slug, $demo, $this->user, $this->company, fn (CarbonImmutable $date, int $order, Closure $event) => $this->on($date, $order, $event));
+
+            foreach (DemoExtra::for($slug) as $extra) {
+                $extra->schedule($context);
+            }
 
             $this->run($end);
-
-            $this->employees($demo, $start);
         });
 
         return $this->company;
+    }
+
+    /**
+     * The context a DemoExtra gets; without $schedule for afterAll().
+     *
+     * @param  Demo  $demo
+     * @param  (Closure(CarbonImmutable, int, Closure(): mixed): void)|null  $schedule
+     */
+    public function context(string $slug, array $demo, User $user, Company $company, ?Closure $schedule = null): DemoContext
+    {
+        $fiscalYear = CurrentCompany::run($company, fn (): FiscalYear => FiscalYear::query()->orderBy('start_date')->firstOrFail());
+        $today = CarbonImmutable::today();
+
+        return new DemoContext(
+            slug: $slug,
+            demo: $demo,
+            user: $user,
+            company: $company,
+            fiscalYear: $fiscalYear,
+            start: CarbonImmutable::parse($fiscalYear->start_date->toDateString()),
+            end: min(CarbonImmutable::parse($fiscalYear->end_date->toDateString()), $today->subDay()),
+            today: $today,
+            warn: $this->warn,
+            schedule: $schedule,
+        );
     }
 
     /** Runs the events up to and including $end, in date order. */
@@ -175,7 +205,8 @@ final class DemoCompanyBuilder
             }
 
             try {
-                ($event['data'])();
+                // Each event in the company's own context: an Action that changes or forgets it cannot leak into the next.
+                CurrentCompany::run($this->company, $event['data']);
             } catch (ValidationException $exception) {
                 ($this->warn)('warn', "{$this->company->name}: ".collect($exception->errors())->flatten()->implode(' '));
             }
@@ -426,7 +457,8 @@ final class DemoCompanyBuilder
     /** @param  Demo  $demo */
     private function salaries(array $demo, CarbonImmutable $start, CarbonImmutable $end): void
     {
-        if ($demo['employees'] === []) {
+        // A company with payroll runs (Extras) books its salaries from them.
+        if ($demo['employees'] === [] || ($demo['payroll_runs'] ?? false)) {
             return;
         }
 

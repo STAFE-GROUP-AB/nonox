@@ -10,6 +10,8 @@ sokord: [dagsrapport, z-rapport, kassarapport, kassasystem, dagskassa, försälj
 
 Har du en butik, ett café eller en restaurang skickar kassasystemet en dagsrapport (Z-rapport) varje dag. Låt kassan mejla den till inkorgen, så blir den en färdig verifikation som du godkänner. Första gången kopplar du rapportens rader till konton; därefter känner NONOX igen rapporten och fyller i allt själv, utan AI.
 
+![En dagsrapport från kassan, tolkad med en sparad mall.](/bilder/manual/leverantorer/inkorgen.webp)
+
 ## Vad NONOX kan läsa
 
 - CSV-filer, oavsett avgränsare och decimaltecken,

@@ -13,6 +13,8 @@ Varje månad som företaget betalar ut lön lämnar det en arbetsgivardeklaratio
 
 Deklarationen gäller den månad lönen **betalas ut**, inte den månad den är intjänad. En lön för oktober som betalas ut den 25 oktober deklareras alltså för oktober.
 
+![Arbetsgivardeklarationerna per månad med skatt, avgifter och status. Beloppen är demodata.](/bilder/manual/lon/arbetsgivardeklaration.webp)
+
 ## Innan du börjar
 
 - Företagets organisationsnummer och telefonnummer måste vara ifyllda under **Företagsinställningar**. Skatteverket kräver ett telefonnummer till en kontaktperson.

@@ -8,6 +8,8 @@ sokord: [personuppgifter, GDPR, integritet, vem ser, sekretess, registerutdrag, 
 
 Det är din arbetsgivare som ansvarar för uppgifterna om dig i NONOX. Här är vad som finns och vem som kan se det.
 
+![Min sida är din startsida som anställd.](/bilder/manual/personal/min-sida.webp)
+
 ## På Min sida och i lönen
 
 Din arbetsgivare har bland annat ditt namn, personnummer, adress, kontonummer för lönen, din lön, dina lönebesked, din frånvaro och dina utlägg med kvitton.

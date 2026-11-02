@@ -12,6 +12,8 @@ Mycket av byråns arbete kommer tillbaka: moms varje månad, arbetsgivardeklarat
 
 Återkommande uppgifter läggs upp per företag. Byt till rätt företag först.
 
+![Återkommande uppgifter som skapas varje period.](/bilder/manual/byra/aterkommande-uppgifter.webp)
+
 ## Så här gör du
 
 1. Öppna kundens företag.

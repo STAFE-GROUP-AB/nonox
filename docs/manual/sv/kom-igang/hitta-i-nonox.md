@@ -8,6 +8,8 @@ sokord: [meny, navigering, hitta, var finns, sidomeny, menyval]
 
 Menyn ligger till vänster på datorn och bakom knappen **Meny** på telefonen. Den följer arbetets gång: det du säljer, det du köper, dina register, bokföringen och sedan det som tillhör moduler du har slagit på. När du klickar på en del öppnas dess sidor under den.
 
+![Sidomenyn till vänster och sökrutan överst finns på varje sida.](/bilder/manual/kom-igang/oversikten.webp)
+
 ## Högst upp: företaget
 
 Överst i menyn står namnet på företaget du arbetar i och dess organisationsnummer. Klickar du på det får du:

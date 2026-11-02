@@ -11,6 +11,8 @@ När allt är inläst jämför du några siffror med det gamla programmet. Stäm
 
 NONOX har redan jämfört varje konto med SIE-filen när den lästes in, och läser inte in något som inte stämmer. Avstämningen här kontrollerar att du har fått med **allt**: alla år, alla verifikationer och det som inte finns i SIE-filen.
 
+![Saldobalansen jämför du med saldobalansen i det gamla programmet.](/bilder/manual/rapporter/saldobalans.webp)
+
 ## Checklista
 
 ### 1. Saldobalansen för varje år

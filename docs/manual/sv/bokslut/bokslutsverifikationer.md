@@ -11,6 +11,8 @@ När allt annat i året är bokfört återstår två bokslutsverifikationer: år
 
 Bokför först allt annat, sedan skatten och sist årets resultat.
 
+![Under Bokslut bokför du skatt och årets resultat.](/bilder/manual/bokslut/checklistan.webp)
+
 ## Årets skatt
 
 Gäller aktiebolag, ekonomiska föreningar och andra företag som själva betalar inkomstskatt. För enskild firma, handelsbolag och kommanditbolag beskattas ägarna, och steget visas inte.

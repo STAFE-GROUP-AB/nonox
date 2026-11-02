@@ -9,6 +9,8 @@ sokord: [SIE4, SIE-fil, importera, Visma, Spiris, eEkonomi, Visma Administration
 
 Nästan alla svenska bokföringsprogram kan exportera **SIE typ 4**, det svenska standardformatet för bokföring. Med en SIE4-fil per räkenskapsår får du med kontoplanen, de ingående balanserna, alla verifikationer och kostnadsställen och projekt. Det är den vägen du flyttar från alla program utom Fortnox, där NONOX också kan hämta direkt; se [Från Fortnox](/manual/flytta/fran-fortnox).
 
+![Läs in SIE-fil: så tar du med bokföringen från ditt gamla program.](/bilder/manual/flytta/fran-andra-program.webp)
+
 ## Vad du exporterar
 
 Gör en SIE4-fil för **varje** räkenskapsår, även de som är stängda. Står det bara "SIE" utan typ, välj den som innehåller verifikationer (typ 4, ibland kallad 4E eller 4I). Spara också underlag, kundfakturor som PDF, registren och listan över obetalda fakturor; se [Planera flytten](/manual/flytta/planera-flytten#ta-ut-allt-ur-det-gamla-programmet).

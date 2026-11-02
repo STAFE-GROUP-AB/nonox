@@ -12,6 +12,8 @@ När företagets avtal är valt anger du för varje anställning vilket avtal de
 
 Tabellen visar varje anställd med **Avtal och lönegrupp**, **Branschvana från** och den **Minimilön** som gäller den här månaden, med personens ålder.
 
+![Varje anställd får avtal, lönegrupp och branschvana.](/bilder/manual/avtal/valj-avtal.webp)
+
 ## Så här anger du avtalsuppgifterna
 
 1. Öppna **Lön → Avtal** och leta upp den anställda under **Anställda**.

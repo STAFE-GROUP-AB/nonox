@@ -364,7 +364,7 @@ Seedern tar ett par minuter och lägger bara till: ett företag som redan finns 
 Bilderna i manualen tas från demoföretagen, aldrig från riktiga data. Vilka sidor som fotograferas står i `docs/manual/skarmbilder.yaml`. Kör appen mot demodatabasen med en egen cache, och ta bilderna i ett annat fönster:
 
 ```bash
-cd public && DB_DATABASE=nonox_demo CACHE_STORE=array APP_URL=http://127.0.0.1:8123 PHP_CLI_SERVER_WORKERS=6 \
+cd public && DB_DATABASE=nonox_demo CACHE_STORE=array OTP_AUTOFILL=false PASSKEYS_SKIP_LOCALLY=true APP_URL=http://127.0.0.1:8123 PHP_CLI_SERVER_WORKERS=6 \
   php -S 127.0.0.1:8123 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
 DB_DATABASE=nonox_demo php artisan manual:screenshots              # alla
 DB_DATABASE=nonox_demo php artisan manual:screenshots --only=lon/  # bara ett avsnitt

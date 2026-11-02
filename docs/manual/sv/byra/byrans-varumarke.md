@@ -11,6 +11,8 @@ En redovisningsbyrå kan visa sin logga och sina färger för sina kunder. Kunde
 
 Det krävs två steg: byrån markerar sitt eget företag som byrå, och kunden väljer byrån. Båda görs av respektive företags **ägare**.
 
+![Byråns logga och färger.](/bilder/manual/byra/byrans-varumarke.webp)
+
 ## Så här gör byrån
 
 Byrån behöver ett eget företag i NONOX. Det är byråns logga och färger från det företaget som visas för kunderna.

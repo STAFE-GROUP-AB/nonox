@@ -19,6 +19,8 @@ Flödet har fyra steg, och två personer:
 3. Filen **laddas ned** och läses in i internetbanken, där den signeras.
 4. När banken har betalat **markeras** filen som betald, och betalningarna bokförs.
 
+![Betalfilerna med bankuppgifterna, det som ska betalas och en godkänd betalfil.](/bilder/manual/leverantorer/betalfiler.webp)
+
 ## Innan du börjar: bankuppgifterna
 
 En ägare eller administratör fyller i uppgifterna en gång under **Bank för betalfiler**:

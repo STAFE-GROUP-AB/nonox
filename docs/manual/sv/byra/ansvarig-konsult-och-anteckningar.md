@@ -11,6 +11,8 @@ Varje klient kan ha en **ansvarig** konsult på byrån. Då kan du och kollegorn
 
 Båda finns under **Mina företag**, fliken **Per företag**.
 
+![Ansvarig konsult och en anteckning per klient.](/bilder/manual/byra/ansvarig-konsult-och-anteckningar.webp)
+
 ## Så här väljer du ansvarig konsult
 
 1. Gå till **Mina företag** och välj fliken **Per företag**.

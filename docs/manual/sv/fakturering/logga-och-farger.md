@@ -9,6 +9,8 @@ sokord: [logga, logotyp, färger, varumärke, fakturamall, utseende, egen design
 
 Fakturor, offerter och order kan bära företagets egen logga och färger. Samma varumärke används på lönebesked och på Min sida för anställda. Du lägger in det en gång under företagets inställningar.
 
+![Logga och färger under Inställningar, och hur en faktura ser ut med dem.](/bilder/manual/installningar/varumarke.webp)
+
 ## Så här gör du
 
 1. Öppna företagsmenyn med företagets namn och välj **Inställningar för företaget**.

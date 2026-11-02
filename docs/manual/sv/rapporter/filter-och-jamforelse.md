@@ -9,6 +9,8 @@ sokord: [filter, period, månad, kvartal, jämförelse, förra året, kostnadsst
 
 Alla rapporter under **Bokföring → Rapporter** använder samma val: räkenskapsår, period och – om företaget använder dem – kostnadsställe och projekt. Valen följer med när du byter rapport och när du klickar dig vidare till ett konto.
 
+![Resultatrapporten med jämförelse med samma period förra året påslagen.](/bilder/manual/rapporter/filter-och-jamforelse.webp)
+
 ## Välj period
 
 1. Välj **Räkenskapsår**. Från början visas det år som pågår.

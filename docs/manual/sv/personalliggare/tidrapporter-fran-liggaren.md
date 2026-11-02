@@ -13,6 +13,8 @@ Har företaget även lönemodulen kan NONOX föreslå tidrapporter från persona
 
 Sidan **Tidrapporter** finns under **Personalliggare** när lönemodulen är påslagen och du får hantera personalliggaren.
 
+![Föreslå tidrapport från liggarens pass, och godkänn förslagen.](/bilder/manual/lon/timlon-och-tidrapporter.webp)
+
 ## Innan du börjar
 
 - Personen ska vara kopplad till sin anställning. Gå till **Personalliggare → Personal**, välj **Ändra** och välj under **Anställd i lönen**.

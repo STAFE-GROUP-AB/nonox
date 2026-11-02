@@ -11,6 +11,8 @@ sokord: [löneförhöjning, lönerevision, retroaktiv lön, retrolön, slutlön,
 
 Allt det här görs från den anställdas sida: öppna **Lön → Anställda** och klicka på **Ändra** på personen. Under formuläret finns korten **Lönerevision** och **Anställningens slut**.
 
+![En lönekörning med retroaktiv lön efter en lönerevision. Beloppen är demodata.](/bilder/manual/lon/lonerevision-och-slutlon.webp)
+
 ## Lönerevision: ny lön från ett datum
 
 En ny månadslön gäller alltid från den första dagen i en månad. Har den månaden redan betalats ut med den gamla lönen räknar NONOX ut skillnaden och betalar den som retroaktiv lön i nästa lönekörning.

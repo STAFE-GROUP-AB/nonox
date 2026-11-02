@@ -9,6 +9,8 @@ sokord: [momskod, momskoder, momskonton, momsrutor, 2611, 2621, 2631, 2641, 3740
 
 I en del program väljer man en momskod på varje rad. I NONOX följer momsen i stället kontot: en försäljning med 25 % moms bokför sin moms på 2611, och momsdeklarationen läser 2611 till ruta 10. Fakturor, leverantörsfakturor och dagsrapporter väljer rätt konto åt dig. Bokför du en verifikation för hand är det kontot du väljer som avgör rutan.
 
+![Momsdeklarationen ruta för ruta, med länkar till kontona bakom.](/bilder/manual/moms/momsdeklaration.webp)
+
 ## Försäljning och utgående moms
 
 | Momssats | Konto för momsen (fakturor) | Ruta |

@@ -11,6 +11,8 @@ Bokföring, fakturering, leverantörsfakturor, moms, rapporter och bokslut finns
 
 Att stänga av en modul tar aldrig bort några uppgifter. De finns kvar så länge bokföringslagen kräver, och visas skrivskyddat för dem som har behörighet.
 
+![Modulerna under Inställningar, med vad som är påslaget.](/bilder/manual/installningar/moduler.webp)
+
 ## Modulerna
 
 | Modul | Vad den gör | Läs mer |

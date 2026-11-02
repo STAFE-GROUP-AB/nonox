@@ -9,6 +9,8 @@ sokord: [delegera till kund, väntar på kund, saknade underlag, kvitto saknas, 
 
 Uppgifter fungerar åt båda hållen. Byrån kan be kunden om något, till exempel ett kvitto som saknas, och kunden kan lämna något till byrån, till exempel *Bokför hyresavtalet som kom i dag*. Alla ser samma uppgift, med checklista och kommentarer, så ni slipper mejla fram och tillbaka.
 
+![Uppgifter som väntar på kunden, med kommentarer.](/bilder/manual/byra/uppgifter-mellan-byra-och-kund.webp)
+
 ## Byrån och Kunden
 
 I varje företag delar NONOX in personerna i två grupper:

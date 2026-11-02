@@ -9,6 +9,8 @@ sokord: [anläggningstillgång, inventarier, investering, avskrivning, dator, ma
 
 När du köper något som ska användas i flera år – en dator, en maskin, inventarier – bokförs inköpet på ett anskaffningskonto och skrivs av över tiden. NONOX känner igen raden när du bokför och erbjuder att lägga in tillgången i anläggningsregistret direkt, så att avskrivningarna sedan kan bokföras därifrån varje månad.
 
+![En leverantörsfaktura för en dator. Raden på konto 1250 lägger in datorn i anläggningsregistret.](/bilder/manual/bokforing/anlaggningstillgang-fran-inkop.webp)
+
 ## Så här gör du
 
 1. Bokför inköpet som vanligt under **Bokföring → Verifikationer → Ny verifikation**, med anskaffningen i debet på ett anskaffningskonto, till exempel 1220 Inventarier och verktyg eller 1250 Datorer.

@@ -8,6 +8,8 @@ sokord: [roll, behörighet, rättigheter, åtkomst, ägare, administratör, redo
 
 Varje person i ett företag har en roll. Rollen avgör vad personen ser och får göra, både i menyn och i varje knapp. Samma person kan ha olika roller i olika företag, till exempel ägare i sitt eget bolag och redovisningskonsult hos en kund.
 
+![Rollerna att välja mellan när du lägger till en person i företaget.](/bilder/manual/kom-igang/roller-och-behorigheter.webp)
+
 ## De sex rollerna
 
 | Roll | Får göra |

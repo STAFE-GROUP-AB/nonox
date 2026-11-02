@@ -12,6 +12,14 @@
 #   fraga      the query string, as a map
 #   enhet      dator (1280 × 800, the default) or mobil (390 × 844)
 #   del        a CSS selector: crop the image to that element
+#   klick      CSS selectors to click in order first (a tab, a dialog, a
+#              menu); text=Moduler clicks the button or link with that text
+#   visa       a CSS selector to scroll to the top of the window
+#   anvandare  sign in as this made-up user (…@example.test) instead of the
+#              owner, or gast for no one signed in
+#   text       what must be on the page (default: the demo company's name)
+#   modell     may also be { tabell: …, dar: { column: value } }: the newest
+#              row of that table in the company
 
 kom-igang/oversikten: { foretag: restaurang, rutt: dashboard }
 kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create }
@@ -20,7 +28,6 @@ kom-igang/oversikten-mobil: { foretag: cafe, rutt: dashboard, enhet: mobil }
 
 bokforing/verifikationer: { foretag: cafe, rutt: accounting.vouchers.index }
 bokforing/bokfor-en-verifikation: { foretag: cafe, rutt: accounting.vouchers.create }
-bokforing/ratta-en-verifikation: { foretag: cafe, rutt: accounting.vouchers.show, modell: voucher }
 bokforing/kontoplan: { foretag: cafe, rutt: accounting.accounts }
 bokforing/verifikationsserier: { foretag: cafe, rutt: accounting.voucherSeries }
 bokforing/rakenskapsar: { foretag: cafe, rutt: accounting.fiscalYears }
@@ -69,3 +76,87 @@ byra/mina-foretag: { foretag: byra, rutt: companies.overview }
 
 installningar/foretagets-uppgifter: { foretag: konsult, rutt: teams.show, modell: company }
 
+
+kom-igang/logga-in: { foretag: restaurang, rutt: login, anvandare: gast, text: 'Logga in' }
+kom-igang/byt-foretag: { foretag: restaurang, rutt: dashboard, klick: ['button:has(> span.bg-accent-500)'] }
+kom-igang/sok: { foretag: cafe, rutt: dashboard, klick: ['button[aria-keyshortcuts]'] }
+kom-igang/roller-och-behorigheter: { foretag: restaurang, rutt: teams.show, modell: company, visa: 'text=Personer i företaget' }
+
+bokforing/kortkommandon: { foretag: cafe, rutt: accounting.vouchers.create, klick: ['text=Kortkommandon (?)'], visa: 'text=Kortkommandon' }
+
+rapporter/filter-och-jamforelse: { foretag: butik, rutt: accounting.reports, fraga: { rapport: resultat, jamfor: '1' } }
+rapporter/skriv-ut-och-exportera: { foretag: butik, rutt: accounting.reports, fraga: { rapport: saldobalans, fran: '2026-07-01', till: '2026-09-30' } }
+
+moms/momsperiod-och-bokforingsmetod: { foretag: konsult, rutt: teams.show, modell: company, visa: 'text=Moms och bokföring' }
+moms/omvand-betalningsskyldighet: { foretag: hantverkare, rutt: vat.index }
+
+installningar/moduler: { foretag: restaurang, rutt: teams.show, modell: company, fraga: { flik: moduler } }
+installningar/varumarke: { foretag: konsult, rutt: teams.show, modell: company, fraga: { flik: varumarke } }
+installningar/agarskap-och-arkivering: { foretag: konsult, rutt: teams.show, modell: company, fraga: { flik: agarskap } }
+installningar/passkeys-och-inloggningar: { foretag: konsult, rutt: profile.show, visa: 'text=Passkeys' }
+installningar/personuppgifter: { foretag: konsult, rutt: profile.show, visa: 'text=Mina uppgifter' }
+installningar/radera-ditt-konto: { foretag: konsult, rutt: profile.show, visa: 'text=Radera mitt konto' }
+
+flytta/fran-andra-program: { foretag: konsult, rutt: accounting.sieImports.index }
+flytta/flytta-lonen: { foretag: restaurang, rutt: payroll.migration }
+
+# From the demo extras (database/seeders/Demo/Extras).
+bokforing/utkast: { foretag: konsult, rutt: accounting.vouchers.edit, modell: { tabell: vouchers, dar: { status: DRAFT } } }
+bokforing/underlag: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { description: 'Kontorsmaterial, Exempelbutiken (kort)' } } }
+bokforing/kostnadsstallen-och-projekt: { foretag: konsult, rutt: accounting.costCenters }
+bokforing/las-en-period: { foretag: konsult, rutt: vat.index }
+bokforing/rattelse: { foretag: konsult, rutt: accounting.vouchers.show, modell: { tabell: vouchers, dar: { source: CORRECTION } } }
+bokforing/anlaggningstillgang-fran-inkop: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { description: 'Bärbar dator' } } }
+bokforing/kontroll-av-bokforingen: { foretag: konsult, rutt: accounting.vouchers.index }
+
+fakturering/utkast: { foretag: konsult, rutt: invoicing.invoices.edit, modell: { tabell: invoices, dar: { status: DRAFT } } }
+fakturering/kreditfaktura: { foretag: konsult, rutt: invoicing.invoices.show, modell: { tabell: invoices, dar: { kind: CREDIT } } }
+fakturering/paminnelser: { foretag: konsult, rutt: invoicing.invoices.index, fraga: { visa: forfallna } }
+fakturering/offerter-och-order: { foretag: konsult, rutt: invoicing.quotes.show, modell: { tabell: sales_documents, dar: { kind: QUOTE, status: OPEN } } }
+fakturering/avtalsfakturering: { foretag: konsult, rutt: invoicing.agreements.show, modell: { tabell: recurring_invoices } }
+fakturering/forsaljning-till-utlandet: { foretag: konsult, rutt: invoicing.invoices.show, modell: { tabell: invoices, dar: { foreign_sale: EU_SERVICES } } }
+
+moms/oss: { foretag: butik, rutt: vat.euReports, visa: 'text=OSS, försäljning till privatpersoner i andra EU-länder' }
+moms/periodisk-sammanstallning: { foretag: konsult, rutt: vat.euReports }
+
+leverantorer/betalfiler: { foretag: konsult, rutt: payables.batches.index }
+leverantorer/kreditnotor: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { kind: CREDIT } } }
+leverantorer/utlandsk-valuta: { foretag: konsult, rutt: payables.invoices.show, modell: { tabell: supplier_invoices, dar: { invoice_currency: EUR } } }
+
+bokslut/arkivpaket: { foretag: konsult, rutt: accounting.fiscalYears }
+
+kom-igang/bjud-in-en-anvandare: { foretag: konsult, rutt: teams.show, modell: company, visa: 'text=Skickade inbjudningar' }
+kom-igang/notiser: { foretag: restaurang, rutt: notifications.index }
+
+byra/uppgifter: { foretag: byra, anvandare: redovisningsbyra@example.test, rutt: tasks.index, fraga: { visa: alla } }
+byra/att-gora-for-alla-klienter: { foretag: byra, anvandare: redovisningsbyra@example.test, rutt: companies.overview }
+byra/uppgifter-mellan-byra-och-kund: { foretag: byra, anvandare: redovisningsbyra@example.test, rutt: tasks.index, fraga: { visa: vantar } }
+byra/aterkommande-uppgifter: { foretag: byra, anvandare: redovisningsbyra@example.test, rutt: tasks.recurring }
+byra/manadsstangning: { foretag: byra, anvandare: redovisningsbyra@example.test, rutt: companies.overview, fraga: { vy: stangning } }
+byra/ansvarig-konsult-och-anteckningar: { foretag: byra, anvandare: redovisningsbyra@example.test, rutt: companies.overview, fraga: { vy: foretag } }
+byra/byrans-varumarke: { foretag: byra, anvandare: redovisningsbyra@example.test, rutt: teams.show, modell: company, fraga: { flik: varumarke } }
+
+lon/lonekorning: { foretag: restaurang, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { status: POSTED } } }
+lon/lonekorning-pagaende: { foretag: restaurang, anvandare: karin.holm@example.test, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { status: CALCULATED } } }
+lon/arbetsgivardeklaration: { foretag: restaurang, rutt: payroll.agi }
+lon/franvaro-och-sjuklon: { foretag: restaurang, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { period: '2026-02' } } }
+lon/formaner-traktamente-och-milersattning: { foretag: restaurang, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { period: '2026-06' } } }
+lon/utlagg: { foretag: restaurang, anvandare: karin.holm@example.test, rutt: payroll.requests }
+lon/timlon-och-tidrapporter: { foretag: restaurang, rutt: staff-ledger.proposals }
+lon/loneunderlag-fran-schemasystem: { foretag: restaurang, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { period: '2026-09' } } }
+lon/lonerevision-och-slutlon: { foretag: restaurang, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { period: '2026-05' } } }
+lon/arbetsgivaravgifter-och-pension: { foretag: restaurang, rutt: payroll.reports, fraga: { rapport: pension } }
+lon/rapporter-och-lonearsskifte: { foretag: restaurang, rutt: payroll.reports, fraga: { rapport: journal } }
+
+personal/min-sida: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home }
+personal/lonebesked: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home, visa: 'text=Mina lönebesked' }
+personal/utlagg: { foretag: restaurang, anvandare: lina.berg@example.test, enhet: mobil, rutt: payroll.portal.home, visa: 'text=Utlägg' }
+
+personalliggare/liggaren-och-rattelser: { foretag: restaurang, rutt: staff-ledger.ledger }
+
+avtal/valj-avtal: { foretag: restaurang, rutt: agreements.index }
+avtal/versioner-och-kontroll: { foretag: restaurang, rutt: agreements.versions }
+avtal/ob-och-overtid: { foretag: restaurang, rutt: payroll.runs.show, modell: { tabell: payroll_runs, dar: { status: CALCULATED } } }
+
+leverantorer/inkorgen: { foretag: restaurang, rutt: inbox.index, klick: ['text=Utkast klara (1)'] }
+bank/bankkoppling: { foretag: restaurang, rutt: banking.index }

@@ -13,6 +13,8 @@ Kiosken är den skärm personalen checkar in och ut på. Det är en vanlig surfp
 
 Innan du börjar behöver du en [lokal](/manual/personalliggare/lokaler) där **Kiosk med namn och kod** är ikryssat, och gärna [personalen](/manual/personalliggare/lagg-till-personal) inlagd.
 
+![Lokalen med sin kopplade kiosk.](/bilder/manual/personalliggare/lokaler.webp)
+
 ## Så här kopplar du kiosken
 
 1. Gå till **Personalliggare → Lokaler och kiosker**.

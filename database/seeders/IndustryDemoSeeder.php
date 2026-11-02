@@ -9,7 +9,9 @@ use App\Actions\Company\UpdateAccountingFirmSettings;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Landing\Industries;
+use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoCompanyBuilder;
+use Database\Seeders\Demo\DemoExtra;
 use Database\Seeders\Demo\DemoIndustries;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
@@ -74,6 +76,8 @@ class IndustryDemoSeeder extends Seeder
         $owner = $this->user(self::OWNER['name'], self::OWNER['email']);
         $current = $owner->current_team_id;
         $companies = [];
+        /** @var list<array{0: string, 1: array<string, mixed>, 2: User, 3: Company}> $built */
+        $built = [];
         $warn = fn (string $level, string $message) => $this->command?->warn("  {$message}");
 
         /** @var array<string, list<Company>> $clients */
@@ -92,8 +96,9 @@ class IndustryDemoSeeder extends Seeder
 
             $isFirm = $demo['is_firm'] ?? false;
             $user = $isFirm ? $this->user(self::FIRM_OWNERS[$slug]['name'], self::FIRM_OWNERS[$slug]['email']) : $owner;
-            $company = $builder->build($user, $demo, $isFirm ? ($clients[$slug] ?? []) : [], $warn);
+            $company = $builder->build($slug, $user, $demo, $isFirm ? ($clients[$slug] ?? []) : [], $warn);
             $companies[] = $company;
+            $built[] = [$slug, $demo, $user, $company];
 
             if (! $isFirm) {
                 if (isset($demo['firm'])) {
@@ -110,6 +115,13 @@ class IndustryDemoSeeder extends Seeder
         $owner->forceFill(['current_team_id' => $current ?? $owner->ownedTeams()->orderBy('id')->value('id')])->save();
 
         $this->addAdministrator($companies);
+
+        foreach ($built as [$slug, $demo, $user, $company]) {
+            foreach (DemoExtra::for($slug) as $extra) {
+                $context = $builder->context($slug, $demos[$slug], $user, $company->fresh() ?? $company);
+                CurrentCompany::run($company, fn () => $extra->afterAll($context));
+            }
+        }
     }
 
     /**

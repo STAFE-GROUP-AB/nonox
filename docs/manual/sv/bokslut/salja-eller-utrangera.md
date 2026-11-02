@@ -9,6 +9,8 @@ sokord: [sälja inventarie, avyttra, avyttring, utrangera, utrangering, kassera,
 
 När en tillgång säljs eller slängs ska den bort ur bokföringen. Anläggningsregistret bokar bort anskaffningsvärdet och avskrivningarna, och skillnaden mot det du fick betalt blir en vinst eller en förlust.
 
+![Anläggningsregistret, där en tillgång säljs eller utrangeras.](/bilder/manual/bokslut/anlaggningstillgangar.webp)
+
 ## Så här gör du
 
 1. Bokför först månadens avskrivning till och med månaden före försäljningen, eller den månad du och din redovisningskonsult har bestämt. Läs [Anläggningsregistret och avskrivningar](/manual/bokslut/anlaggningstillgangar).

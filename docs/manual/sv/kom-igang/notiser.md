@@ -9,6 +9,8 @@ sokord: [notis, notifikation, klocka, avisering, meddelande, påminnelse, e-post
 
 Klockan längst ner i menyn visar dina notiser. En siffra på klockan säger hur många som är olästa. Notiserna handlar om [uppgifter](/manual/byra) mellan dig, dina kollegor och redovisningsbyrån.
 
+![Notiserna om uppgifter och kommentarer från redovisningsbyrån.](/bilder/manual/kom-igang/notiser.webp)
+
 ## Vad du får notiser om
 
 Du får en notis när någon:

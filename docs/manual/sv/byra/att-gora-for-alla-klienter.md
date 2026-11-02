@@ -9,6 +9,8 @@ sokord: [att göra, deadlines, sista dag, försenat, prioritera, filter, sparad 
 
 På fliken **Översikt** under **Mina företag** finns **Att göra**: allt som väntar i alla dina företag i en lista. Det försenade kommer först, sedan det som har närmast sista dag och sist det som har högst prioritet. Du behöver inte öppna en klient för att se vad som väntar där.
 
+![Mina företag för en byrå: alla klienters pengar och det som väntar.](/bilder/manual/byra/att-gora-for-alla-klienter.webp)
+
 ## Det här kommer med i listan
 
 - **Det NONOX ser i bokföringen**, till exempel moms och arbetsgivardeklaration som ska lämnas, bokslut och årsredovisning, förfallna kundfakturor, leverantörsfakturor som väntar på attest eller betalning, utkast, post i inkorgen och lön.

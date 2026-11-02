@@ -9,6 +9,8 @@ sokord: [byta företag, växla företag, många klienter, effektivt, notiser, kl
 
 Med en inloggning kan du arbeta i alla dina klienter. Här är det som sparar mest tid när de är många.
 
+![Mina företag samlar alla klienter i en vy.](/bilder/manual/byra/att-gora-for-alla-klienter.webp)
+
 ## Byt företag
 
 Företaget du arbetar i står högst upp i sidomenyn, med namn och organisationsnummer.

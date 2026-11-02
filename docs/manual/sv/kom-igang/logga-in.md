@@ -9,6 +9,8 @@ sokord: [inloggning, lösenord, kod, engångskod, skapa konto, registrera, passk
 
 NONOX har inga lösenord. Du skriver din e-postadress, får en kod med åtta siffror i mejlet och skriver in den. Är adressen ny skapas ett konto åt dig samtidigt, så att logga in och registrera sig är samma sak.
 
+![Inloggningen: skriv din e-postadress, så skickar NONOX en kod.](/bilder/manual/kom-igang/logga-in.webp)
+
 ## Så här gör du
 
 1. Gå till inloggningssidan och klicka på **Logga in**.

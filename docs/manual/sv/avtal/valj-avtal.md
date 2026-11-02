@@ -11,6 +11,8 @@ sokord: [välja kollektivavtal, bunden av avtal, hängavtal, medlemskap, avtalsb
 
 Det första du gör i Avtal är att ange vilket kollektivavtal företaget är bundet av. Det görs under **Lön → Avtal**, på fliken **Företag och anställda**, i kortet **Avtal som företaget är bundet av**.
 
+![Avtalet företaget är bundet av och anställdas avtal och lönegrupp.](/bilder/manual/avtal/valj-avtal.webp)
+
 ## Så här lägger du till ett avtal
 
 1. Öppna **Lön → Avtal**.

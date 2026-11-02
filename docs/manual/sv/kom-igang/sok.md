@@ -8,6 +8,8 @@ sokord: [söka, sökning, hitta, cmd k, ctrl k, kortkommando, snabbsök, gå til
 
 Sökningen hittar allt du har behörighet att se i företaget du arbetar i: sidor och åtgärder, verifikationer, kundfakturor, offerter och order, leverantörsfakturor, kunder, leverantörer, artiklar, konton, anläggningar, periodiseringar, kostnadsställen och projekt. Med modulerna påslagna söker den också i lön, personalliggare och inkorg. Den hittar också dina andra företag.
 
+![Sökningen med senast öppnade, det som behöver göras och snabbval.](/bilder/manual/kom-igang/sok.webp)
+
 ## Så här söker du
 
 1. Tryck <kbd>⌘</kbd> + <kbd>K</kbd> på Mac eller <kbd>Ctrl</kbd> + <kbd>K</kbd> på Windows. Du kan också trycka <kbd>/</kbd> när du inte skriver i ett fält, eller klicka på fältet **Sök eller gå till …** högst upp.

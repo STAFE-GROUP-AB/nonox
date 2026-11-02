@@ -10,6 +10,8 @@ sokord: [bank, bankkoppling, BankID, PSD2, öppen bankdata, kontoutdrag, transak
 
 Med modulen **Bank** kopplar du företagets bankkonton till NONOX med BankID. Transaktioner och saldon hämtas sedan automatiskt, i stället för att du laddar upp filer från banken. Det här är en kort beskrivning av modulen och dess inställningar; hur du kopplar en bank steg för steg står i [Bankkoppling](/manual/bank/bankkoppling).
 
+![Bankmodulen med kopplad bank och konton.](/bilder/manual/bank/bankkoppling.webp)
+
 ## Det här gör modulen
 
 - **Bara läsa.** NONOX kan läsa transaktioner och saldon, aldrig flytta pengar. Betalfiler signeras fortfarande i banken.

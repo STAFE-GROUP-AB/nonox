@@ -12,6 +12,8 @@ Bokföringslagen kräver att räkenskapsinformationen sparas i sju år efter utg
 
 Arkivpaket skapas under **Bokföring → Räkenskapsår**.
 
+![Ett färdigt arkivpaket för räkenskapsåret, med länken för att ladda ner det.](/bilder/manual/bokslut/arkivpaket.webp)
+
 ## Så här skapar du ett arkivpaket
 
 1. Gå till **Bokföring → Räkenskapsår**.

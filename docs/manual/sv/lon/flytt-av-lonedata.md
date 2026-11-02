@@ -18,6 +18,8 @@ Flytten görs under **Lön → Flytt av lönedata** i fem steg, med CSV-filer. B
 
 Bokföringen för året flyttas för sig, som SIE-fil. Se [SIE](/manual/bokforing/sie) och avsnittet [Flytta till NONOX](/manual/flytta).
 
+![Flytt av lönedata från ett annat lönesystem.](/bilder/manual/flytta/flytta-lonen.webp)
+
 ## Så här startar du flytten
 
 1. Öppna **Lön → Flytt av lönedata**.

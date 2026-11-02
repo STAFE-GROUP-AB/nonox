@@ -12,6 +12,8 @@ En uppgift är något som ska göras i ett företag, av en viss person, före et
 
 Du hittar den under **Uppgifter → Alla uppgifter** i sidomenyn.
 
+![Uppgifterna för byråns alla klienter, med vem som ska göra vad och när.](/bilder/manual/byra/uppgifter.webp)
+
 ## Så här skapar du en uppgift
 
 1. Välj **Ny uppgift**.

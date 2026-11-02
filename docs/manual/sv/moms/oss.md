@@ -11,6 +11,8 @@ Säljer företaget till privatpersoner i andra EU-länder kan momsen behöva tas
 
 Om och när företaget ska använda OSS avgör momsreglerna. Fråga din redovisningskonsult innan du börjar.
 
+![OSS-underlaget per kvartal, för försäljning till privatpersoner i andra EU-länder.](/bilder/manual/moms/oss.webp)
+
 ## Så här fakturerar du
 
 1. Ange kundens land under **Register → Kunder**.

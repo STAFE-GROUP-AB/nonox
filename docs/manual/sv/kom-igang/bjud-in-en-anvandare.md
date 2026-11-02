@@ -10,6 +10,8 @@ sokord: [bjud in, inbjudan, lägg till användare, ny användare, kollega, redov
 
 Arbetar ni fler i företaget, eller sköter en redovisningskonsult bokföringen, bjuder du in dem. Varje person får ett eget konto, en egen roll och loggar in med sin egen kod. Dela aldrig inloggning; behandlingshistoriken ska visa vem som gjorde vad.
 
+![Skickade inbjudningar och personerna i företaget med sina roller.](/bilder/manual/kom-igang/bjud-in-en-anvandare.webp)
+
 ## Så här gör du
 
 1. Klicka på företagets namn högst upp i menyn och välj **Inställningar för företaget**.

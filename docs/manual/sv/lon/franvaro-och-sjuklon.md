@@ -16,6 +16,8 @@ När en anställd är sjuk, vårdar sitt sjuka barn eller är ledig påverkar de
 
 När frånvaron är godkänd räknar NONOX sjuklön, karensavdrag och avdrag i den lönekörning frånvaron hör till.
 
+![En lönekörning med sjukfrånvaro och karensavdrag. Beloppen är demodata.](/bilder/manual/lon/franvaro-och-sjuklon.webp)
+
 ## Så här godkänner du en ansökan från Min sida
 
 Anmälningar och ansökningar från de anställda samlas under **Lön → Ansökningar**. Antalet som väntar visas i menyn, till exempel **Ansökningar (2)**.

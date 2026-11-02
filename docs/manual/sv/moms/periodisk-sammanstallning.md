@@ -12,6 +12,8 @@ Säljer företaget varor eller tjänster utan moms till företag i andra EU-län
 
 Sidan finns under **Bokföring → EU-rapporter**.
 
+![Den periodiska sammanställningen med köparens momsregistreringsnummer och beloppen.](/bilder/manual/moms/periodisk-sammanstallning.webp)
+
 ## Så här gör du
 
 1. Gå till **Bokföring → EU-rapporter**.

@@ -9,6 +9,8 @@ sokord: [logga, logotyp, färg, profil, grafisk profil, fakturamall, utseende, b
 
 Under **Varumärke** lägger du in företagets logga och färger. De används på fakturor, offerter, order, lönebesked och på Min sida för de anställda. Utan logga och färger används NONOX neutrala utseende.
 
+![Logga och färger, och hur en faktura ser ut med dem.](/bilder/manual/installningar/varumarke.webp)
+
 ## Så här gör du
 
 1. Klicka på företagets namn högst upp i menyn och välj **Inställningar för företaget**.

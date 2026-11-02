@@ -11,6 +11,8 @@ Med kostnadsställen och projekt ser du hur det går för en del av företaget, 
 
 Behöver du inte den uppdelningen kan du hoppa över det här helt. Kolumnerna syns inte i verifikationen förrän du har lagt upp något.
 
+![Kostnadsställen med årets intäkter, kostnader och resultat.](/bilder/manual/bokforing/kostnadsstallen-och-projekt.webp)
+
 ## Så här lägger du till ett kostnadsställe
 
 1. Gå till **Bokföring → Kostnadsställen**.

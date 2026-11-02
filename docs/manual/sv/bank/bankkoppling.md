@@ -14,6 +14,8 @@ Med modulen **Bank** kopplar du företagets bankkonton till NONOX med BankID. D�
 > [!IMPORTANT]
 > NONOX kan bara **läsa** från banken. Ingenting kan betalas eller flyttas från NONOX, och NONOX bokför aldrig något själv – en person bekräftar alltid. Leverantörsbetalningar görs fortfarande med betalfiler som du godkänner i banken.
 
+![Kopplade banker med konton och vilket bokföringskonto de hör till.](/bilder/manual/bank/bankkoppling.webp)
+
 ## Innan du börjar
 
 - **Modulen måste vara påslagen.** En ägare eller administratör slår på **Bank** under **Inställningar för företaget → Moduler**. Läs [Moduler](/manual/installningar/moduler).

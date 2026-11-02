@@ -9,6 +9,8 @@ sokord: [kreditfaktura, kreditera, kreditnota, makulera faktura, fel på faktura
 
 En skapad faktura kan inte ändras eller tas bort, eftersom den är bokförd. Blev något fel – fel kund, fel pris, fel datum – krediterar du den i stället. Kreditfakturan är en faktura med negativa belopp som tar ut originalet, både i bokföringen och för kunden. Sedan skriver du en ny, rätt faktura.
 
+![En kreditfaktura som krediterar en obetald faktura.](/bilder/manual/fakturering/kreditfaktura.webp)
+
 ## Så här gör du
 
 1. Öppna fakturan under **Försäljning → Fakturor**.

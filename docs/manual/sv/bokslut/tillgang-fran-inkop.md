@@ -9,6 +9,8 @@ sokord: [skapa tillgång, inköp av inventarier, anskaffningskonto, inventarier 
 
 Köper du en dator eller en maskin behöver du inte först bokföra inköpet och sedan lägga in tillgången i registret för sig. När en rad i en verifikation eller en leverantörsfaktura bokförs på ett anskaffningskonto erbjuder NONOX att skapa tillgången samtidigt. Den skapas i samma ögonblick som inköpet bokförs och länkas till verifikationen.
 
+![En leverantörsfaktura vars rad på konto 1250 blev en anläggningstillgång.](/bilder/manual/bokforing/anlaggningstillgang-fran-inkop.webp)
+
 ## Så här gör du
 
 1. Registrera leverantörsfakturan eller skriv verifikationen som vanligt.

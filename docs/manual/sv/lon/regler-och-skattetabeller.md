@@ -15,6 +15,8 @@ NONOX levererar reglerna, men använder dem inte förrän en namngiven person ha
 
 ![Reglerna för lön. En regel som inte är kontrollerad stoppar lönekörningen.](/bilder/manual/lon/regler-och-skattetabeller.webp)
 
+![En lönekörning räknas bara med regler som en namngiven person har kontrollerat.](/bilder/manual/lon/lonekorning-pagaende.webp)
+
 ## Så här kontrollerar du reglerna
 
 1. Öppna **Lön → Regler**.

@@ -10,6 +10,8 @@ sokord: [medgivande, samtycke, förnya bankkoppling, koppla igen, koppla bort, �
 
 När du kopplar banken ger du ett **medgivande** i banken med BankID: NONOX får läsa de konton du godkänner, under en begränsad tid. Banken bestämmer hur länge, oftast 90 eller 180 dagar. NONOX ber aldrig om mer än 180 dagar. När tiden har gått ut måste medgivandet förnyas med BankID.
 
+![De kopplade bankerna och hur länge kopplingen gäller.](/bilder/manual/bank/bankkoppling.webp)
+
 ## Se hur länge medgivandet gäller
 
 Välj **Bank** i menyn. Under **Kopplade banker** står varje bank med status och *Medgivandet gäller till och med … (… dagar kvar).* och när den senast hämtades.

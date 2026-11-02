@@ -12,6 +12,8 @@ När banken är kopplad hämtar NONOX varje transaktion på kontot. För varje t
 
 Att matcha är inte att bokföra. Ingenting bokförs på den här sidan – du kopplar bara ihop det banken säger med det som redan är bokfört.
 
+![Bankens transaktioner föreslås mot bokföringen.](/bilder/manual/bank/bankkoppling.webp)
+
 ## Så här matchar du
 
 1. Välj **Bank** i menyn.

@@ -8,6 +8,8 @@ sokord: [byta företag, flera företag, växla företag, företagsväljare, mina
 
 Har du tillgång till flera företag, till exempel flera egna bolag eller kunder som redovisningskonsult, arbetar du i ett i taget. Allt du ser, söker efter och gör gäller företaget vars namn står högst upp i menyn. Inget blandas ihop mellan företagen.
 
+![Företagsmenyn överst i sidomenyn, med sökning bland dina företag.](/bilder/manual/kom-igang/byt-foretag.webp)
+
 ## Så här byter du företag
 
 1. Klicka på företagets namn högst upp i menyn.

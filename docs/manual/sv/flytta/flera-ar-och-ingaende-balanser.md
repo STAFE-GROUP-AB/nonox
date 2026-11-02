@@ -9,6 +9,8 @@ sokord: [ingående balans, IB, utgående balans, UB, flera år, tidigare år, hi
 
 När du flyttar vill du oftast ha med flera års bokföring, så att du kan jämföra med tidigare år och visa historiken för revisorn. Du läser in ett år i taget, en SIE-fil per år, och åren måste hänga ihop.
 
+![Läs in SIE-fil: ett år i taget, först det år som redan finns här.](/bilder/manual/flytta/fran-andra-program.webp)
+
 ## I vilken ordning
 
 Räkenskapsåren i NONOX ska ligga i en obruten följd. Därför läser du in åren **närmast först**:

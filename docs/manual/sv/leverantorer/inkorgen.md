@@ -13,6 +13,8 @@ Med inkorgen får företaget en egen e-postadress. Leverantörer skickar sina fa
 
 Inkorgen är en modul som en ägare eller administratör slår på under **Företagsinställningar → Moduler**. Hur du sätter upp adressen och listan med godkända avsändare beskrivs i [Inkorgens adress och godkända avsändare](/manual/leverantorer/inkorgens-installningar).
 
+![Inkorgen med företagets egen adress och ett utkast som är klart att godkänna.](/bilder/manual/leverantorer/inkorgen.webp)
+
 ## Flikarna
 
 | Flik | Vad som finns där |

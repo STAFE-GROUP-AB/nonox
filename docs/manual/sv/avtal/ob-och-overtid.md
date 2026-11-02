@@ -10,6 +10,8 @@ sokord: [OB, OB-tillägg, obekväm arbetstid, natt-OB, storhelg, övertid, över
 
 När företaget är bundet av ett avtal i NONOX finns avtalets egna lönearter för OB, storhelg och övertid, till exempel **OB-tillägg (Gröna Riks)** och **Natt-OB (Gröna Riks)**. Lägger du in timmar med en sådan löneart behöver du inte räkna ut beloppet: NONOX tar avtalets sats för arbetsdagen och räknar fram det.
 
+![En lönekörning med OB och övertid prissatta enligt avtalet. Beloppen är demodata.](/bilder/manual/avtal/ob-och-overtid.webp)
+
 ## Så här lägger du in OB eller övertid
 
 1. Öppna månadens lönekörning under **Lön → Lönekörningar**.

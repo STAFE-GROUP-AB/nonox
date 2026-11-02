@@ -11,6 +11,8 @@ Min sida är din egen sida hos din arbetsgivare. Där ser du dina lönebesked oc
 
 Det finns inget lösenord. Du loggar in med en kod som du får i mejlet, varje gång.
 
+![Min sida på mobilen.](/bilder/manual/personal/min-sida.webp)
+
 ## Första gången
 
 Din arbetsgivare bjuder in dig. Du får ett mejl med ämnet *Dina lönebesked från* och företagets namn.

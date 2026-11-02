@@ -9,6 +9,8 @@ sokord: [momsperiod, redovisningsperiod, månadsmoms, kvartalsmoms, årsmoms, he
 
 Två inställningar styr momsen i NONOX: hur ofta företaget redovisar moms, och om företaget bokför enligt fakturametoden eller kontantmetoden. Båda finns under företagets uppgifter, och båda ska stämma med det Skatteverket har beslutat för företaget.
 
+![Momsredovisning, bokföringsmetod och regelverk under företagets uppgifter.](/bilder/manual/moms/momsperiod-och-bokforingsmetod.webp)
+
 ## Så här ändrar du inställningarna
 
 1. Öppna **Företagsinställningar** och fliken **Uppgifter och personer**.

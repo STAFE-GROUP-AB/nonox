@@ -12,6 +12,8 @@ Fakturerar du samma sak gång på gång – ett lunchavtal med ett kontor, hyran
 
 Avtalen finns under **Försäljning → Avtal**.
 
+![Ett avtal om löpande fakturering varje månad.](/bilder/manual/fakturering/avtalsfakturering.webp)
+
 ## Så här lägger du upp ett avtal
 
 1. Gå till **Försäljning → Avtal** och tryck på **Nytt avtal**.

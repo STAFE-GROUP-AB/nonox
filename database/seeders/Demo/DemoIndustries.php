@@ -34,6 +34,7 @@ use App\Support\Luhn;
  *     is_firm?: bool,
  *     opening_bank: int,
  *     salary_account: int,
+ *     payroll_runs?: bool,
  *     sales: array{kind: string, closed_weekdays?: list<int>, gross_per_day?: array{0: int, 1: int}, rates?: array<int, int>, cash_share?: int, invoices_per_month?: int, hours?: array{0: int, 1: int}},
  *     articles: list<Article>,
  *     customers: list<Customer>,
@@ -52,6 +53,7 @@ final class DemoIndustries
             'bokforing-for-restauranger' => [
                 'org_serial' => '01',
                 'salary_account' => 7010,
+                'payroll_runs' => true,
                 'name' => 'Restaurang Ekbacken Demo AB',
                 'city' => 'Göteborg',
                 'postal_code' => '411 01',

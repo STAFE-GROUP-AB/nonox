@@ -8,6 +8,8 @@ sokord: [sjukanmälan, sjuk, sjukskriven, vab, vård av barn, sjukt barn, frånv
 
 Är du sjuk, eller hemma med ett sjukt barn? Anmäl det från Min sida. Det tar en halv minut.
 
+![Sjukanmälan och vård av barn överst på Min sida.](/bilder/manual/personal/min-sida.webp)
+
 ## Så här sjukanmäler du dig
 
 1. Logga in på [Min sida](/manual/personal/min-sida).

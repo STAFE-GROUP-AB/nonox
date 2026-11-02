@@ -18,6 +18,8 @@ NONOX läser:
 
 Filen får vara högst 10 MB.
 
+![Ett inläst löneunderlag från ett schemasystem i lönekörningen. Beloppen är demodata.](/bilder/manual/lon/loneunderlag-fran-schemasystem.webp)
+
 ## Så här läser du in en fil
 
 1. Exportera lönefilen för månaden från ert schemasystem.

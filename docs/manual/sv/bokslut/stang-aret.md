@@ -9,6 +9,8 @@ sokord: [stänga året, stänga räkenskapsår, låsa året, årsskifte, avsluta
 
 När checklistan är klar och skatten och årets resultat är bokförda stänger du året. Det är bokslutets sista steg för året: balanserna förs över till nästa år och året låses för gott.
 
+![Bokslutets checklista: det som ska vara klart innan året stängs.](/bilder/manual/bokslut/checklistan.webp)
+
 ## Det här krävs
 
 - Hela checklistan är klar eller markerad som att den inte gäller. Läs [Checklistan för bokslutet](/manual/bokslut/checklistan).

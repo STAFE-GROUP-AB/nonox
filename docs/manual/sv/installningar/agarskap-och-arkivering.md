@@ -9,6 +9,8 @@ sokord: [arkivera, avsluta företag, lägga ner, ta bort företag, radera föret
 
 Ett företag i NONOX har alltid en ägare. Ägaren kan lämna över ägarskapet till någon annan, och arkivera företaget när verksamheten är avslutad. Båda görs på fliken **Ägarskap och arkiv** under **Inställningar för företaget**, som bara ägaren ser.
 
+![Överlåt ägarskapet eller arkivera företaget.](/bilder/manual/installningar/agarskap-och-arkivering.webp)
+
 ## Överlåt ägarskapet
 
 Säljer du bolaget, eller ska någon annan ta över ansvaret i NONOX, överlåter du ägarskapet. Den nya ägaren måste redan vara med i företaget med en av de vanliga rollerna, till exempel administratör eller redovisningskonsult.

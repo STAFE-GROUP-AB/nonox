@@ -9,6 +9,8 @@ sokord: [resultatdisposition, disponera resultatet, årsstämma, utdelning, bala
 
 Efter bokslutet ligger årets resultat kvar på 2099 (eller 2019). När året har gått bokför du vad som ska hända med det – för ett aktiebolag det som årsstämman beslutat. Det görs i steg **4. Resultatdisposition** under **Bokföring → Bokslut**, och bokförs i det nya året.
 
+![Resultatdispositionen görs under Bokslut, efter årsstämman.](/bilder/manual/bokslut/checklistan.webp)
+
 ## Det här krävs
 
 - Året är stängt. Läs [Stäng räkenskapsåret](/manual/bokslut/stang-aret).

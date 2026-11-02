@@ -9,6 +9,8 @@ sokord: [kreditnota, kreditfaktura, leverantörskredit, kvitta, kvittning, åter
 
 En kreditnota är leverantörens sätt att minska det du är skyldig, till exempel efter en retur, en prisjustering eller en felaktig faktura. I NONOX registrerar du den nästan som en vanlig faktura, och sedan antingen kvittar du den mot en faktura du inte har betalat eller registrerar pengarna när leverantören betalar tillbaka.
 
+![En kreditnota från en leverantör, kvittad mot en faktura.](/bilder/manual/leverantorer/kreditnotor.webp)
+
 ## Så här registrerar du en kreditnota
 
 1. Gå till **Inköp → Leverantörsfakturor** och klicka på **Ny leverantörsfaktura**.

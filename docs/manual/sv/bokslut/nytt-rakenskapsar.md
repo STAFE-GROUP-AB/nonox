@@ -9,6 +9,8 @@ sokord: [nytt räkenskapsår, årsskifte, ingående balans, ib, utgående balans
 
 Vid årsskiftet ska balanskontonas saldon följa med in i det nya året: företagskontots utgående saldo den sista dagen blir dess [ingående balans](/manual/ordlista/ordlista#ingaende-balans) den första dagen. I NONOX kan du skapa nästa år och föra över balanserna när som helst, och göra om överföringen tills det gamla året är stängt.
 
+![Under Räkenskapsår skapar du nästa år och för över balanserna.](/bilder/manual/bokforing/rakenskapsar.webp)
+
 ## Skapa nästa räkenskapsår
 
 1. Gå till **Bokföring → Räkenskapsår**.

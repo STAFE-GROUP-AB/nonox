@@ -9,6 +9,8 @@ sokord: [lönebesked, lönespecifikation, lönespec, lön, netto, PDF, semesterd
 
 Alla dina lönebesked finns under **Mina lönebesked** på Min sida, det senaste först.
 
+![Dina lönebesked som PDF, det senaste först, och dina semesterdagar.](/bilder/manual/personal/lonebesked.webp)
+
 ## Så här öppnar du ett lönebesked
 
 1. Logga in på [Min sida](/manual/personal/min-sida).

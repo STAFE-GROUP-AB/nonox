@@ -9,6 +9,8 @@ sokord: [kortkommando, tangentbord, snabbtangenter, genväg, mobil, telefon, sur
 
 Verifikationen är byggd för att du ska kunna bokföra med händerna kvar på tangentbordet: skriv, tryck Enter, skriv nästa. I mobilen blir varje rad i stället ett kort med tydliga fält, och kameran är ett tryck bort.
 
+![Kortkommandona visas under verifikationen när du trycker på ?.](/bilder/manual/bokforing/kortkommandon.webp)
+
 ## Kortkommandona
 
 | Tangent | Vad som händer |

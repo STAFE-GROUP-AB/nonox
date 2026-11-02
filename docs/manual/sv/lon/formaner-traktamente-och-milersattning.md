@@ -10,6 +10,8 @@ sokord: [förmån, kostförmån, personalmat, bilförmån, drivmedelsförmån, t
 
 Förmåner, traktamenten och milersättning läggs in i lönekörningen som rader under **Timmar och tillägg**, med respektive löneart. NONOX hämtar Skatteverkets belopp från reglerna och räknar ut vad som är skattepliktigt och vad som är skattefritt.
 
+![En lönekörning med kostförmån och milersättning. Beloppen är demodata.](/bilder/manual/lon/formaner-traktamente-och-milersattning.webp)
+
 ## Förmåner
 
 En förmån är något den anställda får i stället för pengar, till exempel fri mat eller tjänstebil. Förmånen betalas inte ut, men den beskattas och ger arbetsgivaravgift.

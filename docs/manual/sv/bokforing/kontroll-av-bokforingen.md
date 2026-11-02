@@ -8,6 +8,8 @@ sokord: [kontrollsumma, integritet, hash, kedja, manipulering, ändrad i efterha
 
 En bokförd verifikation kan inte ändras i NONOX. Men hur vet du att ingen har ändrat något ändå, till exempel direkt i databasen? Varje natt räknar NONOX om hela bokföringen och kontrollerar att allt är precis som när det bokfördes. Resultatet står överst under **Bokföring → Verifikationer**, och du kan köra kontrollen själv när du vill.
 
+![Resultatet av den senaste kontrollen står överst bland verifikationerna.](/bilder/manual/bokforing/kontroll-av-bokforingen.webp)
+
 ## Så läser du resultatet
 
 Överst på sidan **Verifikationer** står ett av tre besked:

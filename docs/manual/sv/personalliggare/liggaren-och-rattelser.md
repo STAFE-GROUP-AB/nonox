@@ -11,6 +11,8 @@ sokord: [liggaren, rätta, rättelse, ändra tid, fel person, dubbeltryck, manue
 
 **Personalliggare → Liggaren** visar varje in- och utcheckning, med tid, namn, person- eller samordningsnummer, lokal och hur registreringen gjordes. Liggaren kan bara skrivas till. Ingenting i den kan ändras eller tas bort, inte ens av ägaren. Fel rättas med en ny post som visas bredvid originalet.
 
+![Liggaren med varje in- och utcheckning och knappen Rätta.](/bilder/manual/personalliggare/liggaren-och-rattelser.webp)
+
 ## Hitta i liggaren
 
 Välj period med **Från** och **Till**, välj en **Lokal** eller **Alla lokaler**, och sök med **Sök namn**. Kolumnen **Sätt** visar hur registreringen gjordes:

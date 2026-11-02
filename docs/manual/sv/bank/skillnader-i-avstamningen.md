@@ -9,6 +9,8 @@ sokord: [skillnad, differens, avstämning stämmer inte, bankavgift, saknad beta
 
 Står det ett belopp i rutan **Skillnad** när du stämmer av banken finns det något som banken och bokföringen inte är överens om. Här är de vanligaste orsakerna och hur du hittar dem.
 
+![Bankavstämningen visar vad som inte finns hos banken ännu och skillnaden.](/bilder/manual/bank/bankavstamning.webp)
+
 ## Så här letar du upp skillnaden
 
 1. **Kontrollera saldot och datumet.** Är **Datum på kontoutdraget** samma dag som saldot du skrev av? Står det minus framför ett negativt saldo?

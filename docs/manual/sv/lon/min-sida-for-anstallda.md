@@ -10,6 +10,8 @@ sokord: [Min sida, anställdportal, självservice, bjud in anställd, lönebeske
 
 Min sida är de anställdas egen del av NONOX. Där ser de sina lönebesked och sitt semestersaldo, kan sjukanmäla sig, ansöka om semester och skicka in utlägg. Den här artikeln beskriver Min sida från arbetsgivarens sida. Hur de anställda själva använder den står under [För anställda](/manual/personal/min-sida).
 
+![Min sida på mobilen: sjukanmälan, semester, utlägg och lönebesked.](/bilder/manual/personal/min-sida.webp)
+
 ## Så här bjuder du in en anställd
 
 1. Kontrollera att **Självservice för anställda** är på i löneinställningarna (det är förvalt).

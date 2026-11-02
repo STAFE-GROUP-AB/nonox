@@ -10,6 +10,8 @@ sokord: [slå på personalliggare, aktivera personalliggare, personalansvarig, i
 
 Personalliggaren är en modul som du slår på för det företag som behöver den. Det tar en minut. Sedan lägger du till lokalen, personalen och en surfplatta som kiosk, i den ordningen.
 
+![Personalliggarens översikt när lokalen och personalen är upplagda.](/bilder/manual/personalliggare/oversikten-och-avvikelser.webp)
+
 ## Så här gör du
 
 1. Öppna företagsmenyn högst upp i sidomenyn och välj **Inställningar för företaget**.

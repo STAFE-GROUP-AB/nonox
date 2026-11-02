@@ -9,6 +9,8 @@ sokord: [mall, konteringsmall, snabbkontering, inköp med moms, försäljning me
 
 De vanligaste verifikationerna ser nästan alltid likadana ut: ett inköp med 25 % moms, en kontantförsäljning, en bankavgift. Med en konteringsmall skriver du bara beloppet du betalade eller fick, inklusive moms, så fyller NONOX i raderna och räknar ut momsen.
 
+![Mallarna öppnar du under Snabbare: använd en mall, ovanför raderna.](/bilder/manual/bokforing/bokfor-en-verifikation.webp)
+
 ## Så här gör du
 
 1. Gå till **Bokföring → Verifikationer** och välj **Ny verifikation**.

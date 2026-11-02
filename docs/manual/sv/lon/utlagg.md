@@ -11,6 +11,8 @@ sokord: [utlägg, kvitto, ersättning för utlägg, privat betalt, återbetalnin
 
 Ett utlägg är när en anställd har betalat något för företagets räkning med egna pengar, till exempel citroner till baren eller en kabel till kassan. Den anställda skickar in kvittot på Min sida, du godkänner det, och pengarna betalas tillbaka med nästa lön. Kvittot sparas som underlag i bokföringen.
 
+![Ansökningar och utlägg som väntar på godkännande.](/bilder/manual/lon/utlagg.webp)
+
 ## Så här skickar den anställda in ett utlägg
 
 På Min sida väljer den anställda **Lägg in ett utlägg**, tar en bild av kvittot eller väljer en PDF, och fyller i datum, vad som köptes, belopp och moms. Med NONOX AI påslaget räcker det att skicka kvittot; AI:n läser resten. Hjälpen för de anställda finns under [För anställda](/manual/personal).

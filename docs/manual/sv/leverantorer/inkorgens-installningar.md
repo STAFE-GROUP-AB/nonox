@@ -12,6 +12,8 @@ Innan inkorgen tar emot något behöver två saker vara klara: du behöver ge ut
 
 Inställningarna finns under **Företagsinställningar → Moduler**. Klicka på **Inställningar** vid modulen **Inkorg**. Är modulen inte påslagen slår en ägare eller administratör på den där först. Läs [Moduler](/manual/installningar/moduler).
 
+![Företagets egen adress för inkorgen står överst.](/bilder/manual/leverantorer/inkorgen.webp)
+
 ## Företagets adress
 
 Under **Företagets adress** står adressen. Klicka på **Kopiera** och ge den till leverantörer och till ditt kassasystem.

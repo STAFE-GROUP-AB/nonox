@@ -9,6 +9,8 @@ sokord: [bjud in redovisningskonsult, bjud in byrå, ny klient, klient, inbjudan
 
 Byrån arbetar i kundens företag genom att vara med där, med rollen **Redovisningskonsult**. Det finns ingen separat koppling som ger byrån tillgång. Är konsulten med i företaget kan hen arbeta där; tas hen bort försvinner tillgången direkt.
 
+![Skickade inbjudningar och personerna i företaget med sina roller.](/bilder/manual/kom-igang/bjud-in-en-anvandare.webp)
+
 ## Så här bjuder kunden in byrån
 
 Det här gör kundens ägare eller en administratör.

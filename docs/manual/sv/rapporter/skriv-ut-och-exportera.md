@@ -10,6 +10,8 @@ sokord: [pdf, csv, excel, exportera rapport, skriv ut, utskrift, ladda ner rappo
 
 Alla rapporter under **Bokföring → Rapporter** kan skrivas ut, sparas som PDF och laddas ner som CSV-fil för Excel. Det du får är exakt den rapport du ser på skärmen, med samma år, period och filter.
 
+![En saldobalans för ett kvartal, med knapparna för Excel och utskrift.](/bilder/manual/rapporter/skriv-ut-och-exportera.webp)
+
 ## Så här sparar du en rapport som PDF
 
 1. Ta fram rapporten med de val du vill ha.

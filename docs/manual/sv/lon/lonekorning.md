@@ -15,6 +15,8 @@ Lönekörningen går igenom de här stegen, och statusen syns överst på sidan:
 
 **Utkast** → **Beräknad, väntar på attest** → **Attesterad** → **Utbetald** → **Bokförd**
 
+![En bokförd lönekörning med lönebesked per anställd. Beloppen är demodata, inte räknade med kontrollerade regler.](/bilder/manual/lon/lonekorning.webp)
+
 ## Så här skapar du lönekörningen
 
 1. Öppna **Lön → Lönekörningar**.

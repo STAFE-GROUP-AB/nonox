@@ -9,6 +9,8 @@ sokord: [valuta, euro, eur, usd, dollar, växelkurs, valutakurs, kursdifferens, 
 
 Får du en faktura i euro, dollar eller en annan valuta registrerar du den i den valutan. NONOX räknar om den till kronor med Riksbankens kurs och bokför den i kronor. När du sedan betalar skriver du hur många kronor banken faktiskt drog, och skillnaden mot den bokförda kursen bokförs som kursvinst eller kursförlust.
 
+![En faktura i euro med kurs, betalning och kursdifferens.](/bilder/manual/leverantorer/utlandsk-valuta.webp)
+
 ## Så här registrerar du fakturan
 
 1. Registrera fakturan som vanligt: **Inköp → Leverantörsfakturor → Ny leverantörsfaktura**.

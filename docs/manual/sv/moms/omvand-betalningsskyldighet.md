@@ -11,6 +11,8 @@ Vid omvänd betalningsskyldighet är det köparen, inte säljaren, som redovisar
 
 Vilka affärer som omfattas avgör Mervärdesskattelagen, inte NONOX. NONOX bokför rätt när du har talat om vad det är.
 
+![Momsdeklarationen för ett byggföretag, med försäljning där köparen är betalningsskyldig i ruta 41.](/bilder/manual/moms/omvand-betalningsskyldighet.webp)
+
 ## När du säljer byggtjänster
 
 ### Så här markerar du kunden

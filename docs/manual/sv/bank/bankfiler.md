@@ -9,6 +9,8 @@ sokord: [bankfil, camt.054, camt.053, pain.001, BgMax, LB, ISO 20022, XML, konto
 
 Bankerna i Sverige byter till filer enligt standarden ISO 20022, ett XML-format som ser likadant ut i alla banker. NONOX hanterar två sådana filer: en som du **läser in** från banken med kundernas inbetalningar, och en som du **skapar** i NONOX och laddar upp i banken för att betala leverantörer.
 
+![Läs in bankens fil med inbetalningar.](/bilder/manual/fakturering/inbetalningar.webp)
+
 ## Filer du läser in
 
 ### Inbetalningar (camt.054)

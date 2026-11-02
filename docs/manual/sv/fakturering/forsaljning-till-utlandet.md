@@ -12,6 +12,8 @@ Säljer du till en kund utomlands blir fakturan oftast utan svensk moms. NONOX b
 > [!IMPORTANT]
 > Reglerna för försäljning utomlands finns i Mervärdesskattelagen. Konton, momsrutor och fakturatexter i NONOX är markerade för juridisk kontroll. Stäm av med din redovisningskonsult eller Skatteverket innan du fakturerar utomlands första gången.
 
+![En faktura för tjänster till ett företag i ett annat EU-land, utan svensk moms.](/bilder/manual/fakturering/forsaljning-till-utlandet.webp)
+
 ## Sorterna
 
 Välj i fältet **Försäljning utomlands**, på kunden eller på fakturan:

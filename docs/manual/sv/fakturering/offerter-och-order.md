@@ -12,6 +12,8 @@ En **offert** är ett prisförslag till en kund. En **order** är det kunden har
 
 Du hittar dem under **Försäljning → Offerter** och **Försäljning → Order**. Ingenting bokförs förrän fakturan skapas.
 
+![En skickad offert. När kunden tackar ja blir den en order eller en faktura.](/bilder/manual/fakturering/offerter-och-order.webp)
+
 ## Så här skriver du en offert
 
 1. Gå till **Försäljning → Offerter** och tryck på **Ny offert**.

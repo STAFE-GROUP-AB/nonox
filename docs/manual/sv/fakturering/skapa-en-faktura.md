@@ -14,6 +14,8 @@ Fakturorna finns under **Försäljning → Fakturor**.
 
 ![En ny faktura: kund, datum, ROT eller RUT, omvänd betalningsskyldighet och raderna.](/bilder/manual/fakturering/skapa-en-faktura.webp)
 
+![Ett utkast till faktura med kund, datum och rader.](/bilder/manual/fakturering/utkast.webp)
+
 ## Så här gör du
 
 1. Gå till **Försäljning → Fakturor** och tryck på **Ny faktura**.

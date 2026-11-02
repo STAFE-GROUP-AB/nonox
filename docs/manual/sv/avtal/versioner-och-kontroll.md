@@ -13,6 +13,8 @@ Ett kollektivavtal gäller en avtalsperiod, och lönerna höjs ofta i steg under
 
 En version används i lönen först när en namngiven person har jämfört den med källorna. Det är samma princip som för lönens regler; se [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller).
 
+![Avtalsversionerna med giltighet och kontroll. I demon är en version markerad som demodata.](/bilder/manual/avtal/versioner-och-kontroll.webp)
+
 ## Så här granskar du en version
 
 1. Öppna **Lön → Avtal** och fliken **Versioner och kalender**.

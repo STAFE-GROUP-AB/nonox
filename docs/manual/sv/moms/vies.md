@@ -9,6 +9,8 @@ sokord: [vies, momsregistreringsnummer, momsnummer, vat number, kontrollera moms
 
 VIES är EU:s register över momsregistreringsnummer. Säljer du utan moms till ett företag i ett annat EU-land, eller köper där du själv redovisar momsen, är det klokt att kontrollera att motpartens nummer är giltigt. NONOX gör kontrollen direkt från kund- och leverantörsregistret och sparar svaret, så att du kan visa att kontrollen gjordes.
 
+![Momsregistreringsnumren som kontrolleras står i den periodiska sammanställningen.](/bilder/manual/moms/periodisk-sammanstallning.webp)
+
 ## Så här kontrollerar du en kund
 
 1. Gå till **Register → Kunder** och öppna kunden med **Ändra**. Kunden ska ha ett momsregistreringsnummer från ett annat land än Sverige.

@@ -10,6 +10,8 @@ sokord: [kvitto, bilaga, verifikationsunderlag, fota kvitto, ladda upp, pdf, AI,
 
 Underlaget är kvittot, fakturan eller avtalet som visar vad som har hänt. Varje verifikation ska ha ett, och i NONOX sparas det direkt på verifikationen. Du kan dra in en fil, fota kvittot med mobilen och – om företaget har NONOX AI – låta underlaget fylla i verifikationen åt dig.
 
+![En bokförd verifikation med kvittot som underlag bredvid. Kvittot i bilden är ett påhittat exempel.](/bilder/manual/bokforing/underlag.webp)
+
 ## Så här lägger du till underlag när du bokför
 
 1. Öppna en ny verifikation eller ett utkast.

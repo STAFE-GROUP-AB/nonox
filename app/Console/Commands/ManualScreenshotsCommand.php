@@ -17,6 +17,7 @@ use Illuminate\Console\Command;
 use Illuminate\Cookie\CookieValuePrefix;
 use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -34,9 +35,13 @@ use Symfony\Component\Yaml\Yaml;
  * Start the app with a cache of its own, or it reads names cached by the
  * app on the real database (same ids, same cache files):
  *
- *   DB_DATABASE=nonox_demo CACHE_STORE=array APP_URL=http://127.0.0.1:8123 php artisan serve --port=8123
+ *   cd public && DB_DATABASE=nonox_demo CACHE_STORE=array OTP_AUTOFILL=false PASSKEYS_SKIP_LOCALLY=true \
+ *     APP_URL=http://127.0.0.1:8123 php -S 127.0.0.1:8123 ../vendor/laravel/framework/src/Illuminate/Foundation/resources/server.php
  *
- * @phpstan-type Shot array{foretag: string, rutt: string, modell?: string, fraga?: array<string, string>, enhet?: string, del?: string}
+ * Not `php artisan serve`: it does not pass DB_DATABASE on to the server, which
+ * then reads .env and the real database.
+ *
+ * @phpstan-type Shot array{foretag: string, rutt: string, modell?: string|array{tabell: string, dar?: array<string, scalar>}, fraga?: array<string, string>, enhet?: string, del?: string, klick?: list<string>, visa?: string, anvandare?: string, text?: string}
  */
 class ManualScreenshotsCommand extends Command
 {
@@ -78,26 +83,46 @@ class ManualScreenshotsCommand extends Command
         $base = rtrim((string) $this->option('url'), '/');
         $companies = $this->companies();
         $owner = User::query()->findOrFail($companies['restaurang']->user_id);
-        $current = $owner->current_team_id;
-        $cookie = $this->signIn($owner, $encrypter);
+        $admin = config('app.admin_email');
+        $forbid = is_string($admin) && $admin !== '' && $admin !== $owner->email ? [$admin] : [];
+        $cookies = [];
         $failed = false;
 
+        /** @var array<int, int|null> $restore the users' companies before the run */
+        $restore = [];
+
         try {
-            foreach (collect($shots)->groupBy(fn (array $shot): string => $shot['foretag'], preserveKeys: true) as $short => $group) {
+            $groups = collect($shots)->groupBy(fn (array $shot): string => $shot['foretag'].'|'.($shot['anvandare'] ?? ''), preserveKeys: true);
+
+            foreach ($groups as $key => $group) {
+                [$short, $login] = explode('|', (string) $key);
                 $company = $companies[$short] ?? throw new RuntimeException("Okänt demoföretag: {$short}.");
-                $owner->forceFill(['current_team_id' => $company->id])->save();
-                $this->info("{$company->name}: {$group->count()} bilder");
+                $user = match ($login) {
+                    '', 'agare' => $owner,
+                    'gast' => null,
+                    default => $this->demoUser($login),
+                };
+
+                if ($user !== null) {
+                    $restore[$user->id] ??= $user->current_team_id;
+                    $user->forceFill(['current_team_id' => $company->id])->save();
+                    $cookies[$user->id] ??= $this->signIn($user, $encrypter);
+                }
+
+                $this->info("{$company->name}".($login === '' ? '' : " ({$login})").": {$group->count()} bilder");
 
                 $plan = [
                     'chrome' => config('services.chrome.path'),
-                    'cookies' => [['name' => (string) config('session.cookie'), 'value' => $cookie, 'url' => $base]],
+                    'cookies' => $user === null ? [] : [['name' => (string) config('session.cookie'), 'value' => $cookies[$user->id], 'url' => $base]],
                     'shots' => $group->map(fn (array $shot, string $name): array => [
                         'url' => $base.$this->path($shot, $company),
                         'file' => public_path("bilder/manual/{$name}.webp"),
                         ...self::DEVICES[$shot['enhet'] ?? 'dator'],
                         'selector' => $shot['del'] ?? null,
-                        'expect' => $company->name,
-                        'forbid' => array_values(array_filter([config('app.admin_email'), $current === null ? null : Company::query()->whereKey($current)->value('name')], fn (mixed $word): bool => is_string($word) && $word !== '' && ! str_contains($word, 'Demo'))),
+                        'clicks' => $shot['klick'] ?? [],
+                        'reveal' => $shot['visa'] ?? null,
+                        'expect' => $shot['text'] ?? $company->name,
+                        'forbid' => $forbid,
                     ])->values()->all(),
                 ];
 
@@ -110,7 +135,9 @@ class ManualScreenshotsCommand extends Command
                 $failed = $failed || $result->failed();
             }
         } finally {
-            $owner->forceFill(['current_team_id' => $current])->save();
+            foreach ($restore as $id => $team) {
+                User::query()->whereKey($id)->update(['current_team_id' => $team]);
+            }
         }
 
         return $failed ? self::FAILURE : self::SUCCESS;
@@ -130,7 +157,17 @@ class ManualScreenshotsCommand extends Command
         return $companies;
     }
 
-    /** A session of its own for the demo owner, as the encrypted cookie the browser sends. */
+    /** A made-up demo login, never a real person's. */
+    private function demoUser(string $email): User
+    {
+        if (! str_ends_with($email, '@example.test')) {
+            throw new RuntimeException("Skärmbilder tas bara som påhittade användare (@example.test), inte som {$email}.");
+        }
+
+        return User::query()->where('email', $email)->firstOrFail();
+    }
+
+    /** A session of its own for a demo user, as the encrypted cookie the browser sends. */
     private function signIn(User $user, Encrypter $encrypter): string
     {
         $session = app('session')->driver();
@@ -153,10 +190,18 @@ class ManualScreenshotsCommand extends Command
         return isset($shot['fraga']) ? $url.'?'.http_build_query($shot['fraga']) : $url;
     }
 
-    private function model(string $kind, Company $company): int|string
+    /** @param  string|array{tabell: string, dar?: array<string, scalar>}  $kind */
+    private function model(string|array $kind, Company $company): int|string
     {
         if ($kind === 'company') {
             return $company->id;
+        }
+
+        // The newest row of a table in the company, matching the conditions.
+        if (is_array($kind)) {
+            $id = DB::table($kind['tabell'])->where('company_id', $company->id)->where($kind['dar'] ?? [])->orderByDesc('id')->value('id');
+
+            return is_int($id) || is_string($id) ? $id : throw new RuntimeException("Hittade ingen rad i {$kind['tabell']} för {$company->name}.");
         }
 
         return CurrentCompany::run($company, fn (): int|string => match ($kind) {

@@ -9,6 +9,8 @@ sokord: [utkast, spara, preliminär, ej bokförd, vänta, halvfärdig]
 
 Ett utkast är en verifikation som är sparad men inte bokförd. Använd det när du väntar på ett kvitto, när du inte är säker på konteringen eller när någon annan ska titta på den innan den bokförs. Ett utkast har inget nummer och syns inte i rapporterna, i kontosaldona eller i SIE-filen.
 
+![Ett utkast till verifikation. Det kan sparas obalanserat och bokförs när det stämmer.](/bilder/manual/bokforing/utkast.webp)
+
 ## Så här sparar du ett utkast
 
 1. Fyll i det du vet i en ny verifikation (**Bokföring → Verifikationer → Ny verifikation**).

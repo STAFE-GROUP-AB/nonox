@@ -15,6 +15,8 @@ Avsnittet är för dig som sköter lönerna i ett företag: ägaren, en löneadm
 > [!IMPORTANT]
 > NONOX räknar aldrig lön med en sats som ingen har kontrollerat. Varje belopp och procentsats som kommer från lag eller från Skatteverket (arbetsgivaravgifter, sjuklön, semester, förmånsvärden) är en regel med källa, och en namngiven person i företaget måste ha jämfört den med källan innan den används. Saknas en kontrollerad regel för utbetalningsdagen stoppas lönekörningen. Läs [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller) innan den första lönen.
 
+![Kom igång med lön: stegen innan den första lönekörningen.](/bilder/manual/lon/sla-pa-lon.webp)
+
 ## Kom igång
 
 - [Slå på lönemodulen och kom igång](/manual/lon/sla-pa-lon)
