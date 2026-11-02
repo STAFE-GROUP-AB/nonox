@@ -309,7 +309,7 @@ it('ML 17 kap. 24 § p. 13: a domestic row at 0 % must refer to the exemption', 
     ]));
 
     expect(InvoicePdf::html($invoice))->toMatch('/undantag|10 kap\.|artikel 13[0-9]/i');
-})->todo('AUD-FAKT-6: a domestic invoice with 0 % VAT carries no reference to the exemption (ML 17 kap. 24 § p. 13)');
+}); // AUD-FAKT-6 fixed (#54): a domestic row at 0 % prints its exemption (ML 17 kap. 24 § p. 13).
 
 it('ML 17 kap. 28 § p. 6 and 16 kap.: a company that is not VAT registered cannot charge VAT on its invoices', function () {
     $this->company->forceFill(['vat_registered' => false, 'vat_number' => null])->save();

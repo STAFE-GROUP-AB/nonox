@@ -6019,5 +6019,18 @@
     "Fakturan får texten: :text": "The invoice will carry the text: :text",
     "Ta ändå ut moms på fakturan. Jag vet att momsen ska betalas in till Skatteverket (16 kap. 23 § mervärdesskattelagen).": "Charge VAT on the invoice anyway. I know the VAT must be paid to the Swedish Tax Agency (Chapter 16, Section 23 of the VAT Act).",
     "Varför företaget inte är momsregistrerat": "Why the company is not registered for VAT",
-    "Skrivs ut på fakturor utan moms. En faktura med moms kan bara skapas om du bekräftar det på fakturan, eftersom moms som tas ut ska betalas in.": "Printed on invoices without VAT. An invoice with VAT can only be issued if you confirm it on the invoice, since VAT charged must be paid in."
+    "Skrivs ut på fakturor utan moms. En faktura med moms kan bara skapas om du bekräftar det på fakturan, eftersom moms som tas ut ska betalas in.": "Printed on invoices without VAT. An invoice with VAT can only be issued if you confirm it on the invoice, since VAT charged must be paid in.",
+    "Momsfri försäljning, annat undantag": "VAT-exempt sale, other exemption",
+    "Sjukvård eller tandvård (10 kap. 6 §)": "Health care or dental care (Chapter 10, Section 6)",
+    "Social omsorg (10 kap. 14 §)": "Social care (Chapter 10, Section 14)",
+    "Utbildning (10 kap. 15–18 §§)": "Education (Chapter 10, Sections 15–18)",
+    "Idrott (10 kap. 28 §)": "Sports (Chapter 10, Section 28)",
+    "Kultur (10 kap. 30 §)": "Culture (Chapter 10, Section 30)",
+    "Försäkring (10 kap. 32 §)": "Insurance (Chapter 10, Section 32)",
+    "Bank och finans (10 kap. 33 §)": "Banking and finance (Chapter 10, Section 33)",
+    "Fastighet, uthyrning av lokal eller bostad (10 kap. 35 §)": "Real estate, letting of premises or housing (Chapter 10, Section 35)",
+    "Utanför momsen, till exempel utlägg": "Outside the scope of VAT, for example an outlay",
+    "Skäl till 0 % moms, rad": "Reason for 0 % VAT, row",
+    "Utan moms": "Without VAT",
+    "Underlag :base.": "Base :base."
 }

@@ -80,6 +80,14 @@
                                         <option value="{{ $rate }}">{{ $rateLabel }}</option>
                                     @endforeach
                                 </select>
+                                @if($exemptions ?? false)
+                                    {{-- A row sold in Sweden at 0 % says why on the invoice (ML 17 kap. 24 § p. 13). --}}
+                                    <select class="{{ $cell }} mt-1" x-show="String(row.vat_rate) === '0' && ! (typeof vatFree === 'function' ? vatFree() : vatFree)" x-model="row.vat_exemption" :aria-label="'{{ __('Skäl till 0 % moms, rad') }} ' + (index + 1)">
+                                        @foreach(App\Domain\Invoicing\VatExemptionReason::cases() as $reason)
+                                            <option value="{{ $reason->value }}">{{ $reason->label() }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                             </td>
                             <td class="order-last col-span-6 flex items-baseline justify-between gap-3 border-t border-gray-100 pt-3 font-semibold whitespace-nowrap tabular-nums lg:table-cell lg:border-0 lg:py-1 lg:pr-2 lg:text-right lg:font-normal">
                                 <span class="text-xs font-medium text-gray-500 lg:hidden" aria-hidden="true">{{ __('Belopp') }}</span>

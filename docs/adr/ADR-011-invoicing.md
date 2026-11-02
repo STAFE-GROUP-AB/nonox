@@ -86,6 +86,16 @@
   unregistered company shows any output VAT on 2611/2621/2631 with the
   16 kap. 23 § note. TODO(legal-verify): the wording, and how such VAT is
   reported and paid.
+- **Rows at 0 % in Sweden** (2026-11-02, AUD-FAKT-6, #54). A row sold in
+  Sweden at 0 % (not reverse charge, not a sale abroad) carries why:
+  `invoice_rows.vat_exemption` (`VatExemptionReason`: an ML 10 kap.
+  provision, a general exemption, or outside the scope of VAT) and the text
+  kept with it when the draft is saved, `vat_exemption_text`. Without a
+  choice the row gets the general statement 17 kap. 24 § p. 13 c allows.
+  The PDF prints each text with its base (24 § p. 9). There is no VAT code
+  table; the reasons are an enum with the texts. A company not registered
+  for VAT whose own exemption is printed (#51) needs no row reason.
+  TODO(legal-verify): the wording, and articles do not yet carry a reason.
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

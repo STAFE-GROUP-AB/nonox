@@ -114,7 +114,7 @@
         </div>
     @endif
 
-    @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true, 'labour' => $taxReduction !== '', 'withCurrency' => true])
+    @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true, 'labour' => $taxReduction !== '', 'withCurrency' => true, 'exemptions' => ! $vatUnregistered || $vatExemption?->invoiceText() === null])
 
     <x-ui.card>
         <x-ui.field for="invoice_notes" :label="__('Meddelande på fakturan (frivilligt)')" error="notes">

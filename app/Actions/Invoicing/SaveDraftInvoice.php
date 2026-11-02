@@ -8,6 +8,7 @@ use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
+use App\Domain\Invoicing\VatExemptionReason;
 use App\Domain\Vat\OssRates;
 use App\Domain\Vat\OssThreshold;
 use App\Models\Company;
@@ -173,6 +174,18 @@ class SaveDraftInvoice
 
             foreach ($rows as $index => $row) {
                 $rows[$index]['is_labour'] = $taxReduction !== null && (bool) ($rowInput[$index]['labour'] ?? false);
+            }
+
+            // A row sold in Sweden at 0 % says why, unless the company's own exemption covers the invoice (#54, #51).
+            $domestic = ! $reverseCharge && $foreignSale === null;
+            $companyExempt = ! $company->isVatRegistered() && $company->vat_exemption?->invoiceText() !== null;
+
+            foreach ($rows as $index => $row) {
+                $reason = $domestic && ! $companyExempt && $row['vat_rate'] === 0
+                    ? (VatExemptionReason::tryFrom((string) ($rowInput[$index]['vat_exemption'] ?? '')) ?? VatExemptionReason::Other)
+                    : null;
+                $rows[$index]['vat_exemption'] = $reason?->value;
+                $rows[$index]['vat_exemption_text'] = $reason?->invoiceText();
             }
 
             if ($taxReduction !== null && $foreignSale !== null) {

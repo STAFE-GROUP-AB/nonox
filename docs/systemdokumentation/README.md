@@ -536,6 +536,16 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   undantagstext sparad när den skapas (`vat_exemption_text`, 17 kap. 24 §
   p. 13 och 28 § p. 6) och PDF:en skriver ut den (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-5, #51)).
+- En rad som säljs i Sverige med 0 % moms (inte omvänd betalningsskyldighet
+  eller försäljning utomlands) får ett skäl (`invoice_rows.vat_exemption`):
+  en bestämmelse i ML 10 kap. (sjukvård 6 §, social omsorg 14 §,
+  utbildning 15–18 §§, idrott 28 §, kultur 30 §, försäkring 32 §, bank och
+  finans 33 §, fastighet 35 §), ett allmänt undantag eller utanför
+  momsens tillämpningsområde (till exempel utlägg). Utan val blir det det
+  allmänna undantaget (17 kap. 24 § p. 13 c). Texten sparas på raden när
+  utkastet sparas (`vat_exemption_text`) och skrivs ut på fakturan med
+  underlaget per undantag (24 § p. 9) (enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-6, #54)).
 - Undantag från kontantmetoden: försäljning av varor till ett annat EU-land
   (ML 7 kap. 29 §) och tjänster som tas upp i periodisk sammanställning
   (7 kap. 30 §) redovisas för fakturans period oavsett metod. Sådana
