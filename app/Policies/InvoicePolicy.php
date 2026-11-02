@@ -53,7 +53,7 @@ class InvoicePolicy
     {
         return ! $invoice->isCredit()
             && $invoice->status === InvoiceStatus::Issued
-            && $invoice->paid_ore->isZero()
+            && $invoice->paid_ore->ore === $invoice->credited_ore->ore
             && $this->can($user, $invoice, 'invoices:credit');
     }
 

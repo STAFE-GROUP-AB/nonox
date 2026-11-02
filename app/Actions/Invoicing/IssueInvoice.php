@@ -35,8 +35,13 @@ use Illuminate\Validation\ValidationException;
  * now, and under fakturametoden a voucher in series B. After this the
  * invoice never changes.
  *
- * A credit invoice settles the invoice it credits: both are closed, and the
- * receivable nets to zero.
+ * A credit invoice settles the invoice it credits by its own amount
+ * (Mervärdesskattelag (2023:200) 17 kap. 22-23 §§: a credit note changes
+ * the original by what it credits). A partial credit leaves the rest of
+ * the original open to be paid; the original is closed only when nothing
+ * remains. A credit larger than what remains is refused, so the customer
+ * ledger always agrees with 1510 (BFL 4 kap. 1 §, 5 kap. 1 §) (enligt
+ * granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47)).
  */
 class IssueInvoice
 {
@@ -67,8 +72,8 @@ class IssueInvoice
 
             $original = $invoice->isCredit() ? Invoice::query()->whereKey($invoice->credits_invoice_id)->lockForUpdate()->first() : null;
 
-            if ($invoice->isCredit() && ($original === null || $original->status !== InvoiceStatus::Issued || ! $original->paid_ore->isZero())) {
-                throw ValidationException::withMessages(['invoice' => __('Bara en obetald faktura kan krediteras.')]);
+            if ($invoice->isCredit()) {
+                $this->ensureCreditFits($invoice, $original);
             }
 
             if ($invoice->reverse_charge) {
@@ -98,8 +103,8 @@ class IssueInvoice
                 'customer_snapshot' => $customer->snapshot(),
                 'issued_at' => CarbonImmutable::now(),
                 'issued_by' => $user->id,
-                'paid_ore' => $invoice->isCredit() ? $invoice->total_ore->ore : 0,
-                'foreign_paid_minor' => $invoice->isCredit() ? (int) $invoice->foreign_total_minor : 0,
+                'paid_ore' => 0,
+                'foreign_paid_minor' => 0,
             ]);
 
             if ($company->accounting_method === AccountingMethod::Fakturametoden) {
@@ -121,7 +126,9 @@ class IssueInvoice
 
             $invoice->save();
 
-            $original?->forceFill(['status' => InvoiceStatus::Credited, 'paid_ore' => $original->total_ore->ore, 'foreign_paid_minor' => (int) $original->foreign_total_minor])->save();
+            if ($original instanceof Invoice) {
+                $this->settle($invoice, $original);
+            }
 
             Audit::record('invoice.issued', $invoice, [
                 'number' => $number,
@@ -129,7 +136,7 @@ class IssueInvoice
                 'customer' => $customer->name,
                 'total_ore' => $invoice->total_ore->ore,
                 'credits' => $original?->number,
-            ] + ($invoice->isForeign() ? [
+            ] + ($original instanceof Invoice ? ['credit_settled_ore' => -$invoice->paid_ore->ore] : []) + ($invoice->isForeign() ? [
                 'currency' => $invoice->invoice_currency,
                 'foreign_total_minor' => $invoice->foreign_total_minor,
                 'exchange_rate_micros' => $invoice->exchange_rate_micros,
@@ -139,6 +146,65 @@ class IssueInvoice
 
             return $invoice;
         }));
+    }
+
+    /**
+     * A credit invoice credits an issued invoice that is not paid by the
+     * customer, by an amount below zero and no larger than what remains.
+     */
+    private function ensureCreditFits(Invoice $credit, ?Invoice $original): void
+    {
+        if ($original === null || $original->isCredit() || $original->status !== InvoiceStatus::Issued || $original->paid_ore->ore !== $original->credited_ore->ore) {
+            throw ValidationException::withMessages(['invoice' => __('Bara en obetald faktura kan krediteras.')]);
+        }
+
+        if ($credit->total_ore->ore >= 0) {
+            throw ValidationException::withMessages(['invoice' => __('En kreditfaktura ska ha ett belopp under noll.')]);
+        }
+
+        $foreignRemaining = $original->foreignRemaining();
+
+        if (-$credit->total_ore->ore > $original->remaining()->ore || ($foreignRemaining !== null && -(int) $credit->foreign_total_minor > $foreignRemaining)) {
+            throw ValidationException::withMessages(['invoice' => __('Kreditfakturan är större än det som återstår av :title, :remaining.', ['title' => $original->title(), 'remaining' => $original->formatRemaining()])]);
+        }
+    }
+
+    /**
+     * The credit settles the original by its own amount, in kronor and in
+     * the invoice's currency. The original is closed when nothing remains:
+     * credited when only credits settled it, paid when payments did too.
+     */
+    private function settle(Invoice $credit, Invoice $original): void
+    {
+        $foreignRemaining = $original->foreignRemaining();
+        $foreign = $foreignRemaining === null ? 0 : min(-(int) $credit->foreign_total_minor, $foreignRemaining);
+        // When the credit clears the currency, it clears the kronor too, so no öre is left behind on 1510.
+        $kronor = $foreignRemaining !== null && $foreign === $foreignRemaining
+            ? $original->remaining()->ore
+            : min(-$credit->total_ore->ore, $original->remaining()->ore);
+
+        $paid = $original->paid_ore->ore + $kronor;
+        $credited = $original->credited_ore->ore + $kronor;
+        $closed = $foreignRemaining === null ? $paid >= $original->total_ore->ore : $original->foreign_paid_minor + $foreign >= (int) $original->foreign_total_minor;
+
+        $original->forceFill([
+            'paid_ore' => $paid,
+            'credited_ore' => $credited,
+            'foreign_paid_minor' => $original->foreign_paid_minor + $foreign,
+            'status' => match (true) {
+                ! $closed => InvoiceStatus::Issued,
+                $credited >= $original->total_ore->ore => InvoiceStatus::Credited,
+                default => InvoiceStatus::Paid,
+            },
+        ])->save();
+
+        $creditClosed = $foreignRemaining === null ? $kronor >= -$credit->total_ore->ore : $foreign >= -(int) $credit->foreign_total_minor;
+
+        $credit->forceFill([
+            'paid_ore' => -$kronor,
+            'foreign_paid_minor' => -$foreign,
+            'status' => $creditClosed ? InvoiceStatus::Paid : InvoiceStatus::Issued,
+        ])->save();
     }
 
     /**

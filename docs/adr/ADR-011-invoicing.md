@@ -28,10 +28,17 @@
   same SaveDraftVoucher and PostVoucher as manual vouchers, and point back to
   the invoice (`source_type`, `source_id`; `source_id` became text because
   invoices have UUIDs).
-- **Credit invoices.** Only an unpaid invoice can be credited, as a whole: a
-  draft with the same rows and negative quantities. When it is issued it
-  settles the original (status CREDITED) and is itself settled, and its
-  voucher reverses the original's.
+- **Credit invoices.** A credit starts as a draft with the original's rows
+  and negative quantities; the rows can be changed to credit only part of
+  it. When it is issued it settles the original by its own amount, in
+  kronor and in the invoice's currency (`paid_ore`, `foreign_paid_minor`),
+  and `credited_ore` keeps the part of `paid_ore` that credits settled. The
+  original stays open for the rest and is closed only when nothing remains
+  (CREDITED when only credits settled it, PAID when payments did too). A
+  credit larger than what remains, or not below zero, is refused. Its
+  voucher reverses the credited part of the original's (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47); ML 17 kap.
+  22-23 §§, BFL 4 kap. 1 §, 5 kap. 1 §).
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

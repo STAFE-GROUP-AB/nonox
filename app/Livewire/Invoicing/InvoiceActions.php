@@ -157,7 +157,7 @@ class InvoiceActions extends Component
             'canPay' => $this->user()->can('registerPayment', $invoice),
             'canTaxPay' => $this->user()->can('registerTaxReductionPayment', $invoice),
             'canRemind' => $this->user()->can('remind', $invoice),
-            'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->isEmpty(),
+            'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->doesntContain(fn (Invoice $credit): bool => $credit->isDraft()),
             'exchangePreview' => $this->exchangePreview($invoice),
         ]);
     }

@@ -47,7 +47,8 @@ use LogicException;
  * @property Money $vat_ore
  * @property Money $rounding_ore
  * @property Money $total_ore
- * @property Money $paid_ore
+ * @property Money $paid_ore what is settled: payments and the credit invoices that settle it
+ * @property Money $credited_ore the part of paid_ore that credit invoices settled
  * @property ?string $ocr
  * @property ?string $voucher_id
  * @property ?CarbonImmutable $issued_at
@@ -75,7 +76,7 @@ class Invoice extends Model
     public const string CREDIT = 'CREDIT';
 
     /** Columns that may change after the invoice is issued. */
-    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'sent_at', 'sent_to', 'updated_at'];
+    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'credited_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'sent_at', 'sent_to', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -105,6 +106,7 @@ class Invoice extends Model
         'rounding_ore' => 0,
         'total_ore' => 0,
         'paid_ore' => 0,
+        'credited_ore' => 0,
         'invoice_currency' => 'SEK',
         'foreign_paid_minor' => 0,
     ];
@@ -129,6 +131,7 @@ class Invoice extends Model
             'rounding_ore' => MoneyCast::class,
             'total_ore' => MoneyCast::class,
             'paid_ore' => MoneyCast::class,
+            'credited_ore' => MoneyCast::class,
             'issued_at' => 'immutable_datetime',
             'sent_at' => 'immutable_datetime',
             'exchange_rate_micros' => 'integer',

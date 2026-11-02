@@ -5872,5 +5872,9 @@
     "Riksbankens kurs :date, för leveransdagen eller fakturadatum om leveransdatum saknas. Du kan ändra den.": "Riksbanken's rate :date, for the delivery date, or the invoice date when there is none. You can change it.",
     "Tomt: samma som fakturadatum. Valutakursen tas för leveransdagen, då momsen uppstår.": "Empty: same as the invoice date. The exchange rate is taken for the delivery date, when the VAT arises.",
     "Har ansökt om beskattning i köparens land (OSS) eller är registrerat för OSS": "Has asked for taxation in the buyer's country (OSS) or is registered for OSS",
-    "Gäller försäljning av varor och elektroniska tjänster till privatpersoner i andra EU-länder. Utan ansökan tas svensk moms ut så länge försäljningen i år och i fjol är högst :amount.": "Applies to sales of goods and electronic services to consumers in other EU countries. Without it, Swedish VAT is charged as long as the sales this year and last year are at most :amount."
+    "Gäller försäljning av varor och elektroniska tjänster till privatpersoner i andra EU-länder. Utan ansökan tas svensk moms ut så länge försäljningen i år och i fjol är högst :amount.": "Applies to sales of goods and electronic services to consumers in other EU countries. Without it, Swedish VAT is charged as long as the sales this year and last year are at most :amount.",
+    "En kreditfaktura ska ha ett belopp under noll.": "A credit invoice must have an amount below zero.",
+    "Kreditfakturan är större än det som återstår av :title, :remaining.": "The credit invoice is larger than what remains of :title, :remaining.",
+    "Krediterat": "Credited",
+    "Blev något fel kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras.": "If something is wrong the invoice can be credited, in full or in part. A credit invoice reduces it by its amount. Change the rows in the draft to credit only part of it."
 }

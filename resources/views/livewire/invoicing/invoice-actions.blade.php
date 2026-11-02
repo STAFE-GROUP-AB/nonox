@@ -20,9 +20,17 @@
                         <span class="tabular-nums">{{ $invoice->formatForeign($invoice->foreign_paid_minor) }}</span>
                         <span class="block font-normal text-gray-600">{{ __('Kvar: :remaining', ['remaining' => $invoice->formatRemaining()]) }}</span>
                     @else
-                        <x-ui.amount :money="$invoice->paid_ore" />
+                        <x-ui.amount :money="$invoice->paid_ore->minus($invoice->credited_ore)" />
                     @endif
                 </dd></div>
+                @unless($invoice->credited_ore->isZero())
+                    <div><dt class="text-gray-500">{{ __('Krediterat') }}</dt><dd class="font-medium">
+                        <x-ui.amount :money="$invoice->credited_ore" />
+                        @unless($invoice->remaining()->isZero())
+                            <span class="block font-normal text-gray-600">{{ __('Kvar: :remaining', ['remaining' => $invoice->formatRemaining()]) }}</span>
+                        @endunless
+                    </dd></div>
+                @endunless
             @endunless
             <div><dt class="text-gray-500">{{ __('Bokförd') }}</dt><dd class="font-medium">
                 @if($invoice->voucher)
@@ -145,7 +153,7 @@
 
     @if($canCredit)
         <x-ui.card :title="__('Kreditera')">
-            <p class="text-sm text-gray-700">{{ __('Blev något fel kan fakturan krediteras. Då skapas en kreditfaktura som tar ut den, och du kan skicka en ny.') }}</p>
+            <p class="text-sm text-gray-700">{{ __('Blev något fel kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras.') }}</p>
             <div class="mt-3" x-data="{ confirming: false }">
                 <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = true">{{ __('Kreditera fakturan') }}</button>
                 <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3 text-sm">

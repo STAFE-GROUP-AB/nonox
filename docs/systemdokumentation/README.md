@@ -465,8 +465,16 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   B (1510 mot intäktskonton, utgående moms och 3740). Betalning: serie C,
   1930 mot 1510. Enligt kontantmetoden bokförs intäkt och moms först vid
   betalning.
-- En kreditfaktura tar ut hela den obetalda fakturan och vänder dess
-  verifikation.
+- En kreditfaktura krediterar hela fakturan eller en del av den (raderna i
+  utkastet kan ändras). Den minskar originalet med sitt eget belopp
+  (`credited_ore` och `paid_ore`, i kronor och i fakturans valuta) och
+  vänder den krediterade delen av verifikationen. Originalet står öppet för
+  resten och kan betalas; det stängs först när inget återstår (Krediterad
+  om bara kreditfakturor reglerade det, annars Betald). En kreditfaktura
+  som är större än det som återstår, eller inte är under noll, avvisas.
+  Kundreskontran stämmer därmed alltid mot 1510 (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47); ML 17 kap.
+  22–23 §§, BFL 4 kap. 1 §, 5 kap. 1 §).
 - Inbetalningar kan läsas in från bankens fil (ISO 20022 camt.054,
   [ADR-015](../adr/ADR-015-incoming-payment-files.md)). Systemet föreslår
   faktura efter OCR-numret; användaren kontrollerar och bokför. En inbetalning
