@@ -12,7 +12,7 @@ En maskin, en dator eller en bil som används i flera år kostnadsförs inte på
 
 Registret finns under **Bokföring → Anläggningar**.
 
-![Anläggningsregistret med bokfört värde och månadens avskrivning.](/manual/bilder/bokslut/anlaggningstillgangar.webp)
+![Anläggningsregistret med bokfört värde och månadens avskrivning.](/bilder/manual/bokslut/anlaggningstillgangar.webp)
 
 ## Så fungerar det
 

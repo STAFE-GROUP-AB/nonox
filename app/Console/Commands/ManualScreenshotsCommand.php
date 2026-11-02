@@ -93,7 +93,7 @@ class ManualScreenshotsCommand extends Command
                     'cookies' => [['name' => (string) config('session.cookie'), 'value' => $cookie, 'url' => $base]],
                     'shots' => $group->map(fn (array $shot, string $name): array => [
                         'url' => $base.$this->path($shot, $company),
-                        'file' => public_path("manual/bilder/{$name}.webp"),
+                        'file' => public_path("bilder/manual/{$name}.webp"),
                         ...self::DEVICES[$shot['enhet'] ?? 'dator'],
                         'selector' => $shot['del'] ?? null,
                         'expect' => $company->name,

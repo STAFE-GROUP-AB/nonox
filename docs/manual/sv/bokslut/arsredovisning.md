@@ -12,7 +12,7 @@ Aktiebolag och ekonomiska föreningar ska upprätta en årsredovisning. I NONOX 
 
 Sidan finns under **Bokföring → Årsredovisning**.
 
-![Årsredovisningen: texterna och underskrifterna till vänster, förhandsvisningen till höger.](/manual/bilder/bokslut/arsredovisning.webp)
+![Årsredovisningen: texterna och underskrifterna till vänster, förhandsvisningen till höger.](/bilder/manual/bokslut/arsredovisning.webp)
 
 ## Innan du börjar
 

@@ -347,10 +347,6 @@ it('has a link that resolves for every /manual link in the real articles', funct
         preg_match_all('#\]\((/manual[^)\s]*)\)#', (string) file_get_contents(realManual()."/{$path}.md"), $links);
 
         foreach ($links[1] as $link) {
-            if (str_starts_with($link, '/manual/bilder/')) {
-                continue;
-            }
-
             $target = trim((string) parse_url($link, PHP_URL_PATH), '/');
             $fragment = parse_url($link, PHP_URL_FRAGMENT);
             $parts = explode('/', $target);
@@ -375,9 +371,9 @@ it('has a link that resolves for every /manual link in the real articles', funct
 });
 
 it('shows a screenshot as a figure with its caption and size', function () {
-    $page = ManualMarkdown::render("Text.\n\n![Översikten för en restaurang.](/manual/bilder/kom-igang/oversikten.webp)\n\n## Rubrik\n");
+    $page = ManualMarkdown::render("Text.\n\n![Översikten för en restaurang.](/bilder/manual/kom-igang/oversikten.webp)\n\n## Rubrik\n");
 
-    expect($page['html'])->toContain('<figure class="mn-shot"><img src="'.url('/manual/bilder/kom-igang/oversikten.webp').'" alt="Översikten för en restaurang."')
+    expect($page['html'])->toContain('<figure class="mn-shot"><img src="'.url('/bilder/manual/kom-igang/oversikten.webp').'" alt="Översikten för en restaurang."')
         ->toContain('width="2560" height="1600" loading="lazy"')
         ->toContain('<figcaption>Översikten för en restaurang.</figcaption>');
 });
@@ -387,18 +383,22 @@ it('has every screenshot the articles show, each taken from the list, and none l
     $shown = [];
 
     foreach (realArticles() as $path) {
-        preg_match_all('#!\[([^\]]*)\]\(/manual/bilder/([^)\s]+)\.webp\)#', (string) file_get_contents(realManual()."/{$path}.md"), $images, PREG_SET_ORDER);
+        preg_match_all('#!\[([^\]]*)\]\(/bilder/manual/([^)\s]+)\.webp\)#', (string) file_get_contents(realManual()."/{$path}.md"), $images, PREG_SET_ORDER);
 
         foreach ($images as [, $alt, $image]) {
             expect($alt)->not->toBe('', "{$path}: the screenshot {$image} needs a caption.")
-                ->and(is_file(public_path("manual/bilder/{$image}.webp")))->toBeTrue("{$path} shows {$image}, which has not been taken.")
+                ->and(is_file(public_path("bilder/manual/{$image}.webp")))->toBeTrue("{$path} shows {$image}, which has not been taken.")
                 ->and(in_array($image, $listed, true))->toBeTrue("{$path} shows {$image}, which is not in skarmbilder.yaml.");
             $shown[] = $image;
         }
     }
 
-    $files = array_map(fn (string $file): string => substr($file, strlen(public_path('manual/bilder')) + 1, -5), glob(public_path('manual/bilder/*/*.webp')) ?: []);
+    $files = array_map(fn (string $file): string => substr($file, strlen(public_path('bilder/manual')) + 1, -5), glob(public_path('bilder/manual/*/*.webp')) ?: []);
 
     expect(array_values(array_diff($files, $shown)))->toBe([], 'Screenshots no article shows.')
         ->and(array_values(array_diff($listed, $shown)))->toBe([], 'Screenshots in skarmbilder.yaml no article shows.');
+});
+
+it('keeps public/ free of a manual folder, which the web server would serve in place of /manual', function () {
+    expect(file_exists(public_path('manual')))->toBeFalse('nginx answers /manual with a redirect to the folder and then 403.');
 });

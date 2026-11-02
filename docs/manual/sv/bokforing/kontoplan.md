@@ -9,7 +9,7 @@ sokord: [kontoplan, BAS, konto, kontonummer, kontoklass, nytt konto, inaktivera 
 
 Kontoplanen är listan över de konton du bokför på, till exempel 1930 för företagskontot och 6110 för kontorsmaterial. I NONOX är den förifylld med de vanligaste kontona enligt BAS, den kontoplan som nästan alla svenska företag använder, och du kan lägga till de konton du behöver utöver dem. Du hittar den under **Bokföring → Kontoplan**.
 
-![Kontoplanen, där du lägger till, byter namn på och inaktiverar konton.](/manual/bilder/bokforing/kontoplan.webp)
+![Kontoplanen, där du lägger till, byter namn på och inaktiverar konton.](/bilder/manual/bokforing/kontoplan.webp)
 
 ## Vilka konton du får från början
 

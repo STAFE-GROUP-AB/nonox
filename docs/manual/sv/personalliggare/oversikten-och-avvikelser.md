@@ -11,7 +11,7 @@ sokord: [på plats, närvarande, avvikelser, glömd utcheckning, långt pass, p�
 
 **Personalliggare → Översikt** är startsidan för personalliggaren. Den visar vem som är incheckad i varje lokal just nu och samlar det som en chef bör se över. Sidan uppdateras av sig själv var femtonde sekund.
 
-![Personalliggarens översikt med lokalen och avvikelserna att se över.](/manual/bilder/personalliggare/oversikten-och-avvikelser.webp)
+![Personalliggarens översikt med lokalen och avvikelserna att se över.](/bilder/manual/personalliggare/oversikten-och-avvikelser.webp)
 
 ## Vem är på plats
 

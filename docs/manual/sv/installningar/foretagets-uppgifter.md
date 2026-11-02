@@ -12,7 +12,7 @@ Företagets uppgifter används på fakturor, i momsdeklarationen, i SIE-filer oc
 
 Alla i företaget kan se uppgifterna, men bara ägare och administratörer kan ändra dem.
 
-![Företagets uppgifter under Inställningar.](/manual/bilder/installningar/foretagets-uppgifter.webp)
+![Företagets uppgifter under Inställningar.](/bilder/manual/installningar/foretagets-uppgifter.webp)
 
 ## Så här ändrar du uppgifterna
 

@@ -64,7 +64,7 @@ GitHub-flavoured Markdown, plus:
 - **Links to the public site**: `/flytta-hit`, `/sakerhet`, `/utvecklare/…`.
 - No links into the logged-in app (the address differs on a self-hosted
   NONOX). Name the menu path instead.
-- **Screenshots**: `![Bildtext.](/manual/bilder/<avsnitt>/<artikel>.webp)`
+- **Screenshots**: `![Bildtext.](/bilder/manual/<avsnitt>/<artikel>.webp)`
   on a line of its own, usually after the first paragraph. The alt text is
   shown as the caption: one sentence in Swedish that says what the picture
   shows. Screenshots are never made by hand: list the page in

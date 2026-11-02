@@ -370,7 +370,7 @@ DB_DATABASE=nonox_demo php artisan manual:screenshots              # alla
 DB_DATABASE=nonox_demo php artisan manual:screenshots --only=lon/  # bara ett avsnitt
 ```
 
-Använd `php -S` och inte `php artisan serve`, som inte för vidare `DB_DATABASE` till webbservern. En bild sparas bara om demoföretagets namn står på sidan och din `ADMIN_EMAIL` inte gör det. Bilderna hamnar i `public/manual/bilder` som WebP. Kommandot behöver Google Chrome (eller `CHROME_PATH`) och Node.
+Använd `php -S` och inte `php artisan serve`, som inte för vidare `DB_DATABASE` till webbservern. En bild sparas bara om demoföretagets namn står på sidan och din `ADMIN_EMAIL` inte gör det. Bilderna hamnar i `public/bilder/manual` som WebP. Kommandot behöver Google Chrome (eller `CHROME_PATH`) och Node.
 
 ### Kvalitetskontroll
 

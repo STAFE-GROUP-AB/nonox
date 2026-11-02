@@ -9,7 +9,7 @@ sokord: [balansrapport, balansräkning, tillgångar, skulder, eget kapital, BR, 
 
 Balansrapporten visar företagets ställning: vad det äger (tillgångar) och hur det är finansierat (eget kapital och skulder). Den visar läget när perioden börjar, vad som har hänt under perioden och läget när den slutar. De två sidorna är alltid lika stora.
 
-![Balansrapporten med tillgångar, eget kapital och skulder.](/manual/bilder/rapporter/balansrapport.webp)
+![Balansrapporten med tillgångar, eget kapital och skulder.](/bilder/manual/rapporter/balansrapport.webp)
 
 ## Så här tar du fram den
 

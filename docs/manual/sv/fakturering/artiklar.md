@@ -12,7 +12,7 @@ En artikel är något du säljer, till exempel *Konsulttimme* eller *Lunch*, med
 
 Artiklarna finns under **Register → Artiklar**.
 
-![Artiklarna med pris, moms, konto och hur mycket som sålts i år.](/manual/bilder/fakturering/artiklar.webp)
+![Artiklarna med pris, moms, konto och hur mycket som sålts i år.](/bilder/manual/fakturering/artiklar.webp)
 
 ## Så här lägger du till en artikel
 

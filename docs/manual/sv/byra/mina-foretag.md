@@ -12,7 +12,7 @@ sokord: [mina företag, byråvy, klientlista, alla klienter, portfölj, översik
 
 Sidan har fyra flikar.
 
-![Mina företag för en redovisningsbyrå: alla kunders pengar och det som väntar.](/manual/bilder/byra/mina-foretag.webp)
+![Mina företag för en redovisningsbyrå: alla kunders pengar och det som väntar.](/bilder/manual/byra/mina-foretag.webp)
 
 ## Översikt
 

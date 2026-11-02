@@ -12,7 +12,7 @@ När ett byggföretag köper byggtjänster av dig är det ofta köparen som ska 
 > [!IMPORTANT]
 > Vilka tjänster och vilka köpare som omfattas avgörs av Mervärdesskattelagen och Skatteverkets vägledning, inte av NONOX. Är du osäker, kontrollera med Skatteverket eller din redovisningskonsult innan du fakturerar.
 
-![En faktura till ett byggföretag med omvänd betalningsskyldighet.](/manual/bilder/fakturering/omvand-betalningsskyldighet-bygg.webp)
+![En faktura till ett byggföretag med omvänd betalningsskyldighet.](/bilder/manual/fakturering/omvand-betalningsskyldighet-bygg.webp)
 
 ## Innan du börjar
 

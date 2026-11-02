@@ -9,7 +9,7 @@ sokord: [räkenskapsår, bokföringsår, brutet räkenskapsår, första räkensk
 
 Ett räkenskapsår är den period som bokföringen och bokslutet gäller, oftast tolv månader. Varje verifikation hör till det räkenskapsår som dess datum ligger i, och numreringen börjar om varje år. Du ser och hanterar åren under **Bokföring → Räkenskapsår**.
 
-![Räkenskapsåren, med SIE-fil, arkivpaket och överföring av balanser.](/manual/bilder/bokforing/rakenskapsar.webp)
+![Räkenskapsåren, med SIE-fil, arkivpaket och överföring av balanser.](/bilder/manual/bokforing/rakenskapsar.webp)
 
 ## Vad du ser
 

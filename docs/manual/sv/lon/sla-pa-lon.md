@@ -11,7 +11,7 @@ sokord: [aktivera lön, lönemodul, löneinställningar, utbetalningsdag, kom ig
 
 Lön är en modul som varje företag slår på när det behöver den. Har du flera företag i NONOX bestämmer du för vart och ett. När modulen är på får du menyn **Lön** och en checklista som leder dig fram till den första lönekörningen.
 
-![Kom igång med lön: stegen innan den första lönekörningen.](/manual/bilder/lon/sla-pa-lon.webp)
+![Kom igång med lön: stegen innan den första lönekörningen.](/bilder/manual/lon/sla-pa-lon.webp)
 
 ## Så här slår du på Lön
 

@@ -8,7 +8,7 @@ sokord: [app, mobilapp, hemskärm, installera, iphone, android, ipad, pwa, genv�
 
 NONOX fungerar i webbläsaren på alla enheter, och kan dessutom installeras som en app på hemskärmen. Då öppnas NONOX i ett eget fönster utan webbläsarens adressfält och knappar, precis som en vanlig app. Det finns ingen app i App Store eller Google Play; installationen görs från webbläsaren och är gratis.
 
-![NONOX på mobilen: översikten för ett café.](/manual/bilder/kom-igang/oversikten-mobil.webp)
+![NONOX på mobilen: översikten för ett café.](/bilder/manual/kom-igang/oversikten-mobil.webp)
 
 ## Så här gör du på iPhone och iPad
 

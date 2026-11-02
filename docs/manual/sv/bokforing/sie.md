@@ -9,7 +9,7 @@ sokord: [SIE, SIE4, sie-fil, importera bokföring, exportera bokföring, flytta 
 
 SIE är det format alla svenska bokföringsprogram använder för att lämna över bokföring till varandra. En SIE4-fil innehåller ett räkenskapsår: kontoplanen, de ingående och utgående balanserna och varje verifikation. I NONOX läser du in sådana filer när du flyttar hit, och du laddar ner din egen när revisorn eller redovisningsbyrån vill ha den – eller när du vill ta med dig bokföringen härifrån.
 
-![Sidan Läs in SIE-fil, med instruktionerna och uppladdningen.](/manual/bilder/bokforing/sie.webp)
+![Sidan Läs in SIE-fil, med instruktionerna och uppladdningen.](/bilder/manual/bokforing/sie.webp)
 
 ## Läs in en SIE-fil
 

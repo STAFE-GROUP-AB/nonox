@@ -12,7 +12,7 @@ Momsdeklarationen räknas fram ur bokföringen för varje redovisningsperiod. Du
 
 Sidan finns under **Bokföring → Moms**.
 
-![Momsdeklarationen för en månad, ruta för ruta, med länkar till kontona bakom varje ruta.](/manual/bilder/moms/momsdeklaration.webp)
+![Momsdeklarationen för en månad, ruta för ruta, med länkar till kontona bakom varje ruta.](/bilder/manual/moms/momsdeklaration.webp)
 
 ## Så här gör du varje period
 

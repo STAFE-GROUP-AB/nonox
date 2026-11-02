@@ -11,7 +11,7 @@ Profilen gäller dig som person, inte företaget. Det du ändrar här följer me
 
 Du hittar profilen längst ner i menyn: klicka på **Profil** under ditt namn.
 
-![Din profil med namn, e-postadress och passkeys.](/manual/bilder/kom-igang/din-profil.webp)
+![Din profil med namn, e-postadress och passkeys.](/bilder/manual/kom-igang/din-profil.webp)
 
 ## Det här finns på profilen
 

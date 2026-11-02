@@ -9,7 +9,7 @@ sokord: [verifikationslista, grundbok, dagbok, journal, alla verifikationer, ver
 
 Verifikationslistan är bokföringen i den ordning den har registrerats: varje bokförd verifikation under perioden, med alla sina rader. Den motsvarar det som brukar kallas grundbok, och den är bra när revisorn vill gå igenom en månad eller när du vill skriva ut allt som har bokförts.
 
-![Verifikationslistan med varje verifikation och dess rader.](/manual/bilder/rapporter/verifikationslista.webp)
+![Verifikationslistan med varje verifikation och dess rader.](/bilder/manual/rapporter/verifikationslista.webp)
 
 ## Så här tar du fram den
 

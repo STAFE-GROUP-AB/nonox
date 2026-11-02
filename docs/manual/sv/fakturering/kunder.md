@@ -10,7 +10,7 @@ sokord: [kundregister, kund, ny kund, betalningsvillkor, kundnummer, Bolagsverke
 
 Kundregistret är listan över dem du fakturerar. Uppgifterna du skriver här hamnar på fakturan, och kundens betalningsvillkor bestämmer förfallodagen. Du hittar registret under **Register → Kunder**.
 
-![Kundregistret med fakturerat i år och obetalt per kund.](/manual/bilder/fakturering/kunder.webp)
+![Kundregistret med fakturerat i år och obetalt per kund.](/bilder/manual/fakturering/kunder.webp)
 
 ## Så här lägger du till en kund
 

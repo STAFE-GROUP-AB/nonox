@@ -12,7 +12,7 @@ När kunden har betalat prickar du av fakturan. Det kan du göra på två sätt:
 
 Hur betalningen bokförs beror på bokföringsmetoden. Läs [Fakturametoden och kontantmetoden](/manual/fakturering/fakturametoden-och-kontantmetoden).
 
-![Sidan Inbetalningar, där du läser in bankens fil med inbetalningar.](/manual/bilder/fakturering/inbetalningar.webp)
+![Sidan Inbetalningar, där du läser in bankens fil med inbetalningar.](/bilder/manual/fakturering/inbetalningar.webp)
 
 ## Så här registrerar du en betalning för hand
 

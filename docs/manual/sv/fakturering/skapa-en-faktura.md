@@ -12,7 +12,7 @@ En faktura i NONOX börjar som ett utkast som du kan ändra hur mycket du vill. 
 
 Fakturorna finns under **Försäljning → Fakturor**.
 
-![En ny faktura: kund, datum, ROT eller RUT, omvänd betalningsskyldighet och raderna.](/manual/bilder/fakturering/skapa-en-faktura.webp)
+![En ny faktura: kund, datum, ROT eller RUT, omvänd betalningsskyldighet och raderna.](/bilder/manual/fakturering/skapa-en-faktura.webp)
 
 ## Så här gör du
 

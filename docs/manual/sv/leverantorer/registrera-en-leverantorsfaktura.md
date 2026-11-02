@@ -12,7 +12,7 @@ När en faktura kommer från en leverantör registrerar du den i NONOX. Då bokf
 
 Leverantören måste finnas i [leverantörsregistret](/manual/leverantorer/leverantorsregistret) innan fakturan kan sparas.
 
-![Leverantörsfakturorna med vad som ska betalas, vad som väntar på attest och status per faktura.](/manual/bilder/leverantorer/registrera-en-leverantorsfaktura.webp)
+![Leverantörsfakturorna med vad som ska betalas, vad som väntar på attest och status per faktura.](/bilder/manual/leverantorer/registrera-en-leverantorsfaktura.webp)
 
 ## Så här gör du
 

@@ -1,7 +1,7 @@
 # The manual's screenshots, taken by `php artisan manual:screenshots` from
 # the demo companies of IndustryDemoSeeder (never from real data).
 #
-# Each key is the image's path under public/manual/bilder, without .webp,
+# Each key is the image's path under public/bilder/manual, without .webp,
 # and the article that shows it is usually the one with the same path.
 #   foretag    the demo company: restaurang, cafe, butik, frisor,
 #              hantverkare, konsult, byra or ekonomikonsult
