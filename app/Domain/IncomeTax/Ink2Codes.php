@@ -137,7 +137,32 @@ final class Ink2Codes
      * Codes the system proposes from the books. An entered amount, 0
      * included, replaces the proposal; an empty field keeps it.
      */
-    public const array PROPOSED = [self::S_STANDARD_INCOME];
+    public const array PROPOSED = [self::S_STANDARD_INCOME, self::PENSION_BASIS, self::PENSION_BASIS_NEGATIVE, self::S_PENSION_COSTS];
+
+    /**
+     * Fields a person can enter that do not change the taxable result:
+     * INK2 1.4/1.5, the basis for särskild löneskatt on pension costs
+     * (lag 1991:687), and INK2S 4.21, the pension costs within 3.8. Field
+     * codes from SKV's tables INK2_ and INK2S_SKV2002-34-01-26-04.
+     *
+     * @var array<int, string>
+     */
+    public const array INFORMATION = [
+        self::PENSION_BASIS => 'Underlag för särskild löneskatt på pensionskostnader',
+        self::PENSION_BASIS_NEGATIVE => 'Negativt underlag för särskild löneskatt på pensionskostnader',
+        self::S_PENSION_COSTS => 'Pensionskostnader (som ingår i p. 3.8)',
+    ];
+
+    /** INK2 1.4 and 1.5: only one of them may be filled in (SKV field table). */
+    public const int PENSION_BASIS = 7132;
+
+    public const int PENSION_BASIS_NEGATIVE = 7133;
+
+    /** INK2S 4.21. */
+    public const int S_PENSION_COSTS = 8022;
+
+    /** BAS 74xx Pensionskostnader, part of 7000–7699 (INK2R 3.8). */
+    public const array PENSION_ACCOUNTS = [7400, 7499];
 
     /**
      * Every field a person can enter on the page, with its label.
@@ -146,7 +171,7 @@ final class Ink2Codes
      */
     public static function enteredLabels(): array
     {
-        return array_map(fn (array $adjustment): string => $adjustment[0], self::ADJUSTMENTS);
+        return array_map(fn (array $adjustment): string => $adjustment[0], self::ADJUSTMENTS) + self::INFORMATION;
     }
 
     /** INK2S 4.6 a: schablonintäkt på periodiseringsfonder (IL 30 kap. 6 a §). */
@@ -274,6 +299,9 @@ final class Ink2Codes
         8041 => 'Uppdragstagare har biträtt: nej',
         8044 => 'Årsredovisningen har reviderats: ja',
         8045 => 'Årsredovisningen har reviderats: nej',
+        7132 => 'Underlag för särskild löneskatt på pensionskostnader',
+        7133 => 'Negativt underlag för särskild löneskatt på pensionskostnader',
+        8022 => 'Pensionskostnader (som ingår i p. 3.8)',
         7104 => 'Överskott av näringsverksamhet',
         7114 => 'Underskott av näringsverksamhet',
     ];

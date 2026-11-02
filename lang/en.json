@@ -5876,5 +5876,10 @@
     "Beräknad schablonintäkt på periodiseringsfonder": "Standard income on tax allocation reserves",
     "Företaget har periodiseringsfonder vid årets början, men statslåneräntan för året finns inte här. Räkna fram schablonintäkten (fält 7654) och fyll i den.": "The company has tax allocation reserves at the start of the year, but the government borrowing rate for the year is not here. Work out the standard income (field 7654) and enter it.",
     "Inget förslag: underlaget för året saknas här.": "No proposal: the basis for the year is missing here.",
-    "Förslag från bokföringen: :amount. Lämna tomt för att använda förslaget, skriv 0 om fältet inte ska fyllas i.": "Proposed from the books: :amount. Leave empty to use the proposal, enter 0 if the field should not be filled in."
+    "Förslag från bokföringen: :amount. Lämna tomt för att använda förslaget, skriv 0 om fältet inte ska fyllas i.": "Proposed from the books: :amount. Leave empty to use the proposal, enter 0 if the field should not be filled in.",
+    "Underlag för särskild löneskatt på pensionskostnader": "Basis for special payroll tax on pension costs",
+    "Negativt underlag för särskild löneskatt på pensionskostnader": "Negative basis for special payroll tax on pension costs",
+    "Pensionskostnader (som ingår i p. 3.8)": "Pension costs (included in item 3.8)",
+    "Pensionskostnader redovisas i punkt 4.21, men underlaget för särskild löneskatt (punkt 1.4 eller 1.5) är tomt. Kontrollera underlaget.": "Pension costs are reported in item 4.21, but the basis for special payroll tax (item 1.4 or 1.5) is empty. Check the basis.",
+    "Fyll i antingen underlaget eller det negativa underlaget för särskild löneskatt, inte båda.": "Enter either the basis or the negative basis for special payroll tax, not both."
 }

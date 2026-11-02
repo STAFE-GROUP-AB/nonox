@@ -58,7 +58,7 @@ it('proposes the schablonintäkt from the funds at the start of the year and add
 
     // 100 000 × 2,55 % × 12/12 = 2 550; 80 000 + 2 550 = 82 550.
     expect(TaxAllocationReserves::rateFor($this->year))->toBe(255)
-        ->and($ink2->proposals())->toBe([7654 => 2_550])
+        ->and($ink2->proposals())->toMatchArray([7654 => 2_550])
         ->and($ink2->ink2s())->toMatchArray([7650 => 80_000, 7654 => 2_550, 7670 => 82_550])
         ->and($ink2->ink2())->toMatchArray([7104 => 82_550])
         ->and($ink2->taxableKronor())->toBe(82_550)
@@ -103,7 +103,7 @@ it('adjusts the schablonintäkt in proportion for a short tax year', function ()
 
     // 100 000 × 1,96 % × 6/12 = 980.
     expect(TaxAllocationReserves::months($short))->toBe(6)
-        ->and(Ink2::for($this->company, $short, null)->proposals())->toBe([7654 => 980])
+        ->and(Ink2::for($this->company, $short, null)->proposals())->toMatchArray([7654 => 980])
         ->and(Ink2::for($this->company, $short, null)->ink2s())->toMatchArray([7654 => 980, 7670 => 980]);
 });
 
@@ -112,7 +112,7 @@ it('proposes nothing and warns when the rate for the year is not known', functio
     stdIncomeOpening($later, [2126 => -5_000_000, 1930 => 5_000_000]);
     $ink2 = Ink2::for($this->company, $later, null);
 
-    expect($ink2->proposals())->toBe([7654 => null])
+    expect($ink2->proposals())->toMatchArray([7654 => null])
         ->and($ink2->ink2s())->not->toHaveKey(7654)
         ->and($ink2->warnings())->toHaveCount(1);
 
@@ -124,7 +124,7 @@ it('proposes nothing and warns when the rate for the year is not known', functio
 it('proposes nothing for a company without funds', function () {
     $later = FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']);
 
-    expect(Ink2::for($this->company, $later, null)->proposals())->toBe([7654 => 0])
+    expect(Ink2::for($this->company, $later, null)->proposals())->toMatchArray([7654 => 0])
         ->and(Ink2::for($this->company, $later, null)->ink2s())->not->toHaveKey(7654)
         ->and(Ink2::for($this->company, $later, null)->warnings())->toBe([]);
 });

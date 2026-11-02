@@ -204,5 +204,7 @@ it('AUD-BOK-13: lets the disposition pay a dividend from retained earnings after
 it('AUD-BOK-14: fills INK2 1.4 särskild löneskatt and INK2S 4.21 from booked pension costs (SKV INK2 / INK2S 2026P4, fields 7132 and 8022)', function () {
     Bookkeeping::post($this->owner, $this->company, 1_000_000, audBokFindingsAccount(7412)->number, 1930, '2026-06-01');
 
-    expect(Ink2::for($this->company, $this->year, null)->ink2s())->toHaveKey(8022);
-})->todo('AUD-BOK-14: pension costs (74xx) are not carried to INK2S 4.21 nor INK2 1.4');
+    // 10 000 on 7412 is proposed for INK2S 4.21 and INK2 1.4 (#87).
+    expect(Ink2::for($this->company, $this->year, null)->ink2s())->toMatchArray([8022 => 10_000])
+        ->and(Ink2::for($this->company, $this->year, null)->ink2())->toMatchArray([7132 => 10_000]);
+});

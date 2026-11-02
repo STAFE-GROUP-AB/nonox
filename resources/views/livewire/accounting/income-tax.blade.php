@@ -40,7 +40,7 @@
             <x-ui.card :title="__('Skattemässiga justeringar')" :description="__('Belopp i hela kronor, utan minustecken. Skatten på årets resultat läggs tillbaka av sig själv.')">
                 <form wire:submit="save" class="space-y-4">
                     @foreach($fieldLabels as $code => $label)
-                        @php($proposal = array_key_exists($code, $proposals) ? $proposals[$code] : false)
+                        @php($proposal = array_key_exists($code, $proposals) && $proposals[$code] !== 0 ? $proposals[$code] : false)
                         <x-ui.field :for="'adj_'.$code" :label="__($label).' ('.$code.')'" :error="'adjustments.'.$code" :hint="$proposal === false ? null : ($proposal === null ? __('Inget förslag: underlaget för året saknas här.') : __('Förslag från bokföringen: :amount. Lämna tomt för att använda förslaget, skriv 0 om fältet inte ska fyllas i.', ['amount' => $kr($proposal)]))">
                             <input id="adj_{{ $code }}" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="adjustments.{{ $code }}" @if(is_int($proposal)) placeholder="{{ number_format($proposal, 0, ',', ' ') }}" @endif>
                         </x-ui.field>

@@ -1079,6 +1079,15 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   Saknas räntan för året visas en varning och fältet fylls i för hand.
   Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-8,
   #83).
+- Särskild löneskatt på pensionskostnader: INK2 1.4 (fält 7132) eller 1.5
+  (fält 7133, negativt underlag) och INK2S 4.21 (fält 8022, pensionskostnader
+  som ingår i 3.8) föreslås ur årets nettorörelse på BAS 7400–7499. Den
+  särskilda löneskatten själv (7530-gruppen) räknas inte in. Användaren kan
+  ändra varje fält; 1.4 och 1.5 får inte båda fyllas i. Fälten ändrar inte
+  det skattemässiga resultatet. Är 4.21 ifyllt men 1.4 och 1.5 tomma visas
+  en varning. Underlaget enligt lag (1991:687) 2 § är inte alltid detsamma
+  som den bokförda kostnaden; förslaget ska kontrolleras. Enligt granskning
+  2026-11-02, juristgranskning återstår (BS-AUD-BOK-14, #87).
 - SRU-filerna (INFO.SRU och BLANKETTER.SRU, ISO 8859-1, en post per rad)
   laddas ner som ZIP och lämnas i Skatteverkets e-tjänst Filöverföring.
   Fältkoderna är hämtade ur Skatteverkets fältnamnstabeller för
@@ -2306,7 +2315,9 @@ Personalliggare och Avtal när de är påslagna.
   fastigheter m.m.) fylls i för hand i Skatteverkets tjänst. Schablonintäkten
   på periodiseringsfonder: statslåneräntorna per år, att ingående saldo på
   2110–2149 är detsamma som gjorda avdrag, avrundningen till hela kronor och
-  månadsräkningen för ett brutet år (#83). Fältkoderna ska kontrolleras på nytt för
+  månadsräkningen för ett brutet år (#83). Underlaget för särskild
+  löneskatt: att BAS 7400–7499 är rätt förslag och vilka poster enligt lag
+  (1991:687) 2 § som skiljer sig från den bokförda kostnaden (#87). Fältkoderna ska kontrolleras på nytt för
   varje ny beskattningsperiod innan den läggs till i `VERIFIED_PERIODS`.
 - Årsredovisning: radindelningen och BAS-intervallen (särskilt 4000–4999 och
   8000–8799) ska kontrolleras mot ÅRL bilaga 2–3, BFNAR 2016:10 och den

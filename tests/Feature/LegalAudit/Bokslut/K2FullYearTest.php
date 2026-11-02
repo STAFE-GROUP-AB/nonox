@@ -342,3 +342,17 @@ it('#83: adds the schablonintäkt on the periodiseringsfond at the start of the 
         ->and($ink2->ink2())->toMatchArray([7104 => 333_282])
         ->and($ink2->ink2r())->toMatchArray([7321 => 50_000]);
 });
+
+it('#87: reports the pension costs in INK2S 4.21 and the basis for särskild löneskatt in INK2 1.4 (lag 1991:687, SKV INK2/INK2S 2026P4 fields 7132 and 8022)', function () {
+    // A tjänstepension premium of 6 000 in December and its särskild löneskatt
+    // 6 000 × 24,26 % = 1 455,60 on 7533/2514.
+    audBokPost($this->owner, $this->company, '2026-12-20', 'Tjänstepension', [7412 => 600_000, 1930 => -600_000]);
+    audBokPost($this->owner, $this->company, '2026-12-31', 'Särskild löneskatt', [7533 => 145_560, 2514 => -145_560]);
+    $ink2 = Ink2::for($this->company, $this->year, IncomeTaxReturn::query()->sole());
+
+    // 3.8: 39 426 + 6 000 + 1 455,60 = 46 881,60 → 46 882.
+    // Result before tax: 330 007 - 7 455,60 = 322 551,40 → 322 551; taxable 322 551 + 2 000 = 324 551.
+    expect($ink2->ink2())->toMatchArray([7132 => 6_000, 7104 => 324_551])
+        ->and($ink2->ink2s())->toMatchArray([8022 => 6_000, 7650 => 322_551, 7670 => 324_551])
+        ->and($ink2->ink2r())->toMatchArray([7514 => 46_882]);
+});

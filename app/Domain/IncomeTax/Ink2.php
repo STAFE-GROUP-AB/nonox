@@ -18,7 +18,10 @@ use Illuminate\Validation\ValidationException;
  *
  * The schablonintäkt on periodiseringsfonder (4.6 a, field 7654) is
  * proposed from the opening balances of BAS 2110–2149 (see
- * TaxAllocationReserves); an entered amount replaces the proposal.
+ * TaxAllocationReserves). The basis for särskild löneskatt on pension
+ * costs (INK2 1.4/1.5, fields 7132/7133) and the pension costs in INK2S 4.21
+ * (field 8022) are proposed from BAS 74xx. An entered amount replaces a
+ * proposal.
  *
  * TODO(legal-verify): only the adjustments listed in Ink2Codes::ADJUSTMENTS
  * are supported; delägarrätter, andelar i handelsbolag and the other INK2S
@@ -129,6 +132,7 @@ final class Ink2
 
         $taxable = $this->taxableKronor();
         $fields[$taxable >= 0 ? Ink2Codes::S_SURPLUS : Ink2Codes::S_DEFICIT] = abs($taxable);
+        $fields[Ink2Codes::S_PENSION_COSTS] = $this->valueOf(Ink2Codes::S_PENSION_COSTS);
         $fields = self::withoutZeros($fields);
 
         if ($this->return?->consultant !== null) {
@@ -147,7 +151,12 @@ final class Ink2
     {
         $taxable = $this->taxableKronor();
 
-        return self::withoutZeros([...$this->dates(), $taxable >= 0 ? Ink2Codes::SURPLUS : Ink2Codes::DEFICIT => abs($taxable)]);
+        return self::withoutZeros([
+            ...$this->dates(),
+            $taxable >= 0 ? Ink2Codes::SURPLUS : Ink2Codes::DEFICIT => abs($taxable),
+            Ink2Codes::PENSION_BASIS => $this->valueOf(Ink2Codes::PENSION_BASIS),
+            Ink2Codes::PENSION_BASIS_NEGATIVE => $this->valueOf(Ink2Codes::PENSION_BASIS_NEGATIVE),
+        ]);
     }
 
     /** The year's book result in whole kronor; positive is a profit. */
@@ -202,9 +211,16 @@ final class Ink2
         }
 
         $standardIncome = TaxAllocationReserves::standardIncomeOre($this->fiscalYear, $this->accounts);
+        // TODO(legal-verify): the basis under lag (1991:687) 2 § is not always
+        // the booked pension cost (e.g. tryggandelagen provisions, item j,
+        // administration fees); the booked net of BAS 74xx is only a proposal.
+        $pension = self::kronor($this->accounts->movementOf(Ink2Codes::PENSION_ACCOUNTS[0], Ink2Codes::PENSION_ACCOUNTS[1]));
 
         return $this->proposals = [
             Ink2Codes::S_STANDARD_INCOME => $standardIncome === null ? null : self::kronor($standardIncome),
+            Ink2Codes::PENSION_BASIS => max($pension, 0),
+            Ink2Codes::PENSION_BASIS_NEGATIVE => max(-$pension, 0),
+            Ink2Codes::S_PENSION_COSTS => max($pension, 0),
         ];
     }
 
@@ -227,6 +243,12 @@ final class Ink2
             $warnings[] = __('Företaget har periodiseringsfonder vid årets början, men statslåneräntan för året finns inte här. Räkna fram schablonintäkten (fält 7654) och fyll i den.');
         }
 
+        $basis = $this->valueOf(Ink2Codes::PENSION_BASIS) + $this->valueOf(Ink2Codes::PENSION_BASIS_NEGATIVE);
+
+        if ($this->valueOf(Ink2Codes::S_PENSION_COSTS) > 0 && $basis === 0) {
+            $warnings[] = __('Pensionskostnader redovisas i punkt 4.21, men underlaget för särskild löneskatt (punkt 1.4 eller 1.5) är tomt. Kontrollera underlaget.');
+        }
+
         return $warnings;
     }
 
@@ -237,6 +259,13 @@ final class Ink2
 
         if (array_key_exists($code, $entered)) {
             return (int) $entered[$code];
+        }
+
+        // INK2 1.4 and 1.5 go together: once one is entered, the other is not proposed.
+        $pair = [Ink2Codes::PENSION_BASIS => Ink2Codes::PENSION_BASIS_NEGATIVE, Ink2Codes::PENSION_BASIS_NEGATIVE => Ink2Codes::PENSION_BASIS];
+
+        if (isset($pair[$code]) && array_key_exists($pair[$code], $entered)) {
+            return 0;
         }
 
         return in_array($code, Ink2Codes::PROPOSED, true) ? ($this->proposals()[$code] ?? 0) : 0;

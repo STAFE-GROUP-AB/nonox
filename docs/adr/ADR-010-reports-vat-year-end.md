@@ -186,3 +186,20 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-8, #83).
   the proposal and an empty field restores it. No schema change.
 - TODO(legal-verify): the rates; that the booked opening balance equals the
   deductions made; rounding; the month count for broken years.
+
+## INK2: basis for särskild löneskatt on pension costs (2026-11-02, #87)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-14, #87).
+
+- **Fields.** INK2 1.4 = 7132, 1.5 (negative basis) = 7133, INK2S 4.21 =
+  8022 (SKV field tables INK2_/INK2S_SKV2002-34-01-26-04). 7132 and 7133 may
+  not both be present.
+- **Decision.** They live in `Ink2Codes::INFORMATION`: entered like the
+  adjustments but without effect on the taxable result. The proposal is the
+  year's net movement on BAS 7400–7499 (positive → 7132 and 8022, negative →
+  7133). Entering one of 7132/7133 stops the proposal for the other. A warning
+  shows when 8022 is filled in and 1.4/1.5 are empty (Skatteverket's
+  ställningstagande dnr 8-292969-2025, read via a secondary source).
+- TODO(legal-verify): the basis under lag (1991:687) 2 § (tryggandelagen
+  provisions, item j, gruppsjukförsäkring, administration fees) versus the
+  booked 74xx amount.

@@ -60,6 +60,10 @@ class IncomeTaxReturns
             }
         }
 
+        if (($amounts[Ink2Codes::PENSION_BASIS] ?? 0) > 0 && ($amounts[Ink2Codes::PENSION_BASIS_NEGATIVE] ?? 0) > 0) {
+            throw ValidationException::withMessages(['adjustments.'.Ink2Codes::PENSION_BASIS_NEGATIVE => __('Fyll i antingen underlaget eller det negativa underlaget för särskild löneskatt, inte båda.')]);
+        }
+
         return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $amounts, $consultant, $audited): IncomeTaxReturn {
             $return = IncomeTaxReturn::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id], [
                 'adjustments' => $amounts,
