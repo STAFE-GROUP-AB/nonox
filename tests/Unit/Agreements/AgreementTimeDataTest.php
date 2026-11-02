@@ -41,7 +41,9 @@ it('reads rounding, comp time, the calculation period and sick pay from the data
         ->and($rules->compTime()['hours_per_hour'])->toBe(['VU_OT_94' => '1.5', 'VU_OT_72' => '2'])
         ->and($rules->calculationPeriod())->toBe(['max_weeks' => 26, 'source' => 'VU#§ 10 s. 20'])
         ->and($rules->obInSickPay())->toBeTrue()
-        ->and($rules->sickPay()['after_employer_period']['duration'][0])->toBe(['min_employment_months' => 12, 'to_day' => 90]);
+        ->and($rules->sickPay()['after_employer_period']['duration'][0])->toBe(['min_employment_months' => 12, 'or_direct_transfer' => true, 'to_day' => 90, 'max_days_12_months' => 105])
+        ->and($rules->sickPay()['hour_value'])->toBe(['method' => 'MONTHLY_PER_WEEK', 'months_per_year' => '12', 'weeks_per_year' => '52', 'source' => 'VU#§ 23.3 s. 45–47'])
+        ->and($rules->sickPay()['karens']['weekly_hours'])->toBe('AVERAGE');
 });
 
 it('refuses A5–A8 data in the wrong shape or without a source', function (array $change, string $problem) {
@@ -56,6 +58,13 @@ it('refuses A5–A8 data in the wrong shape or without a source', function (arra
     'calculation period of zero weeks' => [['working_time' => ['calculation_period' => ['max_weeks' => 0]]], 'Beräkningsperioden måste ha max_weeks som ett heltal 1–53.'],
     'long sickness from day 10' => [['sick_pay' => ['after_employer_period' => ['from_day' => 10]]], 'sick_pay.after_employer_period har fel form (from_day, deduction med per CALENDAR_DAY, days_per_year, below_bp, above_bp, threshold_prisbasbelopp, och duration med to_day).'],
     'sick pay with a source that is not listed' => [['sick_pay' => ['source' => 'XX#s. 1']], 'sick_pay hänvisar till en källa som inte finns i listan: XX#s. 1.'],
+    'unknown hour value method' => [['sick_pay' => ['hour_value' => ['method' => 'GUESS']]], 'sick_pay.hour_value har fel form (method MONTHLY_PER_WEEK med months_per_year och weeks_per_year, MONTH_WORKING_HOURS, eller DAY_PERCENT med day_bp och hour_divisor).'],
+    'hour value months as a number' => [['sick_pay' => ['hour_value' => ['months_per_year' => 12.2]]], 'sick_pay.hour_value har fel form (method MONTHLY_PER_WEEK med months_per_year och weeks_per_year, MONTH_WORKING_HOURS, eller DAY_PERCENT med day_bp och hour_divisor).'],
+    'karens in days' => [['sick_pay' => ['karens' => ['unit' => 'DAYS']]], 'sick_pay.karens har fel form (unit HOURS, percent_of_weekly_hours_bp och weekly_hours AVERAGE eller AGREED).'],
+    'karens without source' => [['sick_pay' => ['karens' => ['source' => '']]], 'sick_pay.karens saknar källa.'],
+    'ceiling of zero days' => [['sick_pay' => ['after_employer_period' => ['duration' => [['max_days_12_months' => 0]]]]], 'sick_pay.after_employer_period har fel form (from_day, deduction med per CALENDAR_DAY, days_per_year, below_bp, above_bp, threshold_prisbasbelopp, och duration med to_day).'],
+    'unknown part of the monthly salary' => [['sick_pay' => ['after_employer_period' => ['monthly_salary_includes' => ['TIPS']]]], 'sick_pay.after_employer_period.monthly_salary_includes innehåller okända värden.'],
+    'unknown variable pay code' => [['sick_pay' => ['after_employer_period' => ['variable_pay_codes' => ['DRICKS']]]], 'sick_pay.after_employer_period.variable_pay_codes innehåller okända värden.'],
 ]);
 
 it('accepts every shipped file with the new sections', function () {

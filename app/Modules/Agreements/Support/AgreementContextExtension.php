@@ -138,6 +138,8 @@ final class AgreementContextExtension implements ContextExtension
             overtimeCompensation: $employment->overtime_compensation,
             obCompensation: $employment->ob_compensation,
             minimumWageWarnings: $this->minimumWageWarnings,
+            sickPayDirectTransfer: $employment->sick_pay_direct_transfer,
+            fixedSupplementsOre: $employment->fixed_supplements_ore?->ore,
         );
 
         return $this->applyAgreement($context, $agreement);

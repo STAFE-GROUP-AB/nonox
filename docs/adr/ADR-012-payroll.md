@@ -225,3 +225,36 @@ The owner decided that the payroll run uses approved time reports.
   hours should be priced at the hourly rate in force when they were worked
   if it has changed since (the engine uses the employment's current rate,
   as for the run's own month).
+
+## Karensavdrag per sjuklöneperiod (2026-11-02, L2)
+
+Enligt AI-utredning 2026-11-02, juristgranskning återstår. Sjuklönelagen
+6 § andra–tredje stycket and 7 § tredje stycket with the författnings-
+kommentar in prop. 2017/18:96 s. 68–69, and the same rule in the
+agreements (Handels tjänstemän § 10.3.2 anm. and § 10.3.4, Visita–Unionen
+§ 23.3, Gröna Riks § 20 p. 4.2, Detaljhandeln § 15.4 A).
+
+- Sick spells are linked into sjuklöneperioder (a spell starting within the
+  reinfection window continues the period), across runs: the run reads the
+  approved sick absences of the last 15 months, so the day numbering
+  follows the whole chain, not only the last absence record.
+- Each period's karensavdrag is capped at that period's own sick pay. Two
+  periods in one month each get their own. The part not covered is carried
+  to later sick-pay days of the same period, in the same run, the next run
+  or after reinfection, and dropped when the period is over; a payslip note
+  says which.
+- An occasion is a period in which a karensavdrag was actually made, once
+  even when taken over several runs. The ten occasions are counted in the
+  twelve months back from the new period's first day. A period found in the
+  absences that no approved run has recorded (sick leave from before payroll
+  ran here, or a run not yet approved) counts as an occasion with its
+  karensavdrag taken, and the payslip says so.
+- State: `sick_pay_periods` (company-scoped, per payslip and period: first
+  day, last day, day number, karensavdrag due and deducted, the agreement's
+  days from day 15). Written by the calculation, deleted with the payslips
+  on recalculation, frozen with the approved run by the same trigger as
+  payslips (`payroll_children_protect_approved`). Only approved runs are
+  read as history.
+- `TODO(legal-verify)`: the whole of the above, and whether a run that is
+  calculated but not approved should block the next month's sick pay rather
+  than add a note.

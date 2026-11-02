@@ -30,6 +30,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\PayrollYearClosing;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
+use App\Modules\Payroll\Models\SickPayPeriod;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationYearClosing;
@@ -346,6 +347,10 @@ class PayrollRuns
                     'contribution_explanation' => $result->contributionExplanation,
                     'warnings' => $result->warnings,
                 ]);
+
+                foreach ($result->sickPeriods as $period) {
+                    SickPayPeriod::create([...$period, 'payroll_run_id' => $run->id, 'payslip_id' => $payslip->id, 'employee_id' => $employment->employee_id]);
+                }
 
                 foreach ($result->lines as $line) {
                     PayslipLine::create([
@@ -701,6 +706,7 @@ class PayrollRuns
     private function deletePayslips(PayrollRun $run): void
     {
         $ids = Payslip::query()->where('payroll_run_id', $run->id)->pluck('id');
+        SickPayPeriod::query()->where('payroll_run_id', $run->id)->delete();
         PayslipLine::query()->whereIn('payslip_id', $ids)->delete();
         Payslip::query()->whereIn('id', $ids)->delete();
     }

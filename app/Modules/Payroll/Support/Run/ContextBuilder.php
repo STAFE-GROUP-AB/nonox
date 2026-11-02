@@ -25,6 +25,7 @@ use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\PayslipLine;
 use App\Modules\Payroll\Models\PensionPlan;
 use App\Modules\Payroll\Models\SalaryChange;
+use App\Modules\Payroll\Models\SickPayPeriod;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\Models\WorkSchedule;
 use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
@@ -42,6 +43,9 @@ use Illuminate\Support\Collection;
 final class ContextBuilder
 {
     public const string RETRO_CODE = 'RETROLON';
+
+    /** How far back the sick history is read: twelve months for the occasions and the agreement's days from day 15, plus the chain before them. */
+    public const int SICK_HISTORY_MONTHS = 15;
 
     public function __construct(private readonly VacationLedger $vacation, private readonly PayrollExtensions $extensions) {}
 
@@ -91,7 +95,7 @@ final class ContextBuilder
             rules: $rules,
             weeklyHours: $employment->weekly_hours === null ? null : (string) $employment->weekly_hours,
             absences: $this->absenceDays($employee, $periodStart, $periodEnd, $weekPattern),
-            sickHistory: $this->sickHistory($employee, $periodStart),
+            sickHistory: $this->sickHistory($employee, $run, $periodStart),
             weekPattern: $weekPattern,
             pension: $this->pension($employment),
             vacation: $this->vacation->input($employee, $employment, $periodStart, $settings, $rules, $weekPattern, $run->id),
@@ -132,7 +136,7 @@ final class ContextBuilder
             }
 
             for ($day = $absence->date_from->max($from); $day->lessThanOrEqualTo($absence->date_to->min($to)); $day = $day->addDay()) {
-                $days[] = new AbsenceInput($absence->type, $day, self::scheduled($day, $weekPattern) ? (string) $absence->hours : '0');
+                $days[] = new AbsenceInput($absence->type, $day, self::scheduled($day, $weekPattern) ? (string) $absence->hours : '0', extentBp: (int) ($absence->extent_bp ?? 10000));
             }
         }
 
@@ -140,33 +144,50 @@ final class ContextBuilder
     }
 
     /**
-     * The last sick period before the run and how many new sick periods
-     * started in the twelve months before it.
+     * The sick history before the run, for the SickPay step (SickHistory):
+     * the approved sick spells of the last fifteen months (the step links
+     * them into sjuklöneperioder), and from approved payroll runs what each
+     * sjuklöneperiod's karensavdrag was and how much of it has been
+     * deducted, and the days paid under an agreement's deduction from day
+     * 15. Two queries.
      *
-     * TODO(legal-verify): the karensavdrag count here is the number of sick
-     * spells that started in the twelve months before the period.
-     *
-     * @return array{last_sick_period_end?: string, last_sick_period_days?: int, karens_count_12m?: int}
+     * @return array{spells?: list<array{from: string, to: string}>, periods?: array<string, array{full: int, deducted: int}>, long_sick_dates?: list<string>}
      */
-    private function sickHistory(Employee $employee, CarbonImmutable $periodStart): array
+    private function sickHistory(Employee $employee, PayrollRun $run, CarbonImmutable $periodStart): array
     {
-        $sick = $this->approvedAbsences($employee, $periodStart->subYear(), $periodStart->subDay())
+        $from = $periodStart->subMonths(self::SICK_HISTORY_MONTHS);
+        $before = $periodStart->subDay();
+        $spells = array_values($this->approvedAbsences($employee, $from, $before)
             ->where('type', 'SICK')
-            ->sortBy('date_from')
-            ->values();
+            ->map(fn (Absence $absence): array => ['from' => $absence->date_from->max($from)->toDateString(), 'to' => $absence->date_to->min($before)->toDateString()])
+            ->sortBy('from')
+            ->all());
+        $rows = SickPayPeriod::query()
+            ->where('sick_pay_periods.employee_id', $employee->id)
+            ->where('sick_pay_periods.payroll_run_id', '!=', $run->id)
+            ->join('payroll_runs', 'payroll_runs.id', '=', 'sick_pay_periods.payroll_run_id')
+            ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
+            ->whereDate('sick_pay_periods.period_start', '>=', $from->subMonths(self::SICK_HISTORY_MONTHS)->toDateString())
+            ->whereDate('sick_pay_periods.last_day', '<', $periodStart->toDateString())
+            ->get(['sick_pay_periods.period_start', 'sick_pay_periods.karens_full_ore', 'sick_pay_periods.karens_deducted_ore', 'sick_pay_periods.long_sick_dates']);
 
-        if ($sick->isEmpty()) {
+        if ($spells === [] && $rows->isEmpty()) {
             return [];
         }
 
-        /** @var Absence $last */
-        $last = $sick->last();
+        $periods = [];
+        $long = [];
 
-        return [
-            'last_sick_period_end' => $last->date_to->min($periodStart->subDay())->toDateString(),
-            'last_sick_period_days' => (int) $last->date_from->diffInDays($last->date_to->min($periodStart->subDay())) + 1,
-            'karens_count_12m' => $sick->count(),
-        ];
+        foreach ($rows as $row) {
+            $key = $row->period_start->toDateString();
+            $periods[$key] = [
+                'full' => max($periods[$key]['full'] ?? 0, $row->karens_full_ore),
+                'deducted' => ($periods[$key]['deducted'] ?? 0) + $row->karens_deducted_ore,
+            ];
+            $long = [...$long, ...array_map('strval', $row->long_sick_dates)];
+        }
+
+        return ['spells' => $spells, 'periods' => $periods, 'long_sick_dates' => array_values(array_unique($long))];
     }
 
     /**

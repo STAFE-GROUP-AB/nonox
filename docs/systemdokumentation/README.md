@@ -1123,6 +1123,22 @@ lönebeskeden låsta i databasen.
   i perioden räknas med noll timmar (en sjukperiod räknar ändå sina
   kalenderdagar). Frånvaro registreras i lönekörningen för den månad den
   inträffar.
+- Karensavdrag per sjuklöneperiod (sjuklönelagen 6–7 §§, prop. 2017/18:96
+  s. 68–69; enligt AI-utredning 2026-11-02, juristgranskning återstår).
+  Sjukdagar länkas till sjuklöneperioder: en ny sjukdag inom fem dagar från
+  förra periodens slut fortsätter den, även över månadsskiften, och dagarna
+  numreras genom hela kedjan. Varje period får ett eget karensavdrag, högst
+  periodens egen sjuklön. Den del sjuklönen inte räckte till dras från
+  periodens senare sjuklönedagar, i samma eller nästa lönekörning och efter
+  återinsjuknande; när perioden är slut dras den inte. Karensavdrag görs
+  inte när den anställda redan har haft tio karensavdrag de senaste tolv
+  månaderna räknat bakåt från den nya periodens första dag; ett tillfälle är
+  ett gjort avdrag, inte en frånvaropost. Varje lönebesked sparar per
+  sjukperiod vad avdraget skulle bli, vad som drogs och avtalets dagar från
+  dag 15 (`sick_pay_periods`, per företag); raderna låses med lönekörningen
+  när den attesteras, och nästa körning läser bara attesterade körningar.
+  En sjukperiod som ingen attesterad körning har med räknas som redan dragen,
+  och lönebeskedet säger det.
 - Semester (semesterlagen): semesteråret börjar den månad företaget valt
   (1 april enligt lagen) och intjänandeåret är året före. Betalda dagar =
   semesterdagar per år × (anställningsdagar − dagar med frånvaro som inte är
@@ -1863,18 +1879,36 @@ förslag från NONOX AI (ADR-033 §6).
   sats) ger sjuklönens procent som en egen rad, när avtalsdatan säger att OB
   ingår (`sick_pay.includes_ob`) och OB inte ingår i lönen (sjuklönelagen
   6 §: "anställningsförmåner"). Karensavdraget räknas på en genomsnittlig
-  vecka med OB, och utan veckoarbetstid (oregelbunden tid) på schemats
-  genomsnittliga vecka, båda över en referensperiod från måndagen i
-  sjukperiodens första vecka: beräkningsperioden, minst fyra veckor.
-  Tjänstemannaavtalen (Visita–Unionen, Handels tjänstemän) drar från dag 15
-  per kalenderdag enligt `sick_pay.after_employer_period`: en andel av
-  årslönen upp till 10 prisbasbelopp och en annan över, högst en dags lön,
-  till dag 90 (minst ett års anställning) eller 45. Utan Planering gäller
-  lagens beräkning med lönens veckomönster som förut.
-  TODO(legal-verify): om de publicerade passen över referensperioden är en
-  representativ period för oregelbunden tid, vilken dag som avgör
-  anställningstiden för dag 15-avdraget, och taket 105 dagar per 12 månader
-  (inte byggt).
+  vecka med OB, och utan veckoarbetstid (oregelbunden tid) på en
+  genomsnittlig vecka (prop. 2017/18:96 s. 68): i första hand den
+  attesterade tiden och OB i upp till 13 kalenderveckor före sjukperiodens
+  första vecka, räknat från den första veckan med attesterad tid och utan
+  veckor med bara frånvaro; finns ingen sådan historik det publicerade
+  schemat från sjukperiodens första vecka, delat med de veckor som har pass
+  (en vecka utan pass räknas inte som 0 timmar). Finns varken historik,
+  schema eller veckoarbetstid stoppas körningen med ett meddelande.
+- **Avtalets sjuklön (A8, rättad 2026-11-02).** Enligt AI-utredning
+  2026-11-02, juristgranskning återstår. Gäller när Avtal är på, även utan
+  Planering. Avtalsversionen och anställningstidsgruppen avgörs på
+  sjukperiodens första dag. `sick_pay.hour_value` ger avtalets eget timvärde
+  för sjukavdrag och sjuklön för månadslön (Visita–Unionen 12/52, Handels
+  tjänstemän 12,2/52, Gröna Riks månadslönen delad med månadens
+  arbetstimmar, Detaljhandeln 4,6 % per hel dag och 1/166 per timme) och
+  `sick_pay.karens` karensavdraget i tid (20 % av veckoarbetstiden, i
+  Detaljhandeln den i förväg överenskomna). Det formatet inte kan uttrycka
+  blir en notering på lönespecen. Tjänstemannaavtalen drar från dag 15 per
+  kalenderdag enligt `sick_pay.after_employer_period`: en andel av årslönen
+  upp till 10 prisbasbelopp och en annan över, högst en dags fasta lön, till
+  dag 90 (minst ett års anställning eller direkt övergång från en
+  anställning med sjuklön till dag 90, en ruta på anställningen) eller 45,
+  och högst 105 respektive 45 dagar från dag 15 på tolv månader bakåt från
+  sjukperiodens första dag; därefter vanligt sjukavdrag. Månadslönen i
+  avdraget tar med fasta tillägg (på anställningen) och snittet av rörlig
+  lön (provision, bonus) på attesterade lönespecar de tolv månaderna före.
+  TODO(legal-verify): kost- och bostadsförmån i månadslönen och
+  deltidssjukskrivning från dag 15 (noteringar på lönespecen), om
+  Detaljhandelns karenstid ska värderas per timme, och vilka veckor som är
+  representativa.
 - **Semester enligt avtalet (A9).** Avtalsdatans `vacation` ger
   procentsats (procentregeln och semesterersättning med lönen),
   semestertillägg per dag (sammalöneregeln) och lägsta semesterlön per dag
@@ -1920,10 +1954,16 @@ förslag från NONOX AI (ADR-033 §6).
   ung, deltid, övertid, semester, kost/hängavtal), uträknade för hand
   (`expected-payslips.py`) ur avtalsfilerna; provision med garanti räknas
   mot ett syntetiskt avtal eftersom Frisöravtalets satser inte är publika.
-  Pass, mertid och sjuklön med OB (A5–A8) ingår inte i dessa fall.
-- **Inte byggt ännu.** Av A7–A8: övertidstillägg för timavlönade, karens
-  i tid enligt avtalen, avtalens egna timvärden i sjuklönen och taket 105
-  dagar per 12 månader. Av A9–A11: rörlig lön och 4,6 %-regeln i
+  Pass och mertid (A5–A7) ingår inte i dessa fall. Sjuklönen ingår: två
+  sjukperioder i en månad, karensrest över månadsskiftet och efter
+  återinsjuknande, dagnummer genom en kedja, tio tillfällen räknade från
+  sjukperiodens första dag, avtalens timvärden och karens i tid, taket 105
+  dagar, gruppen på sjukperiodens första dag, direkt övergång, fasta tillägg
+  och rörligt snitt i månadslönen och deltid från dag 15.
+- **Inte byggt ännu.** Av A7–A8: övertidstillägg för timavlönade, kost-
+  och bostadsförmån i avtalets månadslön för sjukavdraget och ett mindre
+  dagsavdrag för den som är deltidssjuk från dag 15. Av A9–A11: rörlig lön
+  och 4,6 %-regeln i
   tjänstemannaavtalens semester, garantibelopp för deltid i handeln, ITP 2,
   sjukpension och premiebefrielse i ITP 1, TGL för tjänstemän, Foras och
   Collectums egna filformat.

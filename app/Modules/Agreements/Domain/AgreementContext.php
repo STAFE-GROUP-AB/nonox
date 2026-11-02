@@ -29,6 +29,8 @@ final readonly class AgreementContext
         public ?string $overtimeCompensation,
         public ?string $obCompensation,
         public bool $minimumWageWarnings = true,
+        public bool $sickPayDirectTransfer = false,
+        public ?int $fixedSupplementsOre = null,
     ) {}
 
     /**

@@ -295,6 +295,184 @@ fr.append(case("semester: 13 % även på provision (syntetiskt)", "synthetic:syn
                absences=week(18), vacation={"rule": "PROCENTREGELN", "paid_days_earned": 25, "basis_ore": 30_000_000}))
 fixtures["frisor-syntetiskt"] = fr
 
+# ---------------------------------------------------------------- Sick pay (L1, L2, L4; enligt AI-utredning 2026-11-02, juristgranskning återstår)
+# Sjuklönelagen 6–7 §§, prop. 2017/18:96 s. 68–69 and the agreements' sick-pay sections. The engine keeps 10
+# decimals (Units::SCALE) and rounds half up to whole öre per line; Decimal below does the same.
+import datetime
+
+SCALE = D("0.0000000001")
+
+
+def sc(x):
+    return D(x).quantize(SCALE, rounding=ROUND_HALF_UP)
+
+
+def sick(date, hours="8", extent=None):
+    a = {"type": "SICK", "date": date, "hours": hours}
+    if extent is not None:
+        a["extent_bp"] = extent
+    return a
+
+
+def date_range(first, last):
+    d = datetime.date.fromisoformat(first)
+    end = datetime.date.fromisoformat(last)
+    out = []
+    while d <= end:
+        out.append(d.isoformat())
+        d += datetime.timedelta(days=1)
+    return out
+
+
+def days(first, last, hours_by_weekday=("8", "8", "8", "8", "8", "0", "0"), holidays=("2026-05-01", "2026-05-14"), extent=None):
+    return [sick(d, "0" if d in holidays else hours_by_weekday[datetime.date.fromisoformat(d).weekday()], extent) for d in date_range(first, last)]
+
+
+def kr(ore):
+    return f"{ore // 100},{ore % 100:02d}"
+
+
+def sick_case(name, file, employment, absences, lines, gross, warnings, history=None, facts=None, periods=None):
+    c = case(name, file, employment, [], {"lines": lines, "gross_ore": gross, "employer": {}, "warnings": warnings}, absences=absences)
+    if history is not None:
+        c["sick_history"] = history
+    if facts is not None:
+        c["sick_facts"] = facts
+    if periods is not None:
+        c["expected"]["sick_periods"] = periods
+    return c
+
+
+# Visita–Unionen: hour value monthly × 12 / (52 × weekly hours) (VU § 23.3), the same as the law's default; karens 20 % of the
+# weekly hours in time at that value: 0,2 × 40 h × hour value × 80 %.
+S = 3_500_000
+HV = sc(D(S) * 12 / (52 * 40))                   # 20 192,3076923077 öre
+KARENS = hu(sc(D(8) * HV) * 8000 / 10000)       # 1 292,31 kr
+E = emp(ADULT, monthly_salary_ore=S, group="ALLA")
+vu_s = []
+
+# L2 (1): two sjuklöneperioder in one month each get their own karensavdrag, capped at that period's own sick pay.
+pay_a = hu(D(4) * HV * 8000 / 10000)            # 4 h on 6 May
+pay_b = hu(D(16) * HV * 8000 / 10000)           # 18–19 May
+k_a, k_b = min(KARENS, pay_a), min(KARENS, pay_b)
+lost = hu(D(20) * HV)
+pay = hu(D(20) * HV * 8000 / 10000)
+vu_s.append(sick_case("sjuk: två sjukperioder i en månad, var sin karens, högst periodens sjuklön", VU, E,
+                      [sick("2026-05-06", "4"), sick("2026-05-18"), sick("2026-05-19")],
+                      {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -(k_a + k_b)}, S - lost + pay - k_a - k_b,
+                      [f"Resten, {kr(KARENS - k_a)} kr, dras inte"],
+                      periods=[{"period_start": "2026-05-06", "karens_full_ore": KARENS, "karens_deducted_ore": k_a},
+                               {"period_start": "2026-05-18", "karens_full_ore": KARENS, "karens_deducted_ore": k_b}]))
+
+# L2 (2): the rest of April's karensavdrag (sick 29 April, 2 h) is taken in May after reinfection within five days.
+deducted = hu(D(2) * HV * 8000 / 10000)
+lost = hu(D(8) * HV)
+pay = hu(D(8) * HV * 8000 / 10000)
+k = min(KARENS - deducted, pay)
+vu_s.append(sick_case("sjuk: resten av karensavdraget efter återinsjuknande i nästa månad", VU, E, [sick("2026-05-04")],
+                      {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -k}, S - lost + pay - k, [],
+                      history={"spells": [{"from": "2026-04-29", "to": "2026-04-29"}], "periods": {"2026-04-29": {"full": KARENS, "deducted": deducted}}},
+                      periods=[{"period_start": "2026-04-29", "karens_full_ore": KARENS, "karens_deducted_ore": k}]))
+
+# L2 (2): the same sick period over the month end (1 h on 30 April, then 1–4 May): the rest follows into May.
+deducted = hu(D(1) * HV * 8000 / 10000)
+k = min(KARENS - deducted, pay)
+vu_s.append(sick_case("sjuk: karensrest förs över månadsskiftet i samma sjukperiod", VU, E, days("2026-05-01", "2026-05-04"),
+                      {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -k}, S - lost + pay - k, [],
+                      history={"spells": [{"from": "2026-04-30", "to": "2026-04-30"}], "periods": {"2026-04-30": {"full": KARENS, "deducted": deducted}}},
+                      periods=[{"period_start": "2026-04-30", "day_count": 5, "karens_deducted_ore": k}]))
+
+# L2 (5): day numbering follows the whole chain (10 days, back 1, 3 days, back 3, sick again = day 14), not the last record.
+# Day 14 is the last day with sick pay; days 15–16 take the agreement's deduction per calendar day (VU § 23.3, below).
+lost = hu(D(8) * HV) + 2 * hu(sc(D(S) * 12 * 9000 / (10000 * 365)))
+pay = hu(D(8) * HV * 8000 / 10000)
+vu_s.append(sick_case("sjuk: dagnumren följer hela kedjan av återinsjuknanden", VU, E, [sick("2026-05-04"), sick("2026-05-05"), sick("2026-05-06")],
+                      {"SJUKAVDRAG": -lost, "SJUKLON": pay}, S - lost + pay, ["kost- och bostadsförmån", "Försäkringskassan"],
+                      history={"spells": [{"from": "2026-04-17", "to": "2026-04-26"}, {"from": "2026-04-28", "to": "2026-04-30"}], "periods": {"2026-04-17": {"full": KARENS, "deducted": KARENS}}},
+                      periods=[{"period_start": "2026-04-17", "day_count": 16}]))
+
+# L2 (3)/(4): ten occasions counted back from the NEW period's first day (20 May), not from the run's start.
+ten = ["2025-05-10", "2025-06-10", "2025-07-10", "2025-08-10", "2025-09-10", "2025-10-10", "2025-11-10", "2025-12-10", "2026-01-10", "2026-02-10"]
+hist = {"spells": [{"from": d, "to": d} for d in ten], "periods": {d: {"full": KARENS, "deducted": KARENS} for d in ten}}
+lost = hu(D(8) * HV)
+pay = hu(D(8) * HV * 8000 / 10000)
+vu_s.append(sick_case("sjuk: tolv månader räknas bakåt från sjukperiodens första dag", VU, E, [sick("2026-05-20")],
+                      {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -min(KARENS, pay)}, S - lost + pay - min(KARENS, pay), [], history=hist))
+vu_s.append(sick_case("sjuk: inget karensavdrag efter tio tillfällen", VU, E, [sick("2026-05-05")],
+                      {"SJUKAVDRAG": -lost, "SJUKLON": pay}, S - lost + pay, ["redan haft karensavdrag 10 gånger"], history=hist,
+                      periods=[{"period_start": "2026-05-05", "karens_full_ore": 0, "karens_deducted_ore": 0}]))
+# A period in which no karensavdrag was actually made (no sick pay) is not an occasion.
+nine = {**hist, "periods": {**hist["periods"], "2025-09-10": {"full": KARENS, "deducted": 0}}}
+vu_s.append(sick_case("sjuk: tillfällen är gjorda karensavdrag, inte frånvaroposter", VU, E, [sick("2026-05-05")],
+                      {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -min(KARENS, pay)}, S - lost + pay - min(KARENS, pay), [], history=nine))
+
+# L4: from day 15 the agreement's deduction per calendar day: 90 % × monthly × 12 / 365 below 10 prisbasbelopp (VU § 23.3).
+DAY = hu(sc(D(S) * 12 * 9000 / (10000 * 365)))   # 1 035,62 kr
+# Ceiling of 105 days from day 15 in the twelve months back from the period's first day: 100 used, 5 left (4–8 May).
+used = date_range("2025-09-01", "2025-12-09")
+lost = hu(D(24) * HV)                           # 11–13 May back to the hourly deduction
+vu_s.append(sick_case("sjuk dag 15+: taket 105 dagar på tolv månader", VU, E, days("2026-05-01", "2026-05-14"),
+                      {"SJUKAVDRAG": -(lost + 5 * DAY)}, S - lost - 5 * DAY, ["kost- och bostadsförmån", "Taket på 105 dagar", "Försäkringskassan"],
+                      history={"spells": [{"from": "2026-04-20", "to": "2026-04-30"}], "periods": {"2026-04-20": {"full": KARENS, "deducted": KARENS}}, "long_sick_dates": used}))
+
+# L4: the group is decided on the sick period's first day (20 March, eleven months' employment: to day 45) …
+E2 = emp({"birth_date": "1990-06-15", "start": "2025-04-21"}, monthly_salary_ore=S, group="ALLA")
+hist2 = {"spells": [{"from": "2026-03-20", "to": "2026-04-30"}], "periods": {"2026-03-20": {"full": KARENS, "deducted": KARENS}}, "long_sick_dates": date_range("2026-04-03", "2026-04-30")}
+lost = hu(D(40) * HV)                           # 4–8 May: days 46–50, after day 45
+vu_s.append(sick_case("sjuk dag 15+: gruppen avgörs på sjukperiodens första dag", VU, E2, days("2026-05-01", "2026-05-10"),
+                      {"SJUKAVDRAG": -(lost + 3 * DAY)}, S - lost - 3 * DAY, ["kost- och bostadsförmån", "Försäkringskassan"], history=hist2))
+# … unless the employee came directly from an employment with sick pay to day 90.
+vu_s.append(sick_case("sjuk dag 15+: direkt övergång från anställning med 90 dagar", VU, {**E2, "sick_pay_direct_transfer": True}, days("2026-05-01", "2026-05-10"),
+                      {"SJUKAVDRAG": -10 * DAY}, S - 10 * DAY, ["kost- och bostadsförmån", "Försäkringskassan"], history=hist2))
+# Part-time sick leave from day 15: the whole deduction per calendar day, and a note to check it.
+hist3 = {"spells": [{"from": "2026-04-17", "to": "2026-04-30"}], "periods": {"2026-04-17": {"full": KARENS, "deducted": KARENS}}}
+vu_s.append(sick_case("sjuk dag 15+: deltidssjuk får hela avdraget och en notering", VU, E, days("2026-05-01", "2026-05-03", hours_by_weekday=("4",) * 5 + ("0", "0"), extent=5000),
+                      {"SJUKAVDRAG": -3 * DAY}, S - 3 * DAY, ["kost- och bostadsförmån", "Deltidssjukskrivning", "Försäkringskassan"], history=hist3))
+fixtures["visita-unionen"] += vu_s
+
+# Handelns tjänstemannaavtal: hour value monthly × 12,2 / (52 × weekly hours) (HT § 10.3.2), karens 20 % of the weekly hours.
+S = 3_800_000
+HV = sc(D(S) * D("12.2") / (52 * 40))
+E = emp(ADULT, monthly_salary_ore=S, group="UNIONEN")
+lost = hu(D(16) * HV)
+pay = hu(D(16) * HV * 8000 / 10000)
+k = min(hu(sc(D(8) * HV) * 8000 / 10000), pay)
+fixtures["svenskhandel-unionen-tjansteman"].append(sick_case("sjuk: timvärde 12,2/52 och karens i tid", HT, E, [sick("2026-05-06"), sick("2026-05-07")],
+                                                            {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -k}, S - lost + pay - k, []))
+# Day 15+: "månadslön" adds the fixed supplements (on the employment) and the monthly average of variable pay; the ceiling
+# per day is the fixed salary (salary + fixed supplements) × 12 / 365 (HT § 10.3.6).
+hist = {"spells": [{"from": "2026-04-17", "to": "2026-04-30"}], "periods": {"2026-04-17": {"full": 0, "deducted": 0}}}
+for name, variable in [("sjuk dag 15+: fasta tillägg och rörligt snitt i månadslönen", 300_000), ("sjuk dag 15+: taket per dag är den fasta lönen", 1_000_000)]:
+    yearly = (S + 200_000 + variable) * 12
+    below = min(yearly, 10 * PBB)
+    above = max(0, yearly - 10 * PBB)
+    per_day = sc(D(below * 9000 + above * 1000) / (10000 * 365))
+    cap = sc(D((S + 200_000) * 12) / 365)
+    day = hu(min(per_day, cap))
+    fixtures["svenskhandel-unionen-tjansteman"].append(sick_case(name, HT, {**E, "fixed_supplements_ore": 200_000}, days("2026-05-01", "2026-05-03"),
+                                                                {"SJUKAVDRAG": -3 * day}, S - 3 * day, ["kost- och bostadsförmån", "Försäkringskassan"], history=hist, facts={"variable_monthly_ore": variable}))
+
+# Gröna Riks: hour value monthly / the working hours of the calendar month (GR § 20 p. 4.3.1): May 2026 by the weekly
+# pattern, 1 and 14 May are public holidays: 19 days × 8 h = 152 h. Karens 20 % of the weekly hours.
+S = 3_200_000
+HV = sc(D(S) / 152)
+lost = hu(D(16) * HV)
+pay = hu(D(16) * HV * 8000 / 10000)
+k = min(hu(sc(D(8) * HV) * 8000 / 10000), pay)
+fixtures["visita-hrf-grona-riks"].append(sick_case("sjuk: timvärde månadslön delad med månadens arbetstimmar", GR, emp(ADULT, monthly_salary_ore=S, group="2", week_pattern=["8", "8", "8", "8", "8", "0", "0"]),
+                                                   [sick("2026-05-06"), sick("2026-05-07")], {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -k}, S - lost + pay - k, []))
+
+# Detaljhandeln: 4,6 % of the monthly salary per full sick day, 1/166 per hour of a part day, sick pay 80 % of the deduction
+# (D1 § 13.1, § 15.4); karens 20 % of the weekly hours agreed in advance, valued per hour (1/166) with a note.
+S = 3_000_000
+part = sc(D(S) / 166)
+lost_exact = D(S) * 460 / 10000 + 4 * part
+lost = hu(lost_exact)
+pay = hu(lost_exact * 8000 / 10000)
+k = min(hu(sc(D(8) * part) * 8000 / 10000), pay)
+fixtures["svenskhandel-handels-detaljhandel"].append(sick_case("sjuk: 4,6 % per hel dag och 1/166 per timme", DH, emp(ADULT, monthly_salary_ore=S, group="ALLA", week_pattern=["8", "8", "8", "8", "8", "0", "0"]),
+                                                               [sick("2026-05-06"), sick("2026-05-07", "4")], {"SJUKAVDRAG": -lost, "SJUKLON": pay, "KARENSAVDRAG": -k}, S - lost + pay - k, ["1/166"]))
+
 os.makedirs(OUT, exist_ok=True)
 for key, cases in fixtures.items():
     with open(os.path.join(OUT, f"{key}.json"), "w") as f:

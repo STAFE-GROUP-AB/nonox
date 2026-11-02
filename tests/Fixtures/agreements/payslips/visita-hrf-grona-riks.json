@@ -472,6 +472,55 @@
         },
         "warnings": []
       }
+    },
+    {
+      "name": "sjuk: timvärde månadslön delad med månadens arbetstimmar",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01",
+        "week_pattern": [
+          "8",
+          "8",
+          "8",
+          "8",
+          "8",
+          "0",
+          "0"
+        ]
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SJUKAVDRAG": -336842,
+          "SJUKLON": 269474,
+          "KARENSAVDRAG": -134737
+        },
+        "gross_ore": 2997895,
+        "employer": {},
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "SICK",
+          "date": "2026-05-06",
+          "hours": "8"
+        },
+        {
+          "type": "SICK",
+          "date": "2026-05-07",
+          "hours": "8"
+        }
+      ]
     }
   ]
 }

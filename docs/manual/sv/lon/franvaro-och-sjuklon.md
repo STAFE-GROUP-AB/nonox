@@ -47,14 +47,18 @@ Vill ägaren se orsakerna behöver ägaren få rollen löneadministratör. Se [R
 Sjuklön betalas av arbetsgivaren enligt sjuklönelagen under arbetsgivarens sjuklöneperiod. NONOX räknar så här:
 
 - **Månadslön**: lönen för de sjuka timmarna dras av (**Sjukavdrag**), och personen får **Sjuklön** med sjuklönens procentsats för samma timmar.
-- **Karensavdrag**: för varje ny sjukperiod görs ett karensavdrag, beräknat på en genomsnittlig veckas sjuklön enligt sjuklönelagen.
-- **Återinsjuknande**: börjar en ny sjukperiod kort efter den förra räknas den som en fortsättning, och då görs inget nytt karensavdrag.
+- **Karensavdrag**: för varje ny sjukperiod görs ett karensavdrag, beräknat på en genomsnittlig veckas sjuklön enligt sjuklönelagen. Avdraget blir aldrig större än sjuklönen i just den sjukperioden. Är man sjuk två gånger i samma månad får varje sjukperiod sitt eget karensavdrag.
+- **Rest av karensavdraget**: räcker sjuklönen inte till hela karensavdraget, till exempel när man går hem efter en timme, dras resten från sjuklönen senare i samma sjukperiod. Det gäller också när sjukperioden fortsätter i nästa månad. Lönebeskedet säger hur mycket som är kvar.
+- **Återinsjuknande**: börjar en ny sjukperiod inom fem dagar efter den förra räknas den som en fortsättning. Då görs inget nytt karensavdrag, men resten av det förra dras. Dagarna räknas genom hela kedjan, så dag 15 kommer när de sjuka dagarna i kedjan blir 15.
+- **Högst tio karensavdrag på tolv månader**: har den anställda redan haft tio karensavdrag de senaste tolv månaderna, räknat bakåt från den nya sjukperiodens första dag, görs inget nytt. Det är gjorda avdrag som räknas, inte antalet frånvaroposter.
 - **Efter arbetsgivarperioden** betalar arbetsgivaren ingen sjuklön. Lönebeskedet får varningen **Sjukperioden är längre än arbetsgivarperioden. Anmäl sjukfallet till Försäkringskassan.** Anmälan till Försäkringskassan gör du själv.
 
 Procentsatser, antal dagar och tidsgränser kommer från reglerna under **Lön → Regler**, med länk till lagtexten. Se [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller).
 
+NONOX sparar för varje sjukperiod hur stort karensavdraget skulle bli och hur mycket som har dragits. Nästa lönekörning läser det från lönekörningar som är attesterade. Attestera därför förra månadens lön innan du räknar nästa när någon är sjuk över månadsskiftet. Annars räknas karensavdraget som redan gjort, och lönebeskedet säger det.
+
 > [!IMPORTANT]
-> Sjuklönereglerna har några specialfall som NONOX ännu inte hanterar fullt ut: ett karensavdrag som är större än sjuklönen i månaden begränsas till sjuklönen, och resten förs inte vidare. Ett kollektivavtal kan också ge andra regler än lagen. Kontrollera sådana fall med er redovisningskonsult eller Försäkringskassan.
+> Reglerna om rest av karensavdraget och de tio tillfällena följer sjuklönelagen och förarbetena enligt NONOX egen genomgång, men en jurist har inte granskat dem än. Ett kollektivavtal kan också ge andra regler än lagen, se [Sjuklön med OB enligt schemat](/manual/avtal/sjuklon-med-ob). Kontrollera ovanliga fall med er redovisningskonsult eller Försäkringskassan.
 
 ## Så här räknas annan frånvaro
 

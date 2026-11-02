@@ -441,7 +441,11 @@ byggd: TODO(legal-verify) avtal med Fora och Collectum (ADR-033 fråga 6).
 `employment`, `period`, `payment_date`, `inputs` (`code`, `quantity`,
 `date`), valfria `absences`, `vacation` och `local_overrides`, och
 `expected` (`lines` per löneart, `gross_ore`, `employer` per löneart,
-`warnings` som delsträngar). Förväntade belopp räknas av
+`warnings` som delsträngar, valfritt `sick_periods`), och för sjuklön
+`sick_history` (det körningen läser: sjukperioder före, gjorda
+karensavdrag, avtalets dagar från dag 15), `sick_facts` (genomsnittsvecka,
+månadens arbetstimmar, snitt av rörlig lön) och `week_pattern`,
+`sick_pay_direct_transfer`, `fixed_supplements_ore` på anställningen. Förväntade belopp räknas av
 `tests/Fixtures/agreements/expected-payslips.py` med formlerna i klartext,
 oberoende av PHP-motorn.
 
@@ -485,15 +489,41 @@ har kontrollerat versionen):
       "below_bp": 9000,                  // andel av årslönen upp till gränsen, per kalenderdag / days_per_year
       "above_bp": 1000                   // andel av årslönen över gränsen
     },
-    "duration": [                        // första raden som anställningstiden uppfyller gäller
-      { "min_employment_months": 12, "to_day": 90 },
-      { "to_day": 45 }
+    "duration": [                        // första raden som anställningstiden (eller övergången) uppfyller gäller,
+                                         // räknat på sjukperiodens första dag
+      { "min_employment_months": 12, "or_direct_transfer": true, "to_day": 90, "max_days_12_months": 105 },
+      { "to_day": 45, "max_days_12_months": 45 }
     ],
-    "source": "VU#§ 23 s. 46–48"
+    "monthly_salary_includes": ["FIXED_SUPPLEMENTS", "VARIABLE_AVERAGE", "BENEFITS"],
+    "cap_includes": ["FIXED_SUPPLEMENTS"],          // högsta avdrag per dag = fast lön × 12 / 365
+    "variable_pay_codes": ["PROVISION", "BONUS"],   // motorns lönearter i snittet av rörlig lön
+    "source": "VU#§ 23.1 s. 44, § 23.3 s. 46–48"
+  },
+  "hour_value": {                        // avtalets timvärde i sjukavdrag och sjuklön (månadslön)
+    "method": "MONTHLY_PER_WEEK",        // eller MONTH_WORKING_HOURS, eller DAY_PERCENT med day_bp och hour_divisor
+    "months_per_year": "12", "weeks_per_year": "52",
+    "source": "VU#§ 23.3 s. 45–47"
+  },
+  "karens": {                            // karensavdraget i tid
+    "unit": "HOURS", "percent_of_weekly_hours_bp": 2000,
+    "weekly_hours": "AVERAGE",           // eller AGREED: den i förväg överenskomna (anställningens)
+    "source": "VU#§ 23.3 s. 45–46"
   },
   "source": "VU#§ 23.3 s. 45"
 }
 ```
+
+Sjuklönens nycklar rättade 2026-11-02 (enligt AI-utredning, juristgranskning
+återstår, alla overifierade): `hour_value` finns för Visita–Unionen (12/52),
+Handels tjänstemän (12,2/52), Gröna Riks (`MONTH_WORKING_HOURS`, båda
+varianterna) och Detaljhandeln (`DAY_PERCENT`, 460 bp och 1/166); `karens`
+för samma fyra (Detaljhandeln `AGREED`). `max_days_12_months`,
+`or_direct_transfer`, `monthly_salary_includes`, `cap_includes` och
+`variable_pay_codes` för Visita–Unionen och Handels tjänstemän. Anställningen
+har `sick_pay_direct_transfer` och `fixed_supplements_ore` (Lön → Avtal).
+Det formatet inte kan uttrycka (kost/bostad i månadslönen, deltid från dag
+15, Detaljhandelns karenstid per hel dag och fler än 22 schemadagar) blir en
+notering på lönespecen.
 
 `AgreementFileValidator` kontrollerar formen och källorna, `AgreementRules`
 läser dem (`rounding()`, `compTime()`, `calculationPeriod()`, `sickPay()`,

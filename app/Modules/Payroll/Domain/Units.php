@@ -25,4 +25,6 @@ final class Units
 
     /** Decimals shown for öre values in explanations. */
     public const int SHOWN_DECIMALS = 2;
+
+    public const int MINUTES_PER_HOUR = 60;
 }

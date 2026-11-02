@@ -153,6 +153,18 @@
     },
     "sick_pay": {
         "includes_ob": true,
+        "hour_value": {
+            "method": "DAY_PERCENT",
+            "day_bp": 460,
+            "hour_divisor": "166",
+            "source": "D1#§ 13.1 s. 42, § 15.4 s. 49–50"
+        },
+        "karens": {
+            "unit": "HOURS",
+            "percent_of_weekly_hours_bp": 2000,
+            "weekly_hours": "AGREED",
+            "source": "D1#§ 15.4 A s. 50"
+        },
         "source": "D1#§ 15.4 s. 49"
     },
     "notes": [
