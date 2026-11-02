@@ -1,12 +1,39 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-9cac61e",
+      "datum": "2026-11-02T13:22:04+01:00",
+      "rubrik": "Schablonintäkt, pensionsunderlag och spärr mot för stor utdelning",
+      "beskrivning": "Inkomstdeklarationen föreslår schablonintäkt på periodiseringsfonder och underlag för särskild löneskatt på pensioner. Utdelning större än det fria egna kapitalet stoppas, och utdelning efter ett förlustår går att göra när det fria egna kapitalet räcker.",
+      "typ": "Rättat",
+      "omrade": "Bokslut",
+      "version": "9cac61e"
+    },
+    {
       "id": "2026-11-02-andringslogg-och-fardplan",
       "datum": "2026-11-02T13:20:00+01:00",
       "rubrik": "Ändringslogg och färdplan",
       "beskrivning": "Allt vi levererar står nu med datum och klockslag i ändringsloggen, som också går att följa med RSS. Färdplanen visar det som pågår, det som är planerat och önskemålen, och manualen, API:t och säkerhetssidan har flyttat till sidfoten.",
       "typ": "Nytt",
       "omrade": "Webbplats"
+    },
+    {
+      "id": "2026-11-02-06a6ba7",
+      "datum": "2026-11-02T13:13:56+01:00",
+      "rubrik": "Karensavdrag och avtalssjuklön enligt lag och avtal",
+      "beskrivning": "Karensavdraget har tak per sjukperiod och det som inte ryms förs vidare. Genomsnittsveckan räknas på tiden före sjukperioden, avtalens egna timvärden används, och sjuklönen från dag 15 har avtalets tak.",
+      "typ": "Rättat",
+      "omrade": "Lön",
+      "version": "06a6ba7"
+    },
+    {
+      "id": "2026-11-02-e938cef",
+      "datum": "2026-11-02T13:05:33+01:00",
+      "rubrik": "Övertid räknas per dag och avrundas rätt",
+      "beskrivning": "Övertid räknas enligt lagen och avtalet: frånvaro på ordinarie tid räknas som arbetad tid, övertid avrundas per dag eller tillfälle och inte på periodens summa, och timavlönade får avtalets övertidstillägg. Övertid och komptid räknas in i semesterlönen när avtalet inte säger annat.",
+      "typ": "Rättat",
+      "omrade": "Lön",
+      "version": "e938cef"
     },
     {
       "id": "2026-11-02-9696b54",
