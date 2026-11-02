@@ -477,3 +477,21 @@ finding and the GitHub issue.
   whenever 018 has an amount. Valid under the schema (BELOPP6/7 allow 0).
 - `TODO(legal-verify)`: whether the avgiftsfri variants (132, 133) also
   want a nought; not written.
+
+### The employee's own payment for a benefit (AUD-LON-13, #80)
+
+- The payment reduces the benefit's taxable value (IL 61 kap. 11 §, already
+  handled) and is, for the company, a recovery of what the benefit cost; it
+  is not a debt. FAR's guidance on förmåner: when the employee pays through
+  a net deduction the cost account may be credited, "Alternativt krediteras
+  konto 7388 Anställdas ersättning för erhållna förmåner". NONOX cannot
+  know the cost account of each benefit, so `FORMAN_EGENBETALNING` credits
+  7388 (added to PayCodeCatalog::ACCOUNTS); the voucher otherwise stays as
+  it was and balances (golden payslip in AgiAndPayFixesTest).
+- Migration `2026_11_16_140000_book_own_benefit_payment_on_7388` moves a
+  system pay code still on 2890 and creates 7388 when missing. Posted
+  vouchers are immutable; an existing 2890 balance is the company's to
+  correct.
+- `TODO(legal-verify)`: the BAS 2026 name of 7388 (read in FAR's guidance,
+  not in the BAS chart itself); output VAT on staff meals the employee pays
+  for (Mervärdesskattelagen) is not handled.

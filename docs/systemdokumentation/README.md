@@ -1492,6 +1492,16 @@ lönebeskeden låsta i databasen.
   en övrig förmån eller bilförmån fanns i månaden (i avgiftsunderlaget) och
   skriver då 012 respektive 013 även när värdet efter egen betalning är 0.
   Fälten 131–134 för avgiftsfri ersättning skrivs som förut bara med belopp.
+- Egen betalning för förmån (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-13, #80): lönearten
+  `FORMAN_EGENBETALNING` krediteras 7388 Anställdas ersättning för
+  erhållna förmåner (FAR:s vägledning: kostnadskontot eller 7388), inte
+  2890 Övriga kortfristiga skulder, så ingen skuld byggs upp. En migrering
+  lägger till 7388 och flyttar systemlönearten för företag där den
+  fortfarande pekar på 2890; ett annat valt konto behålls. Bokförda
+  verifikationer ändras inte: ett saldo som redan finns på 2890 rättas med
+  en egen verifikation. `TODO(legal-verify)`: BAS 2026-namnet på 7388 och
+  utgående moms på personalmåltider som den anställda betalar.
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

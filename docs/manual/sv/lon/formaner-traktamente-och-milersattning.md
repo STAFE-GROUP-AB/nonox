@@ -32,7 +32,7 @@ Betalar den anställda något för förmånen, till exempel för personalmaten, 
 
 ### Det här händer i bokföringen
 
-Förmånsvärdet bokförs inte som en egen kostnad. Den verkliga kostnaden bokfördes när företaget köpte maten eller betalade bilen; lönen lägger bara till skatten och arbetsgivaravgiften på förmånen (arbetsgivaravgiften på 7510). Den anställdas egen betalning bokförs mot 2890.
+Förmånsvärdet bokförs inte som en egen kostnad. Den verkliga kostnaden bokfördes när företaget köpte maten eller betalade bilen; lönen lägger bara till skatten och arbetsgivaravgiften på förmånen (arbetsgivaravgiften på 7510). Den anställdas egen betalning minskar företagets kostnad för förmånen och bokförs i kredit på 7388 Anställdas ersättning för erhållna förmåner. Den blir alltså ingen skuld. Exempel: tio luncher à 124 kronor som den anställda betalar själv ger 1 240 kronor i kredit på 7388, och förmånsvärdet blir 0.
 
 ## Traktamente
 

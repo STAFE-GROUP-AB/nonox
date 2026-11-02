@@ -396,7 +396,7 @@ it('books the employee\'s own payment for a benefit without leaving a liability 
 
     // The 1 240 kr the employee paid is the company's income (or a reduced cost), not a debt to anyone.
     expect(LonSupport::voucherLines($posted))->not->toHaveKey(2890);
-})->todo('AUD-LON-13: FORMAN_EGENBETALNING credits 2890 Övriga kortfristiga skulder; a debt that does not exist builds up');
+});
 
 it('applies regional support where the company has chosen it (lag 2001:1170 5 §)', function () {
     app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['regional_support' => true]);

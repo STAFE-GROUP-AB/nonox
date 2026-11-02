@@ -45,7 +45,8 @@ final class PayCodeCatalog
         'BILFORMAN' => ['name_sv' => 'Bilförmån', 'name_en' => 'Car benefit', 'category' => 'BENEFIT', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => null],
         'DRIVMEDELSFORMAN' => ['name_sv' => 'Drivmedelsförmån', 'name_en' => 'Fuel benefit', 'category' => 'BENEFIT', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => null],
         'OVRIG_FORMAN' => ['name_sv' => 'Övrig förmån', 'name_en' => 'Other benefit', 'category' => 'BENEFIT', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => null],
-        'FORMAN_EGENBETALNING' => ['name_sv' => 'Egen betalning för förmån', 'name_en' => 'Employee payment for benefit', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 2890],
+        // The employee's payment recovers the benefit's cost (FAR: "konto 7388 Anställdas ersättning för erhållna förmåner"), not a debt on 2890 (#80).
+        'FORMAN_EGENBETALNING' => ['name_sv' => 'Egen betalning för förmån', 'name_en' => 'Employee payment for benefit', 'category' => 'NET_DEDUCTION', 'unit' => 'AMOUNT', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => null, 'credit' => 7388],
         'MILERSATTNING' => ['name_sv' => 'Milersättning, egen bil', 'name_en' => 'Mileage allowance, own car', 'category' => 'ALLOWANCE_TAX_FREE', 'unit' => 'QUANTITY', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7331, 'credit' => null],
         'MIL_SKATTEPLIKTIG' => ['name_sv' => 'Milersättning, skattepliktig del', 'name_en' => 'Mileage allowance, taxable part', 'category' => 'ALLOWANCE_TAXABLE', 'unit' => 'QUANTITY', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => false, 'debit' => 7332, 'credit' => null],
         'TRAKTAMENTE_HEL' => ['name_sv' => 'Traktamente, hel dag', 'name_en' => 'Per diem, full day', 'category' => 'ALLOWANCE_TAX_FREE', 'unit' => 'DAYS', 'taxable' => false, 'tax_method' => 'NONE', 'contribution' => false, 'vacation' => false, 'pension' => false, 'debit' => 7321, 'credit' => null],
@@ -89,6 +90,8 @@ final class PayCodeCatalog
         7322 => 'Skattepliktiga traktamenten, Sverige',
         7331 => 'Skattefria bilersättningar',
         7332 => 'Skattepliktiga bilersättningar',
+        // TODO(legal-verify): BAS 2026 name of 7388, from FAR's guidance (#80).
+        7388 => 'Anställdas ersättning för erhållna förmåner',
         7410 => 'Pensionsförsäkringspremier',
         7210 => 'Löner till tjänstemän',
         7281 => 'Sjuklöner till tjänstemän',

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Account;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
@@ -494,5 +495,50 @@ describe('a nought in 012 and 013 (#79)', function () {
 
         expect($field('//agd:IU/agd:SkatteplOvrigaFormanerUlagAG'))->toBe('')
             ->and($field('//agd:IU/agd:SkatteplBilformanUlagAG'))->toBe('');
+    });
+});
+
+describe('the employee\'s own payment for a benefit (#80)', function () {
+    it('books the payment as a recovered cost on 7388, so the voucher balances and nothing stays on 2890 (golden payslip)', function () {
+        $dan = LonSupport::employee($this->owner, $this->company, '19750505');
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        LonSupport::input($this->owner, $run, $dan, 'KOSTFORMAN_LUNCH', ['quantity' => '10']);
+        LonSupport::input($this->owner, $run, $dan, 'FORMAN_EGENBETALNING', ['amount' => '1 240']);
+        $posted = LonSupport::postRun($this->owner, $this->admin, $run);
+        $payslip = Payslip::query()->sole();
+
+        // Lunch benefit 10 × 124 = 1 240 kr, paid in full by the employee: benefit value 0, taxable 32 000 kr.
+        // Table 33 column 1 (31 801–32 000): 6 381 kr. Net 32 000 − 6 381 − 1 240 = 24 379 kr.
+        // Contributions 32 000 × 31,42 % = 10 054,40 kr.
+        expect($payslip->tax_ore->ore)->toBe(638_100)
+            ->and($payslip->net_ore->ore)->toBe(2_437_900)
+            ->and(LonSupport::voucherLines($posted))->toBe([
+                1930 => -2_437_900,
+                2710 => -638_100,
+                2730 => -1_005_440,
+                7010 => 3_200_000,
+                7388 => -124_000,
+                7510 => 1_005_440,
+            ]);
+    });
+
+    it('moves an existing company\'s pay code from 2890 to 7388, and keeps an account the company chose', function () {
+        $code = PayCode::query()->where('code', 'FORMAN_EGENBETALNING')->sole();
+        $liability = Account::query()->where('number', 2890)->value('id');
+        $code->forceFill(['credit_account_id' => $liability])->save();
+        Account::query()->where('number', 7388)->delete();
+
+        (require base_path('app/Modules/Payroll/database/migrations/2026_11_16_140000_book_own_benefit_payment_on_7388.php'))->up();
+
+        $account = Account::query()->where('number', 7388)->sole();
+
+        expect($code->fresh()->credit_account_id)->toBe($account->id)
+            ->and($account->name)->toBe('Anställdas ersättning för erhållna förmåner');
+
+        $chosen = Account::query()->where('number', 3990)->value('id') ?? Account::query()->create(['number' => 3990, 'name' => 'Övriga ersättningar och intäkter', 'type' => 'REVENUE'])->id;
+        $code->forceFill(['credit_account_id' => $chosen])->save();
+        (require base_path('app/Modules/Payroll/database/migrations/2026_11_16_140000_book_own_benefit_payment_on_7388.php'))->up();
+
+        expect($code->fresh()->credit_account_id)->toBe($chosen);
     });
 });
