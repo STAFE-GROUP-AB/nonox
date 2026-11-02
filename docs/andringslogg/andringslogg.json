@@ -25,6 +25,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-uppdatera-databasen",
+      "datum": "2026-11-02T16:02:02+01:00",
+      "rubrik": "Uppdatera databasen med en knapp på egen dator",
+      "beskrivning": "Kör du NONOX på din egen dator kan startsidan uppdatera databasen åt dig när en ny version kräver det, utan att du öppnar Terminalen. Knappen finns bara lokalt och tar aldrig bort något.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-02-oppen-beta-ko",
       "datum": "2026-11-02T15:42:48+01:00",
       "rubrik": "Öppen beta med kö fram till lanseringen den 1 januari 2027",

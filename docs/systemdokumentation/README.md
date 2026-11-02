@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.92
+- Version: 0.93
 - Datum: 2026-11-02
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -3153,3 +3153,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.90 | 2026-11-02 | Lön och arbetsgivardeklaration (enligt granskning 2026-11-02, juristgranskning återstår; issue #73–#80): fält 112 (verksamhetens art) vid A-SINK; mottagare utan svenskt person- eller samordningsnummer redovisas med födelsetid, namn, adress och utländskt skatteregistreringsnummer; 30 % skatteavdrag för sidoinkomst (SFL 11 kap. 20 §); mil och traktamente kräver antal och delas i skattefri och skattepliktig del; bonus är semesterlönegrundande; regionalt stöd (lag 2001:1170) som inställning; fält 012/013 som 0 när förmånen fanns; anställdas egen betalning för förmån bokas på 7388. AGI-filen kontrolleras mot Skatteverkets schema 1.1. |
 | 0.91 | 2026-11-02 | Periodisk sammanställning och ruta 38 (enligt granskning 2026-11-02, juristgranskning återstår; issue #65, #97): varor redovisas per månad, kvartal bara med Skatteverkets beslut och högst 500 000 kr per kvartal (SFL 35 kap. 3–7 §§), tjänster i den period de utförs (leveransdatum, ML 7 kap. 30 §); momsnumret kontrolleras före nedladdning. Ruta 38 läser inget konto efter nummer (BAS 2026 har inget konto för trepartshandel); 3107 skapas knutet till ruta 38. |
 | 0.92 | 2026-11-02 | Öppen beta med kö (ADR-038): registrering är stängd; nya användare ställer sig i kö på /ko och godkänns i /hq, eller kommer in via en inbjudan till ett företag. Inloggning för okänd e-post skickar ingen kod och skapar inget konto, och svaret avslöjar inte om adressen finns. Köuppgifterna gallras (nekade efter 30 dagar, övriga efter 12 månader). Integritetspolicyn och villkoren version 1.1. Ändrar ingen bokföring. |
+| 0.93 | 2026-11-02 | Startsidan kan köra väntande migreringar med knappen Uppdatera databasen nu, bara i en lokal installation (APP_ENV=local), bara från samma dator (loopback) och bara via en signerad länk; den kör `migrate` och aldrig något som tömmer databasen. På en server visas kommandot som förut. Ändrar ingen bokföring. |

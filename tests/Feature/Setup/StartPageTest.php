@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Models\User;
 use App\Support\Landing\LandingPage;
 use App\Support\SetupStatus;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\URL;
 
 function pretendEnvironment(string $environment): void
 {
@@ -259,3 +261,43 @@ it('publishes the privacy policy, terms, data processing agreement and sub-proce
 
     $this->get('/')->assertSee(route('legal.privacy'))->assertSee(route('legal.dpa'));
 });
+
+function pendingMigrationsProblem(): array
+{
+    return [
+        'title' => 'Databasen behöver göras i ordning',
+        'explanation' => 'Tabellerna saknas eller behöver uppdateras.',
+        'command' => 'php artisan migrate',
+        'details' => '3 migreringar har inte körts.',
+        'action' => 'migrate',
+    ];
+}
+
+it('offers to update the database from the start page on a local installation opened on the same computer', function () {
+    pretendEnvironment('local');
+    $this->mock(SetupStatus::class)->shouldReceive('problem')->andReturn(pendingMigrationsProblem());
+
+    $this->get('/')->assertOk()->assertSee('Uppdatera databasen nu')->assertSee('php artisan migrate');
+
+    $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.7'])->get('/')
+        ->assertOk()->assertDontSee('Uppdatera databasen nu')->assertSee('Jag har gjort det, ladda om');
+});
+
+it('runs only migrate, and only locally, from the same computer and through the signed link', function () {
+    pretendEnvironment('local');
+    $this->mock(SetupStatus::class)->shouldReceive('problem')->andReturn(null);
+    Artisan::shouldReceive('call')->once()->with('migrate', ['--force' => true])->andReturn(0);
+    Artisan::shouldReceive('output')->andReturn('INFO  Running migrations.');
+    $signed = URL::temporarySignedRoute('setup.migrate', now()->addMinutes(15));
+
+    $this->post(route('setup.migrate'))->assertNotFound();
+    $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.7'])->post($signed)->assertNotFound();
+    $this->withServerVariables(['REMOTE_ADDR' => '127.0.0.1'])->post($signed)->assertOk()->assertSee('Databasen är uppdaterad');
+});
+
+it('never runs migrations from the browser outside a local installation', function (string $environment) {
+    pretendEnvironment($environment);
+    Artisan::shouldReceive('call')->never();
+
+    $this->post(URL::temporarySignedRoute('setup.migrate', now()->addMinutes(15)))->assertNotFound();
+})->with(['production', 'staging', 'testing']);

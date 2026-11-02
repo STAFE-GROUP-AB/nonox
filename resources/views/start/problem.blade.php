@@ -5,11 +5,20 @@
             <h1>{{ $problem['title'] }}</h1>
             <p class="lead">{{ $problem['explanation'] }}</p>
 
-            <pre class="command">{{ $problem['command'] }}</pre>
+            @if(($problem['action'] ?? null) === 'migrate' && App\Http\Controllers\RunMigrationsController::allowed(request()))
+                <p class="lead">Du kör NONOX på din egen dator, så det går att göra här direkt. Inget tas bort: bara det som saknas läggs till.</p>
+                <form method="POST" action="{{ URL::temporarySignedRoute('setup.migrate', now()->addMinutes(15)) }}" class="actions">
+                    <button type="submit" class="button">Uppdatera databasen nu</button>
+                </form>
+                <p class="small">Eller kör raden i Terminalen, i mappen där systemet ligger:</p>
+                <pre class="command">{{ $problem['command'] }}</pre>
+            @else
+                <pre class="command">{{ $problem['command'] }}</pre>
 
-            <div class="actions">
-                <a class="button" href="{{ url('/') }}">Jag har gjort det, ladda om</a>
-            </div>
+                <div class="actions">
+                    <a class="button" href="{{ url('/') }}">Jag har gjort det, ladda om</a>
+                </div>
+            @endif
 
             <details>
                 <summary>Visa tekniska detaljer</summary>

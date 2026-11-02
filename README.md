@@ -320,6 +320,8 @@ php artisan migrate
 npm install && npm run build
 ```
 
+Kör du NONOX på din egen dator (`APP_ENV=local`) och öppnar sidan på samma dator kan du i stället klicka på **Uppdatera databasen nu** när startsidan säger att databasen behöver göras i ordning. Knappen kör bara `php artisan migrate`, aldrig något som tömmer databasen, och finns inte på en server.
+
 ### Felsökning
 
 | Felmeddelande | Orsak och lösning |

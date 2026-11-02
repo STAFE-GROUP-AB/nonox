@@ -32,6 +32,7 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\Payables\PaymentBatchFileController;
 use App\Http\Controllers\Payables\SupplierInvoiceController;
 use App\Http\Controllers\RoadmapController;
+use App\Http\Controllers\RunMigrationsController;
 use App\Http\Controllers\Search\RecentItemController;
 use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\SecurityPageController;
@@ -55,6 +56,8 @@ use Laravel\Jetstream\Http\Controllers\Livewire\UserProfileController;
  */
 
 Route::get('/', StartController::class)->name('start');
+// Runs pending migrations from the start page, only locally and from the same computer (RunMigrationsController).
+Route::post('/start/uppdatera-databasen', RunMigrationsController::class)->name('setup.migrate');
 Route::get('/flytta-hit', MigrationGuideController::class)->name('migrationGuide');
 // The waiting list of the open beta (ADR-038): the way in for new users of the hosted service.
 Route::get('/ko', WaitlistController::class)->name('waitlist');

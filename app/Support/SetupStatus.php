@@ -29,7 +29,7 @@ class SetupStatus
         return $this->problem() === null;
     }
 
-    /** @return array{title: string, explanation: string, command: string, details: string}|null */
+    /** @return array{title: string, explanation: string, command: string, details: string, action?: string}|null */
     public function problem(): ?array
     {
         if ($this->problem === false) {
@@ -98,7 +98,7 @@ class SetupStatus
         ];
     }
 
-    /** @return array{title: string, explanation: string, command: string, details: string}|null */
+    /** @return array{title: string, explanation: string, command: string, details: string, action?: string}|null */
     private function migrationProblem(): ?array
     {
         $files = $this->migrator->getMigrationFiles(
@@ -117,6 +117,7 @@ class SetupStatus
             'explanation' => 'Databasen finns, men tabellerna där allt ska sparas saknas eller behöver uppdateras. Kör raden nedan i Terminalen, i mappen där systemet ligger, och ladda sedan om sidan.',
             'command' => 'php artisan migrate',
             'details' => "{$pending} migreringar har inte körts.",
+            'action' => 'migrate',
         ];
     }
 

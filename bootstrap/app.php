@@ -29,6 +29,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // from config/trustedproxy.php. Not ->trustProxies(at: ...) here: this
         // callback runs before .env is loaded, so env() would always be empty.
 
+        // The start page's migrate button works before the sessions table exists; it is guarded by a signed URL instead.
+        $middleware->validateCsrfTokens(except: ['start/uppdatera-databasen']);
+
         $middleware->web(append: [
             SecurityHeaders::class,
             EndExpiredSessions::class,
