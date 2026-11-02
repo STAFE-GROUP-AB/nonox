@@ -151,8 +151,8 @@
             <span class="muted">{{ __('Säljarens momsreg.nr :seller · Köparens momsreg.nr :buyer', ['seller' => $company->vat_number, 'buyer' => $customer['vat_number'] ?? '']) }}</span></p>
     @endif
 
-    @if($invoice->foreign_sale !== null)
-        <p style="margin-top: 8mm"><strong>{{ $invoice->foreign_sale->invoiceText() }}</strong><br>
+    @if($invoice->bookedForeignSale() !== null)
+        <p style="margin-top: 8mm"><strong>{{ $invoice->bookedForeignSale()->invoiceText() }}</strong><br>
             <span class="muted">@if($company->vat_number){{ __('Säljarens momsreg.nr :seller', ['seller' => $company->vat_number]) }}@endif @if(filled($customer['vat_number'] ?? null)) · {{ __('Köparens momsreg.nr :buyer', ['buyer' => $customer['vat_number']]) }}@endif</span></p>
     @endif
 

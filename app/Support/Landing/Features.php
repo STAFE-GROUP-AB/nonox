@@ -29,7 +29,7 @@ final class Features
         'reports' => ['name' => 'Rapporter per period och kostnadsställe', 'status' => self::LIVE, 'readme' => 'huvudbok, kontoanalys och verifikationslista per period och kostnadsställe'],
         'cost_centres' => ['name' => 'Kostnadsställen och projekt', 'status' => self::LIVE, 'readme' => 'kostnadsställen och projekt'],
         'vat_return' => ['name' => 'Momsdeklaration som fil', 'status' => self::LIVE, 'readme' => 'Momsdeklaration med fil till Skatteverket'],
-        'eu_reports' => ['name' => 'Periodisk sammanställning, OSS och VIES', 'status' => self::LIVE, 'readme' => 'periodisk sammanställning, underlag för OSS och VIES-kontroll'],
+        'eu_reports' => ['name' => 'Periodisk sammanställning, OSS och VIES', 'status' => self::LIVE, 'readme' => 'periodisk sammanställning, underlag för OSS i kronor och euro'],
         'bank_reconciliation' => ['name' => 'Bankavstämning', 'status' => self::LIVE, 'readme' => 'Bankavstämning, periodiseringar, anläggningsregister'],
         'accruals_assets' => ['name' => 'Periodiseringar och anläggningsregister', 'status' => self::LIVE, 'readme' => 'periodiseringar, anläggningsregister med avskrivningar'],
         'year_end' => ['name' => 'Bokslut, årsredovisning K2 och INK2', 'status' => self::LIVE, 'readme' => 'årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer'],

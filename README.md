@@ -63,7 +63,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Offerter och order som blir fakturor utan att något skrivs två gånger, och avtalsfakturering varje månad, kvartal, halvår eller år.
 - Inbetalningar och delbetalningar, kreditfakturor och påminnelser. Bankens fil med inbetalningar (ISO 20022 camt.054) läses in och matchas på OCR-numret.
 - ROT- och RUT-avdrag, omvänd betalningsskyldighet för byggtjänster, och fakturor till andra EU-länder och export med rätt konto, momsruta och fakturatext.
-- Kundfakturor i utländsk valuta (euro, dollar, pund, norska och danska kronor med flera): fakturan skrivs i kundens valuta och bokförs i kronor med Riksbankens kurs på fakturadatumet. Momsen och summan i kronor står på fakturan. Inbetalningen registreras i valutan, för hand eller från bankens fil, och kursvinst eller kursförlust bokförs. Kreditfakturan får samma kurs, och påminnelsen gäller beloppet i valutan.
+- Kundfakturor i utländsk valuta (euro, dollar, pund, norska och danska kronor med flera): fakturan skrivs i kundens valuta och bokförs i kronor med Riksbankens kurs på leveransdagen (eller fakturadatumet), då momsen uppstår. Momsen och summan i kronor står på fakturan. Inbetalningen registreras i valutan, för hand eller från bankens fil, och kursvinst eller kursförlust bokförs. Kreditfakturan får samma kurs, och påminnelsen gäller beloppet i valutan.
 
 ### Inköp
 - Leverantörsfakturor som PDF eller bild, kontering per kostnadsställe och attest av en annan person än den som registrerade. Fakturor i utländsk valuta räknas om med Riksbankens kurs, och kursvinst eller kursförlust bokförs när fakturan betalas.

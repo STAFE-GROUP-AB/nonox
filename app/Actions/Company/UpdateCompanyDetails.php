@@ -35,6 +35,9 @@ class UpdateCompanyDetails
         Gate::forUser($user)->authorize('update', $company);
 
         $dependent = $this->dependentRules($company, $input);
+        if (($input['oss_elected_from'] ?? null) === '') {
+            $input['oss_elected_from'] = null;
+        }
 
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
@@ -55,7 +58,10 @@ class UpdateCompanyDetails
             'f_skatt' => ['required', 'boolean'],
             'employer_registered' => ['required', 'boolean'],
             'turnover_over_40_msek' => ['sometimes', 'boolean'],
+            'oss_elected' => ['sometimes', 'boolean'],
+            'oss_elected_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
         ], CompanySetupRules::messages(), [
+            'oss_elected_from' => __('datum för beskattning i köparens land'),
             'name' => __('företagsnamn'),
             'website' => __('webbplats'),
         ])->validateWithBag('updateCompanyDetails');
@@ -76,6 +82,7 @@ class UpdateCompanyDetails
             'plusgiro' => filled($validated['plusgiro'] ?? null) ? GiroNumber::plusgiro((string) $validated['plusgiro']) : null,
             'vat_registered' => $vatRegistered,
             'vat_number' => $vatRegistered ? $number?->vatNumber() : null,
+            'oss_elected_from' => (bool) ($validated['oss_elected'] ?? $company->oss_elected) ? ($validated['oss_elected_from'] ?? $company->oss_elected_from) : null,
         ])->save();
 
         $changes = Audit::changes($before, $this->snapshot($company));
@@ -122,8 +129,12 @@ class UpdateCompanyDetails
             'name', 'address_line1', 'postal_code', 'city', 'email', 'phone', 'website',
             'bankgiro', 'plusgiro', 'vat_registered', 'vat_number', 'vat_period',
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
-            'f_skatt', 'employer_registered', 'turnover_over_40_msek',
-        ]))->map(fn (mixed $value) => $value instanceof \BackedEnum ? $value->value : $value)->all();
+            'f_skatt', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
+        ]))->map(fn (mixed $value) => match (true) {
+            $value instanceof \BackedEnum => $value->value,
+            $value instanceof \DateTimeInterface => $value->format('Y-m-d'),
+            default => $value,
+        })->all();
     }
 
     /**

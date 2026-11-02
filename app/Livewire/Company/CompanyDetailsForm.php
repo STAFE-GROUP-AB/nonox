@@ -54,6 +54,8 @@ class CompanyDetailsForm extends Component
             'turnover_over_40_msek' => $company->turnover_over_40_msek,
             'framework_confirmed' => false,
             'calendar_year_exempt' => false,
+            'oss_elected' => $company->oss_elected,
+            'oss_elected_from' => (string) $company->oss_elected_from?->toDateString(),
         ];
     }
 

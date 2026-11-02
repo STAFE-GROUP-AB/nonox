@@ -8826,7 +8826,7 @@ components:
         exchange_rate_micros:
           type: integer
           minimum: 1
-          description: 'Booking rate, kronor per unit in millionths. Default Riksbanken''s mid rate on the invoice date.'
+          description: 'Booking rate, also the rate of the VAT base, kronor per unit in millionths. Default Riksbanken''s mid rate on the delivery date, or the invoice date when there is none.'
         rows:
           type: array
           items:
@@ -8890,7 +8890,7 @@ components:
         exchange_rate_micros:
           type: integer
           minimum: 1
-          description: 'Booking rate, kronor per unit in millionths. Default Riksbanken''s mid rate on the invoice date.'
+          description: 'Booking rate, also the rate of the VAT base, kronor per unit in millionths. Default Riksbanken''s mid rate on the delivery date, or the invoice date when there is none.'
         rows:
           type: array
           items:

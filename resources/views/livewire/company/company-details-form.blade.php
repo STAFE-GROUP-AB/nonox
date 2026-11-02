@@ -180,6 +180,19 @@
                 <x-checkbox wire:model="state.turnover_over_40_msek" :disabled="! $canUpdate" />
                 <span class="text-sm text-gray-700">{{ __('Omsättningen är över 40 miljoner kronor om året (andra deklarationsdagar för moms)') }}</span>
             </label>
+            <label class="flex items-start gap-3">
+                <x-checkbox wire:model.live="state.oss_elected" :disabled="! $canUpdate" class="mt-0.5" />
+                <span class="text-sm text-gray-700">{{ __('Har ansökt om beskattning i köparens land (OSS) eller är registrerat för OSS') }}
+                    <span class="block text-xs text-gray-500">{{ __('Gäller försäljning av varor och elektroniska tjänster till privatpersoner i andra EU-länder. Utan ansökan tas svensk moms ut så länge försäljningen i år och i fjol är högst :amount.', ['amount' => App\Support\Money\Money::ofOre(App\Domain\Vat\OssThreshold::AMOUNT_ORE)->format()]) }}</span>
+                </span>
+            </label>
+            @if($state['oss_elected'] ?? false)
+                <div class="ml-8 max-w-xs">
+                    <x-label for="details_oss_elected_from" value="{{ __('Från och med') }}" />
+                    <input id="details_oss_elected_from" type="date" class="{{ $field }}" wire:model="state.oss_elected_from" @disabled(! $canUpdate)>
+                    <x-input-error for="oss_elected_from" class="mt-2" />
+                </div>
+            @endif
         </div>
     </section>
 

@@ -6,6 +6,9 @@ namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\SaveDraftInvoice;
+use App\Domain\Invoicing\ForeignSale;
+use App\Domain\Invoicing\SalesRowInput;
+use App\Domain\Vat\OssThreshold;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Invoicing\Concerns\EditsSalesRows;
 use App\Models\Article;
@@ -13,10 +16,13 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
 use App\Support\Toast;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -64,7 +70,7 @@ class InvoiceEditor extends Component
     /** ISO 4217. In another currency the prices are written in it and booked in kronor at $exchangeRate. */
     public string $currency = 'SEK';
 
-    /** Kronor per unit, "11,234500"; prefilled with Riksbanken's rate on the invoice date. */
+    /** Kronor per unit, "11,234500"; prefilled with Riksbanken's rate on the delivery date, or the invoice date without one. */
     public string $exchangeRate = '';
 
     /** The day of Riksbanken's rate, for the hint under the field; empty when the rate was typed. */
@@ -113,7 +119,7 @@ class InvoiceEditor extends Component
         $this->fetchRate();
     }
 
-    /** A new currency or invoice date: Riksbanken's rate for that day. */
+    /** A new currency, invoice date or delivery date: Riksbanken's rate for the day the VAT arises. */
     public function updatedCurrency(): void
     {
         $this->currency = strtoupper(trim($this->currency)) ?: 'SEK';
@@ -121,6 +127,11 @@ class InvoiceEditor extends Component
     }
 
     public function updatedInvoiceDate(): void
+    {
+        $this->fetchRate();
+    }
+
+    public function updatedDeliveryDate(): void
     {
         $this->fetchRate();
     }
@@ -138,7 +149,7 @@ class InvoiceEditor extends Component
             return;
         }
 
-        $rate = app(RiksbankRates::class)->rate($this->currency, $this->invoiceDate);
+        $rate = app(RiksbankRates::class)->rate($this->currency, SaveDraftInvoice::vatDate(['delivery_date' => $this->deliveryDate, 'invoice_date' => $this->invoiceDate]));
         $this->exchangeRate = (string) $rate?->format();
         $this->rateDate = (string) $rate?->date;
     }
@@ -171,10 +182,41 @@ class InvoiceEditor extends Component
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
             'currencies' => self::CURRENCIES,
             'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
+            'ossThreshold' => $this->ossThreshold(),
             'canIssue' => $this->invoiceId === null
                 ? $this->user()->hasTeamPermission($this->company(), 'invoices:send')
                 : Gate::allows('issue', Invoice::query()->findOrFail($this->invoiceId)),
         ]);
+    }
+
+    /**
+     * Where the company stands against the OSS threshold with this invoice,
+     * for a sale to a consumer in another EU country; null otherwise.
+     *
+     * @return ?array{elected: bool, previous: int, current: int, after: int, swedish_vat: bool, crosses: bool, near: bool}
+     */
+    private function ossThreshold(): ?array
+    {
+        if ($this->credit || $this->foreignSale !== ForeignSale::EuConsumerOss->value) {
+            return null;
+        }
+
+        $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->invoiceDate);
+
+        if (! $date instanceof CarbonImmutable) {
+            return null;
+        }
+
+        try {
+            $rows = SalesRowInput::parse($this->rowInput());
+        } catch (ValidationException) {
+            $rows = [];
+        }
+
+        $rate = $this->currency === 'SEK' ? null : ExchangeRate::parse($this->currency, $this->exchangeRate);
+        $net = array_sum(array_map(fn (array $row): int => $rate?->toOre((int) $row['net_ore']) ?? ($this->currency === 'SEK' ? (int) $row['net_ore'] : 0), $rows));
+
+        return OssThreshold::check($this->company(), $date, $net, $this->invoiceId);
     }
 
     private function persist(SaveDraftInvoice $save): Invoice

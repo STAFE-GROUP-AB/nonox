@@ -16,7 +16,8 @@ use Carbon\CarbonImmutable;
  *
  * TODO(legal-verify): every rate and date below must be checked against the
  * European Commission's rate database (TEDB) before use; reduced rates are
- * missing; the threshold of EUR 10 000 for distance sales is not checked.
+ * missing. The threshold under which such sales carry Swedish VAT instead
+ * (99 680 kronor, ML 6 kap. 62 §) is in OssThreshold.
  */
 final class OssRates
 {

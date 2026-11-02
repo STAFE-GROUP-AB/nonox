@@ -93,8 +93,10 @@
                         <tr class="text-left text-gray-500">
                             <th class="pb-2 pr-4 font-medium">{{ __('Land') }}</th>
                             <th class="pb-2 pr-4 text-right font-medium">{{ __('Momssats') }}</th>
-                            <th class="pb-2 pr-4 text-right font-medium">{{ __('Försäljning exkl. moms') }}</th>
-                            <th class="pb-2 text-right font-medium">{{ __('Moms') }}</th>
+                            <th class="pb-2 pr-4 text-right font-medium">{{ __('Försäljning exkl. moms, SEK') }}</th>
+                            <th class="pb-2 pr-4 text-right font-medium">{{ __('Moms, SEK') }}</th>
+                            <th class="pb-2 pr-4 text-right font-medium">{{ __('Försäljning exkl. moms, EUR') }}</th>
+                            <th class="pb-2 text-right font-medium">{{ __('Moms, EUR') }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100">
@@ -103,18 +105,34 @@
                                 <td class="py-2 pr-4 font-medium text-gray-900">{{ $row['country'] }}</td>
                                 <td class="py-2 pr-4 text-right">{{ rtrim(rtrim(number_format($row['rate'] / 100, 2, ',', ''), '0'), ',') }} %</td>
                                 <td class="py-2 pr-4 text-right"><x-ui.amount :money="App\Support\Money\Money::ofOre($row['net'])" /></td>
-                                <td class="py-2 text-right"><x-ui.amount :money="App\Support\Money\Money::ofOre($row['vat'])" /></td>
+                                <td class="py-2 pr-4 text-right"><x-ui.amount :money="App\Support\Money\Money::ofOre($row['vat'])" /></td>
+                                <td class="py-2 pr-4 text-right">@if($row['net_eur'] !== null)<x-ui.amount :money="App\Support\Money\Money::ofOre($row['net_eur'], 'EUR')" />@else – @endif</td>
+                                <td class="py-2 text-right">@if($row['vat_eur'] !== null)<x-ui.amount :money="App\Support\Money\Money::ofOre($row['vat_eur'], 'EUR')" />@else – @endif</td>
                             </tr>
                         @endforeach
                         <tr class="font-semibold text-gray-900">
                             <td class="pt-3 pr-4" colspan="2">{{ __('Summa') }}</td>
                             <td class="pt-3 pr-4 text-right"><x-ui.amount :money="App\Support\Money\Money::ofOre($ossTotals['net'])" /></td>
-                            <td class="pt-3 text-right"><x-ui.amount :money="App\Support\Money\Money::ofOre($ossTotals['vat'])" /></td>
+                            <td class="pt-3 pr-4 text-right"><x-ui.amount :money="App\Support\Money\Money::ofOre($ossTotals['vat'])" /></td>
+                            <td class="pt-3 pr-4 text-right">@if($ossTotals['net_eur'] !== null)<x-ui.amount :money="App\Support\Money\Money::ofOre($ossTotals['net_eur'], 'EUR')" />@else – @endif</td>
+                            <td class="pt-3 text-right">@if($ossTotals['vat_eur'] !== null)<x-ui.amount :money="App\Support\Money\Money::ofOre($ossTotals['vat_eur'], 'EUR')" />@else – @endif</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-            <p class="mt-3 text-xs text-gray-500">{{ __('Momsen är bokförd på 2619 och ingår inte i den svenska momsdeklarationen. Räkna om till euro med Europeiska centralbankens kurs för kvartalets sista dag.') }}</p>
+            <div class="mt-3 space-y-1 text-xs text-gray-500">
+                <p>{{ __('Deklarationen lämnas i euro. Försäljning i euro räknas med fakturans belopp. Annan valuta räknas om med Europeiska centralbankens kurs för kvartalets sista dag (:date), eller nästa publicerade kurs om ingen kurs publicerades den dagen.', ['date' => $oss->end->toDateString()]) }}</p>
+                @foreach($oss->euroRates as $rate)
+                    <p>{{ __('1 EUR = :rate :currency (ECB :date)', ['rate' => $rate->format(), 'currency' => $rate->currency, 'date' => $rate->date]) }}</p>
+                @endforeach
+                @if($oss->missingRates !== [])
+                    <p class="text-amber-800">{{ __('Europeiska centralbanken har ännu ingen kurs för :currencies för kvartalets sista dag, eller går inte att nå. Beloppen i euro visas när kursen finns.', ['currencies' => implode(', ', $oss->missingRates)]) }}</p>
+                @endif
+                <p>{{ __('Momsen i kronor är bokförd på 2619 och ingår inte i den svenska momsdeklarationen. Försäljning under tröskelvärdet har svensk moms och finns inte här.') }}</p>
+            </div>
+            <div class="mt-4 flex justify-end">
+                <x-secondary-button type="button" wire:click="downloadOss" wire:loading.attr="disabled">{{ __('Ladda ner underlaget (CSV)') }}</x-secondary-button>
+            </div>
         @endif
     </x-ui.card>
 </div>

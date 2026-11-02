@@ -43,6 +43,7 @@ Alla i företaget kan se uppgifterna, men bara ägare och administratörer kan �
 | **Företaget har F-skatt** | Står på fakturorna. |
 | **Företaget är registrerat som arbetsgivare** | Att företaget har anställda och lämnar arbetsgivardeklaration. |
 | **Omsättningen är över 40 miljoner kronor om året** | Ger andra deklarationsdagar för momsen. |
+| **Har ansökt om beskattning i köparens land (OSS) eller är registrerat för OSS** | Bocka i om företaget har valt att ta ut köparlandets moms vid försäljning till privatpersoner i andra EU-länder, och fyll i **Från och med**. Annars tas svensk moms ut tills försäljningen går över 99 680 kronor om året. Läs [OSS](/manual/moms/oss). |
 
 Uppgifterna ska stämma med Skatteverkets beslut. Är du osäker, fråga din redovisningskonsult eller titta i besluten.
 

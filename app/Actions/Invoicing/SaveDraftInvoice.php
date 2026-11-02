@@ -9,6 +9,7 @@ use App\Domain\Invoicing\InvoiceCalculator;
 use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Vat\OssRates;
+use App\Domain\Vat\OssThreshold;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -32,16 +33,29 @@ use Illuminate\Validation\ValidationException;
  * row prices are hundredths of it, and its totals are kept as written,
  * without öresavrundning. Every row is also converted to kronor at the
  * booking rate (half up), and the kronor amounts, with the VAT calculated on
- * the kronor base per rate, are what is booked. The rate is Riksbanken's
- * mid rate on the invoice date (or the last banking day before), or the
- * rate the person typed. A credit invoice always takes the currency and
- * rate of the invoice it credits.
+ * the kronor base per rate, are what is booked. One rate serves both the
+ * booking and the VAT base.
  *
- * TODO(legal-verify): the rate for the VAT base. Mervärdesskattelag
- * (2023:200) 8 kap. 21 § (conversion of the taxable amount, see ADR-016 and
- * ADR-025) and Council Directive 2006/112/EC art. 91 (the rate at the time
- * the tax becomes chargeable; the ECB rate may be used). Riksbanken's mid
- * rate on the invoice date is used here and can be changed per invoice.
+ * The rate is taken on the day the VAT arises (Mervärdesskattelag
+ * (2023:200) 8 kap. 21 §, 7 kap. 3-4 §§): the delivery date when the
+ * invoice has one, otherwise the invoice date, which then stands in for
+ * the delivery (enligt AI-utredning 2026-11-02, juristgranskning återstår).
+ * It is Riksbanken's mid rate on that day (or the last banking day before;
+ * today's when the day is in the future), or the rate the person typed. A
+ * credit invoice always takes the currency and rate of the invoice it
+ * credits.
+ *
+ * A sale to a consumer in another EU country (OSS) carries Swedish VAT while
+ * the company is under the threshold in OssThreshold and has not elected
+ * taxation in the buyer's country; otherwise that country's rate. A credit
+ * invoice follows the invoice it credits.
+ *
+ * TODO(legal-verify): whether Riksbanken's mid rate counts as "the latest
+ * average rate on the most representative currency market in Sweden" (8 kap.
+ * 21 §); Skatteverket names the ECB rate and Nasdaq OMX Stockholm's fixed
+ * mid rate. The invoice date is used for advance invoices (7 kap. 7 §: the
+ * day the payment is received) and for construction services under
+ * omvänd betalningsskyldighet (7 kap. 8 §: the invoice date) alike.
  */
 class SaveDraftInvoice
 {
@@ -94,9 +108,13 @@ class SaveDraftInvoice
             'due_date' => __('förfallodag'),
         ])->validate();
 
-        [$currency, $bookingRate] = $this->currency($company, $validated, $draft);
+        $original = $draft !== null && $draft->credits_invoice_id !== null
+            ? CurrentCompany::run($company, fn (): ?Invoice => Invoice::query()->find($draft->credits_invoice_id))
+            : null;
 
-        return DB::transaction(fn (): Invoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $draft, $currency, $bookingRate): Invoice {
+        [$currency, $bookingRate] = $this->currency($validated, $draft, $original);
+
+        return DB::transaction(fn (): Invoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $company, $draft, $original, $currency, $bookingRate): Invoice {
             $customer = Customer::query()->find((int) $validated['customer_id'])
                 ?? throw ValidationException::withMessages(['customer_id' => __('Välj en kund.')]);
 
@@ -123,8 +141,17 @@ class SaveDraftInvoice
                 throw ValidationException::withMessages(['foreign_sale' => __('Välj antingen omvänd betalningsskyldighet för byggtjänster eller försäljning utomlands, inte båda.')]);
             }
 
-            // A sale to a consumer elsewhere in the EU carries that country's VAT (OSS).
+            // A sale to a consumer elsewhere in the EU carries Swedish VAT under the threshold, else that country's VAT (OSS).
+            $swedishVat = false;
+
             if ($foreignSale === ForeignSale::EuConsumerOss) {
+                $net = array_sum(array_map(fn (array $row): int => $bookingRate?->toOre((int) $row['net_ore']) ?? (int) $row['net_ore'], $rows));
+                $swedishVat = $original instanceof Invoice
+                    ? $original->swedish_vat_under_threshold
+                    : OssThreshold::check($company, $invoiceDate, $net, $draft?->exists === true ? $draft->id : null)['swedish_vat'];
+            }
+
+            if ($foreignSale === ForeignSale::EuConsumerOss && ! $swedishVat) {
                 $rate = OssRates::standard($customer->country, $invoiceDate)
                     ?? throw ValidationException::withMessages(['foreign_sale' => __('Det finns ingen momssats för OSS i kundens land (:country) på fakturadatumet.', ['country' => $customer->country])]);
 
@@ -201,6 +228,7 @@ class SaveDraftInvoice
                 'foreign_net_minor' => $foreignTotals['net'] ?? null,
                 'foreign_vat_minor' => $foreignTotals['vat'] ?? null,
                 'foreign_total_minor' => $foreignTotals['total'] ?? null,
+                'swedish_vat_under_threshold' => $swedishVat,
             ])->save();
 
             InvoiceRow::query()->where('invoice_id', $invoice->id)->delete();
@@ -220,12 +248,8 @@ class SaveDraftInvoice
      * @param  array<string, mixed>  $validated
      * @return array{0: string, 1: ?ExchangeRate}
      */
-    private function currency(Company $company, array $validated, ?Invoice $draft): array
+    private function currency(array $validated, ?Invoice $draft, ?Invoice $original): array
     {
-        $original = $draft !== null && $draft->credits_invoice_id !== null
-            ? CurrentCompany::run($company, fn (): ?Invoice => Invoice::query()->find($draft->credits_invoice_id))
-            : null;
-
         if ($original instanceof Invoice) {
             return [$original->invoice_currency, $original->bookingRate()];
         }
@@ -237,18 +261,31 @@ class SaveDraftInvoice
             return ['SEK', null];
         }
 
-        $date = (string) $validated['invoice_date'];
+        $date = self::vatDate($validated);
         $riksbank = $this->rates->rate($currency, $date);
         $typed = trim((string) ($validated['exchange_rate'] ?? ''));
 
         if ($typed === '') {
-            return [$currency, $riksbank ?? throw ValidationException::withMessages(['exchange_rate' => __('Riksbanken har ingen kurs för :currency på fakturadatumet. Skriv kursen i kronor per :currency, till exempel 11,2345.', ['currency' => $currency])])];
+            return [$currency, $riksbank ?? throw ValidationException::withMessages(['exchange_rate' => __('Riksbanken har ingen kurs för :currency den :date. Skriv kursen i kronor per :currency, till exempel 11,2345.', ['currency' => $currency, 'date' => $date])])];
         }
 
         $rate = ExchangeRate::parse($currency, $typed, $date)
             ?? throw ValidationException::withMessages(['exchange_rate' => __('Skriv kursen i kronor per :currency, till exempel 11,2345.', ['currency' => $currency])]);
 
         return [$currency, $riksbank !== null && $riksbank->micros === $rate->micros ? $riksbank : $rate];
+    }
+
+    /**
+     * The day the VAT arises, which the exchange rate is taken for: the
+     * delivery date, or the invoice date when there is none.
+     *
+     * @param  array<string, mixed>  $input  delivery_date and invoice_date as Y-m-d
+     */
+    public static function vatDate(array $input): string
+    {
+        $delivery = (string) ($input['delivery_date'] ?? '');
+
+        return preg_match('/^\d{4}-\d{2}-\d{2}$/', $delivery) === 1 ? $delivery : (string) $input['invoice_date'];
     }
 
     /**

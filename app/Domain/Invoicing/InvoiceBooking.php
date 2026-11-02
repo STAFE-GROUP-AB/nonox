@@ -24,7 +24,9 @@ use Illuminate\Support\Collection;
  *   revenue, VAT and rounding directly against the bank account.
  *
  * A sale abroad (ForeignSale) is booked on the account for that kind of
- * sale instead of the rows' accounts, without VAT.
+ * sale instead of the rows' accounts, without VAT. A sale to a consumer in
+ * another EU country under the OSS threshold (OssThreshold) carries Swedish
+ * VAT and is booked like a sale in Sweden.
  *
  * A credit invoice has negative amounts, so the same rules reverse it.
  *
@@ -69,11 +71,12 @@ final class InvoiceBooking
     public static function revenue(Invoice $invoice, Collection $rows): array
     {
         $lines = [];
+        $sale = $invoice->bookedForeignSale();
 
         foreach ($rows as $row) {
             $number = match (true) {
                 $invoice->reverse_charge => self::REVERSE_CHARGE_CONSTRUCTION,
-                $invoice->foreign_sale !== null => $invoice->foreign_sale->account(),
+                $sale !== null => $sale->account(),
                 default => $row->account instanceof Account ? $row->account->number : 0,
             };
             $lines[$number] = ($lines[$number] ?? 0) - $row->net_ore->ore;
@@ -83,7 +86,7 @@ final class InvoiceBooking
 
         foreach ($totals['vat_by_rate'] as $rate => $group) {
             if ($group['vat'] !== 0) {
-                $account = $invoice->foreign_sale === ForeignSale::EuConsumerOss ? OssRates::VAT_ACCOUNT : self::OUTPUT_VAT[$rate];
+                $account = $sale === ForeignSale::EuConsumerOss ? OssRates::VAT_ACCOUNT : self::OUTPUT_VAT[$rate];
                 $lines[$account] = ($lines[$account] ?? 0) - $group['vat'];
             }
         }

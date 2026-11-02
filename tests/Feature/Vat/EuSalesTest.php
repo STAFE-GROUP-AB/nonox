@@ -25,11 +25,12 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
+use Tests\Support\FakeEuroRates;
 
 beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-04-02 10:00:00'));
     [$this->owner, $this->company] = Bookkeeping::company();
-    $this->company->forceFill(['vat_number' => 'SE556334368901', 'phone' => '08-123456'])->save();
+    $this->company->forceFill(['vat_number' => 'SE556334368901', 'phone' => '08-123456', 'oss_elected' => true])->save();
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);
     $customer = fn (array $attributes) => app(SaveCustomer::class)($this->owner, $this->company, [...$attributes, 'payment_terms_days' => 30]);
@@ -95,9 +96,12 @@ it('sums the OSS sales per country and rate for the quarter', function () {
     euInvoice($this->consumer, ForeignSale::EuConsumerOss);
     euInvoice($this->consumer, ForeignSale::EuConsumerOss, '500', '2026-02-01');
 
+    FakeEuroRates::set('SEK', '2026-03-31', '11,3310');
+
     $report = OssReport::for(CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-03-31'));
 
-    expect($report->rows)->toBe([['country' => 'DE', 'rate' => 1900, 'net' => 150_000, 'vat' => 28_500]]);
+    // 1 500 kr / 11,3310 = 132,38 EUR; 19 % of it 25,15 EUR.
+    expect($report->rows)->toBe([['country' => 'DE', 'rate' => 1900, 'net' => 150_000, 'vat' => 28_500, 'net_eur' => 13_238, 'vat_eur' => 2_515]]);
 });
 
 it('lists EU sales per buyer in three columns and writes Skatteverket\'s file', function () {
