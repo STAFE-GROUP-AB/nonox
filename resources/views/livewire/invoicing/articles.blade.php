@@ -6,34 +6,43 @@
 <div class="space-y-6">
     @if($showForm)
         <x-ui.card :title="$editingId ? __('Ändra artikel') : __('Ny artikel')">
+            <div class="mb-5 flex gap-2" role="tablist" aria-label="{{ __('Artikelns uppgifter') }}">
+                @foreach(['enkel' => __('Enkel'), 'avancerad' => __('Avancerad')] as $key => $label)
+                    <button type="button" role="tab" aria-selected="{{ $tab === $key ? 'true' : 'false' }}" wire:click="$set('tab', '{{ $key }}')" @class(['min-h-11 rounded-full px-4 py-2 text-sm font-semibold sm:min-h-0', 'bg-ink text-white' => $tab === $key, 'bg-white text-gray-700 ring-1 ring-stone-200 hover:ring-stone-300' => $tab !== $key])>{{ $label }}</button>
+                @endforeach
+            </div>
             <form wire:submit="save" class="grid gap-4 sm:grid-cols-6">
-                <x-ui.field for="article_number" :label="__('Artikelnummer')" error="number" class="sm:col-span-2">
-                    <input id="article_number" type="text" class="{{ $input }} mt-1" wire:model="form.number" maxlength="30">
-                </x-ui.field>
-                <x-ui.field for="article_name" :label="__('Benämning')" error="name" class="sm:col-span-4">
-                    <input id="article_name" type="text" class="{{ $input }} mt-1" wire:model="form.name" placeholder="{{ __('Till exempel: Lunch, Konsulttimme') }}">
-                </x-ui.field>
-                <x-ui.field for="article_price" :label="__('Pris exkl. moms')" error="price" class="sm:col-span-2">
-                    <input id="article_price" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.price" placeholder="149,00">
-                </x-ui.field>
-                <x-ui.field for="article_unit" :label="__('Enhet')" error="unit">
-                    <input id="article_unit" type="text" class="{{ $input }} mt-1" wire:model="form.unit" maxlength="10">
-                </x-ui.field>
-                <x-ui.field for="article_vat" :label="__('Moms')" error="vat_rate">
-                    <select id="article_vat" class="{{ $input }} mt-1" wire:model="form.vat_rate">
-                        @foreach($rates as $rate => $label)
-                            <option value="{{ $rate }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
-                </x-ui.field>
-                <x-ui.field for="article_account" :label="__('Intäktskonto')" error="account" class="sm:col-span-2" :hint="__('Lämna tomt för standardkontot för momssatsen.')">
-                    <select id="article_account" class="{{ $input }} mt-1" wire:model="form.account">
-                        <option value="">{{ __('Standard') }}</option>
-                        @foreach($revenueAccounts as $account)
-                            <option value="{{ $account->number }}">{{ $account->number }} {{ $account->name }}</option>
-                        @endforeach
-                    </select>
-                </x-ui.field>
+                @if($tab === 'enkel')
+                    <x-ui.field for="article_number" :label="__('Artikelnummer')" error="number" class="sm:col-span-2">
+                        <input id="article_number" type="text" class="{{ $input }} mt-1" wire:model="form.number" maxlength="30">
+                    </x-ui.field>
+                    <x-ui.field for="article_name" :label="__('Benämning')" error="name" class="sm:col-span-4">
+                        <input id="article_name" type="text" class="{{ $input }} mt-1" wire:model="form.name" placeholder="{{ __('Till exempel: Lunch, Konsulttimme') }}">
+                    </x-ui.field>
+                    <x-ui.field for="article_price" :label="__('Pris exkl. moms')" error="price" class="sm:col-span-2">
+                        <input id="article_price" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="form.price" placeholder="149,00">
+                    </x-ui.field>
+                    <x-ui.field for="article_unit" :label="__('Enhet')" error="unit">
+                        <input id="article_unit" type="text" class="{{ $input }} mt-1" wire:model="form.unit" maxlength="10">
+                    </x-ui.field>
+                    <x-ui.field for="article_vat" :label="__('Moms')" error="vat_rate">
+                        <select id="article_vat" class="{{ $input }} mt-1" wire:model="form.vat_rate">
+                            @foreach($rates as $rate => $label)
+                                <option value="{{ $rate }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                    <x-ui.field for="article_account" :label="__('Intäktskonto')" error="account" class="sm:col-span-2" :hint="__('Lämna tomt för standardkontot för momssatsen.')">
+                        <select id="article_account" class="{{ $input }} mt-1" wire:model="form.account">
+                            <option value="">{{ __('Standard') }}</option>
+                            @foreach($revenueAccounts as $account)
+                                <option value="{{ $account->number }}">{{ $account->number }} {{ $account->name }}</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                @else
+                    @include('livewire.invoicing.partials.article-advanced')
+                @endif
                 <div class="flex items-center gap-4 sm:col-span-6">
                     <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
                     <button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>

@@ -13,6 +13,28 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-02: v1.4.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-02: v1.4.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Lager**: `GET /inventory/articles` (lagerförda artiklar med saldo totalt och per lagerställe; filter `gtin` och `number`), `GET /inventory/locations`, `GET /inventory/stock-levels` (filter `location_id` och `article_id`) och `POST /inventory/receipts` (skapa en inleverans och, med `"receive": true`, ta emot den direkt). Antal är text med högst tre decimaler; inköpspriser visas bara med `inventory:manage`.
+- **Scopes**: `inventory:view` och `inventory:manage`. Ingen har dem när modulen Lager är avstängd.
+- **Webhook**: `stock.changed` (lagersaldot har ändrats, med varje rörelse och saldot efteråt; webhooken kräver `inventory:view`).
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Inventory (Lager)**: `GET /inventory/articles` (stocked articles with the stock in total and per location; filters `gtin` and `number`), `GET /inventory/locations`, `GET /inventory/stock-levels` (filters `location_id` and `article_id`) and `POST /inventory/receipts` (create a goods receipt and, with `"receive": true`, receive it at once). Quantities are text with up to three decimals; purchase prices are shown only with `inventory:manage`.
+- **Scopes**: `inventory:view` and `inventory:manage`. No one has them while the Lager module is off.
+- **Webhook**: `stock.changed` (stock changed, with every movement and the balance after it; the webhook needs `inventory:view`).
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-02: v1.3.0
 <!-- /lang -->
 <!-- lang:en -->

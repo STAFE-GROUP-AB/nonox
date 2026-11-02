@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\Article;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Inventory\Support\ArticleDetails;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -29,7 +30,7 @@ class SaveArticle
     public const array DEFAULT_ACCOUNTS = [2500 => 3001, 1200 => 3002, 600 => 3003, 0 => 3004];
 
     /**
-     * @param  array<string, mixed>  $input  number, name, unit, price (kronor as written), vat_rate, account (number, optional)
+     * @param  array<string, mixed>  $input  number, name, unit, price (kronor as written), vat_rate, account (number, optional), and any of the advanced fields in ArticleDetails::KEYS
      */
     public function __invoke(User $user, Company $company, array $input, ?Article $article = null): Article
     {
@@ -61,7 +62,7 @@ class SaveArticle
             throw ValidationException::withMessages(['price' => __('Priset går inte att läsa. Skriv till exempel 149,00.')]);
         }
 
-        return DB::transaction(fn (): Article => CurrentCompany::run($company, function () use ($validated, $price, $article, $company, $user): Article {
+        return DB::transaction(fn (): Article => CurrentCompany::run($company, function () use ($validated, $input, $price, $article, $company, $user): Article {
             $rate = (int) $validated['vat_rate'];
             $number = (int) ($validated['account'] ?? self::DEFAULT_ACCOUNTS[$rate]);
             $account = Account::query()->where('number', $number)->first()
@@ -75,6 +76,7 @@ class SaveArticle
                 'vat_rate' => $rate,
                 'account_id' => $account->id,
                 'is_active' => (bool) ($validated['is_active'] ?? $article->is_active ?? true),
+                ...ArticleDetails::attributes($input, $company, $article),
             ];
 
             if ($article === null) {

@@ -82,6 +82,17 @@ use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMailbox;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Models\InboxTemplate;
+use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\PickList;
+use App\Modules\Inventory\Models\PickListLine;
+use App\Modules\Inventory\Models\StockCount;
+use App\Modules\Inventory\Models\StockCountLine;
+use App\Modules\Inventory\Models\StockLevel;
+use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Inventory\Models\StockReceiptLine;
+use App\Modules\Inventory\Models\StockValuation;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Accumulator;
 use App\Modules\Payroll\Models\AgiSubmission;
@@ -252,6 +263,17 @@ const COMPANY_SCOPED_MODELS = [
     PlanningShiftRequest::class => 'planningShiftRequestAttributes',
     PlanningIcalToken::class => 'planningIcalTokenAttributes',
     PlanningAttestation::class => 'planningAttestationAttributes',
+    StockLocation::class => 'inventoryLocationAttributes',
+    StockMovement::class => 'inventoryMovementAttributes',
+    StockLevel::class => 'inventoryLevelAttributes',
+    StockReceipt::class => 'inventoryReceiptAttributes',
+    StockReceiptLine::class => 'inventoryReceiptLineAttributes',
+    PickList::class => 'inventoryPickListAttributes',
+    PickListLine::class => 'inventoryPickListLineAttributes',
+    StockCount::class => 'inventoryCountAttributes',
+    StockCountLine::class => 'inventoryCountLineAttributes',
+    StockValuation::class => ['valuation_date' => '2026-12-31', 'method' => 'FIFO', 'cost_value_ore' => 100, 'value_ore' => 100, 'stock_account' => 1460, 'change_account' => 4960, 'lines' => []],
+    ArticleImage::class => 'inventoryImageAttributes',
     InboxMailbox::class => 'inboxMailboxAttributes',
     AllowedSender::class => ['pattern' => '@hemlig-leverantor.example'],
     InboxTemplate::class => 'inboxTemplateAttributes',
@@ -1139,6 +1161,58 @@ function attachmentAttributes(): array
     ];
 }
 
+function inventoryLocationAttributes(): array
+{
+    $code = 'H'.random_int(1, 1_000_000);
+
+    return ['type' => 'WAREHOUSE', 'code' => $code, 'full_code' => $code, 'sort_key' => $code, 'name' => 'Hemligt lager'];
+}
+
+function inventoryReceiptAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'status' => 'OPEN'];
+}
+
+function inventoryPickListAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'status' => 'OPEN', 'source_label' => 'Hemlig order'];
+}
+
+function inventoryCountAttributes(): array
+{
+    return ['number' => random_int(1, 1_000_000), 'status' => 'OPEN', 'counted_on' => '2026-12-31'];
+}
+
+function inventoryImageAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'path' => 'bilder/hemlig.webp', 'position' => 0, 'alt' => 'Hemlig bild'];
+}
+
+function inventoryMovementAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'quantity_milli' => 1000, 'unit_cost_ore' => 100, 'type' => 'RECEIPT', 'occurred_on' => '2026-03-01'];
+}
+
+function inventoryLevelAttributes(): array
+{
+    return ['article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'quantity_milli' => 1000];
+}
+
+function inventoryReceiptLineAttributes(): array
+{
+    return ['stock_receipt_id' => StockReceipt::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN'])->id, 'article_id' => Article::create(articleAttributes())->id, 'ordered_milli' => 1000, 'unit_cost_ore' => 100];
+}
+
+function inventoryPickListLineAttributes(): array
+{
+    return ['pick_list_id' => PickList::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN'])->id, 'article_id' => Article::create(articleAttributes())->id, 'quantity_milli' => 1000];
+}
+
+function inventoryCountLineAttributes(): array
+{
+    return ['stock_count_id' => StockCount::create(['number' => random_int(1, 1_000_000), 'status' => 'OPEN', 'counted_on' => '2026-12-31'])->id, 'article_id' => Article::create(articleAttributes())->id, 'location_id' => StockLocation::create(inventoryLocationAttributes())->id, 'system_milli' => 0];
+}
+
 function counterAttributes(): array
 {
     $voucher = voucherAttributes();
@@ -1158,7 +1232,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class];
+const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

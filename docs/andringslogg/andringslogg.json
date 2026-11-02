@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-lager",
+      "datum": "2026-11-02T18:05:00+01:00",
+      "rubrik": "Lager: lagerställen, inleveranser, plocklistor, inventering och lagervärdet vid bokslut",
+      "beskrivning": "Den nya modulen Lager följer saldot per artikel och hylla, med EAN-koder som kontrolleras, inleveranser, plocklistor sorterade efter plats och inventering där varje rörelse sparas och aldrig kan ändras. Vid bokslutet räknas lagervärdet fram enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförs mot 1460. Rollen Lagerpersonal ser saldon men inga priser, och lagret kan läsas via API:t.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-02-skarmbilder-pa-startsidan",
       "datum": "2026-11-02T17:42:00+01:00",
       "rubrik": "Startsidan visar funktionerna med skärmbilder",

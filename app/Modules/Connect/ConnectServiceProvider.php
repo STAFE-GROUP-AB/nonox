@@ -41,6 +41,7 @@ use App\Modules\Connect\Sftp\SieFileUploaded;
 use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Connect\Support\ConnectScopes;
 use App\Modules\Connect\Webhooks\WebhookDispatcher;
+use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\ModuleRegistry;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Events\PeriodPublished;
@@ -96,6 +97,7 @@ class ConnectServiceProvider extends ServiceProvider
         Event::listen(PeriodPublished::class, [WebhookDispatcher::class, 'planningPublished']);
         Event::listen(PeriodAttested::class, [WebhookDispatcher::class, 'planningAttested']);
         Event::listen(SieFileUploaded::class, [WebhookDispatcher::class, 'sieUploaded']);
+        Event::listen(StockChanged::class, [WebhookDispatcher::class, 'stockChanged']);
 
         $this->configurePassport();
 

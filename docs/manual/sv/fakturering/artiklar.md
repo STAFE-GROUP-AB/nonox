@@ -25,6 +25,8 @@ Artiklarna finns under **Register → Artiklar**.
 7. Låt **Intäktskonto** stå på **Standard**, eller välj ett annat konto mellan 3000 och 3999.
 8. Tryck på **Spara**.
 
+Fälten ovan finns på fliken **Enkel**. På fliken **Avancerad** kan du fylla i EAN-kod, SKU, inköpspris, leverantör, egenskaper, mått, momshantering och om artikeln är utgången. Har företaget modulen Lager finns där också lagerfälten. Se [Artiklar i lager](/manual/lager/artiklar).
+
 ## Vilket konto försäljningen bokförs på
 
 Om du låter **Intäktskonto** stå på **Standard** väljer NONOX konto efter momssatsen, som i BAS-kontoplanen:
@@ -56,7 +58,7 @@ På fakturan, offerten, ordern eller avtalet skriver du artikelnumret i kolumnen
 ## Vanliga frågor
 
 **Kan jag ta bort en artikel?**
-Det finns ingen knapp för att ta bort artiklar. Använd inte artikeln om den inte längre säljs; fakturor som redan har den påverkas inte.
+Det finns ingen knapp för att ta bort artiklar. Sätt **Status** till **Utgången** under fliken Avancerad om den inte längre säljs; fakturor som redan har den påverkas inte.
 
 **Ska jag skriva priset med eller utan moms?**
 Utan moms. NONOX räknar momsen på fakturan.

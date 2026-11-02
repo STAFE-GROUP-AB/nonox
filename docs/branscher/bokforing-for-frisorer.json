@@ -48,7 +48,7 @@
     },
     "limits": [
         {"text": "Frisöravtalets text för 2025–2027 är inte publik, så avtalets värden i modulen Avtal kan inte kontrolleras ännu och används inte i lönen. Provision med garantilön räknas inte automatiskt."},
-        {"text": "NONOX är inget kassa- eller bokningssystem och har ingen lagerhantering för produkter."},
+        {"text": "NONOX är inget kassa- eller bokningssystem. Produkterna kan följas i modulen Lager, men kassan drar inte sålda produkter från lagret än; det görs vid inventeringen."},
         {"text": "Personalliggaren visas och exporteras som PDF, CSV och XML vid kontrollbesök, men skickas inte direkt till Skatteverket ännu."},
         {"text": "NONOX har ett öppet API med webhooks, men inget kassasystem har ännu byggt en färdig koppling till det, så kassan kan inte kopplas direkt till NONOX än. Kassasystemen och deras integrationsplattformar kan bygga kopplingen mot API:t. Till dess kommer försäljningen in med e-post eller som SIE-fil.", "feature": "pos_integrations"}
     ],

@@ -1,6 +1,14 @@
 {
   "punkter": [
     {
+      "id": "lager",
+      "rubrik": "Lager: bilder, etiketter och kassakoppling",
+      "beskrivning": "Kärnan i Lager finns: lagerställen, inleveranser, plocklistor, inventering och lagervärdet vid bokslut. Nu byggs bilder på artiklarna med AI-beskrivningar, etiketter med streckkod för artiklar och hyllor, och en koppling till kassasystem så att sålda varor dras från lagret.",
+      "status": "Pågår",
+      "omrade": "Lager",
+      "uppdaterad": "2026-11-02"
+    },
+    {
       "id": "lansering-1-0",
       "rubrik": "Lansering av version 1.0 den 1 januari 2027",
       "beskrivning": "NONOX är i öppen beta. Nya företag ställer sig i kö och släpps in i den takt vi hinner hjälpa dem. Den 1 januari 2027 lanseras version 1.0 skarpt, och det som lagts in under betan ligger kvar.",

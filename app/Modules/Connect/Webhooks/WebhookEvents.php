@@ -10,6 +10,10 @@ use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Modules\Connect\Models\ConnectSftpUpload;
+use App\Modules\Inventory\Domain\Quantity;
+use App\Modules\Inventory\Events\StockChanged;
+use App\Modules\Inventory\Models\StockLevel;
+use App\Modules\Inventory\Models\StockMovement;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Models\Publication;
 
@@ -33,6 +37,7 @@ final class WebhookEvents
         'planning.published' => ['planning:view'],
         'planning.attested' => ['planning:attest'],
         'sie.uploaded' => ['import:sie'],
+        'stock.changed' => ['inventory:view'],
     ];
 
     /** @return array<string, string> event => Swedish description */
@@ -46,6 +51,7 @@ final class WebhookEvents
             'planning.published' => __('En period av schemat har publicerats (Planering)'),
             'planning.attested' => __('Tid i schemat har attesterats (Planering)'),
             'sie.uploaded' => __('En SIE-fil har kommit in via SFTP och granskats'),
+            'stock.changed' => __('Lagersaldot har ändrats: inleverans, plock, flytt, inventering, kassa, retur eller kassation (Lager)'),
         ];
     }
 
@@ -232,6 +238,38 @@ final class WebhookEvents
             'can_be_confirmed' => $import?->canBeConfirmed() ?? false,
             'vouchers' => $import === null ? null : (int) ($import->report['vouchers'] ?? 0),
             'blockers' => $import === null ? null : count($import->blockers()),
+        ];
+    }
+
+    /**
+     * Must run inside the company. The movements with their article,
+     * location, signed quantity and the balance after; no costs and no
+     * free text.
+     *
+     * @return ?array<string, mixed>
+     */
+    public static function stockChanged(StockChanged $event): ?array
+    {
+        $movements = StockMovement::query()->whereKey($event->movementIds)->orderBy('id')->get(['id', 'article_id', 'location_id', 'quantity_milli', 'type', 'occurred_on', 'source_type', 'source_id']);
+
+        if ($movements->isEmpty()) {
+            return null;
+        }
+
+        $levels = StockLevel::query()->whereIn('article_id', $event->articleIds)->get(['article_id', 'location_id', 'quantity_milli'])
+            ->mapWithKeys(fn (StockLevel $level): array => ["{$level->article_id}:{$level->location_id}" => $level->quantity_milli]);
+
+        return [
+            'type' => $event->type,
+            'article_ids' => $event->articleIds,
+            'movements' => $movements->map(fn (StockMovement $movement): array => [
+                'movement_id' => $movement->id,
+                'article_id' => $movement->article_id,
+                'location_id' => $movement->location_id,
+                'quantity' => Quantity::decimal($movement->quantity_milli),
+                'balance' => Quantity::decimal((int) ($levels["{$movement->article_id}:{$movement->location_id}"] ?? 0)),
+                'occurred_on' => $movement->occurred_on->toDateString(),
+            ])->all(),
         ];
     }
 }

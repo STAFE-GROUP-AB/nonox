@@ -6,6 +6,7 @@ use App\Modules\Connect\Http\Controllers\Api\V1\ArticleController;
 use App\Modules\Connect\Http\Controllers\Api\V1\CustomerController;
 use App\Modules\Connect\Http\Controllers\Api\V1\DimensionController;
 use App\Modules\Connect\Http\Controllers\Api\V1\FiscalYearController;
+use App\Modules\Connect\Http\Controllers\Api\V1\InventoryController;
 use App\Modules\Connect\Http\Controllers\Api\V1\InvoiceController;
 use App\Modules\Connect\Http\Controllers\Api\V1\PaymentController;
 use App\Modules\Connect\Http\Controllers\Api\V1\PlanningController;
@@ -136,3 +137,12 @@ Route::middleware('connect.scope:planning:view')->group(function (): void {
     Route::get('/planning/areas', [PlanningController::class, 'areas'])->name('planning.areas.index');
     Route::get('/planning/publications', [PlanningController::class, 'publications'])->name('planning.publications.index');
 });
+
+// Lager (ADR-039). inventory:view and inventory:manage are false while the module is off.
+Route::middleware('connect.scope:inventory:view')->group(function (): void {
+    Route::get('/inventory/articles', [InventoryController::class, 'articles'])->name('inventory.articles.index');
+    Route::get('/inventory/locations', [InventoryController::class, 'locations'])->name('inventory.locations.index');
+    Route::get('/inventory/stock-levels', [InventoryController::class, 'levels'])->name('inventory.stock-levels.index');
+});
+
+Route::post('/inventory/receipts', [InventoryController::class, 'storeReceipt'])->middleware(['connect.scope:inventory:manage', $idempotent])->name('inventory.receipts.store');

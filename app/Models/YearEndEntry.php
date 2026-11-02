@@ -17,7 +17,8 @@ use LogicException;
  * dividend) or CURRENCY_REVALUATION (open invoices in another currency
  * valued at the closing rate, ADR-025) or UNPAID_RECEIVABLES and
  * UNPAID_PAYABLES (under kontantmetoden, the invoices unpaid on the last day,
- * booked then and reversed on the first day of the next year). Append-only: the model refuses changes and a database trigger
+ * booked then and reversed on the first day of the next year) or
+ * STOCK_VALUATION (the stock change from Lager's year-end valuation). Append-only: the model refuses changes and a database trigger
  * backs it up.
  *
  * @property int $id
@@ -47,6 +48,9 @@ class YearEndEntry extends Model
 
     /** Kontantmetoden: supplier invoices unpaid on the last day; amount_ore is the liability booked on 2440. */
     public const string UNPAID_PAYABLES = 'UNPAID_PAYABLES';
+
+    /** Lager (ADR-039): the stock valued at the year end; amount_ore is the change booked on the stock account. */
+    public const string STOCK_VALUATION = 'STOCK_VALUATION';
 
     /** @var list<string> */
     protected $fillable = [

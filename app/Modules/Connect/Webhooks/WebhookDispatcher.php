@@ -15,6 +15,7 @@ use App\Modules\Connect\Models\ConnectWebhook;
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Connect\Sftp\SieFileUploaded;
 use App\Modules\Connect\Support\ConnectAccess;
+use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\ModuleManager;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Events\PeriodPublished;
@@ -69,6 +70,11 @@ final class WebhookDispatcher
     public function sieUploaded(SieFileUploaded $event): void
     {
         $this->dispatch($event->companyId, 'sie.uploaded', fn (): ?array => WebhookEvents::sieUploaded($event->uploadId));
+    }
+
+    public function stockChanged(StockChanged $event): void
+    {
+        $this->dispatch($event->companyId, 'stock.changed', fn (): ?array => WebhookEvents::stockChanged($event));
     }
 
     /**

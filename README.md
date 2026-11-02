@@ -121,6 +121,13 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Schema och personalliggare blir löneunderlag: planen jämförs med in- och utcheckningarna, chefen attesterar avvikelserna och tiden blir tidrapporter med timlön, OB per OB-art enligt avtalet och övertid eller komptid, direkt i lönekörningen. Utan personalliggare kan chefen skriva in arbetad tid, även en dag utan planerat pass.
 - Bemanning och kostnad: planerad och faktisk tid och lönekostnad i procent av försäljningen ur bokföringen, dag för dag.
 
+### Lager (modul) – ny
+- Lagerförda artiklar i samma artikelregister som fakturorna, med fliken Avancerad: EAN/GTIN med kontroll av kontrollsiffran, SKU, skannerkod, inköpspris, leverantör, egenskaper, mått och vinstmarginalbeskattning för begagnat.
+- Lagerställen i lager, zoner, hyllor och fack med en kod per plats (HL-A-03-2), och saldo per artikel och plats.
+- Inleveranser från leverantörer, hela eller i delar, med eller utan koppling till leverantörsfakturan. Plocklistor från order, faktura eller för hand, sorterade efter plats, i mobilen eller som PDF.
+- Inventering per hylla eller hela lagret, där skillnaderna förs in med en orsak. Varje lagerrörelse sparas och kan aldrig ändras.
+- Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförd mot 1460 med ett klick. Rollen Lagerpersonal ser saldon men inga priser.
+
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
 - Bara post från godkända avsändare tolkas; annat väntar i karantän tills någon godkänner avsändaren.
@@ -454,7 +461,7 @@ Medvetet utanför scope:
 
 - ❌ ERP-system
 - ❌ CRM
-- ❌ Lagerhantering
+- ❌ Lagerhantering för tillverkning och flera lager mellan företag. Lager för handel finns som modul, se ovan.
 - ❌ Kassasystem. NONOX bokför kassans dagsrapporter och SIE-filer, se Inkorg ovan, men sköter inte försäljningen.
 - ❌ Inkasso
 

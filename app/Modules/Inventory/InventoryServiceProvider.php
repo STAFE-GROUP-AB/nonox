@@ -1,0 +1,68 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Inventory;
+
+use App\Http\Middleware\EnsureUserHasCompany;
+use App\Modules\Inventory\Console\VerifyStockCommand;
+use App\Modules\Inventory\Livewire\ArticlesPage;
+use App\Modules\Inventory\Livewire\CountsPage;
+use App\Modules\Inventory\Livewire\InventorySettingsForm;
+use App\Modules\Inventory\Livewire\LocationsPage;
+use App\Modules\Inventory\Livewire\OverviewPage;
+use App\Modules\Inventory\Livewire\PickListsPage;
+use App\Modules\Inventory\Livewire\ReceiptsPage;
+use App\Modules\Inventory\Livewire\ReportsPage;
+use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\PickList;
+use App\Modules\Inventory\Models\StockCount;
+use App\Modules\Inventory\Models\StockLevel;
+use App\Modules\Inventory\Models\StockLocation;
+use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Inventory\Models\StockReceipt;
+use App\Modules\Inventory\Models\StockValuation;
+use App\Modules\Inventory\Policies\InventoryPolicy;
+use App\Modules\ModuleRegistry;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
+
+/**
+ * Registers Lager (ADR-039). Its pages carry module:inventory and answer 404
+ * while it is off.
+ */
+class InventoryServiceProvider extends ServiceProvider
+{
+    public function register(): void
+    {
+        $this->app->make(ModuleRegistry::class)->register(new InventoryModule);
+    }
+
+    public function boot(): void
+    {
+        $this->loadViewsFrom(__DIR__.'/views', 'inventory');
+        $this->loadMigrationsFrom(__DIR__.'/database/migrations');
+
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class] as $model) {
+            Gate::policy($model, InventoryPolicy::class);
+        }
+
+        Livewire::component(InventorySettingsForm::NAME, InventorySettingsForm::class);
+        Livewire::component('inventory.overview', OverviewPage::class);
+        Livewire::component('inventory.articles', ArticlesPage::class);
+        Livewire::component('inventory.locations', LocationsPage::class);
+        Livewire::component('inventory.receipts', ReceiptsPage::class);
+        Livewire::component('inventory.pick-lists', PickListsPage::class);
+        Livewire::component('inventory.counts', CountsPage::class);
+        Livewire::component('inventory.reports', ReportsPage::class);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([VerifyStockCommand::class]);
+        }
+
+        Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.InventoryModule::KEY])
+            ->group(__DIR__.'/routes/web.php');
+    }
+}
