@@ -13,6 +13,12 @@
         <x-ui.empty-state :title="__('Företaget är inte momsregistrerat')">
             {{ __('Är företaget momsregistrerat, ändra redovisningsperioden för moms under företagets uppgifter.') }}
         </x-ui.empty-state>
+        @if($unregisteredVat !== 0)
+            <div class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900" role="alert">
+                <p class="font-semibold">{{ __('Det finns utgående moms på :amount i bokföringen', ['amount' => Money::ofOre($unregisteredVat)->format()]) }}</p>
+                <p class="mt-1">{{ __('Fakturor med moms har skapats fast företaget inte är momsregistrerat. Den som tar ut moms på en faktura ska betala in beloppet till Skatteverket (16 kap. 23 § mervärdesskattelagen), också när det blev fel. Kontakta Skatteverket om hur beloppet ska redovisas, eller registrera företaget för moms och välj en redovisningsperiod under företagets uppgifter.') }}</p>
+            </div>
+        @endif
     @elseif($fiscalYear === null)
         <x-ui.empty-state :title="__('Inget räkenskapsår ännu')">{{ __('Momsen visas när företaget har ett räkenskapsår.') }}</x-ui.empty-state>
     @else

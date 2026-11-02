@@ -525,6 +525,17 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   betalningarna tillsammans bokför exakt fakturans intäkt och moms (ML
   7 kap. 16 §, 17 kap. 24 § p. 11; enligt granskning 2026-11-02,
   juristgranskning återstår (AUD-FAKT-3, #52)).
+- Företag som inte är momsregistrerade (momsredovisning "Inte
+  momsregistrerad"): inställningarna sparar varför (`vat_exemption`: liten
+  omsättning enligt ML 18 kap. 4 §, bara momsfri försäljning enligt 10 kap.,
+  eller registrering på gång). En faktura med moms kan då bara skapas om
+  utkastet har en uttrycklig bekräftelse (`unregistered_vat_confirmed`),
+  eftersom moms som tas ut på en faktura ska betalas in (16 kap. 23 §); den
+  bokförs som vanligt på 2611/2621/2631, och momssidan visar beloppet med
+  en uppmaning att betala in det. En faktura utan moms får företagets
+  undantagstext sparad när den skapas (`vat_exemption_text`, 17 kap. 24 §
+  p. 13 och 28 § p. 6) och PDF:en skriver ut den (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-5, #51)).
 - Undantag från kontantmetoden: försäljning av varor till ett annat EU-land
   (ML 7 kap. 29 §) och tjänster som tas upp i periodisk sammanställning
   (7 kap. 30 §) redovisas för fakturans period oavsett metod. Sådana

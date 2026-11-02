@@ -74,6 +74,18 @@
   credit and reminds the user to notify Skatteverket (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-9, #49)).
   TODO(legal-verify): 2890 as the account.
+- **Companies not registered for VAT** (2026-11-02, AUD-FAKT-5, #51). The
+  company settings keep why a company is not registered (`teams.vat_exemption`:
+  the small-business exemption in ML 2023:200 18 kap. 4 §, only exempt
+  supplies under 10 kap., or a registration that is pending). Such a company
+  cannot issue an invoice with VAT unless the draft carries an explicit
+  confirmation (`invoices.unregistered_vat_confirmed`), since VAT charged
+  wrongly must be paid to the state (16 kap. 23 §). An invoice without VAT
+  keeps the exemption wording in `invoices.vat_exemption_text` when issued
+  (17 kap. 24 § p. 13, 28 § p. 6) and the PDF prints it. The VAT page of an
+  unregistered company shows any output VAT on 2611/2621/2631 with the
+  16 kap. 23 § note. TODO(legal-verify): the wording, and how such VAT is
+  reported and paid.
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

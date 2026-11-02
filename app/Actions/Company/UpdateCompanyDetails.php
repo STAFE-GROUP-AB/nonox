@@ -9,6 +9,7 @@ use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\GiroNumber;
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Company\ReportingFramework;
+use App\Domain\Company\VatExemption;
 use App\Domain\Company\VatPeriod;
 use App\Models\Company;
 use App\Models\User;
@@ -50,6 +51,7 @@ class UpdateCompanyDetails
             'bankgiro' => ['nullable', 'string', $this->giro(GiroNumber::bankgiro(...), __('Bankgironumret stämmer inte. Kontrollera siffrorna: den sista är en kontrollsiffra som avslöjar skrivfel. Ett bankgironummer har sju eller åtta siffror, till exempel 123-4566.'))],
             'plusgiro' => ['nullable', 'string', $this->giro(GiroNumber::plusgiro(...), __('Plusgironumret stämmer inte. Kontrollera siffrorna: den sista är en kontrollsiffra som avslöjar skrivfel. Till exempel 123456-6.'))],
             'vat_period' => ['required', Rule::enum(VatPeriod::class)],
+            'vat_exemption' => ['sometimes', 'nullable', Rule::enum(VatExemption::class)],
             'fiscal_year_start_month' => ['required', 'integer', 'between:1,12', ...$dependent['fiscal_year_start_month']],
             'accounting_method' => ['required', Rule::enum(AccountingMethod::class)],
             'reporting_framework' => ['required', Rule::enum(ReportingFramework::class), ...$dependent['reporting_framework']],
@@ -82,6 +84,8 @@ class UpdateCompanyDetails
             'plusgiro' => filled($validated['plusgiro'] ?? null) ? GiroNumber::plusgiro((string) $validated['plusgiro']) : null,
             'vat_registered' => $vatRegistered,
             'vat_number' => $vatRegistered ? $number?->vatNumber() : null,
+            // Why a company is not registered matters only while it is not (#51).
+            'vat_exemption' => $vatRegistered ? null : (array_key_exists('vat_exemption', $validated) ? VatExemption::tryFrom((string) $validated['vat_exemption']) : $company->vat_exemption),
             'oss_elected_from' => (bool) ($validated['oss_elected'] ?? $company->oss_elected) ? ($validated['oss_elected_from'] ?? $company->oss_elected_from) : null,
         ])->save();
 
@@ -127,7 +131,7 @@ class UpdateCompanyDetails
     {
         return collect($company->only([
             'name', 'address_line1', 'postal_code', 'city', 'email', 'phone', 'website',
-            'bankgiro', 'plusgiro', 'vat_registered', 'vat_number', 'vat_period',
+            'bankgiro', 'plusgiro', 'vat_registered', 'vat_number', 'vat_period', 'vat_exemption',
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
             'f_skatt', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
         ]))->map(fn (mixed $value) => match (true) {

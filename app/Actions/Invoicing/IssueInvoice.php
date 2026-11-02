@@ -80,6 +80,10 @@ class IssueInvoice
                 $this->ensureCreditFits($invoice, $original);
             }
 
+            if (! $invoice->isCredit()) {
+                $this->ensureVatAllowed($company, $invoice);
+            }
+
             if ($invoice->reverse_charge) {
                 $this->ensureReverseCharge($company, $customer);
             }
@@ -113,6 +117,7 @@ class IssueInvoice
                 'issued_by' => $user->id,
                 'paid_ore' => 0,
                 'foreign_paid_minor' => 0,
+                'vat_exemption_text' => self::exemptionText($company, $invoice),
             ]);
 
             if (InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method)) {
@@ -250,6 +255,37 @@ class IssueInvoice
                 'type' => AccountType::LiabilityEquity,
             ]);
         }
+    }
+
+    /**
+     * A company that is not registered for VAT may not charge VAT without
+     * saying so explicitly: VAT charged wrongly on an invoice must be paid
+     * to the state (Mervärdesskattelag (2023:200) 16 kap. 23 §). A company
+     * whose registration is pending owes the VAT anyway and needs the same
+     * confirmation (enligt granskning 2026-11-02, juristgranskning återstår
+     * (AUD-FAKT-5, #51)).
+     */
+    private function ensureVatAllowed(Company $company, Invoice $invoice): void
+    {
+        if ($company->isVatRegistered() || $invoice->vat_ore->ore === 0 || $invoice->unregistered_vat_confirmed) {
+            return;
+        }
+
+        throw ValidationException::withMessages(['invoice' => __('Företaget är inte momsregistrerat. Sätt momsen till 0 % på raderna, eller bekräfta att momsen ska tas ut. Moms som tas ut på en faktura ska betalas in till Skatteverket (16 kap. 23 § mervärdesskattelagen).')]);
+    }
+
+    /**
+     * The exemption wording of a company that is not registered for VAT,
+     * kept on the invoice as it was when issued; none when VAT is charged
+     * or the company is registered (ML 17 kap. 24 § p. 13, 28 § p. 6).
+     */
+    private static function exemptionText(Company $company, Invoice $invoice): ?string
+    {
+        if ($company->isVatRegistered() || $invoice->vat_ore->ore !== 0 || $invoice->bookedForeignSale() !== null || $invoice->reverse_charge) {
+            return null;
+        }
+
+        return $company->vat_exemption?->invoiceText();
     }
 
     /**

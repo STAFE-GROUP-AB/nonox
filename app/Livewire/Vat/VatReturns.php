@@ -6,7 +6,9 @@ namespace App\Livewire\Vat;
 
 use App\Actions\Accounting\LockPeriod;
 use App\Actions\Vat\SettleVat;
+use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Company\VatPeriod;
+use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Vat\VatBoxes;
 use App\Domain\Vat\VatPeriods;
 use App\Domain\Vat\VatReturn;
@@ -15,8 +17,10 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\VatReport;
+use App\Models\VoucherRow;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -106,6 +110,7 @@ class VatReturns extends Component
         return view('livewire.vat.vat-returns', [
             'company' => $company,
             'registered' => $company->vat_period !== VatPeriod::None,
+            'unregisteredVat' => $company->vat_period === VatPeriod::None ? self::outputVat() : 0,
             'fiscalYears' => FiscalYear::query()->orderByDesc('start_date')->get(),
             'fiscalYear' => $fiscalYear,
             'periods' => $periods,
@@ -117,6 +122,22 @@ class VatReturns extends Component
             'canSettle' => $this->user()->hasTeamPermission($company, 'vouchers:post'),
             'canLock' => $this->user()->hasTeamPermission($company, 'periods:lock'),
         ]);
+    }
+
+    /**
+     * The output VAT on the sales VAT accounts of a company that is not
+     * registered: VAT charged anyway must be paid to the state (ML 16 kap.
+     * 23 §; enligt granskning 2026-11-02, juristgranskning återstår
+     * (AUD-FAKT-5, #51)). Credit balance as a positive amount.
+     */
+    private static function outputVat(): int
+    {
+        return -(int) VoucherRow::query()
+            ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+            ->join('accounts', 'accounts.id', '=', 'voucher_rows.account_id')
+            ->where('vouchers.status', VoucherStatus::Posted->value)
+            ->whereIn('accounts.number', array_values(InvoiceBooking::OUTPUT_VAT))
+            ->sum(DB::raw('voucher_rows.debit_ore - voucher_rows.credit_ore'));
     }
 
     /**

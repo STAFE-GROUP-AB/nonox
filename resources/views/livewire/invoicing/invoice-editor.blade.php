@@ -103,6 +103,17 @@
         </div>
     </x-ui.card>
 
+    @if($vatUnregistered && ! $credit)
+        <div class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+            <p class="font-semibold">{{ __('Företaget är inte momsregistrerat') }}</p>
+            <p class="mt-1">{{ __('Sätt momsen till 0 % på raderna.') }} @if($vatExemption?->invoiceText()){{ __('Fakturan får texten: :text', ['text' => $vatExemption->invoiceText()]) }}@endif</p>
+            <label class="mt-2 flex items-start gap-2">
+                <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="unregisteredVatConfirmed">
+                <span>{{ __('Ta ändå ut moms på fakturan. Jag vet att momsen ska betalas in till Skatteverket (16 kap. 23 § mervärdesskattelagen).') }}</span>
+            </label>
+        </div>
+    @endif
+
     @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true, 'labour' => $taxReduction !== '', 'withCurrency' => true])
 
     <x-ui.card>

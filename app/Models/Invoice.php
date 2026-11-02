@@ -67,6 +67,8 @@ use LogicException;
  * @property ?int $foreign_vat_minor
  * @property ?int $foreign_total_minor
  * @property int $foreign_paid_minor
+ * @property bool $unregistered_vat_confirmed VAT charged although the company is not registered, confirmed (#51)
+ * @property ?string $vat_exemption_text the company's exemption wording when issued (#51)
  */
 class Invoice extends Model
 {
@@ -113,6 +115,7 @@ class Invoice extends Model
         'foreign_paid_minor' => 0,
         'tax_reduction_repayable_ore' => 0,
         'tax_reduction_repaid_ore' => 0,
+        'unregistered_vat_confirmed' => false,
     ];
 
     /** @return array<string, string> */
@@ -122,6 +125,7 @@ class Invoice extends Model
             'reverse_charge' => 'boolean',
             'foreign_sale' => ForeignSale::class,
             'swedish_vat_under_threshold' => 'boolean',
+            'unregistered_vat_confirmed' => 'boolean',
             'tax_reduction_ore' => MoneyCast::class,
             'tax_reduction_paid_ore' => MoneyCast::class,
             'tax_reduction_repayable_ore' => MoneyCast::class,

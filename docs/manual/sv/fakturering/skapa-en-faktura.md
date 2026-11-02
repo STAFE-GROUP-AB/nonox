@@ -57,6 +57,7 @@ Läs mer i [Fakturametoden och kontantmetoden](/manual/fakturering/fakturametode
 - Varje rad behöver en benämning och ett antal, och fakturan behöver minst en rad och ett belopp.
 - Under fakturametoden måste fakturadatumet ligga i ett öppet räkenskapsår och får inte ligga i en låst period. Annars stoppas fakturan med ett meddelande om datumet.
 - Fakturanumret är löpande utan luckor, och fakturor och kreditfakturor delar samma nummerserie.
+- Är företaget inte momsregistrerat stoppas en faktura med moms, om du inte bockar i **Ta ändå ut moms på fakturan**. Moms som tas ut på en faktura ska nämligen betalas in till Skatteverket, också om företaget inte är registrerat (mervärdesskattelagen 16 kap. 23 §). En faktura utan moms får texten om varför företaget inte tar ut moms, som du väljer under [Företagets uppgifter](/manual/installningar/foretagets-uppgifter).
 
 ## Listan över fakturor
 

@@ -58,6 +58,9 @@ class InvoiceEditor extends Component
 
     public bool $reverseCharge = false;
 
+    /** VAT charged although the company is not registered for VAT, confirmed (#51). */
+    public bool $unregisteredVatConfirmed = false;
+
     public string $foreignSale = '';
 
     public string $taxReduction = '';
@@ -92,6 +95,7 @@ class InvoiceEditor extends Component
             $this->ourReference = (string) $invoice->our_reference;
             $this->notes = (string) $invoice->notes;
             $this->reverseCharge = $invoice->reverse_charge;
+            $this->unregisteredVatConfirmed = $invoice->unregistered_vat_confirmed;
             $this->foreignSale = (string) $invoice->foreign_sale?->value;
             $this->taxReduction = (string) $invoice->tax_reduction;
             $this->propertyDesignation = (string) $invoice->property_designation;
@@ -183,6 +187,8 @@ class InvoiceEditor extends Component
             'currencies' => self::CURRENCIES,
             'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
             'ossThreshold' => $this->ossThreshold(),
+            'vatUnregistered' => ! $this->company()->isVatRegistered(),
+            'vatExemption' => $this->company()->vat_exemption,
             'canIssue' => $this->invoiceId === null
                 ? $this->user()->hasTeamPermission($this->company(), 'invoices:send')
                 : Gate::allows('issue', Invoice::query()->findOrFail($this->invoiceId)),
@@ -232,6 +238,7 @@ class InvoiceEditor extends Component
             'our_reference' => $this->ourReference,
             'notes' => $this->notes,
             'reverse_charge' => $this->reverseCharge,
+            'unregistered_vat_confirmed' => $this->unregisteredVatConfirmed,
             'foreign_sale' => $this->foreignSale === '' ? null : $this->foreignSale,
             'tax_reduction' => $this->taxReduction === '' ? null : $this->taxReduction,
             'property_designation' => $this->propertyDesignation,

@@ -88,6 +88,7 @@ class SaveDraftInvoice
             'our_reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'reverse_charge' => ['nullable', 'boolean'],
+            'unregistered_vat_confirmed' => ['nullable', 'boolean'],
             'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
             'tax_reduction' => ['nullable', Rule::in([TaxReduction::ROT, TaxReduction::RUT])],
             'property_designation' => ['nullable', 'string', 'max:255'],
@@ -234,6 +235,7 @@ class SaveDraftInvoice
                 'foreign_vat_minor' => $foreignTotals['vat'] ?? null,
                 'foreign_total_minor' => $foreignTotals['total'] ?? null,
                 'swedish_vat_under_threshold' => $swedishVat,
+                'unregistered_vat_confirmed' => (bool) ($validated['unregistered_vat_confirmed'] ?? ($draft !== null && $draft->exists && $draft->unregistered_vat_confirmed)),
             ])->save();
 
             InvoiceRow::query()->where('invoice_id', $invoice->id)->delete();

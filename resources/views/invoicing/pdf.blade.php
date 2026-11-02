@@ -156,6 +156,10 @@
             <span class="muted">@if($company->vat_number){{ __('Säljarens momsreg.nr :seller', ['seller' => $company->vat_number]) }}@endif @if(filled($customer['vat_number'] ?? null)) · {{ __('Köparens momsreg.nr :buyer', ['buyer' => $customer['vat_number']]) }}@endif</span></p>
     @endif
 
+    @if($invoice->vat_exemption_text)
+        <p style="margin-top: 8mm"><strong>{{ $invoice->vat_exemption_text }}</strong></p>
+    @endif
+
     @if($invoice->notes)
         <p style="margin-top: 8mm">{!! nl2br(e($invoice->notes)) !!}</p>
     @endif

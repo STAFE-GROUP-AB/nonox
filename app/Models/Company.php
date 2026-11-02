@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
+use App\Domain\Company\VatExemption;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Payables\PaymentBank;
 use App\Support\Branding\FirmBranding;
@@ -36,6 +37,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ?CarbonImmutable $accounting_firm_linked_at
  * @property AccountingMethod $accounting_method
  * @property VatPeriod $vat_period
+ * @property ?VatExemption $vat_exemption why the company is not registered for VAT (#51)
  * @property bool $turnover_over_40_msek
  * @property bool $oss_elected
  * @property ?CarbonImmutable $oss_elected_from
@@ -77,6 +79,7 @@ class Company extends JetstreamTeam
         'accounting_method',
         'vat_period',
         'vat_registered',
+        'vat_exemption',
         'turnover_over_40_msek',
         'reporting_framework',
         'bas_version',
@@ -99,6 +102,15 @@ class Company extends JetstreamTeam
         'deleted' => TeamDeleted::class,
     ];
 
+    /**
+     * Whether the company is registered for VAT: the settings keep a VAT
+     * period other than none for a registered company.
+     */
+    public function isVatRegistered(): bool
+    {
+        return $this->vat_registered && $this->vat_period !== VatPeriod::None;
+    }
+
     /** @return array<string, string> */
     protected function casts(): array
     {
@@ -109,6 +121,7 @@ class Company extends JetstreamTeam
             'vat_period' => VatPeriod::class,
             'reporting_framework' => ReportingFramework::class,
             'vat_registered' => 'boolean',
+            'vat_exemption' => VatExemption::class,
             'turnover_over_40_msek' => 'boolean',
             'oss_elected' => 'boolean',
             'oss_elected_from' => 'immutable_date',

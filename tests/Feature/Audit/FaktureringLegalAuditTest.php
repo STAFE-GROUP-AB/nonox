@@ -317,7 +317,7 @@ it('ML 17 kap. 28 § p. 6 and 16 kap.: a company that is not VAT registered cann
     expect(fn () => app(IssueInvoice::class)($this->owner, audFaktDraft($this->customer, [
         ['description' => 'Konsulttimme', 'quantity' => '1', 'price' => '1 000', 'vat_rate' => 2500],
     ])))->toThrow(ValidationException::class);
-})->todo('AUD-FAKT-5: a company without VAT registration issues invoices with 25 % VAT (felaktigt debiterad moms, ML 2 kap. 12 §) and without the exemption reference');
+}); // AUD-FAKT-5 fixed (#51): VAT needs an explicit confirmation (ML 16 kap. 23 §), and the exemption is printed.
 
 it('ML 17 kap. 22-23 §§: a price reduction after payment is made with a credit note referring to the paid invoice', function () {
     $invoice = app(IssueInvoice::class)($this->owner, audFaktDraft($this->customer, [
