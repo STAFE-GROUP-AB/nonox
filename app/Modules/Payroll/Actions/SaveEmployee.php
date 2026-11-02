@@ -75,6 +75,8 @@ class SaveEmployee
             'tax_residence' => ['required', Rule::in(['SE', 'NON_RESIDENT_SINK', 'NON_RESIDENT_A_SINK'])],
             'tax_table' => ['nullable', 'integer', 'between:1,99'],
             'tax_column' => ['nullable', 'integer', 'between:1,9'],
+            // Skatteverket, ruta 112: free text, 1–50 characters, required with A-SINK tax in 275 (AUD-LON-05, #73).
+            'activity_type' => ['nullable', 'required_if:tax_residence,NON_RESIDENT_A_SINK', 'string', 'max:50', 'regex:/\S/', 'not_regex:/[<>]/'],
             'tax_adjustment_type' => ['nullable', Rule::in(['NONE', 'PERCENT', 'TABLE', 'AMOUNT'])],
             'tax_adjustment_percent' => ['nullable', 'required_if:tax_adjustment_type,PERCENT', 'regex:/^\d{1,3}([.,]\d{1,2})?$/'],
             'tax_adjustment_table' => ['nullable', 'required_if:tax_adjustment_type,TABLE', 'integer', 'between:1,99'],
@@ -108,6 +110,7 @@ class SaveEmployee
             'last_name' => __('efternamn'),
             'start_date' => __('anställningens startdag'),
             'vacation_days_per_year' => __('semesterdagar per år'),
+            'activity_type' => __('verksamhetens art'),
         ])->validate();
 
         if ($validated['tax_residence'] === 'SE' && (blank($validated['tax_table'] ?? null) || blank($validated['tax_column'] ?? null))) {
@@ -153,6 +156,7 @@ class SaveEmployee
                 'tax_residence' => $validated['tax_residence'],
                 'tax_table' => $validated['tax_table'] ?? null,
                 'tax_column' => $validated['tax_column'] ?? null,
+                'activity_type' => $validated['tax_residence'] === 'NON_RESIDENT_A_SINK' ? trim((string) $validated['activity_type']) : null,
                 'user_id' => $linkedUserId,
                 ...$adjustment,
             ]);

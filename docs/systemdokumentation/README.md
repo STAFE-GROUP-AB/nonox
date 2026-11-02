@@ -1413,6 +1413,13 @@ lönebeskeden låsta i databasen.
   drogs). Lönebeskedet säger hur mycket som inte kunde dras, och
   skatteförklaringen sparar `calculated_tax_ore`, `cash_ore` och
   `not_withheld_ore`.
+- A-SINK och verksamhetens art (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-05, #73): Skatteverket: "Om du har
+  redovisat i den här rutan [275] ska du också fylla i ruta 112". En
+  anställd med A-SINK måste ha `activity_type` (fritext, 1–50 tecken enligt
+  den tekniska beskrivningen, fältkod 112, element `VerksamhetensArt`).
+  Individuppgiften skriver 112 när 275 skrivs, och AGI stoppas med ett
+  meddelande om en A-SINK-mottagare saknar uppgiften.
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

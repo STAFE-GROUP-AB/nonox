@@ -198,6 +198,11 @@ final class AgiDeclaration
             return null;
         }
 
+        // Ruta 275 needs ruta 112, verksamhetens art (AUD-LON-05, #73).
+        if ($employee->tax_residence === 'NON_RESIDENT_A_SINK' && blank($employee->activity_type)) {
+            throw ValidationException::withMessages(['period' => [__('Verksamhetens art saknas för :name, som beskattas med A-SINK. Skatteverket vill ha den i ruta 112. Fyll i den under Lön → Anställda.', ['name' => "{$employee->first_name} {$employee->last_name}"])]]);
+        }
+
         return new AgiIndividual(
             employeeId: $employee->id,
             specificationNumber: max(1, (int) $employee->employee_number),
@@ -218,6 +223,7 @@ final class AgiDeclaration
             freeCarBenefitKronor: intdiv($free['car'], self::ORE_PER_KRONA),
             freeFuelBenefitKronor: intdiv($free['fuel'], self::ORE_PER_KRONA),
             earlierFreeKronor: intdiv($earlierMonths, self::ORE_PER_KRONA),
+            activityType: $employee->tax_residence === 'NON_RESIDENT_A_SINK' ? $employee->activity_type : null,
         );
     }
 }

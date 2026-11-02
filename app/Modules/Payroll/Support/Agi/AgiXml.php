@@ -47,6 +47,7 @@ final class AgiXml
         'AvdrPrelSkatt' => '001',
         'AvdrSkattSINK' => '274',
         'AvdrSkattASINK' => '275',
+        'VerksamhetensArt' => '112',
         'Bilersattning' => '050',
         'Traktamente' => '051',
         'Borttag' => '205',
@@ -116,6 +117,10 @@ final class AgiXml
             $this->amount($iu, 'SkatteplBilformanEjUlagSA', $individual->freeCarBenefitKronor);
             $this->amount($iu, 'DrivmVidBilformanEjUlagSA', $individual->freeFuelBenefitKronor);
             $this->field($iu, self::TAX_ELEMENTS[$individual->taxForm], (string) $individual->taxKronor);
+
+            if ($individual->taxForm === AgiIndividual::TAX_A_SINK) {
+                $this->field($iu, 'VerksamhetensArt', (string) $individual->activityType);
+            }
 
             if ($individual->mileage) {
                 $this->field($iu, 'Bilersattning', '1');

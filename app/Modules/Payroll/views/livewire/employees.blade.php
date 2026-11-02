@@ -44,6 +44,9 @@
                         <x-ui.field for="employee_tax_table" :label="__('Skattetabell')" error="tax_table" :hint="__('Från den anställdes skattebesked.')"><input id="employee_tax_table" type="number" class="{{ $input }} mt-1" wire:model="form.tax_table"></x-ui.field>
                         <x-ui.field for="employee_tax_column" :label="__('Kolumn')" error="tax_column"><input id="employee_tax_column" type="number" class="{{ $input }} mt-1" wire:model="form.tax_column"></x-ui.field>
                     @endif
+                    @if(($form['tax_residence'] ?? 'SE') === 'NON_RESIDENT_A_SINK')
+                        <x-ui.field for="employee_activity_type" :label="__('Verksamhetens art')" error="activity_type" class="sm:col-span-3" :hint="__('Vilken sorts verksamhet ersättningen gäller, till exempel konsert eller cirkus. Står i arbetsgivardeklarationen (ruta 112).')"><input id="employee_activity_type" type="text" maxlength="50" class="{{ $input }} mt-1" wire:model="form.activity_type"></x-ui.field>
+                    @endif
                 </div>
 
                 @if(($form['tax_residence'] ?? 'SE') === 'SE')

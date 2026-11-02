@@ -346,3 +346,15 @@ finding and the GitHub issue.
 - `TODO(legal-verify)`: earlier avgiftsfri benefits are added to 011 with
   the cash (Skatteverket's example shows cash only); correcting each earlier
   period instead (Skatteverket's other option) is not offered.
+
+### Verksamhetens art with A-SINK (AUD-LON-05, #73)
+
+- Skatteverket (agbeskrivning, ruta 275): "Om du har redovisat i den här
+  rutan ska du också fylla i ruta 112." The technical description gives
+  112 as free text, 1–50 characters ("t.ex. konsert, cirkus"), with no
+  code list, so the employee card stores `activity_type` (string(50)) and
+  requires it for `NON_RESIDENT_A_SINK`.
+- AgiXml writes `VerksamhetensArt` (faltkod 112) for every A-SINK
+  individuppgift; AgiDeclaration refuses to build the declaration when an
+  A-SINK payee has none (an older employee card). Checked against the
+  component schema 1.1.

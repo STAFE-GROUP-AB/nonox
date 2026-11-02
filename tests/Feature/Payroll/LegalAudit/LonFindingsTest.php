@@ -246,13 +246,13 @@ it('declares pay without contributions in field 131, not 011 (Skatteverket, fäl
 });
 
 it('declares the activity (field 112) with A-SINK (Skatteverket, fältkod 275)', function () {
-    $artist = LonSupport::employee($this->owner, $this->company, '19800101', ['tax_residence' => 'NON_RESIDENT_A_SINK', 'tax_table' => null, 'tax_column' => null, 'salary' => '20 000']);
+    $artist = LonSupport::employee($this->owner, $this->company, '19800101', ['tax_residence' => 'NON_RESIDENT_A_SINK', 'tax_table' => null, 'tax_column' => null, 'salary' => '20 000', 'activity_type' => 'Konsert']);
     $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $this->runs->create($this->owner, $this->company, '2026-04'));
 
     // "Om du använder rutan [275] ska du också fylla i 112."
     expect($field('//agd:IU/agd:AvdrSkattASINK[@faltkod="275"]'))->toBe('3000')
-        ->and($field('//agd:IU/agd:*[@faltkod="112"]'))->not->toBe('');
-})->todo('AUD-LON-05: A-SINK is declared without field 112; Skatteverket rejects or questions the individuppgift');
+        ->and($field('//agd:IU/agd:*[@faltkod="112"]'))->toBe('Konsert');
+});
 
 it('never withholds more tax than the cash paid, and books a balanced voucher (SFL 10–11 kap.; BFL 5 kap.)', function () {
     $bo = LonSupport::employee($this->owner, $this->company, '19800820', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD']);

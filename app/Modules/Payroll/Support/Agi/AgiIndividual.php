@@ -10,7 +10,10 @@ namespace App\Modules\Payroll\Support\Agi;
  * Pay that is avgiftsfri under the 1 000 kr rule goes in the "ej underlag
  * för socialavgifter" fields (131–134); in the month the year passes the
  * threshold, pay declared that way in earlier months is added to 011 and
- * stated in 010 (Skatteverket, ruta 010, AUD-LON-02, #71).
+ * stated in 010 (Skatteverket, ruta 010, AUD-LON-02, #71). A-SINK tax in
+ * 275 goes with verksamhetens art in 112 (Skatteverket, ruta 275: "Om du
+ * har redovisat i den här rutan ska du också fylla i ruta 112"; enligt
+ * granskning 2026-11-02, juristgranskning återstår, AUD-LON-05, #73).
  */
 final readonly class AgiIndividual
 {
@@ -36,6 +39,7 @@ final readonly class AgiIndividual
         public int $freeCarBenefitKronor = 0,
         public int $freeFuelBenefitKronor = 0,
         public int $earlierFreeKronor = 0,
+        public ?string $activityType = null,
     ) {}
 
     /** @return array<string, int|bool|string> */
@@ -56,6 +60,7 @@ final readonly class AgiIndividual
             'free_car_benefit' => $this->freeCarBenefitKronor,
             'free_fuel_benefit' => $this->freeFuelBenefitKronor,
             'earlier_free' => $this->earlierFreeKronor,
+            'activity_type' => (string) $this->activityType,
         ];
     }
 }

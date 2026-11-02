@@ -4,7 +4,7 @@ ordning: 20
 roller: [owner, payroll_admin]
 modul: payroll
 rutter: [payroll.employees]
-sokord: [personal, anställd, personalkort, skattetabell, kolumn, jämkning, jämkningsbeslut, SINK, bankkonto lön, timanställd, månadslön, sysselsättningsgrad]
+sokord: [personal, anställd, personalkort, skattetabell, kolumn, jämkning, jämkningsbeslut, SINK, A-SINK, verksamhetens art, bankkonto lön, timanställd, månadslön, sysselsättningsgrad]
 ---
 
 # Anställda
@@ -39,6 +39,8 @@ Under **Skatt** väljer du ett av tre alternativ:
 
 - **Bosatt i Sverige (skattetabell)** – skatten dras enligt Skatteverkets skattetabell. **Skattetabell** och **Kolumn** måste fyllas i; de står på personens skattebesked. NONOX gissar aldrig tabellen.
 - **Bosatt utomlands, SINK** och **Bosatt utomlands, A-SINK** – särskild inkomstskatt med en fast procentsats enligt reglerna. Ingen tabell behövs.
+
+Väljer du **Bosatt utomlands, A-SINK** fyller du också i **Verksamhetens art**: vilken sorts verksamhet ersättningen gäller, till exempel konsert eller cirkus. Skatteverket vill ha den i arbetsgivardeklarationen (ruta 112) när A-SINK-skatten redovisas.
 
 Är du osäker på vilken skatt som gäller, fråga Skatteverket eller er redovisningskonsult.
 

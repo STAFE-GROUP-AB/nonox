@@ -65,7 +65,7 @@ class Employees extends Component
         $this->form = [
             'first_name' => '', 'last_name' => '', 'personal_number' => '', 'email' => '', 'phone' => '',
             'address' => '', 'postal_code' => '', 'city' => '', 'bank_clearing' => '', 'bank_account' => '',
-            'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1',
+            'tax_residence' => 'SE', 'tax_table' => '', 'tax_column' => '1', 'activity_type' => '',
             'tax_adjustment_type' => 'NONE', 'tax_adjustment_percent' => '', 'tax_adjustment_amount' => '', 'tax_adjustment_table' => '', 'tax_adjustment_column' => '',
             'tax_adjustment_valid_from' => '', 'tax_adjustment_valid_to' => '',
             'start_date' => now()->toDateString(), 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY',
@@ -87,7 +87,7 @@ class Employees extends Component
         $this->editingId = $employee->id;
         $this->form = array_map(fn (mixed $value): string => (string) $value, [
             // Personal number and bank details never go into the page state; empty means "keep".
-            ...$employee->only(['first_name', 'last_name', 'email', 'phone', 'address', 'postal_code', 'city', 'tax_residence', 'tax_table', 'tax_column', 'user_id']),
+            ...$employee->only(['first_name', 'last_name', 'email', 'phone', 'address', 'postal_code', 'city', 'tax_residence', 'tax_table', 'tax_column', 'activity_type', 'user_id']),
             'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '',
             ...SaveEmployee::taxAdjustmentForm($employee),
             'start_date' => $employment?->start_date->toDateString(),
