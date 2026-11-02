@@ -11,6 +11,8 @@ sokord: [lager, lagersaldo, varulager, lagerhantering, lagersystem, lagerplats, 
 
 Med Lager vet du vad du har och var det ligger. Du lägger upp ditt lager som hyllor och fack, tar emot varor från leverantörer, plockar ordrar i den ordning du går genom lagret och räknar lagret när det behövs. Vid bokslutet räknar NONOX fram lagervärdet och bokför förändringen åt dig.
 
+![Lagrets översikt med lagervärdet, artiklar som behöver beställas och de senaste rörelserna.](/bilder/manual/lager/oversikt.webp)
+
 Lager är en modul. Den är avstängd tills ägaren slår på den. Den ändrar bara bokföringen när du själv bokför lagerförändringen vid bokslutet. Inköp bokförs som förut, med leverantörsfakturan.
 
 ## Översikten

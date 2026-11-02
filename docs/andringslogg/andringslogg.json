@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-lager-pa-startsidan-och-i-manualen",
+      "datum": "2026-11-02T19:31:08+01:00",
+      "rubrik": "Lager syns på startsidan och i manualen med skärmbilder",
+      "beskrivning": "Startsidan har fått en rad för Lager, och manualens artiklar om översikten, artiklar, lagerställen, inleverans, plocklista, inventering, lagervärde, etiketter, etikettstudion och Skanna visar nu skärmbilder från NONOX. Bilderna är tagna i ett påhittat demoföretag, en inredningsbutik med förråd och butiksgolv, och streckkoderna är interna nummer som inte hör till någon riktig vara.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-02-lager-skanna",
       "datum": "2026-11-02T19:02:52+01:00",
       "rubrik": "Lager: skanna med mobilen, även utan nät",

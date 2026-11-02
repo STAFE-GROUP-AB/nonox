@@ -11,6 +11,8 @@ sokord: [lagervärde, varulager bokslut, lagerförändring, FIFO, vägt genomsni
 
 Vid bokslutet ska varulagret tas upp till sitt värde på balansdagen. NONOX räknar fram värdet ur alla rörelser i lagret och kan bokföra skillnaden mot det som står på lagerkontot.
 
+![Underlaget för varulagret vid bokslutet: lagervärdet, det som är bokfört på lagerkontot och lagerförändringen att bokföra.](/bilder/manual/lager/lagervarde-vid-bokslut.webp)
+
 ## Så räknas värdet
 
 Värdet är antalet i lager gånger anskaffningsvärdet. Anskaffningsvärdet räknas med den metod företaget har valt under **Lager → Inställningar**:

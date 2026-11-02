@@ -11,6 +11,8 @@ sokord: [lagerförd artikel, EAN, GTIN, streckkod, SKU, skannerkod, inköpspris,
 
 Lager använder samma artikelregister som fakturorna. Det finns ingen separat lagerartikel. I artikelformuläret finns två flikar: **Enkel** med det du behöver för att fakturera, och **Avancerad** med koder, mått, inköp och lagerfälten.
 
+![Artiklarna i lager med bild, EAN-kod, saldo per lagerställe och inköpspris.](/bilder/manual/lager/artiklar.webp)
+
 ## Fliken Enkel
 
 Artikelnummer, benämning, pris exklusive moms, enhet, moms och intäktskonto. Det räcker för att sälja artikeln på en faktura. Se [Artiklar](/manual/fakturering/artiklar).

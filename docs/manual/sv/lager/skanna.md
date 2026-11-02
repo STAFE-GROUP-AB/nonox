@@ -11,6 +11,8 @@ sokord: [skanna, skanner, streckkod, ean, qr-kod, mobil, app, lagerapp, handskan
 
 **Skanna** är lagret i telefonen. Du håller telefonen i ena handen och skannar artiklar och hyllor. Allt du gör sparas i telefonen först och skickas till NONOX så fort det finns nät.
 
+![Skanna i mobilen: ta emot, plocka, flytta, inventera och slå upp.](/bilder/manual/lager/skanna.webp)
+
 Du öppnar Skanna under **Lager → Skanna**, eller på adressen `/lager/skanna`.
 
 ## Lägg Skanna på hemskärmen

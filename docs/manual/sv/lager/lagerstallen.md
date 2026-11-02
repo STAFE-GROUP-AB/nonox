@@ -11,6 +11,8 @@ sokord: [lagerställe, lagerplats, hylla, fack, pallplats, zon, ställ, lageradr
 
 Ett lagerställe är en plats där varor ligger. Platserna bildar ett träd i upp till fyra nivåer:
 
+![Lagerställena som ett träd: lagret, zonerna, hyllorna och facken med saldot på varje plats.](/bilder/manual/lager/lagerstallen.webp)
+
 | Nivå | Till exempel | Kod |
 |---|---|---|
 | **Lager** | Butiken, förrådet, centrallagret | HL |

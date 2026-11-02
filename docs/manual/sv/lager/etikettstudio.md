@@ -11,6 +11,8 @@ sokord: [etikettstudio, etikettmall, mall etikett, etikettark, etikettskrivare, 
 
 I etikettstudion bestämmer du hur etiketterna ser ut: storleken, om de skrivs ut på ett A4-ark eller en rulle, och vad som står på dem. Medan du ändrar ser du en förhandsvisning i skala med en av dina egna artiklar eller platser.
 
+![Etikettstudion med en prisetikett och förhandsvisningen i skala.](/bilder/manual/lager/etikettstudio.webp)
+
 Gå till **Lager → Inställningar** och klicka på **Öppna etikettstudion**.
 
 När du slår på Lager får du två mallar att börja med:

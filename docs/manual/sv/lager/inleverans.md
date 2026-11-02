@@ -11,6 +11,8 @@ sokord: [inleverans, ta emot varor, godsmottagning, följesedel, leverans, resto
 
 En inleverans är det du väntar på från en leverantör. När varorna kommer tar du emot dem, och då ökar saldot på det lagerställe där de läggs. Inleveransen bokför ingenting. Inköpet bokförs som vanligt med leverantörsfakturan.
 
+![En inleverans som tas emot: hur mycket som kom och på vilken plats det läggs.](/bilder/manual/lager/inleverans.webp)
+
 ## Så här skapar du en inleverans
 
 1. Gå till **Lager → Inleveranser** och klicka på **Ny inleverans**.
