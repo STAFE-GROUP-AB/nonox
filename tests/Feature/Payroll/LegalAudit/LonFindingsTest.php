@@ -356,7 +356,7 @@ it('counts a bonus in the vacation-pay basis under procentregeln (semesterlagen 
 
     // 12 % × (15 000 + 1 000) = 1 920 kr.
     expect($payout->amount_ore->ore)->toBe(192_000);
-})->todo('AUD-LON-10: BONUS is seeded without vacation basis; confidence medium — a bonus that is not pay for work (vinstdelning) may be excluded');
+});
 
 it('withholds 30 % when the company is not the main employer (SFL 11 kap. 20 § första stycket 1)', function () {
     LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'SIDE_INCOME', 'tax_table' => null, 'tax_column' => null]);

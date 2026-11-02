@@ -416,3 +416,20 @@ finding and the GitHub issue.
   rule) and taxable the rest; rate + quantity as before. An allowance
   without a quantity (an old row, another source) throws
   PayrollBlockedException instead of pricing it at 0 kr.
+
+### Bonus in the vacation-pay basis (AUD-LON-10, #77)
+
+- Semesterlagen 16 b §: "tolv procent av arbetstagarens förfallna lön i en
+  anställning under intjänandeåret", excluding only semesterlön, pay for
+  semesterlönegrundande frånvaro and certain permitteringslön; 16 a §
+  tredje stycket gives 12 % of "sammanlagda förfallna rörliga lön" under
+  sammalöneregeln. A bonus is not excluded, so PayCodeCatalog seeds
+  `BONUS` with vacation basis, and a migration (like the overtime fix,
+  #34) flips a system BONUS still at the old value. A company's own code
+  and an agreement's codes (which carry their own `vacation_basis` in the
+  agreement file) keep theirs.
+- `TODO(legal-verify)`: a profit share not paid for work (vinstdelning)
+  may fall outside förfallen lön; a company paying one should use a pay
+  code of its own without vacation basis. No shipped agreement excludes
+  bonus (Visita–Unionen and Handelns tjänstemannaavtal list it as
+  variable pay).

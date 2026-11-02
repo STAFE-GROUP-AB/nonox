@@ -310,3 +310,32 @@ describe('mileage and per diem as amounts (#76)', function () {
             ->assertSeeHtml('id="input_rate"');
     });
 });
+
+describe('bonus as vacation-pay basis (#77)', function () {
+    it('seeds the bonus pay code as vacation-pay basis (semesterlagen 16 b §)', function () {
+        expect(PayCode::query()->where('code', 'BONUS')->sole()->is_vacation_basis)->toBeTrue();
+    });
+
+    it('turns an existing system bonus code into vacation-pay basis, and leaves a company\'s own code alone', function () {
+        $bonus = PayCode::query()->where('code', 'BONUS')->sole();
+        $bonus->forceFill(['is_vacation_basis' => false])->save();
+        $own = PayCode::query()->create([...$bonus->only(['name_sv', 'name_en', 'category', 'unit', 'is_taxable', 'tax_method', 'is_contribution_basis', 'is_pension_basis']), 'code' => 'VINSTDELNING', 'is_vacation_basis' => false, 'is_system' => false]);
+
+        (require base_path('app/Modules/Payroll/database/migrations/2026_11_16_130000_make_bonus_vacation_basis.php'))->up();
+
+        expect($bonus->fresh()->is_vacation_basis)->toBeTrue()
+            ->and($own->fresh()->is_vacation_basis)->toBeFalse();
+    });
+
+    it('pays semesterersättning on a bonus with the monthly salary (semesterlagen 16 b §: 12 % of förfallen lön)', function () {
+        $erik = LonSupport::employee($this->owner, $this->company, '19920310', ['vacation_payout_with_salary' => true, 'salary' => '30 000']);
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        LonSupport::input($this->owner, $run, $erik, 'BONUS', ['amount' => '5 000']);
+        $this->runs->calculate($this->owner, $run->fresh());
+        $payout = Payslip::query()->sole()->lines()->get()->first(fn ($line) => isset($line->explanation['bp']));
+
+        // 12 % × (30 000 + 5 000) = 4 200 kr.
+        expect($payout->amount_ore->ore)->toBe(420_000)
+            ->and($payout->explanation['basis_ore'])->toBe(3_500_000);
+    });
+});

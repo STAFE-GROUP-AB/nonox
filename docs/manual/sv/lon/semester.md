@@ -4,7 +4,7 @@ ordning: 100
 roller: [owner, admin, payroll_admin]
 modul: payroll
 rutter: [payroll.vacationYear, payroll.vacationLiability]
-sokord: [semester, semesterlön, semestertillägg, semesterersättning, semesterlöneskuld, sparad semester, semesterår, intjänandeår, sammalöneregeln, procentregeln]
+sokord: [semester, semesterlön, semestertillägg, semesterersättning, semesterlöneskuld, sparad semester, semesterår, intjänandeår, sammalöneregeln, procentregeln, bonus]
 ---
 
 # Semester
@@ -35,7 +35,7 @@ Hur semestern betalas beror på semesterregeln:
 - **Sammalöneregeln** (vanlig för månadsavlönade): månadslönen fortsätter som vanligt och varje betald semesterdag ger ett **Semestertillägg**.
 - **Procentregeln** (vanlig för timavlönade och de med mycket rörlig lön): varje betald dag ger **Semesterlön** beräknad på intjänandeårets semesterlönegrundande lön. En månadslön minskas för de semestertimmarna.
 
-Övertid och utbetald komptid ingår i den semesterlönegrundande lönen (semesterlagen 16 b §), och räknas som rörlig lön under sammalöneregeln. Säger kollektivavtalet att semesterlönen ingår i övertidsersättningen, som Visita–Unionen och Handelns tjänstemannaavtal, räknas avtalets övertid inte in. Bedömningen bygger på en AI-utredning den 2 november 2026; juristgranskning återstår.
+Övertid, utbetald komptid och bonus ingår i den semesterlönegrundande lönen (semesterlagen 16 b §), och räknas som rörlig lön under sammalöneregeln. En bonus på 5 000 kronor ger alltså 600 kronor mer i semesterersättning med procentregeln. Säger kollektivavtalet att semesterlönen ingår i övertidsersättningen, som Visita–Unionen och Handelns tjänstemannaavtal, räknas avtalets övertid inte in. Bedömningen bygger på en AI-utredning den 2 november 2026; juristgranskning återstår.
 
 Tar personen ut fler dagar än saldot räcker till blir resten **Obetald semester**, och lönebeskedet får en varning om det.
 

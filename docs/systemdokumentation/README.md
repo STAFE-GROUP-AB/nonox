@@ -1456,6 +1456,16 @@ lönebeskeden låsta i databasen.
   antal vägras när raden läggs in, och stoppar lönebeskedet om det kommer
   på annat sätt, i stället för att betalas som 0 kr. Kryssen 050/051 sätts
   bara när en skattefri ersättning faktiskt betalats.
+- Bonus som semesterlönegrundande lön (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-10, #77): systemlönearten `BONUS`
+  har `is_vacation_basis` = true (semesterlagen 16 b §: tolv procent av
+  förfallen lön, bara semesterlön, ersättning för semesterlönegrundande
+  frånvaro och viss permitteringslön undantas; 16 a § tredje stycket för
+  rörliga lönedelar). En migrering ändrar en befintlig systemkod som
+  fortfarande har det gamla värdet; egna koder och avtalens koder rörs
+  inte. Semesterskulden och öppna intjänandeår läser flaggan; stängda
+  semesterår behåller sina belopp. `TODO(legal-verify)`: vinstdelning som
+  inte är lön för arbete, och avtal som säger annat.
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den
