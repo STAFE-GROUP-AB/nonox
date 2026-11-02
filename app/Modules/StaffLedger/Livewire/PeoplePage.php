@@ -12,6 +12,7 @@ use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\StaffLedger\Actions\PersonCredentials;
 use App\Modules\StaffLedger\Actions\SavePerson;
+use App\Modules\StaffLedger\Domain\Countries;
 use App\Modules\StaffLedger\Livewire\Concerns\InCurrentCompany;
 use App\Modules\StaffLedger\Livewire\Concerns\RevealsPersonalNumbers;
 use App\Modules\StaffLedger\Models\Person;
@@ -64,7 +65,10 @@ class PeoplePage extends Component
     public function create(): void
     {
         $this->editing = 0;
-        $this->form = ['first_name' => '', 'last_name' => '', 'personal_number' => '', 'email' => '', 'language' => 'sv', 'hired' => false, 'employer_name' => '', 'employer_org_number' => '', 'employee_id' => '', 'user_id' => '', 'is_manager' => false];
+        $this->form = [
+            'first_name' => '', 'last_name' => '', 'identity_type' => SavePerson::SWEDISH, 'personal_number' => '', 'identity_country' => '', 'email' => '', 'language' => 'sv',
+            'hired' => false, 'employer_name' => '', 'employer_foreign' => false, 'employer_org_number' => '', 'employer_country' => '', 'employee_id' => '', 'user_id' => '', 'is_manager' => false,
+        ];
     }
 
     public function edit(int $id): void
@@ -73,8 +77,12 @@ class PeoplePage extends Component
         $this->editing = $person->id;
         $this->form = [
             ...$person->only(['first_name', 'last_name', 'email', 'language', 'employer_name', 'employer_org_number', 'is_manager']),
+            'identity_type' => $person->identity_country === null ? SavePerson::SWEDISH : SavePerson::FOREIGN,
+            'identity_country' => (string) $person->identity_country,
             'personal_number' => '',
             'hired' => $person->isHired(),
+            'employer_foreign' => $person->employer_country !== null,
+            'employer_country' => (string) $person->employer_country,
             'employee_id' => (string) $person->employee_id,
             'user_id' => (string) $person->user_id,
         ];
@@ -173,6 +181,7 @@ class PeoplePage extends Component
             'canReveal' => $this->allowed('staff-ledger:view-sensitive'),
             'canManage' => $this->allowed('staff-ledger:manage'),
             'languages' => KioskStrings::LANGUAGES,
+            'countries' => $this->editing === null ? [] : Countries::options(),
             'employees' => $payroll ? Employee::query()->orderBy('first_name')->get(['id', 'first_name', 'last_name', 'employee_number']) : collect(),
             'members' => $this->company()->allUsers()->sortBy('name')->map(fn (User $user): array => ['id' => $user->id, 'name' => $user->name])->values(),
         ]);

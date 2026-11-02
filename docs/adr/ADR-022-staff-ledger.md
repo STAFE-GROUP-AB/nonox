@@ -190,10 +190,53 @@ relay called "Connect" and a NativePHP kiosk; none of those exist in NONOX.
   moves the location's chain anchor to the last removed hash and writes the
   anchor to the audit log. The verifier checks the anchor against the last
   recorded prune, so moving it by hand is detected.
+- Retention (changed 2026-11-07): an entry is kept until two years after
+  the end of the calendar year in which the company's fiscal year
+  (beskattningsår) containing the entry's date ended, 9 kap. 5 § tredje
+  stycket skatteförfarandeförordningen (2011:1261). It used to count from
+  the entry's own calendar year, which removed entries of a broken or
+  extended fiscal year a year too early. `Retention` finds the fiscal year
+  in `fiscal_years`; without one it derives a twelve-month year from
+  `fiscal_year_start_month`, and when that is in doubt (it overlaps a
+  known fiscal year, or the company has none) the entry is kept. Fiscal
+  years are loaded once per company per run. Both the entry's time and the
+  time it was received must be past retention; the walk along the chain
+  stops at the first entry that is kept. Enligt AI-utredning 2026-11-02,
+  juristgranskning återstår.
 - Forgotten check-outs: `personalliggare:remind` (every 15 minutes) mails
   the person, if the register has their email, and the managers once per
   check-in after the configured hours (default 12). Nobody is ever checked
   out automatically.
+
+### Foreign identity numbers (added 2026-11-07)
+
+- 9 kap. 5 § skatteförfarandeförordningen asks for "personnummer,
+  samordningsnummer eller motsvarande utländska nummer". A person can be
+  registered with a foreign identity number and the issuing country (ISO
+  3166-1 alpha-2, plus XK; not SE). The number is kept in the same
+  encrypted `personal_number` column, trimmed with runs of spaces
+  collapsed, at most 30 characters and never Luhn-checked;
+  `identity_country` is null for a Swedish number. The blind index of a
+  foreign number is computed from the country and the number's letters and
+  digits in upper case, so a duplicate is found whatever the spacing. A
+  Swedish number's index is unchanged.
+- An employer of hired staff may likewise be foreign: the number (widened
+  column, 30 characters) and `employer_country`.
+- Entries copy both countries. They are part of the hash payload only when
+  set, so every entry written before keeps its hash. Lists show a foreign
+  number as "Utländskt nummer (NO), dolt"; the control visit, the kiosk's
+  sealed copy, the PDF and the CSV show it in full with the country (the
+  CSV in its own columns), and the provisional XML has
+  `UtlandskIdentitet`/`UtlandsktNummer` with `Nummer` and `Land` as a
+  choice beside the Swedish elements (older files still validate).
+  TODO(legal-verify): how Skatteverket's schema will carry a foreign
+  number and country.
+- Not implemented: the employer data from 2027 in prop. 2025/26:282
+  (39 kap. 11 a § andra stycket SFL, employer for everyone with another
+  employer, identified by name and personal, coordination, organisation or
+  foreign number). The Riksdag decision is planned for 2026-11-11 and the
+  rule would apply from 2027-07-01; the förordning is not issued.
+  Enligt AI-utredning 2026-11-02, juristgranskning återstår.
 
 ### Control visit ("Skatteverket är här")
 

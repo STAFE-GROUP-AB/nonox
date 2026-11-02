@@ -4,6 +4,11 @@
   (personalliggare). Our own format, NOT Skatteverket's.
   TODO(SPEC): replace with Skatteverket's schema for the 2027 rules
   (prop. 2025/26:282) when it is published in Skatteverkets schemalager.
+  2026-11-07: Person and Arbetsgivare may carry a foreign number and its
+  country instead of a Swedish number (9 kap. 5 § skatteförfarande-
+  förordningen, "motsvarande utländska nummer"). Files written before
+  still validate. TODO(legal-verify): how Skatteverket's schema will carry
+  a foreign number and country.
 -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
            xmlns="urn:nonox:personalliggare:provisorisk:0.1"
@@ -29,6 +34,28 @@
             <xs:pattern value="\d{12}"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:simpleType name="Land">
+        <xs:annotation><xs:documentation>Landskod enligt ISO 3166-1 alfa-2 (och XK för Kosovo).</xs:documentation></xs:annotation>
+        <xs:restriction base="xs:string">
+            <xs:pattern value="[A-Z]{2}"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="UtlandsktNummer">
+        <xs:annotation><xs:documentation>Ett nummer utfärdat i ett annat land, som det står i handlingen, och landet. Kontrolleras inte med kontrollsiffra.</xs:documentation></xs:annotation>
+        <xs:sequence>
+            <xs:element name="Nummer">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <xs:minLength value="1"/>
+                        <xs:maxLength value="30"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:element>
+            <xs:element name="Land" type="Land"/>
+        </xs:sequence>
+    </xs:complexType>
 
     <xs:simpleType name="Hash">
         <xs:restriction base="xs:string">
@@ -117,7 +144,10 @@
                                             <xs:complexType>
                                                 <xs:sequence>
                                                     <xs:element name="Namn" type="Text"/>
-                                                    <xs:element name="Identitet" type="Identitet"/>
+                                                    <xs:choice>
+                                                        <xs:element name="Identitet" type="Identitet"/>
+                                                        <xs:element name="UtlandskIdentitet" type="UtlandsktNummer"/>
+                                                    </xs:choice>
                                                 </xs:sequence>
                                             </xs:complexType>
                                         </xs:element>
@@ -125,7 +155,10 @@
                                             <xs:complexType>
                                                 <xs:sequence>
                                                     <xs:element name="Namn" type="Text"/>
-                                                    <xs:element name="Organisationsnummer" type="Organisationsnummer"/>
+                                                    <xs:choice>
+                                                        <xs:element name="Organisationsnummer" type="Organisationsnummer"/>
+                                                        <xs:element name="UtlandsktNummer" type="UtlandsktNummer"/>
+                                                    </xs:choice>
                                                 </xs:sequence>
                                             </xs:complexType>
                                         </xs:element>

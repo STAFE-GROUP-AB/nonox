@@ -86,7 +86,7 @@
                             <th class="py-2 pe-4 text-start font-medium">{{ __('Händelse') }}</th>
                             <th class="py-2 pe-4 text-start font-medium">{{ __('Namn') }}</th>
                             <th class="py-2 pe-4 text-start font-medium">
-                                {{ __('Person- eller samordningsnummer') }}
+                                {{ __('Person- eller ID-nummer') }}
                                 @if($canReveal)
                                     <button type="button" wire:click="{{ $sensitive ? 'hidePersonalNumbers' : 'revealPersonalNumbers' }}" class="ms-2 text-accent-700 underline">{{ $sensitive ? __('Dölj') : __('Visa') }}</button>
                                 @endif

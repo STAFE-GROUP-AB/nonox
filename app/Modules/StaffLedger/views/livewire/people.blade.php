@@ -16,9 +16,30 @@
                 <x-ui.field for="p-last" :label="__('Efternamn')" error="form.last_name">
                     <input id="p-last" wire:model="form.last_name" class="{{ $input }}" required autocomplete="off">
                 </x-ui.field>
-                <x-ui.field for="p-number" :label="__('Person- eller samordningsnummer')" :hint="$editing ? __('Lämna tomt för att behålla det sparade numret.') : __('Tolv siffror, ÅÅÅÅMMDD-NNNN.')" error="form.personal_number">
-                    <input id="p-number" wire:model="form.personal_number" class="{{ $input }} tabular-nums" inputmode="numeric" autocomplete="off" @if(! $editing) required @endif>
+                @php($foreignId = ($form['identity_type'] ?? 'SE') === App\Modules\StaffLedger\Actions\SavePerson::FOREIGN)
+                <x-ui.field for="p-id-type" :label="__('Identitet')" :hint="__('Saknar personen svenskt person- eller samordningsnummer? Välj utländskt identitetsnummer.')" error="form.identity_type" class="sm:col-span-2">
+                    <select id="p-id-type" wire:model.live="form.identity_type" class="{{ $input }}">
+                        <option value="{{ App\Modules\StaffLedger\Actions\SavePerson::SWEDISH }}">{{ __('Svenskt person- eller samordningsnummer') }}</option>
+                        <option value="{{ App\Modules\StaffLedger\Actions\SavePerson::FOREIGN }}">{{ __('Utländskt identitetsnummer') }}</option>
+                    </select>
                 </x-ui.field>
+                @if($foreignId)
+                    <x-ui.field for="p-number" :label="__('Utländskt identitetsnummer')" :hint="$editing ? __('Lämna tomt för att behålla det sparade numret.') : __('Som det står i den utländska handlingen, högst 30 tecken.')" error="form.personal_number">
+                        <input id="p-number" wire:model="form.personal_number" class="{{ $input }} tabular-nums" maxlength="30" autocomplete="off" @if(! $editing) required @endif>
+                    </x-ui.field>
+                    <x-ui.field for="p-id-country" :label="__('Land som utfärdat numret')" error="form.identity_country">
+                        <select id="p-id-country" wire:model="form.identity_country" class="{{ $input }}" required>
+                            <option value="">{{ __('Välj land') }}</option>
+                            @foreach($countries as $code => $name)
+                                <option value="{{ $code }}">{{ $name }} ({{ $code }})</option>
+                            @endforeach
+                        </select>
+                    </x-ui.field>
+                @else
+                    <x-ui.field for="p-number" :label="__('Person- eller samordningsnummer')" :hint="$editing ? __('Lämna tomt för att behålla det sparade numret.') : __('Tolv siffror, ÅÅÅÅMMDD-NNNN.')" error="form.personal_number">
+                        <input id="p-number" wire:model="form.personal_number" class="{{ $input }} tabular-nums" inputmode="numeric" autocomplete="off" @if(! $editing) required @endif>
+                    </x-ui.field>
+                @endif
                 <x-ui.field for="p-email" :label="__('E-post (frivilligt)')" :hint="__('För påminnelse om glömd utcheckning.')" error="form.email">
                     <input id="p-email" type="email" wire:model="form.email" class="{{ $input }}" autocomplete="off">
                 </x-ui.field>
@@ -53,9 +74,24 @@
                     <x-ui.field for="p-employer" :label="__('Arbetsgivarens namn')" error="form.employer_name">
                         <input id="p-employer" wire:model="form.employer_name" class="{{ $input }}">
                     </x-ui.field>
-                    <x-ui.field for="p-employer-org" :label="__('Arbetsgivarens organisationsnummer')" error="form.employer_org_number">
-                        <input id="p-employer-org" wire:model="form.employer_org_number" class="{{ $input }} tabular-nums" inputmode="numeric">
-                    </x-ui.field>
+                    <label class="flex items-center gap-3 sm:col-span-2"><x-checkbox wire:model.live="form.employer_foreign" /> <span>{{ __('Arbetsgivaren är registrerad i ett annat land') }}</span></label>
+                    @if($form['employer_foreign'] ?? false)
+                        <x-ui.field for="p-employer-org" :label="__('Arbetsgivarens utländska nummer')" :hint="__('Registreringsnumret i arbetsgivarens land, högst 30 tecken.')" error="form.employer_org_number">
+                            <input id="p-employer-org" wire:model="form.employer_org_number" class="{{ $input }} tabular-nums" maxlength="30">
+                        </x-ui.field>
+                        <x-ui.field for="p-employer-country" :label="__('Arbetsgivarens land')" error="form.employer_country">
+                            <select id="p-employer-country" wire:model="form.employer_country" class="{{ $input }}" required>
+                                <option value="">{{ __('Välj land') }}</option>
+                                @foreach($countries as $code => $name)
+                                    <option value="{{ $code }}">{{ $name }} ({{ $code }})</option>
+                                @endforeach
+                            </select>
+                        </x-ui.field>
+                    @else
+                        <x-ui.field for="p-employer-org" :label="__('Arbetsgivarens organisationsnummer')" error="form.employer_org_number">
+                            <input id="p-employer-org" wire:model="form.employer_org_number" class="{{ $input }} tabular-nums" inputmode="numeric">
+                        </x-ui.field>
+                    @endif
                 @endif
                 <div class="flex flex-wrap gap-3 sm:col-span-2">
                     <x-button type="submit">{{ __('Spara') }}</x-button>
@@ -100,7 +136,7 @@
                         <tr class="border-b border-stone-200 text-start text-gray-600">
                             <th class="py-2 pe-4 text-start font-medium">{{ __('Namn') }}</th>
                             <th class="py-2 pe-4 text-start font-medium">
-                                {{ __('Person- eller samordningsnummer') }}
+                                {{ __('Person- eller ID-nummer') }}
                                 @if($canReveal)
                                     <button type="button" wire:click="{{ $sensitive ? 'hidePersonalNumbers' : 'revealPersonalNumbers' }}" class="ms-2 text-accent-700 underline">{{ $sensitive ? __('Dölj') : __('Visa') }}</button>
                                 @endif
@@ -119,7 +155,7 @@
                                     @if($person->archived_at) <x-ui.badge>{{ __('Arkiverad') }}</x-ui.badge> @endif
                                 </td>
                                 <td class="py-3 pe-4 tabular-nums">{{ $sensitive ? $person->formattedPersonalNumber() : $person->maskedPersonalNumber() }}</td>
-                                <td class="py-3 pe-4">{{ $person->employer_name ? $person->employer_name.' ('.$person->employer_org_number.')' : __('Eget företag') }}</td>
+                                <td class="py-3 pe-4">{{ $person->employer_name ? $person->employerLabel() : __('Eget företag') }}</td>
                                 <td class="py-3 pe-4">{{ $person->hasPin() ? __('Kod vald') : __('Ingen kod') }}{{ $person->photo_path ? ' · '.__('foto') : '' }}</td>
                                 <td class="py-3">
                                     @if($canManage)

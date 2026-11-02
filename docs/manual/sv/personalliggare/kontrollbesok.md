@@ -33,7 +33,7 @@ Kiosken visar de senaste 31 dagarna. Är den utan internet visar den liggaren so
 ## Så här gör du i NONOX
 
 1. Välj **Skatteverket är här** överst på valfri sida i personalliggaren, eller **Personalliggare → Kontrollbesök** i menyn.
-2. Överst ser du **Incheckade just nu** med namn, person- eller samordningsnummer, arbetsgivare, lokal och när personen checkade in.
+2. Överst ser du **Incheckade just nu** med namn, person- eller samordningsnummer (eller utländskt ID-nummer med landskod), arbetsgivare, lokal och när personen checkade in.
 3. Under **Liggaren** väljer du period med **Från** och **Till**. Förvalt är i dag. Välj en **Lokal** om ni har flera, och sök med **Sök namn eller personnummer**.
 4. Välj **Ladda ner PDF**, **Ladda ner CSV** eller **Ladda ner XML**.
 

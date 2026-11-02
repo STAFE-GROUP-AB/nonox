@@ -43,7 +43,7 @@ return [
     'start' => 'Början',
     'end' => 'Slut',
     'name' => 'Namn',
-    'personal_number' => 'Personnummer',
+    'personal_number' => 'Person- eller ID-nummer',
     'employer' => 'Arbetsgivare',
     'missing' => 'saknas',
     'digit_delete' => 'Radera',

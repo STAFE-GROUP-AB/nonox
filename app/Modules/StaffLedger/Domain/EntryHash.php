@@ -13,6 +13,10 @@ use Carbon\CarbonImmutable;
  * construction as the voucher chain (LedgerHash). The personal number is
  * hashed in clear text, so re-encrypting it with a new key does not break
  * the chain. Times are hashed as stored: whole seconds, local time.
+ *
+ * The issuing countries of a foreign identity number and a foreign
+ * employer number (added 2026-11-07) are part of the payload only when they
+ * are set, so every entry written before them hashes exactly as it did.
  */
 final class EntryHash
 {
@@ -51,6 +55,12 @@ final class EntryHash
             'user_id' => $entry->user_id,
             'uuid' => $entry->uuid,
         ];
+
+        foreach (['identity_country' => $entry->identity_country, 'employer_country' => $entry->employer_country] as $key => $country) {
+            if ($country !== null) {
+                $payload[$key] = $country;
+            }
+        }
 
         ksort($payload);
 
