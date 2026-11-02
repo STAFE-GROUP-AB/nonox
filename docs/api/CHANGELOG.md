@@ -13,6 +13,30 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-02: v1.3.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-02: v1.3.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Kundfakturor i utländsk valuta**: `invoice_currency` och `exchange_rate_micros` (frivillig, annars Riksbankens kurs) på `POST /invoices` och `PATCH /invoices/{id}`, och radpriset `unit_price_minor` i hundradelar av valutan. Svaret har valutan, kursen med datum och källa och beloppen i valutan (`foreign_*_minor`, rader `unit_price_minor` och `net_minor`). Alla `*_ore` är fortfarande kronor.
+- **Betalning i valuta**: `foreign_amount_minor` på `POST /invoices/{id}/payments`; `amount_ore` är kronorna som kom in. Betalningen svarar med `foreign_amount_minor` och `exchange_difference_ore`.
+- **Kunder**: `currency`.
+- **Webhooks**: `invoice.sent` och `invoice.paid` har med `invoice_currency` och valutabeloppen; `invoice.paid` även betalningens belopp och kursdifferens.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Customer invoices in foreign currency**: `invoice_currency` and `exchange_rate_micros` (optional, default Riksbanken's rate) on `POST /invoices` and `PATCH /invoices/{id}`, and the row price `unit_price_minor` in hundredths of the currency. Responses carry the currency, the rate with its date and source and the foreign amounts (`foreign_*_minor`, rows `unit_price_minor` and `net_minor`). Every `*_ore` is still kronor.
+- **Payment in currency**: `foreign_amount_minor` on `POST /invoices/{id}/payments`; `amount_ore` is the kronor received. The payment answers with `foreign_amount_minor` and `exchange_difference_ore`.
+- **Customers**: `currency`.
+- **Webhooks**: `invoice.sent` and `invoice.paid` carry `invoice_currency` and the foreign amounts; `invoice.paid` also the payment's amount and exchange difference.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-02: v1.2.0
 <!-- /lang -->
 <!-- lang:en -->

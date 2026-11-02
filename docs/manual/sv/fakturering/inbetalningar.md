@@ -51,11 +51,16 @@ Varje inbetalning sparas med bankens egen referens. Läser du in en fil som inne
 
 Under **Tidigare filer** finns de senaste filerna, och med bankkopplingen påslagen även **Från banken (NONOX Bank)**. Varje inläst fil sparas som den kom från banken.
 
+## Inbetalningar i utländsk valuta
+
+Betalar en kund en faktura i euro eller en annan valuta till ditt konto i kronor, står beloppet i valutan i bankens fil. NONOX visar det under kronorna och föreslår fakturan på OCR-numret om beloppet ryms i det som återstår. När du bokför minskar fakturan med beloppet i valutan, och skillnaden mot fakturans kurs bokförs som kursvinst eller kursförlust. Saknar filen beloppet i valutan räknas inbetalningen som betalning av hela det som återstår. Läs [Faktura i utländsk valuta](/manual/fakturering/faktura-i-utlandsk-valuta).
+
+Konton i annan valuta än kronor kan inte läsas in än.
+
 ## Det som inte går än
 
 - **Överbetalningar.** Ett belopp som är större än det som återstår kan inte registreras på fakturan. Registrera det fakturan ska ha och bokför resten för hand med en vanlig verifikation, till exempel som en skuld till kunden. Fråga din redovisningskonsult vilket konto som passar.
 - **En betalning för flera fakturor.** Välj **Ingen faktura, hanteras för hand** och registrera betalningen på varje faktura för sig, på respektive fakturas sida.
-- **Betalningar i utländsk valuta.**
 - **BgMax-filer.** NONOX läser bara camt.054. Bankgirots äldre BgMax-format ersätts av camt.054 hos bankerna.
 
 ## Vanliga frågor

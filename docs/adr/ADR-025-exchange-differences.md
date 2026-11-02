@@ -1,8 +1,9 @@
-# ADR-025: Supplier invoices in foreign currency and exchange differences
+# ADR-025: Invoices in foreign currency and exchange differences
 
-- Status: Accepted
+- Status: Accepted (supplier invoices 2026-11-01; customer invoices and the
+  year-end revaluation 2026-11-02)
 - Date: 2026-11-01
-- Task: Phase 3, multi-currency (AGENTS.md §7), first part
+- Task: Phase 3, multi-currency (AGENTS.md §7)
 
 ## Context
 
@@ -82,24 +83,97 @@ difference (kursdifferens) was not booked at all, so 2440 never cleared.
   and exchange gain or loss; the list shows the foreign total and remainder
   under the kronor.
 
+## Customer invoices in foreign currency (2026-11-02)
+
+The same rules on the receivables side (1510), with the differences that
+come from the invoice being written by us rather than received:
+
+- **Stored** (migration `2026_11_13_100000`): `customers.currency` (the
+  currency new invoices start in); on `invoices` `invoice_currency`,
+  `exchange_rate_micros`, `exchange_rate_date`, `exchange_rate_source`
+  (`riksbank` or `manual`), `foreign_net_minor`, `foreign_vat_minor`,
+  `foreign_total_minor` and `foreign_paid_minor`; on `invoice_rows`
+  `foreign_unit_price_minor` and `foreign_net_minor`; on `invoice_payments`
+  `foreign_amount_minor` and `exchange_difference_ore` (kronor received minus
+  kronor settled, so here positive is a **gain**); on `invoice_reminders`
+  `foreign_remaining_minor`; on `bank_transactions` `foreign_currency` and
+  `foreign_amount_minor`. The `*_ore` columns stay kronor as booked, so every
+  report, the VAT return, SIE and the reskontra sums are unchanged. Same
+  check constraint as for supplier invoices; the issued-invoice trigger also
+  lets `foreign_paid_minor` change.
+- **Writing.** The rows are typed in the currency. Each row is converted to
+  kronor at the booking rate (`ExchangeRate::toOre`, half up); the kronor VAT
+  is calculated per rate on the kronor rows, not converted from the foreign
+  VAT, so the VAT booked and reported follows the conversion of the taxable
+  amount. The foreign totals are kept as written, without öresavrundning
+  (öresavrundning applies to kronor only). The rate defaults to Riksbanken's
+  mid rate on the invoice date (or the latest banking day before) and can be
+  typed; a typed rate equal to Riksbanken's keeps the source `riksbank`.
+- **The invoice** shows rows and totals in the currency and, below, the VAT
+  per rate and the total in kronor with the rate and its source, and the
+  company's IBAN and BIC.
+- **Paying, crediting, reminding.** A payment works as for suppliers, with
+  the signs of a receivable: 1930 debit the kronor received, 1510 credit the
+  share settled, 3960 credit a gain or 7960 debit a loss; under
+  kontantmetoden the revenue and VAT are booked at the booking rate. A part
+  payment never settles all the kronor; the one that clears the currency
+  settles exactly what is left. A credit invoice always takes the original's
+  currency and rate (whatever its draft says), so it cancels the receivable
+  exactly. A reminder is for what remains in the currency. ROT and RUT
+  require kronor. Quotes, orders and agreements stay in kronor.
+- **Bank files.** camt.054 gives the instructed amount and its currency
+  (`AmtDtls/InstdAmt`); when that differs from the account's currency it is
+  kept on the bank transaction and used as the foreign amount paid, with the
+  booked kronor as the kronor received. The instructed amount is no longer
+  taken as the account amount when it is in another currency. Without a
+  foreign amount, a payment matched on the OCR number settles what remains.
+  Accounts kept in another currency than kronor are not supported.
+- **API and webhooks.** `invoice_currency`, `exchange_rate_micros` and row
+  `unit_price_minor` on input; payments take `foreign_amount_minor`. The
+  `invoice.sent` and `invoice.paid` payloads carry the currency, the foreign
+  amounts and the exchange difference.
+
+## Unrealised differences at year-end (2026-11-02)
+
+- `CurrencyRevaluation` lists the customer and supplier invoices in another
+  currency open on the last day of the fiscal year (payments and credit
+  invoices up to that day deducted), valued at Riksbanken's rate that day.
+  The difference to the kronor booked is booked once, before the year's
+  result, on the last day in series A: 1510 and 2440 against 3960 (gain) and
+  7960 (loss), with a reversing voucher on the first day of the next fiscal
+  year (which must exist), so a later payment is still measured against the
+  invoice's own rate. Kept as a `year_end_entries` row of type
+  `CURRENCY_REVALUATION`; the year-end checklist has a point for it.
+- Only under fakturametoden: under kontantmetoden the invoices are not on
+  1510 and 2440 during the year (the existing open question on unpaid
+  invoices at year-end under kontantmetoden still stands).
+- Without a Riksbanken rate for a currency on the last day the voucher is
+  booked by hand.
+
 ## Not built yet (next steps)
 
-- **Unrealised differences at year-end.** Open payables in foreign currency
-  are not revalued at the closing rate at bokslut. Next step: a closing-check
-  item listing open foreign invoices with a proposed voucher at the closing
-  rate (and its reversal on the first day of the next year), on 3960/7960.
-  `TODO(legal-verify)`: K2 (BFNAR 2016:10) point 10.7 and K3 chapter 30 on
-  valuation of monetary items at the closing rate, and whether a company on
-  kontantmetoden does this for the unpaid invoices it books at bokslut.
 - Foreign currency in payment files (pain.001 with a foreign `Ccy` and IBAN
   creditor accounts) and offsets between foreign documents.
-- Customer invoices in foreign currency (receivables, 1510) with the same
-  rules.
+- Bank accounts kept in another currency (a euro account, its own
+  revaluation), and overpayments in a foreign currency (refused, as in
+  kronor).
+- Quotes, orders and agreements in foreign currency.
 - Currencies with other than two decimals (JPY, ISK) are stored as
   hundredths like the rest; Riksbanken quotes some per 100 units.
   `RiksbankRates` does not adjust for that yet.
 
 ## Open legal questions
+
+- `TODO(legal-verify)`: for customer invoices, which paragraph of
+  Mervärdesskattelag (2023:200) 17 kap. corresponds to Council Directive
+  2006/112/EC art. 230 (an invoice may be in any currency if the VAT payable
+  is expressed in the national currency, converted as in art. 91), and
+  whether the kronor total is also required on the invoice.
+- `TODO(legal-verify)`: the closing-rate revaluation (BFNAR 2016:10 K2,
+  BFNAR 2012:1 K3 chapter 30), Riksbanken's mid rate as the closing rate, and
+  the reversal on the first day of the next year.
+- `TODO(legal-verify)`: OSS sales in another currency; the OSS return is
+  made in euro, while NONOX books and reports the OSS VAT in kronor.
 
 - `TODO(legal-verify)`: that Riksbanken's mid rate on the invoice date is an
   acceptable booking rate (ML 8 kap. 21 § names the ECB rate for the VAT

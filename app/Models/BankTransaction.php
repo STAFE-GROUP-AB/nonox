@@ -28,6 +28,8 @@ use LogicException;
  * @property ?string $payer_name
  * @property ?string $invoice_id
  * @property ?int $invoice_payment_id
+ * @property ?string $foreign_currency the currency the payer sent, when it differs from the account's
+ * @property ?int $foreign_amount_minor the amount the payer sent in that currency, in hundredths
  */
 class BankTransaction extends Model
 {
@@ -46,6 +48,8 @@ class BankTransaction extends Model
         'message',
         'payer_name',
         'invoice_id',
+        'foreign_currency',
+        'foreign_amount_minor',
     ];
 
     /** @return array<string, string> */
@@ -54,6 +58,7 @@ class BankTransaction extends Model
         return [
             'booking_date' => 'immutable_date',
             'amount_ore' => MoneyCast::class,
+            'foreign_amount_minor' => 'integer',
         ];
     }
 

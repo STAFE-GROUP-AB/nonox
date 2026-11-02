@@ -13,6 +13,7 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Support\Currency\RiksbankRates;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -57,6 +58,18 @@ class InvoiceEditor extends Component
 
     public string $propertyDesignation = '';
 
+    /** The currencies offered in the form; Riksbanken publishes rates for all of them. Another code can be typed. */
+    public const array CURRENCIES = ['SEK', 'EUR', 'USD', 'GBP', 'NOK', 'DKK', 'CHF'];
+
+    /** ISO 4217. In another currency the prices are written in it and booked in kronor at $exchangeRate. */
+    public string $currency = 'SEK';
+
+    /** Kronor per unit, "11,234500"; prefilled with Riksbanken's rate on the invoice date. */
+    public string $exchangeRate = '';
+
+    /** The day of Riksbanken's rate, for the hint under the field; empty when the rate was typed. */
+    public string $rateDate = '';
+
     public function mount(?Invoice $invoice = null): void
     {
         if ($invoice instanceof Invoice) {
@@ -76,6 +89,9 @@ class InvoiceEditor extends Component
             $this->foreignSale = (string) $invoice->foreign_sale?->value;
             $this->taxReduction = (string) $invoice->tax_reduction;
             $this->propertyDesignation = (string) $invoice->property_designation;
+            $this->currency = $invoice->invoice_currency;
+            $this->exchangeRate = (string) $invoice->bookingRate()?->format();
+            $this->rateDate = $invoice->exchange_rate_source === 'riksbank' ? (string) $invoice->exchange_rate_date?->toDateString() : '';
             $this->rows = $this->rowsFrom($invoice->rows);
 
             return;
@@ -93,6 +109,38 @@ class InvoiceEditor extends Component
         $customer = $this->customerId === '' ? null : Customer::query()->find((int) $this->customerId);
         $this->reverseCharge = $customer->reverse_charge_construction ?? false;
         $this->foreignSale = (string) $customer?->foreign_sale?->value;
+        $this->currency = $customer->currency ?? 'SEK';
+        $this->fetchRate();
+    }
+
+    /** A new currency or invoice date: Riksbanken's rate for that day. */
+    public function updatedCurrency(): void
+    {
+        $this->currency = strtoupper(trim($this->currency)) ?: 'SEK';
+        $this->fetchRate();
+    }
+
+    public function updatedInvoiceDate(): void
+    {
+        $this->fetchRate();
+    }
+
+    public function updatedExchangeRate(): void
+    {
+        $this->rateDate = '';
+    }
+
+    private function fetchRate(): void
+    {
+        if ($this->credit || $this->currency === 'SEK' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->invoiceDate) !== 1) {
+            $this->exchangeRate = $this->currency === 'SEK' ? '' : $this->exchangeRate;
+
+            return;
+        }
+
+        $rate = app(RiksbankRates::class)->rate($this->currency, $this->invoiceDate);
+        $this->exchangeRate = (string) $rate?->format();
+        $this->rateDate = (string) $rate?->date;
     }
 
     public function save(SaveDraftInvoice $save): void
@@ -121,6 +169,7 @@ class InvoiceEditor extends Component
     {
         return view('livewire.invoicing.invoice-editor', [
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
+            'currencies' => self::CURRENCIES,
             'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
             'canIssue' => $this->invoiceId === null
                 ? $this->user()->hasTeamPermission($this->company(), 'invoices:send')
@@ -144,6 +193,8 @@ class InvoiceEditor extends Component
             'foreign_sale' => $this->foreignSale === '' ? null : $this->foreignSale,
             'tax_reduction' => $this->taxReduction === '' ? null : $this->taxReduction,
             'property_designation' => $this->propertyDesignation,
+            'currency' => $this->currency,
+            'exchange_rate' => $this->currency === 'SEK' ? null : $this->exchangeRate,
             'rows' => $this->rowInput(),
         ], $this->invoiceId === null ? null : Invoice::query()->findOrFail($this->invoiceId));
     }

@@ -22,6 +22,8 @@ use LogicException;
  * @property int $account_id
  * @property string $voucher_id
  * @property int $created_by
+ * @property ?int $foreign_amount_minor what the payment paid in the invoice's currency
+ * @property int $exchange_difference_ore kronor received minus kronor settled: positive a gain (3960), negative a loss (7960)
  */
 class InvoicePayment extends Model
 {
@@ -36,6 +38,8 @@ class InvoicePayment extends Model
         'account_id',
         'voucher_id',
         'created_by',
+        'foreign_amount_minor',
+        'exchange_difference_ore',
     ];
 
     /** @return array<string, string> */
@@ -44,6 +48,8 @@ class InvoicePayment extends Model
         return [
             'paid_on' => 'immutable_date',
             'amount_ore' => MoneyCast::class,
+            'foreign_amount_minor' => 'integer',
+            'exchange_difference_ore' => 'integer',
         ];
     }
 

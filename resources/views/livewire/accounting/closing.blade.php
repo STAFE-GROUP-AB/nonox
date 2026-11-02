@@ -59,6 +59,38 @@
 
     <x-ui.card :title="__('2. Bokslutsverifikationer')" :description="__('Bokförs den sista dagen i räkenskapsåret. Bokför först allt annat, sedan skatten och sist årets resultat.')">
         <div class="space-y-6">
+            @if($revaluationEntry !== null || ($revaluation !== null && $revaluation['applies']))
+                <div>
+                    <p class="font-semibold text-ink">{{ __('Omvärdering av valutafordringar och valutaskulder') }}</p>
+                    @if($revaluationEntry !== null)
+                        <p class="mt-1 text-sm text-gray-700">{{ $revaluationEntry->amount_ore->ore >= 0 ? __('Bokförd: kursvinst :amount. Den återförs första dagen i nästa år.', ['amount' => $revaluationEntry->amount_ore->format()]) : __('Bokförd: kursförlust :amount. Den återförs första dagen i nästa år.', ['amount' => $revaluationEntry->amount_ore->negated()->format()]) }}</p>
+                    @else
+                        <p class="mt-1 text-sm text-gray-700">{{ __('Obetalda fakturor i utländsk valuta värderas till Riksbankens kurs den :date. Skillnaden mot det bokförda bokförs på 3960 eller 7960 och återförs första dagen i nästa år.', ['date' => $fiscalYear->end_date->toDateString()]) }}</p>
+                        <div class="mt-2 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead><tr class="text-left text-gray-500"><th class="py-1 pr-4 font-medium">{{ __('Faktura') }}</th><th class="py-1 pr-4 text-right font-medium">{{ __('Obetalt') }}</th><th class="py-1 pr-4 text-right font-medium">{{ __('Bokfört') }}</th><th class="py-1 pr-4 text-right font-medium">{{ __('Till dagens kurs') }}</th><th class="py-1 text-right font-medium">{{ __('Skillnad') }}</th></tr></thead>
+                                <tbody class="divide-y divide-stone-100">
+                                    @foreach($revaluation['lines'] as $line)
+                                        <tr>
+                                            <td class="py-1 pr-4">{{ $line['title'] }}</td>
+                                            <td class="py-1 pr-4 text-right tabular-nums">{{ \App\Support\Money\Money::ofOre($line['foreign'])->format(withCurrency: false) }} {{ $line['currency'] }}</td>
+                                            <td class="py-1 pr-4 text-right tabular-nums">{{ $kr($line['booked']) }}</td>
+                                            <td class="py-1 pr-4 text-right tabular-nums">{{ $kr($line['closing']) }}</td>
+                                            <td class="py-1 text-right tabular-nums">{{ $kr($line['difference']) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if($revaluation['missing'] !== [])
+                            <p class="mt-2 text-sm text-accent-800">{{ __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand.', ['currencies' => implode(', ', $revaluation['missing'])]) }}</p>
+                        @elseif(\App\Domain\Closing\CurrencyRevaluation::rows($revaluation['lines']) !== [])
+                            <x-button type="button" class="mt-3" wire:click="bookCurrencyRevaluation" wire:confirm="{{ __('Bokföra omvärderingen den sista dagen och återföringen första dagen i nästa år?') }}">{{ __('Bokför omvärderingen') }}</x-button>
+                        @endif
+                    @endif
+                </div>
+            @endif
+
             @unless($ownerTaxed)
                 <div>
                     <p class="font-semibold text-ink">{{ __('Årets skatt') }}</p>

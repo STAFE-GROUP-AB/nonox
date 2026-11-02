@@ -19,7 +19,7 @@ use Illuminate\Http\Request;
  */
 final class CustomerController
 {
-    private const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'payment_terms_days', 'is_active', 'reverse_charge_construction', 'foreign_sale'];
+    private const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'payment_terms_days', 'is_active', 'reverse_charge_construction', 'foreign_sale', 'currency'];
 
     public function index(Request $request): JsonResponse
     {

@@ -57,7 +57,6 @@ Enligt kontantmetoden bokförs kostnaden och momsen vid betalningen till faktura
 
 - Fakturor i utländsk valuta kan inte tas med i betalfiler.
 - Kreditnotor och fakturor i utländsk valuta kan inte kvittas mot varandra.
-- Orealiserade kursdifferenser – värdet av obetalda valutaskulder vid bokslutet – bokförs inte automatiskt. Om och hur de ska bokföras på bokslutsdagen är en fråga för din redovisningskonsult.
 
 > [!NOTE]
 > Att Riksbankens mittkurs på fakturadatumet är rätt kurs att bokföra till, och att kursdifferenser hör hemma på 3960 och 7960, är något NONOX ännu inte har fått juridiskt kontrollerat. Kontrollera med din redovisningskonsult, särskilt för momsens beskattningsunderlag.
@@ -68,7 +67,10 @@ Enligt kontantmetoden bokförs kostnaden och momsen vid betalningen till faktura
 Hittar NONOX ingen kurs hos Riksbanken för valutan, eller går Riksbanken inte att nå just då, lämnas fältet tomt. Skriv kursen själv, till exempel från bankens avräkning.
 
 **Kan jag fakturera kunder i utländsk valuta?**
-Inte än – det är på väg.
+Ja. Läs [Faktura i utländsk valuta](/manual/fakturering/faktura-i-utlandsk-valuta).
+
+**Vad händer med en obetald faktura vid bokslutet?**
+Obetalda fakturor i utländsk valuta värderas till kursen den sista dagen i räkenskapsåret. Läs [Skatt och årets resultat](/manual/bokslut/bokslutsverifikationer).
 
 ## Läs också
 

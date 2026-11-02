@@ -13,6 +13,11 @@ use Illuminate\Support\Collection;
  * OCR number the payer gave, or, when the payer wrote a message, a whole
  * number in it that is an invoice's OCR number. The amount must not exceed what remains on the
  * invoice. Nothing is booked here; the user confirms every suggestion.
+ *
+ * For an invoice in another currency the kronor say little: the amount the
+ * payer sent in the invoice's currency must not exceed what remains in it.
+ * When the bank did not report one, the OCR number alone suggests the
+ * invoice, and booking it settles what remains (BookIncomingPayments).
  */
 final class IncomingPaymentMatcher
 {
@@ -25,7 +30,7 @@ final class IncomingPaymentMatcher
             ->where('status', InvoiceStatus::Issued->value)
             ->where('kind', Invoice::INVOICE)
             ->whereNotNull('ocr')
-            ->get(['id', 'number', 'ocr', 'total_ore', 'paid_ore', 'customer_snapshot', 'status', 'kind', 'due_date'])
+            ->get(['id', 'number', 'ocr', 'total_ore', 'paid_ore', 'customer_snapshot', 'status', 'kind', 'due_date', 'invoice_currency', 'foreign_total_minor', 'foreign_paid_minor', 'exchange_rate_micros'])
             ->keyBy('ocr');
     }
 
@@ -41,11 +46,30 @@ final class IncomingPaymentMatcher
         foreach ($candidates as $ocr) {
             $invoice = $this->byOcr->get($ocr);
 
-            if ($invoice instanceof Invoice && $credit->amountOre <= $invoice->remaining()->ore) {
+            if ($invoice instanceof Invoice && self::fits($invoice, $credit->amountOre, $credit->foreignCurrency, $credit->foreignAmountMinor)) {
                 return $invoice;
             }
         }
 
         return null;
+    }
+
+    /**
+     * Whether a payment of $amountOre kronor (and, if the bank said so,
+     * $foreignAmount in $foreignCurrency) can be booked on the invoice.
+     */
+    public static function fits(Invoice $invoice, int $amountOre, ?string $foreignCurrency, ?int $foreignAmount): bool
+    {
+        $foreignRemaining = $invoice->foreignRemaining();
+
+        if ($foreignRemaining === null) {
+            return $amountOre <= $invoice->remaining()->ore;
+        }
+
+        if ($foreignCurrency === null || $foreignAmount === null) {
+            return true;
+        }
+
+        return $foreignCurrency === $invoice->invoice_currency && $foreignAmount > 0 && $foreignAmount <= $foreignRemaining;
     }
 }

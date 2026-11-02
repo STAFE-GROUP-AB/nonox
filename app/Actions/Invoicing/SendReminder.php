@@ -20,7 +20,8 @@ use Illuminate\Support\Facades\Validator;
 
 /**
  * Sends a reminder for an overdue invoice: a letter with what remains to pay,
- * the OCR number and a new date to pay by, with the invoice attached.
+ * the OCR number and a new date to pay by, with the invoice attached. An
+ * invoice in another currency is reminded of in that currency.
  *
  * TODO(legal-verify): a reminder fee (påminnelseavgift) and late-payment
  * interest (dröjsmålsränta) are not charged. Confirm when they may be charged
@@ -50,6 +51,7 @@ class SendReminder
                 'sent_on' => $today,
                 'pay_by' => $today->addDays(self::DAYS_TO_PAY),
                 'remaining_ore' => $invoice->remaining()->ore,
+                'foreign_remaining_minor' => $invoice->foreignRemaining(),
                 'sent_to' => $email,
                 'created_by' => $user->id,
             ]);
@@ -66,7 +68,7 @@ class SendReminder
                 'sequence' => $reminder->sequence,
                 'to' => $email,
                 'remaining_ore' => $reminder->remaining_ore->ore,
-            ], $company, $user);
+            ] + ($invoice->isForeign() ? ['currency' => $invoice->invoice_currency, 'foreign_remaining_minor' => $reminder->foreign_remaining_minor] : []), $company, $user);
 
             return $reminder;
         }));

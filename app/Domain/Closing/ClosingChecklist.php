@@ -75,6 +75,7 @@ final class ClosingChecklist
             $items[] = self::bank($fiscalYear);
             $items[] = self::assets($endMonth);
             $items[] = self::accruals($fiscalYear, $endMonth);
+            $items[] = self::currency($company, $fiscalYear);
 
             foreach (self::MANUAL as $key => [$label, $detail]) {
                 $items[] = self::item($key, __($label), __($detail), in_array($key, $checks, true) ? self::OK : self::TODO, null, manual: true);
@@ -161,6 +162,29 @@ final class ClosingChecklist
             $behind->isEmpty() => __('Alla periodiseringar är bokförda till och med :month.', ['month' => $endMonth]),
             default => __(':count periodiseringar har månader kvar att bokföra till och med :month.', ['count' => $behind->count(), 'month' => $endMonth]),
         }, $accruals->isEmpty() ? self::NOT_APPLICABLE : ($behind->isEmpty() ? self::OK : self::TODO), 'accounting.accruals');
+    }
+
+    /**
+     * Customer and supplier invoices in another currency open on the last day are valued at that day's rate (ADR-025).
+     *
+     * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string}
+     */
+    private static function currency(Company $company, FiscalYear $fiscalYear): array
+    {
+        $label = __('Valutafordringar och valutaskulder är omvärderade');
+
+        if (YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::CURRENCY_REVALUATION)->exists()) {
+            return self::item('currency', $label, __('Omvärderingen till balansdagens kurs är bokförd och återförs första dagen i nästa år.'), self::OK, null);
+        }
+
+        $revaluation = CurrencyRevaluation::for($company, $fiscalYear);
+
+        return match (true) {
+            ! $revaluation['applies'] => self::item('currency', $label, __('Inga kund- eller leverantörsfakturor i utländsk valuta är obetalda den sista dagen.'), self::NOT_APPLICABLE, null),
+            $revaluation['missing'] !== [] => self::item('currency', $label, __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand.', ['currencies' => implode(', ', $revaluation['missing'])]), self::TODO, null),
+            CurrencyRevaluation::rows($revaluation['lines']) === [] => self::item('currency', $label, __('Kursen den sista dagen ger ingen skillnad mot det bokförda.'), self::OK, null),
+            default => self::item('currency', $label, __(':count obetalda fakturor i utländsk valuta ska värderas till kursen den sista dagen. Bokför omvärderingen nedan.', ['count' => count($revaluation['lines'])]), self::TODO, null),
+        };
     }
 
     /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string} */

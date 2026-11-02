@@ -27,12 +27,15 @@ trait SalesRowFields
     public function asInput(): array
     {
         $account = $this->getRelation('account');
+        // An invoice row in another currency is written, and so read back, in that currency.
+        $foreignPrice = $this->getAttribute('foreign_unit_price_minor');
+        $price = is_int($foreignPrice) ? Money::ofOre($foreignPrice) : $this->unit_price_ore;
 
         return [
             'description' => $this->description,
             'quantity' => str_replace('.', ',', rtrim(rtrim(ltrim($this->quantity, '-'), '0'), '.')),
             'unit' => $this->unit,
-            'price' => $this->unit_price_ore->format(withCurrency: false),
+            'price' => $price->format(withCurrency: false),
             'discount' => $this->discount_bp === 0 ? '' : sprintf('%d,%02d', intdiv($this->discount_bp, 100), $this->discount_bp % 100),
             'vat_rate' => $this->vat_rate,
             'account' => $account instanceof Account ? $account->number : null,

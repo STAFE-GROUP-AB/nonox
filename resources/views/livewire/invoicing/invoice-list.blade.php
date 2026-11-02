@@ -47,7 +47,7 @@
                                 <td class="order-2 col-span-2 sm:py-2 sm:pr-4">{{ $invoice->customer?->name }}</td>
                                 <td class="order-3 text-gray-600 tabular-nums sm:py-2 sm:pr-4 sm:text-inherit">{{ $invoice->invoice_date->toDateString() }}</td>
                                 <td class="order-5 text-gray-600 tabular-nums sm:py-2 sm:pr-4 sm:text-inherit">@unless($invoice->isCredit())<span class="text-xs sm:hidden">{{ __('Förfaller') }} </span>{{ $invoice->due_date->toDateString() }}@endunless</td>
-                                <td class="order-4 text-right sm:py-2 sm:pr-4"><x-ui.amount :money="$invoice->total_ore" /></td>
+                                <td class="order-4 text-right sm:py-2 sm:pr-4"><x-ui.amount :money="$invoice->total_ore" />@if($invoice->isForeign())<span class="block text-xs text-gray-500 tabular-nums">{{ $invoice->formatForeign((int) $invoice->foreign_total_minor) }}@if($invoice->status === InvoiceStatus::Issued && $invoice->foreign_paid_minor !== 0) · {{ __('kvar :remaining', ['remaining' => $invoice->formatRemaining()]) }}@endif</span>@endif</td>
                                 <td class="order-1 text-right sm:py-2 sm:text-left">
                                     @if($invoice->isOverdue($today))
                                         <span class="inline-flex rounded-full bg-accent-50 px-3 py-1 text-xs font-medium text-accent-700">{{ __('Förfallen') }}</span>

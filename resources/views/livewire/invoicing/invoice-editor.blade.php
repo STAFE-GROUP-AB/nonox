@@ -64,8 +64,21 @@
                 @endif
             </x-ui.field>
             <x-ui.field for="invoice_date" :label="__('Fakturadatum')" error="invoice_date">
-                <input id="invoice_date" type="date" class="{{ $input }} mt-1" wire:model="invoiceDate">
+                <input id="invoice_date" type="date" class="{{ $input }} mt-1" wire:model.change="invoiceDate">
             </x-ui.field>
+            <x-ui.field for="invoice_currency" :label="__('Valuta')" error="currency" :hint="$credit ? __('Samma valuta och kurs som fakturan som krediteras.') : ($currency === 'SEK' ? __('Välj en annan valuta för att fakturera i den.') : __('Priserna skrivs i :currency.', ['currency' => $currency]))">
+                <input id="invoice_currency" type="text" list="invoice-currencies" class="{{ $input }} mt-1 uppercase" wire:model.change="currency" maxlength="3" autocomplete="off" @disabled($credit)>
+                <datalist id="invoice-currencies">
+                    @foreach($currencies as $code)
+                        <option value="{{ $code }}"></option>
+                    @endforeach
+                </datalist>
+            </x-ui.field>
+            @if($currency !== 'SEK')
+                <x-ui.field for="invoice_rate" :label="__('Kurs, kronor per :currency', ['currency' => $currency])" error="exchange_rate" :hint="$rateDate !== '' ? __('Riksbankens kurs :date. Du kan ändra den.', ['date' => $rateDate]) : __('Fakturan bokförs i kronor till den här kursen.')">
+                    <input id="invoice_rate" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="exchangeRate" placeholder="0,000000" @disabled($credit)>
+                </x-ui.field>
+            @endif
             @unless($credit)
                 <x-ui.field for="invoice_due" :label="__('Förfallodag')" error="due_date" :hint="__('Tomt: kundens betalningsvillkor.')">
                     <input id="invoice_due" type="date" class="{{ $input }} mt-1" wire:model="dueDate">
@@ -83,7 +96,7 @@
         </div>
     </x-ui.card>
 
-    @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true, 'labour' => $taxReduction !== ''])
+    @include('livewire.invoicing.partials.rows', ['negative' => $credit, 'reverseCharge' => true, 'labour' => $taxReduction !== '', 'withCurrency' => true])
 
     <x-ui.card>
         <x-ui.field for="invoice_notes" :label="__('Meddelande på fakturan (frivilligt)')" error="notes">

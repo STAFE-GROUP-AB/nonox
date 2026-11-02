@@ -1,8 +1,8 @@
 ---
-beskrivning: Bokför årets skatt och boka årets resultat till eget kapital den sista dagen i räkenskapsåret – bokslutets två sista verifikationer.
+beskrivning: Omvärdera fakturor i utländsk valuta, bokför årets skatt och boka årets resultat till eget kapital den sista dagen i räkenskapsåret.
 ordning: 60
 roller: [owner, admin, accountant]
-sokord: [bokslutsverifikation, årets skatt, inkomstskatt, bolagsskatt, 8910, 2512, årets resultat, 8999, 2099, 2019, boka resultatet]
+sokord: [bokslutsverifikation, omvärdering, balansdagens kurs, valutakurs, 3960, 7960, årets skatt, inkomstskatt, bolagsskatt, 8910, 2512, årets resultat, 8999, 2099, 2019, boka resultatet]
 ---
 
 # Skatt och årets resultat
@@ -11,7 +11,27 @@ När allt annat i året är bokfört återstår två bokslutsverifikationer: år
 
 Bokför först allt annat, sedan skatten och sist årets resultat.
 
+Har företaget obetalda fakturor i utländsk valuta den sista dagen kommer en verifikation till före skatten: omvärderingen till kursen den dagen.
+
 ![Under Bokslut bokför du skatt och årets resultat.](/bilder/manual/bokslut/checklistan.webp)
+
+## Omvärdering av fakturor i utländsk valuta
+
+Kund- och leverantörsfakturor i euro, dollar eller annan valuta som är obetalda den sista dagen i räkenskapsåret värderas till Riksbankens kurs den dagen. Steget visas bara när sådana fakturor finns, och bara med fakturametoden.
+
+### Så här bokför du omvärderingen
+
+1. Lägg upp nästa räkenskapsår om det inte finns. Omvärderingen återförs på dess första dag.
+2. Gå till **Bokföring → Bokslut** när årets sista dag har passerat.
+3. Under **Omvärdering av valutafordringar och valutaskulder** visas varje obetald faktura med det som återstår i valutan, det bokförda värdet i kronor, värdet till dagens kurs och skillnaden.
+4. Klicka på **Bokför omvärderingen** och bekräfta.
+
+**I bokföringen:** en verifikation i serie A den sista dagen, med skillnaden på 1510 Kundfordringar och 2440 Leverantörsskulder mot 3960 (kursvinst) eller 7960 (kursförlust), och en omvänd verifikation den första dagen i nästa år. Återföringen gör att en betalning nästa år fortfarande räknas mot fakturans egen kurs.
+
+Saknar Riksbanken kurs för en valuta den dagen bokför du omvärderingen för hand med en vanlig verifikation.
+
+> [!NOTE]
+> Att omvärderingen ska göras till Riksbankens mittkurs på årets sista dag och återföras på nästa års första dag är inte juridiskt kontrollerat i NONOX ännu. Stäm av med din redovisningskonsult.
 
 ## Årets skatt
 

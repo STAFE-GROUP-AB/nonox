@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.2.0
+  version: 1.3.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -7807,6 +7807,9 @@ components:
             - EU_TRIANGULAR
             - EU_CONSUMER_OSS
             - null
+        currency:
+          type: string
+          description: 'ISO 4217 currency new invoices to the customer start in; default SEK.'
         processing_restricted:
           type: boolean
           description: 'Processing restricted under GDPR art. 18.'
@@ -7902,6 +7905,9 @@ components:
             - EU_TRIANGULAR
             - EU_CONSUMER_OSS
             - null
+        currency:
+          type: string
+          description: 'ISO 4217 currency new invoices to the customer start in; default SEK.'
     CustomerPatch:
       type: object
       description: 'Any subset of CustomerInput.'
@@ -7986,6 +7992,9 @@ components:
             - EU_TRIANGULAR
             - EU_CONSUMER_OSS
             - null
+        currency:
+          type: string
+          pattern: '^[A-Za-z]{3}$'
     Supplier:
       type: object
       properties:
@@ -8379,6 +8388,10 @@ components:
           type: string
         unit_price_ore:
           type: integer
+          description: 'Kronor. For an invoice in another currency, the price converted at the booking rate.'
+        unit_price_minor:
+          type: integer
+          description: 'The price as written, in hundredths of the invoice currency (equal to unit_price_ore for SEK).'
         discount_bp:
           type: integer
           description: 'Discount in basis points (1000 is 10 %).'
@@ -8390,6 +8403,10 @@ components:
             - 'null'
         net_ore:
           type: integer
+          description: 'Kronor as booked.'
+        net_minor:
+          type: integer
+          description: 'Hundredths of the invoice currency.'
         labour:
           type: boolean
           description: 'Labour cost (ROT/RUT).'
@@ -8406,8 +8423,17 @@ components:
           format: date
         amount_ore:
           type: integer
+          description: 'Kronor that reached the bank.'
         currency:
           type: string
+        foreign_amount_minor:
+          type:
+            - integer
+            - 'null'
+          description: 'For an invoice in another currency: the amount paid, in hundredths of that currency.'
+        exchange_difference_ore:
+          type: integer
+          description: 'Kronor received minus kronor of the receivable settled: positive a gain (3960), negative a loss (7960).'
         account:
           type:
             - integer
@@ -8555,6 +8581,48 @@ components:
           type: integer
         remaining_ore:
           type: integer
+        invoice_currency:
+          type: string
+          description: 'ISO 4217 currency the invoice is written in. All *_ore amounts are kronor as booked.'
+        exchange_rate_micros:
+          type:
+            - integer
+            - 'null'
+          description: 'Booking rate, kronor per unit in millionths (11.2345 is 11234500).'
+        exchange_rate_date:
+          type:
+            - string
+            - 'null'
+          format: date
+        exchange_rate_source:
+          type:
+            - string
+            - 'null'
+          enum:
+            - riksbank
+            - manual
+            - null
+        foreign_net_minor:
+          type:
+            - integer
+            - 'null'
+        foreign_vat_minor:
+          type:
+            - integer
+            - 'null'
+        foreign_total_minor:
+          type:
+            - integer
+            - 'null'
+          description: 'Total as written, in hundredths of the invoice currency (no öresavrundning).'
+        foreign_paid_minor:
+          type:
+            - integer
+            - 'null'
+        foreign_remaining_minor:
+          type:
+            - integer
+            - 'null'
         ocr:
           type:
             - string
@@ -8614,6 +8682,10 @@ components:
           maxLength: 10
         unit_price_ore:
           type: integer
+          description: 'Price in öre, for an invoice in SEK.'
+        unit_price_minor:
+          type: integer
+          description: 'Price in hundredths of the invoice currency; required when invoice_currency is not SEK (article prices are kronor and are not used).'
         discount_bp:
           type: integer
           minimum: 0
@@ -8686,6 +8758,14 @@ components:
           type:
             - string
             - 'null'
+        invoice_currency:
+          type: string
+          pattern: '^[A-Za-z]{3}$'
+          description: 'ISO 4217; default SEK. A credit invoice always keeps the currency and rate of the invoice it credits.'
+        exchange_rate_micros:
+          type: integer
+          minimum: 1
+          description: 'Booking rate, kronor per unit in millionths. Default Riksbanken''s mid rate on the invoice date.'
         rows:
           type: array
           items:
@@ -8742,6 +8822,14 @@ components:
           type:
             - string
             - 'null'
+        invoice_currency:
+          type: string
+          pattern: '^[A-Za-z]{3}$'
+          description: 'ISO 4217; default SEK. A credit invoice always keeps the currency and rate of the invoice it credits.'
+        exchange_rate_micros:
+          type: integer
+          minimum: 1
+          description: 'Booking rate, kronor per unit in millionths. Default Riksbanken''s mid rate on the invoice date.'
         rows:
           type: array
           items:
@@ -8765,6 +8853,10 @@ components:
           minimum: 1900
           maximum: 1999
           description: 'Bank account; default 1930.'
+        foreign_amount_minor:
+          type: integer
+          minimum: 1
+          description: 'For an invoice in another currency: the amount paid in that currency (default what remains). amount_ore is then the kronor that reached the bank; the difference is booked on 3960 or 7960.'
     SendInvoiceInput:
       type: object
       properties:

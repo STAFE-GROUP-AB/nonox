@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic camt.054.001.02 credit notification for tests: a customer abroad pays 1 000,00 EUR to a kronor account. Made-up companies and numbers. -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.02">
+  <BkToCstmrDbtCdtNtfctn>
+    <GrpHdr>
+      <MsgId>TEST-20260320-EUR</MsgId>
+      <CreDtTm>2026-03-20T21:45:11</CreDtTm>
+    </GrpHdr>
+    <Ntfctn>
+      <Id>TEST-NTF-EUR</Id>
+      <CreDtTm>2026-03-20T21:45:11</CreDtTm>
+      <Acct>
+        <Id><IBAN>SE4550000000058398257466</IBAN></Id>
+        <Ccy>SEK</Ccy>
+      </Acct>
+      <Ntry>
+        <Amt Ccy="SEK">11200.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>2026-03-20</Dt></BookgDt>
+        <ValDt><Dt>2026-03-20</Dt></ValDt>
+        <BkTxCd><Domn><Cd>PMNT</Cd><Fmly><Cd>RCDT</Cd><SubFmlyCd>XBCT</SubFmlyCd></Fmly></Domn></BkTxCd>
+        <NtryDtls>
+          <TxDtls>
+            <Refs><AcctSvcrRef>FX-TX-0001</AcctSvcrRef></Refs>
+            <AmtDtls>
+              <InstdAmt><Amt Ccy="EUR">1000.00</Amt></InstdAmt>
+              <TxAmt>
+                <Amt Ccy="SEK">11200.00</Amt>
+                <CcyXchg><SrcCcy>EUR</SrcCcy><TrgtCcy>SEK</TrgtCcy><XchgRate>11.2</XchgRate></CcyXchg>
+              </TxAmt>
+            </AmtDtls>
+            <RltdPties><Dbtr><Nm>Exempel Handel AB</Nm></Dbtr></RltdPties>
+            <RmtInf>
+              <Strd>
+                <CdtrRefInf>
+                  <Tp><CdOrPrtry><Cd>SCOR</Cd></CdOrPrtry></Tp>
+                  <Ref>__OCR__</Ref>
+                </CdtrRefInf>
+              </Strd>
+            </RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Ntfctn>
+  </BkToCstmrDbtCdtNtfctn>
+</Document>

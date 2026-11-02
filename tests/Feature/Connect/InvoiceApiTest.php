@@ -117,6 +117,47 @@ it('runs an invoice from draft to issued, sent, part paid and paid, with webhook
         && json_decode($request->body(), true)['data']['paid_ore'] === 283800);
 });
 
+it('invoices in euro with prices in hundredths of a euro, and pays with the euro and the kronor received', function () {
+    Http::fake(['api.riksbank.se/*' => Http::response([['date' => '2026-02-27', 'value' => 11.2]]), '*' => Http::response('', 200)]);
+    [$key, $customer] = invoicingKey($this);
+
+    $this->withToken($key)->patchJson("/api/v1/customers/{$customer}", ['currency' => 'EUR'])->assertOk()->assertJsonPath('data.currency', 'EUR');
+
+    $draft = $this->withToken($key)->withHeader('Idempotency-Key', 'eur-1')->postJson('/api/v1/invoices', [
+        'customer_id' => $customer, 'invoice_date' => '2026-03-02', 'invoice_currency' => 'EUR', 'exchange_rate_micros' => 11_000_000,
+        'rows' => [['description' => 'Konsultarbete', 'quantity' => 2, 'unit_price_minor' => 50000, 'vat_rate' => 0]],
+    ])->assertCreated()
+        ->assertJsonPath('data.invoice_currency', 'EUR')
+        ->assertJsonPath('data.exchange_rate_micros', 11_000_000)
+        ->assertJsonPath('data.exchange_rate_source', 'manual')
+        ->assertJsonPath('data.foreign_total_minor', 100000)
+        ->assertJsonPath('data.rows.0.unit_price_minor', 50000)
+        ->assertJsonPath('data.rows.0.net_minor', 100000)
+        ->assertJsonPath('data.rows.0.net_ore', 1100000)
+        ->assertJsonPath('data.total_ore', 1100000)
+        ->assertJsonPath('data.currency', 'SEK');
+    $id = $draft->json('data.id');
+
+    // A change keeps the currency and the rows in euro; the rate is Riksbanken's again unless given.
+    $this->withToken($key)->patchJson("/api/v1/invoices/{$id}", ['your_reference' => 'Anna Exempel'])->assertOk()
+        ->assertJsonPath('data.invoice_currency', 'EUR')
+        ->assertJsonPath('data.foreign_total_minor', 100000)
+        ->assertJsonPath('data.exchange_rate_source', 'riksbank')
+        ->assertJsonPath('data.total_ore', 1120000);
+
+    $this->withToken($key)->withHeader('Idempotency-Key', 'eur-1-issue')->postJson("/api/v1/invoices/{$id}/issue")->assertOk();
+
+    $this->withToken($key)->withHeader('Idempotency-Key', 'eur-1-pay')->postJson("/api/v1/invoices/{$id}/payments", ['paid_on' => '2026-03-20', 'amount_ore' => 1150000, 'foreign_amount_minor' => 100000])
+        ->assertCreated()
+        ->assertJsonPath('data.foreign_amount_minor', 100000)
+        ->assertJsonPath('data.exchange_difference_ore', 30000);
+
+    $this->withToken($key)->getJson("/api/v1/invoices/{$id}")->assertOk()
+        ->assertJsonPath('data.status', 'PAID')
+        ->assertJsonPath('data.foreign_paid_minor', 100000)
+        ->assertJsonPath('data.foreign_remaining_minor', 0);
+});
+
 it('credits an unpaid invoice with a credit draft that is then issued', function () {
     [$key, $customer] = invoicingKey($this);
     $id = $this->withToken($key)->withHeader('Idempotency-Key', 'k-1')->postJson('/api/v1/invoices', [

@@ -7,6 +7,7 @@ namespace App\Livewire\Accounting;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
+use App\Domain\Closing\CurrencyRevaluation;
 use App\Domain\Closing\YearResult;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
@@ -61,6 +62,16 @@ class ClosingPage extends Component
         });
     }
 
+    public function bookCurrencyRevaluation(YearEndClosing $closing): void
+    {
+        $this->attempt(function () use ($closing): void {
+            $entry = $closing->bookCurrencyRevaluation($this->user(), $this->fiscalYear());
+            $this->toast($entry->amount_ore->ore >= 0
+                ? __('Omvärderingen är bokförd: kursvinst :amount. Den återförs första dagen i nästa år.', ['amount' => $entry->amount_ore->format()])
+                : __('Omvärderingen är bokförd: kursförlust :amount. Den återförs första dagen i nästa år.', ['amount' => $entry->amount_ore->negated()->format()]));
+        });
+    }
+
     public function bookResult(YearEndClosing $closing): void
     {
         $this->attempt(function () use ($closing): void {
@@ -104,6 +115,10 @@ class ClosingPage extends Component
             'complete' => ClosingChecklist::isComplete($items),
             'result' => YearResult::of($fiscalYear),
             'taxEntry' => $entries->firstWhere('type', YearEndEntry::TAX),
+            'revaluationEntry' => $entries->firstWhere('type', YearEndEntry::CURRENCY_REVALUATION),
+            'revaluation' => $fiscalYear->isOpen() && $entries->firstWhere('type', YearEndEntry::CURRENCY_REVALUATION) === null
+                ? CurrencyRevaluation::for($this->company(), $fiscalYear)
+                : null,
             'disposition' => $entries->firstWhere('type', YearEndEntry::DISPOSITION),
             'ownerTaxed' => ClosingAccounts::isOwnerTaxed($this->company()),
             'resultAccount' => ClosingAccounts::resultNumber($this->company()),

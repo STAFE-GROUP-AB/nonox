@@ -48,7 +48,7 @@
                                         <span class="block">{{ $transaction->payer_name ?? __('Okänd betalare') }}</span>
                                         <span class="block text-xs text-gray-500">{{ $transaction->ocr ? __('OCR :ocr', ['ocr' => $transaction->ocr]) : $transaction->message }}</span>
                                     </td>
-                                    <td class="py-2 pr-4 text-right"><x-ui.amount :money="$transaction->amount_ore" /></td>
+                                    <td class="py-2 pr-4 text-right"><x-ui.amount :money="$transaction->amount_ore" />@if($transaction->foreign_currency !== null)<span class="block text-xs text-gray-500 tabular-nums">{{ App\Support\Money\Money::ofOre((int) $transaction->foreign_amount_minor)->format(withCurrency: false) }} {{ $transaction->foreign_currency }}</span>@endif</td>
                                     <td class="py-2">
                                         @if($transaction->isBooked())
                                             <a href="{{ route('invoicing.invoices.show', $transaction->invoice_id) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $transaction->invoice?->title() }}</a>
@@ -57,7 +57,7 @@
                                             <select class="w-full max-w-xs border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-md text-sm" wire:change="assign({{ $transaction->id }}, $event.target.value)" aria-label="{{ __('Faktura för inbetalningen') }}">
                                                 <option value="">{{ __('Ingen faktura, hanteras för hand') }}</option>
                                                 @foreach($openInvoices as $invoice)
-                                                    <option value="{{ $invoice->id }}" @selected($invoice->id === $transaction->invoice_id)>{{ $invoice->title() }} · {{ $invoice->customer_snapshot['name'] ?? '' }} · {{ $invoice->remaining()->format() }}</option>
+                                                    <option value="{{ $invoice->id }}" @selected($invoice->id === $transaction->invoice_id)>{{ $invoice->title() }} · {{ $invoice->customer_snapshot['name'] ?? '' }} · {{ $invoice->formatRemaining() }}</option>
                                                 @endforeach
                                             </select>
                                         @else

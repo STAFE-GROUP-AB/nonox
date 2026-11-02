@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Invoicing;
 
+use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Vat\OssRates;
 use App\Models\Account;
 use App\Models\Invoice;
@@ -27,6 +28,13 @@ use Illuminate\Support\Collection;
  *
  * A credit invoice has negative amounts, so the same rules reverse it.
  *
+ * An invoice in another currency is booked in kronor at its booking rate
+ * (ADR-025). A payment settles its share of those kronor, and the
+ * difference to the kronor that reached the bank is an exchange gain on
+ * 3960 or a loss on 7960; under kontantmetoden the revenue and VAT are
+ * booked at the booking rate, so the VAT follows the rate of the taxable
+ * event and not the payment day.
+ *
  * TODO(legal-verify): under kontantmetoden, invoices still unpaid at the end
  * of the fiscal year must be booked as receivables; that belongs to bokslut.
  */
@@ -37,6 +45,10 @@ final class InvoiceBooking
     public const int ROUNDING = 3740;
 
     public const int BANK = 1930;
+
+    public const int EXCHANGE_GAIN = SupplierInvoiceBooking::EXCHANGE_GAIN;
+
+    public const int EXCHANGE_LOSS = SupplierInvoiceBooking::EXCHANGE_LOSS;
 
     /**
      * Sales of construction services under omvänd betalningsskyldighet.
@@ -96,15 +108,23 @@ final class InvoiceBooking
     }
 
     /**
-     * The voucher rows for a payment of $amount öre to $bankAccount.
+     * The voucher rows for a payment that settles $amount öre of the invoice
+     * as booked. $received is the kronor that reached $bankAccount when it
+     * differs (an invoice in another currency): the bank row then carries
+     * $received and the difference is an exchange gain (3960, credit) or
+     * loss (7960, debit).
      *
      * @param  Collection<int, InvoiceRow>  $rows
      * @return array<int, int>
      */
-    public static function payment(Invoice $invoice, Collection $rows, int $amount, int $bankAccount, bool $cashMethod): array
+    public static function payment(Invoice $invoice, Collection $rows, int $amount, int $bankAccount, bool $cashMethod, ?int $received = null): array
     {
+        $received ??= $amount;
+        $difference = $amount - $received;
+        $exchange = $difference === 0 ? [] : [$difference > 0 ? self::EXCHANGE_LOSS : self::EXCHANGE_GAIN => $difference];
+
         if (! $cashMethod) {
-            return [$bankAccount => $amount, self::RECEIVABLES => -$amount];
+            return [$bankAccount => $received, self::RECEIVABLES => -$amount] + $exchange;
         }
 
         $revenue = self::revenue($invoice, $rows);
@@ -123,6 +143,21 @@ final class InvoiceBooking
             $lines[$largest] += $remainder;
         }
 
-        return [$bankAccount => $amount] + array_filter($lines);
+        return [$bankAccount => $received] + array_filter($lines) + $exchange;
+    }
+
+    /**
+     * The kronor of the invoice as booked that a payment of $foreign
+     * hundredths of its currency settles: its share of the total, rounded
+     * half up, and whatever is left when the payment clears the foreign
+     * amount, so the receivable ends at zero.
+     */
+    public static function settledShare(Invoice $invoice, int $foreign): int
+    {
+        if ($foreign === $invoice->foreignRemaining()) {
+            return $invoice->remaining()->ore;
+        }
+
+        return BigDecimal::of($invoice->total_ore->ore)->multipliedBy($foreign)->dividedBy((int) $invoice->foreign_total_minor, 0, RoundingMode::HalfUp)->toInt();
     }
 }

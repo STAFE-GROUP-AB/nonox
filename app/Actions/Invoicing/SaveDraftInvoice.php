@@ -14,6 +14,8 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\InvoiceRow;
 use App\Models\User;
+use App\Support\Currency\ExchangeRate;
+use App\Support\Currency\RiksbankRates;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -25,9 +27,26 @@ use Illuminate\Validation\ValidationException;
 /**
  * Creates or updates a draft invoice and recalculates its amounts. Nothing
  * is booked until the invoice is issued.
+ *
+ * An invoice in another currency (ADR-025) is written in that currency: the
+ * row prices are hundredths of it, and its totals are kept as written,
+ * without öresavrundning. Every row is also converted to kronor at the
+ * booking rate (half up), and the kronor amounts, with the VAT calculated on
+ * the kronor base per rate, are what is booked. The rate is Riksbanken's
+ * mid rate on the invoice date (or the last banking day before), or the
+ * rate the person typed. A credit invoice always takes the currency and
+ * rate of the invoice it credits.
+ *
+ * TODO(legal-verify): the rate for the VAT base. Mervärdesskattelag
+ * (2023:200) 8 kap. 21 § (conversion of the taxable amount, see ADR-016 and
+ * ADR-025) and Council Directive 2006/112/EC art. 91 (the rate at the time
+ * the tax becomes chargeable; the ECB rate may be used). Riksbanken's mid
+ * rate on the invoice date is used here and can be changed per invoice.
  */
 class SaveDraftInvoice
 {
+    public function __construct(private readonly RiksbankRates $rates) {}
+
     /**
      * @param  array<string, mixed>  $input  customer_id, invoice_date, due_date (optional), delivery_date,
      *                                       your_reference, our_reference, notes, reverse_charge and
@@ -35,7 +54,10 @@ class SaveDraftInvoice
      *                                       setting; an empty foreign_sale means a domestic sale),
      *                                       rows (list of article (number, optional), description,
      *                                       quantity, unit, price (kronor), discount (percent),
-     *                                       vat_rate, account (number, optional))
+     *                                       vat_rate, account (number, optional)),
+     *                                       currency (ISO 4217, optional: the draft's, otherwise SEK;
+     *                                       prices are then in that currency) and exchange_rate
+     *                                       (kronor per unit as typed, optional: Riksbanken's rate)
      */
     public function __invoke(User $user, Company $company, array $input, ?Invoice $draft = null): Invoice
     {
@@ -55,6 +77,8 @@ class SaveDraftInvoice
             'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
             'tax_reduction' => ['nullable', Rule::in([TaxReduction::ROT, TaxReduction::RUT])],
             'property_designation' => ['nullable', 'string', 'max:255'],
+            'currency' => ['nullable', 'string', 'regex:/^[A-Za-z]{3}$/'],
+            'exchange_rate' => ['nullable', 'string', 'max:20'],
             'rows' => ['required', 'array', 'min:1'],
             'rows.*.description' => ['required', 'string', 'max:255'],
             'rows.*.vat_rate' => ['required', 'integer', Rule::in(InvoiceCalculator::VAT_RATES)],
@@ -64,12 +88,15 @@ class SaveDraftInvoice
             'rows.min' => __('Lägg till minst en rad.'),
             'rows.*.description.required' => __('Varje rad behöver en benämning.'),
             'due_date.after_or_equal' => __('Förfallodagen kan inte vara före fakturadatum.'),
+            'currency.regex' => __('Valutan skrivs med tre bokstäver, till exempel EUR eller USD.'),
         ], [
             'invoice_date' => __('fakturadatum'),
             'due_date' => __('förfallodag'),
         ])->validate();
 
-        return DB::transaction(fn (): Invoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $draft): Invoice {
+        [$currency, $bookingRate] = $this->currency($company, $validated, $draft);
+
+        return DB::transaction(fn (): Invoice => CurrentCompany::run($company, function () use ($validated, $input, $user, $draft, $currency, $bookingRate): Invoice {
             $customer = Customer::query()->find((int) $validated['customer_id'])
                 ?? throw ValidationException::withMessages(['customer_id' => __('Välj en kund.')]);
 
@@ -119,11 +146,31 @@ class SaveDraftInvoice
                 $rows[$index]['is_labour'] = $taxReduction !== null && (bool) ($rowInput[$index]['labour'] ?? false);
             }
 
-            $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows));
-
             if ($taxReduction !== null && $foreignSale !== null) {
                 throw ValidationException::withMessages(['tax_reduction' => __('ROT- och RUT-avdrag gäller arbete i Sverige och kan inte kombineras med försäljning utomlands.')]);
             }
+
+            if ($taxReduction !== null && $bookingRate !== null) {
+                throw ValidationException::withMessages(['tax_reduction' => __('ROT- och RUT-avdrag räknas i kronor. Fakturera i SEK för att använda avdraget.')]);
+            }
+
+            $foreignTotals = null;
+
+            if ($bookingRate !== null) {
+                $foreignTotals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows), roundToKronor: false);
+
+                foreach ($rows as $index => $row) {
+                    $rows[$index] = [
+                        ...$row,
+                        'foreign_unit_price_minor' => $row['unit_price_ore'],
+                        'foreign_net_minor' => $row['net_ore'],
+                        'unit_price_ore' => $bookingRate->toOre($row['unit_price_ore']),
+                        'net_ore' => $bookingRate->toOre($row['net_ore']),
+                    ];
+                }
+            }
+
+            $totals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => $row['net_ore'], 'vat_rate' => $row['vat_rate']], $rows), roundToKronor: $bookingRate === null);
 
             $deduction = $taxReduction === null ? 0 : $this->deduction($taxReduction, $rows, $customer, $invoiceDate, $reverseCharge, $draft);
 
@@ -147,6 +194,13 @@ class SaveDraftInvoice
                 'rounding_ore' => $totals['rounding'],
                 'total_ore' => $totals['total'] - $deduction,
                 'tax_reduction_ore' => $deduction,
+                'invoice_currency' => $currency,
+                'exchange_rate_micros' => $bookingRate?->micros,
+                'exchange_rate_date' => $bookingRate?->date,
+                'exchange_rate_source' => $bookingRate?->source,
+                'foreign_net_minor' => $foreignTotals['net'] ?? null,
+                'foreign_vat_minor' => $foreignTotals['vat'] ?? null,
+                'foreign_total_minor' => $foreignTotals['total'] ?? null,
             ])->save();
 
             InvoiceRow::query()->where('invoice_id', $invoice->id)->delete();
@@ -157,6 +211,44 @@ class SaveDraftInvoice
 
             return $invoice->load('rows');
         }));
+    }
+
+    /**
+     * The invoice's currency and its booking rate; null for kronor. A credit
+     * invoice keeps the currency and rate of the invoice it credits.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array{0: string, 1: ?ExchangeRate}
+     */
+    private function currency(Company $company, array $validated, ?Invoice $draft): array
+    {
+        $original = $draft !== null && $draft->credits_invoice_id !== null
+            ? CurrentCompany::run($company, fn (): ?Invoice => Invoice::query()->find($draft->credits_invoice_id))
+            : null;
+
+        if ($original instanceof Invoice) {
+            return [$original->invoice_currency, $original->bookingRate()];
+        }
+
+        $currency = strtoupper(trim((string) ($validated['currency'] ?? '')));
+        $currency = $currency !== '' ? $currency : ($draft !== null && $draft->exists ? $draft->invoice_currency : 'SEK');
+
+        if ($currency === 'SEK') {
+            return ['SEK', null];
+        }
+
+        $date = (string) $validated['invoice_date'];
+        $riksbank = $this->rates->rate($currency, $date);
+        $typed = trim((string) ($validated['exchange_rate'] ?? ''));
+
+        if ($typed === '') {
+            return [$currency, $riksbank ?? throw ValidationException::withMessages(['exchange_rate' => __('Riksbanken har ingen kurs för :currency på fakturadatumet. Skriv kursen i kronor per :currency, till exempel 11,2345.', ['currency' => $currency])])];
+        }
+
+        $rate = ExchangeRate::parse($currency, $typed, $date)
+            ?? throw ValidationException::withMessages(['exchange_rate' => __('Skriv kursen i kronor per :currency, till exempel 11,2345.', ['currency' => $currency])]);
+
+        return [$currency, $riksbank !== null && $riksbank->micros === $rate->micros ? $riksbank : $rate];
     }
 
     /**

@@ -29,6 +29,7 @@ use Illuminate\Validation\ValidationException;
  * @property ?string $postal_code
  * @property ?string $city
  * @property string $country
+ * @property string $currency ISO 4217: the currency new invoices to the customer start in
  * @property int $payment_terms_days
  * @property bool $is_active
  * @property ?CarbonImmutable $processing_restricted_at
@@ -56,6 +57,12 @@ class Customer extends Model
         'is_active',
         'reverse_charge_construction',
         'foreign_sale',
+        'currency',
+    ];
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'currency' => 'SEK',
     ];
 
     /** @var list<string> */

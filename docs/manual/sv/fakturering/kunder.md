@@ -63,7 +63,8 @@ Tryck på **Ändra** för att öppna en kund. Ändringar gäller nya fakturor. E
 - **Kunder tas inte bort.** En kund som finns på en bokförd faktura är en del av räkenskapsinformationen. Om en privatperson ber att bli raderad använder du **Radera enligt GDPR**: kunden raderas om den aldrig har fakturerats, annars anonymiseras uppgifterna i registret medan fakturorna behåller sina.
 - **Begränsa behandling** gör att kunden inte kan användas på nya offerter och fakturor tills du väljer **Häv begränsad behandling**. Kunden får märket *Begränsad behandling* i listan.
 - **Ladda ner registerutdrag (JSON)** ger alla uppgifter om kunden, när en person begär ut sina uppgifter enligt GDPR.
-- Leveranssätt, språk och valuta per kund finns inte. Fakturorna skickas på svenska i kronor, som PDF med e-post.
+- **Valuta för fakturor** bestämmer vilken valuta nya fakturor till kunden skrivs i, till exempel EUR. Läs [Faktura i utländsk valuta](/manual/fakturering/faktura-i-utlandsk-valuta).
+- Leveranssätt och språk per kund finns inte. Fakturorna skickas på svenska, som PDF med e-post.
 
 ## Vanliga frågor
 

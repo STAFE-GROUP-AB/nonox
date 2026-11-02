@@ -74,7 +74,7 @@ Det finns ingen knapp för att ta bort ett fakturautkast i dag. Ett utkast har i
 En kund med begränsad behandling enligt GDPR kan inte väljas. Läs [Kunder](/manual/fakturering/kunder).
 
 **Kan jag fakturera i euro?**
-Inte än. Fakturor skrivs i kronor; kundfakturor i utländsk valuta är på väg.
+Ja. Välj valutan i **Valuta** på fakturan, eller ställ in den på kunden. Läs [Faktura i utländsk valuta](/manual/fakturering/faktura-i-utlandsk-valuta).
 
 ## Läs också
 

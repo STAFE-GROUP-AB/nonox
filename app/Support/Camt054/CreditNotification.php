@@ -87,9 +87,10 @@ final class CreditNotification
             $bookingDate = CarbonImmutable::createFromFormat('!Y-m-d', $date) ?: throw new InvalidArgumentException('An entry has no booking date.');
             $details = $this->nodes('*[local-name()="NtryDtls"]/*[local-name()="TxDtls"]', $entry);
             $entryAmount = $this->amount('*[local-name()="Amt"]', $entry);
+            $accountCurrency = $this->attribute('*[local-name()="Amt"]', 'Ccy', $entry) ?? 'SEK';
 
             if ($details === []) {
-                $credits[] = $this->credit($entry, $entry, $bookingDate, (int) $entryAmount, $seen);
+                $credits[] = $this->credit($entry, $entry, $bookingDate, (int) $entryAmount, $seen, $accountCurrency);
 
                 continue;
             }
@@ -100,11 +101,14 @@ final class CreditNotification
                 }
 
                 $amount = $this->amount('*[local-name()="AmtDtls"]/*[local-name()="TxAmt"]/*[local-name()="Amt"]', $detail)
-                    ?? $this->amount('*[local-name()="AmtDtls"]/*[local-name()="InstdAmt"]/*[local-name()="Amt"]', $detail)
+                    // The instructed amount is the account's only when it is in the account's currency.
+                    ?? (($this->attribute('*[local-name()="AmtDtls"]/*[local-name()="InstdAmt"]/*[local-name()="Amt"]', 'Ccy', $detail) ?? $accountCurrency) === $accountCurrency
+                        ? $this->amount('*[local-name()="AmtDtls"]/*[local-name()="InstdAmt"]/*[local-name()="Amt"]', $detail)
+                        : null)
                     ?? (count($details) === 1 ? $entryAmount : null)
                     ?? throw new InvalidArgumentException('A transaction has no amount.');
 
-                $credits[] = $this->credit($detail, $entry, $bookingDate, $amount, $seen);
+                $credits[] = $this->credit($detail, $entry, $bookingDate, $amount, $seen, $accountCurrency);
             }
         }
 
@@ -114,8 +118,15 @@ final class CreditNotification
     /**
      * @param  array<string, int>  $seen  fingerprints already used in this file
      */
-    private function credit(DOMElement $detail, DOMElement $entry, CarbonImmutable $bookingDate, int $amount, array &$seen): BankCredit
+    private function credit(DOMElement $detail, DOMElement $entry, CarbonImmutable $bookingDate, int $amount, array &$seen, string $accountCurrency = 'SEK'): BankCredit
     {
+        // What the payer sent, when it was another currency than the account's.
+        $instructed = '*[local-name()="AmtDtls"]/*[local-name()="InstdAmt"]/*[local-name()="Amt"]';
+        $instructedCurrency = $detail === $entry ? null : $this->attribute($instructed, 'Ccy', $detail);
+        $foreign = $instructedCurrency !== null && strtoupper($instructedCurrency) !== strtoupper($accountCurrency)
+            ? $this->amount($instructed, $detail)
+            : null;
+
         $ocr = $this->text('*[local-name()="RmtInf"]/*[local-name()="Strd"]/*[local-name()="CdtrRefInf"][*[local-name()="Tp"]/*[local-name()="CdOrPrtry"]/*[local-name()="Cd"]="SCOR"]/*[local-name()="Ref"]', $detail);
         $texts = array_merge(
             array_map(fn (DOMElement $node): string => trim($node->textContent), $this->nodes('*[local-name()="RmtInf"]/*[local-name()="Ustrd"]', $detail)),
@@ -141,6 +152,8 @@ final class CreditNotification
             ocr: $ocr === null ? null : preg_replace('/\s+/', '', $ocr),
             message: $message === '' ? null : mb_substr($message, 0, 500),
             payerName: $payer === null ? null : mb_substr($payer, 0, 255),
+            foreignCurrency: $foreign === null ? null : strtoupper((string) $instructedCurrency),
+            foreignAmountMinor: $foreign,
         );
     }
 
@@ -157,6 +170,14 @@ final class CreditNotification
         } catch (MathException) {
             throw new InvalidArgumentException("Could not read the amount \"{$value}\".");
         }
+    }
+
+    private function attribute(string $query, string $name, DOMElement $context): ?string
+    {
+        $node = $this->nodes($query, $context)[0] ?? null;
+        $value = $node === null ? '' : trim($node->getAttribute($name));
+
+        return preg_match('/^[A-Za-z]{3}$/', $value) === 1 ? strtoupper($value) : null;
     }
 
     private function text(string $query, ?DOMElement $context = null): ?string

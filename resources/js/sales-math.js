@@ -66,8 +66,11 @@ export function rowNet(row, negate = false) {
     return Number(roundDiv(BigInt(price) * signed * BigInt(10000 - discount), 10_000_000n));
 }
 
-/** Totals in öre: net, VAT per rate (highest first), rounding and total. */
-export function totals(rows, negate = false) {
+/**
+ * Totals in öre: net, VAT per rate (highest first), rounding and total. An
+ * invoice in another currency is not rounded to whole units ($roundToKronor).
+ */
+export function totals(rows, negate = false, roundToKronor = true) {
     const byRate = new Map();
 
     for (const row of rows) {
@@ -87,7 +90,7 @@ export function totals(rows, negate = false) {
 
     const net = vatByRate.reduce((sum, group) => sum + group.base, 0);
     const vat = vatByRate.reduce((sum, group) => sum + group.vat, 0);
-    const total = Number(roundDiv(BigInt(net + vat), 100n)) * 100;
+    const total = roundToKronor ? Number(roundDiv(BigInt(net + vat), 100n)) * 100 : net + vat;
 
     return { net, vat, vatByRate, rounding: total - net - vat, total };
 }

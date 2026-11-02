@@ -6,13 +6,17 @@ namespace App\Actions\Closing;
 
 use App\Actions\Accounting\BookVoucher;
 use App\Actions\Accounting\CarryForwardBalances;
+use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
+use App\Domain\Closing\CurrencyRevaluation;
 use App\Domain\Closing\YearResult;
+use App\Domain\Payables\SupplierInvoiceBooking;
+use App\Models\Account;
 use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -112,6 +116,73 @@ class YearEndClosing
 
             return $entry;
         }));
+    }
+
+    /**
+     * Values the customer and supplier invoices in another currency that are
+     * open on the last day at Riksbanken's rate that day (CurrencyRevaluation,
+     * ADR-025): one voucher on the last day with the change of 1510 and 2440
+     * against 3960 and 7960, and its reversal on the first day of the next
+     * year, which must exist. Booked once, before the result.
+     */
+    public function bookCurrencyRevaluation(User $user, FiscalYear $fiscalYear): YearEndEntry
+    {
+        $company = $this->companyOf($fiscalYear);
+        $this->authorize($user, $company);
+        $this->ensureOpen($fiscalYear);
+
+        if ($fiscalYear->end_date->isAfter(CarbonImmutable::today())) {
+            throw ValidationException::withMessages(['revaluation' => __('Omvärderingen görs efter årets sista dag, med kursen den dagen.')]);
+        }
+
+        return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear): YearEndEntry {
+            $revaluation = CurrencyRevaluation::for($company, $fiscalYear);
+
+            if ($revaluation['missing'] !== []) {
+                throw ValidationException::withMessages(['revaluation' => __('Riksbanken har ingen kurs för :currencies den :date. Bokför omvärderingen för hand.', ['currencies' => implode(', ', $revaluation['missing']), 'date' => $fiscalYear->end_date->toDateString()])]);
+            }
+
+            $rows = CurrencyRevaluation::rows($revaluation['lines']);
+
+            if ($rows === []) {
+                throw ValidationException::withMessages(['revaluation' => __('Inga fordringar eller skulder i utländsk valuta behöver omvärderas.')]);
+            }
+
+            $next = FiscalYear::query()->whereDate('start_date', $fiscalYear->end_date->addDay()->toDateString())->first()
+                ?? throw ValidationException::withMessages(['revaluation' => __('Lägg upp nästa räkenskapsår först. Omvärderingen återförs på dess första dag.')]);
+
+            return DB::transaction(function () use ($user, $company, $fiscalYear, $next, $revaluation, $rows): YearEndEntry {
+                FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
+
+                if (YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::CURRENCY_REVALUATION)->exists()) {
+                    throw ValidationException::withMessages(['revaluation' => __('Omvärderingen är redan bokförd. Rätta verifikationen om den blev fel.')]);
+                }
+
+                if (YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::RESULT)->exists()) {
+                    throw ValidationException::withMessages(['revaluation' => __('Årets resultat är redan bokat. Bokför omvärderingen före resultatet.')]);
+                }
+
+                foreach ($rows as $row) {
+                    $this->ensureExchangeAccount($row['account'], $user, $company);
+                }
+
+                $rates = implode(', ', array_map(fn (string $currency): string => "{$currency} {$revaluation['rates'][$currency]->format()}", array_keys($revaluation['rates'])));
+                $voucher = $this->book->rows($user, $company, $fiscalYear->end_date, __('Omvärdering till balansdagens kurs :year (:rates)', ['year' => $fiscalYear->label(), 'rates' => $rates]), self::SERIES, $rows, VoucherSource::Closing, $fiscalYear);
+                $reversal = $this->book->rows($user, $company, $next->start_date, __('Återföring av omvärdering till balansdagens kurs :year', ['year' => $fiscalYear->label()]), self::SERIES, array_map(fn (array $row): array => [...$row, 'amount' => -$row['amount']], $rows), VoucherSource::Closing, $fiscalYear);
+
+                $net = CurrencyRevaluation::net($revaluation['lines']);
+                $entry = YearEndEntry::create(['fiscal_year_id' => $fiscalYear->id, 'type' => YearEndEntry::CURRENCY_REVALUATION, 'amount_ore' => $net, 'voucher_id' => $voucher->id, 'created_by' => $user->id]);
+                Audit::record('closing.currency_revaluation_booked', $fiscalYear, [
+                    'net_ore' => $net,
+                    'rates' => array_map(fn ($rate): array => ['micros' => $rate->micros, 'date' => $rate->date, 'source' => $rate->source], $revaluation['rates']),
+                    'invoices' => count($revaluation['lines']),
+                    'voucher' => $voucher->reference(),
+                    'reversal' => $reversal->reference(),
+                ], $company, $user);
+
+                return $entry;
+            });
+        });
     }
 
     /**
@@ -279,6 +350,19 @@ class YearEndClosing
         if (! ($fiscalYear->fresh() ?? $fiscalYear)->isOpen()) {
             throw ValidationException::withMessages(['fiscal_year' => __('Räkenskapsåret :year är stängt.', ['year' => $fiscalYear->label()])]);
         }
+    }
+
+    /** Adds 3960 or 7960 from BAS when the chart lacks it, as for invoices (ADR-025). */
+    private function ensureExchangeAccount(int $number, User $user, Company $company): void
+    {
+        $name = SupplierInvoiceBooking::EXCHANGE_ACCOUNT_NAMES[$number] ?? null;
+
+        if ($name === null || Account::query()->where('number', $number)->exists()) {
+            return;
+        }
+
+        $account = Account::create(['number' => $number, 'name' => $name, 'type' => AccountType::forNumber($number)]);
+        Audit::record('account.created', $account, ['number' => $number, 'name' => $name, 'reason' => 'exchange_difference'], $company, $user);
     }
 
     private function companyOf(FiscalYear $fiscalYear): Company

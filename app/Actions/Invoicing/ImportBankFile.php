@@ -85,6 +85,8 @@ class ImportBankFile
                     'ocr' => $credit->ocr,
                     'message' => $credit->message,
                     'payer_name' => $credit->payerName,
+                    'foreign_currency' => $credit->foreignCurrency,
+                    'foreign_amount_minor' => $credit->foreignAmountMinor,
                     'invoice_id' => $matcher->match($credit)?->id,
                 ]);
             }

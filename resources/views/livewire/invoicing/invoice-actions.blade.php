@@ -4,11 +4,25 @@
     <x-ui.card>
         <dl class="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
             <div><dt class="text-gray-500">{{ __('Status') }}</dt><dd class="font-medium">{{ $invoice->isOverdue() ? __('Förfallen') : $invoice->status->label() }}</dd></div>
-            <div><dt class="text-gray-500">{{ $invoice->isCredit() ? __('Att kreditera') : __('Att betala') }}</dt><dd class="font-medium"><x-ui.amount :money="$invoice->total_ore" /></dd></div>
+            <div><dt class="text-gray-500">{{ $invoice->isCredit() ? __('Att kreditera') : __('Att betala') }}</dt><dd class="font-medium">
+                @if($invoice->isForeign())
+                    <span class="tabular-nums">{{ $invoice->formatForeign((int) $invoice->foreign_total_minor) }}</span>
+                    <span class="block font-normal text-gray-600"><x-ui.amount :money="$invoice->total_ore" /> · {{ __('kurs :rate', ['rate' => $invoice->bookingRate()?->format()]) }}@if($invoice->exchange_rate_source === 'riksbank') ({{ __('Riksbanken :date', ['date' => $invoice->exchange_rate_date?->toDateString()]) }})@endif</span>
+                @else
+                    <x-ui.amount :money="$invoice->total_ore" />
+                @endif
+            </dd></div>
             @unless($invoice->isCredit())
                 <div><dt class="text-gray-500">{{ __('Förfallodag') }}</dt><dd class="font-medium tabular-nums">{{ $invoice->due_date->toDateString() }}</dd></div>
                 <div><dt class="text-gray-500">{{ __('OCR-nummer') }}</dt><dd class="font-medium tabular-nums">{{ $invoice->ocr }}</dd></div>
-                <div><dt class="text-gray-500">{{ __('Betalt') }}</dt><dd class="font-medium"><x-ui.amount :money="$invoice->paid_ore" /></dd></div>
+                <div><dt class="text-gray-500">{{ __('Betalt') }}</dt><dd class="font-medium">
+                    @if($invoice->isForeign())
+                        <span class="tabular-nums">{{ $invoice->formatForeign($invoice->foreign_paid_minor) }}</span>
+                        <span class="block font-normal text-gray-600">{{ __('Kvar: :remaining', ['remaining' => $invoice->formatRemaining()]) }}</span>
+                    @else
+                        <x-ui.amount :money="$invoice->paid_ore" />
+                    @endif
+                </dd></div>
             @endunless
             <div><dt class="text-gray-500">{{ __('Bokförd') }}</dt><dd class="font-medium">
                 @if($invoice->voucher)
@@ -64,11 +78,32 @@
         <x-ui.card :title="__('Registrera betalning')">
             <form wire:submit="registerPayment" class="grid grid-cols-2 gap-4">
                 <x-ui.field for="paid_on" :label="__('Betaldag')" error="paid_on">
-                    <input id="paid_on" type="date" class="{{ $input }} mt-1" wire:model="paidOn">
+                    <input id="paid_on" type="date" class="{{ $input }} mt-1" @if($invoice->isForeign()) wire:model.change="paidOn" @else wire:model="paidOn" @endif>
                 </x-ui.field>
-                <x-ui.field for="paid_amount" :label="__('Belopp')" error="amount">
-                    <input id="paid_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="amount">
-                </x-ui.field>
+                @if($invoice->isForeign())
+                    <x-ui.field for="paid_foreign" :label="__('Belopp i :currency', ['currency' => $invoice->invoice_currency])" error="foreign_amount">
+                        <input id="paid_foreign" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="foreignAmount">
+                    </x-ui.field>
+                    <x-ui.field for="paid_amount" :label="__('Kronor in på banken')" error="amount" :hint="$rateDate !== '' ? __('Ifyllt med Riksbankens kurs :rate. Ändra till beloppet på kontoutdraget.', ['rate' => $rateDate]) : __('Skriv beloppet på kontoutdraget.')" class="col-span-2">
+                        <input id="paid_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="amount">
+                    </x-ui.field>
+                    @if($exchangePreview)
+                        <p class="col-span-2 text-sm text-gray-700">
+                            {{ __('Kundfordran minskar med :settled (bokförd kurs).', ['settled' => App\Support\Money\Money::ofOre($exchangePreview['settled'])->format()]) }}
+                            @if($exchangePreview['difference'] > 0)
+                                {{ __('Kursvinst :amount bokförs på 3960.', ['amount' => App\Support\Money\Money::ofOre($exchangePreview['difference'])->format()]) }}
+                            @elseif($exchangePreview['difference'] < 0)
+                                {{ __('Kursförlust :amount bokförs på 7960.', ['amount' => App\Support\Money\Money::ofOre(-$exchangePreview['difference'])->format()]) }}
+                            @else
+                                {{ __('Ingen kursdifferens.') }}
+                            @endif
+                        </p>
+                    @endif
+                @else
+                    <x-ui.field for="paid_amount" :label="__('Belopp')" error="amount">
+                        <input id="paid_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="amount">
+                    </x-ui.field>
+                @endif
                 <div class="col-span-2"><x-button wire:loading.attr="disabled">{{ __('Registrera betalningen') }}</x-button></div>
             </form>
             <p class="mt-2 text-sm text-gray-500">{{ __('Betalningen bokförs på 1930 Företagskonto i serie C.') }}</p>
@@ -96,7 +131,12 @@
                     <li class="flex justify-between gap-4 py-2">
                         <span class="tabular-nums">{{ $payment->paid_on->toDateString() }}</span>
                         <a href="{{ route('accounting.vouchers.show', $payment->voucher_id) }}" class="text-accent-600 hover:text-accent-700">{{ $payment->voucher?->reference() }}</a>
-                        <x-ui.amount :money="$payment->amount_ore" />
+                        <span class="text-right">
+                            <x-ui.amount :money="$payment->amount_ore" />
+                            @if($payment->foreign_amount_minor !== null)
+                                <span class="block text-gray-500 tabular-nums">{{ $invoice->formatForeign($payment->foreign_amount_minor) }}@if($payment->exchange_difference_ore !== 0) · {{ $payment->exchange_difference_ore > 0 ? __('kursvinst :amount', ['amount' => App\Support\Money\Money::ofOre($payment->exchange_difference_ore)->format()]) : __('kursförlust :amount', ['amount' => App\Support\Money\Money::ofOre(-$payment->exchange_difference_ore)->format()]) }}@endif</span>
+                            @endif
+                        </span>
                     </li>
                 @endforeach
             </ul>
