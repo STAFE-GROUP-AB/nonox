@@ -8,7 +8,6 @@ use App\Actions\Accounting\AttachToVoucher;
 use App\Actions\Accounting\BookVoucher;
 use App\Actions\Assets\AssetProposals;
 use App\Domain\Accounting\VoucherSource;
-use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\Company;
@@ -63,7 +62,7 @@ class RegisterSupplierInvoice
 
             $voucher = null;
 
-            if ($company->accounting_method !== AccountingMethod::Kontantmetoden) {
+            if (SupplierInvoiceBooking::bookedAtRegistration($invoice, $company->accounting_method)) {
                 $voucher = $this->bookVoucher->rows(
                     $user,
                     $company,

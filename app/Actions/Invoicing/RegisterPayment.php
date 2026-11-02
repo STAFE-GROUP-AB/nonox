@@ -7,7 +7,6 @@ namespace App\Actions\Invoicing;
 use App\Actions\Accounting\BookVoucher;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
-use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceBooking;
@@ -97,7 +96,7 @@ class RegisterPayment
                 $paidOn,
                 __('Inbetalning :invoice, :customer', ['invoice' => $invoice->title(), 'customer' => $invoice->customer_snapshot['name'] ?? '']),
                 'C',
-                InvoiceBooking::payment($invoice, $invoice->rows, $settled, $bankAccount, $company->accounting_method === AccountingMethod::Kontantmetoden, $amount->ore),
+                InvoiceBooking::payment($invoice, $invoice->rows, $settled, $bankAccount, ! InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method), $amount->ore),
                 VoucherSource::Payment,
                 $invoice,
             );

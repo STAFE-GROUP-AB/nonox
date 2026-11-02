@@ -24,7 +24,11 @@
   for rounding. A payment posts 1930 against 1510 in series C. Under
   *kontantmetoden* nothing is posted when issuing; each payment posts its
   share of revenue, VAT and rounding against 1930, with the öre left over on
-  the largest line. Vouchers are made through `BookVoucher`, which uses the
+  the largest line. Exception (2026-11-02, AUD-FAKT-4, #50): EU sales of
+  goods and services in the periodisk sammanställning are reported for the
+  invoice's period whatever the method (ML 2023:200 7 kap. 29-30 §§), so
+  they are booked at issue under kontantmetoden too, and their payment only
+  clears 1510 (`InvoiceBooking::bookedAtIssue`). Vouchers are made through `BookVoucher`, which uses the
   same SaveDraftVoucher and PostVoucher as manual vouchers, and point back to
   the invoice (`source_type`, `source_id`; `source_id` became text because
   invoices have UUIDs).

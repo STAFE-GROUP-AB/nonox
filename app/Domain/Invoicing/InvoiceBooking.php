@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Invoicing;
 
+use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Domain\Vat\OssRates;
 use App\Models\Account;
@@ -22,6 +23,10 @@ use Illuminate\Support\Collection;
  *   A payment then moves the amount from 1510 to the bank account.
  * - Kontantmetoden: nothing when issued. A payment books its share of the
  *   revenue, VAT and rounding directly against the bank account.
+ * - Except EU sales reported for the invoice's period (ForeignSale::
+ *   isReportedWhenInvoiced, ML 7 kap. 29-30 §§): they are booked as under
+ *   fakturametoden whatever the method, and a payment only clears 1510
+ *   (enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-4, #50)).
  *
  * A sale abroad (ForeignSale) is booked on the account for that kind of
  * sale instead of the rows' accounts, without VAT. A sale to a consumer in
@@ -99,7 +104,17 @@ final class InvoiceBooking
     }
 
     /**
-     * The voucher rows when an invoice is issued under fakturametoden.
+     * Whether the invoice is booked when issued (on 1510) rather than when
+     * paid: always under fakturametoden, and under kontantmetoden for the
+     * EU sales the law ties to the invoice's period.
+     */
+    public static function bookedAtIssue(Invoice $invoice, AccountingMethod $method): bool
+    {
+        return $method === AccountingMethod::Fakturametoden || $invoice->bookedForeignSale()?->isReportedWhenInvoiced() === true;
+    }
+
+    /**
+     * The voucher rows when an invoice is booked at issue (bookedAtIssue).
      *
      * @param  Collection<int, InvoiceRow>  $rows
      * @return array<int, int>

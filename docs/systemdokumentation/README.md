@@ -520,6 +520,18 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   B (1510 mot intäktskonton, utgående moms och 3740). Betalning: serie C,
   1930 mot 1510. Enligt kontantmetoden bokförs intäkt och moms först vid
   betalning.
+- Undantag från kontantmetoden: försäljning av varor till ett annat EU-land
+  (ML 7 kap. 29 §) och tjänster som tas upp i periodisk sammanställning
+  (7 kap. 30 §) redovisas för fakturans period oavsett metod. Sådana
+  fakturor (och deras kreditfakturor) bokförs därför när de skapas som
+  enligt fakturametoden, även hos ett företag med kontantmetoden, och
+  betalningen flyttar bara beloppet från 1510 till banken. De tas inte med
+  bland obetalda fakturor vid årets slut, eftersom de redan står på 1510.
+  Ruta 35/39 och den periodiska sammanställningen följer då samma period
+  (`InvoiceBooking::bookedAtIssue`, `ForeignSale::isReportedWhenInvoiced`;
+  enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-4,
+  #50)). Trepartshandel (ruta 38) bokförs tills vidare vid betalning
+  (TODO(legal-verify)).
 - En kreditfaktura krediterar hela fakturan eller en del av den (raderna i
   utkastet kan ändras). Den minskar originalet med sitt eget belopp
   (`credited_ore` och `paid_ore`, i kronor och i fakturans valuta) och
@@ -794,6 +806,14 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   leverantörsskulder kredit) med fakturan som underlag. Betalning: serie E,
   2440 mot 1930. Enligt kontantmetoden bokförs kostnad och moms först vid
   betalning, med fakturan som underlag på den första betalningen.
+- Undantag från kontantmetoden: unionsinterna förvärv av varor (ML 7 kap.
+  26 och 40 §§; kontantmetoden i 7 kap. 16 § andra st. omfattar bara 16 kap.
+  6 och 8–16 §§) bokförs vid registreringen som enligt fakturametoden, med
+  4515–4517, 2614/2624/2634 och 2645 mot 2440, och betalningen flyttar bara
+  beloppet från 2440 till banken. Inköp av tjänster från EU och andra
+  förvärv med omvänd betalningsskyldighet bokförs fortfarande vid betalning
+  (`SupplierInvoiceBooking::bookedAtRegistration`; enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-4, #50)).
 - Attest: en registrerad faktura måste attesteras innan den kan betalas.
   Den som registrerade fakturan får inte attestera den, om inte företaget har
   stängt av kravet (för företag med en person). Ändringen av kravet skrivs

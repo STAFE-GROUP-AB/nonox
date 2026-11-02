@@ -115,7 +115,7 @@ class IssueInvoice
                 'foreign_paid_minor' => 0,
             ]);
 
-            if ($company->accounting_method === AccountingMethod::Fakturametoden) {
+            if (InvoiceBooking::bookedAtIssue($invoice, $company->accounting_method)) {
                 $voucher = ($this->bookVoucher)(
                     $user,
                     $company,

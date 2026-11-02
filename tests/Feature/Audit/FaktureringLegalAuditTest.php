@@ -289,7 +289,7 @@ it('ML 15 kap. 29 §: an intra-Community supply of goods is reported for the per
 
     // The sale (box 35 / periodisk sammanställning) belongs to March even though nothing is paid yet.
     expect(audFaktBalance(3108))->toBe(-1_000_000);
-})->todo('AUD-FAKT-4: under kontantmetoden EU sales (ML 15 kap. 29-30 §§) are booked only when paid, so box 35/39 and the periodisk sammanställning land in the wrong period');
+}); // AUD-FAKT-4 fixed (#50): EU sales are booked at issue under kontantmetoden too (ML 2023:200 7 kap. 29-30 §§).
 
 /* ---------------------------------------------------------------------------
  | Invoice content deviations
@@ -475,7 +475,7 @@ it('ML 15 kap. 26 §: VAT on an intra-Community acquisition of goods is reported
     // Unpaid, but box 20/30/48 belong to March: 2614 −2 500, 2645 +2 500.
     expect(audFaktBalance(2614))->toBe(-250_000)
         ->and(audFaktBalance(2645))->toBe(250_000);
-})->todo('AUD-FAKT-4: under kontantmetoden the VAT on EU acquisitions of goods is booked only when the invoice is paid (ML 15 kap. 26 §)');
+}); // AUD-FAKT-4 fixed (#50): EU acquisitions of goods are booked at registration under kontantmetoden too (ML 2023:200 7 kap. 26, 40 §§).
 
 it('ML 15 kap. 16 §/31 §: under kontantmetoden part payments of a supplier invoice together book exactly its input VAT', function () {
     $this->company->forceFill(['separate_supplier_approval' => false, 'accounting_method' => AccountingMethod::Kontantmetoden])->save();

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Payables;
 
+use App\Domain\Company\AccountingMethod;
 use App\Models\Account;
 use App\Models\CostCenter;
 use App\Models\Project;
@@ -28,6 +29,10 @@ use Illuminate\Support\Collection;
  * - A credit note has negative amounts, so the same rules reverse it.
  * - Kontantmetoden: nothing when registered. A payment books its share of the
  *   costs and the VAT directly against the bank account.
+ * - Except an intra-Community acquisition of goods (VatTreatment::
+ *   isReportedWhenInvoiced, ML 7 kap. 26 and 40 §§): booked when registered
+ *   as under fakturametoden whatever the method; a payment only clears 2440
+ *   (enligt granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-4, #50)).
  * - An invoice in another currency is booked in kronor at the rate on the
  *   invoice. A payment settles its share of those kronor; the bank is
  *   credited with the kronor actually paid and the difference goes to 3960
@@ -58,7 +63,17 @@ final class SupplierInvoiceBooking
     ];
 
     /**
-     * The voucher rows when the invoice is registered under fakturametoden.
+     * Whether the invoice is booked when registered (on 2440) rather than
+     * when paid: always under fakturametoden, and under kontantmetoden for an
+     * intra-Community acquisition of goods.
+     */
+    public static function bookedAtRegistration(SupplierInvoice $invoice, AccountingMethod $method): bool
+    {
+        return $method === AccountingMethod::Fakturametoden || $invoice->vat_treatment->isReportedWhenInvoiced();
+    }
+
+    /**
+     * The voucher rows when the invoice is booked at registration (bookedAtRegistration).
      *
      * @param  Collection<int, SupplierInvoiceRow>  $rows  with account, cost centre and project
      * @return list<array{account: int, amount: int, description?: ?string, cost_center?: ?string, project?: ?string}>
