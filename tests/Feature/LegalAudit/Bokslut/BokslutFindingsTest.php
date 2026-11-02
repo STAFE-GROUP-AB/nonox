@@ -39,20 +39,20 @@ beforeEach(function () {
 
     // Share capital 25 000 and retained earnings 50 000 in the bank; a profit of 80 000 in 2026.
     foreach ([1930 => 7_500_000, 2081 => -2_500_000, 2091 => -5_000_000] as $number => $ore) {
-        OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => audBokFindingsAccount($number)->id, 'amount_ore' => $ore]);
+        OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => audBsFindingsAccount($number)->id, 'amount_ore' => $ore]);
     }
 
     Bookkeeping::post($this->owner, $this->company, 10_000_000, 1930, 3001, '2026-03-01');
     Bookkeeping::post($this->owner, $this->company, 2_000_000, 5010, 1930, '2026-04-01');
 });
 
-function audBokFindingsAccount(int $number): Account
+function audBsFindingsAccount(int $number): Account
 {
     return Account::query()->firstOrCreate(['number' => $number], ['name' => "Konto {$number}", 'type' => AccountType::forNumber($number)]);
 }
 
 /** Books tax 16 480 (80 000 × 20,6 %), the result and closes 2026. Free equity: 50 000 + 63 520 = 113 520. */
-function audBokFindingsClose(): FiscalYear
+function audBsFindingsClose(): FiscalYear
 {
     $bank = Account::query()->where('number', 1930)->firstOrFail();
     app(BankReconciliations::class)->save(test()->owner, test()->company, $bank, '2026-12-31', '155 000', [], null);
@@ -116,7 +116,7 @@ it('AUD-BOK-2: refuses a proposed dividend larger than the free equity (ABL 17 k
 });
 
 it('AUD-BOK-3: refuses to book a dividend larger than the free equity in the disposition (ABL 17 kap. 3 §)', function () {
-    audBokFindingsClose();
+    audBsFindingsClose();
 
     expect(fn () => $this->closing->dispose($this->owner, $this->year, '2027-05-20', '200 000'))
         ->toThrow(ValidationException::class, 'Aktiebolagslagen 17 kap. 3 §')
@@ -133,8 +133,8 @@ it('AUD-BOK-3: refuses to book a dividend larger than the free equity in the dis
 });
 
 it('AUD-BOK-4: puts 2420 Förskott från kunder and 2480 Checkräkningskredit on their own K2 balance sheet lines (ÅRL bilaga 3, BAS)', function () {
-    Bookkeeping::post($this->owner, $this->company, 500_000, 1930, audBokFindingsAccount(2420)->number, '2026-12-01');
-    Bookkeeping::post($this->owner, $this->company, 700_000, 1930, audBokFindingsAccount(2480)->number, '2026-12-02');
+    Bookkeeping::post($this->owner, $this->company, 500_000, 1930, audBsFindingsAccount(2420)->number, '2026-12-01');
+    Bookkeeping::post($this->owner, $this->company, 700_000, 1930, audBsFindingsAccount(2480)->number, '2026-12-02');
     $short = collect(AnnualAccounts::for($this->year)->balanceSheet()['sections'])->firstWhere('key', 'short_term');
     $lines = collect($short['lines'])->keyBy('key');
 
@@ -145,7 +145,7 @@ it('AUD-BOK-4: puts 2420 Förskott från kunder and 2480 Checkräkningskredit on
 })->todo('AUD-BOK-4: K2Schedule puts 2400–2439 under Skulder till kreditinstitut and 2440–2499 under Leverantörsskulder');
 
 it('AUD-BOK-5: specifies every change in equity, the dividend included, in the förvaltningsberättelse (ÅRL 6 kap. 2 § andra stycket, BFNAR 2016:10 kap. 5)', function () {
-    $next = audBokFindingsClose();
+    $next = audBsFindingsClose();
     $this->closing->dispose($this->owner, $this->year, '2027-05-20', '30 000');
     $labels = collect(AnnualAccounts::for($next)->equityChanges())->pluck('label')->implode(' ');
 
@@ -161,7 +161,7 @@ it('AUD-BOK-6: rounds amounts to whole kronor rather than cutting the öre off (
 })->todo('AUD-BOK-6: the annual report view uses intdiv($ore, 100), which truncates');
 
 it('AUD-BOK-8: adds the schablonintäkt on periodiseringsfonder to INK2S 4.6a (field 7654) when the company has funds at the start of the year (IL 30 kap. 6 a §)', function () {
-    OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => audBokFindingsAccount(2125)->id, 'amount_ore' => -10_000_000]);
+    OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => audBsFindingsAccount(2125)->id, 'amount_ore' => -10_000_000]);
     OpeningBalance::query()->where('account_id', Account::query()->where('number', 2091)->value('id'))->update(['amount_ore' => 5_000_000]);
 
     // 100 000 × 2,55 % (statslåneräntan end of November 2025, for a tax year
@@ -171,7 +171,7 @@ it('AUD-BOK-8: adds the schablonintäkt on periodiseringsfonder to INK2S 4.6a (f
 });
 
 it('AUD-BOK-9: reports a change of stock of finished goods on INK2R 3.2 (7411/7510), not as raw materials (SKV INK2R 2026P4)', function () {
-    Bookkeeping::post($this->owner, $this->company, 400_000, audBokFindingsAccount(1460)->number, audBokFindingsAccount(4950)->number, '2026-12-31');
+    Bookkeeping::post($this->owner, $this->company, 400_000, audBsFindingsAccount(1460)->number, audBsFindingsAccount(4950)->number, '2026-12-31');
 
     expect(Ink2::for($this->company, $this->year, null)->ink2r())->toHaveKey(7411)
         ->and(Ink2::for($this->company, $this->year, null)->ink2r())->not->toHaveKey(7511);
@@ -225,7 +225,7 @@ it('AUD-BOK-13: lets the disposition pay a dividend from retained earnings after
 });
 
 it('AUD-BOK-14: fills INK2 1.4 särskild löneskatt and INK2S 4.21 from booked pension costs (SKV INK2 / INK2S 2026P4, fields 7132 and 8022)', function () {
-    Bookkeeping::post($this->owner, $this->company, 1_000_000, audBokFindingsAccount(7412)->number, 1930, '2026-06-01');
+    Bookkeeping::post($this->owner, $this->company, 1_000_000, audBsFindingsAccount(7412)->number, 1930, '2026-06-01');
 
     // 10 000 on 7412 is proposed for INK2S 4.21 and INK2 1.4 (#87).
     expect(Ink2::for($this->company, $this->year, null)->ink2s())->toMatchArray([8022 => 10_000])
