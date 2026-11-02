@@ -163,3 +163,66 @@ Open (`TODO(legal-verify)`): the rate when none is published on the last day
 invoice date as the period and year of a sale, whether registration for OSS
 is the request under 6 kap. 64 §, and that only goods and TBE services are
 marked for OSS.
+
+## INK2: schablonintäkt on periodiseringsfonder (2026-11-02, #83)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-8, #83).
+
+- **Rule.** IL 30 kap. 6 a § (Lag 2018:1206): statslåneräntan at the end of
+  November of the year before the calendar year in which the tax year ends,
+  at least 0,5 %, × the deductions for the funds held at the start of the
+  tax year, in proportion for a tax year that is not twelve months. Reported
+  in INK2S 4.6 a, field 7654 (SKV field table INK2S_SKV2002-34-01-26-04).
+  The auditor's note of "× 72 %" is the rule before Lag 2018:1206 and is not
+  applied; Skatteverket's own example (400 000 × 1,96 % = 7 840) has no such
+  factor.
+- **Decision.** `TaxAllocationReserves` proposes the amount from the opening
+  balances of BAS 2110–2149. The rates are data with a source, keyed by the
+  November year (`RATES`); a year without a rate gives no proposal and a
+  warning. The proposal goes into `Ink2::adjustments()`, so it reaches 4.15,
+  INK2 1.1 and the SRU file.
+- **Override.** Fields in `Ink2Codes::PROPOSED` keep an entered 0 in
+  `income_tax_returns.adjustments`; an entered amount (0 included) replaces
+  the proposal and an empty field restores it. No schema change.
+- TODO(legal-verify): the rates; that the booked opening balance equals the
+  deductions made; rounding; the month count for broken years.
+
+## INK2: basis for särskild löneskatt on pension costs (2026-11-02, #87)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-14, #87).
+
+- **Fields.** INK2 1.4 = 7132, 1.5 (negative basis) = 7133, INK2S 4.21 =
+  8022 (SKV field tables INK2_/INK2S_SKV2002-34-01-26-04). 7132 and 7133 may
+  not both be present.
+- **Decision.** They live in `Ink2Codes::INFORMATION`: entered like the
+  adjustments but without effect on the taxable result. The proposal is the
+  year's net movement on BAS 7400–7499 (positive → 7132 and 8022, negative →
+  7133). Entering one of 7132/7133 stops the proposal for the other. A warning
+  shows when 8022 is filled in and 1.4/1.5 are empty (Skatteverket's
+  ställningstagande dnr 8-292969-2025, read via a secondary source).
+- TODO(legal-verify): the basis under lag (1991:687) 2 § (tryggandelagen
+  provisions, item j, gruppsjukförsäkring, administration fees) versus the
+  booked 74xx amount.
+
+## Dividends within the free equity (2026-11-02, #84, #85, #86)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-2, -3,
+-13; #84, #85, #86).
+
+- **Rule.** ABL 17 kap. 3 § första stycket: no value transfer unless the
+  restricted equity is fully covered afterwards, computed on the latest
+  adopted balance sheet; lag (2018:672) om ekonomiska föreningar 12 kap. 3 §
+  likewise. The room is the free equity (BFNAR 2016:10 p. 5.8: the
+  disposition covers the sum of the free equity). The prudence rule (17 kap.
+  3 § andra stycket) is a judgement and is only shown as a reminder.
+- **Decision.** `DividendLimit` computes the room as
+  `AnnualAccounts::freeEquity()` of the year (retained earnings and the
+  year's result, whether booked to 2099 or not) and refuses a larger
+  dividend, or any dividend when it is negative. `SaveAnnualReport` (the
+  board's proposal) uses it from #84; `YearEndClosing::dispose` (the
+  meeting's decision, booked 2098/2898) uses it on the closed year's balance
+  sheet from #85. The earlier rule that refused every dividend after a loss
+  year is gone (#86): the limit is the free equity, not the year's result.
+- TODO(legal-verify): changes in restricted equity after the balance date,
+  transfers already made since the meeting (17 kap. 4 §), and the same limit
+  for ideella föreningar and stiftelser.

@@ -9,6 +9,7 @@ use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\Company\LegalForm;
 use App\Livewire\Accounting\AnnualReportPage;
+use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Support\Tenancy\CurrentCompany;
@@ -121,4 +122,37 @@ it('is for companies with an annual report, and only for those who close the yea
     $foreign = CurrentCompany::run($other, fn () => FiscalYear::create(['start_date' => '2026-01-01', 'end_date' => '2026-12-31']));
     $this->actingAs($this->owner);
     $this->get(route('accounting.annualReport.show', $foreign))->assertNotFound();
+});
+
+it('refuses a proposed dividend larger than the free equity (ABL 17 kap. 3 §, #84)', function () {
+    $save = fn (string $dividend) => app(SaveAnnualReport::class)($this->owner, $this->year, ['dividend' => $dividend, 'average_employees' => '0']);
+
+    // Free equity: no retained earnings, the year's result 100 000 - 20 000 - 3 000 = 77 000.
+    expect(AnnualAccounts::for($this->year)->freeEquity())->toBe(7_700_000)
+        ->and(fn () => $save('77 000,01'))->toThrow(ValidationException::class, 'Aktiebolagslagen 17 kap. 3 §')
+        ->and(AnnualReport::query()->exists())->toBeFalse();
+
+    $report = $save('77 000');
+
+    expect($report->dividend_ore->ore)->toBe(7_700_000)
+        ->and(AnnualReportDocument::data($this->company, $this->year, $report)['disposition'])->toBe(['free' => 7_700_000, 'dividend' => 7_700_000, 'carried' => 0]);
+});
+
+it('refuses any dividend when the free equity is negative, and names the law of an ekonomisk förening', function () {
+    // A loss of 120 000 brings the free equity to 77 000 - 120 000 = -43 000.
+    Bookkeeping::post($this->owner, $this->company, 12_000_000, 5010, 1930, '2026-11-01');
+    $this->company->forceFill(['legal_form' => LegalForm::EkonomiskForening])->save();
+
+    expect(fn () => app(SaveAnnualReport::class)($this->owner, $this->year, ['dividend' => '1', 'average_employees' => '0']))
+        ->toThrow(ValidationException::class, 'Lagen om ekonomiska föreningar 12 kap. 3 §')
+        ->and(app(SaveAnnualReport::class)($this->owner, $this->year, ['dividend' => '', 'average_employees' => '0'])->dividend_ore->ore)->toBe(0);
+});
+
+it('shows the free equity and the prudence rule by the dividend field', function () {
+    Livewire::test(AnnualReportPage::class)
+        ->assertSee('Högst det fria egna kapitalet, 77'."\u{a0}".'000,00'."\u{a0}".'kr', false)
+        ->assertSee('försiktighetsregeln')
+        ->set('form.dividend', '100 000')
+        ->call('save')
+        ->assertHasErrors('dividend');
 });

@@ -27,6 +27,9 @@ use ZipArchive;
 class IncomeTaxReturns
 {
     /**
+     * An empty field is not saved; for the fields in Ink2Codes::PROPOSED it
+     * then keeps the proposal from the books.
+     *
      * @param  array<int|string, string>  $adjustments  amounts in kronor by field code
      */
     public function save(User $user, FiscalYear $fiscalYear, array $adjustments, ?bool $consultant, ?bool $audited): IncomeTaxReturn
@@ -34,7 +37,7 @@ class IncomeTaxReturns
         $company = $this->authorize($user, $fiscalYear);
         $amounts = [];
 
-        foreach (array_keys(Ink2Codes::ADJUSTMENTS) as $code) {
+        foreach (array_keys(Ink2Codes::enteredLabels()) as $code) {
             $value = trim((string) ($adjustments[$code] ?? $adjustments[(string) $code] ?? ''));
 
             if ($value === '') {
@@ -51,9 +54,14 @@ class IncomeTaxReturns
                 throw ValidationException::withMessages(["adjustments.{$code}" => __('Skriv beloppet utan minustecken.')]);
             }
 
-            if ($kronor > 0) {
+            // A proposed field keeps an entered 0: it replaces the proposal.
+            if ($kronor > 0 || in_array($code, Ink2Codes::PROPOSED, true)) {
                 $amounts[$code] = $kronor;
             }
+        }
+
+        if (($amounts[Ink2Codes::PENSION_BASIS] ?? 0) > 0 && ($amounts[Ink2Codes::PENSION_BASIS_NEGATIVE] ?? 0) > 0) {
+            throw ValidationException::withMessages(['adjustments.'.Ink2Codes::PENSION_BASIS_NEGATIVE => __('Fyll i antingen underlaget eller det negativa underlaget för särskild löneskatt, inte båda.')]);
         }
 
         return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $amounts, $consultant, $audited): IncomeTaxReturn {

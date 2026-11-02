@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\AnnualReport;
 
 use App\Domain\AnnualReport\AnnualReportDocument;
+use App\Domain\Closing\DividendLimit;
 use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
@@ -62,6 +63,9 @@ class SaveAnnualReport
         }
 
         return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $validated, $dividend): AnnualReport {
+            // ABL 17 kap. 3 §: the proposal may not distribute more than the free equity (#84).
+            DividendLimit::ensureWithin($company, $fiscalYear, $dividend);
+
             $report = AnnualReport::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id], [
                 'business_description' => blank($validated['business_description'] ?? null) ? null : $validated['business_description'],
                 'significant_events' => blank($validated['significant_events'] ?? null) ? null : $validated['significant_events'],

@@ -304,6 +304,12 @@ final class AnnualAccounts
         return $this->movement($this->current, $from, $to);
     }
 
+    /** The opening balance of the year on the accounts in the range, debit positive. */
+    public function openingOf(int $from, int $to): int
+    {
+        return $this->sum($this->current, $from, $to, opening: true);
+    }
+
     /** The balance at the end of the year on the accounts in the range, debit positive. */
     public function closingOf(int $from, int $to): int
     {

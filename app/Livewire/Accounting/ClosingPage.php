@@ -8,6 +8,7 @@ use App\Actions\Closing\YearEndClosing;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CurrencyRevaluation;
+use App\Domain\Closing\DividendLimit;
 use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Closing\YearResult;
 use App\Livewire\Concerns\ShowsToasts;
@@ -138,6 +139,10 @@ class ClosingPage extends Component
                 ? CurrencyRevaluation::for($this->company(), $fiscalYear)
                 : null,
             'disposition' => $entries->firstWhere('type', YearEndEntry::DISPOSITION),
+            // The room for a dividend, shown by the field (ABL 17 kap. 3 §).
+            'freeEquity' => ! $fiscalYear->isOpen() && $next !== null && ! ClosingAccounts::isOwnerTaxed($this->company()) && $entries->firstWhere('type', YearEndEntry::DISPOSITION) === null
+                ? DividendLimit::freeEquityOre($fiscalYear)
+                : null,
             'ownerTaxed' => ClosingAccounts::isOwnerTaxed($this->company()),
             'resultAccount' => ClosingAccounts::resultNumber($this->company()),
             'next' => $next,

@@ -14,6 +14,7 @@ use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CurrencyRevaluation;
+use App\Domain\Closing\DividendLimit;
 use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Closing\YearResult;
 use App\Domain\Company\AccountingMethod;
@@ -361,8 +362,9 @@ class YearEndClosing
      * dividend on 2898. For sole traders and partnerships it moves from 2019
      * to 2010.
      *
-     * TODO(legal-verify): the dividend is not checked against the free equity
-     * (ABL 17 kap) nor the prudence rule; that is left to the meeting.
+     * The dividend may not exceed the free equity of the closed year's
+     * balance sheet (ABL 17 kap. 3 §, DividendLimit; #85). The prudence rule
+     * is left to the meeting.
      */
     public function dispose(User $user, FiscalYear $closedYear, string $date, string $dividend): YearEndEntry
     {
@@ -403,9 +405,10 @@ class YearEndClosing
                 throw ValidationException::withMessages(['disposition' => __('Det finns inget resultat att disponera på konto :account.', ['account' => $resultAccount->number])]);
             }
 
-            if ($dividendOre > 0 && $result > 0) {
-                throw ValidationException::withMessages(['dividend' => __('Året gick med förlust. Utdelning beslutas inte ur årets resultat här.')]);
-            }
+            // A loss year may still pay a dividend from retained earnings, as long
+            // as the free equity covers it (ABL 17 kap. 3 §; #86). 2098 then takes
+            // both the loss and the dividend.
+            DividendLimit::ensureWithin($company, $closedYear, $dividendOre);
 
             $lines = ClosingAccounts::isOwnerTaxed($company)
                 ? [

@@ -1052,7 +1052,15 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
 - **Resultatdisposition** bokförs i nästa år på datum för årsstämman: årets
   resultat flyttas från 2099 till 2098, med beslutad utdelning på 2898. För
   enskild firma, handelsbolag och kommanditbolag flyttas resultatet från 2019
-  till 2010. Varje skatt-, resultat- och dispositionspost sparas i
+  till 2010. Utdelningen får inte vara större än det fria egna kapitalet i
+  det stängda årets balansräkning (balanserat resultat och årets resultat,
+  `DividendLimit`, ABL 17 kap. 3 §); en större utdelning avvisas och
+  ingenting bokförs. Fältet visar det fria egna kapitalet. Enligt granskning
+  2026-11-02, juristgranskning återstår (BS-AUD-BOK-3, #85). Även efter ett
+  förlustår får utdelning bokföras ur balanserade vinstmedel så länge det fria
+  egna kapitalet räcker; 2098 tar då både förlusten och utdelningen
+  (BS-AUD-BOK-13, #86). Varje skatt-,
+  resultat- och dispositionspost sparas i
   `year_end_entries`, som databasen inte låter ändra eller ta bort.
 - Bokslutet kräver behörigheten att hantera räkenskapsår.
 
@@ -1075,6 +1083,13 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   2099; ett tidigare resultat som inte disponerats visas som balanserat
   resultat. Saknas föregående år i systemet används årets ingående balanser
   som jämförelse för balansräkningen.
+- Föreslagen utdelning får inte vara större än det fria egna kapitalet
+  (balanserat resultat och årets resultat, `DividendLimit`); en större
+  utdelning avvisas med hänvisning till ABL 17 kap. 3 § (ekonomisk förening:
+  lag 2018:672 12 kap. 3 §). Är det fria egna kapitalet negativt avvisas all
+  utdelning. Fältet visar det fria egna kapitalet och påminner om
+  försiktighetsregeln, som styrelsen bedömer. Enligt granskning 2026-11-02,
+  juristgranskning återstår (BS-AUD-BOK-2, #84).
 - Rapporten visas som sida och laddas ner som PDF. Revisionsberättelse och
   fastställelseintyg läggs till utanför systemet. Digital inlämning till
   Bolagsverket (iXBRL) finns ännu inte.
@@ -1092,6 +1107,26 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   konsult biträtt och om årsredovisningen reviderats. Överskott eller
   underskott förs till INK2 punkt 1.1 eller 1.2. Justeringarna sparas i
   `income_tax_returns`.
+- Schablonintäkt på periodiseringsfonder (INK2S 4.6 a, fält 7654, IL 30 kap.
+  6 a §): systemet föreslår ingående saldo på 2110–2149 vid
+  beskattningsårets ingång × statslåneräntan vid utgången av november året
+  före det kalenderår då beskattningsåret slutar (lägst 0,5 %) × årets
+  månader/12, avrundat till hela kronor (`TaxAllocationReserves`).
+  Räntorna är data med källa (Skatteverket: 1,96 % nov 2024, 2,55 % nov
+  2025). Förslaget räknas in i 4.15 och 1.1 och i SRU-filen. Ett inmatat
+  belopp ersätter förslaget, även 0; ett tomt fält behåller förslaget.
+  Saknas räntan för året visas en varning och fältet fylls i för hand.
+  Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-8,
+  #83).
+- Särskild löneskatt på pensionskostnader: INK2 1.4 (fält 7132) eller 1.5
+  (fält 7133, negativt underlag) och INK2S 4.21 (fält 8022, pensionskostnader
+  som ingår i 3.8) föreslås ur årets nettorörelse på BAS 7400–7499. Den
+  särskilda löneskatten själv (7530-gruppen) räknas inte in. Användaren kan
+  ändra varje fält; 1.4 och 1.5 får inte båda fyllas i. Fälten ändrar inte
+  det skattemässiga resultatet. Är 4.21 ifyllt men 1.4 och 1.5 tomma visas
+  en varning. Underlaget enligt lag (1991:687) 2 § är inte alltid detsamma
+  som den bokförda kostnaden; förslaget ska kontrolleras. Enligt granskning
+  2026-11-02, juristgranskning återstår (BS-AUD-BOK-14, #87).
 - SRU-filerna (INFO.SRU och BLANKETTER.SRU, ISO 8859-1, en post per rad)
   laddas ner som ZIP och lämnas i Skatteverkets e-tjänst Filöverföring.
   Fältkoderna är hämtade ur Skatteverkets fältnamnstabeller för
@@ -2415,9 +2450,13 @@ Personalliggare och Avtal när de är påslagna.
 - Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
   mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
   och bokslutsdispositioner). Identiteten skrivs som 16 följt av
-  organisationsnumret. Övriga INK2S-punkter (schablonintäkt på
-  periodiseringsfond, delägarrätter, handelsbolag, fastigheter m.m.) fylls i
-  för hand i Skatteverkets tjänst. Fältkoderna ska kontrolleras på nytt för
+  organisationsnumret. Övriga INK2S-punkter (delägarrätter, handelsbolag,
+  fastigheter m.m.) fylls i för hand i Skatteverkets tjänst. Schablonintäkten
+  på periodiseringsfonder: statslåneräntorna per år, att ingående saldo på
+  2110–2149 är detsamma som gjorda avdrag, avrundningen till hela kronor och
+  månadsräkningen för ett brutet år (#83). Underlaget för särskild
+  löneskatt: att BAS 7400–7499 är rätt förslag och vilka poster enligt lag
+  (1991:687) 2 § som skiljer sig från den bokförda kostnaden (#87). Fältkoderna ska kontrolleras på nytt för
   varje ny beskattningsperiod innan den läggs till i `VERIFIED_PERIODS`.
 - Årsredovisning: radindelningen och BAS-intervallen (särskilt 4000–4999 och
   8000–8799) ska kontrolleras mot ÅRL bilaga 2–3, BFNAR 2016:10 och den
@@ -2428,8 +2467,11 @@ Personalliggare och Avtal när de är påslagna.
 - Bokslut: skatten räknas inte fram av systemet. Sidan visar 20,6 % av
   resultatet före skatt som jämförelse; skattesatsen och skillnaden mellan
   bokfört och skattemässigt resultat (INK2) ska kontrolleras. Kontona 2512
-  och 2898 ska kontrolleras mot gällande BAS. Utdelningen prövas inte mot fritt
-  eget kapital eller försiktighetsregeln (ABL 17 kap). Eget kapital för
+  och 2898 ska kontrolleras mot gällande BAS. Utdelningen prövas mot fritt eget
+  kapital i det senaste årets balansräkning, men inte mot ändringar i bundet
+  eget kapital efter balansdagen, utdelningar som redan gjorts sedan stämman
+  (ABL 17 kap. 4 §) eller försiktighetsregeln (17 kap. 3 § andra stycket),
+  som styrelsen bedömer (#84, #85). Eget kapital för
   handelsbolag och kommanditbolag hålls inte per delägare. Ideella föreningar
   och stiftelser behandlas som aktiebolag vad gäller skatt och konton.
 - Periodiseringar: systemet varken kräver eller hindrar en periodisering;
