@@ -146,7 +146,7 @@ final class SupplierInvoiceBooking
             $shares[array_keys($shares, max($shares), true)[0]] += $remainder;
         }
 
-        return $shares;
+        return array_values($shares);
     }
 
     /**
@@ -172,7 +172,7 @@ final class SupplierInvoiceBooking
             }
         }
 
-        return array_sum($rest) === $amount ? $rest : null;
+        return array_sum($rest) === $amount ? array_values($rest) : null;
     }
 
     /**
