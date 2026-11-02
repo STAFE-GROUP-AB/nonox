@@ -69,14 +69,17 @@ class CreatePaymentBatch
             $inOpenBatch = SupplierPaymentBatchItem::query()
                 ->whereIn('supplier_invoice_id', $invoiceIds)
                 ->whereHas('batch', fn ($query) => $query->where('status', PaymentBatchStatus::Created->value))
+                ->where(fn ($query) => $query->whereNull('bank_status')->orWhere('bank_status', '!=', SupplierPaymentBatchItem::REJECTED))
                 ->pluck('supplier_invoice_id')
                 ->all();
 
+            // Taken first so each payment's end-to-end id names the file; a refused batch rolls the number back.
+            $number = NumberSeries::take(NumberSeries::PAYMENT_BATCHES);
             $transfers = [];
             $errors = [];
 
             foreach ($invoices as $invoice) {
-                $transfer = $this->transfer($invoice, in_array($invoice->id, $inOpenBatch, true));
+                $transfer = $this->transfer($invoice, in_array($invoice->id, $inOpenBatch, true), $number);
 
                 is_string($transfer)
                     ? $errors[] = $transfer
@@ -87,7 +90,6 @@ class CreatePaymentBatch
                 throw ValidationException::withMessages(['batch' => $errors]);
             }
 
-            $number = NumberSeries::take(NumberSeries::PAYMENT_BATCHES);
             $messageId = 'NONOX-'.$number.'-'.Str::upper(Str::random(12));
             $xml = CreditTransferFile::write(
                 $company->payment_bank,
@@ -143,7 +145,7 @@ class CreatePaymentBatch
     /**
      * The payment for one invoice, or why it cannot be paid.
      */
-    private function transfer(SupplierInvoice $invoice, bool $inOpenBatch): CreditTransfer|string
+    private function transfer(SupplierInvoice $invoice, bool $inOpenBatch, int $batchNumber): CreditTransfer|string
     {
         $title = $invoice->title();
         $supplier = $invoice->supplier_snapshot ?? [];
@@ -173,7 +175,8 @@ class CreatePaymentBatch
         }
 
         return new CreditTransfer(
-            endToEndId: "LF{$invoice->number}",
+            // Unique per payment ("LF<invoice>-<file>"), so the bank's answer finds it even when an invoice is paid in a second file (ApplyPaymentResponses).
+            endToEndId: "LF{$invoice->number}-{$batchNumber}",
             amountOre: $invoice->remaining()->ore,
             creditorName: (string) ($supplier['name'] ?? ''),
             scheme: $bankgiro !== '' ? CreditTransfer::BANKGIRO : CreditTransfer::PLUSGIRO,

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test file: a status report where the bank accepted one payment and rejected one. -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.002.001.03" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <CstmrPmtStsRpt>
+    <GrpHdr>
+      <MsgId>STATUS-0001</MsgId>
+      <CreDtTm>2026-03-11T08:15:00</CreDtTm>
+      <InitgPty>
+        <Id>
+          <OrgId>
+            <BICOrBEI>TESTSESS</BICOrBEI>
+          </OrgId>
+        </Id>
+      </InitgPty>
+    </GrpHdr>
+    <OrgnlGrpInfAndSts>
+      <OrgnlMsgId>NONOX-3-ABCDEFGHIJKL</OrgnlMsgId>
+      <OrgnlMsgNmId>pain.001.001.03</OrgnlMsgNmId>
+      <OrgnlNbOfTxs>2</OrgnlNbOfTxs>
+      <OrgnlCtrlSum>2120.50</OrgnlCtrlSum>
+      <GrpSts>PART</GrpSts>
+      <NbOfTxsPerSts>
+        <DtldNbOfTxs>1</DtldNbOfTxs>
+        <DtldSts>ACCP</DtldSts>
+      </NbOfTxsPerSts>
+      <NbOfTxsPerSts>
+        <DtldNbOfTxs>1</DtldNbOfTxs>
+        <DtldSts>RJCT</DtldSts>
+      </NbOfTxsPerSts>
+    </OrgnlGrpInfAndSts>
+    <OrgnlPmtInfAndSts>
+      <OrgnlPmtInfId>NONOX-3-ABCDEFGHIJKL</OrgnlPmtInfId>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>LF7-3</OrgnlEndToEndId>
+        <TxSts>ACCP</TxSts>
+        <OrgnlTxRef>
+          <Amt>
+            <InstdAmt Ccy="SEK">1620.00</InstdAmt>
+          </Amt>
+          <ReqdExctnDt>2026-03-12</ReqdExctnDt>
+          <Cdtr>
+            <Nm>Grossisten AB</Nm>
+          </Cdtr>
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                <Id>50501055</Id>
+                <SchmeNm>
+                  <Prtry>BGNR</Prtry>
+                </SchmeNm>
+              </Othr>
+            </Id>
+          </CdtrAcct>
+        </OrgnlTxRef>
+      </TxInfAndSts>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>LF8-3</OrgnlEndToEndId>
+        <TxSts>RJCT</TxSts>
+        <StsRsnInf>
+          <Rsn>
+            <Cd>AC03</Cd>
+          </Rsn>
+          <AddtlInf>Beneficiary account</AddtlInf>
+          <AddtlInf>number is incorrect</AddtlInf>
+        </StsRsnInf>
+        <OrgnlTxRef>
+          <Amt>
+            <InstdAmt Ccy="SEK">500.50</InstdAmt>
+          </Amt>
+          <ReqdExctnDt>2026-03-12</ReqdExctnDt>
+          <Cdtr>
+            <Nm>Elbolaget AB</Nm>
+          </Cdtr>
+          <CdtrAcct>
+            <Id>
+              <Othr>
+                <Id>4123451</Id>
+                <SchmeNm>
+                  <Cd>BBAN</Cd>
+                </SchmeNm>
+              </Othr>
+            </Id>
+          </CdtrAcct>
+        </OrgnlTxRef>
+      </TxInfAndSts>
+      <TxInfAndSts>
+        <OrgnlEndToEndId>LF9-3</OrgnlEndToEndId>
+        <TxSts>PDNG</TxSts>
+      </TxInfAndSts>
+    </OrgnlPmtInfAndSts>
+  </CstmrPmtStsRpt>
+</Document>

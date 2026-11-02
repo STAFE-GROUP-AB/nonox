@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test file: an account statement with a whole payment file booked as one amount and a card purchase. -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+  <BkToCstmrStmt>
+    <GrpHdr>
+      <MsgId>STMT-0001</MsgId>
+      <CreDtTm>2026-03-13T06:00:00</CreDtTm>
+    </GrpHdr>
+    <Stmt>
+      <Id>S-1</Id>
+      <Acct>
+        <Id>
+          <IBAN>SE4550000000058398257466</IBAN>
+        </Id>
+      </Acct>
+      <Ntry>
+        <Amt Ccy="SEK">3000.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>
+          <Cd>BOOK</Cd>
+        </Sts>
+        <BookgDt>
+          <DtTm>2026-03-12T10:00:00</DtTm>
+        </BookgDt>
+        <AcctSvcrRef>STMT-ENTRY-1</AcctSvcrRef>
+        <NtryDtls>
+          <Btch>
+            <MsgId>NONOX-5-QWERTYUIOPAS</MsgId>
+            <PmtInfId>NONOX-5-QWERTYUIOPAS</PmtInfId>
+            <NbOfTxs>2</NbOfTxs>
+          </Btch>
+        </NtryDtls>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="SEK">129.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>
+          <Cd>BOOK</Cd>
+        </Sts>
+        <BookgDt>
+          <Dt>2026-03-12</Dt>
+        </BookgDt>
+        <NtryDtls>
+          <TxDtls>
+            <Refs>
+              <EndToEndId>NOTPROVIDED</EndToEndId>
+            </Refs>
+            <RltdPties>
+              <Cdtr>
+                <Pty>
+                  <Nm>Kaffebaren</Nm>
+                </Pty>
+              </Cdtr>
+            </RltdPties>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>

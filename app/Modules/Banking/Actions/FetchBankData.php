@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Banking\Actions;
 
+use App\Actions\Payables\ApplyPaymentResponses;
 use App\Domain\Invoicing\IncomingPaymentMatcher;
 use App\Models\BankTransaction;
 use App\Models\Company;
@@ -23,6 +24,7 @@ use App\Modules\Banking\Support\ProviderFailed;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Camt054\BankCredit;
+use App\Support\Iso20022\OutgoingPaymentEvent;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
@@ -35,8 +37,9 @@ use Illuminate\Support\Facades\DB;
  * fetch goes a few days back to catch late bookings. A credit that pays an
  * unpaid invoice, or carries an OCR number, also becomes an incoming
  * payment (bank_transactions) with the invoice suggested, exactly as from a
- * camt.054 file. Nothing is booked here: a person confirms every match and
- * every payment.
+ * camt.054 file. A debit that matches a payment in a payment file becomes
+ * an answer to confirm on the payment files page (ADR-014). Nothing is
+ * booked here: a person confirms every match and every payment.
  */
 class FetchBankData
 {
@@ -80,7 +83,7 @@ class FetchBankData
 
         try {
             foreach ($accounts as $account) {
-                $counts = $this->fetchAccount($provider, $sessionId, $account);
+                $counts = $this->fetchAccount($company, $provider, $sessionId, $account);
 
                 foreach ($counts as $key => $count) {
                     $totals[$key] += $count;
@@ -105,7 +108,7 @@ class FetchBankData
     }
 
     /** @return array{new: int, skipped: int, payments: int} */
-    private function fetchAccount(BankDataProvider $provider, string $sessionId, BankFeedAccount $account): array
+    private function fetchAccount(Company $company, BankDataProvider $provider, string $sessionId, BankFeedAccount $account): array
     {
         $today = CarbonImmutable::today();
         $from = $account->fetched_through === null
@@ -124,7 +127,7 @@ class FetchBankData
 
         $balances = $provider->balances($sessionId, $account->provider_account_id);
 
-        return DB::transaction(function () use ($account, $fetched, $balances, $today): array {
+        return DB::transaction(function () use ($company, $account, $fetched, $balances, $today): array {
             $byFingerprint = [];
             $seen = [];
 
@@ -138,9 +141,10 @@ class FetchBankData
                 ->whereIn('fingerprint', array_keys($byFingerprint))->pluck('fingerprint')->all();
             $new = array_diff_key($byFingerprint, array_flip($known));
             $payments = $this->incomingPayments($account, $new);
+            $created = [];
 
             foreach ($new as $fingerprint => $transaction) {
-                BankFeedTransaction::create([
+                $created[$fingerprint] = BankFeedTransaction::create([
                     'bank_feed_account_id' => $account->id,
                     'fingerprint' => (string) $fingerprint,
                     'provider_transaction_id' => $transaction->transactionId,
@@ -153,8 +157,10 @@ class FetchBankData
                     'message' => $transaction->message,
                     'reference' => $transaction->reference,
                     'bank_transaction_id' => $payments[$fingerprint] ?? null,
-                ]);
+                ])->id;
             }
+
+            $this->outgoingPayments($company, $account, $new, $created);
 
             foreach ($balances as $balance) {
                 BankFeedBalance::query()->updateOrCreate(
@@ -167,6 +173,43 @@ class FetchBankData
 
             return ['new' => count($new), 'skipped' => count($known), 'payments' => count($payments)];
         });
+    }
+
+    /**
+     * Debits in kronor that look like a payment in one of the company's
+     * payment files (ADR-014) become answers waiting for a person to confirm,
+     * through the same matcher as the bank's camt.054 files. A debit that
+     * matches no payment is left alone. Nothing is booked here.
+     *
+     * @param  array<string, ProviderTransaction>  $transactions
+     * @param  array<string, int>  $created  NONOX Bank transaction id by fingerprint
+     */
+    private function outgoingPayments(Company $company, BankFeedAccount $account, array $transactions, array $created): void
+    {
+        $events = [];
+        $ids = [];
+
+        foreach ($transactions as $fingerprint => $transaction) {
+            if ($transaction->amountOre >= 0 || $transaction->currency !== 'SEK' || $account->currency !== 'SEK') {
+                continue;
+            }
+
+            $reference = $transaction->reference !== null && mb_strlen($transaction->reference) <= 35 ? $transaction->reference : null;
+            $ids[count($events)] = $created[$fingerprint];
+            $events[] = new OutgoingPaymentEvent(
+                kind: OutgoingPaymentEvent::BOOKED,
+                reference: "feed:{$fingerprint}",
+                endToEndId: $reference,
+                amountOre: abs($transaction->amountOre),
+                currency: $transaction->currency,
+                date: $transaction->bookingDate,
+                creditorName: $transaction->counterparty === null ? null : mb_substr($transaction->counterparty, 0, 255),
+            );
+        }
+
+        if ($events !== []) {
+            app(ApplyPaymentResponses::class)->record($company, $events, feedTransactionIds: $ids, keepUnmatched: false);
+        }
     }
 
     /**

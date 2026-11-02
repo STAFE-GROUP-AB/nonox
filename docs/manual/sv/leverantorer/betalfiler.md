@@ -1,5 +1,5 @@
 ---
-beskrivning: Betala många attesterade leverantörsfakturor på en gång med en betalfil (pain.001) som du läser in i internetbanken, och bokför betalningarna när banken har betalat.
+beskrivning: Betala många attesterade leverantörsfakturor på en gång med en betalfil (pain.001) som du läser in i internetbanken. Bankens svar bokför betalningarna och visar det som avvisades.
 ordning: 60
 roller: [owner, admin, accountant, bookkeeper, approver]
 rutter: [payables.batches.index, payables.batches.file]
@@ -17,7 +17,7 @@ Flödet har fyra steg, och två personer:
 1. Någon **skapar** betalfilen.
 2. Någon annan **godkänner** den.
 3. Filen **laddas ned** och läses in i internetbanken, där den signeras.
-4. När banken har betalat **markeras** filen som betald, och betalningarna bokförs.
+4. När banken har betalat **bokförs** betalningarna – automatiskt när du läser in bankens svar, eller när du själv markerar filen som betald.
 
 ![Betalfilerna med bankuppgifterna, det som ska betalas och en godkänd betalfil.](/bilder/manual/leverantorer/betalfiler.webp)
 
@@ -62,16 +62,20 @@ Godkännandet sparas med namn och tid och kan inte ångras. Först nu går filen
 
 ## När banken har betalat
 
+Enklast är att läsa in bankens svar – statusrapporten (pain.002) och debiteringsaviseringen (camt.054). Då bokförs det banken har betalat, och det banken har avvisat visas med orsaken. Läs [Bankens svar på betalfilen](/manual/leverantorer/bankens-svar).
+
+Du kan också markera filen som betald själv:
+
 1. Kontrollera på kontoutdraget att betalningarna är gjorda.
 2. Klicka på **Banken har betalat** vid filen och sedan **Ja, bokför**.
 
-Filen får status **Betald** och varje faktura blir betald.
+Filen får status **Betald** och varje faktura blir betald. Betalningar som banken redan har betalat eller avvisat enligt bankens svar berörs inte.
 
-Betalade banken inte filen, klicka på **Makulera** och **Ja, makulera**. Fakturorna kan då tas med i en ny fil. En fil som inte är godkänd kan också makuleras.
+Betalade banken inte filen, klicka på **Makulera** och **Ja, makulera**. Fakturorna kan då tas med i en ny fil. En fil som inte är godkänd kan också makuleras. En fil där någon betalning redan är bokförd kan inte makuleras.
 
 ## Det här händer i bokföringen
 
-Ingenting bokförs när filen skapas eller godkänns. När du markerar filen som betald bokförs varje faktura i filen som en egen betalning i serie E på betaldagen: 2440 Leverantörsskulder i debet och 1930 Företagskonto i kredit (enligt kontantmetoden kostnaden och momsen i stället för 2440). Läs [Registrera en betalning](/manual/leverantorer/registrera-en-betalning).
+Ingenting bokförs när filen skapas eller godkänns. När du markerar filen som betald, eller bankens svar visar att pengarna har dragits, bokförs varje faktura i filen som en egen betalning i serie E på betaldagen: 2440 Leverantörsskulder i debet och 1930 Företagskonto i kredit (enligt kontantmetoden kostnaden och momsen i stället för 2440). Läs [Registrera en betalning](/manual/leverantorer/registrera-en-betalning).
 
 Själva filen sparas som den skapades, med en kontrollsumma, och kan inte ändras.
 
@@ -88,13 +92,17 @@ Själva filen sparas som den skapades, med en kontrollsumma, och kan inte ändra
 Då går filen inte att markera som betald. Makulera filen och gör en ny utan den fakturan.
 
 **Kan NONOX läsa bankens svar och bokföra automatiskt?**
-Inte än. Automatisk avstämning av betalfiler mot bankens svar är på väg. Tills vidare bekräftar du själv att banken har betalat.
+Ja. Läs in statusrapporten och debiteringsaviseringen från banken under **Läs in bankens svar**. Läs [Bankens svar på betalfilen](/manual/leverantorer/bankens-svar).
+
+**Banken avvisade en betalning.**
+Orsaken står vid betalningen. Fakturan är obetald och finns kvar under **Att betala**. Rätta felet och lägg den i en ny betalfil.
 
 **Vi är bara en person.**
 Då kan en ägare stänga av kravet på att någon annan godkänner. Läs [Attest](/manual/leverantorer/attest).
 
 ## Läs också
 
+- [Bankens svar på betalfilen](/manual/leverantorer/bankens-svar)
 - [Attest](/manual/leverantorer/attest)
 - [Leverantörsregistret](/manual/leverantorer/leverantorsregistret)
 - [Bankkoppling](/manual/bank/bankkoppling)

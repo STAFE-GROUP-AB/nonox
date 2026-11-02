@@ -118,6 +118,11 @@
                             @if($batch->isApproved())
                                 <span class="block text-gray-600">{{ __('Godkänd av :name :date', ['name' => $batch->approver?->name, 'date' => $batch->approved_at?->toDateString()]) }}</span>
                             @endif
+                            @if($batch->isOpen() && ($batch->paid_count > 0 || $batch->rejected_count > 0))
+                                <span class="block text-gray-600">{{ __('Enligt bankens svar: :paid betalda, :rejected avvisade, :waiting väntar.', ['paid' => $batch->paid_count, 'rejected' => $batch->rejected_count, 'waiting' => $batch->payment_count - $batch->paid_count - $batch->rejected_count]) }}</span>
+                            @elseif($batch->rejected_count > 0)
+                                <span class="block text-accent-700">{{ $batch->rejected_count === 1 ? __('1 betalning avvisades av banken.') : __(':count betalningar avvisades av banken.', ['count' => $batch->rejected_count]) }}</span>
+                            @endif
                         </span>
                         <x-ui.amount :money="$batch->total_ore" class="font-medium" />
                         <x-ui.badge :tone="$batch->status === PaymentBatchStatus::Confirmed ? 'success' : 'neutral'">{{ $batch->statusLabel() }}</x-ui.badge>
@@ -145,7 +150,7 @@
                                 @endif
                                 <button type="button" class="text-gray-600 underline" x-show="! confirming" x-on:click="confirming = 'cancel'">{{ __('Makulera') }}</button>
                                 <span x-show="confirming === 'paid'" x-cloak class="flex items-center gap-2">
-                                    <span class="text-gray-700">{{ __('Alla betalningar bokförs på betaldagen.') }}</span>
+                                    <span class="text-gray-700">{{ $batch->paid_count > 0 || $batch->rejected_count > 0 ? __('Betalningarna som väntar bokförs på betaldagen. De som banken redan betalat eller avvisat berörs inte.') : __('Alla betalningar bokförs på betaldagen.') }}</span>
                                     <x-button type="button" wire:click="confirm('{{ $batch->id }}')">{{ __('Ja, bokför') }}</x-button>
                                     <button type="button" class="text-gray-600 underline" x-on:click="confirming = null">{{ __('Avbryt') }}</button>
                                 </span>

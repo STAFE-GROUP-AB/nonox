@@ -7,16 +7,23 @@ namespace App\Domain\Overview\Todos;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Overview\Contracts\TodoProvider;
 use App\Domain\Overview\TodoItem;
+use App\Domain\Payables\PaymentBatchStatus;
+use App\Domain\Payables\PaymentResponseStatus;
+use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\BankReconciliation;
 use App\Models\BankTransaction;
 use App\Models\Company;
+use App\Models\PaymentResponse;
+use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
 use App\Models\VoucherRow;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * The bank: incoming payments from bank files that are not matched to an
- * invoice yet, and the company account (1930) when it has not been
+ * invoice yet, answers to payment files to handle and payments the bank
+ * rejected, and the company account (1930) when it has not been
  * reconciled against the bank statement up to the end of last month.
  */
 final class BankTodos implements TodoProvider
@@ -40,6 +47,10 @@ final class BankTodos implements TodoProvider
                     TodoItem::PRIORITY_BANK,
                 );
             }
+        }
+
+        if ($user->hasTeamPermission($company, 'payments:create')) {
+            array_push($items, ...$this->paymentResponses());
         }
 
         if ($user->hasTeamPermission($company, 'vouchers:post')) {
@@ -70,7 +81,55 @@ final class BankTodos implements TodoProvider
 
     public function invalidatedBy(): array
     {
-        return [BankTransaction::class];
+        return [BankTransaction::class, PaymentResponse::class, SupplierPaymentBatchItem::class];
+    }
+
+    /**
+     * The bank's answers to payment files that wait for a person, and
+     * payments the bank rejected whose invoice is still unpaid and not in a
+     * new file (ADR-014). Two queries.
+     *
+     * @return list<TodoItem>
+     */
+    private function paymentResponses(): array
+    {
+        $items = [];
+        $open = PaymentResponse::query()->whereIn('status', [PaymentResponseStatus::Suggested->value, PaymentResponseStatus::Unmatched->value])->count();
+
+        if ($open > 0) {
+            $items[] = new TodoItem(
+                'payment-responses',
+                'bank',
+                $open === 1 ? __('1 svar från banken om betalfiler att hantera') : __(':count svar från banken om betalfiler att hantera', ['count' => $open]),
+                __('Bekräfta eller avfärda det NONOX inte kunde göra automatiskt.'),
+                route('payables.batches.index'),
+                TodoItem::PRIORITY_PAY,
+            );
+        }
+
+        $rejected = SupplierPaymentBatchItem::query()
+            ->where('bank_status', SupplierPaymentBatchItem::REJECTED)
+            ->whereHas('invoice', fn (Builder $invoice) => $invoice
+                ->where('status', SupplierInvoiceStatus::Approved->value)
+                ->whereDoesntHave('batchItems', fn (Builder $item) => $item
+                    ->whereNull('supplier_payment_id')
+                    ->where(fn (Builder $status) => $status->whereNull('bank_status')->orWhere('bank_status', '!=', SupplierPaymentBatchItem::REJECTED))
+                    ->whereHas('batch', fn (Builder $batch) => $batch->where('status', PaymentBatchStatus::Created->value))))
+            ->distinct()
+            ->count('supplier_invoice_id');
+
+        if ($rejected > 0) {
+            $items[] = new TodoItem(
+                'payment-rejected',
+                'bank',
+                $rejected === 1 ? __('1 betalning avvisad av banken') : __(':count betalningar avvisade av banken', ['count' => $rejected]),
+                __('Fakturan är obetald igen. Se bankens orsak, rätta och betala på nytt.'),
+                route('payables.batches.index'),
+                TodoItem::PRIORITY_PAY,
+            );
+        }
+
+        return $items;
     }
 
     /** Whether anything is booked on the company account up to the date. */

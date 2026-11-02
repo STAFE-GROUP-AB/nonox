@@ -32,6 +32,8 @@ use App\Models\InvoiceRow;
 use App\Models\MonthCloseCheck;
 use App\Models\NumberSeries;
 use App\Models\OpeningBalance;
+use App\Models\PaymentResponse;
+use App\Models\PaymentResponseImport;
 use App\Models\Project;
 use App\Models\RecentItem;
 use App\Models\RecurringInvoice;
@@ -190,6 +192,8 @@ const COMPANY_SCOPED_MODELS = [
     SupplierPaymentBatchItem::class => 'paymentBatchItemAttributes',
     BankFileImport::class => 'bankFileImportAttributes',
     BankTransaction::class => 'bankTransactionAttributes',
+    PaymentResponseImport::class => 'paymentResponseImportAttributes',
+    PaymentResponse::class => 'paymentResponseAttributes',
     RecurringInvoice::class => 'agreementAttributes',
     CompanyModule::class => ['module_key' => 'hemlig', 'enabled' => true],
     WorkSchedule::class => 'payrollWorkScheduleAttributes',
@@ -791,6 +795,28 @@ function bankFileImportAttributes(): array
     ];
 }
 
+function paymentResponseImportAttributes(): array
+{
+    return [
+        'format' => 'pain.002',
+        'file_name' => 'hemlig.xml',
+        'file_path' => 'betalsvar/hemlig.xml',
+        'file_sha256' => hash('sha256', (string) random_int(1, 1_000_000)),
+        'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function paymentResponseAttributes(): array
+{
+    return [
+        'payment_response_import_id' => PaymentResponseImport::create(paymentResponseImportAttributes())->id,
+        'kind' => 'REJECTED',
+        'reference' => 'pain002:'.random_int(1, 1_000_000),
+        'end_to_end_id' => 'LF1-1',
+        'status' => 'UNMATCHED',
+    ];
+}
+
 function bankTransactionAttributes(): array
 {
     return [
@@ -1089,7 +1115,7 @@ function attributesFor(string $model): array
 const NEVER_UPDATED = [VoucherAttachment::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
-const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class];
+const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class];
 
 /** Test-only models that are not part of the application. */
 const TENANCY_FIXTURES = [TenantNote::class];

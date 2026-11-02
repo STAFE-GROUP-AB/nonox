@@ -96,7 +96,7 @@ it('makes a pain.001 file with OCR for bankgiro and a message for plusgiro', fun
         ->and($text('//p:InitgPty//p:SchmeNm/p:Cd'))->toBe(['BANK'])
         ->and($text('//p:DbtrAcct/p:Id/p:IBAN'))->toBe(['SE4550000000058398257466'])
         ->and($text('//p:ReqdExctnDt'))->toBe(['2026-03-12'])
-        ->and($text('//p:CdtTrfTxInf/p:PmtId/p:EndToEndId'))->toBe(["LF{$power->number}", "LF{$food->number}"])
+        ->and($text('//p:CdtTrfTxInf/p:PmtId/p:EndToEndId'))->toBe(["LF{$power->number}-{$batch->number}", "LF{$food->number}-{$batch->number}"])
         ->and($text('//p:CdtTrfTxInf/p:Amt/p:InstdAmt'))->toBe(['500.50', '1620.00'])
         ->and($text('//p:CdtrAcct/p:Id/p:Othr/p:Id'))->toBe(['4123451', '50501055'])
         ->and($text('//p:CdtrAgt//p:MmbId'))->toBe(['9500', '9900'])

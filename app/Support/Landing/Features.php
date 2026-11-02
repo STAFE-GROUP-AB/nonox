@@ -83,7 +83,7 @@ final class Features
         'archive' => ['name' => 'Arkivpaket per räkenskapsår', 'status' => self::LIVE, 'readme' => 'Arkivpaket per räkenskapsår'],
         'audit_log' => ['name' => 'Behandlingshistorik', 'status' => self::LIVE, 'readme' => 'Behandlingshistorik över allt som görs'],
         'branding' => ['name' => 'Egen logga och färger', 'status' => self::LIVE, 'readme' => 'Eget varumärke: logga och färger'],
-        'payment_file_matching' => ['name' => 'Automatisk avstämning av betalfiler', 'status' => self::SOON, 'readme' => 'Automatisk avstämning av betalfiler mot bankens svar'],
+        'payment_file_matching' => ['name' => 'Automatisk avstämning av betalfiler', 'status' => self::LIVE, 'readme' => 'Automatisk avstämning av betalfiler mot bankens svar'],
         'foreign_currency_sales' => ['name' => 'Kundfakturor i utländsk valuta', 'status' => self::SOON, 'readme' => 'betalfiler och kundfakturor i utländsk valuta'],
         'non_eu_goods_import' => ['name' => 'Import av varor från länder utanför EU', 'status' => self::SOON, 'readme' => 'Import av varor från länder utanför EU'],
         'ixbrl' => ['name' => 'Digital inlämning av årsredovisningen', 'status' => self::SOON, 'readme' => 'Digital inlämning av årsredovisningen till Bolagsverket (iXBRL)'],

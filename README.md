@@ -67,6 +67,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Inköp
 - Leverantörsfakturor som PDF eller bild, kontering per kostnadsställe och attest av en annan person än den som registrerade. Fakturor i utländsk valuta räknas om med Riksbankens kurs, och kursvinst eller kursförlust bokförs när fakturan betalas.
 - Betalfiler till banken (ISO 20022 pain.001) för Danske Bank, Handelsbanken, Länsförsäkringar, Nordea, SEB, Swedbank och sparbankerna. En betalfil godkänns av en annan person innan den kan laddas ner, och bokförs när banken har betalat.
+- Automatisk avstämning av betalfiler mot bankens svar: statusrapporten (pain.002), debiteringsaviseringen (camt.054) eller kontoutdraget (camt.053) läses in, varje betalning hittas på referensen i betalfilen, avvisade betalningar visas med bankens orsak på svenska och fakturan kan betalas igen, och det banken har betalat bokförs i serie E. Samma svar bokförs aldrig två gånger. Med bankkopplingen föreslås betalningarna ut direkt från banken.
 - En tolkad faktura kopplas till leverantören som redan finns i registret, även en utländsk utan organisationsnummer (momsnummer, IBAN, e-postdomän eller namn), och ett liknande namn föreslås i stället för att leverantören läggs till igen.
 - Kreditnotor från leverantörer, inköp från andra EU-länder, tjänster från länder utanför EU och omvänd betalningsskyldighet, med momsen i rätt rutor.
 
@@ -139,7 +140,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
 
 ### På väg
-- Automatisk avstämning av betalfiler mot bankens svar, och betalfiler och kundfakturor i utländsk valuta.
+- Utländsk valuta: betalfiler och kundfakturor i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
