@@ -1,4 +1,4 @@
-{{-- RSS 2.0 feed of the public changelog, newest first; ChangelogController::feed() puts the XML declaration in front. --}}
+{{-- RSS 2.0 feed of the public changelog, newest first, without the work outside the code (it has no real date for pubDate); ChangelogController::feed() puts the XML declaration in front. --}}
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>NONOX ändringslogg</title>

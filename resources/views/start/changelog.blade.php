@@ -3,7 +3,8 @@
     shipped change from docs/andringslogg/andringslogg.json, newest first and
     grouped by the project's phases (with month headings only where a phase
     has entries). The filters are a plain GET form and links, so the page
-    works without JavaScript.
+    works without JavaScript. Work outside the code (an entry with a `period`)
+    shows its period and a note, never its datum, which is only for ordering.
 --}}
 @use('App\Support\Landing\Changelog')
 @php
@@ -55,6 +56,7 @@
 .cl-entry:target{background:var(--accl);border-radius:16px;padding-left:14px;padding-right:14px}
 .cl-time{font-size:14px;line-height:1.5;color:var(--muted);font-variant-numeric:tabular-nums}
 .cl-time strong{display:block;color:var(--ink);font-weight:700}
+.cl-outside{display:inline-block;margin-top:6px;padding:2px 9px;border:1px solid var(--line);border-radius:999px;font-size:12.5px;font-weight:600;color:var(--muted)}
 .cl-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px}
 .cl-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:700}
 .cl-nytt{background:var(--n-bg);color:var(--n-fg)}
@@ -100,7 +102,7 @@
     <p class="cl-lead">Här står varje ny funktion, förbättring och rättelse i NONOX, och de utredningar och granskningar som ligger bakom, med datum och klockslag. Listan tas fram ur det vi faktiskt levererar: varje ändring som når programmet får en rad här, skriven på vanlig svenska. Du behöver inte kunna läsa kod för att följa med.</p>
     <aside class="cl-background" aria-labelledby="cl-bakgrund">
       <h2 id="cl-bakgrund">Bakgrund</h2>
-      <p>NONOX började i januari 2026 med den grundläggande arkitekturen och en funktionsspecifikation. Från oktober 2026 har systemet byggts i full skala, med AI-stödd utveckling under mänsklig ledning.</p>
+      <p>NONOX började i januari 2026 med den grundläggande arkitekturen och en funktionsspecifikation. Mellan februari och september 2026 pågick förberedelserna utanför koden: samtal med företag, funktionslistan, arbetssättet och webbplatsens innehåll. Från oktober 2026 har systemet byggts i full skala, med AI-stödd utveckling under mänsklig ledning.</p>
       <p>Specifikationerna skrivs utifrån lagtexten, BAS, SIE och Skatteverkets dokumentation. Varje lagregel finns som data med en källa, och arbetet går igenom juridisk genomgång, oberoende kontroller och tusentals automatiska tester. Loggen nedan visar varje leverans sedan dess.</p>
       <p>NONOX är i öppen beta. Målet är version 1.0 den 1 januari 2027.</p>
     </aside>
@@ -181,10 +183,14 @@
         <h3 id="manad-{{ $key }}" class="cl-month">{{ $month['label'] }} <span>· {{ count($month['entries']) }} {{ count($month['entries']) === 1 ? 'ändring' : 'ändringar' }}</span></h3>
         <ol class="cl-list">
           @foreach($month['entries'] as $entry)
-            @php($date = Changelog::date($entry))
             <li id="{{ $entry['id'] }}" class="cl-entry">
               <div class="cl-time">
-                <time datetime="{{ $date->format('c') }}"><strong>{{ $date->locale('sv')->isoFormat('D MMMM YYYY') }}</strong>kl. {{ $date->format('H:i') }}</time>
+                @if(Changelog::isPeriod($entry))
+                  <strong>{{ ucfirst($entry['period']) }}</strong><span class="cl-outside">Arbete utanför koden</span>
+                @else
+                  @php($date = Changelog::date($entry))
+                  <time datetime="{{ $date->format('c') }}"><strong>{{ $date->locale('sv')->isoFormat('D MMMM YYYY') }}</strong>kl. {{ $date->format('H:i') }}</time>
+                @endif
               </div>
               <article aria-labelledby="{{ $entry['id'] }}-rubrik">
                 <div class="cl-tags">

@@ -124,23 +124,108 @@ it('accepts research entries as their own type with their own badge', function (
     }
 });
 
-it('dates every entry honestly: never in the future, never in the quiet months', function () {
+it('dates every entry honestly: never in the future, and only work outside the code in the preparation months', function () {
     $now = CarbonImmutable::now();
+    $preparation = [CarbonImmutable::parse('2026-02-01', Changelog::TIMEZONE), CarbonImmutable::parse('2026-09-30 23:59:59', Changelog::TIMEZONE)];
 
     foreach (Changelog::all() as $entry) {
         $date = Changelog::date($entry);
 
         expect($date->lessThanOrEqualTo($now))->toBeTrue("{$entry['id']} is dated in the future ({$entry['datum']}).")
-            ->and($date->between(CarbonImmutable::parse('2026-02-01', Changelog::TIMEZONE), CarbonImmutable::parse('2026-09-30 23:59:59', Changelog::TIMEZONE)))
-            ->toBeFalse("{$entry['id']} is dated February–September 2026, when nothing was built.")
             ->and(Changelog::phaseOf($entry))->not->toBeNull("{$entry['id']} lies outside every phase.");
+
+        if (! $date->between(...$preparation)) {
+            continue;
+        }
+
+        // Nothing was committed February–September 2026: only work outside the code, shown by its period, may lie there.
+        expect($entry['period'] ?? null)->toBeString("{$entry['id']} is dated February–September 2026 without a period.")
+            ->and($entry['utanfor_koden'] ?? null)->toBeTrue("{$entry['id']} is dated February–September 2026 but is not marked as work outside the code.")
+            ->and($entry)->not->toHaveKey('version')
+            ->and(Changelog::phaseOf($entry)['id'] ?? null)->toBe('forberedelser');
     }
+});
+
+it('has the preparation work outside the code as period entries', function () {
+    $period = array_values(array_filter(Changelog::all(), fn (array $entry): bool => Changelog::isPeriod($entry)));
+
+    expect($period)->toHaveCount(5);
+
+    foreach ($period as $entry) {
+        expect($entry['period'])->toBe('februari–september 2026')
+            ->and($entry['utanfor_koden'])->toBeTrue()
+            ->and($entry['typ'])->toBe('Utredning')
+            ->and($entry['datum'])->toBe('2026-02-01T00:00:00+01:00');
+    }
+});
+
+it('reports what is wrong with a period entry', function () {
+    $file = tempnam(sys_get_temp_dir(), 'andringslogg');
+    $entry = ['datum' => '2026-02-01T00:00:00+01:00', 'rubrik' => 'R', 'beskrivning' => 'B.', 'typ' => 'Utredning', 'omrade' => 'Kvalitet'];
+    file_put_contents($file, json_encode(['faser' => [['id' => 'f', 'namn' => 'F', 'beskrivning' => 'B', 'fran' => '2026-02-01']], 'poster' => [
+        ['id' => 'ok', ...$entry, 'period' => 'februari–september 2026', 'utanfor_koden' => true],
+        ['id' => 'a', ...$entry, 'period' => 'februari–september 2026'],
+        ['id' => 'b', ...$entry, 'period' => '', 'utanfor_koden' => true, 'version' => 'abc1234'],
+        ['id' => 'c', ...$entry, 'utanfor_koden' => true],
+    ]]));
+
+    try {
+        expect(Changelog::errors($file))->toBe([
+            "a: en post med 'period' ska ha 'utanfor_koden': true.",
+            "b: 'period' ska vara en text, till exempel februari–september 2026.",
+            "b: en post med 'period' kan inte ha 'version'.",
+            "c: 'utanfor_koden' används bara tillsammans med 'period'.",
+        ]);
+    } finally {
+        unlink($file);
+    }
+});
+
+it('shows the period of work outside the code, never a made-up date or time', function () {
+    $period = array_values(array_filter(Changelog::all(), fn (array $entry): bool => Changelog::isPeriod($entry)));
+    $html = $this->get('/andringslogg')->assertOk()->getContent();
+    $phase = pagePart($html, 'aria-labelledby="fas-forberedelser"', 'aria-labelledby="fas-grund"');
+
+    expect($phase)->toContain('<h3 id="manad-februari-september-2026" class="cl-month">Februari–september 2026 <span>· 5 ändringar</span></h3>')
+        ->and(substr_count($phase, 'class="cl-entry"'))->toBe(count($period))
+        ->and(substr_count($phase, 'Arbete utanför koden'))->toBe(count($period))
+        ->and($phase)->not->toContain('<time')
+        ->and($phase)->not->toContain('kl. ')
+        ->and($phase)->not->toContain('1 februari 2026</strong>')
+        ->and($html)->not->toContain('2026-02-01T00:00:00+01:00');
+
+    foreach ($period as $entry) {
+        expect($phase)->toContain('<li id="'.$entry['id'].'" class="cl-entry">')
+            ->and($phase)->toContain(e($entry['rubrik']));
+    }
+
+    // The filters reach them like any other entry.
+    $this->get('/andringslogg?typ=utredning&omrade=kvalitet&q=caféer')->assertOk()
+        ->assertSee('Samtal med caféer, restauranger och andra företag')
+        ->assertSee('Arbete utanför koden');
+    $this->get('/andringslogg?typ=nytt')->assertOk()
+        ->assertDontSee('Arbete utanför koden')
+        ->assertDontSee('id="fas-forberedelser"', false);
+});
+
+it('leaves the work outside the code out of the RSS feed and the roadmap', function () {
+    $xml = simplexml_load_string((string) $this->get('/andringslogg/rss.xml')->assertOk()->getContent());
+    $guids = array_map(fn (SimpleXMLElement $item): string => (string) $item->guid, iterator_to_array($xml->channel->item, false));
+
+    foreach (Changelog::all() as $entry) {
+        if (Changelog::isPeriod($entry)) {
+            expect($guids)->not->toContain("nonox-andringslogg-{$entry['id']}");
+        }
+    }
+
+    expect(array_filter(Changelog::dated(), fn (array $entry): bool => Changelog::isPeriod($entry)))->toBe([])
+        ->and(array_filter(Changelog::latest(100, ['Utredning']), fn (array $entry): bool => Changelog::isPeriod($entry)))->toBe([]);
 });
 
 it('groups the changes by phase under the background, with the goal first', function () {
     $phases = Changelog::phases();
 
-    expect(array_column($phases, 'id'))->toBe(['version-1-0', 'beta-0-9', 'grund'])
+    expect(array_column($phases, 'id'))->toBe(['version-1-0', 'beta-0-9', 'forberedelser', 'grund'])
         ->and($phases[0]['kommande'])->toBeTrue()
         ->and($phases[0]['fran'])->toBe('2027-01-01');
 
@@ -148,6 +233,7 @@ it('groups the changes by phase under the background, with the goal first', func
         ->assertSeeInOrder([
             'Bakgrund',
             'började i januari 2026',
+            'Mellan februari och september 2026 pågick förberedelserna utanför koden',
             'Från oktober 2026',
             'AI-stödd utveckling under mänsklig ledning',
             'lagtexten, BAS, SIE och Skatteverkets dokumentation',
@@ -157,12 +243,17 @@ it('groups the changes by phase under the background, with the goal first', func
             'Mål · 1 januari 2027',
             'aria-labelledby="fas-beta-0-9"',
             'Sedan 29 oktober 2026',
+            'aria-labelledby="fas-forberedelser"',
+            '1 februari 2026 – 28 oktober 2026',
+            'Förberedelser',
+            'De exakta datumen finns inte nedskrivna',
             'aria-labelledby="fas-grund"',
             '11 januari 2026',
         ], false)
         ->getContent();
 
-    expect(substr_count($html, 'aria-labelledby="fas-'))->toBe(3);
+    expect(substr_count($html, 'aria-labelledby="fas-'))->toBe(4)
+        ->and($html)->not->toContain('vilade');
 
     // The goal has no entries; every other phase holds exactly its own.
     foreach (Changelog::byPhase(Changelog::all()) as $group) {
@@ -176,7 +267,7 @@ it('never shows a month heading without changes', function () {
     $months = [];
 
     foreach (Changelog::all() as $entry) {
-        $months[Changelog::date($entry)->format('Y-m')] = true;
+        $months[Changelog::isPeriod($entry) ? $entry['period'] : Changelog::date($entry)->format('Y-m')] = true;
     }
 
     expect(substr_count($html, 'class="cl-month"'))->toBe(count($months));
@@ -264,9 +355,9 @@ it('publishes the changelog as a valid RSS feed', function () {
         ->and((string) $xml['version'])->toBe('2.0')
         ->and((string) $xml->channel->title)->toBe('NONOX ändringslogg')
         ->and((string) $xml->channel->link)->toBe(route('changelog'))
-        ->and(count($xml->channel->item))->toBe(min(50, count(Changelog::all())));
+        ->and(count($xml->channel->item))->toBe(min(50, count(Changelog::dated())));
 
-    $first = Changelog::all()[0];
+    $first = Changelog::dated()[0];
     $item = $xml->channel->item[0];
     expect((string) $item->title)->toBe("{$first['typ']}: {$first['rubrik']}")
         ->and((string) $item->link)->toBe(route('changelog').'#'.$first['id'])

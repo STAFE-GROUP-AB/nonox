@@ -49,7 +49,7 @@ class ChangelogController
 
     public function feed(): Response
     {
-        $entries = array_slice(Changelog::all(), 0, self::FEED_SIZE);
+        $entries = array_slice(Changelog::dated(), 0, self::FEED_SIZE);
         $updated = $entries === [] ? now() : Changelog::date($entries[0]);
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n".view('start.changelog-feed', [
