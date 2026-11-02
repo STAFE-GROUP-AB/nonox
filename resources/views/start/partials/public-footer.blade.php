@@ -16,14 +16,19 @@
         <a class="lp28" href="{{ $home }}#funktioner" style="text-decoration:none;color:#D9D7D1">Funktioner</a>
         <a class="lp29" href="{{ $home }}#priser" style="text-decoration:none;color:#D9D7D1">Priser</a>
         <a class="lp30" href="{{ $ph['flytt'] }}" style="text-decoration:none;color:#D9D7D1">Flyttguide</a>
-        <a href="{{ route('manual.home') }}" style="text-decoration:none;color:#D9D7D1">Manual</a>
         <a class="lp31" href="{{ $home }}#kor-sjalv" style="text-decoration:none;color:#D9D7D1">Nedladdning</a>
       </nav>
-      <nav aria-label="Utvecklare" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
-        <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Utvecklare</span>
-        <a class="lp32" href="{{ $ph['github'] }}" style="text-decoration:none;color:#D9D7D1">GitHub</a>
-        <a class="lp33" href="{{ $ph['docs'] }}" style="text-decoration:none;color:#D9D7D1">Dokumentation</a>
+      <nav aria-label="Resurser" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
+        <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Resurser</span>
+        <a class="lp33" href="{{ route('manual.home') }}" style="text-decoration:none;color:#D9D7D1">Manual</a>
         <a class="lp34" href="{{ $ph['api'] }}" style="text-decoration:none;color:#D9D7D1">API för utvecklare</a>
+        <a class="lp28" href="{{ route('security') }}" style="text-decoration:none;color:#D9D7D1">Säkerhet och regelverk</a>
+        <a class="lp29" href="{{ route('changelog') }}" style="text-decoration:none;color:#D9D7D1">Ändringslogg</a>
+        <a class="lp30" href="{{ route('roadmap') }}" style="text-decoration:none;color:#D9D7D1">Färdplan</a>
+      </nav>
+      <nav aria-label="Öppen källkod" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
+        <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Öppen källkod</span>
+        <a class="lp32" href="{{ $ph['github'] }}" style="text-decoration:none;color:#D9D7D1">Källkoden på GitHub</a>
         <a class="lp35" href="https://www.gnu.org/licenses/agpl-3.0.html" style="text-decoration:none;color:#D9D7D1">Licens AGPL-3.0</a>
       </nav>
       <nav aria-label="Branscher i sidfoten" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
@@ -48,7 +53,6 @@
         <a href="{{ route('legal.dpa') }}" style="text-decoration:none;color:#D9D7D1">Personuppgiftsbiträdesavtal</a>
         <a href="{{ route('legal.subprocessors') }}" style="text-decoration:none;color:#D9D7D1">Underbiträden</a>
         <a href="{{ route('legal.selfHosting') }}" style="text-decoration:none;color:#D9D7D1">Egen drift</a>
-        <a href="{{ route('security') }}" style="text-decoration:none;color:#D9D7D1">Säkerhet och regelverk</a>
         <a href="{{ route('legal.accessibility') }}" style="text-decoration:none;color:#D9D7D1">Tillgänglighet</a>
         <a href="{{ route('cookies') }}" style="text-decoration:none;color:#D9D7D1">Cookies</a>
         <a href="{{ route('cookies') }}" data-cookie-settings style="text-decoration:none;color:#D9D7D1">Cookie-inställningar</a>

@@ -45,6 +45,18 @@ final class ShareCards
                 'accent' => 'öppna betyg.',
                 'text' => 'Betyg per område, vad som är klart och vad som återstår. Granskat mot GDPR, Bokföringslagen och AI-förordningen.',
             ],
+            'andringslogg' => [
+                'eyebrow' => 'Ändringslogg',
+                'title' => 'Allt vi har byggt,',
+                'accent' => 'öppet redovisat.',
+                'text' => 'Varje ny funktion, förbättring och rättelse i NONOX, med datum och klockslag, på vanlig svenska.',
+            ],
+            'fardplan' => [
+                'eyebrow' => 'Färdplan',
+                'title' => 'Det här bygger vi',
+                'accent' => 'härnäst.',
+                'text' => 'Det som pågår, det som är planerat och önskemålen från kunder och partner.',
+            ],
             'flytta-hit' => [
                 'eyebrow' => 'Flytta till NONOX',
                 'title' => 'Byt bokföringsprogram',
