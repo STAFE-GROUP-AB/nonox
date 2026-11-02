@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
+use App\Support\Hq\HqAccess;
 use Closure;
 use Illuminate\Support\Str;
 
@@ -37,7 +38,34 @@ final class Navigation
             $result[] = new NavSection($section['label'], $section['route'], $section['patterns'], $index === $open, $children);
         }
 
+        $hq = $this->hq($user, $currentRoute);
+
+        if ($hq !== null) {
+            $result[] = $hq;
+        }
+
         return $result;
+    }
+
+    /**
+     * HQ (ADR-038): the instance's own area, for the HQ admins only and
+     * whatever company they have selected, or none. It belongs to no
+     * company, so it is not one of the company sections above.
+     */
+    private function hq(User $user, ?string $currentRoute): ?NavSection
+    {
+        if (! HqAccess::allows($user)) {
+            return null;
+        }
+
+        $patterns = ['hq.*'];
+        $active = $currentRoute !== null && Str::is($patterns, $currentRoute);
+        $children = $active ? $this->links([
+            ['label' => __('Kö'), 'route' => 'hq.waitlist'],
+            ['label' => __('Kunder'), 'route' => 'hq.customers'],
+        ], $currentRoute) : [];
+
+        return new NavSection(__('HQ'), 'hq.waitlist', $patterns, $active, $children);
     }
 
     /**
