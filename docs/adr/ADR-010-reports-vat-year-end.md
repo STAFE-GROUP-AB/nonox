@@ -203,3 +203,20 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-14, #87).
 - TODO(legal-verify): the basis under lag (1991:687) 2 § (tryggandelagen
   provisions, item j, gruppsjukförsäkring, administration fees) versus the
   booked 74xx amount.
+
+## Dividends within the free equity (2026-11-02, #84, #85, #86)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-2, -3,
+-13; #84, #85, #86).
+
+- **Rule.** ABL 17 kap. 3 § första stycket: no value transfer unless the
+  restricted equity is fully covered afterwards, computed on the latest
+  adopted balance sheet; lag (2018:672) om ekonomiska föreningar 12 kap. 3 §
+  likewise. The room is the free equity (BFNAR 2016:10 p. 5.8: the
+  disposition covers the sum of the free equity). The prudence rule (17 kap.
+  3 § andra stycket) is a judgement and is only shown as a reminder.
+- **Decision.** `DividendLimit` computes the room as
+  `AnnualAccounts::freeEquity()` of the year (retained earnings and the
+  year's result, whether booked to 2099 or not) and refuses a larger
+  dividend, or any dividend when it is negative. `SaveAnnualReport` (the
+  board's proposal) uses it from #84.

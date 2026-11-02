@@ -6,6 +6,7 @@ namespace App\Livewire\Accounting;
 
 use App\Actions\AnnualReport\SaveAnnualReport;
 use App\Domain\AnnualReport\AnnualReportDocument;
+use App\Domain\Closing\DividendLimit;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\AnnualReport;
 use App\Models\Company;
@@ -59,10 +60,14 @@ class AnnualReportPage extends Component
 
     public function render(): View
     {
+        $fiscalYear = FiscalYear::query()->findOrFail($this->year);
+        $supported = AnnualReportDocument::supports($this->company());
+
         return view('livewire.accounting.annual-report', [
             'years' => FiscalYear::query()->orderByDesc('start_date')->get(),
-            'fiscalYear' => FiscalYear::query()->findOrFail($this->year),
-            'supported' => AnnualReportDocument::supports($this->company()),
+            'fiscalYear' => $fiscalYear,
+            'supported' => $supported,
+            'freeEquity' => $supported ? DividendLimit::freeEquityOre($fiscalYear) : 0,
         ]);
     }
 

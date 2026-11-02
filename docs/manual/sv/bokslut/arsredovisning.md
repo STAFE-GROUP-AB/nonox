@@ -3,7 +3,7 @@ beskrivning: Upprätta årsredovisningen enligt K2 för aktiebolag och ekonomisk
 ordning: 90
 roller: [owner, admin, accountant]
 rutter: [accounting.annualReport, accounting.annualReport.show, accounting.annualReport.pdf]
-sokord: [årsredovisning, k2, förvaltningsberättelse, resultaträkning, balansräkning, noter, flerårsöversikt, underskrifter, bolagsverket, ixbrl, digital inlämning]
+sokord: [årsredovisning, k2, förvaltningsberättelse, resultaträkning, balansräkning, noter, flerårsöversikt, underskrifter, bolagsverket, ixbrl, digital inlämning, utdelning, fritt eget kapital, försiktighetsregeln]
 ---
 
 # Årsredovisning enligt K2
@@ -24,7 +24,7 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
 2. Under **Texter och underskrifter**, fyll i:
    - **Allmänt om verksamheten** – vad företaget gör och var det har sitt säte.
    - **Väsentliga händelser under året** – lämna tomt om inget särskilt har hänt.
-   - **Föreslagen utdelning, kr**.
+   - **Föreslagen utdelning, kr** – högst det fria egna kapitalet, som står under fältet. Det är balanserade vinstmedel plus årets resultat. Försöker du föreslå mer får du ett felmeddelande, eftersom aktiebolagslagen (17 kap. 3 §) inte tillåter det. Utdelningen ska också vara försvarlig med hänsyn till bolagets behov av eget kapital och likviditet (försiktighetsregeln). Det bedömer styrelsen – NONOX kan inte räkna fram det.
    - **Medelantal anställda**.
    - **Ort** och **Datum för underskrift**.
    - **Underskrifter** – en per rad: namn, roll. Till exempel "Anna Andersson, Styrelseledamot".

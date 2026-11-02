@@ -1051,6 +1051,13 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   2099; ett tidigare resultat som inte disponerats visas som balanserat
   resultat. Saknas föregående år i systemet används årets ingående balanser
   som jämförelse för balansräkningen.
+- Föreslagen utdelning får inte vara större än det fria egna kapitalet
+  (balanserat resultat och årets resultat, `DividendLimit`); en större
+  utdelning avvisas med hänvisning till ABL 17 kap. 3 § (ekonomisk förening:
+  lag 2018:672 12 kap. 3 §). Är det fria egna kapitalet negativt avvisas all
+  utdelning. Fältet visar det fria egna kapitalet och påminner om
+  försiktighetsregeln, som styrelsen bedömer. Enligt granskning 2026-11-02,
+  juristgranskning återstår (BS-AUD-BOK-2, #84).
 - Rapporten visas som sida och laddas ner som PDF. Revisionsberättelse och
   fastställelseintyg läggs till utanför systemet. Digital inlämning till
   Bolagsverket (iXBRL) finns ännu inte.

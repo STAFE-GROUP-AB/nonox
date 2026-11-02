@@ -107,7 +107,12 @@ it('AUD-BOK-2: refuses a proposed dividend larger than the free equity (ABL 17 k
     // Free equity 113 520; a dividend of 200 000 would eat into the restricted equity.
     expect(fn () => app(SaveAnnualReport::class)($this->owner, $this->year, ['dividend' => '200 000', 'average_employees' => 0]))
         ->toThrow(ValidationException::class);
-})->todo('AUD-BOK-2: SaveAnnualReport accepts any dividend; the report then shows a negative "Balanseras i ny räkning"');
+
+    // Exactly the free equity is allowed and leaves 0 to carry forward (#84).
+    $report = app(SaveAnnualReport::class)($this->owner, $this->year, ['dividend' => '113 520', 'average_employees' => 0]);
+
+    expect(AnnualReportDocument::data($this->company, $this->year, $report)['disposition'])->toBe(['free' => 11_352_000, 'dividend' => 11_352_000, 'carried' => 0]);
+});
 
 it('AUD-BOK-3: refuses to book a dividend larger than the free equity in the disposition (ABL 17 kap. 3 §)', function () {
     audBokFindingsClose();

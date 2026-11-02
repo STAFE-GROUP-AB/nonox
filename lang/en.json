@@ -5881,5 +5881,11 @@
     "Negativt underlag för särskild löneskatt på pensionskostnader": "Negative basis for special payroll tax on pension costs",
     "Pensionskostnader (som ingår i p. 3.8)": "Pension costs (included in item 3.8)",
     "Pensionskostnader redovisas i punkt 4.21, men underlaget för särskild löneskatt (punkt 1.4 eller 1.5) är tomt. Kontrollera underlaget.": "Pension costs are reported in item 4.21, but the basis for special payroll tax (item 1.4 or 1.5) is empty. Check the basis.",
-    "Fyll i antingen underlaget eller det negativa underlaget för särskild löneskatt, inte båda.": "Enter either the basis or the negative basis for special payroll tax, not both."
+    "Fyll i antingen underlaget eller det negativa underlaget för särskild löneskatt, inte båda.": "Enter either the basis or the negative basis for special payroll tax, not both.",
+    "Utdelningen :dividend är större än det fria egna kapitalet :free. :law tillåter inte att mer delas ut än det fria egna kapitalet.": "The dividend :dividend is larger than the free equity :free. :law does not allow more than the free equity to be distributed.",
+    "Det finns inget fritt eget kapital att dela ut. :law tillåter ingen utdelning när det bundna egna kapitalet inte är fullt täckt.": "There is no free equity to distribute. :law allows no dividend when the restricted equity is not fully covered.",
+    "Lagen om ekonomiska föreningar 12 kap. 3 §": "The Economic Associations Act, chapter 12, section 3",
+    "Aktiebolagslagen 17 kap. 3 §": "The Companies Act, chapter 17, section 3",
+    "Reglerna om skydd för bundet eget kapital": "The rules protecting restricted equity",
+    "Högst det fria egna kapitalet, :free. Utdelningen ska också vara försvarlig med hänsyn till bolagets behov av eget kapital och likviditet (försiktighetsregeln) – det bedömer styrelsen.": "At most the free equity, :free. The dividend must also be justifiable given the company's need for equity and liquidity (the prudence rule) – the board judges that."
 }
