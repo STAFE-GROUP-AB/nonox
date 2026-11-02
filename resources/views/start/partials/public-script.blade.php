@@ -101,5 +101,15 @@
         el.style.transition = (el.style.transition ? el.style.transition + ',' : '') + 'opacity .7s ease, translate .7s cubic-bezier(.2,.7,.2,1)';
         observer.observe(el);
     });
+
+    // The feature screenshots slide in from their side, the text follows.
+    const rows = document.querySelectorAll('[data-fs]');
+    if (rows.length) {
+        document.documentElement.classList.add('fs-anim');
+        const showRow = new IntersectionObserver((entries) => entries.forEach((entry) => {
+            if (entry.isIntersecting) { entry.target.classList.add('fs-in'); showRow.unobserve(entry.target); }
+        }), { rootMargin: '0px 0px -12% 0px', threshold: 0.15 });
+        rows.forEach((row) => showRow.observe(row));
+    }
 })();
 </script>

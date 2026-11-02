@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-skarmbilder-pa-startsidan",
+      "datum": "2026-11-02T17:42:00+01:00",
+      "rubrik": "Startsidan visar funktionerna med skärmbilder",
+      "beskrivning": "Rutnätet med funktioner på startsidan är ersatt av en skärmbild per funktion, tagen i NONOX med påhittade demoföretag, som glider in när du scrollar dit. Varje funktion länkar till sitt avsnitt i manualen.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-02-forberedelser-i-andringsloggen",
       "datum": "2026-11-02T16:36:12+01:00",
       "rubrik": "Förberedelserna före bygget syns i ändringsloggen",
