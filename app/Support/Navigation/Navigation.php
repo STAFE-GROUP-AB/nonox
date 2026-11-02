@@ -160,6 +160,7 @@ final class Navigation
             $can('fiscal-years:manage') ? ['label' => __('Anläggningar'), 'route' => 'accounting.fixedAssets', 'group' => $ongoing] : null,
             $can('import:sie') ? ['label' => __('Läs in SIE-fil'), 'route' => 'accounting.sieImports.index', 'group' => $ongoing] : null,
             $can('reports:view') ? ['label' => __('Rapporter'), 'route' => 'accounting.reports', 'group' => $reports] : null,
+            $can('reports:view') ? ['label' => __('Reskontra'), 'route' => 'accounting.ledgers', 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('Moms'), 'route' => 'vat.index', 'active' => ['vat.index', 'vat.file'], 'group' => $reports] : null,
             $can('vat:prepare') ? ['label' => __('EU-rapporter'), 'route' => 'vat.euReports', 'group' => $reports] : null,
             ['label' => __('Räkenskapsår'), 'route' => 'accounting.fiscalYears', 'group' => $closing],

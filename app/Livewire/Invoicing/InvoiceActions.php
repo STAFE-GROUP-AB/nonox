@@ -11,6 +11,7 @@ use App\Actions\Invoicing\RegisterTaxReductionPayment;
 use App\Actions\Invoicing\RegisterTaxReductionRepayment;
 use App\Actions\Invoicing\SendInvoice;
 use App\Actions\Invoicing\SendReminder;
+use App\Actions\Invoicing\WriteOffInvoice;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\TaxReduction;
@@ -48,6 +49,11 @@ class InvoiceActions extends Component
 
     public string $amount = '';
 
+    /** The day a confirmed customer loss is booked, and why (#57). */
+    public string $writeOffOn = '';
+
+    public string $writeOffReason = '';
+
     /** For an invoice in another currency: how much of it is paid, in that currency. */
     public string $foreignAmount = '';
 
@@ -57,6 +63,7 @@ class InvoiceActions extends Component
     public function mount(Invoice $invoice): void
     {
         $this->invoiceId = $invoice->id;
+        $this->writeOffOn = now()->toDateString();
         $this->email = (string) ($invoice->sent_to ?? $invoice->customer_snapshot['email'] ?? '');
         $this->paidOn = now()->toDateString();
         $this->resetAmounts($invoice);
@@ -94,6 +101,17 @@ class InvoiceActions extends Component
     public function updatedForeignAmount(): void
     {
         $this->prefillKronor($this->invoice());
+    }
+
+    public function writeOff(WriteOffInvoice $writeOff): void
+    {
+        $date = CarbonImmutable::createFromFormat('!Y-m-d', $this->writeOffOn)
+            ?: throw ValidationException::withMessages(['written_off_on' => __('Välj dagen då förlusten bokförs.')]);
+
+        $invoice = $writeOff($this->user(), $this->invoice(), $date, $this->writeOffReason);
+
+        $this->writeOffReason = '';
+        $this->toast(__(':title är bortskriven som kundförlust, :amount.', ['title' => $invoice->title(), 'amount' => $invoice->written_off_ore->format()]));
     }
 
     public function registerPayment(RegisterPayment $register): void
@@ -213,6 +231,7 @@ class InvoiceActions extends Component
             'canRefund' => $this->user()->can('registerRefund', $invoice),
             'refundLeft' => $invoice->isCredit() && $invoice->remaining()->isNegative() ? $this->refundLeft($invoice) : null,
             'canRemind' => $this->user()->can('remind', $invoice),
+            'canWriteOff' => $this->user()->can('writeOff', $invoice),
             'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->doesntContain(fn (Invoice $credit): bool => $credit->isDraft()),
             'exchangePreview' => $this->exchangePreview($invoice),
             'taxRecheck' => $invoice->tax_reduction !== null && $invoice->status === InvoiceStatus::Paid && $invoice->payments->isNotEmpty()

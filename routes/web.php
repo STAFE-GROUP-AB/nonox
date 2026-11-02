@@ -192,6 +192,7 @@ Route::middleware([
         Route::view('/artiklar', 'invoicing.articles')->name('invoicing.articles');
 
         Route::view('/rapporter', 'accounting.reports')->name('accounting.reports');
+        Route::view('/reskontra', 'accounting.ledgers')->name('accounting.ledgers');
         Route::view('/moms', 'vat.index')->name('vat.index');
         Route::get('/moms/{fiscalYear}/fil', VatFileController::class)->whereNumber('fiscalYear')->name('vat.file');
         Route::view('/eu-rapporter', 'vat.eu-reports')->name('vat.euReports');

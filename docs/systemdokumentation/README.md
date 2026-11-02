@@ -536,6 +536,19 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   undantagstext sparad när den skapas (`vat_exemption_text`, 17 kap. 24 §
   p. 13 och 28 § p. 6) och PDF:en skriver ut den (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-5, #51)).
+- Kundförlust: det obetalda på en skapad faktura kan skrivas bort som
+  konstaterad kundförlust med datum och skäl (`WriteOffInvoice`, behörighet
+  `invoices:credit`). Står fakturan på 1510 bokförs en verifikation i serie
+  B: 1510 kredit med det obetalda, den delens andel av utgående moms debet
+  (ML 8 kap. 16 §, 7 kap. 43–44 §§) och resten på 6351 debet. Med
+  kontantmetoden bokförs inget. Fakturan får status WRITTEN_OFF och
+  räknas som öppen i reskontran bara före bortskrivningsdagen. En senare
+  inbetalning är en återvinning (`recovery`): momsen redovisas igen och
+  förlusten minskar i samma proportion, 1510 berörs inte. Reskontran per
+  dag (`LedgerReconciliation`, Bokföring → Reskontra) jämför kund- eller
+  leverantörsreskontran med 1510 respektive 2440 och visar differensen;
+  bokslutets checklista länkar dit för årets sista dag (enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-FAKT-12, #57)).
 - ROT och RUT: procentsatsen och taket per år följer året då kunden
   betalar (IL 67 kap. 12 § p. 1, 19 §; lag 2009:194 7–8 §§). Fakturan
   räknar preliminärt med förfallodagen som betaldag: satsen den dagen och

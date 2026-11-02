@@ -78,7 +78,22 @@ class InvoicePolicy
 
     public function registerPayment(User $user, Invoice $invoice): bool
     {
-        return ! $invoice->isCredit() && $invoice->status === InvoiceStatus::Issued && $this->can($user, $invoice, 'payments:create');
+        return ! $invoice->isCredit()
+            && ($invoice->status === InvoiceStatus::Issued || ($invoice->status === InvoiceStatus::WrittenOff && $invoice->recovered_ore->ore < $invoice->written_off_ore->ore))
+            && $this->can($user, $invoice, 'payments:create');
+    }
+
+    /**
+     * The open part of an invoice can be written off as a confirmed customer
+     * loss (#57), by whoever may credit it. A ROT or RUT invoice cannot yet.
+     */
+    public function writeOff(User $user, Invoice $invoice): bool
+    {
+        return ! $invoice->isCredit()
+            && $invoice->status === InvoiceStatus::Issued
+            && $invoice->remaining()->ore > 0
+            && $invoice->tax_reduction === null
+            && $this->can($user, $invoice, 'invoices:credit');
     }
 
     /**

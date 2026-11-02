@@ -30,6 +30,7 @@ final class PagesProvider extends BaseSearchProvider
         'accounting.accounts' => ['konton', 'bas', 'kontoplanen'],
         'accounting.vouchers.index' => ['verifikat', 'bokföring', 'grundbok'],
         'accounting.bankReconciliation' => ['avstämning', 'bank'],
+        'accounting.ledgers' => ['kundreskontra', 'leverantörsreskontra', 'kundfordringar', 'leverantörsskulder', '1510', '2440'],
         'accounting.closing' => ['årsbokslut', 'bokslutsverifikationer'],
         'accounting.annualReport' => ['k2', 'bolagsverket'],
         'accounting.incomeTax' => ['ink2', 'sru', 'deklaration'],

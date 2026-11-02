@@ -55,6 +55,13 @@ final class InvoiceBooking
 
     public const int ROUNDING = 3740;
 
+    /**
+     * BAS: Konstaterade förluster på kundfordringar.
+     *
+     * TODO(legal-verify): the account against BAS 2026.
+     */
+    public const int CUSTOMER_LOSS = 6351;
+
     public const int BANK = 1930;
 
     public const int EXCHANGE_GAIN = SupplierInvoiceBooking::EXCHANGE_GAIN;
@@ -225,6 +232,45 @@ final class InvoiceBooking
         }
 
         return array_sum($target) === -$amount ? $target : null;
+    }
+
+    /**
+     * The voucher rows of a confirmed customer loss of $amount öre, the open
+     * part of the invoice: 1510 credit, and the open part's share of the
+     * output VAT debit, which reduces the VAT already reported (ML 2023:200
+     * 8 kap. 16 §, 7 kap. 43-44 §§); the rest is the loss on 6351. The share
+     * is taken of the invoice and its credit invoices together, so it is the
+     * VAT of what is actually still owed (enligt granskning 2026-11-02,
+     * juristgranskning återstår (AUD-FAKT-12, #57)).
+     *
+     * @param  Collection<int, InvoiceRow>  $rows
+     * @param  Collection<int, Invoice>  $credits  issued credit invoices, with rows and accounts
+     * @return array<int, int>
+     */
+    public static function writeOff(Invoice $invoice, Collection $rows, Collection $credits, int $amount): array
+    {
+        $lines = self::revenue($invoice, $rows);
+        $base = $invoice->total_ore->ore;
+
+        foreach ($credits as $credit) {
+            foreach (self::revenue($credit, $credit->rows) as $account => $value) {
+                $lines[$account] = ($lines[$account] ?? 0) + $value;
+            }
+
+            $base += $credit->total_ore->ore;
+        }
+
+        $shares = $base === $amount ? array_filter($lines) : self::cashShare(array_filter($lines), $amount, $base);
+        $vatAccounts = [...array_values(self::OUTPUT_VAT), OssRates::VAT_ACCOUNT];
+        $vat = [];
+
+        foreach ($shares as $account => $share) {
+            if (in_array($account, $vatAccounts, true)) {
+                $vat[$account] = -$share;
+            }
+        }
+
+        return array_filter([self::RECEIVABLES => -$amount, self::CUSTOMER_LOSS => $amount - array_sum($vat)] + $vat);
     }
 
     /**

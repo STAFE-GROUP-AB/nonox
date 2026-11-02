@@ -116,6 +116,23 @@
   changes; the payment that settles it re-checks against the actual day
   (`TaxReduction::recheck`), writes the result to the audit log and the
   invoice page tells how much to claim at most.
+- **Customer losses and the ledger as of a date** (2026-11-02,
+  AUD-FAKT-12, #57). `WriteOffInvoice` closes the open part of an issued
+  invoice as a confirmed loss (status WRITTEN_OFF, `written_off_ore`,
+  `written_off_on`, the reason): when the invoice is on 1510 a voucher in
+  series B credits 1510, debits the open part's share of the output VAT
+  (of the invoice and its credits together) and the rest on 6351
+  (ML 8 kap. 16 §, 7 kap. 43-44 §§); under kontantmetoden nothing is
+  booked. Money afterwards is a recovery (`invoice_payments.recovery`,
+  `recovered_ore`): it reverses the write-off's lines in proportion, the
+  last one takes the rest, and 1510 is untouched. Requires
+  `invoices:credit`; ROT/RUT invoices cannot be written off yet; expected
+  losses (6352) are booked by hand. `OpenInvoices` treats a written-off
+  invoice as open until its write-off date and ignores recoveries, and
+  `LedgerReconciliation` (Bokföring → Reskontra, `/reskontra`) compares the
+  customer or supplier ledger on any day with 1510 or 2440; the closing
+  checklist links there for the last day. TODO(legal-verify): 6351, and
+  when a loss counts as confirmed.
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address

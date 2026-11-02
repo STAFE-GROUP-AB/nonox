@@ -69,6 +69,11 @@ use LogicException;
  * @property int $foreign_paid_minor
  * @property bool $unregistered_vat_confirmed VAT charged although the company is not registered, confirmed (#51)
  * @property ?string $vat_exemption_text the company's exemption wording when issued (#51)
+ * @property Money $written_off_ore the open part written off as a confirmed customer loss (#57)
+ * @property ?CarbonImmutable $written_off_on
+ * @property ?string $write_off_voucher_id
+ * @property ?string $write_off_reason
+ * @property Money $recovered_ore paid by the customer after the write-off (#57)
  */
 class Invoice extends Model
 {
@@ -80,7 +85,7 @@ class Invoice extends Model
     public const string CREDIT = 'CREDIT';
 
     /** Columns that may change after the invoice is issued. */
-    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'credited_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'tax_reduction_repaid_ore', 'sent_at', 'sent_to', 'updated_at'];
+    private const array MUTABLE_WHEN_ISSUED = ['status', 'paid_ore', 'credited_ore', 'foreign_paid_minor', 'tax_reduction_paid_ore', 'tax_reduction_repaid_ore', 'written_off_ore', 'written_off_on', 'write_off_voucher_id', 'write_off_reason', 'recovered_ore', 'sent_at', 'sent_to', 'updated_at'];
 
     /** @var list<string> */
     protected $fillable = [
@@ -116,6 +121,8 @@ class Invoice extends Model
         'tax_reduction_repayable_ore' => 0,
         'tax_reduction_repaid_ore' => 0,
         'unregistered_vat_confirmed' => false,
+        'written_off_ore' => 0,
+        'recovered_ore' => 0,
     ];
 
     /** @return array<string, string> */
@@ -126,6 +133,9 @@ class Invoice extends Model
             'foreign_sale' => ForeignSale::class,
             'swedish_vat_under_threshold' => 'boolean',
             'unregistered_vat_confirmed' => 'boolean',
+            'written_off_ore' => MoneyCast::class,
+            'written_off_on' => 'immutable_date',
+            'recovered_ore' => MoneyCast::class,
             'tax_reduction_ore' => MoneyCast::class,
             'tax_reduction_paid_ore' => MoneyCast::class,
             'tax_reduction_repayable_ore' => MoneyCast::class,
