@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-loneskatt",
+      "datum": "2026-11-02T14:50:00+01:00",
+      "rubrik": "Skatteavdrag, jämkning och arbetsgivaravgifter enligt lagen",
+      "beskrivning": "Skatteavdraget blir aldrig större än kontantlönen, och jämkningsbeslut från Skatteverket används. Taket för den sänkta avgiften för unga gäller per kalendermånad, och när årets lön passerar 1 000 kr tas avgifter också på de tidigare månaderna. Avgiftsfri lön redovisas i rätt fält i arbetsgivardeklarationen.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
       "id": "2026-11-02-momsavrakning",
       "datum": "2026-11-02T14:30:00+01:00",
       "rubrik": "Momsavräkning, momskvartal och förfallodag för årsmoms",
