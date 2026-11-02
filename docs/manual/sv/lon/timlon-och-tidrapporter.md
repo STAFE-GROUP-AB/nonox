@@ -28,7 +28,7 @@ Under **Lön → Anställda** ska personen ha **Lön per** satt till **Timme** o
 
 1. Öppna månadens lönekörning.
 2. Under **Timmar och tillägg**: välj **Anställd** och lönearten **Timlön**.
-3. Skriv **Antal timmar**, till exempel 42,5.
+3. Skriv **Antal timmar, mil eller dagar**, till exempel 42,5.
 4. Klicka på **Lägg till** och sedan **Beräkna**.
 
 ## Så här kommer timmarna från personalliggaren

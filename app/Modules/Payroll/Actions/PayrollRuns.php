@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollCalculator;
+use App\Modules\Payroll\Domain\Engine\Steps\Allowances;
 use App\Modules\Payroll\Domain\Engine\Steps\NetPay;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
@@ -103,7 +104,11 @@ class PayrollRuns
     }
 
     /**
-     * @param  array{employee_id: int|string, pay_code_id: int|string, quantity?: ?string, amount?: ?string, note?: ?string, date_from?: ?string, date_to?: ?string}  $input
+     * Mileage and per diem (Allowances::TAX_FREE) need the number of mil or
+     * days, and may carry the whole agreed amount or a rate per unit with
+     * it (#76).
+     *
+     * @param  array{employee_id: int|string, pay_code_id: int|string, quantity?: ?string, amount?: ?string, rate?: ?string, note?: ?string, date_from?: ?string, date_to?: ?string}  $input
      */
     public function addInput(User $user, PayrollRun $run, array $input): PayrollInput
     {
@@ -114,25 +119,45 @@ class PayrollRuns
             'pay_code_id' => ['required', 'integer'],
             'quantity' => ['nullable', 'regex:/^\d{1,6}([.,]\d{1,3})?$/'],
             'amount' => ['nullable', 'string'],
+            'rate' => ['nullable', 'string'],
             'note' => ['nullable', 'string', 'max:255'],
             // The work date, used by NONOX Avtal to choose the agreement's rate step.
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
         ], ['quantity.regex' => __('Skriv antal timmar eller enheter, till exempel 12,5.')])->validate();
 
-        if (blank($validated['quantity'] ?? null) === blank($validated['amount'] ?? null)) {
-            throw ValidationException::withMessages(['amount' => __('Skriv antingen antal eller belopp.')]);
-        }
-
         try {
             $amount = blank($validated['amount'] ?? null) ? null : Money::parse((string) $validated['amount']);
+            $rate = blank($validated['rate'] ?? null) ? null : Money::parse((string) $validated['rate']);
         } catch (InvalidArgumentException) {
             throw ValidationException::withMessages(['amount' => __('Beloppet går inte att läsa.')]);
         }
 
-        return CurrentCompany::run($company, fn (): PayrollInput => DB::transaction(function () use ($user, $company, $run, $validated, $amount): PayrollInput {
+        return CurrentCompany::run($company, fn (): PayrollInput => DB::transaction(function () use ($user, $company, $run, $validated, $amount, $rate): PayrollInput {
             Employee::query()->findOrFail((int) $validated['employee_id']);
             $payCode = PayCode::query()->where('is_active', true)->findOrFail((int) $validated['pay_code_id']);
+            $allowance = isset(Allowances::TAX_FREE[$payCode->code]);
+
+            // An allowance is tax-free per mil or day, so the number is needed; an amount alone would be paid as nothing (#76).
+            if ($allowance && blank($validated['quantity'] ?? null)) {
+                throw ValidationException::withMessages(['quantity' => __('Skriv antal mil eller dagar. Har ni avtalat en högre ersättning, skriv också hela beloppet eller ersättningen per mil eller dag.')]);
+            }
+
+            if ($allowance && $amount !== null && $rate !== null) {
+                throw ValidationException::withMessages(['amount' => __('Skriv antingen hela beloppet eller ersättningen per mil eller dag, inte båda.')]);
+            }
+
+            if (! $allowance && $rate !== null) {
+                throw ValidationException::withMessages(['rate' => __('Ersättning per mil eller dag gäller bara milersättning och traktamente.')]);
+            }
+
+            if (! $allowance && blank($validated['quantity'] ?? null) === blank($validated['amount'] ?? null)) {
+                throw ValidationException::withMessages(['amount' => __('Skriv antingen antal eller belopp.')]);
+            }
+
+            if (($amount !== null && $amount->ore < 0 && $allowance) || ($rate !== null && $rate->ore < 0)) {
+                throw ValidationException::withMessages(['amount' => __('Beloppet kan inte vara negativt.')]);
+            }
 
             // The claim from earlier pay is kept by the engine (NetPay); a hand-entered line would not follow it.
             if ($payCode->code === NetPay::CLAIM_CODE) {
@@ -145,6 +170,7 @@ class PayrollRuns
                 'pay_code_id' => (int) $validated['pay_code_id'],
                 'quantity' => blank($validated['quantity'] ?? null) ? null : str_replace(',', '.', (string) $validated['quantity']),
                 'amount_ore' => $amount?->ore,
+                'rate_ore' => $rate?->ore,
                 'note' => $validated['note'] ?? null,
                 'date_from' => $validated['date_from'] ?? null,
                 'date_to' => $validated['date_to'] ?? ($validated['date_from'] ?? null),

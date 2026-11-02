@@ -158,8 +158,9 @@ final class AgiDeclaration
                 $code = (string) ($codes[$line->pay_code_id] ?? '');
                 $amount = $line->amount_ore->ore;
 
-                $mileage = $mileage || in_array($code, self::MILEAGE, true);
-                $perDiem = $perDiem || in_array($code, self::PER_DIEM, true);
+                // Ruta 050/051: a cross when a tax-free allowance was paid (#76).
+                $mileage = $mileage || (in_array($code, self::MILEAGE, true) && $amount > 0);
+                $perDiem = $perDiem || (in_array($code, self::PER_DIEM, true) && $amount > 0);
 
                 if (! in_array($line->tax_effect, [PayslipLineResult::TAX_TABLE, PayslipLineResult::TAX_ONE_OFF], true)) {
                     continue;

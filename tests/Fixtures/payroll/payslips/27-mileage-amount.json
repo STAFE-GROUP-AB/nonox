@@ -1,0 +1,44 @@
+{
+  "description": "Mileage as an agreed amount (IL 12 kap. 5 §, 25 kr/mil): 40 mil and 1 500 kr. Tax-free 40 × 25 = 1 000 kr, taxable 500 kr. Taxable 32 500 kr, table 33 column 1 (32 401–32 600) = 6 531 kr. Net 32 500 − 6 531 + 1 000 = 26 969 kr. Contributions 32 500 × 31,42 % = 10 211,50 kr",
+  "context": {
+    "birth_date": "1990-06-15",
+    "tax_residence": "SE",
+    "tax_table": 33,
+    "tax_column": 1,
+    "tax_adjustment_percent_bp": null,
+    "salary_form": "MONTHLY",
+    "monthly_salary_ore": 3200000,
+    "hourly_rate_ore": null,
+    "employment_rate_bp": 10000,
+    "employment_start": "2025-01-01",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [
+      {
+        "code": "MILERSATTNING",
+        "description": "Milersättning, egen bil",
+        "category": "ALLOWANCE_TAX_FREE",
+        "taxable": false,
+        "tax_method": "NONE",
+        "contribution_basis": false,
+        "vacation_basis": false,
+        "quantity": "40",
+        "amount_ore": 150000
+      }
+    ],
+    "accumulators": {
+      "contribution_basis_ytd": 9600000
+    },
+    "settings": {
+      "proration_method": "CALENDAR_DAYS"
+    }
+  },
+  "expected": {
+    "gross_ore": 3250000,
+    "tax_ore": 653100,
+    "net_ore": 2696900,
+    "employer_contribution_ore": 1021150
+  }
+}

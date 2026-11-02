@@ -17,7 +17,7 @@ När företaget är bundet av ett avtal i NONOX finns avtalets egna lönearter f
 1. Öppna månadens lönekörning under **Lön → Lönekörningar**.
 2. Under **Timmar och tillägg**: välj **Anställd**.
 3. Välj avtalets **Löneart**, till exempel **OB-tillägg (Gröna Riks)**.
-4. Skriv **Antal timmar**. Lämna beloppet tomt.
+4. Skriv **Antal timmar, mil eller dagar**. Lämna beloppet tomt.
 5. Klicka på **Lägg till** och sedan **Beräkna**.
 
 Timmarna kan också komma från en fil från ert schemasystem. Koppla då filens OB- och övertidskoder till avtalets lönearter, så prissätts raderna på samma sätt med radens eget datum. Se [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem).

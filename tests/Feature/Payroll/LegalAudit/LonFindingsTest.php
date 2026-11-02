@@ -335,13 +335,16 @@ it('computes the car benefit from the car\'s data (IL 61 kap. 5, 8 a, 9 §§)')
 it('pays a mileage allowance entered as an amount (IL 12 kap. 5 §, Skatteverket 25 kr/mil)', function () {
     $dan = LonSupport::employee($this->owner, $this->company, '19750505');
     $run = $this->runs->create($this->owner, $this->company, '2026-04');
-    LonSupport::input($this->owner, $run, $dan, 'MILERSATTNING', ['amount' => '1 250']);
+    // An amount alone cannot be split into tax-free and taxable parts: it is refused instead of paid as 0 kr.
+    expect(fn () => LonSupport::input($this->owner, $run, $dan, 'MILERSATTNING', ['amount' => '1 250']))
+        ->toThrow(ValidationException::class, 'antal mil eller dagar');
+
+    LonSupport::input($this->owner, $run, $dan, 'MILERSATTNING', ['quantity' => '50', 'amount' => '1 250']);
     $this->runs->calculate($this->owner, $run);
 
-    // 1 250 kr agreed mileage pay must reach the employee (and be split tax-free/taxable by the number of mil).
-    // The code ignores the amount: quantity null × 25 kr = 0 kr.
+    // 1 250 kr agreed mileage pay for 50 mil reaches the employee: 50 × 25 kr = 1 250 kr, all tax-free.
     expect(Payslip::query()->sole()->net_ore->ore)->toBe(2_561_900 + 125_000);
-})->todo('AUD-LON-09: an amount on MILERSATTNING/TRAKTAMENTE_* is silently paid as 0 kr; only a quantity works, and a rate above the limit cannot be entered');
+});
 
 it('counts a bonus in the vacation-pay basis under procentregeln (semesterlagen 16 b §: tolv procent av förfallen lön)', function () {
     $erik = LonSupport::employee($this->owner, $this->company, '19920310', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD', 'vacation_payout_with_salary' => true]);

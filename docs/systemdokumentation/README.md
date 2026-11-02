@@ -1445,6 +1445,17 @@ lönebeskeden låsta i databasen.
   gäller. SINK och A-SINK påverkas inte. Det förhöjda skatteavdraget i
   11 kap. 21 § (tabellen för utbetalarens ort plus 10 %) är inte byggt;
   en huvudinkomst utan tabell stoppas som förut (`TODO(legal-verify)`).
+- Milersättning och traktamente som belopp (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-09, #76): en rad för
+  `MILERSATTNING` eller `TRAKTAMENTE_*` kräver antal mil eller dagar.
+  Den kan dessutom ha hela den avtalade ersättningen som belopp eller en
+  ersättning per enhet (`rate_ore`, nytt fält i lönekörningen). Skattefritt
+  är regelns belopp gånger antalet (IL 12 kap. 5 §, traktamente 12 kap.);
+  resten blir en skattepliktig rad (`MIL_SKATTEPLIKTIG` 7332,
+  `TRAKT_SKATTEPLIKTIG` 7322) som redovisas som lön i 011. Ett belopp utan
+  antal vägras när raden läggs in, och stoppar lönebeskedet om det kommer
+  på annat sätt, i stället för att betalas som 0 kr. Kryssen 050/051 sätts
+  bara när en skattefri ersättning faktiskt betalats.
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

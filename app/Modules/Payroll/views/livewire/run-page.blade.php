@@ -119,8 +119,9 @@
                             @foreach($payCodes as $payCode)<option value="{{ $payCode->id }}">{{ $payCode->name_sv }}</option>@endforeach
                         </select>
                     </x-ui.field>
-                    <x-ui.field for="input_quantity" :label="__('Antal timmar')" error="quantity"><input id="input_quantity" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="input.quantity"></x-ui.field>
-                    <x-ui.field for="input_amount" :label="__('eller belopp')" error="amount"><input id="input_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="input.amount"></x-ui.field>
+                    <x-ui.field for="input_quantity" :label="__('Antal timmar, mil eller dagar')" error="quantity"><input id="input_quantity" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="input.quantity"></x-ui.field>
+                    <x-ui.field for="input_amount" :label="__('eller belopp')" error="amount" :hint="__('Milersättning och traktamente: skriv alltid antal mil eller dagar, och här hela ersättningen om den är högre än den skattefria.')"><input id="input_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="input.amount"></x-ui.field>
+                    <x-ui.field for="input_rate" :label="__('Ersättning per mil eller dag (frivilligt)')" error="rate" class="sm:col-span-2" :hint="__('Bara för milersättning och traktamente. Det som överstiger det skattefria blir skattepliktig lön.')"><input id="input_rate" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="input.rate"></x-ui.field>
                     <div class="sm:col-span-2"><x-button wire:loading.attr="disabled">{{ __('Lägg till') }}</x-button></div>
                 </form>
                 @if($inputs->isNotEmpty())

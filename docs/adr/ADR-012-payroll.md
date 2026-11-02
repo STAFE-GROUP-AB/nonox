@@ -402,3 +402,17 @@ finding and the GitHub issue.
   before. `TODO(legal-verify)`: the other cases of 20 § (work shorter than
   a week, förenklad arbetsgivardeklaration, 10 kap. 6 and 13 §§) are not
   offered as choices.
+
+### Mileage and per diem given as an amount (AUD-LON-09, #76)
+
+- The tax-free part of an allowance is per unit (IL 12 kap. 5 §: "2 kronor
+  och 50 öre för varje kilometer"; per diem per day), and Skatteverket
+  (ruta 050/051) has the excess reported as pay. An amount alone cannot be
+  split, so `PayrollRuns::addInput` requires the number of mil or days for
+  `Allowances::TAX_FREE` codes and accepts with it either the whole agreed
+  amount or a rate per unit (new `rate` input, stored in the existing
+  `payroll_inputs.rate_ore`). Other pay codes keep "quantity or amount".
+- The engine prices amount + quantity as tax-free min(amount, quantity ×
+  rule) and taxable the rest; rate + quantity as before. An allowance
+  without a quantity (an old row, another source) throws
+  PayrollBlockedException instead of pricing it at 0 kr.

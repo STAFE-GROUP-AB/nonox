@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\Employees;
+use App\Modules\Payroll\Livewire\PayrollRunPage;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Employee;
+use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\Agi\AgiXml;
@@ -253,5 +255,58 @@ describe('side income (#75)', function () {
             ->assertHasNoErrors();
 
         expect(Employee::query()->where('first_name', 'Sara')->sole()->withholding_basis)->toBe('SIDE_INCOME');
+    });
+});
+
+describe('mileage and per diem as amounts (#76)', function () {
+    it('splits a per diem amount above the limit into tax-free and taxable parts, books and declares it (IL 12 kap.; ruta 051)', function () {
+        $dan = LonSupport::employee($this->owner, $this->company, '19750505');
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        LonSupport::input($this->owner, $run, $dan, 'TRAKTAMENTE_HEL', ['quantity' => '2', 'amount' => '800']);
+        $posted = LonSupport::postRun($this->owner, $this->admin, $run);
+        $payslip = Payslip::query()->sole();
+
+        // 2 days × 300 kr = 600 kr tax-free; 200 kr taxable. Taxable 32 200 kr: table 33 column 1 (32 001–32 200) = 6 431 kr.
+        // Net 32 200 − 6 431 + 600 = 26 369 kr.
+        expect($payslip->tax_ore->ore)->toBe(643_100)
+            ->and($payslip->net_ore->ore)->toBe(2_636_900)
+            ->and(LonSupport::voucherLines($posted))->toMatchArray([7321 => 60_000, 7322 => 20_000])
+            ->and(array_sum(LonSupport::voucherLines($posted)))->toBe(0);
+
+        $field = fixAgiField(app(AgiSubmissions::class)->generate($this->owner, $this->company, '2026-04'));
+
+        // 011 holds the salary and the taxable excess; 051 is crossed.
+        expect($field('//agd:IU/agd:KontantErsattningUlagAG'))->toBe('32200')
+            ->and($field('//agd:IU/agd:Traktamente[@faltkod="051"]'))->toBe('1');
+    });
+
+    it('takes an agreed rate per mil', function () {
+        $dan = LonSupport::employee($this->owner, $this->company, '19750505');
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        LonSupport::input($this->owner, $run, $dan, 'MILERSATTNING', ['quantity' => '100', 'rate' => '30']);
+        $this->runs->calculate($this->owner, $run->fresh());
+        $codes = PayCode::query()->pluck('code', 'id');
+        $lines = Payslip::query()->sole()->lines()->get()->mapWithKeys(fn ($line) => [$codes[$line->pay_code_id] => $line->amount_ore->ore]);
+
+        // 100 mil × 25 kr = 2 500 kr tax-free, 100 × 5 kr = 500 kr taxable.
+        expect($lines->all())->toMatchArray(['MILERSATTNING' => 250_000, 'MIL_SKATTEPLIKTIG' => 50_000]);
+    });
+
+    it('refuses what cannot be priced', function (string $code, array $input, string $message) {
+        $dan = LonSupport::employee($this->owner, $this->company, '19750505');
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+
+        expect(fn () => LonSupport::input($this->owner, $run, $dan, $code, $input))->toThrow(ValidationException::class, $message);
+    })->with([
+        'per diem as an amount only' => ['TRAKTAMENTE_HEL', ['amount' => '900'], 'antal mil eller dagar'],
+        'both amount and rate' => ['MILERSATTNING', ['quantity' => '10', 'amount' => '300', 'rate' => '30'], 'inte båda'],
+        'a rate on another pay code' => ['BONUS', ['amount' => '100', 'rate' => '30'], 'bara milersättning och traktamente'],
+    ]);
+
+    it('has a rate field on the run page', function () {
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+
+        Livewire::test(PayrollRunPage::class, ['run' => $run])
+            ->assertSeeHtml('id="input_rate"');
     });
 });

@@ -6040,5 +6040,14 @@
     "Huvudinkomst eller sidoinkomst": "Main income or side income",
     "Är lönen inte personens huvudinkomst dras 30 procent i skatt i stället för enligt tabell.": "If the pay is not the person's main income, 30 per cent tax is withheld instead of using the table.",
     "Huvudinkomst – skatt enligt skattetabell": "Main income – tax by the tax table",
-    "Sidoinkomst – 30 procent skatt": "Side income – 30 per cent tax"
+    "Sidoinkomst – 30 procent skatt": "Side income – 30 per cent tax",
+    ":item behöver antal mil eller dagar. Det skattefria beloppet räknas per mil eller dag; skriv antalet och vid behov hela ersättningen.": ":item needs the number of mil or days. The tax-free amount is per mil or day; enter the number and, if needed, the whole allowance.",
+    ":item kan inte vara negativ.": ":item cannot be negative.",
+    "Skriv antal mil eller dagar. Har ni avtalat en högre ersättning, skriv också hela beloppet eller ersättningen per mil eller dag.": "Enter the number of mil or days. If you have agreed a higher allowance, also enter the whole amount or the allowance per mil or day.",
+    "Skriv antingen hela beloppet eller ersättningen per mil eller dag, inte båda.": "Enter either the whole amount or the allowance per mil or day, not both.",
+    "Ersättning per mil eller dag gäller bara milersättning och traktamente.": "An allowance per mil or day only applies to mileage and per diem.",
+    "Antal timmar, mil eller dagar": "Number of hours, mil or days",
+    "Milersättning och traktamente: skriv alltid antal mil eller dagar, och här hela ersättningen om den är högre än den skattefria.": "Mileage and per diem: always enter the number of mil or days, and here the whole allowance if it is higher than the tax-free one.",
+    "Ersättning per mil eller dag (frivilligt)": "Allowance per mil or day (optional)",
+    "Bara för milersättning och traktamente. Det som överstiger det skattefria blir skattepliktig lön.": "Only for mileage and per diem. What exceeds the tax-free amount becomes taxable pay."
 }
