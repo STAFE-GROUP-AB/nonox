@@ -1186,6 +1186,49 @@ lönebeskeden låsta i databasen.
   den anställde inte med i lönekörningarna. Underlag för arbetsgivarintyg
   (lön och frånvarodagar per månad, de sista tretton månaderna) kan hämtas
   som CSV; uttaget loggas.
+- Nytt löneår (regler 2027): reglerna för varje år finns i
+  `app/Modules/Payroll/database/data/{år}/rules.json` med värde, giltighet,
+  källa, läsdatum och ett kort citat. Filen för 2027 (läst 2026-11-02) har
+  de värden som var beslutade den dagen; värden som myndigheten ännu inte
+  hade publicerat står under `pending` med myndighet och väntad
+  publicering, och nycklar som en tillsvidareversion redan täcker står under
+  `continued` med källa till lagen i kraft. Inget värde är gissat eller
+  kopierat från året före. Alla regler läses in som overifierade: kommandot
+  `payroll:import-rules` (utan år: alla år) körs varje natt 03:40 från
+  schemaläggaren, så ett nytt års fil når varje installation efter
+  driftsättningen. Inläsningen ändrar aldrig en version som någon har
+  kontrollerat, varken för installationen eller för ett företag, och rör inte
+  en oförändrad version; en rättelse av en kontrollerad version blir en ny
+  version. Lön → Regler visar överst **Inför löneåret** för nästa
+  utbetalningsår (från oktober) eller innevarande år: varje regel som
+  kontrollerad, ej kontrollerad, inte publicerad ännu (med myndighet och
+  väntad publicering) eller saknad från ett visst datum, med källa och
+  knappen Kontrollera (samma åtgärd, behörighet payroll:settings och
+  behandlingshistorik `payroll.rule_verified` som i listan per datum), samt
+  om årets skattetabeller är inlästa.
+- Utbetalningsdagen styr: lönekörningen väljer regler efter
+  utbetalningsdagen och skattetabell efter utbetalningsdagens år, så lön för
+  december 2026 som betalas i januari 2027 räknas med 2027 års regler och
+  tabeller. Det stämmer med lagtexterna för de satser som ändras 2027:
+  SINK-lagens nya 7 § tillämpas på inkomster som tas emot efter
+  2026-12-31, lagen om sänkta avgifter för unga gäller ersättning som ges ut
+  under perioden och socialavgiftslagens ändringar tillämpas på ersättning
+  som ges ut efter ikraftträdandet. Semesterlönegrundande frånvaro hör till
+  intjänandeåret, men värdena är samma 2026 och 2027.
+  `TODO(legal-verify)`: skatteförfarandelagen 10 kap. 16 § tillåter att
+  skatteavdraget i januari görs enligt den tabell som senast tillämpades året
+  före; NONOX har ingen sådan reserv utan stoppar körningen.
+- Skattetabeller för ett nytt år: saknas årets tabeller stoppas en
+  lönekörning med utbetalning det året med beskedet "Skattetabellerna för
+  {år} är inte inlästa ännu" (en gång för hela körningen), innan något
+  räknas. Tabellerna läses in med `payroll:import-tax-tables {år} {fil}` från
+  Skatteverkets textfil eller med `payroll:import-tax-tables {år} --download`
+  från Skatteverkets öppna data (RowStore-datasetet för allmänna tabeller,
+  månadslön), som skrivs om till textfilens postformat och går igenom samma
+  kontroller. Den 2 november 2026 gav öppna data för 2026 exakt samma 7 966
+  rader som Skatteverkets textfil. Skatteverket tar fram 2027 års tabeller i
+  december 2026. Ett år läses in en gång och ändras aldrig; tabellerna läses
+  inte in automatiskt, eftersom inläsningen inte går att ångra.
 
 Nyckeltal för lön visas överst på alla lönesidor för den som får se lönen:
 månadens lönekostnad (bruttolön och arbetsgivaravgifter för attesterade
@@ -1832,6 +1875,35 @@ Personalliggare och Avtal när de är påslagna.
   leverantören av kontoinformation; Enable Banking som underbiträde; om
   transaktioner som hämtats från banken är räkenskapsinformation i sig och
   ska ingå i arkivpaketet (ADR-034).
+
+### Lön, löneåret 2027 (5b)
+
+Alla värden i `data/2027/rules.json` är overifierade tills en människa har
+kontrollerat dem mot källan. Särskilt:
+
+- Budgetpropositionen för 2027 hade inte lämnats 2026-11-02 (valår, senast
+  12 november). Arbetsgivaravgifter, allmän löneavgift, särskild löneskatt
+  och regionalt stöd är hämtade ur lagtexten i kraft; kontrollera dem igen
+  efter riksdagens beslut i december.
+- Avgift för äldre 2027: socialavgiftslagen 2 kap. 27 § (67 år vid årets
+  ingång) ger födda 1938–1959; övergångsbestämmelsen för födda 1937 och
+  tidigare gäller fortfarande.
+- Sänkt avgift för unga 2027: lag (2026:100) ger födda 2004–2008 till och
+  med 30 september 2027; därefter ingen nedsättning.
+- SINK 20 procent från 2027 (SFS 2025:1356), sjöinkomst 15 procent.
+- Inrikes traktamente 2027 är räknat ur inkomstskattelagen 12 kap. 11, 13,
+  16 och 21 §§ med prisbasbeloppet 59 600 kr (0,5 procent avrundat till
+  tiotal = 300 kr); jämför med Skatteverkets "Belopp och procent 2027" när
+  den publiceras.
+- Filformat för arbetsgivardeklarationen 2027: version 1.1 är den enda som
+  Skatteverkets schemalager visade 2026-11-02; kontrollera i januari 2027.
+- Inte publicerade 2026-11-02 (läggs in när de kommer): inkomstbasbelopp
+  (regeringen, november 2026), kostförmån, bilförmånens statslåneränta (30
+  november 2026), måltidsavdrag på traktamente, utlandstraktamente,
+  milersättning, gåvor, friskvård, deklarationsdagar 2027 och tabellen för
+  engångsbelopp (Skatteverket, december 2026).
+- Om skatteavdraget i januari får göras med förra årets tabell
+  (skatteförfarandelagen 10 kap. 16 §) när årets tabeller inte är inlästa.
 
 ### Planering (5i)
 

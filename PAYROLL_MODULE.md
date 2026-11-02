@@ -283,6 +283,15 @@ Monthly salary, hourly salary, overtime (simple/qualified), OB, bonus, commissio
 Columns: `key`, `valid_from`, `valid_to`, `value jsonb`, `source_url`, `verified_by`, `verified_at`.
 Global (not company-scoped), shipped as seed data `app/Modules/Payroll/database/data/{year}/rules.json`, updated yearly via a reviewed PR.
 
+Yearly file format and import:
+- `rules`: one entry per version with `key`, `valid_from`, `valid_to`, `value`, `source_url`, `source_quote` (≤ 25 words) and `source_read_on`.
+- `pending`: keys whose value the authority has not published yet, with `authority`, `expected`, `source_url`, `note`. They are left out — never guessed, never copied from the year before — and shown as "not published yet" in the year view.
+- `continued`: keys an open-ended earlier version (`valid_to` null) already covers, with a source showing the law in force on 1 January.
+- `php artisan payroll:import-rules [year]` (`Actions/ImportPayrollRules`) imports one year or, without a year, every year. It is idempotent and runs nightly at 03:40 from the scheduler, so a new year's file reaches every installation after deploy. It never changes a version verified for the installation or by any company, and leaves unchanged versions alone.
+- Lön → Regler starts with **Inför löneåret** (`Support/YearReadiness`): for the next payment year (from October) per key verified / unverified / not published / missing from a date, the tax table status, sources and a verify button (same `VerifyPayrollRule` action, `payroll:settings`, audit `payroll.rule_verified`).
+- The run picks rules by payment date (`RuleSet::for($run->payment_date)`) and tax tables by the payment date's year: December pay paid in January uses the new year. `TODO(legal-verify)`: SFL 10 kap. 16 § lets January's withholding use the table last applied the year before; not built, the run is blocked instead.
+- 2027 status (researched 2026-11-02): see `docs/systemdokumentation/README.md` §5b and §8.
+
 Required keys — **every value is `TODO(legal-verify)` against Skatteverket/Försäkringskassan before seeding:**
 ```
 employer_contribution.full
@@ -309,7 +318,8 @@ A missing rule for the payment date throws `MissingPayrollRuleException` and **b
 
 ### B.7 Tax tables (`Support/Tax`)
 - `php artisan payroll:import-tax-tables {year} {file}` — validates row counts/checksums, stores `tax_tables(year, table_no, column_no, period_type, income_from_ore, income_to_ore, value, value_type enum(AMOUNT, PERCENT))`, plus the one-off percentage table (engångsbelopp).
-- `TODO(legal-verify)`: official file format and download location; whether an official API exists. Do not scrape.
+- `php artisan payroll:import-tax-tables {year} --download` fetches the same tables from Skatteverket's open data (`Support/Tax/TaxTableOpenData`, RowStore dataset `88320397-5c32-4c16-ae79-d36d95b17b95`, filtered on `år`, 100 rows per page), writes them in the text file's record layout and runs the same checks. Verified 2026-11-02: the 2026 open data equals the official `allmanna-tabeller-manad.txt` line for line. The yearly download links on skatteverket.se change, so the file option stays for manual download. Tables are never imported automatically (an import cannot be undone); Skatteverket produces next year's tables in December.
+- No tables for the payment year → the run is blocked once with "Skattetabellerna för {år} är inte inlästa ännu".
 - Withholding order per payslip:
   1. Tax basis = taxable cash + taxable benefits − gross deductions
   2. Regular salary → table + column lookup (column per Skatteverket rules)

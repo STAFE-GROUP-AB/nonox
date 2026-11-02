@@ -17,6 +17,10 @@ NONOX levererar reglerna, men använder dem inte förrän en namngiven person ha
 
 ![En lönekörning räknas bara med regler som en namngiven person har kontrollerat.](/bilder/manual/lon/lonekorning-pagaende.webp)
 
+## Inför löneåret
+
+Överst under **Lön → Regler** visar **Inför löneåret** om ett helt utbetalningsår är klart: varje regel som kontrollerad, ej kontrollerad, inte publicerad ännu eller saknad, och om årets skattetabeller är inlästa. Från oktober visas nästa år. Du kan kontrollera regler direkt i den listan. Läs mer i [Inför ett nytt löneår](/manual/lon/infor-nytt-lonear).
+
 ## Så här kontrollerar du reglerna
 
 1. Öppna **Lön → Regler**.
@@ -57,7 +61,9 @@ Under **Lön → Regler** ser du alla, med namn på svenska och värdet utskrive
 
 ## Skattetabellerna
 
-Skatteavdraget räknas med Skatteverkets skattetabeller för året. De läses in i NONOX från Skatteverkets fil, med kontroll av filens innehåll, av den som driftar er NONOX-installation. Du väljer bara tabell och kolumn på varje anställd.
+Skatteavdraget räknas med Skatteverkets skattetabeller för året då lönen betalas ut. De läses in i NONOX från Skatteverkets fil eller Skatteverkets öppna data, med kontroll av innehållet, av den som driftar er NONOX-installation. Du väljer bara tabell och kolumn på varje anställd.
+
+Är inga tabeller inlästa för utbetalningsåret stoppas hela lönekörningen med beskedet att skattetabellerna för året inte är inlästa ännu. Skatteverket ger ut nästa års tabeller i december.
 
 Saknas tabellen och kolumnen för en anställd det året stoppas lönekörningen för den personen, med ett besked om att skattetabellen saknas. Kontrollera då att tabell och kolumn på den anställda stämmer med skattebeskedet. Stämmer de, be den som driftar NONOX att läsa in årets tabeller.
 
@@ -66,7 +72,7 @@ Skatteavdraget på lönebeskedet visar vilken tabell, kolumn och inkomst som anv
 ## Vanliga frågor
 
 **Måste vi kontrollera reglerna varje år?**
-Ja. Nästan alla satser gäller ett kalenderår, så de kommer som nya versioner varje år. Gör det i början av januari, innan årets första lön.
+Ja. Nästan alla satser gäller ett kalenderår, så de kommer som nya versioner varje år. Gör det i december eller början av januari, innan årets första lön; se [Inför ett nytt löneår](/manual/lon/infor-nytt-lonear).
 
 **Vi har en redovisningsbyrå. Kan de kontrollera reglerna åt oss?**
 Ja, om de har rollen administratör eller löneadministratör i ert företag. Den som kontrollerar tar ansvar för värdet, så det ska vara någon som faktiskt jämför med källan.

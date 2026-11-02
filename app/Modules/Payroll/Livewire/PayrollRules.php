@@ -11,6 +11,7 @@ use App\Modules\Payroll\Actions\VerifyPayrollRule;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use App\Modules\Payroll\Models\PayrollRuleVerification;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
+use App\Modules\Payroll\Support\YearReadiness;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -19,8 +20,10 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 
 /**
- * Every rule a payroll run needs, on a chosen date: its value, source and who
- * verified it. A run is blocked until every rule is verified.
+ * Every rule a payroll run needs: first whether a whole payment year is
+ * ready (rules and Skatteverket's tax tables), then the rules on a chosen
+ * date with value, source and who verified them. A run is blocked until
+ * every rule it uses is verified.
  */
 class PayrollRules extends Component
 {
@@ -29,25 +32,34 @@ class PayrollRules extends Component
     #[Locked]
     public ?int $checking = null;
 
+    /** Which list the check was opened from: "year" or "day". */
+    #[Locked]
+    public string $checkingIn = 'day';
+
     public bool $confirmed = false;
 
     #[Url(as: 'datum', except: '')]
     public string $date = '';
 
+    #[Url(as: 'ar', except: '')]
+    public string $year = '';
+
     public function mount(): void
     {
-        /** @var User $user */
-        $user = Auth::user();
-        /** @var Company $company */
-        $company = $user->currentCompany();
-        abort_unless($user->hasTeamPermission($company, 'payroll:view'), 403);
+        abort_unless($this->user()->hasTeamPermission($this->company(), 'payroll:view'), 403);
     }
 
-    public function check(int $ruleId): void
+    public function check(int $ruleId, string $in = 'day'): void
     {
         $this->checking = $ruleId;
+        $this->checkingIn = $in === 'year' ? 'year' : 'day';
         $this->confirmed = false;
         $this->resetErrorBag();
+    }
+
+    public function cancelCheck(): void
+    {
+        $this->reset('checking', 'confirmed');
     }
 
     public function verify(VerifyPayrollRule $verify): void
@@ -58,12 +70,9 @@ class PayrollRules extends Component
             return;
         }
 
-        /** @var User $user */
-        $user = Auth::user();
-        /** @var Company $company */
-        $company = $user->currentCompany();
+        $company = $this->company();
         $rule = PayrollRuleVersion::query()->findOrFail($this->checking);
-        $verify($user, $company, $rule);
+        $verify($this->user(), $company, $rule);
 
         $this->reset('checking', 'confirmed');
         $this->toast(__('Regeln :key är kontrollerad av dig för :company.', ['key' => $rule->key, 'company' => $company->name]));
@@ -71,7 +80,10 @@ class PayrollRules extends Component
 
     public function render(): View
     {
-        $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->date) === 1 ? CarbonImmutable::parse($this->date) : CarbonImmutable::today();
+        $today = CarbonImmutable::today();
+        $date = preg_match('/^\d{4}-\d{2}-\d{2}$/', $this->date) === 1 ? CarbonImmutable::parse($this->date) : $today;
+        $years = [$today->year, $today->year + 1];
+        $year = in_array((int) $this->year, $years, true) ? (int) $this->year : YearReadiness::defaultYear($today);
         $versions = PayrollRuleVersion::query()
             ->whereIn('key', RuleSet::REQUIRED_KEYS)
             ->whereDate('valid_from', '<=', $date->toDateString())
@@ -80,20 +92,33 @@ class PayrollRules extends Component
             ->get()
             ->groupBy('key');
 
-        /** @var User $user */
-        $user = Auth::user();
-        /** @var Company $company */
-        $company = $user->currentCompany();
-
         return view('payroll::livewire.rules', [
             'companyChecks' => PayrollRuleVerification::query()->get()->keyBy('payroll_rule_version_id'),
-            'canVerify' => $user->hasTeamPermission($company, 'payroll:settings'),
+            'canVerify' => $this->user()->hasTeamPermission($this->company(), 'payroll:settings'),
             'day' => $date,
             'rows' => array_map(fn (string $key): array => [
                 'key' => $key,
                 'versions' => $versions->get($key, collect())->values(),
             ], RuleSet::REQUIRED_KEYS),
             'missing' => RuleSet::for($date)->missing(),
+            'readiness' => YearReadiness::for($year),
+            'years' => $years,
         ]);
+    }
+
+    private function company(): Company
+    {
+        /** @var Company $company */
+        $company = $this->user()->currentCompany();
+
+        return $company;
+    }
+
+    private function user(): User
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user;
     }
 }

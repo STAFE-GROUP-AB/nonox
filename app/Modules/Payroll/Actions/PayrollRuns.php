@@ -40,6 +40,7 @@ use App\Modules\Payroll\Support\Run\ContextBuilder;
 use App\Modules\Payroll\Support\Run\PayrollExtensions;
 use App\Modules\Payroll\Support\Run\TimeReportPay;
 use App\Modules\Payroll\Support\Tax\MissingTaxTableException;
+use App\Modules\Payroll\Support\Tax\TaxTableLookup;
 use App\Modules\Payroll\Support\Vacation\VacationLedger;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
@@ -264,6 +265,12 @@ class PayrollRuns
                 throw ValidationException::withMessages(['run' => [__('Ingen är anställd under perioden.')]]);
             }
 
+            // The tax tables follow the payment date's year (SFL 12 kap. 1 §: tables per calendar year), so December's pay paid in January needs the new year's tables.
+            // TODO(legal-verify): SFL 10 kap. 16 § lets January's withholding use the table last applied the year before; no such fallback is built, the run is blocked.
+            if (! TaxTableLookup::imported($run->payment_date->year) && $employments->contains(fn (Employment $employment): bool => $employment->employee?->tax_table !== null && ! str_starts_with((string) $employment->employee->tax_residence, 'NON_RESIDENT'))) {
+                $blockers[] = (new MissingTaxTableException($run->payment_date->year, 0, 0, true))->getMessage();
+            }
+
             $this->extensions->prepare($run, $employments);
 
             foreach ($employments as $employment) {
@@ -286,7 +293,10 @@ class PayrollRuns
                 try {
                     $context = $this->contexts->build($run, $employee, $employment, $inputs->get($employee->id, collect()), $payCodes, $settings, $rules, $reports, $late);
                     $results[] = [$employment, $this->calculator->calculate($context)];
-                } catch (PayrollBlockedException|MissingTaxTableException $exception) {
+                } catch (MissingTaxTableException $exception) {
+                    // Without the year's tables at all, one line says so for the whole run.
+                    $blockers[] = $exception->yearMissing ? $exception->getMessage() : "{$name}: {$exception->getMessage()}";
+                } catch (PayrollBlockedException $exception) {
                     $blockers[] = "{$name}: {$exception->getMessage()}";
                 } catch (MissingPayrollRuleException) {
                     $rulesMissing = true;
