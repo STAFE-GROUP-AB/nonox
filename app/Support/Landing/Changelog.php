@@ -13,7 +13,12 @@ use Carbon\CarbonImmutable;
  * describe; every shipped feat/fix/security change adds one (CONTRIBUTING.md),
  * and ChangelogTest fails when the file falls behind the git history.
  *
+ * The entries are grouped by phase (the "faser" list in the same file): the
+ * project's real stages with their dates, so a long quiet stretch between two
+ * phases never shows up as a row of empty months.
+ *
  * @phpstan-type Entry array{id: string, datum: string, rubrik: string, beskrivning: string, typ: string, omrade: string, version?: string}
+ * @phpstan-type Phase array{id: string, namn: string, beskrivning: string, fran: string, till: string|null, kommande: bool}
  */
 final class Changelog
 {
@@ -27,6 +32,7 @@ final class Changelog
         'forbattrat' => 'Förbättrat',
         'rattat' => 'Rättat',
         'sakerhet' => 'Säkerhet',
+        'utredning' => 'Utredning',
     ];
 
     /** Query-string slug => area shown on the page. */
@@ -44,11 +50,15 @@ final class Changelog
         'connect-api' => 'Connect/API',
         'manual' => 'Manual',
         'webbplats' => 'Webbplats',
+        'kvalitet' => 'Kvalitet',
         'ovrigt' => 'Övrigt',
     ];
 
     /** @var list<Entry>|null */
     private static ?array $entries = null;
+
+    /** @var list<Phase>|null */
+    private static ?array $phases = null;
 
     /** @return list<Entry> newest first */
     public static function all(): array
@@ -124,6 +134,96 @@ final class Changelog
         return $months;
     }
 
+    /**
+     * The project's phases, newest first: the upcoming goal before the phase
+     * in progress, and the first phase last.
+     *
+     * @return list<Phase>
+     */
+    public static function phases(): array
+    {
+        if (self::$phases !== null) {
+            return self::$phases;
+        }
+
+        $phases = [];
+
+        foreach (self::rawPhases() as $phase) {
+            $phases[] = [
+                'id' => (string) $phase['id'],
+                'namn' => (string) $phase['namn'],
+                'beskrivning' => (string) $phase['beskrivning'],
+                'fran' => (string) $phase['fran'],
+                'till' => is_string($phase['till'] ?? null) ? $phase['till'] : null,
+                'kommande' => ($phase['kommande'] ?? false) === true,
+            ];
+        }
+
+        usort($phases, fn (array $a, array $b): int => strcmp($b['fran'], $a['fran']));
+
+        return self::$phases = $phases;
+    }
+
+    /**
+     * The phase an entry belongs to: the one whose dates hold the entry's
+     * date in Stockholm time (no end date means still going). An upcoming
+     * phase holds no entries.
+     *
+     * @param  Entry  $entry
+     * @return Phase|null
+     */
+    public static function phaseOf(array $entry): ?array
+    {
+        $day = self::date($entry)->format('Y-m-d');
+
+        foreach (self::phases() as $phase) {
+            if ($phase['kommande']) {
+                continue;
+            }
+
+            if ($day >= $phase['fran'] && ($phase['till'] === null || $day <= $phase['till'])) {
+                return $phase;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Entries grouped by phase and, inside a phase, by month. Only months
+     * with entries get a heading. A phase without matching entries is left
+     * out, except an upcoming one: the goal is always shown.
+     *
+     * @param  list<Entry>  $entries
+     * @return list<array{phase: Phase, count: int, months: array<string, array{label: string, entries: list<Entry>}>}>
+     */
+    public static function byPhase(array $entries): array
+    {
+        $grouped = [];
+
+        foreach ($entries as $entry) {
+            $phase = self::phaseOf($entry);
+
+            if ($phase !== null) {
+                $grouped[$phase['id']][] = $entry;
+            }
+        }
+
+        $result = [];
+
+        foreach (self::phases() as $phase) {
+            $phaseEntries = $grouped[$phase['id']] ?? [];
+
+            if ($phaseEntries === [] && ! $phase['kommande']) {
+                continue;
+            }
+
+            $result[] = ['phase' => $phase, 'count' => count($phaseEntries), 'months' => self::byMonth($phaseEntries)];
+        }
+
+        return $result;
+    }
+
     /** @param  Entry  $entry */
     public static function date(array $entry): CarbonImmutable
     {
@@ -181,6 +281,54 @@ final class Changelog
             $ids[$label] = true;
         }
 
+        return [...$errors, ...self::phaseErrors($file)];
+    }
+
+    /**
+     * Everything wrong with the phases: missing fields, dates that are not
+     * plain dates, and (for the published file) entries outside every phase.
+     *
+     * @return list<string>
+     */
+    private static function phaseErrors(?string $file): array
+    {
+        $errors = [];
+        $phases = self::rawPhases($file);
+
+        if ($phases === []) {
+            return ["'faser' saknas."];
+        }
+
+        foreach ($phases as $index => $phase) {
+            $label = is_string($phase['id'] ?? null) ? "fas {$phase['id']}" : "fas #{$index}";
+
+            foreach (['id', 'namn', 'beskrivning', 'fran'] as $field) {
+                $value = $phase[$field] ?? null;
+
+                if (! is_string($value) || trim($value) === '') {
+                    $errors[] = "{$label}: '{$field}' saknas.";
+                }
+            }
+
+            foreach (['fran', 'till'] as $field) {
+                $value = $phase[$field] ?? null;
+
+                if ($value !== null && (! is_string($value) || preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) !== 1)) {
+                    $errors[] = "{$label}: '{$field}' ska vara ett datum, till exempel 2026-11-02.";
+                }
+            }
+        }
+
+        if ($file !== null || $errors !== []) {
+            return $errors;
+        }
+
+        foreach (self::all() as $entry) {
+            if (self::phaseOf($entry) === null) {
+                $errors[] = "{$entry['id']}: datumet ligger inte i någon fas.";
+            }
+        }
+
         return $errors;
     }
 
@@ -191,5 +339,14 @@ final class Changelog
         $data = json_decode((string) file_get_contents($file ?? base_path(self::FILE)), true, flags: JSON_THROW_ON_ERROR);
 
         return $data['poster'];
+    }
+
+    /** @return list<array<string, mixed>> the phases as written, before any check */
+    private static function rawPhases(?string $file = null): array
+    {
+        /** @var array{faser?: list<array<string, mixed>>} $data */
+        $data = json_decode((string) file_get_contents($file ?? base_path(self::FILE)), true, flags: JSON_THROW_ON_ERROR);
+
+        return $data['faser'] ?? [];
     }
 }

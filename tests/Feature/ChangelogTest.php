@@ -65,6 +65,7 @@ it('reports what is wrong with an entry', function () {
             "a: 'rubrik' saknas.",
             'a: okänt område.',
             'a: id finns redan.',
+            "'faser' saknas.",
         ]);
     } finally {
         unlink($file);
@@ -81,6 +82,119 @@ it('never mentions GitHub in the changelog or the roadmap', function () {
 
         expect($content)->not->toContain('github.com');
     }
+});
+
+it('reports what is wrong with a phase', function () {
+    $file = tempnam(sys_get_temp_dir(), 'andringslogg');
+    file_put_contents($file, json_encode(['poster' => [], 'faser' => [
+        ['id' => 'x', 'namn' => '', 'beskrivning' => 'B', 'fran' => '2026-1-1', 'till' => 'snart'],
+    ]]));
+
+    try {
+        expect(Changelog::errors($file))->toBe([
+            "fas x: 'namn' saknas.",
+            "fas x: 'fran' ska vara ett datum, till exempel 2026-11-02.",
+            "fas x: 'till' ska vara ett datum, till exempel 2026-11-02.",
+        ]);
+    } finally {
+        unlink($file);
+    }
+});
+
+it('accepts research entries as their own type with their own badge', function () {
+    expect(Changelog::TYPES)->toHaveKey('utredning')
+        ->and(Changelog::TYPES['utredning'])->toBe('Utredning')
+        ->and(Changelog::AREAS)->toHaveKey('kvalitet');
+
+    $research = array_filter(Changelog::all(), fn (array $entry): bool => $entry['typ'] === 'Utredning');
+    expect($research)->not->toBeEmpty();
+
+    $html = $this->get('/andringslogg?typ=utredning')->assertOk()
+        ->assertSee('aria-current="true">Utredning', false)
+        ->assertSee('class="cl-badge cl-utredning"', false)
+        ->assertSee('.cl-utredning{background:var(--u-bg);color:var(--u-fg)}', false)
+        ->getContent();
+
+    expect(substr_count($html, 'class="cl-entry"'))->toBe(count($research))
+        ->and(substr_count($html, '--u-bg:'))->toBe(4);
+
+    // Research is not something that shipped: the roadmap's "Klart nyligen" leaves it out.
+    foreach (Changelog::latest(10) as $entry) {
+        expect($entry['typ'])->not->toBe('Utredning');
+    }
+});
+
+it('dates every entry honestly: never in the future, never in the quiet months', function () {
+    $now = CarbonImmutable::now();
+
+    foreach (Changelog::all() as $entry) {
+        $date = Changelog::date($entry);
+
+        expect($date->lessThanOrEqualTo($now))->toBeTrue("{$entry['id']} is dated in the future ({$entry['datum']}).")
+            ->and($date->between(CarbonImmutable::parse('2026-02-01', Changelog::TIMEZONE), CarbonImmutable::parse('2026-09-30 23:59:59', Changelog::TIMEZONE)))
+            ->toBeFalse("{$entry['id']} is dated February–September 2026, when nothing was built.")
+            ->and(Changelog::phaseOf($entry))->not->toBeNull("{$entry['id']} lies outside every phase.");
+    }
+});
+
+it('groups the changes by phase under the background, with the goal first', function () {
+    $phases = Changelog::phases();
+
+    expect(array_column($phases, 'id'))->toBe(['version-1-0', 'beta-0-9', 'grund'])
+        ->and($phases[0]['kommande'])->toBeTrue()
+        ->and($phases[0]['fran'])->toBe('2027-01-01');
+
+    $html = $this->get('/andringslogg')->assertOk()
+        ->assertSeeInOrder([
+            'Bakgrund',
+            'började i januari 2026',
+            'Från oktober 2026',
+            'AI-stödd utveckling under mänsklig ledning',
+            'lagtexten, BAS, SIE och Skatteverkets dokumentation',
+            'öppen beta',
+            'version 1.0 den 1 januari 2027',
+            'aria-labelledby="fas-version-1-0"',
+            'Mål · 1 januari 2027',
+            'aria-labelledby="fas-beta-0-9"',
+            'Sedan 29 oktober 2026',
+            'aria-labelledby="fas-grund"',
+            '11 januari 2026',
+        ], false)
+        ->getContent();
+
+    expect(substr_count($html, 'aria-labelledby="fas-'))->toBe(3);
+
+    // The goal has no entries; every other phase holds exactly its own.
+    foreach (Changelog::byPhase(Changelog::all()) as $group) {
+        $inPhase = array_filter(Changelog::all(), fn (array $entry): bool => Changelog::phaseOf($entry)['id'] === $group['phase']['id']);
+        expect($group['count'])->toBe(count($inPhase));
+    }
+});
+
+it('never shows a month heading without changes', function () {
+    $html = $this->get('/andringslogg')->assertOk()->getContent();
+    $months = [];
+
+    foreach (Changelog::all() as $entry) {
+        $months[Changelog::date($entry)->format('Y-m')] = true;
+    }
+
+    expect(substr_count($html, 'class="cl-month"'))->toBe(count($months));
+
+    foreach (Changelog::byPhase(Changelog::all()) as $group) {
+        foreach ($group['months'] as $month) {
+            expect($month['entries'])->not->toBeEmpty();
+        }
+    }
+
+    foreach (['Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September'] as $quiet) {
+        expect($html)->not->toContain(">{$quiet} 2026 <span>");
+    }
+
+    // A filter leaves out the months and phases it empties.
+    $html = $this->get('/andringslogg?typ=sakerhet')->assertOk()->getContent();
+    expect($html)->not->toContain('id="fas-grund"')
+        ->and($html)->toContain('id="fas-version-1-0"');
 });
 
 it('shows every change newest first, grouped by month, with date and time', function () {
