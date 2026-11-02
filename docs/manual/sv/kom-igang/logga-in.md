@@ -2,12 +2,14 @@
 beskrivning: Så loggar du in i NONOX med en engångskod i mejlet, och när du dessutom bekräftar med en passkey. Inga lösenord att komma ihåg.
 ordning: 10
 rutter: [login, passkeys.challenge]
-sokord: [inloggning, lösenord, kod, engångskod, skapa konto, registrera, passkey, fingeravtryck, Face ID, tvåstegsverifiering]
+sokord: [inloggning, lösenord, kod, engångskod, skapa konto, registrera, kö, beta, passkey, fingeravtryck, Face ID, tvåstegsverifiering]
 ---
 
 # Logga in
 
-NONOX har inga lösenord. Du skriver din e-postadress, får en kod med åtta siffror i mejlet och skriver in den. Är adressen ny skapas ett konto åt dig samtidigt, så att logga in och registrera sig är samma sak.
+NONOX har inga lösenord. Du skriver din e-postadress, får en kod med åtta siffror i mejlet och skriver in den.
+
+Koden skickas bara till den som har ett konto eller en inbjudan till ett företag. Under den öppna betan får du ett konto genom att [ställa dig i kö](/manual/kom-igang/tillgang-under-betan) och bli godkänd, eller genom att ett företag bjuder in dig.
 
 ![Inloggningen: skriv din e-postadress, så skickar NONOX en kod.](/bilder/manual/kom-igang/logga-in.webp)
 
@@ -17,7 +19,7 @@ NONOX har inga lösenord. Du skriver din e-postadress, får en kod med åtta sif
 2. Skriv din e-postadress och klicka på **Skicka kod**.
 3. Öppna mejlet med koden. Det kommer inom någon minut.
 4. Skriv de åtta siffrorna i fältet **Kod** och klicka på **Logga in**.
-5. Är det första gången du loggar in frågar NONOX vad du heter. Skriv ditt namn och klicka på **Skapa konto**.
+5. Är du inbjuden och loggar in för första gången frågar NONOX vad du heter, om inte inbjudan redan har ditt namn. Skriv ditt namn och klicka på **Skapa konto**.
 
 Efter inloggningen hamnar du på **Översikt**. Har du inget företag ännu kommer du i stället till **Kom igång**, där du [skapar ett företag](/manual/kom-igang/skapa-ett-foretag) eller går med i ett som du har blivit inbjuden till.
 
@@ -50,7 +52,7 @@ Du kan också lägga till en passkey frivilligt under din profil. Läs mer i [Pa
 ## Vanliga frågor
 
 **Mejlet med koden kommer inte fram.**
-Titta i skräpposten. Kontrollera att du skrev rätt adress; börja annars om och skicka en ny kod. Kör ditt företag NONOX på en egen server och inga mejl kommer fram alls, behöver den som sköter servern kontrollera e-postinställningarna.
+Koden skickas bara till en adress som har ett konto eller en inbjudan. Står du i kö och inte är godkänd än kommer ingen kod. Titta annars i skräpposten. Kontrollera att du skrev rätt adress; börja annars om och skicka en ny kod. Kör ditt företag NONOX på en egen server och inga mejl kommer fram alls, behöver den som sköter servern kontrollera e-postinställningarna.
 
 **Kan jag logga in med lösenord?**
 Nej. NONOX använder bara engångskoder, och passkeys som extra skydd.
@@ -63,6 +65,7 @@ En inloggning gäller i högst tolv timmar, och kortare om du inte använder NON
 
 ## Läs också
 
+- [Tillgång under betan](/manual/kom-igang/tillgang-under-betan)
 - [Skapa ett företag](/manual/kom-igang/skapa-ett-foretag)
 - [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar)
 - [Bjud in en användare](/manual/kom-igang/bjud-in-en-anvandare)

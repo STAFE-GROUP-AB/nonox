@@ -105,7 +105,7 @@
 <section aria-labelledby="al-cta" style="padding:clamp(80px,11vw,140px) clamp(20px,4vw,40px);background:#FF5A36;color:#15171C;text-align:center">
   <h2 id="al-cta" style="margin:0 auto;max-width:900px;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(40px,7vw,96px);line-height:0.95;letter-spacing:-0.05em;text-wrap:balance">Ta tillbaka din bokföring.</h2>
   <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:40px">
-    <a href="{{ auth()->check() ? route('dashboard') : route('login') }}" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;background:#15171C;color:#F7F5F0;text-decoration:none;font-size:17px;font-weight:700">{{ auth()->check() ? 'Till översikten' : 'Kom igång gratis' }}</a>
+    <a href="{{ auth()->check() ? route('dashboard') : route('waitlist') }}" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;background:#15171C;color:#F7F5F0;text-decoration:none;font-size:17px;font-weight:700">{{ auth()->check() ? 'Till översikten' : 'Ställ dig i kö' }}</a>
     <a href="{{ route('migrationGuide') }}" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;border:2px solid #15171C;color:#15171C;text-decoration:none;font-size:17px;font-weight:700">Flyttguiden</a>
   </div>
 </section>

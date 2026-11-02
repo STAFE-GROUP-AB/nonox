@@ -123,16 +123,10 @@ it('pseudonymises an account that posted vouchers, which still resolve, and the 
     $this->actingAs($kept)->get(route('dashboard'))->assertRedirect(route('login'));
     Auth::guard('web')->forgetUser();
 
-    // Signing in with the old address never reaches the old account: it is a new person.
+    // Signing in with the old address never reaches the old account: the address is unknown now, so no code goes out (ADR-038).
     Mail::fake();
-    $component = Livewire::test(LoginForm::class)->set('email', $email)->call('sendCode');
-    $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
-        $code = $mail->code;
-
-        return true;
-    });
-    $component->set('code', (string) $code)->call('verify')->assertSet('step', 'name');
+    Livewire::test(LoginForm::class)->set('email', $email)->call('sendCode')->assertSet('step', 'code');
+    Mail::assertNotSent(LoginCodeMail::class);
 
     expect(User::query()->where('email', $email)->exists())->toBeFalse();
 });

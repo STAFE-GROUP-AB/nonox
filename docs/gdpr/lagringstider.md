@@ -5,6 +5,9 @@
 | Räkenskapsinformation: verifikationer, fakturor, underlag, lönebesked, AGI, behandlingshistorik | 7 år efter utgången av det kalenderår då räkenskapsåret avslutades | Bokföringslagen 7 kap. 2 § | Kan inte raderas i systemet; arkivpaket per år |
 | Användarkonto (namn, e-post, medlemskap) | Tills användaren raderar kontot | Avtal | "Radera mitt konto" på profilen: kontot raderas, eller pseudonymiseras om bokföring eller behandlingshistorik hänvisar till det (då finns bara användar-id:t kvar, med namnet "Raderad användare") |
 | Inloggningskoder | 1 dygn | Behövs bara för inloggningen | `privacy:prune` varje natt |
+| Kön till den öppna betan: nekade anmälningar | 30 dagar efter beslutet | Hinner rättas om beslutet var fel; saknar ändamål därefter | `waitlist:prune` varje natt |
+| Kön till den öppna betan: anmälningar som väntar eller är parkerade | 12 månader efter anmälan | Den som inte släppts in på ett år har inget kvar att vänta på | `waitlist:prune` |
+| Kön till den öppna betan: godkända anmälningar (svaren, inte kontot) | 12 månader efter godkännandet | Underlag för uppstarten; kontot lagras som ett vanligt användarkonto | `waitlist:prune` |
 | Inbjudningar som inte accepterats | 14 dagar | Inbjudan går ut efter 14 dagar och saknar ändamål därefter | `privacy:prune` |
 | Nycklar till Fortnox vid avbruten flytt | 30 dagar utan aktivitet | Saknar ändamål | `privacy:prune` tömmer nycklarna; vid avslutad flytt direkt |
 | Avslagna ansökningar om frånvaro och avslagna utlägg med kvitto | 1 år efter beslutet | Underlag om beslutet ifrågasätts; aldrig räkenskapsinformation | `privacy:prune` |
@@ -33,4 +36,4 @@
 
 Personalliggarens bevarandetid följer 9 kap. 5 § tredje stycket skatteförfarandeförordningen: två år efter utgången av det kalenderår då beskattningsåret gick ut (Skatteverket påpekar att brutet eller förlängt räkenskapsår kan ge mer än tre år). Prop. 2025/26:282 ändrar inte bevarandetiden. Ändrad 2026-11-07 enligt AI-utredning 2026-11-02, juristgranskning återstår.
 
-TODO(legal-verify): perioderna för avslagna ansökningar och anställdas uppgifter efter anställningen; gallringen av avvisade inkorgsmeddelanden efter 7 dagar; hur länge en ROT/RUT-köpares personnummer ska sparas; om transaktioner hämtade från banken är räkenskapsinformation och därför ska sparas i 7 år (ADR-034).
+TODO(legal-verify): perioderna för kön till den öppna betan (30 dagar för nekade, 12 månader för övriga, ADR-038); perioderna för avslagna ansökningar och anställdas uppgifter efter anställningen; gallringen av avvisade inkorgsmeddelanden efter 7 dagar; hur länge en ROT/RUT-köpares personnummer ska sparas; om transaktioner hämtade från banken är räkenskapsinformation och därför ska sparas i 7 år (ADR-034).

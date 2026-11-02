@@ -10,7 +10,7 @@
     @endif
     @if($step === 'email')
         <h1>Logga in</h1>
-        <p class="lead">Skriv din e-postadress så skickar vi en kod. Inga lösenord att komma ihåg. Är du ny skapas ett konto åt dig.</p>
+        <p class="lead">Skriv din e-postadress så skickar vi en kod. Inga lösenord att komma ihåg.</p>
 
         <form wire:submit="sendCode" novalidate>
             <div class="field">
@@ -30,12 +30,13 @@
                 </button>
             </div>
         </form>
+        @include('livewire.auth.partials.join-waitlist')
         @if(config('app.landing.hosted'))
-            <p class="muted small" style="margin-top:14px">{{ __('Har du inget konto skapas ett när du loggar in.') }} <a href="{{ route('legal.privacy') }}">{{ __('Så behandlar vi dina personuppgifter') }}</a></p>
+            <p class="muted small" style="margin-top:14px"><a href="{{ route('legal.privacy') }}">{{ __('Så behandlar vi dina personuppgifter') }}</a></p>
         @endif
     @elseif($step === 'code')
         <h1>Kolla din e-post</h1>
-        <p class="lead" id="code-help">Vi har skickat en kod med åtta siffror till <strong>{{ $email }}</strong>. Skriv in den här.</p>
+        <p class="lead" id="code-help">Om <strong>{{ $email }}</strong> har ett konto eller en inbjudan har vi skickat en kod med åtta siffror dit. Skriv in den här.</p>
 
         <form wire:submit="verify" novalidate>
             <div class="field">
@@ -49,6 +50,7 @@
                 <button class="link" type="button" wire:click="startOver">Fel adress eller ingen kod? Börja om</button>
             </div>
         </form>
+        @include('livewire.auth.partials.join-waitlist')
     @elseif($step === 'passkey' || $step === 'passkey-register')
         @include('livewire.auth.partials.passkey-step', ['step' => $step])
         <div class="actions">
@@ -56,7 +58,7 @@
         </div>
     @else
         <h1>Välkommen!</h1>
-        <p class="lead">Du är ny här. Vad heter du?</p>
+        <p class="lead">Du är inbjuden men har inget konto än. Vad heter du?</p>
 
         <form wire:submit="createAccount" novalidate>
             <div class="field">

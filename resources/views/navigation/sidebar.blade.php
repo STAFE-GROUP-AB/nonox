@@ -111,6 +111,9 @@
         <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm [&_a]:inline-block [&_a]:py-1 [&_button]:py-1">
             @include('navigation.help', ['helpClass' => 'rounded text-stone-300 hover:text-white', 'helpLabel' => true])
             <a href="{{ route('profile.show') }}" class="text-stone-300 hover:text-white">{{ __('Profile') }}</a>
+            @if(App\Support\Hq\HqAccess::allows(Auth::user()))
+                <a href="{{ route('hq.waitlist') }}" class="text-stone-300 hover:text-white">HQ</a>
+            @endif
             @if (Laravel\Jetstream\Jetstream::hasApiFeatures())
                 <a href="{{ route('api-tokens.index') }}" class="text-stone-300 hover:text-white">{{ __('API Tokens') }}</a>
             @endif

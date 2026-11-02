@@ -20,6 +20,7 @@
 <body>
 <div class="mn">
 <a class="mn-skip" href="#main">Hoppa till innehållet</a>
+@include('start.partials.beta-banner')
 <header class="mn-header">
   <div class="mn-header-inner">
     <a href="{{ url('/') }}" class="mn-brand" aria-label="NONOX, till startsidan">

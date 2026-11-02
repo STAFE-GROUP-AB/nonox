@@ -43,6 +43,29 @@ final class Audit
     }
 
     /**
+     * An entry about the instance itself, not about a company (the waiting
+     * list and /hq, ADR-038): company_id stays empty even when the user has
+     * a company selected.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    public static function instance(string $action, ?Model $subject = null, array $payload = [], ?User $user = null): AuditLog
+    {
+        $request = app()->runningInConsole() ? null : request();
+
+        return AuditLog::create([
+            'company_id' => null,
+            'user_id' => $user->id ?? Auth::id(),
+            'action' => $action,
+            'subject_type' => $subject?->getMorphClass(),
+            'subject_id' => $subject === null ? null : (string) $subject->getKey(),
+            'payload' => $payload,
+            'ip_address' => $request?->ip(),
+            'user_agent' => $request === null ? null : mb_substr((string) $request->userAgent(), 0, 1000),
+        ]);
+    }
+
+    /**
      * The attributes that changed, as {"before": {...}, "after": {...}}.
      *
      * @param  array<string, mixed>  $before

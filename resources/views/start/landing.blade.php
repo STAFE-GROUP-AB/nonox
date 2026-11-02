@@ -27,14 +27,12 @@
       <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell eller din egen server, och snart som program på din dator. Eller låt oss sköta driften från 995 kr om året.</p>
       <p style="margin:16px 0 0;max-width:680px;font-size:clamp(17px,1.8vw,19px);line-height:1.5;font-weight:600;color:var(--ink);text-wrap:pretty">Ett komplett alternativ till de stora molntjänsterna för bokföring, utan licensavgifter och utan inlåsning.</p>
       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:36px">
-        <a class="lp9" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:16.5px;font-weight:700">
+        <a class="lp9" href="{{ auth()->check() ? route('dashboard') : route('waitlist') }}" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:16.5px;font-weight:700">{{ auth()->check() ? 'Till översikten' : 'Ställ dig i kö' }}</a>
+        <a class="lp10" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);text-decoration:none;font-size:16.5px;font-weight:600">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Ladda ner NONOX gratis</a>
-        <a class="lp10" href="#priser" style="display:inline-flex;align-items:center;min-height:54px;padding:0 26px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);text-decoration:none;font-size:16.5px;font-weight:600">Låt oss sköta driften</a>
       </div>
       <p style="margin:18px 0 0;font-size:14px;color:var(--muted)">Ingen bindningstid. Exportera all data när du vill.</p>
-      @if(App\Support\Build\BuildInfo::stage() !== '')
-        <p id="oppen-beta" style="margin:24px 0 0;max-width:680px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:15.5px;line-height:1.55;color:var(--ink);text-wrap:pretty"><strong>NONOX är i öppen beta.</strong> Alla kan registrera sig och börja bokföra redan i dag. Det du lägger in ligger kvar, vi rensar ingenting när betan är över. Fler funktioner kommer löpande.</p>
-      @endif
+      <p id="oppen-beta" style="margin:24px 0 0;max-width:680px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:15.5px;line-height:1.55;color:var(--ink);text-wrap:pretty"><strong>NONOX är i öppen beta.</strong> Ställ dig i kö så släpper vi in dig i den takt vi hinner hjälpa alla. Skarp lansering av version 1.0 sker den 1 januari 2027. Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.</p>
     </div>
 
     <div id="lp-mock" data-reveal="" aria-hidden="true" style="position:relative;margin-top:clamp(48px,7vw,88px);height:650px">
@@ -474,8 +472,8 @@ Insights    Invoicing    Payables      Vat
   <div data-reveal="" style="position:relative;max-width:980px;margin:0 auto">
     <h2 id="cta-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(44px,8vw,112px);line-height:0.95;letter-spacing:-0.05em;text-wrap:balance">Ta tillbaka din bokföring.</h2>
     <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:12px;margin-top:44px">
-      <a class="lp26" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 28px;border-radius:999px;background:#15171C;color:#F7F5F0;text-decoration:none;font-size:17px;font-weight:700"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Ladda ner gratis</a>
-      <a class="lp27" href="#priser" style="display:inline-flex;align-items:center;min-height:56px;padding:0 28px;border-radius:999px;border:2px solid #15171C;color:#15171C;text-decoration:none;font-size:17px;font-weight:700">Låt oss sköta driften</a>
+      <a class="lp26" href="{{ auth()->check() ? route('dashboard') : route('waitlist') }}" style="display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 28px;border-radius:999px;background:#15171C;color:#F7F5F0;text-decoration:none;font-size:17px;font-weight:700">{{ auth()->check() ? 'Till översikten' : 'Ställ dig i kö' }}</a>
+      <a class="lp27" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:56px;padding:0 28px;border-radius:999px;border:2px solid #15171C;color:#15171C;text-decoration:none;font-size:17px;font-weight:700"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"></path></svg>Ladda ner gratis</a>
     </div>
   </div>
 </section>

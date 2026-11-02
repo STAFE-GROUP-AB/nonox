@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-oppen-beta-ko",
+      "datum": "2026-11-02T17:00:00+01:00",
+      "rubrik": "Öppen beta med kö fram till lanseringen den 1 januari 2027",
+      "beskrivning": "Nya användare ställer sig i kö på /ko och svarar på några frågor om sitt företag, och den som blir godkänd får ett mejl och loggar in som vanligt med en kod. Inloggningen skapar inte längre konton för okända adresser, men den som bjuds in till ett företag kommer in direkt. Skarp lansering av version 1.0 sker den 1 januari 2027.",
+      "typ": "Nytt",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-02-fakturering",
       "datum": "2026-11-02T16:05:00+01:00",
       "rubrik": "Fakturor enligt mervärdesskattelagen, kundförluster och reskontra per datum",
