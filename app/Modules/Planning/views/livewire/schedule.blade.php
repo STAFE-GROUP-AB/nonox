@@ -159,16 +159,22 @@
     <div class="hidden overflow-x-auto rounded-3xl bg-white shadow-xs ring-1 ring-stone-200 sm:block">
         @if(! $isDay)
             <div class="grid min-w-[56rem]" style="grid-template-columns: 12rem repeat(7, minmax(0, 1fr));" role="grid" aria-label="{{ __('Veckoschema') }}">
-                <div class="sticky left-0 z-10 border-b border-stone-200 bg-white p-3 text-xs font-semibold uppercase tracking-wide text-gray-500" role="columnheader">{{ $rows === 'avdelningar' ? __('Avdelning') : __('Person') }}</div>
-                @foreach($days as $day)
-                    @php($holiday = SwedishHolidays::nameOf($day))
-                    <button type="button" wire:click="showDay('{{ $day->toDateString() }}')" role="columnheader" @class(['border-b border-l border-stone-200 p-3 text-left hover:bg-stone-50', 'bg-accent-50/50' => $day->isToday()])>
-                        <span class="block text-sm font-bold text-ink">{{ ucfirst($day->locale($locale)->isoFormat('ddd D/M')) }}</span>
-                        <span @class(['block truncate text-xs', 'text-accent-700' => $holiday, 'text-gray-400' => ! $holiday])>{{ $holiday ?? ($day->isWeekend() ? __('Helg') : ' ') }}</span>
-                    </button>
-                @endforeach
+                {{-- role="row" wrappers use display: contents, so the cells stay items of the CSS grid. --}}
+                <div class="contents" role="row">
+                    <div class="sticky left-0 z-10 border-b border-stone-200 bg-white p-3 text-xs font-semibold uppercase tracking-wide text-gray-500" role="columnheader">{{ $rows === 'avdelningar' ? __('Avdelning') : __('Person') }}</div>
+                    @foreach($days as $day)
+                        @php($holiday = SwedishHolidays::nameOf($day))
+                        <div role="columnheader" @class(['border-b border-l border-stone-200', 'bg-accent-50/50' => $day->isToday()])>
+                            <button type="button" wire:click="showDay('{{ $day->toDateString() }}')" class="block h-full w-full p-3 text-left hover:bg-stone-50" aria-label="{{ __('Visa dagen :day', ['day' => $day->locale($locale)->isoFormat('dddd D MMMM')]) }}{{ $holiday ? ', '.$holiday : '' }}">
+                                <span class="block text-sm font-bold text-ink">{{ ucfirst($day->locale($locale)->isoFormat('ddd D/M')) }}</span>
+                                <span @class(['block truncate text-xs', 'text-accent-700' => $holiday, 'text-gray-400' => ! $holiday])>{{ $holiday ?? ($day->isWeekend() ? __('Helg') : ' ') }}</span>
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
 
                 @foreach($rowList as $rowIndex => $row)
+                    <div class="contents" role="row">
                     <div class="sticky left-0 z-10 flex items-center justify-between gap-2 border-b border-stone-200 bg-white px-3 py-2" role="rowheader">
                         <span class="flex min-w-0 items-center gap-2">
                             @if($row['colour'])<span class="size-2.5 shrink-0 rounded-full" style="background: {{ $row['colour'] }}"></span>@endif
@@ -195,16 +201,19 @@
                             @endif
                         </div>
                     @endforeach
+                    </div>
                 @endforeach
 
-                @include('planning::partials.totals', ['days' => $days, 'totals' => $totals, 'money' => $money, 'hours' => $hours])
+                <div class="contents" role="row">
+                    @include('planning::partials.totals', ['days' => $days, 'totals' => $totals, 'money' => $money, 'hours' => $hours])
+                </div>
             </div>
         @else
             @php($date = $from->toDateString())
             <div class="min-w-[56rem]" role="grid" aria-label="{{ __('Dagschema') }}">
-                <div class="grid border-b border-stone-200" style="grid-template-columns: 12rem 1fr;">
-                    <div class="p-3 text-xs font-semibold uppercase tracking-wide text-gray-500">{{ $rows === 'avdelningar' ? __('Avdelning') : __('Person') }}</div>
-                    <div class="relative h-10 border-l border-stone-200">
+                <div class="grid border-b border-stone-200" style="grid-template-columns: 12rem 1fr;" role="row">
+                    <div class="p-3 text-xs font-semibold uppercase tracking-wide text-gray-500" role="columnheader">{{ $rows === 'avdelningar' ? __('Avdelning') : __('Person') }}</div>
+                    <div class="relative h-10 border-l border-stone-200" role="columnheader" aria-label="{{ __('Tid, 00–24') }}">
                         @for($hour = 0; $hour < 24; $hour += 2)
                             <span class="absolute top-3 -translate-x-1/2 text-xs tabular-nums text-gray-500" style="left: {{ $hour / 24 * 100 }}%">{{ sprintf('%02d', $hour) }}</span>
                         @endfor
@@ -212,7 +221,7 @@
                 </div>
                 @foreach($rowList as $rowIndex => $row)
                     @php($rowShifts = $byCell->get($row['key'].'|'.$date, collect()))
-                    <div class="grid border-b border-stone-200" style="grid-template-columns: 12rem 1fr;">
+                    <div class="grid border-b border-stone-200" style="grid-template-columns: 12rem 1fr;" role="row">
                         <div class="flex items-center gap-2 px-3 py-2" role="rowheader">
                             @if($row['colour'])<span class="size-2.5 shrink-0 rounded-full" style="background: {{ $row['colour'] }}"></span>@endif
                             <span @class(['truncate text-sm', 'font-semibold text-ink' => $rowIndex > 0, 'italic text-gray-600' => $rowIndex === 0])>{{ $row['label'] }}</span>
@@ -230,7 +239,7 @@
                         </div>
                     </div>
                 @endforeach
-                <div class="grid" style="grid-template-columns: 12rem repeat(1, minmax(0, 1fr));">
+                <div class="grid" style="grid-template-columns: 12rem repeat(1, minmax(0, 1fr));" role="row">
                     @include('planning::partials.totals', ['days' => $days, 'totals' => $totals, 'money' => $money, 'hours' => $hours])
                 </div>
             </div>

@@ -277,3 +277,26 @@ it('says when the person is told about a change to a published shift', function 
     $page->call('moveShift', $draft->id, $this->anna->id, '2026-11-14 08:00', '2026-11-14 12:00')
         ->assertDispatched('toast', message: 'Passet är flyttat.');
 });
+
+it('marks up both grids with rows around the header and data cells', function () {
+    Planning::shift($this->owner, $this->company, ['employee_id' => $this->anna->id, 'date' => '2026-11-10', 'start' => '08:00', 'end' => '16:00']);
+
+    foreach ([['vecka' => '2026-11-09'], ['vy' => 'dag', 'dag' => '2026-11-10']] as $query) {
+        $html = Livewire::withQueryParams($query)->test(SchedulePage::class)->html();
+        $dom = new DOMDocument;
+        @$dom->loadHTML('<?xml encoding="utf-8"?>'.$html);
+        $xpath = new DOMXPath($dom);
+
+        $cells = $xpath->query('//*[@role="gridcell" or @role="rowheader" or @role="columnheader"]');
+        expect($cells->length)->toBeGreaterThan(3);
+
+        foreach ($cells as $cell) {
+            expect($cell->parentNode?->attributes?->getNamedItem('role')?->nodeValue)->toBe('row')
+                ->and($cell->nodeName)->not->toBe('button');
+        }
+
+        foreach ($xpath->query('//*[@role="row"]') as $row) {
+            expect($row->parentNode?->attributes?->getNamedItem('role')?->nodeValue)->toBe('grid');
+        }
+    }
+});
