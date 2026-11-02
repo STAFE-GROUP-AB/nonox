@@ -137,38 +137,64 @@ final class AgiDeclaration
     private static function individual(Employee $employee, Collection $payslips, Collection $codes): ?AgiIndividual
     {
         $amounts = ['cash' => 0, 'other' => 0, 'car' => 0, 'fuel' => 0];
+        $free = $amounts;
         $mileage = false;
         $perDiem = false;
+        // The payslip that took the year to the 1 000 kr threshold carried the earlier avgiftsfri pay into its basis (SAL 2 kap. 24 § fjärde stycket).
+        $earlierFree = (int) $payslips->sum(fn (Payslip $payslip): int => (int) ($payslip->contribution_explanation['earlier_free_basis_ore'] ?? 0));
+        $freeThisMonth = 0;
 
-        foreach ($payslips->flatMap->lines as $line) {
-            /** @var PayslipLine $line */
-            $code = (string) ($codes[$line->pay_code_id] ?? '');
-            $amount = $line->amount_ore->ore;
+        foreach ($payslips as $payslip) {
+            // Avgiftsfri pay (below the year's threshold) is declared outside the contribution basis, unless the threshold is passed this month.
+            $isFree = array_key_exists('below_annual_threshold_ore', $payslip->contribution_explanation ?? []);
 
-            $mileage = $mileage || in_array($code, self::MILEAGE, true);
-            $perDiem = $perDiem || in_array($code, self::PER_DIEM, true);
-
-            if (! in_array($line->tax_effect, [PayslipLineResult::TAX_TABLE, PayslipLineResult::TAX_ONE_OFF], true)) {
-                continue;
+            if ($isFree && $earlierFree > 0) {
+                $freeThisMonth += $payslip->contribution_basis_ore->ore;
+                $isFree = false;
             }
 
-            $field = match (true) {
-                in_array($code, self::CAR_BENEFIT, true) => 'car',
-                in_array($code, self::FUEL_BENEFIT, true) => 'fuel',
-                ($line->explanation['benefit'] ?? false) === true => 'other',
-                default => 'cash',
-            };
-            $amounts[$field] += $amount;
+            foreach ($payslip->lines as $line) {
+                /** @var PayslipLine $line */
+                $code = (string) ($codes[$line->pay_code_id] ?? '');
+                $amount = $line->amount_ore->ore;
+
+                $mileage = $mileage || in_array($code, self::MILEAGE, true);
+                $perDiem = $perDiem || in_array($code, self::PER_DIEM, true);
+
+                if (! in_array($line->tax_effect, [PayslipLineResult::TAX_TABLE, PayslipLineResult::TAX_ONE_OFF], true)) {
+                    continue;
+                }
+
+                $field = match (true) {
+                    in_array($code, self::CAR_BENEFIT, true) => 'car',
+                    in_array($code, self::FUEL_BENEFIT, true) => 'fuel',
+                    ($line->explanation['benefit'] ?? false) === true => 'other',
+                    default => 'cash',
+                };
+
+                if ($isFree) {
+                    $free[$field] += $amount;
+
+                    continue;
+                }
+
+                $amounts[$field] += $amount;
+            }
         }
 
+        // Ruta 010: what earlier months declared as avgiftsfri is now contribution basis, added to 011 and stated in 010.
+        // TODO(legal-verify): earlier avgiftsfri benefits are added to 011 as well, as Skatteverket's example only shows cash.
+        $earlierMonths = max(0, $earlierFree - $freeThisMonth);
+        $amounts['cash'] += $earlierMonths;
         $amounts = self::ownPaymentAcrossBenefits($amounts);
+        $free = self::ownPaymentAcrossBenefits($free);
         $tax = (int) $payslips->sum(fn (Payslip $payslip): int => $payslip->tax_ore->ore);
 
-        if (min($amounts) < 0 || $tax < 0) {
+        if (min($amounts) < 0 || min($free) < 0 || $tax < 0) {
             throw ValidationException::withMessages(['period' => [__('Beloppen för :name blir negativa för månaden. Arbetsgivardeklarationen tar bara positiva belopp; rätta en tidigare månad i stället.', ['name' => "{$employee->first_name} {$employee->last_name}"])]]);
         }
 
-        if (array_sum($amounts) === 0 && $tax === 0 && ! $mileage && ! $perDiem) {
+        if (array_sum($amounts) === 0 && array_sum($free) === 0 && $tax === 0 && ! $mileage && ! $perDiem) {
             return null;
         }
 
@@ -187,6 +213,11 @@ final class AgiDeclaration
             },
             mileage: $mileage,
             perDiem: $perDiem,
+            freeCashKronor: intdiv($free['cash'], self::ORE_PER_KRONA),
+            freeOtherBenefitsKronor: intdiv($free['other'], self::ORE_PER_KRONA),
+            freeCarBenefitKronor: intdiv($free['car'], self::ORE_PER_KRONA),
+            freeFuelBenefitKronor: intdiv($free['fuel'], self::ORE_PER_KRONA),
+            earlierFreeKronor: intdiv($earlierMonths, self::ORE_PER_KRONA),
         );
     }
 }

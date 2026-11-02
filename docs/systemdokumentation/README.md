@@ -1243,6 +1243,21 @@ lönebeskeden låsta i databasen.
   håller det som tidigare attesterade lönebesked i månaden har använt;
   nästa lönebesked får bara det som är kvar. Två lönebesked till samma
   person i samma körning (två anställningar) räknas i tur och ordning.
+- 1 000 kr-gränsen för arbetsgivaravgifter (enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-LON-02, #71): ersättning är avgiftsfri så
+  länge personens ersättning under året understiger 1 000 kr (SAL 2 kap.
+  14 §). Avgiftsfritt avgiftsunderlag samlas i ackumulatorn
+  `contribution_free_basis_ytd`. Det lönebesked som tar årets ersättning
+  till gränsen får också den tidigare avgiftsfria ersättningen i sitt
+  avgiftsunderlag (SAL 2 kap. 24 § fjärde stycket), och ackumulatorn
+  nollställs. I AGI redovisas avgiftsfri ersättning i 131 (förmåner i
+  132–134), inte i 011. I månaden då gränsen passeras läggs det som tidigare
+  månader redovisat som avgiftsfritt till i 011 och anges i 010
+  (Skatteverkets alternativ att redovisa i den period det blir känt); är den
+  avgiftsfria ersättningen utbetald samma månad redovisas allt i 011.
+  Flyttad lönedata: avgiftsunderlag utan arbetsgivaravgifter i det tidigare
+  systemet räknas som avgiftsfritt. `TODO(legal-verify)`: tidigare
+  avgiftsfria förmåner läggs i 011 tillsammans med kontant ersättning.
 - Inaktuell beräkning (#70, #71): lönebeskedet sparar de ackumulatorer som
   avgifterna byggde på när de kan ändras av en annan körning
   (`contribution_explanation.accumulators_read`). Har en annan körning för
@@ -1444,7 +1459,9 @@ lönebeskeden låsta i databasen.
   enligt Skatteverkets schema version 1.1 av alla attesterade lönekörningar
   med utbetalning i månaden. Huvuduppgiften har summa arbetsgivaravgifter
   (fält 487) och avdragen skatt (497); varje anställd får en individuppgift
-  med kontant ersättning (011), förmåner (012, 013, 018), avdragen skatt
+  med kontant ersättning (011), förmåner (012, 013, 018), avgiftsfri
+  ersättning under 1 000 kr-gränsen (131, och förmåner i 132, 133, 134),
+  avräkning av tidigare avgiftsfri ersättning (010, #71), avdragen skatt
   (001, eller 274/275 för SINK och A-SINK), kryss för milersättning (050)
   och traktamente (051). Specifikationsnumret är den anställdes nummer, så
   att en rättelse ersätter rätt uppgift. Belopp anges i hela kronor utan

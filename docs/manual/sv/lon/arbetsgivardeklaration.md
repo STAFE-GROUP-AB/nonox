@@ -47,6 +47,8 @@ Vilken dag deklarationen ska vara inne beror på företagets omsättning. Välj 
 
 - **Huvuduppgiften**: summan av arbetsgivaravgifterna och den avdragna skatten för månaden.
 - **En individuppgift per anställd**: kontant lön, förmåner, avdragen skatt (eller SINK och A-SINK), och kryss för milersättning och traktamente.
+- **Lön utan arbetsgivaravgift**: så länge en persons ersättning under året är under 1 000 kronor redovisas lönen i ruta 131 (förmåner i 132–134) i stället för 011. Den månad årets ersättning når 1 000 kronor läggs de tidigare beloppen till i ruta 011 och anges i ruta 010, och avgiften tas på hela beloppet. Se [Arbetsgivaravgifter och tjänstepension](/manual/lon/arbetsgivaravgifter-och-pension).
+- **Avdragen skatt** är den skatt som faktiskt drogs. Var skatten större än kontantlönen redovisas bara det som drogs.
 
 Belopp anges i hela kronor. Varje anställd har sitt anställningsnummer som specifikationsnummer, så att en rättelse ersätter rätt uppgift. Filen kontrolleras mot Skatteverkets schema när schemat finns installerat på servern, och den sparas med en kontrollsumma.
 

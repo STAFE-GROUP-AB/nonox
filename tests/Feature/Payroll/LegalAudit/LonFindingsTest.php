@@ -157,9 +157,51 @@ it('charges contributions on the whole year\'s pay once it reaches 1 000 kr (SAL
     }
 
     // 600 kr in March and 600 kr in April: 1 200 kr in the year is not avgiftsfri, so all of it carries 31,42 %:
-    // 1 200 × 31,42 % = 377,04 kr. The code charges only April's 600 kr (188,52 kr).
-    expect((int) Payslip::query()->sum('employer_contribution_ore'))->toBe(37_704);
-})->todo('AUD-LON-02: pay before the 1 000 kr threshold was passed never gets contributions');
+    // 1 200 × 31,42 % = 377,04 kr, all of it on April's payslip (SAL 2 kap. 24 § fjärde stycket).
+    expect((int) Payslip::query()->sum('employer_contribution_ore'))->toBe(37_704)
+        ->and(Payslip::query()->orderBy('id')->get()->map(fn (Payslip $payslip) => $payslip->employer_contribution_ore->ore)->all())->toBe([0, 37_704])
+        ->and(Payslip::query()->orderBy('id')->get()->last()->contribution_explanation['earlier_free_basis_ore'])->toBe(60_000);
+});
+
+it('declares the earlier avgiftsfri pay in 011 and 010 in the month the year passes 1 000 kr (Skatteverket, ruta 010, #71)', function () {
+    $tim = LonSupport::employee($this->owner, $this->company, '19950707', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD']);
+    $agi = [];
+
+    foreach ([['2026-03', '2026-03-25'], ['2026-04', '2026-04-24']] as [$period, $paid]) {
+        $run = $this->runs->create($this->owner, $this->company, $period, CarbonImmutable::parse($paid));
+        LonSupport::input($this->owner, $run, $tim, 'TIMLON', ['quantity' => '4']);
+        $agi[$period] = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $run);
+    }
+
+    // March: 600 kr avgiftsfri, in 131 and not in 011; no contributions.
+    expect($agi['2026-03']('//agd:IU/agd:KontantErsattningEjUlagSA[@faltkod="131"]'))->toBe('600')
+        ->and($agi['2026-03']('//agd:IU/agd:KontantErsattningUlagAG'))->toBe('')
+        ->and($agi['2026-03']('//agd:HU/agd:SummaArbAvgSlf'))->toBe('0');
+
+    // April: 011 = 600 + the 600 declared avgiftsfri in March = 1 200, 010 = 600, 487 = 377 kr (377,04 with öre dropped).
+    expect($agi['2026-04']('//agd:IU/agd:KontantErsattningUlagAG[@faltkod="011"]'))->toBe('1200')
+        ->and($agi['2026-04']('//agd:IU/agd:AvrakningAvgiftsfriErs[@faltkod="010"]'))->toBe('600')
+        ->and($agi['2026-04']('//agd:IU/agd:KontantErsattningEjUlagSA'))->toBe('')
+        ->and($agi['2026-04']('//agd:HU/agd:SummaArbAvgSlf'))->toBe('377');
+});
+
+it('declares nothing in 010 when the avgiftsfri pay and the pay that passes 1 000 kr are paid in the same month (#71)', function () {
+    $tim = LonSupport::employee($this->owner, $this->company, '19950707', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD']);
+    // March's hours paid on 1 April, April's on 24 April.
+    $march = $this->runs->create($this->owner, $this->company, '2026-03', CarbonImmutable::parse('2026-04-01'));
+    LonSupport::input($this->owner, $march, $tim, 'TIMLON', ['quantity' => '4']);
+    $this->runs->calculate($this->owner, $march->fresh());
+    $this->runs->approve($this->admin, $march->fresh());
+    $april = $this->runs->create($this->owner, $this->company, '2026-04');
+    LonSupport::input($this->owner, $april, $tim, 'TIMLON', ['quantity' => '4']);
+    $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $april);
+
+    // All 1 200 kr was paid in April and is contribution basis there: 011 = 1 200, no 010 and no 131.
+    expect($field('//agd:IU/agd:KontantErsattningUlagAG'))->toBe('1200')
+        ->and($field('//agd:IU/agd:AvrakningAvgiftsfriErs'))->toBe('')
+        ->and($field('//agd:IU/agd:KontantErsattningEjUlagSA'))->toBe('')
+        ->and($field('//agd:HU/agd:SummaArbAvgSlf'))->toBe('377');
+});
 
 it('caps the youth reduction at 25 000 kr per calendar month across all payslips paid in it (lag 2026:100 2 §)', function () {
     $ung = LonSupport::employee($this->owner, $this->company, '20050301');
@@ -201,7 +243,7 @@ it('declares pay without contributions in field 131, not 011 (Skatteverket, fäl
     // 900 kr in the year so far, below 1 000 kr: "kontant ersättning för arbete som inte är underlag för socialavgifter" → 131.
     expect($field('//agd:IU/agd:*[@faltkod="131"]'))->toBe('900')
         ->and($field('//agd:IU/agd:KontantErsattningUlagAG'))->toBe('');
-})->todo('AUD-LON-04: AgiXml has no field 131; avgiftsfri pay is declared as underlag in 011');
+});
 
 it('declares the activity (field 112) with A-SINK (Skatteverket, fältkod 275)', function () {
     $artist = LonSupport::employee($this->owner, $this->company, '19800101', ['tax_residence' => 'NON_RESIDENT_A_SINK', 'tax_table' => null, 'tax_column' => null, 'salary' => '20 000']);

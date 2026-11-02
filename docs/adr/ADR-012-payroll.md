@@ -287,3 +287,29 @@ finding and the GitHub issue.
   another run for the person was attested may be out of date. The payslip
   keeps the values it read where they matter (`accumulators_read`), and
   attestation refuses until the run is calculated again.
+
+### Pay that becomes contributable when the year passes 1 000 kr (AUD-LON-02, #71)
+
+- "En ersättning till en person är avgiftsfri om ersättningen till den
+  personen under året understigit 1 000 kronor" (SAL 2 kap. 14 §), and "I
+  avgiftsunderlaget ska också ingå tidigare under året utgiven avgiftsfri
+  ersättning som sammanräknad med en ersättning som utgetts under
+  kalendermånaden blir avgiftspliktig" (SAL 2 kap. 24 § fjärde stycket).
+- Avgiftsfri basis is kept in the calendar-year accumulator
+  `contribution_free_basis_ytd`. The payslip that takes the year to the
+  threshold adds it to its basis (`earlier_free_basis_ore` in the
+  contribution explanation) and clears it; that month's rates apply to it.
+- AGI: Skatteverket (agbeskrivning, ruta 010) lets the employer declare the
+  earlier avgiftsfri pay in the period it becomes known: 011 holds the
+  month's pay plus what earlier periods declared as avgiftsfri, and 010
+  that earlier amount. Avgiftsfri pay is declared in 131 (benefits 132–134)
+  rather than 011, element names from the component schema 1.1
+  (`KontantErsattningEjUlagSA`, `SkatteplOvrigaFormanerEjUlagSA`,
+  `SkatteplBilformanEjUlagSA`, `DrivmVidBilformanEjUlagSA`,
+  `AvrakningAvgiftsfriErs`), checked against the schema files. This also
+  covers the field-131 part of AUD-LON-04, which #71 depends on.
+- Migration of year-to-date totals: a basis with no contributions paid in
+  the earlier system is taken as avgiftsfri.
+- `TODO(legal-verify)`: earlier avgiftsfri benefits are added to 011 with
+  the cash (Skatteverket's example shows cash only); correcting each earlier
+  period instead (Skatteverket's other option) is not offered.

@@ -76,11 +76,21 @@ it('carries year-to-date totals and vacation balances over', function () {
         ->and($values['tax_ytd'])->toBe(2_990_000)
         ->and($values['contributions_ytd'])->toBe(4_021_760)
         ->and($values['one_off_ytd'])->toBe(500_000)
+        // Contributions were paid, so nothing earlier was avgiftsfri (SAL 2 kap. 24 § fjärde stycket, #71).
+        ->and($values['contribution_free_basis_ytd'])->toBe(0)
         ->and($balance['earned'])->toBe(25)
         ->and($balance['taken'])->toBe(3)
         ->and($balance['saved'])->toBe(2)
         ->and($balance['left'])->toBe(24)
         ->and(fn () => $this->move->vacation($this->owner, $this->company, "anstallningsnummer;semesterar_start;intjanade_dagar;uttagna_dagar;sparade_dagar\n17;2026-01-01;25;3;2\n"))->toThrow(ValidationException::class, 'månad 4');
+});
+
+it('carries pay that had no contributions in the earlier system over as avgiftsfri, so it joins the basis when the year passes 1 000 kr (#71)', function () {
+    $this->move->employees($this->owner, $this->company, employeesCsv());
+    $this->move->yearToDate($this->owner, $this->company, "anstallningsnummer;bruttolon;skatt;avgiftsunderlag;arbetsgivaravgifter;engangsbelopp\n17;600;0;600;0;\n");
+    $anna = Employee::query()->where('first_name', 'Anna')->sole();
+
+    expect(Accumulator::query()->where('employee_id', $anna->id)->where('year', 2026)->pluck('value', 'key')['contribution_free_basis_ytd'])->toBe(60_000);
 });
 
 it('keeps the old payslips for the archive and the employee', function () {
