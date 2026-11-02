@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.3.0
+  version: 1.4.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -100,6 +100,10 @@ tags:
     x-en-name: Scheduling
     description: 'The staff schedule (Planering), read-only: shifts per period, areas and publications. Needs the Planering module.'
     x-sv-description: 'Personalschemat i Planering: pass per period, avdelningar och publiceringar.'
+  - name: Lager
+    x-en-name: Inventory
+    description: 'Stock in Lager: stocked articles with stock per location, locations, stock levels, and goods receipts. Needs the Lager module.'
+    x-sv-description: 'Lagret: lagerförda artiklar med saldo per plats, lagerställen, saldon och inleveranser.'
 security:
   - oauth2: []
   - apiKey: []
@@ -6474,6 +6478,354 @@ paths:
           $ref: '#/components/responses/Forbidden'
         429:
           $ref: '#/components/responses/TooManyRequests'
+  /inventory/articles:
+    get:
+      operationId: listInventoryArticles
+      tags:
+        - Lager
+      summary: 'List stocked articles with stock'
+      description: 'The articles kept in stock (Lager), with the total and the quantity per location. Quantities are decimal strings with up to three decimals. purchase_price_ore is null unless the person behind the credential may manage the stock (inventory:manage). Filter on a barcode with gtin or on the article number with number. Needs inventory:view, which no one has while the module is off.'
+      x-sv-summary: 'Lista lagerförda artiklar med saldo'
+      x-sv-description: 'Lagerförda artiklar med saldo totalt och per lagerställe.'
+      security:
+        - oauth2:
+            - 'inventory:view'
+        - apiKey:
+            - 'inventory:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'inventory:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: gtin
+          in: query
+          required: false
+          description: 'Only the article with this EAN/GTIN.'
+          schema:
+            type: string
+          example: '7310865004703'
+        - name: number
+          in: query
+          required: false
+          description: 'Only the article with this article number.'
+          schema:
+            type: string
+          example: V-1
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventoryArticle'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 12
+                        number: V-1
+                        name: Kaffekopp
+                        unit: st
+                        sku: KOPP-VIT
+                        gtin: '7310865004703'
+                        scanner_code: null
+                        brand: Nordvik
+                        model: null
+                        price_ore: 19900
+                        purchase_price_ore: 8000
+                        vat_rate: 2500
+                        vat_treatment: STANDARD
+                        is_active: true
+                        default_location_id: 4
+                        reorder_point: '5'
+                        stock:
+                          quantity: '12'
+                          locations:
+                            - location_id: 4
+                              code: HL-A-01
+                              quantity: '10'
+                            - location_id: 5
+                              code: HL-A-02
+                              quantity: '2'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /inventory/locations:
+    get:
+      operationId: listStockLocations
+      tags:
+        - Lager
+      summary: 'List stock locations'
+      description: 'The stock locations as a tree: warehouses (with an address), zones, shelves and bins. full_code is the printable code (HL-A-01). Needs inventory:view.'
+      x-sv-summary: 'Lista lagerställen'
+      x-sv-description: 'Lagerställena som ett träd: lager, zoner, hyllor och fack.'
+      security:
+        - oauth2:
+            - 'inventory:view'
+        - apiKey:
+            - 'inventory:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'inventory:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockLocation'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 4
+                        parent_id: 2
+                        type: BIN
+                        code: '01'
+                        full_code: HL-A-01
+                        name: null
+                        address: null
+                        is_active: true
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /inventory/stock-levels:
+    get:
+      operationId: listStockLevels
+      tags:
+        - Lager
+      summary: 'List stock levels'
+      description: 'The quantity of each article at each location, kept in step with the movement ledger. Filter on location_id or article_id. Needs inventory:view.'
+      x-sv-summary: 'Lista lagersaldon'
+      x-sv-description: 'Saldot per artikel och lagerställe.'
+      security:
+        - oauth2:
+            - 'inventory:view'
+        - apiKey:
+            - 'inventory:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'inventory:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: location_id
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: article_id
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockLevel'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 31
+                        article_id: 12
+                        article_number: V-1
+                        location_id: 4
+                        location_code: HL-A-01
+                        quantity: '10'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /inventory/receipts:
+    post:
+      operationId: createStockReceipt
+      tags:
+        - Lager
+      summary: 'Create a goods receipt'
+      description: 'Creates an inleverans with lines of article, quantity, location and cost (unit_cost_ore, whole öre per unit; the article purchase price when left out). With "receive": true every line is received at once on received_on (today by default) and the stock grows; otherwise it waits to be received in NONOX. Nothing is booked in the ledger. Same Actions as the app (SaveReceipt, ReceiveStock). Needs inventory:manage.'
+      x-sv-summary: 'Skapa en inleverans'
+      x-sv-description: 'Skapar en inleverans och tar emot den direkt med "receive": true. Inget bokförs.'
+      security:
+        - oauth2:
+            - 'inventory:manage'
+        - apiKey:
+            - 'inventory:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'inventory:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockReceiptInput'
+            examples:
+              example:
+                value:
+                  supplier_id: 3
+                  reference: 'Följesedel 4411'
+                  receive: true
+                  received_on: '2026-11-02'
+                  lines:
+                    - article_id: 12
+                      location_id: 4
+                      quantity: '10'
+                      unit_cost_ore: 8000
+      responses:
+        201:
+          description: 'The receipt.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/StockReceipt'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      number: 7
+                      status: RECEIVED
+                      supplier_id: 3
+                      supplier_invoice_id: null
+                      expected_on: null
+                      reference: 'Följesedel 4411'
+                      lines:
+                        - id: 15
+                          article_id: 12
+                          location_id: 4
+                          quantity: '10'
+                          received: '10'
+                          unit_cost_ore: 8000
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
 webhooks:
   voucher.posted:
     post:
@@ -6895,6 +7247,68 @@ webhooks:
       responses:
         2XX:
           description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  stock.changed:
+    post:
+      operationId: stockChanged
+      summary: 'Stock changed'
+      x-sv-summary: 'Lagersaldot har ändrats'
+      description: "Sent after stock moved in Lager: a goods receipt, a pick, a move between locations, a stocktake, a point-of-sale sale, a return or scrapping. `type` is the kind of movement (RECEIPT, PICK, TRANSFER, COUNT, POS_SALE, RETURN, SCRAP); each movement has its signed quantity and the balance at the location after it. Costs and notes are not included. The webhook needs inventory:view. Sent as an HTTPS POST to every active webhook of the company that subscribes to `stock.changed`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas med HTTPS POST till varje webhook som prenumererar på `stock.changed`, när lagersaldot har ändrats. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: stock.changed
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 6c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f
+                  type: stock.changed
+                  created_at: '2026-11-02T09:00:02+01:00'
+                  company_id: 42
+                  data:
+                    type: PICK
+                    article_ids:
+                      - 12
+                    movements:
+                      - movement_id: 881
+                        article_id: 12
+                        location_id: 4
+                        quantity: '-2'
+                        balance: '8'
+                        occurred_on: '2026-11-02'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
 components:
   securitySchemes:
     oauth2:
@@ -6922,6 +7336,8 @@ components:
             'supplier-invoices:create': 'Read suppliers and supplier invoices, create suppliers and draft and register supplier invoices'
             'supplier-invoices:approve': 'Read and approve supplier invoices (never ones the same person registered, while the company requires separate approval)'
             'planning:view': 'Read the schedule in Planering: shifts per period, areas and publications'
+            'inventory:view': 'Read the stock in Lager: stocked articles with stock per location, locations and stock levels'
+            'inventory:manage': 'Create goods receipts and receive goods into stock, and see purchase prices'
           x-revocationUrl: 'https://nonox.app/oauth/revoke'
       x-sv-scopes:
         'vouchers:view': 'Läsa verifikationer, underlag, kontoplan, räkenskapsår och perioder, kostnadsställen, projekt, verifikationsserier och momskoder'
@@ -6940,6 +7356,8 @@ components:
         'supplier-invoices:create': 'Läsa leverantörer och leverantörsfakturor, lägga till leverantörer och skapa och registrera leverantörsfakturor'
         'supplier-invoices:approve': 'Läsa och attestera leverantörsfakturor (aldrig sådana samma person registrerat, när företaget kräver separat attest)'
         'planning:view': 'Läsa schemat i Planering: pass per period, avdelningar och publiceringar'
+        'inventory:view': 'Läsa lagret: lagerförda artiklar med saldo per plats, lagerställen och saldon'
+        'inventory:manage': 'Skapa inleveranser och ta emot varor i lagret, och se inköpspriser'
     apiKey:
       type: http
       scheme: bearer
@@ -9765,6 +10183,232 @@ components:
             - string
             - 'null'
           format: date-time
+    InventoryArticle:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        name:
+          type: string
+        unit:
+          type: string
+        sku:
+          type:
+            - string
+            - 'null'
+        gtin:
+          type:
+            - string
+            - 'null'
+          description: 'EAN/GTIN with a valid check digit.'
+        scanner_code:
+          type:
+            - string
+            - 'null'
+        brand:
+          type:
+            - string
+            - 'null'
+        model:
+          type:
+            - string
+            - 'null'
+        price_ore:
+          type: integer
+          description: 'Sales price excluding VAT, whole öre.'
+        purchase_price_ore:
+          type:
+            - integer
+            - 'null'
+          description: 'Purchase price, whole öre; null without inventory:manage.'
+        vat_rate:
+          type: integer
+        vat_treatment:
+          type: string
+          enum:
+            - STANDARD
+            - VMB
+        is_active:
+          type: boolean
+        default_location_id:
+          type:
+            - integer
+            - 'null'
+        reorder_point:
+          type:
+            - string
+            - 'null'
+        stock:
+          type: object
+          properties:
+            quantity:
+              type: string
+            locations:
+              type: array
+              items:
+                type: object
+                properties:
+                  location_id:
+                    type: integer
+                  code:
+                    type: string
+                  quantity:
+                    type: string
+        updated_at:
+          type: string
+          format: date-time
+    StockLocation:
+      type: object
+      properties:
+        id:
+          type: integer
+        parent_id:
+          type:
+            - integer
+            - 'null'
+        type:
+          type: string
+          enum:
+            - WAREHOUSE
+            - ZONE
+            - SHELF
+            - BIN
+        code:
+          type: string
+        full_code:
+          type: string
+        name:
+          type:
+            - string
+            - 'null'
+        address:
+          type:
+            - object
+            - 'null'
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    StockLevel:
+      type: object
+      properties:
+        id:
+          type: integer
+        article_id:
+          type: integer
+        article_number:
+          type: string
+        location_id:
+          type: integer
+        location_code:
+          type: string
+        quantity:
+          type: string
+          description: 'Decimal string, negative when the company allows negative stock.'
+        updated_at:
+          type: string
+          format: date-time
+    StockReceiptInput:
+      type: object
+      required:
+        - lines
+      properties:
+        supplier_id:
+          type:
+            - integer
+            - 'null'
+        supplier_invoice_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        expected_on:
+          type:
+            - string
+            - 'null'
+          format: date
+        reference:
+          type:
+            - string
+            - 'null'
+        note:
+          type:
+            - string
+            - 'null'
+        receive:
+          type: boolean
+          description: 'Receive every line at once.'
+        received_on:
+          type: string
+          format: date
+        lines:
+          type: array
+          items:
+            type: object
+            required:
+              - article_id
+              - quantity
+            properties:
+              article_id:
+                type: integer
+              location_id:
+                type:
+                  - integer
+                  - 'null'
+                description: 'Where the goods go; the article default location when left out.'
+              quantity:
+                type: string
+                description: 'Integer, or a decimal string with up to three decimals ("2.5").'
+              unit_cost_ore:
+                type:
+                  - integer
+                  - 'null'
+    StockReceipt:
+      type: object
+      properties:
+        id:
+          type: integer
+        number:
+          type: integer
+        status:
+          type: string
+          enum:
+            - OPEN
+            - PARTIAL
+            - RECEIVED
+            - CANCELLED
+        supplier_id:
+          type:
+            - integer
+            - 'null'
+        supplier_invoice_id:
+          type:
+            - string
+            - 'null'
+        expected_on:
+          type:
+            - string
+            - 'null'
+        reference:
+          type:
+            - string
+            - 'null'
+        lines:
+          type: array
+          items:
+            type: object
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
     PlanningArea:
       type: object
       properties:
@@ -9838,6 +10482,7 @@ components:
             - planning.published
             - planning.attested
             - sie.uploaded
+            - stock.changed
           description: 'Open enum: new event types may be added within v1.'
         created_at:
           type: string
