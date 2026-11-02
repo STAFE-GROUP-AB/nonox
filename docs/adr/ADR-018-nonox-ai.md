@@ -1,7 +1,7 @@
 # ADR-018: NONOX AI with the Laravel AI SDK
 
-Status: accepted, 2026-10-31 (revised the same day: GoZero Core replaced by
-OpenAI, Anthropic and Google)
+Status: accepted, 2026-10-31 (revised the same day: an AI service tried first
+was replaced by OpenAI, Anthropic and Google)
 
 ## Context
 
@@ -44,7 +44,7 @@ saved and posted (BFL: the company is responsible for every voucher).
 - The audit log records that an analysis was made, the provider, the model
   and the tokens used; never the document or its content.
 
-GoZero Core was tried first and removed: its content gate is built for
+An AI service tried first was removed: its content gate is built for
 pictures of objects and refused documents.
 
 ## Consequences
