@@ -1108,6 +1108,16 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   2099; ett tidigare resultat som inte disponerats visas som balanserat
   resultat. Saknas föregående år i systemet används årets ingående balanser
   som jämförelse för balansräkningen.
+- Förändringar i eget kapital specificeras som en tabell med en kolumn per
+  post (aktiekapital, reservfond, balanserat resultat, årets resultat) och
+  totalt, och raderna Belopp vid årets ingång (föregående års
+  balansräkning), Utdelning och Balanseras i ny räkning (ur årsstämmans
+  disposition av föregående års resultat, `year_end_entries` DISPOSITION
+  med verifikation i året), Årets resultat, Övriga förändringar (allt annat
+  på 2080–2099, t.ex. nyemission eller aktieägartillskott) och Belopp vid
+  årets utgång. Raderna summerar per kolumn. ÅRL 6 kap. 2 § andra stycket.
+  Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-5,
+  #90).
 - Föreslagen utdelning får inte vara större än det fria egna kapitalet
   (balanserat resultat och årets resultat, `DividendLimit`); en större
   utdelning avvisas med hänvisning till ABL 17 kap. 3 § (ekonomisk förening:

@@ -271,3 +271,23 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-9, #89).
   the income tax page warns.
 - TODO(legal-verify): 4900–4939 (semi-finished goods) and 4980–4999; whether
   a negative 3.5/3.6 should move to another field.
+
+## Specification of changes in equity (2026-11-02, #90)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-5, #90).
+
+- **Rule.** ÅRL 6 kap. 2 § andra stycket (Lag 2024:347): companies other
+  than HB and EF specify the changes in equity compared with the previous
+  year's balance sheet, in the förvaltningsberättelse. BFNAR 2016:10/2025:2
+  (uppställningsform förvaltningsberättelse) puts it under the heading
+  Förändringar i eget kapital; p. 20.11 adds a row per correction of the
+  opening equity.
+- **Decision.** `AnnualAccounts::equityChanges()` returns the rows (opening,
+  dividend, carried forward, the year's result, other changes, closing) with
+  an amount per column of `equityColumns()` and a total. The dividend and the
+  amount carried forward come from the DISPOSITION entry of the previous
+  year whose voucher lies in this year; other changes are the residual, so
+  every column reconciles by construction.
+- TODO(legal-verify): whether a new issue, a bonus issue or a shareholder
+  contribution must be named on its own row instead of "Övriga
+  förändringar"; corrections of errors under BFNAR 2016:10 p. 20.11.

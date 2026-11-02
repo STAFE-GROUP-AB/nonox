@@ -168,7 +168,7 @@ it('AUD-BOK-5: specifies every change in equity, the dividend included, in the f
     $labels = collect(AnnualAccounts::for($next)->equityChanges())->pluck('label')->implode(' ');
 
     expect(mb_strtolower($labels))->toContain('utdelning');
-})->todo('AUD-BOK-5: AnnualAccounts::equityChanges shows only opening and closing per line, not the changes (utdelning, disposition, årets resultat)');
+});
 
 it('AUD-BOK-6: rounds amounts to whole kronor rather than cutting the öre off (BFNAR 2016:10 p. 3.9)', function () {
     Bookkeeping::post($this->owner, $this->company, 99, 1930, 3001, '2026-05-01');

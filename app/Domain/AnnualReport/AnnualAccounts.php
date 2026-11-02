@@ -8,7 +8,9 @@ use App\Domain\Accounting\VoucherStatus;
 use App\Models\Account;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
+use App\Models\Voucher;
 use App\Models\VoucherRow;
+use App\Models\YearEndEntry;
 use Illuminate\Support\Collection;
 
 /**
@@ -204,26 +206,115 @@ final class AnnualAccounts
     }
 
     /**
-     * Changes in equity during the year, per line: the balance at the start
-     * and at the end of the year.
+     * The columns of the specification of changes in equity: the equity
+     * lines of the balance sheet (aktiekapital, reservfond, balanserat
+     * resultat, årets resultat) that have an amount in either year, or that
+     * the disposition of the previous year's result moves.
      *
-     * @return list<array{label: string, opening: int, closing: int}>
+     * @return list<array{key: string, label: string}>
+     */
+    public function equityColumns(): array
+    {
+        return array_map(fn (array $column): array => ['key' => $column['key'], 'label' => $column['label']], array_values($this->equityLines()));
+    }
+
+    /**
+     * The specification of changes in equity compared with the previous
+     * year's balance sheet (ÅRL 6 kap. 2 § andra stycket): the amounts at
+     * the start of the year, the disposition decided by the annual meeting
+     * (dividend, carried forward), other changes (e.g. a new issue or a
+     * shareholder contribution), the year's result and the amounts at the
+     * end of the year, per column of equityColumns() and in total. The rows
+     * add up: start + changes = end, per column (#90).
+     *
+     * @return list<array{key: string, label: string, amounts: array<string, int>, total: int}>
      */
     public function equityChanges(): array
     {
-        $rows = [];
+        $lines = $this->equityLines();
+        $keys = array_keys($lines);
+        $row = function (string $key, string $label, array $amounts) use ($keys): array {
+            $amounts = array_map(fn (string $column): int => (int) ($amounts[$column] ?? 0), array_combine($keys, $keys));
 
-        foreach ($this->balanceSheet()['sections'] as $section) {
-            if (! in_array($section['key'], ['restricted', 'free'], true)) {
-                continue;
+            return ['key' => $key, 'label' => $label, 'amounts' => $amounts, 'total' => array_sum($amounts)];
+        };
+
+        $opening = $row('opening', __('Belopp vid årets ingång'), array_map(fn (array $line): int => $line['previous'], $lines));
+        $closing = $row('closing', __('Belopp vid årets utgång'), array_map(fn (array $line): int => $line['amount'], $lines));
+        $changes = [];
+        $disposition = $this->disposition();
+
+        if ($disposition !== null) {
+            [$disposed, $dividend] = $disposition;
+
+            if ($dividend !== 0) {
+                $changes[] = $row('dividend', __('Utdelning'), ['year_result' => -$dividend]);
             }
 
-            foreach ($section['lines'] as $line) {
-                $rows[] = ['label' => $line['label'], 'opening' => $line['previous'], 'closing' => $line['amount']];
+            $changes[] = $row('carried_forward', __('Balanseras i ny räkning'), ['retained' => $disposed - $dividend, 'year_result' => -($disposed - $dividend)]);
+        }
+
+        $changes[] = $row('year_result', __('Årets resultat'), ['year_result' => $closing['amounts']['year_result'] ?? 0]);
+
+        $other = [];
+
+        foreach ($keys as $key) {
+            $other[$key] = $closing['amounts'][$key] - $opening['amounts'][$key] - array_sum(array_map(fn (array $change): int => $change['amounts'][$key], $changes));
+        }
+
+        if (array_filter($other) !== []) {
+            $changes[] = $row('other', __('Övriga förändringar'), $other);
+        }
+
+        return [$opening, ...$changes, $closing];
+    }
+
+    /**
+     * The equity lines of the balance sheet by key, with retained earnings
+     * and the year's result always present when the year has a disposition.
+     *
+     * @return array<string, array{key: string, label: string, amount: int, previous: int}>
+     */
+    private function equityLines(): array
+    {
+        $lines = [];
+
+        foreach ($this->balanceSheet()['sections'] as $section) {
+            if (in_array($section['key'], ['restricted', 'free'], true)) {
+                foreach ($section['lines'] as $line) {
+                    $lines[$line['key']] = $line;
+                }
             }
         }
 
-        return $rows;
+        $lines['retained'] ??= ['key' => 'retained', 'label' => __('Balanserat resultat'), 'amount' => 0, 'previous' => 0];
+        $lines['year_result'] ??= ['key' => 'year_result', 'label' => __('Årets resultat'), 'amount' => 0, 'previous' => 0];
+
+        $order = array_flip(['share_capital', 'reserve', 'retained', 'year_result']);
+        uksort($lines, fn (string $a, string $b): int => ($order[$a] ?? 9) <=> ($order[$b] ?? 9));
+
+        return $lines;
+    }
+
+    /**
+     * The previous year's result disposed of by the annual meeting in this
+     * year, and the dividend: [result, dividend] in öre, or null.
+     *
+     * @return ?array{0: int, 1: int}
+     */
+    private function disposition(): ?array
+    {
+        if ($this->previousYear === null) {
+            return null;
+        }
+
+        $entry = YearEndEntry::query()
+            ->where('fiscal_year_id', $this->previousYear->id)
+            ->where('type', YearEndEntry::DISPOSITION)
+            ->whereIn('voucher_id', Voucher::query()->select('id')->where('fiscal_year_id', $this->fiscalYear->id))
+            ->first();
+
+        return $entry === null ? null : [$entry->amount_ore->ore, $entry->dividend_ore->ore];
     }
 
     /**

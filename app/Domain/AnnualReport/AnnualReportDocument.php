@@ -51,6 +51,7 @@ final class AnnualReportDocument
                 'hasPreviousIncome' => $accounts->previousYear !== null,
                 'balance' => $accounts->balanceSheet(),
                 'multiYear' => $accounts->multiYear(),
+                'equityColumns' => $accounts->equityColumns(),
                 'equityChanges' => $accounts->equityChanges(),
                 'disposition' => ['free' => $free, 'dividend' => $dividend, 'carried' => $free - $dividend],
                 'fixedAssets' => $accounts->fixedAssetNotes(),

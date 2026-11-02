@@ -5960,5 +5960,10 @@
     "Fält :code (:label) blir negativt, :amount kr. Det fältet har bara en sida på blanketten. Kontrollera kontona, till exempel om en lagerförändring ska ligga på ett annat konto.": "Field :code (:label) is negative, :amount kr. That field has only one side on the form. Check the accounts, for example whether a stock change belongs on another account.",
     "Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning": "Change in stock of work in progress, finished goods and work on behalf of others",
     "Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning (+)": "Change in stock of work in progress, finished goods and work on behalf of others (+)",
-    "Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning (−)": "Change in stock of work in progress, finished goods and work on behalf of others (−)"
+    "Förändring av lager av produkter i arbete, färdiga varor och pågående arbete för annans räkning (−)": "Change in stock of work in progress, finished goods and work on behalf of others (−)",
+    "Belopp vid årets ingång": "Amount at the start of the year",
+    "Belopp vid årets utgång": "Amount at the end of the year",
+    "Utdelning": "Dividend",
+    "Övriga förändringar": "Other changes",
+    "Totalt": "Total"
 }

@@ -35,6 +35,7 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
 ## Det här innehåller årsredovisningen
 
 - **Förvaltningsberättelse** med dina texter, en flerårsöversikt (nettoomsättning, resultat efter finansiella poster och soliditet, för upp till fyra år), förändringar i eget kapital och förslag till resultatdisposition.
+- **Förändringar i eget kapital** är en tabell med en kolumn per post (aktiekapital, reservfond, balanserat resultat och årets resultat). Den visar beloppen vid årets ingång, den utdelning och det belopp som årsstämman beslutade att balansera i ny räkning, årets resultat, övriga förändringar som en nyemission, och beloppen vid årets utgång. Utdelningen och dispositionen hämtas från [resultatdispositionen](/manual/bokslut/resultatdisposition).
 - **Resultaträkning** uppställd efter kostnadsslag, med föregående år.
 - **Balansräkning** med föregående år.
 - **Noter** om redovisningsprinciper, medelantal anställda och anläggningstillgångar.

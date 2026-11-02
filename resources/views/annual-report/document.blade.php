@@ -65,12 +65,15 @@
 
         <h3>{{ __('Förändringar i eget kapital') }}</h3>
         <table>
-            <thead><tr><th></th><th class="num">{{ __('Vid årets början') }}</th><th class="num">{{ __('Vid årets slut') }}</th></tr></thead>
+            <thead><tr><th></th>@foreach($equityColumns as $column)<th class="num">{{ $column['label'] }}</th>@endforeach<th class="num">{{ __('Totalt') }}</th></tr></thead>
             <tbody>
                 @foreach($equityChanges as $row)
-                    <tr><td>{{ $row['label'] }}</td><td class="num">{{ $kr($row['opening']) }}</td><td class="num">{{ $kr($row['closing']) }}</td></tr>
+                    <tr @class(['sum' => $row['key'] === 'closing'])>
+                        <td>{{ $row['label'] }}</td>
+                        @foreach($equityColumns as $column)<td class="num">{{ $row['amounts'][$column['key']] === 0 && ! in_array($row['key'], ['opening', 'closing'], true) ? '' : $kr($row['amounts'][$column['key']]) }}</td>@endforeach
+                        <td class="num">{{ $kr($row['total']) }}</td>
+                    </tr>
                 @endforeach
-                <tr class="sum"><td>{{ __('Summa eget kapital') }}</td><td class="num">{{ $kr(array_sum(array_column($equityChanges, 'opening'))) }}</td><td class="num">{{ $kr(array_sum(array_column($equityChanges, 'closing'))) }}</td></tr>
             </tbody>
         </table>
 
