@@ -9625,11 +9625,12 @@ components:
             - string
             - 'null'
           format: uuid
+          description: 'The latest settlement voucher of the period: the supplementary one when the period was booked again after a late posting.'
         payable_sek:
           type:
             - integer
             - 'null'
-          description: 'Box 49 in whole kronor, when settled.'
+          description: 'Box 49 in whole kronor, when settled, from the latest booked version of the return.'
     VatReturn:
       type: object
       properties:
@@ -9648,6 +9649,7 @@ components:
             - string
             - 'null'
           format: uuid
+          description: 'The latest settlement voucher of the period: the supplementary one when the period was booked again after a late posting.'
         boxes:
           type: array
           items:

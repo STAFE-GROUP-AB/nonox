@@ -32,20 +32,63 @@
   (`VatBoxes`). There are no VAT codes on rows yet; the mapping covers the
   BAS VAT accounts. `TODO(legal-verify)` on the mapping, on dropping öre per
   box, and on boxes without accounts (06, 07, 08, 37, 38, 41).
-- Periods follow the company's redovisningsperiod: month, calendar quarter or
-  fiscal year.
+- Periods follow the company's redovisningsperiod: calendar month, calendar
+  quarter or the beskattningsår (= the fiscal year for a company), SFL 26
+  kap. 10, 11 and 26 §§. Months and quarters are never cut at a fiscal year
+  edge (#59): with a broken fiscal year, a quarter that straddles the year
+  end is one period, listed under both fiscal years, calculated by date
+  across both (`VatReturn` reads posted vouchers by date for the company, not
+  per fiscal year; opening balances are not vouchers, so nothing is counted
+  twice), declared once (eSKD `Period` = the quarter's last month, deadline
+  from the quarter's end) and settled once. Its settlement voucher is dated
+  the quarter's last day and so lands in the fiscal year that day belongs
+  to; the VAT of the months before the year end reaches that year through
+  the carried-forward opening balance on the VAT accounts. The closing
+  checklist of a year only requires periods that end in it, and the archive
+  package puts a period in the year of its last day. Enligt granskning
+  2026-11-02, juristgranskning återstår (AUD-MOMS-6, #59).
 - Each box can be opened to show the accounts behind it.
 - **File for Skatteverket**: eSKDUpload 6.0 XML, ISO-8859-1. Element names
   are taken from published documentation, not from Skatteverket's DTD itself,
   so the file is `TODO(legal-verify)` until it has been validated in
   Skatteverket's test service.
 - **Posting the VAT**: one voucher in series M, source VAT, dated the last day
-  of the period. Every VAT account (2610–2649) goes back to zero for the
-  period, the total goes to 2650 in whole kronor, and the öre difference to
-  3740. The boxes are stored in `vat_reports` (append-only, database trigger)
-  together with the voucher. A period is posted once. VAT vouchers are left
-  out when a period is calculated, so the report reads the same before and
-  after; if something is posted in the period later, the page says so.
+  of the period. Every VAT account that feeds an output VAT box (10–12,
+  30–32, 60–62) or box 48 goes back to zero for the period, the total goes to
+  2650 in whole kronor, and the öre dropped from the declared boxes to 3740
+  (less than one krona per box). Vilande moms (2618, 2628, 2638, 2648) and
+  any other account in 2610–2649 without a box is not touched; the page
+  lists it as a warning. Box 48 reads 2640–2647 and 2649, not 2648 (ML 7
+  kap. 14 and 31 §§; enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-MOMS-1, #58). The boxes are stored in `vat_reports` (append-only, database trigger)
+  together with the voucher. VAT vouchers are left out when a period is
+  calculated, so the report reads the same before and after.
+- **Supplementary settlement** (#63): if something is posted in a settled
+  period later, the page says so and offers a supplement: a new voucher in
+  series M with only the difference on the VAT accounts that feed a box,
+  2650 (corrected box 49 minus what 2650 already got) and 3740 (the rest),
+  so all the period's settlement vouchers together book it as one. It is
+  dated the period's last day, or today when that day is locked or its
+  fiscal year closed. The corrected boxes are stored as a new version of the
+  return (`vat_reports.version`, unique per company, period start and
+  version; earlier versions are never changed); the highest version is the
+  current one, and the archive package lists every version. The page tells
+  the user to file a corrected return for the whole period at Skatteverket
+  (Skatteverket, "Rätta en momsdeklaration"); NONOX does not file it. A
+  late posting that only changes base boxes (05, 20–24, 35–42, 50) moves no
+  VAT account, so there is nothing to book, but the page still says the
+  boxes differ. Enligt granskning 2026-11-02, juristgranskning återstår
+  (AUD-MOMS-5).
+- **Deadlines** (`VatDeadlines`): month and quarter per SFL 26 kap. 26 §;
+  yearly VAT (#60) per 33, 33 a and 33 b §§ from the legal form, EU trade in
+  the year (`EuTrade`: a posted row on an account feeding box 20, 21, 35,
+  37, 38 or 39, one query for many companies) and electronic filing
+  (assumed, since the return is filed in Skatteverket's e-service): sole
+  trader 12 May the year after; other legal persons by the fiscal year's
+  last month as Skatteverket groups 33 b §; HB/KB and EU trade the 26th of
+  the second month (27 December). Not handled: 33 c § decisions,
+  byråanstånd, dödsbon, juridiska personer without an income tax return.
+  Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-9).
 - **Locking**: after the VAT is declared the period can be locked
   (`companies.locked_until_date`, permission `periods:lock`). A lock only
   moves forward.
