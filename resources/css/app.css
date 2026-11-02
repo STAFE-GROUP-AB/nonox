@@ -52,8 +52,14 @@
     --color-gray-100: #f5f5f4;
     --color-gray-200: #e7e5e4;
     --color-gray-300: #d6d3d1;
-    --color-gray-400: #a8a29e;
-    --color-gray-500: #78716c;
+    /*
+     * gray-400 and gray-500 are darker than Tailwind's stone: they carry
+     * small grey text (hints, empty values, placeholders), which needs 4.5:1
+     * against white, the paper background and the accent tints (WCAG 1.4.3).
+     * #716a64 is 4.9:1 on paper, #6b645e 5.3:1. The dark sidebar uses `stone`.
+     */
+    --color-gray-400: #716a64;
+    --color-gray-500: #6b645e;
     --color-gray-600: #57534e;
     --color-gray-700: #44403c;
     --color-gray-800: #292524;
@@ -114,6 +120,25 @@
     }
 
     /*
+     * Accessibility (docs/tillganglighet.md). Every focusable element shows
+     * where focus is, also the ones a view forgot to give a ring; utilities
+     * that draw their own ring win, since they are in a later layer.
+     */
+    :focus-visible {
+        outline: 2px solid rgb(var(--accent-600));
+        outline-offset: 2px;
+    }
+
+    /*
+     * The sticky top bars must never cover the element that has focus
+     * (WCAG 2.4.11): scrolling to a focused element keeps clear of them.
+     */
+    html {
+        scroll-padding-top: 5rem;
+        scroll-padding-bottom: 1rem;
+    }
+
+    /*
      * A scrolling container is the containing block of what it scrolls. An
      * sr-only label in a table cell is absolutely positioned; without this it
      * is placed against the page, not the container, and a wide table then
@@ -149,6 +174,56 @@ input:where([type='checkbox']):indeterminate {
 
 [x-cloak] {
     display: none;
+}
+
+/*
+ * A file field is visually hidden behind its label or drop zone. When it has
+ * keyboard focus, the box around it shows the focus instead.
+ */
+:has(> input[type='file'].sr-only:focus-visible) {
+    outline: 2px solid rgb(var(--accent-600));
+    outline-offset: 2px;
+}
+
+/*
+ * The edge of a form field must stand out 3:1 from the card (WCAG 1.4.11).
+ * The views draw fields with the light border-gray-300 / border-stone-300
+ * (1.5:1), so fields get #8a837d (3.7:1 on white) here, outside the layers
+ * so it wins. A focused field and a field marked in accent or red keep their
+ * colour.
+ */
+:is(input:not([type='checkbox'], [type='radio'], [type='file'], [type='hidden'], [type='range'], [type='color']), select, textarea):is(.border-gray-300, .border-stone-300):not(:focus, [aria-invalid='true'], [class*='border-accent'], [class*='border-red']) {
+    border-color: #8a837d;
+}
+
+/* The skip link: hidden until it gets focus, then above the top bars. */
+.nx-skip-link {
+    position: absolute;
+    left: 1rem;
+    top: -10rem;
+    z-index: 200;
+    border-radius: 0.75rem;
+    background: var(--color-ink);
+    color: #fff;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.nx-skip-link:focus {
+    top: 1rem;
+}
+
+/* Less motion for those who asked their system for it (WCAG 2.3.3). */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /*

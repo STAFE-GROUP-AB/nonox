@@ -67,7 +67,7 @@
                             <button type="button" class="text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>
                         </div>
                     @endif
-                    @error('module') <p class="mt-2 text-accent-700">{{ $message }}</p> @enderror
+                    @error('module') <p class="mt-2 text-accent-700" role="alert">{{ $message }}</p> @enderror
                 </div>
             @endif
 

@@ -15,8 +15,19 @@ $width = match ($width) {
 };
 @endphp
 
-<div class="relative" x-data="{ open: false }" @click.away="open = false" @close.stop="open = false">
-    <div @click="open = ! open">
+{{--
+    A menu button (WCAG 4.1.2, 2.1.1): the trigger's button says whether the
+    menu is open, Esc closes it and gives focus back, and it closes when focus
+    leaves it.
+--}}
+<div class="relative"
+     x-data="{ open: false, button() { return $refs.trigger.querySelector('button, a'); } }"
+     x-init="$nextTick(() => { button()?.setAttribute('aria-haspopup', 'true'); button()?.setAttribute('aria-expanded', 'false'); }); $watch('open', (value) => button()?.setAttribute('aria-expanded', value ? 'true' : 'false'))"
+     @click.away="open = false"
+     @close.stop="open = false"
+     x-on:keydown.escape="if (open) { open = false; button()?.focus(); }"
+     x-on:focusout="if ($event.relatedTarget && ! $el.contains($event.relatedTarget)) open = false">
+    <div x-ref="trigger" @click="open = ! open">
         {{ $trigger }}
     </div>
 

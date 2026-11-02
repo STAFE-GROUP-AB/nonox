@@ -8,10 +8,15 @@
     x-data="{
         toasts: [],
         next: 0,
+        paused: false,
         add(message, type = 'success') {
             const id = this.next++;
             this.toasts.push({ id, message, type, visible: true });
-            setTimeout(() => this.remove(id), type === 'error' ? 8000 : 5000);
+            this.expire(id, type === 'error' ? 8000 : 5000);
+        },
+        {{-- A toast stays while the pointer or keyboard focus is on it (WCAG 2.2.1). --}}
+        expire(id, after) {
+            setTimeout(() => this.paused ? this.expire(id, 2000) : this.remove(id), after);
         },
         remove(id) {
             const toast = this.toasts.find(t => t.id === id);
@@ -21,6 +26,10 @@
     }"
     x-init="@foreach(App\Support\Toast::pending() as $toast) add({{ Js::from($toast['message']) }}, {{ Js::from($toast['type']) }}); @endforeach"
     x-on:toast.window="add($event.detail.message ?? $event.detail[0]?.message, $event.detail.type ?? $event.detail[0]?.type)"
+    x-on:mouseenter="paused = true"
+    x-on:mouseleave="paused = false"
+    x-on:focusin="paused = true"
+    x-on:focusout="paused = false"
     class="nx-toaster"
     role="status"
     aria-live="polite"
@@ -56,8 +65,9 @@
     .nx-toast__message { margin: 0; flex: 1; padding-top: .05rem; }
     .nx-toast__close {
         flex: none; background: none; border: 0; color: inherit; opacity: .7; cursor: pointer;
-        font-size: 1.25rem; line-height: 1; padding: 0 .1rem;
+        font-size: 1.25rem; line-height: 1; padding: 0; min-width: 1.5rem; min-height: 1.5rem;
     }
+    .nx-toast__close:focus-visible { outline: 2px solid #f7f5f0; outline-offset: 2px; border-radius: 4px; }
     .nx-toast__close:hover, .nx-toast__close:focus-visible { opacity: 1; }
     @keyframes nx-toast-in { from { opacity: 0; transform: translateY(.5rem); } to { opacity: 1; transform: none; } }
     @media (max-width: 30rem) {

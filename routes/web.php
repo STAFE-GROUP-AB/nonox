@@ -57,6 +57,7 @@ Route::get('/villkor', LegalPageController::class)->defaults('document', 'terms'
 Route::get('/personuppgiftsbitradesavtal', LegalPageController::class)->defaults('document', 'dpa')->name('legal.dpa');
 Route::get('/underbitraden', LegalPageController::class)->defaults('document', 'subprocessors')->name('legal.subprocessors');
 Route::get('/egen-drift', LegalPageController::class)->defaults('document', 'selfHosting')->name('legal.selfHosting');
+Route::get('/tillganglighet', LegalPageController::class)->defaults('document', 'accessibility')->name('legal.accessibility');
 Route::get('/sakerhet', SecurityPageController::class)->name('security');
 Route::get('/cookies', fn () => view('start.cookies', LandingPage::data()))->name('cookies');
 Route::get('/alternativ-till-{program}', AlternativeController::class)->where('program', '[a-z-]+')->name('alternative');

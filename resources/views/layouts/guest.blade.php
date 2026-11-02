@@ -16,9 +16,9 @@
         @livewireStyles
     </head>
     <body>
-        <div class="font-sans text-gray-900 antialiased">
+        <main id="main" class="font-sans text-gray-900 antialiased">
             {{ $slot }}
-        </div>
+        </main>
 
         <p class="pb-6 text-center text-xs tabular-nums text-gray-500">NONOX {{ App\Support\Build\BuildInfo::line() }}</p>
 

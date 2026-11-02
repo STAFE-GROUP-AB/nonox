@@ -35,7 +35,7 @@
             <p class="mt-1 text-xs text-gray-500" wire:loading wire:target="file">{{ __('Laddar upp…') }}</p>
             <p class="mt-1 text-xs text-gray-500">{{ __('Fakturan blir underlag till verifikationen när den bokförs.') }}</p>
         </div>
-        @error('file') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+        @error('file') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
         @include('ai::partials.analyze-panel', ['canAnalyze' => $aiAvailable && ($file || $fileUrl)])
     </x-ui.card>
 
@@ -202,7 +202,7 @@
                                     <span class="mb-1 block text-xs font-medium text-gray-500 md:hidden" aria-hidden="true">{{ __('Belopp') }}</span>
                                     <input type="text" inputmode="decimal" class="{{ $cell }} text-right tabular-nums" x-model="row.amount" x-on:dblclick="fillRest(index)" :aria-label="'{{ __('Belopp, rad') }} ' + (index + 1)">
                                 </td>
-                                <td class="absolute top-2 right-2 md:static md:table-cell md:py-1 md:text-center"><button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 md:inline md:size-auto md:text-sm" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button></td>
+                                <td class="absolute top-2 right-2 md:static md:table-cell md:py-1 md:text-center"><button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 md:size-8 md:text-sm" x-on:click="removeRow(index)" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button></td>
                             </tr>
                         </template>
                     </tbody>
@@ -258,7 +258,7 @@
             @foreach($errors->getMessages() as $key => $messages)
                 @if(str_starts_with($key, 'rows'))
                     @foreach($messages as $message)
-                        <p class="mt-2 text-sm text-accent-700">{{ $message }}</p>
+                        <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p>
                     @endforeach
                 @endif
             @endforeach

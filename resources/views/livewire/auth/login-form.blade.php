@@ -15,8 +15,8 @@
         <form wire:submit="sendCode" novalidate>
             <div class="field">
                 <label for="email">E-postadress</label>
-                <input id="email" type="email" wire:model="email" autocomplete="email" autofocus>
-                @error('email') <div class="error">{{ $message }}</div> @enderror
+                <input id="email" type="email" wire:model="email" autocomplete="email" autofocus @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
+                @error('email') <div class="error" id="email-error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             @if($autofill)
@@ -35,13 +35,13 @@
         @endif
     @elseif($step === 'code')
         <h1>Kolla din e-post</h1>
-        <p class="lead">Vi har skickat en kod med åtta siffror till <strong>{{ $email }}</strong>. Skriv in den här.</p>
+        <p class="lead" id="code-help">Vi har skickat en kod med åtta siffror till <strong>{{ $email }}</strong>. Skriv in den här.</p>
 
         <form wire:submit="verify" novalidate>
             <div class="field">
                 <label for="code">Kod</label>
-                <input id="code" class="code-input" type="text" wire:model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="9" autofocus>
-                @error('code') <div class="error">{{ $message }}</div> @enderror
+                <input id="code" class="code-input" type="text" wire:model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="9" autofocus aria-describedby="code-help @error('code') code-error @enderror" @error('code') aria-invalid="true" @enderror>
+                @error('code') <div class="error" id="code-error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="actions">
@@ -61,8 +61,8 @@
         <form wire:submit="createAccount" novalidate>
             <div class="field">
                 <label for="name">Ditt namn</label>
-                <input id="name" type="text" wire:model="name" autocomplete="name" autofocus>
-                @error('name') <div class="error">{{ $message }}</div> @enderror
+                <input id="name" type="text" wire:model="name" autocomplete="name" autofocus @error('name') aria-invalid="true" aria-describedby="name-error" @enderror>
+                @error('name') <div class="error" id="name-error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="actions">

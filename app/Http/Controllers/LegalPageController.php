@@ -28,6 +28,7 @@ class LegalPageController
         'dpa' => ['file' => 'personuppgiftsbitradesavtal', 'title' => 'Personuppgiftsbiträdesavtal'],
         'subprocessors' => ['file' => 'underbitraden', 'title' => 'Underbiträden'],
         'selfHosting' => ['file' => 'egen-drift', 'title' => 'NONOX i egen drift'],
+        'accessibility' => ['file' => 'tillganglighet', 'title' => 'Tillgänglighetsredogörelse'],
     ];
 
     public function __invoke(string $document): View
@@ -74,6 +75,7 @@ class LegalPageController
             '{villkor}' => route('legal.terms'),
             '{egendrift}' => route('legal.selfHosting'),
             '{sakerhet}' => route('security'),
+            '{tillganglighet}' => route('legal.accessibility'),
         ];
     }
 }

@@ -15,7 +15,7 @@
                 <input id="bank_file" type="file" class="sr-only" wire:model="file" accept=".xml,application/xml,text/xml">
                 <p class="mt-1 text-xs text-gray-500" wire:loading wire:target="file">{{ __('Läser filen…') }}</p>
             </div>
-            @error('file') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+            @error('file') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
         </x-ui.card>
     @endif
 
@@ -69,7 +69,7 @@
                         </tbody>
                     </table>
                 </div>
-                @error('transaction') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+                @error('transaction') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
 
                 @if($canBook)
                     <div class="mt-5 flex flex-wrap items-center justify-end gap-4">

@@ -135,7 +135,7 @@
                                 <span class="text-sm tabular-nums text-gray-700" :class="balancesAfter[index] < 0 && 'text-accent-700'" x-text="balancesAfter[index] === null ? '' : format(balancesAfter[index])"></span>
                             </td>
                             <td class="absolute top-2 right-2 md:static md:table-cell md:py-1 md:align-top md:text-center">
-                                <button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 md:mt-1.5 md:inline md:size-auto md:text-sm" x-on:click="removeRow(index)" x-show="rows.length > 1" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button>
+                                <button type="button" class="inline-flex size-11 items-center justify-center rounded-full text-xl text-gray-400 hover:text-accent-600 md:mt-0.5 md:size-8 md:text-base" x-on:click="removeRow(index)" x-show="rows.length > 1" :aria-label="'{{ __('Ta bort rad') }} ' + (index + 1)">×</button>
                             </td>
                         </tr>
                     </template>
@@ -154,7 +154,7 @@
         @foreach($errors->getMessages() as $key => $messages)
             @if(str_starts_with($key, 'rows.'))
                 @foreach($messages as $message)
-                    <p class="mt-2 text-sm text-accent-700">{{ $message }}</p>
+                    <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p>
                 @endforeach
             @endif
         @endforeach
@@ -194,7 +194,7 @@
             <p class="mt-1 text-xs text-gray-500" wire:loading wire:target="uploads">{{ __('Laddar upp…') }}</p>
         </div>
 
-        @error('uploads') <p class="mt-2 text-sm text-accent-700">{{ $message }}</p> @enderror
+        @error('uploads') <p class="mt-2 text-sm text-accent-700" role="alert">{{ $message }}</p> @enderror
         @include('ai::partials.analyze-panel', ['canAnalyze' => $aiAvailable && ($uploads !== [] || $attachments->isNotEmpty())])
 
         @if($attachments->isNotEmpty() || $uploads !== [])

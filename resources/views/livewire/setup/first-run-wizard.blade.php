@@ -14,14 +14,14 @@
             <div class="field">
                 <label for="company_name">Vad heter företaget?</label>
                 <input id="company_name" type="text" wire:model="company_name" autocomplete="organization" autofocus>
-                @error('company_name') <div class="error">{{ $message }}</div> @enderror
+                @error('company_name') <div class="error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="field">
                 <label for="org_number">Organisationsnummer</label>
                 <input id="org_number" type="text" wire:model="org_number" inputmode="numeric" placeholder="556123-4567">
                 <span class="hint">Tio siffror. Det står på registreringsbeviset från Bolagsverket. Har du enskild firma är det ditt personnummer.</span>
-                @error('org_number') <div class="error">{{ $message }}</div> @enderror
+                @error('org_number') <div class="error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="field">
@@ -67,14 +67,14 @@
             <div class="field">
                 <label for="name">Ditt namn</label>
                 <input id="name" type="text" wire:model="name" autocomplete="name" autofocus>
-                @error('name') <div class="error">{{ $message }}</div> @enderror
+                @error('name') <div class="error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="field">
                 <label for="email">Din e-postadress</label>
                 <input id="email" type="email" wire:model="email" autocomplete="email">
                 <span class="hint">Det är med den här adressen du loggar in. Det finns inga lösenord: varje gång får du en kod till mejlen.</span>
-                @error('email') <div class="error">{{ $message }}</div> @enderror
+                @error('email') <div class="error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="actions">
@@ -98,7 +98,7 @@
             <div class="field">
                 <label for="code">Kod</label>
                 <input id="code" class="code-input" type="text" wire:model="code" inputmode="numeric" autocomplete="one-time-code" maxlength="9" autofocus>
-                @error('code') <div class="error">{{ $message }}</div> @enderror
+                @error('code') <div class="error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="actions">

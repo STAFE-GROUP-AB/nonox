@@ -77,7 +77,8 @@
         .hint { display: block; color: var(--muted); font-size: .875rem; margin-top: .35rem; }
         input[type=text], input[type=email], select {
             width: 100%; padding: .7rem .8rem; font: inherit; color: var(--ink);
-            background: var(--field); border: 1px solid var(--line); border-radius: 12px;
+            /* The field's edge stands out 3:1 in light and dark mode (WCAG 1.4.11). */
+            background: var(--field); border: 1px solid #8a837d; border-radius: 12px;
         }
         input:focus, select:focus, button:focus-visible, a:focus-visible {
             outline: 3px solid color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: 1px; border-color: var(--accent);
@@ -113,9 +114,11 @@
 </head>
 <body>
     <div class="shell">
-        <div class="brand"><picture><source srcset="{{ asset('brand/nonox-light.svg') }}" media="(prefers-color-scheme: dark)"><img src="{{ asset('brand/nonox.svg') }}" alt="NONOX"></picture><span>Ekonomisystem</span></div>
+        <header class="brand"><picture><source srcset="{{ asset('brand/nonox-light.svg') }}" media="(prefers-color-scheme: dark)"><img src="{{ asset('brand/nonox.svg') }}" alt="NONOX"></picture><span>Ekonomisystem</span></header>
 
-        {{ $slot }}
+        <main id="main">
+            {{ $slot }}
+        </main>
 
         <footer>Fri programvara under AGPL-3.0. Din data stannar hos dig.<br><span style="font-variant-numeric:tabular-nums">NONOX {{ App\Support\Build\BuildInfo::line() }}</span></footer>
     </div>

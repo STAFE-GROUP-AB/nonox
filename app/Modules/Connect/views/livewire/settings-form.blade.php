@@ -6,7 +6,7 @@
             <span>{{ __('Alla appar som är registrerade i den här NONOX-installationen. En ägare eller administratör godkänner ändå varje app med passkey.') }}</span></label>
         <label class="flex items-start gap-2 text-sm"><input type="radio" value="listed" wire:model.live="appPolicy" class="mt-0.5 border-gray-300 text-accent-600 focus:ring-accent-500">
             <span>{{ __('Bara apparna jag markerar nedan. En app som tas bort från listan förlorar åtkomsten direkt.') }}</span></label>
-        @error('app_policy') <p class="text-sm text-red-700">{{ $message }}</p> @enderror
+        @error('app_policy') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
     </fieldset>
 
     @if($appPolicy === 'listed')

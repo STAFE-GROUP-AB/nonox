@@ -1,4 +1,5 @@
 <x-app-layout>
+    <x-slot name="title">{{ __('Översikt') }}</x-slot>
     <div class="w-full py-6 px-4 sm:px-6 lg:px-10 space-y-6" x-data="overviewTabs(@js($tab))">
         <livewire:overview.overview-page />
 
