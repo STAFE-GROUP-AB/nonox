@@ -74,6 +74,7 @@ it('carries the program versions into every company\'s behandlingshistorik in th
     unlink($zipPath);
     $entries = collect(json_decode($json, true));
 
-    expect($entries->firstWhere('action', 'system.version_deployed')['payload'] ?? null)->toMatchArray(['build' => 9004])
+    // Other installs of the test database may already hold earlier version entries; ours is the latest.
+    expect($entries->where('action', 'system.version_deployed')->last()['payload'] ?? null)->toMatchArray(['build' => 9004])
         ->and($json)->not->toContain('annat bolag');
 });
