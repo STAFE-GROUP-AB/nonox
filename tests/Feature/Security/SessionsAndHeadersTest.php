@@ -51,9 +51,11 @@ it('keeps employees who only use Min sida out of staff pages', function () {
     CurrentCompany::set($company);
     Payroll::setUp($company, $owner);
     $employee = Bookkeeping::member($company, 'employee');
+    $staff = Bookkeeping::member($company, 'staff_ledger_staff');
 
     expect(StaffAccess::allows($owner, $company))->toBeTrue()
-        ->and(StaffAccess::allows($employee, $company))->toBeFalse();
+        ->and(StaffAccess::allows($employee, $company))->toBeFalse()
+        ->and(StaffAccess::allows($staff, $company))->toBeFalse();
 });
 
 it('cleans uploaded file names so they can always be downloaded', function () {
