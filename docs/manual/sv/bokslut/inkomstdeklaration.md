@@ -3,7 +3,7 @@ beskrivning: Ta fram Inkomstdeklaration 2 för aktiebolaget ur bokföringen, lä
 ordning: 100
 roller: [owner, admin, accountant]
 rutter: [accounting.incomeTax, accounting.incomeTax.sru]
-sokord: [inkomstdeklaration, ink2, ink2r, ink2s, sru, sru-fil, deklaration aktiebolag, skattemässigt resultat, filöverföring, skattemässiga justeringar]
+sokord: [inkomstdeklaration, ink2, ink2r, ink2s, sru, sru-fil, deklaration aktiebolag, skattemässigt resultat, filöverföring, skattemässiga justeringar, schablonintäkt, periodiseringsfond, statslåneränta]
 ---
 
 # Inkomstdeklaration 2 och SRU-filer
@@ -24,6 +24,7 @@ Sidan finns under **Bokföring → Inkomstdeklaration**.
    - **Nedskrivning av finansiella tillgångar som inte ska dras av**
    - **Utdelning som inte ska tas upp**
    - **Andra bokförda intäkter som inte ska tas upp**
+   - **Beräknad schablonintäkt på periodiseringsfonder** – har företaget periodiseringsfonder står ett förslag under fältet. Lämna fältet tomt för att använda förslaget. Skriv ett annat belopp om förslaget inte stämmer, eller 0 om fältet inte ska fyllas i.
    - **Andra ej bokförda intäkter som ska tas upp**
    - **Andra ej bokförda kostnader som ska dras av**
    - **Outnyttjat underskott från föregående år**
@@ -40,12 +41,13 @@ Skatten på årets resultat läggs tillbaka av sig själv – den är inte avdra
 
 - **INK2R** fylls fält för fält från BAS-kontointervall, i hela kronor. Årets resultat är resultaträkningens, även om det inte är bokat på 2099.
 - **INK2S** börjar med det bokförda resultatet, lägger tillbaka den bokförda skatten och räknar in dina justeringar. Överskott eller underskott förs till INK2 punkt 1.1 eller 1.2.
+- **Schablonintäkt på periodiseringsfonder** (punkt 4.6 a) föreslås ur bokföringen: periodiseringsfonderna vid årets början (konto 2110–2149) gånger statslåneräntan vid utgången av november året innan. Räntan är lägst 0,5 %. Är räkenskapsåret kortare eller längre än tolv månader räknas beloppet om i samma mån. Exempel: fonder på 100 000 kr och räntan 2,55 % ger 2 550 kr för ett år som slutar 2026. Beloppet ökar överskottet och följer med i SRU-filen. Finns inte räntan för året i NONOX ser du en varning, och då fyller du i beloppet själv.
 - **Justeringarna** sparas för året, så att du kan komma tillbaka och ändra dem.
 - Varje nedladdning av SRU-filerna skrivs i behandlingshistoriken.
 
 ## Det här fyller du i själv i e-tjänsten
 
-Övriga punkter på INK2S – till exempel schablonintäkt på periodiseringsfond, delägarrätter, andelar i handelsbolag och fastigheter – fyller NONOX inte i. Gäller de företaget lägger du in dem i Skatteverkets e-tjänst. Fråga din redovisningskonsult.
+Övriga punkter på INK2S – till exempel delägarrätter, andelar i handelsbolag och fastigheter – fyller NONOX inte i. Gäller de företaget lägger du in dem i Skatteverkets e-tjänst. Fråga din redovisningskonsult.
 
 ## När knappen inte finns
 
@@ -54,7 +56,7 @@ Fältkoderna i SRU-filerna gäller en viss beskattningsperiod och kontrolleras f
 Företagets organisationsnummer behövs för filerna.
 
 > [!NOTE]
-> Kopplingen mellan BAS-konton och deklarationens fält är ännu inte juridiskt kontrollerad mot den officiella kopplingen, särskilt för konton i 4000–4999, koncernposter och bokslutsdispositioner. Låt din redovisningskonsult granska deklarationen.
+> Kopplingen mellan BAS-konton och deklarationens fält är ännu inte juridiskt kontrollerad mot den officiella kopplingen, särskilt för konton i 4000–4999, koncernposter och bokslutsdispositioner. Låt din redovisningskonsult granska deklarationen. Förslaget till schablonintäkt bygger på en granskning 2026-11-02; juristgranskning återstår.
 
 ## Vanliga frågor
 

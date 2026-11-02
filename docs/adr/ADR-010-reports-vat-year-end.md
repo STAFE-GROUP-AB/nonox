@@ -163,3 +163,26 @@ Open (`TODO(legal-verify)`): the rate when none is published on the last day
 invoice date as the period and year of a sale, whether registration for OSS
 is the request under 6 kap. 64 §, and that only goods and TBE services are
 marked for OSS.
+
+## INK2: schablonintäkt on periodiseringsfonder (2026-11-02, #83)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-8, #83).
+
+- **Rule.** IL 30 kap. 6 a § (Lag 2018:1206): statslåneräntan at the end of
+  November of the year before the calendar year in which the tax year ends,
+  at least 0,5 %, × the deductions for the funds held at the start of the
+  tax year, in proportion for a tax year that is not twelve months. Reported
+  in INK2S 4.6 a, field 7654 (SKV field table INK2S_SKV2002-34-01-26-04).
+  The auditor's note of "× 72 %" is the rule before Lag 2018:1206 and is not
+  applied; Skatteverket's own example (400 000 × 1,96 % = 7 840) has no such
+  factor.
+- **Decision.** `TaxAllocationReserves` proposes the amount from the opening
+  balances of BAS 2110–2149. The rates are data with a source, keyed by the
+  November year (`RATES`); a year without a rate gives no proposal and a
+  warning. The proposal goes into `Ink2::adjustments()`, so it reaches 4.15,
+  INK2 1.1 and the SRU file.
+- **Override.** Fields in `Ink2Codes::PROPOSED` keep an entered 0 in
+  `income_tax_returns.adjustments`; an entered amount (0 included) replaces
+  the proposal and an empty field restores it. No schema change.
+- TODO(legal-verify): the rates; that the booked opening balance equals the
+  deductions made; rounding; the month count for broken years.

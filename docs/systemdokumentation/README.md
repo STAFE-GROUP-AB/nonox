@@ -1068,6 +1068,17 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   konsult biträtt och om årsredovisningen reviderats. Överskott eller
   underskott förs till INK2 punkt 1.1 eller 1.2. Justeringarna sparas i
   `income_tax_returns`.
+- Schablonintäkt på periodiseringsfonder (INK2S 4.6 a, fält 7654, IL 30 kap.
+  6 a §): systemet föreslår ingående saldo på 2110–2149 vid
+  beskattningsårets ingång × statslåneräntan vid utgången av november året
+  före det kalenderår då beskattningsåret slutar (lägst 0,5 %) × årets
+  månader/12, avrundat till hela kronor (`TaxAllocationReserves`).
+  Räntorna är data med källa (Skatteverket: 1,96 % nov 2024, 2,55 % nov
+  2025). Förslaget räknas in i 4.15 och 1.1 och i SRU-filen. Ett inmatat
+  belopp ersätter förslaget, även 0; ett tomt fält behåller förslaget.
+  Saknas räntan för året visas en varning och fältet fylls i för hand.
+  Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-8,
+  #83).
 - SRU-filerna (INFO.SRU och BLANKETTER.SRU, ISO 8859-1, en post per rad)
   laddas ner som ZIP och lämnas i Skatteverkets e-tjänst Filöverföring.
   Fältkoderna är hämtade ur Skatteverkets fältnamnstabeller för
@@ -2291,9 +2302,11 @@ Personalliggare och Avtal när de är påslagna.
 - Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
   mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
   och bokslutsdispositioner). Identiteten skrivs som 16 följt av
-  organisationsnumret. Övriga INK2S-punkter (schablonintäkt på
-  periodiseringsfond, delägarrätter, handelsbolag, fastigheter m.m.) fylls i
-  för hand i Skatteverkets tjänst. Fältkoderna ska kontrolleras på nytt för
+  organisationsnumret. Övriga INK2S-punkter (delägarrätter, handelsbolag,
+  fastigheter m.m.) fylls i för hand i Skatteverkets tjänst. Schablonintäkten
+  på periodiseringsfonder: statslåneräntorna per år, att ingående saldo på
+  2110–2149 är detsamma som gjorda avdrag, avrundningen till hela kronor och
+  månadsräkningen för ett brutet år (#83). Fältkoderna ska kontrolleras på nytt för
   varje ny beskattningsperiod innan den läggs till i `VERIFIED_PERIODS`.
 - Årsredovisning: radindelningen och BAS-intervallen (särskilt 4000–4999 och
   8000–8799) ska kontrolleras mot ÅRL bilaga 2–3, BFNAR 2016:10 och den

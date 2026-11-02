@@ -5872,5 +5872,9 @@
     "Riksbankens kurs :date, för leveransdagen eller fakturadatum om leveransdatum saknas. Du kan ändra den.": "Riksbanken's rate :date, for the delivery date, or the invoice date when there is none. You can change it.",
     "Tomt: samma som fakturadatum. Valutakursen tas för leveransdagen, då momsen uppstår.": "Empty: same as the invoice date. The exchange rate is taken for the delivery date, when the VAT arises.",
     "Har ansökt om beskattning i köparens land (OSS) eller är registrerat för OSS": "Has asked for taxation in the buyer's country (OSS) or is registered for OSS",
-    "Gäller försäljning av varor och elektroniska tjänster till privatpersoner i andra EU-länder. Utan ansökan tas svensk moms ut så länge försäljningen i år och i fjol är högst :amount.": "Applies to sales of goods and electronic services to consumers in other EU countries. Without it, Swedish VAT is charged as long as the sales this year and last year are at most :amount."
+    "Gäller försäljning av varor och elektroniska tjänster till privatpersoner i andra EU-länder. Utan ansökan tas svensk moms ut så länge försäljningen i år och i fjol är högst :amount.": "Applies to sales of goods and electronic services to consumers in other EU countries. Without it, Swedish VAT is charged as long as the sales this year and last year are at most :amount.",
+    "Beräknad schablonintäkt på periodiseringsfonder": "Standard income on tax allocation reserves",
+    "Företaget har periodiseringsfonder vid årets början, men statslåneräntan för året finns inte här. Räkna fram schablonintäkten (fält 7654) och fyll i den.": "The company has tax allocation reserves at the start of the year, but the government borrowing rate for the year is not here. Work out the standard income (field 7654) and enter it.",
+    "Inget förslag: underlaget för året saknas här.": "No proposal: the basis for the year is missing here.",
+    "Förslag från bokföringen: :amount. Lämna tomt för att använda förslaget, skriv 0 om fältet inte ska fyllas i.": "Proposed from the books: :amount. Leave empty to use the proposal, enter 0 if the field should not be filled in."
 }

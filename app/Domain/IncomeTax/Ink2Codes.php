@@ -127,10 +127,30 @@ final class Ink2Codes
         7652 => ['Nedskrivning av finansiella tillgångar som inte ska dras av', 1],
         7753 => ['Utdelning som inte ska tas upp', -1],
         7754 => ['Andra bokförda intäkter som inte ska tas upp', -1],
+        7654 => ['Beräknad schablonintäkt på periodiseringsfonder', 1],
         7665 => ['Andra ej bokförda intäkter som ska tas upp', 1],
         7764 => ['Andra ej bokförda kostnader som ska dras av', -1],
         7763 => ['Outnyttjat underskott från föregående år', -1],
     ];
+
+    /**
+     * Codes the system proposes from the books. An entered amount, 0
+     * included, replaces the proposal; an empty field keeps it.
+     */
+    public const array PROPOSED = [self::S_STANDARD_INCOME];
+
+    /**
+     * Every field a person can enter on the page, with its label.
+     *
+     * @return array<int, string>
+     */
+    public static function enteredLabels(): array
+    {
+        return array_map(fn (array $adjustment): string => $adjustment[0], self::ADJUSTMENTS);
+    }
+
+    /** INK2S 4.6 a: schablonintäkt på periodiseringsfonder (IL 30 kap. 6 a §). */
+    public const int S_STANDARD_INCOME = 7654;
 
     /** INK2S 4.1/4.2 the book result, 4.3a the tax, 4.15/4.16 the taxable surplus or deficit. */
     public const int S_PROFIT = 7650;
@@ -244,6 +264,7 @@ final class Ink2Codes
         7653 => 'Andra bokförda kostnader som inte ska dras av',
         7753 => 'Utdelning som inte ska tas upp',
         7754 => 'Andra bokförda intäkter som inte ska tas upp',
+        7654 => 'Beräknad schablonintäkt på periodiseringsfonder',
         7665 => 'Andra ej bokförda intäkter',
         7764 => 'Andra ej bokförda kostnader',
         7763 => 'Outnyttjat underskott från föregående år',

@@ -32,12 +32,17 @@
             </div>
         </section>
 
+        @foreach($ink2->warnings() as $warning)
+            <p class="rounded-2xl bg-white px-4 py-3 text-sm text-accent-800 ring-1 ring-accent-200" role="status">{{ $warning }}</p>
+        @endforeach
+
         <div class="grid gap-6 xl:grid-cols-[minmax(0,28rem)_1fr]">
             <x-ui.card :title="__('Skattemässiga justeringar')" :description="__('Belopp i hela kronor, utan minustecken. Skatten på årets resultat läggs tillbaka av sig själv.')">
                 <form wire:submit="save" class="space-y-4">
-                    @foreach($adjustmentLabels as $code => [$label, $sign])
-                        <x-ui.field :for="'adj_'.$code" :label="__($label).' ('.$code.')'" :error="'adjustments.'.$code">
-                            <input id="adj_{{ $code }}" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="adjustments.{{ $code }}">
+                    @foreach($fieldLabels as $code => $label)
+                        @php($proposal = array_key_exists($code, $proposals) ? $proposals[$code] : false)
+                        <x-ui.field :for="'adj_'.$code" :label="__($label).' ('.$code.')'" :error="'adjustments.'.$code" :hint="$proposal === false ? null : ($proposal === null ? __('Inget förslag: underlaget för året saknas här.') : __('Förslag från bokföringen: :amount. Lämna tomt för att använda förslaget, skriv 0 om fältet inte ska fyllas i.', ['amount' => $kr($proposal)]))">
+                            <input id="adj_{{ $code }}" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="adjustments.{{ $code }}" @if(is_int($proposal)) placeholder="{{ number_format($proposal, 0, ',', ' ') }}" @endif>
                         </x-ui.field>
                     @endforeach
                     <div class="grid gap-4 sm:grid-cols-2">

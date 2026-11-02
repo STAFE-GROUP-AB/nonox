@@ -76,7 +76,8 @@ class IncomeTaxPage extends Component
             'fiscalYear' => $fiscalYear,
             'ink2' => $ink2,
             'forms' => $ink2 === null ? [] : ['INK2' => $ink2->ink2(), 'INK2R' => $ink2->ink2r(), 'INK2S' => $ink2->ink2s()],
-            'adjustmentLabels' => Ink2Codes::ADJUSTMENTS,
+            'fieldLabels' => Ink2Codes::enteredLabels(),
+            'proposals' => $ink2?->proposals() ?? [],
             'labels' => Ink2Codes::LABELS,
         ]);
     }
@@ -86,7 +87,7 @@ class IncomeTaxPage extends Component
         $return = IncomeTaxReturn::query()->where('fiscal_year_id', $this->year)->first();
         $this->adjustments = [];
 
-        foreach (array_keys(Ink2Codes::ADJUSTMENTS) as $code) {
+        foreach (array_keys(Ink2Codes::enteredLabels()) as $code) {
             $amount = $return->adjustments[$code] ?? null;
             $this->adjustments[$code] = $amount === null ? '' : (string) $amount;
         }

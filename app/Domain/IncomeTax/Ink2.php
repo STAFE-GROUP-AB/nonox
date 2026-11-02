@@ -16,13 +16,19 @@ use Illuminate\Validation\ValidationException;
  * whole kronor, the book result, the tax, the adjustments a person entered
  * and the taxable surplus or deficit that follows.
  *
+ * The schablonintäkt on periodiseringsfonder (4.6 a, field 7654) is
+ * proposed from the opening balances of BAS 2110–2149 (see
+ * TaxAllocationReserves); an entered amount replaces the proposal.
+ *
  * TODO(legal-verify): only the adjustments listed in Ink2Codes::ADJUSTMENTS
- * are supported; periodiseringsfond schablonintäkt, delägarrätter, andelar i
- * handelsbolag and the other INK2S points must be added by hand in
- * Skatteverket's service.
+ * are supported; delägarrätter, andelar i handelsbolag and the other INK2S
+ * points must be added by hand in Skatteverket's service.
  */
 final class Ink2
 {
+    /** @var ?array<int, ?int> */
+    private ?array $proposals = null;
+
     public function __construct(
         public readonly Company $company,
         public readonly FiscalYear $fiscalYear,
@@ -167,14 +173,13 @@ final class Ink2
         return $taxable;
     }
 
-    /** @return array<int, int> code => whole kronor, only the ones entered */
+    /** @return array<int, int> code => whole kronor, entered or proposed, without zeros */
     public function adjustments(): array
     {
-        $entered = $this->return->adjustments ?? [];
         $adjustments = [];
 
         foreach (array_keys(Ink2Codes::ADJUSTMENTS) as $code) {
-            $amount = $entered[$code] ?? 0;
+            $amount = $this->valueOf($code);
 
             if ($amount !== 0) {
                 $adjustments[$code] = $amount;
@@ -182,6 +187,59 @@ final class Ink2
         }
 
         return $adjustments;
+    }
+
+    /**
+     * What the books propose for the fields in Ink2Codes::PROPOSED, in whole
+     * kronor; null when the proposal cannot be made (a rate is missing).
+     *
+     * @return array<int, ?int>
+     */
+    public function proposals(): array
+    {
+        if ($this->proposals !== null) {
+            return $this->proposals;
+        }
+
+        $standardIncome = TaxAllocationReserves::standardIncomeOre($this->fiscalYear, $this->accounts);
+
+        return $this->proposals = [
+            Ink2Codes::S_STANDARD_INCOME => $standardIncome === null ? null : self::kronor($standardIncome),
+        ];
+    }
+
+    /** Whether a person has entered the field, 0 included. */
+    public function isEntered(int $code): bool
+    {
+        return array_key_exists($code, $this->return->adjustments ?? []);
+    }
+
+    /**
+     * Things the person must check before filing, in Swedish.
+     *
+     * @return list<string>
+     */
+    public function warnings(): array
+    {
+        $warnings = [];
+
+        if ($this->proposals()[Ink2Codes::S_STANDARD_INCOME] === null && ! $this->isEntered(Ink2Codes::S_STANDARD_INCOME)) {
+            $warnings[] = __('Företaget har periodiseringsfonder vid årets början, men statslåneräntan för året finns inte här. Räkna fram schablonintäkten (fält 7654) och fyll i den.');
+        }
+
+        return $warnings;
+    }
+
+    /** The entered amount, else the proposal, else 0. */
+    private function valueOf(int $code): int
+    {
+        $entered = $this->return->adjustments ?? [];
+
+        if (array_key_exists($code, $entered)) {
+            return (int) $entered[$code];
+        }
+
+        return in_array($code, Ink2Codes::PROPOSED, true) ? ($this->proposals()[$code] ?? 0) : 0;
     }
 
     /** @return array<int, string> */
