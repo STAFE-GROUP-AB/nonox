@@ -12,6 +12,26 @@ import '../css/scanner.css';
 
 const config = JSON.parse(document.getElementById('scanner-config').textContent);
 const app = document.getElementById('scanner');
+// Opened from the Skanna home-screen app (its start_url carries ?app=skanna):
+// the app stays locked to scanning, with no way out to the full NONOX app.
+// The mark lives in sessionStorage, which belongs to that app window only.
+const lockedToScanning = (() => {
+    const standalone = window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+    try {
+        const url = new URL(location.href);
+
+        if (url.searchParams.get('app') === 'skanna') {
+            sessionStorage.setItem('nonox-skanna-app', '1');
+            url.searchParams.delete('app');
+            history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+        }
+
+        return standalone && sessionStorage.getItem('nonox-skanna-app') === '1';
+    } catch {
+        return false;
+    }
+})();
 const SYNC_MS = 20000;
 const DATA_MS = 5 * 60 * 1000;
 const STEP = 1000;
@@ -1264,7 +1284,9 @@ function header() {
 
     return el('header', { class: 's-header' },
         state.screen === 'home'
-            ? el('a', { class: 's-back', href: config.urls.app }, el('span', { 'aria-hidden': 'true' }, '‹'), ' NONOX')
+            ? (lockedToScanning
+                ? el('p', { class: 's-back s-brand' }, 'Skanna')
+                : el('a', { class: 's-back', href: config.urls.app }, el('span', { 'aria-hidden': 'true' }, '‹'), ' NONOX'))
             : el('button', { type: 'button', class: 's-back', onclick: home }, el('span', { 'aria-hidden': 'true' }, '‹'), ` ${t('back')}`),
         el('div', { class: 's-header-mid' },
             el('p', { class: 's-company' }, state.data?.context?.company ?? 'NONOX'),

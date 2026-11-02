@@ -5,7 +5,7 @@
     "lang": "sv",
     "dir": "ltr",
     "id": "/lager/skanna",
-    "start_url": "/lager/skanna",
+    "start_url": "/lager/skanna?app=skanna",
     "scope": "/",
     "display": "standalone",
     "orientation": "portrait",

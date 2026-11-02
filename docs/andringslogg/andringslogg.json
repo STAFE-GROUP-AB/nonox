@@ -35,7 +35,7 @@
       "id": "2026-11-02-skanna-som-egen-app",
       "datum": "2026-11-02T23:28:53+01:00",
       "rubrik": "Skanna kan läggas på hemskärmen som en egen app",
-      "beskrivning": "Lägger du till Skanna på hemskärmen blir den en egen app med egen ikon och namnet Skanna, och den öppnas direkt i skanningsläget. Lagerpersonalen behöver alltså bara Skanna på telefonen, och loggar man in på nytt hamnar man tillbaka i Skanna.",
+      "beskrivning": "Lägger du till Skanna på hemskärmen blir den en egen app med egen ikon och namnet Skanna, och den öppnas direkt i skanningsläget utan någon väg vidare till resten av NONOX. Lagerpersonalen behöver alltså bara Skanna på telefonen, och loggar man in på nytt hamnar man tillbaka i Skanna.",
       "typ": "Förbättrat",
       "omrade": "Lager"
     },

@@ -125,6 +125,11 @@ button:disabled {
     text-decoration: none;
 }
 
+.s-brand {
+    margin: 0;
+    color: var(--s-ink);
+}
+
 .s-back span {
     font-size: 1.6rem;
     line-height: 1;

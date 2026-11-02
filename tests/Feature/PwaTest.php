@@ -29,7 +29,7 @@ it('describes installable apps whose start pages and icons exist', function (str
 
     expect($manifest['lang'])->toBe('sv')
         ->and($manifest['display'])->toBe('standalone')
-        ->and($manifest['start_url'])->toBe(route($route, absolute: false));
+        ->and(strtok($manifest['start_url'], '?'))->toBe(route($route, absolute: false));
 
     $sizes = collect($manifest['icons'])->pluck('sizes')->all();
     expect($sizes)->toContain('192x192', '512x512')
@@ -49,7 +49,9 @@ it('describes installable apps whose start pages and icons exist', function (str
 ]);
 
 it('gives Skanna its own manifest so it installs as a separate app', function () {
+    // ?app=skanna tells the page it runs as the Skanna app, which hides the way out to the full app.
     expect(manifest('skanna.webmanifest')['id'])->not->toBe(manifest('app.webmanifest')['id'])
+        ->and(manifest('skanna.webmanifest')['start_url'])->toBe('/lager/skanna?app=skanna')
         ->and(public_path('brand/skanna-touch-icon.png'))->toBeFile();
 
     $view = (string) view('partials.favicon', ['manifest' => 'skanna.webmanifest', 'touchIcon' => 'brand/skanna-touch-icon.png', 'appTitle' => 'Skanna']);
