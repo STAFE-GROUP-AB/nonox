@@ -536,6 +536,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   undantagstext sparad när den skapas (`vat_exemption_text`, 17 kap. 24 §
   p. 13 och 28 § p. 6) och PDF:en skriver ut den (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-5, #51)).
+- ROT och RUT: procentsatsen och taket per år följer året då kunden
+  betalar (IL 67 kap. 12 § p. 1, 19 §; lag 2009:194 7–8 §§). Fakturan
+  räknar preliminärt med förfallodagen som betaldag: satsen den dagen och
+  det som återstår av taket det året efter kundens andra fakturor från
+  företaget (betalda det året, eller med förfallodag det året om de är
+  obetalda). Betalningen som reglerar fakturan kontrollerar avdraget mot
+  den faktiska betaldagen; avviker det skrivs det i behandlingshistoriken
+  och fakturasidan visar hur mycket som högst kan begäras (enligt
+  granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-10, #56)).
 - Köparens adress: en fullständig faktura (över 4 000 kr inklusive moms,
   eller alltid vid varuförsäljning till ett annat EU-land och tjänster där
   köparen i ett annat EU-land är skyldig att betala momsen) till ett

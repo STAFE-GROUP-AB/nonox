@@ -9,6 +9,7 @@ use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Events\InvoicePaid;
 use App\Models\Account;
@@ -121,6 +122,9 @@ class RegisterPayment
                 'status' => $settledAll ? InvoiceStatus::Paid : InvoiceStatus::Issued,
             ])->save();
 
+            // ROT/RUT: the year the buyer actually paid decides the share and the ceiling (#56).
+            $recheck = $invoice->status === InvoiceStatus::Paid ? TaxReduction::recheck($invoice, $paidOn) : null;
+
             Audit::record('invoice.payment_registered', $invoice, array_filter([
                 'number' => $invoice->number,
                 'amount_ore' => $amount->ore,
@@ -130,6 +134,7 @@ class RegisterPayment
                 'foreign_amount_minor' => $foreignRemaining === null ? null : $foreignAmount,
                 'settled_ore' => $foreignRemaining === null ? null : $settled,
                 'exchange_difference_ore' => $foreignRemaining === null ? null : $difference,
+                'tax_reduction_recheck' => $recheck,
             ], fn (mixed $value): bool => $value !== null), $company, $user);
 
             if ($invoice->status === InvoiceStatus::Paid) {

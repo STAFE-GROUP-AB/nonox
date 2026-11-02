@@ -6033,5 +6033,7 @@
     "Skäl till 0 % moms, rad": "Reason for 0 % VAT, row",
     "Utan moms": "Without VAT",
     "Underlag :base.": "Base :base.",
-    ":customer saknar fullständig adress. En faktura till ett företag över :limit, eller till ett företag i ett annat EU-land, ska ha köparens namn och adress (17 kap. 24 § mervärdesskattelagen). Fyll i gatuadress, postnummer och ort på kunden.": ":customer has no complete address. An invoice to a business over :limit, or to a business in another EU country, must carry the buyer's name and address (Chapter 17, Section 24 of the VAT Act). Fill in the street address, postcode and city on the customer."
+    ":customer saknar fullständig adress. En faktura till ett företag över :limit, eller till ett företag i ett annat EU-land, ska ha köparens namn och adress (17 kap. 24 § mervärdesskattelagen). Fyll i gatuadress, postnummer och ort på kunden.": ":customer has no complete address. An invoice to a business over :limit, or to a business in another EU country, must carry the buyer's name and address (Chapter 17, Section 24 of the VAT Act). Fill in the street address, postcode and city on the customer.",
+    "Det finns ingen regel för :type på förfallodagen.": "There is no rule for :type on the due date.",
+    "Kunden betalade :year. Med det årets procentsats och tak blir avdraget :allowed, inte :invoiced som på fakturan. Begär högst :allowed hos Skatteverket; mellanskillnaden betalar kunden.": "The customer paid in :year. With that year's rate and ceiling the deduction is :allowed, not :invoiced as on the invoice. Claim at most :allowed from the Swedish Tax Agency; the customer pays the difference."
 }

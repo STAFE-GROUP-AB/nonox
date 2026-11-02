@@ -217,7 +217,7 @@ class SaveDraftInvoice
             $deduction = match (true) {
                 $taxReduction === null => 0,
                 $original instanceof Invoice => $this->creditedDeduction($rows, $original, $draft),
-                default => $this->deduction($taxReduction, $rows, $customer, $invoiceDate, $reverseCharge, $draft),
+                default => $this->deduction($taxReduction, $rows, $customer, $dueDate, $reverseCharge, $draft),
             };
 
             $invoice = $draft ?? new Invoice(['created_by' => $user->id]);
@@ -382,9 +382,6 @@ class SaveDraftInvoice
             throw ValidationException::withMessages(['tax_reduction' => __('ROT och RUT gäller privatpersoner. Fyll i kundens personnummer.')]);
         }
 
-        $rate = TaxReduction::rate($type, $date)
-            ?? throw ValidationException::withMessages(['tax_reduction' => __('Det finns ingen regel för :type på fakturadatumet.', ['type' => TaxReduction::label($type)])]);
-
         $labour = array_values(array_filter($rows, fn (array $row): bool => (bool) $row['is_labour']));
 
         if ($labour === []) {
@@ -392,17 +389,9 @@ class SaveDraftInvoice
         }
 
         $labourTotals = InvoiceCalculator::totals(array_map(fn (array $row): array => ['net' => (int) $row['net_ore'], 'vat_rate' => (int) $row['vat_rate']], $labour));
-        $used = Invoice::query()->where('customer_id', $customer->id)->whereNotNull('tax_reduction')
-            ->whereYear('invoice_date', $date->year)->where('status', '<>', 'DRAFT')
-            ->when($draft !== null && $draft->exists, fn ($query) => $query->whereKeyNot($draft?->id))
-            ->selectRaw('tax_reduction, SUM(tax_reduction_ore) AS used')->groupBy('tax_reduction')->pluck('used', 'tax_reduction')
-            ->map(fn (mixed $used): int => (int) $used);
-        $room = TaxReduction::CEILINGS['TOTAL'] - $used->sum();
 
-        if ($type === TaxReduction::ROT) {
-            $room = min($room, TaxReduction::CEILINGS[TaxReduction::ROT] - (int) ($used[TaxReduction::ROT] ?? 0));
-        }
-
-        return TaxReduction::amount($labourTotals['net'] + $labourTotals['vat'], $rate, $room);
+        // The year the buyer pays decides the share and the ceiling; the due date is the expected day (#56).
+        return TaxReduction::allowed($type, $labourTotals['net'] + $labourTotals['vat'], $customer, $date, $draft?->exists === true ? $draft->id : null)
+            ?? throw ValidationException::withMessages(['tax_reduction' => __('Det finns ingen regel för :type på förfallodagen.', ['type' => TaxReduction::label($type)])]);
     }
 }

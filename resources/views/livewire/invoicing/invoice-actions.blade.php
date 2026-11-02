@@ -142,6 +142,9 @@
         <x-ui.card :title="__(':type hos Skatteverket', ['type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)])">
             <p class="text-sm text-gray-700">{{ __('Begärt :claimed, mottaget :paid.', ['claimed' => $invoice->tax_reduction_ore->format(), 'paid' => $invoice->tax_reduction_paid_ore->format()]) }}</p>
             <p class="mt-1 text-xs text-gray-500">{{ __('Begär utbetalningen i Skatteverkets e-tjänst Rot och rut när kunden har betalat sin del. Registrera Skatteverkets betalning här när den kommer.') }}</p>
+            @if($taxRecheck !== null)
+                <p class="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900" role="alert">{{ __('Kunden betalade :year. Med det årets procentsats och tak blir avdraget :allowed, inte :invoiced som på fakturan. Begär högst :allowed hos Skatteverket; mellanskillnaden betalar kunden.', ['year' => $taxRecheck['year'], 'allowed' => App\Support\Money\Money::ofOre($taxRecheck['allowed'])->format(), 'invoiced' => App\Support\Money\Money::ofOre($taxRecheck['invoiced'])->format()]) }}</p>
+            @endif
             @if($canTaxPay)
                 <form wire:submit="registerTaxReductionPayment" class="mt-4 grid grid-cols-2 gap-4">
                     <x-ui.field for="tax_paid_on" :label="__('Betaldag')"><input id="tax_paid_on" type="date" class="{{ $input }} mt-1" wire:model="taxPaidOn"></x-ui.field>

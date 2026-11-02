@@ -32,7 +32,7 @@ På fakturan står **Avgår ROT-avdrag** (eller RUT-avdrag) med beloppet, arbets
 
 ## Taket per kund och år
 
-NONOX räknar med det avdrag kunden redan har fått på **ert företags** fakturor samma kalenderår, och minskar avdraget om taket skulle överskridas. Kunden kan ha använt en del av taket hos andra företag; det kan NONOX inte veta. Fråga kunden om du är osäker.
+Avdraget hör till det år kunden **betalar** fakturan, inte det år den skrivs. NONOX räknar därför med förfallodagen som betaldag: procentsatsen den dagen, och det avdrag kunden redan har fått på **ert företags** fakturor som betalas samma år. Avdraget minskas om taket skulle överskridas. När kunden betalar kontrollerar NONOX avdraget igen mot den verkliga betaldagen. Betalade kunden ett annat år och blir avdraget då ett annat, visar fakturans sida hur mycket du högst kan begära hos Skatteverket; mellanskillnaden betalar kunden. Kunden kan ha använt en del av taket hos andra företag; det kan NONOX inte veta. Fråga kunden om du är osäker.
 
 ## Det här händer i bokföringen
 

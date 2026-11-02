@@ -13,6 +13,7 @@ use App\Actions\Invoicing\SendInvoice;
 use App\Actions\Invoicing\SendReminder;
 use App\Domain\Invoicing\InvoiceBooking;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Invoicing\TaxReduction;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Invoice;
 use App\Models\User;
@@ -214,6 +215,9 @@ class InvoiceActions extends Component
             'canRemind' => $this->user()->can('remind', $invoice),
             'canCredit' => $this->user()->can('credit', $invoice) && $invoice->creditInvoices->doesntContain(fn (Invoice $credit): bool => $credit->isDraft()),
             'exchangePreview' => $this->exchangePreview($invoice),
+            'taxRecheck' => $invoice->tax_reduction !== null && $invoice->status === InvoiceStatus::Paid && $invoice->payments->isNotEmpty()
+                ? TaxReduction::recheck($invoice->loadMissing('rows'), TaxReduction::paymentDay($invoice))
+                : null,
         ]);
     }
 

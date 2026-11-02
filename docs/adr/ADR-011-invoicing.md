@@ -106,6 +106,16 @@
   under the small-business exemption may use simplified invoices (26 §
   p. 3-4). TODO(legal-verify): a customer without any number counts as a
   private person; ROT counts as construction.
+- **ROT and RUT follow the year of payment** (2026-11-02, AUD-FAKT-10,
+  #56). The share and the yearly ceiling are those of the day the buyer
+  pays (IL 67 kap. 12 § p. 1, 19 §; lag 2009:194 7-8 §§). The draft uses
+  its due date as the expected day: the rate on that day, and the room left
+  after the buyer's other invoices from this company whose last payment (or
+  due date while unpaid) falls in that year; a credit counts in its
+  original's year (`TaxReduction::allowed`, `used`). The invoice never
+  changes; the payment that settles it re-checks against the actual day
+  (`TaxReduction::recheck`), writes the result to the audit log and the
+  invoice page tells how much to claim at most.
 - **Payments** are kept in `invoice_payments` (append-only) with their
   voucher. A payment larger than what remains is refused.
 - **Sending.** The PDF (ADR-002) is emailed to the customer's invoice address
