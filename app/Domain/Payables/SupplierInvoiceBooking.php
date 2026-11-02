@@ -28,7 +28,11 @@ use Illuminate\Support\Collection;
  *   output VAT (2614/2624/2634) and input VAT (2645/2647), ADR-016.
  * - A credit note has negative amounts, so the same rules reverse it.
  * - Kontantmetoden: nothing when registered. A payment books its share of the
- *   costs and the VAT directly against the bank account.
+ *   costs and the VAT directly against the bank account. The payment that
+ *   settles the invoice books what is left of each row, so the payments
+ *   together book exactly the invoice's costs and VAT (ML 2023:200 7 kap.
+ *   33 §) (enligt granskning 2026-11-02, juristgranskning återstår
+ *   (AUD-FAKT-3, #52)).
  * - Except an intra-Community acquisition of goods (VatTreatment::
  *   isReportedWhenInvoiced, ML 7 kap. 26 and 40 §§): booked when registered
  *   as under fakturametoden whatever the method; a payment only clears 2440
@@ -114,22 +118,61 @@ final class SupplierInvoiceBooking
         }
 
         $costs = self::costs($invoice, $rows);
-        $total = $invoice->total_ore->ore;
+        $shares = ($amount === $invoice->remaining()->ore ? self::cashRest($invoice, $costs, $amount) : null)
+            ?? self::cashShare($costs, $amount, $invoice->total_ore->ore);
+
+        $costs = array_map(fn (array $cost, int $share): array => [...$cost, 'amount' => $share], $costs, $shares);
+
+        return [...$costs, ...$exchange, ['account' => $bankAccount, 'amount' => -$paid]];
+    }
+
+    /**
+     * Kontantmetoden: a part payment's share of each cost row, rounded half
+     * up, with the rounding remainder on the largest row so the voucher balances.
+     *
+     * @param  list<array{account: int, amount: int, description?: ?string, cost_center?: ?string, project?: ?string}>  $costs
+     * @return list<int>
+     */
+    public static function cashShare(array $costs, int $amount, int $total): array
+    {
         $shares = array_map(
             fn (array $cost): int => BigDecimal::of($cost['amount'])->multipliedBy($amount)->dividedBy($total, 0, RoundingMode::HalfUp)->toInt(),
             $costs,
         );
 
-        // The rounding remainder of the shares goes to the largest row, so the voucher balances.
         $remainder = $amount - array_sum($shares);
 
         if ($remainder !== 0 && $shares !== []) {
             $shares[array_keys($shares, max($shares), true)[0]] += $remainder;
         }
 
-        $costs = array_map(fn (array $cost, int $share): array => [...$cost, 'amount' => $share], $costs, $shares);
+        return $shares;
+    }
 
-        return [...$costs, ...$exchange, ['account' => $bankAccount, 'amount' => -$paid]];
+    /**
+     * Kontantmetoden: the shares of the payment that settles the invoice.
+     * Each row takes what is left after the earlier payments (and offsets),
+     * so that together they book exactly the invoice's costs and VAT (ML
+     * 2023:200 7 kap. 33 §; enligt granskning 2026-11-02, juristgranskning
+     * återstår (AUD-FAKT-3, #52)). Null when the earlier payments do not
+     * add up to the rest (then the payment is shared pro rata as before).
+     *
+     * @param  list<array{account: int, amount: int, description?: ?string, cost_center?: ?string, project?: ?string}>  $costs
+     * @return list<int>|null
+     */
+    private static function cashRest(SupplierInvoice $invoice, array $costs, int $amount): ?array
+    {
+        $rest = array_column($costs, 'amount');
+
+        foreach ($invoice->payments()->get() as $payment) {
+            $settled = $payment->amount_ore->ore - (int) $payment->exchange_difference_ore;
+
+            foreach (self::cashShare($costs, $settled, $invoice->total_ore->ore) as $index => $share) {
+                $rest[$index] -= $share;
+            }
+        }
+
+        return array_sum($rest) === $amount ? $rest : null;
     }
 
     /**

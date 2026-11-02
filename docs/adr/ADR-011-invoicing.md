@@ -24,7 +24,9 @@
   for rounding. A payment posts 1930 against 1510 in series C. Under
   *kontantmetoden* nothing is posted when issuing; each payment posts its
   share of revenue, VAT and rounding against 1930, with the öre left over on
-  the largest line. Exception (2026-11-02, AUD-FAKT-4, #50): EU sales of
+  the largest line; the payment that settles the invoice books what is left
+  of each line after earlier payments and credits, so the payments add up
+  to the invoice exactly (2026-11-02, AUD-FAKT-3, #52). Exception (2026-11-02, AUD-FAKT-4, #50): EU sales of
   goods and services in the periodisk sammanställning are reported for the
   invoice's period whatever the method (ML 2023:200 7 kap. 29-30 §§), so
   they are booked at issue under kontantmetoden too, and their payment only

@@ -273,7 +273,7 @@ it('ML 15 kap. 16 §: under kontantmetoden part payments together book exactly t
     expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid)
         ->and(audFaktBalance(2611))->toBe(-2_500)
         ->and(audFaktRange(3000, 3999))->toBe(-10_000);
-})->todo('AUD-FAKT-3: kontantmetoden rounds each part payment\'s VAT share on its own; the last payment does not take the rest, so declared VAT can differ from the invoice by öre');
+}); // AUD-FAKT-3 fixed (#52): the payment that settles the invoice takes what is left of each line.
 
 it('ML 15 kap. 29 §: an intra-Community supply of goods is reported for the period the invoice is issued, also under kontantmetoden', function () {
     $this->company->forceFill(['accounting_method' => AccountingMethod::Kontantmetoden])->save();
@@ -492,4 +492,4 @@ it('ML 15 kap. 16 §/31 §: under kontantmetoden part payments of a supplier inv
 
     expect(audFaktBalance(2641))->toBe(2_500)
         ->and(audFaktBalance(4010))->toBe(10_000);
-})->todo('AUD-FAKT-3: kontantmetoden rounds each part payment\'s share of a supplier invoice on its own, so input VAT can differ from the invoice by öre');
+}); // AUD-FAKT-3 fixed (#52): the payment that settles the supplier invoice takes what is left of each row.

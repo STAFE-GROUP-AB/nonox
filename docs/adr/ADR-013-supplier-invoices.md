@@ -32,8 +32,9 @@
   input VAT debit, 2440 Leverantörsskulder credit. A payment posts 2440 against
   1930 in series E. Under *kontantmetoden* nothing is posted when
   registering; each payment posts its share of the costs and VAT against 1930,
-  with the öre left over on the largest row, and the first payment carries the
-  invoice file as underlag. Exception (2026-11-02, AUD-FAKT-4, #50): an
+  with the öre left over on the largest row (the payment that settles the
+  invoice takes what is left of each row, 2026-11-02, AUD-FAKT-3, #52), and
+  the first payment carries the invoice file as underlag. Exception (2026-11-02, AUD-FAKT-4, #50): an
   intra-Community acquisition of goods is reported for the invoice's period
   (ML 2023:200 7 kap. 26, 40 §§), so it is booked at registration under
   kontantmetoden too (`SupplierInvoiceBooking::bookedAtRegistration`). All vouchers go through `BookVoucher`, which gained

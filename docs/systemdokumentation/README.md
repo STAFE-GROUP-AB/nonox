@@ -519,7 +519,12 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Bokföring enligt fakturametoden: när fakturan skapas, verifikation i serie
   B (1510 mot intäktskonton, utgående moms och 3740). Betalning: serie C,
   1930 mot 1510. Enligt kontantmetoden bokförs intäkt och moms först vid
-  betalning.
+  betalning. En delbetalning bokför sin andel av varje rad (avrundad
+  halvt uppåt); betalningen som reglerar fakturan bokför det som återstår
+  av varje rad efter tidigare betalningar och kreditfakturor, så att
+  betalningarna tillsammans bokför exakt fakturans intäkt och moms (ML
+  7 kap. 16 §, 17 kap. 24 § p. 11; enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-3, #52)).
 - Undantag från kontantmetoden: försäljning av varor till ett annat EU-land
   (ML 7 kap. 29 §) och tjänster som tas upp i periodisk sammanställning
   (7 kap. 30 §) redovisas för fakturans period oavsett metod. Sådana
@@ -805,7 +810,11 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   på fakturadatum (kostnadskonton och 2641 ingående moms debet, 2440
   leverantörsskulder kredit) med fakturan som underlag. Betalning: serie E,
   2440 mot 1930. Enligt kontantmetoden bokförs kostnad och moms först vid
-  betalning, med fakturan som underlag på den första betalningen.
+  betalning, med fakturan som underlag på den första betalningen. Den
+  betalning (eller kvittning) som reglerar fakturan bokför det som återstår
+  av varje rad, så att kostnader och ingående moms tillsammans blir exakt
+  fakturans (ML 7 kap. 33 §; enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-FAKT-3, #52)).
 - Undantag från kontantmetoden: unionsinterna förvärv av varor (ML 7 kap.
   26 och 40 §§; kontantmetoden i 7 kap. 16 § andra st. omfattar bara 16 kap.
   6 och 8–16 §§) bokförs vid registreringen som enligt fakturametoden, med

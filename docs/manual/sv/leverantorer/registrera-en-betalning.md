@@ -39,7 +39,7 @@ Enligt **fakturametoden** är kostnaden och momsen redan bokförda, så betalnin
 | 2440 Leverantörsskulder | beloppet | |
 | 1930 Företagskonto | | beloppet |
 
-Enligt **kontantmetoden** bokförs kostnaden och momsen först nu. Betalningen bokför sin del av fakturans kostnadsrader och moms direkt mot 1930, och fakturafilen blir underlag till den första betalningens verifikation.
+Enligt **kontantmetoden** bokförs kostnaden och momsen först nu. Betalningen bokför sin del av fakturans kostnadsrader och moms direkt mot 1930, och fakturafilen blir underlag till den första betalningens verifikation. Betalar du i flera delar tar den sista betalningen det som är kvar av varje rad, så att kostnad och moms tillsammans blir exakt fakturans. Varor från ett annat EU-land är ett undantag: de bokförs redan när fakturan registreras, och betalningen flyttar bara beloppet från 2440 till banken.
 
 Är fakturan i en annan valuta bokförs också en eventuell kursvinst eller kursförlust. Läs [Fakturor i utländsk valuta](/manual/leverantorer/utlandsk-valuta).
 

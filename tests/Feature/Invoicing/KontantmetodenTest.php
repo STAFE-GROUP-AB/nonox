@@ -178,3 +178,69 @@ it('leaves EU invoices out of the unpaid invoices booked at year end, since they
         ->and(UnpaidInvoices::total($unpaid['customer']))->toBe(100_000)
         ->and($unpaid['supplier'])->toBe([]);
 });
+
+/* ---------------------------------------------------------------------------
+ | AUD-FAKT-3 (#52): part payments together book exactly the invoice
+ * ------------------------------------------------------------------------- */
+
+it('lets the payment that settles a customer invoice take the rest of each line (ML 7 kap. 16 §, 17 kap. 24 § p. 11)', function () {
+    // 100 kr at 12 % (VAT 12) and 50 kr at 6 % (VAT 3): 165 kr, paid 55 + 55 + 55.
+    // A third each: 3001 33,333 → 33,33; 3002 16,666 → 16,67; 2621 4,00; 2631 1,00 (sum 55,00).
+    // Three such shares would book 3001 99,99 and 3002 50,01; the last payment takes the rest instead.
+    $invoice = kontantIssue(kontantDomesticCustomer(), [
+        ['description' => 'Tjänst', 'quantity' => '1', 'price' => '100', 'vat_rate' => 1200, 'account' => 3001],
+        ['description' => 'Bok', 'quantity' => '1', 'price' => '50', 'vat_rate' => 600, 'account' => 3002],
+    ]);
+
+    foreach ([5_500, 5_500, 5_500] as $day => $ore) {
+        app(RegisterPayment::class)($this->owner, $invoice->fresh(), CarbonImmutable::parse('2026-03-1'.($day + 1)), Money::ofOre($ore));
+    }
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid)
+        ->and(kontantBalance(1930))->toBe(16_500)
+        ->and(kontantBalance(3001))->toBe(-10_000)
+        ->and(kontantBalance(3002))->toBe(-5_000)
+        ->and(kontantBalance(2621))->toBe(-1_200)
+        ->and(kontantBalance(2631))->toBe(-300);
+});
+
+it('takes the credited part off what the settling payment books', function () {
+    // 100 kr + 25 % = 125 kr. 41,67 paid, then 25 kr (20 + 5 VAT) credited, then the rest, 58,33, paid.
+    // Booked in total: 100 − 20 = 80 kr revenue and 25 − 5 = 20 kr VAT, the 100 kr received.
+    $invoice = kontantIssue(kontantDomesticCustomer(), [['description' => 'Tjänst', 'quantity' => '1', 'price' => '100', 'vat_rate' => 2500]]);
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(4_167));
+
+    $credit = app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $invoice->customer_id, 'invoice_date' => '2026-03-12', 'due_date' => '2026-03-12',
+        'rows' => [['description' => 'Avdrag', 'quantity' => '1', 'price' => '20', 'vat_rate' => 2500]],
+    ], app(CreditInvoice::class)($this->owner, $invoice->fresh()));
+    app(IssueInvoice::class)($this->owner, $credit);
+
+    expect($invoice->fresh()->remaining()->ore)->toBe(5_833);
+
+    app(RegisterPayment::class)($this->owner, $invoice->fresh(), CarbonImmutable::parse('2026-03-20'), Money::ofOre(5_833));
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid)
+        ->and(kontantBalance(1930))->toBe(10_000)
+        ->and(kontantBalance(2611))->toBe(-2_000)
+        ->and(kontantBalance(3001))->toBe(-8_000);
+});
+
+it('lets the payment that settles a supplier invoice take the rest of each row (ML 7 kap. 33 §)', function () {
+    // 60 + 40 kr costs and 25 kr VAT = 125 kr, paid 41,67 + 41,67 + 41,66.
+    // Pro rata: 4010 20,0016 → 20,00, 6540 13,3344 → 13,33, 2641 8,334 → 8,33, öre left on 4010 (20,01).
+    // The last payment takes the rest: 4010 60 − 40,02 = 19,98, 6540 40 − 26,66 = 13,34, 2641 25 − 16,66 = 8,34.
+    $invoice = kontantSupplierInvoice('SE', ['invoice_number' => 'G-3', 'total' => '125,00', 'vat' => '25,00', 'rows' => [
+        ['account' => '4010', 'amount' => '60,00'],
+        ['account' => '6540', 'amount' => '40,00'],
+    ]]);
+
+    foreach ([4_167, 4_167, 4_166] as $day => $ore) {
+        app(PaySupplierInvoice::class)($this->owner, $invoice->fresh(), CarbonImmutable::parse('2026-03-1'.($day + 1)), Money::ofOre($ore));
+    }
+
+    expect(kontantBalance(1930))->toBe(-12_500)
+        ->and(kontantBalance(2641))->toBe(2_500)
+        ->and(kontantBalance(4010))->toBe(6_000)
+        ->and(kontantBalance(6540))->toBe(4_000);
+});
