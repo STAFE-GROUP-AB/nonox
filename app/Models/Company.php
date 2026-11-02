@@ -41,6 +41,8 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property bool $turnover_over_40_msek
  * @property bool $oss_elected
  * @property ?CarbonImmutable $oss_elected_from
+ * @property bool $eu_sales_quarterly_goods Skatteverket's decision: periodisk sammanställning for goods per quarter (SFL 35 kap. 4 §, #65)
+ * @property ?CarbonImmutable $eu_sales_quarterly_goods_from the first day of the quarter the decision applies from
  * @property ReportingFramework $reporting_framework
  * @property int $fiscal_year_start_month
  * @property ?CarbonImmutable $locked_until_date
@@ -125,6 +127,8 @@ class Company extends JetstreamTeam
             'turnover_over_40_msek' => 'boolean',
             'oss_elected' => 'boolean',
             'oss_elected_from' => 'immutable_date',
+            'eu_sales_quarterly_goods' => 'boolean',
+            'eu_sales_quarterly_goods_from' => 'immutable_date',
             'f_skatt' => 'boolean',
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',

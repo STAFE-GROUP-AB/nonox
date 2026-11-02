@@ -697,7 +697,12 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   ett eget. Vid export måste kunden ha ett land utanför EU. Fakturan visar en
   text på svenska och engelska och båda momsregistreringsnumren.
 - **Trepartshandel som mellanman:** konto 3107, ruta 38, ingen moms; kräver
-  köparens momsregistreringsnummer som övrig EU-försäljning.
+  köparens momsregistreringsnummer som övrig EU-försäljning. BAS 2026 har
+  inget konto för trepartshandel, så 3107 (ett ledigt nummer i BAS-gruppen
+  3100) skapas med kopplingen `vat_box = 38`; ruta 38 läser inget konto efter
+  nummer. Ett befintligt 3107 utan ruta kopplas till ruta 38 när en faktura
+  för trepartshandel skapas, och en migrering kopplade alla befintliga 3107
+  utan ruta (enligt granskning 2026-11-02, juristgranskning återstår, #97).
 - **Privatperson i annat EU-land (OSS):** fakturan får köparlandets
   normalskattesats (`OssRates`, per land och från-datum), försäljningen
   bokförs på 3106 och momsen på 2619. Konto 2619 räknas inte in i någon ruta
@@ -749,7 +754,22 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - **EU-rapporter** (`/eu-rapporter`): periodisk sammanställning per månad
   eller kvartal, per köpares momsregistreringsnummer i kolumnerna varor,
   trepartshandel och tjänster (hela kronor), med fil i Skatteverkets format
-  SKV574008 för Filöverföring; samt underlag för OSS-deklarationen per
+  SKV574008 för Filöverföring. Rad 2 har företagets momsregistreringsnummer
+  som 12 siffror utan "SE" (Skatteverket godtar båda och skriver utan i sina
+  exempel); ett nummer som inte är SE + 12 siffror stoppar filen. Varor och
+  trepartshandel tas upp på fakturadatumet (ML 7 kap. 29 §), tjänster när de
+  utförts (7 kap. 30 §): fakturans leveransdatum om det finns, annars
+  fakturadatumet; kreditfakturor på sitt fakturadatum. Varor redovisas per
+  kalendermånad (SFL 35 kap. 3 §). Kvartal godtas för varor bara när
+  företaget under Företagsuppgifter angett Skatteverkets beslut om kvartal
+  (`teams.eu_sales_quarterly_goods`, gäller från det kvartal som
+  `eu_sales_quarterly_goods_from` anger, alltid ett kvartals första dag,
+  35 kap. 6 §) och varorna (fakturerade varor och trepartshandel, netto
+  efter krediter) är högst 500 000 kr i kvartalet och i vart och ett av de
+  fyra kvartalen före (35 kap. 4 och 7 §§). Annars visas en varning och
+  filen skapas inte. Bara tjänster per månad visas som en upplysning (35
+  kap. 5 §, kräver beslut) men stoppas inte (enligt granskning 2026-11-02,
+  juristgranskning återstår (OSAKERT-MOMS-PS, #65)); samt underlag för OSS-deklarationen per
   kvartal, land och momssats, i kronor som bokfört (för avstämning mot 2619)
   och i euro, som deklarationen lämnas i (ML 22 kap. 42 §). Försäljning
   fakturerad i euro räknas med fakturans eurobelopp; annan valuta, kronor
@@ -2872,8 +2892,9 @@ Personalliggare och Avtal när de är påslagna.
   fakturatexterna ska kontrolleras mot mervärdesskattelagen (17 kap.) och
   BAS. Momsregistreringsnumret kontrolleras inte mot VIES, och systemet
   hanterar inte bevis för att varor lämnat Sverige.
-- Trepartshandel: konto 3107 och fakturatexten är inte bekräftade mot BAS och
-  ML; ruta 37 (mellanmans inköp) bokförs inte automatiskt.
+- Trepartshandel: BAS 2026 har inget konto för rutorna 37 och 38; NONOX
+  använder 3107 kopplat till ruta 38 (#97). Fakturatexten är inte bekräftad
+  mot ML; ruta 37 (mellanmans inköp) bokförs inte automatiskt.
 - OSS: konto 3106/2619 är inte bekräftade mot BAS. Momssatserna i `OssRates`
   ska kontrolleras mot EU-kommissionens databas (TEDB); reducerade satser
   hanteras inte. Tröskelvärdet 99 680 kr (ML 6 kap. 62 §): att året tas från
@@ -2897,9 +2918,13 @@ Personalliggare och Avtal när de är påslagna.
   skicka en enskild firmas personnummer till Bolagsverket och visa svaret,
   villkoren för vidareanvändning och källangivelse, samt Bolagsverkets
   fullständiga lista över koder för organisationsform.
-- Periodisk sammanställning: vilken period en försäljning hör till
-  (fakturadatum används), avrundning till hela kronor och filens
-  teckenkodning (ISO-8859-1).
+- Periodisk sammanställning: varor som faktureras senare än den 15:e
+  månaden efter leveransen hör till den månad fakturan senast skulle ha
+  utfärdats (ML 7 kap. 29 § med 17 kap. 17 §), vilket inte hanteras;
+  tjänster som pågår över flera perioder och förskott på tjänster; om ett
+  kvartal med både varor (efter beslut) och tjänster får lämnas som en
+  kvartalsrapport; avrundning till hela kronor och filens teckenkodning
+  (ISO-8859-1) (#65).
 - Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
   mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
   och bokslutsdispositioner). Identiteten skrivs som 16 följt av

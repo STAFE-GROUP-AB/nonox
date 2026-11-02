@@ -64,7 +64,7 @@ Ingående moms på 2640–2647 och 2649 räknas till **ruta 48**, Ingående moms
 |---|---|---|
 | 3108 | Varor till företag i annat EU-land | 35 |
 | 3105 | Export av varor utanför EU | 36 |
-| 3107 | Mellanmans försäljning vid trepartshandel | 38 |
+| 3107, kopplat till ruta 38 | Mellanmans försäljning vid trepartshandel | 38 |
 | Eget konto | Mellanmans inköp vid trepartshandel | 37 |
 | 3308 | Tjänster till företag i annat EU-land | 39 |
 | 3305 | Tjänster till kund utanför EU | 40 |
@@ -73,7 +73,9 @@ Ingående moms på 2640–2647 och 2649 räknas till **ruta 48**, Ingående moms
 
 Fakturor till kunder i andra länder bokförs på de här kontona när du väljer typ av försäljning på fakturan.
 
-BAS har inget konto för **ruta 37**, mellanmans inköp av varor vid trepartshandel. Lägg upp ett eget kostnadskonto, till exempel 4519, och koppla det till ruta 37 under [Kontoplan](/manual/bokforing/kontoplan) med **Momsruta**. Samma sätt fungerar för andra egna konton som ska till en viss ruta.
+BAS har inget konto för **ruta 37** och **ruta 38**, mellanmans inköp och försäljning av varor vid trepartshandel. Lägg upp ett eget kostnadskonto, till exempel 4519, och koppla det till ruta 37 under [Kontoplan](/manual/bokforing/kontoplan) med **Momsruta**. Samma sätt fungerar för andra egna konton som ska till en viss ruta.
+
+För försäljningen i ruta 38 använder NONOX konto 3107. Det läggs upp och kopplas till ruta 38 första gången du skapar en faktura för trepartshandel. Bokför du trepartshandel för hand på ett annat konto, koppla det kontot till ruta 38.
 
 ## Inköp där du redovisar momsen
 

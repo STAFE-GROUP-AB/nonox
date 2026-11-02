@@ -6,7 +6,7 @@
 <div class="space-y-8">
     <x-ui.card :title="__('Periodisk sammanställning')" :description="__('Försäljning utan moms till företag i andra EU-länder, per köpare. Lämnas till Skatteverket senast den 25:e månaden efter perioden, som fil i e-tjänsten Filöverföring.')">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <x-ui.field for="eu_period" :label="__('Period')">
+            <x-ui.field for="eu_period" :label="__('Period')" error="period">
                 <select id="eu_period" class="{{ $input }} mt-1" wire:model.live="period">
                     @foreach($periods as $key => $label)
                         <option value="{{ $key }}" @selected($key === $selected)>{{ $label }}</option>
@@ -50,6 +50,12 @@
             </div>
             <p class="mt-3 text-xs text-gray-500">{{ __('Summorna ska stämma med rutorna 35, 38 och 39 i momsdeklarationen för samma period.') }}</p>
 
+            @if($periodProblem)
+                <p class="mt-4 rounded-lg bg-accent-50 p-3 text-sm text-accent-800" role="alert">{{ $periodProblem }}</p>
+            @elseif($periodNote)
+                <p class="mt-4 text-sm text-gray-600">{{ $periodNote }}</p>
+            @endif
+
             <form wire:submit="download" class="mt-6 grid gap-4 border-t border-gray-100 pt-6 sm:grid-cols-2 lg:grid-cols-4">
                 <x-ui.field for="eu_contact" :label="__('Ansvarig person')" error="contactName">
                     <input id="eu_contact" type="text" class="{{ $input }} mt-1" wire:model="contactName" maxlength="35">
@@ -61,7 +67,7 @@
                     <input id="eu_email" type="email" class="{{ $input }} mt-1" wire:model="email">
                 </x-ui.field>
                 <div class="flex items-end">
-                    <x-button wire:loading.attr="disabled" :disabled="! $hasVatNumber">{{ __('Ladda ner fil') }}</x-button>
+                    <x-button wire:loading.attr="disabled" :disabled="! $hasVatNumber || $periodProblem !== null">{{ __('Ladda ner fil') }}</x-button>
                 </div>
                 @unless($hasVatNumber)
                     <p class="text-sm text-accent-700 sm:col-span-2 lg:col-span-4">{{ __('Fyll i företagets momsregistreringsnummer under Företagsuppgifter för att kunna skapa filen.') }}</p>

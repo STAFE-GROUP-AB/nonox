@@ -30,7 +30,12 @@
   goods and services in the periodisk sammanställning are reported for the
   invoice's period whatever the method (ML 2023:200 7 kap. 29-30 §§), so
   they are booked at issue under kontantmetoden too, and their payment only
-  clears 1510 (`InvoiceBooking::bookedAtIssue`). Vouchers are made through `BookVoucher`, which uses the
+  clears 1510 (`InvoiceBooking::bookedAtIssue`). In the periodisk
+  sammanställning itself a service is reported for the period of its
+  delivery date when the invoice has one (ML 7 kap. 30 §), goods for the
+  invoice date, and goods only per month unless the company has entered
+  Skatteverket's decision on quarters and stays within 500 000 kr a quarter
+  (SFL 35 kap. 3–4 §§; 2026-11-02, OSAKERT-MOMS-PS, #65). Vouchers are made through `BookVoucher`, which uses the
   same SaveDraftVoucher and PostVoucher as manual vouchers, and point back to
   the invoice (`source_type`, `source_id`; `source_id` became text because
   invoices have UUIDs).
