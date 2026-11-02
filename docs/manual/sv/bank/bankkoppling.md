@@ -46,6 +46,7 @@ Klart. Transaktionerna hämtas vid nästa hämtning, eller direkt om du trycker 
 - **Hämta nu** hämtar direkt, högst en gång i kvarten.
 - Samma transaktion sparas aldrig två gånger, hur många gånger den än hämtas.
 - Transaktioner och saldon sparas och finns kvar även om du kopplar bort banken eller stänger av modulen.
+- En dragning som passar en betalning i en av dina betalfiler blir ett förslag under **Inköp → Betalfiler**, som du bekräftar. Läs [Bankens svar på betalfilen](/manual/leverantorer/bankens-svar).
 
 ## Banker med egna krav
 

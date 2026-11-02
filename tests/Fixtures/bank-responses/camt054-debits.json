@@ -1,0 +1,44 @@
+[
+    {
+        "kind": "BOOKED",
+        "reference": "camt:ENTRY-77:1",
+        "original_message_id": "NONOX-3-ABCDEFGHIJKL",
+        "payment_info_id": "NONOX-3-ABCDEFGHIJKL",
+        "end_to_end_id": "LF7-3",
+        "amount_ore": 162000,
+        "currency": "SEK",
+        "date": "2026-03-12",
+        "creditor_account": "50501055",
+        "creditor_name": "Grossisten AB",
+        "reason_code": null,
+        "reason_text": null
+    },
+    {
+        "kind": "BOOKED",
+        "reference": "camt:TX-78",
+        "original_message_id": null,
+        "payment_info_id": null,
+        "end_to_end_id": "LF8-3",
+        "amount_ore": 50050,
+        "currency": "SEK",
+        "date": "2026-03-12",
+        "creditor_account": null,
+        "creditor_name": null,
+        "reason_code": null,
+        "reason_text": null
+    },
+    {
+        "kind": "RETURNED",
+        "reference": "camt:RETURN-1",
+        "original_message_id": null,
+        "payment_info_id": null,
+        "end_to_end_id": "LF5-2",
+        "amount_ore": 30000,
+        "currency": "SEK",
+        "date": "2026-03-14",
+        "creditor_account": null,
+        "creditor_name": null,
+        "reason_code": "AC04",
+        "reason_text": "Closed account"
+    }
+]

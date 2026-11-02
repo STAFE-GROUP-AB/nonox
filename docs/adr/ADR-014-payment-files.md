@@ -95,12 +95,76 @@ same schema but differ in a few fields. Sources read for this decision:
   unapproved batch. Batches confirmed before this step have no approval and
   stay downloadable as history; open ones must be approved like new ones.
 
+## The bank's answers (added 2026-11-02)
+
+Sources read for this part:
+
+- Handelsbanken, *ISO 20022 CustomerPaymentStatusReport pain.002.001.03*,
+  implementation guide version 1.0.4 (19 March 2025), with its examples
+  "Rejected transactions on execution day" and "Partially accepted file
+  including accept on transaction level"
+  (handelsbanken.com, Global Gateway, ISO 20022 XML; read 2026-11-02).
+- Handelsbanken, *ISO 20022 Debit Notification camt.054.001.02*,
+  implementation guide version 1.0.7 (23 February 2026), with its example
+  "Debit notification Swedish local from bg no" (read 2026-11-02).
+- SEB's and Länsförsäkringar's guides listed above cover pain.002.001.03 too.
+- ISO 20022 External Code Sets (iso20022.org): ExternalPaymentTransactionStatus1Code
+  for the statuses, ExternalStatusReason1Code and ExternalReturnReason1Code for
+  the reasons (read 2026-11-02).
+
+Decisions:
+
+- **End-to-end id per payment.** A payment's EndToEndId is now
+  `LF<invoice number>-<file number>` (at most 35 characters), unique per
+  company, so an invoice paid in a second file after a rejection is told apart.
+  Files made earlier used `LF<invoice number>`; they are still matched, with
+  the file's message id when the bank gives it and otherwise the payment still
+  waiting for the bank. The file's MsgId is also its PmtInfId, as before.
+- **What is read.** pain.002 (any version, by local name): a status per
+  payment (TxSts), per block (PmtInfSts) or for the whole file (GrpSts) when
+  nothing more specific is given. RJCT is a rejection; ACCP, ACTC, ACSP, ACSC,
+  ACWC and ACCC are acceptances; the rest (PDNG, RCVD, PART by itself) say
+  nothing final and are skipped. camt.054 and camt.053: booked debits (Sts
+  BOOK) per TxDtls, with Refs/MsgId, PmtInfId and EndToEndId ("NOTPROVIDED"
+  counts as none); an entry without details but with NtryDtls/Btch is the
+  whole file booked as one amount. A booked credit with RvslInd and the
+  payer's references is a returned payment, as Handelsbanken's guide
+  describes. Files are read with DOM without network or DOCTYPE (no XXE), at
+  most 10 MB, like the camt.054 credit reader (ADR-015).
+- **Idempotency.** A file is read once (SHA-256 per company). Each answer is
+  stored once per kind and bank reference (AcctSvcrRef, or a fingerprint).
+  A payment with a booked payment is never booked again; a second answer
+  about it is "already handled".
+- **Matching.** By reference first; otherwise, for debits only, the same
+  amount in kronor, booked from 3 days before to 10 days after the file's
+  payment day, to the same bankgiro or plusgiro when the bank names it, among
+  payments neither paid nor rejected, and only when exactly one fits. These
+  windows are our own choice, not a rule from any bank.
+- **What is done automatically.** Only for answers matched by reference in a
+  file read by a person with `payments:create`: acceptances are recorded;
+  rejections mark the payment rejected with the bank's reason and the invoice
+  is free to pay again; booked debits are paid through `PaySupplierInvoice`
+  on the bank's booking day (series E, both accounting methods exactly as a
+  manual payment), and only when the file is approved, the amount equals the
+  file's and the invoice still owes it. Everything else — matches by amount,
+  answers from NONOX Bank, returns, rejections of a payment already booked —
+  waits for a person to confirm or dismiss. A file is closed when all its
+  payments are paid or rejected (paid if any was paid, otherwise cancelled).
+  A partly paid file cannot be cancelled, and "the bank has paid" books only
+  the payments without an answer.
+- **NONOX Bank.** Debits in kronor fetched through the bank connection
+  (ADR-034) go through the same matcher; one that fits a payment becomes a
+  suggestion, never a booking.
+- **Currency.** Payment files pay kronor only, so no exchange difference
+  arises here; an answer in another currency is left to a person.
+
 ## Open
 
 - `TODO(verify-with-bank)`: each company sends a first file through its bank's
-  test service before real use; the UI says so.
-- Reading the bank's status report (pain.002) and debit notifications
-  (camt.054) to confirm batches automatically.
+  test service before real use; the UI says so. The same goes for reading a
+  first status report and debit notification: the synthetic test files follow
+  Handelsbanken's guide and examples, not files received from each bank.
+- Booking a returned payment (reversal) automatically.
 - Signing in the bank is the bank's approval of the payment; within NONOX the
   invoice is attested and the payment file approved, by different people
   unless the company has turned separate approval off.

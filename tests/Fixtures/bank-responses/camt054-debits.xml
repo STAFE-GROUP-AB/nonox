@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Synthetic test file: a debit notification with two payments booked as one entry, one entry not yet booked, an ordinary incoming payment and a returned payment. -->
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.054.001.02">
+  <BkToCstmrDbtCdtNtfctn>
+    <GrpHdr>
+      <MsgId>DEBIT-0001</MsgId>
+      <CreDtTm>2026-03-12T18:00:00</CreDtTm>
+    </GrpHdr>
+    <Ntfctn>
+      <Id>N-1</Id>
+      <CreDtTm>2026-03-12T18:00:00</CreDtTm>
+      <Acct>
+        <Id>
+          <IBAN>SE4550000000058398257466</IBAN>
+        </Id>
+      </Acct>
+      <Ntry>
+        <Amt Ccy="SEK">2120.50</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt>
+          <Dt>2026-03-12</Dt>
+        </BookgDt>
+        <AcctSvcrRef>ENTRY-77</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <Refs>
+              <MsgId>NONOX-3-ABCDEFGHIJKL</MsgId>
+              <PmtInfId>NONOX-3-ABCDEFGHIJKL</PmtInfId>
+              <EndToEndId>LF7-3</EndToEndId>
+            </Refs>
+            <AmtDtls>
+              <TxAmt>
+                <Amt Ccy="SEK">1620.00</Amt>
+              </TxAmt>
+            </AmtDtls>
+            <RltdPties>
+              <Cdtr>
+                <Nm>Grossisten AB</Nm>
+              </Cdtr>
+              <CdtrAcct>
+                <Id>
+                  <Othr>
+                    <Id>5050-1055</Id>
+                    <SchmeNm>
+                      <Prtry>BGNR</Prtry>
+                    </SchmeNm>
+                  </Othr>
+                </Id>
+              </CdtrAcct>
+            </RltdPties>
+          </TxDtls>
+          <TxDtls>
+            <Refs>
+              <AcctSvcrRef>TX-78</AcctSvcrRef>
+              <EndToEndId>LF8-3</EndToEndId>
+            </Refs>
+            <AmtDtls>
+              <InstdAmt>
+                <Amt Ccy="SEK">500.50</Amt>
+              </InstdAmt>
+            </AmtDtls>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="SEK">99.00</Amt>
+        <CdtDbtInd>DBIT</CdtDbtInd>
+        <Sts>PDNG</Sts>
+        <BookgDt>
+          <Dt>2026-03-12</Dt>
+        </BookgDt>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="SEK">250.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt>
+          <Dt>2026-03-12</Dt>
+        </BookgDt>
+        <AcctSvcrRef>CREDIT-1</AcctSvcrRef>
+      </Ntry>
+      <Ntry>
+        <Amt Ccy="SEK">300.00</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <RvslInd>true</RvslInd>
+        <Sts>BOOK</Sts>
+        <BookgDt>
+          <Dt>2026-03-14</Dt>
+        </BookgDt>
+        <AcctSvcrRef>RETURN-1</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <Refs>
+              <EndToEndId>LF5-2</EndToEndId>
+            </Refs>
+            <RtrInf>
+              <Rsn>
+                <Cd>AC04</Cd>
+              </Rsn>
+              <AddtlInf>Closed account</AddtlInf>
+            </RtrInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Ntfctn>
+  </BkToCstmrDbtCdtNtfctn>
+</Document>

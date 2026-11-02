@@ -1,0 +1,30 @@
+[
+    {
+        "kind": "ACCEPTED",
+        "reference": "pain002:c5065acf3d4b4c869b685777e6d7c82c6d18e7b3c0936498fa282ebfde93ceee",
+        "original_message_id": "NONOX-3-ABCDEFGHIJKL",
+        "payment_info_id": "NONOX-3-ABCDEFGHIJKL",
+        "end_to_end_id": "LF7-3",
+        "amount_ore": 162000,
+        "currency": "SEK",
+        "date": "2026-03-11",
+        "creditor_account": "50501055",
+        "creditor_name": "Grossisten AB",
+        "reason_code": null,
+        "reason_text": null
+    },
+    {
+        "kind": "REJECTED",
+        "reference": "pain002:09981f15ec72478ac077cc8ea636cd4cefd8881d38409748b89394ac18ac5715",
+        "original_message_id": "NONOX-3-ABCDEFGHIJKL",
+        "payment_info_id": "NONOX-3-ABCDEFGHIJKL",
+        "end_to_end_id": "LF8-3",
+        "amount_ore": 50050,
+        "currency": "SEK",
+        "date": "2026-03-11",
+        "creditor_account": "4123451",
+        "creditor_name": "Elbolaget AB",
+        "reason_code": "AC03",
+        "reason_text": "Beneficiary account number is incorrect"
+    }
+]

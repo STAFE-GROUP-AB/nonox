@@ -1,0 +1,16 @@
+[
+    {
+        "kind": "REJECTED",
+        "reference": "pain002:bebc3db71ab9f82289bc013556a298adfe122d5b026d63535404f9798a4a479c",
+        "original_message_id": "NONOX-4-MNOPQRSTUVWX",
+        "payment_info_id": null,
+        "end_to_end_id": null,
+        "amount_ore": null,
+        "currency": null,
+        "date": "2026-03-11",
+        "creditor_account": null,
+        "creditor_name": null,
+        "reason_code": "FF01",
+        "reason_text": "Invalid file format"
+    }
+]

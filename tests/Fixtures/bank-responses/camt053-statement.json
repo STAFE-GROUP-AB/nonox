@@ -1,0 +1,30 @@
+[
+    {
+        "kind": "BOOKED",
+        "reference": "camt:STMT-ENTRY-1",
+        "original_message_id": "NONOX-5-QWERTYUIOPAS",
+        "payment_info_id": "NONOX-5-QWERTYUIOPAS",
+        "end_to_end_id": null,
+        "amount_ore": 300000,
+        "currency": "SEK",
+        "date": "2026-03-12",
+        "creditor_account": null,
+        "creditor_name": null,
+        "reason_code": null,
+        "reason_text": null
+    },
+    {
+        "kind": "BOOKED",
+        "reference": "camt:sha256:30a4d557bbd2443ef0b48173505f881aaba14b8f0f9d2015:1",
+        "original_message_id": null,
+        "payment_info_id": null,
+        "end_to_end_id": null,
+        "amount_ore": 12900,
+        "currency": "SEK",
+        "date": "2026-03-12",
+        "creditor_account": null,
+        "creditor_name": "Kaffebaren",
+        "reason_code": null,
+        "reason_text": null
+    }
+]

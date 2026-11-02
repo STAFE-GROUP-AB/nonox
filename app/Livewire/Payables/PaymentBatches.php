@@ -14,12 +14,14 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\SupplierInvoice;
 use App\Models\SupplierPaymentBatch;
+use App\Models\SupplierPaymentBatchItem;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -117,6 +119,10 @@ class PaymentBatches extends Component
         $this->toast(__(':title är makulerad. Fakturorna kan betalas igen.', ['title' => $batch->title()]));
     }
 
+    /** The bank's answers (PaymentResponses) paid or rejected payments; the lists are read again. */
+    #[On('payment-responses-updated')]
+    public function refreshAfterBankResponse(): void {}
+
     public function render(): View
     {
         $payable = $this->payable()->with('supplier:id,name')->orderBy('due_date')->orderBy('number')->get();
@@ -126,7 +132,15 @@ class PaymentBatches extends Component
             'company' => $this->company(),
             'payable' => $payable,
             'selectedTotal' => $selectedTotal,
-            'batches' => SupplierPaymentBatch::query()->with(['creator:id,name', 'approver:id,name'])->orderByDesc('number')->limit(50)->get(),
+            'batches' => SupplierPaymentBatch::query()
+                ->with(['creator:id,name', 'approver:id,name'])
+                ->withCount([
+                    'items as paid_count' => fn (Builder $query) => $query->whereNotNull('supplier_payment_id'),
+                    'items as rejected_count' => fn (Builder $query) => $query->where('bank_status', SupplierPaymentBatchItem::REJECTED),
+                ])
+                ->orderByDesc('number')
+                ->limit(50)
+                ->get(),
             'canCreate' => $this->user()->can('create', [SupplierPaymentBatch::class, $this->company()]),
             // Checked once for the page rather than through the policy per batch, which would query the company each time.
             'canApprove' => $this->user()->hasTeamPermission($this->company(), 'payments:approve'),
@@ -148,7 +162,9 @@ class PaymentBatches extends Component
             ->where('status', SupplierInvoiceStatus::Approved->value)
             ->where('kind', SupplierInvoice::INVOICE)
             ->where('invoice_currency', 'SEK')
-            ->whereDoesntHave('batchItems', fn (Builder $query) => $query->whereHas('batch', fn (Builder $batch) => $batch->where('status', PaymentBatchStatus::Created->value)));
+            ->whereDoesntHave('batchItems', fn (Builder $query) => $query
+                ->where(fn (Builder $item) => $item->whereNull('bank_status')->orWhere('bank_status', '!=', SupplierPaymentBatchItem::REJECTED))
+                ->whereHas('batch', fn (Builder $batch) => $batch->where('status', PaymentBatchStatus::Created->value)));
     }
 
     private function user(): User

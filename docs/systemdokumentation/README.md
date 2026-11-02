@@ -607,9 +607,10 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Betalfiler: attesterade fakturor kan betalas med en fil till banken (ISO
   20022 pain.001.001.03, [ADR-014](../adr/ADR-014-payment-files.md)). Filen
   sparas som den skapades, med kontrollsumma, och kan inte ändras. Betalningen
-  bokförs först när användaren bekräftar att banken har betalat, på
-  betaldagen i serie E. Betalningsuppgifterna tas från leverantörens uppgifter
-  när fakturan registrerades.
+  bokförs när användaren bekräftar att banken har betalat, på betaldagen i
+  serie E, eller när bankens svar läses in (avsnitt 5a1b).
+  Betalningsuppgifterna tas från leverantörens uppgifter när fakturan
+  registrerades.
 - Godkännande av betalfiler: en ny betalfil måste godkännas av någon med
   rätt att godkänna betalningar (`payments:approve`: ägare, administratör och
   attestant) innan den kan laddas ned och läsas in i banken, och innan den kan
@@ -621,6 +622,93 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   att markera en fil som betald utan godkännande. En fil som inte är godkänd
   kan makuleras. Betalfiler som bekräftades innan godkännandet infördes
   saknar godkännande men kan laddas ned som historik.
+
+### 5a1b. Bankens svar på betalfiler (automatisk avstämning)
+
+Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
+([ADR-014](../adr/ADR-014-payment-files.md)). Koden finns i
+`App\Support\Pain002\PaymentStatusReport`,
+`App\Support\Camt054\DebitNotification`,
+`App\Domain\Payables\OutgoingPaymentMatcher` och
+`App\Actions\Payables\ApplyPaymentResponses`.
+
+- **Filer som läses.** Statusrapport (ISO 20022 pain.002.001.03 och senare
+  versioner), debiteringsavisering (camt.054.001.02 och senare) och
+  kontoutdrag (camt.053). Filen får vara högst 10 MB, läses utan nätverk och
+  avvisas om den har en DOCTYPE (inga externa eller expanderande entiteter).
+  Filen sparas som den kom med sin SHA-256 i `payment_response_imports`, som
+  databasen inte låter ändra eller ta bort. Samma fil (samma SHA-256) kan inte
+  läsas in två gånger.
+- **Referenser.** Varje betalning i en betalfil får ett eget end-to-end-id,
+  `LF<fakturans löpnummer>-<betalfilens nummer>`, och filen har ett eget
+  meddelande-id (`MsgId`, också `PmtInfId`). Bankerna skickar tillbaka dem i
+  sina svar. Betalfiler från före den här ändringen har end-to-end-id
+  `LF<löpnummer>`; de hittas också, och finns samma id i flera filer väljs
+  den som väntar på banken.
+- **Svar.** Varje svar sparas i `payment_responses` med vad banken sa (typ,
+  bankens referens, referenserna ovan, belopp, datum, mottagarens konto,
+  orsakskod och bankens text). Ett svar identifieras av typ och bankens
+  referens (eller ett fingeravtryck när banken inte ger någon), så samma svar
+  i två filer läses bara en gång. Databasen låter bara ett öppet svar
+  (`SUGGESTED`, `UNMATCHED`) få sin matchning och sitt utfall, en gång;
+  innehållet ändras aldrig och inget tas bort.
+- **Matchning.** 1) På referens: end-to-end-id, avgränsat av filens
+  meddelande-id när banken anger det. Ett svar utan end-to-end-id (hela filen
+  avvisad, eller hela filen dragen som ett belopp) kopplas till filen på
+  meddelande-id. 2) Annars, för pengar som dragits: samma belopp i kronor,
+  bokföringsdag från 3 dagar före till 10 dagar efter filens betaldag, samma
+  bankgiro eller plusgiro om banken anger mottagarens konto, bland
+  betalningar som varken är betalda eller avvisade. Bara när exakt en
+  betalning passar blir det ett förslag, som en person bekräftar. Ett svar
+  utan referens som inte passar någon betalning (till exempel ett kortköp i
+  ett kontoutdrag) sparas inte.
+- **Godkänd** (pain.002 ACCP, ACTC, ACSP, ACSC, ACWC, ACCC): betalningen
+  markeras som godkänd av banken. Inget bokförs.
+- **Avvisad** (pain.002 RJCT, för en betalning, ett betalningsblock eller hela
+  filen): betalningen markeras som avvisad med bankens orsakskod och text
+  (`supplier_payment_batch_items.bank_status`, `reason_code`,
+  `reason_text`). Orsaken visas på svenska efter ISO 20022:s kodlista
+  (ExternalStatusReason1Code, `App\Domain\Payables\BankReasonCode`), med
+  bankens egen text bredvid. Fakturan var aldrig bokförd som betald; den
+  är attesterad och obetald och kan läggas i en ny betalfil. Skrivs till
+  behandlingshistoriken (`payment_batch.payment_rejected`) och visas under
+  "Att göra" på Översikt tills fakturan är betald eller ligger i en ny fil.
+  Kommer en avvisning för en betalning som redan är bokförd görs ingenting
+  automatiskt; svaret väntar på en person som rättar med en
+  rättelseverifikation.
+- **Dragen från kontot** (camt.054/camt.053, bokförd debitering): betalningen
+  bokförs genom samma `PaySupplierInvoice` som när en person registrerar en
+  betalning eller bekräftar filen, på bankens bokföringsdag i serie E, så
+  fakturametoden och kontantmetoden bokförs exakt som annars. Bara ett svar
+  som matchats på referens, i en fil som en person läst in, bokförs
+  automatiskt. Det bokförs inte automatiskt när filen inte är godkänd i
+  NONOX (svaret väntar tills den är godkänd), när beloppet skiljer sig från
+  filen, när betalningen inte är i kronor, när fakturan har betalats på annat
+  sätt eller när betalfilen redan är makulerad eller betald. En betalning som
+  redan har en betalning bokförd bokförs aldrig igen; svaret blir "Redan
+  hanterad". Alla bokföringar för ett svar sker i en transaktion.
+- **Återförd** (camt.054 kredit med `RvslInd`, med betalarens referenser):
+  pengarna har kommit tillbaka. Inget görs automatiskt; en person rättar
+  betalningen med en rättelseverifikation och betalar igen.
+- **Filen stängs** när varje betalning i den är betald eller avvisad: betald
+  om banken betalade någon, makulerad om banken avvisade alla
+  (`payment_batch.confirmed` eller `payment_batch.cancelled` med
+  `via: bank_response`). Knappen "Banken har betalat" bokför bara de
+  betalningar banken inte redan svarat om, och en fil där någon betalning är
+  bokförd kan inte makuleras.
+- **Bankkopplingen** (modulen Bank, ADR-034): en hämtad debitering i kronor
+  som passar en betalning (på referens eller belopp) blir ett förslag som en
+  person bekräftar. Inget bokförs utan en person. Bokförs samma betalning
+  sedan från en fil, eller bekräftas filen för hand, blir förslaget "Redan
+  hanterad".
+- **Behörighet.** Att läsa in svar, bekräfta och avfärda kräver
+  `payments:create` (ägare, administratör, redovisningskonsult, bokförare);
+  bokföringen kräver dessutom rätt att betala fakturan. Revisorn ser svaren.
+  Bekräftelser och avfärdanden skrivs till behandlingshistoriken
+  (`payment_response.confirmed`, `payment_response.dismissed`), liksom varje
+  inläst fil (`payment_response_file.imported` med SHA-256 och antal).
+- **Valuta.** Betalfiler betalar bara kronor, så kursdifferenser uppstår inte
+  här. Ett svar i annan valuta bokförs inte automatiskt.
 
 ## 5a2. Anläggningsregister
 
@@ -1509,6 +1597,10 @@ betalningar görs fortfarande med betalfiler som signeras i banken.
   ett OCR-nummer blir en inbetalning under Inbetalningar → Från banken, med
   fakturan föreslagen på samma sätt som från bankens fil (avsnitt 5, camt.054).
   Samma bankreferens kan inte bli två inbetalningar. En person bokför.
+- **Betalningar ut.** En dragning i kronor som passar en betalning i en
+  betalfil (på referens eller belopp, avsnitt 5a1b) blir ett förslag under
+  Leverantörsfakturor → Betalfiler. En person bekräftar, och då bokförs
+  betalningen i serie E. Dragningar som inte passar någon betalfil lämnas.
 - **Matchning.** För varje transaktion föreslås den bokförda raden på
   kontot med samma belopp och närmast datum inom sju dagar, varje rad en
   gång. En person med `banking:view` och rätt att bokföra bekräftar eller tar
