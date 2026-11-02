@@ -51,3 +51,26 @@ mandatory).
 
 - A page to read the log (`audit-log:view`).
 - Archiving the log in the archive package (§10, T-1.6).
+
+## Versions of the systemdokumentation (2026-11-02, #44)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (AUD-BOK-9, #44).
+
+- **Rule.** BFL 5 kap. 11 § and BFNAR 2013:2, comment on p. 9.1: the
+  systemdokumentation is räkenskapsinformation; when it changes, the
+  replaced version is kept so the bookkeeping can be followed at every point
+  in time during the archiving period.
+- **Decision.** `system_documentation_versions` keeps every distinct text of
+  `docs/systemdokumentation/README.md` this installation used (version and
+  date from the header, SHA-256, the program version, the time it was taken
+  into use). It is instance data, like an audit entry without a company, so
+  it has no `company_id`; it is append-only in the model and by trigger.
+  `VersionRecorder` records after every `migrate` (`MigrationsEnded` and
+  `NoPendingMigrations`), from `nonox:build-info`, from
+  `nonox:record-version` and hourly from the scheduler, so a self-hosted
+  installation records without our deploy script. The archive package adds
+  the versions in use during the fiscal year and `versioner.txt`. The header
+  of the document is kept at the last row of the change table, and a test
+  checks the order.
+- **Note for whoever adds a version row:** update `- Version:` and
+  `- Datum:` in the header to the new last row, or the test fails.

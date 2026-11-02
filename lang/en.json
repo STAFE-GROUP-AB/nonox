@@ -6024,5 +6024,10 @@
     "Rättad av": "Corrected by",
     "Rättar": "Corrects",
     "Rättad av :reference": "Corrected by :reference",
-    "Rättar :reference": "Corrects :reference"
+    "Rättar :reference": "Corrects :reference",
+    "Systemdokumentationen som gällde under räkenskapsåret :start – :end.": "The system documentation that applied during the fiscal year :start – :end.",
+    "Filen README.md bredvid är den version som gäller när paketet skapas.": "The README.md file next to this is the version that applies when the package is made.",
+    ":file – version :version, i bruk från :date (programversion :program).": ":file – version :version, in use from :date (program version :program).",
+    "Den här installationen har inte sparat någon version från räkenskapsåret. Ändringshistoriken i README.md visar vad som ändrats och när.": "This installation has not saved a version from the fiscal year. The change history in README.md shows what changed and when.",
+    "Hur systemet fungerar: versionen när paketet skapades och de versioner som var i bruk under året (:count filer).": "How the system works: the version when the package was made and the versions in use during the year (:count files)."
 }

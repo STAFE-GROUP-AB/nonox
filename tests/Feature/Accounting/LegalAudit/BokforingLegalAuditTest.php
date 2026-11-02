@@ -492,5 +492,5 @@ describe('bevarande i sju år (BFL 7 kap. 2 §) och behandlingshistorik (BFNAR p
         $latest = collect($table[1])->sortBy(fn (string $version): int => (int) explode('.', $version)[1])->last();
 
         expect($header[1] ?? null)->toBe($latest);
-    })->todo('AUD-BOK-9: systemdokumentationen säger "Version: 0.15" men tabellen går till 0.43 och raderna ligger i fel ordning');
+    });
 });

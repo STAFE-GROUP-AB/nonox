@@ -19,7 +19,7 @@ leverantorsfakturor/  {!! __('Leverantörsfakturorna som de kom in (:count filer
 moms/  {!! __('Momsdeklarationerna: rutor och belopp per period samt filen till Skatteverket (:count filer).', ['count' => $contents['moms']]) !!}
 lon/  {!! __('Lönebesked och arbetsgivardeklarationer för lön som betalats ut under året (:count filer).', ['count' => $contents['lon']]) !!}
 behandlingshistorik/  {!! __('Allt som gjorts i företaget från årets första dag tills paketet skapades: vem, när och vad (:count filer).', ['count' => $contents['behandlingshistorik']]) !!}
-systemdokumentation/  {!! __('Hur systemet fungerar, i den version som gällde när paketet skapades (:count filer).', ['count' => $contents['systemdokumentation']]) !!}
+systemdokumentation/  {!! __('Hur systemet fungerar: versionen när paketet skapades och de versioner som var i bruk under året (:count filer).', ['count' => $contents['systemdokumentation']]) !!}
 manifest.json  {!! __('Förteckning över alla filer med storlek och SHA-256.') !!}
 SHA256SUMS.txt  {!! __('Samma kontrollsummor i ett format som datorn kan kontrollera.') !!}
 

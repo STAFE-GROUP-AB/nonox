@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Support\Build\BuildInfo;
+use App\Support\Build\VersionRecorder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Process;
@@ -42,6 +43,7 @@ class WriteBuildInfoCommand extends Command
 
         BuildInfo::fake(null);
         $this->info('Byggd: '.BuildInfo::line());
+        VersionRecorder::recordQuietly();
 
         return self::SUCCESS;
     }

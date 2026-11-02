@@ -37,7 +37,7 @@ Paketet innehåller en mapp med företagets organisationsnummer och årets datum
 | `moms/` | Rutor och belopp för varje redovisad momsperiod och filen till Skatteverket. |
 | `lon/` | Lönebesked för attesterade lönekörningar med utbetalning under året, lönebesked från ett tidigare lönesystem och arbetsgivardeklarationerna. |
 | `behandlingshistorik/` | Allt som gjorts i företaget från årets första dag till dess paketet skapades, som CSV och JSON. |
-| `systemdokumentation/` | NONOX systemdokumentation i den version som gällde när paketet skapades. |
+| `systemdokumentation/` | NONOX systemdokumentation i den version som gällde när paketet skapades. Under `versioner/` ligger de versioner som var i bruk under räkenskapsåret, och `versioner.txt` säger när varje version togs i bruk. |
 
 Dessutom:
 

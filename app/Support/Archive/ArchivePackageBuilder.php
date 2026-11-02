@@ -27,6 +27,7 @@ use App\Modules\Payroll\Models\ImportedPayslip;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\PayslipPdf;
+use App\Support\Build\SystemDocumentation;
 use App\Support\Csv;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -84,7 +85,7 @@ final class ArchivePackageBuilder
                     'moms' => $this->vatReturns($company, $fiscalYear),
                     'lon' => $user->hasTeamPermission($company, 'payroll:archive-view') ? $this->payroll($fiscalYear) : 0,
                     'behandlingshistorik' => $this->auditLog($company, $fiscalYear),
-                    'systemdokumentation' => $this->systemDocumentation(),
+                    'systemdokumentation' => $this->systemDocumentation($fiscalYear),
                 ];
 
                 $this->readMe($user, $company, $fiscalYear, $contents);
@@ -365,8 +366,12 @@ final class ArchivePackageBuilder
         return 2;
     }
 
-    /** The systemdokumentation as it reads when the package is made (BFNAR 2013:2). */
-    private function systemDocumentation(): int
+    /**
+     * The systemdokumentation as it reads when the package is made, and
+     * every version that applied during the fiscal year with the time it was
+     * taken into use (BFL 5 kap. 11 §; BFNAR 2013:2, comment on p. 9.1; #44).
+     */
+    private function systemDocumentation(FiscalYear $fiscalYear): int
     {
         $count = 0;
 
@@ -375,7 +380,32 @@ final class ArchivePackageBuilder
             $count++;
         }
 
-        return $count;
+        $versions = SystemDocumentation::forFiscalYear($fiscalYear);
+        $lines = [
+            __('Systemdokumentationen som gällde under räkenskapsåret :start – :end.', ['start' => $fiscalYear->start_date->toDateString(), 'end' => $fiscalYear->end_date->toDateString()]),
+            __('Filen README.md bredvid är den version som gäller när paketet skapas.'),
+            '',
+        ];
+
+        foreach ($versions as $version) {
+            $name = 'versioner/'.($version->version ?? 'okand').'-'.substr($version->sha256, 0, 12).'.md';
+            $this->put("systemdokumentation/{$name}", $version->content);
+            $count++;
+            $lines[] = __(':file – version :version, i bruk från :date (programversion :program).', [
+                'file' => $name,
+                'version' => $version->version ?? '?',
+                'date' => $version->recorded_at->setTimezone('Europe/Stockholm')->format('Y-m-d H:i'),
+                'program' => $version->program_version ?? '?',
+            ]);
+        }
+
+        if ($versions->isEmpty()) {
+            $lines[] = __('Den här installationen har inte sparat någon version från räkenskapsåret. Ändringshistoriken i README.md visar vad som ändrats och när.');
+        }
+
+        $this->put('systemdokumentation/versioner.txt', implode("\r\n", $lines)."\r\n");
+
+        return $count + 1;
     }
 
     /**
