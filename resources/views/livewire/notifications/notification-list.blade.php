@@ -23,7 +23,16 @@
                         </p>
                         <p class="mt-1 text-sm text-ink">{{ App\Notifications\TaskActivity::sentence($data) }}</p>
                     </div>
-                    @if(isset($data['company_id'], $data['task_id']) && in_array((int) $data['company_id'], $memberOf, true))
+                    @if(isset($data['company_id'], $data['destination']) && in_array((int) $data['company_id'], $memberOf, true))
+                        <div class="shrink-0">
+                            @include('firm.open-in-company', [
+                                'companyId' => $data['company_id'],
+                                'destination' => $data['destination'],
+                                'notice' => $notification->id,
+                                'label' => __('Öppna Lön → Regler'),
+                            ])
+                        </div>
+                    @elseif(isset($data['company_id'], $data['task_id']) && in_array((int) $data['company_id'], $memberOf, true))
                         <div class="shrink-0">
                             @include('firm.open-in-company', [
                                 'companyId' => $data['company_id'],

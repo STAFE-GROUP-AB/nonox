@@ -149,8 +149,18 @@ HTML only) and the tax table file layout (SKV 433, edition 36).
 - `payroll:import-tax-tables {year} --download` reads the same tables from
   Skatteverket's open data (RowStore), converted to the record layout and
   checked like a file; on 2026-11-02 the 2026 open data matched the
-  official text file line for line. No automatic import: an imported year
-  cannot be replaced.
+  official text file line for line.
+- `payroll:fetch-published-tax-tables` runs nightly at 04:10 and imports
+  the current year's and, from October, the next year's tables once they
+  are published. An imported year is never fetched again, and a year with
+  fewer tables than the year before is refused (an imported year cannot be
+  replaced, so a partly published year must not be taken). Decided
+  2026-11-02 by the owner: the tables are Skatteverket's own data, checked
+  by the importer, and need no human approval; the payroll rules still do.
+- After tables are imported, and when the nightly rule import brings new
+  or changed versions, everyone with `payroll:settings` in each active
+  company with Lön gets a `PayrollYearNotice` saying what to check, opening
+  Lön → Regler in that company.
 - Without tables for the payment year a run is blocked once with
   "Skattetabellerna för {år} är inte inlästa ännu". `TODO(legal-verify)`:
   SFL 10 kap. 16 § allows January withholding by the table last applied the

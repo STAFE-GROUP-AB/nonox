@@ -35,7 +35,11 @@ Skatteverket tar fram skattetabellerna för nästa år i december. Tabellerna g�
 
 Saknas tabellerna för året stoppas lönekörningen innan något räknas, med beskedet **Skattetabellerna för 2027 är inte inlästa ännu** (med rätt år). Ingen lön räknas med förra årets tabeller.
 
-Driftar ni NONOX själva läses tabellerna in med ett kommando, antingen direkt från Skatteverkets öppna data eller från filen som laddas ner från Skatteverkets sida om skattetabeller:
+NONOX hämtar tabellerna själv. Varje natt tittar NONOX efter årets tabeller och, från oktober, nästa års tabeller i Skatteverkets öppna data, och läser in dem så snart de är publicerade. Ett år som redan är inläst rörs aldrig igen, och ett år som bara är delvis publicerat väntar NONOX med.
+
+När tabellerna är inlästa får alla som ansvarar för lönen i företaget (ägare, administratörer och löneadministratörer) en notis med vad de ska kontrollera: att varje anställd har rätt skattetabell och kolumn enligt sitt nya skattebesked, och att engångsskatt och SINK stämmer. Notisen öppnar **Lön → Regler** i rätt företag. Samma sorts notis kommer när nya eller ändrade lönevärden har kommit in och behöver kontrolleras mot källan.
+
+Den som driftar NONOX kan också läsa in tabellerna direkt med ett kommando, från Skatteverkets öppna data eller från filen på Skatteverkets sida om skattetabeller:
 
 ```
 php artisan payroll:import-tax-tables 2027 --download

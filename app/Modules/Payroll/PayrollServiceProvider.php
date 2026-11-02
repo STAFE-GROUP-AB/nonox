@@ -6,6 +6,7 @@ namespace App\Modules\Payroll;
 
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Modules\ModuleRegistry;
+use App\Modules\Payroll\Console\FetchPublishedTaxTablesCommand;
 use App\Modules\Payroll\Console\ImportPayrollRulesCommand;
 use App\Modules\Payroll\Console\ImportTaxTablesCommand;
 use App\Modules\Payroll\Console\VerifyPayrollRuleCommand;
@@ -86,12 +87,14 @@ class PayrollServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([ImportPayrollRulesCommand::class, VerifyPayrollRuleCommand::class, ImportTaxTablesCommand::class]);
+            $this->commands([ImportPayrollRulesCommand::class, VerifyPayrollRuleCommand::class, ImportTaxTablesCommand::class, FetchPublishedTaxTablesCommand::class]);
         }
 
         $this->callAfterResolving(Schedule::class, function (Schedule $schedule): void {
             // Every year's rule file into the database, unverified; checked versions are never touched (PAYROLL_MODULE.md B.6).
             $schedule->command('payroll:import-rules')->dailyAt('03:40')->withoutOverlapping();
+            // Skatteverket's tax tables as soon as they are published (December for the next year); an imported year is never touched.
+            $schedule->command('payroll:fetch-published-tax-tables')->dailyAt('04:10')->withoutOverlapping();
         });
 
         Gate::policy(Employee::class, EmployeePolicy::class);

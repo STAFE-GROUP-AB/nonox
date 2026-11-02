@@ -12,6 +12,7 @@ use App\Modules\Payroll\Models\PayrollRuleVerification;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\Notifications\PayrollYearNotice;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Tax\TaxTableImporter;
 use App\Modules\Payroll\Support\Tax\TaxTableOpenData;
@@ -24,6 +25,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
@@ -106,7 +108,8 @@ it('never changes a version a company has checked, but corrects one nobody has c
 it('imports every year without an argument and runs every night from the scheduler', function () {
     expect(Artisan::call('payroll:import-rules'))->toBe(0)
         ->and(Artisan::output())->toContain('Läser reglerna för 2026')->toContain('Läser reglerna för 2027')
-        ->and(collect(app(Schedule::class)->events())->contains(fn ($event) => str_contains((string) $event->command, 'payroll:import-rules') && $event->expression === '40 3 * * *'))->toBeTrue();
+        ->and(collect(app(Schedule::class)->events())->contains(fn ($event) => str_contains((string) $event->command, 'payroll:import-rules') && $event->expression === '40 3 * * *'))->toBeTrue()
+        ->and(collect(app(Schedule::class)->events())->contains(fn ($event) => str_contains((string) $event->command, 'payroll:fetch-published-tax-tables') && $event->expression === '10 4 * * *'))->toBeTrue();
 });
 
 it('prepares the next payment year from October', function () {
@@ -270,4 +273,86 @@ it('says when Skatteverket has not published the year, and refuses rows it canno
         ->and(Artisan::call('payroll:import-tax-tables', ['year' => 2029, '--download' => true]))->toBe(1)
         ->and(Artisan::output())->toContain('seventh column')
         ->and(Artisan::call('payroll:import-tax-tables', ['year' => 2028]))->toBe(2);
+});
+
+it('fetches the next year\'s tables every night once Skatteverket has published them, and never touches an imported year', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-10 04:10', 'Europe/Stockholm'));
+    app(TaxTableImporter::class)->import(2026, 'skattetabell-2026.txt', (string) file_get_contents(base_path('tests/Fixtures/payroll/skattetabell-2026-manad-tabell-33.txt')));
+    $rows = [
+        ['år' => '2027', 'tabellnr' => '33', 'antal dgr' => '30B', 'inkomst fr.o.m.' => '1', 'inkomst t.o.m.' => '20000', 'kolumn 1' => '0', 'kolumn 2' => '0', 'kolumn 3' => '0', 'kolumn 4' => '0', 'kolumn 5' => '0', 'kolumn 6' => '0', 'kolumn 7' => ''],
+        ['år' => '2027', 'tabellnr' => '33', 'antal dgr' => '30B', 'inkomst fr.o.m.' => '20001', 'inkomst t.o.m.' => '60000', 'kolumn 1' => '7777', 'kolumn 2' => '6666', 'kolumn 3' => '5555', 'kolumn 4' => '4444', 'kolumn 5' => '3333', 'kolumn 6' => '2222', 'kolumn 7' => ''],
+        ['år' => '2027', 'tabellnr' => '33', 'antal dgr' => '30%', 'inkomst fr.o.m.' => '60001', 'inkomst t.o.m.' => '', 'kolumn 1' => '50', 'kolumn 2' => '50', 'kolumn 3' => '50', 'kolumn 4' => '50', 'kolumn 5' => '50', 'kolumn 6' => '50', 'kolumn 7' => ''],
+    ];
+    Http::fake([TaxTableOpenData::URL.'*' => Http::sequence()
+        ->push(['resultCount' => 0, 'results' => []])
+        ->push(['resultCount' => 3, 'offset' => 0, 'results' => $rows])]);
+
+    expect(Artisan::call('payroll:fetch-published-tax-tables'))->toBe(0)
+        ->and(Artisan::output())->toContain('Skattetabellerna för 2026 är redan inlästa')->toContain('inte publicerat skattetabellerna för 2027 ännu')
+        ->and(Artisan::call('payroll:fetch-published-tax-tables'))->toBe(0)
+        ->and(Artisan::output())->toContain('1 tabeller med 18 rader är inlästa för 2027')
+        ->and(DB::table('tax_table_imports')->where('year', 2027)->value('file_name'))->toBe('skatteverket-oppna-data-2027.txt')
+        ->and(AuditLog::query()->where('action', 'payroll.tax_tables_imported')->count())->toBe(1)
+        ->and(Artisan::call('payroll:fetch-published-tax-tables'))->toBe(0)
+        ->and(Artisan::output())->toContain('Skattetabellerna för 2027 är redan inlästa');
+
+    Http::assertSentCount(2);
+});
+
+it('does not take a year Skatteverket has only published in part, and looks only at the current year before October', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-10 04:10', 'Europe/Stockholm'));
+    DB::table('tax_table_imports')->insert(['year' => 2026, 'period_type' => 'MONTH', 'file_name' => 'x.txt', 'file_sha256' => str_repeat('0', 64), 'row_count' => 9000, 'table_count' => 14, 'created_at' => now(), 'updated_at' => now()]);
+    Http::fake([TaxTableOpenData::URL.'*' => Http::response(['resultCount' => 1, 'offset' => 0, 'results' => [
+        ['år' => '2027', 'tabellnr' => '33', 'antal dgr' => '30B', 'inkomst fr.o.m.' => '1', 'inkomst t.o.m.' => '', 'kolumn 1' => '0', 'kolumn 2' => '0', 'kolumn 3' => '0', 'kolumn 4' => '0', 'kolumn 5' => '0', 'kolumn 6' => '0', 'kolumn 7' => ''],
+    ]])]);
+
+    expect(Artisan::call('payroll:fetch-published-tax-tables'))->toBe(1)
+        ->and(Artisan::output())->toContain('fewer than the 14 of the year before')
+        ->and(DB::table('tax_table_imports')->where('year', 2027)->exists())->toBeFalse();
+
+    $this->travelTo(CarbonImmutable::parse('2027-03-01 04:10', 'Europe/Stockholm'));
+    DB::table('tax_table_imports')->insert(['year' => 2027, 'period_type' => 'MONTH', 'file_name' => 'y.txt', 'file_sha256' => str_repeat('1', 64), 'row_count' => 9000, 'table_count' => 14, 'created_at' => now(), 'updated_at' => now()]);
+    Http::fake();
+
+    expect(Artisan::call('payroll:fetch-published-tax-tables'))->toBe(0);
+    Http::assertNothingSent();
+});
+
+it('tells everyone responsible for payroll in each company with Lön when the tax tables or the payroll values change', function () {
+    Notification::fake();
+    [$owner, $company] = Bookkeeping::company();
+    app(ModuleManager::class)->enable(PayrollModule::KEY, $company, $owner);
+    $payrollAdmin = Bookkeeping::member($company, 'payroll_admin');
+    $employee = Bookkeeping::member($company, 'employee');
+    $bookkeeper = Bookkeeping::member($company, 'bookkeeper');
+    [$otherOwner] = Bookkeeping::company();
+
+    expect(Artisan::call('payroll:import-tax-tables', ['year' => 2027, 'file' => base_path('tests/Fixtures/payroll/skattetabell-2027-syntetisk-tabell-33.txt')]))->toBe(0)
+        ->and(Artisan::call('payroll:import-rules', ['year' => 2027]))->toBe(0);
+
+    foreach ([$owner, $payrollAdmin] as $responsible) {
+        Notification::assertSentTo($responsible, PayrollYearNotice::class, fn (PayrollYearNotice $notice): bool => $notice->kind === PayrollYearNotice::TAX_TABLES && $notice->year === 2027 && str_contains($notice->title, 'skattetabell och kolumn'));
+        Notification::assertSentTo($responsible, PayrollYearNotice::class, fn (PayrollYearNotice $notice): bool => $notice->kind === PayrollYearNotice::RULES && str_contains($notice->title, 'Lön → Regler') && $notice->toArray($responsible)['destination'] === 'payroll-rules');
+    }
+
+    Notification::assertNotSentTo([$employee, $bookkeeper, $otherOwner], PayrollYearNotice::class);
+
+    // Nothing changed the second night: no new notice about the values.
+    Notification::fake();
+    Artisan::call('payroll:import-rules', ['year' => 2027]);
+    Notification::assertNothingSent();
+});
+
+it('opens Lön → Regler in the right company from the notice', function () {
+    [$owner, $company] = Bookkeeping::company();
+    app(ModuleManager::class)->enable(PayrollModule::KEY, $company, $owner);
+    $owner->notify(PayrollYearNotice::taxTables($company->id, (string) $company->name, 2027));
+
+    $this->actingAs($owner)->get(route('notifications.index'))
+        ->assertOk()
+        ->assertSee('Skatteverkets skattetabeller för 2027 är inlästa')
+        ->assertSee('Öppna Lön → Regler');
+
+    $this->actingAs($owner)->put(route('current-team.update'), ['team_id' => $company->id, 'till' => 'payroll-rules'])
+        ->assertRedirect(route('payroll.rules'));
 });

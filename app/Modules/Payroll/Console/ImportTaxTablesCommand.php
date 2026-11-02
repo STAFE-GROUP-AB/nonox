@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Console;
 
+use App\Models\Company;
+use App\Modules\Payroll\Actions\NotifyPayrollResponsibles;
+use App\Modules\Payroll\Notifications\PayrollYearNotice;
 use App\Modules\Payroll\Support\Tax\TaxTableImporter;
 use App\Modules\Payroll\Support\Tax\TaxTableOpenData;
 use Illuminate\Console\Command;
@@ -27,8 +30,12 @@ class ImportTaxTablesCommand extends Command
 
     protected $description = 'Läser in Skatteverkets skattetabeller för ett år';
 
-    public function handle(TaxTableImporter $importer, TaxTableOpenData $openData): int
+    private NotifyPayrollResponsibles $notify;
+
+    public function handle(TaxTableImporter $importer, TaxTableOpenData $openData, NotifyPayrollResponsibles $notify): int
     {
+        $this->notify = $notify;
+
         $year = (int) $this->argument('year');
         $path = $this->argument('file');
 
@@ -82,6 +89,8 @@ class ImportTaxTablesCommand extends Command
         }
 
         $this->comment("{$result['tables']} tabeller med {$result['rows']} rader är inlästa för {$year}.");
+        $told = ($this->notify)(fn (Company $company): PayrollYearNotice => PayrollYearNotice::taxTables($company->id, (string) $company->name, $year));
+        $this->line("{$told} löneansvariga har fått en notis.");
 
         return self::SUCCESS;
     }

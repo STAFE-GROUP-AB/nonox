@@ -1391,12 +1391,23 @@ lönebeskeden låsta i databasen.
   {år} är inte inlästa ännu" (en gång för hela körningen), innan något
   räknas. Tabellerna läses in med `payroll:import-tax-tables {år} {fil}` från
   Skatteverkets textfil eller med `payroll:import-tax-tables {år} --download`
-  från Skatteverkets öppna data (RowStore-datasetet för allmänna tabeller,
+  (och varje natt 04:10 med `payroll:fetch-published-tax-tables`, som tar
+  årets och från oktober nästa års tabeller när de är publicerade, aldrig
+  rör ett inläst år och väntar med ett år som har färre tabeller än året
+  före; inläsningen loggas som `payroll.tax_tables_imported`). Efter
+  inlästa tabeller, och när den nattliga regelinläsningen har nya eller
+  ändrade versioner, får alla med `payroll:settings` i varje aktivt företag
+  med Lön en notis (`PayrollYearNotice`) om vad som ska kontrolleras, med
+  länk till Lön → Regler i företaget. `--download` och den nattliga
+  hämtningen läser från Skatteverkets öppna data (RowStore-datasetet för allmänna tabeller,
   månadslön), som skrivs om till textfilens postformat och går igenom samma
   kontroller. Den 2 november 2026 gav öppna data för 2026 exakt samma 7 966
   rader som Skatteverkets textfil. Skatteverket tar fram 2027 års tabeller i
-  december 2026. Ett år läses in en gång och ändras aldrig; tabellerna läses
-  inte in automatiskt, eftersom inläsningen inte går att ångra.
+  december 2026. Ett år läses in en gång och ändras aldrig. Tabellerna är
+  Skatteverkets egna data och kontrolleras av programmet (rader, luckor,
+  antal tabeller); till skillnad från lönereglerna är de ingen tolkning som
+  en person måste godkänna, men varje företag får notisen och kontrollerar
+  de anställdas tabell och kolumn.
 
 Nyckeltal för lön visas överst på alla lönesidor för den som får se lönen:
 månadens lönekostnad (bruttolön och arbetsgivaravgifter för attesterade
@@ -2313,3 +2324,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.71 | 2026-11-02 | NONOX Connect: SFTP för SIE-filer (ADR-032). En nyckelinloggning per företag via SFTPGo:s krokar, företaget avgörs av servern. En uppladdad fil blir en väntande SIE-inläsning som en person måste bekräfta; inget bokförs automatiskt. Filen tas bort ur mappen efter läsningen. Behandlingshistorik för nycklar, inloggningar och filer. |
 | 0.72 | 2026-11-02 | Avtal A5–A8 på Planering (5h, 5i, ADR-033): avrundning av OB och övertid enligt avtalsdata, övertid och mertid över en beräkningsperiod på flera veckor, komptid med saldo (Lön → Komptid), sjuklön med OB enligt det publicerade schemat och karensavdrag på ett genomsnitt som tar med schemats OB, avdrag dag 15–90 enligt avtal. Alla värden overifierade. |
 | 0.73 | 2026-11-02 | Avtal A9–A12 (5h, ADR-033): avtalets semester (procentsats, semestertillägg, lägsta semesterlön per dag), tjänstepension SAF-LO och ITP 1 och avtalsförsäkringar som arbetsgivarkostnad (7410/2740, 7530/2514, 7570/2740), Fora- och Collectum-underlag som CSV, provision med garanti, tillägg och kostavdrag, lokala avvikelser som används först efter kontroll, LocalAgreementAgent och gyllene lönespecar. En lönekörning med bundet avtal stoppas tills pensions- och försäkringsreglerna är kontrollerade. Alla värden overifierade. |
+| 0.74 | 2026-11-02 | Lön: skattetabellerna hämtas varje natt från Skatteverkets öppna data så snart de är publicerade (årets och från oktober nästa års), aldrig för ett redan inläst år och inte för ett år med färre tabeller än året före. Notis till alla med `payroll:settings` i varje aktivt företag med Lön när tabeller läses in och när nya eller ändrade lönevärden kommer in, med vad som ska kontrolleras. Ändrar ingen bokföring. |

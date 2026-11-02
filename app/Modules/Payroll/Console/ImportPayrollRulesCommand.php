@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Console;
 
+use App\Models\Company;
 use App\Modules\Payroll\Actions\ImportPayrollRules;
+use App\Modules\Payroll\Actions\NotifyPayrollResponsibles;
+use App\Modules\Payroll\Notifications\PayrollYearNotice;
 use Illuminate\Console\Command;
 
 /**
@@ -20,7 +23,7 @@ class ImportPayrollRulesCommand extends Command
 
     protected $description = 'Läser in lönesatser som overifierade regler';
 
-    public function handle(ImportPayrollRules $import): int
+    public function handle(ImportPayrollRules $import, NotifyPayrollResponsibles $notify): int
     {
         $year = $this->argument('year');
         $years = $year === null ? ImportPayrollRules::years() : [(int) $year];
@@ -35,6 +38,11 @@ class ImportPayrollRulesCommand extends Command
             $this->info("Läser reglerna för {$one}...");
             $result = $import($one, fn (array $rule) => $this->line("Läser {$rule['key']} från {$rule['valid_from']}...", verbosity: 'v'));
             $this->comment("{$one}: {$result['imported']} regler inlästa som overifierade, {$result['unchanged']} oförändrade, {$result['checked']} redan kontrollerade lämnades orörda.");
+
+            if ($result['imported'] > 0) {
+                $told = $notify(fn (Company $company): PayrollYearNotice => PayrollYearNotice::rules($company->id, (string) $company->name, $one, $result['imported']));
+                $this->line("{$told} löneansvariga har fått en notis.");
+            }
         }
 
         return self::SUCCESS;

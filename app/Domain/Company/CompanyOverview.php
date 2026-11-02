@@ -58,6 +58,7 @@ final class CompanyOverview
         'agi' => 'payroll.agi',
         'payroll-runs' => 'payroll.runs.index',
         'payroll-requests' => 'payroll.requests',
+        'payroll-rules' => 'payroll.rules',
         // The firm workspace and tasks (ADR-028).
         'inbox' => 'inbox.index',
         'incoming-payments' => 'invoicing.incomingPayments',

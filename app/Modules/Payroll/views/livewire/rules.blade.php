@@ -37,7 +37,7 @@
                     {{ __('Skattetabellerna för :year är inte inlästa ännu. Skatteverket publicerar dem i december året före. Utan dem stoppas varje lönekörning med utbetalning :year för anställda som betalar skatt enligt tabell.', ['year' => $readiness['year']]) }}
                 </p>
                 <p class="mt-1 text-sm text-gray-600">
-                    {{ __('Tabellerna gäller alla företag i installationen och läses in av den som driftar NONOX, med kommandot') }}
+                    {{ __('Tabellerna gäller alla företag i installationen. NONOX hämtar dem själv från Skatteverket varje natt så snart de är publicerade, och du får en notis när de är inlästa. Den som driftar NONOX kan också läsa in dem direkt med kommandot') }}
                     <code class="rounded-sm bg-gray-100 px-1 text-xs">php artisan payroll:import-tax-tables {{ $readiness['year'] }} --download</code>.
                     <a href="https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/skattetabeller.4.96cca41179bad4b1aa8a46.html" target="_blank" rel="noopener" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Skattetabellerna hos Skatteverket') }}</a>
                 </p>
