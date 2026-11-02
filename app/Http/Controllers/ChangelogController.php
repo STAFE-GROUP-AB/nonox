@@ -29,7 +29,7 @@ class ChangelogController
 
         return view('start.changelog', [
             ...LandingPage::data(),
-            'months' => Changelog::byMonth($entries),
+            'phases' => Changelog::byPhase($entries),
             'shown' => count($entries),
             'total' => count($all),
             'first' => $all === [] ? null : Changelog::date($all[array_key_last($all)]),
@@ -43,7 +43,7 @@ class ChangelogController
             ],
             'canonical' => route('changelog'),
             'pageTitle' => 'Ändringslogg – allt vi har byggt i NONOX',
-            'pageDescription' => 'Varje ny funktion, förbättring och rättelse i NONOX med datum och tid, på vanlig svenska. Hämtat ur det vi faktiskt levererar.',
+            'pageDescription' => 'Varje ny funktion, förbättring, rättelse och utredning i NONOX med datum och tid, på vanlig svenska. Hämtat ur det vi faktiskt levererar.',
         ]);
     }
 

@@ -1,7 +1,8 @@
 {{--
     The public changelog (/andringslogg, ChangelogController::index): every
     shipped change from docs/andringslogg/andringslogg.json, newest first and
-    grouped by month. The filters are a plain GET form and links, so the page
+    grouped by the project's phases (with month headings only where a phase
+    has entries). The filters are a plain GET form and links, so the page
     works without JavaScript.
 --}}
 @use('App\Support\Landing\Changelog')
@@ -12,7 +13,8 @@
 
         return route('changelog').($params === [] ? '' : '?'.http_build_query($params));
     };
-    $typeClass = ['Nytt' => 'cl-nytt', 'Förbättrat' => 'cl-forbattrat', 'Rättat' => 'cl-rattat', 'Säkerhet' => 'cl-sakerhet'];
+    $typeClass = ['Nytt' => 'cl-nytt', 'Förbättrat' => 'cl-forbattrat', 'Rättat' => 'cl-rattat', 'Säkerhet' => 'cl-sakerhet', 'Utredning' => 'cl-utredning'];
+    $day = fn (string $date): string => \Carbon\CarbonImmutable::parse($date, Changelog::TIMEZONE)->locale('sv')->isoFormat('D MMMM YYYY');
 @endphp
 <!DOCTYPE html>
 <html lang="sv">
@@ -20,10 +22,10 @@
 @include('start.partials.public-head')
 <link rel="alternate" type="application/rss+xml" title="NONOX ändringslogg" href="{{ route('changelog.feed') }}">
 <style>
-:root{--n-bg:#DCF5E6;--n-fg:#0F5132;--f-bg:#E3F1F7;--f-fg:#0B4A63;--r-bg:#FFF1CC;--r-fg:#6B4A00;--s-bg:#FFE1D6;--s-fg:#8A2A0F}
-@media (prefers-color-scheme:dark){:root{--n-bg:#143524;--n-fg:#8FE0B0;--f-bg:#12303D;--f-fg:#8FD0EA;--r-bg:#3A2E0C;--r-fg:#F5D27A;--s-bg:#3A231D;--s-fg:#FF9F85}}
-[data-theme=light]{--n-bg:#DCF5E6;--n-fg:#0F5132;--f-bg:#E3F1F7;--f-fg:#0B4A63;--r-bg:#FFF1CC;--r-fg:#6B4A00;--s-bg:#FFE1D6;--s-fg:#8A2A0F}
-[data-theme=dark]{--n-bg:#143524;--n-fg:#8FE0B0;--f-bg:#12303D;--f-fg:#8FD0EA;--r-bg:#3A2E0C;--r-fg:#F5D27A;--s-bg:#3A231D;--s-fg:#FF9F85}
+:root{--n-bg:#DCF5E6;--n-fg:#0F5132;--f-bg:#E3F1F7;--f-fg:#0B4A63;--r-bg:#FFF1CC;--r-fg:#6B4A00;--s-bg:#FFE1D6;--s-fg:#8A2A0F;--u-bg:#ECE7FA;--u-fg:#46307F}
+@media (prefers-color-scheme:dark){:root{--n-bg:#143524;--n-fg:#8FE0B0;--f-bg:#12303D;--f-fg:#8FD0EA;--r-bg:#3A2E0C;--r-fg:#F5D27A;--s-bg:#3A231D;--s-fg:#FF9F85;--u-bg:#2A2342;--u-fg:#CDBDFF}}
+[data-theme=light]{--n-bg:#DCF5E6;--n-fg:#0F5132;--f-bg:#E3F1F7;--f-fg:#0B4A63;--r-bg:#FFF1CC;--r-fg:#6B4A00;--s-bg:#FFE1D6;--s-fg:#8A2A0F;--u-bg:#ECE7FA;--u-fg:#46307F}
+[data-theme=dark]{--n-bg:#143524;--n-fg:#8FE0B0;--f-bg:#12303D;--f-fg:#8FD0EA;--r-bg:#3A2E0C;--r-fg:#F5D27A;--s-bg:#3A231D;--s-fg:#FF9F85;--u-bg:#2A2342;--u-fg:#CDBDFF}
 .cl-wrap{max-width:1040px;margin:0 auto;padding:0 clamp(20px,4vw,40px)}
 .cl-crumbs ol{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px;font-size:14px;color:var(--muted)}
 .cl-crumbs li+li::before{content:"/";margin-right:6px}
@@ -59,9 +61,20 @@
 .cl-forbattrat{background:var(--f-bg);color:var(--f-fg)}
 .cl-rattat{background:var(--r-bg);color:var(--r-fg)}
 .cl-sakerhet{background:var(--s-bg);color:var(--s-fg)}
+.cl-utredning{background:var(--u-bg);color:var(--u-fg)}
+.cl-background{margin-top:clamp(28px,4vw,40px);padding:clamp(20px,2.6vw,28px);border-left:4px solid var(--accb);border-radius:0 18px 18px 0;background:var(--card);max-width:820px}
+.cl-background h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-0.01em}
+.cl-background p{margin:8px 0 0;font-size:16px;line-height:1.6;color:var(--muted)}
+.cl-phase{margin-top:clamp(40px,5vw,64px)}
+.cl-phase-head{padding-bottom:16px;border-bottom:2px solid var(--ink)}
+.cl-phase-kicker{margin:0;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acct)}
+.cl-phase-name{margin:6px 0 0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(28px,3.6vw,44px);letter-spacing:-0.035em;line-height:1.05}
+.cl-phase-head p{margin:10px 0 0;max-width:720px;font-size:16px;line-height:1.6;color:var(--muted)}
+.cl-goal{padding:clamp(20px,2.6vw,28px);border:1px dashed var(--line);border-radius:22px}
+.cl-goal .cl-phase-head{border-bottom:0;padding-bottom:0}
 .cl-area{font-size:13px;font-weight:600;color:var(--muted);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line)}
 .cl-area:hover{color:var(--acct)}
-.cl-entry h3{margin:0;font-size:19px;font-weight:700;letter-spacing:-0.015em;line-height:1.3}
+.cl-entry h4{margin:0;font-size:19px;font-weight:700;letter-spacing:-0.015em;line-height:1.3}
 .cl-entry p{margin:6px 0 0;font-size:16px;line-height:1.6;color:var(--muted);max-width:680px}
 .cl-ver{display:inline-block;margin-top:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted)}
 .cl-empty{margin-top:32px;padding:32px;border:1px dashed var(--line);border-radius:22px;text-align:center;color:var(--muted)}
@@ -84,7 +97,13 @@
     </nav>
     <p style="margin:clamp(36px,6vw,72px) 0 16px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--acct)">Ändringslogg</p>
     <h1 id="cl-rubrik" class="cl-h1">Allt vi har byggt, <span style="color:var(--accb)">öppet redovisat.</span></h1>
-    <p class="cl-lead">Här står varje ny funktion, förbättring och rättelse i NONOX, med datum och klockslag. Listan tas fram ur det vi faktiskt levererar: varje ändring som når programmet får en rad här, skriven på vanlig svenska. Du behöver inte kunna läsa kod för att följa med.</p>
+    <p class="cl-lead">Här står varje ny funktion, förbättring och rättelse i NONOX, och de utredningar och granskningar som ligger bakom, med datum och klockslag. Listan tas fram ur det vi faktiskt levererar: varje ändring som når programmet får en rad här, skriven på vanlig svenska. Du behöver inte kunna läsa kod för att följa med.</p>
+    <aside class="cl-background" aria-labelledby="cl-bakgrund">
+      <h2 id="cl-bakgrund">Bakgrund</h2>
+      <p>NONOX började i januari 2026 med den grundläggande arkitekturen och en funktionsspecifikation. Från oktober 2026 har systemet byggts i full skala, med AI-stödd utveckling under mänsklig ledning.</p>
+      <p>Specifikationerna skrivs utifrån lagtexten, BAS, SIE och Skatteverkets dokumentation. Varje lagregel finns som data med en källa, och arbetet går igenom juridisk genomgång, oberoende kontroller och tusentals automatiska tester. Loggen nedan visar varje leverans sedan dess.</p>
+      <p>NONOX är i öppen beta. Målet är version 1.0 den 1 januari 2027.</p>
+    </aside>
     <div class="cl-meta">
       <a href="{{ route('roadmap') }}" class="cmp-link">Se färdplanen</a>
       <a href="{{ route('changelog.feed') }}" class="cmp-link">Följ med RSS</a>
@@ -124,9 +143,42 @@
       </p>
     </div>
 
-    @forelse($months as $key => $month)
-      <section aria-labelledby="manad-{{ $key }}" style="margin-top:clamp(32px,4vw,48px)">
-        <h2 id="manad-{{ $key }}" class="cl-month">{{ $month['label'] }} <span>· {{ count($month['entries']) }} {{ count($month['entries']) === 1 ? 'ändring' : 'ändringar' }}</span></h2>
+    @if($shown === 0)
+      <div class="cl-empty">
+        <p style="margin:0;font-size:17px;color:var(--ink);font-weight:600">Inga ändringar matchar.</p>
+        <p style="margin:8px 0 0">Prova ett annat ord eller ett annat område. <a href="{{ route('changelog') }}">Visa alla ändringar</a></p>
+      </div>
+    @endif
+
+    @foreach($phases as $group)
+      @php($phase = $group['phase'])
+      @if($phase['kommande'])
+      <section aria-labelledby="fas-{{ $phase['id'] }}" class="cl-phase cl-goal">
+        <div class="cl-phase-head">
+          <p class="cl-phase-kicker">Mål · {{ $day($phase['fran']) }}</p>
+          <h2 id="fas-{{ $phase['id'] }}" class="cl-phase-name">{{ $phase['namn'] }}</h2>
+          <p>{{ $phase['beskrivning'] }}</p>
+        </div>
+      </section>
+      @else
+      <section aria-labelledby="fas-{{ $phase['id'] }}" class="cl-phase">
+        <div class="cl-phase-head">
+          <p class="cl-phase-kicker">
+            @if($phase['till'] === null)
+              Sedan {{ $day($phase['fran']) }}
+            @elseif($phase['till'] === $phase['fran'])
+              {{ $day($phase['fran']) }}
+            @else
+              {{ $day($phase['fran']) }} – {{ $day($phase['till']) }}
+            @endif
+            · {{ $group['count'] }} {{ $group['count'] === 1 ? 'ändring' : 'ändringar' }}
+          </p>
+          <h2 id="fas-{{ $phase['id'] }}" class="cl-phase-name">{{ $phase['namn'] }}</h2>
+          <p>{{ $phase['beskrivning'] }}</p>
+        </div>
+      @foreach($group['months'] as $key => $month)
+      <section aria-labelledby="manad-{{ $key }}" style="margin-top:clamp(20px,3vw,32px)">
+        <h3 id="manad-{{ $key }}" class="cl-month">{{ $month['label'] }} <span>· {{ count($month['entries']) }} {{ count($month['entries']) === 1 ? 'ändring' : 'ändringar' }}</span></h3>
         <ol class="cl-list">
           @foreach($month['entries'] as $entry)
             @php($date = Changelog::date($entry))
@@ -139,7 +191,7 @@
                   <span class="cl-badge {{ $typeClass[$entry['typ']] ?? '' }}">{{ $entry['typ'] }}</span>
                   <a href="{{ $query(['omrade' => Changelog::areaSlug($entry['omrade'])]) }}" class="cl-area" aria-label="Visa alla ändringar inom {{ $entry['omrade'] }}">{{ $entry['omrade'] }}</a>
                 </div>
-                <h3 id="{{ $entry['id'] }}-rubrik">{{ $entry['rubrik'] }}</h3>
+                <h4 id="{{ $entry['id'] }}-rubrik">{{ $entry['rubrik'] }}</h4>
                 <p>{{ $entry['beskrivning'] }}</p>
                 @isset($entry['version'])<span class="cl-ver">Version {{ $entry['version'] }}</span>@endisset
               </article>
@@ -147,12 +199,10 @@
           @endforeach
         </ol>
       </section>
-    @empty
-      <div class="cl-empty">
-        <p style="margin:0;font-size:17px;color:var(--ink);font-weight:600">Inga ändringar matchar.</p>
-        <p style="margin:8px 0 0">Prova ett annat ord eller ett annat område. <a href="{{ route('changelog') }}">Visa alla ändringar</a></p>
-      </div>
-    @endforelse
+      @endforeach
+      </section>
+      @endif
+    @endforeach
   </div>
 </section>
 </main>

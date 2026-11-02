@@ -44,6 +44,9 @@ Allt ska vara grönt. CI kör samma kontroller på varje pull request.
 Den publika ändringsloggen på `/andringslogg` och färdplanen på `/fardplan` är till för dem som aldrig öppnar koden. Håll dem ärliga:
 
 - Varje ändring som levereras (`feat`, `fix`, `perf` eller en säkerhetsrättelse) får en post i `docs/andringslogg/andringslogg.json` i samma pull request. Skriv rubriken och en till tre meningar på vanlig svenska, ur användarens perspektiv. Ange `datum` (ISO 8601 med tidszon, Europe/Stockholm), `typ` (Nytt, Förbättrat, Rättat eller Säkerhet), `omrade` och gärna `version` (den korta commit-hashen). Små ändringar samma dag som hör ihop blir en post.
+- Typen `Utredning` är för utredningar, beslut (ADR), specifikationer och granskningar: arbete som ligger bakom programmet men inte själv är en ändring i det.
+- `datum` är alltid den verkliga tidpunkten: för en leverans när den gjordes, för en utredning när dokumentet lades till i git (`git log --diff-filter=A --format=%aI -- <fil>`). Datera aldrig bakåt, hitta aldrig på arbete och sätt aldrig en tid som ligger efter commiten. Det som inte går att datera får ingen post.
+- Posterna grupperas efter faserna i `faser` i samma fil (id, namn, beskrivning, `fran`, `till` och `kommande` för ett mål). Varje post måste ligga i en fas; en ny fas läggs till först när den har börjat.
 - Skriv aldrig namn på personer eller kunder, hemligheter eller länkar till kodförrådet i posterna.
 - Ren städning, tester, kodstil och stavfel i dokumentationen får ingen post.
 - När något på färdplanen (`docs/fardplan/fardplan.json`) blir klart tar du bort punkten där. Den syns sedan under Klart nyligen, som läses ur ändringsloggen. Färdplanen tar bara upp större funktioner och önskemål, aldrig buggar eller små rättelser.

@@ -1,8 +1,40 @@
 {
+  "faser": [
+    {
+      "id": "version-1-0",
+      "namn": "Version 1.0",
+      "beskrivning": "Målet är version 1.0 den 1 januari 2027, när betan är klar och det som står kvar på färdplanen före 1.0 är levererat.",
+      "fran": "2027-01-01",
+      "till": null,
+      "kommande": true
+    },
+    {
+      "id": "beta-0-9",
+      "namn": "Beta 0.9",
+      "beskrivning": "Systemet byggs i full skala och öppnas som beta. Här står varje leverans, utredning och granskning sedan dess.",
+      "fran": "2026-10-29",
+      "till": null
+    },
+    {
+      "id": "grund",
+      "namn": "Grund",
+      "beskrivning": "Den grundläggande arkitekturen, en funktionsspecifikation och de första modellerna. Därefter vilade projektet till oktober 2026.",
+      "fran": "2026-01-11",
+      "till": "2026-01-11"
+    }
+  ],
   "poster": [
     {
+      "id": "2026-11-02-andringslogg-faser",
+      "datum": "2026-11-02T15:30:31+01:00",
+      "rubrik": "Ändringsloggen visar projektets faser och utredningarna bakom",
+      "beskrivning": "Ändringsloggen börjar med en kort bakgrund och grupperas efter faserna Grund, Beta 0.9 och målet version 1.0. Utredningar, beslut och granskningar har fått en egen typ, med verkligt datum och klockslag från när de gjordes.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-02-agi",
-      "datum": "2026-11-02T16:30:00+01:00",
+      "datum": "2026-11-02T15:03:16+01:00",
       "rubrik": "Arbetsgivardeklarationen för alla slags mottagare och rätt skatt på sidoinkomst",
       "beskrivning": "Arbetsgivardeklarationen kan redovisa mottagare utan svenskt personnummer och har med alla fält som krävs vid särskild inkomstskatt. Lön som sidoinkomst får 30 % skatteavdrag, mil och traktamente delas rätt i skattefri och skattepliktig del, bonus räknas in i semesterlönen och regionalt stöd kan slås på.",
       "typ": "Rättat",
@@ -10,7 +42,7 @@
     },
     {
       "id": "2026-11-02-fakturering",
-      "datum": "2026-11-02T16:05:00+01:00",
+      "datum": "2026-11-02T14:54:36+01:00",
       "rubrik": "Fakturor enligt mervärdesskattelagen, kundförluster och reskontra per datum",
       "beskrivning": "Fakturor får rätt innehåll: undantagstext på rader utan moms, köparens adress när den krävs och skydd mot moms från företag som inte är momsregistrerade. Med kontantmetoden bokförs EU-handel i fakturans period och sista delbetalningen tar resten. Kundförluster kan skrivas av med minskad moms, och kund- och leverantörsreskontran kan stämmas av mot bokföringen på valfri dag.",
       "typ": "Rättat",
@@ -18,7 +50,7 @@
     },
     {
       "id": "2026-11-02-arsredovisning",
-      "datum": "2026-11-02T15:35:00+01:00",
+      "datum": "2026-11-02T14:16:32+01:00",
       "rubrik": "Årsredovisning med fastställelseintyg, noter och rätt uppställning",
       "beskrivning": "Balansräkningen följer K2 med egna rader för bland annat checkräkningskredit och förskott från kunder. Årsredovisningen har fastställelseintyg, specificerade förändringar i eget kapital och noter om säkerheter och händelser efter året. Verifikationslistan visar vilka verifikationer som rättats, och varje ny programversion och version av systemdokumentationen sparas.",
       "typ": "Rättat",
@@ -26,7 +58,7 @@
     },
     {
       "id": "2026-11-02-momsrutor",
-      "datum": "2026-11-02T15:10:00+01:00",
+      "datum": "2026-11-02T14:08:25+01:00",
       "rubrik": "Rätt momsruta för all försäljning",
       "beskrivning": "Momspliktig försäljning på alla intäktskonton kommer med i ruta 05, och försäljning utan moms hamnar i ruta 42. NONOX varnar när momssatsen inte passar kontot. Rutorna för uttag, vinstmarginalbeskattning, frivillig moms på uthyrning och trepartshandel finns nu, och ett konto kan knytas till en momsruta.",
       "typ": "Rättat",
@@ -34,7 +66,7 @@
     },
     {
       "id": "2026-11-02-loneskatt",
-      "datum": "2026-11-02T14:50:00+01:00",
+      "datum": "2026-11-02T13:57:29+01:00",
       "rubrik": "Skatteavdrag, jämkning och arbetsgivaravgifter enligt lagen",
       "beskrivning": "Skatteavdraget blir aldrig större än kontantlönen, och jämkningsbeslut från Skatteverket används. Taket för den sänkta avgiften för unga gäller per kalendermånad, och när årets lön passerar 1 000 kr tas avgifter också på de tidigare månaderna. Avgiftsfri lön redovisas i rätt fält i arbetsgivardeklarationen.",
       "typ": "Rättat",
@@ -42,7 +74,7 @@
     },
     {
       "id": "2026-11-02-momsavrakning",
-      "datum": "2026-11-02T14:30:00+01:00",
+      "datum": "2026-11-02T13:47:34+01:00",
       "rubrik": "Momsavräkning, momskvartal och förfallodag för årsmoms",
       "beskrivning": "Momsavräkningen rör bara de konton som hör till deklarationen, så vilande moms hamnar inte längre som intäkt. Momskvartal delas inte vid brutet räkenskapsår, årsmomsen har rätt förfallodag och en sen verifikation i en avräknad period ger en kompletterande avräkning.",
       "typ": "Rättat",
@@ -50,7 +82,7 @@
     },
     {
       "id": "2026-11-02-kreditfakturor",
-      "datum": "2026-11-02T14:10:00+01:00",
+      "datum": "2026-11-02T13:39:29+01:00",
       "rubrik": "Kreditfakturor stämmer mot kundreskontran",
       "beskrivning": "En delkreditering lämnar resten av fakturan obetald och betalbar. ROT- och RUT-avdrag krediteras i rätt andel, och det Skatteverket redan har betalat blir en skuld att betala tillbaka. Betalda fakturor kan nu krediteras och pengarna betalas tillbaka.",
       "typ": "Rättat",
@@ -67,7 +99,7 @@
     },
     {
       "id": "2026-11-02-andringslogg-och-fardplan",
-      "datum": "2026-11-02T13:20:00+01:00",
+      "datum": "2026-11-02T13:22:28+01:00",
       "rubrik": "Ändringslogg och färdplan",
       "beskrivning": "Allt vi levererar står nu med datum och klockslag i ändringsloggen, som också går att följa med RSS. Färdplanen visar det som pågår, det som är planerat och önskemålen, och manualen, API:t och säkerhetssidan har flyttat till sidfoten.",
       "typ": "Nytt",
@@ -1188,6 +1220,519 @@
       "typ": "Nytt",
       "omrade": "Övrigt",
       "version": "e70d9c8"
+    },
+    {
+      "id": "2026-01-11-utredning-funktionsspecifikation",
+      "datum": "2026-01-11T00:33:17+01:00",
+      "rubrik": "Funktionsspecifikation för fakturering och grundbokföring",
+      "beskrivning": "En första kravbild skrivs för ett ekonomisystem med öppen källkod för svenska aktiebolag, med bokföringslagen som grund. Den beskriver fakturering och grundbokföring och regeln att allt som påverkar bokföringen bara får läggas till, aldrig skrivas över.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "20068d0"
+    },
+    {
+      "id": "2026-10-29-utredning-kravspecifikation",
+      "datum": "2026-10-29T17:54:10+01:00",
+      "rubrik": "Kravspecifikation och arbetsregler för hela systemet",
+      "beskrivning": "Specifikationen för hela NONOX skrivs utifrån bokföringslagen, BAS, SIE och Skatteverkets dokumentation. Den slår fast reglerna som aldrig får brytas: en bokförd verifikation ändras aldrig, varje verifikation balanserar och inget företag ser ett annat företags uppgifter.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet",
+      "version": "623d435"
+    },
+    {
+      "id": "2026-10-29-utredning-bygget-startar",
+      "datum": "2026-10-29T17:54:10+01:00",
+      "rubrik": "Bygget i full skala börjar",
+      "beskrivning": "NONOX byggs från och med nu med AI-stöd under mänsklig ledning: agenter som bygger, granskar och kontrollerar varje del, och en människa som beslutar. Varje del levereras med automatiska tester.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet",
+      "version": "623d435"
+    },
+    {
+      "id": "2026-10-29-utredning-beslut-karnan",
+      "datum": "2026-10-29T17:54:10+01:00",
+      "rubrik": "Beslut: arkitekturen för bokföringens kärna",
+      "beskrivning": "Elva beslutsdokument om teknik, roller, isolering mellan företag, pengar i hela ören, verifikationer med obruten kedja, SIE4, kostnadsställen och projekt, rapporter, moms och årsskifte.",
+      "typ": "Utredning",
+      "omrade": "Bokföring",
+      "version": "623d435"
+    },
+    {
+      "id": "2026-10-29-utredning-systemdokumentation",
+      "datum": "2026-10-29T17:54:10+01:00",
+      "rubrik": "Systemdokumentationen, första versionen",
+      "beskrivning": "Den systemdokumentation som BFNAR 2013:2 kräver skrivs från start: datamodell, verifikationsflöde, numrering, rättelser och kontroller. Den uppdateras vid varje ändring som rör bokföringen.",
+      "typ": "Utredning",
+      "omrade": "Bokföring",
+      "version": "623d435"
+    },
+    {
+      "id": "2026-10-29-utredning-beslut-fakturering",
+      "datum": "2026-10-29T18:08:37+01:00",
+      "rubrik": "Beslut: kundfakturor och PDF",
+      "beskrivning": "Hur kundfakturor, OCR-nummer, betalningar och krediteringar ska fungera, och hur fakturor blir PDF.",
+      "typ": "Utredning",
+      "omrade": "Fakturering",
+      "version": "56cf6df"
+    },
+    {
+      "id": "2026-10-29-utredning-beslut-lon",
+      "datum": "2026-10-29T18:16:31+01:00",
+      "rubrik": "Beslut: lönen och frågorna för juridisk granskning",
+      "beskrivning": "Ett förslag till hur lönen ska byggas, med de juridiska frågor som måste besvaras innan något räknas.",
+      "typ": "Utredning",
+      "omrade": "Lön",
+      "version": "3bf344e"
+    },
+    {
+      "id": "2026-10-30-utredning-beslut-leverantorsfakturor",
+      "datum": "2026-10-30T07:43:26+01:00",
+      "rubrik": "Beslut: leverantörsfakturor med attest",
+      "beskrivning": "Hur leverantörsfakturor registreras, attesteras och betalas, och när de bokförs med faktura- respektive kontantmetoden.",
+      "typ": "Utredning",
+      "omrade": "Leverantörer",
+      "version": "090ff3f"
+    },
+    {
+      "id": "2026-10-30-utredning-beslut-betalfiler",
+      "datum": "2026-10-30T07:53:22+01:00",
+      "rubrik": "Beslut: betalfiler till banken",
+      "beskrivning": "Utredning av formatet ISO 20022 pain.001 för att skicka leverantörsbetalningar till banken.",
+      "typ": "Utredning",
+      "omrade": "Leverantörer",
+      "version": "31a9d0c"
+    },
+    {
+      "id": "2026-10-30-utredning-beslut-inbetalningar",
+      "datum": "2026-10-30T07:59:34+01:00",
+      "rubrik": "Beslut: inbetalningar från bankens fil",
+      "beskrivning": "Utredning av formatet camt.054 för att läsa kundinbetalningar från banken och matcha dem mot fakturor.",
+      "typ": "Utredning",
+      "omrade": "Bank",
+      "version": "53c29eb"
+    },
+    {
+      "id": "2026-10-30-utredning-beslut-leverantorskredit",
+      "datum": "2026-10-30T08:20:52+01:00",
+      "rubrik": "Beslut: leverantörskrediter och inköp med omvänd moms",
+      "beskrivning": "Hur kreditfakturor från leverantörer och inköp där köparen redovisar momsen ska bokföras och hamna i momsdeklarationen.",
+      "typ": "Utredning",
+      "omrade": "Leverantörer",
+      "version": "ca9f06d"
+    },
+    {
+      "id": "2026-10-30-utredning-beslut-moduler",
+      "datum": "2026-10-30T09:11:21+01:00",
+      "rubrik": "Beslut: ramverk för tillvalsmoduler",
+      "beskrivning": "Tillval som lönen byggs som moduler som slås på per företag, utan att röra bokföringens kärna.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "59cc143"
+    },
+    {
+      "id": "2026-10-30-utredning-specifikation-lon",
+      "datum": "2026-10-30T09:11:21+01:00",
+      "rubrik": "Specifikation av lönemodulen",
+      "beskrivning": "En fullständig specifikation för lönen: anställda, skattetabeller, arbetsgivaravgifter, semester, sjuklön och arbetsgivardeklaration. Varje sats och gräns är data med källa, och en lönekörning utan kontrollerad regel spärras.",
+      "typ": "Utredning",
+      "omrade": "Lön",
+      "version": "59cc143"
+    },
+    {
+      "id": "2026-10-30-utredning-beslut-ai",
+      "datum": "2026-10-30T13:07:27+01:00",
+      "rubrik": "Beslut: AI-stöd med mänsklig kontroll",
+      "beskrivning": "Hur AI får hjälpa till, vilka uppgifter den får se och att en människa har tillsyn över det AI:n föreslår.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "590e40c"
+    },
+    {
+      "id": "2026-10-30-utredning-flyttguide",
+      "datum": "2026-10-30T15:29:28+01:00",
+      "rubrik": "Guide för att flytta från ett tidigare program",
+      "beskrivning": "Steg för steg: välja brytdag, exportera SIE4 för alla år, ta med underlag och register, stämma av och spara arkivet under hela lagringstiden.",
+      "typ": "Utredning",
+      "omrade": "Webbplats",
+      "version": "85e0842"
+    },
+    {
+      "id": "2026-10-30-utredning-beslut-granssnitt",
+      "datum": "2026-10-30T20:20:52+01:00",
+      "rubrik": "Beslut: gränssnittet och företagets egen färg",
+      "beskrivning": "Ett eget formspråk för hela programmet, där varje företag kan få sin egen accentfärg.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "28d8e2b"
+    },
+    {
+      "id": "2026-10-31-utredning-flytt-kallor",
+      "datum": "2026-10-31T11:39:20+01:00",
+      "rubrik": "Utredning: flytt från de vanligaste programmen",
+      "beskrivning": "Vad som går att exportera från fyra vanliga utgångslägen och hur det tas emot i NONOX, som underlag till flyttguiden.",
+      "typ": "Utredning",
+      "omrade": "Webbplats",
+      "version": "271b365"
+    },
+    {
+      "id": "2026-10-31-utredning-beslut-jamforelser",
+      "datum": "2026-10-31T11:58:05+01:00",
+      "rubrik": "Beslut: sakliga jämförelser med andra program",
+      "beskrivning": "När andra bokföringsprogram får nämnas på webbplatsen: bara som sakliga jämförelser som går att kontrollera, med data som sparas tillsammans med koden.",
+      "typ": "Utredning",
+      "omrade": "Webbplats",
+      "version": "14eff0c"
+    },
+    {
+      "id": "2026-10-31-utredning-villkor",
+      "datum": "2026-10-31T12:51:36+01:00",
+      "rubrik": "Villkor, integritetspolicy och biträdesavtal",
+      "beskrivning": "Användarvillkor, integritetspolicy, personuppgiftsbiträdesavtal och listan över underbiträden skrivs utifrån dataskyddsförordningen.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "579124c"
+    },
+    {
+      "id": "2026-10-31-utredning-dataskydd",
+      "datum": "2026-10-31T13:24:31+01:00",
+      "rubrik": "Dataskydd: registerförteckning och lagringstider",
+      "beskrivning": "Registerförteckning, lagringstider per uppgift, incidentrutin och en konsekvensbedömning för lönedata. Lagringstiderna väger dataskyddsförordningen mot bokföringslagens krav på arkivering.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "e2b0a8a"
+    },
+    {
+      "id": "2026-10-31-utredning-beslut-revisor",
+      "datum": "2026-10-31T14:26:47+01:00",
+      "rubrik": "Beslut: revisorns tillgång till lönebesked",
+      "beskrivning": "Revisorn behåller läsrätt till lönebesked, och varje gång ett lönebesked visas loggas det.",
+      "typ": "Utredning",
+      "omrade": "Lön",
+      "version": "ef7a9bb"
+    },
+    {
+      "id": "2026-10-31-utredning-beslut-personalliggare",
+      "datum": "2026-10-31T15:48:36+01:00",
+      "rubrik": "Beslut: personalliggaren",
+      "beskrivning": "Hur personalliggaren ska föras med in- och utcheckning, och hur uppgifterna skyddas och sparas.",
+      "typ": "Utredning",
+      "omrade": "Personalliggare",
+      "version": "8c3fe2b"
+    },
+    {
+      "id": "2026-10-31-utredning-beslut-inkorg",
+      "datum": "2026-10-31T15:49:22+01:00",
+      "rubrik": "Beslut: inkorgen för underlag",
+      "beskrivning": "Hur kvitton och fakturor som skickas in tas emot, sparas som räkenskapsinformation och kopplas till bokföringen.",
+      "typ": "Utredning",
+      "omrade": "Bokföring",
+      "version": "b54b7f8"
+    },
+    {
+      "id": "2026-11-01-utredning-sakerhetsgranskning",
+      "datum": "2026-11-01T13:20:26+01:00",
+      "rubrik": "Granskning av säkerhet och regelefterlevnad",
+      "beskrivning": "Säkerheten och regelefterlevnaden gås igenom punkt för punkt och redovisas öppet på säkerhetssidan.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet",
+      "version": "5ee3945"
+    },
+    {
+      "id": "2026-11-01-utredning-regelverk",
+      "datum": "2026-11-01T13:27:01+01:00",
+      "rubrik": "Förteckning över regelverk och frågor till jurist",
+      "beskrivning": "Alla lagar och regler som berör NONOX listas med källa, och de frågor som kräver en jurist samlas på ett ställe.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet",
+      "version": "2337d02"
+    },
+    {
+      "id": "2026-11-01-utredning-konsekvensbedomningar",
+      "datum": "2026-11-01T13:27:01+01:00",
+      "rubrik": "Konsekvensbedömningar för AI, inkorg och personalliggare",
+      "beskrivning": "Konsekvensbedömningar enligt dataskyddsförordningen för AI-stödet, inkorgen och personalliggaren, en genomgång av AI-förordningen och en beskrivning av säkerhetskopieringen.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "2337d02"
+    },
+    {
+      "id": "2026-11-01-utredning-egen-drift",
+      "datum": "2026-11-01T13:54:46+01:00",
+      "rubrik": "Ansvar när NONOX körs på egen server",
+      "beskrivning": "Vem som ansvarar för vad när ett företag eller en byrå kör NONOX på sin egen server.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "5d8cd0c"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-valuta",
+      "datum": "2026-11-01T15:48:56+01:00",
+      "rubrik": "Beslut: utländsk valuta och kursdifferenser",
+      "beskrivning": "Hur fakturor i utländsk valuta bokförs och hur kursdifferenser vid betalning hanteras.",
+      "typ": "Utredning",
+      "omrade": "Bokföring",
+      "version": "ea43123"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-arkivering",
+      "datum": "2026-11-01T15:49:00+01:00",
+      "rubrik": "Beslut: arkivering av företag och byte av ägare",
+      "beskrivning": "Ett företag arkiveras som skrivskyddat i stället för att raderas, och ägarskapet kan lämnas över.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "4a4e1a2"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-passkey",
+      "datum": "2026-11-01T15:59:16+01:00",
+      "rubrik": "Beslut: passkey för den som ser känsliga uppgifter",
+      "beskrivning": "Användare som ser känsliga personuppgifter, som löner, får ett extra steg vid inloggning.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "996fc49"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-byra",
+      "datum": "2026-11-01T16:04:46+01:00",
+      "rubrik": "Beslut: byråns arbetsyta och uppgifter",
+      "beskrivning": "Hur en redovisningsbyrå ser alla sina kunder, fördelar uppgifter och följer månadsbokslutet.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "12a540e"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-oversikt",
+      "datum": "2026-11-01T16:07:37+01:00",
+      "rubrik": "Beslut: översikten med nyckeltal och prognos",
+      "beskrivning": "Vad startsidan för ett företag ska visa: nyckeltal, att göra, senaste verifikationer och en prognos.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "8ada26b"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-sok",
+      "datum": "2026-11-01T16:28:40+01:00",
+      "rubrik": "Beslut: sökning i hela programmet",
+      "beskrivning": "En sökruta som hittar konton, verifikationer, kunder och fakturor i alla moduler, utan att visa något användaren inte får se.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "a94af49"
+    },
+    {
+      "id": "2026-11-01-utredning-branscher",
+      "datum": "2026-11-01T16:42:52+01:00",
+      "rubrik": "Utredning: åtta branscher och målgrupper",
+      "beskrivning": "Vad butiker, kaféer, frisörer, hantverkare, konsulter, restauranger, ekonomikonsulter och redovisningsbyråer behöver av ett ekonomisystem, med priser räknade ur jämförelsedata.",
+      "typ": "Utredning",
+      "omrade": "Webbplats",
+      "version": "d8a9e68"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-byraprofil",
+      "datum": "2026-11-01T17:00:39+01:00",
+      "rubrik": "Beslut: byråns egen profil mot kunderna",
+      "beskrivning": "En redovisningsbyrå kan visa sin egen logotyp och sina färger för sina kunder.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "35af029"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-app",
+      "datum": "2026-11-01T18:35:03+01:00",
+      "rubrik": "Beslut: NONOX som installerbar app",
+      "beskrivning": "NONOX kan läggas på hemskärmen som en app, utan någon appbutik.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "d55069e"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-avtal",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Beslut: kollektivavtal i lönen",
+      "beskrivning": "Hur kollektivavtalens regler blir data i lönen, och en genomgång av vad lönemotorn saknade för att kunna räkna dem.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-avtal-detaljhandel",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Utredning: Detaljhandelsavtalet",
+      "beskrivning": "Avtalets regler för lön och ersättningar gås igenom ur den publicerade avtalstexten. Resultatet blir underlag för avtalsdata i lönen, med källa för varje regel.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-avtal-lager-e-handel",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Utredning: Lager- och E-handelsavtalet",
+      "beskrivning": "Avtalets regler för lön och ersättningar gås igenom ur den publicerade avtalstexten. Resultatet blir underlag för avtalsdata i lönen, med källa för varje regel.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-avtal-handelns-tjansteman",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Utredning: Handelns tjänstemannaavtal",
+      "beskrivning": "Avtalets regler för lön och ersättningar gås igenom ur den publicerade avtalstexten. Resultatet blir underlag för avtalsdata i lönen, med källa för varje regel.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-avtal-frisor",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Utredning: Frisöravtalet",
+      "beskrivning": "Avtalets regler för lön och ersättningar gås igenom ur den publicerade avtalstexten. Resultatet blir underlag för avtalsdata i lönen, med källa för varje regel.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-avtal-grona-riks",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Utredning: Gröna Riks",
+      "beskrivning": "Avtalets regler för lön och ersättningar gås igenom ur den publicerade avtalstexten. Resultatet blir underlag för avtalsdata i lönen, med källa för varje regel.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-avtal-besoksnaring",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Utredning: Besöksnäringens tjänstemannaavtal",
+      "beskrivning": "Avtalets regler för lön och ersättningar gås igenom ur den publicerade avtalstexten. Resultatet blir underlag för avtalsdata i lönen, med källa för varje regel.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-avtal-bageri",
+      "datum": "2026-11-01T19:26:49+01:00",
+      "rubrik": "Utredning: Livsmedelsavtalet för bageriföretag",
+      "beskrivning": "Avtalets regler för lön och ersättningar gås igenom ur den publicerade avtalstexten. Resultatet blir underlag för avtalsdata i lönen, med källa för varje regel.",
+      "typ": "Utredning",
+      "omrade": "Avtal",
+      "version": "de5c84e"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-connect",
+      "datum": "2026-11-01T19:48:52+01:00",
+      "rubrik": "Beslut: öppet API och NONOX Connect",
+      "beskrivning": "Hur andra program ansluter till NONOX med behörighet per företag, och hur API:t versionshanteras och beskrivs.",
+      "typ": "Utredning",
+      "omrade": "Connect/API",
+      "version": "d9bad34"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-bank",
+      "datum": "2026-11-01T20:03:51+01:00",
+      "rubrik": "Beslut: bankkoppling för kontoinformation",
+      "beskrivning": "Hur kontoutdrag hämtas från banken med kundens samtycke, bara för läsning.",
+      "typ": "Utredning",
+      "omrade": "Bank",
+      "version": "e50ed4c"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-foretagsuppslag",
+      "datum": "2026-11-01T21:30:34+01:00",
+      "rubrik": "Beslut: företagsuppgifter från organisationsnumret",
+      "beskrivning": "Hur namn och adress hämtas från ett offentligt register när ett företag läggs upp.",
+      "typ": "Utredning",
+      "omrade": "Övrigt",
+      "version": "b51ba2d"
+    },
+    {
+      "id": "2026-11-01-utredning-manualens-upplagg",
+      "datum": "2026-11-01T22:51:55+01:00",
+      "rubrik": "Manualens upplägg och skrivregler",
+      "beskrivning": "Avsnitten i den öppna manualen och reglerna för hur artiklarna skrivs läggs fast.",
+      "typ": "Utredning",
+      "omrade": "Manual",
+      "version": "0c2ffba"
+    },
+    {
+      "id": "2026-11-01-utredning-beslut-manual",
+      "datum": "2026-11-01T23:14:36+01:00",
+      "rubrik": "Beslut: en öppen manual med hjälp i programmet",
+      "beskrivning": "Manualen ligger öppet på webbplatsen, går att söka i och öppnas från rätt sida i programmet.",
+      "typ": "Utredning",
+      "omrade": "Manual",
+      "version": "939d498"
+    },
+    {
+      "id": "2026-11-02-utredning-specifikation-planering",
+      "datum": "2026-11-02T04:18:24+01:00",
+      "rubrik": "Specifikation av NONOX Planering",
+      "beskrivning": "Specifikation och beslut för schemaläggning, Min sida för anställda och attest av tid som går vidare till lönen.",
+      "typ": "Utredning",
+      "omrade": "Planering",
+      "version": "62d1076"
+    },
+    {
+      "id": "2026-11-02-utredning-wcag",
+      "datum": "2026-11-02T10:13:36+01:00",
+      "rubrik": "Granskning mot WCAG 2.2 AA, kriterium för kriterium",
+      "beskrivning": "Alla 55 kriterier på nivå A och AA gås igenom. 34 uppfylls, 12 rättas i granskningen, 2 brister finns kvar med en plan och 1 är inte testat.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet",
+      "version": "353bf43"
+    },
+    {
+      "id": "2026-11-02-utredning-juridiska-fragor",
+      "datum": "2026-11-02T11:57:17+01:00",
+      "rubrik": "289 juridiska frågetecken blir 44 utredda frågor",
+      "beskrivning": "Alla öppna markeringar om juridisk kontroll samlas, dubbletter slås ihop och 44 frågor utreds mot lagtext och andra offentliga källor. Varje fynd kontrolleras sedan en gång till av separata agenter. Utredningen ersätter inte en jurist, som ska granska den.",
+      "typ": "Utredning",
+      "omrade": "Kvalitet",
+      "version": "5a2990c"
+    },
+    {
+      "id": "2026-11-02-utredning-granskning-bokforing",
+      "datum": "2026-11-02T12:44:47+01:00",
+      "rubrik": "Bokföringen granskad mot bokföringslagen",
+      "beskrivning": "Bokföringens kärna gås igenom mot bokföringslagen och BFNAR med tester där varje förväntat värde är uträknat för hand.",
+      "typ": "Utredning",
+      "omrade": "Bokföring",
+      "version": "9696b54"
+    },
+    {
+      "id": "2026-11-02-utredning-granskning-fakturering",
+      "datum": "2026-11-02T12:54:09+01:00",
+      "rubrik": "Faktureringen granskad mot lagen",
+      "beskrivning": "Fakturering och leverantörsreskontra gås igenom mot mervärdesskattelagen och bokföringslagen med tester uträknade för hand. Avvikelser rättas först efter en oberoende andra kontroll.",
+      "typ": "Utredning",
+      "omrade": "Fakturering",
+      "version": "d1c4b8d"
+    },
+    {
+      "id": "2026-11-02-utredning-granskning-moms",
+      "datum": "2026-11-02T12:54:09+01:00",
+      "rubrik": "Momsen granskad mot lagen och Skatteverket",
+      "beskrivning": "Momsdeklarationens rutor, perioder och förfallodagar gås igenom mot mervärdesskattelagen, skatteförfarandelagen och Skatteverkets anvisningar, med tester uträknade för hand.",
+      "typ": "Utredning",
+      "omrade": "Moms",
+      "version": "8721fbe"
+    },
+    {
+      "id": "2026-11-02-utredning-granskning-bokslut",
+      "datum": "2026-11-02T12:56:10+01:00",
+      "rubrik": "Bokslutet granskat mot årsredovisningslagen",
+      "beskrivning": "Bokslut, årsredovisning och inkomstdeklaration gås igenom mot årsredovisningslagen och BFN:s regler, med ett helt räkenskapsår enligt K2 uträknat för hand.",
+      "typ": "Utredning",
+      "omrade": "Bokslut",
+      "version": "331af77"
+    },
+    {
+      "id": "2026-11-02-utredning-granskning-lon",
+      "datum": "2026-11-02T12:59:52+01:00",
+      "rubrik": "Lönen granskad med lönebesked uträknade för hand",
+      "beskrivning": "Lönen gås igenom mot skatte- och avgiftsreglerna, semesterlagen och sjuklönelagen. Hela lönekörningar provas från lönebesked till verifikation, arbetsgivardeklaration och betalfil, med varje belopp uträknat för hand.",
+      "typ": "Utredning",
+      "omrade": "Lön",
+      "version": "de94ccb"
     }
   ]
 }
