@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-periodisk-sammanstallning",
+      "datum": "2026-11-02T16:45:00+01:00",
+      "rubrik": "Periodisk sammanställning för rätt period",
+      "beskrivning": "Varor till företag i andra EU-länder redovisas per månad. Kvartal går bara att välja när Skatteverkets beslut om kvartal är angivet under Företagsuppgifter och varorna är värda högst 500 000 kr per kvartal. Tjänster räknas till den period de utfördes, enligt fakturans leveransdatum.",
+      "typ": "Rättat",
+      "omrade": "Moms"
+    },
+    {
       "id": "2026-11-02-agi",
       "datum": "2026-11-02T16:30:00+01:00",
       "rubrik": "Arbetsgivardeklarationen för alla slags mottagare och rätt skatt på sidoinkomst",

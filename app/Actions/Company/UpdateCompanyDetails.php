@@ -14,6 +14,7 @@ use App\Domain\Company\VatPeriod;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -36,8 +37,10 @@ class UpdateCompanyDetails
         Gate::forUser($user)->authorize('update', $company);
 
         $dependent = $this->dependentRules($company, $input);
-        if (($input['oss_elected_from'] ?? null) === '') {
-            $input['oss_elected_from'] = null;
+        foreach (['oss_elected_from', 'eu_sales_quarterly_goods_from'] as $date) {
+            if (($input[$date] ?? null) === '') {
+                $input[$date] = null;
+            }
         }
 
         $validated = Validator::make($input, [
@@ -62,8 +65,11 @@ class UpdateCompanyDetails
             'turnover_over_40_msek' => ['sometimes', 'boolean'],
             'oss_elected' => ['sometimes', 'boolean'],
             'oss_elected_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'eu_sales_quarterly_goods' => ['sometimes', 'boolean'],
+            'eu_sales_quarterly_goods_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
         ], CompanySetupRules::messages(), [
             'oss_elected_from' => __('datum för beskattning i köparens land'),
+            'eu_sales_quarterly_goods_from' => __('första kvartalet beslutet gäller'),
             'name' => __('företagsnamn'),
             'website' => __('webbplats'),
         ])->validateWithBag('updateCompanyDetails');
@@ -87,6 +93,7 @@ class UpdateCompanyDetails
             // Why a company is not registered matters only while it is not (#51).
             'vat_exemption' => $vatRegistered ? null : (array_key_exists('vat_exemption', $validated) ? VatExemption::tryFrom((string) $validated['vat_exemption']) : $company->vat_exemption),
             'oss_elected_from' => (bool) ($validated['oss_elected'] ?? $company->oss_elected) ? ($validated['oss_elected_from'] ?? $company->oss_elected_from) : null,
+            'eu_sales_quarterly_goods_from' => $this->quarterlyGoodsFrom($company, $validated),
         ])->save();
 
         $changes = Audit::changes($before, $this->snapshot($company));
@@ -126,6 +133,24 @@ class UpdateCompanyDetails
         ];
     }
 
+    /**
+     * The decision on quarterly reporting of goods applies from the start of
+     * a quarter (SFL 35 kap. 6 §), so a date is moved to its quarter's first
+     * day; without a decision there is no date.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function quarterlyGoodsFrom(Company $company, array $validated): ?string
+    {
+        if (! (bool) ($validated['eu_sales_quarterly_goods'] ?? $company->eu_sales_quarterly_goods)) {
+            return null;
+        }
+
+        $from = array_key_exists('eu_sales_quarterly_goods_from', $validated) ? $validated['eu_sales_quarterly_goods_from'] : $company->eu_sales_quarterly_goods_from?->toDateString();
+
+        return is_string($from) ? CarbonImmutable::parse($from)->firstOfQuarter()->toDateString() : null;
+    }
+
     /** @return array<string, mixed> */
     private function snapshot(Company $company): array
     {
@@ -134,6 +159,7 @@ class UpdateCompanyDetails
             'bankgiro', 'plusgiro', 'vat_registered', 'vat_number', 'vat_period', 'vat_exemption',
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
             'f_skatt', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
+            'eu_sales_quarterly_goods', 'eu_sales_quarterly_goods_from',
         ]))->map(fn (mixed $value) => match (true) {
             $value instanceof \BackedEnum => $value->value,
             $value instanceof \DateTimeInterface => $value->format('Y-m-d'),

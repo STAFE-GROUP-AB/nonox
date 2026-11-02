@@ -58,6 +58,8 @@ class CompanyDetailsForm extends Component
             'calendar_year_exempt' => false,
             'oss_elected' => $company->oss_elected,
             'oss_elected_from' => (string) $company->oss_elected_from?->toDateString(),
+            'eu_sales_quarterly_goods' => $company->eu_sales_quarterly_goods,
+            'eu_sales_quarterly_goods_from' => (string) $company->eu_sales_quarterly_goods_from?->toDateString(),
         ];
     }
 

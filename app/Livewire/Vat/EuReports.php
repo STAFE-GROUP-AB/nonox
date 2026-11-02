@@ -67,7 +67,7 @@ class EuReports extends Component
 
         $company = $this->company();
 
-        if (blank($company->vat_number)) {
+        if (EuSalesList::reporterVatNumber($company) === null) {
             $this->addError('contactName', __('Fyll i företagets momsregistreringsnummer under Företagsuppgifter.'));
 
             return null;
@@ -78,6 +78,14 @@ class EuReports extends Component
 
         if ($list->rows === []) {
             $this->toast(__('Det finns ingen försäljning att redovisa för perioden.'));
+
+            return null;
+        }
+
+        $problem = $list->periodProblem($company);
+
+        if ($problem !== null) {
+            $this->addError('period', $problem);
 
             return null;
         }
@@ -120,15 +128,18 @@ class EuReports extends Component
     {
         [$start, $end] = self::bounds($this->selectedPeriod());
         [$ossStart, $ossEnd] = self::bounds($this->selectedOssQuarter());
+        $list = EuSalesList::for($start, $end);
 
         return view('livewire.vat.eu-reports', [
             'periods' => self::periods(),
             'quarters' => array_filter(self::periods(), fn (string $label, string $key): bool => str_contains($key, 'K'), ARRAY_FILTER_USE_BOTH),
             'selected' => $this->selectedPeriod(),
             'selectedOss' => $this->selectedOssQuarter(),
-            'list' => EuSalesList::for($start, $end),
+            'list' => $list,
+            'periodProblem' => $list->rows === [] ? null : $list->periodProblem($this->company()),
+            'periodNote' => $list->periodNote(),
             'oss' => OssReport::for($ossStart, $ossEnd),
-            'hasVatNumber' => filled($this->company()->vat_number),
+            'hasVatNumber' => EuSalesList::reporterVatNumber($this->company()) !== null,
         ]);
     }
 

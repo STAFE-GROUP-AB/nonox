@@ -206,6 +206,19 @@
                     <x-input-error for="oss_elected_from" class="mt-2" />
                 </div>
             @endif
+            <label class="flex items-start gap-3">
+                <x-checkbox wire:model.live="state.eu_sales_quarterly_goods" :disabled="! $canUpdate" class="mt-0.5" />
+                <span class="text-sm text-gray-700">{{ __('Skatteverket har beslutat att periodisk sammanställning för varor får lämnas per kvartal') }}
+                    <span class="block text-xs text-gray-500">{{ __('Utan beslut redovisas varor till företag i andra EU-länder per månad. Beslutet gäller så länge varorna är värda högst 500 000 kr per kvartal.') }}</span>
+                </span>
+            </label>
+            @if($state['eu_sales_quarterly_goods'] ?? false)
+                <div class="ml-8 max-w-xs">
+                    <x-label for="details_eu_sales_quarterly_goods_from" value="{{ __('Gäller från och med') }}" />
+                    <input id="details_eu_sales_quarterly_goods_from" type="date" class="{{ $field }}" wire:model="state.eu_sales_quarterly_goods_from" @disabled(! $canUpdate)>
+                    <x-input-error for="eu_sales_quarterly_goods_from" class="mt-2" />
+                </div>
+            @endif
         </div>
     </section>
 
