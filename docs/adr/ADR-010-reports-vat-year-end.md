@@ -219,4 +219,9 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-2, -3,
   `AnnualAccounts::freeEquity()` of the year (retained earnings and the
   year's result, whether booked to 2099 or not) and refuses a larger
   dividend, or any dividend when it is negative. `SaveAnnualReport` (the
-  board's proposal) uses it from #84.
+  board's proposal) uses it from #84; `YearEndClosing::dispose` (the
+  meeting's decision, booked 2098/2898) uses it on the closed year's balance
+  sheet from #85.
+- TODO(legal-verify): changes in restricted equity after the balance date,
+  transfers already made since the meeting (17 kap. 4 §), and the same limit
+  for ideella föreningar and stiftelser.

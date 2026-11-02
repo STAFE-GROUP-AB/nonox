@@ -58,6 +58,7 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
 
 function audBokAccount(int $number): Account
@@ -355,4 +356,26 @@ it('#87: reports the pension costs in INK2S 4.21 and the basis for särskild lö
     expect($ink2->ink2())->toMatchArray([7132 => 6_000, 7104 => 324_551])
         ->and($ink2->ink2s())->toMatchArray([8022 => 6_000, 7650 => 322_551, 7670 => 324_551])
         ->and($ink2->ink2r())->toMatchArray([7514 => 46_882]);
+});
+
+it('#84/#85: refuses a dividend above the free equity 436 615 in the proposal and in the disposition, and accepts exactly that (ABL 17 kap. 3 §)', function () {
+    $this->closing->bookTax($this->owner, $this->year, '68 392');
+    $this->closing->bookResult($this->owner, $this->year);
+
+    // Free equity: retained 175 000 + the year's result 261 615 = 436 615.
+    expect(fn () => app(SaveAnnualReport::class)($this->owner, $this->year, ['dividend' => '436 616', 'average_employees' => 1]))
+        ->toThrow(ValidationException::class);
+
+    app(SaveAnnualReport::class)($this->owner, $this->year, ['dividend' => '436 615', 'average_employees' => 1]);
+    $this->closing->close($this->owner, $this->year);
+
+    expect(fn () => $this->closing->dispose($this->owner, $this->year, '2027-05-20', '436 616'))
+        ->toThrow(ValidationException::class);
+
+    $this->closing->dispose($this->owner, $this->year, '2027-05-20', '436 615');
+    $rows = Voucher::query()->whereDate('voucher_date', '2027-05-20')->with('rows.account')->sole()->rows
+        ->mapWithKeys(fn ($row): array => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all();
+
+    // 2099 debit 261 615; 2098 debit 175 000; 2898 credit 436 615. Free equity in 2027: 0.
+    expect($rows)->toEqualCanonicalizing([2099 => 26_161_500, 2098 => 17_500_000, 2898 => -43_661_500]);
 });

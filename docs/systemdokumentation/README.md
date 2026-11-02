@@ -1028,7 +1028,12 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
 - **Resultatdisposition** bokförs i nästa år på datum för årsstämman: årets
   resultat flyttas från 2099 till 2098, med beslutad utdelning på 2898. För
   enskild firma, handelsbolag och kommanditbolag flyttas resultatet från 2019
-  till 2010. Varje skatt-, resultat- och dispositionspost sparas i
+  till 2010. Utdelningen får inte vara större än det fria egna kapitalet i
+  det stängda årets balansräkning (balanserat resultat och årets resultat,
+  `DividendLimit`, ABL 17 kap. 3 §); en större utdelning avvisas och
+  ingenting bokförs. Fältet visar det fria egna kapitalet. Enligt granskning
+  2026-11-02, juristgranskning återstår (BS-AUD-BOK-3, #85). Varje skatt-,
+  resultat- och dispositionspost sparas i
   `year_end_entries`, som databasen inte låter ändra eller ta bort.
 - Bokslutet kräver behörigheten att hantera räkenskapsår.
 
@@ -2335,8 +2340,11 @@ Personalliggare och Avtal när de är påslagna.
 - Bokslut: skatten räknas inte fram av systemet. Sidan visar 20,6 % av
   resultatet före skatt som jämförelse; skattesatsen och skillnaden mellan
   bokfört och skattemässigt resultat (INK2) ska kontrolleras. Kontona 2512
-  och 2898 ska kontrolleras mot gällande BAS. Utdelningen prövas inte mot fritt
-  eget kapital eller försiktighetsregeln (ABL 17 kap). Eget kapital för
+  och 2898 ska kontrolleras mot gällande BAS. Utdelningen prövas mot fritt eget
+  kapital i det senaste årets balansräkning, men inte mot ändringar i bundet
+  eget kapital efter balansdagen, utdelningar som redan gjorts sedan stämman
+  (ABL 17 kap. 4 §) eller försiktighetsregeln (17 kap. 3 § andra stycket),
+  som styrelsen bedömer (#84, #85). Eget kapital för
   handelsbolag och kommanditbolag hålls inte per delägare. Ideella föreningar
   och stiftelser behandlas som aktiebolag vad gäller skatt och konton.
 - Periodiseringar: systemet varken kräver eller hindrar en periodisering;

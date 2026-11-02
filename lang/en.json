@@ -5887,5 +5887,6 @@
     "Lagen om ekonomiska föreningar 12 kap. 3 §": "The Economic Associations Act, chapter 12, section 3",
     "Aktiebolagslagen 17 kap. 3 §": "The Companies Act, chapter 17, section 3",
     "Reglerna om skydd för bundet eget kapital": "The rules protecting restricted equity",
-    "Högst det fria egna kapitalet, :free. Utdelningen ska också vara försvarlig med hänsyn till bolagets behov av eget kapital och likviditet (försiktighetsregeln) – det bedömer styrelsen.": "At most the free equity, :free. The dividend must also be justifiable given the company's need for equity and liquidity (the prudence rule) – the board judges that."
+    "Högst det fria egna kapitalet, :free. Utdelningen ska också vara försvarlig med hänsyn till bolagets behov av eget kapital och likviditet (försiktighetsregeln) – det bedömer styrelsen.": "At most the free equity, :free. The dividend must also be justifiable given the company's need for equity and liquidity (the prudence rule) – the board judges that.",
+    "0 om ingen utdelning. Högst det fria egna kapitalet, :free.": "0 if no dividend. At most the free equity, :free."
 }

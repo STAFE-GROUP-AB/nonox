@@ -22,6 +22,7 @@ use App\Models\Account;
 use App\Models\AnnualReport;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
+use App\Models\Voucher;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
@@ -118,8 +119,18 @@ it('AUD-BOK-3: refuses to book a dividend larger than the free equity in the dis
     audBokFindingsClose();
 
     expect(fn () => $this->closing->dispose($this->owner, $this->year, '2027-05-20', '200 000'))
+        ->toThrow(ValidationException::class, 'Aktiebolagslagen 17 kap. 3 §')
+        ->and(fn () => $this->closing->dispose($this->owner, $this->year, '2027-05-20', '113 520,01'))
         ->toThrow(ValidationException::class);
-})->todo('AUD-BOK-3: YearEndClosing::dispose books any dividend on a profit year without checking free equity');
+
+    // The whole free equity, 113 520, may be distributed (#85): 2099 debit 63 520,
+    // 2098 debit 50 000 (113 520 - 63 520), 2898 credit 113 520.
+    $entry = $this->closing->dispose($this->owner, $this->year, '2027-05-20', '113 520');
+    $rows = Voucher::query()->with('rows.account')->findOrFail($entry->voucher_id)->rows
+        ->mapWithKeys(fn ($row): array => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all();
+
+    expect($rows)->toEqualCanonicalizing([2099 => 6_352_000, 2098 => 5_000_000, 2898 => -11_352_000]);
+});
 
 it('AUD-BOK-4: puts 2420 Förskott från kunder and 2480 Checkräkningskredit on their own K2 balance sheet lines (ÅRL bilaga 3, BAS)', function () {
     Bookkeeping::post($this->owner, $this->company, 500_000, 1930, audBokFindingsAccount(2420)->number, '2026-12-01');

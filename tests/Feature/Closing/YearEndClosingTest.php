@@ -118,6 +118,30 @@ it('disposes of the result after the annual meeting, with the dividend', functio
         ->and(fn () => DB::table('year_end_entries')->update(['amount_ore' => 0]))->toThrow(QueryException::class);
 });
 
+it('refuses to book a dividend larger than the free equity of the closed year (ABL 17 kap. 3 §, #85)', function () {
+    prepareClosingYear();
+    $this->closing->bookTax($this->owner, $this->year, '16 480');
+    $this->closing->bookResult($this->owner, $this->year);
+    $this->closing->close($this->owner, $this->year);
+
+    // No retained earnings: the free equity is the year's result 80 000 - 16 480 = 63 520.
+    Livewire::test(ClosingPage::class)
+        ->set('year', $this->year->id)
+        ->assertSee('Högst det fria egna kapitalet, 63'."\u{a0}".'520,00'."\u{a0}".'kr', false)
+        ->set('dividend', '70 000')
+        ->call('dispose')
+        ->assertDispatched('toast');
+
+    expect(fn () => $this->closing->dispose($this->owner, $this->year, '2027-05-31', '63 520,01'))->toThrow(ValidationException::class)
+        ->and(YearEndEntry::query()->where('type', YearEndEntry::DISPOSITION)->exists())->toBeFalse();
+
+    $entry = $this->closing->dispose($this->owner, $this->year, '2027-05-31', '63 520');
+    $voucher = Voucher::query()->with('rows.account')->findOrFail($entry->voucher_id);
+
+    expect($voucher->rows->mapWithKeys(fn ($row) => [$row->account->number => $row->debit_ore->ore - $row->credit_ore->ore])->all())
+        ->toEqualCanonicalizing([2099 => 6_352_000, 2898 => -6_352_000]);
+});
+
 it('moves a sole trader\'s result to the owner\'s equity, without company tax', function () {
     $this->company->forceFill(['legal_form' => LegalForm::Ef])->save();
     prepareClosingYear();

@@ -184,7 +184,7 @@
             <form wire:submit="dispose" class="flex flex-wrap items-end gap-4">
                 <x-ui.field for="disposition_date" :label="$ownerTaxed ? __('Datum') : __('Datum för årsstämman')"><input id="disposition_date" type="date" class="{{ $input }} mt-1" wire:model="dispositionDate"></x-ui.field>
                 @unless($ownerTaxed)
-                    <x-ui.field for="disposition_dividend" :label="__('Utdelning, kr')" :hint="__('0 om ingen utdelning.')"><input id="disposition_dividend" type="text" inputmode="decimal" class="{{ $input }} mt-1 w-48" wire:model="dividend"></x-ui.field>
+                    <x-ui.field for="disposition_dividend" :label="__('Utdelning, kr')" :hint="__('0 om ingen utdelning. Högst det fria egna kapitalet, :free.', ['free' => \App\Support\Money\Money::ofOre(max($freeEquity ?? 0, 0))->format()])"><input id="disposition_dividend" type="text" inputmode="decimal" class="{{ $input }} mt-1 w-48" wire:model="dividend"></x-ui.field>
                 @endunless
                 <x-button>{{ __('Bokför resultatdispositionen') }}</x-button>
             </form>
