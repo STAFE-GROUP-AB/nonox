@@ -106,6 +106,10 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   verifikationerna. Fliken Statistik och prognos visar diagram med samma
   siffror som tabeller ([ADR-027](../adr/ADR-027-overview.md)).
 - Översikten läser bara. Den bokför, ändrar och loggar ingenting.
+- Nyckeltalet Resultat hittills (överst i verifikationslistan) är årets
+  rörelse på 3000–8989, samma avgränsning som resultaträkningen. 8999 Årets
+  resultat räknas inte med, så resultatet står kvar när det bokats mot 2099
+  i bokslutet (#94).
 - "Att göra" bygger på samma regler som Mina företag (1a) för det valda
   företaget, plus bankposter som inte är kopplade till en faktura, företags-
   kontot som inte är avstämt till och med förra månadens slut, underlag i
