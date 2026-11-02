@@ -52,7 +52,10 @@
     <x-ui.card>
         @if($canManage)
             <x-slot:cta>
+                <span class="flex flex-wrap gap-2">
+                <a href="{{ route('invoicing.articles', ['ny' => 1, 'kamera' => 1]) }}" class="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-gray-800 ring-1 ring-stone-300 hover:ring-stone-400 focus-visible:ring-2 focus-visible:ring-accent-500 sm:min-h-0">{{ __('Snabbregistrera med kamera') }}</a>
                 <a href="{{ route('invoicing.articles', ['ny' => 1]) }}" class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-transparent bg-accent-600 px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-accent-700 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500 focus-visible:ring-offset-2 sm:min-h-0">{{ __('Ny artikel') }}</a>
+                </span>
             </x-slot:cta>
         @endif
 
@@ -104,9 +107,18 @@
                             @php($low = $article->reorder_point_milli !== null && (int) $article->stock_milli <= $article->reorder_point_milli)
                             <tr wire:key="stock-article-{{ $article->id }}">
                                 <td class="py-2 pr-4">
-                                    <span class="font-semibold tabular-nums">{{ $article->number }}</span> {{ $article->name }}
-                                    @if($article->gtin)<span class="block text-xs text-gray-500 tabular-nums">EAN {{ $article->gtin }}</span>@endif
-                                    @if(! $article->is_stock_item)<x-ui.badge>{{ __('Inte lagerförd') }}</x-ui.badge>@endif
+                                    <span class="flex items-center gap-3">
+                                        @if($article->mainImage)
+                                            <img src="{{ route('inventory.articleImages.show', ['article' => $article->id, 'image' => $article->mainImage->id, 'storlek' => 'liten']) }}" alt="" class="size-12 shrink-0 rounded-lg object-cover ring-1 ring-stone-200" loading="lazy">
+                                        @else
+                                            <span class="size-12 shrink-0 rounded-lg bg-stone-100" aria-hidden="true"></span>
+                                        @endif
+                                        <span>
+                                            <span class="font-semibold tabular-nums">{{ $article->number }}</span> {{ $article->name }}
+                                            @if($article->gtin)<span class="block text-xs text-gray-500 tabular-nums">EAN {{ $article->gtin }}</span>@endif
+                                            @if(! $article->is_stock_item)<x-ui.badge>{{ __('Inte lagerförd') }}</x-ui.badge>@endif
+                                        </span>
+                                    </span>
                                 </td>
                                 <td class="py-2 pr-4">
                                     @forelse($article->stockLevels->sortBy(fn ($level) => $level->location?->sort_key) as $level)

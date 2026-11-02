@@ -141,6 +141,7 @@ Route::middleware('connect.scope:planning:view')->group(function (): void {
 // Lager (ADR-039). inventory:view and inventory:manage are false while the module is off.
 Route::middleware('connect.scope:inventory:view')->group(function (): void {
     Route::get('/inventory/articles', [InventoryController::class, 'articles'])->name('inventory.articles.index');
+    Route::get('/inventory/articles/{article}/images/{image}/content', [InventoryController::class, 'image'])->whereNumber(['article', 'image'])->name('inventory.articles.images.content');
     Route::get('/inventory/locations', [InventoryController::class, 'locations'])->name('inventory.locations.index');
     Route::get('/inventory/stock-levels', [InventoryController::class, 'levels'])->name('inventory.stock-levels.index');
 });

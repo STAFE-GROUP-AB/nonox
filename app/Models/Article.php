@@ -13,6 +13,7 @@ use App\Support\Tenancy\BelongsToCompany;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * An article: a product or service with its price excluding VAT, its VAT
@@ -146,6 +147,16 @@ class Article extends Model
     public function images(): HasMany
     {
         return $this->hasMany(ArticleImage::class)->orderBy('position');
+    }
+
+    /**
+     * The first image, shown in lists (ADR-039).
+     *
+     * @return HasOne<ArticleImage, $this>
+     */
+    public function mainImage(): HasOne
+    {
+        return $this->hasOne(ArticleImage::class)->ofMany(['position' => 'min', 'id' => 'min']);
     }
 
     /** @return HasMany<StockLevel, $this> */

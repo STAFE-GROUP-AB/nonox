@@ -65,9 +65,14 @@
                 @foreach($current->lines as $line)
                     <li class="grid gap-3 rounded-2xl bg-stone-50 p-4 sm:grid-cols-12 sm:items-center" wire:key="pick-line-{{ $line->id }}">
                         <span class="text-2xl font-bold tabular-nums text-ink sm:col-span-2">{{ $line->location?->full_code ?? __('Ingen plats') }}</span>
-                        <span class="sm:col-span-6">
-                            <span class="font-semibold tabular-nums">{{ $line->article?->number }}</span> {{ $line->article?->name }}
-                            <span class="block text-sm text-gray-600">{{ __('Plocka :quantity :unit', ['quantity' => $q($line->quantity_milli), 'unit' => $line->article?->unit]) }}@if($line->article?->gtin) · EAN {{ $line->article->gtin }}@endif</span>
+                        <span class="flex items-center gap-3 sm:col-span-6">
+                            @if($line->article?->mainImage)
+                                <img src="{{ route('inventory.articleImages.show', ['article' => $line->article->id, 'image' => $line->article->mainImage->id, 'storlek' => 'liten']) }}" alt="" class="size-12 shrink-0 rounded-lg object-cover ring-1 ring-stone-200" loading="lazy">
+                            @endif
+                            <span>
+                                <span class="font-semibold tabular-nums">{{ $line->article?->number }}</span> {{ $line->article?->name }}
+                                <span class="block text-sm text-gray-600">{{ __('Plocka :quantity :unit', ['quantity' => $q($line->quantity_milli), 'unit' => $line->article?->unit]) }}@if($line->article?->gtin) · EAN {{ $line->article->gtin }}@endif</span>
+                            </span>
                         </span>
                         @if($current->status === 'OPEN' && $canCount)
                             <x-ui.field for="picked-{{ $line->id }}" :label="__('Plockat')" error="picked.{{ $line->id }}.picked" class="sm:col-span-4">

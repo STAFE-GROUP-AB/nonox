@@ -19,6 +19,9 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Modules\Connect\Support\ConnectScopes;
+use App\Modules\Inventory\Actions\ArticleImages;
+use App\Modules\Inventory\InventoryModule;
+use App\Modules\ModuleManager;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -57,6 +60,10 @@ function twoCompanies(): array
     $supplierB = app(SaveSupplier::class)($ownerB, $b, ['name' => 'B:s leverantör AB', 'payment_terms_days' => 30]);
     $yearB = CurrentCompany::run($b, fn () => FiscalYear::query()->firstOrFail());
     $articleB = app(SaveArticle::class)($ownerB, $b, ['number' => 'B1', 'name' => 'B:s artikel', 'unit' => 'st', 'price' => '100', 'vat_rate' => 2500]);
+    // Lager on in both, so an inventory route answers 404 and not 403 for B's records.
+    app(ModuleManager::class)->enable(InventoryModule::KEY, $b, $ownerB);
+    app(ModuleManager::class)->enable(InventoryModule::KEY, $a, $ownerA);
+    $imageB = CurrentCompany::run($b, fn () => app(ArticleImages::class)->add($ownerB, $b, $articleB, UploadedFile::fake()->image('b.jpg', 40, 40)));
     $costCenterB = app(SaveDimensionObject::class)($ownerB, $b, Dimension::CostCenter, ['code' => 'B10', 'name' => 'B:s kostnadsställe']);
     $projectB = app(SaveDimensionObject::class)($ownerB, $b, Dimension::Project, ['code' => 'BP', 'name' => 'B:s projekt']);
     $invoiceRows = [['description' => 'B:s rad', 'quantity' => '1', 'price' => '100', 'vat_rate' => 2500]];
@@ -86,6 +93,7 @@ function twoCompanies(): array
             'voucher' => $voucherB->id, 'posted' => $postedB->id, 'attachment' => $attachmentB->id, 'customer' => $customerB->id,
             'supplier' => $supplierB->id, 'fiscal_year' => $yearB->id, 'article' => $articleB->id, 'cost_center' => $costCenterB->id,
             'project' => $projectB->id, 'invoice' => $invoiceB->id, 'issued' => $issuedB->id, 'supplier_invoice' => $supplierInvoiceB->id,
+            'article_image' => $imageB->id,
         ],
     ];
 }
@@ -111,6 +119,7 @@ function crossCompanyCalls(array $b): array
         ['GET', "/api/v1/fiscal-years/{$b['fiscal_year']}/sie"],
         ['GET', "/api/v1/articles/{$b['article']}"],
         ['PATCH', "/api/v1/articles/{$b['article']}", ['name' => 'Kapad']],
+        ['GET', "/api/v1/inventory/articles/{$b['article']}/images/{$b['article_image']}/content"],
         ['GET', "/api/v1/cost-centers/{$b['cost_center']}"],
         ['PATCH', "/api/v1/cost-centers/{$b['cost_center']}", ['name' => 'Kapad']],
         ['GET', "/api/v1/projects/{$b['project']}"],
@@ -189,7 +198,7 @@ it('shows the credential\'s own company, never the person\'s current one', funct
 });
 
 it('covers every API route that takes an id', function () {
-    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice'], 'X')))
+    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image'], 'X')))
         ->map(fn (array $call): string => $call[0].' '.preg_replace('/X/', '{}', explode('?', $call[1])[0]))
         ->unique()->values();
 

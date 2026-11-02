@@ -64,6 +64,7 @@ final class Features
         'inventory' => ['name' => 'Lager med lagerställen och EAN', 'status' => self::LIVE, 'readme' => 'Lagerställen i lager, zoner, hyllor och fack', 'module' => 'Lager'],
         'inventory_flow' => ['name' => 'Inleveranser, plocklistor och inventering', 'status' => self::LIVE, 'readme' => 'Inventering per hylla eller hela lagret', 'module' => 'Lager'],
         'inventory_valuation' => ['name' => 'Lagervärde vid bokslut', 'status' => self::LIVE, 'readme' => 'Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris', 'module' => 'Lager'],
+        'inventory_images' => ['name' => 'Artikelbilder från mobilen och NONOX AI', 'status' => self::LIVE, 'readme' => 'Bilder på artiklarna, tagna direkt med mobilens kamera', 'module' => 'Lager'],
         'control_visit' => ['name' => 'Kontrollbesök i personalliggaren', 'status' => self::LIVE, 'readme' => 'Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren', 'module' => 'Personalliggare'],
         'inbox' => ['name' => 'Inkorg för fakturor och kvitton', 'status' => self::LIVE, 'readme' => 'En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem', 'module' => 'Inkorg'],
         'daily_reports' => ['name' => 'Dagsrapporter från kassasystemet', 'status' => self::LIVE, 'readme' => 'dagsrapporter läses utan AI, med mallar som en person godkänt', 'module' => 'Inkorg'],

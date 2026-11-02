@@ -10,9 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * An image of an article, in order. The table is in place for the image
- * upload and AI description work that follows (ADR-039); nothing in this
- * module writes it yet.
+ * A picture of an article, in order; position 0 is the main image. Written
+ * only through ArticleImages, served through ArticleImageController and the
+ * API (ADR-039).
  *
  * @property int $id
  * @property int $company_id

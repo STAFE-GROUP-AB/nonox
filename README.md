@@ -127,6 +127,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Inleveranser från leverantörer, hela eller i delar, med eller utan koppling till leverantörsfakturan. Plocklistor från order, faktura eller för hand, sorterade efter plats, i mobilen eller som PDF.
 - Inventering per hylla eller hela lagret, där skillnaderna förs in med en orsak. Varje lagerrörelse sparas och kan aldrig ändras.
 - Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförd mot 1460 med ett klick. Rollen Lagerpersonal ser saldon men inga priser.
+- Bilder på artiklarna, tagna direkt med mobilens kamera, med huvudbild i listorna, på plocklistan och i API:t. Med NONOX AI föreslås benämning, beskrivning, varumärke, egenskaper och EAN-kod från bilderna, och du bockar i vad som ska användas. Snabbregistrera en ny vara med kameran.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
@@ -148,7 +149,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Påminnelse med e-post och under Att göra innan medgivandet går ut (högst 180 dagar), och bortkoppling när som helst. Kräver att den som driftar NONOX har avtal med Enable Banking; i den driftade tjänsten slås modulen på när de juridiska frågorna är besvarade.
 
 ### NONOX AI (modul)
-- Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
+- Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel till OpenAI, Claude eller Gemini. Med Lager påslaget föreslår den artikelns uppgifter från bilder på varan. En person kontrollerar och sparar alltid, AI:n sparar aldrig själv. Kvitton från anställda läses bara; AI:n bedömer aldrig inköpet eller personen.
 
 ### Företaget och din data
 - Ingen registrerar sig själv: nya användare kommer in via kön (anmälan på /ko som ägaren godkänner i /hq med passkey) eller via en inbjudan från ett företag. Inloggningen skickar bara kod till befintliga användare och inbjudna, utan att avslöja vilka adresser som har ett konto.
