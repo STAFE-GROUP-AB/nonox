@@ -14,14 +14,18 @@ declare(strict_types=1);
 use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\RegisterPayment;
+use App\Actions\Invoicing\RegisterRefund;
 use App\Actions\Invoicing\RegisterTaxReductionPayment;
 use App\Actions\Invoicing\RegisterTaxReductionRepayment;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
+use App\Domain\Closing\OpenInvoices;
+use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Livewire\Invoicing\InvoiceActions;
 use App\Models\Customer;
+use App\Models\FiscalYear;
 use App\Models\Invoice;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
@@ -147,7 +151,7 @@ it('refuses a credit larger than what remains of an unpaid invoice, or one that 
 
     // 1 250 − 750 = 500 kr left; a credit of 625 kr is too large.
     expect(fn () => kredCredit($invoice, [['description' => 'Licens', 'quantity' => '1', 'price' => '500', 'vat_rate' => 2500]]))
-        ->toThrow(ValidationException::class, 'större än det som återstår');
+        ->toThrow(ValidationException::class, 'större än det som går att kreditera');
 
     $draft = app(CreditInvoice::class)($this->owner, $invoice->fresh());
     $draft = app(SaveDraftInvoice::class)($this->owner, $this->company, [
@@ -323,4 +327,170 @@ it('takes a credit off the unpaid claim first and books only the paid rest as a 
         ->toThrow(AuthorizationException::class)
         ->and(fn () => app(RegisterTaxReductionRepayment::class)($this->owner, $credit, CarbonImmutable::parse('2026-05-30'), Money::ofOre(100_001)))
         ->toThrow(ValidationException::class);
+});
+
+/*
+ * A credit note for a paid or part-paid invoice (#53). The law does not
+ * limit credit notes to unpaid invoices (ML 17 kap. 22-23 §§; a VAT
+ * reduction needs such a document, 7 kap. 46 §). What the customer has
+ * already paid of the credit is a credit balance on the credit invoice
+ * (credit on 1510), paid back with a refund.
+ */
+
+/** 1 000 kr + 25 % = 1 250 kr. */
+function kredLicence(): Invoice
+{
+    return app(IssueInvoice::class)(test()->owner, kredDraft(test()->customer, [['description' => 'Licens', 'quantity' => '1', 'price' => '1 000', 'vat_rate' => 2500]]));
+}
+
+/** 400 kr + 25 % = 500 kr. */
+function kredPriceReduction(Invoice $invoice): Invoice
+{
+    return kredCredit($invoice, [['description' => 'Prisavdrag licens', 'quantity' => '1', 'price' => '400', 'vat_rate' => 2500]]);
+}
+
+it('credits a paid invoice as a credit balance, and the refund settles it (#53)', function () {
+    $invoice = kredLicence();
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(125_000));
+
+    $credit = kredPriceReduction($invoice);
+
+    // Nothing remained to settle: the whole 500 kr is owed to the customer.
+    expect($credit->status)->toBe(InvoiceStatus::Issued)
+        ->and($credit->statusLabel())->toBe('Att återbetala')
+        ->and($credit->remaining()->ore)->toBe(-50_000)
+        ->and($credit->isOverdue(CarbonImmutable::parse('2026-06-01')))->toBeFalse()
+        ->and($invoice->fresh()->status)->toBe(InvoiceStatus::Paid)
+        ->and(kredBalance(1510))->toBe(-50_000)
+        ->and(kredLedger())->toBe(-50_000)
+        // Revenue 1 000 − 400 = 600 kr and VAT 250 − 100 = 150 kr.
+        ->and(kredBalance(3001))->toBe(-60_000)
+        ->and(kredBalance(2611))->toBe(-15_000)
+        ->and(collect(OpenInvoices::customer(CarbonImmutable::parse('2026-03-31')))->sum('open'))->toBe(-50_000);
+
+    Livewire::test(InvoiceActions::class, ['invoice' => $credit])
+        ->assertSee('Betala tillbaka till kunden')
+        ->assertSet('refundAmount', '500,00')
+        ->set('refundPaidOn', '2026-03-12')
+        ->call('registerRefund')
+        ->assertHasNoErrors();
+
+    expect($credit->fresh()->status)->toBe(InvoiceStatus::Paid)
+        ->and($credit->fresh()->payments->first()->amount_ore->ore)->toBe(-50_000)
+        ->and(kredBalance(1510))->toBe(0)
+        ->and(kredLedger())->toBe(0)
+        ->and(kredBalance(1930))->toBe(125_000 - 50_000)
+        ->and(OpenInvoices::customer(CarbonImmutable::parse('2026-03-31')))->toBe([])
+        // On the day before the refund the credit balance was still open.
+        ->and(collect(OpenInvoices::customer(CarbonImmutable::parse('2026-03-11')))->sum('open'))->toBe(-50_000);
+});
+
+it('settles what remains of a part-paid invoice first and leaves the rest as a credit balance (#53)', function () {
+    $invoice = kredLicence();
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(100_000));
+
+    // 250 kr remained: the 500 kr credit settles it and 250 kr is owed to the customer.
+    $credit = kredPriceReduction($invoice);
+
+    expect($invoice->fresh()->status)->toBe(InvoiceStatus::Paid)
+        ->and($invoice->fresh()->credited_ore->ore)->toBe(25_000)
+        ->and($invoice->fresh()->remaining()->ore)->toBe(0)
+        ->and($credit->remaining()->ore)->toBe(-25_000)
+        ->and(kredBalance(1510))->toBe(-25_000)
+        ->and(kredLedger())->toBe(-25_000);
+
+    expect(fn () => app(RegisterRefund::class)($this->owner, $credit, CarbonImmutable::parse('2026-03-12'), Money::ofOre(25_001)))
+        ->toThrow(ValidationException::class);
+
+    app(RegisterRefund::class)($this->owner, $credit, CarbonImmutable::parse('2026-03-12'), Money::ofOre(25_000));
+
+    expect(kredBalance(1510))->toBe(0)
+        ->and(kredLedger())->toBe(0)
+        ->and(kredBalance(1930))->toBe(100_000 - 25_000);
+});
+
+it('refuses a credit of more than is not credited yet, and only members with payments:create refund (#53)', function () {
+    $invoice = kredLicence();
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(125_000));
+
+    expect(fn () => kredCredit($invoice, [['description' => 'Licens', 'quantity' => '1', 'price' => '1 001', 'vat_rate' => 2500]]))
+        ->toThrow(ValidationException::class, 'större än det som går att kreditera');
+
+    $credit = kredCredit($invoice);
+
+    expect($credit->remaining()->ore)->toBe(-125_000)
+        ->and(fn () => app(CreditInvoice::class)($this->owner, $invoice->fresh()))->toThrow(AuthorizationException::class)
+        ->and(fn () => app(RegisterRefund::class)(Bookkeeping::member($this->company, 'auditor'), $credit, CarbonImmutable::parse('2026-03-12'), Money::ofOre(125_000)))
+        ->toThrow(AuthorizationException::class)
+        ->and(fn () => app(RegisterPayment::class)($this->owner, $credit, CarbonImmutable::parse('2026-03-12'), Money::ofOre(1)))
+        ->toThrow(AuthorizationException::class);
+});
+
+it('books the credited revenue and VAT when the refund is paid under kontantmetoden (#53)', function () {
+    $this->company->forceFill(['accounting_method' => AccountingMethod::Kontantmetoden])->save();
+    $invoice = kredLicence();
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(125_000));
+    $credit = kredPriceReduction($invoice);
+
+    // Nothing is booked when the credit is issued under kontantmetoden.
+    expect($credit->voucher_id)->toBeNull()
+        ->and(kredBalance(3001))->toBe(-100_000);
+
+    app(RegisterRefund::class)($this->owner, $credit, CarbonImmutable::parse('2026-03-12'), Money::ofOre(50_000));
+
+    // The refund reverses 400 kr revenue and 100 kr VAT: 600 kr and 150 kr remain.
+    expect(kredBalance(3001))->toBe(-60_000)
+        ->and(kredBalance(2611))->toBe(-15_000)
+        ->and(kredBalance(1930))->toBe(75_000)
+        ->and(kredBalance(1510))->toBe(0);
+});
+
+it('pays back a credit balance in euro in its currency, with the exchange difference (#53)', function () {
+    Http::fake(['api.riksbank.se/*' => Http::response([['date' => '2026-03-02', 'value' => 11.0]])]);
+    $invoice = app(IssueInvoice::class)($this->owner, kredDraft($this->customer, [['description' => 'Licens', 'quantity' => '1', 'price' => '1 000', 'vat_rate' => 0]], ['currency' => 'EUR', 'exchange_rate' => '11']));
+    // 1 000 € paid; 11 000 kr reached the bank.
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(1_100_000), foreignAmount: 100_000);
+
+    $credit = kredCredit($invoice, [['description' => 'Licens', 'quantity' => '1', 'price' => '300', 'vat_rate' => 0]]);
+
+    // 300 € at the invoice's 11 kr = 3 300 kr owed to the customer.
+    expect($credit->foreignRemaining())->toBe(-30_000)
+        ->and($credit->remaining()->ore)->toBe(-330_000)
+        ->and(kredBalance(1510))->toBe(-330_000);
+
+    // 300 € paid back cost 3 150 kr at 10,50: 150 kr less than booked, an exchange gain on 3960.
+    app(RegisterRefund::class)($this->owner, $credit, CarbonImmutable::parse('2026-03-20'), Money::ofOre(315_000), foreignAmount: 30_000);
+
+    expect($credit->fresh()->status)->toBe(InvoiceStatus::Paid)
+        ->and(kredBalance(1510))->toBe(0)
+        ->and(kredLedger())->toBe(0)
+        ->and(kredBalance(3960))->toBe(-15_000)
+        ->and(kredBalance(1930))->toBe(1_100_000 - 315_000);
+});
+
+it('credits a ROT invoice the customer and Skatteverket have paid: credit balance on 1510, debt on 2890 (#53, #49)', function () {
+    $invoice = kredRotInvoice();
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(687_500));
+    app(RegisterTaxReductionPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-20'), Money::ofOre(187_500));
+
+    $credit = kredCredit($invoice);
+
+    expect($credit->remaining()->ore)->toBe(-687_500)
+        ->and(kredBalance(1510))->toBe(-687_500)
+        ->and(kredLedger())->toBe(-687_500)
+        ->and(kredBalance(1513))->toBe(0)
+        ->and(kredBalance(2890))->toBe(-187_500);
+});
+
+it('books a credit balance not yet paid back at year-end under kontantmetoden as the reversed share of the credit (#53)', function () {
+    $this->company->forceFill(['accounting_method' => AccountingMethod::Kontantmetoden])->save();
+    $invoice = kredLicence();
+    app(RegisterPayment::class)($this->owner, $invoice, CarbonImmutable::parse('2026-03-10'), Money::ofOre(125_000));
+    kredPriceReduction($invoice);
+
+    $unpaid = UnpaidInvoices::for($this->company, FiscalYear::query()->orderBy('start_date')->firstOrFail());
+    $rows = collect($unpaid['customerRows'])->pluck('amount', 'account')->sortKeys()->all();
+
+    // The 500 kr owed to the customer: 1510 credit, and 400 kr revenue and 100 kr VAT reversed.
+    expect($rows)->toBe([1510 => -50_000, 2611 => 10_000, 3001 => 40_000]);
 });

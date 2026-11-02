@@ -254,9 +254,33 @@ class Invoice extends Model
         return $foreign === null ? $this->remaining()->format() : $this->formatForeign($foreign);
     }
 
+    /** A credit invoice with money left to repay to the customer is not overdue; only an unpaid invoice is. */
     public function isOverdue(?CarbonImmutable $today = null): bool
     {
-        return $this->status === InvoiceStatus::Issued && $this->due_date->lessThan($today ?? CarbonImmutable::today());
+        return ! $this->isCredit() && $this->status === InvoiceStatus::Issued && $this->due_date->lessThan($today ?? CarbonImmutable::today());
+    }
+
+    /** "Obetald", or for an open credit invoice "Att återbetala": the customer has money to get back. */
+    public function statusLabel(): string
+    {
+        return $this->isCredit() && $this->status === InvoiceStatus::Issued ? __('Att återbetala') : $this->status->label();
+    }
+
+    /**
+     * What may still be credited: the total less every issued credit
+     * invoice, whether it settled the invoice or became a credit balance.
+     * In kronor, and for an invoice in another currency in that currency.
+     *
+     * @return array{kronor: int, foreign: ?int}
+     */
+    public function creditable(): array
+    {
+        $credits = $this->creditInvoices()->where('status', '<>', InvoiceStatus::Draft->value)->get(['total_ore', 'foreign_total_minor']);
+
+        return [
+            'kronor' => $this->total_ore->ore + (int) $credits->sum(fn (Invoice $credit): int => $credit->total_ore->ore),
+            'foreign' => $this->isForeign() ? (int) $this->foreign_total_minor + (int) $credits->sum(fn (Invoice $credit): int => (int) $credit->foreign_total_minor) : null,
+        ];
     }
 
     /**

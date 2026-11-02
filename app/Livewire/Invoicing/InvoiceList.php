@@ -42,7 +42,7 @@ class InvoiceList extends Component
             ->with('customer:id,name,number')
             ->when($this->filter === 'utkast', fn ($query) => $query->where('status', InvoiceStatus::Draft->value))
             ->when($this->filter === 'obetalda', fn ($query) => $query->where('status', InvoiceStatus::Issued->value))
-            ->when($this->filter === 'forfallna', fn ($query) => $query->where('status', InvoiceStatus::Issued->value)->whereDate('due_date', '<', $today))
+            ->when($this->filter === 'forfallna', fn ($query) => $query->where('status', InvoiceStatus::Issued->value)->where('kind', Invoice::INVOICE)->whereDate('due_date', '<', $today))
             ->when($this->filter === 'betalda', fn ($query) => $query->whereIn('status', [InvoiceStatus::Paid->value, InvoiceStatus::Credited->value]))
             ->orderByRaw('number IS NOT NULL, number DESC')
             ->orderByDesc('created_at')

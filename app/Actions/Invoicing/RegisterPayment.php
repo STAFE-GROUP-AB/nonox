@@ -88,7 +88,7 @@ class RegisterPayment
             $difference = $amount->ore - $settled;
 
             if ($difference !== 0) {
-                $this->ensureExchangeAccount($difference > 0 ? InvoiceBooking::EXCHANGE_GAIN : InvoiceBooking::EXCHANGE_LOSS, $user, $company);
+                self::ensureExchangeAccount($difference > 0 ? InvoiceBooking::EXCHANGE_GAIN : InvoiceBooking::EXCHANGE_LOSS, $user, $company);
             }
 
             $voucher = ($this->bookVoucher)(
@@ -146,7 +146,7 @@ class RegisterPayment
      * supplier invoices. A deactivated one is left as it is, and BookVoucher
      * refuses it.
      */
-    private function ensureExchangeAccount(int $number, User $user, Company $company): void
+    public static function ensureExchangeAccount(int $number, User $user, Company $company): void
     {
         if (Account::query()->where('number', $number)->exists()) {
             return;

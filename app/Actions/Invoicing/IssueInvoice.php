@@ -23,6 +23,7 @@ use App\Models\NumberSeries;
 use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Support\Audit\Audit;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -39,9 +40,12 @@ use Illuminate\Validation\ValidationException;
  * (Mervärdesskattelag (2023:200) 17 kap. 22-23 §§: a credit note changes
  * the original by what it credits). A partial credit leaves the rest of
  * the original open to be paid; the original is closed only when nothing
- * remains. A credit larger than what remains is refused, so the customer
- * ledger always agrees with 1510 (BFL 4 kap. 1 §, 5 kap. 1 §) (enligt
- * granskning 2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47)).
+ * remains. A paid or part-paid invoice can be credited too: what the
+ * customer has already paid of the credit is a credit balance on the credit
+ * invoice, paid back with RegisterRefund. A credit larger than what is not
+ * credited yet is refused, so the customer ledger always agrees with 1510
+ * (BFL 4 kap. 1 §, 5 kap. 1 §) (enligt granskning 2026-11-02,
+ * juristgranskning återstår (AUD-FAKT-13, #47; AUD-FAKT-8, #53)).
  */
 class IssueInvoice
 {
@@ -158,30 +162,37 @@ class IssueInvoice
     }
 
     /**
-     * A credit invoice credits an issued invoice that is not paid by the
-     * customer, by an amount below zero and no larger than what remains.
+     * A credit invoice credits an issued invoice, unpaid or paid (ML 17 kap.
+     * 22-23 §§, 7 kap. 46 §), by an amount below zero and no larger than
+     * what is not credited yet.
      */
     private function ensureCreditFits(Invoice $credit, ?Invoice $original): void
     {
-        if ($original === null || $original->isCredit() || $original->status !== InvoiceStatus::Issued || $original->paid_ore->ore !== $original->credited_ore->ore) {
-            throw ValidationException::withMessages(['invoice' => __('Bara en obetald faktura kan krediteras.')]);
+        if ($original === null || $original->isCredit() || ! in_array($original->status, [InvoiceStatus::Issued, InvoiceStatus::Paid], true)) {
+            throw ValidationException::withMessages(['invoice' => __('Bara en skapad faktura som inte är helt krediterad kan krediteras.')]);
         }
 
         if ($credit->total_ore->ore >= 0) {
             throw ValidationException::withMessages(['invoice' => __('En kreditfaktura ska ha ett belopp under noll.')]);
         }
 
-        $foreignRemaining = $original->foreignRemaining();
+        $creditable = $original->creditable();
 
-        if (-$credit->total_ore->ore > $original->remaining()->ore || ($foreignRemaining !== null && -(int) $credit->foreign_total_minor > $foreignRemaining)) {
-            throw ValidationException::withMessages(['invoice' => __('Kreditfakturan är större än det som återstår av :title, :remaining.', ['title' => $original->title(), 'remaining' => $original->formatRemaining()])]);
+        if (-$credit->total_ore->ore > $creditable['kronor'] || ($creditable['foreign'] !== null && -(int) $credit->foreign_total_minor > $creditable['foreign'])) {
+            $left = $creditable['foreign'] !== null ? $original->formatForeign($creditable['foreign']) : Money::ofOre($creditable['kronor'])->format();
+
+            throw ValidationException::withMessages(['invoice' => __('Kreditfakturan är större än det som går att kreditera av :title, :left.', ['title' => $original->title(), 'left' => $left])]);
         }
     }
 
     /**
      * The credit settles the original by its own amount, in kronor and in
-     * the invoice's currency. The original is closed when nothing remains:
-     * credited when only credits settled it, paid when payments did too.
+     * the invoice's currency, as far as anything remains to pay. The original
+     * is closed when nothing remains: credited when only credits settled it,
+     * paid when payments did too. What the customer has already paid of the
+     * credited amount is left open on the credit invoice as a credit balance
+     * (negative on 1510) to pay back (RegisterRefund) (enligt granskning
+     * 2026-11-02, juristgranskning återstår (AUD-FAKT-8, #53)).
      */
     private function settle(Invoice $credit, Invoice $original): void
     {

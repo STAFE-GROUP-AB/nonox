@@ -124,7 +124,7 @@ final class CompanyOverview
             $drafts = $this->countBy(Voucher::query()->whereIn('company_id', $ids)->where('status', VoucherStatus::Draft->value));
             $toApprove = $this->countBy(SupplierInvoice::query()->whereIn('company_id', $ids)->where('status', SupplierInvoiceStatus::Registered->value));
             $toPay = $this->countBy(SupplierInvoice::query()->whereIn('company_id', $ids)->where('status', SupplierInvoiceStatus::Approved->value)->whereDate('due_date', '<=', $today->addDays(7)->toDateString()));
-            $overdue = $this->countBy(Invoice::query()->whereIn('company_id', $ids)->where('status', InvoiceStatus::Issued->value)->whereDate('due_date', '<', $today->toDateString()));
+            $overdue = $this->countBy(Invoice::query()->whereIn('company_id', $ids)->where('status', InvoiceStatus::Issued->value)->where('kind', Invoice::INVOICE)->whereDate('due_date', '<', $today->toDateString()));
             $lastPosted = Voucher::query()->whereIn('company_id', $ids)->where('status', VoucherStatus::Posted->value)
                 ->groupBy('company_id')->select('company_id', DB::raw('max(voucher_date) as last'))->pluck('last', 'company_id')->all();
             $years = FiscalYear::query()->whereIn('company_id', $ids)->orderBy('start_date')->get()->groupBy('company_id');

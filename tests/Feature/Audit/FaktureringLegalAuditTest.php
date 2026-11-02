@@ -327,8 +327,16 @@ it('ML 17 kap. 22-23 §§: a price reduction after payment is made with a credit
 
     $credit = app(CreditInvoice::class)($this->owner, $invoice->fresh());
 
-    expect($credit->isCredit())->toBeTrue();
-})->todo('AUD-FAKT-8: only an unpaid invoice can be credited, and only in full; a paid or part-paid invoice cannot get a credit note (ML 17 kap. 23 §)');
+    expect($credit->isCredit())->toBeTrue()
+        ->and($credit->credits_invoice_id)->toBe($invoice->id);
+
+    // AUD-FAKT-8 fixed (#53): issued, the 12 500 kr credit is a credit balance for the customer, and 1510 agrees with the ledger.
+    app(IssueInvoice::class)($this->owner, $credit);
+
+    expect(audFaktBalance(1510))->toBe(-1_250_000)
+        ->and(audFaktReceivablesLedger())->toBe(-1_250_000)
+        ->and(audFaktBalance(2611))->toBe(0);
+});
 
 /* ---------------------------------------------------------------------------
  | ROT/RUT (IL 67 kap. 11-19 §§, lag 2009:194) and 1513

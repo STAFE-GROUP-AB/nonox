@@ -475,6 +475,22 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   Kundreskontran stämmer därmed alltid mot 1510 (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47); ML 17 kap.
   22–23 §§, BFL 4 kap. 1 §, 5 kap. 1 §).
+- Även en betald eller delvis betald faktura kan krediteras (ML 17 kap.
+  22–23 §§, 7 kap. 46 §). Kreditfakturan reglerar först det som återstår av
+  originalet; det kunden redan har betalat av det krediterade beloppet
+  står öppet på kreditfakturan som ett tillgodohavande för kunden (status
+  ISSUED, visas som "Att återbetala", negativt kvar och kredit på 1510).
+  En kreditfaktura får inte vara större än det som ännu inte är krediterat
+  av originalet. Återbetalningen registreras på kreditfakturan
+  (`RegisterRefund`) som en betalning med negativt belopp i serie C: 1510
+  mot bankkontot under fakturametoden, återbetalningens del av intäkt och
+  moms mot bankkontot under kontantmetoden; i utländsk valuta i valutan med
+  kursdifferens på 3960/7960. Kundreskontran per dag (`OpenInvoices`)
+  räknar med kreditfakturornas återbetalningar, och vid bokslut med
+  kontantmetoden bokförs ett tillgodohavande som kreditfakturans andel.
+  En kreditfaktura med tillgodohavande förfaller aldrig och syns inte
+  bland förfallna fakturor (enligt granskning 2026-11-02, juristgranskning
+  återstår (AUD-FAKT-8, #53)).
 - Inbetalningar kan läsas in från bankens fil (ISO 20022 camt.054,
   [ADR-015](../adr/ADR-015-incoming-payment-files.md)). Systemet föreslår
   faktura efter OCR-numret; användaren kontrollerar och bokför. En inbetalning

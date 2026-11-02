@@ -111,7 +111,7 @@ final class InvoicesProvider extends DatabaseSearchProvider
 
     public function todo(SearchContext $context): array
     {
-        $overdue = Invoice::query()->where('status', InvoiceStatus::Issued->value)->whereDate('due_date', '<', CarbonImmutable::today())->count();
+        $overdue = Invoice::query()->where('status', InvoiceStatus::Issued->value)->where('kind', Invoice::INVOICE)->whereDate('due_date', '<', CarbonImmutable::today())->count();
 
         if ($overdue === 0) {
             return [];
@@ -137,7 +137,7 @@ final class InvoicesProvider extends DatabaseSearchProvider
     {
         match ($status) {
             SearchQuery::UNPAID => $builder->where('invoices.status', InvoiceStatus::Issued->value),
-            SearchQuery::OVERDUE => $builder->where('invoices.status', InvoiceStatus::Issued->value)->whereDate('invoices.due_date', '<', CarbonImmutable::today()),
+            SearchQuery::OVERDUE => $builder->where('invoices.status', InvoiceStatus::Issued->value)->where('invoices.kind', Invoice::INVOICE)->whereDate('invoices.due_date', '<', CarbonImmutable::today()),
             SearchQuery::PAID => $builder->whereIn('invoices.status', [InvoiceStatus::Paid->value, InvoiceStatus::Credited->value]),
             SearchQuery::DRAFT => $builder->where('invoices.status', InvoiceStatus::Draft->value),
             default => null,
@@ -149,7 +149,7 @@ final class InvoicesProvider extends DatabaseSearchProvider
         $customer = (string) ($invoice->customer_snapshot['name'] ?? $invoice->getAttribute('customer_name'));
         $badge = match (true) {
             $invoice->isOverdue() => __('Förfallen'),
-            $invoice->status === InvoiceStatus::Issued => __('Obetald'),
+            $invoice->status === InvoiceStatus::Issued => $invoice->statusLabel(),
             $invoice->status === InvoiceStatus::Draft => __('Utkast'),
             default => $invoice->status->label(),
         };

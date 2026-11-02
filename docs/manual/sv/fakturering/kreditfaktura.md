@@ -1,8 +1,8 @@
 ---
-beskrivning: Blev en faktura fel? Kreditera hela den eller en del av den med en kreditfaktura, i bokföringen och för kunden.
+beskrivning: Blev en faktura fel, eller ska kunden få ett prisavdrag? Kreditera hela den eller en del av den, även när den är betald, och betala tillbaka det kunden har betalat.
 ordning: 80
 roller: [owner, admin, accountant, bookkeeper]
-sokord: [kreditfaktura, kreditera, kreditnota, delkreditera, delkreditering, prisavdrag, makulera faktura, fel på faktura, ta bort faktura]
+sokord: [kreditfaktura, kreditera, kreditnota, delkreditera, delkreditering, prisavdrag, återbetalning, betala tillbaka, kundsaldo, betald faktura, makulera faktura, fel på faktura, ta bort faktura]
 ---
 
 # Kreditera en faktura
@@ -25,21 +25,36 @@ Kreditfakturan minskar originalet med sitt eget belopp. Krediterar du hela faktu
 
 ## Det här händer i bokföringen
 
-Kreditfakturan bokförs som en faktura men med omvända tecken. Under fakturametoden blir det en verifikation i serie B som minskar kundfordran på 1510 och försäljning och utgående moms med kreditfakturans belopp. Kundreskontran och konto 1510 visar samma belopp efteråt. Under kontantmetoden bokförs ingenting när kreditfakturan skapas. När kunden betalar resten bokförs betalningens del av försäljningen och momsen. Kreditfakturan får nästa nummer i samma nummerserie som fakturorna.
+Kreditfakturan bokförs som en faktura men med omvända tecken. Under fakturametoden blir det en verifikation i serie B som minskar kundfordran på 1510 och försäljning och utgående moms med kreditfakturans belopp. Kundreskontran och konto 1510 visar samma belopp efteråt. Under kontantmetoden bokförs ingenting när kreditfakturan skapas. När kunden betalar resten bokförs betalningens del av försäljningen och momsen, och när du betalar tillbaka till kunden bokförs återbetalningens del. Kreditfakturan får nästa nummer i samma nummerserie som fakturorna.
 
-## Bara obetalda fakturor
+## Betalda och delvis betalda fakturor
 
-NONOX krediterar en faktura som är skapad och som kunden inte har betalat något av. Du kan kreditera flera gånger, så länge något återstår. En kreditfaktura får inte vara större än det som återstår av fakturan. Knappen **Kreditera** syns inte om:
+Du kan kreditera en faktura även när kunden har betalat, till exempel för ett prisavdrag eller en reklamation. Momslagen kräver en kreditfaktura som hänvisar till fakturan, oavsett om den är betald.
 
-- kunden har betalat hela fakturan eller en del av den,
+- Har kunden betalat en del minskar kreditfakturan först det som återstår att betala.
+- Det kunden redan har betalat av det krediterade beloppet blir pengar som kunden ska få tillbaka. Kreditfakturan får då status **Att återbetala**, och beloppet står som en skuld till kunden i kundreskontran och med kredit på 1510.
+
+### Betala tillbaka till kunden
+
+1. Betala kunden från banken.
+2. Öppna kreditfakturan.
+3. Under **Betala tillbaka till kunden** fyller du i **Betaldag** och **Belopp**. Beloppet är förifyllt med det som återstår. Är fakturan i utländsk valuta fyller du i beloppet i valutan och kronorna som gick ut från banken.
+4. Tryck på **Registrera återbetalningen**.
+
+Återbetalningen bokförs i serie C: 1510 i debet och 1930 i kredit. Under kontantmetoden bokförs i stället återbetalningens del av försäljningen och momsen mot 1930, eftersom de bokfördes när kunden betalade. När allt är återbetalt får kreditfakturan status **Betald**.
+
+## När går det inte att kreditera?
+
+En kreditfaktura får inte vara större än det som ännu inte är krediterat av fakturan. Knappen **Kreditera** syns inte om:
+
 - hela fakturan redan är krediterad,
 - det redan finns ett utkast till kreditfaktura för den, eller
 - fakturan själv är en kreditfaktura.
 
-> [!IMPORTANT]
-> Har kunden redan betalat och ska ha pengar tillbaka går det inte att göra med en kreditfaktura i NONOX i dag. Bokför återbetalningen med en vanlig verifikation och spara underlaget. Fråga din redovisningskonsult om du är osäker. Läs [Bokför en verifikation](/manual/bokforing/bokfor-en-verifikation).
-
 ## Vanliga frågor
+
+**Kunden har betalat. Kan jag ändå kreditera?**
+Ja. Läs avsnittet **Betalda och delvis betalda fakturor** ovan.
 
 **Kan jag kreditera bara en del av fakturan?**
 Ja. Ändra raderna i utkastet så att de visar det som ska krediteras. Originalet minskar med kreditfakturans belopp, och resten står kvar att betala.

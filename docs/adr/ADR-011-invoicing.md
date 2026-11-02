@@ -39,6 +39,18 @@
   voucher reverses the credited part of the original's (enligt granskning
   2026-11-02, juristgranskning återstår (AUD-FAKT-13, #47); ML 17 kap.
   22-23 §§, BFL 4 kap. 1 §, 5 kap. 1 §).
+- **Credits of paid invoices.** A paid or part-paid invoice can be credited
+  (ML 17 kap. 22-23 §§, 7 kap. 46 §). The credit settles what remains of the
+  original first; the rest stays open on the credit invoice (ISSUED,
+  negative remaining, credit on 1510) as the customer's credit balance. A
+  credit larger than the original less earlier credits is refused. The
+  balance is paid back with `RegisterRefund`, a negative `invoice_payments`
+  row on the credit invoice booked like a payment with the signs reversed
+  (series C; under kontantmetoden the refund's share of the credited
+  revenue and VAT; in another currency with the exchange difference).
+  Offsetting a credit balance against another invoice of the same customer
+  is not built yet (enligt granskning 2026-11-02, juristgranskning återstår
+  (AUD-FAKT-8, #53)).
 - **ROT and RUT on a credit invoice.** The credit takes the original's
   type and deduction, never recomputed at the credit's date, rate or
   ceiling: the original's deduction in proportion to the labour (including

@@ -3,7 +3,7 @@
 <div class="space-y-6">
     <x-ui.card>
         <dl class="grid gap-x-8 gap-y-3 text-sm sm:grid-cols-2">
-            <div><dt class="text-gray-500">{{ __('Status') }}</dt><dd class="font-medium">{{ $invoice->isOverdue() ? __('Förfallen') : $invoice->status->label() }}</dd></div>
+            <div><dt class="text-gray-500">{{ __('Status') }}</dt><dd class="font-medium">{{ $invoice->isOverdue() ? __('Förfallen') : $invoice->statusLabel() }}</dd></div>
             <div><dt class="text-gray-500">{{ $invoice->isCredit() ? __('Att kreditera') : __('Att betala') }}</dt><dd class="font-medium">
                 @if($invoice->isForeign())
                     <span class="tabular-nums">{{ $invoice->formatForeign((int) $invoice->foreign_total_minor) }}</span>
@@ -152,8 +152,33 @@
         </x-ui.card>
     @endif
 
+    @if($refundLeft !== null)
+        <x-ui.card :title="__('Betala tillbaka till kunden')">
+            <p class="text-sm text-gray-700">{{ __('Kunden hade redan betalat det som krediterades och har :amount att få tillbaka. Beloppet står som en skuld till kunden i kundreskontran, med kredit på 1510, tills det är återbetalt.', ['amount' => $refundLeft]) }}</p>
+            @if($canRefund)
+                <form wire:submit="registerRefund" class="mt-4 grid grid-cols-2 gap-4">
+                    <x-ui.field for="refund_paid_on" :label="__('Betaldag')"><input id="refund_paid_on" type="date" class="{{ $input }} mt-1" wire:model="refundPaidOn"></x-ui.field>
+                    @if($invoice->isForeign())
+                        <x-ui.field for="refund_foreign" :label="__('Belopp i :currency', ['currency' => $invoice->invoice_currency])" error="refund_foreign_amount">
+                            <input id="refund_foreign" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="refundForeignAmount">
+                        </x-ui.field>
+                        <x-ui.field for="refund_amount" :label="__('Kronor ut från banken')" error="refund_amount" :hint="__('Skriv beloppet på kontoutdraget.')" class="col-span-2">
+                            <input id="refund_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="refundAmount">
+                        </x-ui.field>
+                    @else
+                        <x-ui.field for="refund_amount" :label="__('Belopp')" error="refund_amount">
+                            <input id="refund_amount" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model="refundAmount">
+                        </x-ui.field>
+                    @endif
+                    <div class="col-span-2"><x-button wire:loading.attr="disabled">{{ __('Registrera återbetalningen') }}</x-button></div>
+                </form>
+                <p class="mt-2 text-sm text-gray-500">{{ __('Återbetalningen bokförs från 1930 Företagskonto i serie C.') }}</p>
+            @endif
+        </x-ui.card>
+    @endif
+
     @if($invoice->payments->isNotEmpty())
-        <x-ui.card :title="__('Betalningar')">
+        <x-ui.card :title="$invoice->isCredit() ? __('Återbetalningar') : __('Betalningar')">
             <ul class="divide-y divide-gray-100 text-sm">
                 @foreach($invoice->payments as $payment)
                     <li class="flex justify-between gap-4 py-2">
@@ -176,7 +201,7 @@
             @if($invoice->tax_reduction !== null && ! $invoice->tax_reduction_paid_ore->isZero())
                 <p class="mb-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{{ __('Skatteverket har betalat ut :amount i :type för fakturan. Krediterar du avdraget blir den delen en skuld till Skatteverket, och du ska anmäla ändringen till Skatteverket utan dröjsmål.', ['amount' => $invoice->tax_reduction_paid_ore->format(), 'type' => App\Domain\Invoicing\TaxReduction::label($invoice->tax_reduction)]) }}</p>
             @endif
-            <p class="text-sm text-gray-700">{{ __('Blev något fel kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras.') }}</p>
+            <p class="text-sm text-gray-700">{{ __('Blev något fel, eller ska kunden få ett prisavdrag, kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras. Har kunden redan betalat får kunden pengar tillbaka, som du registrerar på kreditfakturan.') }}</p>
             <div class="mt-3" x-data="{ confirming: false }">
                 <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" x-show="! confirming" x-on:click="confirming = true">{{ __('Kreditera fakturan') }}</button>
                 <span x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3 text-sm">
