@@ -1,5 +1,5 @@
 @php
-    $tabs = [['route' => 'agreements.index', 'label' => __('Företag och anställda')], ['route' => 'agreements.versions', 'label' => __('Versioner och kalender')]];
+    $tabs = [['route' => 'agreements.index', 'label' => __('Företag och anställda')], ['route' => 'agreements.versions', 'label' => __('Versioner och kalender')], ['route' => 'agreements.local', 'label' => __('Lokala avtal')], ['route' => 'agreements.reports', 'label' => __('Fora och Collectum')]];
 
     if (App\Modules\Agreements\Actions\AgreementAi::availableFor(auth()->user(), auth()->user()->currentCompany())) {
         $tabs[] = ['route' => 'agreements.ai', 'label' => __('NONOX AI')];

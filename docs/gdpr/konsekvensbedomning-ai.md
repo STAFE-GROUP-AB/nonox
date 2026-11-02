@@ -54,6 +54,25 @@ Tillägg 2026-11-01 för modulen Avtal. Gäller bara när både NONOX AI och Avt
 
 Kvarstående: maskeringen är mönsterbaserad och kan missa en ovanligt skriven uppgift (till exempel en adress utan rubrik). TODO(legal-verify): om förslag om lönegrupp är högrisk enligt AI-förordningens bilaga III punkt 4 b trots att en person beslutar varje fält, och vad det i så fall kräver från 2 december 2027 (ADR-018, avsnittet om AI-förordningen).
 
+## 3b. Avtal: NONOX AI läser lokala avtal (LocalAgreementAgent, ADR-033 §6)
+
+Tillägg 2026-11-02. Samma villkor som 3a: bara när NONOX AI och Avtal är påslagna och användaren har `ai:use` och `agreements:manage`.
+
+| | |
+|---|---|
+| **Ändamål** | Läsa ett lokalt avtal mellan företaget och facket och föreslå var det avviker från det centrala avtalet (till exempel en annan OB-sats, en annan provision eller en annan beräkningsperiod), uttryckt i de avvikelser NONOX kan spara. En person godkänner, ändrar eller avvisar varje förslag, och en person med `agreements:verify` kontrollerar varje avvikelse mot det lokala avtalet innan lönen använder den. |
+| **Registrerade** | Personer som nämns i det lokala avtalet (företrädare för arbetsgivaren och klubben, ibland namngivna anställda). Ett lokalt avtal gäller normalt kollektivet, inte enskilda. |
+| **Vad som skickas** | Bara dokumentets text med samma maskering som i 3a. Därtill de avtal företaget är bundet av med avtalets koder och NONOX egna korta beskrivningar av dem, och listan över avvikelser NONOX kan spara. **Avtalets belopp och satser skickas inte.** Ingen fil skickas. |
+| **Vad som sparas** | Dokumentet krypterat på den privata disken. Varje förslag med citat (krypterat) och sida. En godkänd avvikelse sparas på företagets avtalsbindning (`collective_agreements.overrides`) med värde, sida, vem som lade in och vem som kontrollerade den, men utan citat. Behandlingshistoriken sparar agent, antal förslag och antal dolda uppgifter, aldrig innehållet. |
+
+| Risk | Åtgärd |
+|---|---|
+| Fler uppgifter än nödvändigt lämnar tjänsten | Maskering före sändning; bara text; avtalets egna värden skickas inte. |
+| AI:n ändrar lönen | Ett förslag ändrar ingenting förrän en person godkänner det, och en godkänd avvikelse används i lönekörningen först när en person med `agreements:verify` har kontrollerat den. Förslag som inte passar en tillåten avvikelse eller ett avtal företaget är bundet av sparas inte alls. Lönebeskedet visar när en sats kommer från det lokala avtalet. |
+| Fel läsning av ett belopp | Citat och sida visas bredvid förslaget; NONOX visar vad som gäller i dag ("Centrala avtalet" eller den tidigare avvikelsen). Avvikelsen kontrolleras en gång till innan den används. |
+
+Kvarstående: samma maskeringsrisk som i 3a. AI:n föreslår villkor för kollektivet, inte för en enskild anställd; frågan om AI-förordningens bilaga III punkt 4 b (TODO(legal-verify), 3a) gäller även här.
+
 ## 4. Slutsats
 
 [Företagets bedömning, namn, datum, nästa översyn.]

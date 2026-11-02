@@ -1817,8 +1817,8 @@ förslag från NONOX AI (ADR-033 §6).
   sida och om citatet finns ordagrant i dokumentet. Inget förs in förrän en
   person godkänner, ändrar eller avvisar förslaget; "Godkänn alla som
   stämmer med dokumentet" gäller bara förslag vars citat hittades. Avtalets
-  belopp och satser kommer aldrig från AI:n. `LocalAgreementAgent` (lokala
-  avtal) är inte byggd.
+  belopp och satser kommer aldrig från AI:n. `LocalAgreementAgent` läser
+  ett uppladdat lokalt avtal och föreslår avvikelser (se Lokala avtal nedan).
 - **Behandlingshistorik.** Inläsning, kontroll, bindning, anställningens
   avtalsuppgifter, uppladdning och borttagning av dokument, varje analys
   (agent, antal förslag, antal dolda uppgifter) och varje beslut om ett
@@ -1864,11 +1864,58 @@ förslag från NONOX AI (ADR-033 §6).
   representativ period för oregelbunden tid, vilken dag som avgör
   anställningstiden för dag 15-avdraget, och taket 105 dagar per 12 månader
   (inte byggt).
-- **Inte byggt ännu (A9–A12, och delar av A7–A8).** Övertidstillägg för
-  timavlönade, karens i tid enligt avtalen, avtalens egna timvärden i
-  sjuklönen, avtalets semesterregler, pension och avtalsförsäkringar per
-  avtal med Fora-rapport, provision med garanti, fasta tillägg, kostavdrag
-  och gyllene lönespecar per avtal.
+- **Semester enligt avtalet (A9).** Avtalsdatans `vacation` ger
+  procentsats (procentregeln och semesterersättning med lönen),
+  semestertillägg per dag (sammalöneregeln) och lägsta semesterlön per dag
+  efter ålder och branschvana. `AgreementPayTerms` lägger värdena på
+  `VacationInput` (`withAgreementTerms`) och lönens eget semestersteg räknar
+  med dem; raden förklarar avtal och källa. Säger avtalet en annan
+  semesterregel än anställningens blir det en varning. Semesterskulden,
+  semesterårets slutbetalningar och semesterersättning vid anställningens
+  slut räknas fortfarande med lagens värden.
+- **Pension och avtalsförsäkringar (A10).** Avtalsdatan pekar på lönens
+  regler `pension.saf_lo`/`pension.itp1` och
+  `insurance.fora.arbetare`/`insurance.fora.tjansteman` (versionerade,
+  kontrolleras under Lön → Regler; saknas en kontrollerad regel stoppas
+  körningen). Har anställningen ingen egen pensionsplan används avtalets,
+  med åldersgränser och tak (ITP 1: 30 IBB). `AgreementCostsStep` lägger en
+  rad per premie (bp > 0) på kontant lön utan förmåner, med tak 7,5 PBB där
+  regeln säger så, och hängavtalets administrationsavgift. Premierna är
+  arbetsgivarens kostnad (`EMPLOYER`) och bokförs i lönens verifikation:
+  tjänstepension 7410/2740, särskild löneskatt 7530/2514,
+  avtalsförsäkringar (löneart `AVTALSFORSAKRING`) 7570/2740.
+  TODO(legal-verify): BAS-namnet på 7570 och premieunderlaget per försäkring.
+- **Fora- och Collectum-underlag (A10).** Lön → Avtal → Fora och Collectum
+  visar per utbetalningsmånad kontant bruttolön, pension och premier per
+  anställd i attesterade körningar; CSV (kolumner i
+  `docs/avtal/datamodell.md` §6.7) kräver `agreements:manage` och loggas
+  (`agreements.premium_basis_downloaded`). Det är NONOX eget underlag, inte
+  Foras JSON-format eller Collectums format; inget skickas.
+- **Provision, tillägg och kostavdrag (A11).** Avtalskoder av sorten
+  `COMMISSION` (omsättning som antal; provision minus garanterad lön, eller
+  hela provisionen utan garanti, på löneart `PROVISION`), `SUPPLEMENT`
+  (per timme eller tillfälle, löneart `AVTALSTILLAGG`, semestergrund per
+  kod) och `MEAL` (dagar; blir kostförmån till Skatteverkets värde plus
+  nettoavdrag `FORMAN_EGENBETALNING` som minskar förmånsvärdet).
+- **Lokala avtal.** En lokal avvikelse sparas per sökväg i
+  `collective_agreements.overrides` (tillåtna sökvägar i `LocalOverrides`),
+  för hand eller som godkänt AI-förslag, och används i en körning först när
+  en person med `agreements:verify` har kontrollerat den. Ändras den måste
+  den kontrolleras igen. Raden förklarar att värdet kommer från det lokala
+  avtalet (källa `LOKALT#s. N`). Beräkningsperiod, komptid och fri text
+  sparas men räknas inte.
+- **Gyllene lönespecar (A12).** `tests/Fixtures/agreements/payslips` har
+  minst tio fall per avtal i våg 1 (dag, kväll, natt, helg, helgdag/storhelg,
+  ung, deltid, övertid, semester, kost/hängavtal), uträknade för hand
+  (`expected-payslips.py`) ur avtalsfilerna; provision med garanti räknas
+  mot ett syntetiskt avtal eftersom Frisöravtalets satser inte är publika.
+  Pass, mertid och sjuklön med OB (A5–A8) ingår inte i dessa fall.
+- **Inte byggt ännu.** Av A7–A8: övertidstillägg för timavlönade, karens
+  i tid enligt avtalen, avtalens egna timvärden i sjuklönen och taket 105
+  dagar per 12 månader. Av A9–A11: rörlig lön och 4,6 %-regeln i
+  tjänstemannaavtalens semester, garantibelopp för deltid i handeln, ITP 2,
+  sjukpension och premiebefrielse i ITP 1, TGL för tjänstemän, Foras och
+  Collectums egna filformat.
 
 ## 5i. Planering (modul)
 

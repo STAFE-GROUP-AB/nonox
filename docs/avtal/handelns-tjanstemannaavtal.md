@@ -122,3 +122,9 @@ sig "till närmast följande vardag" kräver kalenderlogik (gap G5).
 - ITP1 2026, TFA och TRR: se `visita-unionen.md` (samma premier).
   ITP-åldrar: pensionsålder 66 (ITP1) / 65 (ITP2) enligt HT § 1.4; gränsen
   mellan ITP1 och ITP2 per födelseår ej verifierad → `TODO(legal-verify)`.
+
+## I NONOX: semester, pension, försäkringar och tillägg (A9–A12, 2026-11-02)
+
+- Semester: sammalöneregeln, semestertillägg 0,8 % per dag; 0,5 % av rörlig lön och 4,6 %-regeln räknas inte.
+- Pension och försäkringar: `pension.itp1`, `insurance.fora.tjansteman`. ITP 2 och gränsen mellan ITP 1 och ITP 2 per födelseår räknas inte (TODO(legal-verify)).
+- Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/svenskhandel-unionen-tjansteman.json`.

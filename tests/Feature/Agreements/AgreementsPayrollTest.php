@@ -67,6 +67,7 @@ beforeEach(function () {
     $this->travelTo(CarbonImmutable::parse('2026-04-10 10:00:00'));
     [$this->owner, $this->company] = Bookkeeping::company();
     Payroll::setUp($this->company, $this->owner);
+    Payroll::agreementPremiums();
     app(ModuleManager::class)->enable(AgreementsModule::KEY, $this->company, $this->owner);
     CurrentCompany::set($this->company);
     $this->actingAs($this->owner);

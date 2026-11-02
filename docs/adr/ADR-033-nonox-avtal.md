@@ -202,8 +202,24 @@ lines, explanation per line), A4 (minimum wage warnings) and the AI setup
 of §6 with `AgreementIdentificationAgent` and `EmploymentTermsAgent`. As
 built, the payroll engine gains `PayrollExtensions` (context extensions
 and steps registered by other modules) and an agreement code is its own
-pay code with `formula_ref = agreement:<code>`. Remaining: A5–A12 and
-`LocalAgreementAgent`.
+pay code with `formula_ref = agreement:<code>`.
+
+Added 2026-11-02 (branch of agent avtal-ersattning): A9 (the agreement's
+vacation percentage, semestertillägg and lowest vacation pay per day,
+applied through `VacationInput::withAgreementTerms`), A10 (pension and
+agreement insurances from the payroll rules `pension.*` and
+`insurance.fora.*`, booked 7410/7570 against 2740, and a Fora/Collectum
+basis as NONOX's own CSV, not their file formats), A11 (commission with
+guarantee, fixed supplements, meal deductions), A12 (golden payslips, at
+least ten per wave-1 agreement), local overrides in
+`collective_agreements.overrides` verified with `agreements:verify` before
+use, and `LocalAgreementAgent`. As built, the engine gained
+`PayrollContext::withVacation()`/`withPension()`, optional agreement
+fields on `VacationInput` and on the pension plan array (threshold, ceiling,
+ages), and three pay codes (`AVTALSTILLAGG`, `PROVISION`,
+`AVTALSFORSAKRING`); the agreement logic stays in the module
+(`AgreementPayTerms`, `AgreementCostsStep`). Remaining: A5–A8 (other
+branch), ITP 2, Fora's JSON file and Collectum's formats.
 
 **A5–A8 (2026-11-02).** §4 is implemented by NONOX Planering (ADR-037)
 instead of a `work_shifts` table of this module: published shifts, the

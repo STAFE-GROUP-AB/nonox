@@ -21,7 +21,7 @@ final readonly class PayrollContext
      * @param  list<AbsenceInput>  $absences  approved absences in the period
      * @param  array{last_sick_period_end?: string, last_sick_period_days?: int, karens_count_12m?: int}  $sickHistory
      * @param  ?list<string>  $weekPattern  scheduled hours Monday to Sunday
-     * @param  ?array{below_bp: int, above_bp: int, name: string}  $pension  the employment's pension plan
+     * @param  ?array{below_bp: int, above_bp: int, name: string, threshold_ibb?: string, ceiling_ibb?: ?string, from_age?: ?int, to_age_exclusive?: ?int, rule_version_id?: ?int, agreement?: array<string, mixed>}  $pension  the employment's pension plan, or the collective agreement's (NONOX Avtal): the optional keys set another threshold, a ceiling and the ages the premium is paid between
      * @param  array<string, object>  $extensions  what other modules add for their steps, by module key (for example the agreement the employment is bound by)
      */
     public function __construct(
@@ -73,6 +73,26 @@ final readonly class PayrollContext
     public function withInputs(array $inputs): self
     {
         return new self(...[...get_object_vars($this), 'inputs' => $inputs]);
+    }
+
+    /**
+     * A copy with other vacation terms, for a module that applies a
+     * collective agreement's vacation rules (NONOX Avtal, ADR-033 A9).
+     */
+    public function withVacation(?VacationInput $vacation): self
+    {
+        return new self(...[...get_object_vars($this), 'vacation' => $vacation]);
+    }
+
+    /**
+     * A copy with another pension plan, for a module that applies a
+     * collective agreement's pension (NONOX Avtal, ADR-033 A10).
+     *
+     * @param  ?array{below_bp: int, above_bp: int, name: string, threshold_ibb?: string, ceiling_ibb?: ?string, from_age?: ?int, to_age_exclusive?: ?int, rule_version_id?: ?int, agreement?: array<string, mixed>}  $pension
+     */
+    public function withPension(?array $pension): self
+    {
+        return new self(...[...get_object_vars($this), 'pension' => $pension]);
     }
 
     /** A copy with what a module adds for its own steps. */

@@ -213,3 +213,10 @@ omställningsstöd), FPT.
 Särskild löneskatt 24,26 % på pensionspremien finns redan som regel
 (`special_payroll_tax.pension`). Vilken TSL-rad som gäller för HRF-området:
 `TODO(legal-verify)`.
+
+## I NONOX: semester, pension, försäkringar och tillägg (A9–A12, 2026-11-02)
+
+- Semester: `vacation.percent_bp` 1272, lägsta semesterlön per dag 1 620 / 1 227 kr (2025-04-01) och 1 675 / 1 269 kr (2026-04-01) efter 3 månader, i proportion för deltid. Steget för semesteråret 2027-04-01 ligger utanför versionens giltighet och kommer med nästa version. Sparad semester 0,5 % sparas men räknas inte.
+- Pension och försäkringar: `pension.saf_lo`, `insurance.fora.arbetare`; hängavtalet har `admin_fee_bp` 51 och hängavtalets omställningspremie 0,74 %. TODO(legal-verify): vilken TSL-rad (huvudavtal eller omställningsavtal) som gäller för HRF-området, och om administrationsavgiften tas på samma underlag som premierna.
+- Kostavdrag: kod `GR_KOST` (MEAL), 55 / 56 kr per dag, nettoavdrag mot Skatteverkets värde för lunch eller middag. TODO(legal-verify): vilket schablonvärde. Månadsbeloppet 2 913 / 3 000 kr och tilläggstabellen vid högre kostpris är inte data.
+- Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/visita-hrf-grona-riks.json`.

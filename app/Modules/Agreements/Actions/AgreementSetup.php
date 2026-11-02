@@ -176,10 +176,25 @@ class AgreementSetup
         $created = 0;
 
         foreach ($rules->codes() as $code => $definition) {
-            $base = PayCodeCatalog::CODES[(string) ($definition['pay_code'] ?? '')] ?? null;
+            $kind = (string) ($definition['kind'] ?? '');
+            // A commission is entered as the turnover and a meal deduction as days: both are paid as
+            // lines of their own (AgreementPayTerms), so the input's pay code follows an addition and is
+            // never paid as it is.
+            $base = PayCodeCatalog::CODES[match ($kind) {
+                'MEAL' => 'AVTALSTILLAGG',
+                default => (string) ($definition['pay_code'] ?? ''),
+            }] ?? null;
 
             if ($base === null || in_array($code, $existing, true)) {
                 continue;
+            }
+
+            if (isset($definition['vacation_basis']) && is_bool($definition['vacation_basis'])) {
+                $base['vacation'] = $definition['vacation_basis'];
+            }
+
+            if ($kind === 'MEAL') {
+                $base = [...$base, 'vacation' => false, 'pension' => false, 'debit' => null];
             }
 
             PayCode::create([
@@ -187,7 +202,7 @@ class AgreementSetup
                 'name_sv' => mb_substr("{$definition['name']} ({$rules->shortName()})", 0, 255),
                 'name_en' => mb_substr("{$base['name_en']} ({$rules->shortName()})", 0, 255),
                 'category' => $base['category'],
-                'unit' => 'HOURS',
+                'unit' => in_array($kind, ['COMMISSION', 'MEAL'], true) || ($definition['unit'] ?? 'HOUR') === 'OCCASION' ? 'QUANTITY' : 'HOURS',
                 'formula_ref' => mb_substr(PayCode::AGREEMENT_PREFIX.$code, 0, 50),
                 'is_taxable' => $base['taxable'],
                 'tax_method' => $base['tax_method'],

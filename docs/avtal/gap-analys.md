@@ -162,6 +162,20 @@ utbetalning av komptid vid anställningens slut som avtalsregel (bara manuell
 utbetalning under Lön → Komptid), och sjukdagens timmar för timavlönade utan
 publicerade pass (lönens veckomönster gäller då som förut).
 
+Status A9–A12 (2026-11-02): **A9** byggt för procentsats, semestertillägg
+och lägsta semesterlön per dag (G13 delvis: rörlig lön, 4,6 %-regeln,
+faktor 1 796 för deltid och semesterskulden enligt avtal saknas). **A10**
+byggt: SAF-LO och ITP 1 (ålderspension) med åldrar och tak som lönens
+regler, Fora-försäkringar per komponent med tak, hängavtalsavgift, bokföring
+7410/7570/2740, och Fora/Collectum-underlag som CSV (G18, G19; G23 som eget
+underlag, inte Foras JSON-format). ITP 2, sjukpension/premiebefrielse i
+ITP 1 och TGL för tjänstemän saknas. **A11** byggt: provision med garanti,
+fasta tillägg per timme eller tillfälle och kostavdrag (G14–G16, delvis
+G15: anställningstidstillägg, frysrum, skiftform och tidbank är inte data).
+**A12**: gyllene lönespecar, minst tio per avtal i våg 1 (frisör mot ett
+syntetiskt avtal); fall med pass, mertid och sjuklön med OB väntar på
+A5–A8. Lokala avvikelser (G21) och `LocalAgreementAgent` är byggda.
+
 ## 6. Risker
 
 - **Fel avtal på anställningen** är det vanligaste felet i praktiken.

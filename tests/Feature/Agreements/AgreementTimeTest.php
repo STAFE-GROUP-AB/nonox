@@ -37,6 +37,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
+use Tests\Support\Payroll;
 use Tests\Support\Planning;
 
 /*
@@ -106,6 +107,7 @@ beforeEach(function () {
     Notification::fake();
     [$this->owner, $this->company] = Bookkeeping::company();
     Planning::setUp($this->company, $this->owner);
+    Payroll::agreementPremiums();
     $this->actingAs($this->owner);
     $this->anna = Planning::employee($this->owner, $this->company, 'Anna', '900615123', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD', 'start_date' => '2026-01-01']);
     $this->bertil = Planning::employee($this->owner, $this->company, 'Bertil', '850301234', ['start_date' => '2026-01-01']);

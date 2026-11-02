@@ -1,0 +1,418 @@
+{
+  "agreement": "visita-unionen",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "dag",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 3500000
+        },
+        "gross_ore": 3500000,
+        "employer": {
+          "TJANSTEPENSION": 157500,
+          "AVTALSFORSAKRING": 14700
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "kväll: OB efter 20",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_OB",
+          "quantity": "6",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_OB": 16008
+        },
+        "gross_ore": 3516008,
+        "employer": {
+          "TJANSTEPENSION": 158220,
+          "AVTALSFORSAKRING": 14767
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helg: OB lördag efter 16",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_OB",
+          "quantity": "8",
+          "date": "2026-05-09"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_OB": 21344
+        },
+        "gross_ore": 3521344,
+        "employer": {
+          "TJANSTEPENSION": 158460,
+          "AVTALSFORSAKRING": 14789
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "natt: OB och natt-OB",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_OB",
+          "quantity": "5",
+          "date": "2026-05-06"
+        },
+        {
+          "code": "VU_OB_NATT",
+          "quantity": "5",
+          "date": "2026-05-06"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_OB": 13340,
+          "VU_OB_NATT": 11750
+        },
+        "gross_ore": 3525090,
+        "employer": {
+          "TJANSTEPENSION": 158629,
+          "AVTALSFORSAKRING": 14805
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "jour vardag /600",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_JOUR",
+          "quantity": "10",
+          "date": "2026-05-12"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_JOUR": 58330
+        },
+        "gross_ore": 3558330,
+        "employer": {
+          "TJANSTEPENSION": 160125,
+          "AVTALSFORSAKRING": 14945
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "beredskap storhelg /350",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_BERED_STORH",
+          "quantity": "12",
+          "date": "2026-05-14"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_BERED_STORH": 120000
+        },
+        "gross_ore": 3620000,
+        "employer": {
+          "TJANSTEPENSION": 162900,
+          "AVTALSFORSAKRING": 15204
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "övertid /94",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_OT_94",
+          "quantity": "2",
+          "date": "2026-05-13"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_OT_94": 74468
+        },
+        "gross_ore": 3574468,
+        "employer": {
+          "TJANSTEPENSION": 160851,
+          "AVTALSFORSAKRING": 15013
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "restid /240",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_RESTID",
+          "quantity": "3",
+          "date": "2026-05-20"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_RESTID": 43749
+        },
+        "gross_ore": 3543749,
+        "employer": {
+          "TJANSTEPENSION": 159469,
+          "AVTALSFORSAKRING": 14884
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "semester: sammalöneregeln med 0,8 % per dag",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SEMESTERTILLAGG": 140000
+        },
+        "gross_ore": 3640000,
+        "employer": {
+          "TJANSTEPENSION": 163800,
+          "AVTALSFORSAKRING": 15288
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-20",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-21",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-22",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "SAMMALONEREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 42000000
+      }
+    },
+    {
+      "name": "kostavdrag 55 kr per dag före 1 juni 2026",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_KOST",
+          "quantity": "20",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "FORMAN_EGENBETALNING": -110000,
+          "KOSTFORMAN_LUNCH": 248000
+        },
+        "gross_ore": 3638000,
+        "employer": {
+          "TJANSTEPENSION": 157500,
+          "AVTALSFORSAKRING": 14700
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "ung: 18 år, ingen ITP 1",
+      "agreement": "visita-unionen/MEMBER-2025-06-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 2500000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "VU_OB",
+          "quantity": "4",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "VU_OB": 10672
+        },
+        "gross_ore": 2510672,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 10545
+        },
+        "warnings": []
+      }
+    }
+  ]
+}

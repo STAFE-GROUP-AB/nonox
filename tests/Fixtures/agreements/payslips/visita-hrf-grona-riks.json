@@ -1,0 +1,477 @@
+{
+  "agreement": "visita-hrf-grona-riks",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "dag: månadslön utan avtalsrader",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 3200000
+        },
+        "gross_ore": 3200000,
+        "employer": {
+          "TJANSTEPENSION": 144000,
+          "AVTALSFORSAKRING": 14400
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "kväll: OB 10 tim vardag efter 20",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "GR_OB",
+          "quantity": "10",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "GR_OB": 27590
+        },
+        "gross_ore": 3227590,
+        "employer": {
+          "TJANSTEPENSION": 145242,
+          "AVTALSFORSAKRING": 14525
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "natt: OB och natt-OB 01–06",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "GR_OB",
+          "quantity": "5",
+          "date": "2026-05-06"
+        },
+        {
+          "code": "GR_OB_NATT",
+          "quantity": "5",
+          "date": "2026-05-06"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "GR_OB": 13795,
+          "GR_OB_NATT": 12155
+        },
+        "gross_ore": 3225950,
+        "employer": {
+          "TJANSTEPENSION": 145168,
+          "AVTALSFORSAKRING": 14517
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helg: OB lördag efter 16",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "GR_OB",
+          "quantity": "8",
+          "date": "2026-05-09"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "GR_OB": 22072
+        },
+        "gross_ore": 3222072,
+        "employer": {
+          "TJANSTEPENSION": 144993,
+          "AVTALSFORSAKRING": 14499
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "storhelg: 100 % av timlönen, varnar när julafton inte är lördag eller söndag",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-12",
+      "payment_date": "2026-12-23",
+      "inputs": [
+        {
+          "code": "GR_STORHELG",
+          "quantity": "8",
+          "date": "2026-12-24"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "GR_STORHELG": 147976
+        },
+        "gross_ore": 3347976,
+        "employer": {
+          "TJANSTEPENSION": 150659,
+          "AVTALSFORSAKRING": 15066
+        },
+        "warnings": [
+          "men 2026-12-24 är inte en sådan dag"
+        ]
+      }
+    },
+    {
+      "name": "ung: 18 år med timlön under minimilönen, ingen pension före 22",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 11000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2U",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "100",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TIMLON": 1100000
+        },
+        "gross_ore": 1100000,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 4950
+        },
+        "warnings": [
+          "under minimilönen"
+        ]
+      }
+    },
+    {
+      "name": "deltid 75 %: övertid a) med timlön enligt deltidsformeln",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 7500,
+        "weekly_hours": "30",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "GR_OT_A",
+          "quantity": "2",
+          "date": "2026-05-12"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "GR_OT_A": 50232
+        },
+        "gross_ore": 2450232,
+        "employer": {
+          "TJANSTEPENSION": 110260,
+          "AVTALSFORSAKRING": 11026
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "övertid b) och c)",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "GR_OT_B",
+          "quantity": "3",
+          "date": "2026-05-13"
+        },
+        {
+          "code": "GR_OT_C",
+          "quantity": "2",
+          "date": "2026-05-14"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "GR_OT_B": 94335,
+          "GR_OT_C": 70290
+        },
+        "gross_ore": 3364625,
+        "employer": {
+          "TJANSTEPENSION": 151408,
+          "AVTALSFORSAKRING": 15141
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "semester: 12,72 % enligt avtalet, procentregeln",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 976896,
+          "SEMESTERAVDRAG": -738462
+        },
+        "gross_ore": 3438434,
+        "employer": {
+          "TJANSTEPENSION": 154730,
+          "AVTALSFORSAKRING": 15473
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-20",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-21",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-22",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 38400000
+      }
+    },
+    {
+      "name": "semester: lägsta semesterlön per dag under 20 år",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 12500,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2U",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "88",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 253800,
+          "TIMLON": 1100000
+        },
+        "gross_ore": 1353800,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 6092
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 2000000
+      }
+    },
+    {
+      "name": "kostavdrag: 20 dagar, förmånen minskas med avdraget",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "GR_KOST",
+          "quantity": "20",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "FORMAN_EGENBETALNING": -112000,
+          "KOSTFORMAN_LUNCH": 248000,
+          "OVRIG_FORMAN": -112000
+        },
+        "gross_ore": 3336000,
+        "employer": {
+          "TJANSTEPENSION": 144000,
+          "AVTALSFORSAKRING": 14400
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "hängavtal: högre omställningspremie och administrationsavgift 0,51 %",
+      "agreement": "visita-hrf-grona-riks/HANGAVTAL-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3200000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 3200000
+        },
+        "gross_ore": 3200000,
+        "employer": {
+          "TJANSTEPENSION": 144000,
+          "AVTALSFORSAKRING": 43520
+        },
+        "warnings": []
+      }
+    }
+  ]
+}

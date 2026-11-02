@@ -136,6 +136,8 @@
                                         @case('ORE_PER_HOUR') {{ __(':amount per timme', ['amount' => App\Support\Money\Money::ofOre((int) $rate['ore'])->format()]) }} @break
                                         @case('PERCENT_OF_HOURLY') {{ ($rate['plus_hourly_wage'] ?? false) ? __('timlön + :percent %', ['percent' => number_format($rate['bp'] / 100, 2, ',', ' ')]) : __(':percent % av timlönen', ['percent' => number_format($rate['bp'] / 100, 2, ',', ' ')]) }} @break
                                         @case('DIVISOR_OF_MONTHLY') {{ __('månadslönen / :divisor per timme', ['divisor' => $rate['divisor']]) }} @break
+                                        @case('ORE') {{ __(':amount per tillfälle eller dag', ['amount' => App\Support\Money\Money::ofOre((int) $rate['ore'])->format()]) }} @break
+                                        @case('PERCENT_OF_TURNOVER') {{ __(':percent % av omsättningen', ['percent' => number_format($rate['bp'] / 100, 2, ',', ' ')]) }} @break
                                     @endswitch
                                     @if(! $loop->last) · @endif
                                 @endforeach
@@ -145,6 +147,8 @@
                     @endforeach
                 </ul>
             @endif
+
+            @include('agreements::partials.version-terms', ['rules' => $rules])
 
             @if($rules->notes() !== [])
                 <h3 class="mt-6 text-sm font-semibold text-gray-900">{{ __('Det här räknar NONOX inte ännu') }}</h3>

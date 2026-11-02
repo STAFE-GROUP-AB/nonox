@@ -105,6 +105,10 @@
                                             @if($proposal->field === 'binding')
                                                 {{ $agreements->get($proposal->value['agreement_key'] ?? '')?->agreementRules()->name() ?? ($proposal->value['agreement_key'] ?? '') }}
                                                 <span class="block text-xs font-normal text-gray-600">{{ filled($proposal->value['variant'] ?? null) ? App\Modules\Agreements\Models\AgreementRuleVersion::variantLabel($proposal->value['variant']) : __('Variant okänd') }}{{ filled($proposal->value['bound_from'] ?? null) ? ', '.__('från :date', ['date' => $proposal->value['bound_from']]) : '' }}</span>
+                                            @elseif($proposal->field === 'override')
+                                                {{ App\Modules\Agreements\Domain\LocalOverrides::label((string) ($proposal->value['path'] ?? '')) }}: {{ App\Modules\Agreements\Domain\LocalOverrides::describe((string) ($proposal->value['path'] ?? ''), $proposal->value['value'] ?? null) }}
+                                                <span class="block text-xs font-normal text-gray-600">{{ $proposal->value['description'] ?? '' }}</span>
+                                                <span class="block text-xs font-normal text-gray-500">{{ __('Används i lönen först när en behörig person har kontrollerat den under Lön → Avtal → Lokala avtal.') }}</span>
                                             @else
                                                 {{ $proposal->value }}
                                             @endif
@@ -139,7 +143,7 @@
                                                             <input id="edit_from" type="date" wire:model="editBinding.bound_from" class="{{ $select }}">
                                                         </x-ui.field>
                                                     @else
-                                                        <x-ui.field for="edit_value" :label="App\Modules\Agreements\Actions\AgreementAi::fieldLabel($proposal->field)">
+                                                        <x-ui.field for="edit_value" :label="App\Modules\Agreements\Actions\AgreementAi::fieldLabel($proposal->field)" :hint="$proposal->field === 'override' ? __('Kronor (30), procent (35 %) eller delare (/600), som det lokala avtalet säger.') : null">
                                                             <input id="edit_value" type="text" wire:model="editValue" class="{{ $select }}">
                                                         </x-ui.field>
                                                     @endif

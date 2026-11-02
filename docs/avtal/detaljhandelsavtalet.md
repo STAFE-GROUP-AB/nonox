@@ -199,3 +199,9 @@ försäkring för arbetare och FPT (§ 17.2 s. 52). Premier 2026 (P26):
 3. Hängavtalets namn och eventuell administrationsavgift.
 4. Vilken dag som avgör minimilönesteg vid ålder (avtalet: "från den första
    i månaden då förändring sker").
+
+## I NONOX: semester, pension, försäkringar och tillägg (A9–A12, 2026-11-02)
+
+- Semester: procentregeln för alla (`rule_monthly` PROCENTREGELN), 13 %, garantibelopp per dag 1 470 / 1 740 kr (2025-04-01) och 1 515 / 1 790 kr (2026-04-01) med 3 års branschvana, för heltid. Deltid (faktor 1 796) ger en varning i stället för en beräkning.
+- Pension och försäkringar: `pension.saf_lo`, `insurance.fora.arbetare`. TODO(legal-verify): TSL-rad för Handels (inte anslutet till Huvudavtalet 2024) och förstärkt pensionsavsättning (§ 17.14).
+- Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/svenskhandel-handels-detaljhandel.json`.

@@ -1,6 +1,6 @@
 {
     "year": 2026,
-    "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; each company checks them against the sources in Lön → Regler (or an installation verifies them with payroll:verify-rule) before use. Missing until researched: per_diem.foreign.by_country (Skatteverket publishes it as CSV/API, see rättslig vägledning), and how a salary with öre is placed in a table interval.",
+    "note": "Values researched from the cited primary sources on 2026-10-30. Every version is imported unverified; each company checks them against the sources in Lön → Regler (or an installation verifies them with payroll:verify-rule) before use. Missing until researched: per_diem.foreign.by_country (Skatteverket publishes it as CSV/API, see rättslig vägledning), and how a salary with öre is placed in a table interval. Agreement pensions and insurances (pension.saf_lo, pension.itp1, insurance.fora.*) added 2026-11-02 for NONOX Avtal (ADR-033 A10); used only by employments bound to an agreement, not required keys.",
     "rules": [
         {
             "key": "employer_contribution.full",
@@ -674,6 +674,113 @@
             },
             "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/semesterlag-1977480_sfs-1977-480/",
             "source_quote": "17 § sjukdom högst 180 dagar under intjänandeåret; 17 a § ledighet enligt 8 § första stycket föräldraledighetslagen och föräldrapenning högst 120 dagar (180 för ensamstående); 17 b § grundutbildning högst 60 dagar. Antalet dagar per frånvarotyp och intjänandeår som är semesterlönegrundande."
+        },
+        {
+            "key": "pension.saf_lo",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "name": "Avtalspension SAF-LO",
+                "below_bp": 450,
+                "above_bp": 3000,
+                "threshold_ibb": "7.5",
+                "from_age": 22,
+                "to_age_exclusive": 65,
+                "note": "TODO(legal-verify): 0,10 % of the premium is financed by a surplus in 2026 (total 4,85 % instead of 4,95 % with the insurances); whether the employer's cost is booked at 4,40 % or 4,50 % is checked against the invoice. Age: from the month the employee turns 22 up to and including the month before 65."
+            },
+            "source_url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf",
+            "source_quote": "Arbetsgivaren betalar premie från och med månaden den anställda fyller 22 år och till och med månaden innan 65 år."
+        },
+        {
+            "key": "pension.itp1",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "name": "ITP 1",
+                "below_bp": 450,
+                "above_bp": 3000,
+                "threshold_ibb": "7.5",
+                "ceiling_ibb": "30",
+                "from_age": 25,
+                "note": "Ålderspension only. Sjukpension (0,030 % / 0,108 %) and premiebefrielse (0,125 % / 1,415 %) are invoiced by Collectum and not calculated. TODO(legal-verify): the age the premiums stop at, the age from which they start (25 per avtalat.se), and Collectum's administration fee."
+            },
+            "source_url": "https://collectum.se/avtal-och-faktura/faktura-och-premier/aktuella-premier-och-basbelopp",
+            "source_quote": "4,5 % upp till 52 125 kr/mån; 30 % mellan 52 125 kr/mån och 208 500 kr/mån"
+        },
+        {
+            "key": "insurance.fora.arbetare",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "components": [
+                    {
+                        "key": "AGS",
+                        "name": "AGS",
+                        "bp": 0,
+                        "cap_pbb": "7.5"
+                    },
+                    {
+                        "key": "AGB",
+                        "name": "AGB",
+                        "bp": 0,
+                        "cap_pbb": "7.5"
+                    },
+                    {
+                        "key": "PBF",
+                        "name": "PBF",
+                        "bp": 0
+                    },
+                    {
+                        "key": "FPT",
+                        "name": "FPT",
+                        "bp": 0
+                    },
+                    {
+                        "key": "TFA",
+                        "name": "TFA",
+                        "bp": 1
+                    },
+                    {
+                        "key": "TGL",
+                        "name": "TGL",
+                        "bp": 10,
+                        "cap_pbb": "7.5"
+                    },
+                    {
+                        "key": "TSL",
+                        "name": "Omställningsstöd (TSL)",
+                        "bp": 34,
+                        "hangavtal_bp": 74,
+                        "cap_pbb": "7.5"
+                    }
+                ],
+                "note": "TSL with Huvudavtal (0,34 % member, 0,74 % hängavtal). Without Huvudavtal (omställningsavtal only) the premium is 0,15 % / 0,55 %: TODO(legal-verify) which row applies per agreement area (Handels did not join Huvudavtalet 2024). Kammarkollegiet repays up to 0,15 % via Fora (not booked here). Ages: not stated in the source, TODO(legal-verify)."
+            },
+            "source_url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf",
+            "source_quote": "Huvudavtal: Premien 0,34 % vid medlemskap i Svenskt Näringsliv och 0,74 % vid hängavtal."
+        },
+        {
+            "key": "insurance.fora.tjansteman",
+            "valid_from": "2026-01-01",
+            "valid_to": "2026-12-31",
+            "value": {
+                "components": [
+                    {
+                        "key": "TFA",
+                        "name": "TFA",
+                        "bp": 2
+                    },
+                    {
+                        "key": "TRR",
+                        "name": "Omställning (TRR)",
+                        "bp": 40,
+                        "hangavtal_bp": 80,
+                        "to_age_exclusive": 67
+                    }
+                ],
+                "note": "TGL for tjänstemän is an amount per person (Alecta), not a percentage: not calculated. TODO(legal-verify): TRR up to the month before 67 (avtalat.se ITP 2 premiums 2026, https://www.avtalat.se/media/dmnlzmb3/2026-premier_itp-2.pdf), 0,15 % repaid via Fora; TFA 0,02 % and TRR 0,40 %/0,80 % read from Fora's price list 2026."
+            },
+            "source_url": "https://www.fora.se/foretag/kostnad-och-faktura/prislistor/prislista-2026---foretag-med-kollektivavtal/"
         }
     ]
 }

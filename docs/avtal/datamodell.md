@@ -320,6 +320,131 @@ avtalsfilen (upphovsrätt, ADR-033 fråga 1); granskaren slår upp sidan.
 - Minimilönekontrollen jämför anställningens lön med raden för grupp,
   ålder och erfarenhet och ger varning eller stopp enligt `check`.
 
+## 6. A9–A12 som byggt (2026-11-02)
+
+Alla tillägg är **frivilliga** nycklar; en fil utan dem räknas som förut.
+De nya avsnitten ligger sist i filen, efter `notes`.
+
+### 6.1 `vacation` (A9)
+
+```jsonc
+"vacation": {
+  "rule_monthly": "SAMMALONEREGELN",      // valfri: avtalets regel för månadsavlönade; avvikelse ger varning
+  "percent_bp": 1272,                     // procentregeln och semesterersättning med lönen
+  "supplement_bp_per_day": 80,            // sammalöneregeln: tillägg per betald dag, bp av månadslönen
+  "variable_pay_percent_bp": 1272,        // sparas, räknas inte ännu
+  "saved_day_percent_bp": 50,             // sparas, räknas inte ännu
+  "minimum_daily": {                      // lägsta semesterlön per betald dag
+    "min_employment_months": 3,
+    "part_time": "PRO_RATA",              // PRO_RATA (× sysselsättningsgrad) | FULL_TIME_ONLY (deltid: varning)
+    "steps": [ { "valid_from": "2026-04-01", "rows": [ { "age_min": 20, "ore": 167500 }, { "age_max_exclusive": 20, "ore": 126900 } ] } ],
+    "source": "GR#§ 17 s. 25"
+  },
+  "extra_days": [ { "when": "OVERTIME_INCLUDED_IN_SALARY", "days": 5, "source": "VU#§ 16 s. 33" } ],  // visas, räknas inte
+  "note": "…",
+  "source": "GR#§ 17 s. 25"
+}
+```
+
+En rad i `minimum_daily.steps[].rows` kan också ha `experience_months_min`
+(branschvana). Den högsta raden personen uppfyller gäller. Steget väljs
+efter löneperiodens sista dag; åldern räknas den dagen.
+TODO(legal-verify) per avtal: om semesterårets steg ska väljas efter
+semesterdagen.
+
+### 6.2 `pension` (A10)
+
+`{ "rule_key": "pension.saf_lo" | "pension.itp1", "source": "…" }`. Värdet
+läses ur lönens regel med samma nyckel:
+
+```jsonc
+"pension.saf_lo": { "name": "Avtalspension SAF-LO", "below_bp": 450, "above_bp": 3000,
+                    "threshold_ibb": "7.5", "ceiling_ibb": null, "from_age": 22, "to_age_exclusive": 65 }
+```
+
+Åldern räknas på periodens sista dag (premie från månaden personen fyller
+`from_age`, till och med månaden före `to_age_exclusive`). En anställning
+med egen pensionsplan behåller den.
+
+### 6.3 `insurances` (A10)
+
+`{ "rule_key": "insurance.fora.arbetare" | "insurance.fora.tjansteman",
+"admin_fee_bp": 51, "admin_fee_source": "GH#§ 28 s. 35", "source": "…" }`.
+Lönens regel:
+
+```jsonc
+"insurance.fora.arbetare": { "components": [
+  { "key": "TFA", "name": "TFA", "bp": 1 },
+  { "key": "TGL", "name": "TGL", "bp": 10, "cap_pbb": "7.5" },
+  { "key": "TSL", "name": "Omställningsstöd (TSL)", "bp": 34, "hangavtal_bp": 74, "cap_pbb": "7.5" } ] }
+```
+
+`hangavtal_bp` används när bindningens variant är `HANGAVTAL`. `cap_pbb`
+begränsar underlaget per månad till n × prisbasbeloppet / 12. Valfria
+`from_age` och `to_age_exclusive`. Komponenter med 0 bp ger ingen rad.
+
+### 6.4 Nya kodsorter (A11)
+
+Under `codes` finns utöver `OB` och `OVERTIME`:
+
+| `kind` | `pay_code` | Inmatning (antal) | Sats (`rates[].rate.type`) | Blir |
+|---|---|---|---|---|
+| `SUPPLEMENT` | `AVTALSTILLAGG` | timmar (`unit: HOUR`) eller tillfällen (`unit: OCCASION`) | `ORE_PER_HOUR`, `PERCENT_OF_HOURLY`, `DIVISOR_OF_MONTHLY`; för `OCCASION` `ORE` | en rad, prissatt som OB |
+| `COMMISSION` | `PROVISION` | omsättning i kronor exkl. moms | `PERCENT_OF_TURNOVER` (`bp`) | provision minus garanterad lön (`guarantee: SALARY`) eller hela provisionen (`NONE`) |
+| `MEAL` | `FORMAN_EGENBETALNING` | dagar | `ORE` per dag | kostförmån (`benefit_code`: `KOSTFORMAN_LUNCH` m.fl.) till Skatteverkets värde + nettoavdrag som minskar förmånsvärdet |
+
+Valfritt `vacation_basis: true|false` på en kod styr semestergrunden för
+avtalets löneart (t.ex. restid). Nya rate-typer: `ORE` (belopp per
+tillfälle eller dag) och `PERCENT_OF_TURNOVER`.
+
+### 6.5 Nya lönearter och konton i lönen
+
+`AVTALSTILLAGG` (7010), `PROVISION` (7010) och `AVTALSFORSAKRING`
+(arbetsgivarens kostnad, 7570/2740). Konto 7570 "Premier för
+arbetsmarknadsförsäkringar" läggs till i lönens kontolista,
+TODO(legal-verify) mot BAS 2026.
+
+### 6.6 Lokala avvikelser (`collective_agreements.overrides`)
+
+```jsonc
+{ "codes.GR_OB.rate": { "value": { "type": "ORE_PER_HOUR", "ore": 3500 }, "label": "Sats för GR_OB",
+    "source": "LOKALT#s. 2", "origin": "AI" | "MANUAL", "document_id": 12, "description": "…",
+    "recorded_by": 3, "recorded_at": "…", "applied": true,
+    "verified_by": "Namn", "verified_by_id": 4, "verified_at": "…" } }
+```
+
+Tillåtna sökvägar (`LocalOverrides::PATHS`): `codes.<KOD>.rate`,
+`codes.<KOD>.guarantee` (provision), `vacation.percent_bp`,
+`vacation.supplement_bp_per_day` räknas; `working_time.calculation_period_weeks`,
+`overtime.comp_time_hours_per_hour` och `other` sparas men räknas inte.
+Bara avvikelser med `verified_at` läggs över versionens regler i en
+körning (`AgreementRules::withOverrides`); källan `LOKALT` läggs till i
+versionens källor.
+
+### 6.7 Fora- och Collectum-underlag (CSV)
+
+Semikolonseparerad UTF-8 med BOM, en rad per anställd och avtal för
+körningar med status APPROVED, PAID eller POSTED och utbetalningsdag i
+månaden. Kolumner: `personnummer` (12 siffror), `namn`, `avtal`, `variant`,
+`utbetalningsdag` (flera med mellanslag), `kontant_bruttolon_kr` (rader med
+skatt enligt tabell eller engångsbelopp, utan förmåner),
+`manadslon_kr` (bara Collectum), `tjanstepension_kr`, och en kolumn
+`premie_<försäkring>_kr` per försäkring som förekommer. Belopp i kronor med
+decimalkomma. Foras JSON-filspecifikation (v. 1.37, publicerad som PDF för
+lönesystemleverantörer) kräver dessutom varje anställds FOK-kod och är inte
+byggd: TODO(legal-verify) avtal med Fora och Collectum (ADR-033 fråga 6).
+
+### 6.8 Gyllene lönespecar
+
+`tests/Fixtures/agreements/payslips/<avtal>.json`: `cases[]` med
+`agreement` (avtalsfil, eller `synthetic:<fil>` i `tests/Fixtures/agreements`),
+`employment`, `period`, `payment_date`, `inputs` (`code`, `quantity`,
+`date`), valfria `absences`, `vacation` och `local_overrides`, och
+`expected` (`lines` per löneart, `gross_ore`, `employer` per löneart,
+`warnings` som delsträngar). Förväntade belopp räknas av
+`tests/Fixtures/agreements/expected-payslips.py` med formlerna i klartext,
+oberoende av PHP-motorn.
+
 ## 7. A5–A8 som byggt (2026-11-02)
 
 Planeringsmodulen (ADR-037) är passen och passdelningen: `work_shifts` och

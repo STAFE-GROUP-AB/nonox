@@ -7,7 +7,9 @@ namespace App\Modules\Agreements\Support;
 use App\Modules\Agreements\AgreementsModule;
 use App\Modules\Agreements\AgreementsSettings;
 use App\Modules\Agreements\Domain\AgreementContext;
+use App\Modules\Agreements\Domain\AgreementPayTerms;
 use App\Modules\Agreements\Domain\AgreementPricer;
+use App\Modules\Agreements\Domain\AgreementRules;
 use App\Modules\Agreements\Models\AgreementRuleVersion;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
@@ -48,7 +50,7 @@ final class AgreementContextExtension implements ContextExtension
     /** @var list<int> */
     private array $companyChecked = [];
 
-    public function __construct(private readonly ModuleManager $modules, private readonly AgreementPricer $pricer)
+    public function __construct(private readonly ModuleManager $modules, private readonly AgreementPricer $pricer, private readonly AgreementPayTerms $terms = new AgreementPayTerms)
     {
         $this->bindings = collect();
         $this->versions = collect();
@@ -128,7 +130,7 @@ final class AgreementContextExtension implements ContextExtension
                 'id' => $version->id,
                 'valid_from' => $version->valid_from,
                 'valid_to' => $version->valid_to,
-                'rules' => $version->agreementRules(),
+                'rules' => self::withLocalOverrides($version->agreementRules(), $binding),
             ])->all()),
             group: $employment->agreement_group,
             experienceFrom: $employment->industry_experience_from,
@@ -137,9 +139,35 @@ final class AgreementContextExtension implements ContextExtension
             obCompensation: $employment->ob_compensation,
             minimumWageWarnings: $this->minimumWageWarnings,
         );
-        $context = $context->withExtension(AgreementContext::KEY, $agreement);
 
-        return $context->withInputs($this->pricer->price($context, $agreement));
+        return $this->applyAgreement($context, $agreement);
+    }
+
+    /**
+     * Adds the agreement to the context and applies it before the
+     * calculation: prices the agreement's lines (A3), then vacation,
+     * pension, insurances, commission and meals (A9–A11). Pure; the golden
+     * payslips call it directly.
+     *
+     * @throws PayrollBlockedException
+     */
+    public function applyAgreement(PayrollContext $context, AgreementContext $agreement): PayrollContext
+    {
+        $context = $context->withExtension(AgreementContext::KEY, $agreement);
+        $context = $context->withInputs($this->pricer->price($context, $agreement));
+
+        return $this->terms->apply($context, $agreement);
+    }
+
+    /**
+     * The version's rules with the company's local overrides that a person
+     * with agreements:verify has verified (ADR-033 §3, LocalOverrides).
+     */
+    public static function withLocalOverrides(AgreementRules $rules, CollectiveAgreement $binding): AgreementRules
+    {
+        $verified = array_filter((array) $binding->overrides, fn (mixed $override): bool => is_array($override) && filled($override['verified_at'] ?? null));
+
+        return $verified === [] ? $rules : $rules->withOverrides($verified);
     }
 
     private function ensureBound(CollectiveAgreement $binding, string $name, PayrollContext $context): void

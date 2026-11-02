@@ -15,7 +15,8 @@
     "valid_to": "2027-03-31",
     "validity_source": "LA#§ 10",
     "sources": [
-        { "id": "LA", "title": "Livsmedelsavtalet 2025–2027 inklusive tilläggsavtal", "publisher": "Livsmedelsföretagen/Livs", "url": "https://www.livsmedelsforetagen.se/app/uploads/2025/05/livsmedelsavtalet-2025-ny.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" }
+        { "id": "LA", "title": "Livsmedelsavtalet 2025–2027 inklusive tilläggsavtal", "publisher": "Livsmedelsföretagen/Livs", "url": "https://www.livsmedelsforetagen.se/app/uploads/2025/05/livsmedelsavtalet-2025-ny.pdf", "edition": "2025–2027", "retrieved_at": "2026-11-01" },
+        { "id": "P26", "title": "Premier 2026, arbetsgivare med kollektivavtal – arbetare (Svenskt Näringsliv–LO)", "publisher": "Avtalat (Fora/AFA/AMF/Svenskt Näringsliv/LO)", "url": "https://www.avtalat.se/media/10ql04hg/2026-premier_asl_22-12-2025.pdf", "edition": "2025-12-22", "retrieved_at": "2026-11-02" }
     ],
     "working_time": {
         "full_time_hours_per_week": "40",
@@ -155,8 +156,45 @@
         "Minimilön för 17 år (65 %), 16 år (63 %) och utbildningsår 1–3 (73 %, 80 %, 87 %) av gällande minimilön är inte data; samma procent gäller OB-beloppen för dem.",
         "Lägre minimilön i 12 månader för den som saknar arbetslivserfarenhet är overifierad och inte med.",
         "Ingen timlönedelare anges i faktabladet; minimilönerna är timlöner.",
-        "Skiftformstillägg (5,3 % och 11,1 %), arbetstidskonto (2,78 % och 2,92 %), semester 13,2 % och sjuklön är inte data i den här versionen ännu.",
+        "Skiftformstillägg (5,3 % och 11,1 %), arbetstidskonto (2,78 % och 2,92 %) och sjuklön är inte data i den här versionen ännu.",
         "TODO(legal-verify): servispersonal på konditori eller café med servering kan höra till Gröna Riks i stället; det avgörs per företag och anställning.",
         "Hängavtal finns och kostar ingen avgift till Livs enligt Livs frågor och svar; ingen HANGAVTAL-variant finns här ännu."
-    ]
+    ],
+    "vacation": {
+        "percent_bp": 1320,
+        "saved_day_percent_bp": 53,
+        "minimum_daily": {
+            "min_employment_months": 6,
+            "part_time": "PRO_RATA",
+            "steps": [
+                {
+                    "valid_from": "2025-04-01",
+                    "rows": [
+                        {
+                            "ore": 173900
+                        }
+                    ]
+                },
+                {
+                    "valid_from": "2026-04-01",
+                    "rows": [
+                        {
+                            "ore": 178900
+                        }
+                    ]
+                }
+            ],
+            "source": "LA#huvudavtalet § 5.7 s. 16–17"
+        },
+        "source": "LA#huvudavtalet § 5.7 s. 16–17",
+        "note": "Semester (A9): 13,2 % och lägsta semesterlön per dag (minst 6 månaders anställning). Avdraget 1/21,75 av månadslönen per semesterdag räknas inte ännu; NONOX drar timmar enligt schemat. TODO(legal-verify): om minimibeloppet gäller per semesteråret eller per lönekörning."
+    },
+    "pension": {
+        "rule_key": "pension.saf_lo",
+        "source": "LA#s. 2; P26"
+    },
+    "insurances": {
+        "rule_key": "insurance.fora.arbetare",
+        "source": "LA#s. 2; P26"
+    }
 }

@@ -63,6 +63,35 @@ final class Payroll
     }
 
     /**
+     * The agreement pension and insurance premiums NONOX Avtal points at
+     * (ADR-033 A10), 2026 values from rules.json, verified only inside the
+     * test. Not part of setUp: only runs with a collective agreement need them.
+     */
+    public const array AGREEMENT_RULES = [
+        'prisbasbelopp' => ['ore' => 5_920_000],
+        'pension.saf_lo' => ['name' => 'Avtalspension SAF-LO', 'below_bp' => 450, 'above_bp' => 3000, 'threshold_ibb' => '7.5', 'from_age' => 22, 'to_age_exclusive' => 65],
+        'pension.itp1' => ['name' => 'ITP 1', 'below_bp' => 450, 'above_bp' => 3000, 'threshold_ibb' => '7.5', 'ceiling_ibb' => '30', 'from_age' => 25],
+        'insurance.fora.arbetare' => ['components' => [
+            ['key' => 'AGS', 'name' => 'AGS', 'bp' => 0, 'cap_pbb' => '7.5'],
+            ['key' => 'TFA', 'name' => 'TFA', 'bp' => 1],
+            ['key' => 'TGL', 'name' => 'TGL', 'bp' => 10, 'cap_pbb' => '7.5'],
+            ['key' => 'TSL', 'name' => 'Omställningsstöd (TSL)', 'bp' => 34, 'hangavtal_bp' => 74, 'cap_pbb' => '7.5'],
+        ]],
+        'insurance.fora.tjansteman' => ['components' => [
+            ['key' => 'TFA', 'name' => 'TFA', 'bp' => 2],
+            ['key' => 'TRR', 'name' => 'Omställning (TRR)', 'bp' => 40, 'hangavtal_bp' => 80, 'to_age_exclusive' => 67],
+        ]],
+    ];
+
+    public static function agreementPremiums(): void
+    {
+        foreach (self::AGREEMENT_RULES as $key => $value) {
+            PayrollRuleVersion::create(['key' => $key, 'valid_from' => '2026-01-01', 'value' => $value, 'source_url' => 'https://example.test'])
+                ->forceFill(['verified_by' => 'Testperson', 'verified_at' => now()])->save();
+        }
+    }
+
+    /**
      * @param  array<string, mixed>  $overrides
      */
     public static function employee(User $user, Company $company, array $overrides = []): Employee

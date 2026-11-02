@@ -163,3 +163,11 @@ saknar rörlig del och 4,6 %-regeln (gap G13).
   inte automatisk beräkning i v1; kostnaden tas från fakturan.
 - Rapportering till Fora för tjänstemän: lönesumma en gång per år i januari
   (https://www.fora.se/foretag/rapportera-loner-och-premier/sa-rapporterar-du-tjansteman-vd-och-agare/).
+
+## I NONOX: semester, pension, försäkringar och tillägg (A9–A12, 2026-11-02)
+
+- Semester: sammalöneregeln, `supplement_bp_per_day` 80; 12,72 % av rörlig lön (`variable_pay_percent_bp`) och 4,6 %-regeln räknas inte; +5 dagar vid övertidsundantag visas men räknas inte.
+- Pension och försäkringar: `pension.itp1` (ålderspension 4,5 % / 30 % upp till 30 IBB från 25 år), `insurance.fora.tjansteman` (TFA 0,02 %, TRR 0,40 % / 0,80 %). ITP 2, sjukpension, premiebefrielse och TGL (kronbelopp) räknas inte.
+- Tillägg: restid `/240` och `/190` (inte semestergrundande), jour `/600`, `/400`, `/300`, `/150` och beredskap `/1400`, `/1000`, `/700`, `/350` som SUPPLEMENT-koder. Minsta antal timmar kontrolleras inte.
+- Kostavdrag: `VU_KOST` 55 kr (2025-06-01) och 56 kr (2026-06-01) per dag.
+- Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/visita-unionen.json`.

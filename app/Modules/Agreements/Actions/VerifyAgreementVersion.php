@@ -10,6 +10,7 @@ use App\Modules\Agreements\AgreementsModule;
 use App\Modules\Agreements\Models\AgreementRuleVerification;
 use App\Modules\Agreements\Models\AgreementRuleVersion;
 use App\Modules\ModuleManager;
+use App\Modules\Payroll\Models\CollectiveAgreement;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -40,6 +41,11 @@ class VerifyAgreementVersion
 
             if ($existing instanceof AgreementRuleVerification) {
                 return $existing;
+            }
+
+            // A newer version can bring codes the company's binding did not have (supplements, commission, meals).
+            if (CollectiveAgreement::query()->where('agreement_key', $version->agreement_key)->where('variant', $version->variant)->exists()) {
+                app(AgreementSetup::class)->seedPayCodes($version->agreementRules());
             }
 
             $verification = AgreementRuleVerification::create([

@@ -1,0 +1,471 @@
+{
+  "agreement": "svenskhandel-handels-detaljhandel",
+  "note": "Expected amounts worked out by hand from the agreement data and the 2026 premium rules (docs/avtal/datamodell.md §6.8). Synthetic agreements carry invented values.",
+  "cases": [
+    {
+      "name": "dag",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "MANADSLON": 3000000
+        },
+        "gross_ore": 3000000,
+        "employer": {
+          "TJANSTEPENSION": 135000,
+          "AVTALSFORSAKRING": 13500
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "kväll: OB 50 % 18.15–20",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "DH_OB_50",
+          "quantity": "8",
+          "date": "2026-05-05"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "DH_OB_50": 72288
+        },
+        "gross_ore": 3072288,
+        "employer": {
+          "TJANSTEPENSION": 138253,
+          "AVTALSFORSAKRING": 13825
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "natt: OB 70 % efter 20",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "DH_OB_70",
+          "quantity": "6",
+          "date": "2026-05-06"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "DH_OB_70": 75906
+        },
+        "gross_ore": 3075906,
+        "employer": {
+          "TJANSTEPENSION": 138416,
+          "AVTALSFORSAKRING": 13842
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helg: OB 100 % lördag efter 12",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "DH_OB_100",
+          "quantity": "6",
+          "date": "2026-05-09"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "DH_OB_100": 108432
+        },
+        "gross_ore": 3108432,
+        "employer": {
+          "TJANSTEPENSION": 139879,
+          "AVTALSFORSAKRING": 13988
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "helgdag: OB 100 % Kristi himmelsfärd",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "DH_OB_100",
+          "quantity": "8",
+          "date": "2026-05-14"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "DH_OB_100": 144576
+        },
+        "gross_ore": 3144576,
+        "employer": {
+          "TJANSTEPENSION": 141506,
+          "AVTALSFORSAKRING": 14151
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "ung: 18 år timlön under minimilönen, OB på egen timlön",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 15000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "80",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "DH_OB_50",
+          "quantity": "6",
+          "date": "2026-05-07"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TIMLON": 1200000,
+          "DH_OB_50": 45000
+        },
+        "gross_ore": 1245000,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 5603
+        },
+        "warnings": [
+          "under minimilönen"
+        ]
+      }
+    },
+    {
+      "name": "deltid 75 %: övertid de första timmarna (timlön + 35 %)",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 7500,
+        "weekly_hours": "28.69",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "DH_OT_A",
+          "quantity": "3",
+          "date": "2026-05-12"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "DH_OT_A": 73194
+        },
+        "gross_ore": 2323194,
+        "employer": {
+          "TJANSTEPENSION": 104544,
+          "AVTALSFORSAKRING": 10454
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "övertid 70 % och 100 %",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "DH_OT_70",
+          "quantity": "2",
+          "date": "2026-05-13"
+        },
+        {
+          "code": "DH_OT_100",
+          "quantity": "2",
+          "date": "2026-05-16"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "DH_OT_70": 61446,
+          "DH_OT_100": 72290
+        },
+        "gross_ore": 3133736,
+        "employer": {
+          "TJANSTEPENSION": 141018,
+          "AVTALSFORSAKRING": 14102
+        },
+        "warnings": []
+      }
+    },
+    {
+      "name": "semester: 13 % procentregeln",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 936000,
+          "SEMESTERAVDRAG": -692308
+        },
+        "gross_ore": 3243692,
+        "employer": {
+          "TJANSTEPENSION": 145966,
+          "AVTALSFORSAKRING": 14597
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-20",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-21",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-22",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 36000000
+      }
+    },
+    {
+      "name": "semester: garantibelopp per dag för fyllda 18",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 16100,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "2008-03-10",
+        "start": "2025-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "60",
+          "date": "2026-05-04"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "SEMESTERLON": 303000
+        },
+        "gross_ore": 1269000,
+        "employer": {
+          "TJANSTEPENSION": 0,
+          "AVTALSFORSAKRING": 5711
+        },
+        "warnings": []
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 2000000
+      }
+    },
+    {
+      "name": "semester: varnar när anställningen har sammalöneregeln men avtalet procentregeln",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "MONTHLY",
+        "monthly_salary_ore": 3000000,
+        "hourly_rate_ore": null,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [],
+      "expected": {
+        "lines": {
+          "SEMESTERTILLAGG": 64500
+        },
+        "gross_ore": 3064500,
+        "employer": {
+          "TJANSTEPENSION": 137903,
+          "AVTALSFORSAKRING": 13790
+        },
+        "warnings": [
+          "anger procentregeln för månadsavlönade"
+        ]
+      },
+      "absences": [
+        {
+          "type": "VACATION",
+          "date": "2026-05-18",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-19",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-20",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-21",
+          "hours": "8"
+        },
+        {
+          "type": "VACATION",
+          "date": "2026-05-22",
+          "hours": "8"
+        }
+      ],
+      "vacation": {
+        "rule": "SAMMALONEREGELN",
+        "paid_days_earned": 25,
+        "basis_ore": 36000000
+      }
+    }
+  ]
+}

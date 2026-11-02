@@ -1,0 +1,38 @@
+{
+    "schema": "nonox.agreement/1",
+    "agreement": {
+        "key": "syntetiskt-frisor-utan-garanti",
+        "name": "Syntetiskt provisionsavtal (endast test)",
+        "short_name": "Syntetiskt",
+        "parties": ["Testarbetsgivare", "Testfack"],
+        "collective": "ARBETARE",
+        "variant": "MEMBER",
+        "base_agreement": null,
+        "source": "SYNT#s. 1"
+    },
+    "valid_from": "2025-04-01",
+    "valid_to": "2027-03-31",
+    "sources": [
+        { "id": "SYNT", "title": "Syntetiskt testavtal med påhittade värden", "publisher": "NONOX test", "url": "https://example.test/syntetiskt-avtal", "edition": "test", "retrieved_at": "2026-11-02" }
+    ],
+    "groups": [
+        { "code": "SYNT", "name": "Testgrupp", "description": "Påhittad grupp för test", "source": "SYNT#s. 1" }
+    ],
+    "codes": {
+        "SY_PROV": {
+            "name": "Provision",
+            "kind": "COMMISSION",
+            "pay_code": "PROVISION",
+            "guarantee": "NONE",
+            "description": "Provision på omsättning exklusive moms, utöver garantilönen",
+            "rates": [
+                { "valid_from": "2025-04-01", "rate": { "type": "PERCENT_OF_TURNOVER", "bp": 3500 } }
+            ],
+            "source": "SYNT#s. 2"
+        }
+    },
+    "notes": ["Påhittade värden. Används bara av de gyllene lönespecarna för provision med garanti (A11) eftersom Frisöravtalets provisionssatser inte finns i någon publik text."],
+    "vacation": { "percent_bp": 1300, "source": "SYNT#s. 3" },
+    "pension": { "rule_key": "pension.saf_lo", "source": "SYNT#s. 4" },
+    "insurances": { "rule_key": "insurance.fora.arbetare", "source": "SYNT#s. 4" }
+}

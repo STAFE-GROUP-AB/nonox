@@ -225,7 +225,18 @@
                                                 <span class="block text-xs text-gray-500 tabular-nums">{{ __(':hours tim × :rate kr', ['hours' => PayrollRunPage::hours((string) $line->quantity), 'rate' => $line->rate_ore->format(withCurrency: false)]) }}</span>
                                             @endif
                                             @if(is_array($line->explanation['agreement'] ?? null))
-                                                <span class="block text-xs text-gray-500">{{ __('Sats enligt :agreement, version från :version, steg från :step. Källa: :source', ['agreement' => $line->explanation['agreement']['name'] ?? '', 'version' => $line->explanation['agreement']['version_valid_from'] ?? '', 'step' => $line->explanation['agreement']['rate_from'] ?? '', 'source' => trim(($line->explanation['agreement']['source_title'] ?? '').' '.($line->explanation['agreement']['source'] ?? ''))]) }}</span>
+                                                @if(isset($line->explanation['agreement']['rate_from'], $line->explanation['agreement']['version_valid_from']))
+                                                    <span class="block text-xs text-gray-500">{{ __('Sats enligt :agreement, version från :version, steg från :step. Källa: :source', ['agreement' => $line->explanation['agreement']['name'] ?? '', 'version' => $line->explanation['agreement']['version_valid_from'] ?? '', 'step' => $line->explanation['agreement']['rate_from'] ?? '', 'source' => trim(($line->explanation['agreement']['source_title'] ?? '').' '.($line->explanation['agreement']['source'] ?? ''))]) }}</span>
+                                                @else
+                                                    <span class="block text-xs text-gray-500">{{ __('Enligt :agreement. Källa: :source', ['agreement' => $line->explanation['agreement']['name'] ?? '', 'source' => trim(($line->explanation['agreement']['source_title'] ?? '').' '.($line->explanation['agreement']['source'] ?? '').(isset($line->explanation['agreement']['rule_key']) ? ', '.__('regel :rule', ['rule' => $line->explanation['agreement']['rule_key']]) : ''))]) }}</span>
+                                                @endif
+                                                @if(is_array($line->explanation['agreement']['commission'] ?? null))
+                                                    @php($commission = $line->explanation['agreement']['commission'])
+                                                    <span class="block text-xs text-gray-500 tabular-nums">{{ __('Provision :commission på omsättning :turnover, minus garanterad lön :guarantee', ['commission' => App\Support\Money\Money::ofOre((int) $commission['commission_ore'])->format(), 'turnover' => App\Support\Money\Money::ofOre((int) $commission['turnover_ore'])->format(), 'guarantee' => App\Support\Money\Money::ofOre((int) $commission['guaranteed_ore'])->format()]) }}</span>
+                                                @endif
+                                                @if(! empty($line->explanation['agreement']['local_override']) || str_starts_with((string) ($line->explanation['agreement']['source'] ?? ''), 'LOKALT'))
+                                                    <span class="block text-xs font-medium text-accent-700">{{ __('Värdet kommer från företagets lokala avtal.') }}</span>
+                                                @endif
                                             @endif
                                         </td>
                                         <td class="py-1 text-right"><x-ui.amount :money="$line->amount_ore" /></td>
