@@ -330,6 +330,11 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   felaktiga verifikationen och kan samtidigt bokföra rätt rader.
 - Rättelsen hänvisar till originalet och originalet till rättelsen. En orsak
   måste anges. En verifikation kan rättas en gång.
+- Verifikationslistan (rapporten, CSV, PDF och arkivpaketet) har kolumnerna
+  Rättad av och Rättar på varje rad, så att rättelsen syns när den rättade
+  posten granskas (BFL 5 kap. 5 §). Ligger den andra verifikationen i ett
+  annat räkenskapsår står året inom parentes, till exempel "A1 (2027)".
+  Enligt granskning 2026-11-02, juristgranskning återstår (AUD-BOK-3, #42).
 
 ### 4.5 Underlag
 

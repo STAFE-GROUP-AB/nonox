@@ -373,7 +373,7 @@ describe('rapporter stämmer mot huvudboken (BFL 5 kap. 1 §, BFNAR punkterna 2.
 
         // The archive package must be readable without NONOX; the original's lines must point to A5.
         expect($original->flatten()->implode(' '))->toContain('A5');
-    })->todo('AUD-BOK-3: verifikationslistan i arkivpaketet och CSV visar inte att A2 rättats av A5');
+    });
 
     it('shows the year\'s result in the income statement also after the result is booked to equity (8999/2099)', function () {
         audBokYear($this->owner, $this->company, $this->year);

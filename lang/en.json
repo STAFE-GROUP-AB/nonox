@@ -6020,5 +6020,9 @@
     "Nettoomsättningen har förändrats med mer än 30 procent, från :from kr :fromYear till :to kr :toYear.": "Net sales changed by more than 30 percent, from :from kr in :fromYear to :to kr in :toYear.",
     "Nettoomsättningen har förändrats med mer än 30 procent mellan :from och :to. K2 kräver att du kommenterar det i förvaltningsberättelsen.": "Net sales changed by more than 30 percent between :from and :to. K2 requires a comment in the directors' report.",
     "Kommentar till nettoomsättningen": "Comment on net sales",
-    "Förklara varför omsättningen har ändrats, till exempel en ny kund eller ett förlorat avtal.": "Explain why net sales changed, for example a new customer or a lost contract."
+    "Förklara varför omsättningen har ändrats, till exempel en ny kund eller ett förlorat avtal.": "Explain why net sales changed, for example a new customer or a lost contract.",
+    "Rättad av": "Corrected by",
+    "Rättar": "Corrects",
+    "Rättad av :reference": "Corrected by :reference",
+    "Rättar :reference": "Corrects :reference"
 }

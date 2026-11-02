@@ -260,7 +260,7 @@ final class LedgerReports
             ->orderBy('voucher_series.code')
             ->orderBy('vouchers.number')
             ->select('vouchers.*')
-            ->with(['series', 'rows.account', 'rows.costCenter', 'rows.project'])
+            ->with(['series', 'rows.account', 'rows.costCenter', 'rows.project', 'correctedBy.series', 'correctedBy.fiscalYear', 'corrects.series', 'corrects.fiscalYear'])
             ->get();
     }
 

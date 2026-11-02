@@ -30,7 +30,7 @@ Paketet innehåller en mapp med företagets organisationsnummer och årets datum
 | Mapp | Innehåll |
 |---|---|
 | `sie/` | Årets SIE4-fil, samma som SIE-exporten. |
-| `rapporter/` | Saldobalans, resultatrapport, balansrapport, huvudbok och verifikationslista för hela året, som CSV och PDF. Långa rapporter delas i flera PDF-filer. |
+| `rapporter/` | Saldobalans, resultatrapport, balansrapport, huvudbok och verifikationslista för hela året, som CSV och PDF. Långa rapporter delas i flera PDF-filer. Verifikationslistan visar för varje rättad verifikation vilken verifikation som rättade den, och tvärtom. |
 | `verifikationer/` | Underlagen till varje bokförd verifikation, under sina ursprungliga namn. |
 | `kundfakturor/` | Utfärdade kund- och kreditfakturor med fakturadatum under året, som PDF. |
 | `leverantorsfakturor/` | Leverantörsfakturorna med fakturadatum under året, som de laddades upp. |

@@ -296,6 +296,12 @@
                             <a href="{{ route('accounting.vouchers.show', $voucher) }}" class="text-accent-600 hover:text-accent-700 print:text-gray-900">{{ $voucher->reference() }}</a>
                             <span class="tabular-nums text-gray-600">{{ $voucher->voucher_date->toDateString() }}</span>
                             <span>{{ $voucher->description }}</span>
+                            @if($voucher->correctedBy)
+                                <span class="text-sm font-normal text-gray-600">{{ __('Rättad av :reference', ['reference' => $voucher->linkedReference($voucher->correctedBy)]) }}</span>
+                            @endif
+                            @if($voucher->corrects)
+                                <span class="text-sm font-normal text-gray-600">{{ __('Rättar :reference', ['reference' => $voucher->linkedReference($voucher->corrects)]) }}</span>
+                            @endif
                         </h3>
                         @php($voucherCostCenters = $listCostCenters || $voucher->rows->contains(fn ($row) => $row->cost_center_id !== null))
                         @php($voucherProjects = $listProjects || $voucher->rows->contains(fn ($row) => $row->project_id !== null))
