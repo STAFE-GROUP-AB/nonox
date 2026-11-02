@@ -9,11 +9,11 @@
     {{-- The invoice itself, beside the form, so it can be copied field by field. --}}
     <x-ui.card :title="__('Fakturan')">
         @if($file && str_starts_with((string) $file->getMimeType(), 'image/'))
-            <img src="{{ $file->temporaryUrl() }}" alt="{{ $file->getClientOriginalName() }}" class="w-full rounded-lg border border-gray-200 object-contain">
+            <img data-zoom src="{{ $file->temporaryUrl() }}" alt="{{ $file->getClientOriginalName() }}" class="w-full rounded-lg border border-gray-200 object-contain">
         @elseif($file)
             <p class="rounded-lg bg-gray-50 px-4 py-3 text-sm text-gray-700">{{ __(':name är vald. Den sparas och visas här när du sparar utkastet.', ['name' => $file->getClientOriginalName()]) }}</p>
         @elseif($fileUrl && str_starts_with((string) $invoice->file_mime, 'image/'))
-            <img src="{{ $fileUrl }}" alt="{{ $invoice->file_name }}" class="w-full rounded-lg border border-gray-200 object-contain">
+            <img data-zoom src="{{ $fileUrl }}" alt="{{ $invoice->file_name }}" class="w-full rounded-lg border border-gray-200 object-contain">
         @elseif($fileUrl)
             <iframe src="{{ $fileUrl }}" title="{{ $invoice->file_name }}" class="h-160 w-full rounded-lg border border-gray-200 bg-gray-50"></iframe>
         @endif

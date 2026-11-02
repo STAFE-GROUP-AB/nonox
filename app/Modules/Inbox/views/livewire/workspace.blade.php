@@ -99,7 +99,7 @@
                         @if($first->mime === 'application/pdf')
                             <iframe src="{{ route('inbox.attachment', ['message' => $message->id, 'attachment' => $first->id]) }}" title="{{ $first->filename }}" class="h-[36rem] w-full" sandbox></iframe>
                         @else
-                            <img src="{{ route('inbox.attachment', ['message' => $message->id, 'attachment' => $first->id]) }}" alt="{{ $first->filename }}" class="mx-auto max-h-[36rem]">
+                            <img data-zoom src="{{ route('inbox.attachment', ['message' => $message->id, 'attachment' => $first->id]) }}" alt="{{ $first->filename }}" class="mx-auto max-h-[36rem]">
                         @endif
                     </div>
                 @endif

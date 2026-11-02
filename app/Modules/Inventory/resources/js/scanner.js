@@ -9,8 +9,10 @@ import {
     parseQuantity, receiptProgress, resolveCode, sendOrder, stockOf, walkingOrder, withPending,
 } from './scanner-core.js';
 import '../css/scanner.css';
+import { lockZoomWhenInstalled } from '../../../../../resources/js/zoom-lock.js';
 
 const config = JSON.parse(document.getElementById('scanner-config').textContent);
+lockZoomWhenInstalled();
 const app = document.getElementById('scanner');
 // Opened from the Skanna home-screen app (its start_url carries ?app=skanna):
 // the app stays locked to scanning, with no way out to the full NONOX app.
@@ -576,7 +578,7 @@ function lookupScreen() {
 
         return el('main', { class: 's-main' },
             el('article', { class: 's-card' },
-                item.image ? el('img', { class: 's-card-image', src: item.image, alt: '' }) : null,
+                item.image ? el('img', { class: 's-card-image', src: item.image, alt: '', 'data-zoom': item.image }) : null,
                 el('p', { class: 's-eyebrow' }, item.number),
                 el('h1', { class: 's-title' }, item.name),
                 el('dl', { class: 's-codes' },

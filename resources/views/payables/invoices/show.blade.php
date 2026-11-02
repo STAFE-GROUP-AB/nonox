@@ -5,7 +5,7 @@
             @if($invoice->file_path === null)
                 <x-ui.empty-state :title="__('Ingen fil')">{{ __('Fakturan registrerades utan fil. Spara pappersfakturan, eller lägg till den som underlag på verifikationen.') }}</x-ui.empty-state>
             @elseif(str_starts_with((string) $invoice->file_mime, 'image/'))
-                <img src="{{ route('payables.invoices.file', $invoice) }}" alt="{{ $invoice->file_name }}" class="w-full rounded-xl border border-gray-200 bg-white object-contain">
+                <img data-zoom src="{{ route('payables.invoices.file', $invoice) }}" alt="{{ $invoice->file_name }}" class="w-full rounded-xl border border-gray-200 bg-white object-contain">
             @else
                 <iframe src="{{ route('payables.invoices.file', $invoice) }}" title="{{ $invoice->title() }}" class="h-192 w-full rounded-xl border border-gray-200 bg-white"></iframe>
             @endif

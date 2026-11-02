@@ -19,7 +19,7 @@
             @php($url = route('accounting.vouchers.attachment', [$voucher, $selected->id]))
             <div class="mt-4 overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                 @if($selected->isImage())
-                    <img src="{{ $url }}" alt="{{ $selected->original_name }}" class="w-full object-contain">
+                    <img data-zoom src="{{ $url }}" alt="{{ $selected->original_name }}" class="w-full object-contain">
                 @elseif($selected->mime === 'application/pdf')
                     <iframe src="{{ $url }}" title="{{ $selected->original_name }}" class="h-128 w-full"></iframe>
                 @else

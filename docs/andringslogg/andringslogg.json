@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-appen-zoomar-inte",
+      "datum": "2026-11-02T23:43:49+01:00",
+      "rubrik": "Installerad app zoomar inte längre av misstag",
+      "beskrivning": "När NONOX, Min sida eller Skanna är inlagd på hemskärmen går sidan inte längre att nypa eller dubbeltrycka för att zooma, och den zoomar inte in när man trycker i ett fält. Bilder på fakturor, kvitton och artiklar öppnas i helskärm när man trycker på dem, och där zoomar man med två fingrar.",
+      "typ": "Förbättrat",
+      "omrade": "Allmänt"
+    },
+    {
       "id": "2026-11-02-skanna-som-egen-app",
       "datum": "2026-11-02T23:28:53+01:00",
       "rubrik": "Skanna kan läggas på hemskärmen som en egen app",
