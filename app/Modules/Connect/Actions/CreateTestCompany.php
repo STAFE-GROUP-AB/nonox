@@ -75,6 +75,8 @@ final class CreateTestCompany
                 'vat_registered' => true,
                 'vat_period' => 'QUARTERLY',
                 'reporting_framework' => 'K2',
+                // A synthetic test company with no turnover: a small company.
+                'framework_confirmed' => true,
                 'f_skatt' => true,
                 'employer_registered' => false,
                 'accept_agreement' => true,

@@ -48,7 +48,8 @@ class InitialiseBookkeeping
                 return null;
             }
 
-            [$start, $end] = FiscalYearRules::yearContaining($today, $company->fiscal_year_start_month);
+            $startMonth = FiscalYearRules::requiresCalendarYear($company->legal_form) ? 1 : $company->fiscal_year_start_month;
+            [$start, $end] = FiscalYearRules::yearContaining($today, $startMonth);
 
             return FiscalYear::create(['start_date' => $start, 'end_date' => $end]);
         });

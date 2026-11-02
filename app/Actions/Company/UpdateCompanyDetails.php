@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Company;
 
 use App\Domain\Company\AccountingMethod;
+use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\GiroNumber;
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Company\ReportingFramework;
@@ -33,6 +34,8 @@ class UpdateCompanyDetails
     {
         Gate::forUser($user)->authorize('update', $company);
 
+        $dependent = $this->dependentRules($company, $input);
+
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'address_line1' => ['nullable', 'string', 'max:255'],
@@ -44,16 +47,24 @@ class UpdateCompanyDetails
             'bankgiro' => ['nullable', 'string', $this->giro(GiroNumber::bankgiro(...), __('Bankgironumret stämmer inte. Kontrollera siffrorna: den sista är en kontrollsiffra som avslöjar skrivfel. Ett bankgironummer har sju eller åtta siffror, till exempel 123-4566.'))],
             'plusgiro' => ['nullable', 'string', $this->giro(GiroNumber::plusgiro(...), __('Plusgironumret stämmer inte. Kontrollera siffrorna: den sista är en kontrollsiffra som avslöjar skrivfel. Till exempel 123456-6.'))],
             'vat_period' => ['required', Rule::enum(VatPeriod::class)],
-            'fiscal_year_start_month' => ['required', 'integer', 'between:1,12'],
+            'fiscal_year_start_month' => ['required', 'integer', 'between:1,12', ...$dependent['fiscal_year_start_month']],
             'accounting_method' => ['required', Rule::enum(AccountingMethod::class)],
-            'reporting_framework' => ['required', Rule::enum(ReportingFramework::class)],
+            'reporting_framework' => ['required', Rule::enum(ReportingFramework::class), ...$dependent['reporting_framework']],
+            'framework_confirmed' => $dependent['framework_confirmed'],
+            'calendar_year_exempt' => $dependent['calendar_year_exempt'],
             'f_skatt' => ['required', 'boolean'],
             'employer_registered' => ['required', 'boolean'],
             'turnover_over_40_msek' => ['sometimes', 'boolean'],
-        ], attributes: [
+        ], CompanySetupRules::messages(), [
             'name' => __('företagsnamn'),
             'website' => __('webbplats'),
         ])->validateWithBag('updateCompanyDetails');
+
+        $confirmed = [
+            'framework_conditions_confirmed' => (bool) ($validated['framework_confirmed'] ?? false),
+            'calendar_year_exempt_confirmed' => (bool) ($validated['calendar_year_exempt'] ?? false),
+        ];
+        unset($validated['framework_confirmed'], $validated['calendar_year_exempt']);
 
         $before = $this->snapshot($company);
         $vatRegistered = $validated['vat_period'] !== VatPeriod::None->value;
@@ -70,8 +81,38 @@ class UpdateCompanyDetails
         $changes = Audit::changes($before, $this->snapshot($company));
 
         if ($changes['after'] !== []) {
-            Audit::record('company.updated', $company, $changes, $company);
+            Audit::record('company.updated', $company, [...$changes, ...array_filter($confirmed)], $company);
         }
+    }
+
+    /**
+     * The legal-form rules apply to a value the user changes. A value that
+     * was saved before the rules existed is kept, and the settings page
+     * shows a warning instead (enligt AI-utredning 2026-11-02,
+     * juristgranskning återstår).
+     *
+     * @param  array<string, mixed>  $input
+     * @return array<string, list<mixed>>
+     */
+    private function dependentRules(Company $company, array $input): array
+    {
+        $month = is_numeric($input['fiscal_year_start_month'] ?? null) ? (int) $input['fiscal_year_start_month'] : null;
+        $framework = is_string($input['reporting_framework'] ?? null) ? ReportingFramework::tryFrom($input['reporting_framework']) : null;
+        $monthChanged = $month !== null && $month !== $company->fiscal_year_start_month;
+        $frameworkChanged = $framework !== null && $framework !== $company->reporting_framework;
+
+        $rules = CompanySetupRules::rules([
+            'legal_form' => $company->legal_form->value,
+            'reporting_framework' => $framework?->value,
+            'fiscal_year_start_month' => $month,
+        ]);
+
+        return [
+            'fiscal_year_start_month' => $monthChanged ? $rules['fiscal_year_start_month'] : [],
+            'reporting_framework' => $frameworkChanged ? $rules['reporting_framework'] : [],
+            'framework_confirmed' => $frameworkChanged ? $rules['framework_confirmed'] : ['nullable', 'boolean'],
+            'calendar_year_exempt' => $monthChanged ? $rules['calendar_year_exempt'] : ['nullable', 'boolean'],
+        ];
     }
 
     /** @return array<string, mixed> */

@@ -95,6 +95,15 @@
             <p class="mt-1 text-sm text-gray-600">{{ __('Osäker? Fråga din redovisningskonsult, eller titta i besluten från Skatteverket.') }}</p>
         </div>
 
+        @if($warnings !== [])
+            <div role="status" class="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 space-y-2" data-company-warnings>
+                @foreach($warnings as $warning)
+                    <p>{{ $warning }}</p>
+                @endforeach
+                <p>{{ __('Inget har ändrats. Kontrollera med din redovisningskonsult och ändra här om det behövs.') }}</p>
+            </div>
+        @endif
+
         <div class="grid gap-5 sm:grid-cols-2">
             <div>
                 <x-label for="details_vat_period" value="{{ __('Momsredovisning') }}" />
@@ -107,7 +116,7 @@
             </div>
             <div>
                 <x-label for="details_fiscal_year" value="{{ __('Räkenskapsåret börjar') }}" />
-                <select id="details_fiscal_year" class="{{ $field }}" wire:model="state.fiscal_year_start_month" @disabled(! $canUpdate)>
+                <select id="details_fiscal_year" class="{{ $field }}" wire:model.live="state.fiscal_year_start_month" @disabled(! $canUpdate)>
                     @foreach($months as $number => $month)
                         <option value="{{ $number }}">1 {{ $month }}</option>
                     @endforeach
@@ -125,7 +134,7 @@
             </div>
             <div>
                 <x-label for="details_framework" value="{{ __('Regelverk för årsbokslut') }}" />
-                <select id="details_framework" class="{{ $field }}" wire:model="state.reporting_framework" @disabled(! $canUpdate)>
+                <select id="details_framework" class="{{ $field }}" wire:model.live="state.reporting_framework" @disabled(! $canUpdate)>
                     @foreach($frameworks as $framework)
                         <option value="{{ $framework->value }}">{{ $framework->label() }}</option>
                     @endforeach
@@ -133,6 +142,30 @@
                 <x-input-error for="reporting_framework" class="mt-2" />
             </div>
         </div>
+
+        @if($askPartners)
+            <div class="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <p>{{ __('Ett handels- eller kommanditbolag där en fysisk person beskattas för hela eller en del av bolagets inkomst ska ha kalenderår som räkenskapsår.') }}</p>
+                <label class="mt-3 flex items-start gap-3">
+                    <x-checkbox wire:model="state.calendar_year_exempt" class="mt-0.5" />
+                    <span>{{ __('Ingen fysisk person beskattas för någon del av bolagets inkomst.') }}</span>
+                </label>
+                <x-input-error for="calendar_year_exempt" class="mt-2" />
+            </div>
+        @endif
+
+        @if($frameworkRefusal)
+            <p class="text-sm text-red-700">{{ $frameworkRefusal }}</p>
+        @elseif($frameworkConditions)
+            <div class="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <p>{{ $frameworkConditions }}</p>
+                <label class="mt-3 flex items-start gap-3">
+                    <x-checkbox wire:model="state.framework_confirmed" class="mt-0.5" />
+                    <span>{{ __('Företaget uppfyller villkoren. Är du osäker, välj K3 eller fråga din redovisningskonsult.') }}</span>
+                </label>
+                <x-input-error for="framework_confirmed" class="mt-2" />
+            </div>
+        @endif
 
         <div class="space-y-3">
             <label class="flex items-center gap-3">

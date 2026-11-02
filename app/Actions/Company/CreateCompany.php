@@ -6,6 +6,7 @@ namespace App\Actions\Company;
 
 use App\Actions\Accounting\InitialiseBookkeeping;
 use App\Domain\Company\AccountingMethod;
+use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Company\ReportingFramework;
@@ -70,6 +71,9 @@ class CreateCompany implements CreatesTeams
                 'name' => $company->name,
                 'org_number' => $company->org_number,
                 'legal_form' => $company->legal_form->value,
+                'reporting_framework' => $company->reporting_framework->value,
+                'framework_conditions_confirmed' => $validated['framework_confirmed'] ?? false,
+                'calendar_year_exempt_confirmed' => $validated['calendar_year_exempt'] ?? false,
                 'agreement_version' => $company->agreement_version,
             ], $company, $user);
 
@@ -95,6 +99,8 @@ class CreateCompany implements CreatesTeams
             $input['org_number'] = $number->formatted();
         }
 
+        $dependent = CompanySetupRules::rules($input);
+
         return Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
             'legal_name' => ['nullable', 'string', 'max:255'],
@@ -111,17 +117,18 @@ class CreateCompany implements CreatesTeams
             'city' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'fiscal_year_start_month' => ['required', 'integer', 'between:1,12'],
+            'fiscal_year_start_month' => ['required', 'integer', 'between:1,12', ...$dependent['fiscal_year_start_month']],
             'accounting_method' => ['required', Rule::enum(AccountingMethod::class)],
             'vat_registered' => ['required', 'boolean'],
             'vat_period' => ['required', Rule::enum(VatPeriod::class)],
-            // TODO(legal-verify): which legal forms and company sizes may use K1, K2 and K3?
-            // Any combination is accepted until that is confirmed.
-            'reporting_framework' => ['required', Rule::enum(ReportingFramework::class)],
+            'reporting_framework' => ['required', Rule::enum(ReportingFramework::class), ...$dependent['reporting_framework']],
+            'framework_confirmed' => $dependent['framework_confirmed'],
+            'calendar_year_exempt' => $dependent['calendar_year_exempt'],
             'f_skatt' => ['required', 'boolean'],
             'employer_registered' => ['required', 'boolean'],
             'accept_agreement' => config('app.landing.hosted') ? ['accepted'] : ['nullable'],
         ], [
+            ...CompanySetupRules::messages(),
             'org_number.unique' => __('Det finns redan ett företag med det här organisationsnumret.'),
             'accept_agreement.accepted' => __('Godkänn villkoren och personuppgiftsbiträdesavtalet för att skapa företaget.'),
         ], [
@@ -161,6 +168,8 @@ class CreateCompany implements CreatesTeams
     {
         $number = OrganisationNumber::tryFrom((string) $validated['org_number']);
         $vatRegistered = (bool) $validated['vat_registered'];
+
+        unset($validated['framework_confirmed'], $validated['calendar_year_exempt']);
 
         return [
             ...$validated,

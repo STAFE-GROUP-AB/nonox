@@ -41,6 +41,7 @@ function companyStep(array $overrides = []): Testable
         'legal_form' => 'AB',
         'vat' => 'QUARTERLY',
         'fiscal_year_start_month' => 1,
+        'framework_confirmed' => true,
         ...$overrides,
     ] as $property => $value) {
         $component->set($property, $value);

@@ -49,6 +49,7 @@ it('confirms that a company was created', function () {
     Livewire::test(CreateCompanyForm::class)
         ->set('name', 'Toastbolaget AB')
         ->set('org_number', CompanyFactory::organisationNumber()->formatted())
+        ->set('framework_confirmed', true)
         ->call('create');
 
     expect(flashedToasts())->toBe(['Toastbolaget AB är skapat. Du arbetar nu i det företaget.']);
@@ -185,6 +186,7 @@ it('welcomes the owner after the first-run guide', function () {
     Livewire::test(FirstRunWizard::class)
         ->set('company_name', 'Första AB')
         ->set('org_number', CompanyFactory::organisationNumber()->digits)
+        ->set('framework_confirmed', true)
         ->call('toPerson')
         ->set('name', 'Anna')
         ->set('email', 'anna@example.com')

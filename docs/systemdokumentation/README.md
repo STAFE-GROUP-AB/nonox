@@ -225,8 +225,7 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 ## 2. Kontoplan
 
 - Ett nytt företag får en förifylld kontoplan med vanliga konton enligt BAS 2026,
-  vald efter regelverk: K1 (enskild firma, handelsbolag) eller K2/K3
-  (aktiebolag). Mallarna finns i `database/data/bas/2026/`.
+  vald efter regelverk: K1 (enskild firma, ideell förening) eller K2/K3. Mallarna finns i `database/data/bas/2026/`.
 - Kontonummer är fyrsiffriga (1000–9999) och unika inom företaget. Kontotyp sätts
   efter första siffran: 1 tillgång, 2 eget kapital och skulder, 3 intäkt, 4–9
   kostnad.
@@ -238,8 +237,31 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 ## 3. Räkenskapsår
 
 - Ett räkenskapsår börjar den första och slutar den sista dagen i en månad.
-- Normalt är det tolv månader. Det första räkenskapsåret får vara 6–18 månader
-  (se öppen fråga nedan).
+- Normalt är det tolv månader. När bokföringsskyldigheten börjar eller året
+  läggs om får det vara kortare (ingen nedre gräns) eller högst 18 månader
+  (BFL 3 kap. 3 §). Det gäller när det första årets datum ändras och när ett år
+  läses in från en SIE-fil.
+- En enskild firma ska ha kalenderår (BFL 3 kap. 1 §). Ett nytt företag med
+  företagsformen enskild firma får räkenskapsår från januari, och det första
+  året kan bara ändras så att det slutar den 31 december. Har en befintlig
+  enskild firma brutet räkenskapsår ändras inget år som finns; sidan
+  Räkenskapsår, företagsinställningarna och SIE-granskningen visar en
+  varning, och nästa år som skapas slutar den 31 december (omläggning till
+  kalenderår), därefter hela kalenderår.
+- Handels- och kommanditbolag ska ha kalenderår om en fysisk person beskattas
+  för bolagets inkomst. NONOX känner inte till delägarna; väljs en annan
+  startmånad än januari måste användaren bekräfta att ingen fysisk person
+  beskattas, och bekräftelsen loggas.
+- Regelverk (K1/K2/K3): K1 kan bara väljas för enskild firma och ideell
+  förening. För K1 och K2 visas storleksvillkoren (K1: nettoomsättning normalt
+  högst 3 miljoner kronor; K2: inte större företag enligt ÅRL 1 kap. 3 §, inte
+  publikt aktiebolag eller moderföretag i större koncern), som användaren
+  bekräftar; storleken kontrolleras inte eftersom NONOX saknar uppgifterna.
+  Bekräftelsen loggas i behandlingshistoriken. Reglerna gäller när företaget
+  skapas och när värdet ändras i inställningarna; ett sparat värde som ser fel
+  ut behålls och visas med en varning.
+- Reglerna ovan bygger på AI-utredning 2026-11-02; juristgranskning återstår
+  (ADR-010).
 - Ett nytt räkenskapsår skapas alltid direkt efter det senaste, så att åren aldrig
   överlappar eller lämnar en lucka.
 - Det första räkenskapsåret kan få nya datum så länge det är företagets enda år och
@@ -2080,11 +2102,18 @@ Personalliggare och Avtal när de är påslagna.
   uppgifter arbetsgivarintyget kräver; retroaktiv lön på avdrag och
   semesterlön i redan utbetalda månader; det tidigare lönesystemets egna
   exportformat (t.ex. PAXml) och API.
-- Minsta längd för ett första räkenskapsår: `AGENTS.md` anger 6 månader;
-  bokföringslagen 3 kap anger högst 18.
+- Räkenskapsårets längd och kalenderår (BFL 3 kap., AI-utredning 2026-11-02):
+  att ingen nedre gräns gäller, att omläggning till kalenderår för en enskild
+  firma inte kräver Skatteverkets tillstånd, att kommanditbolag omfattas av
+  kalenderårsregeln för handelsbolag och att en enskild firmas första år får
+  förlängas till 31 december året efter. `AGENTS.md` §6.2 ("6–18 månader")
+  behöver rättas av ägaren.
 - BAS-licensen och kontroll av mallarnas kontonummer och namn mot den officiella
   BAS 2026-kontoplanen.
-- Vilka företagsformer som får använda K1, K2 och K3.
+- Vilka företagsformer som får använda K1, K2 och K3 (AI-utredning
+  2026-11-02): särskilt K1 för handels- och kommanditbolag med bara fysiska
+  delägare (spärrat tills vidare), K2 årsbokslut (BFNAR 2017:3) för enskild
+  firma och handelsbolag, och K2 för stiftelser och ideella föreningar.
 - Att lägga till underlag till en redan bokförd verifikation, så länge
   verifikationen i sig är oförändrad.
 - SIE-företagstyperna "I" och "S" avser ideella föreningar och stiftelser som

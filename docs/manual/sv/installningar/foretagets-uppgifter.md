@@ -37,14 +37,20 @@ Alla i företaget kan se uppgifterna, men bara ägare och administratörer kan �
 | Uppgift | Vad den styr |
 |---|---|
 | **Momsredovisning** | Hur ofta ni redovisar moms: **Varje månad**, **Varje kvartal**, **En gång per år**, eller **Inte momsregistrerad**. Styr perioderna i [momsdeklarationen](/manual/moms/momsdeklaration). Väljer du en period räknar NONOX ut momsregistreringsnumret från organisationsnumret. |
-| **Räkenskapsåret börjar** | Den första dagen i företagets räkenskapsår. |
+| **Räkenskapsåret börjar** | Den första dagen i företagets räkenskapsår. En enskild firma ska ha januari. |
 | **Bokföringsmetod** | [Fakturametoden](/manual/ordlista/ordlista#fakturametoden) eller [kontantmetoden](/manual/ordlista/ordlista#kontantmetoden): om kund- och leverantörsfakturor bokförs när de skickas och tas emot, eller när de betalas. |
-| **Regelverk för årsbokslut** | K1, K2 eller K3. Styr bland annat [årsredovisningen](/manual/bokslut/arsredovisning). |
+| **Regelverk för årsbokslut** | K1, K2 eller K3. Styr bland annat [årsredovisningen](/manual/bokslut/arsredovisning). Vilka företag som får välja vad står i [Skapa ett företag](/manual/kom-igang/skapa-ett-foretag#vad-uppgifterna-betyder). |
 | **Företaget har F-skatt** | Står på fakturorna. |
 | **Företaget är registrerat som arbetsgivare** | Att företaget har anställda och lämnar arbetsgivardeklaration. |
 | **Omsättningen är över 40 miljoner kronor om året** | Ger andra deklarationsdagar för momsen. |
 
 Uppgifterna ska stämma med Skatteverkets beslut. Är du osäker, fråga din redovisningskonsult eller titta i besluten.
+
+### Regelverk och räkenskapsår kontrolleras när du ändrar dem
+
+- Byter du till K1 eller K2 visas villkoren för regelverket. Kryssa i **Företaget uppfyller villkoren** innan du sparar. K1 går bara att välja för enskilda firmor och ideella föreningar.
+- En enskild firma kan inte byta till en annan startmånad än januari. Ett handels- eller kommanditbolag som byter till en annan månad får bekräfta att ingen fysisk person beskattas för bolagets inkomst.
+- Ser ett val som redan är sparat fel ut, till exempel K1 för ett aktiebolag eller en enskild firma med brutet räkenskapsår, visas en gul varning överst. NONOX ändrar ingenting själv och stoppar inte att du sparar annat. Kontrollera med din redovisningskonsult och ändra om det behövs.
 
 > [!IMPORTANT]
 > Att ändra **Räkenskapsåret börjar** flyttar inga räkenskapsår som redan finns. Har företaget fått ett nytt räkenskapsår av Skatteverket och Bolagsverket ändrar du också datumen för det pågående eller nästa räkenskapsår under **Bokföring → Räkenskapsår**. Se [Räkenskapsår](/manual/bokforing/rakenskapsar).

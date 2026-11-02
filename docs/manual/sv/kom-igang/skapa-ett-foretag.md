@@ -2,7 +2,7 @@
 beskrivning: Så skapar du ditt första företag i NONOX – och fler senare. Vad varje uppgift betyder, vad som förväljs och vad NONOX sätter upp åt dig.
 ordning: 20
 rutter: [teams.create, onboarding]
-sokord: [nytt företag, lägg till företag, starta, registrera företag, organisationsnummer, aktiebolag, enskild firma, Bolagsverket]
+sokord: [nytt företag, lägg till företag, starta, registrera företag, organisationsnummer, aktiebolag, enskild firma, Bolagsverket, K1, K2, K3, regelverk, kalenderår]
 ---
 
 # Skapa ett företag
@@ -25,7 +25,7 @@ Ha organisationsnumret till hands, och gärna besluten från Skatteverket om mom
 4. Fyll gärna i **E-post till företaget (frivilligt)**.
 5. Under **Bokföring och moms** väljer du när **Räkenskapsåret börjar i** och vilken **Bokföringsmetod** företaget använder.
 6. Kryssa i **Företaget är momsregistrerat** om det är det, och välj **Hur ofta redovisar ni moms?**
-7. Välj **Regelverk för årsbokslut**.
+7. Välj **Regelverk för årsbokslut**. Väljer du K1 eller K2 visas villkoren för regelverket. Kryssa i **Företaget uppfyller villkoren** om de stämmer.
 8. Kryssa i **Företaget har F-skatt** och **Företaget är registrerat som arbetsgivare** om de stämmer.
 9. Klicka på **Skapa företaget**.
 
@@ -42,11 +42,24 @@ Du hamnar på **Översikt** i det nya företaget. Där finns listan **Kom igång
 
 **Räkenskapsåret börjar i** är den månad företagets räkenskapsår börjar. För de flesta är det januari. NONOX skapar det första räkenskapsåret åt dig, det som pågår i dag.
 
+- En **enskild firma** ska enligt bokföringslagen ha kalenderår som räkenskapsår. Räkenskapsåret börjar därför alltid i januari.
+- Ett **handelsbolag** eller **kommanditbolag** ska också ha kalenderår om en fysisk person beskattas för hela eller en del av bolagets inkomst. Väljer du en annan månad än januari får du bekräfta att ingen fysisk person beskattas för bolagets inkomst.
+- Övriga företag får ha brutet räkenskapsår, till exempel maj–april.
+
 **Bokföringsmetod** är [fakturametoden](/manual/ordlista/ordlista#fakturametoden) eller [kontantmetoden](/manual/ordlista/ordlista#kontantmetoden). Den avgör när fakturor bokförs: när de skickas och tas emot, eller först när de betalas.
 
 **Hur ofta redovisar ni moms?** är momsperioden enligt Skatteverkets beslut: **Varje månad**, **Varje kvartal** eller **En gång per år**. Är företaget momsregistrerat räknar NONOX själv ut momsregistreringsnumret från organisationsnumret.
 
-**Regelverk för årsbokslut** är **K1 – förenklat årsbokslut**, **K2 – mindre företag** eller **K3 – huvudregelverket**. Valet styr vilken kontoplan företaget får från början. NONOX kontrollerar inte vilket regelverk ditt företag får använda; fråga din redovisningskonsult om du är osäker.
+**Regelverk för årsbokslut** är **K1 – förenklat årsbokslut**, **K2 – mindre företag** eller **K3 – huvudregelverket**. Valet styr vilken kontoplan företaget får från början.
+
+- **K1** kan bara väljas av en enskild firma eller en ideell förening, och bara om nettoomsättningen normalt är högst 3 miljoner kronor per år. För handels- och kommanditbolag går K1 inte att välja ännu, eftersom det inte är kontrollerat.
+- **K2** gäller bara mindre företag. Ett företag är större om det under vart och ett av de två senaste räkenskapsåren har haft mer än ett av: fler än 50 anställda i medeltal, en balansomslutning över 40 miljoner kronor och en nettoomsättning över 80 miljoner kronor, eller om det är noterat. Publika aktiebolag och moderföretag i en större koncern kan inte heller använda K2.
+- **K3** kan alla företag använda.
+
+NONOX känner bara till företagsformen, inte omsättning, balansomslutning eller antal anställda. Därför stoppar NONOX bara det som företagsformen avgör. Storleken bekräftar du själv genom att kryssa i **Företaget uppfyller villkoren**. Är du osäker, välj K3 eller fråga din redovisningskonsult.
+
+> [!NOTE]
+> Reglerna om räkenskapsår och regelverk bygger på en genomgång av bokföringslagen och Bokföringsnämndens allmänna råd. En jurist har ännu inte granskat dem.
 
 > [!TIP]
 > Osäker på något? Förvalen passar de flesta aktiebolag: räkenskapsår från januari, fakturametoden, moms varje kvartal och K2. Du kan ändra allt utom organisationsnummer och företagsform under **Inställningar för företaget**.
