@@ -260,6 +260,22 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   övriga efter 12 månader. Kontot som ett godkännande skapade påverkas inte.
 - Ingen bokföring berörs: kön skapar varken företag, verifikationer eller
   räkenskapsinformation.
+- HQ är en egen sektion i huvudmenyn med sidorna **Kö** och **Kunder**, och
+  syns bara för HQ-administratörerna, oavsett vilket företag de har valt.
+- **Kunder** (`/hq/kunder`) visar instansens företag och användare, bara
+  uppgifter om kontona: företagets namn, organisationsnummer (inte för en
+  enskild firma, där det är ägarens personnummer), företagsform, när det
+  skapades, om det är arkiverat, påslagna moduler, antal medlemmar, ägaren,
+  senaste aktivitet och **antalet** bokförda verifikationer; användarens
+  namn, e-post, företag och roll, när kontot skapades, senaste inloggning
+  (senaste `auth.signed_in` i behandlingshistoriken) och om hen kom via kön,
+  via en inbjudan eller på annat sätt. Inga belopp, verifikationer, fakturor,
+  personnummer eller uppgifter om anställda visas.
+- Sidan är bara för läsning: ingen inloggning som en annan användare, ingen
+  ändring och ingen radering. Varje besök skrivs i behandlingshistoriken
+  utan företag och utan personuppgifter (`hq.customers_viewed`,
+  `hq.company_viewed` med företagets id, `hq.user_viewed` med användarens
+  id).
 
 ## 2. Kontoplan
 

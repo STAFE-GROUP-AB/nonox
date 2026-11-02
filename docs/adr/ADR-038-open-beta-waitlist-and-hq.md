@@ -123,6 +123,61 @@ It sits in the flow above the header and scrolls away, so it never covers
 content. Download links for running NONOX yourself stay: the software is
 open source and needs no queue.
 
+### 6. The HQ menu and Kunder (added 2026-11-02)
+
+HQ is a section of the sidebar, not a link in the footer. An HQ admin sees
+**HQ** last in the main menu, with the pages **Kö** (`/hq`) and **Kunder**
+(`/hq/kunder`). HQ belongs to the instance, not to a company: it is built by
+`Navigation` outside the company sections, so it shows whatever company the
+admin has selected, and also with no company. Nobody else sees it, whatever
+their role in a company.
+
+**Kunder** (`App\Livewire\Hq\Customers`, read model
+`App\Support\Hq\CustomerDirectory`) has two tabs:
+
+- **Företag**: name, organisation number, legal form, created, archived,
+  enabled modules, number of members (owner included), owner's name and
+  e-mail, last activity (the latest entry in the audit log for the company)
+  and the number of posted vouchers. Search on name and organisation number;
+  filters for module, archived and created period; sorting; pagination.
+  `/hq/kunder/foretag/{id}` adds the members with role and last sign-in and
+  every module with its state.
+- **Användare**: name, e-mail, companies with role, created, last sign-in,
+  and source: *via kön* (an approved waiting-list entry points at the user),
+  *via inbjudan* (a member of a company through `team_user`; since
+  self-registration is closed, membership means an invitation) or *övrigt*
+  (the first-run setup and accounts from before the beta). The source is
+  derived, not stored: a user who later joins a company by invitation and
+  came from the queue still counts as *via kön*. Search on name and e-mail;
+  filters for source and created period; sorting; pagination.
+  `/hq/kunder/anvandare/{id}` shows the same for one user.
+
+Last sign-in is the latest `auth.signed_in` entry in the audit log, written
+on every sign-in by the `Login` event (`AuditSubscriber`). No new column was
+needed.
+
+Data minimisation: no amounts, vouchers, invoices, personal numbers or
+employee data. The only figure taken from the bookkeeping is the count of
+posted vouchers. A sole trader's organisation number is the owner's personal
+number, so it is shown as "Dolt (personnummer)"; searching on it still finds
+the company, since the admin must already know the number.
+
+Read-only: no impersonation, no editing, no deletion, and the page says so.
+Access is the same as the queue: `EnsureHqAdmin` on the routes (404 for
+everyone else, guests included) and `HqAccess::ensure` again on every
+Livewire request. Reading needs no passkey step beyond the one the session
+already passed; only decisions in the queue do.
+
+Every cross-company query runs inside `CompanyScope::bypass` with a comment
+(AGENTS.md §6.0). The lists cost the same number of queries whatever the
+number of rows: last activity, last sign-in, the voucher count and the source
+are subqueries of the list query, the owner and memberships are eager-loaded,
+and the enabled modules are one query per page.
+
+Every visit is audited at instance level, without personal data:
+`hq.customers_viewed` (the tab), `hq.company_viewed` (`company_id`) and
+`hq.user_viewed` (`user_id`).
+
 ## Consequences
 
 - A self-hosted installation with public pages also gets the queue; its

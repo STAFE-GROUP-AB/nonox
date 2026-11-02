@@ -156,3 +156,29 @@ it('shows the pages of Personalliggare, and keeps Min incheckning its own item',
 
     expect(pageLabels(openSection($this->owner, $this->company, 'staff-ledger.overview')))->toContain('Tidrapporter');
 });
+
+it('adds HQ with Kö and Kunder last for an HQ admin, also without a company', function () {
+    config(['nonox.hq_admins' => [$this->owner->email], 'app.admin_email' => null]);
+
+    $sections = navigationFor($this->owner, $this->company, 'hq.customers.company');
+    $hq = collect($sections)->last();
+
+    expect($hq->label)->toBe('HQ')
+        ->and($hq->active)->toBeTrue()
+        ->and(pageLabels($hq))->toBe(['Kö', 'Kunder'])
+        ->and($hq->current()?->label)->toBe('Kunder')
+        ->and(collect($sections)->filter(fn (NavSection $section): bool => $section->active))->toHaveCount(1);
+
+    $withoutCompany = app(Navigation::class)->for($this->owner->fresh(), null, 'hq.waitlist.show');
+
+    expect(collect($withoutCompany)->last()->label)->toBe('HQ')
+        ->and(collect($withoutCompany)->last()->current()?->label)->toBe('Kö')
+        ->and(collect(navigationFor($this->owner, $this->company, 'dashboard'))->last()->hasChildren())->toBeFalse();
+});
+
+it('never shows HQ to anyone who is not an HQ admin', function (string $role) {
+    config(['nonox.hq_admins' => ['someone-else@example.test'], 'app.admin_email' => null]);
+    $user = $role === 'owner' ? $this->owner : Bookkeeping::member($this->company, $role);
+
+    expect(array_map(fn (NavSection $section): string => $section->label, navigationFor($user, $this->company, 'hq.customers')))->not->toContain('HQ');
+})->with(['owner', 'admin', 'accountant', 'auditor']);

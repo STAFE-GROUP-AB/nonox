@@ -25,6 +25,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-hq-kunder",
+      "datum": "2026-11-02T16:09:01+01:00",
+      "rubrik": "HQ får en egen meny med kön och en kundöversikt",
+      "beskrivning": "Den som driver tjänsten hittar HQ i huvudmenyn, med kön och en ny översikt över företag och användare. Översikten visar bara uppgifter om kontona, som moduler, antal medlemmar och senaste inloggning, aldrig belopp, verifikationer, fakturor eller personnummer. Den går inte att ändra något i, och varje besök skrivs i behandlingshistoriken.",
+      "typ": "Nytt",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-02-uppdatera-databasen",
       "datum": "2026-11-02T16:02:02+01:00",
       "rubrik": "Uppdatera databasen med en knapp på egen dator",

@@ -27,6 +27,8 @@ Biträdet behandlar personuppgifterna endast enligt den personuppgiftsansvariges
 
 Den som arbetar för biträdet och har tillgång till personuppgifterna har tystnadsplikt och får bara behandla dem enligt instruktionerna.
 
+För att driva tjänsten ser biträdets administratörer en översikt över företag och användare: företagets namn, organisationsnummer (inte för en enskild firma), påslagna moduler, antal medlemmar och bokförda verifikationer och senaste aktivitet, samt användarnas namn, e-post, roll och senaste inloggning. Översikten visar inga belopp, verifikationer, fakturor, personnummer eller uppgifter om anställda, går inte att ändra något i, och varje visning skrivs i behandlingshistoriken.
+
 ## 4. Säkerhet (artikel 32)
 
 Biträdet vidtar bland annat dessa åtgärder:

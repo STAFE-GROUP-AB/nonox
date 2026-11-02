@@ -110,6 +110,10 @@ Route::post('/logga-ut', LogoutController::class)->middleware('auth')->name('log
 Route::prefix('hq')->name('hq.')->middleware(EnsureHqAdmin::class)->group(function () {
     Route::view('/', 'hq.waitlist')->name('waitlist');
     Route::get('/ko/{entry}', fn (int $entry) => view('hq.entry', ['entryId' => $entry]))->whereNumber('entry')->name('waitlist.show');
+    // Kunder: the companies and users of the instance, read-only metadata (ADR-038).
+    Route::view('/kunder', 'hq.customers')->name('customers');
+    Route::get('/kunder/foretag/{companyId}', fn (int $companyId) => view('hq.customer-company', ['companyId' => $companyId]))->whereNumber('companyId')->name('customers.company');
+    Route::get('/kunder/anvandare/{userId}', fn (int $userId) => view('hq.customer-user', ['userId' => $userId]))->whereNumber('userId')->name('customers.user');
 });
 // The passkey step for a signed-in session that has to pass it (RequirePasskey, ADR-029).
 Route::view('/logga-in/passkey', 'auth.passkey')->middleware('auth')->name('passkeys.challenge');
