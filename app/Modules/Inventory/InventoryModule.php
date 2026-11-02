@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Contracts\IsNew;
 use App\Modules\Contracts\Module;
+use App\Modules\Inventory\Actions\LabelTemplates;
 use App\Modules\Inventory\Livewire\InventorySettingsForm;
 use App\Modules\ModuleCheck;
 use App\Modules\ModuleManager;
@@ -110,7 +111,7 @@ final class InventoryModule implements IsNew, Module
                     ['label' => __('Plocklistor'), 'route' => 'inventory.pickLists', 'active' => ['inventory.pickLists', 'inventory.pickLists.pdf']],
                     ['label' => __('Inventering'), 'route' => 'inventory.counts', 'active' => ['inventory.counts']],
                     ['label' => __('Rapporter'), 'route' => 'inventory.reports', 'active' => ['inventory.reports']],
-                    ...($user->hasTeamPermission($company, 'inventory:settings') ? [['label' => __('Inställningar'), 'route' => 'inventory.settings', 'active' => ['inventory.settings']]] : []),
+                    ...($user->hasTeamPermission($company, 'inventory:settings') ? [['label' => __('Inställningar'), 'route' => 'inventory.settings', 'active' => ['inventory.settings', 'inventory.labels', 'inventory.labels.sample']]] : []),
                 ],
             ],
         ];
@@ -137,6 +138,7 @@ final class InventoryModule implements IsNew, Module
     public function onEnable(Company $company, User $by): void
     {
         app(ModuleManager::class)->seedSettings(self::KEY, $company, InventorySettings::DEFAULTS);
+        app(LabelTemplates::class)->ensureDefaults($company, $by);
     }
 
     public function onDisable(Company $company, User $by): void {}

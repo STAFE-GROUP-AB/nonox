@@ -6,6 +6,9 @@
             <x-ui.card :title="__('Lager')" :description="__('Gäller hela företaget. Att slå på eller av Lager gör ägaren under Moduler.')">
                 <livewire:inventory.settings-form :company="$company" />
             </x-ui.card>
+            <x-ui.card :title="__('Etiketter')" :description="__('Mallar för pris- och hyllkantsetiketter och för etiketter på lagerställen, med förhandsvisning.')">
+                <x-ui.link :href="route('inventory.labels')">{{ __('Öppna etikettstudion') }}</x-ui.link>
+            </x-ui.card>
         @else
             <x-ui.card>
                 <x-ui.empty-state :title="__('Du kan inte ändra inställningarna')">{{ __('Be ägaren eller en administratör om behörighet.') }}</x-ui.empty-state>

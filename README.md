@@ -128,6 +128,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Inventering per hylla eller hela lagret, där skillnaderna förs in med en orsak. Varje lagerrörelse sparas och kan aldrig ändras.
 - Lagervärde vid bokslut enligt FIFO eller vägt genomsnittspris med lägsta värdets princip, och lagerförändringen bokförd mot 1460 med ett klick. Rollen Lagerpersonal ser saldon men inga priser.
 - Bilder på artiklarna, tagna direkt med mobilens kamera, med huvudbild i listorna, på plocklistan och i API:t. Med NONOX AI föreslås benämning, beskrivning, varumärke, egenskaper och EAN-kod från bilderna, och du bockar i vad som ska användas. Snabbregistrera en ny vara med kameran.
+- Etiketter med pris, EAN-streckkod eller QR-kod för artiklar och platskod för hyllor och fack, på A4-etikettark eller i etikettskrivare. Etikettstudion visar etiketten i skala medan du ändrar mallen och varnar för det som inte får plats. Utskrift från artikellistan, en inleverans eller ett helt hyllträd, och filtret Ej utskrivna.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.

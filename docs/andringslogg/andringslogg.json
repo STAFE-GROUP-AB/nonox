@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-02-etiketter",
+      "datum": "2026-11-02T19:01:54+01:00",
+      "rubrik": "Lager: etiketter och etikettstudio",
+      "beskrivning": "Skriv ut prisetiketter med EAN-streckkod eller QR-kod för artiklar och etiketter med platskoden för hyllor och fack, på A4-etikettark eller i en etikettskrivare. Etikettstudion under Lager, Inställningar visar etiketten i skala medan du ändrar mallen och varnar för text som inte får plats och koder som blir för små. Etiketter skrivs ut från artikellistan, för det som kom in med en inleverans och för en hel hylla på en gång, filtret Ej utskrivna visar vilka artiklar som saknar etikett, och Lagerpersonal skriver ut utan pris.",
+      "typ": "Nytt",
+      "omrade": "Lager"
+    },
+    {
       "id": "2026-11-02-lager-bilder-ai",
       "datum": "2026-11-02T18:48:52+01:00",
       "rubrik": "Lager: bilder på artiklarna och Fyll i med NONOX AI",

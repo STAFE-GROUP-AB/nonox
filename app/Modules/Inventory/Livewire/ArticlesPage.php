@@ -12,6 +12,7 @@ use App\Modules\Inventory\Models\StockLocation;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -19,7 +20,9 @@ use Livewire\WithPagination;
 /**
  * Lager → Artiklar: the stocked articles with their total and their stock
  * per location, filtered by search (number, name, EAN, SKU, scanner code),
- * warehouse and status, and a small form to move, scrap or return goods.
+ * warehouse and status (also "Ej utskrivna": no labels printed yet), a
+ * small form to move, scrap or return goods, and printing labels for the
+ * ticked articles or one article (ADR-041).
  * Three queries for the page, whatever the number of articles.
  */
 class ArticlesPage extends Component
@@ -42,6 +45,12 @@ class ArticlesPage extends Component
     /** @var array<string, mixed> */
     public array $form = [];
 
+    /** @var list<string> article ids ticked for printing labels */
+    public array $selected = [];
+
+    /** @var ?array<int, int> article id => copies while the label print step is open */
+    public ?array $printing = null;
+
     public function mount(): void
     {
         abort_unless($this->can('viewAny'), 403);
@@ -63,6 +72,34 @@ class ArticlesPage extends Component
         $this->moving = $article->id;
         $this->form = ['kind' => $kind, 'location_id' => $from, 'to_location_id' => null, 'quantity' => '', 'date' => CarbonImmutable::today()->toDateString(), 'note' => ''];
         $this->resetErrorBag();
+    }
+
+    /** Opens the label print step for the ticked articles, or for one article. */
+    public function printLabels(?int $articleId = null): void
+    {
+        abort_unless($this->can('printLabels'), 403);
+        $ids = $articleId !== null ? [$articleId] : array_map('intval', $this->selected);
+        $found = $ids === [] ? [] : Article::query()->whereKey($ids)->orderBy('number')->pluck('id')->all();
+
+        if ($found === []) {
+            $this->toast(__('Markera de artiklar du vill skriva ut etiketter för.'), 'error');
+
+            return;
+        }
+
+        $this->printing = array_fill_keys($found, 1);
+    }
+
+    #[On('labels-printed')]
+    public function labelsPrinted(): void
+    {
+        $this->reset('printing', 'selected');
+    }
+
+    #[On('labels-closed')]
+    public function closeLabels(): void
+    {
+        $this->reset('printing');
     }
 
     public function cancel(): void
@@ -99,6 +136,7 @@ class ArticlesPage extends Component
             ->when($this->status !== 'alla', fn ($query) => $query->where('is_stock_item', true))
             ->when($this->status === 'lagt', fn ($query) => $query->whereNotNull('reorder_point_milli')->whereRaw("{$total} <= reorder_point_milli"))
             ->when($this->status === 'negativt', fn ($query) => $query->whereRaw("{$total} < 0"))
+            ->when($this->status === 'ej-utskrivna', fn ($query) => $query->whereNull('labels_printed_at'))
             ->when($term !== '', fn ($query) => $query->where(fn ($inner) => $inner
                 ->where('number', 'ilike', '%'.$term.'%')
                 ->orWhere('name', 'ilike', '%'.$term.'%')
@@ -115,6 +153,7 @@ class ArticlesPage extends Component
             'canCount' => $this->can('count'),
             'canManage' => $this->can('manage'),
             'seesPrices' => $this->seesPrices(),
+            'canPrint' => $this->can('printLabels'),
         ]);
     }
 }

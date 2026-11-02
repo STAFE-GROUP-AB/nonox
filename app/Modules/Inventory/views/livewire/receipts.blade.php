@@ -3,6 +3,10 @@
     $q = fn (?int $milli): string => App\Modules\Inventory\Domain\Quantity::format((int) $milli);
 @endphp
 <div class="space-y-6">
+    @if($printing !== null)
+        <livewire:inventory.label-print kind="ARTICLE" :items="$printing" :given-label="__('Mottaget antal')" :key="'label-print-'.md5((string) json_encode($printing))" />
+    @endif
+
     @if($creating)
         <x-ui.card :title="__('Ny inleverans')" :description="__('Det du väntar på från leverantören. Inget bokförs; lagret ökar när du tar emot varorna.')">
             <form wire:submit="save" class="space-y-5">
@@ -151,14 +155,17 @@
                                 @if($receipt->reference) · {{ $receipt->reference }}@endif
                             </span>
                         </span>
-                        @if($canCount && $receipt->isOpen())
-                            <span class="flex gap-3 text-sm font-semibold">
+                        <span class="flex flex-wrap gap-3 text-sm font-semibold">
+                            @if($canCount && $receipt->isOpen())
                                 <button type="button" wire:click="openReceive({{ $receipt->id }})" class="text-accent-700 underline">{{ __('Ta emot') }}</button>
                                 @if($receipt->status === 'OPEN')
                                     <button type="button" wire:click="cancelReceipt({{ $receipt->id }})" wire:confirm="{{ __('Makulera inleveransen? Inget har tagits emot på den.') }}" class="text-gray-700 underline">{{ __('Makulera') }}</button>
                                 @endif
-                            </span>
-                        @endif
+                            @endif
+                            @if($canPrint && $receipt->lines->sum('received_milli') > 0)
+                                <button type="button" wire:click="printLabels({{ $receipt->id }})" class="text-accent-700 underline">{{ __('Etiketter för det som kom in') }}</button>
+                            @endif
+                        </span>
                     </li>
                 @endforeach
             </ul>

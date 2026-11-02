@@ -59,4 +59,5 @@ Från listan kan du också:
 
 - [Bilder och NONOX AI](/manual/lager/bilder-och-ai)
 - [Lagerställen](/manual/lager/lagerstallen)
+- [Skriv ut etiketter](/manual/lager/etiketter) – pris- och hyllkantsetiketter med streckkod.
 - [Inleverans](/manual/lager/inleverans)

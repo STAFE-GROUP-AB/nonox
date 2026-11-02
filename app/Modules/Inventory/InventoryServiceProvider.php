@@ -9,12 +9,15 @@ use App\Modules\Inventory\Console\VerifyStockCommand;
 use App\Modules\Inventory\Livewire\ArticlesPage;
 use App\Modules\Inventory\Livewire\CountsPage;
 use App\Modules\Inventory\Livewire\InventorySettingsForm;
+use App\Modules\Inventory\Livewire\LabelPrintPanel;
+use App\Modules\Inventory\Livewire\LabelStudioPage;
 use App\Modules\Inventory\Livewire\LocationsPage;
 use App\Modules\Inventory\Livewire\OverviewPage;
 use App\Modules\Inventory\Livewire\PickListsPage;
 use App\Modules\Inventory\Livewire\ReceiptsPage;
 use App\Modules\Inventory\Livewire\ReportsPage;
 use App\Modules\Inventory\Models\ArticleImage;
+use App\Modules\Inventory\Models\LabelTemplate;
 use App\Modules\Inventory\Models\PickList;
 use App\Modules\Inventory\Models\StockCount;
 use App\Modules\Inventory\Models\StockLevel;
@@ -45,7 +48,7 @@ class InventoryServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'inventory');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class] as $model) {
+        foreach ([StockMovement::class, StockLocation::class, StockLevel::class, StockReceipt::class, PickList::class, StockCount::class, StockValuation::class, ArticleImage::class, LabelTemplate::class] as $model) {
             Gate::policy($model, InventoryPolicy::class);
         }
 
@@ -57,6 +60,8 @@ class InventoryServiceProvider extends ServiceProvider
         Livewire::component('inventory.pick-lists', PickListsPage::class);
         Livewire::component('inventory.counts', CountsPage::class);
         Livewire::component('inventory.reports', ReportsPage::class);
+        Livewire::component(LabelStudioPage::NAME, LabelStudioPage::class);
+        Livewire::component(LabelPrintPanel::NAME, LabelPrintPanel::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([VerifyStockCommand::class]);

@@ -21,6 +21,8 @@ Lager har fyra nivåer: att se lagret, att hantera varor (ta emot, plocka, flytt
 | **Revisor** | Ja, med priser | Nej | Nej | Nej |
 | **Lagerpersonal** | Ja, utan priser | Ja | Nej | Nej |
 
+Alla som får ta emot, plocka och räkna får också skriva ut etiketter. Priset kommer bara med på etiketten för den som får ändra artiklar och priser. Etikettmallarna ändras under Inställningar.
+
 Attestanter har ingen åtkomst till Lager. Att bokföra lagerförändringen vid bokslutet kräver dessutom att du får sköta räkenskapsåret.
 
 ## Lagerpersonal
@@ -31,7 +33,8 @@ Rollen passar den som arbetar på golvet. Hen kan:
 - ta emot inleveranser,
 - plocka och klarmarkera plocklistor,
 - flytta, kassera och ta emot returer,
-- inventera.
+- inventera,
+- skriva ut etiketter, men aldrig med pris.
 
 Hen ser inga inköpspriser, inget lagervärde och inga inställningar, och kan inte ändra artiklar eller lagerställen. Rollen syns bara när Lager är påslaget. Ge någon rollen när du bjuder in hen. Se [Bjud in en användare](/manual/kom-igang/bjud-in-en-anvandare).
 
