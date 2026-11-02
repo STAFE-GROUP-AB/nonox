@@ -363,6 +363,13 @@
             ],
             "source_url": "https://www.skatteverket.se/agbeskrivning",
             "note": "Skatteverket's guidance; no change for 2027 announced on 2026-11-02. TODO(legal-verify): check again in January 2027."
+        },
+        {
+            "keys": [
+                "tax.side_income"
+            ],
+            "source_url": "https://data.riksdagen.se/dokument/sfs-2011-1244.text",
+            "note": "Skatteförfarandelagen 11 kap. 20 § (30 % on pay that is not the main income), added 2026-11-02 for #75. TODO(legal-verify): amendments in force from 2027-01-01 not checked."
         }
     ]
 }

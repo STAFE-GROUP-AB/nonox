@@ -1436,6 +1436,15 @@ lönebeskeden låsta i databasen.
   uppgifterna saknas. Registerutdraget och anonymiseringen omfattar de nya
   fälten. `TODO(legal-verify)`: om TIN ska krävas för alla begränsat
   skattskyldiga (SFF 6 kap. 2 § har undantag; här är det frivilligt).
+- Sidoinkomst (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-LON-11, #75): `employees.withholding_basis` är TABLE (huvudinkomst,
+  skattetabell) eller SIDE_INCOME. För en anställd bosatt i Sverige med
+  SIDE_INCOME dras regeln `tax.side_income` (30 %, SFL 11 kap. 20 § första
+  stycket 1) på all skattepliktig lön, även engångsbelopp, utan tabell;
+  ett jämkningsbeslut i kraft gäller före. Taket mot kontantlönen (#68)
+  gäller. SINK och A-SINK påverkas inte. Det förhöjda skatteavdraget i
+  11 kap. 21 § (tabellen för utbetalarens ort plus 10 %) är inte byggt;
+  en huvudinkomst utan tabell stoppas som förut (`TODO(legal-verify)`).
 - Avdrag efter skatt som är större än lönen (#68): blir nettolönen negativ
   av ett förskott, ett nettolöneavdrag eller en egen betalning för förmån
   sätts den till noll, och det som inte räckte blir en fordran på den

@@ -37,6 +37,10 @@ use InvalidArgumentException;
  */
 class SaveEmployee
 {
+    public const string WITHHOLDING_TABLE = 'TABLE';
+
+    public const string WITHHOLDING_SIDE_INCOME = 'SIDE_INCOME';
+
     public const string IDENTITY_SWEDISH = 'SWEDISH';
 
     public const string IDENTITY_BIRTH = 'BIRTH';
@@ -82,6 +86,8 @@ class SaveEmployee
             'tax_residence' => ['required', Rule::in(['SE', 'NON_RESIDENT_SINK', 'NON_RESIDENT_A_SINK'])],
             'tax_table' => ['nullable', 'integer', 'between:1,99'],
             'tax_column' => ['nullable', 'integer', 'between:1,9'],
+            // SFL 11 kap. 20 § första stycket 1: 30 % when the pay is not the employee's main income (#75).
+            'withholding_basis' => ['nullable', Rule::in([self::WITHHOLDING_TABLE, self::WITHHOLDING_SIDE_INCOME])],
             // Skatteverket, ruta 112: free text, 1–50 characters, required with A-SINK tax in 275 (AUD-LON-05, #73).
             'activity_type' => ['nullable', 'required_if:tax_residence,NON_RESIDENT_A_SINK', 'string', 'max:50', 'regex:/\S/', 'not_regex:/[<>]/'],
             'tax_adjustment_type' => ['nullable', Rule::in(['NONE', 'PERCENT', 'TABLE', 'AMOUNT'])],
@@ -143,7 +149,9 @@ class SaveEmployee
             throw ValidationException::withMessages(['identity_type' => __('Den som är bosatt i Sverige och beskattas enligt skattetabell behöver ett svenskt person- eller samordningsnummer. Utan svenskt nummer går det bara med SINK eller A-SINK.')]);
         }
 
-        if ($validated['tax_residence'] === 'SE' && (blank($validated['tax_table'] ?? null) || blank($validated['tax_column'] ?? null))) {
+        $sideIncome = $validated['tax_residence'] === 'SE' && ($validated['withholding_basis'] ?? null) === self::WITHHOLDING_SIDE_INCOME;
+
+        if ($validated['tax_residence'] === 'SE' && ! $sideIncome && (blank($validated['tax_table'] ?? null) || blank($validated['tax_column'] ?? null))) {
             throw ValidationException::withMessages(['tax_table' => __('Fyll i skattetabell och kolumn från den anställdes skattebesked.')]);
         }
 
@@ -165,7 +173,7 @@ class SaveEmployee
         // Without the field (an import, an older caller) the stored decision is kept.
         $adjustment = array_key_exists('tax_adjustment_type', $input) ? self::taxAdjustment($validated) : [];
 
-        return CurrentCompany::run($company, fn (): Employee => DB::transaction(function () use ($user, $company, $validated, $employee, $salary, $identity, $adjustment): Employee {
+        return CurrentCompany::run($company, fn (): Employee => DB::transaction(function () use ($user, $company, $validated, $employee, $salary, $identity, $adjustment, $sideIncome): Employee {
             $costCenterId = null;
 
             if (filled($validated['cost_center'] ?? null)) {
@@ -193,6 +201,7 @@ class SaveEmployee
                 'tax_residence' => $validated['tax_residence'],
                 'tax_table' => blank($validated['tax_table'] ?? null) ? null : (int) $validated['tax_table'],
                 'tax_column' => blank($validated['tax_column'] ?? null) ? null : (int) $validated['tax_column'],
+                ...(array_key_exists('withholding_basis', $validated) || $validated['tax_residence'] !== 'SE' ? ['withholding_basis' => $sideIncome ? self::WITHHOLDING_SIDE_INCOME : self::WITHHOLDING_TABLE] : []),
                 'activity_type' => $validated['tax_residence'] === 'NON_RESIDENT_A_SINK' ? trim((string) $validated['activity_type']) : null,
                 'user_id' => $linkedUserId,
                 ...$adjustment,

@@ -4,7 +4,7 @@ ordning: 20
 roller: [owner, payroll_admin]
 modul: payroll
 rutter: [payroll.employees]
-sokord: [personal, anställd, personalkort, skattetabell, kolumn, jämkning, jämkningsbeslut, SINK, A-SINK, verksamhetens art, bankkonto lön, timanställd, månadslön, sysselsättningsgrad]
+sokord: [personal, anställd, personalkort, skattetabell, kolumn, jämkning, jämkningsbeslut, sidoinkomst, 30 procent, SINK, A-SINK, verksamhetens art, bankkonto lön, timanställd, månadslön, sysselsättningsgrad]
 ---
 
 # Anställda
@@ -55,6 +55,15 @@ I arbetsgivardeklarationen redovisas personen då med födelsedatum, födelseort
 Medborgarskap och TIN kan du fylla i även för den som har ett svenskt samordningsnummer och beskattas med SINK eller A-SINK. De skickas då med i deklarationen.
 
 Väljer du **Bosatt utomlands, A-SINK** fyller du också i **Verksamhetens art**: vilken sorts verksamhet ersättningen gäller, till exempel konsert eller cirkus. Skatteverket vill ha den i arbetsgivardeklarationen (ruta 112) när A-SINK-skatten redovisas.
+
+### Sidoinkomst
+
+Är lönen hos er inte personens huvudinkomst, till exempel ett extrajobb vid sidan av en heltidsanställning någon annanstans, ska ni dra 30 procent i skatt i stället för enligt tabellen (skatteförfarandelagen 11 kap. 20 §). Välj då **Sidoinkomst – 30 procent skatt** under **Huvudinkomst eller sidoinkomst**. Skattetabell och kolumn behövs inte.
+
+De 30 procenten dras på all skattepliktig lön, även engångsbelopp som bonus. Har personen ett beslut om jämkning följer lönekörningen beslutet i stället.
+
+> [!NOTE]
+> Saknar ni skatteuppgift för någon som har lönen som huvudinkomst gäller andra regler (förhöjt skatteavdrag enligt 11 kap. 21 §). Det räknar NONOX inte ut än: be personen om skattebeskedet och fyll i tabell och kolumn.
 
 Är du osäker på vilken skatt som gäller, fråga Skatteverket eller er redovisningskonsult.
 

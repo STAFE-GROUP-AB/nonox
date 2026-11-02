@@ -39,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $tax_residence
  * @property ?int $tax_table
  * @property ?int $tax_column
+ * @property string $withholding_basis TABLE (main income, tax table) or SIDE_INCOME (30 %, SFL 11 kap. 20 §)
  * @property ?string $activity_type verksamhetens art for A-SINK (AGI field 112)
  * @property string $tax_adjustment_type NONE, PERCENT (basis points), TABLE (table and column) or AMOUNT (öre per payment)
  * @property ?int $tax_adjustment_value
@@ -89,6 +90,7 @@ class Employee extends Model
         'tax_residence',
         'tax_table',
         'tax_column',
+        'withholding_basis',
         'activity_type',
         'municipality_code',
         'church_member',

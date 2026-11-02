@@ -6036,5 +6036,9 @@
     "Medborgarskap (landskod)": "Citizenship (country code)",
     "Två bokstäver, till exempel PL.": "Two letters, for example PL.",
     "Utländskt skatteregistreringsnummer (TIN)": "Foreign tax identification number (TIN)",
-    "TIN utfärdat av (landskod)": "TIN issued by (country code)"
+    "TIN utfärdat av (landskod)": "TIN issued by (country code)",
+    "Huvudinkomst eller sidoinkomst": "Main income or side income",
+    "Är lönen inte personens huvudinkomst dras 30 procent i skatt i stället för enligt tabell.": "If the pay is not the person's main income, 30 per cent tax is withheld instead of using the table.",
+    "Huvudinkomst – skatt enligt skattetabell": "Main income – tax by the tax table",
+    "Sidoinkomst – 30 procent skatt": "Side income – 30 per cent tax"
 }

@@ -8,6 +8,7 @@ use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\PayrollRun;
+use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Support\Agi\AgiXml;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -207,5 +208,50 @@ describe('payees without a Swedish number (#74)', function () {
             ->assertSet('form.birth_date', '1985-03-14')
             ->call('save')
             ->assertHasNoErrors();
+    });
+});
+
+describe('side income (#75)', function () {
+    it('withholds 30 % of a bonus too (SFL 11 kap. 20 §: "30 procent av underlaget")', function () {
+        $eva = LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'SIDE_INCOME', 'tax_table' => null, 'tax_column' => null]);
+        $run = $this->runs->create($this->owner, $this->company, '2026-04');
+        LonSupport::input($this->owner, $run, $eva, 'BONUS', ['amount' => '10 000']);
+        $this->runs->calculate($this->owner, $run->fresh());
+
+        // (32 000 + 10 000) × 30 % = 12 600 kr.
+        expect(Payslip::query()->sole()->tax_ore->ore)->toBe(1_260_000);
+    });
+
+    it('follows a jämkning decision instead (SFL 11 kap. 27 §)', function () {
+        $eva = LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'SIDE_INCOME', 'tax_table' => null, 'tax_column' => null]);
+        $eva->forceFill(['tax_adjustment_type' => 'PERCENT', 'tax_adjustment_value' => 2000, 'tax_adjustment_valid_from' => '2026-01-01'])->save();
+        $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+        // 32 000 kr × 20 % = 6 400 kr.
+        expect(Payslip::query()->sole()->tax_ore->ore)->toBe(640_000);
+    });
+
+    it('keeps the flat SINK rate for a payee living abroad', function () {
+        $eva = LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'SIDE_INCOME', 'tax_residence' => 'NON_RESIDENT_SINK', 'tax_table' => null, 'tax_column' => null]);
+        $this->runs->calculate($this->owner, $this->runs->create($this->owner, $this->company, '2026-04'));
+
+        // SINK 22,5 % of 32 000 kr = 7 200 kr.
+        expect($eva->withholding_basis)->toBe('TABLE')
+            ->and(Payslip::query()->sole()->tax_ore->ore)->toBe(720_000);
+    });
+
+    it('is chosen in the employee form, which then needs no table', function () {
+        Livewire::test(Employees::class)
+            ->call('create')
+            ->set('form.first_name', 'Sara')->set('form.last_name', 'Sido')
+            ->set('form.personal_number', LonSupport::personalNumber('19900615'))
+            ->set('form.withholding_basis', 'SIDE_INCOME')
+            ->assertDontSeeHtml('id="employee_tax_table"')
+            ->set('form.tax_table', '')
+            ->set('form.salary', '10 000')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect(Employee::query()->where('first_name', 'Sara')->sole()->withholding_basis)->toBe('SIDE_INCOME');
     });
 });

@@ -42,6 +42,14 @@
                         </select>
                     </x-ui.field>
                     @if(($form['tax_residence'] ?? 'SE') === 'SE')
+                        <x-ui.field for="employee_withholding_basis" :label="__('Huvudinkomst eller sidoinkomst')" error="withholding_basis" class="sm:col-span-3" :hint="__('Är lönen inte personens huvudinkomst dras 30 procent i skatt i stället för enligt tabell.')">
+                            <select id="employee_withholding_basis" class="{{ $input }} mt-1" wire:model.live="form.withholding_basis">
+                                <option value="TABLE">{{ __('Huvudinkomst – skatt enligt skattetabell') }}</option>
+                                <option value="SIDE_INCOME">{{ __('Sidoinkomst – 30 procent skatt') }}</option>
+                            </select>
+                        </x-ui.field>
+                    @endif
+                    @if(($form['tax_residence'] ?? 'SE') === 'SE' && ($form['withholding_basis'] ?? 'TABLE') !== 'SIDE_INCOME')
                         <x-ui.field for="employee_tax_table" :label="__('Skattetabell')" error="tax_table" :hint="__('Från den anställdes skattebesked.')"><input id="employee_tax_table" type="number" class="{{ $input }} mt-1" wire:model="form.tax_table"></x-ui.field>
                         <x-ui.field for="employee_tax_column" :label="__('Kolumn')" error="tax_column"><input id="employee_tax_column" type="number" class="{{ $input }} mt-1" wire:model="form.tax_column"></x-ui.field>
                     @endif

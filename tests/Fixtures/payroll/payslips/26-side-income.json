@@ -1,0 +1,44 @@
+{
+  "description": "Side income (SFL 11 kap. 20 § första stycket 1): 30 % of all taxable pay, no table. 30 000 kr + bonus 5 000 kr = 35 000 kr × 30 % = 10 500 kr; net 24 500 kr; contributions 35 000 × 31,42 % = 10 997 kr",
+  "context": {
+    "birth_date": "1990-06-15",
+    "tax_residence": "SE",
+    "tax_table": null,
+    "tax_column": null,
+    "tax_adjustment_percent_bp": null,
+    "side_income": true,
+    "salary_form": "MONTHLY",
+    "monthly_salary_ore": 3000000,
+    "hourly_rate_ore": null,
+    "employment_rate_bp": 10000,
+    "employment_start": "2025-01-01",
+    "employment_end": null,
+    "period_start": "2026-04-01",
+    "period_end": "2026-04-30",
+    "payment_date": "2026-04-24",
+    "inputs": [
+      {
+        "code": "BONUS",
+        "description": "Bonus",
+        "category": "ADDITION",
+        "taxable": true,
+        "tax_method": "ONE_OFF",
+        "contribution_basis": true,
+        "vacation_basis": false,
+        "amount_ore": 500000
+      }
+    ],
+    "accumulators": {
+      "contribution_basis_ytd": 9000000
+    },
+    "settings": {
+      "proration_method": "CALENDAR_DAYS"
+    }
+  },
+  "expected": {
+    "gross_ore": 3500000,
+    "tax_ore": 1050000,
+    "net_ore": 2450000,
+    "employer_contribution_ore": 1099700
+  }
+}

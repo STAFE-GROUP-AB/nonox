@@ -383,3 +383,22 @@ finding and the GitHub issue.
 - `TODO(legal-verify)`: whether the foreign TIN must be required for every
   SINK/A-SINK payee (optional here, as SFF 6 kap. 2 § has exceptions);
   whether Skatteverket expects a particular use of the three free digits.
+
+### Side income, 30 % (AUD-LON-11, #75)
+
+- SFL 11 kap. 20 §: "skatteavdrag göras med 30 procent av underlaget, om
+  ersättningen 1. inte är mottagarens huvudinkomst". The employee card
+  gets `withholding_basis` (TABLE or SIDE_INCOME, default TABLE). With
+  SIDE_INCOME (residence SE only) the engine withholds the rule
+  `tax.side_income` (bp 3000, rules.json 2026 with the statute as source,
+  valid until changed) on all taxable pay, one-off included, and needs no
+  table. A jämkning decision in force wins (SFL 11 kap. 27 §): percent and
+  amount were already checked first, and a TABLE decision is used instead
+  of the 30 %.
+- SFL 11 kap. 21 § (förhöjt skatteavdrag when the payer has no tax
+  information, the employee has shown no A-skatt decision, and the pay is
+  the main income) is a different rule: the table for the payer's locality
+  plus 10 %. It is not built; a main income without a table is refused as
+  before. `TODO(legal-verify)`: the other cases of 20 § (work shorter than
+  a week, förenklad arbetsgivardeklaration, 10 kap. 6 and 13 §§) are not
+  offered as choices.

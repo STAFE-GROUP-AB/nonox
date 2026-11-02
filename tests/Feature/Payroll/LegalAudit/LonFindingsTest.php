@@ -355,8 +355,22 @@ it('counts a bonus in the vacation-pay basis under procentregeln (semesterlagen 
     expect($payout->amount_ore->ore)->toBe(192_000);
 })->todo('AUD-LON-10: BONUS is seeded without vacation basis; confidence medium — a bonus that is not pay for work (vinstdelning) may be excluded');
 
-it('withholds 30 % when the company is not the main employer or has no tax information (SFL 11 kap.)')
-    ->todo('AUD-LON-11: no option for sidoinkomst/30 %; missing tax table blocks the run instead (legal paragraph to verify)');
+it('withholds 30 % when the company is not the main employer (SFL 11 kap. 20 § första stycket 1)', function () {
+    LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'SIDE_INCOME', 'tax_table' => null, 'tax_column' => null]);
+    $field = lonFindingAgi($this->runs, $this->owner, $this->admin, $this->company, $this->runs->create($this->owner, $this->company, '2026-04'));
+    $payslip = Payslip::query()->sole();
+
+    // 32 000 kr × 30 % = 9 600 kr (the table would give 6 381 kr); field 001 declares it.
+    expect($payslip->tax_ore->ore)->toBe(960_000)
+        ->and($payslip->tax_explanation['method'])->toBe('side_income')
+        ->and($field('//agd:IU/agd:AvdrPrelSkatt[@faltkod="001"]'))->toBe('9600');
+});
+
+it('does not guess a table for a main income without tax information (SFL 11 kap. 21 §, raised withholding not built)', function () {
+    // 21 § (table of the payer's locality plus 10 %) is a separate rule, not 30 %: until it is built, a main income needs the table.
+    expect(fn () => LonSupport::employee($this->owner, $this->company, '19900615', ['withholding_basis' => 'TABLE', 'tax_table' => null, 'tax_column' => null]))
+        ->toThrow(ValidationException::class, 'skattetabell');
+});
 
 it('declares a benefit fully paid by the employee as 0 in field 012 (Skatteverket: "Om värdet blir noll ska du fylla i noll")', function () {
     $dan = LonSupport::employee($this->owner, $this->company, '19750505');

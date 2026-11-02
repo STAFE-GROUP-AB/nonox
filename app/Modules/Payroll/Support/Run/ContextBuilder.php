@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Support\Run;
 
 use App\Modules\Payroll\Actions\ExpenseClaims;
+use App\Modules\Payroll\Actions\SaveEmployee;
 use App\Modules\Payroll\Domain\Engine\AbsenceInput;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
@@ -111,6 +112,7 @@ final class ContextBuilder
             taxAdjustmentTable: $adjustment === 'TABLE' ? $employee->tax_adjustment_table : null,
             taxAdjustmentColumn: $adjustment === 'TABLE' ? $employee->tax_adjustment_column : null,
             taxAdjustmentAmountOre: $adjustment === 'AMOUNT' ? $employee->tax_adjustment_value : null,
+            sideIncome: $employee->tax_residence === 'SE' && $employee->withholding_basis === SaveEmployee::WITHHOLDING_SIDE_INCOME,
         );
 
         $compTime = CompTimeEntry::query()

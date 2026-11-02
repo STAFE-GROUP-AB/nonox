@@ -39,8 +39,14 @@ use App\Support\Money\Money;
  * the payslip says so (enligt granskning 2026-11-02, juristgranskning
  * återstår, AUD-LON-06, #68).
  *
- * TODO(legal-verify): the mandatory withholding when tax information is
- * missing; here such payslips are blocked.
+ * Pay that is not the employee's main income is taxed with 30 % (rule
+ * tax.side_income, SFL 11 kap. 20 § första stycket 1) when the employee card
+ * says so; a jämkning decision in force still wins (enligt granskning
+ * 2026-11-02, juristgranskning återstår, AUD-LON-11, #75).
+ *
+ * TODO(legal-verify): the raised withholding of SFL 11 kap. 21 § when tax
+ * information is missing for a main income (the table of the payer's
+ * locality plus 10 %) is not built; such payslips are blocked.
  * TODO(legal-verify): whether tax-free cash (traktamente, milersättning) may
  * be used to withhold tax on other pay; here it counts as cash (AUD-LON-06).
  */
@@ -85,6 +91,16 @@ final class WithholdingTaxStep implements Step
         }
 
         $byDecision = $context->taxAdjustmentTable !== null;
+
+        // SFL 11 kap. 20 § första stycket 1: 30 % of all taxable pay when it is not the main income, unless a jämkning decision says otherwise (#75).
+        if ($context->sideIncome && ! $byDecision) {
+            $result = $this->tax->flat($regular + $oneOff, 'tax.side_income', 'side_income', $context->rules);
+            $draft->taxOre = $result->taxOre;
+            $draft->taxExplanation = $result->explanation;
+            $this->withholdFromCash($draft);
+
+            return;
+        }
         $table = $byDecision ? $context->taxAdjustmentTable : $context->taxTable;
         $column = $byDecision ? $context->taxAdjustmentColumn : $context->taxColumn;
 

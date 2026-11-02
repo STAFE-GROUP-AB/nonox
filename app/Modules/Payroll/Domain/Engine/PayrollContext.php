@@ -26,6 +26,7 @@ final readonly class PayrollContext
      * @param  int  $employeeClaimOre  what the employee still owes from earlier payslips whose deductions after tax were larger than the pay (NetPay), over all years
      * @param  ?int  $taxAdjustmentTable  a jämkning decision that names another table (with $taxAdjustmentColumn); like $taxAdjustmentPercentBp and $taxAdjustmentAmountOre only set while the decision is in force on the payment date
      * @param  ?int  $taxAdjustmentAmountOre  a jämkning decision that names an amount of tax per payment
+     * @param  bool  $sideIncome  the pay is not the employee's main income: 30 % is withheld instead of the table (SFL 11 kap. 20 §)
      */
     public function __construct(
         public CarbonImmutable $birthDate,
@@ -58,6 +59,7 @@ final readonly class PayrollContext
         public ?int $taxAdjustmentTable = null,
         public ?int $taxAdjustmentColumn = null,
         public ?int $taxAdjustmentAmountOre = null,
+        public bool $sideIncome = false,
     ) {}
 
     /**

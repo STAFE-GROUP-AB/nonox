@@ -36,6 +36,7 @@ beforeEach(function () {
         'sick_pay.reinfection_window_days' => ['days' => 5],
         'a_sink.rate' => ['bp' => 1500],
         'tax.one_off_without_regular_salary' => ['bp' => 3000],
+        'tax.side_income' => ['bp' => 3000],
         'tax.one_off' => ['columns' => ['1' => [[0, 25041, 0], [25042, 82800, 1000], [82801, 192000, 2100], [192001, 477600, 2600], [477601, 660000, 3400], [660001, null, 5400]]]],
     ] as $key => $value) {
         PayrollRuleVersion::create(['key' => $key, 'valid_from' => '2026-01-01', 'value' => $value, 'source_url' => 'https://example.test'])
@@ -78,6 +79,7 @@ function payrollContextFrom(array $data): PayrollContext
         taxAdjustmentTable: $data['tax_adjustment_table'] ?? null,
         taxAdjustmentColumn: $data['tax_adjustment_column'] ?? null,
         taxAdjustmentAmountOre: $data['tax_adjustment_amount_ore'] ?? null,
+        sideIncome: $data['side_income'] ?? false,
     );
 }
 
