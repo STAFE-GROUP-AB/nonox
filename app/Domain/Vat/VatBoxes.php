@@ -31,7 +31,7 @@ final class VatBoxes
      * @var array<int, array{label: string, element: string, side: 'credit'|'debit', accounts: list<array{0: int, 1: int}>}>
      */
     public const array BOXES = [
-        5 => ['label' => 'Momspliktig försäljning som inte ingår i ruta 06, 07 eller 08', 'element' => 'ForsMomsEjAnnan', 'side' => self::CREDIT, 'accounts' => [[3000, 3003], [3005, 3099]]],
+        5 => ['label' => 'Momspliktig försäljning som inte ingår i ruta 06, 07 eller 08', 'element' => 'ForsMomsEjAnnan', 'side' => self::CREDIT, 'accounts' => [[3000, 3003], [3005, 3099], [3914, 3914]]],
         10 => ['label' => 'Utgående moms 25 %', 'element' => 'MomsUtgHog', 'side' => self::CREDIT, 'accounts' => [[2610, 2613], [2616, 2616]]],
         11 => ['label' => 'Utgående moms 12 %', 'element' => 'MomsUtgMedel', 'side' => self::CREDIT, 'accounts' => [[2620, 2623], [2626, 2626]]],
         12 => ['label' => 'Utgående moms 6 %', 'element' => 'MomsUtgLag', 'side' => self::CREDIT, 'accounts' => [[2630, 2633], [2636, 2636]]],
@@ -57,6 +57,32 @@ final class VatBoxes
         // 2648 Vilande ingående moms is not deductible yet (ML 7 kap. 31 §), so it is not in box 48.
         48 => ['label' => 'Ingående moms att dra av', 'element' => 'MomsIngAvdr', 'side' => self::DEBIT, 'accounts' => [[2640, 2647], [2649, 2649]]],
     ];
+
+    public const int TAXABLE_SALES = 5;
+
+    public const int EXEMPT_SALES = 42;
+
+    /**
+     * Output VAT on taxable sales in Sweden (BAS 2026: 2611, 2621, 2631 and
+     * their group accounts), with its rate in basis points. A voucher that
+     * books VAT here has a taxable base of VAT / rate, which box 05 must
+     * show whatever revenue account carries the sale (#61).
+     */
+    public const array SALE_VAT = [2610 => 2500, 2611 => 2500, 2620 => 1200, 2621 => 1200, 2630 => 600, 2631 => 600];
+
+    /**
+     * Revenue accounts that are never part of a taxable sale's base in box
+     * 05 without being mapped: VMB and reverse charge (3200–3299, their base
+     * is reported elsewhere), own withdrawals (3400–3499, box 06), revenue
+     * corrections, rounding and excise (3700–3799), exchange gains (3960),
+     * gains on fixed assets (3970–3979, the gain is not the price) and
+     * public grants (3980–3989, box 42 at most).
+     *
+     * TODO(legal-verify): a sale of a fixed asset belongs in box 05 at its
+     * price; the price is booked against the asset account, not on a revenue
+     * account, so it shows as output VAT without a base (VatReturn::$unexplained).
+     */
+    public const array NOT_SALES = [[3200, 3299], [3400, 3499], [3700, 3799], [3960, 3989]];
 
     /** Output VAT boxes, summed against box 48 into box 49. */
     public const array OUTPUT_VAT = [10, 11, 12, 30, 31, 32, 60, 61, 62];
@@ -94,6 +120,27 @@ final class VatBoxes
     public static function isVatAccount(int $account): bool
     {
         return $account >= self::VAT_ACCOUNTS[0] && $account <= self::VAT_ACCOUNTS[1];
+    }
+
+    /**
+     * A revenue account without a box that may carry a taxable sale in
+     * Sweden: its credit counts in box 05 as far as the output VAT on the
+     * same voucher explains it (#61). 3990 Övriga ersättningar och intäkter,
+     * 3500–3699 fakturerade kostnader and sidointäkter are examples.
+     */
+    public static function isOtherRevenue(int $account): bool
+    {
+        if ($account < 3000 || $account > 3999 || self::boxFor($account) !== null) {
+            return false;
+        }
+
+        foreach (self::NOT_SALES as [$from, $to]) {
+            if ($account >= $from && $account <= $to) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public static function boxFor(int $account): ?int

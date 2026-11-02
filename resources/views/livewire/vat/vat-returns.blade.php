@@ -129,6 +129,13 @@
                     </div>
                 @endif
 
+                @if(abs($return->unexplained) >= 100)
+                    <div class="mt-4 rounded-lg bg-amber-50 p-4 text-sm text-amber-950" role="status">
+                        <p class="font-semibold">{{ __('Utgående moms utan försäljning i ruta 05') }}</p>
+                        <p class="mt-1">{{ __('Momsen på försäljning i Sverige motsvarar :amount kr mer i underlag än det som är bokfört på intäktskonton. Det kan till exempel vara en såld inventarie, där priset är bokfört mot tillgångskontot. Lägg till underlaget i ruta 05 när du lämnar deklarationen, eller rätta bokföringen.', ['amount' => number_format(intdiv($return->unexplained, 100), 0, ',', ' ')]) }}</p>
+                    </div>
+                @endif
+
                 <div class="mt-6 flex flex-wrap items-center gap-4 print:hidden">
                     <a href="{{ route('vat.file', ['fiscalYear' => $fiscalYear, 'period' => $selected['start']->toDateString()]) }}" class="text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ner fil till Skatteverket') }}</a>
                     <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" x-on:click="window.print()">{{ __('Skriv ut eller spara som PDF') }}</button>

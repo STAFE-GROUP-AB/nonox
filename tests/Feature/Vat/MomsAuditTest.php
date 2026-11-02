@@ -398,9 +398,10 @@ it('puts every taxable sale in box 05, not only accounts 3000–3099', function 
 
     $boxes = VatReturn::calculate($this->year, CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-03-31'))->boxes();
 
+    // Skatteverket fält 05: all taxable sales in Sweden excluding VAT, whatever the account (AUD-MOMS-3, #61).
     expect($boxes[10])->toBe(250)
         ->and($boxes[5])->toBe(1_000);
-})->todo('AUD-MOMS-3: box 05 only reads 3000–3003 and 3005–3099; taxable sales on other revenue accounts (3500–3699 fakturerade kostnader, 3900-series, sale of inventories) reach box 10–12 but not box 05.');
+});
 
 it('places a sale by its VAT rate, not only by the revenue account chosen', function () {
     $customer = momsAuditCustomer($this->owner, $this->company, ['name' => 'Kund i Sverige AB']);

@@ -2,7 +2,7 @@
 beskrivning: NONOX har inga separata momskoder. Momsen följer kontona enligt BAS, och här ser du vilka konton som blir vilken ruta i momsdeklarationen.
 ordning: 30
 roller: [owner, admin, accountant]
-sokord: [momskod, momskoder, momskonton, momsrutor, 2611, 2621, 2631, 2641, 3740, vilande moms, 2618, 2648, bas-konton, momssats, 25 procent, 12 procent, 6 procent]
+sokord: [ruta 05, 3990, underlag, momskod, momskoder, momskonton, momsrutor, 2611, 2621, 2631, 2641, 3740, vilande moms, 2618, 2648, bas-konton, momssats, 25 procent, 12 procent, 6 procent]
 ---
 
 # Hur momsen hamnar i rätt ruta
@@ -19,7 +19,14 @@ I en del program väljer man en momskod på varje rad. I NONOX följer momsen i 
 | 12 % | 2621 | 11 |
 | 6 % | 2631 | 12 |
 
-Momspliktig försäljning på 3000–3099 (utom 3004) räknas till **ruta 05**.
+Momspliktig försäljning på 3000–3099 (utom 3004) och 3914 räknas till **ruta 05**.
+
+Säljer du något momspliktigt på ett annat intäktskonto, till exempel 3990 Övriga ersättningar och intäkter eller ett konto för fakturerade kostnader, räknas det också till ruta 05. NONOX räknar då ut underlaget från momsen på samma verifikation: 250 kr på 2611 betyder 1 000 kr i underlag. Bara så mycket som momsen räcker till tas med, så ett bidrag på samma verifikation hamnar inte i ruta 05.
+
+Finns det utgående moms på försäljning som inget intäktskonto bär underlaget för visar momsdeklarationen en varning med beloppet. Det händer till exempel när du säljer en inventarie: priset bokförs mot tillgångskontot och bara vinsten på ett intäktskonto. Lägg då till underlaget i ruta 05 när du lämnar deklarationen.
+
+> [!NOTE]
+> Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-3, #61).
 
 ## Inköp och ingående moms
 

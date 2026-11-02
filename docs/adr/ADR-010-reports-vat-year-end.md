@@ -32,6 +32,17 @@
   (`VatBoxes`). There are no VAT codes on rows yet; the mapping covers the
   BAS VAT accounts. `TODO(legal-verify)` on the mapping, on dropping öre per
   box, and on boxes without accounts (06, 07, 08, 37, 38, 41).
+- **Box 05 by the VAT, not only the account** (#61): box 05 reads
+  3000–3003, 3005–3099 and 3914 by account, and also, per voucher, the credit
+  on a revenue account without a box (3990, 3500–3699 and the like; not
+  3200–3299, 3400–3499, 3700–3799 or 3960–3989) as far as the voucher's output
+  VAT on sales in Sweden (2610/2611, 2620/2621, 2630/2631) explains it: base
+  = VAT / rate, less what box 05 accounts on the same voucher already carry.
+  Output VAT whose base is on no revenue account (a sold fixed asset, where
+  the price meets the asset account) is shown as a warning with the missing
+  base; a difference within rounding the VAT to whole kronor per voucher is
+  ignored. One extra grouped query per period. Enligt granskning 2026-11-02,
+  juristgranskning återstår (AUD-MOMS-3, #61).
 - Periods follow the company's redovisningsperiod: calendar month, calendar
   quarter or the beskattningsår (= the fiscal year for a company), SFL 26
   kap. 10, 11 and 26 §§. Months and quarters are never cut at a fiscal year

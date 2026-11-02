@@ -476,6 +476,14 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   kvartalets sista dag, i det räkenskapsår den dagen hör till. Bokslutets
   checklista kräver bara perioder som slutar i året (enligt granskning
   2026-11-02, juristgranskning återstår, AUD-MOMS-6, #59).
+- Ruta 05 tar med all momspliktig försäljning i Sverige, oavsett
+  intäktskonto: 3000–3003, 3005–3099 och 3914 efter konto, och per
+  verifikation även kredit på ett intäktskonto utan ruta (till exempel 3990)
+  så långt verifikationens utgående moms på försäljning (2610/2611,
+  2620/2621, 2630/2631) räcker, räknat som moms / momssats. Utgående moms som
+  inget intäktskonto bär underlaget för (till exempel en såld inventarie)
+  visas som en varning med det saknade underlaget (enligt granskning
+  2026-11-02, juristgranskning återstår, AUD-MOMS-3, #61).
 - Momsen bokförs med en verifikation i serie M per period: momskontona som
   hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
   ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören
