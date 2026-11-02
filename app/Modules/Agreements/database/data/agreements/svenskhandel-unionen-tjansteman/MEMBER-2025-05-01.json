@@ -23,6 +23,7 @@
     "working_time": {
         "full_time_hours_per_week": "40",
         "calculation_period": { "max_weeks": 13, "source": "HT#bilaga 1 § 2.1–2.2 s. 60" },
+        "overtime_method": { "method": "DAILY", "source": "HT#§ 4.2.1–4.2.4 s. 14–15" },
         "source": "HT#bilaga 1 § 2.1–2.2 s. 60"
     },
     "groups": [
@@ -142,6 +143,8 @@
             "rates": [
                 { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "94" } }
             ],
+            "vacation_basis": false,
+            "vacation_basis_source": "HT#§ 9.4.1 s. 28 (i övertids- och restidsersättning ingår semesterlön)",
             "source": "HT#§ 4"
         },
         "HT_OT_72": {
@@ -152,6 +155,8 @@
             "rates": [
                 { "valid_from": "2025-05-01", "rate": { "type": "DIVISOR_OF_MONTHLY", "divisor": "72" } }
             ],
+            "vacation_basis": false,
+            "vacation_basis_source": "HT#§ 9.4.1 s. 28 (i övertids- och restidsersättning ingår semesterlön)",
             "source": "HT#§ 4"
         }
     },
@@ -159,8 +164,8 @@
         "overtime": {
             "unit_minutes": 30,
             "method": "DOWN_TO_WHOLE_UNIT",
-            "per": "SHIFT",
-            "source": "HT#§ 4.2.3"
+            "per": "DAY",
+            "source": "HT#§ 4.2.3 s. 14"
         }
     },
     "overtime": {

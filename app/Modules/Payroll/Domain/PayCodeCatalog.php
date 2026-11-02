@@ -18,9 +18,13 @@ final class PayCodeCatalog
     public const array CODES = [
         'MANADSLON' => ['name_sv' => 'Månadslön', 'name_en' => 'Monthly salary', 'category' => 'SALARY', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'TIMLON' => ['name_sv' => 'Timlön', 'name_en' => 'Hourly pay', 'category' => 'SALARY', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
-        'OVERTID' => ['name_sv' => 'Övertid', 'name_en' => 'Overtime', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => true, 'debit' => 7010, 'credit' => null],
-        // Comp time paid out, or taken as leave by an hourly-paid employee (CompTimeLedger). TODO(legal-verify): vacation basis, as for OVERTID.
-        'KOMPTID' => ['name_sv' => 'Komptid', 'name_en' => 'Comp time', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => false, 'pension' => true, 'debit' => 7010, 'credit' => null],
+        // Overtime and paid-out comp time are förfallen lön and so vacation-pay basis under procentregeln (semesterlagen 16 b §), and variable
+        // pay earning 12 % under sammalöneregeln (16 a § tredje stycket, CloseVacationYear). An agreement may exclude them per code
+        // (vacation_basis: false, e.g. Visita–Unionen § 16 and Handelns tjänstemannaavtal § 9.4.1: semesterlön is included in overtime pay).
+        // Enligt AI-utredning 2026-11-02, juristgranskning återstår. TODO(legal-verify): overtime as "rörlig lönedel" under sammalöneregeln.
+        'OVERTID' => ['name_sv' => 'Övertid', 'name_en' => 'Overtime', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
+        // Comp time paid out, or taken as leave by an hourly-paid employee (CompTimeLedger): vacation basis like the overtime it came from.
+        'KOMPTID' => ['name_sv' => 'Komptid', 'name_en' => 'Comp time', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'OBTILLAGG' => ['name_sv' => 'OB-tillägg', 'name_en' => 'Unsocial hours supplement', 'category' => 'ADDITION', 'unit' => 'HOURS', 'taxable' => true, 'tax_method' => 'TABLE', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'BONUS' => ['name_sv' => 'Bonus', 'name_en' => 'Bonus', 'category' => 'ADDITION', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'ONE_OFF', 'contribution' => true, 'vacation' => false, 'pension' => true, 'debit' => 7010, 'credit' => null],
         'RETROLON' => ['name_sv' => 'Retroaktiv lön', 'name_en' => 'Retroactive pay', 'category' => 'ADDITION', 'unit' => 'AMOUNT', 'taxable' => true, 'tax_method' => 'ONE_OFF', 'contribution' => true, 'vacation' => true, 'pension' => true, 'debit' => 7010, 'credit' => null],

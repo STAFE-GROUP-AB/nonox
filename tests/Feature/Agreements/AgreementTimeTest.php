@@ -195,7 +195,7 @@ it('measures overtime against a rotating schedule\'s period instead of each cale
 it('warns when the calculation period is longer than the agreement allows', function () {
     avtalTidAgreement();
     avtalTidSettings(['overtime_pay_code' => 'GR_OT_A', 'overtime_period_weeks' => 30, 'overtime_period_start' => '2026-05-04']);
-    // Gröna Riks: at most 26 weeks without a local agreement. The 30-week period from 4 May ends 29 November.
+    // Gröna Riks: at most 16 weeks for monthly pay without a local agreement. The 30-week period from 4 May ends 29 November.
     $this->travelTo(avtalTid('2026-12-02 10:00:00'));
     avtalTidWeek($this->bertil, '2026-11-23');
     avtalTidPublish('2026-11-23', '2026-11-29');
@@ -204,7 +204,7 @@ it('warns when the calculation period is longer than the agreement allows', func
     app(AttestPeriod::class)($this->owner, $this->company, avtalTid('2026-11-01'), avtalTid('2026-11-30'));
 
     Livewire::withQueryParams(['fran' => '2026-11-01', 'till' => '2026-11-30'])->test(AttestPage::class)
-        ->assertSee('Beräkningsperioden är 30 veckor, men Gröna Riks medger högst 26 veckor utan lokalt avtal (GR#§ 9 s. 13).');
+        ->assertSee('Beräkningsperioden är 30 veckor, men Gröna Riks medger högst 16 veckor utan lokalt avtal (GR#§ 9 p. 1 s. 13).');
 });
 
 it('registers comp time taken, paid out and adjusted, pays a payout in the run and shows the balance', function () {

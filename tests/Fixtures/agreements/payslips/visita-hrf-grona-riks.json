@@ -472,6 +472,95 @@
         },
         "warnings": []
       }
+    },
+    {
+      "name": "timavlönad: övertidstillägg a) utan timlönen igen, semesterersättning även på tillägget",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 16000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "100",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "GR_OT_A_TL",
+          "quantity": "3",
+          "date": "2026-05-12"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TIMLON": 1600000,
+          "GR_OT_A_TL": 16800,
+          "SEMESTERERSATTNING": 205657
+        },
+        "gross_ore": 1822457,
+        "employer": {
+          "TJANSTEPENSION": 82011,
+          "AVTALSFORSAKRING": 8200
+        },
+        "warnings": []
+      },
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 0,
+        "basis_ore": 0,
+        "payout_with_salary": true
+      }
+    },
+    {
+      "name": "timavlönad: mertidstillägg a) 35 % från 2026-04-01",
+      "agreement": "visita-hrf-grona-riks/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 16000,
+        "employment_rate_bp": 5000,
+        "weekly_hours": "20",
+        "group": "2",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "100",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "GR_MT_A_TL",
+          "quantity": "2",
+          "date": "2026-05-13"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TIMLON": 1600000,
+          "GR_MT_A_TL": 11200
+        },
+        "gross_ore": 1611200,
+        "employer": {
+          "TJANSTEPENSION": 72504,
+          "AVTALSFORSAKRING": 7250
+        },
+        "warnings": []
+      }
     }
   ]
 }

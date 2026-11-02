@@ -48,6 +48,12 @@ final class AgreementFileValidator
     /** UP_PER_STARTED_UNIT: a started unit counts as whole; DOWN_TO_WHOLE_UNIT: only whole units count. */
     public const array ROUNDING_METHODS = ['UP_PER_STARTED_UNIT', 'DOWN_TO_WHOLE_UNIT'];
 
+    /** What a rounding is applied to: each shift, each day's total, or each occasion of overtime. */
+    public const array ROUNDING_PER = ['SHIFT', 'DAY', 'OCCASION'];
+
+    /** How overtime and mertid are measured: against the period's contracted time, or per day against the ordinary daily time. */
+    public const array OVERTIME_METHODS = ['PERIOD', 'DAILY'];
+
     /** @var list<string> */
     private array $problems = [];
 
@@ -154,8 +160,9 @@ final class AgreementFileValidator
             $this->source($rule, "rounding.{$kind}");
 
             if (! in_array($kind, self::ROUNDING_KINDS, true) || ! is_int($rule['unit_minutes'] ?? null) || $rule['unit_minutes'] < 2 || $rule['unit_minutes'] > 60
-                || ! in_array($rule['method'] ?? null, self::ROUNDING_METHODS, true) || ($rule['per'] ?? null) !== 'SHIFT') {
-                $this->problems[] = __('Avrundningen :kind har fel form (unit_minutes 2–60, method :methods, per SHIFT).', ['kind' => (string) $kind, 'methods' => implode(' eller ', self::ROUNDING_METHODS)]);
+                || ! in_array($rule['method'] ?? null, self::ROUNDING_METHODS, true) || ! in_array($rule['per'] ?? null, self::ROUNDING_PER, true)
+                || (isset($rule['threshold_minutes']) && (! is_int($rule['threshold_minutes']) || $rule['threshold_minutes'] < 0 || $rule['threshold_minutes'] > 60))) {
+                $this->problems[] = __('Avrundningen :kind har fel form (unit_minutes 2–60, method :methods, per SHIFT, DAY eller OCCASION, threshold_minutes 0–60).', ['kind' => (string) $kind, 'methods' => implode(' eller ', self::ROUNDING_METHODS)]);
             }
         }
     }
@@ -166,6 +173,17 @@ final class AgreementFileValidator
      */
     private function overtime(array $overtime, array $codes): void
     {
+        if (isset($overtime['hourly_paid'])) {
+            $hourly = (array) $overtime['hourly_paid'];
+            $this->source($hourly, 'overtime.hourly_paid');
+
+            foreach ((array) ($hourly['supplement_codes'] ?? []) as $code => $supplement) {
+                if (! in_array((string) $code, $codes, true) || ! in_array($supplement, $codes, true)) {
+                    $this->problems[] = __('overtime.hourly_paid: :code pekar på en kod som inte finns.', ['code' => (string) $code]);
+                }
+            }
+        }
+
         if (! isset($overtime['comp_time'])) {
             return;
         }
@@ -240,8 +258,18 @@ final class AgreementFileValidator
             $period = (array) $workingTime['calculation_period'];
             $this->source($period, 'working_time.calculation_period');
 
-            if (! is_int($period['max_weeks'] ?? null) || $period['max_weeks'] < 1 || $period['max_weeks'] > 53) {
-                $this->problems[] = __('Beräkningsperioden måste ha max_weeks som ett heltal 1–53.');
+            if (! is_int($period['max_weeks'] ?? null) || $period['max_weeks'] < 1 || $period['max_weeks'] > 53
+                || (isset($period['max_weeks_hourly']) && (! is_int($period['max_weeks_hourly']) || $period['max_weeks_hourly'] < 1 || $period['max_weeks_hourly'] > 53))) {
+                $this->problems[] = __('Beräkningsperioden måste ha max_weeks (och max_weeks_hourly) som ett heltal 1–53.');
+            }
+        }
+
+        if (isset($workingTime['overtime_method'])) {
+            $method = (array) $workingTime['overtime_method'];
+            $this->source($method, 'working_time.overtime_method');
+
+            if (! in_array($method['method'] ?? null, self::OVERTIME_METHODS, true)) {
+                $this->problems[] = __('working_time.overtime_method måste vara PERIOD eller DAILY.');
             }
         }
     }
@@ -446,6 +474,10 @@ final class AgreementFileValidator
 
         if (isset($definition['vacation_basis']) && ! is_bool($definition['vacation_basis'])) {
             $this->problems[] = __('Koden :code: vacation_basis måste vara true eller false.', ['code' => $code]);
+        }
+
+        if (isset($definition['vacation_basis_source'])) {
+            $this->source(['source' => $definition['vacation_basis_source']], "codes.{$code}.vacation_basis_source");
         }
     }
 

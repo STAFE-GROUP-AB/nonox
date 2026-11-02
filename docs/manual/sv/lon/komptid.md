@@ -51,6 +51,12 @@ Under **Registrera** på **Lön → Komptid** väljer du anställd, typ, datum o
 
 Timvärdet är månadslönen gånger 12, delat med 52 veckor och veckoarbetstiden, eller timlönen.
 
+### Semesterlön på utbetald komptid
+
+Utbetald komptid räknas in i semesterlönegrundande lön, precis som den övertid den kommer från (semesterlagen 16 b §). Har avtalet sagt att semesterlönen redan ingår i övertidsersättningen, som Visita–Unionen och Handelns tjänstemannaavtal, räknas komptid som tjänats in på avtalets övertid inte in. NONOX tar då den äldsta intjänade komptiden först och delar raden på lönespecen i två om saldot kommer från båda slagen. Raden som inte räknas in heter **Komptid, utbetald (inte semesterlönegrundande enligt avtalet)**.
+
+Bedömningen bygger på en AI-utredning den 2 november 2026. Juristgranskning återstår, särskilt om avtalens skrivning om övertidsersättning också gäller utbetald komptid.
+
 - Saldot kan inte bli negativt. NONOX säger hur mycket som finns kvar.
 - Ett datum i en månad där lönen redan är attesterad går inte att välja.
 - En beräknad lönekörning för månaden går tillbaka till utkast, så att du räknar om den.
@@ -64,7 +70,7 @@ Intjänad komptid tar du bort genom att öppna dagen igen under **Planering → 
 ## Bra att veta
 
 - Ska outtagen komptid betalas ut när anställningen slutar, registrera en utbetalning före slutlönen. NONOX gör det inte av sig själv.
-- Komptid för timavlönades övertid räknas inte ännu. Deras tid betalas som timlön.
+- Komptid för timavlönades övertid räknas inte ännu. Deras tid betalas som timlön, och ger avtalet ett övertidstillägg betalas det ut.
 
 ## Läs också
 

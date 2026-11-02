@@ -80,11 +80,14 @@ only, never another product's texts, layout, colours or feature names.
   against AFS 2023:2.
 - Attest tolerance: differences under N minutes (default 5) between plan and
   actual are accepted silently; rounding of check-in times (none by default).
-- Overtime and mertid (monthly-paid staff): pay codes, a calculation period
-  of 1–52 weeks from a given Monday (a rotating schedule's length; default 1
-  = per calendar week, measured against the weekly hours × the weeks), and
-  the company's own comp-time factor used when the agreement has none
-  (default 1). Added with NONOX Avtal A7 (ADR-033).
+- Overtime and mertid: pay codes, a calculation period of 1–52 weeks from a
+  given Monday (a rotating schedule's length; default 1 = per calendar week,
+  measured against the weekly hours × the weeks; at most 4 weeks for an
+  employment no collective agreement binds, arbetstidslagen 5 § andra
+  stycket), and the company's own comp-time factor used when the agreement
+  has none (default 1). Added with NONOX Avtal A7 (ADR-033); per-day method,
+  rounding per day or occasion, leave as worked time and hourly supplements
+  added 2026-11-02 (fix-overtid, see §8).
 - Sales source for labour cost %: revenue accounts (default 3000–3799) from
   the books, per day.
 
@@ -198,7 +201,20 @@ Every action: authorized by policy, transactional, audited, tenancy-safe.
   (factor per agreement code from the agreement data, else the company's
   own) instead of time reports; reopening the day removes them.
 - OB minutes are rounded per shift and code when the agreement data has
-  `rounding.ob`; the overtime total by `rounding.overtime`.
+  `rounding.ob` (TODO(legal-verify): the agreements do not say per what).
+  Overtime is rounded per day or per occasion by `rounding.overtime.per`
+  (Visita–Unionen up per started half hour per day, Handelns
+  tjänstemannaavtal down to whole half hours per day, Gröna Riks per occasion
+  after `threshold_minutes` 10), never on the period total.
+- Overtime and mertid are measured per calculation period (OvertimeTerms,
+  PayrollBasis::period): `working_time.overtime_method` PERIOD (default;
+  approved absence and comp leave on scheduled days count as worked,
+  arbetstidslagen 7 § andra stycket) or DAILY (each day's time beyond its
+  planned time, not netted; Visita–Unionen § 11.1, Handelns
+  tjänstemannaavtal § 4.2). Hourly-paid staff get the period's overtime and
+  mertid only when the agreement has `overtime.hourly_paid`, on its
+  supplement-only code for the company's chosen code (Gröna Riks,
+  Detaljhandeln). Enligt AI-utredning 2026-11-02, juristgranskning återstår.
 - Sick pay uses the published shifts (NONOX Avtal A8): the shift's hours and
   lost OB on a sick day, and the schedule's average week in the
   karensavdrag (`AgreementSickPayExtension`, reads `planning_shifts`).

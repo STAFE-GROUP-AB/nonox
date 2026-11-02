@@ -394,7 +394,12 @@ Under `codes` finns utöver `OB` och `OVERTIME`:
 | `MEAL` | `FORMAN_EGENBETALNING` | dagar | `ORE` per dag | kostförmån (`benefit_code`: `KOSTFORMAN_LUNCH` m.fl.) till Skatteverkets värde + nettoavdrag som minskar förmånsvärdet |
 
 Valfritt `vacation_basis: true|false` på en kod styr semestergrunden för
-avtalets löneart (t.ex. restid). Nya rate-typer: `ORE` (belopp per
+avtalets löneart (t.ex. restid), med `vacation_basis_source` som källa.
+Övertid följer annars `OVERTID`, som är semesterlönegrundande
+(semesterlagen 16 b §). Visita–Unionen (§ 16) och Handelns
+tjänstemannaavtal (§ 9.4.1) har `false` på övertiden: semesterlönen ingår i
+övertidsersättningen. Gröna Riks (§ 17 p. 1) och Detaljhandeln (§ 14.6 A)
+har `true`. Enligt AI-utredning 2026-11-02, juristgranskning återstår. Nya rate-typer: `ORE` (belopp per
 tillfälle eller dag) och `PERCENT_OF_TURNOVER`.
 
 ### 6.5 Nya lönearter och konton i lönen
@@ -457,16 +462,28 @@ har kontrollerat versionen):
 ```jsonc
 "working_time": {
   // … som förut, plus:
-  "calculation_period": { "max_weeks": 26, "source": "GR#§ 9 s. 13" }
+  // max_weeks_hourly: egen gräns för timavlönade (Gröna Riks 8, månadsavlönade 16)
+  "calculation_period": { "max_weeks": 16, "max_weeks_hourly": 8, "source": "GR#§ 9 p. 1 s. 13" },
+  // PERIOD: periodens tid mot periodens avtalade tid (ledighet räknas som arbetad);
+  // DAILY: varje dags tid utöver dagens ordinarie (schemalagda) tid, utan nettning (VU § 11.1, HT § 4.2)
+  "overtime_method": { "method": "PERIOD", "source": "GR#§ 9 p. 1 s. 13; § 12 p. 1.1 s. 18" }
 },
 "rounding": {
-  // OB per pass och övertid på periodens summa. method: UP_PER_STARTED_UNIT
-  // ("varje påbörjad halvtimme") eller DOWN_TO_WHOLE_UNIT ("endast fulla
-  // halvtimmar"). per: bara SHIFT.
+  // method: UP_PER_STARTED_UNIT ("varje påbörjad halvtimme") eller
+  // DOWN_TO_WHOLE_UNIT ("endast fulla halvtimmar"). per: SHIFT (OB per pass;
+  // för övertid läst som DAY), DAY (dagens övertid före och efter ordinarie tid
+  // tillsammans) eller OCCASION (varje tillfälle utanför schemat).
+  // threshold_minutes: en förlängning på högst så många minuter är inte övertid.
+  // Aldrig på periodens summa.
   "ob":       { "unit_minutes": 30, "method": "UP_PER_STARTED_UNIT", "per": "SHIFT", "source": "GR#§ 13 s. 21" },
-  "overtime": { "unit_minutes": 30, "method": "UP_PER_STARTED_UNIT", "per": "SHIFT", "source": "GR#§§ 11–12 s. 19" }
+  "overtime": { "unit_minutes": 30, "method": "UP_PER_STARTED_UNIT", "per": "OCCASION", "threshold_minutes": 10, "source": "GR#§ 12 p. 1.2 anm. s. 19" }
 },
 "overtime": {
+  // Timavlönade: avtalskod → kod med bara tillägget (timlönen betalar redan timmen)
+  "hourly_paid": {
+    "supplement_codes": { "GR_OT_A": "GR_OT_A_TL", "GR_MT_A": "GR_MT_A_TL" },
+    "source": "GR#§ 12 p. 1–2 s. 18–20"
+  },
   "comp_time": {
     // timmar ledighet per övertidstimme, per avtalskod (kind OVERTIME)
     "hours_per_hour": { "GR_OT_A": "1.5", "GR_OT_B": "1.5", "GR_OT_C": "2" },
@@ -496,7 +513,8 @@ har kontrollerat versionen):
 ```
 
 `AgreementFileValidator` kontrollerar formen och källorna, `AgreementRules`
-läser dem (`rounding()`, `compTime()`, `calculationPeriod()`, `sickPay()`,
+läser dem (`rounding()`, `overtimeRounding()`, `overtimeMethod()`,
+`hourlySupplement()`, `compTime()`, `calculationPeriod()`, `sickPay()`,
 `obInSickPay()`). Data finns i Gröna Riks (båda varianterna),
 Visita–Unionen, Handels tjänstemän, Detaljhandeln och Lager (de två
 sista bara `calculation_period` och `sick_pay.includes_ob`).
@@ -511,8 +529,10 @@ Utanför avtalsfilen:
   `KOMPTID` betalar utbetalningar och timavlönades uttag.
 - **Beräkningsperiod** och **egen komptidsfaktor** är Planerings inställningar
   (`overtime_period_weeks`, `overtime_period_start`, `comp_time_factor`).
-  Avtalets `calculation_period.max_weeks` ger en varning när perioden är
-  längre.
+  Avtalets `calculation_period.max_weeks` (för timavlönade
+  `max_weeks_hourly`) ger en varning när perioden är längre. Utan
+  kollektivavtal räknas högst fyra veckor (arbetstidslagen 5 § andra
+  stycket), oavsett inställningen.
 - **Sjuklön**: lönemotorn får `SickPayTerms` (genomsnittlig OB per vecka,
   genomsnittlig veckoarbetstid vid oregelbunden tid, `LongSickTerms`) och per
   sjukdag `AbsenceInput::lostSupplementsOre`. Det är generiska fält; det är

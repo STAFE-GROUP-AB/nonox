@@ -43,6 +43,9 @@ use Illuminate\Support\Facades\DB;
  */
 final class VacationLedger
 {
+    /** Whether a payslip line is vacation-pay basis: its own flag when it has one, else its pay code's. */
+    public const string VACATION_BASIS_SQL = "COALESCE((payslip_lines.explanation->>'vacation_basis')::boolean, pay_codes.is_vacation_basis)";
+
     /** Absence that never earns vacation (7 §): full unpaid leave. */
     private const array NEVER_QUALIFYING = ['LEAVE_UNPAID', 'STUDY', 'OTHER'];
 
@@ -225,7 +228,8 @@ final class VacationLedger
             ->whereNotIn('payroll_runs.status', [PayrollRun::DRAFT, PayrollRun::CALCULATED])
             ->whereBetween('payroll_runs.payment_date', [$from->toDateString(), $to->toDateString()])
             ->where(fn ($query) => $query
-                ->where(fn ($basis) => $basis->where('pay_codes.is_vacation_basis', true)->where('pay_codes.category', '<>', 'SICK'))
+                // A line may carry its own flag (paid comp time follows the overtime it was earned on, CompTimeLedger).
+                ->where(fn ($basis) => $basis->whereRaw(self::VACATION_BASIS_SQL)->where('pay_codes.category', '<>', 'SICK'))
                 ->orWhereIn('pay_codes.code', ['OBETALD_SEMESTER', 'SEMESTERAVDRAG'])
                 ->orWhere(fn ($leave) => $leave->where('pay_codes.code', 'FRANVAROAVDRAG')->whereIn(DB::raw("payslip_lines.explanation->>'type'"), self::NEVER_QUALIFYING)))
             ->groupBy('payslips.employee_id')

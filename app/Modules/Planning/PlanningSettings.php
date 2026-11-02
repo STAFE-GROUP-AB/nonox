@@ -20,6 +20,9 @@ final class PlanningSettings
 
     public const string DEFAULT_PERIOD_ANCHOR = '2024-01-01';
 
+    /** Arbetstidslagen 5 § andra stycket: without a collective agreement, ordinary time is averaged over at most four weeks. */
+    public const int MAX_WEEKS_WITHOUT_AGREEMENT = 4;
+
     /** @var array<string, mixed> */
     public const array DEFAULTS = [
         'default_view' => 'week',
@@ -157,9 +160,9 @@ final class PlanningSettings
      *
      * @param  array<string, mixed>  $settings
      */
-    public static function periodStart(array $settings, CarbonImmutable $day): CarbonImmutable
+    public static function periodStart(array $settings, CarbonImmutable $day, ?int $weeks = null): CarbonImmutable
     {
-        $weeks = max(1, self::int($settings, 'overtime_period_weeks'));
+        $weeks = max(1, $weeks ?? self::int($settings, 'overtime_period_weeks'));
         $monday = CarbonImmutable::create($day->year, $day->month, $day->day, 0, 0, 0, $day->getTimezone())?->startOfWeek(CarbonImmutable::MONDAY) ?? $day;
 
         if ($weeks === 1) {
@@ -171,6 +174,22 @@ final class PlanningSettings
         $periods = intdiv($offset, $weeks) - ($offset % $weeks < 0 ? 1 : 0);
 
         return $anchor->addWeeks($periods * $weeks);
+    }
+
+    /**
+     * The calculation period in weeks for an employment: the setting, but
+     * at most four weeks when no collective agreement binds the employment,
+     * since arbetstidslagen 5 § andra stycket allows averaging the ordinary
+     * time over at most four weeks (only an agreement may deviate, 3 §).
+     * Enligt AI-utredning 2026-11-02, juristgranskning återstår.
+     *
+     * @param  array<string, mixed>  $settings
+     */
+    public static function periodWeeks(array $settings, bool $agreementBinds): int
+    {
+        $weeks = max(1, self::int($settings, 'overtime_period_weeks'));
+
+        return $agreementBinds ? $weeks : min($weeks, self::MAX_WEEKS_WITHOUT_AGREEMENT);
     }
 
     /** @param  array<string, mixed>  $settings */

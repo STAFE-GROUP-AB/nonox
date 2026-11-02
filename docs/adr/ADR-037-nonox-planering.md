@@ -52,3 +52,17 @@ layout or names (AGENTS.md §1.1).
 - The scheduler role and Min sida grow; Min sida must stay fast on phones.
 - Out of scope for now: automatic scheduling, forecasting beyond history,
   hourly POS sales, tips, chat and SMS.
+
+## Amendment 2026-11-02: overtime and mertid (fix-overtid)
+
+Overtime and mertid are measured per calculation period by `OvertimeTerms`
+and `PayrollBasis::period`: a PERIOD method (worked time plus leave on
+scheduled days, arbetstidslagen 7 § andra stycket, against the contracted
+time) or a DAILY method selected by the agreement data (Visita–Unionen,
+Handelns tjänstemannaavtal). The agreement's rounding is applied per day or
+occasion, never to the period total. Without a collective agreement the
+period is at most four weeks (5 § andra stycket), whatever the setting.
+Hourly-paid staff get the agreement's overtime and mertid supplement on
+supplement-only codes when the agreement gives it (Gröna Riks,
+Detaljhandeln); their hourly pay is unchanged. Enligt AI-utredning
+2026-11-02, juristgranskning återstår.

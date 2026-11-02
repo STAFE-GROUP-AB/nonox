@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Modules\Agreements\Domain\AgreementRules;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Models\Absence;
+use App\Modules\Payroll\Models\CompTimeEntry;
 use App\Modules\Payroll\Models\Employee;
 use App\Modules\Payroll\Models\Employment;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -16,6 +17,7 @@ use App\Modules\Planning\Domain\BasisTerms;
 use App\Modules\Planning\Domain\DayBasis;
 use App\Modules\Planning\Domain\DayComparison;
 use App\Modules\Planning\Domain\Deviation;
+use App\Modules\Planning\Domain\OvertimeTerms;
 use App\Modules\Planning\Domain\PayrollBasis;
 use App\Modules\Planning\Domain\PlanVsActual;
 use App\Modules\Planning\Domain\WeekBasis;
@@ -55,10 +57,14 @@ final class AttestData
         $shownFrom = CarbonImmutable::parse($from->toDateString(), $zone);
         $shownTo = CarbonImmutable::parse($to->toDateString(), $zone)->min($today);
         $settings = PlanningSettings::resolve($this->modules->settings(PlanningModule::KEY, $company));
-        // Whole calculation periods (calendar weeks by default) are read, so overtime and mertid can be counted per period.
+        // Whole calculation periods (calendar weeks by default) are read, so overtime and mertid can be counted per period;
+        // also the four-week periods used for employments without a collective agreement (PlanningSettings::periodWeeks).
         $weeks = max(1, PlanningSettings::int($settings, 'overtime_period_weeks'));
-        $from = PlanningSettings::periodStart($settings, $shownFrom);
-        $to = PlanningSettings::periodStart($settings, $shownTo)->addWeeks($weeks)->subDay()->min($today);
+        $capped = PlanningSettings::periodWeeks($settings, false);
+        $from = PlanningSettings::periodStart($settings, $shownFrom)->min(PlanningSettings::periodStart($settings, $shownFrom, $capped));
+        $to = PlanningSettings::periodStart($settings, $shownTo)->addWeeks($weeks)->subDay()
+            ->max(PlanningSettings::periodStart($settings, $shownTo, $capped)->addWeeks($capped)->subDay())
+            ->min($today);
         $ledgerOn = $this->modules->isEnabled(StaffLedgerModule::KEY, $company);
 
         if ($shownTo->lessThan($shownFrom)) {
@@ -149,40 +155,44 @@ final class AttestData
             }
         }
 
-        $rows = $this->withWeeks($rows, $settings, $today, $agreements);
+        $rows = $this->withWeeks($rows, $settings, $today, $agreements, $this->leaveDays($absences, $from, $to, $ids));
         $rows = array_values(array_filter($rows, fn (AttestRow $row): bool => $row->date->greaterThanOrEqualTo($shownFrom) && $row->date->lessThanOrEqualTo($shownTo)));
 
         return ['rows' => $rows, 'employees' => $employees, 'ledger' => $ledgerOn];
     }
 
     /**
-     * Overtime and mertid of monthly-paid staff per calculation period
-     * (PayrollBasis::week): a calendar week, or the number of weeks in the
-     * settings (a rotating schedule's cycle), measured against the period's
-     * contracted time. Put on the period's last day. A period counts only
-     * when it is over and every day in it is attested; until then the last
-     * day says the period is waiting. Hourly staff are paid every minute and
-     * get nothing here. When the employee may take comp time, the period
-     * also says what it would earn as leave, and whether it is paid or taken
-     * as comp time (chosen on the last day, else the employment's default).
+     * Overtime and mertid per calculation period (PayrollBasis::period): a
+     * calendar week, or the number of weeks in the settings (a rotating
+     * schedule's cycle), at most four weeks for an employment no collective
+     * agreement binds (arbetstidslagen 5 § andra stycket), measured the way
+     * the agreement says (OvertimeTerms). Put on the period's last day. A
+     * period counts only when it is over and every day in it is attested;
+     * until then the last day says the period is waiting. Monthly-paid staff
+     * get it on the pay codes the company chose; hourly-paid staff only when
+     * the agreement gives them a supplement (Gröna Riks, Detaljhandeln), on
+     * the agreement's supplement-only code, since the hourly pay already
+     * pays the hour. When a monthly-paid employee may take comp time, the
+     * period also says what it would earn as leave, and whether it is paid
+     * or taken as comp time (chosen on the last day, else the employment's
+     * default).
      *
      * @param  list<AttestRow>  $rows
      * @param  array<string, mixed>  $settings
+     * @param  array<int, array<string, true>>  $leave  employee => dates with approved absence or comp leave
      * @return list<AttestRow>
      */
-    private function withWeeks(array $rows, array $settings, CarbonImmutable $today, EmploymentAgreements $agreements): array
+    private function withWeeks(array $rows, array $settings, CarbonImmutable $today, EmploymentAgreements $agreements, array $leave): array
     {
         $rules = (array) ($settings['working_time_rules'] ?? []);
         $ordinary = (array) ($rules['ordinary_week'] ?? []);
         $fullTime = (int) (is_numeric($ordinary['value'] ?? null) ? $ordinary['value'] : 40) * 60;
-        $overtimeCode = PlanningSettings::code($settings, 'overtime_pay_code');
-        $extraTimeCode = PlanningSettings::code($settings, 'extra_time_pay_code');
-        $length = max(1, PlanningSettings::int($settings, 'overtime_period_weeks'));
-        $label = $length > 1 ? __('Perioden') : __('Veckan');
+        $configured = max(1, PlanningSettings::int($settings, 'overtime_period_weeks'));
         $periods = [];
 
         foreach ($rows as $index => $row) {
-            $periods[$row->employee->id.'|'.PlanningSettings::periodStart($settings, $row->date)->toDateString()][] = $index;
+            $length = PlanningSettings::periodWeeks($settings, self::employmentOn($row->employee, $row->date)?->collective_agreement_id !== null);
+            $periods[$row->employee->id.'|'.$length.'|'.PlanningSettings::periodStart($settings, $row->date, $length)->toDateString()][] = $index;
         }
 
         foreach ($periods as $key => $indexes) {
@@ -190,20 +200,32 @@ final class AttestData
             $carrier = $rows[$last];
             $employment = self::employmentOn($carrier->employee, $carrier->date);
 
-            if ($employment?->salary_form !== 'MONTHLY') {
+            if ($employment === null) {
                 continue;
             }
 
-            $periodStart = CarbonImmutable::parse(explode('|', (string) $key)[1], LocalTimestamp::ZONE);
+            [$agreement] = $agreements->on($employment, $carrier->date);
+            $hourly = $employment->salary_form === 'HOURLY';
+
+            if ($employment->salary_form !== 'MONTHLY' && ! ($hourly && $agreement?->hasHourlySupplements() === true)) {
+                continue;
+            }
+
+            [, $length, $start] = explode('|', (string) $key);
+            $length = (int) $length;
+            $label = $length > 1 ? __('Perioden') : __('Veckan');
+            $periodStart = CarbonImmutable::parse($start, LocalTimestamp::ZONE);
             $sunday = $periodStart->addWeeks($length)->subDay();
             $complete = $sunday->lessThan($today);
             $worked = 0;
             $planned = 0;
+            $days = [];
 
             foreach ($indexes as $index) {
                 $worked += $rows[$index]->comparison->actualMinutes();
                 $planned += $rows[$index]->comparison->plannedMinutes();
                 $complete = $complete && ! $rows[$index]->isOpen();
+                $days[] = $rows[$index]->comparison;
             }
 
             $contracted = self::contractedMinutes($employment, $fullTime) * $length;
@@ -225,16 +247,21 @@ final class AttestData
                 continue;
             }
 
-            [$agreement] = $agreements->on($employment, $carrier->date);
-            $week = PayrollBasis::week($worked, $contracted, $fullTime * $length, $overtimeCode, $extraTimeCode, $employment->overtime_compensation === 'INCLUDED_IN_SALARY', $agreement?->rounding('OVERTIME'), $length);
-            $deviations = $week->deviations;
-            $maximum = $agreement?->calculationPeriod();
+            [$overtimeCode, $extraTimeCode, $codeNotes] = self::periodCodes($settings, $hourly ? $agreement : null, $carrier->date);
+            $included = $employment->overtime_compensation === 'INCLUDED_IN_SALARY';
+            $week = PayrollBasis::period($days, $leave[$carrier->employee->id] ?? [], OvertimeTerms::from($agreement), $contracted, $fullTime * $length, $overtimeCode, $extraTimeCode, $included, $length);
+            $deviations = $week->hasExtraTime() ? [...$week->deviations, ...$codeNotes] : $week->deviations;
+            $maximum = $agreement?->calculationPeriod($employment->salary_form);
 
             if ($length > 1 && $maximum !== null && $length > $maximum['max_weeks']) {
                 $deviations[] = new Deviation(Deviation::EXTRA_TIME, __('Beräkningsperioden är :weeks veckor, men :agreement medger högst :max veckor utan lokalt avtal (:source).', ['weeks' => $length, 'agreement' => $agreement->shortName(), 'max' => $maximum['max_weeks'], 'source' => $maximum['source']]));
             }
 
-            if ($week->hasExtraTime() && $employment->overtime_compensation !== 'INCLUDED_IN_SALARY') {
+            if ($length < $configured && $week->hasExtraTime()) {
+                $deviations[] = Deviation::info(Deviation::EXTRA_TIME, __('Utan kollektivavtal räknas övertid och mertid över högst :max veckor (arbetstidslagen 5 § andra stycket), inte :weeks veckor som i inställningarna.', ['max' => $length, 'weeks' => $configured]));
+            }
+
+            if (! $hourly && $week->hasExtraTime() && ! $included) {
                 $options = self::compTimeOptions($week, $agreement, $overtimeCode, $extraTimeCode, $settings);
                 $chosen = $carrier->attestation?->details['week_choice'] ?? null;
                 $choice = in_array($chosen, [WeekBasis::PAY, WeekBasis::COMP_TIME], true)
@@ -253,6 +280,71 @@ final class AttestData
         }
 
         return array_values($rows);
+    }
+
+    /**
+     * The pay codes a period's overtime and mertid go on: the company's
+     * choice, or for an hourly-paid employee (an agreement given) the
+     * agreement's supplement-only code for that choice, when it has a rate
+     * on the day. What could not be mapped is said.
+     *
+     * @param  array<string, mixed>  $settings
+     * @return array{?string, ?string, list<Deviation>}
+     */
+    private static function periodCodes(array $settings, ?AgreementRules $hourlyAgreement, CarbonImmutable $day): array
+    {
+        $overtime = PlanningSettings::code($settings, 'overtime_pay_code');
+        $extra = PlanningSettings::code($settings, 'extra_time_pay_code');
+
+        if ($hourlyAgreement === null) {
+            return [$overtime, $extra, []];
+        }
+
+        $notes = [];
+        $codes = [];
+
+        foreach ([$overtime, $extra] as $code) {
+            $supplement = $code === null ? null : $hourlyAgreement->hourlySupplement($code);
+
+            if ($supplement !== null && $hourlyAgreement->rate($supplement['code'], $day) !== null) {
+                $codes[] = $supplement['code'];
+
+                continue;
+            }
+
+            $codes[] = null;
+
+            if ($code !== null) {
+                $notes[] = Deviation::info(Deviation::EXTRA_TIME, __(':agreement har inget tillägg för timavlönade för :code den här dagen; timlönen betalar redan tiden.', ['agreement' => $hourlyAgreement->shortName(), 'code' => $code]));
+            }
+        }
+
+        return [$codes[0], $codes[1], $notes];
+    }
+
+    /**
+     * Dates with approved absence (from payroll) or comp leave taken, per
+     * employee: leave placed on ordinary time counts as worked when overtime
+     * is measured (arbetstidslagen 7 § andra stycket).
+     *
+     * @param  array<int, array<string, true>>  $absences
+     * @param  list<int>  $ids
+     * @return array<int, array<string, true>>
+     */
+    private function leaveDays(array $absences, CarbonImmutable $from, CarbonImmutable $to, array $ids): array
+    {
+        $taken = CompTimeEntry::query()
+            ->whereIn('employee_id', $ids)
+            ->where('kind', CompTimeEntry::TAKEN)
+            ->whereDate('date', '>=', $from->toDateString())
+            ->whereDate('date', '<=', $to->toDateString())
+            ->get(['employee_id', 'date']);
+
+        foreach ($taken as $entry) {
+            $absences[$entry->employee_id][$entry->date->toDateString()] = true;
+        }
+
+        return $absences;
     }
 
     /**

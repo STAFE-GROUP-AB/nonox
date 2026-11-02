@@ -241,6 +241,35 @@ supplements for hourly-paid staff, karens counted in time, the agreements'
 own hour values in sick pay, the 105-day cap, and comp-time payout on
 termination as a rule.
 
+### Overtime, rounding and vacation basis (fix-overtid, 2026-11-02)
+
+Enligt AI-utredning 2026-11-02, juristgranskning återstår (verified findings
+L5, A1, A2):
+
+- **Vacation basis (L5).** `OVERTID` and `KOMPTID` are vacation-pay basis
+  (semesterlagen 16 b §; under sammalöneregeln variable pay earning 12 %,
+  16 a § tredje stycket, through `CloseVacationYear`). Agreement codes carry
+  `vacation_basis` with `vacation_basis_source`: Gröna Riks (§ 17 p. 1) and
+  Detaljhandeln (§ 14.6 A) true; Visita–Unionen (§ 16) and Handelns
+  tjänstemannaavtal (§ 9.4.1) false, since semesterlön is included in their
+  overtime pay. Paid-out comp time follows the flag of the overtime it was
+  earned on, first in, first out (`CompTimeLedger::origins`), carried on the
+  payslip line as `explanation.vacation_basis`, which the vacation ledger
+  reads before the pay code's flag. A migration sets the flag on existing
+  system pay codes still at the old seeded value. SJUKLON, SJUKAVDRAG and
+  KARENSAVDRAG keep their flags (the ledger excludes category SICK).
+- **Overtime method (A1).** `working_time.overtime_method` PERIOD or DAILY;
+  leave on scheduled ordinary time counts as worked under PERIOD
+  (arbetstidslagen 7 § andra stycket, 10 §); without an agreement the
+  calculation period is at most four weeks (5 § andra stycket); Gröna Riks'
+  limit is 16 weeks monthly, 8 hourly (`max_weeks_hourly`, § 9 p. 1).
+  Hourly-paid staff get supplements through `overtime.hourly_paid` and the
+  `*_TL` codes (Gröna Riks § 12, Detaljhandeln § 9); mertid codes
+  `GR_MT_*`, `DH_MT_*` from 2026-04-01 (GR § 12 p. 2, DH § 9.5).
+- **Rounding (A2).** `rounding.overtime.per` DAY or OCCASION and
+  `threshold_minutes`; never on the period total. OB rounding per shift and
+  code is unchanged and uncertain (the agreements do not say per what).
+
 ## Legal questions (all `TODO(legal-verify)`)
 
 1. **Copyright in agreement texts.** A collective agreement is a private

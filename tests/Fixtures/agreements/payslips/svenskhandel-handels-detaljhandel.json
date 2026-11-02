@@ -466,6 +466,54 @@
         "paid_days_earned": 25,
         "basis_ore": 36000000
       }
+    },
+    {
+      "name": "timavlönad: övertidstillägg 35 % och semesterersättning 13 % även på tillägget",
+      "agreement": "svenskhandel-handels-detaljhandel/MEMBER-2025-04-01.json",
+      "employment": {
+        "salary_form": "HOURLY",
+        "monthly_salary_ore": null,
+        "hourly_rate_ore": 18000,
+        "employment_rate_bp": 10000,
+        "weekly_hours": "40",
+        "group": "ALLA",
+        "experience_from": null,
+        "birth_date": "1990-06-15",
+        "start": "2020-01-01"
+      },
+      "period": "2026-05",
+      "payment_date": "2026-05-25",
+      "inputs": [
+        {
+          "code": "TIMLON",
+          "quantity": "120",
+          "date": "2026-05-04"
+        },
+        {
+          "code": "DH_OT_A_TL",
+          "quantity": "2",
+          "date": "2026-05-12"
+        }
+      ],
+      "expected": {
+        "lines": {
+          "TIMLON": 2160000,
+          "DH_OT_A_TL": 12600,
+          "SEMESTERERSATTNING": 282438
+        },
+        "gross_ore": 2455038,
+        "employer": {
+          "TJANSTEPENSION": 110477,
+          "AVTALSFORSAKRING": 11048
+        },
+        "warnings": []
+      },
+      "vacation": {
+        "rule": "PROCENTREGELN",
+        "paid_days_earned": 0,
+        "basis_ore": 0,
+        "payout_with_salary": true
+      }
     }
   ]
 }

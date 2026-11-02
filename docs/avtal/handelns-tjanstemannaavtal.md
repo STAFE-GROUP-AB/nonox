@@ -128,3 +128,10 @@ sig "till närmast följande vardag" kräver kalenderlogik (gap G5).
 - Semester: sammalöneregeln, semestertillägg 0,8 % per dag; 0,5 % av rörlig lön och 4,6 %-regeln räknas inte.
 - Pension och försäkringar: `pension.itp1`, `insurance.fora.tjansteman`. ITP 2 och gränsen mellan ITP 1 och ITP 2 per födelseår räknas inte (TODO(legal-verify)).
 - Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/svenskhandel-unionen-tjansteman.json`.
+
+## I NONOX: övertid, mertid och semestergrund (fix-overtid, 2026-11-02)
+
+Enligt AI-utredning 2026-11-02, juristgranskning återstår.
+
+- Övertid räknas per dag mot den ordinarie dagliga arbetstiden (`overtime_method: DAILY`, § 4.2.1–4.2.4 s. 14–15); bara hela halvtimmar per dag (`rounding.overtime.per: DAY`, § 4.2.3 s. 14).
+- Övertidskoderna är inte semesterlönegrundande (`vacation_basis: false`, § 9.4.1 s. 28: i övertids- och restidsersättning ingår semesterlön). Om det också gäller utbetald komptid är inte utrett (TODO(legal-verify)).

@@ -29,7 +29,9 @@ Nu jämförs den attesterade tiden under hela perioden med veckoarbetstiden gån
 
 ## Avtalets längsta period
 
-Kollektivavtalen säger hur lång beräkningsperioden får vara utan ett lokalt avtal, till exempel 26 veckor i Gröna Riks. Är er period längre visar Tid att attestera en avvikelse med avtalets gräns och källan.
+Kollektivavtalen säger hur lång beräkningsperioden får vara utan ett lokalt avtal, till exempel 16 veckor för månadsavlönade och 8 veckor för timavlönade i Gröna Riks. Är er period längre visar Tid att attestera en avvikelse med avtalets gräns och källan.
+
+Utan kollektivavtal får perioden vara högst fyra veckor (arbetstidslagen 5 § andra stycket). För en anställd utan avtal räknar NONOX då övertid och mertid per fyra veckor, även om inställningen är längre, och säger det på periodens sista dag.
 
 > [!IMPORTANT]
 > Avtalen har ofta olika gränser för olika anställningsformer, och en längre period kan kräva ett lokalt avtal. Kontrollera vad som gäller för er, eller fråga er redovisningskonsult.

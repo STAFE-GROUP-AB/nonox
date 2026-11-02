@@ -205,3 +205,11 @@ försäkring för arbetare och FPT (§ 17.2 s. 52). Premier 2026 (P26):
 - Semester: procentregeln för alla (`rule_monthly` PROCENTREGELN), 13 %, garantibelopp per dag 1 470 / 1 740 kr (2025-04-01) och 1 515 / 1 790 kr (2026-04-01) med 3 års branschvana, för heltid. Deltid (faktor 1 796) ger en varning i stället för en beräkning.
 - Pension och försäkringar: `pension.saf_lo`, `insurance.fora.arbetare`. TODO(legal-verify): TSL-rad för Handels (inte anslutet till Huvudavtalet 2024) och förstärkt pensionsavsättning (§ 17.14).
 - Premierna kontrolleras som lönens regler (Lön → Regler); avtalsfilen pekar bara på dem. Gyllene lönespecar: `tests/Fixtures/agreements/payslips/svenskhandel-handels-detaljhandel.json`.
+
+## I NONOX: övertid, mertid och semestergrund (fix-overtid, 2026-11-02)
+
+Enligt AI-utredning 2026-11-02, juristgranskning återstår.
+
+- Övertid och mertid är semesterlönegrundande (`vacation_basis: true`, § 14.6 A s. 45: underlaget är lönen utom semesterlön, sjuklön och permitteringslön).
+- Mertid från 2026-04-01 med samma tillägg som övertid: `DH_MT_A/70/100` (§ 9.5 s. 37). Timavlönade får bara tillägget på `DH_OT_*_TL` och `DH_MT_*_TL` (`overtime.hourly_paid`, § 9.1 s. 34–35).
+- Övertid räknas per period (`overtime_method: PERIOD`); avtalet har ingen avrundningsregel i datan.
