@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-agi",
+      "datum": "2026-11-02T16:30:00+01:00",
+      "rubrik": "Arbetsgivardeklarationen för alla slags mottagare och rätt skatt på sidoinkomst",
+      "beskrivning": "Arbetsgivardeklarationen kan redovisa mottagare utan svenskt personnummer och har med alla fält som krävs vid särskild inkomstskatt. Lön som sidoinkomst får 30 % skatteavdrag, mil och traktamente delas rätt i skattefri och skattepliktig del, bonus räknas in i semesterlönen och regionalt stöd kan slås på.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
       "id": "2026-11-02-fakturering",
       "datum": "2026-11-02T16:05:00+01:00",
       "rubrik": "Fakturor enligt mervärdesskattelagen, kundförluster och reskontra per datum",
