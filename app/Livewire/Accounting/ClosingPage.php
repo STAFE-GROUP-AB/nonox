@@ -8,12 +8,15 @@ use App\Actions\Closing\YearEndClosing;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CurrencyRevaluation;
+use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Closing\YearResult;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\ClosingCheck;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\YearEndEntry;
+use App\Support\Money\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -59,6 +62,16 @@ class ClosingPage extends Component
             $entry = $closing->bookTax($this->user(), $this->fiscalYear(), $this->tax);
             $this->reset('tax');
             $this->toast($entry->amount_ore->ore === 0 ? __('Noterat att året inte ger någon skatt.') : __('Skatten :amount är bokförd.', ['amount' => $entry->amount_ore->format()]));
+        });
+    }
+
+    public function bookUnpaidInvoices(YearEndClosing $closing): void
+    {
+        $this->attempt(function () use ($closing): void {
+            $entries = collect($closing->bookUnpaidInvoices($this->user(), $this->fiscalYear()))->keyBy('type');
+            $receivables = $entries->get(YearEndEntry::UNPAID_RECEIVABLES)?->amount_ore->format() ?? Money::zero()->format();
+            $payables = $entries->get(YearEndEntry::UNPAID_PAYABLES)?->amount_ore->format() ?? Money::zero()->format();
+            $this->toast(__('De obetalda fakturorna är bokförda: kundfordringar :receivables och leverantörsskulder :payables. De återförs första dagen i nästa år.', ['receivables' => $receivables, 'payables' => $payables]));
         });
     }
 
@@ -115,6 +128,11 @@ class ClosingPage extends Component
             'complete' => ClosingChecklist::isComplete($items),
             'result' => YearResult::of($fiscalYear),
             'taxEntry' => $entries->firstWhere('type', YearEndEntry::TAX),
+            'unpaidEntries' => $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->keyBy('type'),
+            'unpaid' => $fiscalYear->isOpen() && $entries->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->isEmpty()
+                && ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', 'unpaid')->doesntExist()
+                ? UnpaidInvoices::for($this->company(), $fiscalYear, withRows: false)
+                : null,
             'revaluationEntry' => $entries->firstWhere('type', YearEndEntry::CURRENCY_REVALUATION),
             'revaluation' => $fiscalYear->isOpen() && $entries->firstWhere('type', YearEndEntry::CURRENCY_REVALUATION) === null
                 ? CurrencyRevaluation::for($this->company(), $fiscalYear)

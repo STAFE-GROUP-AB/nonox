@@ -45,7 +45,12 @@
                         <p class="font-semibold text-ink">{{ $item['label'] }} <span class="sr-only">{{ match ($item['status']) { 'ok' => __('Klar'), 'na' => __('Gäller inte'), 'warn' => __('Kontrollera'), default => __('Att göra') } }}</span></p>
                         <p class="text-sm text-gray-600">{{ $item['detail'] }}</p>
                     </div>
-                    @if($item['manual'] && $fiscalYear->isOpen())
+                    @if($item['confirm'] !== null && $fiscalYear->isOpen())
+                        <label class="ml-10 flex min-h-11 items-center gap-2 text-sm text-gray-800 sm:ml-0 sm:min-h-0">
+                            <input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
+                            {{ $item['confirm'] }}
+                        </label>
+                    @elseif($item['manual'] && $fiscalYear->isOpen())
                         <label class="ml-10 flex min-h-11 items-center gap-2 text-sm text-gray-800 sm:ml-0 sm:min-h-0">
                             <input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
                             {{ __('Klart eller gäller inte') }}
@@ -60,6 +65,32 @@
 
     <x-ui.card :title="__('2. Bokslutsverifikationer')" :description="__('Bokförs den sista dagen i räkenskapsåret. Bokför först allt annat, sedan skatten och sist årets resultat.')">
         <div class="space-y-6">
+            @if($unpaidEntries->isNotEmpty() || ($unpaid !== null && $unpaid['applies']))
+                <div>
+                    <p class="font-semibold text-ink">{{ __('Obetalda fakturor vid årets slut') }}</p>
+                    @if($unpaidEntries->isNotEmpty())
+                        <p class="mt-1 text-sm text-gray-700">{{ __('Bokförda: kundfordringar :receivables och leverantörsskulder :payables. De återförs första dagen i nästa år.', ['receivables' => $kr($unpaidEntries->get('UNPAID_RECEIVABLES')?->amount_ore->ore ?? 0), 'payables' => $kr($unpaidEntries->get('UNPAID_PAYABLES')?->amount_ore->ore ?? 0)]) }}</p>
+                    @else
+                        <p class="mt-1 text-sm text-gray-700">{{ __('Med kontantmetoden bokförs fakturor när de betalas. Fakturor som är obetalda den :date bokförs den dagen, på samma konton och momskonton som med fakturametoden, och återförs första dagen i nästa år så att betalningen sedan bokförs som vanligt.', ['date' => $fiscalYear->end_date->toDateString()]) }}</p>
+                        <div class="mt-2 overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead><tr class="text-left text-gray-500"><th class="py-1 pr-4 font-medium">{{ __('Faktura') }}</th><th class="py-1 text-right font-medium">{{ __('Obetalt') }}</th></tr></thead>
+                                <tbody class="divide-y divide-stone-100">
+                                    @foreach([...$unpaid['customer'], ...$unpaid['supplier']] as $line)
+                                        <tr>
+                                            <td class="py-1 pr-4">{{ $line['title'] }}</td>
+                                            <td class="py-1 text-right tabular-nums">{{ $kr($line['open']) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-600">{{ __('Momsen hamnar i momsdeklarationen för perioden med årets sista dag om den inte redan är bokförd. Bokför därför det här steget innan du bokför momsen för årets sista period.') }}</p>
+                        <x-button type="button" class="mt-3" wire:click="bookUnpaidInvoices" wire:confirm="{{ __('Bokföra de obetalda fakturorna den sista dagen och återföringen första dagen i nästa år?') }}">{{ __('Bokför obetalda fakturor') }}</x-button>
+                    @endif
+                </div>
+            @endif
+
             @if($revaluationEntry !== null || ($revaluation !== null && $revaluation['applies']))
                 <div>
                     <p class="font-semibold text-ink">{{ __('Omvärdering av valutafordringar och valutaskulder') }}</p>
@@ -83,8 +114,10 @@
                                 </tbody>
                             </table>
                         </div>
-                        @if($revaluation['missing'] !== [])
-                            <p class="mt-2 text-sm text-accent-800">{{ __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand.', ['currencies' => implode(', ', $revaluation['missing'])]) }}</p>
+                        @if($unpaid !== null && $unpaid['applies'])
+                            <p class="mt-2 text-sm text-accent-800">{{ __('Bokför först de obetalda fakturorna vid årets slut. Sedan kan de omvärderas.') }}</p>
+                        @elseif($revaluation['missing'] !== [])
+                            <p class="mt-2 text-sm text-accent-800">{{ __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand och bekräfta det i checklistan.', ['currencies' => implode(', ', $revaluation['missing'])]) }}</p>
                         @elseif(\App\Domain\Closing\CurrencyRevaluation::rows($revaluation['lines']) !== [])
                             <x-button type="button" class="mt-3" wire:click="bookCurrencyRevaluation" wire:confirm="{{ __('Bokföra omvärderingen den sista dagen och återföringen första dagen i nästa år?') }}">{{ __('Bokför omvärderingen') }}</x-button>
                         @endif

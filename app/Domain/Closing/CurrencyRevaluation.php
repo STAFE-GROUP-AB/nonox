@@ -4,19 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domain\Closing;
 
-use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceBooking;
-use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceBooking;
-use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\Invoice;
-use App\Models\InvoicePayment;
 use App\Models\SupplierInvoice;
-use App\Models\SupplierPayment;
 use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
+use App\Support\Tenancy\CurrentCompany;
 
 /**
  * Unrealised exchange differences at year-end (ADR-025): customer invoices
@@ -26,17 +22,24 @@ use App\Support\Currency\RiksbankRates;
  * booked on the last day and reversed on the first day of the next year,
  * so a later payment still settles the kronor booked on the invoice.
  *
- * Only under fakturametoden: under kontantmetoden the invoices are not on
- * 1510 and 2440 during the year.
+ * Under kontantmetoden the same invoices are first booked on 1510 and 2440
+ * by the closing step for unpaid invoices (UnpaidInvoices), at the kronor
+ * this class takes as booked, so they are valued the same way afterwards.
+ * An invoice with a credit invoice for part of it is valued for the rest.
  *
- * A constant number of queries: the open invoices with their payments up to
- * the last day, and one rate per currency.
+ * Rule ("enligt AI-utredning 2026-11-02, juristgranskning återstår"): K2
+ * (BFNAR 2016:10) punkt 13.5 and 17.8 and K3 (BFNAR 2012:1) punkt 30.3 say
+ * monetary items in foreign currency "ska" be valued at the closing rate.
+ * Bank accounts kept in another currency are not supported (ADR-025), so
+ * there are none to value.
  *
- * TODO(legal-verify): BFNAR 2016:10 (K2) and BFNAR 2012:1 (K3, chapter 30)
- * on valuing receivables and liabilities in foreign currency at the closing
- * rate; whether Riksbanken's mid rate is an acceptable closing rate; and
- * how a company on kontantmetoden values the unpaid invoices it books at
- * year-end.
+ * A constant number of queries: the open invoices with their payments and
+ * credit invoices up to the last day, and one rate per currency.
+ *
+ * TODO(legal-verify): whether Riksbanken's mid rate is an acceptable closing
+ * rate (K2 names it in the commentary; the bank's buying rate for receivables
+ * and selling rate for liabilities is the normal case), and the reversal on
+ * the first day of the next year.
  */
 final class CurrencyRevaluation
 {
@@ -46,50 +49,22 @@ final class CurrencyRevaluation
      */
     public static function for(Company $company, FiscalYear $fiscalYear, array $rates = []): array
     {
-        if ($company->accounting_method !== AccountingMethod::Fakturametoden) {
-            return ['applies' => false, 'lines' => [], 'missing' => [], 'rates' => []];
-        }
-
-        $end = $fiscalYear->end_date->toDateString();
+        $end = $fiscalYear->end_date;
         $open = [];
 
-        $invoices = Invoice::query()
-            ->where('invoice_currency', '<>', 'SEK')
-            ->whereIn('status', [InvoiceStatus::Issued->value, InvoiceStatus::Paid->value, InvoiceStatus::Credited->value])
-            ->where('kind', Invoice::INVOICE)
-            ->whereDate('invoice_date', '<=', $end)
-            ->with(['payments' => fn ($query) => $query->whereDate('paid_on', '<=', $end), 'creditInvoices' => fn ($query) => $query->whereNotNull('number')->whereDate('invoice_date', '<=', $end)])
-            ->get();
+        /** @var list<array{invoice: Invoice, open: int, foreign: ?int}> $customer */
+        $customer = CurrentCompany::run($company, fn (): array => OpenInvoices::customer($end, foreignOnly: true));
+        /** @var list<array{invoice: SupplierInvoice, open: int, foreign: ?int}> $supplier */
+        $supplier = CurrentCompany::run($company, fn (): array => OpenInvoices::supplier($end, foreignOnly: true));
 
-        foreach ($invoices as $invoice) {
-            if (! $invoice->isForeign() || $invoice->creditInvoices->isNotEmpty()) {
-                continue;
-            }
-
-            $foreign = (int) $invoice->foreign_total_minor - (int) $invoice->payments->sum(fn (InvoicePayment $payment): int => (int) $payment->foreign_amount_minor);
-            $booked = $invoice->total_ore->ore - (int) $invoice->payments->sum(fn (InvoicePayment $payment): int => $payment->amount_ore->ore - $payment->exchange_difference_ore);
-
-            if ($foreign !== 0) {
+        foreach ($customer as ['invoice' => $invoice, 'open' => $booked, 'foreign' => $foreign]) {
+            if ($foreign !== null) {
                 $open[] = ['kind' => 'receivable', 'title' => $invoice->title().', '.($invoice->customer_snapshot['name'] ?? ''), 'currency' => $invoice->invoice_currency, 'foreign' => $foreign, 'booked' => $booked];
             }
         }
 
-        $supplierInvoices = SupplierInvoice::query()
-            ->where('invoice_currency', '<>', 'SEK')
-            ->whereIn('status', [SupplierInvoiceStatus::Registered->value, SupplierInvoiceStatus::Approved->value, SupplierInvoiceStatus::Paid->value])
-            ->whereDate('invoice_date', '<=', $end)
-            ->with(['payments' => fn ($query) => $query->whereDate('paid_on', '<=', $end)])
-            ->get();
-
-        foreach ($supplierInvoices as $invoice) {
-            if (! $invoice->isForeign()) {
-                continue;
-            }
-
-            $foreign = (int) $invoice->foreign_total_minor - (int) $invoice->payments->sum(fn (SupplierPayment $payment): int => (int) $payment->foreign_amount_minor);
-            $booked = $invoice->total_ore->ore - (int) $invoice->payments->sum(fn (SupplierPayment $payment): int => $payment->amount_ore->ore - $payment->exchange_difference_ore);
-
-            if ($foreign !== 0) {
+        foreach ($supplier as ['invoice' => $invoice, 'open' => $booked, 'foreign' => $foreign]) {
+            if ($foreign !== null) {
                 $open[] = ['kind' => 'payable', 'title' => $invoice->title().', '.$invoice->supplierName(), 'currency' => $invoice->invoice_currency, 'foreign' => $foreign, 'booked' => $booked];
             }
         }
@@ -97,7 +72,7 @@ final class CurrencyRevaluation
         $missing = [];
 
         foreach (array_unique(array_column($open, 'currency')) as $currency) {
-            $rate = $rates[$currency] ?? app(RiksbankRates::class)->rate($currency, $end);
+            $rate = $rates[$currency] ?? app(RiksbankRates::class)->rate($currency, $end->toDateString());
 
             if ($rate instanceof ExchangeRate) {
                 $rates[$currency] = $rate;

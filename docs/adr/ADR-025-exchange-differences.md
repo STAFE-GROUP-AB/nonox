@@ -144,11 +144,43 @@ come from the invoice being written by us rather than received:
   year (which must exist), so a later payment is still measured against the
   invoice's own rate. Kept as a `year_end_entries` row of type
   `CURRENCY_REVALUATION`; the year-end checklist has a point for it.
-- Only under fakturametoden: under kontantmetoden the invoices are not on
-  1510 and 2440 during the year (the existing open question on unpaid
-  invoices at year-end under kontantmetoden still stands).
 - Without a Riksbanken rate for a currency on the last day the voucher is
   booked by hand.
+
+## Revaluation is required, and covers kontantmetoden (2026-11-02)
+
+Rule ("enligt AI-utredning 2026-11-02, juristgranskning återstår"): K2
+(BFNAR 2016:10, consolidated 2025-06-16) punkt 13.5 (short-term receivables
+in foreign currency "ska värderas till balansdagens kurs"), 17.8 (a liability
+in foreign currency "ska räknas om till balansdagens kurs"), 11.8 and 14.6;
+K3 (BFNAR 2012:1, consolidated 2025-12-15) punkt 30.3, 30.5–30.7. Sources
+read 2026-11-02: https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf
+and https://www.bfn.se/wp-content/uploads/vl12-1-k3-kons20251215.pdf.
+
+- **Kontantmetoden.** The invoices unpaid on the last day are first booked on
+  1510 and 2440 at their booking rate by the closing step for unpaid
+  invoices (ADR-013, "Kontantmetoden at year-end"); the revaluation then
+  values them like under fakturametoden. Both use `OpenInvoices`, so the
+  kronor the revaluation takes as booked are the kronor that step booked.
+  The revaluation refuses to book under kontantmetoden before that step is
+  booked (or confirmed as booked by hand).
+- **Part credits.** A customer invoice with a credit invoice for part of it
+  is no longer skipped: what is left (the invoice less the credit invoices
+  and payments up to the last day, in the currency and in kronor) is valued.
+- **Bank accounts in another currency.** Not applicable: bank accounts are
+  kept in kronor only (see "Bank files" above and "Not built yet"), so there
+  is no foreign-currency bank balance to value (K2 14.6). When foreign bank
+  accounts are built, their revaluation must be built with them.
+- **Checklist.** The point "Valutafordringar och valutaskulder är
+  omvärderade" blocks closing again (TODO) when there are open foreign
+  invoices and the revaluation would change something. It is OK when the
+  revaluation entry is booked, when the closing rate gives no difference, or
+  when a person confirms "Omvärderingen är bokförd för hand" (stored in
+  `closing_checks` with key `currency`, who and when, audited as
+  `closing.checked`; unticked again while the year is open). The manual
+  confirmation is what clears the point when Riksbanken has no rate and the
+  voucher is booked by hand. This replaces the earlier WARN status, which
+  never blocked.
 
 ## Not built yet (next steps)
 
@@ -169,9 +201,12 @@ come from the invoice being written by us rather than received:
   2006/112/EC art. 230 (an invoice may be in any currency if the VAT payable
   is expressed in the national currency, converted as in art. 91), and
   whether the kronor total is also required on the invoice.
-- `TODO(legal-verify)`: the closing-rate revaluation (BFNAR 2016:10 K2,
-  BFNAR 2012:1 K3 chapter 30), Riksbanken's mid rate as the closing rate, and
-  the reversal on the first day of the next year.
+- `TODO(legal-verify)`: Riksbanken's mid rate as the closing rate (the K2
+  commentary names it as acceptable, while the normal case is the bank's
+  buying rate for receivables and selling rate for liabilities), and the
+  reversal on the first day of the next year. That the revaluation is
+  required, also under kontantmetoden, follows K2 13.5/17.8 and K3 30.3
+  (enligt AI-utredning 2026-11-02, juristgranskning återstår).
 - `TODO(legal-verify)`: OSS sales in another currency; the OSS return is
   made in euro, while NONOX books and reports the OSS VAT in kronor.
 

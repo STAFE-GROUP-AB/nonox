@@ -85,8 +85,9 @@
   buyer, VAT number, date, number, delivery date, quantities, prices, VAT
   per rate and the total. Confirm nothing is missing for simplified and full
   invoices.
-- Kontantmetoden: invoices unpaid at the end of the fiscal year must be
-  booked as receivables at bokslut (Phase 3).
+- Kontantmetoden: invoices unpaid at the end of the fiscal year are booked
+  as receivables at bokslut, built 2026-11-02 (see ADR-013, "Kontantmetoden
+  at year-end"). Still open: the reversal method and the VAT period.
 
 ## Agreements (avtalsfakturering), added 2026-10-30
 

@@ -40,8 +40,7 @@ Med kontantmetoden bokförs ingenting när fakturan skapas. På fakturans sida s
 
 **När betalningen kommer** – en verifikation i serie C, daterad på betaldagen. Bankkontot debiteras, och intäkt, moms och öresavrundning krediteras direkt. Betalar kunden bara en del fördelar NONOX betalningen på intäkt och moms i samma proportion som på fakturan.
 
-> [!WARNING]
-> Med kontantmetoden ska fakturor som är obetalda när räkenskapsåret slutar bokföras som fordringar i bokslutet. NONOX gör inte det automatiskt i dag. Gå igenom obetalda fakturor vid årets slut och kontrollera med din redovisningskonsult hur de ska bokföras.
+**Vid årets slut** – fakturor som är obetalda den sista dagen i räkenskapsåret ska bokföras som fordringar i bokslutet. Det gör du i ett steg under **Bokföring → Bokslut**. Läs [Obetalda fakturor vid årets slut (kontantmetoden)](/manual/bokslut/kontantmetoden-vid-arets-slut).
 
 ## Gäller för alla fakturor
 

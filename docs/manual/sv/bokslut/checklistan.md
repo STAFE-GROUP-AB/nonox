@@ -25,7 +25,8 @@ De här punkterna bockas av av sig själva när bokföringen visar att de är kl
 | **Bank och kassa är avstämda** | Varje bank- och kassakonto med saldo eller rörelse är avstämt utan skillnad den sista dagen i året. |
 | **Avskrivningarna är bokförda** | Alla tillgångar i anläggningsregistret är avskrivna till och med årets sista månad. |
 | **Periodiseringarna är bokförda** | Alla periodiseringar är bokförda till och med årets sista månad. |
-| **Valutafordringar och valutaskulder är omvärderade** | Obetalda kund- och leverantörsfakturor i utländsk valuta är värderade till kursen den sista dagen, i steg 2. Gäller inte utan sådana fakturor eller med kontantmetoden. Punkten är en påminnelse och stoppar inte bokslutet, så att du kan bokföra omvärderingen för hand om Riksbanken saknar kurs. |
+| **Obetalda fakturor vid årets slut är bokförda** | Bara med kontantmetoden: kund- och leverantörsfakturor som är obetalda den sista dagen är bokförda i steg 2. Gäller inte med fakturametoden eller om inga fakturor är obetalda. Läs [Obetalda fakturor vid årets slut](/manual/bokslut/kontantmetoden-vid-arets-slut). |
+| **Valutafordringar och valutaskulder är omvärderade** | Obetalda kund- och leverantörsfakturor i utländsk valuta är värderade till kursen den sista dagen, i steg 2. Gäller inte utan sådana fakturor. Med kontantmetoden bokför du först de obetalda fakturorna. |
 | **Årets skatt är bokförd** | Skatten är bokförd i steg 2, eller noll angivet. Gäller inte enskild firma, handelsbolag och kommanditbolag. |
 | **Årets resultat är bokfört** | Årets resultat är bokat i steg 2. |
 
@@ -40,7 +41,11 @@ De här kan NONOX inte se själv. Kryssa i **Klart eller gäller inte** när pun
 - **Löner och semesterskuld är bokförda** – löner, skatter, avgifter och semesterlöneskuld för året.
 - **Varulagret är inventerat** – räkna lagret och bokför förändringen.
 
-Bockarna kan tas bort igen så länge året är öppet.
+Bockarna kan tas bort igen så länge året är öppet. NONOX sparar vem som kryssade och när.
+
+## Bokfört för hand
+
+Två av punkterna som NONOX kontrollerar själv kan du också bekräfta: **Obetalda fakturor vid årets slut är bokförda** och **Valutafordringar och valutaskulder är omvärderade**. Har du bokfört verifikationen själv – till exempel för att Riksbanken saknar kurs för en valuta den sista dagen – kryssar du i **Bokfört för hand** eller **Omvärderingen är bokförd för hand** vid punkten. Då räknas punkten som klar. Kryssa bara i när verifikationen verkligen är bokförd.
 
 ## Så här tar du dig igenom checklistan
 
@@ -54,7 +59,7 @@ Bockarna kan tas bort igen så länge året är öppet.
 
 ## Kontantmetoden
 
-Bokför företaget enligt kontantmetoden är obetalda kund- och leverantörsfakturor inte bokförda på 1510 och 2440. De ska bokas upp vid räkenskapsårets slut, och det gör NONOX inte automatiskt ännu. Bokför dem med en verifikation på årets sista dag innan du bockar av punkterna, och fråga din redovisningskonsult hur.
+Bokför företaget enligt kontantmetoden är obetalda kund- och leverantörsfakturor inte bokförda på 1510 och 2440 under året. De bokförs i bokslutet, i ett eget steg. Gör det innan du bockar av **Kundfordringar stämmer** och **Leverantörsskulder stämmer**. Läs [Obetalda fakturor vid årets slut (kontantmetoden)](/manual/bokslut/kontantmetoden-vid-arets-slut).
 
 ## Vem får göra bokslutet?
 
@@ -63,6 +68,7 @@ Sidan kräver rätten att hantera räkenskapsår: **Ägare**, **Administratör**
 ## Läs också
 
 - [Skatt och årets resultat](/manual/bokslut/bokslutsverifikationer)
+- [Obetalda fakturor vid årets slut (kontantmetoden)](/manual/bokslut/kontantmetoden-vid-arets-slut)
 - [Bankavstämning](/manual/bank/bankavstamning)
 - [Momsdeklarationen](/manual/moms/momsdeklaration)
 - [Periodiseringar](/manual/bokslut/periodiseringar)
