@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
+use App\Modules\Payroll\Actions\SaveEmployee;
+use App\Modules\Payroll\Livewire\Employees;
 use App\Modules\Payroll\Models\PayCode;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
@@ -12,6 +14,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\Feature\Payroll\LegalAudit\LonSupport;
 use Tests\Support\Bookkeeping;
 
@@ -49,14 +52,100 @@ function lonFindingAgi(PayrollRuns $runs, mixed $owner, mixed $admin, mixed $com
 
 it('withholds tax by the employee\'s jämkning decision (SFL 11 kap., beslut om särskild beräkningsgrund)', function () {
     $anna = LonSupport::employee($this->owner, $this->company, '19900615');
-    // The columns exist on employees, but nothing reads them: ContextBuilder passes taxAdjustmentPercentBp: null.
     $anna->forceFill(['tax_adjustment_type' => 'PERCENT', 'tax_adjustment_value' => 2000, 'tax_adjustment_valid_from' => '2026-01-01', 'tax_adjustment_valid_to' => '2026-12-31'])->save();
     $run = $this->runs->create($this->owner, $this->company, '2026-04');
     $this->runs->calculate($this->owner, $run);
 
     // A decision of 20 %: 32 000 × 20 % = 6 400 kr, not the table's 6 381 kr.
     expect(Payslip::query()->sole()->tax_ore->ore)->toBe(640_000);
-})->todo('AUD-LON-01: jämkning is never applied; there is no field for it and ContextBuilder passes null');
+});
+
+it('stores the jämkning decision from the employee card and follows each kind on the payment dates it covers (SFL 11 kap. 27 §, #69)', function (array $decision, int $expectedTax, string $method) {
+    $anna = LonSupport::employee($this->owner, $this->company, '19900615');
+    app(SaveEmployee::class)($this->owner, $this->company, [
+        'first_name' => 'Anna', 'last_name' => 'Kock', 'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '',
+        'tax_residence' => 'SE', 'tax_table' => 33, 'tax_column' => 1,
+        'start_date' => '2025-01-01', 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY', 'salary' => '32 000', 'employment_rate' => 100, 'weekly_hours' => '40',
+        'tax_adjustment_valid_from' => '2026-04-01', 'tax_adjustment_valid_to' => '2026-12-31',
+        ...$decision,
+    ], $anna);
+    $run = $this->runs->create($this->owner, $this->company, '2026-04');
+    $this->runs->calculate($this->owner, $run);
+    $payslip = Payslip::query()->sole();
+
+    expect($payslip->tax_ore->ore)->toBe($expectedTax)
+        ->and($payslip->tax_explanation['method'])->toBe($method);
+})->with([
+    // 32 000 × 20,5 % = 6 560 kr.
+    'a percentage' => [['tax_adjustment_type' => 'PERCENT', 'tax_adjustment_percent' => '20,5'], 656_000, 'adjustment_percent'],
+    // Table 33, column 3, 31 801–32 000 kr: 3 135 kr (Skatteverket's 2026 table 33).
+    'another table and column' => [['tax_adjustment_type' => 'TABLE', 'tax_adjustment_table' => '33', 'tax_adjustment_column' => '3'], 313_500, 'table'],
+    'an amount per payment' => [['tax_adjustment_type' => 'AMOUNT', 'tax_adjustment_amount' => '5 000'], 500_000, 'adjustment_amount'],
+]);
+
+it('uses the table again when the payment date is outside the decision (#69)', function () {
+    $anna = LonSupport::employee($this->owner, $this->company, '19900615');
+    $anna->forceFill(['tax_adjustment_type' => 'PERCENT', 'tax_adjustment_value' => 2000, 'tax_adjustment_valid_from' => '2026-05-01', 'tax_adjustment_valid_to' => null])->save();
+    $run = $this->runs->create($this->owner, $this->company, '2026-04');
+    $this->runs->calculate($this->owner, $run);
+
+    // Paid 24 April, the decision applies from 1 May: table 33 column 1, 6 381 kr.
+    expect(Payslip::query()->sole()->tax_ore->ore)->toBe(638_100);
+});
+
+it('asks for what the decision says and when it starts (#69)', function (array $decision, string $field) {
+    $anna = LonSupport::employee($this->owner, $this->company, '19900615');
+
+    expect(fn () => app(SaveEmployee::class)($this->owner, $this->company, [
+        'first_name' => 'Anna', 'last_name' => 'Kock', 'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '',
+        'tax_residence' => 'SE', 'tax_table' => 33, 'tax_column' => 1,
+        'start_date' => '2025-01-01', 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY', 'salary' => '32 000', 'employment_rate' => 100,
+        ...$decision,
+    ], $anna))->toThrow(ValidationException::class);
+
+    try {
+        app(SaveEmployee::class)($this->owner, $this->company, [
+            'first_name' => 'Anna', 'last_name' => 'Kock', 'personal_number' => '', 'bank_clearing' => '', 'bank_account' => '',
+            'tax_residence' => 'SE', 'tax_table' => 33, 'tax_column' => 1,
+            'start_date' => '2025-01-01', 'employment_type' => 'TILLSVIDARE', 'salary_form' => 'MONTHLY', 'salary' => '32 000', 'employment_rate' => 100,
+            ...$decision,
+        ], $anna);
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey($field);
+    }
+})->with([
+    'no percentage' => [['tax_adjustment_type' => 'PERCENT', 'tax_adjustment_valid_from' => '2026-04-01'], 'tax_adjustment_percent'],
+    'over 100 %' => [['tax_adjustment_type' => 'PERCENT', 'tax_adjustment_percent' => '120', 'tax_adjustment_valid_from' => '2026-04-01'], 'tax_adjustment_percent'],
+    'no first day' => [['tax_adjustment_type' => 'PERCENT', 'tax_adjustment_percent' => '20'], 'tax_adjustment_valid_from'],
+    'a table without a column' => [['tax_adjustment_type' => 'TABLE', 'tax_adjustment_table' => '33', 'tax_adjustment_valid_from' => '2026-04-01'], 'tax_adjustment_column'],
+    'ends before it starts' => [['tax_adjustment_type' => 'AMOUNT', 'tax_adjustment_amount' => '100', 'tax_adjustment_valid_from' => '2026-04-01', 'tax_adjustment_valid_to' => '2026-03-01'], 'tax_adjustment_valid_to'],
+]);
+
+it('edits the jämkning decision in the employee form (#69)', function () {
+    $anna = LonSupport::employee($this->owner, $this->company, '19900615');
+
+    Livewire::test(Employees::class)
+        ->call('edit', $anna->id)
+        ->assertSet('form.tax_adjustment_type', 'NONE')
+        ->set('form.tax_adjustment_type', 'PERCENT')
+        ->set('form.tax_adjustment_percent', '18')
+        ->set('form.tax_adjustment_valid_from', '2026-04-01')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($anna->fresh()->tax_adjustment_value)->toBe(1800);
+
+    Livewire::test(Employees::class)
+        ->call('edit', $anna->id)
+        ->assertSet('form.tax_adjustment_percent', '18')
+        ->assertSet('form.tax_adjustment_valid_from', '2026-04-01')
+        ->set('form.tax_adjustment_type', 'NONE')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect($anna->fresh()->tax_adjustment_type)->toBe('NONE')
+        ->and($anna->fresh()->tax_adjustment_value)->toBeNull();
+});
 
 it('charges contributions on the whole year\'s pay once it reaches 1 000 kr (SAL 2 kap. 14 §)', function () {
     $tim = LonSupport::employee($this->owner, $this->company, '19950707', ['salary_form' => 'HOURLY', 'salary' => '150', 'employment_type' => 'TIMANSTALLD']);

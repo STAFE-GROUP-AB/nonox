@@ -29,6 +29,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $tax_residence
  * @property ?int $tax_table
  * @property ?int $tax_column
+ * @property string $tax_adjustment_type NONE, PERCENT (basis points), TABLE (table and column) or AMOUNT (öre per payment)
+ * @property ?int $tax_adjustment_value
+ * @property ?int $tax_adjustment_table
+ * @property ?int $tax_adjustment_column
+ * @property ?CarbonImmutable $tax_adjustment_valid_from
+ * @property ?CarbonImmutable $tax_adjustment_valid_to
  * @property string $status
  * @property ?array{bank_clearing: ?string, bank_account: ?string} $pending_bank
  * @property ?int $pending_bank_by
@@ -71,6 +77,8 @@ class Employee extends Model
         'church_member',
         'tax_adjustment_type',
         'tax_adjustment_value',
+        'tax_adjustment_table',
+        'tax_adjustment_column',
         'tax_adjustment_valid_from',
         'tax_adjustment_valid_to',
         'emergency_contact',
@@ -93,6 +101,8 @@ class Employee extends Model
             'tax_column' => 'integer',
             'church_member' => 'boolean',
             'tax_adjustment_value' => 'integer',
+            'tax_adjustment_table' => 'integer',
+            'tax_adjustment_column' => 'integer',
             'tax_adjustment_valid_from' => 'immutable_date',
             'tax_adjustment_valid_to' => 'immutable_date',
             'emergency_contact' => 'encrypted',
@@ -101,6 +111,28 @@ class Employee extends Model
             'pending_bank' => 'encrypted:array',
             'pending_bank_at' => 'immutable_datetime',
         ];
+    }
+
+    /**
+     * The jämkning decision in force on a payment date, or null: the payer
+     * follows Skatteverket's decision on a särskild beräkningsgrund for the
+     * payments its validity covers (SFL 11 kap. 27 §).
+     */
+    public function taxAdjustmentOn(CarbonImmutable $paymentDate): ?string
+    {
+        if ($this->tax_adjustment_type === 'NONE' || $this->tax_adjustment_valid_from === null) {
+            return null;
+        }
+
+        if ($paymentDate->lessThan($this->tax_adjustment_valid_from)) {
+            return null;
+        }
+
+        if ($this->tax_adjustment_valid_to !== null && $paymentDate->greaterThan($this->tax_adjustment_valid_to)) {
+            return null;
+        }
+
+        return $this->tax_adjustment_type;
     }
 
     public function hasPendingBankChange(): bool

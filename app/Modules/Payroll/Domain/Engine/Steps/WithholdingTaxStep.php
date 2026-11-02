@@ -8,6 +8,7 @@ use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
 use App\Modules\Payroll\Domain\Engine\PayslipDraft;
 use App\Modules\Payroll\Domain\Engine\Step;
+use App\Modules\Payroll\Domain\Tax\Withholding;
 use App\Modules\Payroll\Domain\Tax\WithholdingTax;
 use App\Modules\Payroll\Domain\Units;
 use App\Support\Money\Money;
@@ -20,6 +21,16 @@ use App\Support\Money\Money;
  * engångsbelopp table on the expected annual income: regular pay for a full
  * year plus this and earlier one-off payments of the year (Skatteverket,
  * "Engångsbelopp"); without regular pay, by the flat rate for that case.
+ *
+ * A jämkning decision (beslut om särskild beräkningsgrund) in force on the
+ * payment date is followed instead of the employee's table (SFL 11 kap.
+ * 27 §): a percentage of all taxable pay, another table and column, or an
+ * amount per payment (enligt granskning 2026-11-02, juristgranskning
+ * återstår, AUD-LON-01, #69).
+ * TODO(legal-verify): Skatteverket's guidance to employers describes only a
+ * percentage; the table and amount kinds follow the columns the employee
+ * card has, and how an amount decision treats one-off payments (here the
+ * amount covers the whole payment) is unverified.
  *
  * Tax is withheld only from the cash paid (SFL 10 kap. 3 §): a benefit is
  * part of the basis (SFL 11 kap. 4 §), but when the table tax is larger than
@@ -65,11 +76,28 @@ final class WithholdingTaxStep implements Step
             return;
         }
 
-        if ($context->taxTable === null || $context->taxColumn === null) {
+        if ($context->taxAdjustmentAmountOre !== null) {
+            $draft->taxOre = $regular + $oneOff > 0 ? max($context->taxAdjustmentAmountOre, 0) : 0;
+            $draft->taxExplanation = ['method' => 'adjustment_amount', 'amount_ore' => $context->taxAdjustmentAmountOre];
+            $this->withholdFromCash($draft);
+
+            return;
+        }
+
+        $byDecision = $context->taxAdjustmentTable !== null;
+        $table = $byDecision ? $context->taxAdjustmentTable : $context->taxTable;
+        $column = $byDecision ? $context->taxAdjustmentColumn : $context->taxColumn;
+
+        if ($table === null || $column === null) {
             throw new PayrollBlockedException(__('Skattetabell och kolumn saknas för den anställda.'));
         }
 
-        $regularTax = $this->tax->fromTable($context->paymentDate->year, $context->taxTable, $context->taxColumn, $regular, $context->rules);
+        $regularTax = $this->tax->fromTable($context->paymentDate->year, $table, $column, $regular, $context->rules);
+
+        if ($byDecision) {
+            $regularTax = new Withholding($regularTax->taxOre, [...$regularTax->explanation, 'adjustment' => true]);
+        }
+
         $draft->taxOre = $regularTax->taxOre;
         $draft->taxExplanation = $regularTax->explanation;
 
@@ -81,7 +109,7 @@ final class WithholdingTaxStep implements Step
 
         $oneOffTax = $regular <= 0
             ? $this->tax->flat($oneOff, 'tax.one_off_without_regular_salary', 'one_off_without_regular_salary', $context->rules)
-            : $this->tax->oneOff($oneOff, $regular * Units::MONTHS_PER_YEAR + $oneOff + ($context->accumulators['one_off_ytd'] ?? 0), $context->taxColumn, $context->rules);
+            : $this->tax->oneOff($oneOff, $regular * Units::MONTHS_PER_YEAR + $oneOff + ($context->accumulators['one_off_ytd'] ?? 0), $column, $context->rules);
 
         $draft->taxOre += $oneOffTax->taxOre;
         $draft->taxExplanation = ['regular' => $regularTax->explanation, 'one_off' => [...$oneOffTax->explanation, 'amount_ore' => $oneOff, 'tax_ore' => $oneOffTax->taxOre]];

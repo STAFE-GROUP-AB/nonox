@@ -1220,6 +1220,19 @@ lönebeskeden låsta i databasen.
   anställningens kostnadsställe), personalskatt på 2710, arbetsgivaravgifter
   på 7510 mot 2730 och nettolönerna mot 1930. Verifikationen balanserar alltid:
   brutto − skatt ± nettoposter = netto.
+- Jämkning (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-LON-01, #69): Skatteverkets beslut om särskild beräkningsgrund sparas
+  på den anställda (`tax_adjustment_type` PERCENT, TABLE eller AMOUNT, med
+  `tax_adjustment_value` i baspunkter eller öre, `tax_adjustment_table` och
+  `tax_adjustment_column`, och giltighet `tax_adjustment_valid_from`–
+  `tax_adjustment_valid_to`). Lönekörningen följer beslutet för
+  utbetalningsdagar inom giltigheten (SFL 11 kap. 27 §): en procentsats på
+  all skattepliktig lön (även engångsbelopp), en annan tabell och kolumn
+  (engångsbelopp med beslutets kolumn) eller ett belopp per utbetalning.
+  Utanför giltigheten används skattetabellen. Skatteförklaringen visar
+  metoden. `TODO(legal-verify)`: Skatteverkets information till
+  arbetsgivare beskriver bara en procentsats; tabell och belopp är
+  oprövade.
 - Skatt som är större än kontantlönen (enligt granskning 2026-11-02,
   juristgranskning återstår, AUD-LON-06, #68): skatteavdrag görs bara från
   kontant ersättning (SFL 10 kap. 3 §). Förmåner räknas in i underlaget

@@ -251,3 +251,23 @@ finding and the GitHub issue.
 - `TODO(legal-verify)`: set-off against later pay (lag (1970:215) om
   arbetsgivares kvittningsrätt); whether tax-free cash (allowances) counts as
   cash to withhold from (here it does).
+
+### Jämkning decisions (AUD-LON-01, #69)
+
+- "En utbetalare ska följa ett beslut om särskild beräkningsgrund enligt
+  55 kap. 9 § senast två veckor efter det att utbetalaren fick del av det"
+  (SFL 11 kap. 27 §). The employee card stores the decision: kind
+  (PERCENT, TABLE, AMOUNT), the percentage (basis points) or amount (öre),
+  the table and column (new columns `tax_adjustment_table`,
+  `tax_adjustment_column`), and the first and last payment day it applies
+  to. The person entering it chooses the first day, no later than two
+  weeks after receiving it; the form says so.
+- The context builder passes the decision when the payment date is inside
+  the validity. A percentage applies to all taxable pay, one-off payments
+  included (as before). TABLE replaces the table and column, also for the
+  one-off column. AMOUNT withholds the amount per payment with taxable pay.
+  The cash cap (#68) applies to all of them.
+- `TODO(legal-verify)`: Skatteverket's employer guidance describes a
+  percentage only ("göra skatteavdrag enligt den procentsats som beslutet
+  säger"); whether table and amount decisions occur, and how an amount
+  decision treats one-off payments, is unverified.

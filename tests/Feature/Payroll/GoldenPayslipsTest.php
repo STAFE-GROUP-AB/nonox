@@ -75,6 +75,9 @@ function payrollContextFrom(array $data): PayrollContext
         sickHistory: $data['sick_history'] ?? [],
         weekPattern: $data['week_pattern'] ?? null,
         employeeClaimOre: $data['employee_claim_ore'] ?? 0,
+        taxAdjustmentTable: $data['tax_adjustment_table'] ?? null,
+        taxAdjustmentColumn: $data['tax_adjustment_column'] ?? null,
+        taxAdjustmentAmountOre: $data['tax_adjustment_amount_ore'] ?? null,
     );
 }
 

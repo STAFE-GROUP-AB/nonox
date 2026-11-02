@@ -4,7 +4,7 @@ ordning: 20
 roller: [owner, payroll_admin]
 modul: payroll
 rutter: [payroll.employees]
-sokord: [personal, anställd, personalkort, skattetabell, kolumn, SINK, bankkonto lön, timanställd, månadslön, sysselsättningsgrad]
+sokord: [personal, anställd, personalkort, skattetabell, kolumn, jämkning, jämkningsbeslut, SINK, bankkonto lön, timanställd, månadslön, sysselsättningsgrad]
 ---
 
 # Anställda
@@ -40,7 +40,25 @@ Under **Skatt** väljer du ett av tre alternativ:
 - **Bosatt i Sverige (skattetabell)** – skatten dras enligt Skatteverkets skattetabell. **Skattetabell** och **Kolumn** måste fyllas i; de står på personens skattebesked. NONOX gissar aldrig tabellen.
 - **Bosatt utomlands, SINK** och **Bosatt utomlands, A-SINK** – särskild inkomstskatt med en fast procentsats enligt reglerna. Ingen tabell behövs.
 
-Har personen jämkning eller är du osäker på vilken skatt som gäller, fråga Skatteverket eller er redovisningskonsult.
+Är du osäker på vilken skatt som gäller, fråga Skatteverket eller er redovisningskonsult.
+
+## Jämkning
+
+Har den anställda fått ett beslut om jämkning från Skatteverket ska företaget följa det senast två veckor efter att ni fick det. Fyll i beslutet under **Jämkning** på personalkortet:
+
+1. Välj vad beslutet säger under **Beslut**:
+   - **Skatteavdrag med en procentsats** – fyll i **Procent**, till exempel 20.
+   - **Skatteavdrag enligt en annan tabell och kolumn** – fyll i tabellen och kolumnen som står i beslutet.
+   - **Skatteavdrag med ett fast belopp per utbetalning** – fyll i beloppet.
+2. Fyll i **Gäller från**, den första utbetalningsdagen som beslutet ska gälla. Står det ett slutdatum i beslutet fyller du i **Gäller till och med**.
+3. Klicka på **Spara**.
+
+Lönekörningen följer beslutet för utbetalningar mellan de två dagarna. Före och efter används skattetabellen igen. På lönebeskedet står det att skatten är dragen enligt jämkning.
+
+Procentsatsen gäller hela den skattepliktiga lönen, även engångsbelopp som bonus. Välj **Inget beslut om jämkning** och spara när beslutet inte längre ska användas.
+
+> [!NOTE]
+> Skatteverkets information till arbetsgivare beskriver jämkning som en procentsats. De två andra valen finns för beslut som är skrivna på annat sätt; kontrollera med Skatteverket om du är osäker.
 
 > [!IMPORTANT]
 > Skattetabellerna läses in i NONOX från Skatteverkets fil. Finns inte tabellen och kolumnen för året stoppas lönekörningen för den personen. Se [Regler och skattetabeller](/manual/lon/regler-och-skattetabeller).
