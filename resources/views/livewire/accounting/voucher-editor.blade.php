@@ -8,7 +8,7 @@
 @endphp
 
 <div
-    x-data="voucherEditor($wire.entangle('rows'), @js($canPost), $wire.entangle('balances'), @js($accountSigns))"
+    x-data="voucherEditor($wire.entangle('rows'), @js($canPost), $wire.entangle('balances'), @js($accountSigns), @js($vatRules))"
     x-on:keydown.window="shortcuts($event)"
     data-back-url="{{ route('accounting.vouchers.index') }}"
     class="flex flex-col gap-6"
@@ -173,6 +173,14 @@
                 {{ __('Det skiljer') }} <span class="tabular-nums" x-text="format(Math.abs(difference))"></span> {{ __('kr mellan debet och kredit.') }}
             </span>
         </div>
+
+        <template x-if="vatWarnings.length > 0">
+            <div class="mt-3 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-950" role="status" aria-live="polite" data-vat-warning>
+                <template x-for="warning in vatWarnings" :key="warning.account">
+                    <p x-text="@js(__('Konto :account är försäljning med moms, men verifikationen har ingen utgående moms på något av kontona :vat. Utan moms på samma verifikation redovisas försäljningen i ruta 42 som momsfri.')).replace(':account', warning.account).replace(':vat', warning.vat.join(', '))"></p>
+                </template>
+            </div>
+        </template>
     </x-ui.card>
 
     <x-ui.card :title="__('Underlag')" :description="__('Kvitto eller faktura som visar vad som hänt. PDF eller bild, högst 10 MB. Underlag sparas för alltid och kan inte tas bort när verifikationen är bokförd.')">

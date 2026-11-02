@@ -50,6 +50,7 @@
                             <th scope="col" class="py-2 pr-4 font-medium w-24">{{ __('Konto') }}</th>
                             <th scope="col" class="py-2 pr-4 font-medium">{{ __('Namn') }}</th>
                             <th scope="col" class="py-2 pr-4 font-medium hidden sm:table-cell">{{ __('Typ') }}</th>
+                            <th scope="col" class="py-2 pr-4 font-medium">{{ __('Momsruta') }}</th>
                             @if($canManage)
                                 <th scope="col" class="py-2 font-medium text-right"><span class="sr-only">{{ __('Åtgärder') }}</span></th>
                             @endif
@@ -76,10 +77,36 @@
                                     @endif
                                 </td>
                                 <td class="py-2.5 pr-4 hidden sm:table-cell text-gray-600">{{ $account->type->label() }}</td>
+                                <td class="py-2.5 pr-4 text-gray-600 tabular-nums">
+                                    @if($editingBoxId === $account->id)
+                                        <form wire:submit="saveBox" class="flex flex-wrap items-center gap-2">
+                                            <label for="editing_box" class="sr-only">{{ __('Momsruta för konto :number', ['number' => $account->number]) }}</label>
+                                            <select id="editing_box" class="{{ $input }} max-w-xs py-1.5" wire:model="editingBox">
+                                                <option value="">{{ __('Efter kontonumret') }}</option>
+                                                @foreach($boxOptions as $box => $label)
+                                                    <option value="{{ $box }}">{{ $label }}</option>
+                                                @endforeach
+                                            </select>
+                                            <x-button class="py-1.5" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
+                                            <button type="button" class="text-sm text-gray-600 underline" wire:click="cancelEditingBox">{{ __('Avbryt') }}</button>
+                                        </form>
+                                        <x-input-error for="vat_box" class="mt-1" />
+                                    @else
+                                        @php($box = App\Domain\Vat\VatBoxes::boxFor($account->number, $account->vat_box))
+                                        <span @if($box !== null) title="{{ __(App\Domain\Vat\VatBoxes::BOXES[$box]['label']) }}" @endif>{{ $box === null ? '–' : sprintf('%02d', $box) }}</span>
+                                        @if($account->vat_box !== null)
+                                            <span class="text-xs text-gray-500">{{ __('vald') }}</span>
+                                        @endif
+                                    @endif
+                                </td>
                                 @if($canManage)
                                     <td class="py-2.5 text-right whitespace-nowrap">
                                         @if($editingId !== $account->id)
                                             <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startEditing({{ $account->id }})">{{ __('Byt namn') }}</button>
+                                            @if(App\Domain\Vat\VatBoxes::canHaveBox($account->number))
+                                                <span class="text-gray-300 mx-1" aria-hidden="true">·</span>
+                                                <button type="button" class="text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="startEditingBox({{ $account->id }})">{{ __('Momsruta') }}</button>
+                                            @endif
                                             <span class="text-gray-300 mx-1" aria-hidden="true">·</span>
                                             <button type="button" class="text-sm font-medium text-gray-600 hover:text-gray-900" wire:click="toggleActive({{ $account->id }})">
                                                 {{ $account->is_active ? __('Inaktivera') : __('Aktivera') }}

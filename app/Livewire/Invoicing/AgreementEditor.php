@@ -9,7 +9,6 @@ use App\Actions\Invoicing\SaveRecurringInvoice;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Invoicing\Concerns\EditsSalesRows;
-use App\Models\Article;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\RecurringInvoice;
@@ -140,7 +139,8 @@ class AgreementEditor extends Component
             'agreement' => $agreement,
             'editable' => $agreement === null || Gate::allows('update', $agreement),
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name', 'email']),
-            'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
+            'articles' => $this->rowArticles(),
+            'vatRules' => $this->salesVatRules(),
         ]);
     }
 

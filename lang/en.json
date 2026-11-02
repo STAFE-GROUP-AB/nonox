@@ -5971,6 +5971,7 @@
     "Återbetalningen bokförs från 1930 Företagskonto i serie C.": "The refund is booked from 1930 Business account in series C.",
     "Återbetalningar": "Refunds",
     "Blev något fel, eller ska kunden få ett prisavdrag, kan fakturan krediteras, hel eller till en del. Då skapas en kreditfaktura som minskar den med sitt belopp. Ändra raderna i utkastet om bara en del ska krediteras. Har kunden redan betalat får kunden pengar tillbaka, som du registrerar på kreditfakturan.": "If something is wrong, or the customer is to get a price reduction, the invoice can be credited, in full or in part. A credit invoice reduces it by its amount. Change the rows in the draft to credit only part of it. If the customer has already paid, the customer gets money back, which you register on the credit invoice.",
+
     "När deklarationen är lämnad bokförs momsen: momskontona som ingår i deklarationen nollställs och beloppet förs till 2650 Redovisningskonto för moms, med ören på 3740. Vilande moms och andra momskonton utan ruta lämnas orörda. Det blir en verifikation i serie M som inte kan ändras.": "Once the return has been filed, the VAT is booked: the VAT accounts in the return are cleared and the total goes to 2650 VAT settlement account, with the öre on 3740. Deferred VAT and other VAT accounts without a box are left as they are. It becomes a voucher in series M that cannot be changed.",
     "Momskonton som inte ingår i deklarationen": "VAT accounts not in the return",
     "De här kontona hör inte till någon ruta, till exempel vilande moms som ska redovisas först när kunden betalar. De tas inte med i deklarationen och flyttas inte till 2650 när momsen bokförs. Flytta beloppet till rätt momskonto i den period momsen ska redovisas.": "These accounts belong to no box, for example deferred VAT that is reported only when the customer pays. They are not in the return and are not moved to 2650 when the VAT is booked. Move the amount to the right VAT account in the period the VAT is to be reported.",
@@ -6008,5 +6009,22 @@
     "Lämna tomt om beslutet inte har något slutdatum.": "Leave empty if the decision has no end date.",
     "Procentsatsen kan vara högst 100.": "The percentage can be at most 100.",
     "Beloppet kan inte vara negativt.": "The amount cannot be negative.",
-    "Beräkna lönekörningen igen innan du attesterar. En annan lönekörning för :names har attesterats sedan den här beräknades, och arbetsgivaravgifterna beror på den.": "Calculate the payroll run again before you approve it. Another payroll run for :names has been approved since this one was calculated, and the employer contributions depend on it."
+    "Beräkna lönekörningen igen innan du attesterar. En annan lönekörning för :names har attesterats sedan den här beräknades, och arbetsgivaravgifterna beror på den.": "Calculate the payroll run again before you approve it. Another payroll run for :names has been approved since this one was calculated, and the employer contributions depend on it.",
+    "Utgående moms utan försäljning i ruta 05": "Output VAT without a sale in box 05",
+    "Momsen på försäljning i Sverige motsvarar :amount kr mer i underlag än det som är bokfört på intäktskonton. Det kan till exempel vara en såld inventarie, där priset är bokfört mot tillgångskontot. Lägg till underlaget i ruta 05 när du lämnar deklarationen, eller rätta bokföringen.": "The VAT on sales in Sweden corresponds to :amount kr more in taxable base than is booked on revenue accounts. It can for example be a sold piece of equipment, where the price is booked against the asset account. Add the base to box 05 when you file the return, or correct the bookkeeping.",
+    "Konto :account är för försäljning med :expected moms, men momssatsen är :rate. Momsdeklarationen följer momsen på verifikationen, så kontrollera att kontot är rätt.": "Account :account is for sales with :expected VAT, but the VAT rate is :rate. The VAT return follows the VAT on the voucher, so check that the account is right.",
+    "Konto :account är försäljning med moms, men verifikationen har ingen utgående moms på något av kontona :vat. Utan moms på samma verifikation redovisas försäljningen i ruta 42 som momsfri.": "Account :account is sales with VAT, but the voucher has no output VAT on any of the accounts :vat. Without VAT on the same voucher the sale is reported in box 42 as exempt.",
+    "Rad :line: konto :account är för försäljning med :expected moms, men raden har :rate. Momsdeklarationen följer momsen, så kontrollera kontot på artikeln eller raden.": "Row :line: account :account is for sales with :expected VAT, but the row has :rate. The VAT return follows the VAT, so check the account on the article or the row.",
+    "Momspliktiga uttag": "Taxable withdrawals",
+    "Beskattningsunderlag vid vinstmarginalbeskattning": "Taxable base under the margin scheme",
+    "Hyresinkomster vid frivillig beskattning": "Rental income under voluntary taxation",
+    "Mellanmans inköp av varor vid trepartshandel": "Intermediary's purchases of goods in triangular trade",
+    "Välj en ruta för försäljning eller inköp.": "Choose a box for sales or purchases.",
+    "Bara intäkts- och kostnadskonton (3000–8999) kan kopplas till en momsruta. Momskontona följer BAS.": "Only revenue and cost accounts (3000–8999) can be tied to a VAT box. The VAT accounts follow BAS.",
+    "Konto :number hör inte till någon momsruta.": "Account :number belongs to no VAT box.",
+    "Konto :number redovisas i momsdeklarationens ruta :box.": "Account :number is reported in box :box of the VAT return.",
+    "Momsruta": "VAT box",
+    "Momsruta för konto :number": "VAT box for account :number",
+    "Efter kontonumret": "By the account number",
+    "vald": "chosen"
 }

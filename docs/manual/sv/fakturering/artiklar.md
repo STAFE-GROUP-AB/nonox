@@ -38,6 +38,8 @@ Om du låter **Intäktskonto** stå på **Standard** väljer NONOX konto efter m
 
 Vill du följa upp en viss sorts försäljning för sig, till exempel catering skilt från lunch, lägger du upp ett eget intäktskonto i [kontoplanen](/manual/bokforing/kontoplan) och väljer det på artikeln.
 
+Kontot och momssatsen ska passa ihop: 3001 är för 25 % moms, 3002 för 12 %, 3003 för 6 % och 3004 för momsfri försäljning. Väljer du ett konto som inte passar momssatsen sparas artikeln ändå, men du får en varning. Samma varning visas på fakturan om en rad har en momssats som inte passar kontot. Momsdeklarationen följer momsen: en rad utan moms hamnar i ruta 42 även om kontot är 3001.
+
 > [!NOTE]
 > Säljer du till ett annat EU-land, exporterar eller fakturerar med omvänd betalningsskyldighet bokförs försäljningen på kontot för just den sortens försäljning, oavsett vad artikeln säger. Läs [Försäljning till andra EU-länder och export](/manual/fakturering/forsaljning-till-utlandet).
 

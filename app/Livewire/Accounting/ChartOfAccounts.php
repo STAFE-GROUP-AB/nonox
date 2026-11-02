@@ -7,6 +7,7 @@ namespace App\Livewire\Accounting;
 use App\Actions\Accounting\CreateAccount;
 use App\Actions\Accounting\UpdateAccount;
 use App\Domain\Accounting\AccountClass;
+use App\Domain\Vat\VatBoxes;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
 use App\Models\Company;
@@ -39,6 +40,11 @@ class ChartOfAccounts extends Component
     public ?int $editingId = null;
 
     public string $editingName = '';
+
+    public ?int $editingBoxId = null;
+
+    /** The box as chosen, '' to follow the account number. */
+    public string $editingBox = '';
 
     public function updated(string $property): void
     {
@@ -84,6 +90,33 @@ class ChartOfAccounts extends Component
         $this->toast(__('Konto :number heter nu :name.', ['number' => $account->number, 'name' => $account->name]));
     }
 
+    public function startEditingBox(int $accountId): void
+    {
+        $account = Account::findOrFail($accountId);
+
+        $this->editingBoxId = $account->id;
+        $this->editingBox = $account->vat_box === null ? '' : (string) $account->vat_box;
+        $this->resetErrorBag();
+    }
+
+    public function cancelEditingBox(): void
+    {
+        $this->reset('editingBoxId', 'editingBox');
+    }
+
+    public function saveBox(UpdateAccount $updateAccount): void
+    {
+        $account = Account::findOrFail($this->editingBoxId);
+
+        $updateAccount($this->user(), $account, ['vat_box' => $this->editingBox === '' ? null : (int) $this->editingBox]);
+
+        $box = VatBoxes::boxFor($account->number, $account->vat_box);
+        $this->reset('editingBoxId', 'editingBox');
+        $this->toast($box === null
+            ? __('Konto :number hör inte till någon momsruta.', ['number' => $account->number])
+            : __('Konto :number redovisas i momsdeklarationens ruta :box.', ['number' => $account->number, 'box' => sprintf('%02d', $box)]));
+    }
+
     public function toggleActive(int $accountId, UpdateAccount $updateAccount): void
     {
         $account = Account::findOrFail($accountId);
@@ -110,6 +143,7 @@ class ChartOfAccounts extends Component
             'accounts' => $this->accounts(),
             'classes' => AccountClass::all(),
             'canManage' => $this->user()->can('create', [Account::class, $company]),
+            'boxOptions' => array_combine(VatBoxes::ACCOUNT_BOXES, array_map(fn (int $box): string => sprintf('%02d', $box).' '.__(VatBoxes::BOXES[$box]['label']), VatBoxes::ACCOUNT_BOXES)),
         ]);
     }
 

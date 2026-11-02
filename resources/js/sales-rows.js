@@ -7,13 +7,16 @@
 
 import { formatOre } from './money.js';
 import { rowNet, totals } from './sales-math.js';
+import { ratePercent, salesRowVatWarnings } from './vat-rate-check.js';
 
 function blankRow() {
     return { article: '', description: '', quantity: '1', unit: 'st', price: '', discount: '', vat_rate: '2500', account: '' };
 }
 
 document.addEventListener('alpine:init', () => {
-    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false, currency = () => 'SEK') => ({
+    window.Alpine.data('salesRows', (rows, articles, negative, vatFree = false, currency = () => 'SEK', vatRules = {}) => ({
+        // Sales accounts and the VAT rates they take (App\Domain\Vat\SalesVatRules, #62).
+        vatRules,
         rows,
         articles,
         negative,
@@ -37,6 +40,17 @@ document.addEventListener('alpine:init', () => {
             const rows = vatFree ? this.rows.map((row) => ({ ...row, vat_rate: '0' })) : this.rows;
 
             return totals(rows, this.negative, this.currencyCode === 'SEK');
+        },
+
+        /** Rows whose VAT rate does not fit their revenue account: a warning, not a block. */
+        get vatWarnings() {
+            const vatFree = typeof this.vatFree === 'function' ? this.vatFree() : this.vatFree;
+
+            return salesRowVatWarnings(this.rows, this.articles, this.vatRules, vatFree);
+        },
+
+        percent(basisPoints) {
+            return ratePercent(basisPoints);
         },
 
         net(row) {

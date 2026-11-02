@@ -73,6 +73,10 @@ Under raderna står hela tiden vad som saknas innan verifikationen kan bokföras
 
 Knappen **Bokför** går bara att trycka på när raden är grön.
 
+### Varning om momsen
+
+Bokför du försäljning på ett konto som hör till moms, till exempel 3001 Försäljning inom Sverige, 25 % moms, utan utgående moms på samma verifikation, visar NONOX en gul varning: **Konto 3001 är försäljning med moms, men verifikationen har ingen utgående moms …**. Det är bara en varning, du kan bokföra ändå. Men en försäljning utan moms på verifikationen redovisas i momsdeklarationens ruta 42 som momsfri, inte i ruta 05. Lägg till momsraden, till exempel på 2611, eller välj 3004 om försäljningen är momsfri. Läs [Hur momsen hamnar i rätt ruta](/manual/moms/moms-och-konton).
+
 ## Det här händer i bokföringen
 
 När du väljer **Ja, bokför** kontrollerar NONOX allt en gång till på servern, i en och samma transaktion:

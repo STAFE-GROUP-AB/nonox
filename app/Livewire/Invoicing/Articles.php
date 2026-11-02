@@ -6,6 +6,7 @@ namespace App\Livewire\Invoicing;
 
 use App\Actions\Invoicing\SaveArticle;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Domain\Vat\SalesVatRules;
 use App\Livewire\Concerns\OpensFormFromLink;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Account;
@@ -78,9 +79,12 @@ class Articles extends Component
             'account' => ($this->form['account'] ?? '') === '' ? null : (int) $this->form['account'],
         ], $this->editingId === null ? null : Article::query()->findOrFail($this->editingId));
 
-        $this->toast($this->editingId === null
+        $saved = $this->editingId === null
             ? __('Artikel :number :name är tillagd.', ['number' => $article->number, 'name' => $article->name])
-            : __('Artikeln :name är sparad.', ['name' => $article->name]));
+            : __('Artikeln :name är sparad.', ['name' => $article->name]);
+        $mismatch = SalesVatRules::mismatch((int) $article->account?->number, $article->vat_rate, $article->account?->vat_box);
+
+        $this->toast($mismatch === null ? $saved : "{$saved} {$mismatch}");
 
         $this->cancel();
     }

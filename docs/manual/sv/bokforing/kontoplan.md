@@ -2,7 +2,7 @@
 beskrivning: Kontoplanen enligt BAS – hitta ett konto, lägg till ett nytt, byt namn och inaktivera konton du inte vill bokföra på.
 ordning: 100
 rutter: [accounting.accounts]
-sokord: [kontoplan, BAS, konto, kontonummer, kontoklass, nytt konto, inaktivera konto, ta bort konto]
+sokord: [kontoplan, BAS, konto, kontonummer, kontoklass, nytt konto, inaktivera konto, ta bort konto, momsruta, ruta 37]
 ---
 
 # Kontoplan
@@ -40,6 +40,15 @@ Typen väljs av den första siffran: 1 tillgångar, 2 eget kapital och skulder, 
 ## Byt namn på ett konto
 
 Välj **Byt namn** på kontots rad, skriv det nya namnet och välj **Spara**. Numret går aldrig att ändra, eftersom bokförda verifikationer pekar på det. Det nya namnet syns överallt, även i gamla rapporter.
+
+## Koppla ett konto till en momsruta
+
+Kolumnen **Momsruta** visar vilken ruta i momsdeklarationen kontot räknas till, till exempel 05 för 3001 och 48 för 2641. Rutan följer kontonumret enligt BAS. Läs [Hur momsen hamnar i rätt ruta](/manual/moms/moms-och-konton).
+
+Har du ett eget intäkts- eller kostnadskonto som ska till en viss ruta väljer du **Momsruta** på kontots rad, väljer rutan och **Spara**. Det behövs till exempel för ruta 37, mellanmans inköp vid trepartshandel, som inte har något konto i BAS. Välj **Efter kontonumret** för att gå tillbaka. Det går bara för konton mellan 3000 och 8999 och bara för rutor med försäljning eller inköp. Momskontona följer alltid BAS. Ändringen gäller alla perioder som inte redan är deklarerade, och den skrivs i behandlingshistoriken.
+
+> [!NOTE]
+> Enligt granskning 2026-11-02, juristgranskning återstår (AUD-MOMS-7, #64).
 
 ## Inaktivera ett konto
 

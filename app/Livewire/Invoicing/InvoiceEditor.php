@@ -11,7 +11,6 @@ use App\Domain\Invoicing\SalesRowInput;
 use App\Domain\Vat\OssThreshold;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Livewire\Invoicing\Concerns\EditsSalesRows;
-use App\Models\Article;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -181,7 +180,8 @@ class InvoiceEditor extends Component
         return view('livewire.invoicing.invoice-editor', [
             'customers' => Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->orderBy('name')->get(['id', 'number', 'name']),
             'currencies' => self::CURRENCIES,
-            'articles' => Article::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'unit', 'price_ore', 'vat_rate']),
+            'articles' => $this->rowArticles(),
+            'vatRules' => $this->salesVatRules(),
             'ossThreshold' => $this->ossThreshold(),
             'canIssue' => $this->invoiceId === null
                 ? $this->user()->hasTeamPermission($this->company(), 'invoices:send')
