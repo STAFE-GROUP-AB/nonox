@@ -163,7 +163,7 @@ HTML only) and the tax table file layout (SKV 433, edition 36).
   Lön → Regler in that company.
 - Without tables for the payment year a run is blocked once with
   "Skattetabellerna för {år} är inte inlästa ännu". `TODO(legal-verify)`:
-  SFL 10 kap. 16 § allows January withholding by the table last applied the
+  SFL 11 kap. 16 § andra stycket allows January withholding by the table last applied the
   year before.
 
 ## Rounding, one-off tax and A-SINK (2026-10-30)

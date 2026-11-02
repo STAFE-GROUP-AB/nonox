@@ -266,7 +266,7 @@ class PayrollRuns
             }
 
             // The tax tables follow the payment date's year (SFL 12 kap. 1 §: tables per calendar year), so December's pay paid in January needs the new year's tables.
-            // TODO(legal-verify): SFL 10 kap. 16 § lets January's withholding use the table last applied the year before; no such fallback is built, the run is blocked.
+            // TODO(legal-verify): SFL 11 kap. 16 § andra stycket lets January's withholding use the table last applied the year before; no such fallback is built, the run is blocked.
             if (! TaxTableLookup::imported($run->payment_date->year) && $employments->contains(fn (Employment $employment): bool => $employment->employee?->tax_table !== null && ! str_starts_with((string) $employment->employee->tax_residence, 'NON_RESIDENT'))) {
                 $blockers[] = (new MissingTaxTableException($run->payment_date->year, 0, 0, true))->getMessage();
             }

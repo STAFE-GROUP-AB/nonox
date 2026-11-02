@@ -290,7 +290,7 @@ Yearly file format and import:
 - `continued`: keys an open-ended earlier version (`valid_to` null) already covers, with a source showing the law in force on 1 January.
 - `php artisan payroll:import-rules [year]` (`Actions/ImportPayrollRules`) imports one year or, without a year, every year. It is idempotent and runs nightly at 03:40 from the scheduler, so a new year's file reaches every installation after deploy. It never changes a version verified for the installation or by any company, and leaves unchanged versions alone.
 - Lön → Regler starts with **Inför löneåret** (`Support/YearReadiness`): for the next payment year (from October) per key verified / unverified / not published / missing from a date, the tax table status, sources and a verify button (same `VerifyPayrollRule` action, `payroll:settings`, audit `payroll.rule_verified`).
-- The run picks rules by payment date (`RuleSet::for($run->payment_date)`) and tax tables by the payment date's year: December pay paid in January uses the new year. `TODO(legal-verify)`: SFL 10 kap. 16 § lets January's withholding use the table last applied the year before; not built, the run is blocked instead.
+- The run picks rules by payment date (`RuleSet::for($run->payment_date)`) and tax tables by the payment date's year: December pay paid in January uses the new year. `TODO(legal-verify)`: SFL 11 kap. 16 § andra stycket lets January's withholding use the table last applied the year before; not built, the run is blocked instead.
 - 2027 status (researched 2026-11-02): see `docs/systemdokumentation/README.md` §5b and §8.
 
 Required keys — **every value is `TODO(legal-verify)` against Skatteverket/Försäkringskassan before seeding:**

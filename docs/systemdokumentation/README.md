@@ -1383,9 +1383,12 @@ lönebeskeden låsta i databasen.
   under perioden och socialavgiftslagens ändringar tillämpas på ersättning
   som ges ut efter ikraftträdandet. Semesterlönegrundande frånvaro hör till
   intjänandeåret, men värdena är samma 2026 och 2027.
-  `TODO(legal-verify)`: skatteförfarandelagen 10 kap. 16 § tillåter att
+  Skatteförfarandelagen 11 kap. 16 § andra stycket tillåter ("får") att
   skatteavdraget i januari görs enligt den tabell som senast tillämpades året
-  före; NONOX har ingen sådan reserv utan stoppar körningen.
+  före. Regeln är frivillig, så det är tillåtet att NONOX i stället stoppar
+  körningen tills årets tabeller är inlästa (kontrollerat av två oberoende
+  AI-genomgångar 2026-11-02, juristgranskning återstår). Tabellerna hämtas
+  automatiskt när de publiceras.
 - Skattetabeller för ett nytt år: saknas årets tabeller stoppas en
   lönekörning med utbetalning det året med beskedet "Skattetabellerna för
   {år} är inte inlästa ännu" (en gång för hela körningen), innan något
@@ -2232,7 +2235,7 @@ kontrollerat dem mot källan. Särskilt:
   milersättning, gåvor, friskvård, deklarationsdagar 2027 och tabellen för
   engångsbelopp (Skatteverket, december 2026).
 - Om skatteavdraget i januari får göras med förra årets tabell
-  (skatteförfarandelagen 10 kap. 16 §) när årets tabeller inte är inlästa.
+  (skatteförfarandelagen 11 kap. 16 § andra stycket) när årets tabeller inte är inlästa.
 
 ### Planering (5i)
 
