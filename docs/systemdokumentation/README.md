@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.96
+- Version: 0.97
 - Datum: 2026-11-02
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -3365,3 +3365,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.94 | 2026-11-02 | HQ som egen menysektion för HQ-administratörerna med Kö och Kunder (ADR-038 §6): en läsvy över företag och användare i installationen utan bokföring, belopp eller personnummer; varje öppning loggas utan personuppgifter i behandlingshistoriken. Integritetspolicyn och personuppgiftsbiträdesavtalet beskriver översikten (version 1.2). Ändrar ingen bokföring. |
 | 0.95 | 2026-11-02 | Modulen Lager (ADR-039, avsnitt 5j): artikelregistret utökat med lagerfält, lagerställen i ett träd, en lagerreskontra som bara kan läggas till (stock_movements, skyddad av databastrigger), inleveranser, plocklistor, inventering och värdering enligt FIFO eller vägt genomsnitt med lägsta värdets princip. Bokslutet kan boka lagerförändringen på balansdagen i serie A; i övrigt bokför lagret ingenting. |
 | 0.96 | 2026-11-02 | Lager: bilder på artiklar (skalas om, metadata tas bort, privat krypterad disk) och förslag från NONOX AI som användaren godkänner fält för fält; AI föreslår aldrig priser eller konton. Ändrar ingen bokföring. |
+| 0.97 | 2026-11-02 | Lager: etiketter och etikettstudio (ADR-041), skanning med mobilen med kö utan nät som körs exakt en gång per operation (ADR-040), och modulen Kassakopplingar för Zettle och Onslip (ADR-042, avsnitt 5k): varje köp sparas en gång och dras från lagret, och dagens försäljning blir ett utkast till verifikation i serie K "Kassa" som en person granskar och bokför. Serie K skapas först när modulen slås på. |
