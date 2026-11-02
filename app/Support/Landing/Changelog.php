@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Landing;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Str;
 
 /**
  * The public changelog at /andringslogg: everything that has shipped, in
@@ -17,7 +18,14 @@ use Carbon\CarbonImmutable;
  * project's real stages with their dates, so a long quiet stretch between two
  * phases never shows up as a row of empty months.
  *
- * @phpstan-type Entry array{id: string, datum: string, rubrik: string, beskrivning: string, typ: string, omrade: string, version?: string}
+ * Work done outside the code whose exact date was never recorded (design,
+ * customer conversations, the website's content) gets an entry with a
+ * `period` label and `utanfor_koden: true`. Its `datum` is only the start of
+ * its phase, used for ordering and phase membership; the page shows the
+ * period instead and the RSS feed leaves such entries out, since any date or
+ * time shown for them would be made up.
+ *
+ * @phpstan-type Entry array{id: string, datum: string, rubrik: string, beskrivning: string, typ: string, omrade: string, version?: string, period?: string, utanfor_koden?: bool}
  * @phpstan-type Phase array{id: string, namn: string, beskrivning: string, fran: string, till: string|null, kommande: bool}
  */
 final class Changelog
@@ -111,11 +119,35 @@ final class Changelog
      */
     public static function latest(int $count, array $types = ['Nytt', 'Förbättrat']): array
     {
-        return array_slice(array_values(array_filter(self::all(), fn (array $entry): bool => in_array($entry['typ'], $types, true))), 0, $count);
+        return array_slice(array_values(array_filter(self::all(), fn (array $entry): bool => in_array($entry['typ'], $types, true) && ! self::isPeriod($entry))), 0, $count);
     }
 
     /**
-     * Entries grouped by month, keyed "2026-11", in the order given.
+     * The entries that carry a real date and time, newest first: everything
+     * but the work outside the code (the RSS feed).
+     *
+     * @return list<Entry>
+     */
+    public static function dated(): array
+    {
+        return array_values(array_filter(self::all(), fn (array $entry): bool => ! self::isPeriod($entry)));
+    }
+
+    /**
+     * Whether an entry is work outside the code with only a period, no
+     * recorded date: its `datum` must never be shown.
+     *
+     * @param  Entry  $entry
+     */
+    public static function isPeriod(array $entry): bool
+    {
+        return isset($entry['period']);
+    }
+
+    /**
+     * Entries grouped by month, keyed "2026-11", in the order given. Entries
+     * with only a period are grouped under that period instead, keyed by its
+     * slug, so no month is made up for them.
      *
      * @param  list<Entry>  $entries
      * @return array<string, array{label: string, entries: list<Entry>}>
@@ -125,6 +157,14 @@ final class Changelog
         $months = [];
 
         foreach ($entries as $entry) {
+            if (isset($entry['period'])) {
+                $key = Str::slug($entry['period']);
+                $months[$key] ??= ['label' => ucfirst($entry['period']), 'entries' => []];
+                $months[$key]['entries'][] = $entry;
+
+                continue;
+            }
+
             $date = self::date($entry);
             $key = $date->format('Y-m');
             $months[$key] ??= ['label' => ucfirst($date->settings(['locale' => 'sv'])->isoFormat('MMMM YYYY')), 'entries' => []];
@@ -274,6 +314,8 @@ final class Changelog
                 $errors[] = "{$label}: 'datum' ska vara ISO 8601 med tidszon, till exempel 2026-11-02T12:00:00+01:00.";
             }
 
+            $errors = [...$errors, ...self::periodErrors($label, $entry)];
+
             if (isset($ids[$label])) {
                 $errors[] = "{$label}: id finns redan.";
             }
@@ -282,6 +324,37 @@ final class Changelog
         }
 
         return [...$errors, ...self::phaseErrors($file)];
+    }
+
+    /**
+     * Everything wrong with an entry's period: a period is only for work
+     * outside the code, which has no commit and so no version.
+     *
+     * @param  array<string, mixed>  $entry
+     * @return list<string>
+     */
+    private static function periodErrors(string $label, array $entry): array
+    {
+        $errors = [];
+        $hasPeriod = array_key_exists('period', $entry);
+
+        if ($hasPeriod && (! is_string($entry['period']) || trim($entry['period']) === '')) {
+            $errors[] = "{$label}: 'period' ska vara en text, till exempel februari–september 2026.";
+        }
+
+        if ($hasPeriod && ($entry['utanfor_koden'] ?? null) !== true) {
+            $errors[] = "{$label}: en post med 'period' ska ha 'utanfor_koden': true.";
+        }
+
+        if ($hasPeriod && array_key_exists('version', $entry)) {
+            $errors[] = "{$label}: en post med 'period' kan inte ha 'version'.";
+        }
+
+        if (! $hasPeriod && array_key_exists('utanfor_koden', $entry)) {
+            $errors[] = "{$label}: 'utanfor_koden' används bara tillsammans med 'period'.";
+        }
+
+        return $errors;
     }
 
     /**
