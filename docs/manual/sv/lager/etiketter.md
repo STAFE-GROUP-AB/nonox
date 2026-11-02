@@ -11,6 +11,8 @@ sokord: [etikett, etiketter, prisetikett, hyllkant, hyllkantsetikett, streckkod,
 
 Du kan skriva ut etiketter för artiklar och för lagerställen. Etiketterna blir en PDF som öppnas i en ny flik. Skriv ut den på ett A4-etikettark i en vanlig skrivare, eller på en rulle i en etikettskrivare. Hur etiketten ser ut bestäms av en mall, se [Etikettstudion](/manual/lager/etikettstudio).
 
+![Utskrift av artikeletiketter: mall, antal och var på arket utskriften börjar.](/bilder/manual/lager/etiketter.webp)
+
 ## Etiketter för artiklar
 
 1. Gå till **Lager → Artiklar**.

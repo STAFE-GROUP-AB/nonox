@@ -11,6 +11,8 @@ sokord: [inventering, inventera, räkna lagret, lagerinventering, svinn, stöld,
 
 Vid en inventering räknar du det som faktiskt finns på hyllan. Skillnaden mot systemets saldo förs in i lagret med en orsak, så att lagret stämmer igen. Inventera minst en gång om året, på räkenskapsårets sista dag eller så nära den som möjligt. Du kan också räkna en hylla i taget när du vill.
 
+![En inventering av en hylla som pågår, med systemets antal, det räknade antalet och en orsak till skillnaden.](/bilder/manual/lager/inventering.webp)
+
 ## Så här startar du en inventering
 
 1. Gå till **Lager → Inventering** och klicka på **Ny inventering**.

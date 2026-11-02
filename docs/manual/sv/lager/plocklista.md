@@ -11,6 +11,8 @@ sokord: [plocklista, plocka, plockorder, utleverans, packa order, skicka varor, 
 
 En plocklista visar vad som ska hämtas och var det ligger. Raderna sorteras efter lagerställets kod, så att du går genom lagret en gång. Varje artikel tas först från sin standardplats och sedan från andra platser där det finns varor.
 
+![En plocklista sorterad efter plats, med bild och EAN-kod på varje rad.](/bilder/manual/lager/plocklista.webp)
+
 ## Så här gör du en plocklista
 
 1. Gå till **Lager → Plocklistor**.
