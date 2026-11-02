@@ -1,6 +1,14 @@
 {
   "poster": [
     {
+      "id": "2026-11-02-arsredovisning",
+      "datum": "2026-11-02T15:35:00+01:00",
+      "rubrik": "Årsredovisning med fastställelseintyg, noter och rätt uppställning",
+      "beskrivning": "Balansräkningen följer K2 med egna rader för bland annat checkräkningskredit och förskott från kunder. Årsredovisningen har fastställelseintyg, specificerade förändringar i eget kapital och noter om säkerheter och händelser efter året. Verifikationslistan visar vilka verifikationer som rättats, och varje ny programversion och version av systemdokumentationen sparas.",
+      "typ": "Rättat",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-02-momsrutor",
       "datum": "2026-11-02T15:10:00+01:00",
       "rubrik": "Rätt momsruta för all försäljning",
