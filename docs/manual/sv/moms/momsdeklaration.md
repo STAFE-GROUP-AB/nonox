@@ -50,9 +50,10 @@ Rutan räknas fram av de bokförda verifikationerna. Utkast räknas aldrig med.
 
 **Bokför momsen** gör en verifikation i serie M på periodens sista dag, med texten "Momsredovisning" och perioden:
 
-- Varje momskonto (2610–2649) nollställs för perioden: utgående moms i debet, ingående moms i kredit.
+- Varje momskonto som hör till en ruta (utgående moms i rutorna 10–12, 30–32 och 60–62 och ingående moms i ruta 48) nollställs för perioden: utgående moms i debet, ingående moms i kredit.
 - Nettot förs till **2650 Redovisningskonto för moms** – i kredit när ni ska betala, i debet när ni ska få tillbaka.
-- Öresskillnaden mellan kontona och rutorna i hela kronor bokförs på **3740 Öres- och kronutjämning**.
+- Ören som rutorna i hela kronor inte tar med bokförs på **3740 Öres- och kronutjämning**. Det blir alltid mindre än en krona per ruta.
+- Vilande moms (2618, 2628, 2638 och 2648) och andra momskonton som inte hör till någon ruta lämnas orörda. Sidan visar dem under **Momskonton som inte ingår i deklarationen**. Läs [Vilande moms](/manual/moms/moms-och-konton).
 
 Rutorna sparas tillsammans med verifikationen och kan inte ändras. En period kan bara bokföras en gång. Betalningen till eller från skattekontot bokför du som vanligt när den sker.
 

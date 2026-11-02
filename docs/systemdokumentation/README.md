@@ -436,9 +436,16 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Momsdeklarationens rutor räknas fram ur rörelserna på momskonton och
   försäljnings- och inköpskonton enligt BAS, per redovisningsperiod. Beloppen
   anges i hela kronor.
-- Momsen bokförs med en verifikation i serie M per period: momskontona
-  nollställs, beloppet förs till 2650 och öresavrundningen till 3740. Rutorna
-  sparas med verifikationen och kan inte ändras. En period bokförs en gång.
+- Momsen bokförs med en verifikation i serie M per period: momskontona som
+  hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
+  ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören
+  som rutorna i hela kronor inte tar med till 3740. Rutorna sparas med
+  verifikationen och kan inte ändras. En period bokförs en gång.
+- Vilande moms (2618, 2628, 2638 och 2648) och andra konton mellan 2610 och
+  2649 utan ruta ingår inte i deklarationen och flyttas inte till 2650; de
+  visas som en varning på momssidan. Ruta 48 läser 2640–2647 och 2649, inte
+  2648 (ML 7 kap. 14 och 31 §§; enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-MOMS-1, #58).
 - Efter deklarationen kan bokföringen låsas till och med periodens sista dag.
   Låset kan bara flyttas framåt.
 

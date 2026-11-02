@@ -23,7 +23,8 @@ final class VatReturn
     /**
      * @param  array<int, int>  $exact  box => öre
      * @param  array<int, list<array{number: int, name: string, amount: int}>>  $sources  box => contributing accounts
-     * @param  array<int, int>  $vatAccounts  account number => debit minus credit on 2610–2649
+     * @param  array<int, int>  $vatAccounts  account number => debit minus credit on the VAT accounts that feed a VAT box
+     * @param  list<array{number: int, name: string, amount: int}>  $unsettled  VAT accounts (2610–2649) with a movement but no box, debit minus credit
      */
     private function __construct(
         public readonly CarbonImmutable $start,
@@ -31,6 +32,7 @@ final class VatReturn
         public readonly array $exact,
         public readonly array $sources,
         public readonly array $vatAccounts,
+        public readonly array $unsettled = [],
     ) {}
 
     public static function calculate(FiscalYear $fiscalYear, CarbonImmutable $start, CarbonImmutable $end): self
@@ -42,6 +44,7 @@ final class VatReturn
         $exact = array_fill_keys(array_keys(VatBoxes::BOXES), 0);
         $sources = [];
         $vatAccounts = [];
+        $unsettled = [];
 
         foreach ($movements as $accountId => $movement) {
             $account = $accounts->get($accountId);
@@ -57,8 +60,11 @@ final class VatReturn
                 continue;
             }
 
-            if ($account->number >= VatBoxes::VAT_ACCOUNTS[0] && $account->number <= VatBoxes::VAT_ACCOUNTS[1] && $change !== 0) {
+            // Only VAT that is declared is settled; vilande moms (2618, 2628, 2638, 2648) and other VAT accounts without a box stay put (#58).
+            if (VatBoxes::isSettled($account->number) && $change !== 0) {
                 $vatAccounts[$account->number] = $change;
+            } elseif (VatBoxes::isVatAccount($account->number) && $change !== 0) {
+                $unsettled[] = ['number' => $account->number, 'name' => $account->name, 'amount' => $change];
             }
 
             $box = VatBoxes::boxFor($account->number);
@@ -78,8 +84,9 @@ final class VatReturn
         }
 
         ksort($vatAccounts);
+        usort($unsettled, fn (array $a, array $b): int => $a['number'] <=> $b['number']);
 
-        return new self($start, $end, $exact, $sources, $vatAccounts);
+        return new self($start, $end, $exact, $sources, $vatAccounts, $unsettled);
     }
 
     /**
@@ -107,8 +114,10 @@ final class VatReturn
 
     /**
      * The settlement voucher's rows, signed öre (debit positive): every VAT
-     * account back to zero for the period, the total to 2650 in whole
-     * kronor, and the öre difference to 3740.
+     * account that feeds a box back to zero for the period, the total to 2650
+     * in whole kronor, and the öre dropped from the declared boxes to 3740.
+     * Accounts without a box are not touched, so 3740 only ever holds the
+     * rounding of the boxes: less than one krona per box.
      *
      * @return array<int, int> account number => amount
      */

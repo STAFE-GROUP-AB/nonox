@@ -40,9 +40,14 @@
   so the file is `TODO(legal-verify)` until it has been validated in
   Skatteverket's test service.
 - **Posting the VAT**: one voucher in series M, source VAT, dated the last day
-  of the period. Every VAT account (2610–2649) goes back to zero for the
-  period, the total goes to 2650 in whole kronor, and the öre difference to
-  3740. The boxes are stored in `vat_reports` (append-only, database trigger)
+  of the period. Every VAT account that feeds an output VAT box (10–12,
+  30–32, 60–62) or box 48 goes back to zero for the period, the total goes to
+  2650 in whole kronor, and the öre dropped from the declared boxes to 3740
+  (less than one krona per box). Vilande moms (2618, 2628, 2638, 2648) and
+  any other account in 2610–2649 without a box is not touched; the page
+  lists it as a warning. Box 48 reads 2640–2647 and 2649, not 2648 (ML 7
+  kap. 14 and 31 §§; enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-MOMS-1, #58). The boxes are stored in `vat_reports` (append-only, database trigger)
   together with the voucher. A period is posted once. VAT vouchers are left
   out when a period is calculated, so the report reads the same before and
   after; if something is posted in the period later, the page says so.
