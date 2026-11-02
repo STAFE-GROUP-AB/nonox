@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\Closing\YearEndClosing;
+use App\Actions\Invoicing\CreditInvoice;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\RegisterPayment;
 use App\Actions\Invoicing\SaveCustomer;
 use App\Actions\Invoicing\SaveDraftInvoice;
 use App\Actions\Payables\ApproveSupplierInvoice;
+use App\Actions\Payables\PaySupplierInvoice;
 use App\Actions\Payables\RegisterSupplierInvoice;
 use App\Actions\Payables\SaveSupplier;
 use App\Actions\Payables\SaveSupplierInvoice;
@@ -17,6 +19,8 @@ use App\Domain\Closing\CurrencyRevaluation;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Livewire\Accounting\ClosingPage;
+use App\Models\AuditLog;
+use App\Models\ClosingCheck;
 use App\Models\FiscalYear;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
@@ -24,6 +28,7 @@ use App\Models\YearEndEntry;
 use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -91,7 +96,7 @@ it('values the open part of each invoice at the closing rate', function () {
 });
 
 it('books the revaluation on the last day and reverses it on the first day of the next year', function () {
-    expect(collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::WARN)
+    expect(collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::TODO)
         ->and(fn () => app(YearEndClosing::class)->bookCurrencyRevaluation($this->owner, $this->year))->toThrow(ValidationException::class, 'nästa räkenskapsår');
 
     app(CreateNextFiscalYear::class)($this->owner, $this->company);
@@ -113,14 +118,24 @@ it('books the revaluation on the last day and reverses it on the first day of th
     expect((int) VoucherRow::query()->whereHas('account', fn ($query) => $query->where('number', 1510))->sum(DB::raw('debit_ore - credit_ore')))->toBe(0);
 });
 
-it('waits for the last day, and leaves the checklist point out without open invoices in another currency', function () {
+it('waits for the last day, and under kontantmetoden for the unpaid invoices to be booked first', function () {
     $this->travelTo(CarbonImmutable::parse('2026-12-20 10:00:00'));
     expect(fn () => app(YearEndClosing::class)->bookCurrencyRevaluation($this->owner, $this->year))->toThrow(ValidationException::class, 'efter årets sista dag');
 
     $this->travelTo(CarbonImmutable::parse('2027-01-15 10:00:00'));
     $this->company->forceFill(['accounting_method' => AccountingMethod::Kontantmetoden])->save();
+    $currency = collect(ClosingChecklist::for($this->company->fresh(), $this->year))->firstWhere('key', 'currency');
 
-    expect(collect(ClosingChecklist::for($this->company->fresh(), $this->year))->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::NOT_APPLICABLE);
+    expect($currency['status'])->toBe(ClosingChecklist::TODO)
+        ->and($currency['detail'])->toContain('obetalda fakturorna')
+        ->and(fn () => app(YearEndClosing::class)->bookCurrencyRevaluation($this->owner, $this->year))->toThrow(ValidationException::class, 'obetalda fakturorna');
+});
+
+it('leaves the checklist point out without open invoices in another currency', function () {
+    app(RegisterPayment::class)($this->owner, $this->invoice->fresh(), CarbonImmutable::parse('2026-12-15'), Money::parse('7 800'));
+    app(PaySupplierInvoice::class)($this->owner, $this->supplierInvoice->fresh(), CarbonImmutable::parse('2026-12-15'), Money::parse('950'));
+
+    expect(collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::NOT_APPLICABLE);
 });
 
 it('does not count an invoice paid before the year ended', function () {
@@ -141,9 +156,62 @@ it('books the revaluation from the closing page', function () {
         ->assertDispatched('toast', message: "Omvärderingen är bokförd: kursvinst 450,00\u{00A0}kr. Den återförs första dagen i nästa år.");
 });
 
-it('warns about an unbooked revaluation without blocking the closing', function () {
-    $items = ClosingChecklist::for($this->company, $this->year);
+it('blocks the closing until the revaluation is booked or confirmed as booked by hand', function () {
+    $currency = fn (): array => collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency');
 
-    expect(collect($items)->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::WARN)
-        ->and(ClosingChecklist::isComplete([collect($items)->firstWhere('key', 'currency')]))->toBeTrue();
+    expect($currency()['status'])->toBe(ClosingChecklist::TODO)
+        ->and($currency()['confirm'])->toBe('Omvärderingen är bokförd för hand')
+        ->and(ClosingChecklist::isComplete([$currency()]))->toBeFalse();
+
+    app(YearEndClosing::class)->check($this->owner, $this->year, 'currency', true);
+    $check = ClosingCheck::query()->where('fiscal_year_id', $this->year->id)->where('key', 'currency')->firstOrFail();
+
+    expect($currency()['status'])->toBe(ClosingChecklist::OK)
+        ->and($currency()['detail'])->toContain('för hand')
+        ->and($check->checked_by)->toBe($this->owner->id)
+        ->and($check->created_at)->not->toBeNull()
+        ->and(AuditLog::query()->where('action', 'closing.checked')->where('payload->key', 'currency')->exists())->toBeTrue()
+        ->and(ClosingChecklist::isComplete([$currency()]))->toBeTrue();
+
+    app(YearEndClosing::class)->check($this->owner, $this->year, 'currency', false);
+
+    expect($currency()['status'])->toBe(ClosingChecklist::TODO);
+});
+
+it('stays blocking when Riksbanken has no rate, until a person confirms the revaluation by hand', function () {
+    Http::swap(new Factory);
+    Http::fake(fn () => Http::response([]));
+    $currency = collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency');
+
+    expect($currency['status'])->toBe(ClosingChecklist::TODO)
+        ->and($currency['detail'])->toContain('ingen kurs');
+
+    Livewire::test(ClosingPage::class, ['year' => $this->year->id])
+        ->set('year', $this->year->id)
+        ->assertSee('Omvärderingen är bokförd för hand')
+        ->call('check', 'currency', true);
+
+    expect(collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::OK);
+});
+
+it('values the rest of an invoice credited in part', function () {
+    $customer = app(SaveCustomer::class)($this->owner, $this->company, ['name' => 'Delkredit Exempel AB', 'payment_terms_days' => 30, 'currency' => 'EUR']);
+    $this->travelTo(CarbonImmutable::parse('2026-12-01 10:00:00'));
+    $invoice = app(IssueInvoice::class)($this->owner, app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $customer->id, 'invoice_date' => '2026-12-01', 'currency' => 'EUR', 'exchange_rate' => '11',
+        'rows' => [['description' => 'Licens', 'quantity' => '1', 'price' => '1000', 'vat_rate' => 0]],
+    ]));
+    $draft = app(CreditInvoice::class)($this->owner, $invoice);
+    // 400 € of the 1 000 € are credited before the year ends.
+    $credit = app(IssueInvoice::class)($this->owner, app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $customer->id, 'invoice_date' => '2026-12-01', 'due_date' => '2026-12-01',
+        'rows' => [['description' => 'Licens', 'quantity' => '0,4', 'price' => '1000', 'vat_rate' => 0, 'account' => $draft->rows->load('account')->first()->account->number]],
+    ], $draft));
+    $this->travelTo(CarbonImmutable::parse('2027-01-15 10:00:00'));
+
+    $line = collect(CurrencyRevaluation::for($this->company, $this->year)['lines'])->firstWhere('title', "{$invoice->title()}, Delkredit Exempel AB");
+
+    expect($credit->total_ore->ore)->toBe(-440_000)
+        // 600 € left, booked at 11 (6 600 kr), worth 6 900 kr at 11,5.
+        ->and([$line['foreign'], $line['booked'], $line['closing'], $line['difference']])->toBe([60_000, 660_000, 690_000, 30_000]);
 });

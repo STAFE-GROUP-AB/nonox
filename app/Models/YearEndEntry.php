@@ -15,7 +15,9 @@ use LogicException;
  * zero and then without a voucher), RESULT (the year's result moved to
  * equity) or DISPOSITION (the result disposed of in the next year, with the
  * dividend) or CURRENCY_REVALUATION (open invoices in another currency
- * valued at the closing rate, ADR-025). Append-only: the model refuses changes and a database trigger
+ * valued at the closing rate, ADR-025) or UNPAID_RECEIVABLES and
+ * UNPAID_PAYABLES (under kontantmetoden, the invoices unpaid on the last day,
+ * booked then and reversed on the first day of the next year). Append-only: the model refuses changes and a database trigger
  * backs it up.
  *
  * @property int $id
@@ -39,6 +41,12 @@ class YearEndEntry extends Model
 
     /** Invoices in another currency valued at the closing rate; amount_ore is the net gain (negative a loss). */
     public const string CURRENCY_REVALUATION = 'CURRENCY_REVALUATION';
+
+    /** Kontantmetoden: customer invoices unpaid on the last day; amount_ore is the receivable booked on 1510. */
+    public const string UNPAID_RECEIVABLES = 'UNPAID_RECEIVABLES';
+
+    /** Kontantmetoden: supplier invoices unpaid on the last day; amount_ore is the liability booked on 2440. */
+    public const string UNPAID_PAYABLES = 'UNPAID_PAYABLES';
 
     /** @var list<string> */
     protected $fillable = [

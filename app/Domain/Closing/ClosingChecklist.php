@@ -8,6 +8,7 @@ use App\Actions\Banking\BankReconciliations;
 use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Accruals\AccrualPlan;
+use App\Domain\Company\AccountingMethod;
 use App\Domain\Vat\VatPeriods;
 use App\Models\Account;
 use App\Models\Accrual;
@@ -51,7 +52,17 @@ final class ClosingChecklist
     ];
 
     /**
-     * @return list<array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string}>
+     * Points the system checks, which a person may also confirm as done by
+     * hand (a voucher booked by hand leaves no year-end entry), with the
+     * text of the confirmation. Stored as ClosingCheck like the manual points.
+     */
+    public const array CONFIRMABLE = [
+        'unpaid' => 'Bokfört för hand',
+        'currency' => 'Omvärderingen är bokförd för hand',
+    ];
+
+    /**
+     * @return list<array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string}>
      */
     public static function for(Company $company, FiscalYear $fiscalYear): array
     {
@@ -78,7 +89,9 @@ final class ClosingChecklist
             $items[] = self::bank($fiscalYear);
             $items[] = self::assets($endMonth);
             $items[] = self::accruals($fiscalYear, $endMonth);
-            $items[] = self::currency($company, $fiscalYear);
+            $entries = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->pluck('type')->all();
+            $items[] = self::unpaid($company, $fiscalYear, $entries, $checks);
+            $items[] = self::currency($company, $fiscalYear, $entries, $checks);
 
             foreach (self::MANUAL as $key => [$label, $detail]) {
                 $items[] = self::item($key, __($label), __($detail), in_array($key, $checks, true) ? self::OK : self::TODO, null, manual: true);
@@ -111,7 +124,7 @@ final class ClosingChecklist
     /**
      * Every bank or cash account with a balance or movement must be reconciled on the last day without a difference.
      *
-     * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string}
+     * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string}
      */
     private static function bank(FiscalYear $fiscalYear): array
     {
@@ -132,7 +145,7 @@ final class ClosingChecklist
         }, $used->isEmpty() ? self::NOT_APPLICABLE : ($open === [] ? self::OK : self::TODO), 'accounting.bankReconciliation');
     }
 
-    /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string} */
+    /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string} */
     private static function assets(string $endMonth): array
     {
         $assets = FixedAsset::query()->where('status', FixedAsset::ACTIVE)->withSum('depreciations', 'amount_ore')->get();
@@ -145,7 +158,7 @@ final class ClosingChecklist
         }, $assets->isEmpty() ? self::NOT_APPLICABLE : ($behind->isEmpty() ? self::OK : self::TODO), 'accounting.fixedAssets');
     }
 
-    /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string} */
+    /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string} */
     private static function accruals(FiscalYear $fiscalYear, string $endMonth): array
     {
         $accruals = Accrual::query()->with('postings')->where('start_month', '<=', $endMonth)->get();
@@ -168,33 +181,80 @@ final class ClosingChecklist
     }
 
     /**
-     * Customer and supplier invoices in another currency open on the last day are valued at that day's rate (ADR-025).
-     * A warning, not a block: the rule is not verified yet (TODO(legal-verify) in ADR-025), and a revaluation booked
-     * by hand leaves no YearEndEntry, so a block could never be cleared.
+     * Under kontantmetoden every customer and supplier invoice unpaid on the
+     * last day is booked then (UnpaidInvoices, BFL 5 kap. 2 §). Blocks until
+     * the step is booked or a person confirms it was booked by hand.
      *
-     * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string}
+     * @param  array<mixed>  $entries  year-end entry types of the year
+     * @param  array<mixed>  $checks  confirmed checklist keys
+     * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string}
      */
-    private static function currency(Company $company, FiscalYear $fiscalYear): array
+    private static function unpaid(Company $company, FiscalYear $fiscalYear, array $entries, array $checks): array
+    {
+        $label = __('Obetalda fakturor vid årets slut är bokförda');
+
+        if ($company->accounting_method !== AccountingMethod::Kontantmetoden) {
+            return self::item('unpaid', $label, __('Gäller bara kontantmetoden. Med fakturametoden är fakturorna redan bokförda.'), self::NOT_APPLICABLE, null);
+        }
+
+        if (array_intersect([YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES], $entries) !== []) {
+            return self::item('unpaid', $label, __('Obetalda kund- och leverantörsfakturor är bokförda den sista dagen och återförs första dagen i nästa år.'), self::OK, null);
+        }
+
+        $confirm = __(self::CONFIRMABLE['unpaid']);
+
+        if (in_array('unpaid', $checks, true)) {
+            return self::item('unpaid', $label, __('Bekräftat att de obetalda fakturorna är bokförda för hand.'), self::OK, null, confirm: $confirm);
+        }
+
+        $unpaid = UnpaidInvoices::for($company, $fiscalYear, withRows: false);
+
+        return $unpaid['applies']
+            ? self::item('unpaid', $label, __('Med kontantmetoden ska alla fakturor som är obetalda den sista dagen bokföras. :count fakturor är obetalda. Bokför dem nedan.', ['count' => count($unpaid['customer']) + count($unpaid['supplier'])]), self::TODO, null, confirm: $confirm)
+            : self::item('unpaid', $label, __('Inga kund- eller leverantörsfakturor är obetalda den sista dagen.'), self::NOT_APPLICABLE, null);
+    }
+
+    /**
+     * Customer and supplier invoices in another currency open on the last day
+     * are valued at that day's rate (ADR-025; K2 13.5 and 17.8, K3 30.3).
+     * Blocks until the revaluation is booked, or a person confirms it was
+     * booked by hand (when Riksbanken has no rate, for instance).
+     *
+     * @param  array<mixed>  $entries  year-end entry types of the year
+     * @param  array<mixed>  $checks  confirmed checklist keys
+     * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string}
+     */
+    private static function currency(Company $company, FiscalYear $fiscalYear, array $entries, array $checks): array
     {
         $label = __('Valutafordringar och valutaskulder är omvärderade');
 
-        if (YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::CURRENCY_REVALUATION)->exists()) {
+        if (in_array(YearEndEntry::CURRENCY_REVALUATION, $entries, true)) {
             return self::item('currency', $label, __('Omvärderingen till balansdagens kurs är bokförd och återförs första dagen i nästa år.'), self::OK, null);
         }
 
+        $confirm = __(self::CONFIRMABLE['currency']);
+
+        if (in_array('currency', $checks, true)) {
+            return self::item('currency', $label, __('Bekräftat att omvärderingen är bokförd för hand.'), self::OK, null, confirm: $confirm);
+        }
+
         $revaluation = CurrencyRevaluation::for($company, $fiscalYear);
+        $unpaidFirst = $company->accounting_method === AccountingMethod::Kontantmetoden
+            && array_intersect([YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES], $entries) === []
+            && ! in_array('unpaid', $checks, true);
 
         return match (true) {
             ! $revaluation['applies'] => self::item('currency', $label, __('Inga kund- eller leverantörsfakturor i utländsk valuta är obetalda den sista dagen.'), self::NOT_APPLICABLE, null),
-            $revaluation['missing'] !== [] => self::item('currency', $label, __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand.', ['currencies' => implode(', ', $revaluation['missing'])]), self::WARN, null),
+            $unpaidFirst => self::item('currency', $label, __('Bokför först de obetalda fakturorna vid årets slut. Sedan värderas de i utländsk valuta till kursen den sista dagen.'), self::TODO, null, confirm: $confirm),
+            $revaluation['missing'] !== [] => self::item('currency', $label, __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand och bekräfta det här.', ['currencies' => implode(', ', $revaluation['missing'])]), self::TODO, null, confirm: $confirm),
             CurrencyRevaluation::rows($revaluation['lines']) === [] => self::item('currency', $label, __('Kursen den sista dagen ger ingen skillnad mot det bokförda.'), self::OK, null),
-            default => self::item('currency', $label, __(':count obetalda fakturor i utländsk valuta ska värderas till kursen den sista dagen. Bokför omvärderingen nedan.', ['count' => count($revaluation['lines'])]), self::WARN, null),
+            default => self::item('currency', $label, __(':count obetalda fakturor i utländsk valuta ska värderas till kursen den sista dagen. Bokför omvärderingen nedan.', ['count' => count($revaluation['lines'])]), self::TODO, null, confirm: $confirm),
         };
     }
 
-    /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string} */
-    private static function item(string $key, string $label, string $detail, string $status, ?string $route, bool $manual = false): array
+    /** @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string} */
+    private static function item(string $key, string $label, string $detail, string $status, ?string $route, bool $manual = false, ?string $confirm = null): array
     {
-        return ['key' => $key, 'label' => $label, 'detail' => $detail, 'status' => $status, 'manual' => $manual, 'route' => $route];
+        return ['key' => $key, 'label' => $label, 'detail' => $detail, 'status' => $status, 'manual' => $manual, 'route' => $route, 'confirm' => $confirm];
     }
 }

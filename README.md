@@ -79,7 +79,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Bokföring
 - **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag som kan fotograferas med mobilen. Kontosaldot syns direkt när du väljer konto och efter varje rad. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar (tillgången kan skapas direkt när inköpet bokförs), och inläsning av SIE4 i två steg med avstämning.
 - **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok, kontoanalys och verifikationslista per period och kostnadsställe, som PDF och CSV. Klicka på ett konto för att se dess huvudbok och vidare till verifikationen. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS och VIES-kontroll.
-- **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, omvärdering av obetalda kund- och leverantörsfakturor i utländsk valuta till balansdagens kurs, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
+- **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, obetalda fakturor bokförda vid årets slut med kontantmetoden, omvärdering av obetalda kund- och leverantörsfakturor i utländsk valuta till balansdagens kurs, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
 - **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 

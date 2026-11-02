@@ -11,13 +11,20 @@ När allt annat i året är bokfört återstår två bokslutsverifikationer: år
 
 Bokför först allt annat, sedan skatten och sist årets resultat.
 
-Har företaget obetalda fakturor i utländsk valuta den sista dagen kommer en verifikation till före skatten: omvärderingen till kursen den dagen.
+Före skatten kan två verifikationer till komma:
+
+- med kontantmetoden: de fakturor som är obetalda den sista dagen. Läs [Obetalda fakturor vid årets slut (kontantmetoden)](/manual/bokslut/kontantmetoden-vid-arets-slut).
+- har företaget obetalda fakturor i utländsk valuta den sista dagen: omvärderingen till kursen den dagen.
 
 ![Under Bokslut bokför du skatt och årets resultat.](/bilder/manual/bokslut/checklistan.webp)
 
 ## Omvärdering av fakturor i utländsk valuta
 
-Kund- och leverantörsfakturor i euro, dollar eller annan valuta som är obetalda den sista dagen i räkenskapsåret värderas till Riksbankens kurs den dagen. Steget visas bara när sådana fakturor finns, och bara med fakturametoden.
+Kund- och leverantörsfakturor i euro, dollar eller annan valuta som är obetalda den sista dagen i räkenskapsåret ska värderas till kursen den dagen (K2 punkt 13.5 och 17.8, K3 punkt 30.3). NONOX använder Riksbankens kurs. Steget visas bara när sådana fakturor finns.
+
+En faktura som är delvis betald eller delvis krediterad värderas för det som återstår.
+
+Med kontantmetoden bokför du först de obetalda fakturorna vid årets slut. Då hamnar de på 1510 och 2440 till fakturans kurs, och sedan värderas de här som med fakturametoden.
 
 ### Så här bokför du omvärderingen
 
@@ -28,10 +35,12 @@ Kund- och leverantörsfakturor i euro, dollar eller annan valuta som är obetald
 
 **I bokföringen:** en verifikation i serie A den sista dagen, med skillnaden på 1510 Kundfordringar och 2440 Leverantörsskulder mot 3960 (kursvinst) eller 7960 (kursförlust), och en omvänd verifikation den första dagen i nästa år. Återföringen gör att en betalning nästa år fortfarande räknas mot fakturans egen kurs.
 
-Saknar Riksbanken kurs för en valuta den dagen bokför du omvärderingen för hand med en vanlig verifikation.
+Saknar Riksbanken kurs för en valuta den dagen bokför du omvärderingen för hand med en vanlig verifikation, och en återföring första dagen i nästa år. Kryssa sedan i **Omvärderingen är bokförd för hand** vid punkten i [checklistan](/manual/bokslut/checklistan). Punkten stoppar bokslutet tills omvärderingen är bokförd eller bekräftad.
+
+Bankkonton i utländsk valuta finns inte i NONOX – alla bankkonton förs i kronor – så det finns inga banksaldon i valuta att omvärdera.
 
 > [!NOTE]
-> Att omvärderingen ska göras till Riksbankens mittkurs på årets sista dag och återföras på nästa års första dag är inte juridiskt kontrollerat i NONOX ännu. Stäm av med din redovisningskonsult.
+> Att fordringar och skulder i utländsk valuta ska värderas till balansdagens kurs är kontrollerat enligt en AI-utredning 2026-11-02; juristgranskning återstår. Att Riksbankens mittkurs duger som kurs, och att omvärderingen återförs på nästa års första dag, är inte juridiskt kontrollerat. Stäm av med din redovisningskonsult.
 
 ## Årets skatt
 
@@ -87,5 +96,6 @@ Inte här – skatten sparas en gång. Rätta verifikationen om beloppet blev fe
 ## Läs också
 
 - [Checklistan för bokslutet](/manual/bokslut/checklistan)
+- [Obetalda fakturor vid årets slut (kontantmetoden)](/manual/bokslut/kontantmetoden-vid-arets-slut)
 - [Stäng räkenskapsåret](/manual/bokslut/stang-aret)
 - [Inkomstdeklaration 2 och SRU-filer](/manual/bokslut/inkomstdeklaration)

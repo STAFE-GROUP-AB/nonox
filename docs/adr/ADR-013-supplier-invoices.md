@@ -60,5 +60,73 @@
   until then.
 - Invoices in other currencies (built in ADR-025).
 - Email-in of invoices and reading them automatically (optional module).
-- `TODO(legal-verify)`: under kontantmetoden, unpaid supplier invoices at the
-  end of the fiscal year must be booked as liabilities at bokslut.
+- Kontantmetoden at year-end: built 2026-11-02, see below.
+
+## Kontantmetoden at year-end (2026-11-02)
+
+Rule ("enligt AI-utredning 2026-11-02, juristgranskning återstår"):
+Bokföringslagen (1999:1078) 5 kap. 2 §: a company may wait with booking
+non-cash business events until they are paid, but "Vid räkenskapsårets
+utgång ska dock samtliga då obetalda fordringar och skulder bokföras."
+BFNAR 2006:1 punkt 4.2 c and 6.56–6.57 (kundfordringar at what was invoiced
+and not paid, including VAT). Sources read 2026-11-02:
+https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
+and https://www.bfn.se/wp-content/uploads/2020/06/bfnar06-1-grund.pdf.
+
+- **A closing step** on the closing page, "Obetalda fakturor vid årets slut"
+  (`YearEndClosing::bookUnpaidInvoices`, `UnpaidInvoices`, `OpenInvoices`).
+  It lists the customer and supplier invoices unpaid on the last day of the
+  fiscal year: the invoice total less payments (in kronor as settled, so at
+  the invoice's own rate) and credit invoices dated up to that day. A
+  payment after the last day does not count. A customer invoice credited in
+  part is unpaid for the rest.
+- **Booking.** One voucher per side, in series A, on the last day, with the
+  fiscal year as subject and source CLOSING, through `BookVoucher` and so
+  `PostVoucher`:
+  - customer invoices: 1510 debit the unpaid total, against the revenue
+    accounts, output VAT and öresavrundning as `InvoiceBooking::revenue`
+    books them under fakturametoden, each invoice's share as a payment of
+    the unpaid amount would book it under kontantmetoden (with the credit
+    invoices' lines added for a part credit);
+  - supplier invoices and credit notes: the costs (with cost centre and
+    project), input VAT and, for reverse charge, the output VAT, as
+    `SupplierInvoiceBooking::payment` books the unpaid amount under
+    kontantmetoden, against 2440.
+  Rows are summed per account (and dimension).
+- **Reversal.** Each voucher is reversed by a voucher with the opposite
+  signs on the first day of the next fiscal year, which must exist. The
+  payment in the next year is then booked as usual under kontantmetoden
+  (revenue or cost and VAT against the bank), so nothing is booked twice and
+  the next year's revenue, costs and VAT net to zero for these invoices.
+  This is the same technique as the year-end currency revaluation
+  (ADR-025). Booking the payment against 1510/2440 instead would need the
+  payment flow to know about the year-end entry; reversal keeps it
+  unchanged. `TODO(legal-verify)`: neither BFL nor BFNAR 2006:1 says how the
+  year-end entry is undone; confirm that reversal on the first day is an
+  acceptable method.
+- **VAT.** The VAT is booked on the usual VAT accounts (2611/2621/2631,
+  2641, and for reverse charge the 26xx pair) on the last day. The VAT
+  return is calculated from the ledger, so if the VAT period holding the last
+  day is not yet settled, the VAT on these invoices is in that return and the
+  reversal and payment cancel out in the next year; if it is already settled,
+  the VAT stays on the VAT accounts over the year end and is reported in the
+  period of the payment. The UI asks the user to book this step before the
+  VAT of the last period. The VAT report logic is unchanged.
+  `TODO(legal-verify)`: in which VAT period a company on kontantmetoden
+  reports the VAT on invoices unpaid at year-end (Mervärdesskattelag
+  2023:200, 7 kap.). Not verified.
+- **Order and once only.** After the last day of the year (so the payments
+  up to that day are in), once per year, before the currency revaluation and
+  the year's result. Kept as `year_end_entries` rows of type
+  `UNPAID_RECEIVABLES` (amount = the receivable booked) and `UNPAID_PAYABLES`
+  (amount = the liability booked), one per side that had anything, with the
+  voucher; the audit entry `closing.unpaid_invoices_booked` carries both
+  vouchers and both reversals.
+- **Checklist.** The point "Obetalda fakturor vid årets slut är bokförda"
+  blocks closing (TODO) while there are unpaid invoices and the step is not
+  booked; it is OK when booked, and not applicable under fakturametoden or
+  when nothing is unpaid. Like the currency point, it can be confirmed as
+  booked by hand (`closing_checks` key `unpaid`, with who and when, audited
+  as `closing.checked`), for a company that booked the entry manually.
+- **Not built.** The 3 MSEK turnover limit for kontantmetoden (BFL 5 kap.
+  2 §) is not checked.

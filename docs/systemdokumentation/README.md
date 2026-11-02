@@ -686,7 +686,7 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   skrivs till behandlingshistoriken. Fakturor i utländsk valuta kan inte tas
   med i betalfiler (de betalar kronor till bankgiro och plusgiro) och kan
   inte kvittas mot kreditnotor ännu. Orealiserade kursdifferenser på obetalda
-  fakturor vid bokslutet bokas inte automatiskt.
+  fakturor vid bokslutet bokförs i bokslutet (avsnitt 5a5).
 - Betalfiler: attesterade fakturor kan betalas med en fil till banken (ISO
   20022 pain.001.001.03, [ADR-014](../adr/ADR-014-payment-files.md)). Filen
   sparas som den skapades, med kontrollsumma, och kan inte ändras. Betalningen
@@ -915,12 +915,18 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   utkast i året, att alla momsperioder är bokförda, att varje bank- och
   kassakonto med saldo eller rörelse är avstämt utan skillnad den sista dagen,
   att avskrivningar och periodiseringar är bokförda till och med årets sista
-  månad, att årets skatt är bokförd (inte för enskild firma, handelsbolag och
+  månad, att obetalda fakturor är bokförda vid årets slut (kontantmetoden),
+  att fordringar och skulder i utländsk valuta är omvärderade, att årets
+  skatt är bokförd (inte för enskild firma, handelsbolag och
   kommanditbolag) och att årets resultat är bokat. Användaren bekräftar själv
   kassainventering, kundfordringar mot 1510, leverantörsskulder mot 2440,
   skattekontot mot 1630, löner och semesterskuld samt varulager; en punkt som
   inte gäller företaget bockas också av. Bockarna sparas i `closing_checks`
-  och kan tas bort så länge året är öppet.
+  (vem och när) och kan tas bort så länge året är öppet; varje bock och
+  borttagning skrivs till behandlingshistoriken. Punkterna för obetalda
+  fakturor och omvärdering kan också bekräftas som bokförda för hand
+  (samma tabell, nycklarna `unpaid` och `currency`), för det fall
+  verifikationen gjorts manuellt, till exempel när Riksbanken saknar kurs.
 - **Bokslutsverifikationer** bokförs den sista dagen i året i serie A.
   Skatten (8910 mot 2512) anges av användaren; noll sparas utan verifikation.
   Därefter bokas årets resultat efter skatt på 8999 mot 2099 (2019 för
@@ -932,19 +938,54 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   nästa år (som skapas vid behov), året får status stängt med tid och person,
   och bokföringen låses till och med årets sista dag. Det går inte att ångra;
   inget kan bokföras i ett stängt år.
-- **Omvärdering av valutafordringar och valutaskulder** (ADR-025, gäller
-  fakturametoden): kund- och leverantörsfakturor i utländsk valuta som är
-  obetalda den sista dagen (betalningar och krediteringar till och med den
-  dagen räknas av) värderas till Riksbankens kurs den dagen. Skillnaden mot
+- **Obetalda fakturor vid årets slut** (kontantmetoden, BFL 5 kap. 2 §,
+  [ADR-013](../adr/ADR-013-supplier-invoices.md); enligt AI-utredning
+  2026-11-02, juristgranskning återstår): med kontantmetoden bokförs
+  fakturor när de betalas, men alla kund- och leverantörsfakturor som är
+  obetalda den sista dagen bokförs den dagen. Obetalt är fakturans belopp
+  minus betalningar och krediteringar till och med den dagen; en betalning
+  efter den sista dagen räknas inte av. Kundfakturorna bokförs i en
+  verifikation i serie A: 1510 debet mot intäktskonton, utgående moms och
+  öresavrundning kredit, fördelade som en betalning med kontantmetoden
+  (`InvoiceBooking`). Leverantörsfakturorna bokförs i en egen verifikation:
+  kostnadskonton (med kostnadsställe och projekt) och ingående moms debet
+  mot 2440 kredit (`SupplierInvoiceBooking`). En delvis krediterad faktura
+  bokförs med det som återstår. Fakturor i utländsk valuta bokförs till
+  fakturans kurs och omvärderas sedan (nästa punkt). Varje verifikation
+  återförs med en omvänd verifikation första dagen i nästa år (som måste
+  finnas), så att betalningen sedan bokförs som vanligt enligt
+  kontantmetoden och intäkt, kostnad och moms bokförs en gång. Steget görs
+  efter årets sista dag, en gång, före omvärderingen och årets resultat;
+  sparas i `year_end_entries` (typ `UNPAID_RECEIVABLES` med fordran och
+  `UNPAID_PAYABLES` med skulden) och i behandlingshistoriken
+  (`closing.unpaid_invoices_booked` med verifikationerna och återföringarna).
+  Checklistan blockerar stängningen så länge det finns obetalda fakturor och
+  steget inte är bokfört eller bekräftat som bokfört för hand; punkten
+  gäller inte med fakturametoden eller utan obetalda fakturor. Momsen bokförs
+  på de vanliga momskontona den sista dagen och kommer därför med i
+  momsdeklarationen för perioden med årets sista dag om den inte redan är
+  bokförd; annars ligger den kvar på momskontona och återförs första dagen
+  i nästa år, så att den redovisas vid betalningen. Vilken period momsen ska
+  redovisas i är inte verifierat (se Öppna frågor).
+- **Omvärdering av valutafordringar och valutaskulder** (ADR-025; K2 punkt
+  13.5 och 17.8, K3 punkt 30.3; enligt AI-utredning 2026-11-02,
+  juristgranskning återstår): kund- och leverantörsfakturor i utländsk
+  valuta som är obetalda den sista dagen (betalningar och krediteringar till
+  och med den dagen räknas av; en delvis krediterad faktura värderas för det
+  som återstår) värderas till Riksbankens kurs den dagen. Med kontantmetoden
+  görs det efter att de obetalda fakturorna bokförts (föregående punkt). Skillnaden mot
   de bokförda kronorna bokförs den sista dagen i serie A: 1510 och 2440 mot
   3960 (vinst) och 7960 (förlust), och återförs med en omvänd verifikation
   första dagen i nästa år (som måste finnas), så att en senare betalning
   fortfarande räknas mot fakturans egen kurs. Bokförs en gång per år, före
   årets resultat, efter årets sista dag; sparas i `year_end_entries` (typ
   `CURRENCY_REVALUATION`, beloppet är nettovinsten). Checklistan har en
-  punkt för det: klar när den är bokförd eller kursen inte ger någon
-  skillnad, gäller inte utan obetalda fakturor i valuta eller med
-  kontantmetoden. Saknar Riksbanken kurs bokförs omvärderingen för hand.
+  punkt för det som blockerar stängningen: klar när omvärderingen är bokförd,
+  när kursen inte ger någon skillnad eller när någon bekräftat att den är
+  bokförd för hand; gäller inte utan obetalda fakturor i valuta. Saknar
+  Riksbanken kurs bokförs omvärderingen för hand och bekräftas i
+  checklistan. Bankkonton i utländsk valuta finns inte i systemet (alla
+  bankkonton förs i kronor), så det finns inga sådana saldon att omvärdera.
 - **Resultatdisposition** bokförs i nästa år på datum för årsstämman: årets
   resultat flyttas från 2099 till 2098, med beslutad utdelning på 2898. För
   enskild firma, handelsbolag och kommanditbolag flyttas resultatet från 2019
@@ -2128,8 +2169,11 @@ Personalliggare och Avtal när de är påslagna.
   handelsbolag.
 - Fakturans obligatoriska innehåll enligt mervärdesskattelagen; omvänd
   skattskyldighet, EU- och exportfakturor är inte byggda ännu.
-- Kontantmetoden: obetalda kundfakturor vid räkenskapsårets slut ska bokföras
-  som fordringar, och obetalda leverantörsfakturor som skulder, vid bokslutet.
+- Kontantmetoden vid årets slut (byggt, avsnitt 5a5): att återföring första
+  dagen i nästa år är en godtagbar metod för de obetalda fakturorna (BFL och
+  BFNAR 2006:1 säger vad som ska bokföras, inte hur det tas bort), och i
+  vilken momsperiod momsen på dem redovisas (Mervärdesskattelag 2023:200,
+  7 kap.).
 - Import av varor från länder utanför EU (ruta 50, 60–62) är inte byggd ännu;
   vilket datum som styr växelkursen för varor från andra EU-länder ska
   bekräftas.
@@ -2137,16 +2181,18 @@ Personalliggare och Avtal när de är påslagna.
   fakturadatumet är rätt bokföringskurs (ML 8 kap. 21 § nämner ECB:s kurs
   för momsens beskattningsunderlag); att realiserade kursdifferenser på
   leverantörsskulder hör hemma på 3960/7960; hur orealiserade
-  kursdifferenser på obetalda skulder ska värderas vid bokslutet (K2 punkt
-  10.7, K3 kap. 30) och om det ska göras även enligt kontantmetoden.
+  kursdifferenser på obetalda skulder ska värderas vid bokslutet (byggt
+  enligt K2 punkt 13.5 och 17.8 och K3 punkt 30.3, även med kontantmetoden;
+  juristgranskning återstår).
 - Kundfakturor i utländsk valuta: att Riksbankens mittkurs på fakturadatumet
   duger som kurs för momsens beskattningsunderlag (ML 8 kap. 21 §; rådets
   direktiv 2006/112/EG art. 91); vilken paragraf i ML 17 kap. som motsvarar
   direktivets art. 230 om att momsbeloppet ska anges i kronor på en faktura i
   annan valuta, och om även summan i kronor krävs; att realiserade
-  kursdifferenser på kundfordringar hör hemma på 3960/7960; omvärderingen
-  till balansdagens kurs (Riksbankens mittkurs på årets sista dag, med
-  återföring första dagen i nästa år) enligt K2 och K3; och OSS-försäljning i
+  kursdifferenser på kundfordringar hör hemma på 3960/7960; att Riksbankens
+  mittkurs på årets sista dag duger som balansdagens kurs (K2:s kommentar
+  nämner den, men normalt bankens köpkurs för fordringar och säljkurs för
+  skulder), och återföringen första dagen i nästa år; och OSS-försäljning i
   annan valuta (OSS-deklarationen görs i euro).
 - Inlästa verifikationer bokförs med en behandlingshistorikpost per inläsning,
   inte en per verifikation. Varje verifikations ursprung finns i tabellen

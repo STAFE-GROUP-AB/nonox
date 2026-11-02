@@ -14,7 +14,9 @@ use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Closing\CurrencyRevaluation;
+use App\Domain\Closing\UnpaidInvoices;
 use App\Domain\Closing\YearResult;
+use App\Domain\Company\AccountingMethod;
 use App\Domain\Payables\SupplierInvoiceBooking;
 use App\Models\Account;
 use App\Models\ClosingCheck;
@@ -53,7 +55,7 @@ class YearEndClosing
         $this->authorize($user, $company);
         $this->ensureOpen($fiscalYear);
 
-        if (! array_key_exists($key, ClosingChecklist::MANUAL)) {
+        if (! array_key_exists($key, ClosingChecklist::MANUAL) && ! array_key_exists($key, ClosingChecklist::CONFIRMABLE)) {
             throw ValidationException::withMessages(['key' => __('Okänd punkt i checklistan.')]);
         }
 
@@ -119,6 +121,77 @@ class YearEndClosing
     }
 
     /**
+     * Under kontantmetoden, books the customer and supplier invoices unpaid
+     * on the last day of the year (UnpaidInvoices, BFL 5 kap. 2 §): one
+     * voucher per side on the last day, 1510 against revenue and output VAT
+     * and costs and input VAT against 2440, each reversed on the first day of
+     * the next year, which must exist. Booked once, before the currency
+     * revaluation and the result.
+     *
+     * @return list<YearEndEntry>
+     */
+    public function bookUnpaidInvoices(User $user, FiscalYear $fiscalYear): array
+    {
+        $company = $this->companyOf($fiscalYear);
+        $this->authorize($user, $company);
+        $this->ensureOpen($fiscalYear);
+
+        if ($company->accounting_method !== AccountingMethod::Kontantmetoden) {
+            throw ValidationException::withMessages(['unpaid' => __('Bara företag med kontantmetoden bokför obetalda fakturor vid årets slut.')]);
+        }
+
+        if ($fiscalYear->end_date->isAfter(CarbonImmutable::today())) {
+            throw ValidationException::withMessages(['unpaid' => __('De obetalda fakturorna bokförs efter årets sista dag, när det är klart vad som betalades i tid.')]);
+        }
+
+        return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear): array {
+            $next = FiscalYear::query()->whereDate('start_date', $fiscalYear->end_date->addDay()->toDateString())->first()
+                ?? throw ValidationException::withMessages(['unpaid' => __('Lägg upp nästa räkenskapsår först. Bokföringen av de obetalda fakturorna återförs på dess första dag.')]);
+
+            return DB::transaction(function () use ($user, $company, $fiscalYear, $next): array {
+                FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
+                $types = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->pluck('type')->all();
+
+                if (array_intersect([YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES], $types) !== []) {
+                    throw ValidationException::withMessages(['unpaid' => __('De obetalda fakturorna är redan bokförda. Rätta verifikationen om den blev fel.')]);
+                }
+
+                if (in_array(YearEndEntry::RESULT, $types, true)) {
+                    throw ValidationException::withMessages(['unpaid' => __('Årets resultat är redan bokat. Bokför de obetalda fakturorna före resultatet.')]);
+                }
+
+                $unpaid = UnpaidInvoices::for($company, $fiscalYear);
+
+                if (! $unpaid['applies']) {
+                    throw ValidationException::withMessages(['unpaid' => __('Inga kund- eller leverantörsfakturor är obetalda den sista dagen.')]);
+                }
+
+                $entries = [];
+                $audit = [];
+                $sides = [
+                    [YearEndEntry::UNPAID_RECEIVABLES, $unpaid['customer'], $unpaid['customerRows'], __('Obetalda kundfakturor vid årets slut :year', ['year' => $fiscalYear->label()]), __('Återföring av obetalda kundfakturor vid årets slut :year', ['year' => $fiscalYear->label()])],
+                    [YearEndEntry::UNPAID_PAYABLES, $unpaid['supplier'], $unpaid['supplierRows'], __('Obetalda leverantörsfakturor vid årets slut :year', ['year' => $fiscalYear->label()]), __('Återföring av obetalda leverantörsfakturor vid årets slut :year', ['year' => $fiscalYear->label()])],
+                ];
+
+                foreach ($sides as [$type, $invoices, $rows, $description, $reversalDescription]) {
+                    if ($rows === []) {
+                        continue;
+                    }
+
+                    $voucher = $this->book->rows($user, $company, $fiscalYear->end_date, $description, self::SERIES, $rows, VoucherSource::Closing, $fiscalYear);
+                    $reversal = $this->book->rows($user, $company, $next->start_date, $reversalDescription, self::SERIES, array_map(fn (array $row): array => [...$row, 'amount' => -$row['amount']], $rows), VoucherSource::Closing, $fiscalYear);
+                    $entries[] = YearEndEntry::create(['fiscal_year_id' => $fiscalYear->id, 'type' => $type, 'amount_ore' => UnpaidInvoices::total($invoices), 'voucher_id' => $voucher->id, 'created_by' => $user->id]);
+                    $audit[$type] = ['invoices' => count($invoices), 'amount_ore' => UnpaidInvoices::total($invoices), 'voucher' => $voucher->reference(), 'reversal' => $reversal->reference()];
+                }
+
+                Audit::record('closing.unpaid_invoices_booked', $fiscalYear, $audit, $company, $user);
+
+                return $entries;
+            });
+        });
+    }
+
+    /**
      * Values the customer and supplier invoices in another currency that are
      * open on the last day at Riksbanken's rate that day (CurrencyRevaluation,
      * ADR-025): one voucher on the last day with the change of 1510 and 2440
@@ -136,6 +209,14 @@ class YearEndClosing
         }
 
         return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear): YearEndEntry {
+            $unpaidBooked = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->whereIn('type', [YearEndEntry::UNPAID_RECEIVABLES, YearEndEntry::UNPAID_PAYABLES])->exists()
+                || ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', 'unpaid')->exists();
+
+            // Under kontantmetoden the invoices reach 1510 and 2440 only through the closing step for unpaid invoices (or by hand).
+            if ($company->accounting_method === AccountingMethod::Kontantmetoden && ! $unpaidBooked) {
+                throw ValidationException::withMessages(['revaluation' => __('Bokför först de obetalda fakturorna vid årets slut. Sedan kan de omvärderas.')]);
+            }
+
             $revaluation = CurrencyRevaluation::for($company, $fiscalYear);
 
             if ($revaluation['missing'] !== []) {
