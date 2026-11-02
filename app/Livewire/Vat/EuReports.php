@@ -42,6 +42,10 @@ class EuReports extends Component
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'vat:prepare'), 403);
 
+        // The period the reports are for, so the select shows the period that is calculated, not its first option.
+        $this->period = $this->selectedPeriod();
+        $this->ossQuarter = $this->selectedOssQuarter();
+
         $this->contactName = $this->user()->name;
         $this->phone = (string) $this->company()->phone;
         $this->email = $this->user()->email;

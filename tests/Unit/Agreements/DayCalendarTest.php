@@ -58,3 +58,12 @@ it('lists a year\'s calendar deterministically', function () {
         ->and(collect($first)->firstWhere('date', '2026-06-19')['names'])->toBe(['MIDSOMMARAFTON'])
         ->and(collect($first)->firstWhere('date', '2026-06-19')['spans'][0]['type'])->toBe('LORDAG_LIK');
 });
+
+it('keeps wall-clock times on the days summer time starts and ends', function (string $date) {
+    $types = ['SONDAG' => ['name' => 'Söndag', 'days' => [['day' => 'SUNDAY', 'from' => '06:00', 'to' => '22:00']]]];
+
+    $span = DayCalendar::spansOn($types, CarbonImmutable::parse($date, 'Europe/Stockholm'))[0];
+
+    expect($span['start']->format('Y-m-d H:i'))->toBe("{$date} 06:00")
+        ->and($span['end']->format('Y-m-d H:i'))->toBe("{$date} 22:00");
+})->with(['2026-03-29', '2026-10-25']);

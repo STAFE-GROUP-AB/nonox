@@ -236,6 +236,11 @@ final class DayCalendar
             throw new LogicException("Bad time {$time} in the agreement data.");
         }
 
-        return $day->startOfDay()->addHours((int) $parts[1])->addMinutes((int) $parts[2]);
+        // The wall-clock time that day: adding hours to midnight would count elapsed time and be an hour off on the days summer time starts or ends.
+        if ($parts[1] === '24') {
+            return $day->startOfDay()->addDay();
+        }
+
+        return $day->setTime((int) $parts[1], (int) $parts[2]);
     }
 }

@@ -182,3 +182,11 @@ it('shows both reports and downloads the file', function () {
         ->call('download')
         ->assertFileDownloaded('periodisksammanstallning'.preg_replace('/\D/', '', (string) $this->company->org_number).'2603.txt');
 });
+
+it('selects the period the reports are calculated for, so the select never shows another one', function () {
+    Livewire::test(EuReports::class)
+        ->assertSet('period', '2026-03')
+        ->assertSet('ossQuarter', '2026-K1')
+        ->assertSeeHtml('<option value="2026-03" selected')
+        ->assertSeeHtml('<option value="2026-K1" selected');
+});
