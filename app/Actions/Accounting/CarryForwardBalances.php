@@ -101,9 +101,11 @@ class CarryForwardBalances
             return $next;
         }
 
+        [, $end] = FiscalYearRules::nextYear($start, FiscalYearRules::requiresCalendarYear($company->legal_form));
+
         $next = FiscalYear::create([
             'start_date' => $start,
-            'end_date' => $start->addMonths(FiscalYearRules::NORMAL_MONTHS)->subDay(),
+            'end_date' => $end,
             'status' => FiscalYearStatus::Open,
         ]);
 

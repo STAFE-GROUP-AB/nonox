@@ -14,8 +14,9 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Creates the twelve-month fiscal year that follows the latest one, so the
- * years never overlap or leave a gap.
+ * Creates the fiscal year that follows the latest one, so the years never
+ * overlap or leave a gap. Normally twelve months; a company that must use
+ * the calendar year moves to it (FiscalYearRules::nextYear).
  */
 class CreateNextFiscalYear
 {
@@ -32,8 +33,7 @@ class CreateNextFiscalYear
                 ]);
             }
 
-            $start = $latest->end_date->addDay();
-            $end = $start->addMonths(FiscalYearRules::NORMAL_MONTHS)->subDay();
+            [$start, $end] = FiscalYearRules::nextYear($latest->end_date->addDay(), FiscalYearRules::requiresCalendarYear($company->legal_form));
 
             $fiscalYear = FiscalYear::create(['start_date' => $start, 'end_date' => $end]);
 

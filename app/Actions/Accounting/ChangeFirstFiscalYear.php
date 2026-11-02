@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Accounting;
 
 use App\Domain\Accounting\FiscalYearRules;
+use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Audit\Audit;
@@ -36,7 +37,8 @@ class ChangeFirstFiscalYear
                 ]);
             }
 
-            $problem = FiscalYearRules::problem($start, $end, mayDeviate: true);
+            $company = Company::query()->findOrFail($fiscalYear->company_id);
+            $problem = FiscalYearRules::problem($start, $end, mayDeviate: true, calendarYear: FiscalYearRules::requiresCalendarYear($company->legal_form));
 
             if ($problem !== null) {
                 throw ValidationException::withMessages(['start_date' => $problem]);

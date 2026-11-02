@@ -78,7 +78,7 @@ final class SieImportAnalyser
             }
 
             $this->checkFile($reader, $company, $sha256, $ignoreImportId);
-            $fiscalYear = $this->planFiscalYear();
+            $fiscalYear = $this->planFiscalYear($company);
             $this->planAccounts();
             $this->planDimensions();
             $this->planSeries($fiscalYear);
@@ -330,7 +330,7 @@ final class SieImportAnalyser
         }
     }
 
-    private function planFiscalYear(): ?FiscalYear
+    private function planFiscalYear(Company $company): ?FiscalYear
     {
         $start = $this->plan->start;
         $end = $this->plan->end;
@@ -378,12 +378,18 @@ final class SieImportAnalyser
             return null;
         }
 
+        // Historical years are read in as they were kept: no minimum length
+        // (BFL 3 kap. 3 §), and a sole trader's broken year is only flagged.
         $problem = FiscalYearRules::problem($start, $end, mayDeviate: true);
 
         if ($problem !== null) {
             $this->plan->block($problem);
 
             return null;
+        }
+
+        if (FiscalYearRules::requiresCalendarYear($company->legal_form) && ! FiscalYearRules::isCalendarAligned($end)) {
+            $this->plan->warn(__('Räkenskapsåret :label slutar inte den 31 december. En enskild firma ska ha kalenderår som räkenskapsår. Året läses in som det är, men kontrollera det med din redovisningskonsult.', ['label' => $label]));
         }
 
         $this->plan->createFiscalYear = true;

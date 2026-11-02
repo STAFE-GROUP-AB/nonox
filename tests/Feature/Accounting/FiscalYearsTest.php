@@ -56,7 +56,7 @@ it('explains why a first fiscal year is not allowed', function (string $start, s
     expect(fn () => app(ChangeFirstFiscalYear::class)($this->owner, FiscalYear::query()->sole(), $start, $end))
         ->toThrow(ValidationException::class, $message);
 })->with([
-    'longer than 18 months' => ['2025-01-01', '2026-12-31', 'mellan 6 och 18 månader'],
+    'longer than 18 months' => ['2025-01-01', '2026-12-31', 'högst 18 månader'],
     'mid-month start' => ['2025-09-15', '2026-12-31', 'första dagen i en månad'],
     'not a date' => ['igår', '2026-12-31', 'ÅÅÅÅ-MM-DD'],
 ]);

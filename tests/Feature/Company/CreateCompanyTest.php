@@ -25,6 +25,7 @@ function validCompanyInput(array $overrides = []): array
         'vat_registered' => true,
         'vat_period' => 'QUARTERLY',
         'reporting_framework' => 'K2',
+        'framework_confirmed' => true,
         'f_skatt' => true,
         'employer_registered' => false,
         ...$overrides,
@@ -113,6 +114,7 @@ it('creates a company from the form and opens the overview', function () {
     Livewire::test(CreateCompanyForm::class)
         ->set('name', 'Formbolaget AB')
         ->set('org_number', CompanyFactory::organisationNumber()->formatted())
+        ->set('framework_confirmed', true)
         ->call('create')
         ->assertHasNoErrors()
         ->assertRedirect(route('dashboard'));
@@ -134,7 +136,7 @@ it('shows a Swedish error for an invalid organisation number in the form', funct
 it('requires the terms and data processing agreement on the hosted service and records who accepted which version', function () {
     config(['app.landing.hosted' => true]);
     $user = User::factory()->create();
-    $input = ['name' => 'Värdbolaget AB', 'org_number' => '556334-3689', 'legal_form' => 'AB', 'fiscal_year_start_month' => 1, 'accounting_method' => 'FAKTURAMETODEN', 'vat_registered' => true, 'vat_period' => 'QUARTERLY', 'reporting_framework' => 'K2', 'f_skatt' => true, 'employer_registered' => false];
+    $input = ['name' => 'Värdbolaget AB', 'org_number' => '556334-3689', 'legal_form' => 'AB', 'fiscal_year_start_month' => 1, 'accounting_method' => 'FAKTURAMETODEN', 'vat_registered' => true, 'vat_period' => 'QUARTERLY', 'reporting_framework' => 'K2', 'framework_confirmed' => true, 'f_skatt' => true, 'employer_registered' => false];
 
     expect(fn () => app(CreateCompany::class)->create($user, $input))->toThrow(ValidationException::class);
 

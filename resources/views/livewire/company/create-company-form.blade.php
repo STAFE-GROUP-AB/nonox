@@ -18,7 +18,7 @@
 
             <div>
                 <x-label for="legal_form" value="{{ __('Företagsform') }}" />
-                <select id="legal_form" class="{{ $select }}" wire:model="legal_form">
+                <select id="legal_form" class="{{ $select }}" wire:model.live="legal_form">
                     @foreach($legalForms as $form)
                         <option value="{{ $form->value }}">{{ $form->label() }}</option>
                     @endforeach
@@ -71,11 +71,14 @@
         <div class="grid gap-6 sm:grid-cols-2">
             <div>
                 <x-label for="fiscal_year_start_month" value="{{ __('Räkenskapsåret börjar i') }}" />
-                <select id="fiscal_year_start_month" class="{{ $select }}" wire:model="fiscal_year_start_month">
+                <select id="fiscal_year_start_month" class="{{ $select }}" wire:model.live="fiscal_year_start_month" @if($calendarYearOnly) aria-describedby="fiscal_year_calendar" @endif>
                     @foreach($months as $number => $month)
                         <option value="{{ $number }}">{{ $month }}</option>
                     @endforeach
                 </select>
+                @if($calendarYearOnly)
+                    <p id="fiscal_year_calendar" class="mt-2 text-sm text-gray-600">{{ __('En enskild firma har alltid kalenderår som räkenskapsår.') }}</p>
+                @endif
                 <x-input-error for="fiscal_year_start_month" class="mt-2" />
             </div>
 
@@ -89,6 +92,17 @@
                 <x-input-error for="accounting_method" class="mt-2" />
             </div>
         </div>
+
+        @if($askPartners)
+            <div class="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <p>{{ __('Ett handels- eller kommanditbolag där en fysisk person beskattas för hela eller en del av bolagets inkomst ska ha kalenderår som räkenskapsår.') }}</p>
+                <label class="mt-3 flex items-start gap-3">
+                    <x-checkbox wire:model="calendar_year_exempt" class="mt-0.5" />
+                    <span>{{ __('Ingen fysisk person beskattas för någon del av bolagets inkomst.') }}</span>
+                </label>
+                <x-input-error for="calendar_year_exempt" class="mt-2" />
+            </div>
+        @endif
 
         <label class="flex items-center gap-3">
             <x-checkbox wire:model.live="vat_registered" />
@@ -109,12 +123,25 @@
 
         <div>
             <x-label for="reporting_framework" value="{{ __('Regelverk för årsbokslut') }}" />
-            <select id="reporting_framework" class="{{ $select }}" wire:model="reporting_framework">
+            <select id="reporting_framework" class="{{ $select }}" wire:model.live="reporting_framework">
                 @foreach($frameworks as $framework)
                     <option value="{{ $framework->value }}">{{ $framework->label() }}</option>
                 @endforeach
             </select>
             <x-input-error for="reporting_framework" class="mt-2" />
+
+            @if($frameworkRefusal)
+                <p class="mt-2 text-sm text-red-700">{{ $frameworkRefusal }}</p>
+            @elseif($frameworkConditions)
+                <div class="mt-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                    <p>{{ $frameworkConditions }}</p>
+                    <label class="mt-3 flex items-start gap-3">
+                        <x-checkbox wire:model="framework_confirmed" class="mt-0.5" />
+                        <span>{{ __('Företaget uppfyller villkoren. Är du osäker, välj K3 eller fråga din redovisningskonsult.') }}</span>
+                    </label>
+                    <x-input-error for="framework_confirmed" class="mt-2" />
+                </div>
+            @endif
         </div>
 
         <div class="space-y-3">

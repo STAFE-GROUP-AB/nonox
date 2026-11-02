@@ -2,7 +2,7 @@
 beskrivning: Räkenskapsåren i NONOX – ett kortare eller längre första år, nästa år, balanser som förs över vid årsskiftet och SIE-fil per år.
 ordning: 120
 rutter: [accounting.fiscalYears]
-sokord: [räkenskapsår, bokföringsår, brutet räkenskapsår, första räkenskapsåret, förlängt räkenskapsår, årsskifte, nytt år, ingående balans]
+sokord: [räkenskapsår, bokföringsår, brutet räkenskapsår, första räkenskapsåret, förlängt räkenskapsår, förkortat räkenskapsår, kalenderår, enskild firma, årsskifte, nytt år, ingående balans]
 ---
 
 # Räkenskapsår
@@ -31,11 +31,12 @@ Det första året skapas när företaget skapas, utifrån den månad räkenskaps
 Reglerna i NONOX:
 
 - Året ska börja den första dagen i en månad och sluta den sista dagen i en månad.
-- Det får vara mellan 6 och 18 månader långt.
+- Det får vara högst 18 månader långt. Det finns ingen nedre gräns: ett första år kan vara en enda månad.
+- En enskild firma ska ha kalenderår. Dess första år ska därför sluta den 31 december, men kan börja i vilken månad som helst.
 - Det går bara så länge företaget har ett enda räkenskapsår och det är öppet. **Ändra datum** syns bara då.
 
 > [!IMPORTANT]
-> Ändra datumen innan du börjar bokföra, så att inga verifikationer hamnar utanför året. Den nedre gränsen på 6 månader är ännu inte juridiskt kontrollerad av NONOX – bokföringslagen sätter gränser för hur långt ett första räkenskapsår får vara. Fråga din redovisningskonsult om ditt första år blir kortare än ett halvår.
+> Ändra datumen innan du börjar bokföra, så att inga verifikationer hamnar utanför året. Reglerna följer bokföringslagen 3 kap.: när bokföringsskyldigheten börjar eller räkenskapsåret läggs om får året vara kortare än tolv månader eller förlängas till högst arton. En jurist har ännu inte granskat hur NONOX tillämpar reglerna.
 
 ## Så här skapar du nästa räkenskapsår
 
@@ -43,6 +44,8 @@ Reglerna i NONOX:
 2. Välj **Skapa nästa räkenskapsår**.
 
 Det nya året börjar dagen efter att det senaste slutar och är tolv månader. Åren kan därför aldrig överlappa eller lämna ett glapp. Du behöver ett nytt år innan du kan bokföra något med ett datum efter det gamla årets slut.
+
+En enskild firma som har brutet räkenskapsår sedan tidigare får en varning på sidan. De år som redan finns ändras inte. Nästa år som skapas slutar den 31 december, så att firman går över till kalenderår. Året efter det är ett helt kalenderår.
 
 ## Vid årsskiftet: för över balanserna
 
@@ -70,7 +73,10 @@ Alla som arbetar i bokföringen ser räkenskapsåren. Ägare, administratörer o
 ## Vanliga frågor
 
 **Mitt företag har brutet räkenskapsår, till exempel maj–april.**
-Det fungerar. Åren följer den månad räkenskapsåret börjar, och etiketten blir till exempel "2026/2027".
+Det fungerar för aktiebolag, ekonomiska föreningar och stiftelser, och för handels- och kommanditbolag där ingen fysisk person beskattas för bolagets inkomst. Åren följer den månad räkenskapsåret börjar, och etiketten blir till exempel "2026/2027". En enskild firma ska ha kalenderår.
+
+**Jag läser in en SIE-fil med ett kort räkenskapsår.**
+Det går bra. NONOX läser in år av alla längder upp till 18 månader. Är företaget en enskild firma och året i filen slutar en annan dag än den 31 december läses året in som det är, med en varning i granskningen.
 
 **Kan jag ta bort ett räkenskapsår?**
 Nej. Ett år med bokföring ska sparas, och NONOX har ingen funktion för att ta bort ett år.

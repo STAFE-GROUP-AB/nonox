@@ -487,3 +487,35 @@ it('offers to create the company named in the file when the user has none with t
         ->assertSet('org_number', '556334-3689')
         ->assertSet('name', 'Exempelbolaget i Malmö AB');
 });
+
+it('reads in a short fiscal year: the law sets no minimum length (BFL 3 kap. 3 §)', function () {
+    $short = str_replace('#RAR 0 20260101 20261231', '#RAR 0 20251101 20251231', sieImportFile([
+        sieImportVoucher('A', 1, '20251110', ['#TRANS 1930 {} 100.00', '#TRANS 3001 {} -100.00']),
+    ]));
+
+    $import = analyseSie($this->owner, $this->company, $short);
+
+    expect($import->blockers())->toBe([])
+        ->and($import->report['fiscal_year'])->toMatchArray(['create' => true]);
+
+    app(ConfirmSieImport::class)($this->owner, $import);
+
+    expect($import->fresh()->status)->toBe(SieImportStatus::Completed)
+        ->and(FiscalYear::query()->whereDate('start_date', '2025-11-01')->sole()->end_date->toDateString())->toBe('2025-12-31');
+});
+
+it('reads in a sole trader\'s broken year as it was kept, with a warning', function () {
+    $this->company->forceFill(['legal_form' => 'EF', 'reporting_framework' => 'K1'])->save();
+
+    $calendar = str_replace('#RAR 0 20260101 20261231', '#RAR 0 20250501 20251231', sieImportFile([]));
+    $import = analyseSie($this->owner, $this->company, $calendar);
+
+    expect($import->blockers())->toBe([])
+        ->and(implode(' ', $import->report['warnings']))->not->toContain('slutar inte den 31 december');
+
+    $broken = str_replace('#RAR 0 20260101 20261231', '#RAR 0 20270101 20270630', sieImportFile([]));
+    $import = analyseSie($this->owner, $this->company, $broken);
+
+    expect($import->blockers())->toBe([])
+        ->and(implode(' ', $import->report['warnings']))->toContain('slutar inte den 31 december');
+});

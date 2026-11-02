@@ -26,7 +26,7 @@
 
             <div class="field">
                 <label for="legal_form">Vilken sorts företag är det?</label>
-                <select id="legal_form" wire:model="legal_form">
+                <select id="legal_form" wire:model.live="legal_form">
                     @foreach($legalForms as $form)
                         <option value="{{ $form->value }}">{{ $form->label() }}</option>
                     @endforeach
@@ -46,12 +46,44 @@
 
             <div class="field">
                 <label for="fiscal_year_start_month">När börjar räkenskapsåret?</label>
-                <select id="fiscal_year_start_month" wire:model="fiscal_year_start_month">
+                <select id="fiscal_year_start_month" wire:model.live="fiscal_year_start_month">
                     @foreach($months as $number => $month)
                         <option value="{{ $number }}">1 {{ $month }}</option>
                     @endforeach
                 </select>
-                <span class="hint">För de flesta företag är det 1 januari.</span>
+                @if($calendarYearOnly)
+                    <span class="hint">En enskild firma har alltid kalenderår, alltså 1 januari.</span>
+                @else
+                    <span class="hint">För de flesta företag är det 1 januari.</span>
+                @endif
+                @error('fiscal_year_start_month') <div class="error" role="alert">{{ $message }}</div> @enderror
+            </div>
+
+            @if($askPartners)
+                <div class="field">
+                    <span class="hint">Ett handels- eller kommanditbolag där en fysisk person beskattas för hela eller en del av bolagets inkomst ska ha kalenderår som räkenskapsår.</span>
+                    <label class="choice"><input type="checkbox" wire:model="calendar_year_exempt"> Ingen fysisk person beskattas för någon del av bolagets inkomst.</label>
+                    @error('calendar_year_exempt') <div class="error" role="alert">{{ $message }}</div> @enderror
+                </div>
+            @endif
+
+            <div class="field">
+                <label for="reporting_framework">Vilket regelverk följer bokslutet?</label>
+                <select id="reporting_framework" wire:model.live="reporting_framework">
+                    @foreach($frameworks as $framework)
+                        <option value="{{ $framework->value }}">{{ $framework->label() }}</option>
+                    @endforeach
+                </select>
+                @if($frameworkRefusal)
+                    <div class="error" role="alert">{{ $frameworkRefusal }}</div>
+                @else
+                    @if($frameworkConditions)
+                        <span class="hint">{{ $frameworkConditions }}</span>
+                        <label class="choice"><input type="checkbox" wire:model="framework_confirmed"> Företaget uppfyller villkoren. Är du osäker, välj K3 eller fråga din redovisningskonsult.</label>
+                    @endif
+                    @error('reporting_framework') <div class="error" role="alert">{{ $message }}</div> @enderror
+                @endif
+                @error('framework_confirmed') <div class="error" role="alert">{{ $message }}</div> @enderror
             </div>
 
             <div class="actions">

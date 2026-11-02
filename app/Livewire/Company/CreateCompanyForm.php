@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Company;
 
 use App\Actions\Company\CreateCompany;
+use App\Domain\Accounting\FiscalYearRules;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
+use App\Domain\Company\ReportingFrameworkRules;
 use App\Domain\Company\VatPeriod;
 use App\Livewire\Concerns\LooksUpCompanies;
 use App\Models\Company;
@@ -52,6 +54,26 @@ class CreateCompanyForm extends Component implements SpansCompanies
 
     public bool $accept_agreement = false;
 
+    public bool $framework_confirmed = false;
+
+    public bool $calendar_year_exempt = false;
+
+    /** A new framework means new conditions to confirm. */
+    public function updatedReportingFramework(): void
+    {
+        $this->framework_confirmed = false;
+    }
+
+    /** A sole trader always starts the year in January (BFL 3 kap. 1 §). */
+    public function updatedLegalForm(): void
+    {
+        $this->framework_confirmed = false;
+
+        if (FiscalYearRules::requiresCalendarYear(LegalForm::from($this->legal_form))) {
+            $this->fiscal_year_start_month = 1;
+        }
+    }
+
     /** Name and organisation number from a SIE file uploaded in the wrong company, if any. */
     public function mount(): void
     {
@@ -87,6 +109,8 @@ class CreateCompanyForm extends Component implements SpansCompanies
             'reporting_framework' => $this->reporting_framework,
             'f_skatt' => $this->f_skatt,
             'accept_agreement' => $this->accept_agreement,
+            'framework_confirmed' => $this->framework_confirmed,
+            'calendar_year_exempt' => $this->calendar_year_exempt,
             'employer_registered' => $this->employer_registered,
         ]);
 
@@ -123,7 +147,14 @@ class CreateCompanyForm extends Component implements SpansCompanies
 
     public function render(): View
     {
+        $legalForm = LegalForm::tryFrom($this->legal_form) ?? LegalForm::Ab;
+        $framework = ReportingFramework::tryFrom($this->reporting_framework) ?? ReportingFramework::K2;
+
         return view('livewire.company.create-company-form', [
+            'frameworkRefusal' => ReportingFrameworkRules::refusal($legalForm, $framework),
+            'frameworkConditions' => ReportingFrameworkRules::conditions($legalForm, $framework),
+            'calendarYearOnly' => FiscalYearRules::requiresCalendarYear($legalForm),
+            'askPartners' => FiscalYearRules::requiresCalendarYearWithNaturalPartner($legalForm) && $this->fiscal_year_start_month !== 1,
             'legalForms' => LegalForm::cases(),
             'accountingMethods' => AccountingMethod::cases(),
             'vatPeriods' => array_filter(VatPeriod::cases(), fn (VatPeriod $period) => $period !== VatPeriod::None),

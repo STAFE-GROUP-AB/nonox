@@ -8,6 +8,7 @@ use App\Actions\Accounting\CarryForwardBalances;
 use App\Actions\Accounting\ChangeFirstFiscalYear;
 use App\Actions\Accounting\CreateArchivePackage;
 use App\Actions\Accounting\CreateNextFiscalYear;
+use App\Domain\Accounting\FiscalYearRules;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\ArchivePackage;
 use App\Models\Company;
@@ -98,6 +99,8 @@ class FiscalYears extends Component
     {
         $fiscalYears = FiscalYear::query()->orderByDesc('start_date')->get();
         $canArchive = $this->user()->hasTeamPermission($this->company(), 'export:archive');
+        $calendarYear = FiscalYearRules::requiresCalendarYear($this->company()->legal_form);
+        $latest = $fiscalYears->first();
         $packages = $canArchive
             ? ArchivePackage::query()->whereIn('id', ArchivePackage::query()->selectRaw('max(id)')->groupBy('fiscal_year_id'))->get()->keyBy('fiscal_year_id')
             : collect();
@@ -110,10 +113,14 @@ class FiscalYears extends Component
             'packages' => $packages,
             'building' => $packages->contains(fn (ArchivePackage $package): bool => $package->isBusy()),
             'onlyYearId' => $fiscalYears->count() === 1 ? $fiscalYears->first()?->id : null,
-            'nextLabels' => $fiscalYears->mapWithKeys(fn (FiscalYear $year): array => [$year->id => (new FiscalYear([
-                'start_date' => $year->end_date->addDay(),
-                'end_date' => $year->end_date->addYear(),
-            ]))->label()])->all(),
+            'nextLabels' => $fiscalYears->mapWithKeys(function (FiscalYear $year) use ($calendarYear): array {
+                [$start, $end] = FiscalYearRules::nextYear($year->end_date->addDay(), $calendarYear);
+
+                return [$year->id => (new FiscalYear(['start_date' => $start, 'end_date' => $end]))->label()];
+            })->all(),
+            'calendarYearWarning' => $calendarYear && $latest !== null && ! FiscalYearRules::isCalendarAligned($latest->end_date)
+                ? __('En enskild firma ska ha kalenderår som räkenskapsår, men det senaste räkenskapsåret slutar :end. Befintliga år ändras inte. Nästa räkenskapsår som skapas slutar den 31 december, så att företaget går över till kalenderår.', ['end' => $latest->end_date->toDateString()])
+                : null,
             'today' => now()->toImmutable()->startOfDay(),
         ]);
     }

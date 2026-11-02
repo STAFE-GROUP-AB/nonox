@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace App\Livewire\Company;
 
 use App\Actions\Company\UpdateCompanyDetails;
+use App\Domain\Accounting\FiscalYearRules;
 use App\Domain\Company\AccountingMethod;
+use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\ReportingFramework;
+use App\Domain\Company\ReportingFrameworkRules;
 use App\Domain\Company\VatPeriod;
 use App\Livewire\Concerns\LooksUpCompanies;
 use App\Livewire\Concerns\ShowsToasts;
@@ -49,7 +52,14 @@ class CompanyDetailsForm extends Component
             'f_skatt' => $company->f_skatt,
             'employer_registered' => $company->employer_registered,
             'turnover_over_40_msek' => $company->turnover_over_40_msek,
+            'framework_confirmed' => false,
+            'calendar_year_exempt' => false,
         ];
+    }
+
+    public function updatedStateReportingFramework(): void
+    {
+        $this->state['framework_confirmed'] = false;
     }
 
     public function save(UpdateCompanyDetails $updateCompanyDetails): void
@@ -61,6 +71,8 @@ class CompanyDetailsForm extends Component
         $company = $this->company()->refresh();
         $this->state['bankgiro'] = $company->bankgiro;
         $this->state['plusgiro'] = $company->plusgiro;
+        $this->state['framework_confirmed'] = false;
+        $this->state['calendar_year_exempt'] = false;
 
         $this->toast(__('Uppgifterna för :company är sparade.', ['company' => $company->name]));
     }
@@ -92,8 +104,18 @@ class CompanyDetailsForm extends Component
     {
         $company = $this->company();
 
+        $framework = ReportingFramework::tryFrom((string) ($this->state['reporting_framework'] ?? '')) ?? $company->reporting_framework;
+        $month = (int) ($this->state['fiscal_year_start_month'] ?? $company->fiscal_year_start_month);
+        $frameworkChanged = $framework !== $company->reporting_framework;
+
         return view('livewire.company.company-details-form', [
             'company' => $company,
+            'warnings' => CompanySetupRules::warnings($company),
+            'frameworkRefusal' => $frameworkChanged ? ReportingFrameworkRules::refusal($company->legal_form, $framework) : null,
+            'frameworkConditions' => $frameworkChanged ? ReportingFrameworkRules::conditions($company->legal_form, $framework) : null,
+            'askPartners' => $month !== $company->fiscal_year_start_month
+                && $month !== 1
+                && FiscalYearRules::requiresCalendarYearWithNaturalPartner($company->legal_form),
             'canUpdate' => $this->user()->can('update', $company),
             'accountingMethods' => AccountingMethod::cases(),
             'vatPeriods' => VatPeriod::cases(),
