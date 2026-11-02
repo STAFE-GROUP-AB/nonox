@@ -24,6 +24,7 @@ use LogicException;
  *
  * @property bool $reverse_charge
  * @property ?ForeignSale $foreign_sale
+ * @property bool $swedish_vat_under_threshold an EU consumer sale under the OSS threshold, taxed in Sweden
  * @property ?string $tax_reduction ROT or RUT
  * @property Money $tax_reduction_ore
  * @property Money $tax_reduction_paid_ore
@@ -114,6 +115,7 @@ class Invoice extends Model
         return [
             'reverse_charge' => 'boolean',
             'foreign_sale' => ForeignSale::class,
+            'swedish_vat_under_threshold' => 'boolean',
             'tax_reduction_ore' => MoneyCast::class,
             'tax_reduction_paid_ore' => MoneyCast::class,
             'number' => 'integer',
@@ -170,6 +172,16 @@ class Invoice extends Model
     public function remaining(): Money
     {
         return $this->total_ore->minus($this->paid_ore);
+    }
+
+    /**
+     * The kind of foreign sale the invoice is booked and reported as. A sale
+     * to a consumer in another EU country under the OSS threshold carries
+     * Swedish VAT and is booked like a sale in Sweden, so it has none.
+     */
+    public function bookedForeignSale(): ?ForeignSale
+    {
+        return $this->foreign_sale === ForeignSale::EuConsumerOss && $this->swedish_vat_under_threshold ? null : $this->foreign_sale;
     }
 
     /** An invoice written in another currency than kronor, booked at exchange_rate_micros (ADR-025). */

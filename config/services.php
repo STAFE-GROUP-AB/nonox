@@ -142,6 +142,11 @@ return [
         'url' => env('RIKSBANK_URL', 'https://api.riksbank.se/swea/v1/'),
     ],
 
+    // The ECB's euro reference rates, for the OSS return in euro (EcbRates).
+    'ecb' => [
+        'url' => env('ECB_DATA_URL', 'https://data-api.ecb.europa.eu/service/'),
+    ],
+
     'vies' => [
         'url' => env('VIES_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api/'),
     ],

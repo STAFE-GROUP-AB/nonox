@@ -49,6 +49,8 @@ class CompanyDetailsForm extends Component
             'f_skatt' => $company->f_skatt,
             'employer_registered' => $company->employer_registered,
             'turnover_over_40_msek' => $company->turnover_over_40_msek,
+            'oss_elected' => $company->oss_elected,
+            'oss_elected_from' => (string) $company->oss_elected_from?->toDateString(),
         ];
     }
 

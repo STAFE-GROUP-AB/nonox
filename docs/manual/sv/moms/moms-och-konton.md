@@ -67,7 +67,7 @@ Ruta 49 räknas fram: utgående moms (rutorna 10–12, 30–32 och 60–62) minu
 
 ## Konto 2619 – OSS
 
-Moms på försäljning till privatpersoner i andra EU-länder bokförs på 2619. Den räknas inte in i någon ruta och flyttas inte till 2650 när momsen bokförs, eftersom den redovisas i OSS-deklarationen. Läs [OSS](/manual/moms/oss).
+Moms på försäljning till privatpersoner i andra EU-länder bokförs på 2619 när den redovisas via OSS. Under tröskelvärdet 99 680 kronor får sådan försäljning svensk moms och bokförs som vanlig försäljning. Den räknas inte in i någon ruta och flyttas inte till 2650 när momsen bokförs, eftersom den redovisas i OSS-deklarationen. Läs [OSS](/manual/moms/oss).
 
 ## Bra att veta
 

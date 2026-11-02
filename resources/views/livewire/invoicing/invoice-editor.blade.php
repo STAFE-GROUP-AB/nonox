@@ -53,7 +53,14 @@
                             <x-ui.field for="invoice_property" :label="__('Fastighetsbeteckning eller BRF')" error="property_designation"><input id="invoice_property" type="text" class="{{ $input }} mt-1" wire:model="propertyDesignation" placeholder="{{ __('Till exempel Uppsala Kåbo 1:23') }}"></x-ui.field>
                         @endif
                     </div>
-                    @if($foreignSale === 'EU_CONSUMER_OSS')
+                    @if($foreignSale === 'EU_CONSUMER_OSS' && $ossThreshold !== null && $ossThreshold['swedish_vat'])
+                        @php($ossLimit = App\Support\Money\Money::ofOre(App\Domain\Vat\OssThreshold::AMOUNT_ORE)->format())
+                        <p class="mt-2 text-xs text-gray-500">{{ __('Företaget är under tröskelvärdet :limit för försäljning till privatpersoner i andra EU-länder och har inte valt beskattning i köparens land. Fakturan får svensk moms och redovisas i den vanliga momsdeklarationen.', ['limit' => $ossLimit]) }}</p>
+                        <p @class(['mt-1 text-xs', 'text-gray-500' => ! $ossThreshold['near'], 'font-medium text-amber-800' => $ossThreshold['near']]) role="status">{{ __('Med den här fakturan :after i år (i fjol :previous).', ['after' => App\Support\Money\Money::ofOre($ossThreshold['after'])->format(), 'previous' => App\Support\Money\Money::ofOre($ossThreshold['previous'])->format()]) }}@if($ossThreshold['near']) {{ __('Snart nås tröskelvärdet. Den faktura som går över det och alla senare får momsen i kundens land via OSS, och företaget behöver då vara registrerat för OSS.') }}@endif</p>
+                    @elseif($foreignSale === 'EU_CONSUMER_OSS')
+                        @if($ossThreshold !== null && $ossThreshold['crosses'])
+                            <p class="mt-2 text-xs font-medium text-amber-800" role="alert">{{ __('Den här fakturan gör att försäljningen till privatpersoner i andra EU-länder går över tröskelvärdet :limit i år. Den och alla senare får momsen i kundens land via OSS. Registrera företaget för OSS hos Skatteverket.', ['limit' => App\Support\Money\Money::ofOre(App\Domain\Vat\OssThreshold::AMOUNT_ORE)->format()]) }}</p>
+                        @endif
                         <p class="mt-2 text-xs text-gray-500">{{ __('Raderna får momssatsen i kundens land när du sparar, och momsen bokförs på 2619 för OSS-deklarationen i stället för den svenska momsdeklarationen.') }}</p>
                     @elseif($foreignSale !== '')
                         <p class="mt-2 text-xs text-gray-500">{{ __('Fakturan blir utan svensk moms och försäljningen bokförs på :account. Texten :text skrivs ut på fakturan.', ['account' => App\Domain\Invoicing\ForeignSale::from($foreignSale)->account(), 'text' => App\Domain\Invoicing\ForeignSale::from($foreignSale)->invoiceText()]) }}</p>
@@ -75,7 +82,7 @@
                 </datalist>
             </x-ui.field>
             @if($currency !== 'SEK')
-                <x-ui.field for="invoice_rate" :label="__('Kurs, kronor per :currency', ['currency' => $currency])" error="exchange_rate" :hint="$rateDate !== '' ? __('Riksbankens kurs :date. Du kan ändra den.', ['date' => $rateDate]) : __('Fakturan bokförs i kronor till den här kursen.')">
+                <x-ui.field for="invoice_rate" :label="__('Kurs, kronor per :currency', ['currency' => $currency])" error="exchange_rate" :hint="$rateDate !== '' ? __('Riksbankens kurs :date, för leveransdagen eller fakturadatum om leveransdatum saknas. Du kan ändra den.', ['date' => $rateDate]) : __('Fakturan bokförs i kronor till den här kursen.')">
                     <input id="invoice_rate" type="text" inputmode="decimal" class="{{ $input }} mt-1 text-right tabular-nums" wire:model.blur="exchangeRate" placeholder="0,000000" @disabled($credit)>
                 </x-ui.field>
             @endif
@@ -84,8 +91,8 @@
                     <input id="invoice_due" type="date" class="{{ $input }} mt-1" wire:model="dueDate">
                 </x-ui.field>
             @endunless
-            <x-ui.field for="invoice_delivery" :label="__('Leveransdatum')" error="delivery_date" :hint="__('Tomt: samma som fakturadatum.')">
-                <input id="invoice_delivery" type="date" class="{{ $input }} mt-1" wire:model="deliveryDate">
+            <x-ui.field for="invoice_delivery" :label="__('Leveransdatum')" error="delivery_date" :hint="$currency === 'SEK' ? __('Tomt: samma som fakturadatum.') : __('Tomt: samma som fakturadatum. Valutakursen tas för leveransdagen, då momsen uppstår.')">
+                <input id="invoice_delivery" type="date" class="{{ $input }} mt-1" wire:model.change="deliveryDate">
             </x-ui.field>
             <x-ui.field for="invoice_your_reference" :label="__('Er referens')" error="your_reference">
                 <input id="invoice_your_reference" type="text" class="{{ $input }} mt-1" wire:model="yourReference">

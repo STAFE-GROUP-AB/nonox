@@ -14,6 +14,7 @@ use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Invoicing\Ocr;
 use App\Domain\Invoicing\TaxReduction;
 use App\Domain\Vat\OssRates;
+use App\Domain\Vat\OssThreshold;
 use App\Models\Account;
 use App\Models\Company;
 use App\Models\Customer;
@@ -80,6 +81,12 @@ class IssueInvoice
 
             if ($invoice->foreign_sale !== null) {
                 $this->ensureForeignSale($company, $customer, $invoice->foreign_sale);
+            }
+
+            // Other invoices issued since the draft was saved may have moved the company over the OSS threshold.
+            if ($invoice->foreign_sale === ForeignSale::EuConsumerOss && ! $invoice->isCredit()
+                && OssThreshold::check($company, $invoice->invoice_date, $invoice->net_ore->ore, $invoice->id)['swedish_vat'] !== $invoice->swedish_vat_under_threshold) {
+                throw ValidationException::withMessages(['invoice' => __('Gränsen för försäljning till privatpersoner i andra EU-länder har passerats eller ändrats sedan utkastet sparades. Spara utkastet igen så att rätt moms används.')]);
             }
 
             $number = NumberSeries::take(NumberSeries::INVOICES);

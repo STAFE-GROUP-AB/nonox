@@ -495,6 +495,30 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   bokförs på 3106 och momsen på 2619. Konto 2619 räknas inte in i någon ruta
   och flyttas inte till 2650 vid momsavräkningen, eftersom momsen redovisas i
   OSS-deklarationen. Kräver inget momsregistreringsnummer men ett EU-land.
+- **Tröskelvärdet för OSS** (ML 6 kap. 62–65 §§, `OssThreshold`, enligt
+  AI-utredning 2026-11-02, juristgranskning återstår): så länge företagets
+  försäljning till privatpersoner i andra EU-länder (alla länder tillsammans,
+  exklusive moms, i kronor, utfärdade fakturor med kreditfakturor avdragna,
+  per kalenderår efter fakturadatum) är högst 99 680 kr i år och var det i
+  fjol, får en sådan faktura **svensk moms**: radernas egna momssatser och
+  konton, utgående moms på 2611/2621/2631 och rutorna 05 och 10–12 i den
+  vanliga momsdeklarationen. Fakturan markeras
+  `swedish_vat_under_threshold` och räknas mot tröskeln men tas inte med i
+  OSS-underlaget och får ingen OSS-text. Den faktura som gör att summan går
+  över tröskeln, och alla senare, får köparlandets moms via OSS (6 kap.
+  63 §). Var förra årets försäljning över tröskeln gäller OSS hela året.
+  Beloppet finns på ett ställe (`OssThreshold::AMOUNT_ORE`) med källa.
+  - Företaget kan ange att det har begärt beskattning i köparens land eller
+    är registrerat för OSS (6 kap. 64 §), med ett från-datum
+    (`teams.oss_elected`, `oss_elected_from`, under Företagsuppgifter, i
+    behandlingshistoriken som `company.updated`). Då används OSS från det
+    datumet oavsett tröskeln.
+  - Beslutet tas när utkastet sparas och kontrolleras igen när fakturan
+    utfärdas: har andra fakturor sedan dess flyttat företaget över tröskeln
+    avvisas utfärdandet tills utkastet sparats igen. En kreditfaktura följer
+    alltid fakturan den krediterar.
+  - Fakturaredigeraren visar hur mycket som sålts i år och i fjol, varnar
+    när 80 % av tröskeln är nådd och säger till när fakturan går över den.
 - **VIES:** ett kundnummer kan kontrolleras mot EU:s register VIES från
   kundformuläret. Svaret, namnet och konsultationsnumret sparas i
   `vat_number_checks` (append-only, modell och databastrigger). Var senaste
@@ -518,8 +542,19 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   eller kvartal, per köpares momsregistreringsnummer i kolumnerna varor,
   trepartshandel och tjänster (hela kronor), med fil i Skatteverkets format
   SKV574008 för Filöverföring; samt underlag för OSS-deklarationen per
-  kvartal, land och momssats i kronor. Endast utfärdade fakturor räknas;
-  krediteringar minskar beloppen.
+  kvartal, land och momssats, i kronor som bokfört (för avstämning mot 2619)
+  och i euro, som deklarationen lämnas i (ML 22 kap. 42 §). Försäljning
+  fakturerad i euro räknas med fakturans eurobelopp; annan valuta, kronor
+  inräknat, räknas om från fakturans belopp i den valutan med Europeiska
+  centralbankens referenskurs för kvartalets sista dag (Skatteverket,
+  "Deklarera och betala moms i One Stop Shop"), eller nästa publicerade kurs
+  om ingen publicerades den dagen. Momsen i euro räknas per land och
+  momssats på eurounderlaget, halvt uppåt. Kurserna hämtas från ECB:s
+  dataportal (`EcbRates`, serie `EXR.D.{valuta}.EUR.SP00.A`, utan nyckel)
+  och cachas; saknas en kurs visas kronorna och en upplysning i stället för
+  euro. Underlaget kan laddas ner som CSV (`vat.oss_report_downloaded` i
+  behandlingshistoriken). Endast utfärdade fakturor räknas; krediteringar
+  minskar beloppen.
 - Kan inte kombineras med omvänd byggmoms eller ROT/RUT.
 - Ruta 35 matades tidigare av 3106 (momspliktig EU-försäljning); den matas nu
   av 3108, momsfri försäljning av varor till annat EU-land.
@@ -552,9 +587,13 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   priserna och fakturans summor är hundradelar av valutan och avrundas inte
   till hela enheter (öresavrundning bara i kronor).
 - **Kurs.** Fakturan bokförs till en kurs i kronor per enhet (miljondelar,
-  `exchange_rate_micros`). Förvald är Riksbankens mittkurs (SWEA,
-  `SEK{valuta}PMI`) på fakturadatumet eller senaste bankdag före; användaren
-  kan skriva en egen. Kursen, dess datum och källa (`riksbank` eller
+  `exchange_rate_micros`). Samma kurs används för bokföringen och för
+  momsens beskattningsunderlag, och den tas för dagen då momsen uppstår
+  (ML 8 kap. 21 §, 7 kap. 3–4 §§; enligt AI-utredning 2026-11-02,
+  juristgranskning återstår): leveransdatumet när fakturan har ett, annars
+  fakturadatumet, som då får stå för leveransen. Förvald är Riksbankens
+  mittkurs (SWEA, `SEK{valuta}PMI`) den dagen eller senaste bankdag före
+  (dagens kurs om dagen ligger i framtiden); användaren kan skriva en egen. Kursen, dess datum och källa (`riksbank` eller
   `manual`) sparas på fakturan.
 - **Belopp i kronor.** Varje rad räknas om till kronor med kursen (halvt
   uppåt). Momsen i kronor räknas per momssats på radernas kronor, och
@@ -2146,9 +2185,23 @@ Personalliggare och Avtal när de är påslagna.
 - Trepartshandel: konto 3107 och fakturatexten är inte bekräftade mot BAS och
   ML; ruta 37 (mellanmans inköp) bokförs inte automatiskt.
 - OSS: konto 3106/2619 är inte bekräftade mot BAS. Momssatserna i `OssRates`
-  ska kontrolleras mot EU-kommissionens databas (TEDB); reducerade satser och
-  tröskeln 10 000 euro hanteras inte, och omräkningen till euro görs av
-  användaren.
+  ska kontrolleras mot EU-kommissionens databas (TEDB); reducerade satser
+  hanteras inte. Tröskelvärdet 99 680 kr (ML 6 kap. 62 §): att året tas från
+  fakturadatumet, att registrering för OSS räknas som begäran enligt 6 kap.
+  64 §, att all OSS-markerad försäljning är distansförsäljning av varor
+  eller TBE-tjänster (andra tjänster till privatpersoner följer egna regler
+  och räknas inte för sig). Omräkningen till euro: vilken kurs som gäller när
+  ECB inte publicerar någon på kvartalets sista dag (nästa publicerade
+  används; direktivets art. 369h är inte läst), avrundningen av momsen i
+  euro, att eurofakturor räknas med sina eurobelopp, vilken period en
+  försäljning hör till och rättelser av tidigare kvartal.
+- Valutakurs för momsens beskattningsunderlag: om Riksbankens mittkurs
+  räknas som "senast noterade genomsnittliga kurs på den mest representativa
+  valutamarknaden i Sverige" (ML 8 kap. 21 §); Skatteverket nämner ECB:s
+  kurs och Nasdaq OMX Stockholms fastställda mittkurs. Vid förskott (7 kap.
+  7 §) och byggtjänster med omvänd betalningsskyldighet (7 kap. 8 §) borde
+  dagen vara betalningsdagen respektive fakturadagen; NONOX använder
+  leveransdatumet om det är ifyllt, annars fakturadatumet.
 - VIES: om kontroll krävs före varje försäljning och hur gammal den får vara.
 - Företagsuppgifter från Bolagsverket (ADR-035): rättslig grund för att
   skicka en enskild firmas personnummer till Bolagsverket och visa svaret,

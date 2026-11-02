@@ -2,7 +2,7 @@
 beskrivning: Fakturera i euro, dollar eller annan valuta. Fakturan bokförs i kronor med Riksbankens kurs, och kursvinst eller kursförlust bokförs när kunden betalar.
 ordning: 125
 roller: [owner, admin, accountant, bookkeeper]
-sokord: [valuta, euro, eur, usd, dollar, pund, gbp, nok, dkk, växelkurs, valutakurs, kursdifferens, kursvinst, kursförlust, 3960, 7960, riksbanken, iban]
+sokord: [valuta, euro, eur, usd, dollar, pund, gbp, nok, dkk, växelkurs, valutakurs, kursdifferens, kursvinst, kursförlust, 3960, 7960, riksbanken, iban, leveransdatum]
 ---
 
 # Faktura i utländsk valuta
@@ -10,7 +10,7 @@ sokord: [valuta, euro, eur, usd, dollar, pund, gbp, nok, dkk, växelkurs, valuta
 Du kan fakturera en kund i euro, dollar, pund, norska eller danska kronor eller en annan valuta. Fakturan skrivs i kundens valuta. NONOX räknar om den till kronor med Riksbankens kurs och bokför den i kronor. När kunden betalar registrerar du hur många kronor som kom in, och skillnaden mot den bokförda kursen bokförs som kursvinst eller kursförlust.
 
 > [!IMPORTANT]
-> Vilken kurs momsen ska räknas med, och vad som ska stå i kronor på fakturan, är markerat för juridisk kontroll i NONOX. Stäm av med din redovisningskonsult innan du fakturerar i utländsk valuta första gången.
+> Om Riksbankens kurs får användas för momsen, och vad som ska stå i kronor på fakturan, är markerat för juridisk kontroll i NONOX. Skatteverket nämner Europeiska centralbankens kurs och Nasdaq OMX Stockholms mittkurs. Stäm av med din redovisningskonsult innan du fakturerar i utländsk valuta första gången.
 
 ## Så här ställer du in kunden
 
@@ -24,7 +24,7 @@ Nya fakturor till kunden börjar då i den valutan. Du kan ändra valutan på va
 
 1. Skapa en faktura som vanligt: **Försäljning → Fakturor → Ny faktura**. Läs [Skapa en faktura](/manual/fakturering/skapa-en-faktura).
 2. Välj kunden. **Valuta** fylls i med kundens valuta.
-3. Kontrollera **Fakturadatum**. **Kurs, kronor per EUR** fylls i med Riksbankens kurs för fakturadatumet, och under fältet står vilken dag kursen gäller. Du kan ändra kursen.
+3. Kontrollera **Fakturadatum** och fyll i **Leveransdatum** om varan levererades eller tjänsten utfördes en annan dag. **Kurs, kronor per EUR** fylls i med Riksbankens kurs för leveransdagen, eller för fakturadatumet om leveransdatum saknas. Under fältet står vilken dag kursen gäller. Du kan ändra kursen.
 4. Skriv raderna med priser i valutan, utan moms. Summorna längst ner visas i valutan.
 5. Tryck på **Skapa fakturan** och **Ja, skapa**.
 
@@ -50,6 +50,8 @@ Betalar kunden i flera omgångar minskar valutabeloppet för varje betalning, oc
 ## Det här händer i bokföringen
 
 **Fakturan** bokförs i kronor till kursen på fakturan. Varje rad räknas om till kronor, och momsen räknas på kronorna. Momsdeklarationen, rapporterna och SIE-filen är i kronor.
+
+Samma kurs används för bokföringen och för momsen. Momsen ska räknas om med kursen den dag momsen uppstår, oftast leveransdagen. Därför tar NONOX kursen för leveransdatumet. Saknas leveransdatum används fakturadatumet, som då räknas som leveransdag. Vid förskott uppstår momsen när betalningen kommer in; fyll då i kursen för den dagen själv.
 
 **Betalningen** blir en verifikation i serie C:
 
@@ -80,6 +82,9 @@ En [kreditfaktura](/manual/fakturering/kreditfaktura) får samma valuta och samm
 - Överbetalningar. Ett belopp i valutan som är större än det som återstår kan inte registreras.
 
 ## Vanliga frågor
+
+**Varför ändrades kursen när jag fyllde i leveransdatum?**
+Momsen uppstår när varan levereras eller tjänsten utförs, och kursen ska vara den som gällde då. NONOX hämtar därför Riksbankens kurs för leveransdagen. Ligger leveransdagen i framtiden används dagens kurs.
 
 **Kursen fylls inte i.**
 Hittar NONOX ingen kurs hos Riksbanken för valutan, eller går Riksbanken inte att nå just då, får du ett meddelande när du sparar. Skriv kursen själv, till exempel från bankens kurslista.

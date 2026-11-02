@@ -56,13 +56,18 @@ Fakturan stoppas när du skapar den om
 
 ## Privatpersoner i andra EU-länder (OSS)
 
-Väljer du **Privatperson i annat EU-land (OSS)** får raderna momssatsen i kundens land när du sparar, och momsen bokförs på 2619 i stället för på de svenska momskontona. Den redovisas i OSS-deklarationen, inte i den svenska momsdeklarationen. NONOX har bara ländernas normala momssats, inte de sänkta, och kontrollerar inte gränsen för när OSS måste användas.
+Väljer du **Privatperson i annat EU-land (OSS)** avgör tröskelvärdet vilken moms fakturan får:
+
+- **Under 99 680 kronor om året**, i år och i fjol, och utan att företaget valt beskattning i köparens land: svensk moms. Fakturan bokförs som en vanlig försäljning i Sverige och hamnar i den vanliga momsdeklarationen.
+- **Över gränsen, eller när företaget har valt det**: raderna får momssatsen i kundens land när du sparar, och momsen bokförs på 2619 i stället för på de svenska momskontona. Den redovisas i OSS-deklarationen, inte i den svenska momsdeklarationen.
+
+Fakturan visar hur mycket företaget har sålt till privatpersoner i andra EU-länder i år och varnar när gränsen närmar sig. NONOX har bara ländernas normala momssats, inte de sänkta. Läs [OSS](/manual/moms/oss).
 
 Underlag för OSS och den periodiska sammanställningen finns under **Bokföring → EU-rapporter**. Läs [Moms och EU](/manual/moms).
 
 ## Det här händer i bokföringen
 
-Under fakturametoden bokförs fakturan i serie B med 1510 Kundfordringar i debet och kontot för sorten i kredit, utan utgående moms (för OSS med momsen på 2619). Försäljning till företag i andra EU-länder kommer med i den periodiska sammanställningen.
+Under fakturametoden bokförs fakturan i serie B med 1510 Kundfordringar i debet och kontot för sorten i kredit, utan utgående moms (för OSS med momsen på 2619, och under tröskelvärdet med svensk moms som en vanlig försäljning). Försäljning till företag i andra EU-länder kommer med i den periodiska sammanställningen.
 
 ## Vanliga frågor
 

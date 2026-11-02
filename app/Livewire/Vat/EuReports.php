@@ -91,6 +91,31 @@ class EuReports extends Component
         }, $list->filename($company), ['Content-Type' => 'text/plain; charset=ISO-8859-1']);
     }
 
+    /** The OSS basis for the quarter as a CSV file, in kronor and euro. */
+    public function downloadOss(): ?StreamedResponse
+    {
+        $company = $this->company();
+        abort_unless($this->user()->hasTeamPermission($company, 'vat:prepare'), 403);
+        [$start, $end] = self::bounds($this->selectedOssQuarter());
+        $report = OssReport::for($start, $end);
+
+        if ($report->rows === []) {
+            $this->toast(__('Det finns ingen OSS-försäljning att redovisa för kvartalet.'));
+
+            return null;
+        }
+
+        $contents = $report->csv();
+
+        Audit::record('vat.oss_report_downloaded', $company, ['quarter' => $this->selectedOssQuarter(), 'rows' => count($report->rows), 'missing_rates' => $report->missingRates], $company, $this->user());
+
+        $this->toast(__('Underlaget för OSS laddas ner.'));
+
+        return response()->streamDownload(function () use ($contents): void {
+            echo $contents;
+        }, "oss-{$this->selectedOssQuarter()}.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
     public function render(): View
     {
         [$start, $end] = self::bounds($this->selectedPeriod());

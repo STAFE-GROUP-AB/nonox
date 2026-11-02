@@ -107,8 +107,17 @@ come from the invoice being written by us rather than received:
   VAT, so the VAT booked and reported follows the conversion of the taxable
   amount. The foreign totals are kept as written, without öresavrundning
   (öresavrundning applies to kronor only). The rate defaults to Riksbanken's
-  mid rate on the invoice date (or the latest banking day before) and can be
+  mid rate on the VAT date (or the latest banking day before) and can be
   typed; a typed rate equal to Riksbanken's keeps the source `riksbank`.
+- **One rate, taken on the VAT date (2026-11-02).** The same rate is the
+  booking rate and the rate of the VAT base, since the kronor VAT is
+  calculated on the converted rows. It is taken for the day the VAT arises
+  (Mervärdesskattelag (2023:200) 8 kap. 21 §, 7 kap. 3–4 §§): the invoice's
+  delivery date when it has one, otherwise the invoice date, which then
+  stands in for the delivery (`SaveDraftInvoice::vatDate`; enligt
+  AI-utredning 2026-11-02, juristgranskning återstår). A future delivery
+  date gets today's rate. The editor fetches the rate again when the
+  delivery date changes. Supplier invoices still take the invoice date.
 - **The invoice** shows rows and totals in the currency and, below, the VAT
   per rate and the total in kronor with the rate and its source, and the
   company's IBAN and BIC.
@@ -172,12 +181,21 @@ come from the invoice being written by us rather than received:
 - `TODO(legal-verify)`: the closing-rate revaluation (BFNAR 2016:10 K2,
   BFNAR 2012:1 K3 chapter 30), Riksbanken's mid rate as the closing rate, and
   the reversal on the first day of the next year.
-- `TODO(legal-verify)`: OSS sales in another currency; the OSS return is
-  made in euro, while NONOX books and reports the OSS VAT in kronor.
+- OSS sales in another currency (resolved 2026-11-02, ADR-010): the OSS
+  basis is now also in euro; invoices in euro count with their euro amounts,
+  others are converted at the ECB rate for the quarter's last day. The VAT
+  stays booked on 2619 in kronor at the invoice's rate.
 
-- `TODO(legal-verify)`: that Riksbanken's mid rate on the invoice date is an
-  acceptable booking rate (ML 8 kap. 21 § names the ECB rate for the VAT
-  base; the two can differ slightly).
+- `TODO(legal-verify)`: whether Riksbanken's own mid rate counts as "the
+  latest average rate fixed on the most representative currency market in
+  Sweden" (ML 8 kap. 21 § alternative 1). Skatteverket names the ECB rate
+  and Nasdaq OMX Stockholm's fixed mid rate. An ECB option for the VAT base
+  (cross rates via euro, 8 kap. 22 §) was not added: the booking and the VAT
+  base share one rate, and choosing the source is the open question.
+- `TODO(legal-verify)`: advance invoices (the VAT arises when the payment is
+  received, 7 kap. 7 §) and construction services under omvänd
+  betalningsskyldighet (the invoice date, 7 kap. 8 §) use the delivery date
+  or invoice date like every other invoice.
 - `TODO(legal-verify)`: that realised differences on trade payables belong on
   3960/7960 ("av rörelsekaraktär") and not among the financial items in
   class 8 (which the BAS data in this repository does not list).

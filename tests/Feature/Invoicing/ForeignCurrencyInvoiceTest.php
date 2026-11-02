@@ -279,6 +279,49 @@ it('credits an invoice in euro in the same currency and at the same rate', funct
         ->and(euroBalance(2611) + euroBalance(2621))->toBe(0);
 });
 
+it('takes the rate for the delivery date, when the VAT arises, and the invoice date without one', function () {
+    // Riksbanken answers with the rate of the last day asked for.
+    Http::fake(fn ($request) => str_ends_with($request->url(), '/2026-02-20')
+        ? Http::response([['date' => '2026-02-20', 'value' => 10.9]])
+        : Http::response([['date' => '2026-03-02', 'value' => 11.2]]));
+
+    $delivered = euroDraft($this->customer, '', [['100', 2500]], ['delivery_date' => '2026-02-20']);
+    $undated = euroDraft($this->customer, '', [['100', 2500]]);
+
+    expect([$delivered->exchange_rate_micros, $delivered->exchange_rate_date?->toDateString(), $delivered->exchange_rate_source])->toBe([10_900_000, '2026-02-20', 'riksbank'])
+        // The VAT base in kronor follows the delivery date's rate: 100 € = 1 090 kr, VAT 272,50 kr.
+        ->and([$delivered->net_ore->ore, $delivered->vat_ore->ore])->toBe([109_000, 27_250])
+        ->and($undated->exchange_rate_date?->toDateString())->toBe('2026-03-02')
+        ->and(SaveDraftInvoice::vatDate(['invoice_date' => '2026-03-02', 'delivery_date' => '']))->toBe('2026-03-02');
+
+    // A typed rate equal to Riksbanken's on the delivery date keeps that source and date.
+    $typed = euroDraft($this->customer, '10,9', [['100', 2500]], ['delivery_date' => '2026-02-20']);
+    expect([$typed->exchange_rate_source, $typed->exchange_rate_date?->toDateString()])->toBe(['riksbank', '2026-02-20']);
+
+    // A credit invoice keeps the original's rate, whatever its own delivery date.
+    $invoice = app(IssueInvoice::class)($this->owner, $delivered);
+    $credit = app(CreditInvoice::class)($this->owner, $invoice);
+    $credit = app(SaveDraftInvoice::class)($this->owner, $this->company, [
+        'customer_id' => $this->customer->id, 'invoice_date' => '2026-03-02', 'delivery_date' => '2026-03-02',
+        'rows' => $credit->rows->load('account')->map->asInput()->all(),
+    ], $credit);
+    expect($credit->exchange_rate_micros)->toBe(10_900_000);
+});
+
+it('fetches the rate again in the editor when the delivery date changes', function () {
+    Http::fake(fn ($request) => str_ends_with($request->url(), '/2026-02-20')
+        ? Http::response([['date' => '2026-02-20', 'value' => 10.9]])
+        : Http::response([['date' => '2026-02-27', 'value' => 11.2]]));
+
+    Livewire::test(InvoiceEditor::class)
+        ->set('customerId', (string) $this->customer->id)
+        ->assertSet('rateDate', '2026-02-27')
+        ->set('deliveryDate', '2026-02-20')
+        ->assertSet('exchangeRate', '10,900000')
+        ->assertSet('rateDate', '2026-02-20')
+        ->assertSee('för leveransdagen');
+});
+
 it('does not combine ROT or RUT with another currency', function () {
     expect(fn () => euroDraft($this->customer, '11', [['1000', 2500]], ['tax_reduction' => 'RUT']))
         ->toThrow(ValidationException::class, 'räknas i kronor');
