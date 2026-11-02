@@ -87,6 +87,10 @@ class AnnualReportPage extends Component
             'signing_place' => (string) ($report->signing_place ?? $this->company()->city ?? ''),
             'signing_date' => (string) ($report?->signing_date?->toDateString() ?? ''),
             'signatories' => $report === null ? $owners : collect($report->signatories)->map(fn (array $person): string => trim("{$person['name']}, {$person['role']}", ', '))->implode("\n"),
+            'adoption_date' => (string) ($report?->adoption_date?->toDateString() ?? ''),
+            'adoption_decision' => (string) ($report->adoption_decision ?? ''),
+            'certifier_name' => (string) ($report->certifier_name ?? ''),
+            'certifier_role' => (string) ($report->certifier_role ?? ''),
         ];
         $this->resetErrorBag();
     }

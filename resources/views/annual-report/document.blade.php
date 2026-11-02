@@ -184,5 +184,18 @@
             </tbody>
         </table>
     </div>
+
+    <div class="break">
+        <h2>{{ __('Fastställelseintyg') }}</h2>
+        <p>{{ __('Undertecknad :role intygar att resultaträkningen och balansräkningen i denna årsredovisning för :company har fastställts av :meeting den :date.', ['role' => mb_strtolower($certificate['role'] ?: __('styrelseledamot')), 'company' => $company->legal_name ?: $company->name, 'meeting' => mb_strtolower($certificate['meeting']), 'date' => $certificate['date'] ?? '……………………']) }}</p>
+        <p>{{ $certificate['decision'] ?: __(':meeting beslutade om vinsten eller förlusten enligt följande:', ['meeting' => $certificate['meeting']]).' ……………………………………………………………………' }}</p>
+        <p>{{ __('Jag intygar att innehållet i denna kopia överensstämmer med originalet.') }}</p>
+        <p class="muted">{{ __('Årsredovisningslagen 8 kap. 3 §') }}</p>
+        <table class="signatures">
+            <tbody>
+                <tr><td><span class="line">{{ $certificate['name'] ?? '' }}</span><span class="muted">{{ $certificate['role'] ?: __('Styrelseledamot eller verkställande direktör') }}</span></td><td></td></tr>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>

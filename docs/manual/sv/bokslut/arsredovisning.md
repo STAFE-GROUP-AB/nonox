@@ -28,9 +28,10 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
    - **Medelantal anställda**.
    - **Ort** och **Datum för underskrift**.
    - **Underskrifter** – en per rad: namn, roll. Till exempel "Anna Andersson, Styrelseledamot".
-3. Klicka på **Spara**.
-4. Granska **Förhandsvisning av årsredovisningen**.
-5. Klicka på **Ladda ner PDF**.
+3. Efter stämman, fyll i **Fastställelseintyg**: **Fastställelsedag**, **Den som intygar** och **Roll** (styrelseledamot eller verkställande direktör). **Stämmans beslut om vinsten eller förlusten** kan du lämna tomt om du har bokat [resultatdispositionen](/manual/bokslut/resultatdisposition) – då skrivs beslutet ut därifrån.
+4. Klicka på **Spara**.
+5. Granska **Förhandsvisning av årsredovisningen**.
+6. Klicka på **Ladda ner PDF**.
 
 ## Det här innehåller årsredovisningen
 
@@ -40,13 +41,13 @@ Gör bokslutet först, så att årets skatt och resultat är bokförda. Läs [Ch
 - **Balansräkning** med föregående år.
 - **Noter** om redovisningsprinciper, medelantal anställda och anläggningstillgångar.
 - **Underskrifter**.
+- **Fastställelseintyg** sist, för kopian som skickas till Bolagsverket. Årsredovisningslagen (8 kap. 3 §) kräver att en styrelseledamot eller VD intygar att resultat- och balansräkningen har fastställts, när det skedde och vad stämman beslutade om vinsten eller förlusten. Saknas något står det streckade rader att fylla i för hand.
 
 Raderna bildas av BAS-kontointervall och följer K2:s uppställning. Checkräkningskredit (konto 2480), förskott från kunder (2420) och leverantörsskulder (2440) står på egna rader, liksom förbättringsutgifter på annans fastighet (1120) och pågående nyanläggningar (1180, 1280). Indelningen är densamma som i inkomstdeklarationens räkenskapsschema (INK2R). I resultaträkningen är en förändring av lager av egna produkter och pågående arbeten (4940–4959, 4970–4979) en rörelseintäkt. Förändring av lager av handelsvaror (4960–4969) och inköpskonton som du markerat som handelsvaror i [kontoplanen](/manual/bokforing/kontoplan) står under Handelsvaror. Övriga inköp står under Råvaror och förnödenheter. Årets resultat i balansräkningen är resultaträkningens resultat, även om det inte är bokat på 2099 än. Finns föregående år inte i NONOX används årets ingående balanser som jämförelse i balansräkningen.
 
 ## Det här gör du utanför NONOX
 
 - **Revisionsberättelse** – har företaget revisor läggs den till utanför systemet.
-- **Fastställelseintyg** – skrivs efter årsstämman och läggs till utanför systemet.
 - **Inlämning till Bolagsverket** – digital inlämning (iXBRL) är på väg. Tills vidare lämnar du årsredovisningen på det sätt Bolagsverket anvisar.
 
 > [!NOTE]

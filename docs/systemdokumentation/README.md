@@ -1125,8 +1125,17 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   utdelning. Fältet visar det fria egna kapitalet och påminner om
   försiktighetsregeln, som styrelsen bedömer. Enligt granskning 2026-11-02,
   juristgranskning återstår (BS-AUD-BOK-2, #84).
-- Rapporten visas som sida och laddas ner som PDF. Revisionsberättelse och
-  fastställelseintyg läggs till utanför systemet. Digital inlämning till
+- Sist i rapporten finns fastställelseintyget (ÅRL 8 kap. 3 §): en
+  styrelseledamot eller VD intygar att resultat- och balansräkningen har
+  fastställts, fastställelsedagen och stämmans beslut om vinsten eller
+  förlusten, samt att kopian överensstämmer med originalet. Fälten
+  fastställelsedag (efter räkenskapsårets slut), beslut, namn och roll sparas
+  i `annual_reports`. Är beslutet tomt skrivs det ur den bokförda
+  resultatdispositionen; finns ingen lämnas tomma rader. Bolagsverkets
+  formkrav har inte kunnat läsas. Enligt granskning 2026-11-02,
+  juristgranskning återstår (BS-AUD-BOK-10, #91).
+- Rapporten visas som sida och laddas ner som PDF. Revisionsberättelsen
+  läggs till utanför systemet. Digital inlämning till
   Bolagsverket (iXBRL) finns ännu inte.
 - Kräver behörigheten att hantera räkenskapsår.
 

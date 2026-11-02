@@ -24,6 +24,10 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?string $signing_place
  * @property ?CarbonImmutable $signing_date
  * @property list<array{name: string, role: string}> $signatories
+ * @property ?CarbonImmutable $adoption_date
+ * @property ?string $adoption_decision
+ * @property ?string $certifier_name
+ * @property ?string $certifier_role
  * @property int $updated_by
  */
 class AnnualReport extends Model
@@ -41,6 +45,10 @@ class AnnualReport extends Model
         'signing_place',
         'signing_date',
         'signatories',
+        'adoption_date',
+        'adoption_decision',
+        'certifier_name',
+        'certifier_role',
         'updated_by',
     ];
 
@@ -52,6 +60,7 @@ class AnnualReport extends Model
             'average_employees' => 'integer',
             'signing_date' => 'immutable_date',
             'signatories' => 'array',
+            'adoption_date' => 'immutable_date',
         ];
     }
 }

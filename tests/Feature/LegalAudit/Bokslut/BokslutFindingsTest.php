@@ -199,7 +199,7 @@ it('AUD-BOK-10: includes a fastställelseintyg for the copy filed with Bolagsver
     $html = AnnualReportDocument::html($this->company, $this->year, new AnnualReport(['fiscal_year_id' => $this->year->id, 'signatories' => [], 'average_employees' => 0, 'dividend_ore' => 0]));
 
     expect($html)->toContain('Fastställelseintyg');
-})->todo('AUD-BOK-10: the annual report document has no fastställelseintyg');
+});
 
 it('AUD-BOK-11: offers the K2 notes on ställda säkerheter, eventualförpliktelser and events after the year (ÅRL 5 kap. 14–16, 22 §; BFNAR 2016:10 p. 18.13–18.22)', function () {
     $report = app(SaveAnnualReport::class)($this->owner, $this->year, ['average_employees' => 0, 'pledged_assets' => 'Företagsinteckning 500 000 kr']);

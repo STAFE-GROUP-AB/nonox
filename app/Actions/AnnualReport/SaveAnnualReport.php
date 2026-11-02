@@ -25,7 +25,7 @@ use InvalidArgumentException;
 class SaveAnnualReport
 {
     /**
-     * @param  array<string, mixed>  $input  business_description, significant_events, dividend, average_employees, signing_place, signing_date, signatories
+     * @param  array<string, mixed>  $input  business_description, significant_events, dividend, average_employees, signing_place, signing_date, signatories, adoption_date, adoption_decision, certifier_name, certifier_role
      */
     public function __invoke(User $user, FiscalYear $fiscalYear, array $input): AnnualReport
     {
@@ -47,9 +47,17 @@ class SaveAnnualReport
             'signing_place' => ['nullable', 'string', 'max:100'],
             'signing_date' => ['nullable', 'date_format:Y-m-d'],
             'signatories' => ['nullable', 'string', 'max:2000'],
-        ], [], [
+            // ÅRL 8 kap. 3 §: the meeting adopts the accounts after the year has ended.
+            'adoption_date' => ['nullable', 'date_format:Y-m-d', 'after:'.$fiscalYear->end_date->toDateString()],
+            'adoption_decision' => ['nullable', 'string', 'max:2000'],
+            'certifier_name' => ['nullable', 'string', 'max:255'],
+            'certifier_role' => ['nullable', 'string', 'max:100'],
+        ], [
+            'adoption_date.after' => __('Stämman kan fastställa räkningarna först efter räkenskapsårets slut, :date.', ['date' => $fiscalYear->end_date->toDateString()]),
+        ], [
             'average_employees' => __('medelantal anställda'),
             'signing_date' => __('datum'),
+            'adoption_date' => __('fastställelsedag'),
         ])->validate();
 
         try {
@@ -74,6 +82,10 @@ class SaveAnnualReport
                 'signing_place' => blank($validated['signing_place'] ?? null) ? null : $validated['signing_place'],
                 'signing_date' => blank($validated['signing_date'] ?? null) ? null : $validated['signing_date'],
                 'signatories' => self::signatories((string) ($validated['signatories'] ?? '')),
+                'adoption_date' => blank($validated['adoption_date'] ?? null) ? null : $validated['adoption_date'],
+                'adoption_decision' => blank($validated['adoption_decision'] ?? null) ? null : trim((string) $validated['adoption_decision']),
+                'certifier_name' => blank($validated['certifier_name'] ?? null) ? null : trim((string) $validated['certifier_name']),
+                'certifier_role' => blank($validated['certifier_role'] ?? null) ? null : trim((string) $validated['certifier_role']),
                 'updated_by' => $user->id,
             ]);
 

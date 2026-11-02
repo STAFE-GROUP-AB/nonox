@@ -27,11 +27,21 @@
                         <x-ui.field for="ar_date" :label="__('Datum för underskrift')" error="signing_date"><input id="ar_date" type="date" class="{{ $input }} mt-1" wire:model="form.signing_date"></x-ui.field>
                     </div>
                     <x-ui.field for="ar_signatories" :label="__('Underskrifter')" error="signatories" :hint="__('En per rad: namn, roll. Till exempel Anna Andersson, Styrelseledamot.')"><textarea id="ar_signatories" rows="3" class="{{ $input }} mt-1" wire:model="form.signatories"></textarea></x-ui.field>
+                    <fieldset class="space-y-4 border-t border-stone-200 pt-4">
+                        <legend class="text-sm font-semibold text-gray-900">{{ __('Fastställelseintyg') }}</legend>
+                        <p class="text-xs text-gray-500">{{ __('Fylls i efter stämman. Intyget kommer sist i PDF:en, på kopian som skickas till Bolagsverket (årsredovisningslagen 8 kap. 3 §).') }}</p>
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <x-ui.field for="ar_adoption_date" :label="__('Fastställelsedag')" error="adoption_date" :hint="__('Dagen då stämman fastställde resultat- och balansräkningen.')"><input id="ar_adoption_date" type="date" class="{{ $input }} mt-1" wire:model="form.adoption_date"></x-ui.field>
+                            <x-ui.field for="ar_certifier_name" :label="__('Den som intygar')" error="certifier_name"><input id="ar_certifier_name" type="text" class="{{ $input }} mt-1" wire:model="form.certifier_name"></x-ui.field>
+                            <x-ui.field for="ar_certifier_role" :label="__('Roll')" error="certifier_role" :hint="__('Styrelseledamot eller verkställande direktör.')"><input id="ar_certifier_role" type="text" class="{{ $input }} mt-1" wire:model="form.certifier_role"></x-ui.field>
+                        </div>
+                        <x-ui.field for="ar_adoption_decision" :label="__('Stämmans beslut om vinsten eller förlusten')" error="adoption_decision" :hint="__('Lämna tomt för att använda den bokförda resultatdispositionen.')"><textarea id="ar_adoption_decision" rows="3" class="{{ $input }} mt-1" wire:model="form.adoption_decision"></textarea></x-ui.field>
+                    </fieldset>
                     <div class="flex flex-wrap items-center gap-4">
                         <x-button>{{ __('Spara') }}</x-button>
                         <a href="{{ route('accounting.annualReport.pdf', $fiscalYear) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Ladda ner PDF') }}</a>
                     </div>
-                    <p class="text-xs text-gray-500">{{ __('Gör bokslutet först så att årets resultat och skatt är bokförda. Revisionsberättelse och fastställelseintyg läggs till utanför systemet.') }}</p>
+                    <p class="text-xs text-gray-500">{{ __('Gör bokslutet först så att årets resultat och skatt är bokförda. Revisionsberättelsen läggs till utanför systemet.') }}</p>
                 </form>
             </x-ui.card>
 

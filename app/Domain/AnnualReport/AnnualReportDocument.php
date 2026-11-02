@@ -10,6 +10,8 @@ use App\Models\AnnualReport;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
+use App\Models\YearEndEntry;
+use App\Support\Money\Money;
 use App\Support\Tenancy\CurrentCompany;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -55,9 +57,61 @@ final class AnnualReportDocument
                 'equityChanges' => $accounts->equityChanges(),
                 'disposition' => ['free' => $free, 'dividend' => $dividend, 'carried' => $free - $dividend],
                 'fixedAssets' => $accounts->fixedAssetNotes(),
+                'certificate' => self::certificate($company, $fiscalYear, $report, $free),
                 'depreciation' => self::depreciationPrinciples(),
             ];
         });
+    }
+
+    /**
+     * The fastställelseintyg on the copy filed with Bolagsverket (ÅRL 8 kap.
+     * 3 §): a board member or the managing director certifies that the income
+     * statement and balance sheet have been adopted, on which day, and the
+     * meeting's decision on the profit or loss. The decision is the text the
+     * person wrote, else the booked disposition (#91).
+     *
+     * TODO(legal-verify): Bolagsverket's form requirements for the
+     * certificate and the certified copy (bestyrkande), which could not be
+     * read on 2026-11-02.
+     *
+     * @return array{meeting: string, date: ?string, decision: ?string, name: ?string, role: ?string}
+     */
+    public static function certificate(Company $company, FiscalYear $fiscalYear, AnnualReport $report, int $free): array
+    {
+        return [
+            'meeting' => self::meeting($company),
+            'date' => $report->adoption_date?->toDateString(),
+            'decision' => filled($report->adoption_decision) ? $report->adoption_decision : self::bookedDecision($company, $fiscalYear, $free),
+            'name' => $report->certifier_name,
+            'role' => $report->certifier_role,
+        ];
+    }
+
+    /** The meeting that adopts the accounts: årsstämman (AB) or föreningsstämman (ekonomisk förening). */
+    public static function meeting(Company $company): string
+    {
+        return $company->legal_form === LegalForm::EkonomiskForening ? __('Föreningsstämman') : __('Årsstämman');
+    }
+
+    /**
+     * The meeting's decision written out: from the booked disposition when
+     * there is one, else from the board's proposal in the report.
+     */
+    public static function decisionText(Company $company, int $free, int $dividend): string
+    {
+        $owners = $company->legal_form === LegalForm::EkonomiskForening ? __('medlemmarna') : __('aktieägarna');
+        $amount = fn (int $ore): string => Money::ofOre($ore)->format(withCurrency: false);
+
+        return $dividend > 0
+            ? __(':meeting beslutade att av de till förfogande stående medlen, :free kr, dela ut :dividend kr till :owners och balansera :carried kr i ny räkning.', ['meeting' => self::meeting($company), 'free' => $amount($free), 'dividend' => $amount($dividend), 'owners' => $owners, 'carried' => $amount($free - $dividend)])
+            : __(':meeting beslutade att de till förfogande stående medlen, :free kr, balanseras i ny räkning.', ['meeting' => self::meeting($company), 'free' => $amount($free)]);
+    }
+
+    private static function bookedDecision(Company $company, FiscalYear $fiscalYear, int $free): ?string
+    {
+        $entry = YearEndEntry::query()->where('fiscal_year_id', $fiscalYear->id)->where('type', YearEndEntry::DISPOSITION)->first();
+
+        return $entry === null ? null : self::decisionText($company, $free, $entry->dividend_ore->ore);
     }
 
     public static function html(Company $company, FiscalYear $fiscalYear, AnnualReport $report): string

@@ -291,3 +291,23 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-5, #90).
 - TODO(legal-verify): whether a new issue, a bonus issue or a shareholder
   contribution must be named on its own row instead of "Övriga
   förändringar"; corrections of errors under BFNAR 2016:10 p. 20.11.
+
+## Fastställelseintyg (2026-11-02, #91)
+
+Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-10, #91).
+
+- **Rule.** ÅRL 8 kap. 3 § p. 1 (aktiebolag) and p. 2 (ekonomiska
+  föreningar), read 2026-11-02: certified copies reach Bolagsverket within a
+  month of the adoption; on the copy a board member or the managing director
+  certifies that the balance sheet and income statement have been adopted,
+  gives the day, and the meeting's decision on the profit or loss.
+- **Decision.** Four nullable columns on `annual_reports` (adoption_date,
+  adoption_decision, certifier_name, certifier_role) and a last page in the
+  PDF. The decision defaults to a sentence built from the booked DISPOSITION
+  entry of the year; the meeting is "årsstämman" for an AB and
+  "föreningsstämman" for an ekonomisk förening. The page is always printed,
+  with dotted lines for what is missing, so the same PDF can be signed by
+  hand.
+- TODO(legal-verify): Bolagsverket's form requirements (original or copy,
+  digital filing, the wording of the bestyrkande), which could not be read
+  (captcha).
