@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Inbox;
 
 use App\Http\Middleware\EnsureUserHasCompany;
+use App\Models\Voucher;
+use App\Modules\Inbox\Actions\ForgetDeletedDraft;
 use App\Modules\Inbox\Console\FetchInboxCommand;
 use App\Modules\Inbox\Console\InboxSummaryCommand;
 use App\Modules\Inbox\Console\PruneInboxCommand;
@@ -65,6 +67,9 @@ class InboxServiceProvider extends ServiceProvider
         }
 
         Gate::policy(InboxMessage::class, InboxMessagePolicy::class);
+
+        // A deleted draft no longer belongs to its message; with none left the message is open again.
+        Voucher::deleted(fn (Voucher $voucher) => app(ForgetDeletedDraft::class)($voucher));
 
         Livewire::component(InboxSettingsForm::NAME, InboxSettingsForm::class);
         Livewire::component('inbox.workspace', InboxWorkspace::class);

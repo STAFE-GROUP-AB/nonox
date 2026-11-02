@@ -43,7 +43,7 @@ Har du bokfört utan underlag kan du lägga till det efteråt: öppna verifikati
 
 ### Ta bort underlag
 
-På ett utkast väljer du **Ta bort** bredvid filen. På en bokförd verifikation går det inte: underlaget är en del av räkenskapsinformationen och sparas så länge bokföringen sparas. Har du lagt till fel fil, lägg till den rätta också. Båda finns kvar, och behandlingshistoriken visar vem som lade till vad och när.
+På ett utkast väljer du **Ta bort** bredvid filen. Kom filen från inkorgen, eller används den av en annan verifikation, tas den bara bort från utkastet. Själva filen finns kvar där den används. På en bokförd verifikation går det inte: underlaget är en del av räkenskapsinformationen och sparas så länge bokföringen sparas. Har du lagt till fel fil, lägg till den rätta också. Båda finns kvar, och behandlingshistoriken visar vem som lade till vad och när.
 
 ## NONOX AI läser underlaget
 

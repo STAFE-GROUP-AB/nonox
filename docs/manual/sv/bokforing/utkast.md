@@ -33,6 +33,8 @@ Ett utkast behöver inte gå ihop. Det som krävs är ett datum inom ett räkens
 
 Eftersom utkastet aldrig var bokfört påverkas inget i bokföringen. Borttagningen går inte att ångra.
 
+Kom utkastet från [inkorgen](/manual/leverantorer/inkorgen) finns mejlet och dess bilagor kvar. De kan vara underlag för en annan verifikation från samma mejl, och då får de inte försvinna. Tar du bort alla utkast från ett mejl som inte har bokförts hamnar mejlet under **Att granska** igen.
+
 ## Bra att veta
 
 - Ett utkast kan ändras och tas bort fritt, men bara av den som får lägga in verifikationer. Så fort det är bokfört gäller samma regler som för all annan bokföring: det kan bara [rättas](/manual/bokforing/ratta-en-verifikation).

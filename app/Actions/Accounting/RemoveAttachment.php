@@ -8,12 +8,15 @@ use App\Models\User;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Support\Audit\Audit;
+use App\Support\Files\StoredFiles;
+use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * Removes an attachment from a draft. Attachments of posted vouchers are kept
- * for good (AGENTS.md §10).
+ * for good (AGENTS.md §10). The file itself is removed only when no other
+ * row refers to it, such as the inbox mail it came from or another voucher.
  */
 class RemoveAttachment
 {
@@ -23,12 +26,18 @@ class RemoveAttachment
 
         Gate::forUser($user)->authorize('update', $voucher);
 
-        $attachment->delete();
-        Storage::disk(AttachToVoucher::DISK)->delete($attachment->file_path);
+        CurrentCompany::run($voucher->company_id, function () use ($user, $voucher, $attachment): void {
+            DB::transaction(function () use ($user, $voucher, $attachment): void {
+                $attachment->delete();
 
-        Audit::record('voucher.attachment_removed', $voucher, [
-            'name' => $attachment->original_name,
-            'sha256' => $attachment->sha256,
-        ], $voucher->company_id, $user);
+                $deleted = StoredFiles::deleteUnreferenced([$attachment->file_path]);
+
+                Audit::record('voucher.attachment_removed', $voucher, [
+                    'name' => $attachment->original_name,
+                    'sha256' => $attachment->sha256,
+                    'file_kept' => $deleted === [],
+                ], $voucher->company_id, $user);
+            });
+        });
     }
 }

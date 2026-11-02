@@ -14,11 +14,11 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Support\Audit\Audit;
+use App\Support\Files\StoredFiles;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -151,6 +151,6 @@ class EraseEmployee
 
         $employee->delete();
 
-        DB::afterCommit(fn () => Storage::disk('local')->delete($receipts->all()));
+        StoredFiles::deleteUnreferenced($receipts->all());
     }
 }

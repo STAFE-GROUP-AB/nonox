@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Actions\Accounting\AttachToVoucher;
 use App\Migration\Fortnox\FortnoxConnection;
 use App\Models\LoginCode;
 use App\Models\TeamInvitation;
@@ -12,11 +11,12 @@ use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\StaffLedger\Actions\PruneStaffLedger;
 use App\Support\Audit\Audit;
+use App\Support\Files\StoredFiles;
 use App\Support\Tenancy\ArchivedCompany;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Removes personal data that no longer has a purpose (GDPR art. 5.1 c and e).
@@ -65,11 +65,11 @@ class PrunePersonalDataCommand extends Command
 
             $expenses = 0;
             Expense::query()->where('status', 'REJECTED')->where('decided_at', '<', $cutoff)->each(function (Expense $expense) use (&$expenses): void {
-                if ($expense->receipt_path !== null) {
-                    Storage::disk(AttachToVoucher::DISK)->delete($expense->receipt_path);
-                }
+                DB::transaction(function () use ($expense): void {
+                    $expense->delete();
 
-                $expense->delete();
+                    StoredFiles::deleteUnreferenced([$expense->receipt_path]);
+                });
                 $expenses++;
             });
 

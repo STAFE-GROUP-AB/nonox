@@ -121,6 +121,8 @@ Tryck på <kbd>?</kbd> i inkorgen för att se dem.
 
 Ett underlag som inte är bokfört kan du radera själv med **Radera**. Det går inte att ångra.
 
+Tar du bort ett utkast som kom från inkorgen finns mejlet kvar. Har du tagit bort alla utkast från ett mejl och inget är bokfört, hamnar mejlet under **Att granska** igen. Då kan du godkänna det på nytt eller radera det.
+
 ## Läs också
 
 - [Inkorgens adress och godkända avsändare](/manual/leverantorer/inkorgens-installningar)
