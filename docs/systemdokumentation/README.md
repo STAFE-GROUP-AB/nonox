@@ -71,7 +71,15 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   eller den 26:e i månaden efter (den 27:e i december) för företag med
   omsättning över 40 miljoner kronor, vilket anges i företagets inställningar;
   kvartalsmoms den 12:e i andra månaden efter kvartalet (den 17:e i augusti).
-  En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
+  Helårsmoms enligt SFL 26 kap. 33, 33 a och 33 b §§: enskild firma den 12
+  maj året efter; aktiebolag, ekonomisk och ideell förening och stiftelse
+  efter räkenskapsårets sista månad och digital inlämning (januari–april 12
+  december, maj–juni 17 januari, juli–augusti 12 april, september–december
+  17 augusti); handels- och kommanditbolag och alla med EU-handel under året
+  den 26:e i andra månaden efter året (den 27:e i december). EU-handel läses
+  ur bokföringen: en bokförd rad på ett konto till ruta 20, 21, 35, 38 eller
+  39 (enligt granskning 2026-11-02, juristgranskning återstår, AUD-MOMS-9,
+  #60). En dag som infaller på helg flyttas till närmast följande vardag. AGI:s dag
   kommer från den kontrollerade regeln `agi.deadlines`; utan kontrollerad
   regel visas ingen dag.
 - Fliken Månad för månad (Byråvy) visar alla företag för en vald månad,
@@ -460,9 +468,32 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 - Momsdeklarationens rutor räknas fram ur rörelserna på momskonton och
   försäljnings- och inköpskonton enligt BAS, per redovisningsperiod. Beloppen
   anges i hela kronor.
-- Momsen bokförs med en verifikation i serie M per period: momskontona
-  nollställs, beloppet förs till 2650 och öresavrundningen till 3740. Rutorna
-  sparas med verifikationen och kan inte ändras. En period bokförs en gång.
+- Redovisningsperioden är kalendermånad, kalenderkvartal eller beskattningsår
+  (räkenskapsåret) enligt SFL 26 kap. 10 och 11 §§. Månader och kvartal delas
+  aldrig vid ett brutet räkenskapsårs gräns: ett kvartal som spänner över två
+  räkenskapsår är en deklaration, räknas fram ur de bokförda verifikationerna
+  efter datum i båda åren och avräknas en gång med en verifikation på
+  kvartalets sista dag, i det räkenskapsår den dagen hör till. Bokslutets
+  checklista kräver bara perioder som slutar i året (enligt granskning
+  2026-11-02, juristgranskning återstår, AUD-MOMS-6, #59).
+- Momsen bokförs med en verifikation i serie M per period: momskontona som
+  hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
+  ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören
+  som rutorna i hela kronor inte tar med till 3740. Rutorna sparas med
+  verifikationen och kan inte ändras.
+- Bokförs något i en period vars moms redan är bokförd visar momssidan det
+  och erbjuder ett tillägg: en ny verifikation i serie M med bara skillnaden
+  på momskontona, 2650 och 3740, daterad periodens sista dag (eller dagens
+  datum om den dagen är låst eller räkenskapsåret stängt). De rättade rutorna
+  sparas som en ny version av deklarationen; tidigare versioner ändras
+  aldrig. Användaren uppmanas lämna en rättad deklaration för hela perioden
+  hos Skatteverket (enligt granskning 2026-11-02, juristgranskning återstår,
+  AUD-MOMS-5, #63).
+- Vilande moms (2618, 2628, 2638 och 2648) och andra konton mellan 2610 och
+  2649 utan ruta ingår inte i deklarationen och flyttas inte till 2650; de
+  visas som en varning på momssidan. Ruta 48 läser 2640–2647 och 2649, inte
+  2648 (ML 7 kap. 14 och 31 §§; enligt granskning 2026-11-02,
+  juristgranskning återstår, AUD-MOMS-1, #58).
 - Efter deklarationen kan bokföringen låsas till och med periodens sista dag.
   Låset kan bara flyttas framåt.
 

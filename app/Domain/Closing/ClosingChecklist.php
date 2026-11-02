@@ -76,13 +76,14 @@ final class ClosingChecklist
                 ? __('Alla verifikationer i året är bokförda.')
                 : __(':count verifikationer är utkast. Bokför eller ta bort dem.', ['count' => $drafts]), $drafts === 0 ? self::OK : self::TODO, 'accounting.vouchers.index');
 
-            $periods = VatPeriods::of($fiscalYear, $company->vat_period);
-            $reported = VatReport::query()->whereBetween('period_start', [$fiscalYear->start_date->toDateString(), $fiscalYear->end_date->toDateString()])
+            // A calendar quarter that runs past the year end is settled in the next year (#59), so only periods that end in the year count.
+            $periods = array_values(array_filter(VatPeriods::of($fiscalYear, $company->vat_period), fn (array $period): bool => $period['end']->lessThanOrEqualTo($fiscalYear->end_date)));
+            $reported = VatReport::query()->whereIn('period_start', array_map(fn (array $period): string => $period['start']->toDateString(), $periods))
                 ->get(['period_start'])->map(fn (VatReport $report): string => $report->period_start->toDateString())->all();
             $missing = array_values(array_filter($periods, fn (array $period): bool => ! in_array($period['start']->toDateString(), $reported, true)));
             $items[] = self::item('vat', __('Momsen är redovisad'), match (true) {
                 $periods === [] => __('Företaget redovisar inte moms.'),
-                $missing === [] => __('Alla momsperioder i året är bokförda.'),
+                $missing === [] => __('Alla momsperioder som slutar i året är bokförda.'),
                 default => __('Kvar: :periods.', ['periods' => implode(', ', array_map(fn (array $period): string => VatPeriods::label($period['start'], $period['end']), $missing))]),
             }, $periods === [] ? self::NOT_APPLICABLE : ($missing === [] ? self::OK : self::TODO), 'vat.index');
 

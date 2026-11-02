@@ -21,7 +21,7 @@ De här punkterna bockas av av sig själva när bokföringen visar att de är kl
 | Punkt | Klar när |
 |---|---|
 | **Inga utkast i året** | Alla verifikationer i året är bokförda. Bokför eller ta bort utkasten. |
-| **Momsen är redovisad** | Alla momsperioder i året är bokförda. Punkten räknar upp de som saknas. |
+| **Momsen är redovisad** | Alla momsperioder som slutar i året är bokförda. Ett kalenderkvartal som fortsätter efter årets slut räknas till nästa år. Punkten räknar upp de som saknas. |
 | **Bank och kassa är avstämda** | Varje bank- och kassakonto med saldo eller rörelse är avstämt utan skillnad den sista dagen i året. |
 | **Avskrivningarna är bokförda** | Alla tillgångar i anläggningsregistret är avskrivna till och med årets sista månad. |
 | **Periodiseringarna är bokförda** | Alla periodiseringar är bokförda till och med årets sista månad. |
