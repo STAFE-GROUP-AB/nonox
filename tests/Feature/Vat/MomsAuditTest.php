@@ -456,7 +456,28 @@ it('settles VAT booked in a period after it was settled', function () {
 
 it('lets a company choose yearly VAT only with a taxable base up to 1 million kronor', function () {})->todo('AUD-MOMS-8: vat_period YEARLY is accepted for any company; Skatteverket allows yearly only up to 1 mkr and quarterly up to 40 mkr (SFL 26 kap. 10–11 §§). Low impact: Skatteverket decides the period at registration.');
 
-it('supports boxes 06, 07, 08 and 37', function () {})->todo('AUD-MOMS-7: no account feeds box 06 (uttag), 07 (vinstmarginal), 08 (frivillig skattskyldighet uthyrning) or 37 (mellanmans inköp, trepartshandel); 2612/2613/2616 VAT reaches box 10 but its base lands in 05 or nowhere.');
+it('supports boxes 06, 07, 08 and 37', function () {
+    momsAuditAccount(3401, 'Egna uttag momspliktiga, 25 %', 'REVENUE');
+    momsAuditAccount(2612, 'Utgående moms på egna uttag, 25 %', 'LIABILITY_EQUITY');
+    momsAuditAccount(2616, 'Utgående moms VMB 25 %', 'LIABILITY_EQUITY');
+    momsAuditAccount(3211, 'Försäljning positiv VMB 25 %', 'REVENUE');
+    momsAuditAccount(3913, 'Frivilligt momspliktiga hyresintäkter', 'REVENUE');
+    momsAuditAccount(2613, 'Utgående moms för uthyrning, 25 %', 'LIABILITY_EQUITY');
+    momsAuditAccount(4519, 'Inköp av varor, mellanman i trepartshandel', 'EXPENSE');
+    momsAuditAccount(2013, 'Övriga egna uttag', 'LIABILITY_EQUITY');
+    Account::query()->where('number', 4519)->sole()->forceFill(['vat_box' => 37])->save();
+
+    // Uttag 400 kr + 100 kr VAT; VMB margin VAT 200 kr (base 800 kr); rent 1 000 kr + 250 kr; trepartsinköp 3 000 kr.
+    momsAuditBook($this->owner, $this->company, '2026-02-01', [['account' => 2013, 'debit_ore' => 50_000], ['account' => 3401, 'credit_ore' => 40_000], ['account' => 2612, 'credit_ore' => 10_000]]);
+    momsAuditBook($this->owner, $this->company, '2026-02-02', [['account' => 1930, 'debit_ore' => 300_000], ['account' => 3211, 'credit_ore' => 280_000], ['account' => 2616, 'credit_ore' => 20_000]]);
+    momsAuditBook($this->owner, $this->company, '2026-02-03', [['account' => 1930, 'debit_ore' => 125_000], ['account' => 3913, 'credit_ore' => 100_000], ['account' => 2613, 'credit_ore' => 25_000]]);
+    momsAuditBook($this->owner, $this->company, '2026-02-04', [['account' => 4519, 'debit_ore' => 300_000], ['account' => 2440, 'credit_ore' => 300_000]]);
+
+    $boxes = VatReturn::calculate($this->year, CarbonImmutable::parse('2026-01-01'), CarbonImmutable::parse('2026-03-31'))->boxes();
+
+    // Fält 06, 07, 08 and 37 (AUD-MOMS-7, #64); none of it in box 05; box 10 = 100 + 200 + 250.
+    expect([$boxes[6], $boxes[7], $boxes[8], $boxes[37], $boxes[5], $boxes[10]])->toBe([400, 800, 1_000, 3_000, 0, 550]);
+});
 
 it('lists the quarter\'s VAT-free EU sales per buyer in the periodisk sammanställning (ML 2023:200, SFL 35 kap.)', function () {
     momsAuditQuarter($this->owner, $this->company);

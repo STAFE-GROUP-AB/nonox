@@ -12,10 +12,15 @@ namespace App\Domain\Vat;
  * count debit minus credit. Box 49 is calculated. Boxes are numbered as
  * integers and shown with two digits (05).
  *
- * TODO(legal-verify): the account-to-box mapping follows the BAS chart's
- * VAT accounts. Confirm it against the current BAS momsrapport and
- * Skatteverket's box definitions, and decide boxes 06, 07, 08, 37 and 38,
- * which have no account here yet.
+ * Boxes 06 (3401–3403 Egna uttag momspliktiga) and 08 (3913 Frivilligt
+ * momspliktiga hyresintäkter) follow their BAS 2026 accounts. Box 07 has no
+ * account: its base is derived from the VMB VAT on 2616, 2626 and 2636
+ * (VatReturn). Box 37 has no BAS account; a company ties an account of its
+ * own to it (accounts.vat_box, #64).
+ *
+ * TODO(legal-verify): the account-to-box mapping follows the BAS 2026
+ * chart's names. Confirm it against the current BAS momsrapport and
+ * Skatteverket's box definitions.
  */
 final class VatBoxes
 {
@@ -32,6 +37,9 @@ final class VatBoxes
      */
     public const array BOXES = [
         5 => ['label' => 'Momspliktig försäljning som inte ingår i ruta 06, 07 eller 08', 'element' => 'ForsMomsEjAnnan', 'side' => self::CREDIT, 'accounts' => [[3000, 3003], [3005, 3099], [3914, 3914]]],
+        6 => ['label' => 'Momspliktiga uttag', 'element' => 'UttagMoms', 'side' => self::CREDIT, 'accounts' => [[3401, 3403]]],
+        7 => ['label' => 'Beskattningsunderlag vid vinstmarginalbeskattning', 'element' => 'UlagMargbesk', 'side' => self::CREDIT, 'accounts' => []],
+        8 => ['label' => 'Hyresinkomster vid frivillig beskattning', 'element' => 'HyrinkomstFriv', 'side' => self::CREDIT, 'accounts' => [[3913, 3913]]],
         10 => ['label' => 'Utgående moms 25 %', 'element' => 'MomsUtgHog', 'side' => self::CREDIT, 'accounts' => [[2610, 2613], [2616, 2616]]],
         11 => ['label' => 'Utgående moms 12 %', 'element' => 'MomsUtgMedel', 'side' => self::CREDIT, 'accounts' => [[2620, 2623], [2626, 2626]]],
         12 => ['label' => 'Utgående moms 6 %', 'element' => 'MomsUtgLag', 'side' => self::CREDIT, 'accounts' => [[2630, 2633], [2636, 2636]]],
@@ -49,6 +57,7 @@ final class VatBoxes
         62 => ['label' => 'Utgående moms 6 % på import', 'element' => 'MomsImportUtgLag', 'side' => self::CREDIT, 'accounts' => [[2635, 2635]]],
         35 => ['label' => 'Försäljning av varor till ett annat EU-land', 'element' => 'ForsVaruAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3108, 3108]]],
         36 => ['label' => 'Försäljning av varor utanför EU', 'element' => 'ForsVaruUtomEg', 'side' => self::CREDIT, 'accounts' => [[3105, 3105]]],
+        37 => ['label' => 'Mellanmans inköp av varor vid trepartshandel', 'element' => 'InkopVaruMellan3p', 'side' => self::DEBIT, 'accounts' => []],
         38 => ['label' => 'Mellanmans försäljning av varor vid trepartshandel', 'element' => 'ForsVaruMellan3p', 'side' => self::CREDIT, 'accounts' => [[3107, 3107]]],
         39 => ['label' => 'Försäljning av tjänster till näringsidkare i ett annat EU-land', 'element' => 'ForsTjSkskAnnatEg', 'side' => self::CREDIT, 'accounts' => [[3308, 3308]]],
         40 => ['label' => 'Övrig försäljning av tjänster omsatta utanför Sverige', 'element' => 'ForsTjOvrUtomEg', 'side' => self::CREDIT, 'accounts' => [[3305, 3305]]],
@@ -59,6 +68,29 @@ final class VatBoxes
     ];
 
     public const int TAXABLE_SALES = 5;
+
+    public const int MARGIN_SCHEME = 7;
+
+    /**
+     * Output VAT under vinstmarginalbeskattning (BAS 2026: Utgående moms VMB
+     * 25/12/6 %), with its rate. Box 07 is the base the VAT is calculated
+     * on, so it is the VAT / rate (Skatteverket, fält 07).
+     *
+     * TODO(legal-verify): a negative margin is reported as 0 per sale; a
+     * credit that brings a period's VMB VAT below zero is not clamped here.
+     */
+    public const array MARGIN_VAT = [2616 => 2500, 2626 => 1200, 2636 => 600];
+
+    /**
+     * The boxes an account can be tied to instead of the box its number
+     * gives (accounts.vat_box, #64): the base boxes for sales and purchases.
+     * VAT boxes are not offered; they follow the BAS VAT accounts, which the
+     * settlement moves to 2650.
+     */
+    public const array ACCOUNT_BOXES = [5, 6, 8, 20, 21, 22, 23, 24, 35, 36, 37, 38, 39, 40, 41, 42, 50];
+
+    /** The accounts that may be tied to a box: revenue and costs, not balance sheet or VAT accounts. */
+    public const array ACCOUNTS_WITH_BOX = [3000, 8999];
 
     public const int EXEMPT_SALES = 42;
 
@@ -117,6 +149,11 @@ final class VatBoxes
         return $box !== null && ($box === self::INPUT_VAT || in_array($box, self::OUTPUT_VAT, true));
     }
 
+    public static function canHaveBox(int $account): bool
+    {
+        return $account >= self::ACCOUNTS_WITH_BOX[0] && $account <= self::ACCOUNTS_WITH_BOX[1];
+    }
+
     public static function isVatAccount(int $account): bool
     {
         return $account >= self::VAT_ACCOUNTS[0] && $account <= self::VAT_ACCOUNTS[1];
@@ -128,9 +165,9 @@ final class VatBoxes
      * same voucher explains it (#61). 3990 Övriga ersättningar och intäkter,
      * 3500–3699 fakturerade kostnader and sidointäkter are examples.
      */
-    public static function isOtherRevenue(int $account): bool
+    public static function isOtherRevenue(int $account, ?int $override = null): bool
     {
-        if ($account < 3000 || $account > 3999 || self::boxFor($account) !== null) {
+        if ($account < 3000 || $account > 3999 || self::boxFor($account, $override) !== null) {
             return false;
         }
 
@@ -143,8 +180,16 @@ final class VatBoxes
         return true;
     }
 
-    public static function boxFor(int $account): ?int
+    /**
+     * The box the account feeds: the box it is tied to (accounts.vat_box),
+     * otherwise the box its number falls in.
+     */
+    public static function boxFor(int $account, ?int $override = null): ?int
     {
+        if ($override !== null && self::canHaveBox($account) && in_array($override, self::ACCOUNT_BOXES, true)) {
+            return $override;
+        }
+
         foreach (self::BOXES as $box => $definition) {
             foreach ($definition['accounts'] as [$from, $to]) {
                 if ($account >= $from && $account <= $to) {

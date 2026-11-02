@@ -335,7 +335,7 @@ class VoucherEditor extends Component
     public function render(): View
     {
         $costCenters = CostCenter::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']);
-        $accounts = Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'type']);
+        $accounts = Account::query()->where('is_active', true)->orderBy('number')->get(['number', 'name', 'type', 'vat_box']);
         $projects = Project::query()->where('is_active', true)->orderBy('code')->get(['code', 'name']);
 
         return view('livewire.accounting.voucher-editor', [

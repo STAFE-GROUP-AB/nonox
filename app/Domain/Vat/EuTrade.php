@@ -46,8 +46,10 @@ final class EuTrade
             ->where('vouchers.status', VoucherStatus::Posted->value)
             ->where('vouchers.source', '<>', VoucherSource::Vat->value)
             ->where(function (Builder $query): void {
+                $query->whereIn('accounts.vat_box', self::BOXES);
+
                 foreach (self::BOXES as $box) {
-                    foreach (VatBoxes::BOXES[$box]['accounts'] ?? [] as [$from, $to]) {
+                    foreach (VatBoxes::BOXES[$box]['accounts'] as [$from, $to]) {
                         $query->orWhereBetween('accounts.number', [$from, $to]);
                     }
                 }

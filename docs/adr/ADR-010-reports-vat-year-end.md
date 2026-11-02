@@ -31,7 +31,8 @@
 - Boxes are calculated from account movements, mapped by BAS account number
   (`VatBoxes`). There are no VAT codes on rows yet; the mapping covers the
   BAS VAT accounts. `TODO(legal-verify)` on the mapping, on dropping öre per
-  box, and on boxes without accounts (06, 07, 08, 37, 38, 41).
+  box, and on the BAS accounts read for boxes 06, 07, 08 and 38 (box 37 has
+  no BAS account and is reached through `accounts.vat_box`, #64).
 - **Box 05 by the VAT, not only the account** (#61): box 05 reads
   3000–3003, 3005–3099 and 3914 by account, and also, per voucher, the credit
   on a revenue account without a box (3990, 3500–3699 and the like; not
@@ -55,6 +56,20 @@
   other box 05 account 25/12/6 %, box 42 0 %). Warnings, not validation, so
   imports and unusual cases still post. Enligt granskning 2026-11-02,
   juristgranskning återstår (AUD-MOMS-4, #62).
+- **Boxes 06, 07, 08 and 37** (#64): 06 reads 3401–3403 and 08 reads 3913
+  (BAS 2026 v1.1: Egna uttag momspliktiga, Frivilligt momspliktiga
+  hyresintäkter); 3914 Övriga momspliktiga hyresintäkter reads as 05. Box 07
+  is the base under the margin scheme, which is not on any account (3211
+  holds the price less the VAT), so it is derived per period as the VMB VAT
+  on 2616/2626/2636 / rate. BAS has no account for box 37; instead an
+  account in 3000–8999 can be tied to a base box (05, 06, 08, 20–24,
+  35–42, 50) with `accounts.vat_box`, which wins over the number. VAT
+  accounts cannot be tied, so the settlement keeps following BAS. EuTrade
+  also counts accounts tied to its boxes. BAS 2026 v1.1 has no 2617, 2627 or
+  2637 (checked in the official chart), so nothing is mapped to them; such
+  an account in an imported chart stays a VAT account without a box and is
+  listed as not declared. Enligt granskning 2026-11-02, juristgranskning
+  återstår (AUD-MOMS-7, #64).
 - Periods follow the company's redovisningsperiod: calendar month, calendar
   quarter or the beskattningsår (= the fiscal year for a company), SFL 26
   kap. 10, 11 and 26 §§. Months and quarters are never cut at a fiscal year

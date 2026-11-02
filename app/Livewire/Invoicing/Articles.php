@@ -82,7 +82,7 @@ class Articles extends Component
         $saved = $this->editingId === null
             ? __('Artikel :number :name är tillagd.', ['number' => $article->number, 'name' => $article->name])
             : __('Artikeln :name är sparad.', ['name' => $article->name]);
-        $mismatch = SalesVatRules::mismatch((int) $article->account?->number, $article->vat_rate);
+        $mismatch = SalesVatRules::mismatch((int) $article->account?->number, $article->vat_rate, $article->account?->vat_box);
 
         $this->toast($mismatch === null ? $saved : "{$saved} {$mismatch}");
 

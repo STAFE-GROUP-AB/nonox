@@ -41,7 +41,7 @@ trait EditsSalesRows
      */
     protected function salesVatRules(): array
     {
-        return SalesVatRules::forAccounts(Account::query()->whereBetween('number', [3000, 3999])->get(['id', 'number']));
+        return SalesVatRules::forAccounts(Account::query()->whereBetween('number', [3000, 3999])->get(['id', 'number', 'vat_box']));
     }
 
     /**

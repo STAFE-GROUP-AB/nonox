@@ -493,6 +493,14 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   intäktskontot (3001 25 %, 3002 12 %, 3003 6 %, 3004 0 %); varningen
   stoppar inte bokföringen (enligt granskning 2026-11-02, juristgranskning
   återstår, AUD-MOMS-4, #62).
+- Ruta 06 läser 3401–3403 (egna uttag momspliktiga), ruta 08 läser 3913
+  (frivilligt momspliktiga hyresintäkter) och ruta 07 räknas som momsen på
+  2616, 2626 och 2636 (utgående moms VMB) delad med momssatsen, eftersom
+  rutan är beskattningsunderlaget och inte priset. BAS saknar konto för ruta
+  37; ett intäkts- eller kostnadskonto (3000–8999) kan kopplas till en ruta
+  för försäljning eller inköp i kontoplanen (`accounts.vat_box`), och
+  kopplingen går före kontonumret. Ändringen skrivs i behandlingshistoriken
+  (enligt granskning 2026-11-02, juristgranskning återstår, AUD-MOMS-7, #64).
 - Momsen bokförs med en verifikation i serie M per period: momskontona som
   hör till en momsruta (utgående moms i rutorna 10–12, 30–32 och 60–62,
   ingående moms i ruta 48) nollställs, beloppet förs till 2650 och de ören

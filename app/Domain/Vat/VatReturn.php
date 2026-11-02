@@ -79,7 +79,13 @@ final class VatReturn
                 $unsettled[] = ['number' => $account->number, 'name' => $account->name, 'amount' => $change];
             }
 
-            $box = VatBoxes::boxFor($account->number);
+            if (isset(VatBoxes::MARGIN_VAT[$account->number]) && $change !== 0) {
+                // Box 07 is the base under vinstmarginalbeskattning: the VMB VAT / rate (#64).
+                $margin = BigDecimal::of(-$change)->multipliedBy(10_000)->dividedBy(VatBoxes::MARGIN_VAT[$account->number], 0, RoundingMode::HalfUp)->toInt();
+                self::addSource($exact, $sources, VatBoxes::MARGIN_SCHEME, $account->number, $account->name, $margin);
+            }
+
+            $box = VatBoxes::boxFor($account->number, $account->vat_box);
 
             if ($box === null) {
                 continue;
@@ -128,7 +134,7 @@ final class VatReturn
      * exact as the VAT was rounded; a whole-krona difference per voucher is
      * accepted as rounding.
      *
-     * @param  list<array{number: int, name: string, net: int}>  $rows  credit minus debit per account on the voucher
+     * @param  list<array{number: int, name: string, box: ?int, net: int}>  $rows  credit minus debit per account on the voucher, box = accounts.vat_box
      * @param  array<int, int>  $exact
      * @param  array<int, array<int, array{number: int, name: string, amount: int}>>  $sources
      */
@@ -148,7 +154,7 @@ final class VatReturn
             }
 
             if ($row['net'] !== 0 && $row['number'] >= 3000 && ($row['number'] < 3700 || $row['number'] > 3799)) {
-                if (VatBoxes::boxFor($row['number']) === VatBoxes::TAXABLE_SALES) {
+                if (VatBoxes::boxFor($row['number'], $row['box']) === VatBoxes::TAXABLE_SALES) {
                     $taxableRows[] = $row;
                 } else {
                     $onlyTaxableAccounts = false;
@@ -159,9 +165,9 @@ final class VatReturn
                 $rate = VatBoxes::SALE_VAT[$row['number']];
                 $base = $base->plus(BigDecimal::of($row['net'])->multipliedBy(10_000)->dividedBy($rate, 4, RoundingMode::HalfUp));
                 $tolerance = $tolerance->plus(BigDecimal::of(50 * 10_000)->dividedBy($rate, 4, RoundingMode::HalfUp));
-            } elseif (VatBoxes::boxFor($row['number']) === VatBoxes::TAXABLE_SALES) {
+            } elseif (VatBoxes::boxFor($row['number'], $row['box']) === VatBoxes::TAXABLE_SALES) {
                 $taxable += $row['net'];
-            } elseif (VatBoxes::isOtherRevenue($row['number']) && $row['net'] !== 0) {
+            } elseif (VatBoxes::isOtherRevenue($row['number'], $row['box']) && $row['net'] !== 0) {
                 $other[] = $row;
             }
         }
@@ -236,7 +242,7 @@ final class VatReturn
      * accounts (3000–3999) and output VAT accounts (2610–2639): what box 05
      * and box 42 need beyond the account of each row. One query.
      *
-     * @return Collection<array-key, list<array{number: int, name: string, net: int}>>
+     * @return Collection<array-key, list<array{number: int, name: string, box: ?int, net: int}>>
      */
     private static function salesByVoucher(int $companyId, CarbonImmutable $start, CarbonImmutable $end): Collection
     {
@@ -248,15 +254,16 @@ final class VatReturn
             ->where('vouchers.source', '<>', VoucherSource::Vat->value)
             ->whereBetween('vouchers.voucher_date', [$start->toDateString(), $end->toDateString()])
             ->where(fn (Builder $query) => $query->whereBetween('accounts.number', [2610, 2639])->orWhereBetween('accounts.number', [3000, 3999]))
-            ->groupBy('voucher_rows.voucher_id', 'accounts.number', 'accounts.name')
+            ->groupBy('voucher_rows.voucher_id', 'accounts.number', 'accounts.name', 'accounts.vat_box')
             ->orderBy('voucher_rows.voucher_id')
             ->orderBy('accounts.number')
-            ->selectRaw('voucher_rows.voucher_id, accounts.number, accounts.name, SUM(voucher_rows.credit_ore - voucher_rows.debit_ore) AS net')
+            ->selectRaw('voucher_rows.voucher_id, accounts.number, accounts.name, accounts.vat_box, SUM(voucher_rows.credit_ore - voucher_rows.debit_ore) AS net')
             ->get()
             ->groupBy(fn (VoucherRow $row): string => (string) $row->voucher_id)
             ->map(fn (Collection $rows): array => array_values($rows->map(fn (VoucherRow $row): array => [
                 'number' => (int) $row->getAttribute('number'),
                 'name' => (string) $row->getAttribute('name'),
+                'box' => $row->getAttribute('vat_box') === null ? null : (int) $row->getAttribute('vat_box'),
                 'net' => (int) $row->getAttribute('net'),
             ])->all()));
     }

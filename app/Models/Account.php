@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $name
  * @property AccountType $type
  * @property bool $is_active
+ * @property ?int $vat_box the VAT return box the account is tied to, null to follow its number (VatBoxes)
  */
 class Account extends Model
 {
@@ -30,6 +31,7 @@ class Account extends Model
         'is_active',
         'requires_cost_center',
         'requires_project',
+        'vat_box',
     ];
 
     /** @return array<string, string> */
@@ -39,6 +41,7 @@ class Account extends Model
             'number' => 'integer',
             'type' => AccountType::class,
             'is_active' => 'boolean',
+            'vat_box' => 'integer',
             'requires_cost_center' => 'boolean',
             'requires_project' => 'boolean',
         ];

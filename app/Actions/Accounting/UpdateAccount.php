@@ -5,16 +5,19 @@ declare(strict_types=1);
 namespace App\Actions\Accounting;
 
 use App\Domain\Accounting\AccountType;
+use App\Domain\Vat\VatBoxes;
 use App\Models\Account;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
- * Renames, retypes, activates or deactivates an account. The account number
- * never changes. Accounts are deactivated, never deleted (AGENTS.md §6.1).
+ * Renames, retypes, activates or deactivates an account, or ties it to a box
+ * of the VAT return (vat_box, #64). The account number never changes.
+ * Accounts are deactivated, never deleted (AGENTS.md §6.1).
  */
 class UpdateAccount
 {
@@ -29,9 +32,16 @@ class UpdateAccount
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'type' => ['sometimes', 'required', Rule::enum(AccountType::class)],
             'is_active' => ['sometimes', 'required', 'boolean'],
-        ], attributes: [
+            'vat_box' => ['sometimes', 'nullable', 'integer', Rule::in(VatBoxes::ACCOUNT_BOXES)],
+        ], [
+            'vat_box.in' => __('Välj en ruta för försäljning eller inköp.'),
+        ], [
             'name' => __('kontonamn'),
         ])->validate();
+
+        if (($validated['vat_box'] ?? null) !== null && ! VatBoxes::canHaveBox($account->number)) {
+            throw ValidationException::withMessages(['vat_box' => __('Bara intäkts- och kostnadskonton (3000–8999) kan kopplas till en momsruta. Momskontona följer BAS.')]);
+        }
 
         $before = $this->snapshot($account);
 
@@ -57,6 +67,7 @@ class UpdateAccount
             'name' => $account->name,
             'type' => $account->type->value,
             'is_active' => $account->is_active,
+            'vat_box' => $account->vat_box,
         ];
     }
 }

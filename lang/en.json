@@ -5946,5 +5946,17 @@
     "Momsen på försäljning i Sverige motsvarar :amount kr mer i underlag än det som är bokfört på intäktskonton. Det kan till exempel vara en såld inventarie, där priset är bokfört mot tillgångskontot. Lägg till underlaget i ruta 05 när du lämnar deklarationen, eller rätta bokföringen.": "The VAT on sales in Sweden corresponds to :amount kr more in taxable base than is booked on revenue accounts. It can for example be a sold piece of equipment, where the price is booked against the asset account. Add the base to box 05 when you file the return, or correct the bookkeeping.",
     "Konto :account är för försäljning med :expected moms, men momssatsen är :rate. Momsdeklarationen följer momsen på verifikationen, så kontrollera att kontot är rätt.": "Account :account is for sales with :expected VAT, but the VAT rate is :rate. The VAT return follows the VAT on the voucher, so check that the account is right.",
     "Konto :account är försäljning med moms, men verifikationen har ingen utgående moms på något av kontona :vat. Utan moms på samma verifikation redovisas försäljningen i ruta 42 som momsfri.": "Account :account is sales with VAT, but the voucher has no output VAT on any of the accounts :vat. Without VAT on the same voucher the sale is reported in box 42 as exempt.",
-    "Rad :line: konto :account är för försäljning med :expected moms, men raden har :rate. Momsdeklarationen följer momsen, så kontrollera kontot på artikeln eller raden.": "Row :line: account :account is for sales with :expected VAT, but the row has :rate. The VAT return follows the VAT, so check the account on the article or the row."
+    "Rad :line: konto :account är för försäljning med :expected moms, men raden har :rate. Momsdeklarationen följer momsen, så kontrollera kontot på artikeln eller raden.": "Row :line: account :account is for sales with :expected VAT, but the row has :rate. The VAT return follows the VAT, so check the account on the article or the row.",
+    "Momspliktiga uttag": "Taxable withdrawals",
+    "Beskattningsunderlag vid vinstmarginalbeskattning": "Taxable base under the margin scheme",
+    "Hyresinkomster vid frivillig beskattning": "Rental income under voluntary taxation",
+    "Mellanmans inköp av varor vid trepartshandel": "Intermediary's purchases of goods in triangular trade",
+    "Välj en ruta för försäljning eller inköp.": "Choose a box for sales or purchases.",
+    "Bara intäkts- och kostnadskonton (3000–8999) kan kopplas till en momsruta. Momskontona följer BAS.": "Only revenue and cost accounts (3000–8999) can be tied to a VAT box. The VAT accounts follow BAS.",
+    "Konto :number hör inte till någon momsruta.": "Account :number belongs to no VAT box.",
+    "Konto :number redovisas i momsdeklarationens ruta :box.": "Account :number is reported in box :box of the VAT return.",
+    "Momsruta": "VAT box",
+    "Momsruta för konto :number": "VAT box for account :number",
+    "Efter kontonumret": "By the account number",
+    "vald": "chosen"
 }
