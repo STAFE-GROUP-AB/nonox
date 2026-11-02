@@ -114,7 +114,7 @@
 
   <section aria-labelledby="sec-rapportera" style="margin-top:clamp(48px,7vw,80px)" class="sec-card">
     <h2 id="sec-rapportera">Hittat en sårbarhet?</h2>
-    <p style="color:var(--muted);max-width:760px">Hör av dig innan du publicerar något, så rättar vi det och berättar öppet om det här. Du som granskar i god tro behöver inte vara orolig för rättsliga följder. Skriv till <a href="mailto:{{ $securityEmail }}">{{ $securityEmail }}</a>.</p>
+    <p style="color:var(--muted);max-width:760px">Hör av dig innan du publicerar något, så rättar vi det och berättar öppet om det här. Du som granskar i god tro behöver inte vara orolig för rättsliga följder. @if($securityEmail !== '')Skriv till <a href="mailto:{{ $securityEmail }}">{{ $securityEmail }}</a>.@else Rapportera det privat via projektets säkerhetsrapportering i källkodsförrådet.@endif</p>
   </section>
 </main>
 @include('start.partials.public-footer')

@@ -37,6 +37,7 @@ return [
         'company_name' => env('NONOX_COMPANY_NAME'),
         'org_number' => env('NONOX_COMPANY_ORG_NUMBER'),
         'privacy_email' => env('NONOX_PRIVACY_EMAIL'),
+        'security_email' => env('NONOX_SECURITY_EMAIL'),
         'company_address' => env('NONOX_COMPANY_ADDRESS'),
     ],
 

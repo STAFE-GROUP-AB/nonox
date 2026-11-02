@@ -22,7 +22,7 @@ class SecurityPageController
             'security' => SecurityReview::areas('sakerhet'),
             'regulations' => SecurityReview::areas('regelverk'),
             'totals' => SecurityReview::totals(),
-            'securityEmail' => (string) (config('app.landing.security_email') ?: config('app.landing.privacy_email') ?: 'andreas@gozero.se'),
+            'securityEmail' => (string) (config('app.landing.security_email') ?: config('app.landing.privacy_email')),
             'pageTitle' => 'Säkerhet och regelverk – NONOX',
             'pageDescription' => 'Hur säkert NONOX är och hur det följer GDPR, Bokföringslagen, AI-förordningen och andra regelverk: senaste granskningen, betyg per område och det som återstår.',
         ]);
