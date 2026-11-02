@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.94
+- Version: 0.95
 - Datum: 2026-11-02
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -3233,3 +3233,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.92 | 2026-11-02 | Öppen beta med kö (ADR-038): registrering är stängd; nya användare ställer sig i kö på /ko och godkänns i /hq, eller kommer in via en inbjudan till ett företag. Inloggning för okänd e-post skickar ingen kod och skapar inget konto, och svaret avslöjar inte om adressen finns. Köuppgifterna gallras (nekade efter 30 dagar, övriga efter 12 månader). Integritetspolicyn och villkoren version 1.1. Ändrar ingen bokföring. |
 | 0.93 | 2026-11-02 | Startsidan kan köra väntande migreringar med knappen Uppdatera databasen nu, bara i en lokal installation (APP_ENV=local), bara från samma dator (loopback) och bara via en signerad länk; den kör `migrate` och aldrig något som tömmer databasen. På en server visas kommandot som förut. Ändrar ingen bokföring. |
 | 0.94 | 2026-11-02 | HQ som egen menysektion för HQ-administratörerna med Kö och Kunder (ADR-038 §6): en läsvy över företag och användare i installationen utan bokföring, belopp eller personnummer; varje öppning loggas utan personuppgifter i behandlingshistoriken. Integritetspolicyn och personuppgiftsbiträdesavtalet beskriver översikten (version 1.2). Ändrar ingen bokföring. |
+| 0.95 | 2026-11-02 | Modulen Lager (ADR-039, avsnitt 5j): artikelregistret utökat med lagerfält, lagerställen i ett träd, en lagerreskontra som bara kan läggas till (stock_movements, skyddad av databastrigger), inleveranser, plocklistor, inventering och värdering enligt FIFO eller vägt genomsnitt med lägsta värdets princip. Bokslutet kan boka lagerförändringen på balansdagen i serie A; i övrigt bokför lagret ingenting. |
