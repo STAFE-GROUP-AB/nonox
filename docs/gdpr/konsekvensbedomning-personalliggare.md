@@ -27,8 +27,8 @@ TODO(legal-verify): vilka paragrafer i 39 kap. skatteförfarandelagen och vilka 
 | Uppgift | Varför | Var den finns |
 |---|---|---|
 | Namn | Liggaren ska visa vem som arbetar | Registret och varje post |
-| Person- eller samordningsnummer | Identifiering enligt 39 kap. SFL | Krypterat i databasen. Maskerat i alla listor. |
-| Arbetsgivarens namn och organisationsnummer | Inhyrd personal och personal hos andra arbetsgivare | Registret och varje post |
+| Person- eller samordningsnummer, eller utländskt ID-nummer med land för den som saknar svenskt nummer | Identifiering enligt 9 kap. 5 § skatteförfarandeförordningen ("motsvarande utländska nummer") | Krypterat i databasen. Maskerat i alla listor (ett utländskt nummer döljs helt). |
+| Arbetsgivarens namn och organisationsnummer, eller utländskt nummer med land | Inhyrd personal och personal hos andra arbetsgivare | Registret och varje post |
 | Tid för in- och utcheckning per lokal | Liggarens innehåll | Varje post, med kioskens tid och serverns mottagningstid |
 | Rättelser och manuella registreringar med skäl, vem och när | Spårbarhet, liggaren får inte skrivas om | Egna poster som pekar på originalet |
 | PIN-kod | Identifiering på kiosken | Lagras aldrig. Servern sparar bara ett salt och ett kontrollvärde (PBKDF2). |
@@ -42,7 +42,7 @@ TODO(legal-verify): vilka paragrafer i 39 kap. skatteförfarandelagen och vilka 
 
 - Uppgifterna i liggaren följer av lagen. NONOX samlar inte in mer än liggaren, påminnelsen och den frivilliga platskontrollen kräver. TODO(legal-verify): exakt vilka uppgifter Skatteverket kräver från 2027 (`app/Modules/StaffLedger/Actions/SavePerson.php`).
 - Liggaren används inte för arbetstidsuppföljning eller prestationsmätning. [Företaget intygar hur liggaren används. Om liggaren också används för tidrapporter till lönen är det ett nytt ändamål som ska bedömas här (artikel 6.4).]
-- Bevarandetid: posterna gallras automatiskt efter den tid som är inställd. Antagandet är två år efter utgången av det kalenderår då liggaren fördes. TODO(legal-verify): bevarandetiden (se [lagringstider](lagringstider.md)).
+- Bevarandetid: posterna gallras automatiskt två år efter utgången av det kalenderår då företagets beskattningsår (räkenskapsår) som posten hör till gick ut, enligt 9 kap. 5 § tredje stycket skatteförfarandeförordningen (2011:1261). Med brutet eller förlängt räkenskapsår blir det mer än tre år. Enligt AI-utredning 2026-11-02, juristgranskning återstår (se [lagringstider](lagringstider.md)).
 - Information till de registrerade (artikel 13): [Hur företaget informerar personalen, till exempel anslag vid kiosken och skriftlig information vid anställning.]
 
 ## 4. Risker
@@ -77,7 +77,8 @@ TODO(legal-verify): vilka paragrafer i 39 kap. skatteförfarandelagen och vilka 
 - **Foton på kiosken.** Fotona följer med kioskens personallista och lagras i webbläsaren på enheten utan NONOX:s egen kryptering. [Använd foto bara när det behövs.]
 - **Samtycke till foto i en anställning.** Det är osäkert om samtycket kan vara frivilligt. TODO(legal-verify): om foto ska bygga på samtycke (artikel 6.1 a) eller på berättigat intresse (artikel 6.1 f).
 - **Tidrapporter till lönen.** Om liggaren används för lön behandlas uppgifterna för ett nytt ändamål. [Företagets bedömning.]
-- **Lagringstiden** är ett antagande tills den har verifierats.
+- **Lagringstiden** följer 9 kap. 5 § tredje stycket skatteförfarandeförordningen enligt en AI-utredning 2026-11-02. Juristgranskning återstår.
+- **Arbetsgivaruppgifter från 2027.** Enligt prop. 2025/26:282 (39 kap. 11 a § andra stycket SFL, riksdagsbeslut planerat 11 november 2026, tillämpas från 1 juli 2027) ska arbetsgivaren dokumenteras för alla som har en annan arbetsgivare. Det är inte infört i NONOX förrän reglerna och förordningen är beslutade. [Bedömningen ska ses över då.]
 
 ## 7. Slutsats
 

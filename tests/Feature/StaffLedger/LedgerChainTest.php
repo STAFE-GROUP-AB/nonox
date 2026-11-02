@@ -13,6 +13,7 @@ use App\Modules\StaffLedger\Domain\CorrectionKind;
 use App\Modules\StaffLedger\Domain\Direction;
 use App\Modules\StaffLedger\Domain\EntryHash;
 use App\Modules\StaffLedger\Domain\EntryType;
+use App\Modules\StaffLedger\Domain\Retention;
 use App\Modules\StaffLedger\Models\Entry;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -139,7 +140,8 @@ it('prunes from the old end after the retention period and still verifies', func
 });
 
 it('keeps entries inside the retention period', function () {
-    expect(PruneStaffLedger::cutoff(CarbonImmutable::parse('2028-12-31'))->toDateString())->toBe('2026-01-01')
+    // The entries are from the 2026 fiscal year (calendar year): kept through 2028-12-31.
+    expect(Retention::earliestKept(CarbonImmutable::parse('2028-12-31'))->toDateString())->toBe('2026-01-01')
         ->and(app(PruneStaffLedger::class)(CarbonImmutable::parse('2028-12-31'))['entries'])->toBe(0)
         ->and(Entry::query()->count())->toBe(3);
 });

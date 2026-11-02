@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Modules\StaffLedger\Models;
 
 use App\Models\User;
-use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\StaffLedger\Domain\CheckInMethod;
 use App\Modules\StaffLedger\Domain\CorrectionKind;
 use App\Modules\StaffLedger\Domain\Direction;
 use App\Modules\StaffLedger\Domain\EntryType;
+use App\Modules\StaffLedger\Domain\Identity;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -36,8 +36,10 @@ use LogicException;
  * @property CheckInMethod $method
  * @property string $person_name
  * @property string $personal_number
+ * @property ?string $identity_country
  * @property ?string $employer_name
  * @property ?string $employer_org_number
+ * @property ?string $employer_country
  * @property CarbonImmutable $occurred_at
  * @property CarbonImmutable $received_at
  * @property ?int $device_id
@@ -76,8 +78,10 @@ class Entry extends Model
         'method',
         'person_name',
         'personal_number',
+        'identity_country',
         'employer_name',
         'employer_org_number',
+        'employer_country',
         'occurred_at',
         'received_at',
         'device_id',
@@ -123,14 +127,24 @@ class Entry extends Model
         });
     }
 
+    public function identity(): Identity
+    {
+        return new Identity($this->personal_number, $this->identity_country);
+    }
+
+    public function employerLabel(): string
+    {
+        return Identity::employer($this->employer_name, $this->employer_org_number, $this->employer_country);
+    }
+
     public function maskedPersonalNumber(): string
     {
-        return PersonalNumber::masked($this->personal_number);
+        return $this->identity()->masked();
     }
 
     public function formattedPersonalNumber(): string
     {
-        return PersonalNumber::tryFrom($this->personal_number)?->formatted() ?? $this->personal_number;
+        return $this->identity()->formatted();
     }
 
     /** IN or OUT for check-ins, check-outs and manual entries; null for corrections. */

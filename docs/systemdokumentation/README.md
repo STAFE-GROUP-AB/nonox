@@ -1559,13 +1559,46 @@ semesterlöneskuld och antal anställda. Varje siffra är en fråga.
   tobaksgrossister, kropps- och skönhetsvård (även frisörer) och tvätterier.
   Personalliggaren är inte räkenskapsinformation enligt bokföringslagen, men
   den hanteras med samma skydd.
-- **Uppgifter per post:** namn, person- eller samordningsnummer (krypterat),
-  arbetsgivarens namn och organisationsnummer för inhyrd personal, lokal,
+- **Uppgifter per post:** namn, person- eller samordningsnummer eller, för
+  den som saknar svenskt nummer, utländskt identitetsnummer med land
+  (krypterat; 9 kap. 5 § skatteförfarandeförordningen, "motsvarande
+  utländska nummer", enligt AI-utredning 2026-11-02, juristgranskning
+  återstår), arbetsgivarens namn och organisationsnummer, eller utländskt
+  nummer med land, för inhyrd personal, lokal,
   händelse (in eller ut), tid enligt enheten, tid då servern tog emot posten,
   sätt (kiosk med kod, kiosk med QR-kod, mobil, manuellt, rättelse), enhet och
   löpnummer, vem som registrerade (manuellt och rättelse) och orsak.
   Personens uppgifter kopieras till posten, så liggaren visar vad som gällde
   när den skrevs även om registret ändras.
+- **Utländska nummer:** kontrolleras aldrig med kontrollsiffra, sparas som
+  de skrivits (utan inledande och avslutande mellanslag, högst 30 tecken)
+  och landet anges med ISO 3166-1 alfa-2 (Sverige kan inte väljas). En
+  dubblett hittas oberoende av mellanslag, bindestreck och versaler inom
+  samma land. Landet ingår i postens hash bara när det finns, så poster
+  skrivna före 2026-11-07 har oförändrad hash. I listor visas numret som
+  "Utländskt nummer (land), dolt"; på kontrollbesöket, i PDF, CSV (egna
+  kolumner för land) och i den provisoriska XML-filen (`UtlandskIdentitet`
+  respektive `UtlandsktNummer` med `Nummer` och `Land`) visas det i sin
+  helhet. TODO(legal-verify): hur Skatteverkets kommande schema anger ett
+  utländskt nummer. Arbetsgivaruppgiften enligt prop. 2025/26:282
+  (39 kap. 11 a § andra stycket SFL, riksdagsbeslut planerat 2026-11-11,
+  tillämpas från 2027-07-01) är inte införd; förordningen är inte utfärdad.
+- **Bevarande:** en post sparas till och med 31 december två år efter det
+  kalenderår då företagets räkenskapsår (beskattningsår) som innehåller
+  postens datum slutade, 9 kap. 5 § tredje stycket
+  skatteförfarandeförordningen (2011:1261). Kalenderårsföretag: en post från
+  2025 sparas till och med 2027-12-31. Räkenskapsår maj–april: en post från
+  juni 2025 (året slutar 2026-04-30) sparas till och med 2028-12-31.
+  Räkenskapsåret hämtas ur företagets räkenskapsår; täcker inget datumet
+  räknas ett tolvmånadersår fram ur första månaden i räkenskapsåret, och om
+  det överlappar ett befintligt räkenskapsår, eller om företaget saknar
+  räkenskapsår, sparas posten. Både postens tid och mottagningstiden ska
+  ligga utanför bevarandetiden. `privacy:prune` tar bort poster från
+  kedjans äldsta ände och stannar vid första post som ska sparas.
+  Arkiverade personer utan kvarvarande poster tas bort när
+  arkiveringsdagen ligger utanför bevarandetiden enligt samma regel.
+  Ändrat 2026-11-07 (tidigare räknades från postens kalenderår) enligt
+  AI-utredning 2026-11-02, juristgranskning återstår.
 - **Oändringsbarhet:** posterna går bara att lägga till. Modellen vägrar
   ändring och borttagning, och en trigger i databasen vägrar UPDATE, DELETE
   och TRUNCATE. Varje post har en hashkedja per företag och lokal:
@@ -2151,10 +2184,13 @@ Personalliggare och Avtal när de är påslagna.
   lönegrupp från NONOX AI är högrisk enligt AI-förordningens bilaga III
   punkt 4 b.
 
-- Personalliggare: exakt vilka uppgifter som ska registreras och hur länge
-  liggaren ska bevaras enligt 39 kap. skatteförfarandelagen och Skatteverkets
-  föreskrifter från 2027 (antaget: två år efter utgången av det kalenderår då
-  liggaren fördes); branschernas avgränsning; om en manuell registrering eller
+- Personalliggare: vilka uppgifter som ska registreras från 2027 enligt
+  39 kap. skatteförfarandelagen, förordningen och Skatteverkets föreskrifter
+  (arbetsgivaruppgiften i prop. 2025/26:282 är inte införd); juristgranskning
+  av bevarandetiden (9 kap. 5 § tredje stycket skatteförfarandeförordningen,
+  två år efter utgången av det kalenderår då beskattningsåret gick ut) och
+  av utländska identitetsnummer (AI-utredning 2026-11-02); hur Skatteverkets
+  schema anger ett utländskt nummer; branschernas avgränsning; om en manuell registrering eller
   rättelse behöver fler uppgifter; Skatteverkets XML-schema och API för
   elektronisk överföring från 1 juli 2027 (TODO SPEC).
 

@@ -24,10 +24,10 @@
 
     <h2>{{ __('Incheckade just nu') }} ({{ count($report->present) }})</h2>
     <table>
-        <thead><tr><th>{{ __('Namn') }}</th><th>{{ __('Person- eller samordningsnummer') }}</th><th>{{ __('Arbetsgivare') }}</th><th>{{ __('Lokal') }}</th><th>{{ __('Incheckad') }}</th></tr></thead>
+        <thead><tr><th>{{ __('Namn') }}</th><th>{{ __('Person- eller ID-nummer') }}</th><th>{{ __('Arbetsgivare') }}</th><th>{{ __('Lokal') }}</th><th>{{ __('Incheckad') }}</th></tr></thead>
         <tbody>
             @forelse($report->present as $shift)
-                <tr><td>{{ $shift->personName }}</td><td>{{ App\Modules\StaffLedger\Support\Export\ControlVisitReport::formatNumber($shift->personalNumber) }}</td><td>{{ $shift->employerName ? $shift->employerName.' ('.$shift->employerOrgNumber.')' : '' }}</td><td>{{ $report->locationName($shift->locationId) }}</td><td>{{ $shift->start?->format('Y-m-d H:i') }}</td></tr>
+                <tr><td>{{ $shift->personName }}</td><td>{{ $shift->identity()->formatted() }}</td><td>{{ $shift->employerLabel() }}</td><td>{{ $report->locationName($shift->locationId) }}</td><td>{{ $shift->start?->format('Y-m-d H:i') }}</td></tr>
             @empty
                 <tr><td colspan="5">{{ __('Ingen är incheckad.') }}</td></tr>
             @endforelse
@@ -36,13 +36,13 @@
 
     <h2>{{ __('Arbetspass under perioden') }} ({{ count($report->shifts) }})</h2>
     <table>
-        <thead><tr><th>{{ __('Namn') }}</th><th>{{ __('Person- eller samordningsnummer') }}</th><th>{{ __('Arbetsgivare') }}</th><th>{{ __('Lokal') }}</th><th>{{ __('Början') }}</th><th>{{ __('Slut') }}</th><th>{{ __('Anmärkning') }}</th></tr></thead>
+        <thead><tr><th>{{ __('Namn') }}</th><th>{{ __('Person- eller ID-nummer') }}</th><th>{{ __('Arbetsgivare') }}</th><th>{{ __('Lokal') }}</th><th>{{ __('Början') }}</th><th>{{ __('Slut') }}</th><th>{{ __('Anmärkning') }}</th></tr></thead>
         <tbody>
             @foreach($report->shifts as $shift)
                 <tr>
                     <td>{{ $shift->personName }}</td>
-                    <td>{{ App\Modules\StaffLedger\Support\Export\ControlVisitReport::formatNumber($shift->personalNumber) }}</td>
-                    <td>{{ $shift->employerName ? $shift->employerName.' ('.$shift->employerOrgNumber.')' : '' }}</td>
+                    <td>{{ $shift->identity()->formatted() }}</td>
+                    <td>{{ $shift->employerLabel() }}</td>
                     <td>{{ $report->locationName($shift->locationId) }}</td>
                     <td>{{ $shift->start?->format('Y-m-d H:i') ?? __('saknas') }}</td>
                     <td>{{ $shift->end?->format('Y-m-d H:i') ?? __('saknas') }}</td>
@@ -54,7 +54,7 @@
 
     <h2>{{ __('Alla registreringar, med rättelser') }} ({{ $report->entries->count() }})</h2>
     <table>
-        <thead><tr><th>{{ __('Post') }}</th><th>{{ __('Tid') }}</th><th>{{ __('Händelse') }}</th><th>{{ __('Namn') }}</th><th>{{ __('Person- eller samordningsnummer') }}</th><th>{{ __('Sätt') }}</th><th>{{ __('Rättelse och orsak') }}</th></tr></thead>
+        <thead><tr><th>{{ __('Post') }}</th><th>{{ __('Tid') }}</th><th>{{ __('Händelse') }}</th><th>{{ __('Namn') }}</th><th>{{ __('Person- eller ID-nummer') }}</th><th>{{ __('Sätt') }}</th><th>{{ __('Rättelse och orsak') }}</th></tr></thead>
         <tbody>
             @foreach($report->entries as $entry)
                 <tr>
@@ -62,7 +62,7 @@
                     <td>{{ $entry->occurred_at->format('Y-m-d H:i:s') }}</td>
                     <td>{{ $entry->type->label() }}{{ $entry->effectiveDirection() ? ' ('.$entry->effectiveDirection()->label().')' : '' }}</td>
                     <td>{{ $entry->person_name }}</td>
-                    <td>{{ App\Modules\StaffLedger\Support\Export\ControlVisitReport::formatNumber($entry->personal_number) }}</td>
+                    <td>{{ $entry->formattedPersonalNumber() }}</td>
                     <td>
                         {{ $entry->method->label() }}
                         @foreach($entry->flags as $flag)

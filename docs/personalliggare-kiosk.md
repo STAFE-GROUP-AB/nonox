@@ -30,9 +30,11 @@ varje kiosk hör till ett enda företag.
 ## 3. Lägg till personalen
 
 1. Gå till **Personalliggare → Personal** och välj **Lägg till person**.
-2. Fyll i namn och person- eller samordningsnummer (tolv siffror). För inhyrd
-   personal: kryssa i **Inhyrd personal** och fyll i arbetsgivarens namn och
-   organisationsnummer.
+2. Fyll i namn och person- eller samordningsnummer (tolv siffror). Saknar
+   personen svenskt nummer: välj **Utländskt identitetsnummer**, skriv numret
+   och välj landet som utfärdat det. För inhyrd personal: kryssa i **Inhyrd
+   personal** och fyll i arbetsgivarens namn och organisationsnummer, eller
+   arbetsgivarens utländska nummer och land.
 3. Välj kioskens språk för personen: svenska, engelska, arabiska, persiska,
    somaliska, spanska, thailändska eller tigrinja.
 4. Välj en **kod** med fyra siffror tillsammans med personen. Enkla koder som

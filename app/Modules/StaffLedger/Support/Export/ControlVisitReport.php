@@ -61,7 +61,9 @@ final readonly class ControlVisitReport
                 return true;
             }
 
-            return str_contains(mb_strtolower($name), $needle) || ($digits !== '' && str_contains($number, $digits));
+            return str_contains(mb_strtolower($name), $needle)
+                || ($digits !== '' && str_contains((string) preg_replace('/\D/', '', $number), $digits))
+                || str_contains(mb_strtolower($number), $needle);
         };
 
         $present = array_values(array_filter(LedgerQuery::present($locationId), fn (Shift $shift): bool => $matches($shift->personName, $shift->personalNumber)));

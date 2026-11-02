@@ -42,8 +42,10 @@ final class AppendEntry
                 'person_id' => $person->id,
                 'person_name' => $person->name(),
                 'personal_number' => $person->personal_number,
+                'identity_country' => $person->identity_country,
                 'employer_name' => $person->employer_name,
                 'employer_org_number' => $person->employer_org_number,
+                'employer_country' => $person->employer_country,
             ];
 
             $entry = new Entry([

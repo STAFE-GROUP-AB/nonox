@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\StaffLedger\Models;
 
 use App\Models\User;
-use App\Modules\Payroll\Domain\PersonalNumber;
 use App\Modules\Payroll\Models\Employee;
+use App\Modules\StaffLedger\Domain\Identity;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
@@ -15,8 +15,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Someone who works in a location and is registered in the staff ledger:
  * own staff or hired staff (with the employer's name and organisation
- * number). The personal number is encrypted at rest and found through a
- * keyed blind index. The kiosk PIN is never stored, only a PBKDF2 verifier
+ * number, or a foreign employer number and its country). The personal
+ * number is encrypted at rest and found through a keyed blind index; for a
+ * person without a Swedish number it holds a foreign identity number, and
+ * `identity_country` the issuing country (Identity). The kiosk PIN is never stored, only a PBKDF2 verifier
  * with a per-person salt (ADR-022).
  *
  * @property int $id
@@ -25,10 +27,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $last_name
  * @property string $personal_number
  * @property string $personal_number_index
+ * @property ?string $identity_country
  * @property ?string $email
  * @property string $language
  * @property ?string $employer_name
  * @property ?string $employer_org_number
+ * @property ?string $employer_country
  * @property ?int $employee_id
  * @property ?int $user_id
  * @property ?string $photo_path
@@ -58,10 +62,12 @@ class Person extends Model
         'last_name',
         'personal_number',
         'personal_number_index',
+        'identity_country',
         'email',
         'language',
         'employer_name',
         'employer_org_number',
+        'employer_country',
         'employee_id',
         'user_id',
         'is_manager',
@@ -80,10 +86,20 @@ class Person extends Model
         ];
     }
 
-    /** A keyed hash of the twelve digits, so duplicates are found without decrypting. */
+    /** A keyed hash of the twelve digits (or Identity::indexKey()), so duplicates are found without decrypting. */
     public static function indexFor(string $digits): string
     {
         return hash_hmac('sha256', 'staff-ledger-person:'.$digits, (string) config('app.key'));
+    }
+
+    public function identity(): Identity
+    {
+        return new Identity($this->personal_number, $this->identity_country);
+    }
+
+    public function employerLabel(): string
+    {
+        return Identity::employer($this->employer_name, $this->employer_org_number, $this->employer_country);
     }
 
     public function name(): string
@@ -93,12 +109,12 @@ class Person extends Model
 
     public function maskedPersonalNumber(): string
     {
-        return PersonalNumber::masked($this->personal_number);
+        return $this->identity()->masked();
     }
 
     public function formattedPersonalNumber(): string
     {
-        return PersonalNumber::tryFrom($this->personal_number)?->formatted() ?? $this->personal_number;
+        return $this->identity()->formatted();
     }
 
     public function hasPin(): bool

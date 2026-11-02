@@ -13,7 +13,11 @@ use DOMElement;
  * NONOX's own, provisional XML for the staff ledger, validated against
  * database/xsd/personalliggare-provisorisk-0.1.xsd. Every entry is exported
  * as it is stored, with its hash, so the file can be checked against the
- * chain. TODO(SPEC): replace with Skatteverket's schema (LedgerXmlFormat).
+ * chain. A foreign identity or employer number is written with its country
+ * (UtlandskIdentitet, UtlandsktNummer) instead of the Swedish number.
+ * TODO(SPEC): replace with Skatteverket's schema (LedgerXmlFormat).
+ * TODO(legal-verify): how Skatteverket's format carries a foreign number;
+ * until it is published, NONOX's own elements are used.
  */
 final class ProvisionalLedgerXml implements LedgerXmlFormat
 {
@@ -82,12 +86,12 @@ final class ProvisionalLedgerXml implements LedgerXmlFormat
 
         $person = $this->element($document, $node, 'Person');
         $this->text($document, $person, 'Namn', $entry->person_name);
-        $this->text($document, $person, 'Identitet', $entry->personal_number);
+        $this->identity($document, $person, 'Identitet', 'UtlandskIdentitet', $entry->personal_number, $entry->identity_country);
 
         if ($entry->employer_org_number !== null) {
             $employer = $this->element($document, $node, 'Arbetsgivare');
             $this->text($document, $employer, 'Namn', (string) $entry->employer_name);
-            $this->text($document, $employer, 'Organisationsnummer', (string) preg_replace('/\D/', '', $entry->employer_org_number));
+            $this->identity($document, $employer, 'Organisationsnummer', 'UtlandsktNummer', $entry->employer_country === null ? (string) preg_replace('/\D/', '', $entry->employer_org_number) : $entry->employer_org_number, $entry->employer_country);
         }
 
         if ($entry->corrects_entry_id !== null && $entry->correction !== null) {
@@ -113,6 +117,20 @@ final class ProvisionalLedgerXml implements LedgerXmlFormat
         }
 
         $this->text($document, $node, 'Hash', $entry->hash);
+    }
+
+    /** A Swedish number as its own element, or a foreign number with its country. */
+    private function identity(DOMDocument $document, DOMElement $parent, string $swedish, string $foreign, string $number, ?string $country): void
+    {
+        if ($country === null) {
+            $this->text($document, $parent, $swedish, $number);
+
+            return;
+        }
+
+        $node = $this->element($document, $parent, $foreign);
+        $this->text($document, $node, 'Nummer', $number);
+        $this->text($document, $node, 'Land', $country);
     }
 
     private function element(DOMDocument $document, DOMElement $parent, string $name): DOMElement

@@ -43,7 +43,7 @@ return [
     'start' => 'Start',
     'end' => 'End',
     'name' => 'Name',
-    'personal_number' => 'Personal number',
+    'personal_number' => 'Personal or ID number',
     'employer' => 'Employer',
     'missing' => 'missing',
     'digit_delete' => 'Delete',

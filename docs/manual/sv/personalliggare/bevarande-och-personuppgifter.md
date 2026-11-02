@@ -8,14 +8,22 @@ sokord: [bevarandetid, lagringstid, gallring, GDPR, personuppgifter, samtycke, f
 
 # Bevarande och personuppgifter
 
-Personalliggaren innehåller personnummer för alla som arbetar hos er, även inhyrd personal. Här är vad NONOX sparar, var och hur länge.
+Personalliggaren innehåller personnummer, samordningsnummer eller utländska ID-nummer för alla som arbetar hos er, även inhyrd personal. Här är vad NONOX sparar, var och hur länge.
 
 ## Hur länge liggaren sparas
 
-NONOX sparar liggaren i två år efter utgången av det kalenderår då den fördes. Sedan tas de äldsta posterna bort automatiskt, lokal för lokal, och det skrivs i behandlingshistoriken. Kontrollen av liggaren fungerar ändå för de poster som finns kvar.
+En post i liggaren sparas i två år efter utgången av det kalenderår då företagets räkenskapsår slutade. Det är räkenskapsåret som posten hör till som räknas, inte kalenderåret då posten skrevs. Sedan tas de äldsta posterna bort automatiskt, lokal för lokal, och det skrivs i behandlingshistoriken. Kontrollen av liggaren fungerar ändå för de poster som finns kvar.
+
+| Räkenskapsår | Post från | Sparas till och med |
+|---|---|---|
+| Kalenderår (januari–december) | 15 juni 2025 | 31 december 2027 |
+| Brutet, maj–april (2025-05-01–2026-04-30) | 15 juni 2025 | 31 december 2028 |
+| Förlängt första år (2025-09-01–2026-12-31) | 1 oktober 2025 | 31 december 2028 |
+
+Med brutet eller förlängt räkenskapsår kan liggaren alltså sparas i mer än tre år. NONOX använder räkenskapsåren under **Bokföring → Räkenskapsår**. Finns inget räkenskapsår för en post räknar NONOX med företagets första månad i räkenskapsåret. Går det inte att avgöra vilket räkenskapsår posten hör till sparas den.
 
 > [!IMPORTANT]
-> Bevarandetiden bygger på 39 kap. skatteförfarandelagen och är inte slutligt kontrollerad i NONOX. Kontrollera med din redovisningskonsult eller Skatteverket vad som gäller för er.
+> Bevarandetiden följer 9 kap. 5 § skatteförfarandeförordningen. Bedömningen bygger på en AI-utredning 2026-11-02 och är inte granskad av jurist. Kontrollera med din redovisningskonsult eller Skatteverket vad som gäller för er.
 
 Personer som du har arkiverat tas bort när de inte längre finns med i någon kvarvarande post, tillsammans med sitt foto.
 
@@ -23,8 +31,8 @@ Personer som du har arkiverat tas bort när de inte längre finns med i någon k
 
 | Uppgift | Varför | Hur länge |
 |---|---|---|
-| In- och utcheckningar med namn, personnummer och arbetsgivare | Liggaren och kontrollbesök | Två år efter kalenderårets slut, se ovan |
-| Personen: namn, personnummer, e-post, kontrollvärde för koden och QR-nyckel | För att kunna checka in | Så länge personen finns i registret |
+| In- och utcheckningar med namn, person-, samordnings- eller utländskt ID-nummer och arbetsgivare | Liggaren och kontrollbesök | Två år efter utgången av det kalenderår då räkenskapsåret slutade, se ovan |
+| Personen: namn, person-, samordnings- eller utländskt ID-nummer med land, e-post, kontrollvärde för koden och QR-nyckel | För att kunna checka in | Så länge personen finns i registret |
 | Foto | Bara om personen har samtyckt | Tills samtycket återkallas eller personen tas bort |
 | Avståndet till lokalen vid mobil incheckning | Platskontrollen | Som posten. Positionen sparas aldrig |
 

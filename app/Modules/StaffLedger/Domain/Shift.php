@@ -24,7 +24,19 @@ final readonly class Shift
         public ?CarbonImmutable $end,
         public ?Entry $startEntry,
         public ?Entry $endEntry,
+        public ?string $identityCountry = null,
+        public ?string $employerCountry = null,
     ) {}
+
+    public function identity(): Identity
+    {
+        return new Identity($this->personalNumber, $this->identityCountry);
+    }
+
+    public function employerLabel(): string
+    {
+        return Identity::employer($this->employerName, $this->employerOrgNumber, $this->employerCountry);
+    }
 
     public function isOpen(): bool
     {

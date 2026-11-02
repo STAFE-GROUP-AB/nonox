@@ -1,5 +1,4 @@
 @php($input = 'mt-1 block w-full border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
-@php($number = fn (string $digits): string => App\Modules\StaffLedger\Support\Export\ControlVisitReport::formatNumber($digits))
 <div class="space-y-8">
     <x-ui.card :title="__('Incheckade just nu (:count)', ['count' => count($report->present)])">
         @if($report->present === [])
@@ -9,7 +8,7 @@
                 <table class="w-full text-base">
                     <thead><tr class="border-b border-stone-200 text-sm text-gray-600">
                         <th class="py-2 pe-4 text-start font-medium">{{ __('Namn') }}</th>
-                        <th class="py-2 pe-4 text-start font-medium">{{ __('Person- eller samordningsnummer') }}</th>
+                        <th class="py-2 pe-4 text-start font-medium">{{ __('Person- eller ID-nummer') }}</th>
                         <th class="py-2 pe-4 text-start font-medium">{{ __('Arbetsgivare') }}</th>
                         <th class="py-2 pe-4 text-start font-medium">{{ __('Lokal') }}</th>
                         <th class="py-2 text-start font-medium">{{ __('Incheckad') }}</th>
@@ -18,8 +17,8 @@
                         @foreach($report->present as $shift)
                             <tr>
                                 <td class="py-2 pe-4 font-semibold text-ink">{{ $shift->personName }}</td>
-                                <td class="py-2 pe-4 tabular-nums">{{ $number($shift->personalNumber) }}</td>
-                                <td class="py-2 pe-4">{{ $shift->employerName ? $shift->employerName.' ('.$shift->employerOrgNumber.')' : '' }}</td>
+                                <td class="py-2 pe-4 tabular-nums">{{ $shift->identity()->formatted() }}</td>
+                                <td class="py-2 pe-4">{{ $shift->employerLabel() }}</td>
                                 <td class="py-2 pe-4">{{ $report->locationName($shift->locationId) }}</td>
                                 <td class="py-2 tabular-nums">{{ $shift->start?->format('Y-m-d H:i') }}</td>
                             </tr>
@@ -59,7 +58,7 @@
             <table class="w-full text-sm">
                 <thead><tr class="border-b border-stone-200 text-gray-600">
                     <th class="py-2 pe-4 text-start font-medium">{{ __('Namn') }}</th>
-                    <th class="py-2 pe-4 text-start font-medium">{{ __('Person- eller samordningsnummer') }}</th>
+                    <th class="py-2 pe-4 text-start font-medium">{{ __('Person- eller ID-nummer') }}</th>
                     <th class="py-2 pe-4 text-start font-medium">{{ __('Arbetsgivare') }}</th>
                     <th class="py-2 pe-4 text-start font-medium">{{ __('Lokal') }}</th>
                     <th class="py-2 pe-4 text-start font-medium">{{ __('Början') }}</th>
@@ -70,8 +69,8 @@
                     @forelse($report->shifts as $shift)
                         <tr>
                             <td class="py-2 pe-4 font-medium">{{ $shift->personName }}</td>
-                            <td class="py-2 pe-4 tabular-nums">{{ $number($shift->personalNumber) }}</td>
-                            <td class="py-2 pe-4">{{ $shift->employerName ? $shift->employerName.' ('.$shift->employerOrgNumber.')' : '' }}</td>
+                            <td class="py-2 pe-4 tabular-nums">{{ $shift->identity()->formatted() }}</td>
+                            <td class="py-2 pe-4">{{ $shift->employerLabel() }}</td>
                             <td class="py-2 pe-4">{{ $report->locationName($shift->locationId) }}</td>
                             <td class="py-2 pe-4 tabular-nums">{{ $shift->start?->format('Y-m-d H:i') ?? __('saknas') }}</td>
                             <td class="py-2 pe-4 tabular-nums">{{ $shift->end?->format('Y-m-d H:i') ?? ($shift->isOpen() ? __('incheckad') : __('saknas')) }}</td>

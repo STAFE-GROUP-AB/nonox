@@ -114,6 +114,8 @@ final class ShiftBuilder
             end: $end,
             startEntry: $start === null ? null : $person,
             endEntry: $endEntry,
+            identityCountry: $person->identity_country,
+            employerCountry: $person->employer_country,
         );
     }
 }

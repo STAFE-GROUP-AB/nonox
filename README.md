@@ -108,6 +108,8 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Lokaler och personal med in- och utcheckning i en kiosk på en surfplatta, som fungerar även utan internet, med kod, personlig QR-kod eller mobil incheckning.
 - Liggaren skrivs bara till, med en kedja av kontrollsummor och rättelser som syns bredvid originalet. Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren.
 - Kiosken sparar aldrig koderna. Personnummer för kontrollbesöket utan internet sparas bara krypterade och öppnas med en chefs kod.
+- Den som saknar svenskt person- eller samordningsnummer registreras med sitt utländska ID-nummer och landet som utfärdat det, och inhyrd personal kan ha en utländsk arbetsgivare.
+- Liggaren sparas två år efter utgången av det kalenderår då räkenskapsåret slutade, även vid brutet eller förlängt räkenskapsår, och gallras sedan automatiskt.
 
 ### Planering (modul) – ny
 - Schema med lönekostnad: veckovy och dagvy där passen dras på plats, mallar och kopierade veckor, öppna pass, avdelningar och kompetenser. Lönekostnaden räknas medan du planerar, med OB enligt kollektivavtalet, och varningar för dygnsvila, veckovila, raster och minderåriga.
