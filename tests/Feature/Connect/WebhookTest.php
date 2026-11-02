@@ -239,9 +239,12 @@ it('retries with backoff, then turns the webhook off and mails the owner', funct
         $this->travelBack();
     }
 
-    $delivery = CompanyScope::bypass(fn () => ConnectWebhookDelivery::query()->findOrFail($first['id']));
-    expect($delivery->status)->toBe('failed')
+    // Both deliveries are retried on the same schedule; whichever reaches its last attempt first fails and cancels the other.
+    $statuses = CompanyScope::bypass(fn () => ConnectWebhookDelivery::query()->where('webhook_id', $webhook->id)->get());
+    $delivery = $statuses->firstWhere('status', 'failed');
+    expect($delivery)->not->toBeNull()
         ->and($delivery->attempts)->toBe(8)
+        ->and($statuses->pluck('status')->sort()->values()->all())->toBe(['cancelled', 'failed'])
         ->and($elapsed)->toBeGreaterThan(22 * 3600)->toBeLessThan(25 * 3600)
         ->and($webhook->refresh()->isActive())->toBeFalse()
         ->and($webhook->disabled_reason)->toBe('failing')

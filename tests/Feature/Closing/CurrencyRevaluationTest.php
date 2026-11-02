@@ -91,7 +91,7 @@ it('values the open part of each invoice at the closing rate', function () {
 });
 
 it('books the revaluation on the last day and reverses it on the first day of the next year', function () {
-    expect(collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::TODO)
+    expect(collect(ClosingChecklist::for($this->company, $this->year))->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::WARN)
         ->and(fn () => app(YearEndClosing::class)->bookCurrencyRevaluation($this->owner, $this->year))->toThrow(ValidationException::class, 'nästa räkenskapsår');
 
     app(CreateNextFiscalYear::class)($this->owner, $this->company);
@@ -139,4 +139,11 @@ it('books the revaluation from the closing page', function () {
         ->assertSee('700,00 EUR')
         ->call('bookCurrencyRevaluation')
         ->assertDispatched('toast', message: "Omvärderingen är bokförd: kursvinst 450,00\u{00A0}kr. Den återförs första dagen i nästa år.");
+});
+
+it('warns about an unbooked revaluation without blocking the closing', function () {
+    $items = ClosingChecklist::for($this->company, $this->year);
+
+    expect(collect($items)->firstWhere('key', 'currency')['status'])->toBe(ClosingChecklist::WARN)
+        ->and(ClosingChecklist::isComplete([collect($items)->firstWhere('key', 'currency')]))->toBeTrue();
 });

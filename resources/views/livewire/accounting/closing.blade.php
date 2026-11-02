@@ -39,9 +39,10 @@
                         'bg-ink text-white' => $item['status'] === 'ok',
                         'bg-stone-200 text-gray-600' => $item['status'] === 'na',
                         'bg-accent-100 text-accent-800' => $item['status'] === 'todo',
+                        'bg-amber-100 text-amber-900' => $item['status'] === 'warn',
                     ]) aria-hidden="true">{{ match ($item['status']) { 'ok' => '✓', 'na' => '–', default => '!' } }}</span>
                     <div class="min-w-0 flex-1 basis-48">
-                        <p class="font-semibold text-ink">{{ $item['label'] }} <span class="sr-only">{{ match ($item['status']) { 'ok' => __('Klar'), 'na' => __('Gäller inte'), default => __('Att göra') } }}</span></p>
+                        <p class="font-semibold text-ink">{{ $item['label'] }} <span class="sr-only">{{ match ($item['status']) { 'ok' => __('Klar'), 'na' => __('Gäller inte'), 'warn' => __('Kontrollera'), default => __('Att göra') } }}</span></p>
                         <p class="text-sm text-gray-600">{{ $item['detail'] }}</p>
                     </div>
                     @if($item['manual'] && $fiscalYear->isOpen())
@@ -49,7 +50,7 @@
                             <input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
                             {{ __('Klart eller gäller inte') }}
                         </label>
-                    @elseif($item['route'] !== null && $item['status'] === 'todo')
+                    @elseif($item['route'] !== null && in_array($item['status'], ['todo', 'warn'], true))
                         <a href="{{ route($item['route']) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Gå dit') }}</a>
                     @endif
                 </li>

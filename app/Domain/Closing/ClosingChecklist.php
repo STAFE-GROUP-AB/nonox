@@ -37,6 +37,9 @@ final class ClosingChecklist
 
     public const string NOT_APPLICABLE = 'na';
 
+    /** Shown as something to look at, but does not block closing the year. */
+    public const string WARN = 'warn';
+
     /** Points a person confirms, with what to check. */
     public const array MANUAL = [
         'cash_count' => ['Kassan är inventerad', 'Räkna kontanterna den sista dagen och jämför med kassakontot. Gäller inte företag utan kontanter.'],
@@ -166,6 +169,8 @@ final class ClosingChecklist
 
     /**
      * Customer and supplier invoices in another currency open on the last day are valued at that day's rate (ADR-025).
+     * A warning, not a block: the rule is not verified yet (TODO(legal-verify) in ADR-025), and a revaluation booked
+     * by hand leaves no YearEndEntry, so a block could never be cleared.
      *
      * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string}
      */
@@ -181,9 +186,9 @@ final class ClosingChecklist
 
         return match (true) {
             ! $revaluation['applies'] => self::item('currency', $label, __('Inga kund- eller leverantörsfakturor i utländsk valuta är obetalda den sista dagen.'), self::NOT_APPLICABLE, null),
-            $revaluation['missing'] !== [] => self::item('currency', $label, __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand.', ['currencies' => implode(', ', $revaluation['missing'])]), self::TODO, null),
+            $revaluation['missing'] !== [] => self::item('currency', $label, __('Riksbanken har ingen kurs för :currencies den sista dagen. Bokför omvärderingen för hand.', ['currencies' => implode(', ', $revaluation['missing'])]), self::WARN, null),
             CurrencyRevaluation::rows($revaluation['lines']) === [] => self::item('currency', $label, __('Kursen den sista dagen ger ingen skillnad mot det bokförda.'), self::OK, null),
-            default => self::item('currency', $label, __(':count obetalda fakturor i utländsk valuta ska värderas till kursen den sista dagen. Bokför omvärderingen nedan.', ['count' => count($revaluation['lines'])]), self::TODO, null),
+            default => self::item('currency', $label, __(':count obetalda fakturor i utländsk valuta ska värderas till kursen den sista dagen. Bokför omvärderingen nedan.', ['count' => count($revaluation['lines'])]), self::WARN, null),
         };
     }
 
