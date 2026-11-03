@@ -80,7 +80,13 @@ use App\Modules\Connect\Models\IdempotencyRecord;
 use App\Modules\Crm\Models\Account as CrmAccount;
 use App\Modules\Crm\Models\AccountPerson as CrmAccountPerson;
 use App\Modules\Crm\Models\Activity as CrmActivity;
+use App\Modules\Crm\Models\Deal as CrmDeal;
+use App\Modules\Crm\Models\DealStageChange as CrmDealStageChange;
+use App\Modules\Crm\Models\Goal as CrmGoal;
+use App\Modules\Crm\Models\LossReason as CrmLossReason;
 use App\Modules\Crm\Models\Person as CrmPerson;
+use App\Modules\Crm\Models\Pipeline as CrmPipeline;
+use App\Modules\Crm\Models\PipelineStage as CrmPipelineStage;
 use App\Modules\Crm\Models\Suppression as CrmSuppression;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
@@ -296,6 +302,12 @@ const COMPANY_SCOPED_MODELS = [
     CrmAccountPerson::class => 'crmAccountPersonAttributes',
     CrmActivity::class => 'crmActivityAttributes',
     CrmSuppression::class => ['kind' => 'EMAIL', 'hash' => 'hemlig-hash', 'reason' => 'OBJECTION'],
+    CrmPipeline::class => ['name' => 'Hemlig säljtratt'],
+    CrmPipelineStage::class => 'crmPipelineStageAttributes',
+    CrmLossReason::class => ['name' => 'Hemlig orsak'],
+    CrmDeal::class => 'crmDealAttributes',
+    CrmDealStageChange::class => 'crmDealStageChangeAttributes',
+    CrmGoal::class => 'crmGoalAttributes',
     PosConnection::class => 'posConnectionAttributes',
     PosProductLink::class => 'posProductLinkAttributes',
     PosSale::class => 'posSaleAttributes',
@@ -1201,6 +1213,30 @@ function crmActivityAttributes(): array
     return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'type' => 'NOTE', 'subject' => 'Hemlig anteckning'];
 }
 
+function crmPipelineStageAttributes(): array
+{
+    return ['pipeline_id' => CrmPipeline::create(['name' => 'Hemlig säljtratt'])->id, 'name' => 'Hemligt steg', 'probability' => 40];
+}
+
+function crmDealAttributes(): array
+{
+    $stage = CrmPipelineStage::create(crmPipelineStageAttributes());
+
+    return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'pipeline_id' => $stage->pipeline_id, 'stage_id' => $stage->id, 'title' => 'Hemlig affär', 'value_ore' => 100_000];
+}
+
+function crmDealStageChangeAttributes(): array
+{
+    $deal = CrmDeal::create(crmDealAttributes());
+
+    return ['deal_id' => $deal->id, 'to_stage_id' => $deal->stage_id, 'changed_at' => now()];
+}
+
+function crmGoalAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'month' => '2026-06-01', 'metric' => 'MEETINGS', 'target' => 8];
+}
+
 function inventoryLocationAttributes(): array
 {
     $code = 'H'.random_int(1, 1_000_000);
@@ -1274,7 +1310,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class];
+const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];

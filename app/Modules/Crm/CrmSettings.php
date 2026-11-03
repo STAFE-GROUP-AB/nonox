@@ -19,6 +19,9 @@ use App\Modules\ModuleManager;
  * - suppression_review_years: an entry on the list of people who objected
  *   (SuppressionList) is listed in "Att göra" for review when it has not
  *   been reviewed for this many years. TODO(legal-verify): the default.
+ * - win_back_months: a lost deal or a lost account gets a "Vinn tillbaka"
+ *   date this many months after the loss (ADR-043 stage 2); the date can be
+ *   changed or cleared per deal and account.
  */
 final class CrmSettings
 {
@@ -27,6 +30,7 @@ final class CrmSettings
         'months_to_inactive' => 12,
         'prune_after_months' => 24,
         'suppression_review_years' => 3,
+        'win_back_months' => 6,
     ];
 
     /** @var array<string, array{int, int}> key => [min, max] */
@@ -34,6 +38,7 @@ final class CrmSettings
         'months_to_inactive' => [1, 120],
         'prune_after_months' => [6, 120],
         'suppression_review_years' => [1, 10],
+        'win_back_months' => [1, 36],
     ];
 
     /** Days ahead "Att göra" warns before people and prospects are erased. */

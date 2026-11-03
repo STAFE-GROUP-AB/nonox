@@ -11,6 +11,7 @@ use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
@@ -26,6 +27,11 @@ use Illuminate\Validation\ValidationException;
  * without a customer) is removed with its activities. An account that is a
  * customer is never removed here: the customer register's erasure decides
  * what the books allow (BFL).
+ *
+ * Stage 2: a deal belongs to its account and stays when a person is erased,
+ * without the person. A prospect's deals go with it. A customer's deals
+ * lose their title and loss note when the customer is anonymised: free
+ * text that may name people.
  *
  * $user is null when privacy:prune erases by retention.
  */
@@ -48,6 +54,7 @@ final class EraseCrmData
                 'updated_at' => now(),
             ]);
 
+            Deal::query()->where('person_id', $person->id)->update(['person_id' => null, 'updated_at' => now()]);
             $person->delete();
 
             // The id only: the name must not outlive the person in the append-only log.
@@ -82,6 +89,7 @@ final class EraseCrmData
 
         DB::transaction(fn () => CurrentCompany::run($company, function () use ($user, $company, $account): void {
             Account::query()->where('parent_id', $account->id)->update(['parent_id' => null]);
+            // The deals, their history and the activities go with the account (foreign keys, cascade).
             $account->delete();
 
             Audit::record('privacy.erased', null, ['subject' => 'crm_prospect', 'account_id' => $account->id, 'by' => $user === null ? 'retention' : 'request'], $company, $user);
@@ -126,7 +134,14 @@ final class EraseCrmData
                 'updated_at' => now(),
             ]);
 
-            Audit::record('privacy.erased', $account, ['subject' => 'crm_account', 'activities_anonymised' => $activities, 'by' => 'customer_anonymised'], $event->companyId);
+            $deals = Deal::query()->where('account_id', $account->id)->update([
+                'person_id' => null,
+                'title' => __('Anonymiserad affär'),
+                'loss_note' => null,
+                'updated_at' => now(),
+            ]);
+
+            Audit::record('privacy.erased', $account, ['subject' => 'crm_account', 'activities_anonymised' => $activities, 'deals_anonymised' => $deals, 'by' => 'customer_anonymised'], $event->companyId);
         });
     }
 }

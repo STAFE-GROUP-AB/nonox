@@ -9,8 +9,10 @@ use App\Domain\Overview\TodoItem;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\CrmSettings;
+use App\Modules\Crm\Domain\DealNextStep;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Suppression;
 use Carbon\CarbonImmutable;
@@ -19,8 +21,12 @@ use Carbon\CarbonImmutable;
  * CRM's part of "Att göra" on Översikt (ADR-043): the user's own activities
  * that are overdue, and, for those who manage the CRM, the people and
  * prospects that privacy:prune erases within 30 days unless someone logs an
- * activity. Three queries. Personal: the overdue activities are the user's
- * own, so the list is cached per user.
+ * activity. Personal: the overdue activities are the user's own, so the
+ * list is cached per user.
+ *
+ * Stage 2: open deals without a next step, the user's own for everyone
+ * with crm:view and all of them for those with crm:settings, so no deal
+ * falls between the chairs (DealNextStep).
  */
 final class CrmTodos implements PersonalTodoProvider
 {
@@ -46,6 +52,21 @@ final class CrmTodos implements PersonalTodoProvider
                 route('crm.activities'),
                 TodoItem::PRIORITY_OTHER,
                 $today->subDay(),
+            );
+        }
+
+        // A seller sees their own deals here; those who run the sales (crm:settings) see every one.
+        $withoutStep = DealNextStep::missing()->when(! $user->hasTeamPermission($company, 'crm:settings'), fn ($query) => $query->where('owner_id', $user->id))->count();
+
+        if ($withoutStep > 0) {
+            $todos[] = new TodoItem(
+                'crm-deals-without-step',
+                'task',
+                $withoutStep === 1 ? __('1 affär saknar nästa steg') : __(':count affärer saknar nästa steg', ['count' => $withoutStep]),
+                __('En öppen affär ska alltid ha ett planerat nästa steg. Planera ett, eller markera affären som vunnen eller förlorad.'),
+                route('crm.deals', ['visa' => 'utan-steg']),
+                TodoItem::PRIORITY_OTHER,
+                $today,
             );
         }
 
@@ -87,6 +108,6 @@ final class CrmTodos implements PersonalTodoProvider
 
     public function invalidatedBy(): array
     {
-        return [Activity::class, Person::class, Account::class, Suppression::class];
+        return [Activity::class, Person::class, Account::class, Suppression::class, Deal::class];
     }
 }

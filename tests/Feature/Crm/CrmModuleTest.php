@@ -25,7 +25,7 @@ use Tests\Support\Crm;
  * settings, and an account for every customer.
  */
 
-const CRM_PAGES = ['crm.activities', 'crm.people', 'crm.settings'];
+const CRM_PAGES = ['crm.activities', 'crm.people', 'crm.settings', 'crm.dashboard', 'crm.deals', 'crm.forecast'];
 
 beforeEach(function () {
     [$this->owner, $this->company] = Bookkeeping::company();
@@ -45,7 +45,7 @@ it('answers 404 until it is turned on, then shows every page with Swedish URLs',
         $this->get(route($route))->assertOk();
     }
 
-    $this->get(route('dashboard'))->assertSee(route('crm.activities'), escape: false);
+    $this->get(route('dashboard'))->assertSee(route('crm.dashboard'), escape: false);
     expect(app(ModuleManager::class)->settings(CrmModule::KEY, $this->company))->toEqual(CrmSettings::DEFAULTS);
 
     [$otherOwner] = Bookkeeping::company();
@@ -158,7 +158,7 @@ it('saves the settings within their limits, for those with crm:settings', functi
         ->assertHasNoErrors()
         ->assertDispatched('toast');
 
-    expect(CrmSettings::for($this->company))->toBe(['months_to_inactive' => 6, 'prune_after_months' => 36, 'suppression_review_years' => 3]);
+    expect(CrmSettings::for($this->company))->toBe(['months_to_inactive' => 6, 'prune_after_months' => 36, 'suppression_review_years' => 3, 'win_back_months' => 6]);
 
     Livewire::test(CrmSettingsForm::class, ['company' => $this->company])
         ->set('settings.months_to_inactive', 0)
@@ -174,5 +174,6 @@ it('saves the settings within their limits, for those with crm:settings', functi
 it('runs the status rules every day in the schedule', function () {
     $events = collect(app(Schedule::class)->events())->map(fn ($event) => $event->command);
 
-    expect($events->contains(fn (?string $command): bool => str_contains((string) $command, 'crm:refresh-statuses')))->toBeTrue();
+    expect($events->contains(fn (?string $command): bool => str_contains((string) $command, 'crm:refresh-statuses')))->toBeTrue()
+        ->and($events->contains(fn (?string $command): bool => str_contains((string) $command, 'crm:win-back')))->toBeTrue();
 });

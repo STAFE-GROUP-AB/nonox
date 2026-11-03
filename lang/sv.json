@@ -142,5 +142,7 @@
     "{1} En bild gick inte att spara.|[2,*] :count bilder gick inte att spara.": "{1} En bild gick inte att spara.|[2,*] :count bilder gick inte att spara.",
     ":count rad är kopplad till :article och dragen från lagret.|:count rader är kopplade till :article och dragna från lagret.": ":count rad är kopplad till :article och dragen från lagret.|:count rader är kopplade till :article och dragna från lagret.",
     ":count lagerändring skickades till kassan.|:count lagerändringar skickades till kassan.": ":count lagerändring skickades till kassan.|:count lagerändringar skickades till kassan.",
-    ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.": ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand."
+    ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.": ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.",
+    ":count affär|:count affärer": ":count affär|:count affärer",
+    ":count affär i steget|:count affärer i steget": ":count affär i steget|:count affärer i steget"
 }

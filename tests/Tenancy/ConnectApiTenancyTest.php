@@ -35,6 +35,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Connect;
+use Tests\Support\Crm;
 
 /*
  * AGENTS.md §13.2 for the public API (ADR-032): a credential for company A
@@ -80,6 +81,8 @@ function twoCompanies(): array
     $crmAccountB = CurrentCompany::run($b, fn () => CrmAccount::query()->where('customer_id', $customerB->id)->firstOrFail());
     $crmPersonB = app(SavePerson::class)($ownerB, $b, ['name' => 'B:s kontakt', 'legal_basis' => 'AGREEMENT']);
     $crmActivityB = app(LogActivity::class)($ownerB, $b, ['account_id' => $crmAccountB->id, 'type' => 'NOTE', 'subject' => 'B:s anteckning']);
+    $crmDealB = Crm::deal($b, $ownerB, $crmAccountB, 'B:s affär');
+    $crmPipelineB = $crmDealB->pipeline_id;
     $supplierInvoiceB = app(SaveSupplierInvoice::class)($ownerB, $b, ['supplier_id' => $supplierB->id, 'invoice_date' => '2026-03-03', 'total' => '125', 'vat' => '25', 'rows' => [['account' => '5410', 'amount' => '100']]]);
 
     // A has its own records too, so the lists are not empty by accident.
@@ -104,6 +107,7 @@ function twoCompanies(): array
             'supplier' => $supplierB->id, 'fiscal_year' => $yearB->id, 'article' => $articleB->id, 'cost_center' => $costCenterB->id,
             'project' => $projectB->id, 'invoice' => $invoiceB->id, 'issued' => $issuedB->id, 'supplier_invoice' => $supplierInvoiceB->id,
             'article_image' => $imageB->id, 'crm_account' => $crmAccountB->id, 'crm_person' => $crmPersonB->id, 'crm_activity' => $crmActivityB->id,
+            'crm_deal' => $crmDealB->id, 'crm_pipeline' => $crmPipelineB,
         ],
     ];
 }
@@ -154,6 +158,9 @@ function crossCompanyCalls(array $b): array
         ['PATCH', "/api/v1/crm/people/{$b['crm_person']}", ['title' => 'Kapad']],
         ['GET', "/api/v1/crm/activities/{$b['crm_activity']}"],
         ['PATCH', "/api/v1/crm/activities/{$b['crm_activity']}", ['subject' => 'Kapad']],
+        ['GET', "/api/v1/crm/deals/{$b['crm_deal']}"],
+        ['PATCH', "/api/v1/crm/deals/{$b['crm_deal']}", ['title' => 'Kapad']],
+        ['GET', "/api/v1/crm/pipelines/{$b['crm_pipeline']}"],
         // Reports that take another company's fiscal year as a parameter.
         ['GET', "/api/v1/reports/trial-balance?fiscal_year_id={$b['fiscal_year']}"],
         ['GET', "/api/v1/reports/general-ledger?fiscal_year_id={$b['fiscal_year']}"],
@@ -214,7 +221,7 @@ it('shows the credential\'s own company, never the person\'s current one', funct
 });
 
 it('covers every API route that takes an id', function () {
-    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image', 'crm_account', 'crm_person', 'crm_activity'], 'X')))
+    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image', 'crm_account', 'crm_person', 'crm_activity', 'crm_deal', 'crm_pipeline'], 'X')))
         ->map(fn (array $call): string => $call[0].' '.preg_replace('/X/', '{}', explode('?', $call[1])[0]))
         ->unique()->values();
 

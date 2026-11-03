@@ -19,7 +19,7 @@
     @endif
 
     @if($nextAccount)
-        <x-ui.card :title="__('Nästa steg för :name', ['name' => $nextAccount->name])" :description="__('Planera vad som ska hända härnäst, eller hoppa över.')">
+        <x-ui.card :title="__('Nästa steg för :name', ['name' => $nextAccount->name])" :description="$nextRequired ? __('Det här är affärens enda planerade steg. Planera nästa, så klarmarkeras steget samtidigt. Eller avsluta affären som vunnen eller förlorad.') : __('Planera vad som ska hända härnäst, eller hoppa över.')">
             <form wire:submit="saveNext" class="grid gap-4 sm:grid-cols-3">
                 <x-ui.field for="next_type" :label="__('Typ')" error="type">
                     <select id="next_type" class="{{ $input }} mt-1" wire:model="next.type">
@@ -34,9 +34,15 @@
                 <x-ui.field for="next_due" :label="__('När')" error="due_at">
                     <input id="next_due" type="datetime-local" class="{{ $input }} mt-1" wire:model="next.due_at">
                 </x-ui.field>
+                @error('next')<p class="text-sm text-accent-700 sm:col-span-3">{{ $message }}</p>@enderror
                 <div class="flex flex-wrap items-center gap-4 sm:col-span-3">
-                    <x-button wire:loading.attr="disabled">{{ __('Planera') }}</x-button>
-                    <button type="button" class="min-h-11 text-sm font-medium text-gray-700 underline" wire:click="skipNext">{{ __('Hoppa över') }}</button>
+                    <x-button wire:loading.attr="disabled">{{ $nextRequired ? __('Klar och planera nästa') : __('Planera') }}</x-button>
+                    @if($nextRequired)
+                        <a href="{{ route('crm.deals.show', $nextDealId) }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Avsluta affären') }}</a>
+                        <button type="button" class="min-h-11 text-sm text-gray-600 underline" wire:click="skipNext">{{ __('Avbryt') }}</button>
+                    @else
+                        <button type="button" class="min-h-11 text-sm font-medium text-gray-700 underline" wire:click="skipNext">{{ __('Hoppa över') }}</button>
+                    @endif
                 </div>
             </form>
         </x-ui.card>
@@ -66,6 +72,9 @@
                                 {{ $activity->type->label() }} · {{ $activity->account?->name }}@if($activity->person) · {{ $activity->person->name }}@if($activity->person->doNotContact()) ({{ __("Kontakta inte") }})@endif @endif
                                 @if($who === 'alla' && $activity->assignee) · {{ $activity->assignee->name }}@endif
                             </span>
+                            @if($activity->deal)
+                                <a href="{{ route('crm.deals.show', $activity->deal) }}" class="block text-sm text-accent-600 hover:text-accent-700">{{ __('Affär') }}: {{ $activity->deal->title }}</a>
+                            @endif
                             @if($activity->due_at)
                                 <span @class(['block text-sm', 'font-medium text-accent-700' => $group['late'], 'text-gray-500' => ! $group['late']])>{{ $activity->due_at->setTimezone($zone)->translatedFormat('D j M H:i') }}</span>
                             @endif

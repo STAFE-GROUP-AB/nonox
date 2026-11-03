@@ -11,6 +11,7 @@ use App\Modules\Contracts\IsNew;
 use App\Modules\Contracts\Module;
 use App\Modules\Contracts\ProvidesTodos;
 use App\Modules\Crm\Actions\EnsureCustomerAccounts;
+use App\Modules\Crm\Actions\EnsurePipelineDefaults;
 use App\Modules\Crm\Livewire\CrmSettingsForm;
 use App\Modules\Crm\Support\CrmTodos;
 use App\Modules\ModuleCheck;
@@ -56,7 +57,7 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
 
     public function description(): string
     {
-        return __('Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg och nyckeltal direkt ur bokföringen: fakturerat, obetalt, betaltid och täckningsbidrag. Ersätter kundregistret medan modulen är på.');
+        return __('Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg och nyckeltal direkt ur bokföringen: fakturerat, obetalt, betaltid och täckningsbidrag. Affärer i en säljtratt med prognos, mål per säljare och vinn tillbaka-påminnelser. Ersätter kundregistret medan modulen är på.');
     }
 
     public function icon(): string
@@ -106,12 +107,15 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
         return [
             [
                 'label' => __('CRM'),
-                'route' => 'crm.activities',
+                'route' => 'crm.dashboard',
                 'permission' => 'crm:view',
                 'active' => ['crm.*', 'invoicing.customers'],
                 'children' => fn (User $user, Company $company): array => [
+                    ['label' => __('Översikt'), 'route' => 'crm.dashboard', 'active' => ['crm.dashboard']],
+                    ['label' => __('Affärer'), 'route' => 'crm.deals', 'active' => ['crm.deals', 'crm.deals.show']],
                     ['label' => __('Kunder och prospekt'), 'route' => 'invoicing.customers', 'active' => ['invoicing.customers', 'crm.accounts.show']],
                     ['label' => __('Mina aktiviteter'), 'route' => 'crm.activities', 'active' => ['crm.activities']],
+                    ['label' => __('Prognos och mål'), 'route' => 'crm.forecast', 'active' => ['crm.forecast']],
                     ['label' => __('Personer'), 'route' => 'crm.people', 'active' => ['crm.people']],
                     ...($user->hasTeamPermission($company, 'crm:settings') ? [['label' => __('Inställningar'), 'route' => 'crm.settings', 'active' => ['crm.settings']]] : []),
                 ],
@@ -137,11 +141,12 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
         ]);
     }
 
-    /** Seeds the settings and gives every existing customer an account; both idempotent. */
+    /** Seeds the settings, gives every existing customer an account and creates the default pipeline; all idempotent. */
     public function onEnable(Company $company, User $by): void
     {
         app(ModuleManager::class)->seedSettings(self::KEY, $company, CrmSettings::DEFAULTS);
         app(EnsureCustomerAccounts::class)($company, $by);
+        app(EnsurePipelineDefaults::class)($company);
     }
 
     public function onDisable(Company $company, User $by): void {}

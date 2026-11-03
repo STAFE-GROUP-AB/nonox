@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $company_id
  * @property int $account_id
  * @property ?int $person_id
+ * @property ?int $deal_id the deal this activity is a step of (ADR-043 stage 2)
  * @property ActivityType $type
  * @property ?CallOutcome $call_outcome
  * @property string $subject
@@ -44,6 +45,7 @@ class Activity extends Model
         'company_id',
         'account_id',
         'person_id',
+        'deal_id',
         'type',
         'call_outcome',
         'subject',
@@ -77,6 +79,12 @@ class Activity extends Model
     public function person(): BelongsTo
     {
         return $this->belongsTo(Person::class);
+    }
+
+    /** @return BelongsTo<Deal, $this> */
+    public function deal(): BelongsTo
+    {
+        return $this->belongsTo(Deal::class);
     }
 
     /** @return BelongsTo<User, $this> */

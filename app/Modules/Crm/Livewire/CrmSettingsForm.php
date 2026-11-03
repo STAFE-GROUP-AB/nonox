@@ -56,6 +56,7 @@ class CrmSettingsForm extends Component
             'settings.months_to_inactive' => __('månader utan faktura'),
             'settings.prune_after_months' => __('månader utan aktivitet'),
             'settings.suppression_review_years' => __('år mellan granskningarna'),
+            'settings.win_back_months' => __('månader till vinn tillbaka'),
         ])->validate();
 
         $modules->updateSettings(CrmModule::KEY, $company, $this->user(), array_map('intval', (array) $validated['settings']));
