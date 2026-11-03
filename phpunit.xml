@@ -28,6 +28,7 @@
         <env name="OTP_AUTOFILL" value="false"/>
         <env name="PASSKEYS_SKIP_LOCALLY" value="false"/>
         <env name="CACHE_STORE" value="array"/>
+        <env name="NONOX_CHAT_STORE" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="MAIL_MAILER" value="array"/>

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-krypterad-chatt",
+      "datum": "2026-11-03T15:50:00+01:00",
+      "rubrik": "Krypterad chatt med kod, som raderas helt",
+      "beskrivning": "Starta en chatt från vilken sida som helst och läs upp eller sms:a koden, så kan supporten, revisorn eller kunden ansluta. Allt krypteras i webbläsaren och raderas helt när chatten avslutas, efter 30 minuter utan meddelanden eller senast efter 8 timmar. Med Följ mina sidor kommer den andra till samma sida som du.",
+      "typ": "Nytt",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-03-crm-hav-begransning",
       "datum": "2026-11-03T12:50:00+01:00",
       "rubrik": "CRM: en begränsning hävs med ett eget steg",

@@ -50,6 +50,7 @@ final class LandingPage
         ['label' => 'Min sida för anställda', 'keys' => ['employee_portal']],
         ['label' => 'Byråläge med många klienter', 'keys' => ['firm_overview']],
         ['label' => 'Öppet API', 'keys' => ['public_api']],
+        ['label' => 'Krypterad chatt med support, revisor och kund', 'keys' => ['secure_chat']],
         ['label' => 'Flytt med SIE4, eller direkt från Fortnox', 'keys' => ['sie', 'fortnox_import']],
     ];
 

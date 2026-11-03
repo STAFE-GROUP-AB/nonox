@@ -34,6 +34,22 @@ return [
         'max_per_email_per_hour' => 3,
     ],
 
+    /*
+     | The encrypted chat (ADR-045). Everything lives in the cache store
+     | "chat" (config/cache.php) and is gone after the idle time, the
+     | absolute limit, or when either person ends the chat.
+     */
+    'chat' => [
+        'idle_seconds' => 30 * 60,
+        'max_seconds' => 8 * 3600,
+        'max_messages' => 500,
+        // Bytes of ciphertext per message, the AES-GCM tag included.
+        'max_ciphertext_bytes' => 4096,
+        // Attempts to start or join, per user and per IP address.
+        'join_attempts' => 10,
+        'join_decay_seconds' => 600,
+    ],
+
     // The date the open beta ends and version 1.0 launches, shown on the public pages.
     'launch_date' => '2027-01-01',
 

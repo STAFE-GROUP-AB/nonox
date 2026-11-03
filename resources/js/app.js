@@ -6,6 +6,7 @@ import './asset-proposals';
 import './passkeys';
 import './overview-charts';
 import './spotlight';
+import './secure-chat';
 import './planning-schedule';
 import './pwa';
 import './accessibility';

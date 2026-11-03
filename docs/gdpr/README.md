@@ -58,6 +58,7 @@ Se avsnitt 4 i [personuppgiftsbiträdesavtalet](../juridik/personuppgiftsbitrade
 - **Sessioner:** löper ut efter 12 timmar, och användaren kan logga ut från alla andra enheter.
 - **Åtkomst:** behörigheter per roll. Känsliga löneuppgifter kräver en egen behörighet och läsning loggas. Ett bankbyte kräver en andra persons bekräftelse.
 - **Spårbarhet:** behandlingshistorik som inte kan ändras.
+- **Krypterad chatt (ADR-045):** det som skrivs krypteras i webbläsaren (AES-256-GCM med en nyckel som härleds ur koden och aldrig når servern), hålls bara tillfälligt i arbetsminnet och raderas helt när chatten avslutas, efter 30 minuter utan meddelanden eller senast efter 8 timmar. Ingenting sparas i databasen, behandlingshistoriken eller loggarna.
 - **Gränssnitt:** säkerhetsrubriker på varje svar, och varje sida är låst till sitt företag.
 - **Filer:** krypteras i vila med applikationsnyckeln (`EncryptedAdapter`).
 - **Säkerhetskopior:** varje natt, krypterade (AES-256), bara i Sverige, sparas 7 dagar. Två gånger per dygn förs dessutom en krypterad kopia till en annan plats i Sverige. Varje vecka återställs den senaste kopian i en tillfällig databas och kontrolleras automatiskt, se [säkerhetskopiering](sakerhetskopiering.md#återställningstest).

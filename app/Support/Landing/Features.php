@@ -82,6 +82,7 @@ final class Features
         'firm_overview' => ['name' => 'Mina företag', 'status' => self::LIVE, 'readme' => 'summor och en gemensam "Att göra" för alla klienter, med filter per konsult, deadline och typ'],
         'month_close' => ['name' => 'Månadsstängning per klient', 'status' => self::LIVE, 'readme' => '**Månadsstängning:** en rad per klient'],
         'tasks' => ['name' => 'Uppgifter mellan byrå och kund', 'status' => self::LIVE, 'readme' => 'delegera mellan byrån och kundens användare åt båda hållen'],
+        'secure_chat' => ['name' => 'Krypterad chatt som raderas helt', 'status' => self::LIVE, 'readme' => 'Krypterad chatt som raderas helt'],
         'search' => ['name' => 'Sök med ⌘K', 'status' => self::LIVE, 'readme' => '**Sök med ⌘K:** en sökning över allt du har behörighet att se'],
         'overview' => ['name' => 'Översikt med att göra och prognos', 'status' => self::LIVE, 'readme' => 'Nyckeltal för företagaren'],
         'firm_branding' => ['name' => 'Byråns varumärke hos kunderna', 'status' => self::LIVE, 'readme' => 'Redovisningsbyråns varumärke: en byrå kan visa sin logga och sina färger för sina kunder'],

@@ -69,6 +69,11 @@
 
         @stack('modals')
 
+        {{-- The encrypted chat (ADR-045): any signed-in user, any page. --}}
+        @auth
+            <x-secure-chat.panel :company="$layoutCompany" />
+        @endauth
+
         {{-- Read aloud by screen readers: what happened after a form was sent (resources/js/accessibility.js). --}}
         <div id="nx-announcer" class="sr-only" role="status" aria-live="polite" aria-atomic="true"
              data-one-error="{{ __('Formuläret har ett fel. Rätta det och skicka igen.') }}"
