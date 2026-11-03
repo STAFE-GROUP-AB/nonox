@@ -31,6 +31,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $account_created
  * @property bool $person_created
  * @property string $status
+ * @property ?int $review_customer_id
+ * @property ?int $review_account_id
+ * @property ?int $review_person_id
+ * @property ?string $review_decision
  * @property ?array<string, string> $pushed
  * @property ?string $error
  * @property ?CarbonImmutable $failed_at
@@ -49,6 +53,19 @@ class OperatorLink extends Model
 
     public const string FAILED = 'FAILED';
 
+    /**
+     * The operator already has a customer, CRM account or person with the
+     * same organisation number or e-mail that the sync did not create:
+     * nothing is linked or written until an HQ admin decides.
+     */
+    public const string NEEDS_REVIEW = 'NEEDS_REVIEW';
+
+    /** HQ's decision on a NEEDS_REVIEW link: link to the existing record. */
+    public const string DECISION_LINK = 'LINK';
+
+    /** HQ's decision on a NEEDS_REVIEW link: create a new record. */
+    public const string DECISION_NEW = 'NEW';
+
     /** @var list<string> */
     protected $fillable = [
         'target_company_id',
@@ -61,6 +78,10 @@ class OperatorLink extends Model
         'account_created',
         'person_created',
         'status',
+        'review_customer_id',
+        'review_account_id',
+        'review_person_id',
+        'review_decision',
         'pushed',
         'error',
         'failed_at',

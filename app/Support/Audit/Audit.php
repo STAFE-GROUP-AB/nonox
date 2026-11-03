@@ -17,6 +17,32 @@ use Illuminate\Support\Facades\Auth;
  */
 final class Audit
 {
+    /** @var array<string, mixed> added to every entry written inside withContext() */
+    private static array $context = [];
+
+    /**
+     * Adds fields to every entry the callback writes, for example
+     * `via: operator_sync` when the operator sync writes through a company's
+     * own Actions (ADR-044), so the log tells the sync from a person.
+     *
+     * @template T
+     *
+     * @param  array<string, mixed>  $context
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function withContext(array $context, callable $callback): mixed
+    {
+        $before = self::$context;
+        self::$context = [...$before, ...$context];
+
+        try {
+            return $callback();
+        } finally {
+            self::$context = $before;
+        }
+    }
+
     /**
      * @param  array<string, mixed>  $payload
      */
@@ -36,7 +62,7 @@ final class Audit
             'action' => $action,
             'subject_type' => $subject?->getMorphClass(),
             'subject_id' => $subject === null ? null : (string) $subject->getKey(),
-            'payload' => $payload,
+            'payload' => [...$payload, ...self::$context],
             'ip_address' => $request?->ip(),
             'user_agent' => $request === null ? null : mb_substr((string) $request->userAgent(), 0, 1000),
         ]);

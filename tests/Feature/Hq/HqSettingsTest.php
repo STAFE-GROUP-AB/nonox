@@ -59,9 +59,7 @@ it('has today\'s behaviour by default: queue open, self-registration closed, no 
 
     expect($settings->waitlistOpen())->toBeTrue()
         ->and($settings->selfRegistrationOpen())->toBeFalse()
-        ->and($settings->operatorCompanyId())->toBeNull()
-        ->and($settings->customersCompanyId())->toBeNull()
-        ->and($settings->waitlistCompanyId())->toBeNull();
+        ->and($settings->operatorCompanyId())->toBeNull();
 });
 
 it('saves the settings with a passkey step and audits ids and booleans only', function () {
@@ -83,8 +81,6 @@ it('saves the settings with a passkey step and audits ids and booleans only', fu
     $audit = AuditLog::query()->where('action', 'hq.settings_updated')->sole();
 
     expect($settings->operatorCompanyId())->toBe($operator->id)
-        ->and($settings->customersCompanyId())->toBe($operator->id)
-        ->and($settings->waitlistCompanyId())->toBe($operator->id)
         ->and($settings->waitlistOpen())->toBeFalse()
         ->and($settings->selfRegistrationOpen())->toBeTrue()
         ->and($audit->company_id)->toBeNull()

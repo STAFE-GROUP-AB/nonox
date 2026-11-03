@@ -17,7 +17,7 @@ use Illuminate\View\View;
  */
 class LegalPageController
 {
-    public const string VERSION = '1.3';
+    public const string VERSION = '1.4';
 
     public const string EFFECTIVE = '2026-11-03';
 

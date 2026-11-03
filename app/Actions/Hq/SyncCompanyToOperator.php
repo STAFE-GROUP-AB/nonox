@@ -30,29 +30,37 @@ use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 /**
- * Makes a company in the installation a customer of the target company
- * (ADR-044): the operator company, or the company HQ chose for customers.
+ * Makes a company in the installation a customer of the operator company
+ * (ADR-044).
  *
- * Everything is written in the target through its own Actions inside
- * CurrentCompany::run, acting as the target's owner (the system has no
- * user of its own), never with raw inserts:
+ * Everything is written in the operator company through its own Actions
+ * inside CurrentCompany::run, acting as its owner (the system has no user
+ * of its own) and with `via: operator_sync` on every audit entry, never
+ * with raw inserts:
  *
- * - No link yet: the queue prospect of the company's owner becomes the
- *   customer (ConvertToCustomer), else the one existing customer with the
- *   same organisation number is linked, else SaveCustomer creates one.
+ * - No link yet: the queue prospect the sync made for the company's owner
+ *   becomes the customer (ConvertToCustomer). Otherwise, when the operator
+ *   already has a customer or CRM account with the same organisation
+ *   number that the sync did not create, nothing is linked, written or
+ *   added: the link waits in NEEDS_REVIEW until an HQ admin chooses Koppla
+ *   or Skapa ny kund (anyone can type any organisation number when they
+ *   create a company). Otherwise SaveCustomer creates the customer.
  * - Linked: only the fields whose value changed in the source since the
  *   last push are written, so the operator's own edits stay. An archived
  *   company makes the customer inactive; taking it out of the archive
  *   makes it active again. A customer anonymised, restricted (GDPR) or
- *   removed in the target is never written to or created again.
- * - With CRM on in the target: the owner of the company becomes a contact
- *   person on the customer's account (legal basis: agreement), unless the
- *   address is on the target's suppression list or the person there must
- *   not be contacted.
+ *   removed in the operator company is never written to or created again.
+ * - With CRM on: the owner of the company becomes a contact person on the
+ *   customer's account: under the agreement for a sole trader (the owner
+ *   is the customer), else under legitimate interest (a contact in their
+ *   professional role). Not when the address is on the suppression list
+ *   or the person there must not be contacted.
  *
  * A sole trader's number is a personal number: it goes to the register's
  * encrypted personal_number, never to org_number, and the VAT number (which
- * contains it) is not copied.
+ * contains it) is not copied. TODO(legal-verify): dataskyddslagen 3 kap.
+ * 10 § (when a personal number may be processed) for a sole trader's
+ * number in the operator's customer register.
  */
 final class SyncCompanyToOperator
 {
@@ -66,8 +74,10 @@ final class SyncCompanyToOperator
 
     public const string SKIPPED = 'skipped';
 
-    /** @var list<string> the customer fields a company feeds */
-    public const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country'];
+    public const string NEEDS_REVIEW = 'needs_review';
+
+    /** The context string the change-tracking key is derived with from APP_KEY. */
+    private const string HASH_CONTEXT = 'nonox-operator-sync-change-tracking-v1';
 
     public function __construct(
         private readonly SaveCustomer $saveCustomer,
@@ -85,7 +95,7 @@ final class SyncCompanyToOperator
 
         $actor = self::actor($target);
 
-        return Cache::lock("operator-sync:company:{$target->id}:{$source->id}", 30)->block(10, fn (): string => DB::transaction(function () use ($source, $target, $actor): string {
+        return Audit::withContext(['via' => 'operator_sync'], fn (): string => Cache::lock("operator-sync:company:{$target->id}:{$source->id}", 30)->block(10, fn (): string => DB::transaction(function () use ($source, $target, $actor): string {
             $link = OperatorLink::query()->where('target_company_id', $target->id)->where('source_company_id', $source->id)->lockForUpdate()->first();
 
             // An archived company that never was a customer does not become one now.
@@ -98,11 +108,29 @@ final class SyncCompanyToOperator
                 return self::SKIPPED;
             }
 
+            // Waiting for an HQ admin: nothing is written until they decide.
+            if ($link?->status === OperatorLink::NEEDS_REVIEW && $link->review_decision === null) {
+                return self::NEEDS_REVIEW;
+            }
+
             $values = self::values($source);
 
             [$outcome, $link, $customer] = $link?->customer_id === null
                 ? $this->attach($source, $target, $actor, $values, $link)
                 : $this->update($source, $target, $actor, $values, $link);
+
+            if ($outcome === self::NEEDS_REVIEW) {
+                $link->forceFill(['status' => OperatorLink::NEEDS_REVIEW, 'error' => null, 'failed_at' => null])->save();
+
+                Audit::instance('hq.operator_review_needed', $link, [
+                    'source_company_id' => $source->id,
+                    'target_company_id' => $target->id,
+                    'review_customer_id' => $link->review_customer_id,
+                    'review_account_id' => $link->review_account_id,
+                ]);
+
+                return $outcome;
+            }
 
             if ($customer !== null && $this->modules->isEnabled(CrmModule::KEY, $target)) {
                 $this->ensureOwnerContact($link, $source, $target, $actor, $customer);
@@ -110,6 +138,9 @@ final class SyncCompanyToOperator
 
             $link->forceFill([
                 'status' => OperatorLink::SYNCED,
+                'review_customer_id' => null,
+                'review_account_id' => null,
+                'review_person_id' => null,
                 'error' => null,
                 'failed_at' => null,
                 'synced_at' => now(),
@@ -122,11 +153,12 @@ final class SyncCompanyToOperator
                     'target_company_id' => $target->id,
                     'customer_id' => $link->customer_id,
                     'outcome' => $outcome,
+                    'via' => 'operator_sync',
                 ]);
             }
 
             return $outcome;
-        }));
+        })));
     }
 
     /**
@@ -170,16 +202,33 @@ final class SyncCompanyToOperator
 
     /**
      * Keyed hashes of the values, so the link can tell what changed without
-     * keeping the values (a personal number among them).
+     * keeping the values (a personal number among them). The key is derived
+     * from APP_KEY with HKDF and a fixed context string, and `_key` keeps a
+     * fingerprint of it: after an APP_KEY rotation the hashes no longer
+     * match, so the next sync takes the current values as the new baseline
+     * instead of overwriting the operator's own edits.
      *
      * @param  array<string, mixed>  $values
      * @return array<string, string>
      */
     public static function hashes(array $values): array
     {
-        $key = hash_hmac('sha256', 'nonox-operator-sync', (string) config('app.key'));
+        $key = self::hashKey();
 
-        return array_map(fn (mixed $value): string => hash_hmac('sha256', json_encode($value, JSON_THROW_ON_ERROR), $key), $values);
+        return [
+            ...array_map(fn (mixed $value): string => hash_hmac('sha256', json_encode($value, JSON_THROW_ON_ERROR), $key), $values),
+            '_key' => self::keyFingerprint(),
+        ];
+    }
+
+    private static function hashKey(): string
+    {
+        return hash_hkdf('sha256', (string) config('app.key'), 32, self::HASH_CONTEXT);
+    }
+
+    private static function keyFingerprint(): string
+    {
+        return substr(hash_hmac('sha256', 'fingerprint', self::hashKey()), 0, 16);
     }
 
     /**
@@ -188,7 +237,7 @@ final class SyncCompanyToOperator
      */
     private function attach(Company $source, Company $target, User $actor, array $values, ?OperatorLink $link): array
     {
-        $prospect = $this->modules->isEnabled(CrmModule::KEY, $target) ? $this->queueProspect($source, $target) : null;
+        $prospect = $link?->review_decision === null && $this->modules->isEnabled(CrmModule::KEY, $target) ? $this->queueProspect($source, $target) : null;
 
         if ($prospect !== null) {
             // The queue applicant's link becomes this company's: one row, no duplicate.
@@ -223,13 +272,25 @@ final class SyncCompanyToOperator
 
         $link ??= new OperatorLink(['target_company_id' => $target->id, 'source_company_id' => $source->id]);
 
-        $existing = $this->existingCustomer($target, $values['org_number']);
+        if ($link->review_decision === OperatorLink::DECISION_LINK) {
+            $chosen = $this->chosenCustomer($link, $target, $actor);
 
-        if ($existing !== null) {
-            // The operator's own customer: linked as it is, only later changes in the source are pushed.
-            $link->forceFill(['customer_id' => $existing->id, 'customer_created' => false, 'pushed' => self::hashes([...$values, 'archived' => $source->isArchived()])])->save();
+            if ($chosen !== null) {
+                // Linked as it is, by an HQ admin's decision: only later changes in the source are pushed.
+                $link->forceFill(['customer_id' => $chosen->id, 'pushed' => self::hashes([...$values, 'archived' => $source->isArchived()])])->save();
 
-            return [self::LINKED, $link, $existing];
+                return [self::LINKED, $link, $chosen];
+            }
+        }
+
+        if ($link->review_decision === null) {
+            [$customerId, $accountId] = $this->candidates($target, $values['org_number']);
+
+            if ($customerId !== null || $accountId !== null) {
+                $link->forceFill(['review_customer_id' => $customerId, 'review_account_id' => $accountId]);
+
+                return [self::NEEDS_REVIEW, $link, null];
+            }
         }
 
         $customer = ($this->saveCustomer)($actor, $target, [...array_filter($values, fn (?string $value): bool => $value !== null), 'payment_terms_days' => 30]);
@@ -237,6 +298,64 @@ final class SyncCompanyToOperator
         $link->forceFill(['customer_id' => $customer->id, 'customer_created' => true, 'pushed' => self::hashes([...$values, 'archived' => false])])->save();
 
         return [self::CREATED, $link, $customer];
+    }
+
+    /**
+     * The customer an HQ admin chose to link to: the candidate customer, or
+     * the candidate CRM account, made a customer when it is not one yet.
+     */
+    private function chosenCustomer(OperatorLink $link, Company $target, User $actor): ?Customer
+    {
+        return CurrentCompany::run($target, function () use ($link, $target, $actor): ?Customer {
+            if ($link->review_customer_id !== null) {
+                return Customer::query()->find($link->review_customer_id);
+            }
+
+            $account = $link->review_account_id === null ? null : Account::query()->find($link->review_account_id);
+
+            if ($account === null) {
+                return null;
+            }
+
+            if ($account->customer_id !== null) {
+                return Customer::query()->find($account->customer_id);
+            }
+
+            $customer = ($this->convertToCustomer)($actor, $target, $account);
+            $link->forceFill(['crm_account_id' => $account->id, 'customer_created' => true]);
+
+            return $customer;
+        });
+    }
+
+    /**
+     * Records the operator already has with this organisation number and
+     * that the sync did not create: a customer no link points at, or a CRM
+     * account that is not a customer.
+     *
+     * @return array{0: ?int, 1: ?int}
+     */
+    private function candidates(Company $target, ?string $orgNumber): array
+    {
+        if ($orgNumber === null) {
+            return [null, null];
+        }
+
+        return CurrentCompany::run($target, function () use ($target, $orgNumber): array {
+            $customerId = Customer::query()
+                ->where('org_number', $orgNumber)
+                ->whereNotIn('id', OperatorLink::query()->where('target_company_id', $target->id)->whereNotNull('customer_id')->select('customer_id'))
+                ->orderBy('id')
+                ->value('id');
+
+            $accountId = $customerId !== null ? null : Account::query()
+                ->where('org_number', $orgNumber)
+                ->whereNull('customer_id')
+                ->orderBy('id')
+                ->value('id');
+
+            return [$customerId === null ? null : (int) $customerId, $accountId === null ? null : (int) $accountId];
+        });
     }
 
     /**
@@ -254,7 +373,15 @@ final class SyncCompanyToOperator
         $now = [...$values, 'archived' => $source->isArchived()];
         $hashes = self::hashes($now);
         $pushed = (array) $link->pushed;
-        $changed = array_keys(array_filter($hashes, fn (string $hash, string $field): bool => ($pushed[$field] ?? null) !== $hash, ARRAY_FILTER_USE_BOTH));
+
+        // A new APP_KEY: the old hashes say nothing, so today's values become the baseline.
+        if (($pushed['_key'] ?? null) !== $hashes['_key']) {
+            $link->forceFill(['pushed' => $hashes]);
+
+            return [self::UNCHANGED, $link, $customer];
+        }
+
+        $changed = array_keys(array_filter($hashes, fn (string $hash, string $field): bool => $field !== '_key' && ($pushed[$field] ?? null) !== $hash, ARRAY_FILTER_USE_BOTH));
 
         if ($changed === []) {
             return [self::UNCHANGED, $link, $customer];
@@ -298,35 +425,19 @@ final class SyncCompanyToOperator
         return ($this->saveCustomer)($actor, $target, [...$input, ...$fields], $customer);
     }
 
-    /** The CRM prospect from the queue entry of the company's owner, not yet any company's. */
+    /** The CRM prospect the sync made from the queue entry of the company's owner, not yet any company's. */
     private function queueProspect(Company $source, Company $target): ?OperatorLink
     {
         return OperatorLink::query()
             ->where('target_company_id', $target->id)
             ->whereNull('source_company_id')
             ->whereNotNull('crm_account_id')
+            ->where('account_created', true)
+            ->where('status', OperatorLink::SYNCED)
             ->whereIn('waitlist_entry_id', DB::table('waitlist_entries')->where('approved_user_id', $source->user_id)->select('id'))
             ->orderBy('id')
             ->lockForUpdate()
             ->first();
-    }
-
-    /** The one customer of the target with this organisation number that no other company is linked to. */
-    private function existingCustomer(Company $target, ?string $orgNumber): ?Customer
-    {
-        if ($orgNumber === null) {
-            return null;
-        }
-
-        return CurrentCompany::run($target, function () use ($target, $orgNumber): ?Customer {
-            $matches = Customer::query()
-                ->where('org_number', $orgNumber)
-                ->whereNotIn('id', OperatorLink::query()->where('target_company_id', $target->id)->whereNotNull('customer_id')->select('customer_id'))
-                ->limit(2)
-                ->get();
-
-            return $matches->count() === 1 ? $matches->first() : null;
-        });
     }
 
     /** Anonymised on request in the target's register (EraseRegisterEntry). */
@@ -341,10 +452,24 @@ final class SyncCompanyToOperator
     }
 
     /**
+     * The legal basis for the owner as the customer's contact person: the
+     * agreement for a sole trader, whose owner is the customer; legitimate
+     * interest for anyone else, a contact in their professional role.
+     * TODO(legal-verify): the balancing test for company owners as contacts.
+     *
+     * @return array{0: LegalBasis, 1: string}
+     */
+    public static function ownerBasis(Company $source): array
+    {
+        return IdentityNumber::isPersonal($source->org_number)
+            ? [LegalBasis::Agreement, __('Ägare till en enskild firma som är kund.')]
+            : [LegalBasis::LegitimateInterest, __('Ägare till ett företag som är kund; kontakt i yrkesrollen.')];
+    }
+
+    /**
      * The owner of the company as a contact person on the customer's CRM
-     * account, under the agreement. A person the queue already brought in
-     * with consent is the same person: linked, and the legal basis becomes
-     * the agreement.
+     * account. A person the queue already brought in with consent is the
+     * same person: linked, and the legal basis follows ownerBasis().
      */
     private function ensureOwnerContact(OperatorLink $link, Company $source, Company $target, User $actor, Customer $customer): void
     {
@@ -354,7 +479,9 @@ final class SyncCompanyToOperator
             return;
         }
 
-        CurrentCompany::run($target, function () use ($link, $target, $actor, $customer, $owner): void {
+        [$basis, $note] = self::ownerBasis($source);
+
+        CurrentCompany::run($target, function () use ($link, $target, $actor, $customer, $owner, $basis, $note): void {
             $account = Account::query()->where('customer_id', $customer->id)->first();
 
             if ($account === null) {
@@ -379,8 +506,8 @@ final class SyncCompanyToOperator
                 $person = ($this->savePerson)($actor, $target, [
                     'name' => $owner->name,
                     'email' => $email,
-                    'legal_basis' => LegalBasis::Agreement->value,
-                    'legal_basis_note' => __('Ägare till ett företag som använder tjänsten.'),
+                    'legal_basis' => $basis->value,
+                    'legal_basis_note' => $note,
                     'account_id' => $account->id,
                     'role' => PersonRole::DecisionMaker->value,
                 ]);
@@ -404,8 +531,8 @@ final class SyncCompanyToOperator
                     'email' => $person->email,
                     'phone' => $person->phone,
                     'mobile' => $person->mobile,
-                    'legal_basis' => LegalBasis::Agreement->value,
-                    'legal_basis_note' => __('Ägare till ett företag som använder tjänsten.'),
+                    'legal_basis' => $basis->value,
+                    'legal_basis_note' => $note,
                     'informed_at' => $person->informed_at?->toDateString(),
                 ], $person);
             }

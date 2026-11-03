@@ -37,30 +37,24 @@ class SyncOperatorCustomersCommand extends Command
 
     public function handle(SyncCompanyToOperator $syncCompany, SyncWaitlistEntryToOperator $syncEntry, ModuleManager $modules): int
     {
-        $settings = InstanceSettings::current();
-        $customersTarget = $settings->customersCompanyId() === null ? null : Company::query()->find($settings->customersCompanyId());
-        $waitlistTarget = $settings->waitlistCompanyId() === null ? null : Company::query()->find($settings->waitlistCompanyId());
+        $operatorId = InstanceSettings::current()->operatorCompanyId();
+        $target = $operatorId === null ? null : Company::query()->find($operatorId);
 
-        if ($customersTarget === null && $waitlistTarget === null) {
+        if ($target === null) {
             $this->warn('Inget driftbolag är valt i HQ. Ingenting att göra.');
 
             return self::SUCCESS;
         }
 
         $dryRun = (bool) $this->option('dry-run');
-        $crmOn = $waitlistTarget !== null && $modules->isEnabled(CrmModule::KEY, $waitlistTarget);
 
-        if ($waitlistTarget !== null && ! $crmOn) {
-            $this->warn("CRM är inte påslaget i företag {$waitlistTarget->id}: köanmälningarna hoppas över.");
+        if ($modules->isEnabled(CrmModule::KEY, $target)) {
+            $this->entries($target, $syncEntry, $dryRun);
+        } else {
+            $this->warn("CRM är inte påslaget i företag {$target->id}: köanmälningarna hoppas över.");
         }
 
-        if ($waitlistTarget !== null && $crmOn) {
-            $this->entries($waitlistTarget, $syncEntry, $dryRun);
-        }
-
-        if ($customersTarget !== null) {
-            $this->companies($customersTarget, $syncCompany, $dryRun);
-        }
+        $this->companies($target, $syncCompany, $dryRun);
 
         $this->comment($dryRun ? 'Provkörning klar. Ingenting ändrades.' : 'Klart.');
 
@@ -72,7 +66,7 @@ class SyncOperatorCustomersCommand extends Command
         $query = WaitlistEntry::query()->where('status', '!=', WaitlistStatus::Rejected->value)->orderBy('id');
 
         if ($dryRun) {
-            $linked = (clone $query)->whereIn('id', OperatorLink::query()->where('target_company_id', $target->id)->whereIn('status', [OperatorLink::SYNCED, OperatorLink::SUPPRESSED])->select('waitlist_entry_id'))->count();
+            $linked = (clone $query)->whereIn('id', OperatorLink::query()->where('target_company_id', $target->id)->whereIn('status', [OperatorLink::SYNCED, OperatorLink::SUPPRESSED, OperatorLink::NEEDS_REVIEW])->select('waitlist_entry_id'))->count();
             $total = $query->count();
 
             $this->info("Kön: {$total} anmälningar, {$linked} redan synkade, ".($total - $linked).' att synka (anmälningar vars användare redan har ett företag hoppas över).');
@@ -108,7 +102,7 @@ class SyncOperatorCustomersCommand extends Command
             $known = OperatorLink::query()->where('target_company_id', $target->id)->whereNotNull('source_company_id')->pluck('source_company_id')->all();
             $toCreate = $eligible->filter(fn (Company $company): bool => ! $company->isArchived() && ! in_array($company->id, $known, true))->count();
 
-            $this->info("Företag: {$eligible->count()} i installationen, {$linked} redan kunder, {$toCreate} blir kunder (eller kopplas till en befintlig kund med samma organisationsnummer).");
+            $this->info("Företag: {$eligible->count()} i installationen, {$linked} redan kunder, {$toCreate} att synka (de som har samma organisationsnummer som en befintlig kund väntar på granskning i HQ).");
 
             return;
         }

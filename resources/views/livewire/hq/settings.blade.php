@@ -38,28 +38,7 @@
                     </select>
                     @error('operator_company_id') <p id="hq-operator-error" class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                 </div>
-                <div>
-                    <label for="hq-customers-target" class="block text-sm font-medium text-gray-700">{{ __('Kunderna hamnar i') }}</label>
-                    <select id="hq-customers-target" wire:model="customersCompanyId" class="mt-1 {{ $input }}" @disabled($operatorCompanyId === '') aria-describedby="hq-customers-target-hint" @error('customers_company_id') aria-invalid="true" @enderror>
-                        <option value="">{{ __('Driftbolaget') }}</option>
-                        @foreach($companies as $company)
-                            <option value="{{ $company->id }}">{{ $company->name }} ({{ $company->id }})</option>
-                        @endforeach
-                    </select>
-                    <p id="hq-customers-target-hint" class="mt-1 text-sm text-gray-600">{{ __('Varje företag i NONOX blir kund här, utom driftbolaget, de valda företagen själva, testföretag och arkiverade företag.') }}</p>
-                    @error('customers_company_id') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                </div>
-                <div>
-                    <label for="hq-waitlist-target" class="block text-sm font-medium text-gray-700">{{ __('Köanmälningarna hamnar i') }}</label>
-                    <select id="hq-waitlist-target" wire:model="waitlistCompanyId" class="mt-1 {{ $input }}" @disabled($operatorCompanyId === '') aria-describedby="hq-waitlist-target-hint" @error('waitlist_company_id') aria-invalid="true" @enderror>
-                        <option value="">{{ __('Driftbolaget') }}</option>
-                        @foreach($companies as $company)
-                            <option value="{{ $company->id }}">{{ $company->name }} ({{ $company->id }})</option>
-                        @endforeach
-                    </select>
-                    <p id="hq-waitlist-target-hint" class="mt-1 text-sm text-gray-600">{{ __('Varje anmälan blir ett prospekt med den sökande som kontaktperson (samtycke). Kräver att CRM är påslaget i företaget.') }}</p>
-                    @error('waitlist_company_id') <p class="mt-1 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
-                </div>
+                <p class="text-sm text-gray-600">{{ __('Varje företag i NONOX blir kund här, utom driftbolaget självt och testföretag; ett arkiverat företag blir ingen ny kund. Varje anmälan i kön blir ett prospekt med den sökande som kontaktperson (samtycke), om CRM är påslaget i driftbolaget. Inget annat företag får uppgifterna.') }}</p>
             </div>
         </x-ui.card>
 
@@ -94,12 +73,40 @@
     <p class="text-sm text-red-700" role="alert" x-show="error" x-text="error" x-cloak></p>
     @error('passkey') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
 
+    @if($reviews->isNotEmpty())
+        <x-ui.card :title="__('Koppla till befintlig kund?')" data-operator-reviews>
+            <p class="text-sm text-gray-600">{{ __('Driftbolaget har redan en kund, ett CRM-konto eller en person med samma organisationsnummer eller e-postadress. Vem som helst kan skriva vilket nummer som helst, så ingenting kopplas, ändras eller läggs till förrän du har bestämt. Koppla använder den befintliga posten; Skapa ny lägger upp en egen.') }}</p>
+            <ul class="mt-4 space-y-4">
+                @foreach($reviews as $review)
+                    <li wire:key="review-{{ $review['id'] }}" class="rounded-xl ring-1 ring-stone-200 p-4">
+                        <div class="grid gap-4 sm:grid-cols-2 text-sm">
+                            @foreach(['source' => __('Från'), 'candidate' => __('Befintlig hos driftbolaget')] as $side => $heading)
+                                <div>
+                                    <p class="font-medium text-gray-500">{{ $heading }}</p>
+                                    <p class="mt-1 text-ink">{{ $review[$side]['label'] }}</p>
+                                    <p class="text-ink font-semibold">{{ $review[$side]['name'] }}</p>
+                                    <p class="tabular-nums text-gray-700">{{ $review[$side]['org_number'] ?? __('Inget organisationsnummer') }}</p>
+                                    @if($review[$side]['detail'])<p class="text-gray-700 break-all">{{ $review[$side]['detail'] }}</p>@endif
+                                </div>
+                            @endforeach
+                        </div>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <button type="button" class="rounded-xl bg-accent-600 px-4 py-2 text-sm font-semibold text-white hover:bg-accent-700 disabled:opacity-60" x-bind:disabled="busy" x-on:click="withPasskey((credential) => $wire.resolve(credential, {{ $review['id'] }}, 'LINK'))">{{ __('Koppla') }}</button>
+                            <button type="button" class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-stone-300 hover:ring-stone-400 disabled:opacity-60" x-bind:disabled="busy" x-on:click="withPasskey((credential) => $wire.resolve(credential, {{ $review['id'] }}, 'NEW'))">{{ __('Skapa ny kund') }}</button>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+            @error('review') <p class="mt-4 text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
+        </x-ui.card>
+    @endif
+
     <x-ui.card :title="__('Synk till driftbolaget')">
-        @if($customersTarget === null)
+        @if($operator === null)
             <p class="text-sm text-gray-600">{{ __('Avstängt. Välj ett driftbolag för att företagen och köanmälningarna ska föras över.') }}</p>
         @else
-            @if($waitlistCrmOff)
-                <p class="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200" role="status" data-crm-off>{{ __('CRM är inte påslaget i företaget som köanmälningarna ska till. Anmälningarna förs inte över förrän CRM slås på där; kör sedan synken av befintliga uppgifter.') }}</p>
+            @if($crmOff)
+                <p class="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200" role="status" data-crm-off>{{ __('CRM är inte påslaget i driftbolaget. Anmälningarna i kön förs inte över förrän CRM slås på där; kör sedan synken av befintliga uppgifter.') }}</p>
             @endif
             <dl class="grid gap-4 sm:grid-cols-4 text-sm">
                 <div><dt class="font-medium text-gray-500">{{ __('Företag som är kunder') }}</dt><dd class="mt-1 text-xl font-semibold tabular-nums text-ink">{{ $customerLinks }}</dd></div>

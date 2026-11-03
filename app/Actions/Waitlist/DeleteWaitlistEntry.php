@@ -32,7 +32,8 @@ class DeleteWaitlistEntry
         return DB::transaction(function () use ($admin, $entry, $reason): array {
             Audit::instance('waitlist.deleted', $entry, ['status' => $entry->status->value, 'reason' => $reason], $admin);
 
-            $released = ($this->release)($entry->id);
+            // A deletion on the applicant's request erases their CRM person too (art. 17); see ReleaseWaitlistProspect.
+            $released = ($this->release)($entry->id, request: $reason === 'request');
 
             WaitlistEntry::forgetNotices([$entry->id]);
             $entry->delete();

@@ -23,13 +23,13 @@ final class OperatorSync
 
     public static function companySaved(Company $company, bool $created): void
     {
-        $target = InstanceSettings::current()->customersCompanyId();
+        $target = InstanceSettings::current()->operatorCompanyId();
 
         if ($target === null || (! $created && ! $company->wasChanged(self::WATCHED))) {
             return;
         }
 
-        if ($company->id === $target || $company->id === InstanceSettings::current()->operatorCompanyId() || $company->isTestCompany()) {
+        if ($company->id === $target || $company->isTestCompany()) {
             return;
         }
 
@@ -38,7 +38,7 @@ final class OperatorSync
 
     public static function waitlistEntryCreated(WaitlistEntry $entry): void
     {
-        if (InstanceSettings::current()->waitlistCompanyId() === null) {
+        if (InstanceSettings::current()->operatorCompanyId() === null) {
             return;
         }
 
@@ -46,19 +46,13 @@ final class OperatorSync
     }
 
     /**
-     * Which companies never become customers: the target itself, the
-     * operator company and the other target, and test companies (demo
-     * data, ADR-032). An archived company is not excluded here: a customer
-     * it already has is made inactive; it just never becomes a new one.
+     * Which companies never become customers: the operator company itself
+     * and test companies (demo data, ADR-032). An archived company is not
+     * excluded here: a customer it already has is made inactive; it just
+     * never becomes a new one.
      */
     public static function isExcluded(Company $company, Company $target): bool
     {
-        $settings = InstanceSettings::current();
-
-        return $company->id === $target->id
-            || $company->id === $settings->operatorCompanyId()
-            || $company->id === $settings->customersCompanyId()
-            || $company->id === $settings->waitlistCompanyId()
-            || $company->isTestCompany();
+        return $company->id === $target->id || $company->isTestCompany();
     }
 }

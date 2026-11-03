@@ -47,7 +47,7 @@ final class SyncToOperator implements ShouldQueueAfterCommit
     {
         $settings = InstanceSettings::current();
         $settings->forget();
-        $targetId = $this->kind === self::COMPANY ? $settings->customersCompanyId() : $settings->waitlistCompanyId();
+        $targetId = $settings->operatorCompanyId();
         $target = $targetId === null ? null : Company::query()->find($targetId);
 
         if ($target === null) {

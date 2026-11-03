@@ -13,11 +13,12 @@ platshållarna `{foretag}` och `{orgnr}`, som hämtas ur konfigurationen
 (`app.landing.company_name`, `app.landing.org_number`). Inga namn skrivs i
 koden eller i det här repot.
 
-Redan publicerat (version 1.3, gäller från 2026-11-03), eftersom det
-beskriver hur tjänsten redan fungerar: att köanmälningarna också finns i
-tjänstens kundregister och CRM, att uppgifterna där raderas med anmälan
-och att företaget och ägaren finns i kundregistret. Det står utan namn på
-driftbolaget.
+Redan i integritetspolicyn (version 1.4), eftersom det beskriver hur
+tjänsten fungerar: att köanmälningarna också finns i tjänstens CRM, hur
+länge och att de raderas direkt på begäran, och att företaget och ägaren
+finns i tjänstens kundregister. Det står utan namn på driftbolaget.
+Uppgifterna går bara till driftbolaget; inget annat företag i
+installationen kan väljas som mottagare.
 
 ## 1. Konfigurationen
 
@@ -50,15 +51,16 @@ driftbolag, och att den som fakturerar tjänsten är densamma.
 > tjänsten i sitt kundregister och dem som står i kö i sitt CRM i NONOX.
 
 **Avsnitt 2, tabellen, raden om kön.** Kolumnen Ändamål, nu "… finns därför
-också i tjänstens kundregister och CRM, där vi väljer ut och kontaktar dem
-som står i kö". Ändras till "… finns därför också i [DRIFTBOLAGETS NAMN]s
-kundregister och CRM i NONOX, där vi väljer ut och kontaktar dem som står i
-kö". Rättslig grund och lagringstid oförändrade.
+också i tjänstens CRM, där vi väljer ut och kontaktar dem som står i kö".
+Ändras till "… finns därför också i [DRIFTBOLAGETS NAMN]s CRM i NONOX, där
+vi väljer ut och kontaktar dem som står i kö". Rättslig grund och
+lagringstid oförändrade.
 
-**Avsnitt 2, tabellen, raden om företaget du företräder.** "… finns i
-tjänstens kundregister …" ändras till "… finns i [DRIFTBOLAGETS NAMN]s
-kundregister i NONOX …". Ny mening i samma cell: "Ägaren läggs in som
-kontaktperson med avtalet som grund."
+**Avsnitt 2, tabellen, raden om företaget i tjänstens kundregister.**
+"Företaget du företräder i tjänstens kundregister" ändras till "Företaget
+du företräder i [DRIFTBOLAGETS NAMN]s kundregister i NONOX". Den rättsliga
+grunden för ägaren som kontaktperson står redan: avtal för en enskild
+firma (ägaren är kunden), annars berättigat intresse.
 
 **Avsnitt 4, Vilka som får del av uppgifterna.** Ny första mening:
 
@@ -66,10 +68,10 @@ kontaktperson med avtalet som grund."
 > uppgifterna i kundregistret och CRM. Inga andra företag i tjänsten ser
 > dem.
 
-**Avsnitt 5, dina rättigheter, stycket om kön.** Oförändrat i sak; "vårt
-kundregister och CRM" står redan.
+**Avsnitt 5, dina rättigheter, stycket om radering ur CRM.** "tjänstens
+CRM" ändras till "[DRIFTBOLAGETS NAMN]s CRM".
 
-**Versionsrad.** Ny version (1.4) och nytt datum. `LegalPageController::VERSION`
+**Versionsrad.** Ny version (1.5) och nytt datum. `LegalPageController::VERSION`
 och `EFFECTIVE` ändras samtidigt.
 
 ## 3. Allmänna villkor (`docs/juridik/villkor.md`)
@@ -91,6 +93,11 @@ TODO(legal-verify): om överföringen av Kundens företagsuppgifter till
 driftbolagets kundregister behöver stå i villkoren eller räcker i
 integritetspolicyn, och om ändringar i villkoren kräver att befintliga
 kunder godkänner på nytt (`agreement_version`).
+
+**Varsel.** Ändrade villkor ska meddelas Kunden **60 dagar** innan de
+börjar gälla (villkor.md §9). Ett nytt stycke i villkoren kan alltså inte
+gälla befintliga kunder förrän 60 dagar efter att de fått besked; sätt
+`EFFECTIVE` därefter, och skicka beskedet till varje kunds ägare.
 
 ## 4. Personuppgiftsbiträdesavtalet (`docs/juridik/personuppgiftsbitradesavtal.md`)
 
@@ -134,3 +141,16 @@ uppgifter utanför installationen.
    företaget inte har angett någon.
 4. TODO(legal-verify): om kontaktpersonen för en användare som raderar sitt
    konto ska raderas direkt ur driftbolagets CRM.
+5. TODO(legal-verify): ägaren som kontaktperson: avtal för en enskild firma,
+   berättigat intresse för ägaren till ett aktiebolag eller annat bolag;
+   intresseavvägningen för det senare.
+6. TODO(legal-verify): dataskyddslagen 3 kap. 10 §: när en enskild firmas
+   personnummer får behandlas i driftbolagets kundregister (krypterat, behövs
+   för att identifiera kunden).
+7. TODO(legal-verify): spärrlistan efter en radering på begäran (HMAC av
+   e-post och telefon, art. 6.1 c och f) och hur länge den sparas.
+8. TODO(legal-verify): intresseavvägningen för en köanmälans kontakt som
+   finns kvar efter gallringen för att driftbolaget har haft kontakt med
+   personen.
+9. TODO(legal-verify): att samtycken som gavs innan integritetspolicyn
+   nämnde CRM räknas som informerade från den dag policyn ändrades.

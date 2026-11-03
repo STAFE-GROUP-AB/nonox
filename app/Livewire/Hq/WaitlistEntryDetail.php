@@ -86,10 +86,12 @@ class WaitlistEntryDetail extends Component implements SpansCompanies
 
         $released = $delete($this->admin(), $this->entry());
 
-        // Something someone worked on in the CRM stays there (ADR-044): say so, so an erasure request is finished by hand.
-        Toast::flash($released['kept'] > 0
-            ? __('Anmälan och alla svar är raderade. Prospektet i CRM har aktiviteter, affärer eller har blivit kund och ligger kvar. Har personen begärt radering raderar du personen i CRM också.')
-            : __('Anmälan och alla svar är raderade.'));
+        // A company account someone worked on stays in the CRM without the person (ADR-044): say so.
+        Toast::flash(match (true) {
+            $released['kept'] > 0 => __('Anmälan och alla svar är raderade, liksom personen i CRM. Företagets konto i CRM har aktiviteter eller affärer och ligger kvar utan personen.'),
+            $released['erased_people'] > 0 => __('Anmälan och alla svar är raderade, liksom personen i CRM.'),
+            default => __('Anmälan och alla svar är raderade.'),
+        });
 
         $this->redirectRoute('hq.waitlist', navigate: false);
     }

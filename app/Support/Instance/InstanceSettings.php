@@ -13,11 +13,10 @@ use Illuminate\Support\Facades\Schema;
  * (a scoped binding), so asking many times costs one query.
  *
  * - operator.company_id: the company in this installation that runs the
- *   service (Driftbolaget). Empty = the feature is off, the default for a
- *   self-hosted installation.
- * - operator.customers_company_id / operator.waitlist_company_id: where
- *   the companies (as customers) and the queue applicants (as CRM
- *   prospects) go; empty = the operator company.
+ *   service (Driftbolaget). The companies become its customers and the
+ *   queue applicants its CRM prospects; no other company receives them,
+ *   since another legal entity would be a disclosure without a basis.
+ *   Empty = the feature is off, the default for a self-hosted installation.
  * - waitlist.open: whether /ko takes new applications (default open).
  * - registration.open: whether an unknown address may create an account
  *   on the sign-in form (default closed, ADR-038).
@@ -26,10 +25,6 @@ final class InstanceSettings
 {
     public const string OPERATOR = 'operator.company_id';
 
-    public const string CUSTOMERS_TARGET = 'operator.customers_company_id';
-
-    public const string WAITLIST_TARGET = 'operator.waitlist_company_id';
-
     public const string WAITLIST_OPEN = 'waitlist.open';
 
     public const string REGISTRATION_OPEN = 'registration.open';
@@ -37,8 +32,6 @@ final class InstanceSettings
     /** @var array<string, mixed> the defaults, which are also the only keys */
     public const array DEFAULTS = [
         self::OPERATOR => null,
-        self::CUSTOMERS_TARGET => null,
-        self::WAITLIST_TARGET => null,
         self::WAITLIST_OPEN => true,
         self::REGISTRATION_OPEN => false,
     ];
@@ -86,25 +79,12 @@ final class InstanceSettings
         $this->values = null;
     }
 
+    /** The operator company: where every company becomes a customer and every queue applicant a prospect. */
     public function operatorCompanyId(): ?int
     {
-        return self::id($this->get(self::OPERATOR));
-    }
+        $value = $this->get(self::OPERATOR);
 
-    /** Where every company in the installation becomes a customer; null while there is no operator company. */
-    public function customersCompanyId(): ?int
-    {
-        $operator = $this->operatorCompanyId();
-
-        return $operator === null ? null : (self::id($this->get(self::CUSTOMERS_TARGET)) ?? $operator);
-    }
-
-    /** Where the queue applicants become CRM prospects; null while there is no operator company. */
-    public function waitlistCompanyId(): ?int
-    {
-        $operator = $this->operatorCompanyId();
-
-        return $operator === null ? null : (self::id($this->get(self::WAITLIST_TARGET)) ?? $operator);
+        return is_int($value) || (is_string($value) && ctype_digit($value)) ? (int) $value : null;
     }
 
     public function waitlistOpen(): bool
@@ -115,10 +95,5 @@ final class InstanceSettings
     public function selfRegistrationOpen(): bool
     {
         return (bool) $this->get(self::REGISTRATION_OPEN);
-    }
-
-    private static function id(mixed $value): ?int
-    {
-        return is_int($value) || (is_string($value) && ctype_digit($value)) ? (int) $value : null;
     }
 }

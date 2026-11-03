@@ -25,7 +25,7 @@ use Illuminate\Support\Facades\Validator;
 final class UpdateInstanceSettings
 {
     /**
-     * @param  array<string, mixed>  $input  operator_company_id, customers_company_id, waitlist_company_id, waitlist_open, registration_open
+     * @param  array<string, mixed>  $input  operator_company_id, waitlist_open, registration_open
      * @return list<string>
      */
     public function __invoke(User $admin, array $input): array
@@ -42,14 +42,10 @@ final class UpdateInstanceSettings
 
         $validated = Validator::make($input, [
             'operator_company_id' => ['nullable', 'integer', $company],
-            'customers_company_id' => ['nullable', 'integer', $company],
-            'waitlist_company_id' => ['nullable', 'integer', $company],
             'waitlist_open' => ['required', 'boolean'],
             'registration_open' => ['required', 'boolean'],
         ], [], [
             'operator_company_id' => __('driftbolag'),
-            'customers_company_id' => __('företag för kunderna'),
-            'waitlist_company_id' => __('företag för kön'),
         ])->validate();
 
         $id = fn (mixed $value): ?int => $value === null || $value === '' ? null : (int) $value;
@@ -57,9 +53,6 @@ final class UpdateInstanceSettings
 
         $new = [
             InstanceSettings::OPERATOR => $operator,
-            // Without an operator company there is nothing to send anywhere.
-            InstanceSettings::CUSTOMERS_TARGET => $operator === null ? null : $id($validated['customers_company_id'] ?? null),
-            InstanceSettings::WAITLIST_TARGET => $operator === null ? null : $id($validated['waitlist_company_id'] ?? null),
             InstanceSettings::WAITLIST_OPEN => (bool) $validated['waitlist_open'],
             InstanceSettings::REGISTRATION_OPEN => (bool) $validated['registration_open'],
         ];

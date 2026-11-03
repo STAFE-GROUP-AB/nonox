@@ -281,46 +281,57 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 
 - HQ → **Inställningar** (`/hq/installningar`) har installationens egna
   inställningar i tabellen `instance_settings` (instansens data, inget
-  `company_id`): driftbolaget, vilket företag kunderna respektive
-  köanmälningarna hamnar i (standard: driftbolaget), om kön är öppen
-  (standard ja) och om självregistreringen är öppen (standard nej). Bara
-  HQ-administratörerna når sidan (404 för alla andra), varje ändring kräver
-  en färsk passkey-bekräftelse och skrivs i behandlingshistoriken utan
-  företag med företagens id och ja/nej (`hq.settings_updated`). Vilket
-  företag som är driftbolag står bara i databasen.
+  `company_id`): driftbolaget, om kön är öppen (standard ja) och om
+  självregistreringen är öppen (standard nej). Bara HQ-administratörerna
+  når sidan (404 för alla andra), varje ändring kräver en färsk
+  passkey-bekräftelse och skrivs i behandlingshistoriken utan företag med
+  företagets id och ja/nej (`hq.settings_updated`). Vilket företag som är
+  driftbolag står bara i databasen. Uppgifterna går bara till driftbolaget,
+  aldrig till något annat företag.
 - Utan driftbolag händer ingenting, vilket är standard för den som kör
   NONOX själv.
 - **Företagen blir kunder.** Varje företag i installationen, utom
-  driftbolaget, de valda målföretagen och testföretag, blir kund i
-  målföretagets kundregister genom kundregistrets egen åtgärd
-  (`SaveCustomer`), inne i målföretaget (`CurrentCompany::run`) och i
-  ägarens namn. Ett arkiverat företag blir ingen ny kund; en befintlig kund
-  görs inaktiv när företaget arkiveras och aktiv igen när det tas ur
-  arkivet. Ingenting raderas. En enskild firmas nummer är ägarens
-  personnummer och sparas krypterat i `personal_number`, aldrig i
-  `org_number`, och momsnumret (som innehåller det) förs inte över.
-- **Aldrig dubbletter.** Tabellen `operator_links` (instansens data) har en
-  rad per källa och mål med kundens, CRM-kontots och personens id, om
-  synken skapade dem och HMAC av de värden som senast fördes över (aldrig
-  värdena). Finns redan en kund med samma organisationsnummer, och ingen
-  annan källa är kopplad till den, kopplas den i stället för att en ny
-  skapas. Ändras namn eller adress i källan förs bara de ändrade fälten
-  över, så driftbolagets egna ändringar av andra fält ligger kvar. En kund
-  som anonymiserats, fått begränsad behandling eller tagits bort i
-  målföretaget skrivs aldrig över och skapas inte igen.
-- **CRM.** Är CRM påslaget i målföretaget blir företagets ägare
-  kontaktperson på kundens konto med rättslig grund avtal. Köanmälningar
-  blir prospekt (källa "Kö") med den sökande som kontaktperson med rättslig
-  grund samtycke, daterat när samtycket gavs i kön. Står e-post eller
-  telefon på målföretagets spärrlista, eller är personen markerad Kontakta
-  inte, skapas ingenting. När den godkända sökande skapar sitt företag blir
-  prospektet kunden (`ConvertToCustomer`): ett konto, en kund, en person.
-- **Gallringen följer kön.** När en anmälan raderas (HQ eller
-  `waitlist:prune`) raderas prospektet och personen som synken skapade,
-  om ingen har arbetat med dem (ingen aktivitet, ingen affär, ingen kund,
-  personen inte kopplad till något annat konto). Annars kopplas de bara
-  loss och följer CRM:s egen gallring, och HQ säger det när anmälan
-  raderas.
+  driftbolaget självt och testföretag, blir kund i driftbolagets
+  kundregister genom kundregistrets egen åtgärd (`SaveCustomer`), inne i
+  driftbolaget (`CurrentCompany::run`) och i ägarens namn; posterna i
+  behandlingshistoriken märks `via: operator_sync`. Ett arkiverat företag
+  blir ingen ny kund; en befintlig kund görs inaktiv när företaget
+  arkiveras och aktiv igen när det tas ur arkivet. Ingenting raderas. En
+  enskild firmas nummer är ägarens personnummer och sparas krypterat i
+  `personal_number`, aldrig i `org_number`, och momsnumret (som innehåller
+  det) förs inte över.
+- **Aldrig dubbletter, aldrig någon annans post.** Tabellen `operator_links`
+  (instansens data) har en rad per källa med kundens, CRM-kontots och
+  personens id, om synken skapade dem och HMAC av de värden som senast
+  fördes över (aldrig värdena; nyckeln härleds ur APP_KEY med HKDF, och
+  byts APP_KEY tas dagens värden som ny utgångspunkt utan att något skrivs
+  över). Har driftbolaget redan en kund, ett CRM-konto eller en person med
+  samma organisationsnummer eller e-postadress kopplas, ändras och läggs
+  ingenting till: länken väntar på **Koppla till befintlig kund?** i HQ,
+  där administratören väljer Koppla eller Skapa ny kund (passkey,
+  `hq.operator_review_resolved`). Ändras namn eller adress i källan förs
+  bara de ändrade fälten över. En kund som anonymiserats, fått begränsad
+  behandling eller tagits bort i driftbolaget skrivs aldrig över och skapas
+  inte igen.
+- **CRM.** Är CRM påslaget blir företagets ägare kontaktperson på kundens
+  konto, med rättslig grund avtal för en enskild firma och annars
+  berättigat intresse. Köanmälningar blir prospekt (källa "Kö") med den
+  sökande som kontaktperson med rättslig grund samtycke, daterat när
+  samtycket gavs i kön (gavs det innan integritetspolicyn nämnde CRM räknas
+  informationen från den dag policyn ändrades). Står e-post eller telefon på
+  spärrlistan, eller är personen markerad Kontakta inte, skapas ingenting.
+  När den godkända sökande skapar sitt företag blir prospektet kunden
+  (`ConvertToCustomer`): ett konto, en kund, en person.
+- **Radering på begäran** (HQ → Radera anmälan): personen som synken skapade
+  raderas alltid, och e-post och telefon sparas som HMAC på spärrlistan
+  (orsak "raderad på begäran") så att synken inte lägger till personen
+  igen. Kontot raderas också, utom ett företags konto som någon har arbetat
+  med (aktiviteter eller affärer), som finns kvar utan personen; en enskild
+  firmas konto raderas alltid.
+- **Gallring** (`waitlist:prune`): kontot och personen som synken skapade
+  raderas om ingen har arbetat med dem. En person som finns kvar byter
+  rättslig grund från samtycke till berättigat intresse och följer sedan
+  CRM:s egen gallring; gallringens klocka flyttas inte.
 - **Användarens åtgärd går aldrig sönder.** Synken körs som ett jobb efter
   commit med bara id:n. Ett fel skrivs på länken (felets klass, aldrig
   uppgifterna), loggas och visas i HQ som "Synk misslyckades" med knappen
@@ -3521,4 +3532,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.95 | 2026-11-02 | Modulen Lager (ADR-039, avsnitt 5j): artikelregistret utökat med lagerfält, lagerställen i ett träd, en lagerreskontra som bara kan läggas till (stock_movements, skyddad av databastrigger), inleveranser, plocklistor, inventering och värdering enligt FIFO eller vägt genomsnitt med lägsta värdets princip. Bokslutet kan boka lagerförändringen på balansdagen i serie A; i övrigt bokför lagret ingenting. |
 | 0.96 | 2026-11-02 | Lager: bilder på artiklar (skalas om, metadata tas bort, privat krypterad disk) och förslag från NONOX AI som användaren godkänner fält för fält; AI föreslår aldrig priser eller konton. Ändrar ingen bokföring. |
 | 0.97 | 2026-11-02 | Lager: etiketter och etikettstudio (ADR-041), skanning med mobilen med kö utan nät som körs exakt en gång per operation (ADR-040), och modulen Kassakopplingar för Zettle och Onslip (ADR-042, avsnitt 5k): varje köp sparas en gång och dras från lagret, och dagens försäljning blir ett utkast till verifikation i serie K "Kassa" som en person granskar och bokför. Serie K skapas först när modulen slås på. |
-| 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos det företag som HQ pekar ut, genom målföretagets egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.3. Ändrar ingen bokföring. |
+| 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos driftbolaget som HQ pekar ut, genom dess egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Inget kopplas till en befintlig post utan HQ:s beslut, och radering på begäran tar alltid bort personen. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.4. Ändrar ingen bokföring. |

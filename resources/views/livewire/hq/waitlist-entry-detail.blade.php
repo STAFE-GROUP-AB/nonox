@@ -77,7 +77,7 @@
             <div class="mt-6 border-t border-stone-200 pt-4">
                 <button type="button" class="text-sm font-semibold text-red-700 hover:underline" x-show="! confirmDelete" x-on:click="confirmDelete = true">{{ __('Radera anmälan') }}</button>
                 <div x-show="confirmDelete" x-cloak class="space-y-3">
-                    <p class="text-sm text-gray-700">{{ __('Anmälan och alla svar tas bort för gott, och prospektet som anmälan blev i driftbolagets CRM raderas också om ingen har arbetat med det. Ett konto som redan har skapats påverkas inte. Gör det här när personen ber om det.') }}</p>
+                    <p class="text-sm text-gray-700">{{ __('Anmälan och alla svar tas bort för gott. Personen i driftbolagets CRM raderas också och spärras så att den inte läggs till igen; företagets konto där raderas om ingen har arbetat med det. Ett konto för inloggning som redan har skapats påverkas inte. Gör det här när personen ber om det.') }}</p>
                     <div class="flex flex-wrap gap-2">
                         <button type="button" class="rounded-xl bg-red-700 px-4 py-2 text-sm font-semibold text-white hover:bg-red-800 disabled:opacity-60" x-bind:disabled="busy" x-on:click="withPasskey((credential) => $wire.delete(credential))">{{ __('Ja, radera') }}</button>
                         <button type="button" class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-stone-200" x-on:click="confirmDelete = false">{{ __('Avbryt') }}</button>

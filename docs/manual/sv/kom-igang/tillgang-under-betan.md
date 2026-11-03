@@ -37,7 +37,7 @@ Har ett företag som redan använder NONOX bjudit in dig, till exempel din redov
 
 Ibland stänger vi kön en tid, så att vi hinner hjälpa dem som redan står i den. Då står det **Kön är stängd just nu** på sidan för kön, och du kan inte anmäla dig. Står du redan i kö ligger din anmälan kvar.
 
-När vi öppnar registreringen behöver du inte stå i kö: skriv din e-postadress på inloggningssidan, skriv in koden från mejlet och ditt namn, så skapas ditt konto. Sedan skapar du ditt företag.
+När vi öppnar registreringen behöver du inte stå i kö: skriv din e-postadress på inloggningssidan, skriv in koden från mejlet och ditt namn, så skapas ditt konto. Sedan skapar du ditt företag. När registreringen är öppen skickar vi en kod till alla adresser.
 
 ## Vanliga frågor
 
@@ -48,7 +48,7 @@ Inloggningen skickar bara en kod till den som har ett konto eller en inbjudan. S
 Det beror på hur många som står i kö. Vi går igenom kön löpande och hör av oss om vi undrar något.
 
 **Jag vill inte stå i kö längre.**
-Svara på bekräftelsemejlet så tar vi bort din anmälan och dina svar, även ur vårt kundregister. Anmälningar som inte har godkänts tas annars bort automatiskt efter tolv månader.
+Svara på bekräftelsemejlet så tar vi bort din anmälan och dina svar, även ur vårt CRM. Anmälningar som inte har godkänts tas annars bort automatiskt efter tolv månader.
 
 ## Läs också
 
