@@ -73,6 +73,7 @@ final class SavePerson
 
         $lift = (bool) ($attributes['lift_restriction'] ?? false);
         unset($attributes['lift_restriction']);
+        $wasRestricted = $person?->do_not_contact_reason === DoNotContact::Restriction;
 
         if (array_key_exists('do_not_contact', $attributes)) {
             $flag = (bool) $attributes['do_not_contact'];
@@ -96,7 +97,7 @@ final class SavePerson
             $attributes['consent_at'] = null;
         }
 
-        return DB::transaction(fn (): Person => CurrentCompany::run($company, function () use ($user, $company, $attributes, $person, $accountId, $role): Person {
+        return DB::transaction(fn (): Person => CurrentCompany::run($company, function () use ($user, $company, $attributes, $person, $accountId, $role, $wasRestricted): Person {
             if ($person === null) {
                 // Someone who objected and was erased is flagged again when added back (art. 21(3)).
                 if (($attributes['do_not_contact_at'] ?? null) === null
@@ -138,6 +139,10 @@ final class SavePerson
 
             // Names and contact details stay out of the append-only log: only which fields changed.
             Audit::record('crm.person_updated', $person, ['fields' => array_keys(Audit::changes($before, $person->only(array_keys($attributes))))], $company, $user);
+
+            if ($wasRestricted && $person->do_not_contact_reason !== DoNotContact::Restriction) {
+                Audit::record('crm.restriction_lifted', $person, ['person_id' => $person->id], $company, $user);
+            }
 
             return $person;
         }));

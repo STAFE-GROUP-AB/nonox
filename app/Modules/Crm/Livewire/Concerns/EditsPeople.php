@@ -64,6 +64,8 @@ trait EditsPeople
     {
         $person = $this->editingPersonId === null ? null : Person::query()->findOrFail($this->editingPersonId);
         $input = $this->personForm;
+        // Lifting a restriction is its own step (Häv begränsningen), never part of the form.
+        unset($input['lift_restriction'], $input['restriction_locked']);
 
         if ($person === null && $this->personAccountId() !== null) {
             $input['account_id'] = $this->personAccountId();

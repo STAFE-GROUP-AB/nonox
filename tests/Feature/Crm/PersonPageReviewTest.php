@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\AuditLog;
 use App\Modules\Crm\Actions\LinkPerson;
 use App\Modules\Crm\Actions\LogActivity;
 use App\Modules\Crm\Actions\SavePerson;
@@ -176,9 +177,13 @@ it('lifts a restriction only through Häv begränsningen, never from the ordinar
     expect($this->person->fresh()?->title)->toBe('VD')
         ->and($this->person->fresh()?->do_not_contact_reason?->value)->toBe('RESTRICTION');
 
-    $page->call('saveDoNotContact', false, true);
+    $page->set('personForm.lift_restriction', true)->call('startPerson', $this->person->id)->set('personForm.do_not_contact', false)->set('personForm.lift_restriction', true)->call('savePerson')->assertHasErrors('do_not_contact');
+    expect($this->person->fresh()?->do_not_contact_reason?->value)->toBe('RESTRICTION');
 
-    expect($this->person->fresh()?->doNotContact())->toBeFalse();
+    $page->call('closePanel')->call('saveDoNotContact', false, true);
+
+    expect($this->person->fresh()?->doNotContact())->toBeFalse()
+        ->and(AuditLog::query()->where('action', 'crm.restriction_lifted')->where('subject_id', (string) $this->person->id)->value('payload'))->toBe(['person_id' => $this->person->id]);
 });
 
 it('tells a read-only user on the account card why the actions are disabled', function () {
