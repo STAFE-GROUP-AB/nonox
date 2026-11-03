@@ -354,6 +354,8 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
 
 ## 3. Räkenskapsår
 
+All tid i NONOX är svensk tid (Europe/Stockholm). Tidszonen är fast i koden, både för programmet och för databasens session (`config/app.php` och `config/database.php`), och går inte att ändra med en inställning. Tidpunkter lagras utan tidszon i svensk tid, och datum som verifikationsdatum har ingen tid alls. Det gör att en tidpunkt aldrig hamnar i fel dag, vecka eller månad, även när databasservern själv står på en annan tidszon.
+
 - Ett räkenskapsår börjar den första och slutar den sista dagen i en månad.
 - Normalt är det tolv månader. När bokföringsskyldigheten börjar eller året
   läggs om får det vara kortare (ingen nedre gräns) eller högst 18 månader
