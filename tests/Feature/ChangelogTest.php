@@ -404,13 +404,14 @@ it('lists the changelog and the roadmap in the sitemap', function () {
         ->assertDontSee('rss.xml');
 });
 
-it('moves the manual, the API, security, changelog and roadmap to the footer', function () {
+it('gathers the manual, the API, security, changelog and roadmap under Dokumentation in the header, and keeps them in the footer', function () {
     $html = $this->get('/branscher')->assertOk()->getContent();
     $header = pagePart($html, '<header id="lp-header"', '</header>');
+    $documentation = pagePart($header, 'id="mm-dokumentation"', '</nav>');
     $footer = pagePart($html, '<footer', '</footer>');
 
     foreach ([route('manual.home'), route('developers.home'), route('security'), route('changelog'), route('roadmap')] as $url) {
-        expect($header)->not->toContain('href="'.$url.'"')
+        expect($documentation)->toContain('href="'.$url.'"')
             ->and($footer)->toContain('href="'.$url.'"');
     }
 

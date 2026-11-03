@@ -495,6 +495,6 @@ NONOX är licensierat under **GNU Affero General Public License v3.0 (AGPL-3.0)*
 
 <div align="center">
 
-Utvecklat av [Stafe Development AB](https://stafe.se), en del av Stafe Group AB · [nonox.app](https://nonox.app)
+Utvecklat av [Stafe Development AB](https://stafegroup.com), en del av Stafe Group AB · [nonox.app](https://nonox.app)
 
 </div>

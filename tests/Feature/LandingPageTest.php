@@ -53,3 +53,27 @@ it('lists only built features under the hero', function () {
         expect($page)->toContain(e($item['label']));
     }
 });
+
+it('has a Dokumentation mega menu before Priser that gathers the manual, API, source code, rules and terms', function () {
+    $html = $this->get('/')->assertOk()->getContent();
+
+    $nav = substr($html, (int) strpos($html, 'class="mm-nav"'));
+    expect(strpos($nav, 'Dokumentation'))->toBeLessThan(strpos($nav, 'Priser'));
+
+    $panel = substr($html, (int) strpos($html, 'id="mm-dokumentation"'));
+    $panel = substr($panel, 0, (int) strpos($panel, '</nav>') + 6);
+
+    foreach ([route('manual.home'), route('developers.home'), route('security'), route('roadmap'), route('changelog'), route('legal.terms'), route('legal.privacy'), route('legal.dpa'), route('legal.subprocessors'), route('legal.selfHosting'), route('legal.accessibility'), route('cookies'), 'https://github.com/'] as $href) {
+        expect($panel)->toContain('href="'.$href);
+    }
+});
+
+it('lists the moving guide under Kom igång and links Om Stafe to stafegroup.com', function () {
+    $html = $this->get('/')->assertOk()->getContent();
+
+    $panel = substr($html, (int) strpos($html, 'id="mm-kom-igang"'));
+    $panel = substr($panel, 0, (int) strpos($panel, 'mm-promo'));
+
+    expect($panel)->toContain('Flyttguide')->toContain('href="'.route('migrationGuide'))
+        ->and($html)->toContain('href="https://stafegroup.com"')->not->toContain('href="https://stafe.se"');
+});

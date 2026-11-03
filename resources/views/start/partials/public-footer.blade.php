@@ -46,7 +46,7 @@
       </nav>
       <nav aria-label="Företag" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
         <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Företag</span>
-        <a class="lp36" href="https://stafe.se" style="text-decoration:none;color:#D9D7D1">Om Stafe</a>
+        <a class="lp36" href="https://stafegroup.com" style="text-decoration:none;color:#D9D7D1">Om Stafe</a>
         <a class="lp37" href="{{ $ph['contact'] }}" style="text-decoration:none;color:#D9D7D1">Kontakt</a>
         @if($ph['terms'])<a class="lp38" href="{{ $ph['terms'] }}" style="text-decoration:none;color:#D9D7D1">Villkor</a>@endif
         @if($ph['privacy'])<a class="lp39" href="{{ $ph['privacy'] }}" style="text-decoration:none;color:#D9D7D1">Integritetspolicy</a>@endif
