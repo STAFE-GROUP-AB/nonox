@@ -345,35 +345,35 @@
             {{-- Key figures from the ledger. --}}
             <x-ui.card :title="__('Nyckeltal')" :description="$account->customer ? __('Ur bokföringen, i kronor.') : __('Visas när prospektet har blivit kund och fått sin första faktura.')">
                 @if($account->customer)
-                    <dl class="grid grid-cols-2 gap-x-4 gap-y-4 text-sm" data-testid="crm-figures">
-                        <div>
+                    <dl class="divide-y divide-gray-100 text-sm" data-testid="crm-figures">
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Fakturerat 12 mån') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->invoiced12Months)" class="text-lg font-bold text-ink" /></dd>
+                            <dd><x-ui.amount :money="$money($figures->invoiced12Months)" class="text-base font-bold text-ink" /></dd>
                         </div>
-                        <div>
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Fakturerat totalt') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->invoicedTotal)" class="text-lg font-bold text-ink" /></dd>
+                            <dd><x-ui.amount :money="$money($figures->invoicedTotal)" class="text-base font-bold text-ink" /></dd>
                         </div>
-                        <div>
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Obetalt') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->open)" class="text-lg font-bold text-ink" /></dd>
+                            <dd><x-ui.amount :money="$money($figures->open)" class="text-base font-bold text-ink" /></dd>
                         </div>
-                        <div>
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Förfallet') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->overdue)" @class(['text-lg font-bold', 'text-accent-700' => $figures->overdue > 0, 'text-ink' => $figures->overdue === 0]) /></dd>
+                            <dd><x-ui.amount :money="$money($figures->overdue)" @class(['text-base font-bold', 'text-accent-700' => $figures->overdue > 0, 'text-ink' => $figures->overdue === 0]) /></dd>
                         </div>
-                        <div>
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Betaltid i snitt') }}</dt>
-                            <dd class="text-lg font-bold text-ink tabular-nums">{{ $figures->paymentDays === null ? '–' : __(':days dagar', ['days' => number_format($figures->paymentDays, 1, ',', ' ')]) }}</dd>
+                            <dd class="text-base font-bold text-ink tabular-nums">{{ $figures->paymentDays === null ? '–' : __(':days dagar', ['days' => number_format($figures->paymentDays, 1, ',', ' ')]) }}</dd>
                         </div>
-                        <div>
+                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Täckningsbidrag 12 mån') }}</dt>
-                            <dd>
+                            <dd class="text-right">
                                 @if($figures->margin === null)
-                                    <span class="text-lg font-bold text-ink">–</span>
+                                    <span class="text-base font-bold text-ink">–</span>
                                 @else
-                                    <x-ui.amount :money="$money($figures->margin)" class="text-lg font-bold text-ink" />
-                                    @if($figures->marginRate() !== null)<span class="block text-xs text-gray-500">{{ number_format($figures->marginRate() * 100, 0, ',', ' ') }} %</span>@endif
+                                    <x-ui.amount :money="$money($figures->margin)" class="text-base font-bold text-ink" />
+                                    @if($figures->marginRate() !== null)<span class="ms-1 text-xs text-gray-500">{{ number_format($figures->marginRate() * 100, 0, ',', ' ') }} %</span>@endif
                                 @endif
                             </dd>
                         </div>
