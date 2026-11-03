@@ -10,6 +10,7 @@ use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Domain\LegalBasis;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Account;
+use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
@@ -70,8 +71,10 @@ final class SavePerson
 
         if (array_key_exists('do_not_contact', $attributes)) {
             $flag = (bool) $attributes['do_not_contact'];
-            $attributes['do_not_contact_at'] = $flag ? ($person->do_not_contact_at ?? now()) : null;
             $attributes['do_not_contact_reason'] = $flag ? $attributes['do_not_contact_reason'] : null;
+            // A new reason starts its own clock: the one note allowed under a restriction counts from the restriction.
+            $sameReason = $person?->do_not_contact_reason?->value === $attributes['do_not_contact_reason'];
+            $attributes['do_not_contact_at'] = $flag ? ($sameReason ? ($person->do_not_contact_at ?? now()) : now()) : null;
         } else {
             unset($attributes['do_not_contact_reason']);
         }
@@ -105,6 +108,7 @@ final class SavePerson
 
             $before = $person->only(array_keys($attributes));
             $objected = $person->do_not_contact_reason === DoNotContact::Objection;
+            $restricted = $person->do_not_contact_reason === DoNotContact::Restriction;
             $old = $person->only(['email', 'phone', 'mobile']);
             $person->fill($attributes)->forceFill(['last_activity_at' => now()])->save();
 
@@ -114,6 +118,12 @@ final class SavePerson
             }
 
             SuppressionList::remember($person);
+
+            if (! $restricted && $person->do_not_contact_reason === DoNotContact::Restriction) {
+                // Art. 18: the data may only be stored. Open tasks and planned activities about the person are closed, so they leave Mina aktiviteter.
+                $closed = Activity::query()->where('person_id', $person->id)->whereNull('done_at')->update(['done_at' => now(), 'updated_at' => now()]);
+                Audit::record('crm.activities_closed_for_restriction', $person, ['person_id' => $person->id, 'activities' => $closed], $company, $user);
+            }
 
             // Names and contact details stay out of the append-only log: only which fields changed.
             Audit::record('crm.person_updated', $person, ['fields' => array_keys(Audit::changes($before, $person->only(array_keys($attributes))))], $company, $user);

@@ -2967,8 +2967,11 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   spärrar. Det är pseudonymisering, inte anonymisering. Raderna granskas när
   de inte har granskats på inställt antal år (standard 3, `TODO(legal-verify)`)
   och visas då under Att göra. Vid en begränsning får bara en anteckning om
-  begränsningen loggas, och ingen aktivitet kan byta typ till samtal, möte
-  eller e-post.
+  begränsningen loggas (räknat från när begränsningen sattes; ett byte av
+  orsak startar om räkningen), befintliga aktiviteter om personen kan inte
+  ändras utan bara klarmarkeras, och när begränsningen sätts klarmarkeras
+  personens öppna aktiviteter (`crm.activities_closed_for_restriction`, bara
+  id och antal). Ingen aktivitet kan byta typ till samtal, möte eller e-post.
 - **Anonymiserad kund:** `EraseRegisterEntry` skickar `CustomerAnonymised` i
   samma transaktion; CRM tömmer webbplats, källa, taggar, SNI-kod, orsak,
   personkopplingar och aktiviteternas rubrik och text. Anonymiserade och

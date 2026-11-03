@@ -203,7 +203,10 @@ building, where this ADR left them open or the code required a change:
   (a known gap outside this module).
 - **Kontakta inte.** A person can be flagged (objection, art. 21, or
   restriction, art. 18). After an objection only notes can be logged; after
-  a restriction one note documenting it and nothing more. No activity of a
+  a restriction one note documenting it and nothing more, counted from when
+  the restriction (or a change of reason) was set. Under a restriction the
+  person's existing activities cannot be edited, only completed, and setting
+  it closes their open activities (audited with ids only). No activity of a
   flagged person can change its type. Only an objection survives erasure,
   as an HMAC of each e-mail address and phone number in `crm_suppressions`
   (art. 21(3)), so the person is flagged again if added back; a restriction

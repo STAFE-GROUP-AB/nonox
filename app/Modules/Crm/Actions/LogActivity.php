@@ -126,10 +126,19 @@ final class LogActivity
      * be written about the person: no new call, meeting, e-mail or task, and
      * no activity changed into one. After a restriction (art. 18) the data
      * may only be stored: one note documenting the restriction is allowed,
-     * nothing more, and no activity is changed into another type.
+     * nothing more, no activity is changed into another type, and no
+     * existing activity about the person is edited (closing an open one with
+     * CompleteActivity still works).
      */
     private function guardDoNotContact(Company $company, ActivityType $type, ?int $personId, ?Activity $activity): void
     {
+        if ($activity?->person_id !== null && CurrentCompany::run($company, fn (): bool => Person::query()
+            ->whereKey($activity->person_id)
+            ->where('do_not_contact_reason', DoNotContact::Restriction->value)
+            ->exists())) {
+            throw ValidationException::withMessages(['person_id' => __('Behandlingen av personen är begränsad. Aktiviteter om personen kan inte ändras, bara klarmarkeras.')]);
+        }
+
         if ($personId === null) {
             return;
         }

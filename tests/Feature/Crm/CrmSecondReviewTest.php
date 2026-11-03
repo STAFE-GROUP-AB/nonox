@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Actions\Invoicing\RegisterPayment;
 use App\Actions\Privacy\EraseRegisterEntry;
+use App\Models\AuditLog;
 use App\Models\Customer;
+use App\Modules\Crm\Actions\CompleteActivity;
 use App\Modules\Crm\Actions\EnsureCustomerAccounts;
 use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Actions\LinkPerson;
@@ -16,6 +18,7 @@ use App\Modules\Crm\Livewire\AccountCard;
 use App\Modules\Crm\Livewire\AccountsPage;
 use App\Modules\Crm\Livewire\PeoplePage;
 use App\Modules\Crm\Models\Account;
+use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Suppression;
 use App\Modules\Crm\Support\CrmTodos;
@@ -195,4 +198,42 @@ it('counts the mentions once, when the person form opens', function () {
     DB::disableQueryLog();
 
     expect($queries)->toBeEmpty();
+});
+
+it('closes the person\'s open activities when a restriction is set, and then allows no edits, only completion', function () {
+    $log = app(LogActivity::class);
+    $person = Crm::person($this->company, $this->owner, 'Begränsad Person', ['account_id' => $this->account->id]);
+    $task = $log($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $person->id, 'type' => 'TASK', 'due_at' => '2026-06-20T10:00']);
+    $note = $log($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $person->id, 'type' => 'NOTE', 'body' => 'Före begränsningen.']);
+    $other = $log($this->owner, $this->company, ['account_id' => $this->account->id, 'type' => 'TASK', 'due_at' => '2026-06-20T10:00']);
+
+    app(SavePerson::class)($this->owner, $this->company, ['name' => 'Begränsad Person', 'legal_basis' => 'LEGITIMATE_INTEREST', 'do_not_contact' => true, 'do_not_contact_reason' => 'RESTRICTION'], $person);
+
+    expect($task->fresh()?->isOpen())->toBeFalse()
+        ->and($other->fresh()?->isOpen())->toBeTrue()
+        ->and(AuditLog::query()->where('action', 'crm.activities_closed_for_restriction')->latest('id')->first()?->payload)->toMatchArray(['person_id' => $person->id, 'activities' => 1]);
+
+    expect(fn () => $log($this->owner, $this->company, ['body' => 'Ändrad text.'], $note->fresh()))->toThrow(ValidationException::class, 'kan inte ändras');
+
+    $open = Activity::query()->create(['account_id' => $this->account->id, 'person_id' => $person->id, 'type' => 'TASK', 'subject' => 'Gammal uppgift', 'created_by' => $this->owner->id]);
+    expect(app(CompleteActivity::class)($this->owner, $this->company, $open)->isOpen())->toBeFalse();
+});
+
+it('starts the restriction\'s clock again when the reason changes, so its one note counts from the restriction', function () {
+    $person = flagged($this, 'OBJECTION');
+    $log = app(LogActivity::class);
+    $log($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $person->id, 'type' => 'NOTE', 'body' => 'Invände.']);
+    $objectedAt = $person->fresh()?->do_not_contact_at;
+
+    $this->travel(1)->hours();
+    $person = app(SavePerson::class)($this->owner, $this->company, ['name' => 'Flaggad Person', 'email' => 'flaggad@exempel.test', 'legal_basis' => 'LEGITIMATE_INTEREST', 'do_not_contact' => true, 'do_not_contact_reason' => 'RESTRICTION'], $person);
+
+    expect($person->do_not_contact_at?->greaterThan($objectedAt))->toBeTrue();
+
+    $log($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $person->id, 'type' => 'NOTE', 'body' => 'Begärde begränsning.']);
+    expect(fn () => $log($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $person->id, 'type' => 'NOTE']))->toThrow(ValidationException::class, 'finns redan');
+
+    // Saving again with the same reason keeps the time.
+    $kept = app(SavePerson::class)($this->owner, $this->company, ['name' => 'Flaggad Person', 'email' => 'flaggad@exempel.test', 'legal_basis' => 'LEGITIMATE_INTEREST', 'do_not_contact' => true, 'do_not_contact_reason' => 'RESTRICTION'], $person);
+    expect($kept->do_not_contact_at?->equalTo($person->do_not_contact_at))->toBeTrue();
 });

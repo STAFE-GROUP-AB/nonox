@@ -53,12 +53,12 @@ Mallen är ett förslag. Stäm av den med den som ansvarar för dataskyddet hos 
 Säger personen att den inte vill bli kontaktad (en invändning, artikel 21) eller begär att behandlingen begränsas (artikel 18), kryssar du i **Kontakta inte** på personen och väljer varför. Då:
 
 - syns **Kontakta inte** vid personen på kundens kort, under **Personer** och i **Mina aktiviteter**,
-- går det inte att logga nya samtal, möten, e-post eller uppgifter för personen, bara anteckningar,
+- går det inte att logga nya samtal, möten, e-post eller uppgifter för personen; vid en invändning kan du fortfarande skriva anteckningar (vid begränsad behandling gäller reglerna nedan),
 - försvinner knappen **Ring** för personen.
 
 Vid en **invändning** sparas personens e-postadress och telefonnummer på en spärrlista som en kontrollsumma (hash), aldrig som text. Listan finns kvar när personen raderas, och läggs samma person till igen får den **Kontakta inte** direkt (artikel 21.3). Kontrollsumman är en pseudonymisering, inte en anonymisering: den som har nyckeln och en adress kan pröva om adressen finns på listan. Tar ni bort krysset för att personen har ångrat sig försvinner kontrollsummorna, utom de som en annan person med invändning har.
 
-Vid **begränsad behandling** får uppgifterna bara sparas. Det går inte att logga några nya aktiviteter för personen, utom en enda anteckning om begränsningen. Ingenting sparas på spärrlistan; raderas personen finns inget kvar.
+Vid **begränsad behandling** får uppgifterna bara sparas. Det går inte att logga några nya aktiviteter för personen, utom en enda anteckning om begränsningen, räknat från när begränsningen sattes. Befintliga aktiviteter om personen kan inte ändras, bara klarmarkeras, och när begränsningen sätts klarmarkeras personens öppna uppgifter och planerade aktiviteter, så att de försvinner från **Mina aktiviteter**. Ingenting sparas på spärrlistan; raderas personen finns inget kvar.
 
 Spärrlistan granskas med jämna mellanrum: en rad som inte har granskats på tre år (inställningen **Granska spärrlistan, år** under **CRM → Inställningar**) visas under **Att göra**. Under **CRM → Personer → Spärrlista** väljer du **Behåll** om invändningen fortfarande gäller eller **Ta bort**.
 ## Registerutdrag
