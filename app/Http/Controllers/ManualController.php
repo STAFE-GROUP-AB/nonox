@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Support\Manual\Manual;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -40,10 +41,12 @@ class ManualController
         return $this->show($section, Manual::OVERVIEW);
     }
 
-    public function article(string $section, string $article): View
+    public function article(string $section, string $article): View|RedirectResponse
     {
-        // The overview has one address: the section's own.
-        abort_if($article === Manual::OVERVIEW, 404);
+        // The overview has one address, the section's own; its file name redirects there.
+        if ($article === Manual::OVERVIEW) {
+            return redirect()->route('manual.section', $section, 301);
+        }
 
         return $this->show($section, $article);
     }

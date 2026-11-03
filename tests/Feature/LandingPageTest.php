@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Support\Landing\Features;
 use App\Support\Landing\LandingPage;
 use App\Support\Landing\SecurityReview;
+use App\Support\Manual\Manual;
 
 beforeEach(function () {
     config(['app.landing.enabled' => true]);
@@ -38,7 +39,10 @@ it('shows a screenshot and a manual link for every feature on the landing page',
         expect(public_path("bilder/manual/{$card['img']}.webp"))->toBeFile("Landing card '{$card['t']}' has no screenshot")
             ->and(base_path("docs/manual/sv/{$card['man']}.md"))->toBeFile("Landing card '{$card['t']}' links to a missing manual article")
             ->and($page)->toContain(asset("bilder/manual/{$card['img']}.webp"))
-            ->and($page)->toContain(route('manual.article', [$section, $article]));
+            ->and($page)->toContain($article === Manual::OVERVIEW ? route('manual.section', $section).'"' : route('manual.article', [$section, $article]));
+
+        $href = $article === Manual::OVERVIEW ? route('manual.section', $section) : route('manual.article', [$section, $article]);
+        $this->get($href)->assertOk();
     }
 });
 
