@@ -85,7 +85,7 @@
           <a href="{{ route('login') }}" class="mm-login">Logga in</a>
         @endauth
         @guest
-          <a class="lp8" href="{{ route('waitlist') }}" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ställ dig i kö</a>
+          <a class="lp8" href="{{ App\Support\Landing\SignupPath::url() }}" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">{{ App\Support\Landing\SignupPath::label() }}</a>
         @else
           <a class="lp8" href="{{ $home }}#kor-sjalv" style="display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:14px;font-weight:700">Ladda ner gratis</a>
         @endguest
@@ -164,7 +164,7 @@
           <a href="{{ route('login') }}" style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;border:1px solid var(--line);background:var(--card);text-decoration:none;font-weight:600">Logga in</a>
         @endauth
         @guest
-          <a href="{{ route('waitlist') }}" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ställ dig i kö</a>
+          <a href="{{ App\Support\Landing\SignupPath::url() }}" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">{{ App\Support\Landing\SignupPath::label() }}</a>
         @else
           <a href="{{ $home }}#kor-sjalv" data-lp-close style="display:flex;align-items:center;justify-content:center;height:48px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-weight:700">Ladda ner gratis</a>
         @endguest

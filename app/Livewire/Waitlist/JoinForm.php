@@ -7,6 +7,7 @@ namespace App\Livewire\Waitlist;
 use App\Actions\Waitlist\JoinWaitlist;
 use App\Domain\Waitlist\WaitlistOptions;
 use App\Models\User;
+use App\Support\Instance\InstanceSettings;
 use App\Support\Tenancy\SpansCompanies;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
@@ -52,6 +53,12 @@ class JoinForm extends Component implements SpansCompanies
     public function submit(JoinWaitlist $join): void
     {
         if ($this->done) {
+            return;
+        }
+
+        if (! InstanceSettings::current()->waitlistOpen()) {
+            $this->addError('form', __('Kön är stängd just nu. Försök igen senare.'));
+
             return;
         }
 

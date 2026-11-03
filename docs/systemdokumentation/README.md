@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.97
-- Datum: 2026-11-02
+- Version: 0.98
+- Datum: 2026-11-03
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -276,6 +276,65 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   utan företag och utan personuppgifter (`hq.customers_viewed`,
   `hq.company_viewed` med företagets id, `hq.user_viewed` med användarens
   id).
+
+## 1g. Driftbolaget, kön och självregistreringen (ADR-044)
+
+- HQ → **Inställningar** (`/hq/installningar`) har installationens egna
+  inställningar i tabellen `instance_settings` (instansens data, inget
+  `company_id`): driftbolaget, vilket företag kunderna respektive
+  köanmälningarna hamnar i (standard: driftbolaget), om kön är öppen
+  (standard ja) och om självregistreringen är öppen (standard nej). Bara
+  HQ-administratörerna når sidan (404 för alla andra), varje ändring kräver
+  en färsk passkey-bekräftelse och skrivs i behandlingshistoriken utan
+  företag med företagens id och ja/nej (`hq.settings_updated`). Vilket
+  företag som är driftbolag står bara i databasen.
+- Utan driftbolag händer ingenting, vilket är standard för den som kör
+  NONOX själv.
+- **Företagen blir kunder.** Varje företag i installationen, utom
+  driftbolaget, de valda målföretagen och testföretag, blir kund i
+  målföretagets kundregister genom kundregistrets egen åtgärd
+  (`SaveCustomer`), inne i målföretaget (`CurrentCompany::run`) och i
+  ägarens namn. Ett arkiverat företag blir ingen ny kund; en befintlig kund
+  görs inaktiv när företaget arkiveras och aktiv igen när det tas ur
+  arkivet. Ingenting raderas. En enskild firmas nummer är ägarens
+  personnummer och sparas krypterat i `personal_number`, aldrig i
+  `org_number`, och momsnumret (som innehåller det) förs inte över.
+- **Aldrig dubbletter.** Tabellen `operator_links` (instansens data) har en
+  rad per källa och mål med kundens, CRM-kontots och personens id, om
+  synken skapade dem och HMAC av de värden som senast fördes över (aldrig
+  värdena). Finns redan en kund med samma organisationsnummer, och ingen
+  annan källa är kopplad till den, kopplas den i stället för att en ny
+  skapas. Ändras namn eller adress i källan förs bara de ändrade fälten
+  över, så driftbolagets egna ändringar av andra fält ligger kvar. En kund
+  som anonymiserats, fått begränsad behandling eller tagits bort i
+  målföretaget skrivs aldrig över och skapas inte igen.
+- **CRM.** Är CRM påslaget i målföretaget blir företagets ägare
+  kontaktperson på kundens konto med rättslig grund avtal. Köanmälningar
+  blir prospekt (källa "Kö") med den sökande som kontaktperson med rättslig
+  grund samtycke, daterat när samtycket gavs i kön. Står e-post eller
+  telefon på målföretagets spärrlista, eller är personen markerad Kontakta
+  inte, skapas ingenting. När den godkända sökande skapar sitt företag blir
+  prospektet kunden (`ConvertToCustomer`): ett konto, en kund, en person.
+- **Gallringen följer kön.** När en anmälan raderas (HQ eller
+  `waitlist:prune`) raderas prospektet och personen som synken skapade,
+  om ingen har arbetat med dem (ingen aktivitet, ingen affär, ingen kund,
+  personen inte kopplad till något annat konto). Annars kopplas de bara
+  loss och följer CRM:s egen gallring, och HQ säger det när anmälan
+  raderas.
+- **Användarens åtgärd går aldrig sönder.** Synken körs som ett jobb efter
+  commit med bara id:n. Ett fel skrivs på länken (felets klass, aldrig
+  uppgifterna), loggas och visas i HQ som "Synk misslyckades" med knappen
+  Försök igen.
+- `php artisan hq:sync-operator-customers` för över det som fanns innan
+  driftbolaget valdes. Kommandot kan köras flera gånger utan att något
+  dubbleras, och `--dry-run` räknar bara och ändrar ingenting.
+- **Kön stängd:** `/ko` visar att kön är stängd och tar inte emot
+  anmälningar; de som redan står i kö ligger kvar. **Självregistrering
+  öppen:** inloggningen skickar en kod till varje adress och skapar ett konto
+  för en okänd adress efter rätt kod och ett namn, med samma
+  begränsningar av antal försök som inloggningen.
+- Ingen bokföring berörs: synken skapar kunder, konton och personer, aldrig
+  verifikationer.
 
 ## 2. Kontoplan
 
@@ -3460,3 +3519,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.95 | 2026-11-02 | Modulen Lager (ADR-039, avsnitt 5j): artikelregistret utökat med lagerfält, lagerställen i ett träd, en lagerreskontra som bara kan läggas till (stock_movements, skyddad av databastrigger), inleveranser, plocklistor, inventering och värdering enligt FIFO eller vägt genomsnitt med lägsta värdets princip. Bokslutet kan boka lagerförändringen på balansdagen i serie A; i övrigt bokför lagret ingenting. |
 | 0.96 | 2026-11-02 | Lager: bilder på artiklar (skalas om, metadata tas bort, privat krypterad disk) och förslag från NONOX AI som användaren godkänner fält för fält; AI föreslår aldrig priser eller konton. Ändrar ingen bokföring. |
 | 0.97 | 2026-11-02 | Lager: etiketter och etikettstudio (ADR-041), skanning med mobilen med kö utan nät som körs exakt en gång per operation (ADR-040), och modulen Kassakopplingar för Zettle och Onslip (ADR-042, avsnitt 5k): varje köp sparas en gång och dras från lagret, och dagens försäljning blir ett utkast till verifikation i serie K "Kassa" som en person granskar och bokför. Serie K skapas först när modulen slås på. |
+| 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos det företag som HQ pekar ut, genom målföretagets egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.3. Ändrar ingen bokföring. |

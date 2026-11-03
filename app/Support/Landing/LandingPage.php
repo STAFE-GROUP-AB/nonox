@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support\Landing;
 
 use App\Support\Build\BuildInfo;
+use App\Support\Instance\InstanceSettings;
 
 /**
  * The content of the public landing page (resources/views/start/landing).
@@ -172,8 +173,9 @@ final class LandingPage
             'unit' => $priced ? '/år' : '',
             'priceSize' => $priced ? '40px' : '26px',
             // The hosted service is behind the waiting list during the open beta (ADR-038).
-            'cta' => $priced ? 'Ställ dig i kö' : 'Kontakta oss',
-            'href' => $priced ? route('waitlist') : $ph['contact'],
+            // HQ can open self-registration or close the queue (ADR-044): SignupPath knows where to go.
+            'cta' => $priced ? SignupPath::label() : 'Kontakta oss',
+            'href' => $priced ? SignupPath::url() : $ph['contact'],
             'border' => $plan['popular'] ? '2px solid #FF5A36' : '1px solid var(--line)',
             'btnBg' => $plan['popular'] ? 'var(--ink)' : 'transparent',
             'btnFg' => $plan['popular'] ? 'var(--bg)' : 'var(--ink)',
@@ -256,11 +258,23 @@ final class LandingPage
         ], $steps, array_keys($steps));
     }
 
+    /** How a new company gets in right now, as HQ has set it (ADR-044). */
+    private static function wayIn(): string
+    {
+        $settings = InstanceSettings::current();
+
+        return match (true) {
+            $settings->selfRegistrationOpen() => 'Logga in med din e-post så skapar vi ett konto, och sedan lägger du upp ditt företag.',
+            $settings->waitlistOpen() => 'Ställ dig i kö och svara på några frågor om ditt företag. Vi släpper in nya företag i den takt vi hinner hjälpa dem, och du får ett mejl när du är godkänd.',
+            default => 'Kön är stängd just nu, så att vi hinner hjälpa dem som redan står i den. Den som redan står i kö får ett mejl när den är godkänd.',
+        };
+    }
+
     /** @return list<array{q: string, a: string}> */
     private static function faqs(): array
     {
         return [
-            ['q' => 'Hur kommer jag in under den öppna betan?', 'a' => 'Ställ dig i kö och svara på några frågor om ditt företag. Vi släpper in nya företag i den takt vi hinner hjälpa dem, och du får ett mejl när du är godkänd. Har ett företag bjudit in dig behöver du inte stå i kö. Skarp lansering av version 1.0 sker den 1 januari 2027, och det du lägger in under betan ligger kvar.'],
+            ['q' => 'Hur kommer jag in under den öppna betan?', 'a' => self::wayIn().' Har ett företag bjudit in dig behöver du inte stå i kö. Skarp lansering av version 1.0 sker den 1 januari 2027, och det du lägger in under betan ligger kvar.'],
             ['q' => 'Är NONOX ett alternativ till Fortnox?', 'a' => 'Ja. NONOX har bokföring, fakturering, lön, moms, bokslut och årsredovisning, och du flyttar hela historiken från Fortnox med SIE4-filer. Skillnaden är att NONOX är öppen källkod, att alla delar ingår och att du kan köra det själv gratis.'],
             ['q' => 'Vad skiljer NONOX från Fortnox, Visma och Bokio?', 'a' => 'Funktionerna för ett svenskt småföretag är i stort sett desamma. NONOX är öppen källkod, kostar 0 kr att köra själv eller 995 kr om året med drift, och alla delar ingår utan tillval. Jämförelsen på sidan visar funktion för funktion.'],
             ['q' => 'Är NONOX verkligen gratis?', 'a' => 'Ja. Programmet är öppen källkod och gratis att ladda ner och köra själv. Du betalar bara om du vill att vi sköter driften.'],

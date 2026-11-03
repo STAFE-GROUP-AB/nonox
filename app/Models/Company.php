@@ -11,6 +11,7 @@ use App\Domain\Company\VatExemption;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Payables\PaymentBank;
 use App\Support\Branding\FirmBranding;
+use App\Support\Hq\OperatorSync;
 use App\Support\Tenancy\ArchivedCompany;
 use Carbon\CarbonImmutable;
 use Database\Factories\CompanyFactory;
@@ -240,5 +241,9 @@ class Company extends JetstreamTeam
             ArchivedCompany::forget($company->id);
             FirmBranding::forgetIfChanged($company);
         });
+
+        // The operator company's customer register follows the companies of the installation (ADR-044).
+        static::created(fn (self $company) => OperatorSync::companySaved($company, true));
+        static::updated(fn (self $company) => OperatorSync::companySaved($company, false));
     }
 }

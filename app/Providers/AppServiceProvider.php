@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Build\VersionRecorder;
 use App\Support\Files\EncryptedAdapter;
+use App\Support\Instance\InstanceSettings;
 use App\Support\Overview\TaskTodoProvider;
 use App\Support\Tenancy\CompanyContext;
 use App\Support\Tenancy\CurrentCompany;
@@ -51,6 +52,9 @@ class AppServiceProvider extends ServiceProvider
         config(['livewire.temporary_file_upload.disk' => 'uploads']);
 
         $this->app->scoped(CompanyContext::class);
+
+        // The installation's own settings from /hq (ADR-044): read once per request or job.
+        $this->app->scoped(InstanceSettings::class);
 
         // "Att göra" on a company's Översikt includes the tasks assigned to the user (ADR-028).
         $this->app->tag([TaskTodoProvider::class], TodoProviders::TAG);

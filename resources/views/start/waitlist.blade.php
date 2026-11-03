@@ -48,7 +48,7 @@
 <main id="main" class="wl-wrap">
   <section class="wl-intro" aria-labelledby="wl-rubrik">
     <p class="wl-eyebrow">Öppen beta</p>
-    <h1 id="wl-rubrik">Ställ dig i kö till NONOX.</h1>
+    <h1 id="wl-rubrik">{{ $closed ? 'Kön till NONOX.' : 'Ställ dig i kö till NONOX.' }}</h1>
     <p style="margin-top:22px">NONOX är i <strong>öppen beta</strong>. Vi släpper in nya företag i den takt vi hinner hjälpa dem, så att varje start blir bra. Svara på några frågor så hör vi av oss.</p>
     <p><strong>Skarp lansering av version 1.0 sker den 1 januari 2027.</strong> Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.</p>
     <ul class="wl-facts">
@@ -60,9 +60,23 @@
     <p class="wl-small" style="margin-top:28px">Redan godkänd? <a href="{{ route('login') }}">Logga in</a>. Har ett företag bjudit in dig loggar du in med adressen inbjudan gick till, du behöver inte stå i kö.</p>
   </section>
 
+  @if($closed)
+  <section aria-labelledby="wl-stangd" class="wl-card" data-waitlist-closed>
+    <h2 id="wl-stangd" class="wl-h2">Kön är stängd just nu.</h2>
+    <p class="wl-lead">Vi tar inte emot nya anmälningar för tillfället, så att vi hinner hjälpa dem som redan står i kö. Titta in igen lite senare.</p>
+    @if($registrationOpen)
+      <p class="wl-lead">Du kan skapa ett konto direkt i stället: <a href="{{ route('login') }}" style="color:var(--acct);font-weight:600">kom igång här</a>.</p>
+    @endif
+    <p class="wl-small" style="margin-top:22px">Står du redan i kö ligger din anmälan kvar, och du får ett mejl när du är godkänd. Vill du hellre köra NONOX själv är programmet öppen källkod och <a href="{{ url('/') }}#kor-sjalv">gratis att ladda ner</a>.</p>
+  </section>
+  @else
   <section aria-label="Anmälan till kön">
+    @if($registrationOpen)
+      <p class="wl-note">Du behöver inte stå i kö: du kan också <a href="{{ route('login') }}" style="color:var(--acct);font-weight:600">skapa ett konto direkt</a>.</p>
+    @endif
     <livewire:waitlist.join-form />
   </section>
+  @endif
 </main>
 @include('start.partials.public-footer')
 </div>
