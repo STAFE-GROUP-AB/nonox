@@ -378,8 +378,48 @@ out in the migration so it never changes with the action).
   prospect's deals are deleted with it (foreign key cascade); the register
   extracts (customer and contact person) list the deals with their free
   text; pruning keeps prospects with an open deal and the contact person of
-  an open deal. `TODO(legal-verify)`: whether names mentioned only in a
-  deal's title must be found by hand at erasure, as for activities.
+  an open deal while the deal has changed since the cutoff (a stale
+  open deal keeps no one). `TODO(legal-verify)`: whether names mentioned
+  only in a deal's title must be found by hand at erasure, as for
+  activities.
+
+### Stage 2: review round (2026-11-03)
+
+- **Win-back never reaches someone who must not be contacted**
+  (`WinBackBlock`): a deal's contact person or a private person's people
+  marked Kontakta inte (objection or restriction), a customer with
+  restricted processing or anonymised/inactive in the register, or an
+  e-mail or phone on the suppression list. `LoseDeal` and
+  `SetAccountStatus` then set no default date, `SetWinBack` and a given
+  date in `LoseDeal` are refused with a message per case, and
+  `crm:win-back` skips and clears the date under the row lock. It also
+  skips (and clears) when the account has won a deal since the loss. A
+  win-back date is today at the earliest and less than three years ahead.
+- **The reminder is not contact**: the task does not touch
+  `last_activity_at`, so it never keeps anyone from being pruned.
+- **Anonymised customer**: its open deals are closed as lost without a
+  reason, all win-back dates are cleared, and the account's open
+  activities (already anonymised) are closed.
+- **Pruning**: an open deal keeps its account and contact person only while
+  the deal has changed since the cutoff.
+- **Goals per seller** are personal data about employees: the manual tells
+  the company to inform the sellers (art. 13) and not to use the figures as
+  the only basis for decisions about one seller, and that a company with a
+  collective agreement may have to negotiate first (11 § MBL).
+  `TODO(legal-verify)`: whether introducing the goal follow-up triggers the
+  duty to negotiate under 11 § MBL, and when.
+- **Marketing to private persons**: the manual reminds of 19 §
+  marknadsföringslagen and NIX for win-back contact with private persons.
+- **Engineering**: Flytta on the board is a select plus a button (WCAG
+  3.2.2), the phone's stage switcher is plain buttons with `aria-pressed`,
+  four columns fit at 1280 px; a deal's value is at most
+  10 000 000 000 000 öre; `WinDeal` locks the account, `CompleteActivity`
+  the deal and `ArchivePipeline`/`SaveDeal`/`MoveDeal` the pipeline; a
+  contact person marked Kontakta inte stays on the deal but its steps are
+  planned without them, with a notice on the card; no deal is created or
+  changed for a customer with restricted processing or that is inactive;
+  a private person's linked quote, order and invoice are hidden from a
+  seller without `invoices:view`, on the card and in the API.
 
 ### Deviations from the brief, with reasons
 

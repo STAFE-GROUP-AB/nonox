@@ -17,6 +17,11 @@
                     · {{ $deal->pipeline?->name }}
                 </p>
                 <h1 class="mt-1 break-words text-2xl font-bold tracking-tight text-ink">{{ $deal->title }}</h1>
+                @if($deal->person?->doNotContact())
+                    <p class="mt-2 rounded-xl bg-accent-50 px-3 py-2 text-sm text-accent-800" data-testid="crm-deal-do-not-contact">
+                        {{ __(':name är märkt Kontakta inte. Nästa steg planeras utan personen. Byt kontaktperson under Ändra, eller avsluta affären.', ['name' => $deal->person->name]) }}
+                    </p>
+                @endif
                 <p class="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
                     <x-ui.badge :tone="$deal->status->tone()">{{ $deal->status->label() }}</x-ui.badge>
                     <span>{{ __('Ansvarig') }}: {{ $deal->owner?->name ?? __('ingen') }}</span>
@@ -71,7 +76,7 @@
             </div>
         @endif
 
-        @if($deal->status === App\Modules\Crm\Domain\DealStatus::Won && ($deal->quote || $deal->order || $deal->invoice))
+        @if($deal->status === App\Modules\Crm\Domain\DealStatus::Won && ! $limitedLedger && ($deal->quote || $deal->order || $deal->invoice))
             <p class="mt-5 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 <span class="text-gray-500">{{ __('Kopplad till') }}:</span>
                 @foreach([['doc' => $deal->quote, 'route' => 'invoicing.quotes.show', 'label' => __('Offert :number')], ['doc' => $deal->order, 'route' => 'invoicing.orders.show', 'label' => __('Order :number')], ['doc' => $deal->invoice, 'route' => 'invoicing.invoices.show', 'label' => __('Faktura :number')]] as $link)

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Modules\Crm\Domain\AccountStatus;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\DealStatus;
+use App\Modules\Crm\Domain\WinBackBlock;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Deal;
@@ -25,6 +26,11 @@ use Illuminate\Support\Facades\DB;
  * second one. The owner is the deal's, else the account's, else the
  * company's owner, and only someone still in the company. Returns the
  * number of tasks made.
+ *
+ * No task (and the date is cleared) for someone who must not be contacted
+ * (WinBackBlock), or when the account has won a deal since the loss. The
+ * task does not touch last_activity_at: a reminder is not contact, and must
+ * not keep a contact from being pruned.
  */
 final class CreateWinBackTasks
 {
@@ -47,6 +53,15 @@ final class CreateWinBackTasks
                     $deal = Deal::query()->whereKey($id)->whereNull('win_back_task_at')->where('status', DealStatus::Lost->value)->lockForUpdate()->first();
 
                     if (! $deal instanceof Deal) {
+                        return 0;
+                    }
+
+                    $skip = $this->skip($deal, $deal->account_id, $deal->lost_at);
+
+                    if ($skip !== null) {
+                        $deal->forceFill(['win_back_at' => null])->save();
+                        Audit::record('crm.win_back_skipped', $deal, ['deal_id' => $deal->id, 'account_id' => $deal->account_id, 'reason' => $skip], $company);
+
                         return 0;
                     }
 
@@ -74,6 +89,15 @@ final class CreateWinBackTasks
                         return 0;
                     }
 
+                    $skip = $this->skip($account, $account->id, $account->status_set_manually_at);
+
+                    if ($skip !== null) {
+                        $account->forceFill(['win_back_at' => null])->save();
+                        Audit::record('crm.win_back_skipped', $account, ['account_id' => $account->id, 'reason' => $skip], $company);
+
+                        return 0;
+                    }
+
                     $activity = $this->task($company, $account->id, null, $this->owner([$account->owner_id, $company->user_id], $members), $today, __('Vinn tillbaka kunden'));
                     $account->forceFill(['win_back_task_at' => now()])->save();
                     Audit::record('crm.win_back_task', $activity, ['account_id' => $account->id], $company);
@@ -84,6 +108,27 @@ final class CreateWinBackTasks
         });
 
         return $made;
+    }
+
+    /**
+     * Why no task is made, or null: someone who must not be contacted
+     * (WinBackBlock), or the account has won a deal since it was lost.
+     */
+    private function skip(Deal|Account $record, int $accountId, ?CarbonImmutable $lostAt): ?string
+    {
+        $block = WinBackBlock::for($record);
+
+        if ($block !== null) {
+            return $block->value;
+        }
+
+        $wonSince = Deal::query()
+            ->where('account_id', $accountId)
+            ->where('status', DealStatus::Won->value)
+            ->when($lostAt !== null, fn ($query) => $query->where('won_at', '>', $lostAt))
+            ->exists();
+
+        return $wonSince ? 'WON_SINCE' : null;
     }
 
     /**
@@ -116,7 +161,7 @@ final class CreateWinBackTasks
             'created_by' => null,
         ]);
 
-        LogActivity::touch($activity);
+        // A machine reminder is not contact: the pruning clock (last_activity_at) is not reset here.
 
         return $activity;
     }

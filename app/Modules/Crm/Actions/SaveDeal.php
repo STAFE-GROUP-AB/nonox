@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Modules\Crm\Actions;
 
 use App\Models\Company;
+use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\DealStageChange;
+use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Pipeline;
 use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Support\CompanyMembers;
@@ -67,7 +69,7 @@ final class SaveDeal
             'pipeline_id' => ['nullable', 'integer'],
             'stage_id' => ['nullable', 'integer'],
             'title' => [$creating ? 'required' : 'sometimes', 'string', 'max:255'],
-            'value_ore' => ['sometimes', 'integer', 'min:0', 'max:'.(PHP_INT_MAX / 100)],
+            'value_ore' => ['sometimes', 'integer', 'min:0', 'max:'.Deal::MAX_VALUE_ORE],
             'expected_close_date' => ['nullable', 'date'],
             'owner_id' => ['nullable', 'integer', Rule::in(CompanyMembers::ids($company))],
             'next_step' => [$creating ? 'required' : 'prohibited', 'array'],
@@ -79,6 +81,7 @@ final class SaveDeal
             'owner_id.in' => __('Ansvarig säljare måste vara med i företaget.'),
             'next_step.required' => __('En ny affär behöver ett nästa steg, så att den inte glöms bort.'),
             'value_ore.min' => __('Värdet kan inte vara negativt.'),
+            'value_ore.max' => __('Värdet är för stort.'),
         ], [
             'title' => __('rubrik'),
             'value_ore' => __('värde'),
@@ -91,6 +94,13 @@ final class SaveDeal
             $accountId = (int) ($validated['account_id'] ?? $deal?->account_id);
             [$pipeline, $stage] = $this->placement($validated, $deal);
             $personId = array_key_exists('person_id', $validated) ? $validated['person_id'] : $deal?->person_id;
+
+            $customer = Customer::query()->whereIn('id', Account::query()->whereKey($accountId)->select('customer_id'))->first();
+
+            // As on the account card (canSell): no new business with a customer whose processing is restricted or who is inactive.
+            if ($customer instanceof Customer && ($customer->isRestricted() || ! $customer->is_active)) {
+                throw ValidationException::withMessages(['account_id' => __('Kunden är inaktiv eller har begränsad behandling. Affärer kan inte läggas upp eller ändras.')]);
+            }
 
             if ($personId !== null && ! Account::query()->whereKey($accountId)->whereHas('people', fn ($people) => $people->whereKey((int) $personId))->exists()) {
                 throw ValidationException::withMessages(['person_id' => __('Personen hör inte till kunden. Koppla personen till kunden först.')]);
@@ -118,7 +128,8 @@ final class SaveDeal
                     ...array_intersect_key($next, array_flip(['type', 'subject', 'due_at', 'assigned_to'])),
                     'assigned_to' => $next['assigned_to'] ?? $deal->owner_id ?? $user->id,
                     'account_id' => $deal->account_id,
-                    'person_id' => $deal->person_id,
+                    // A contact person who must not be contacted is on the deal, but not on its calls and meetings.
+                    'person_id' => $deal->person_id !== null && Person::query()->whereKey($deal->person_id)->whereNull('do_not_contact_at')->exists() ? $deal->person_id : null,
                     'deal_id' => $deal->id,
                     'done' => false,
                 ]);
@@ -162,10 +173,11 @@ final class SaveDeal
             $pipelineId = $stage->pipeline_id;
         }
 
+        // Locked, so ArchivePipeline cannot archive it while this deal goes in.
         $pipeline = match (true) {
-            $pipelineId !== null => Pipeline::query()->find((int) $pipelineId),
-            $deal !== null => Pipeline::query()->find($deal->pipeline_id),
-            default => Pipeline::query()->active()->ordered()->first(),
+            $pipelineId !== null => Pipeline::query()->lockForUpdate()->find((int) $pipelineId),
+            $deal !== null => Pipeline::query()->lockForUpdate()->find($deal->pipeline_id),
+            default => Pipeline::query()->active()->ordered()->lockForUpdate()->first(),
         };
 
         if (! $pipeline instanceof Pipeline) {

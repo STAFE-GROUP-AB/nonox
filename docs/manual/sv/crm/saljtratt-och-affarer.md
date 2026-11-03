@@ -36,7 +36,7 @@ Filtrera på **Ansvarig** (välj **Mina affärer** för dina egna) och, om före
 
 ## Nästa steg är obligatoriskt
 
-En öppen affär har alltid ett planerat nästa steg, så att ingen affär faller mellan stolarna. Därför:
+En öppen affär ska alltid ha ett planerat nästa steg, så att ingen affär faller mellan stolarna. Därför:
 
 - En ny affär skapas alltid med sitt första steg.
 - När du klarmarkerar affärens sista planerade steg frågar NONOX efter nästa, och det går inte att hoppa över. Planera nästa steg, så klarmarkeras det gamla samtidigt. Eller tryck på **Avsluta affären** och markera den som vunnen eller förlorad.
@@ -50,7 +50,7 @@ Det gäller i affärens kort, på kundens kort och under **Mina aktiviteter**.
 
 1. Öppna affären och tryck på **Vunnen**.
 2. Justera värdet om ni kom överens om något annat.
-3. Koppla gärna **Offert**, **Order** eller **Faktura** från bokföringen. Då syns affären på fakturan i målen, och kortet länkar dit.
+3. Koppla gärna **Offert**, **Order** eller **Faktura** från bokföringen. Då räknas fakturan in i säljarens mål, och kortet länkar dit.
 4. Är det ett prospekt kan du bocka i att göra det till kund, om du får skapa kunder.
 5. Tryck på **Markera som vunnen**.
 
@@ -62,7 +62,9 @@ Det gäller i affärens kort, på kundens kort och under **Mina aktiviteter**.
 4. Kontrollera datumet under **Vinn tillbaka**. Det är förifyllt sex månader fram (företagets inställning). Lämna det tomt om du inte vill ha någon påminnelse.
 5. Tryck på **Markera som förlorad**.
 
-På datumet får den ansvarige en uppgift, **Vinn tillbaka**, under Mina aktiviteter. Datumet går att ändra eller ta bort på affären med **Ändra datum**. En kund som du sätter som **Förlorad** på kundkortet får samma påminnelse.
+På datumet får den ansvarige en uppgift, **Vinn tillbaka**, under Mina aktiviteter. Datumet går att ändra eller ta bort på affären med **Ändra datum**. En kund som du sätter som **Förlorad** på kundkortet får samma påminnelse. Har kunden vunnits tillbaka i en annan affär före datumet kommer ingen påminnelse.
+
+Är kunden en privatperson får du bara mejla erbjudanden om personen har samtyckt eller redan är kund och fick säga nej när adressen samlades in (19 § marknadsföringslagen), och ringer du ska numret kontrolleras mot NIX. En person som är märkt Kontakta inte får ingen påminnelse, och inte heller en kund med begränsad behandling eller en kund som är inaktiv eller anonymiserad i kundregistret.
 
 ## Inställningar
 

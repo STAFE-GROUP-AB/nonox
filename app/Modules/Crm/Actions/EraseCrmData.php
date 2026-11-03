@@ -8,6 +8,7 @@ use App\Events\CustomerAnonymised;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Domain\AccountKind;
+use App\Modules\Crm\Domain\DealStatus;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
@@ -31,7 +32,8 @@ use Illuminate\Validation\ValidationException;
  * Stage 2: a deal belongs to its account and stays when a person is erased,
  * without the person. A prospect's deals go with it. A customer's deals
  * lose their title and loss note when the customer is anonymised: free
- * text that may name people.
+ * text that may name people. The open ones are closed as lost, every
+ * win-back date is cleared, and the account's open activities are closed.
  *
  * $user is null when privacy:prune erases by retention.
  */
@@ -54,7 +56,8 @@ final class EraseCrmData
                 'updated_at' => now(),
             ]);
 
-            Deal::query()->where('person_id', $person->id)->update(['person_id' => null, 'updated_at' => now()]);
+            // An erasure is not business with the deal: its updated_at (the pruning clock of its account) stays.
+            Deal::query()->where('person_id', $person->id)->toBase()->update(['person_id' => null]);
             $person->delete();
 
             // The id only: the name must not outlive the person in the append-only log.
@@ -113,7 +116,7 @@ final class EraseCrmData
                 return;
             }
 
-            $account->forceFill(['website' => null, 'source' => null, 'tags' => [], 'sni_code' => null, 'lost_reason' => null])->save();
+            $account->forceFill(['website' => null, 'source' => null, 'tags' => [], 'sni_code' => null, 'lost_reason' => null, 'win_back_at' => null, 'win_back_task_at' => null])->save();
 
             // A private person's account: the people at it (the person, a relative) go too, unless they are also at another account.
             // A company's contacts are other people, with their own legal basis, and stay.
@@ -134,12 +137,22 @@ final class EraseCrmData
                 'updated_at' => now(),
             ]);
 
+            // The open deals end as lost without a reason, and no deal reminds anyone to win the customer back.
+            Deal::query()->where('account_id', $account->id)->where('status', DealStatus::Open->value)->update([
+                'status' => DealStatus::Lost->value,
+                'lost_at' => now(),
+                'loss_reason_id' => null,
+            ]);
             $deals = Deal::query()->where('account_id', $account->id)->update([
                 'person_id' => null,
                 'title' => __('Anonymiserad affär'),
                 'loss_note' => null,
+                'win_back_at' => null,
+                'win_back_task_at' => null,
                 'updated_at' => now(),
             ]);
+            // The anonymised activities stay on the timeline; none of them is still to be done.
+            Activity::query()->where('account_id', $account->id)->whereNull('done_at')->update(['done_at' => now()]);
 
             Audit::record('privacy.erased', $account, ['subject' => 'crm_account', 'activities_anonymised' => $activities, 'deals_anonymised' => $deals, 'by' => 'customer_anonymised'], $event->companyId);
         });

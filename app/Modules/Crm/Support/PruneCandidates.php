@@ -20,7 +20,9 @@ use Illuminate\Support\Facades\DB;
  * name may be on invoices. Queries for the current company.
  *
  * Stage 2: an account with an open deal, and the contact person of an open
- * deal, are kept too: the business is still going on.
+ * deal, are kept while the deal itself has moved since $cutoff (any
+ * change, move, win or loss updates it). A stale open deal does not keep
+ * anyone forever.
  *
  * TODO(legal-verify): which links to the ledger keep a contact person.
  */
@@ -40,7 +42,8 @@ final class PruneCandidates
             ->whereNotExists(fn ($query) => $query->select(DB::raw(1))
                 ->from('crm_deals')
                 ->whereColumn('crm_deals.person_id', 'crm_people.id')
-                ->where('crm_deals.status', DealStatus::Open->value));
+                ->where('crm_deals.status', DealStatus::Open->value)
+                ->where('crm_deals.updated_at', '>=', $cutoff));
     }
 
     /** @return Builder<Account> */
@@ -52,6 +55,7 @@ final class PruneCandidates
             ->whereNotExists(fn ($query) => $query->select(DB::raw(1))
                 ->from('crm_deals')
                 ->whereColumn('crm_deals.account_id', 'crm_accounts.id')
-                ->where('crm_deals.status', DealStatus::Open->value));
+                ->where('crm_deals.status', DealStatus::Open->value)
+                ->where('crm_deals.updated_at', '>=', $cutoff));
     }
 }

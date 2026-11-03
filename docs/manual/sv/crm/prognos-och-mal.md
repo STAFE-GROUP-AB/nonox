@@ -54,6 +54,9 @@ Under ordervärdet visas också **Fakturerat på kopplade affärer**: vad som ha
 
 En säljare ser sina egna mål. Den som sätter målen ser allas.
 
+> [!IMPORTANT]
+> Mål och utfall per säljare är personuppgifter om era anställda. Berätta för säljarna vad som mäts, varför och vem som ser det innan ni börjar använda målen (artikel 13 i dataskyddsförordningen). Har ni kollektivavtal kan ni behöva förhandla med facket innan ni inför uppföljningen (11 § medbestämmandelagen). Använd siffrorna för att följa upp försäljningen, inte som enda underlag för beslut om en enskild säljare.
+
 > [!NOTE]
 > Rollen **Säljare** kan inte skapa offerter. Vill ni ha mål för offerter ger ni säljaren en roll som får skapa fakturor och offerter.
 

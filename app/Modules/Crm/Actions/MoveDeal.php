@@ -43,7 +43,7 @@ final class MoveDeal
                 throw ValidationException::withMessages(['stage_id' => __('Steget finns inte i säljtratten.')]);
             }
 
-            if ($stage->pipeline_id !== $deal->pipeline_id && Pipeline::query()->whereKey($stage->pipeline_id)->whereNotNull('archived_at')->exists()) {
+            if ($stage->pipeline_id !== $deal->pipeline_id && Pipeline::query()->whereKey($stage->pipeline_id)->lockForUpdate()->first()?->isArchived() !== false) {
                 throw ValidationException::withMessages(['stage_id' => __('Säljtratten är arkiverad och tar inte emot nya affärer.')]);
             }
 

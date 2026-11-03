@@ -16,6 +16,7 @@ use App\Modules\Crm\Actions\SaveDeal;
 use App\Modules\Crm\Actions\SetWinBack;
 use App\Modules\Crm\Actions\WinDeal;
 use App\Modules\Crm\CrmSettings;
+use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\CallOutcome;
 use App\Modules\Crm\Domain\DealNextStep;
@@ -143,7 +144,8 @@ class DealCard extends Component
         $log($this->user(), $this->company(), [
             ...$this->stepInput(),
             'account_id' => $deal->account_id,
-            'person_id' => $deal->person_id,
+            // A contact person marked Kontakta inte stays on the deal; the step is planned without them.
+            'person_id' => $deal->person_id !== null && Person::query()->whereKey($deal->person_id)->whereNull('do_not_contact_at')->exists() ? $deal->person_id : null,
             'deal_id' => $deal->id,
             'done' => false,
         ]);
@@ -257,7 +259,7 @@ class DealCard extends Component
     public function render(): View
     {
         $deal = Deal::query()
-            ->with(['account:id,name,customer_id,kind', 'person:id,name', 'owner:id,name', 'stage:id,name,probability', 'pipeline:id,name', 'lossReason:id,name', 'quote:id,kind,number', 'order:id,kind,number', 'invoice:id,number'])
+            ->with(['account:id,name,customer_id,kind', 'person:id,name,do_not_contact_at', 'owner:id,name', 'stage:id,name,probability', 'pipeline:id,name', 'lossReason:id,name', 'quote:id,kind,number', 'order:id,kind,number', 'invoice:id,number'])
             ->findOrFail($this->dealId);
         $company = $this->company();
         $user = $this->user();
@@ -271,6 +273,8 @@ class DealCard extends Component
             'history' => $this->history($deal),
             'canManage' => $user->can('update', $deal),
             'canSeeInvoices' => $canSeeInvoices,
+            // As on the account card: a private person's quotes, orders and invoices are for those who may see the invoices.
+            'limitedLedger' => ! $canSeeInvoices && $deal->account?->kind === AccountKind::Person,
             'canMakeCustomer' => $customerId === null && $user->can('create', [Customer::class, $company]),
             'members' => in_array($this->panel, ['edit', 'step', 'complete'], true) ? CompanyMembers::all($company) : collect(),
             'people' => $this->panel === 'edit' ? Person::query()->whereHas('accounts', fn (Builder $query) => $query->whereKey($deal->account_id))->orderBy('name')->get(['id', 'name']) : collect(),

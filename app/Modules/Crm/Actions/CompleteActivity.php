@@ -10,6 +10,8 @@ use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\CallOutcome;
 use App\Modules\Crm\Domain\DealNextStep;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Deal;
+use App\Modules\Crm\Models\Person;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -55,11 +57,19 @@ final class CompleteActivity
         // validate() keeps only the keys with rules, so the next step is read from the input; LogActivity validates it.
         $next = isset($validated['next'], $input['next']) && is_array($input['next']) ? $input['next'] : null;
 
-        if ($next === null) {
-            CurrentCompany::run($company, fn () => DealNextStep::guardLeaving($activity));
-        }
-
         return DB::transaction(fn (): Activity => CurrentCompany::run($company, function () use ($user, $company, $activity, $validated, $note, $next): Activity {
+            // The deal row is locked, so two people completing its last two steps at once cannot both skip the next one.
+            if ($activity->deal_id !== null) {
+                Deal::query()->whereKey($activity->deal_id)->lockForUpdate()->first();
+            }
+
+            if ($next === null) {
+                DealNextStep::guardLeaving($activity);
+            }
+
+            // The default person of the next step is the same one, unless they must not be contacted.
+            $personId = $activity->person_id !== null && Person::query()->whereKey($activity->person_id)->whereNull('do_not_contact_at')->exists() ? $activity->person_id : null;
+
             $activity->forceFill([
                 'done_at' => now(),
                 'call_outcome' => $activity->type === ActivityType::Call ? ($validated['call_outcome'] ?? $activity->call_outcome?->value) : null,
@@ -72,7 +82,7 @@ final class CompleteActivity
             if ($next !== null) {
                 ($this->log)($user, $company, [
                     'type' => ActivityType::Task->value,
-                    'person_id' => $activity->person_id,
+                    'person_id' => $personId,
                     ...array_intersect_key($next, array_flip(['type', 'subject', 'body', 'due_at', 'assigned_to', 'person_id'])),
                     'account_id' => $activity->account_id,
                     'deal_id' => $activity->deal_id,

@@ -51,6 +51,9 @@ class Deal extends Model
 {
     use BelongsToCompany;
 
+    /** The largest value a deal may have, in öre (100 000 000 000 kr), like a goal's. */
+    public const int MAX_VALUE_ORE = 10_000_000_000_000;
+
     protected $table = 'crm_deals';
 
     /** @var list<string> */

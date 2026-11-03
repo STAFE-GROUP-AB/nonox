@@ -41,12 +41,12 @@ final class WinDeal
         Gate::forUser($user)->authorize('update', $deal);
 
         $validated = Validator::make($input, [
-            'value_ore' => ['sometimes', 'integer', 'min:0', 'max:'.(PHP_INT_MAX / 100)],
+            'value_ore' => ['sometimes', 'integer', 'min:0', 'max:'.Deal::MAX_VALUE_ORE],
             'quote_id' => ['nullable', 'uuid'],
             'order_id' => ['nullable', 'uuid'],
             'invoice_id' => ['nullable', 'uuid'],
             'make_customer' => ['sometimes', 'boolean'],
-        ], [], ['value_ore' => __('värde')])->validate();
+        ], ['value_ore.max' => __('Värdet är för stort.'), 'value_ore.min' => __('Värdet kan inte vara negativt.')], ['value_ore' => __('värde')])->validate();
 
         return DB::transaction(fn (): Deal => CurrentCompany::run($company, function () use ($user, $company, $deal, $validated): Deal {
             $deal = Deal::query()->whereKey($deal->id)->lockForUpdate()->firstOrFail();
@@ -55,7 +55,8 @@ final class WinDeal
                 throw ValidationException::withMessages(['deal' => __('Affären är redan avslutad.')]);
             }
 
-            $account = Account::query()->findOrFail($deal->account_id);
+            // Locked, so two wins at once do not both make the prospect a customer.
+            $account = Account::query()->whereKey($deal->account_id)->lockForUpdate()->firstOrFail();
 
             if ($account->customer_id === null && (bool) ($validated['make_customer'] ?? false) && $user->can('create', [Customer::class, $company])) {
                 ($this->convert)($user, $company, $account);

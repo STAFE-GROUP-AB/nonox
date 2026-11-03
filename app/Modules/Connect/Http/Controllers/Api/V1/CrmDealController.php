@@ -10,6 +10,7 @@ use App\Modules\Crm\Actions\LoseDeal;
 use App\Modules\Crm\Actions\SaveDeal;
 use App\Modules\Crm\Actions\SetWinBack;
 use App\Modules\Crm\Actions\WinDeal;
+use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\DealStatus;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\LossReason;
@@ -48,19 +49,22 @@ final class CrmDealController
             $query->where('status', strtoupper((string) $request->query('status')));
         }
 
-        return CursorList::respond($request, $query, fn (Deal $deal): array => self::presentDeal($deal));
+        $query->with('account:id,kind');
+        $limited = $this->limitedLedger();
+
+        return CursorList::respond($request, $query, fn (Deal $deal): array => self::presentDeal($deal, $limited));
     }
 
     public function deal(int $deal): JsonResponse
     {
-        return CursorList::one(self::presentDeal(Deal::query()->findOrFail($deal)));
+        return CursorList::one(self::presentDeal(Deal::query()->with('account:id,kind')->findOrFail($deal), $this->limitedLedger()));
     }
 
     public function storeDeal(Request $request, SaveDeal $save): JsonResponse
     {
         $deal = $save($this->user(), $this->company(), array_intersect_key($request->json()->all(), array_flip(self::DEAL_FIELDS)));
 
-        return CursorList::one(self::presentDeal($deal->refresh()), 201)
+        return CursorList::one(self::presentDeal($deal->refresh()->load('account:id,kind'), $this->limitedLedger()), 201)
             ->header('Location', route('connect.api.crm.deals.show', $deal->id));
     }
 
@@ -103,7 +107,7 @@ final class CrmDealController
             return $deal;
         });
 
-        return CursorList::one(self::presentDeal($saved->refresh()));
+        return CursorList::one(self::presentDeal($saved->refresh()->load('account:id,kind'), $this->limitedLedger()));
     }
 
     public function pipelines(Request $request): JsonResponse
@@ -150,9 +154,16 @@ final class CrmDealController
         ]);
     }
 
-    /** @return array<string, mixed> */
-    public static function presentDeal(Deal $deal): array
+    /**
+     * Without invoices:view, a private person's ledger documents are not
+     * shown (as on the account card, ADR-043): the links come back null.
+     *
+     * @return array<string, mixed>
+     */
+    public static function presentDeal(Deal $deal, bool $limitedLedger = false): array
     {
+        $hide = $limitedLedger && $deal->account?->kind === AccountKind::Person;
+
         return [
             'id' => $deal->id,
             'account_id' => $deal->account_id,
@@ -168,9 +179,9 @@ final class CrmDealController
             'lost_at' => self::time($deal->lost_at),
             'loss_reason_id' => $deal->loss_reason_id,
             'loss_note' => $deal->loss_note,
-            'quote_id' => $deal->quote_id,
-            'order_id' => $deal->order_id,
-            'invoice_id' => $deal->invoice_id,
+            'quote_id' => $hide ? null : $deal->quote_id,
+            'order_id' => $hide ? null : $deal->order_id,
+            'invoice_id' => $hide ? null : $deal->invoice_id,
             'win_back_at' => $deal->win_back_at?->toDateString(),
             'created_by' => $deal->created_by,
             'created_at' => self::time($deal->created_at),
@@ -204,6 +215,11 @@ final class CrmDealController
             'created_at' => self::time($stage->created_at),
             'updated_at' => self::time($stage->updated_at),
         ];
+    }
+
+    private function limitedLedger(): bool
+    {
+        return ! $this->user()->hasTeamPermission($this->company(), 'invoices:view');
     }
 
     private static function time(?DateTimeInterface $time): ?string

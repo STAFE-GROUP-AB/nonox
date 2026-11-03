@@ -7585,5 +7585,16 @@
     "Ordervärde": "Order value",
     "En affär kan bara markeras som vunnen (WON) eller förlorad (LOST).": "A deal can only be marked as won (WON) or lost (LOST).",
     ":count affär|:count affärer": ":count deal|:count deals",
-    ":count affär i steget|:count affärer i steget": ":count deal in the stage|:count deals in the stage"
+    ":count affär i steget|:count affärer i steget": ":count deal in the stage|:count deals in the stage",
+    "Värdet är för stort.": "The value is too large.",
+    "Datumet för att vinna tillbaka kan inte ha passerat.": "The win-back date cannot be in the past.",
+    "Datumet för att vinna tillbaka kan vara högst tre år fram.": "The win-back date can be at most three years ahead.",
+    "Kunden är inaktiv eller har begränsad behandling. Affärer kan inte läggas upp eller ändras.": "The customer is inactive or its processing is restricted. Deals cannot be added or changed.",
+    ":name är märkt Kontakta inte. Nästa steg planeras utan personen. Byt kontaktperson under Ändra, eller avsluta affären.": ":name is marked Do not contact. The next step is planned without the person. Change the contact person under Edit, or close the deal.",
+    "Visa steg": "Show stage",
+    "Steg att flytta :title till": "Stage to move :title to",
+    "Flytta :title": "Move :title",
+    "Personen har bett att inte bli kontaktad. Ingen påminnelse om att vinna tillbaka kan sättas.": "The person has asked not to be contacted. No win-back reminder can be set.",
+    "Behandlingen av uppgifterna är begränsad. Ingen påminnelse om att vinna tillbaka kan sättas.": "The processing of the data is restricted. No win-back reminder can be set.",
+    "Kunden är inaktiv eller anonymiserad i kundregistret. Ingen påminnelse om att vinna tillbaka kan sättas.": "The customer is inactive or anonymised in the customer register. No win-back reminder can be set."
 }

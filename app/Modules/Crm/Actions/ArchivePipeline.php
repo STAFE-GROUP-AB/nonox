@@ -29,6 +29,9 @@ final class ArchivePipeline
         Gate::forUser($user)->authorize('configure', $pipeline);
 
         return DB::transaction(fn (): Pipeline => CurrentCompany::run($company, function () use ($user, $company, $pipeline, $archive): Pipeline {
+            // Locked against SaveDeal and MoveDeal putting a deal into it meanwhile (they lock it too).
+            $pipeline = Pipeline::query()->whereKey($pipeline->id)->lockForUpdate()->firstOrFail();
+
             if ($archive) {
                 if (Deal::query()->where('pipeline_id', $pipeline->id)->where('status', DealStatus::Open->value)->exists()) {
                     throw ValidationException::withMessages(['pipeline' => __('Säljtratten har öppna affärer. Flytta dem till en annan säljtratt eller avsluta dem först.')]);

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Domain\DealStatus;
+use App\Modules\Crm\Domain\WinBackBlock;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\LossReason;
@@ -25,7 +26,9 @@ use Illuminate\Validation\ValidationException;
  * company's list is required, a note is optional. The deal gets a win-back
  * date: the company's setting (default six months) after today, unless
  * `win_back_at` is given; given empty, the deal gets none. On that date
- * the daily crm:win-back makes a "Vinn tillbaka" task for the owner.
+ * the daily crm:win-back makes a "Vinn tillbaka" task for the owner. For
+ * someone who must not be contacted (WinBackBlock) the deal gets no date,
+ * and a date given is refused.
  *
  * The note is free text and may name people: it is handled like an
  * activity's text (register extract, anonymised with the customer) and
@@ -47,8 +50,10 @@ final class LoseDeal
                 }
             }],
             'loss_note' => ['nullable', 'string', 'max:1000'],
-            'win_back_at' => ['nullable', 'date'],
+            'win_back_at' => ['nullable', 'date', 'after_or_equal:today', 'before:'.CarbonImmutable::now(LogActivity::ZONE)->addYears(3)->toDateString()],
         ], [
+            'win_back_at.after_or_equal' => __('Datumet för att vinna tillbaka kan inte ha passerat.'),
+            'win_back_at.before' => __('Datumet för att vinna tillbaka kan vara högst tre år fram.'),
             'loss_reason_id.required' => __('Välj varför affären förlorades, så går det att lära sig av det.'),
         ], [
             'loss_note' => __('kommentar'),
@@ -59,6 +64,16 @@ final class LoseDeal
             ? (blank($validated['win_back_at'] ?? null) ? null : CarbonImmutable::parse((string) $validated['win_back_at'])->toDateString())
             : CarbonImmutable::now(LogActivity::ZONE)->addMonthsNoOverflow(CrmSettings::for($company)['win_back_months'])->toDateString();
         $note = trim((string) ($validated['loss_note'] ?? ''));
+        $block = CurrentCompany::run($company, fn (): ?WinBackBlock => WinBackBlock::for($deal));
+
+        if ($block !== null && $winBackAt !== null) {
+            // Without a date given, the default just falls away; a date given for someone who must not be contacted is refused.
+            if (array_key_exists('win_back_at', $input)) {
+                throw ValidationException::withMessages(['win_back_at' => $block->message()]);
+            }
+
+            $winBackAt = null;
+        }
 
         return DB::transaction(fn (): Deal => CurrentCompany::run($company, function () use ($user, $company, $deal, $validated, $winBackAt, $note): Deal {
             $deal = Deal::query()->whereKey($deal->id)->lockForUpdate()->firstOrFail();

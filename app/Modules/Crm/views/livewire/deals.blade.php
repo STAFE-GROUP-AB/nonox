@@ -129,9 +129,9 @@
 
         {{-- The board. On the phone one stage at a time, chosen with the switcher. --}}
         <div x-data="{ active: {{ (int) $activeStage }}, over: null }" class="space-y-4">
-            <div class="flex gap-2 overflow-x-auto pb-1 sm:hidden" role="tablist" aria-label="{{ __('Steg') }}">
+            <div class="flex gap-2 overflow-x-auto pb-1 sm:hidden" role="group" aria-label="{{ __('Visa steg') }}">
                 @foreach($stages as $stage)
-                    <button type="button" role="tab" class="{{ $chip }} flex-none" x-on:click="active = {{ $stage->id }}" :class="active === {{ $stage->id }} ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-200'" :aria-selected="active === {{ $stage->id }}">
+                    <button type="button" class="{{ $chip }} flex-none" x-on:click="active = {{ $stage->id }}" :class="active === {{ $stage->id }} ? 'bg-ink text-white' : 'bg-white text-ink ring-1 ring-stone-200'" :aria-pressed="(active === {{ $stage->id }}).toString()">
                         {{ $stage->name }} ({{ $figures[$stage->id]['count'] ?? 0 }})
                     </button>
                 @endforeach
@@ -141,7 +141,7 @@
                 @foreach($stages as $stage)
                     @php $sum = $figures[$stage->id] ?? ['count' => 0, 'value' => 0, 'weighted' => 0]; @endphp
                     <section wire:key="stage-{{ $stage->id }}"
-                        class="w-full flex-none flex-col rounded-3xl bg-stone-100 p-3 sm:flex sm:w-72"
+                        class="w-full flex-none flex-col rounded-3xl bg-stone-100 p-3 sm:flex sm:w-52 2xl:w-72"
                         :class="{ 'hidden': active !== {{ $stage->id }}, 'flex': active === {{ $stage->id }}, 'ring-2 ring-accent-500': over === {{ $stage->id }} }"
                         @if($canManage)
                             x-on:dragover.prevent="over = {{ $stage->id }}"
@@ -190,14 +190,15 @@
                                         @if($deal->owner) · {{ $deal->owner->name }}@endif
                                     </span>
                                     @if($canManage && $stages->count() > 1)
-                                        <label class="mt-2 flex items-center gap-2 text-xs text-gray-600">
-                                            <span>{{ __('Flytta') }}</span>
-                                            <select class="min-h-11 flex-1 rounded-lg border-gray-300 py-1 text-xs focus:border-accent-500 focus:ring-accent-500 sm:min-h-0" aria-label="{{ __('Flytta :title till ett annat steg', ['title' => $deal->title]) }}" wire:change="move({{ $deal->id }}, $event.target.value)">
+                                        {{-- Choosing a stage moves nothing; the button does (WCAG 3.2.2: arrow keys in a select must not act). --}}
+                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600" x-data="{ to: '{{ $deal->stage_id }}' }">
+                                            <select class="min-h-11 w-full min-w-0 flex-1 basis-full rounded-lg border-gray-300 py-1 text-xs focus:border-accent-500 focus:ring-accent-500 sm:min-h-0" aria-label="{{ __('Steg att flytta :title till', ['title' => $deal->title]) }}" x-model="to">
                                                 @foreach($stages as $option)
                                                     <option value="{{ $option->id }}" @selected($option->id === $deal->stage_id)>{{ $option->name }}</option>
                                                 @endforeach
                                             </select>
-                                        </label>
+                                            <button type="button" class="inline-flex min-h-11 items-center rounded-lg bg-stone-100 px-3 font-medium text-ink hover:bg-stone-200 disabled:opacity-40 sm:min-h-8" x-bind:disabled="to === '{{ $deal->stage_id }}'" x-on:click="$wire.move({{ $deal->id }}, parseInt(to))" aria-label="{{ __('Flytta :title', ['title' => $deal->title]) }}">{{ __('Flytta') }}</button>
+                                        </div>
                                     @endif
                                 </li>
                             @empty
