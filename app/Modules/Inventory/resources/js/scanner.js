@@ -9,10 +9,10 @@ import {
     parseQuantity, receiptProgress, resolveCode, sendOrder, stockOf, walkingOrder, withPending,
 } from './scanner-core.js';
 import '../css/scanner.css';
-import { lockZoomWhenInstalled } from '../../../../../resources/js/zoom-lock.js';
+import { tameZoomWhenInstalled } from '../../../../../resources/js/installed-zoom.js';
 
 const config = JSON.parse(document.getElementById('scanner-config').textContent);
-lockZoomWhenInstalled();
+tameZoomWhenInstalled();
 const app = document.getElementById('scanner');
 // Opened from the Skanna home-screen app (its start_url carries ?app=skanna):
 // the app stays locked to scanning, with no way out to the full NONOX app.

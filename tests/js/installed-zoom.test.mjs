@@ -1,18 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isInstalled, lockedViewport, pinchScale } from '../../resources/js/zoom-lock.js';
-
-test('switches page zoom off and keeps the rest of the viewport', () => {
-    assert.equal(
-        lockedViewport('width=device-width, initial-scale=1, viewport-fit=cover'),
-        'width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no',
-    );
-    assert.equal(
-        lockedViewport('width=device-width, maximum-scale=5, user-scalable=yes'),
-        'width=device-width, maximum-scale=1, user-scalable=no',
-    );
-    assert.equal(lockedViewport(null), 'maximum-scale=1, user-scalable=no');
-});
+import { isInstalled, pinchScale } from '../../resources/js/installed-zoom.js';
 
 test('pinches a picture between its own size and five times larger', () => {
     assert.equal(pinchScale(1, 100, 200), 2);

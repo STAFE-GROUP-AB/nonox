@@ -31,7 +31,7 @@ Nu finns **Min sida** bland dina appar.
 - Första gången du öppnar appen kan du behöva logga in en gång till. Det går till på samma sätt, med en kod i mejlet.
 - Appen behöver internet. Utan internet visar den en sida som säger det.
 - Inga lönebesked eller andra uppgifter om dig sparas i mobilen.
-- Appen zoomar inte när du nyper eller trycker i ett fält. En bild öppnas i helskärm när du trycker på den, och där kan du zooma med två fingrar.
+- Appen zoomar inte när du dubbeltrycker eller trycker i ett fält. Vill du se större kan du nypa med två fingrar. En bild öppnas i helskärm när du trycker på den.
 - Vill du ta bort appen gör du som med andra appar: tryck länge på ikonen och välj att ta bort den.
 
 ## Läs också

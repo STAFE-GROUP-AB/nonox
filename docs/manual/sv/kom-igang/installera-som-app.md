@@ -36,7 +36,7 @@ Namnen på menyvalen kan skilja sig något mellan versioner av telefoner och web
 - **Utan internet** visar appen en sida som säger att det saknas anslutning. Bokföring kan inte göras offline.
 - **Anställda** som bara använder Min sida får en egen app som öppnar Min sida direkt. Se [Min sida](/manual/personal/min-sida).
 - **Personalliggarens kiosk** på surfplattan är en egen app som fungerar även utan internet. Se [Kiosken](/manual/personalliggare/kiosken).
-- **Sidorna zoomar inte i appen.** Som installerad app går sidan inte att nypa eller dubbeltrycka för att zooma, och den zoomar inte in när du trycker i ett fält. Bilder på fakturor, kvitton och artiklar öppnas i helskärm när du trycker på dem, och där zoomar du med två fingrar. En PDF-faktura visas i en egen ruta som har sin egen zoom.
+- **Ingen zoom av misstag.** Som installerad app zoomar sidan inte när du dubbeltrycker eller trycker i ett fält. Vill du se större kan du nypa med två fingrar som vanligt. Bilder på fakturor, kvitton och artiklar öppnas i helskärm när du trycker på dem, och där zoomar du bara bilden. En PDF-faktura visas i en egen ruta som har sin egen zoom.
 - Använder du passkey fungerar den likadant i appen som i webbläsaren.
 
 ## Läs också

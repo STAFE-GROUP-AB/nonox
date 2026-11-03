@@ -1,6 +1,6 @@
-import { lockZoomWhenInstalled } from './zoom-lock';
+import { tameZoomWhenInstalled } from './installed-zoom';
 
-lockZoomWhenInstalled();
+tameZoomWhenInstalled();
 
 // Makes NONOX installable on a phone, tablet or computer (public/sw.js). The
 // worker only shows an offline page; it caches no data. The staff ledger

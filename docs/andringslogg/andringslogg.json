@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-nypzoom-tillbaka",
+      "datum": "2026-11-03T00:49:12+01:00",
+      "rubrik": "Nypzoom fungerar igen i den installerade appen",
+      "beskrivning": "Den installerade appen zoomar fortfarande inte när du dubbeltrycker eller trycker i ett fält, men nu kan du nypa med två fingrar för att förstora sidan igen. Det gör att texten alltid går att förstora för den som behöver det. Bilder på fakturor och artiklar öppnas som förut i helskärm.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-03-manualens-meny-stannar",
       "datum": "2026-11-03T00:22:11+01:00",
       "rubrik": "Manualens meny stannar där du är",

@@ -1,22 +1,13 @@
 // When NONOX or Skanna runs as an installed app (added to the home screen),
-// the page itself never zooms: no pinch, no double-tap zoom and no automatic
-// zoom when a field gets focus, so it behaves like an app. What is worth
-// zooming into, an invoice or an article picture, carries data-zoom and opens
-// in a full-screen viewer where two fingers zoom the picture only. In a normal
-// browser tab nothing changes. A PDF in an iframe is its own document: these
-// listeners never see its gestures, so it keeps the zoom the phone gives it.
+// the zoom that only gets in the way is switched off: a double tap does not
+// zoom (touch-action: manipulation), and fields have at least 16px text, the
+// size below which iPhone zooms into a field that gets focus. Pinching with
+// two fingers still zooms the page, so text can always be enlarged (WCAG 2.2,
+// 1.4.4). What is worth a closer look, an invoice or an article picture,
+// carries data-zoom and opens in a full-screen viewer that zooms the picture
+// itself. In a normal browser tab nothing changes.
 
 const MAX_SCALE = 5;
-
-/** The viewport content with page zoom switched off, keeping everything else. */
-export function lockedViewport(content) {
-    const parts = String(content ?? '')
-        .split(',')
-        .map((part) => part.trim())
-        .filter((part) => part !== '' && !/^(maximum-scale|minimum-scale|user-scalable)\s*=/i.test(part));
-
-    return [...parts, 'maximum-scale=1', 'user-scalable=no'].join(', ');
-}
 
 /** The picture's scale after a pinch, between 1 and MAX_SCALE. */
 export function pinchScale(startScale, startDistance, distance) {
@@ -35,11 +26,6 @@ export function isInstalled(win = window) {
 
 let viewer = null;
 
-function zoomedIn() {
-    // A page that did zoom (an iframe's PDF on iPhone) must be able to zoom back out.
-    return (window.visualViewport?.scale ?? 1) > 1.01;
-}
-
 function insideViewer(target) {
     return viewer !== null && target instanceof Node && viewer.contains(target);
 }
@@ -47,7 +33,8 @@ function insideViewer(target) {
 function style() {
     const css = document.createElement('style');
     css.textContent = `
-html.is-installed, html.is-installed body { touch-action: pan-x pan-y; }
+html.is-installed, html.is-installed body { touch-action: manipulation; }
+html.is-installed :is(input, select, textarea):not(.text-base, .text-lg, .text-xl, .text-2xl, .text-3xl, .s-scan-input, .s-step-input) { font-size: max(16px, 1rem); }
 html.is-installed [data-zoom] { cursor: zoom-in; }
 .zoom-viewer { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center; justify-content: center; overflow: hidden; background: rgba(12, 13, 16, .96); touch-action: none; }
 .zoom-viewer img { max-width: 100%; max-height: 100%; object-fit: contain; transform-origin: 0 0; user-select: none; -webkit-user-select: none; -webkit-user-drag: none; will-change: transform; }
@@ -81,6 +68,22 @@ function openViewer(source) {
 
     box.append(img, close);
     document.body.append(box);
+
+    // A page that is already pinch-zoomed: the viewer covers what is on screen, not the whole page.
+    const fitToScreen = () => {
+        const screen = window.visualViewport;
+
+        if (!screen || screen.scale <= 1.01) {
+            box.style.cssText = '';
+
+            return;
+        }
+
+        box.style.cssText = `inset:auto;left:${screen.offsetLeft}px;top:${screen.offsetTop}px;width:${screen.width}px;height:${screen.height}px`;
+    };
+    fitToScreen();
+    window.visualViewport?.addEventListener('resize', fitToScreen);
+    window.visualViewport?.addEventListener('scroll', fitToScreen);
     viewer = box;
     close.focus();
 
@@ -142,6 +145,26 @@ function openViewer(source) {
             shut();
         }
 
+        // The keyboard zooms and moves the picture too: + and - zoom, 0 resets, the arrows move.
+        const step = { ArrowLeft: [60, 0], ArrowRight: [-60, 0], ArrowUp: [0, 60], ArrowDown: [0, -60] }[event.key];
+        const zoom = { '+': 1.5, '=': 1.5, '-': 1 / 1.5, 0: 0 }[event.key];
+
+        if (zoom !== undefined) {
+            event.preventDefault();
+            const b = base();
+            const cx = box.clientWidth / 2;
+            const cy = box.clientHeight / 2;
+            zoomTo(zoom === 0 ? 1 : pinchScale(scale, 1, zoom), b, (cx - b.left - x) / scale, (cy - b.top - y) / scale, cx, cy);
+        }
+
+        if (step !== undefined && scale > 1) {
+            event.preventDefault();
+            x += step[0];
+            y += step[1];
+            clamp(base());
+            apply();
+        }
+
         // The close button is the only control: Tab stays in the viewer.
         if (event.key === 'Tab') {
             event.preventDefault();
@@ -150,6 +173,8 @@ function openViewer(source) {
     };
 
     const shut = () => {
+        window.visualViewport?.removeEventListener('resize', fitToScreen);
+        window.visualViewport?.removeEventListener('scroll', fitToScreen);
         box.remove();
         viewer = null;
         document.removeEventListener('keydown', onKey);
@@ -242,7 +267,7 @@ function openViewer(source) {
 }
 
 /** Call once per page. Does nothing in a normal browser tab. */
-export function lockZoomWhenInstalled() {
+export function tameZoomWhenInstalled() {
     if (typeof window === 'undefined' || !isInstalled()) {
         return;
     }
@@ -250,16 +275,10 @@ export function lockZoomWhenInstalled() {
     document.documentElement.classList.add('is-installed');
     style();
 
-    const meta = document.querySelector('meta[name="viewport"]');
-
-    if (meta) {
-        meta.setAttribute('content', lockedViewport(meta.getAttribute('content')));
-    }
-
-    // iPhone ignores user-scalable=no, so its pinch gestures are stopped here.
-    // Inside the viewer the page never zooms either: the viewer zooms the picture with pointer events.
+    // Inside the viewer the page does not zoom: the viewer zooms the picture with pointer events.
+    // A page that is already zoomed keeps its gestures, so it can always be pinched back out.
     const block = (event) => {
-        if (insideViewer(event.target) || !zoomedIn()) {
+        if (insideViewer(event.target) && (window.visualViewport?.scale ?? 1) <= 1.01) {
             event.preventDefault();
         }
     };

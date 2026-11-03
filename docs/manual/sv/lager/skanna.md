@@ -26,7 +26,7 @@ Skanna är en del av NONOX. Du laddar inte ner något från App Store eller Goog
 
 Skanna blir en egen app på hemskärmen, med en egen ikon och namnet **Skanna**, bredvid NONOX om du har lagt till den också. Den öppnas direkt i skanningsläget och är låst till skanningen: där finns ingen väg vidare till resten av NONOX. Lagerpersonalen behöver alltså bara Skanna på sin telefon. Öppnar du Skanna i webbläsaren eller inifrån NONOX-appen finns länken tillbaka till NONOX kvar.
 
-Appen zoomar inte när du nyper på skärmen. Trycker du på en artikelbild öppnas den i helskärm, och där kan du zooma med två fingrar.
+Appen zoomar inte när du dubbeltrycker eller trycker i ett fält, men du kan nypa med två fingrar för att se större. Trycker du på en artikelbild öppnas den i helskärm.
 
 Första gången du öppnar appen loggar du in i den. Hemskärmsappar på iPhone sparar sin inloggning separat från Safari.
 

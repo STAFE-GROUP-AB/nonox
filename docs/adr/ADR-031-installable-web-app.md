@@ -33,18 +33,19 @@ chrome.
    ledger kiosk, whose own worker and sealed roster (ADR on the kiosk) are
    designed for it and registered for the narrower scope
    `/personalliggare/kiosk/`, which takes precedence there.
-4. **The installed app does not zoom the page** (`resources/js/zoom-lock.js`,
-   loaded by the app and by Skanna). Only when the page runs standalone
-   (`display-mode: standalone` or iOS `navigator.standalone`) it adds
-   `maximum-scale=1, user-scalable=no` to the viewport, which also stops
-   iOS zooming into a focused field, and cancels iOS `gesturestart`/
-   `gesturechange` and two-finger `touchmove`, since iOS ignores
-   `user-scalable=no`. Pictures worth zooming (invoices, receipts, article
-   pictures) carry `data-zoom` and open in a full-screen viewer that scales
-   the picture itself with pointer events (pinch, pan, double tap, Esc). A PDF
-   in an iframe is its own document and keeps its zoom; a page that did zoom
-   can always zoom back out. A browser tab is unchanged, so zoom as an
-   accessibility aid stays where it is needed most.
+4. **The installed app only stops the zoom that gets in the way**
+   (`resources/js/installed-zoom.js`, loaded by the app and by Skanna). When
+   the page runs standalone (`display-mode: standalone` or iOS
+   `navigator.standalone`) a double tap does not zoom (`touch-action:
+   manipulation`), and inputs, selects and text areas get at least 16px text,
+   the size below which iOS zooms into a focused field. Pinch zoom stays, so
+   text can always be enlarged to 200 % (WCAG 2.2, 1.4.4); an earlier version
+   blocked it and was reverted after the accessibility review. Pictures worth
+   a closer look (invoices, receipts, article pictures) carry `data-zoom`;
+   they are keyboard buttons ("Visa större") and open in a full-screen viewer
+   that scales the picture itself with pointer events (pinch, drag when zoomed,
+   double tap, + / - / 0 and the arrow keys, Esc, a tap on the background), where page gestures are
+   cancelled. A browser tab is unchanged.
 5. **Public comparison.** `docs/migration/jamforelse.json` gets the value
    `web` ("Webbapp att installera (PWA)") for NONOX on the "Mobilapp" row,
    instead of "yes": other programs on that row have apps in App Store and
