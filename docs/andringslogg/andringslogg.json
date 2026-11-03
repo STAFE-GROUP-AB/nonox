@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-crm",
+      "datum": "2026-11-03T02:30:00+01:00",
+      "rubrik": "CRM: kunder och prospekt med aktiviteter och nyckeltal ur bokföringen",
+      "beskrivning": "Den nya modulen CRM gör Kunder till ett CRM, med kontaktpersoner och roller, aktiviteter med nästa steg och en tidslinje där offerter, fakturor, betalningar och påminnelser syns bredvid samtal och möten. Kundkortet visar vad kunden är värd direkt ur bokföringen: fakturerat, obetalt, betaltid och täckningsbidrag. Statusen följer fakturorna, gamla kontakter gallras enligt GDPR, rollen Säljare ser kunderna men inte bokföringen, och allt fungerar i mobilen och via API:t.",
+      "typ": "Nytt",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-03-ny-startsida-rubrik",
       "datum": "2026-11-03T01:31:41+01:00",
       "rubrik": "Startsidan visar hela systemet direkt",

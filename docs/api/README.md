@@ -148,6 +148,8 @@ Varje scope är samma behörighet som rollerna i NONOX använder.
 | `planning:view` | Läsa schemat i Planering: pass per period, avdelningar och publiceringar |
 | `inventory:view` | Läsa lagret: lagerförda artiklar med saldo per plats, lagerställen och saldon |
 | `inventory:manage` | Skapa inleveranser och ta emot varor i lagret, och se inköpspriser |
+| `crm:view` | Läsa CRM: kunder och prospekt, kontaktpersoner och aktiviteter |
+| `crm:manage` | Lägga till och ändra kunder och prospekt, kontaktpersoner och aktiviteter i CRM |
 
 `GET /company` kräver ingen särskild behörighet.
 
@@ -262,6 +264,7 @@ De hamnar i `storage/oauth-private.key` och `storage/oauth-public.key` (aldrig i
 | Moms | `/vat-periods?fiscal_year_id=…`, `/vat-return?fiscal_year_id=…&period_start=…` |
 | Planering | `/planning/shifts?from=…&to=…` (publicerat schema, högst 93 dagar; `include_drafts=true` för planen som den är nu), `/planning/areas`, `/planning/publications`. Kräver modulen Planering. Kostnadsuppskattningar ingår inte. |
 | Lager | `/inventory/articles` (med saldo per plats; `gtin`, `number`), `/inventory/locations`, `/inventory/stock-levels`, `POST /inventory/receipts` (inleverans, `"receive": true` tar emot direkt). Kräver modulen Lager. |
+| CRM | `/crm/accounts` (kunder och prospekt; `status`, `customer_id`), `/crm/people` (`account_id`), `/crm/activities` (`account_id`, `assigned_to`, `open`), med `POST` och `PATCH` för var och en. `PATCH /crm/accounts/{id}` med `status` sätter status för hand. Kräver modulen CRM. |
 
 Belopp in och ut är hela öre. Momssatser och rabatter anges i hundradels procent: `2500` är 25 %, `1000` är 10 %. Antal skickas som heltal eller som text med högst tre decimaler (`"1.5"`); decimaltal i JSON avvisas, eftersom de inte är exakta. Momsdeklarationens rutor är hela kronor (`amount_sek`), precis som på blanketten.
 

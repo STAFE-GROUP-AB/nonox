@@ -54,6 +54,7 @@ final class Changelog
         'avtal' => 'Avtal',
         'planering' => 'Planering',
         'lager' => 'Lager',
+        'crm' => 'CRM',
         'personalliggare' => 'Personalliggare',
         'bank' => 'Bank',
         'connect-api' => 'Connect/API',

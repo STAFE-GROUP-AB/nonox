@@ -17,7 +17,7 @@ function memberWithRole(Company $company, CompanyRole $role): User
 
 it('registers the five member roles from AGENTS.md §4, the payroll and staff ledger modules\' two each and Planering\'s scheduler', function () {
     expect(collect(Jetstream::$roles)->keys()->sort()->values()->all())
-        ->toBe(['accountant', 'admin', 'approver', 'auditor', 'bookkeeper', 'employee', 'payroll_admin', 'scheduler', 'staff_ledger_manager', 'staff_ledger_staff', 'stock_clerk']);
+        ->toBe(['accountant', 'admin', 'approver', 'auditor', 'bookkeeper', 'employee', 'payroll_admin', 'sales', 'scheduler', 'staff_ledger_manager', 'staff_ledger_staff', 'stock_clerk']);
 });
 
 it('uses only permission keys from AGENTS.md §4', function (CompanyRole $role) {

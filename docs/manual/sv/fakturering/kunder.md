@@ -64,6 +64,7 @@ Tryck på **Ändra** för att öppna en kund. Ändringar gäller nya fakturor. E
 - **Begränsa behandling** gör att kunden inte kan användas på nya offerter och fakturor tills du väljer **Häv begränsad behandling**. Kunden får märket *Begränsad behandling* i listan.
 - **Ladda ner registerutdrag (JSON)** ger alla uppgifter om kunden, när en person begär ut sina uppgifter enligt GDPR.
 - **Valuta för fakturor** bestämmer vilken valuta nya fakturor till kunden skrivs i, till exempel EUR. Läs [Faktura i utländsk valuta](/manual/fakturering/faktura-i-utlandsk-valuta).
+- Med modulen **CRM** påslagen visar **Kunder** i stället kunder och prospekt med kontaktpersoner, aktiviteter och nyckeltal. Kunduppgifterna för fakturor ändrar du då längst ned på kundens kort. Läs [CRM](/manual/crm).
 - Leveranssätt och språk per kund finns inte. Fakturorna skickas på svenska, som PDF med e-post.
 
 ## Vanliga frågor

@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.4.0
+  version: 1.5.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -104,6 +104,10 @@ tags:
     x-en-name: Inventory
     description: 'Stock in Lager: stocked articles with stock per location, locations, stock levels, and goods receipts. Needs the Lager module.'
     x-sv-description: 'Lagret: lagerförda artiklar med saldo per plats, lagerställen, saldon och inleveranser.'
+  - name: CRM
+    x-en-name: CRM
+    description: 'Accounts (prospects and customers), contact people with their role and legal basis, and activities with a next step. Needs the CRM module.'
+    x-sv-description: 'Kunder och prospekt, kontaktpersoner med roll och rättslig grund, och aktiviteter.'
 security:
   - oauth2: []
   - apiKey: []
@@ -6889,6 +6893,1051 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         429:
           $ref: '#/components/responses/TooManyRequests'
+  /crm/accounts:
+    get:
+      operationId: listCrmAccounts
+      tags:
+        - CRM
+      summary: 'List CRM accounts'
+      description: 'The accounts in the CRM: prospects and customers, with the people at each and their role. An account that is a customer has customer_id; its ledger fields stay on the customer. Filter on status (PROSPECT, ACTIVE, INACTIVE, LOST) or customer_id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista kunder och prospekt'
+      x-sv-description: 'Kunder och prospekt i CRM, med personerna och deras roller.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: status
+          in: query
+          required: false
+          description: 'PROSPECT, ACTIVE, INACTIVE or LOST.'
+          schema:
+            type: string
+        - name: customer_id
+          in: query
+          required: false
+          description: 'The account of one customer.'
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmAccount'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 41
+                        name: 'Exempelbolaget AB'
+                        kind: 'COMPANY'
+                        status: 'ACTIVE'
+                        lost_reason: null
+                        status_set_by_hand_at: null
+                        customer_id: 12
+                        org_number: '556036-0793'
+                        owner_id: 3
+                        parent_id: null
+                        sni_code: '62010'
+                        website: 'exempelbolaget.example'
+                        email: 'info@exempelbolaget.example'
+                        phone: '08-123 456 78'
+                        address_line1: 'Exempelgatan 1'
+                        postal_code: '111 22'
+                        city: 'Stockholm'
+                        country: 'SE'
+                        source: 'Mässa'
+                        tags:
+                          - 'it'
+                          - 'stockholm'
+                        people:
+                          - person_id: 7
+                            role: 'DECISION_MAKER'
+                        last_activity_at: '2026-11-02T09:00:00+01:00'
+                        created_at: '2026-11-01T10:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createCrmAccount
+      tags:
+        - CRM
+      summary: 'Create a prospect'
+      description: 'Adds an account as a prospect. It gets a customer number only when it becomes a customer in NONOX. The owner is the person behind the credential unless owner_id names another member. Same Action as the app (SaveAccount). Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Skapa ett prospekt'
+      x-sv-description: 'Lägger till ett prospekt. Det får ett kundnummer först när det blir kund.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmAccountInput'
+            examples:
+              example:
+                value:
+                  name: 'Exempelbolaget AB'
+                  org_number: '556036-0793'
+                  city: 'Stockholm'
+                  source: 'Mässa'
+                  tags:
+                    - 'it'
+      responses:
+        201:
+          description: 'The account.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmAccount'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 41
+                      name: 'Exempelbolaget AB'
+                      kind: 'COMPANY'
+                      status: 'PROSPECT'
+                      lost_reason: null
+                      status_set_by_hand_at: null
+                      customer_id: null
+                      org_number: '556036-0793'
+                      owner_id: 3
+                      parent_id: null
+                      sni_code: '62010'
+                      website: 'exempelbolaget.example'
+                      email: 'info@exempelbolaget.example'
+                      phone: '08-123 456 78'
+                      address_line1: 'Exempelgatan 1'
+                      postal_code: '111 22'
+                      city: 'Stockholm'
+                      country: 'SE'
+                      source: 'Mässa'
+                      tags:
+                        - 'it'
+                        - 'stockholm'
+                      people: []
+                      last_activity_at: '2026-11-02T09:00:00+01:00'
+                      created_at: '2026-11-01T10:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/crm/accounts/{account}':
+    parameters:
+      - name: account
+        in: path
+        required: true
+        description: 'Account id.'
+        schema:
+          type: integer
+        example: 41
+    get:
+      operationId: getCrmAccount
+      tags:
+        - CRM
+      summary: 'Get a CRM account'
+      description: 'One account by id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Hämta kund eller prospekt'
+      x-sv-description: 'En kund eller ett prospekt, utifrån id.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      responses:
+        200:
+          description: 'The account.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmAccount'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 41
+                      name: 'Exempelbolaget AB'
+                      kind: 'COMPANY'
+                      status: 'ACTIVE'
+                      lost_reason: null
+                      status_set_by_hand_at: null
+                      customer_id: 12
+                      org_number: '556036-0793'
+                      owner_id: 3
+                      parent_id: null
+                      sni_code: '62010'
+                      website: 'exempelbolaget.example'
+                      email: 'info@exempelbolaget.example'
+                      phone: '08-123 456 78'
+                      address_line1: 'Exempelgatan 1'
+                      postal_code: '111 22'
+                      city: 'Stockholm'
+                      country: 'SE'
+                      source: 'Mässa'
+                      tags:
+                        - 'it'
+                        - 'stockholm'
+                      people:
+                        - person_id: 7
+                          role: 'DECISION_MAKER'
+                      last_activity_at: '2026-11-02T09:00:00+01:00'
+                      created_at: '2026-11-01T10:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateCrmAccount
+      tags:
+        - CRM
+      summary: 'Change a CRM account'
+      description: 'Changes the given fields; the others keep their values. On an account that is a customer, name, numbers, e-mail, phone and address are changed in the customer register and need invoices:create of the person behind the credential. status (with lost_reason for LOST) sets the status by hand; it stands until the next invoice. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Ändra kund eller prospekt'
+      x-sv-description: 'Ändrar de fält som skickas. status sätter status för hand; LOST kräver lost_reason.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmAccountPatch'
+            examples:
+              example:
+                value:
+                  owner_id: 3
+                  status: 'LOST'
+                  lost_reason: 'Valde en annan leverantör'
+      responses:
+        200:
+          description: 'The account.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmAccount'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 41
+                      name: 'Exempelbolaget AB'
+                      kind: 'COMPANY'
+                      status: 'LOST'
+                      lost_reason: 'Valde en annan leverantör'
+                      status_set_by_hand_at: '2026-11-02T09:00:00+01:00'
+                      customer_id: 12
+                      org_number: '556036-0793'
+                      owner_id: 3
+                      parent_id: null
+                      sni_code: '62010'
+                      website: 'exempelbolaget.example'
+                      email: 'info@exempelbolaget.example'
+                      phone: '08-123 456 78'
+                      address_line1: 'Exempelgatan 1'
+                      postal_code: '111 22'
+                      city: 'Stockholm'
+                      country: 'SE'
+                      source: 'Mässa'
+                      tags:
+                        - 'it'
+                        - 'stockholm'
+                      people:
+                        - person_id: 7
+                          role: 'DECISION_MAKER'
+                      last_activity_at: '2026-11-02T09:00:00+01:00'
+                      created_at: '2026-11-01T10:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /crm/people:
+    get:
+      operationId: listCrmPeople
+      tags:
+        - CRM
+      summary: 'List contact people'
+      description: 'The contact people with the accounts they are at, their role there, and the legal basis they are kept on (GDPR). Filter on account_id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista kontaktpersoner'
+      x-sv-description: 'Kontaktpersonerna med företag, roll och rättslig grund.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: account_id
+          in: query
+          required: false
+          description: 'The people at one account.'
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmPerson'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 7
+                        name: 'Anna Exempel'
+                        title: 'Inköpschef'
+                        email: 'anna@exempelbolaget.example'
+                        phone: null
+                        mobile: '070-123 45 67'
+                        legal_basis: 'LEGITIMATE_INTEREST'
+                        legal_basis_note: null
+                        consent_at: null
+                        is_active: true
+                        accounts:
+                          - account_id: 41
+                            role: 'DECISION_MAKER'
+                        created_at: '2026-11-01T10:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createCrmPerson
+      tags:
+        - CRM
+      summary: 'Create a contact person'
+      description: 'Adds a contact person. legal_basis is required (AGREEMENT, LEGITIMATE_INTEREST or CONSENT, with consent_at for CONSENT). account_id and role place the person at an account at once. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Skapa en kontaktperson'
+      x-sv-description: 'Lägger till en kontaktperson med rättslig grund, och kopplar den till ett företag med account_id och role.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmPersonInput'
+            examples:
+              example:
+                value:
+                  name: 'Anna Exempel'
+                  title: 'Inköpschef'
+                  mobile: '070-123 45 67'
+                  legal_basis: 'LEGITIMATE_INTEREST'
+                  account_id: 41
+                  role: 'DECISION_MAKER'
+      responses:
+        201:
+          description: 'The person.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmPerson'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      name: 'Anna Exempel'
+                      title: 'Inköpschef'
+                      email: 'anna@exempelbolaget.example'
+                      phone: null
+                      mobile: '070-123 45 67'
+                      legal_basis: 'LEGITIMATE_INTEREST'
+                      legal_basis_note: null
+                      consent_at: null
+                      is_active: true
+                      accounts:
+                        - account_id: 41
+                          role: 'DECISION_MAKER'
+                      created_at: '2026-11-01T10:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/crm/people/{person}':
+    parameters:
+      - name: person
+        in: path
+        required: true
+        description: 'Person id.'
+        schema:
+          type: integer
+        example: 7
+    get:
+      operationId: getCrmPerson
+      tags:
+        - CRM
+      summary: 'Get a contact person'
+      description: 'One contact person by id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Hämta kontaktperson'
+      x-sv-description: 'En kontaktperson, utifrån id.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      responses:
+        200:
+          description: 'The person.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmPerson'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      name: 'Anna Exempel'
+                      title: 'Inköpschef'
+                      email: 'anna@exempelbolaget.example'
+                      phone: null
+                      mobile: '070-123 45 67'
+                      legal_basis: 'LEGITIMATE_INTEREST'
+                      legal_basis_note: null
+                      consent_at: null
+                      is_active: true
+                      accounts:
+                        - account_id: 41
+                          role: 'DECISION_MAKER'
+                      created_at: '2026-11-01T10:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateCrmPerson
+      tags:
+        - CRM
+      summary: 'Change a contact person'
+      description: 'Changes the given fields; the others keep their values. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Ändra kontaktperson'
+      x-sv-description: 'Ändrar de fält som skickas.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmPersonPatch'
+            examples:
+              example:
+                value:
+                  title: 'VD'
+      responses:
+        200:
+          description: 'The person.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmPerson'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 7
+                      name: 'Anna Exempel'
+                      title: 'VD'
+                      email: 'anna@exempelbolaget.example'
+                      phone: null
+                      mobile: '070-123 45 67'
+                      legal_basis: 'LEGITIMATE_INTEREST'
+                      legal_basis_note: null
+                      consent_at: null
+                      is_active: true
+                      accounts:
+                        - account_id: 41
+                          role: 'DECISION_MAKER'
+                      created_at: '2026-11-01T10:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /crm/activities:
+    get:
+      operationId: listCrmActivities
+      tags:
+        - CRM
+      summary: 'List activities'
+      description: 'Notes, calls, meetings, e-mails and tasks. done_at is null while an activity is open. Filter on account_id, assigned_to, or open (true for open, false for done). Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista aktiviteter'
+      x-sv-description: 'Anteckningar, samtal, möten, e-post och uppgifter.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: account_id
+          in: query
+          required: false
+          description: 'The activities of one account.'
+          schema:
+            type: integer
+        - name: assigned_to
+          in: query
+          required: false
+          description: 'The activities of one user.'
+          schema:
+            type: integer
+        - name: open
+          in: query
+          required: false
+          description: 'true for open, false for done.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmActivity'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 93
+                        account_id: 41
+                        person_id: 7
+                        type: 'MEETING'
+                        call_outcome: null
+                        subject: 'Visning'
+                        body: null
+                        assigned_to: 3
+                        due_at: '2026-11-20T10:00:00+01:00'
+                        done_at: null
+                        created_by: 3
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createCrmActivity
+      tags:
+        - CRM
+      summary: 'Log or plan an activity'
+      description: 'Logs an activity on an account, or plans one. A NOTE is done when it is written; the other types are done with "done": true and otherwise open, with an optional due_at (Europe/Stockholm when no offset is given). The activity belongs to the person behind the credential unless assigned_to names another member. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Logga eller planera en aktivitet'
+      x-sv-description: 'Loggar en aktivitet eller planerar den. En anteckning är klar direkt; övriga är klara med "done": true.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmActivityInput'
+            examples:
+              example:
+                value:
+                  account_id: 41
+                  person_id: 7
+                  type: 'MEETING'
+                  subject: 'Visning'
+                  due_at: '2026-11-20T10:00'
+      responses:
+        201:
+          description: 'The activity.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmActivity'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 93
+                      account_id: 41
+                      person_id: 7
+                      type: 'MEETING'
+                      call_outcome: null
+                      subject: 'Visning'
+                      body: null
+                      assigned_to: 3
+                      due_at: '2026-11-20T10:00:00+01:00'
+                      done_at: null
+                      created_by: 3
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/crm/activities/{activity}':
+    parameters:
+      - name: activity
+        in: path
+        required: true
+        description: 'Activity id.'
+        schema:
+          type: integer
+        example: 93
+    get:
+      operationId: getCrmActivity
+      tags:
+        - CRM
+      summary: 'Get an activity'
+      description: 'One activity by id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Hämta aktivitet'
+      x-sv-description: 'En aktivitet, utifrån id.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      responses:
+        200:
+          description: 'The activity.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmActivity'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 93
+                      account_id: 41
+                      person_id: 7
+                      type: 'MEETING'
+                      call_outcome: null
+                      subject: 'Visning'
+                      body: null
+                      assigned_to: 3
+                      due_at: '2026-11-20T10:00:00+01:00'
+                      done_at: null
+                      created_by: 3
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateCrmActivity
+      tags:
+        - CRM
+      summary: 'Change or complete an activity'
+      description: 'Changes the given fields. "done": true completes an open activity (with call_outcome for a CALL); "done": false opens it again. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Ändra eller klarmarkera aktivitet'
+      x-sv-description: 'Ändrar de fält som skickas. "done": true klarmarkerar.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmActivityPatch'
+            examples:
+              example:
+                value:
+                  done: true
+      responses:
+        200:
+          description: 'The activity.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmActivity'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 93
+                      account_id: 41
+                      person_id: 7
+                      type: 'MEETING'
+                      call_outcome: null
+                      subject: 'Visning'
+                      body: null
+                      assigned_to: 3
+                      due_at: '2026-11-20T10:00:00+01:00'
+                      done_at: '2026-11-20T11:00:00+01:00'
+                      created_by: 3
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
 webhooks:
   voucher.posted:
     post:
@@ -7401,6 +8450,8 @@ components:
             'planning:view': 'Read the schedule in Planering: shifts per period, areas and publications'
             'inventory:view': 'Read the stock in Lager: stocked articles with stock per location, locations and stock levels'
             'inventory:manage': 'Create goods receipts and receive goods into stock, and see purchase prices'
+            'crm:view': 'Read the CRM: accounts (prospects and customers), contact people and activities'
+            'crm:manage': 'Create and change accounts, contact people and activities in the CRM'
           x-revocationUrl: 'https://nonox.app/oauth/revoke'
       x-sv-scopes:
         'vouchers:view': 'Läsa verifikationer, underlag, kontoplan, räkenskapsår och perioder, kostnadsställen, projekt, verifikationsserier och momskoder'
@@ -7421,6 +8472,8 @@ components:
         'planning:view': 'Läsa schemat i Planering: pass per period, avdelningar och publiceringar'
         'inventory:view': 'Läsa lagret: lagerförda artiklar med saldo per plats, lagerställen och saldon'
         'inventory:manage': 'Skapa inleveranser och ta emot varor i lagret, och se inköpspriser'
+        'crm:view': 'Läsa CRM: kunder och prospekt, kontaktpersoner och aktiviteter'
+        'crm:manage': 'Lägga till och ändra kunder och prospekt, kontaktpersoner och aktiviteter i CRM'
     apiKey:
       type: http
       scheme: bearer
@@ -10572,6 +11625,403 @@ components:
         data:
           type: object
       description: 'A webhook delivery body. Events are thin: ids, references, dates and amounts, never personal data; fetch the record through the API for more.'
+    CrmAccount:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        kind:
+          type: string
+          enum:
+            - COMPANY
+            - PERSON
+        status:
+          type: string
+          enum:
+            - PROSPECT
+            - ACTIVE
+            - INACTIVE
+            - LOST
+        lost_reason:
+          type:
+            - string
+            - 'null'
+        status_set_by_hand_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: 'When the status was set by hand; null while the rules decide.'
+        customer_id:
+          type:
+            - integer
+            - 'null'
+          description: 'The customer in the customer register, once the account is a customer.'
+        org_number:
+          type:
+            - string
+            - 'null'
+        owner_id:
+          type:
+            - integer
+            - 'null'
+        parent_id:
+          type:
+            - integer
+            - 'null'
+          description: 'The parent company (group), another account.'
+        sni_code:
+          type:
+            - string
+            - 'null'
+        website:
+          type:
+            - string
+            - 'null'
+        email:
+          type:
+            - string
+            - 'null'
+        phone:
+          type:
+            - string
+            - 'null'
+        address_line1:
+          type:
+            - string
+            - 'null'
+        postal_code:
+          type:
+            - string
+            - 'null'
+        city:
+          type:
+            - string
+            - 'null'
+        country:
+          type: string
+        source:
+          type:
+            - string
+            - 'null'
+        tags:
+          type: array
+          items:
+            type: string
+        people:
+          type: array
+          items:
+            type: object
+            properties:
+              person_id:
+                type: integer
+              role:
+                $ref: '#/components/schemas/CrmRole'
+        last_activity_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CrmRole:
+      type: string
+      enum:
+        - DECISION_MAKER
+        - AMBASSADOR
+        - INFLUENCER
+        - USER
+        - INVOICE_RECIPIENT
+        - OTHER
+    CrmAccountInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        org_number:
+          type: string
+          description: 'Swedish organisation number, checked with Luhn.'
+        kind:
+          type: string
+          enum:
+            - COMPANY
+            - PERSON
+        owner_id:
+          type: integer
+          description: 'A member of the company; the person behind the credential when left out.'
+        parent_id:
+          type: integer
+        sni_code:
+          type: string
+        website:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        address_line1:
+          type: string
+        postal_code:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        source:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+    CrmAccountPatch:
+      allOf:
+        - $ref: '#/components/schemas/CrmAccountInput'
+        - type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - PROSPECT
+                - ACTIVE
+                - INACTIVE
+                - LOST
+            lost_reason:
+              type: string
+              description: 'Required with status LOST.'
+    CrmPerson:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        title:
+          type:
+            - string
+            - 'null'
+        email:
+          type:
+            - string
+            - 'null'
+        phone:
+          type:
+            - string
+            - 'null'
+        mobile:
+          type:
+            - string
+            - 'null'
+        legal_basis:
+          type: string
+          enum:
+            - AGREEMENT
+            - LEGITIMATE_INTEREST
+            - CONSENT
+        legal_basis_note:
+          type:
+            - string
+            - 'null'
+        consent_at:
+          type:
+            - string
+            - 'null'
+          format: date
+        is_active:
+          type: boolean
+        accounts:
+          type: array
+          items:
+            type: object
+            properties:
+              account_id:
+                type: integer
+              role:
+                $ref: '#/components/schemas/CrmRole'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CrmPersonInput:
+      type: object
+      required:
+        - name
+        - legal_basis
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        mobile:
+          type: string
+        legal_basis:
+          type: string
+          enum:
+            - AGREEMENT
+            - LEGITIMATE_INTEREST
+            - CONSENT
+          description: 'The legal basis for keeping the person (GDPR art. 6.1).'
+        legal_basis_note:
+          type: string
+        consent_at:
+          type: string
+          format: date
+          description: 'Required with CONSENT.'
+        is_active:
+          type: boolean
+        account_id:
+          type: integer
+          description: 'Place the new person at this account.'
+        role:
+          $ref: '#/components/schemas/CrmRole'
+    CrmPersonPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        mobile:
+          type: string
+        legal_basis:
+          type: string
+          enum:
+            - AGREEMENT
+            - LEGITIMATE_INTEREST
+            - CONSENT
+        legal_basis_note:
+          type: string
+        consent_at:
+          type: string
+          format: date
+        is_active:
+          type: boolean
+    CrmActivity:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        person_id:
+          type:
+            - integer
+            - 'null'
+        type:
+          $ref: '#/components/schemas/CrmActivityType'
+        call_outcome:
+          type:
+            - string
+            - 'null'
+          description: 'REACHED, NO_ANSWER, LEFT_MESSAGE or WRONG_NUMBER; calls only.'
+        subject:
+          type: string
+        body:
+          type:
+            - string
+            - 'null'
+        assigned_to:
+          type:
+            - integer
+            - 'null'
+        due_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        done_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+          description: 'null while the activity is open.'
+        created_by:
+          type:
+            - integer
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CrmActivityType:
+      type: string
+      enum:
+        - NOTE
+        - CALL
+        - MEETING
+        - EMAIL
+        - TASK
+    CrmActivityInput:
+      type: object
+      required:
+        - account_id
+        - type
+      properties:
+        account_id:
+          type: integer
+        person_id:
+          type: integer
+        type:
+          $ref: '#/components/schemas/CrmActivityType'
+        call_outcome:
+          type: string
+          enum:
+            - REACHED
+            - NO_ANSWER
+            - LEFT_MESSAGE
+            - WRONG_NUMBER
+        subject:
+          type: string
+          description: 'The name of the type when left out.'
+        body:
+          type: string
+        assigned_to:
+          type: integer
+        due_at:
+          type: string
+          description: 'Date and time; Europe/Stockholm when no offset is given.'
+        done:
+          type: boolean
+    CrmActivityPatch:
+      type: object
+      properties:
+        account_id:
+          type: integer
+        person_id:
+          type: integer
+        type:
+          $ref: '#/components/schemas/CrmActivityType'
+        call_outcome:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        assigned_to:
+          type: integer
+        due_at:
+          type: string
+        done:
+          type: boolean
 x-oauth:
   description: 'OAuth 2.0 endpoints, outside /api/v1. Documented here for reference; they are not part of `paths`.'
   x-sv-description: 'OAuth-adresserna, utanför /api/v1.'

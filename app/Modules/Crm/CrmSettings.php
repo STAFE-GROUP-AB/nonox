@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Modules\Crm;
+
+use App\Models\Company;
+use App\Modules\ModuleManager;
+
+/**
+ * CRM's settings per company (ADR-043), kept in company_modules.settings.
+ *
+ * - months_to_inactive: an active customer without an invoice for this many
+ *   months becomes inactive. The company's own rule.
+ * - prune_after_months: contact people and prospects without any activity
+ *   for this many months are erased by privacy:prune, unless they are linked
+ *   to the ledger. TODO(legal-verify): the default retention for prospects
+ *   and their contact people (docs/gdpr/lagringstider.md).
+ */
+final class CrmSettings
+{
+    /** @var array<string, int> */
+    public const array DEFAULTS = [
+        'months_to_inactive' => 12,
+        'prune_after_months' => 24,
+    ];
+
+    /** @var array<string, array{int, int}> key => [min, max] */
+    public const array LIMITS = [
+        'months_to_inactive' => [1, 120],
+        'prune_after_months' => [6, 120],
+    ];
+
+    /** Days ahead "Att göra" warns before people and prospects are erased. */
+    public const int PRUNE_NOTICE_DAYS = 30;
+
+    /**
+     * @param  array<string, mixed>  $stored
+     * @return array<string, int>
+     */
+    public static function resolve(array $stored): array
+    {
+        $settings = [];
+
+        foreach (self::DEFAULTS as $key => $default) {
+            $value = $stored[$key] ?? null;
+            [$min, $max] = self::LIMITS[$key];
+            $settings[$key] = is_numeric($value) ? max($min, min($max, (int) $value)) : $default;
+        }
+
+        return $settings;
+    }
+
+    /** @return array<string, int> */
+    public static function for(Company $company): array
+    {
+        return self::resolve(app(ModuleManager::class)->settings(CrmModule::KEY, $company));
+    }
+}

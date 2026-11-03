@@ -186,3 +186,8 @@ lager/lagervarde-vid-bokslut: { foretag: butik, rutt: inventory.reports, fraga: 
 lager/etiketter: { foretag: butik, rutt: inventory.articles, klick: ['text=Etikett'] }
 lager/etikettstudio: { foretag: butik, rutt: inventory.labels, klick: ['text=Ändra'] }
 lager/skanna: { foretag: butik, rutt: inventory.scanner, enhet: mobil }
+
+crm/kunder-och-prospekt: { foretag: konsult, rutt: invoicing.customers }
+crm/kundkortet: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } } }
+crm/kundkortet-mobil: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Fastighetsbolaget Exempel AB' } }, enhet: mobil }
+crm/mina-aktiviteter: { foretag: konsult, rutt: crm.activities }

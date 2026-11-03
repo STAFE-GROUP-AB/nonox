@@ -2896,6 +2896,67 @@ Den föreslår verifikationer men bokför aldrig själv.
   för kortfordran, presentkort och dricks, och momsen på kortavgifter
   (se ADR-042).
 
+## 5l. CRM (modul)
+
+Kunder och prospekt, kontaktpersoner, aktiviteter och nyckeltal ur
+bokföringen, ADR-043 (steg 1). Modulen skriver aldrig till bokföringen. Ett
+prospekt blir kund genom kundregistrets egen åtgärd (`SaveCustomer`), och
+kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
+`customers`.
+
+- **Tabeller:** `crm_accounts` (kund eller prospekt, med `customer_id` när det
+  är en kund, unik), `crm_people` (kontaktperson med rättslig grund),
+  `crm_account_person` (personens roll hos ett företag) och `crm_activities`
+  (anteckning, samtal med utfall, möte, e-post och uppgift; öppen så länge
+  `done_at` saknas). Alla är företagsbundna (`BelongsToCompany`).
+- **Kundregistret:** när modulen slås på får varje kund ett konto i ett enda
+  `INSERT … SELECT` (`EnsureCustomerAccounts`, idempotent). En observer på
+  `Customer` (`CustomerAccounts`) ger nya kunder ett konto medan modulen är på,
+  oavsett var kunden skapas, för över namn, nummer och adress när kunden
+  ändras, och tar bort kontot när kunden raderas enligt GDPR. Ändras namn,
+  nummer eller adress på ett kundkonto i CRM går ändringen genom
+  `SaveCustomer` och kräver `invoices:create`.
+- **`/kunder`:** med modulen på och `crm:view` visar sidan CRM-listan, annars
+  det vanliga kundregistret. `?redigera=<kund-id>` öppnar kundens kort och
+  `?ny=1` formuläret för ett nytt prospekt.
+- **Status:** `crm:refresh-statuses` kör kl. 05.25 varje dag (`StatusRules`):
+  prospekt utan utfärdad faktura, aktiv kund om senaste fakturadatum ligger
+  inom inställt antal månader (standard 12), annars inaktiv. Kreditfakturor
+  räknas inte. Förlorad sätts bara för hand med en orsak. En status satt för
+  hand gäller tills en faktura utfärdas efter den. Varje ändring skrivs till
+  behandlingshistoriken (`crm.status_changed`).
+- **Nyckeltal** (`AccountFigures`, tre frågor för valfritt antal kunder):
+  fakturerat 12 månader och totalt (utfärdade fakturor exklusive moms,
+  kreditfakturor avdragna), obetalt och förfallet (`total_ore − paid_ore` på
+  obetalda fakturor), betaltid (betaldag minus fakturadatum viktat med
+  beloppet, betalningar de senaste 12 månaderna, utan återvunna belopp) och
+  täckningsbidrag 12 månader (radernas nettobelopp minus antal × artikelns
+  inköpspris i dag, för rader med inköpspris, och andelen av försäljningen
+  som har ett inköpspris). Beloppen är kronor oavsett fakturavaluta.
+- **Tidslinje** (`Timeline`): aktiviteter, offerter och order, utfärdade
+  fakturor och kreditfakturor, betalningar och påminnelser i en `UNION ALL`,
+  nyast först och sidindelad: två frågor per sida oavsett antal.
+- **Behörigheter:** `crm:view` (läsa, även nyckeltal), `crm:manage` (skriva),
+  `crm:settings`. Ägare, administratör, redovisningskonsult och bokförare får
+  alla tre, revisor `crm:view`, rollen Säljare (`sales`) `crm:view` och
+  `crm:manage` och inget i bokföringen.
+- **API:** `/api/v1/crm/accounts`, `/crm/people` och `/crm/activities` med
+  `crm:view` och `crm:manage`, genom samma Actions.
+- **GDPR:** rättslig grund krävs per person (avtal, berättigat intresse eller
+  samtycke med datum). Registerutdraget för en kund innehåller CRM-kontot och
+  aktiviteterna, och en kontaktperson har ett eget utdrag. Radering av en
+  person tar bort personen och anonymiserar aktiviteterna om den; ett
+  prospekt raderas med sina aktiviteter; ett kundkonto raderas aldrig i CRM.
+  `privacy:prune` raderar personer och prospekt utan aktivitet på inställt
+  antal månader (standard 24) i företag med modulen på, utom prospekt som
+  blivit kunder och fakturamottagare hos kunder. De visas under Att göra 30
+  dagar innan. Namn och kontaktuppgifter skrivs aldrig till
+  behandlingshistoriken, bara id och vilka fält som ändrats.
+- Allt skrivs till behandlingshistoriken (`crm.*`, `privacy.*`).
+- `TODO(legal-verify)`: texten om intresseavvägningen för kontaktpersoner,
+  standardtiden för gallring av prospekt och kontaktpersoner, och vilka
+  kopplingar till bokföringen som ska hindra gallring av en kontaktperson.
+
 ## 6. Belopp
 
 - Belopp lagras som hela ören i heltal, aldrig som flyttal. Avrundning sker till
@@ -2987,6 +3048,11 @@ Den föreslår verifikationer men bokför aldrig själv.
   BFNAR 2013:2; den beskrivs i avsnitt 7, och systemets versioner i avsnitt 9.
 
 ## 8. Öppna frågor (TODO legal-verify)
+
+- CRM (ADR-043): texten om intresseavvägningen för kontaktpersoner i
+  manualen (docs/manual/sv/crm/gdpr-i-crm.md), standardtiden för gallring av
+  prospekt och kontaktpersoner (24 månader) och vilka kopplingar till
+  bokföringen som ska hindra att en kontaktperson gallras.
 
 - Avtal (ADR-033): upphovsrätt till en sammanställning av ett avtals
   värden och korta citat i källhänvisningar; ansvar för levererade

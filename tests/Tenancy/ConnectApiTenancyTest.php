@@ -19,6 +19,10 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Modules\Connect\Support\ConnectScopes;
+use App\Modules\Crm\Actions\LogActivity;
+use App\Modules\Crm\Actions\SavePerson;
+use App\Modules\Crm\CrmModule;
+use App\Modules\Crm\Models\Account as CrmAccount;
 use App\Modules\Inventory\Actions\ArticleImages;
 use App\Modules\Inventory\InventoryModule;
 use App\Modules\ModuleManager;
@@ -70,6 +74,12 @@ function twoCompanies(): array
     $invoiceB = app(SaveDraftInvoice::class)($ownerB, $b, ['customer_id' => $customerB->id, 'invoice_date' => '2026-03-02', 'rows' => $invoiceRows]);
     $issuedB = app(IssueInvoice::class)($ownerB, app(SaveDraftInvoice::class)($ownerB, $b, ['customer_id' => $customerB->id, 'invoice_date' => '2026-03-02', 'rows' => $invoiceRows]));
     app(RegisterPayment::class)($ownerB, $issuedB, CarbonImmutable::parse('2026-03-05'), Money::ofOre(5000));
+    // CRM on in both, so a CRM route answers 404 and not 403 for B's records.
+    app(ModuleManager::class)->enable(CrmModule::KEY, $b, $ownerB);
+    app(ModuleManager::class)->enable(CrmModule::KEY, $a, $ownerA);
+    $crmAccountB = CurrentCompany::run($b, fn () => CrmAccount::query()->where('customer_id', $customerB->id)->firstOrFail());
+    $crmPersonB = app(SavePerson::class)($ownerB, $b, ['name' => 'B:s kontakt', 'legal_basis' => 'AGREEMENT']);
+    $crmActivityB = app(LogActivity::class)($ownerB, $b, ['account_id' => $crmAccountB->id, 'type' => 'NOTE', 'subject' => 'B:s anteckning']);
     $supplierInvoiceB = app(SaveSupplierInvoice::class)($ownerB, $b, ['supplier_id' => $supplierB->id, 'invoice_date' => '2026-03-03', 'total' => '125', 'vat' => '25', 'rows' => [['account' => '5410', 'amount' => '100']]]);
 
     // A has its own records too, so the lists are not empty by accident.
@@ -93,7 +103,7 @@ function twoCompanies(): array
             'voucher' => $voucherB->id, 'posted' => $postedB->id, 'attachment' => $attachmentB->id, 'customer' => $customerB->id,
             'supplier' => $supplierB->id, 'fiscal_year' => $yearB->id, 'article' => $articleB->id, 'cost_center' => $costCenterB->id,
             'project' => $projectB->id, 'invoice' => $invoiceB->id, 'issued' => $issuedB->id, 'supplier_invoice' => $supplierInvoiceB->id,
-            'article_image' => $imageB->id,
+            'article_image' => $imageB->id, 'crm_account' => $crmAccountB->id, 'crm_person' => $crmPersonB->id, 'crm_activity' => $crmActivityB->id,
         ],
     ];
 }
@@ -138,6 +148,12 @@ function crossCompanyCalls(array $b): array
         ['POST', "/api/v1/supplier-invoices/{$b['supplier_invoice']}/register"],
         ['POST', "/api/v1/supplier-invoices/{$b['supplier_invoice']}/approve"],
         ['POST', "/api/v1/supplier-invoices/{$b['supplier_invoice']}/payments", ['paid_on' => '2026-03-05', 'amount_ore' => 100]],
+        ['GET', "/api/v1/crm/accounts/{$b['crm_account']}"],
+        ['PATCH', "/api/v1/crm/accounts/{$b['crm_account']}", ['source' => 'Kapad']],
+        ['GET', "/api/v1/crm/people/{$b['crm_person']}"],
+        ['PATCH', "/api/v1/crm/people/{$b['crm_person']}", ['title' => 'Kapad']],
+        ['GET', "/api/v1/crm/activities/{$b['crm_activity']}"],
+        ['PATCH', "/api/v1/crm/activities/{$b['crm_activity']}", ['subject' => 'Kapad']],
         // Reports that take another company's fiscal year as a parameter.
         ['GET', "/api/v1/reports/trial-balance?fiscal_year_id={$b['fiscal_year']}"],
         ['GET', "/api/v1/reports/general-ledger?fiscal_year_id={$b['fiscal_year']}"],
@@ -198,7 +214,7 @@ it('shows the credential\'s own company, never the person\'s current one', funct
 });
 
 it('covers every API route that takes an id', function () {
-    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image'], 'X')))
+    $listed = collect(crossCompanyCalls(array_fill_keys(['voucher', 'posted', 'attachment', 'customer', 'supplier', 'fiscal_year', 'article', 'cost_center', 'project', 'invoice', 'issued', 'supplier_invoice', 'article_image', 'crm_account', 'crm_person', 'crm_activity'], 'X')))
         ->map(fn (array $call): string => $call[0].' '.preg_replace('/X/', '{}', explode('?', $call[1])[0]))
         ->unique()->values();
 

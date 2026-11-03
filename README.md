@@ -132,6 +132,12 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Skanna med mobilen: ta emot, plocka, flytta, inventera och slå upp varor med telefonens kamera, en Bluetooth-skanner eller en handskanner. Fel vara vid plock ger rött blink, ljud och vibration. Fungerar utan nät: allt sparas i telefonen och skickas en gång när det finns nät.
 - Kassakopplingar (modul, ADR-042) för Zettle och Onslip 360: varje köp sparas en gång och dras från lagret, rader utan artikel väntar på att kopplas, lagerändringar skickas till Zettle som ändringar, artiklarna läggs upp i kassan och varje dag blir ett verifikationsutkast i serie K. Kräver att den som driftar registrerar en egen app hos kassaleverantören (se `.env.example`); öppnas på webbplatsen när det är gjort.
 
+### CRM (modul) – ny
+- Kunder och prospekt med kontaktpersoner: när modulen är på blir Kunder ett CRM, och varje kund i kundregistret får ett kort. Ett prospekt får kundnummer först när det blir kund. En person kan höra till flera företag med en roll hos varje (beslutsfattare, ambassadör, påverkare, användare, fakturamottagare), och varje person har en rättslig grund enligt GDPR.
+- Aktiviteter med nästa steg: samtal med utfall, möten, anteckningar, e-post och uppgifter, och Mina aktiviteter med försenat, i dag och kommande. Klarmarkera med ett tryck, och NONOX frågar efter nästa steg.
+- Nyckeltal ur bokföringen per kund: fakturerat de senaste tolv månaderna och totalt, obetalt och förfallet, betaltid i snitt och täckningsbidrag med andelen av försäljningen som har ett inköpspris. Tidslinje med aktiviteter, offerter, order, fakturor, betalningar och påminnelser.
+- Kundstatus som följer fakturorna (prospekt, aktiv, inaktiv, förlorad med orsak), gallring av gamla kontakter, rollen Säljare utan åtkomst till bokföringen, byggt för mobilen och med i API:t.
+
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
 - Bara post från godkända avsändare tolkas; annat väntar i karantän tills någon godkänner avsändaren.

@@ -11,6 +11,7 @@ use App\Models\Invoice;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Modules\Crm\Support\CrmExport;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Payroll\Models\Absence;
@@ -75,6 +76,8 @@ final class DataSubjectExport
             'kund' => [...$customer->only(['number', 'name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country']), 'personal_number' => $customer->personal_number],
             'fakturor' => Invoice::query()->where('customer_id', $customer->id)->orderBy('invoice_date')->get()
                 ->map(fn (Invoice $invoice): array => ['nummer' => $invoice->number, 'datum' => $invoice->invoice_date->toDateString(), 'belopp_ore' => $invoice->total_ore->ore, 'status' => $invoice->status->value])->all(),
+            // CRM (ADR-043): the customer's account and activities, when it has one.
+            'crm' => CrmExport::forCustomer($customer),
         ];
     }
 

@@ -42,7 +42,7 @@ Personnummer sparas krypterade. Anställdas personnummer och personnummer i pers
 
 ## Gallring
 
-En del uppgifter som inte är räkenskapsinformation tas bort automatiskt när de inte längre behövs, till exempel inloggningskoder, inbjudningar som inte har accepterats och, med modulen Inkorg, avvisad e-post. Med NONOX AI påslagen skickas underlag till er AI-leverantör för att läsas; se [NONOX AI](/manual/installningar/nonox-ai).
+En del uppgifter som inte är räkenskapsinformation tas bort automatiskt när de inte längre behövs, till exempel inloggningskoder, inbjudningar som inte har accepterats och, med modulen Inkorg, avvisad e-post. Med modulen CRM raderas kontaktpersoner och prospekt som ingen har haft någon aktivitet med på länge; se [GDPR i CRM](/manual/crm/gdpr-i-crm). Med NONOX AI påslagen skickas underlag till er AI-leverantör för att läsas; se [NONOX AI](/manual/installningar/nonox-ai).
 
 ## Avtal och policy
 

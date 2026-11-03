@@ -74,6 +74,12 @@ lager:
   for: foretag
   modul: inventory
   ikon: box
+crm:
+  titel: CRM
+  beskrivning: Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg, kundstatus, nyckeltal ur bokföringen och GDPR.
+  for: foretag
+  modul: crm
+  ikon: users
 byra:
   titel: För redovisningsbyråer
   beskrivning: Mina företag, månadsstängning, uppgifter mellan byrå och kund och byråns varumärke.

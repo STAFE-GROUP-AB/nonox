@@ -1,0 +1,222 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Seeders\Demo\Extras;
+
+use App\Models\Article;
+use App\Models\Customer;
+use App\Modules\Crm\Actions\LinkPerson;
+use App\Modules\Crm\Actions\LogActivity;
+use App\Modules\Crm\Actions\SaveAccount;
+use App\Modules\Crm\Actions\SavePerson;
+use App\Modules\Crm\Actions\SetAccountStatus;
+use App\Modules\Crm\CrmModule;
+use App\Modules\Crm\Domain\PersonRole;
+use App\Modules\Crm\Models\Account;
+use App\Modules\ModuleManager;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
+use Database\Seeders\Demo\DemoContext;
+use Database\Seeders\Demo\DemoExtra;
+use Database\Seeders\Demo\DemoIndustries;
+use Illuminate\Validation\ValidationException;
+
+/**
+ * CRM in the consultancy (ADR-043), for the manual's CRM pages and the
+ * landing page: the module on, so the customers from the books become
+ * accounts with their key figures, contact people with roles and a legal
+ * basis, prospects at different stages (one lost), and activities spread
+ * over the last months with open next steps: one overdue, two today and
+ * some coming. The consultancy hour gets an internal cost, so the
+ * contribution margin shows, built on part of the sales.
+ *
+ * Every name, number and address is made up: the organisation numbers are
+ * synthetic (DemoIndustries::orgNumber), the e-mail addresses end in .test
+ * and the phone numbers are in the ranges PTS keeps for fiction and examples
+ * (08-465 004 00 to 499 and 070-174 06 05 to 99).
+ */
+final class CrmExtras extends DemoExtra
+{
+    /**
+     * Prospects: name, serial for the organisation number, city, source, tags, people (name, title, role, legal basis).
+     *
+     * @var list<array{0: string, 1: string, 2: string, 3: string, 4: string, 5: list<array{0: string, 1: string, 2: string, 3: string}>}>
+     */
+    private const array PROSPECTS = [
+        ['Fastighetsbolaget Exempel AB', '41', 'Uppsala', 'Mässa', 'fastighet, varm', [['Lena Lund', 'Förvaltningschef', 'DECISION_MAKER', 'LEGITIMATE_INTEREST'], ['Omar Ek', 'IT-ansvarig', 'INFLUENCER', 'LEGITIMATE_INTEREST']]],
+        ['Logistikhuset Exempel AB', '42', 'Göteborg', 'Tips från kund', 'logistik', [['Sara Berg', 'Inköpschef', 'DECISION_MAKER', 'LEGITIMATE_INTEREST']]],
+        ['Tandvården Exempel AB', '43', 'Stockholm', 'Webben', 'vård', [['Per Holm', 'Klinikchef', 'DECISION_MAKER', 'CONSENT']]],
+        ['Byggvaror Exempel AB', '44', 'Västerås', 'Mässa', 'bygg', [['Eva Sand', 'VD', 'DECISION_MAKER', 'LEGITIMATE_INTEREST']]],
+    ];
+
+    /**
+     * People at the customers from the books: customer name => list of [name, title, role, legal basis].
+     *
+     * @var array<string, list<array{0: string, 1: string, 2: string, 3: string}>>
+     */
+    private const array CUSTOMER_PEOPLE = [
+        'Kunden Exempel AB' => [['Karin Exempelsson', 'VD', 'DECISION_MAKER', 'AGREEMENT'], ['Johan Dahl', 'Ekonomichef', 'INVOICE_RECIPIENT', 'AGREEMENT'], ['Mia Strand', 'Projektledare', 'AMBASSADOR', 'AGREEMENT']],
+        'Mjukvaruhuset Exempel AB' => [['Ali Nord', 'Teknisk chef', 'DECISION_MAKER', 'AGREEMENT'], ['Ida Viklund', 'Utvecklare', 'USER', 'LEGITIMATE_INTEREST']],
+    ];
+
+    /** The next number in the range PTS keeps for fiction and examples (070-174 06 05 to 070-174 06 99). */
+    private int $mobiles = 0;
+
+    public function industries(): array
+    {
+        return ['bokforing-for-konsulter'];
+    }
+
+    public function afterAll(DemoContext $c): void
+    {
+        // The consultancy hour's internal cost, so the key figures show a contribution margin.
+        Article::query()->where('number', 'KONS')->update(['purchase_price_ore' => 62_000]);
+
+        app(ModuleManager::class)->enable(CrmModule::KEY, $c->company, $c->user);
+
+        $this->customers($c);
+        $this->prospects($c);
+    }
+
+    private function customers(DemoContext $c): void
+    {
+        $phones = ['08-465 004 10', '08-465 004 11', '08-465 004 12', '08-465 004 13', '08-465 004 14'];
+        $n = 0;
+
+        foreach (Customer::query()->orderBy('number')->get() as $customer) {
+            $account = Account::query()->where('customer_id', $customer->id)->first();
+
+            if ($account === null) {
+                continue;
+            }
+
+            app(SaveAccount::class)($c->user, $c->company, [
+                ...$account->only(['name', 'org_number', 'email', 'address_line1', 'postal_code', 'city', 'country']),
+                'phone' => $customer->phone ?? $phones[$n % count($phones)],
+                'owner_id' => $c->user->id,
+                'source' => $n === 0 ? 'Rekommendation' : 'Nätverk',
+                'sni_code' => '62010',
+                'tags' => $n === 0 ? ['ramavtal', 'stockholm'] : ['it'],
+            ], $account);
+            $n++;
+
+            $people = $this->people($c, $account, self::CUSTOMER_PEOPLE[$customer->name] ?? [['Kim Exempel', 'Inköpare', 'DECISION_MAKER', 'AGREEMENT']]);
+            $first = $people[0] ?? null;
+
+            $this->logAt($c, 75, ['account_id' => $account->id, 'person_id' => $first, 'type' => 'MEETING', 'subject' => 'Uppstart av uppdraget', 'body' => 'Gick igenom målen för året och vem som godkänner tiden.', 'done' => true]);
+            $this->logAt($c, 40, ['account_id' => $account->id, 'person_id' => $first, 'type' => 'CALL', 'subject' => 'Avstämning', 'call_outcome' => 'REACHED', 'body' => 'Nöjda med leveransen. Vill diskutera fler timmar efter sommaren.', 'done' => true]);
+            $this->logAt($c, 12, ['account_id' => $account->id, 'type' => 'NOTE', 'subject' => 'Anteckning', 'body' => 'Budgeten för nästa år beslutas i styrelsen i december.']);
+            $this->logAt($c, 0, ['account_id' => $account->id, 'person_id' => $first, 'type' => 'TASK', 'subject' => 'Skicka förslag på ramavtal', 'due_at' => $c->today->addDays($n === 1 ? 0 : 6)->setTime(15, 0)->format('Y-m-d\TH:i')]);
+        }
+    }
+
+    private function prospects(DemoContext $c): void
+    {
+        foreach (self::PROSPECTS as $index => [$name, $serial, $city, $source, $tags, $people]) {
+            $account = app(SaveAccount::class)($c->user, $c->company, [
+                'name' => $name,
+                'org_number' => DemoIndustries::orgNumber($serial),
+                'city' => $city,
+                'phone' => '08-465 004 2'.$index,
+                'email' => 'info@'.strtolower(explode(' ', $name)[0]).'.test',
+                'source' => $source,
+                'tags' => $tags,
+                'owner_id' => $c->user->id,
+            ]);
+            $ids = $this->people($c, $account, $people);
+            $person = $ids[0] ?? null;
+
+            match ($index) {
+                0 => $this->hot($c, $account, $person),
+                1 => $this->early($c, $account, $person),
+                2 => $this->overdue($c, $account, $person),
+                default => $this->lost($c, $account, $person),
+            };
+        }
+    }
+
+    private function hot(DemoContext $c, Account $account, ?int $person): void
+    {
+        $this->logAt($c, 30, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'CALL', 'subject' => 'Första samtalet', 'call_outcome' => 'REACHED', 'body' => 'Har problem med sitt fastighetssystem. Vill träffas.', 'done' => true]);
+        $this->logAt($c, 14, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'MEETING', 'subject' => 'Möte på plats', 'body' => 'Visade hur vi har löst samma sak hos en annan kund. Vill ha offert.', 'done' => true]);
+        $this->logAt($c, 3, ['account_id' => $account->id, 'type' => 'EMAIL', 'subject' => 'Skickade underlag', 'body' => 'Referenser och en grov tidsplan.', 'done' => true]);
+        $this->logAt($c, 0, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'CALL', 'subject' => 'Följ upp underlaget', 'due_at' => $c->today->setTime(10, 30)->format('Y-m-d\TH:i')]);
+        $this->logAt($c, 0, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'MEETING', 'subject' => 'Genomgång av offerten', 'due_at' => $c->today->addDays(8)->setTime(13, 0)->format('Y-m-d\TH:i')]);
+    }
+
+    private function early(DemoContext $c, Account $account, ?int $person): void
+    {
+        $this->logAt($c, 6, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'CALL', 'subject' => 'Kalla samtalet', 'call_outcome' => 'LEFT_MESSAGE', 'done' => true]);
+        $this->logAt($c, 0, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'CALL', 'subject' => 'Ring igen', 'due_at' => $c->today->addDays(2)->setTime(9, 0)->format('Y-m-d\TH:i')]);
+    }
+
+    private function overdue(DemoContext $c, Account $account, ?int $person): void
+    {
+        $this->logAt($c, 20, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'MEETING', 'subject' => 'Digitalt möte', 'body' => 'Intresserade, men vill vänta tills den nya kliniken öppnat.', 'done' => true]);
+        $this->logAt($c, 20, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'TASK', 'subject' => 'Hör av dig om tidsplanen', 'due_at' => $c->today->subDays(3)->setTime(10, 0)->format('Y-m-d\TH:i')]);
+    }
+
+    private function lost(DemoContext $c, Account $account, ?int $person): void
+    {
+        $this->logAt($c, 50, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'MEETING', 'subject' => 'Presentation', 'done' => true]);
+        $this->logAt($c, 35, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'CALL', 'subject' => 'Besked', 'call_outcome' => 'REACHED', 'body' => 'Valde en leverantör de redan har.', 'done' => true]);
+
+        $this->at($c, 35, fn () => app(SetAccountStatus::class)($c->user, $c->company, $account->fresh() ?? $account, 'LOST', 'Valde en befintlig leverantör'));
+    }
+
+    /**
+     * @param  list<array{0: string, 1: string, 2: string, 3: string}>  $people
+     * @return list<int> the people's ids
+     */
+    private function people(DemoContext $c, Account $account, array $people): array
+    {
+        $ids = [];
+
+        foreach ($people as $i => [$name, $title, $role, $basis]) {
+            $handle = strtolower(str_replace(['å', 'ä', 'ö', ' '], ['a', 'a', 'o', '.'], $name));
+
+            try {
+                $person = app(SavePerson::class)($c->user, $c->company, [
+                    'name' => $name,
+                    'title' => $title,
+                    'email' => "{$handle}@exempel.test",
+                    'mobile' => '070-174 06 '.(10 + $this->mobiles++),
+                    'legal_basis' => $basis,
+                    'consent_at' => $basis === 'CONSENT' ? $c->today->subMonths(2)->toDateString() : null,
+                ]);
+                app(LinkPerson::class)($c->user, $c->company, $account, $person, PersonRole::from($role));
+                $ids[] = $person->id;
+            } catch (ValidationException $exception) {
+                $c->warn(collect($exception->errors())->flatten()->implode(' '));
+            }
+        }
+
+        return $ids;
+    }
+
+    /** @param  array<string, mixed>  $input */
+    private function logAt(DemoContext $c, int $daysAgo, array $input): void
+    {
+        $this->at($c, $daysAgo, fn () => app(LogActivity::class)($c->user, $c->company, $input));
+    }
+
+    /**
+     * Runs $step as if it happened $daysAgo days before today, during office hours.
+     *
+     * @param  callable(): mixed  $step
+     */
+    private function at(DemoContext $c, int $daysAgo, callable $step): void
+    {
+        $previous = Carbon::getTestNow();
+        Carbon::setTestNow(CarbonImmutable::parse($c->today->subDays($daysAgo)->toDateString().' 09:15:00', 'Europe/Stockholm'));
+
+        try {
+            $step();
+        } catch (ValidationException $exception) {
+            $c->warn(collect($exception->errors())->flatten()->implode(' '));
+        } finally {
+            Carbon::setTestNow($previous);
+        }
+    }
+}

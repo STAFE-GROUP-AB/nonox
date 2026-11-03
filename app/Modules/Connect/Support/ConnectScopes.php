@@ -34,6 +34,8 @@ final class ConnectScopes
         'planning:view',
         'inventory:view',
         'inventory:manage',
+        'crm:view',
+        'crm:manage',
     ];
 
     /** @return array<string, string> scope => Swedish description, for the consent screen and API keys */
@@ -58,6 +60,8 @@ final class ConnectScopes
             'planning:view' => __('Läsa schemat i Planering: pass per period, avdelningar och publiceringar'),
             'inventory:view' => __('Läsa lagret: lagerförda artiklar med saldo per plats, lagerställen och saldon'),
             'inventory:manage' => __('Skapa inleveranser och ta emot varor i lagret, och se inköpspriser'),
+            'crm:view' => __('Läsa CRM: kunder och prospekt, kontaktpersoner och aktiviteter'),
+            'crm:manage' => __('Lägga till och ändra kunder och prospekt, kontaktpersoner och aktiviteter i CRM'),
         ];
     }
 

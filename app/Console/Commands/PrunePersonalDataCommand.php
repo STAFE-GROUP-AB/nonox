@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Migration\Fortnox\FortnoxConnection;
 use App\Models\LoginCode;
 use App\Models\TeamInvitation;
+use App\Modules\Crm\Actions\PruneCrm;
 use App\Modules\Payroll\Models\Absence;
 use App\Modules\Payroll\Models\Expense;
 use App\Modules\StaffLedger\Actions\PruneStaffLedger;
@@ -24,7 +25,8 @@ use Illuminate\Support\Facades\DB;
  * stale invitations, tokens of moves that were abandoned, and rejected
  * absence and outlay requests that never reached the payroll or the books,
  * and staff ledger entries and people whose retention period is over
- * (PruneStaffLedger).
+ * (PruneStaffLedger), and CRM contact people and prospects with no
+ * activity for the company's set number of months (PruneCrm, ADR-043).
  *
  * TODO(legal-verify): the periods in RETENTION (see docs/gdpr/lagringstider.md).
  */
@@ -79,6 +81,10 @@ class PrunePersonalDataCommand extends Command
         $staffLedger = ArchivedCompany::maintenance(fn (): array => app(PruneStaffLedger::class)());
         $counts['staff_ledger_entries'] = $staffLedger['entries'];
         $counts['staff_ledger_people'] = $staffLedger['people'];
+
+        $crm = ArchivedCompany::maintenance(fn (): array => app(PruneCrm::class)());
+        $counts['crm_people'] = $crm['people'];
+        $counts['crm_prospects'] = $crm['prospects'];
 
         Audit::record('privacy.pruned', null, $counts);
 

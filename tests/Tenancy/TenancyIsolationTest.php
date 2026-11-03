@@ -77,6 +77,10 @@ use App\Modules\Connect\Models\ConnectSftpUpload;
 use App\Modules\Connect\Models\ConnectWebhook;
 use App\Modules\Connect\Models\ConnectWebhookDelivery;
 use App\Modules\Connect\Models\IdempotencyRecord;
+use App\Modules\Crm\Models\Account as CrmAccount;
+use App\Modules\Crm\Models\AccountPerson as CrmAccountPerson;
+use App\Modules\Crm\Models\Activity as CrmActivity;
+use App\Modules\Crm\Models\Person as CrmPerson;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMailbox;
@@ -286,6 +290,10 @@ const COMPANY_SCOPED_MODELS = [
     StockValuation::class => ['valuation_date' => '2026-12-31', 'method' => 'FIFO', 'cost_value_ore' => 100, 'value_ore' => 100, 'stock_account' => 1460, 'change_account' => 4960, 'lines' => []],
     ArticleImage::class => 'inventoryImageAttributes',
     LabelTemplate::class => ['name' => 'Hemlig etikettmall', 'kind' => 'ARTICLE', 'media' => 'ROLL', 'width_mm' => 50, 'height_mm' => 25, 'layout' => 'AUTO', 'elements' => ['name'], 'is_default' => false],
+    CrmAccount::class => ['name' => 'Hemligt prospekt AB'],
+    CrmPerson::class => ['name' => 'Hemlig kontakt', 'legal_basis' => 'LEGITIMATE_INTEREST'],
+    CrmAccountPerson::class => 'crmAccountPersonAttributes',
+    CrmActivity::class => 'crmActivityAttributes',
     PosConnection::class => 'posConnectionAttributes',
     PosProductLink::class => 'posProductLinkAttributes',
     PosSale::class => 'posSaleAttributes',
@@ -1179,6 +1187,16 @@ function attachmentAttributes(): array
         'size' => 100,
         'sha256' => str_repeat('0', 64),
     ];
+}
+
+function crmAccountPersonAttributes(): array
+{
+    return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'person_id' => CrmPerson::create(['name' => 'Hemlig kontakt', 'legal_basis' => 'CONSENT'])->id, 'role' => 'DECISION_MAKER'];
+}
+
+function crmActivityAttributes(): array
+{
+    return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'type' => 'NOTE', 'subject' => 'Hemlig anteckning'];
 }
 
 function inventoryLocationAttributes(): array

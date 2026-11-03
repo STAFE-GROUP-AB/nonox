@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Connect\Http\Controllers\Api\V1\ArticleController;
+use App\Modules\Connect\Http\Controllers\Api\V1\CrmController;
 use App\Modules\Connect\Http\Controllers\Api\V1\CustomerController;
 use App\Modules\Connect\Http\Controllers\Api\V1\DimensionController;
 use App\Modules\Connect\Http\Controllers\Api\V1\FiscalYearController;
@@ -147,3 +148,22 @@ Route::middleware('connect.scope:inventory:view')->group(function (): void {
 });
 
 Route::post('/inventory/receipts', [InventoryController::class, 'storeReceipt'])->middleware(['connect.scope:inventory:manage', $idempotent])->name('inventory.receipts.store');
+
+// CRM (ADR-043). crm:view and crm:manage are false while the module is off.
+Route::middleware('connect.scope:crm:view')->group(function (): void {
+    Route::get('/crm/accounts', [CrmController::class, 'accounts'])->name('crm.accounts.index');
+    Route::get('/crm/accounts/{account}', [CrmController::class, 'account'])->whereNumber('account')->name('crm.accounts.show');
+    Route::get('/crm/people', [CrmController::class, 'people'])->name('crm.people.index');
+    Route::get('/crm/people/{person}', [CrmController::class, 'person'])->whereNumber('person')->name('crm.people.show');
+    Route::get('/crm/activities', [CrmController::class, 'activities'])->name('crm.activities.index');
+    Route::get('/crm/activities/{activity}', [CrmController::class, 'activity'])->whereNumber('activity')->name('crm.activities.show');
+});
+
+Route::middleware('connect.scope:crm:manage')->group(function () use ($idempotent): void {
+    Route::post('/crm/accounts', [CrmController::class, 'storeAccount'])->middleware($idempotent)->name('crm.accounts.store');
+    Route::patch('/crm/accounts/{account}', [CrmController::class, 'updateAccount'])->whereNumber('account')->name('crm.accounts.update');
+    Route::post('/crm/people', [CrmController::class, 'storePerson'])->middleware($idempotent)->name('crm.people.store');
+    Route::patch('/crm/people/{person}', [CrmController::class, 'updatePerson'])->whereNumber('person')->name('crm.people.update');
+    Route::post('/crm/activities', [CrmController::class, 'storeActivity'])->middleware($idempotent)->name('crm.activities.store');
+    Route::patch('/crm/activities/{activity}', [CrmController::class, 'updateActivity'])->whereNumber('activity')->name('crm.activities.update');
+});

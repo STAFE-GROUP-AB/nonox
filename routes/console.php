@@ -24,3 +24,5 @@ Schedule::command('tasks:send-digest')->weekdays()->at('06:45')->withoutOverlapp
 // The waiting list of the open beta (ADR-038): retention, and one summary a day for the HQ admins.
 Schedule::command('waitlist:prune')->dailyAt('04:40')->withoutOverlapping();
 Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
+// CRM (ADR-043): prospect, active and inactive from the ledger, once a day.
+Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();

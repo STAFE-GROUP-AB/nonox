@@ -1,0 +1,12 @@
+@php($input = 'mt-1 block w-28 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs tabular-nums')
+<form wire:submit="save" class="grid gap-5 sm:grid-cols-2">
+    <x-ui.field for="crm-inactive" :label="__('Inaktiv efter, månader utan faktura')" error="settings.months_to_inactive" :hint="__('En aktiv kund blir inaktiv när den inte har fått någon faktura på så här många månader. Standard är 12.')">
+        <input id="crm-inactive" type="number" min="1" max="120" inputmode="numeric" wire:model="settings.months_to_inactive" class="{{ $input }}">
+    </x-ui.field>
+    <x-ui.field for="crm-prune" :label="__('Gallra efter, månader utan aktivitet')" error="settings.prune_after_months" :hint="__('Kontaktpersoner och prospekt utan aktivitet på så här länge raderas. De visas under Att göra 30 dagar innan. Standard är 24.')">
+        <input id="crm-prune" type="number" min="6" max="120" inputmode="numeric" wire:model="settings.prune_after_months" class="{{ $input }}">
+    </x-ui.field>
+    <div class="sm:col-span-2">
+        <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
+    </div>
+</form>

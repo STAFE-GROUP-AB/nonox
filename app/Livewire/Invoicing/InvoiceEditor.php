@@ -110,6 +110,14 @@ class InvoiceEditor extends Component
 
         $this->invoiceDate = now()->toDateString();
         $this->rows = [$this->blankRow()];
+
+        // ?kund=<id>: a new invoice for that customer, as from the CRM card (ADR-043).
+        $customer = request()->integer('kund');
+
+        if ($customer > 0 && Customer::query()->whereKey($customer)->exists()) {
+            $this->customerId = (string) $customer;
+            $this->updatedCustomerId();
+        }
     }
 
     /** A new choice of customer brings that customer's VAT treatment. */

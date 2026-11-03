@@ -75,6 +75,14 @@ class SalesDocumentEditor extends Component
         $this->documentDate = now()->toDateString();
         $this->untilDate = $this->kind === SalesDocument::QUOTE ? now()->addDays(30)->toDateString() : '';
         $this->rows = [$this->blankRow()];
+
+        // ?kund=<id>: a new quote or order for that customer, as from the CRM card (ADR-043).
+        $customer = Customer::query()->find(request()->integer('kund'));
+
+        if ($customer instanceof Customer) {
+            $this->customerId = (string) $customer->id;
+            $this->email = (string) $customer->email;
+        }
     }
 
     public function save(SaveSalesDocument $save): void
