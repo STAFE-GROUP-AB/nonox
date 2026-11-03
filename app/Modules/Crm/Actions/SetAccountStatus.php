@@ -46,7 +46,7 @@ final class SetAccountStatus
                 'last_activity_at' => now(),
             ])->save();
 
-            Audit::record('crm.status_changed', $account, ['before' => $before->value, 'after' => $new->value, 'by' => 'hand', 'reason' => $reason], $company, $user);
+            Audit::record('crm.status_changed', $account, ['before' => $before->value, 'after' => $new->value, 'by' => 'hand', 'reason_given' => $reason !== null], $company, $user);
 
             return $account;
         }));

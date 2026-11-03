@@ -7,6 +7,7 @@ namespace App\Actions\Privacy;
 use App\Domain\Invoicing\AgreementStatus;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
+use App\Events\CustomerAnonymised;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\Invoice;
@@ -78,6 +79,8 @@ class EraseRegisterEntry
             ])->save();
 
             Audit::record('privacy.erased', $customer, ['subject' => 'customer', 'mode' => 'anonymised', 'kept_personal_number' => $keepPersonalNumber], $company, $user);
+            // Modules that keep more about the customer (CRM) erase it in this transaction.
+            event(new CustomerAnonymised($company->id, $customer->id));
 
             return 'anonymised';
         }));

@@ -136,7 +136,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Kunder och prospekt med kontaktpersoner: när modulen är på blir Kunder ett CRM, och varje kund i kundregistret får ett kort. Ett prospekt får kundnummer först när det blir kund. En person kan höra till flera företag med en roll hos varje (beslutsfattare, ambassadör, påverkare, användare, fakturamottagare), och varje person har en rättslig grund enligt GDPR.
 - Aktiviteter med nästa steg: samtal med utfall, möten, anteckningar, e-post och uppgifter, och Mina aktiviteter med försenat, i dag och kommande. Klarmarkera med ett tryck, och NONOX frågar efter nästa steg.
 - Nyckeltal ur bokföringen per kund: fakturerat de senaste tolv månaderna och totalt, obetalt och förfallet, betaltid i snitt och täckningsbidrag med andelen av försäljningen som har ett inköpspris. Tidslinje med aktiviteter, offerter, order, fakturor, betalningar och påminnelser.
-- Kundstatus som följer fakturorna (prospekt, aktiv, inaktiv, förlorad med orsak), gallring av gamla kontakter, rollen Säljare utan åtkomst till bokföringen, byggt för mobilen och med i API:t.
+- Kundstatus som följer fakturorna (prospekt, aktiv, inaktiv, förlorad med orsak), gallring av gamla kontakter, rollen Säljare som ser fakturerat, obetalt och betaltid per kund men inga verifikationer eller rapporter, byggt för mobilen och med i API:t.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.

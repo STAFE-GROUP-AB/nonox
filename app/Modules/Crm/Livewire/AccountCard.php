@@ -322,16 +322,22 @@ class AccountCard extends Component
         $company = $this->company();
         $user = $this->user();
         $now = CarbonImmutable::now();
+        $canSeeInvoices = $user->hasTeamPermission($company, 'invoices:view');
+        // A private person's debts and payment habits are for those who may see the invoices, not for a seller.
+        $limitedLedger = ! $canSeeInvoices && $account->kind === AccountKind::Person;
 
         return view('crm::livewire.account-card', [
             'account' => $account,
             'figures' => $figures->forCustomer($account->customer_id),
-            'timeline' => $timeline->for($account),
+            'timeline' => $timeline->for($account, withReminders: ! $limitedLedger),
+            'canSeeInvoices' => $canSeeInvoices,
+            'limitedLedger' => $limitedLedger,
             'next' => $this->activities()->whereNull('done_at')->with(['person:id,name', 'assignee:id,name'])->orderByRaw('due_at ASC NULLS LAST')->orderBy('id')->limit(5)->get(),
             'canManage' => $user->can('update', $account),
             'canEditCustomer' => $account->customer instanceof Customer && $user->can('update', $account->customer),
             'canConvert' => $account->customer_id === null && $user->can('update', $account) && $user->can('create', [Customer::class, $company]),
-            'canSell' => $account->customer_id !== null && $user->hasTeamPermission($company, 'invoices:create'),
+            // The editors offer only active customers whose processing is not restricted; an anonymised customer is inactive.
+            'canSell' => $account->customer instanceof Customer && $account->customer->is_active && ! $account->customer->isRestricted() && $user->hasTeamPermission($company, 'invoices:create'),
             'canExport' => $account->customer instanceof Customer && $user->can('update', $account->customer),
             'members' => CompanyMembers::all($company),
             'types' => ActivityType::cases(),
@@ -342,6 +348,7 @@ class AccountCard extends Component
             'otherPeople' => $this->panel === 'link' ? Person::query()->whereNotIn('id', $account->people->pluck('id'))->orderBy('name')->limit(500)->get(['id', 'name', 'title']) : collect(),
             'parents' => $this->panel === 'edit' ? Account::query()->whereKeyNot($account->id)->orderBy('name')->limit(500)->get(['id', 'name']) : collect(),
             'sharedLocked' => ! $this->canEditShared($account),
+            'mentions' => $this->panel === 'person' && $this->editingPersonId !== null ? app(EraseCrmData::class)->mentions(Person::query()->findOrFail($this->editingPersonId)) : 0,
             'now' => $now,
         ]);
     }

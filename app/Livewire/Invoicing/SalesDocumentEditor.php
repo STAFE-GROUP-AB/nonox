@@ -77,7 +77,7 @@ class SalesDocumentEditor extends Component
         $this->rows = [$this->blankRow()];
 
         // ?kund=<id>: a new quote or order for that customer, as from the CRM card (ADR-043).
-        $customer = Customer::query()->find(request()->integer('kund'));
+        $customer = Customer::query()->where('is_active', true)->whereNull('processing_restricted_at')->find(request()->integer('kund'));
 
         if ($customer instanceof Customer) {
             $this->customerId = (string) $customer->id;

@@ -103,7 +103,10 @@ All tables are company-scoped (`BelongsToCompany`, tenancy tests).
   are links (`tel:`, `mailto:`); quick buttons for call, meeting, note and
   task; the installed app (ADR-031) needs nothing more.
 - **Permissions**: `crm:view`, `crm:manage`, `crm:settings`. New role
-  **Säljare** (`sales`): `crm:view` and `crm:manage`, nothing in the ledger.
+  **Säljare** (`sales`): `crm:view` and `crm:manage`. A seller sees invoiced,
+  unpaid and payment time per customer, but no invoices, vouchers or
+  reports; for a private person (kind PERSON) not even the unpaid amount,
+  the payment time or the reminders (see Implementation).
   Key figures are visible with `crm:view`: a seller needs to know whether a
   customer pays. Owner, admin, accountant and bookkeeper get all three;
   auditor gets `crm:view`.
@@ -181,3 +184,40 @@ building, where this ADR left them open or the code required a change:
   completes an activity.
 - **Look.** The app has one (light) theme; the CRM uses the app's own
   components and adds no dark-mode styles of its own.
+
+### Review round (2026-11-03)
+
+- **Audit log.** CRM writes only ids, field names, statuses and whether a
+  reason was given to the append-only log; never names, numbers, contact
+  details or free text. (The core customer register still logs a customer's
+  name on `customer.created`; that is outside the CRM.)
+- **Anonymised customers.** `EraseRegisterEntry` dispatches
+  `CustomerAnonymised` in its transaction; the CRM clears website, source,
+  tags, SNI code, lost reason, the person links and the subject and text of
+  the account's activities. The backfill skips anonymised and restricted
+  customers, and the card offers no new quote, order or invoice for an
+  inactive or restricted customer (`?kund=` uses the editors' own filter).
+- **Personal numbers.** The CRM refuses a personal number in
+  `org_number` and never copies a sole trader's personal number from the
+  customer register. The core register keeps it in plain `org_number`
+  (a known gap outside this module).
+- **Kontakta inte.** A person can be flagged (objection, art. 21, or
+  restriction, art. 18). No new call, meeting, e-mail or task can be logged
+  for them, only notes. The flag survives erasure as an HMAC of each e-mail
+  address and phone number in `crm_suppressions`, so the person is flagged
+  again if added back. `TODO(legal-verify)`: how long the suppression list
+  is kept.
+- **Information duty (art. 14).** An optional "Informerad den" date on the
+  person, and a template text in the manual (`TODO(legal-verify)`).
+- **Sellers and private persons.** Without `invoices:view`, a private
+  person's unpaid amount, payment time, reminders and invoice and payment
+  amounts are hidden, and no one sees links into invoices they cannot open.
+- **Auditor** keeps `crm:view`: an auditor already sees the invoices, and
+  the CRM shows how customers were followed up. The manual says so.
+- **"Lägg till kund".** `?ny=1` opens a customer form for those who may add
+  customers (the account is created and turned into a customer in one
+  transaction) and a prospect form for others.
+- **Navigation.** With CRM on and `crm:view`, Kunder is only under CRM;
+  others still find it under Register.
+- **Person extract while off.** The contact-person extract works with the
+  module off, for those with `settings:manage`.

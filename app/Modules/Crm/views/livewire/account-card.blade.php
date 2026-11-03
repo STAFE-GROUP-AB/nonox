@@ -298,7 +298,8 @@
                                     'reminder' => __('Påminnelse :sequence för faktura :number', ['sequence' => $entry->status, 'number' => $entry->number]),
                                     default => '',
                                 };
-                                $url = match ($entry->kind) {
+                                // Links into the ledger only for those who may open it; others would get 403.
+                                $url = ! $canSeeInvoices ? null : match ($entry->kind) {
                                     'quote' => route('invoicing.quotes.show', $entry->ref),
                                     'order' => route('invoicing.orders.show', $entry->ref),
                                     'invoice', 'credit', 'payment', 'reminder' => route('invoicing.invoices.show', $entry->ref),
@@ -323,7 +324,7 @@
                                                 $entry->person_name,
                                                 $entry->user_name,
                                             ])->filter()->implode(' · ') }}
-                                        @elseif($entry->amount_ore !== null)
+                                        @elseif($entry->amount_ore !== null && ! ($limitedLedger && in_array($entry->kind, ['invoice', 'credit', 'payment'], true)))
                                             <x-ui.amount :money="$money((int) $entry->amount_ore)" />
                                             @if(in_array($entry->kind, ['invoice', 'credit', 'quote', 'order'], true)) {{ __('exkl. moms') }}@endif
                                             @if($entry->kind === 'reminder') {{ __('kvar att betala') }}@endif
@@ -354,6 +355,7 @@
                             <dt class="text-gray-500">{{ __('Fakturerat totalt') }}</dt>
                             <dd><x-ui.amount :money="$money($figures->invoicedTotal)" class="text-base font-bold text-ink" /></dd>
                         </div>
+                        @if(! $limitedLedger)
                         <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Obetalt') }}</dt>
                             <dd><x-ui.amount :money="$money($figures->open)" class="text-base font-bold text-ink" /></dd>
@@ -366,6 +368,7 @@
                             <dt class="text-gray-500">{{ __('Betaltid i snitt') }}</dt>
                             <dd class="text-base font-bold text-ink tabular-nums">{{ $figures->paymentDays === null ? '–' : __(':days dagar', ['days' => number_format($figures->paymentDays, 1, ',', ' ')]) }}</dd>
                         </div>
+                        @endif
                         <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Täckningsbidrag 12 mån') }}</dt>
                             <dd class="text-right">
@@ -390,6 +393,7 @@
                 @if($canSell)
                     <div class="mt-4 flex flex-wrap gap-3 text-sm">
                         <a href="{{ route('invoicing.quotes.create', ['kund' => $account->customer_id]) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700">{{ __('Ny offert') }}</a>
+                        <a href="{{ route('invoicing.orders.create', ['kund' => $account->customer_id]) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700">{{ __('Ny order') }}</a>
                         <a href="{{ route('invoicing.invoices.create', ['kund' => $account->customer_id]) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700">{{ __('Ny faktura') }}</a>
                     </div>
                 @endif
@@ -404,7 +408,7 @@
                         @foreach($account->people as $person)
                             <li wire:key="person-{{ $person->id }}" class="py-3">
                                 <span class="flex flex-wrap items-baseline justify-between gap-2">
-                                    <span class="font-medium text-gray-900">{{ $person->name }}</span>
+                                    <span class="font-medium text-gray-900">{{ $person->name }}@if($person->doNotContact()) <x-ui.badge tone="accent" class="ms-1">{{ __('Kontakta inte') }}</x-ui.badge>@endif</span>
                                     @if($canManage)
                                         <select class="rounded-lg border-gray-300 py-1 text-xs focus:border-accent-500 focus:ring-accent-500" aria-label="{{ __('Roll för :name', ['name' => $person->name]) }}" wire:change="changeRole({{ $person->id }}, $event.target.value)">
                                             @foreach($roles as $role)
@@ -422,7 +426,7 @@
                                 </span>
                                 @if($canManage)
                                     <span class="mt-1 flex flex-wrap gap-x-4 text-sm">
-                                        <button type="button" class="min-h-11 text-gray-700 underline sm:min-h-0" wire:click="startActivity('CALL', {{ $person->id }})">{{ __('Logga samtal') }}</button>
+                                        @unless($person->doNotContact())<button type="button" class="min-h-11 text-gray-700 underline sm:min-h-0" wire:click="startActivity('CALL', {{ $person->id }})">{{ __('Logga samtal') }}</button>@endunless
                                         <button type="button" class="min-h-11 text-gray-700 underline sm:min-h-0" wire:click="startPerson({{ $person->id }})">{{ __('Ändra') }}</button>
                                         <button type="button" class="min-h-11 text-gray-700 underline sm:min-h-0" wire:click="unlink({{ $person->id }})" wire:confirm="{{ __('Ta bort :name från kunden? Personen finns kvar under Personer.', ['name' => $person->name]) }}">{{ __('Ta bort från kunden') }}</button>
                                     </span>

@@ -114,7 +114,7 @@ class InvoiceEditor extends Component
         // ?kund=<id>: a new invoice for that customer, as from the CRM card (ADR-043).
         $customer = request()->integer('kund');
 
-        if ($customer > 0 && Customer::query()->whereKey($customer)->exists()) {
+        if ($customer > 0 && Customer::query()->whereKey($customer)->where('is_active', true)->whereNull('processing_restricted_at')->exists()) {
             $this->customerId = (string) $customer;
             $this->updatedCustomerId();
         }

@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\AccountStatus;
+use App\Modules\Crm\Domain\IdentityNumber;
 use App\Modules\Crm\Models\Account;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -17,7 +18,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Gives every customer of the company an account (ADR-043), when the module
  * is turned on: one insert for all customers without one, then the status
- * rules. Idempotent: a customer that has an account is left alone. A
+ * rules. Idempotent: a customer that has an account is left alone, and so
+ * are customers anonymised or restricted under GDPR. A
  * customer added later gets its account from CustomerAccounts, the
  * observer on the customer register.
  */
@@ -30,12 +32,19 @@ final class EnsureCustomerAccounts
             $created = DB::transaction(function (): int {
                 $missing = Customer::query()
                     ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from('crm_accounts')->whereColumn('crm_accounts.customer_id', 'customers.id'))
+                    // Not a customer whose processing is restricted (art. 18), nor one anonymised on request (art. 17).
+                    ->whereNull('processing_restricted_at')
+                    ->whereNotExists(fn ($query) => $query->select(DB::raw(1))->from('audit_logs')
+                        ->where('audit_logs.action', 'privacy.erased')
+                        ->where('audit_logs.subject_type', (new Customer)->getMorphClass())
+                        ->whereRaw('audit_logs.subject_id = customers.id::text'))
                     ->toBase()
                     ->select([
                         'company_id',
                         'id',
                         'name',
-                        'org_number',
+                        // A sole trader's personal number in the register's org_number is not copied (IdentityNumber).
+                        DB::raw("CASE WHEN SUBSTRING(REGEXP_REPLACE(COALESCE(org_number, ''), '[^0-9]', '', 'g') FROM 3 FOR 1) IN ('0', '1') THEN NULL ELSE org_number END"),
                         DB::raw("CASE WHEN personal_number IS NULL THEN '".AccountKind::Company->value."' ELSE '".AccountKind::Person->value."' END"),
                         DB::raw("'".AccountStatus::Prospect->value."'"),
                         'email',
@@ -88,6 +97,6 @@ final class EnsureCustomerAccounts
      */
     public static function sharedFields(Customer $customer): array
     {
-        return [...$customer->only(Account::CUSTOMER_FIELDS), 'country' => $customer->country ?: 'SE'];
+        return [...$customer->only(Account::CUSTOMER_FIELDS), 'org_number' => IdentityNumber::forCrm($customer->org_number), 'country' => $customer->country ?: 'SE'];
     }
 }

@@ -30,7 +30,7 @@ final class CrmController
 
     private const array ACCOUNT_FIELDS = ['name', 'org_number', 'kind', 'owner_id', 'parent_id', 'sni_code', 'website', 'email', 'phone', 'address_line1', 'postal_code', 'city', 'country', 'source', 'tags'];
 
-    private const array PERSON_FIELDS = ['name', 'title', 'email', 'phone', 'mobile', 'legal_basis', 'legal_basis_note', 'consent_at', 'is_active', 'account_id', 'role'];
+    private const array PERSON_FIELDS = ['name', 'title', 'email', 'phone', 'mobile', 'legal_basis', 'legal_basis_note', 'consent_at', 'is_active', 'informed_at', 'do_not_contact', 'do_not_contact_reason', 'account_id', 'role'];
 
     private const array ACTIVITY_FIELDS = ['account_id', 'person_id', 'type', 'call_outcome', 'subject', 'body', 'assigned_to', 'due_at', 'done'];
 
@@ -113,7 +113,7 @@ final class CrmController
     public function updatePerson(Request $request, int $person, SavePerson $save): JsonResponse
     {
         $model = Person::query()->findOrFail($person);
-        $current = [...$model->only(['name', 'title', 'email', 'phone', 'mobile', 'legal_basis_note', 'is_active']), 'legal_basis' => $model->legal_basis->value, 'consent_at' => $model->consent_at?->toDateString()];
+        $current = [...$model->only(['name', 'title', 'email', 'phone', 'mobile', 'legal_basis_note', 'is_active']), 'legal_basis' => $model->legal_basis->value, 'consent_at' => $model->consent_at?->toDateString(), 'informed_at' => $model->informed_at?->toDateString(), 'do_not_contact' => $model->doNotContact(), 'do_not_contact_reason' => $model->do_not_contact_reason?->value];
         $changes = array_intersect_key($request->json()->all(), array_flip(array_diff(self::PERSON_FIELDS, ['account_id', 'role'])));
 
         $saved = $save($this->user(), $this->company(), [...$current, ...$changes], $model);
@@ -206,6 +206,9 @@ final class CrmController
             'legal_basis_note' => $person->legal_basis_note,
             'consent_at' => $person->consent_at?->toDateString(),
             'is_active' => $person->is_active,
+            'informed_at' => $person->informed_at?->toDateString(),
+            'do_not_contact' => $person->doNotContact(),
+            'do_not_contact_reason' => $person->do_not_contact_reason?->value,
             'accounts' => $person->accounts->map(fn (Account $account): array => ['account_id' => $account->id, 'role' => $account->link->role->value])->values()->all(),
             'created_at' => self::time($person->created_at),
             'updated_at' => self::time($person->updated_at),

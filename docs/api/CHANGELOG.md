@@ -22,13 +22,13 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- lang:sv -->
 ### Tillagt
 
-- **CRM**: `GET` och `POST /crm/accounts`, `GET` och `PATCH /crm/accounts/{account}` (kunder och prospekt; `PATCH` med `status` sätter status för hand, `LOST` kräver `lost_reason`), `GET` och `POST /crm/people`, `GET` och `PATCH /crm/people/{person}` (kontaktpersoner med roll och rättslig grund) och `GET` och `POST /crm/activities`, `GET` och `PATCH /crm/activities/{activity}` (anteckningar, samtal, möten, e-post och uppgifter; `"done": true` klarmarkerar). Samma regler som i appen.
+- **CRM**: `GET` och `POST /crm/accounts`, `GET` och `PATCH /crm/accounts/{account}` (kunder och prospekt; `PATCH` med `status` sätter status för hand, `LOST` kräver `lost_reason`), `GET` och `POST /crm/people`, `GET` och `PATCH /crm/people/{person}` (kontaktpersoner med roll och rättslig grund) och `GET` och `POST /crm/activities`, `GET` och `PATCH /crm/activities/{activity}` (anteckningar, samtal, möten, e-post och uppgifter; `"done": true` klarmarkerar). Samma regler som i appen. En person har `informed_at` och `do_not_contact` (`OBJECTION` eller `RESTRICTION`); för en sådan person går det bara att skapa anteckningar.
 - **Scopes**: `crm:view` och `crm:manage`. Ingen har dem när modulen CRM är avstängd.
 <!-- /lang -->
 <!-- lang:en -->
 ### Added
 
-- **CRM**: `GET` and `POST /crm/accounts`, `GET` and `PATCH /crm/accounts/{account}` (prospects and customers; `PATCH` with `status` sets the status by hand, `LOST` needs `lost_reason`), `GET` and `POST /crm/people`, `GET` and `PATCH /crm/people/{person}` (contact people with role and legal basis) and `GET` and `POST /crm/activities`, `GET` and `PATCH /crm/activities/{activity}` (notes, calls, meetings, e-mails and tasks; `"done": true` completes one). The same rules as in the app.
+- **CRM**: `GET` and `POST /crm/accounts`, `GET` and `PATCH /crm/accounts/{account}` (prospects and customers; `PATCH` with `status` sets the status by hand, `LOST` needs `lost_reason`), `GET` and `POST /crm/people`, `GET` and `PATCH /crm/people/{person}` (contact people with role and legal basis) and `GET` and `POST /crm/activities`, `GET` and `PATCH /crm/activities/{activity}` (notes, calls, meetings, e-mails and tasks; `"done": true` completes one). The same rules as in the app. A person has `informed_at` and `do_not_contact` (`OBJECTION` or `RESTRICTION`); for such a person only notes can be created.
 - **Scopes**: `crm:view` and `crm:manage`. No one has them while the CRM module is off.
 <!-- /lang -->
 

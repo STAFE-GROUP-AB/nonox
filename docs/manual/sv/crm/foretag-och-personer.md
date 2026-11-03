@@ -50,6 +50,9 @@ Längst ned på kortet finns **Kunduppgifter för fakturor**: betalningsvillkor,
 
 ## Bra att veta
 
+- CRM sparar inga personnummer. För en enskild firma lämnar du organisationsnumret tomt; när firman blir kund står numret i kundregistret.
+- **Ny kund** (för den som får skapa kunder) lägger till en kund direkt, med nästa kundnummer. **Nytt prospekt** lägger till någon du ännu inte fakturerar.
+- En person kan märkas **Kontakta inte**. Se [GDPR i CRM](/manual/crm/gdpr-i-crm#kontakta-inte).
 - En kund som finns i bokföringen kan aldrig raderas från CRM. Bokföringslagen kräver att fakturorna och deras uppgifter sparas.
 - Personer och prospekt som ingen har haft kontakt med på länge raderas enligt företagets gallringsregel. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 

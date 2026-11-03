@@ -26,7 +26,9 @@ use Carbon\CarbonImmutable;
  *
  * Permissions: crm:view sees accounts, people, activities and key figures;
  * crm:manage changes them; crm:settings changes the settings. The role
- * Säljare (sales) gets view and manage and nothing in the ledger.
+ * Säljare (sales) gets view and manage: it sees invoiced, unpaid and
+ * payment time per customer (not for private persons), but no invoices,
+ * vouchers or reports.
  */
 final class CrmModule implements IsNew, Module, ProvidesTodos
 {
@@ -105,7 +107,7 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
                 'label' => __('CRM'),
                 'route' => 'crm.activities',
                 'permission' => 'crm:view',
-                'active' => 'crm.*',
+                'active' => ['crm.*', 'invoicing.customers'],
                 'children' => fn (User $user, Company $company): array => [
                     ['label' => __('Kunder och prospekt'), 'route' => 'invoicing.customers', 'active' => ['invoicing.customers', 'crm.accounts.show']],
                     ['label' => __('Mina aktiviteter'), 'route' => 'crm.activities', 'active' => ['crm.activities']],

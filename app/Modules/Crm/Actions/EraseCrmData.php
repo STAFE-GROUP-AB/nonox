@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Actions;
 
+use App\Events\CustomerAnonymised;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Models\Account;
+use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +37,11 @@ final class EraseCrmData
         }
 
         DB::transaction(fn () => CurrentCompany::run($company, function () use ($user, $company, $person): void {
+            // Someone who asked not to be contacted stays on the suppression list (hashes only).
+            if ($person->do_not_contact_reason !== null) {
+                SuppressionList::remember($person, $person->do_not_contact_reason->value);
+            }
+
             $activities = Activity::query()->where('person_id', $person->id)->update([
                 'person_id' => null,
                 'subject' => __('Anonymiserad aktivitet'),
@@ -46,6 +54,21 @@ final class EraseCrmData
             // The id only: the name must not outlive the person in the append-only log.
             Audit::record('privacy.erased', null, ['subject' => 'crm_person', 'person_id' => $person->id, 'activities_anonymised' => $activities, 'by' => $user === null ? 'retention' : 'request'], $company, $user);
         }));
+    }
+
+    /**
+     * Activities not linked to the person whose subject or text mentions
+     * their name: erasure leaves these, and the screen asks for them to be
+     * checked by hand.
+     */
+    public function mentions(Person $person): int
+    {
+        $name = '%'.addcslashes($person->name, '\\%_').'%';
+
+        return Activity::query()
+            ->where(fn ($query) => $query->whereNull('person_id')->orWhere('person_id', '<>', $person->id))
+            ->where(fn ($query) => $query->where('subject', 'ilike', $name)->orWhere('body', 'ilike', $name))
+            ->count();
     }
 
     public function prospect(?User $user, Company $company, Account $account): void
@@ -64,5 +87,35 @@ final class EraseCrmData
 
             Audit::record('privacy.erased', null, ['subject' => 'crm_prospect', 'account_id' => $account->id, 'by' => $user === null ? 'retention' : 'request'], $company, $user);
         }));
+    }
+
+    /**
+     * A booked customer anonymised in the customer register (EraseRegisterEntry):
+     * the account stays (the invoices point at the customer), but what the CRM
+     * alone knows about it goes: website, source, tags, SNI code, the reason
+     * it was lost, the links to people and the subject and text of its
+     * activities. Name, numbers and address follow the register's anonymised
+     * values through CustomerAccounts. Runs in the erasure's transaction.
+     */
+    public function customerAnonymised(CustomerAnonymised $event): void
+    {
+        CurrentCompany::run($event->companyId, function () use ($event): void {
+            $account = Account::query()->where('customer_id', $event->customerId)->first();
+
+            if ($account === null) {
+                return;
+            }
+
+            $account->forceFill(['website' => null, 'source' => null, 'tags' => [], 'sni_code' => null, 'lost_reason' => null])->save();
+            AccountPerson::query()->where('account_id', $account->id)->delete();
+            $activities = Activity::query()->where('account_id', $account->id)->update([
+                'person_id' => null,
+                'subject' => __('Anonymiserad aktivitet'),
+                'body' => null,
+                'updated_at' => now(),
+            ]);
+
+            Audit::record('privacy.erased', $account, ['subject' => 'crm_account', 'activities_anonymised' => $activities, 'by' => 'customer_anonymised'], $event->companyId);
+        });
     }
 }

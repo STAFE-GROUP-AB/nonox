@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm;
 
+use App\Events\CustomerAnonymised;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\Customer;
+use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Console\RefreshStatusesCommand;
+use App\Modules\Crm\Http\CrmPersonExportController;
 use App\Modules\Crm\Livewire\AccountCard;
 use App\Modules\Crm\Livewire\AccountsPage;
 use App\Modules\Crm\Livewire\ActivitiesPage;
@@ -20,6 +23,7 @@ use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Policies\CrmPolicy;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Modules\ModuleRegistry;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
@@ -47,6 +51,7 @@ class CrmServiceProvider extends ServiceProvider
         }
 
         Customer::observe(CustomerAccounts::class);
+        Event::listen(CustomerAnonymised::class, [EraseCrmData::class, 'customerAnonymised']);
 
         Livewire::component(CrmSettingsForm::NAME, CrmSettingsForm::class);
         Livewire::component('crm.accounts', AccountsPage::class);
@@ -61,5 +66,11 @@ class CrmServiceProvider extends ServiceProvider
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.CrmModule::KEY])
             ->group(__DIR__.'/routes/web.php');
+
+        // A contact person's register extract also works while the module is off: GDPR rights do not stop with the module.
+        Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class])
+            ->get('/registerutdrag/kontaktperson/{person}', CrmPersonExportController::class)
+            ->whereNumber('person')
+            ->name('privacy.export.crmPerson');
     }
 }

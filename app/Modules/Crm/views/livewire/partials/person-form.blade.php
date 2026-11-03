@@ -46,17 +46,37 @@
         <x-ui.field for="person_basis_note" :label="__('Anteckning om grunden (valfritt)')" error="legal_basis_note" class="sm:col-span-2">
             <input id="person_basis_note" type="text" class="{{ $input }} mt-1" wire:model="personForm.legal_basis_note">
         </x-ui.field>
+        <x-ui.field for="person_informed" :label="__('Informerad den (valfritt)')" error="informed_at" :hint="__('Dagen personen fick information om hur ni behandlar uppgifterna (GDPR artikel 14), senast en månad efter att ni sparade dem.')">
+            <input id="person_informed" type="date" class="{{ $input }} mt-1" wire:model="personForm.informed_at">
+        </x-ui.field>
+        <label class="flex min-h-11 items-start gap-3 text-sm text-gray-800 sm:col-span-2">
+            <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model.live="personForm.do_not_contact">
+            <span>{{ __('Kontakta inte') }}<span class="block text-xs text-gray-500">{{ __('Personen har invänt mot behandlingen eller begärt begränsad behandling. Inga nya samtal, möten, mejl eller uppgifter kan loggas för personen, bara anteckningar.') }}</span></span>
+        </label>
+        @if($personForm['do_not_contact'] ?? false)
+            <x-ui.field for="person_dnc_reason" :label="__('Varför')" error="do_not_contact_reason">
+                <select id="person_dnc_reason" class="{{ $input }} mt-1" wire:model="personForm.do_not_contact_reason">
+                    <option value="">{{ __('Välj') }}</option>
+                    @foreach(App\Modules\Crm\Domain\DoNotContact::cases() as $reason)
+                        <option value="{{ $reason->value }}">{{ $reason->label() }}</option>
+                    @endforeach
+                </select>
+            </x-ui.field>
+        @endif
         @if($editingPersonId)
             <label class="flex min-h-11 items-center gap-3 text-sm text-gray-800 sm:col-span-2">
                 <input type="checkbox" class="size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="personForm.is_active">
                 <span>{{ __('Aktiv kontakt') }}</span>
             </label>
+            @if(($mentions ?? 0) > 0)
+                <p class="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:col-span-2">{{ trans_choice(':count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.', $mentions) }}</p>
+            @endif
         @endif
         <div class="flex flex-wrap items-center gap-4 sm:col-span-2">
             <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
             <button type="button" class="min-h-11 text-sm text-gray-600 underline" wire:click="closePanel">{{ __('Avbryt') }}</button>
             @if($editingPersonId)
-                <button type="button" class="ms-auto min-h-11 text-sm text-accent-700 underline" wire:click="erasePerson" wire:confirm="{{ __('Radera personen enligt GDPR? Personen tas bort från alla kunder, och aktiviteterna om personen blir kvar utan namn och text. Det går inte att ångra.') }}">{{ __('Radera enligt GDPR') }}</button>
+                <button type="button" class="ms-auto min-h-11 text-sm text-accent-700 underline" wire:click="erasePerson" wire:confirm="{{ __('Radera personen enligt GDPR? Personen tas bort från alla kunder, och aktiviteterna som är kopplade till personen blir kvar utan namn och text. Fritext i andra aktiviteter som nämner personen ändras inte. Det går inte att ångra.') }}">{{ __('Radera enligt GDPR') }}</button>
             @endif
         </div>
     </form>

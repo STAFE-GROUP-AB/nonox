@@ -36,6 +36,13 @@ final class ConvertToCustomer
         }
 
         return DB::transaction(fn (): Customer => CurrentCompany::run($company, function () use ($user, $company, $account, $paymentTermsDays): Customer {
+            // A double click must not make two customers: lock the account and look again.
+            $account = Account::query()->whereKey($account->id)->lockForUpdate()->firstOrFail();
+
+            if ($account->customer_id !== null) {
+                throw ValidationException::withMessages(['account' => __('Det här är redan en kund.')]);
+            }
+
             $customer = CustomerAccounts::withoutNewAccounts(fn (): Customer => ($this->saveCustomer)($user, $company, [
                 ...$account->only(Account::CUSTOMER_FIELDS),
                 'payment_terms_days' => $paymentTermsDays,

@@ -43,7 +43,9 @@ CRM är byggt för telefonen först. Knapparna är stora, telefonnummer och e-po
 | **Revisor** | Ja | Nej | Nej |
 | **Säljare** | Ja | Ja | Nej |
 
-Rollen **Säljare** finns när CRM är påslaget. En säljare ser kunderna, nyckeltalen och aktiviteterna, men inget i bokföringen: inga fakturor, inga verifikationer och inga rapporter. Att göra ett prospekt till kund och att ändra kundens fakturauppgifter kräver att man får skapa fakturor.
+Rollen **Säljare** finns när CRM är påslaget. En säljare ser fakturerat, obetalt och betaltid per kund, men inga verifikationer eller rapporter och kan inte öppna fakturorna. För en privatperson ser säljaren varken vad personen är skyldig, betaltiden eller påminnelserna. Att göra ett prospekt till kund och att ändra kundens fakturauppgifter kräver att man får skapa fakturor.
+
+En **Revisor** ser hela CRM, nyckeltalen och aktiviteterna, men kan inte ändra något. Revisorn ser redan fakturorna i bokföringen, och CRM visar hur kunderna har följts upp.
 
 ## Läs också
 

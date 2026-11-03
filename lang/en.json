@@ -7322,5 +7322,16 @@
     "Samtal": "Call",
     "Läsa CRM: kunder och prospekt, kontaktpersoner och aktiviteter": "Read the CRM: customers and prospects, contact people and activities",
     "Lägga till och ändra kunder och prospekt, kontaktpersoner och aktiviteter i CRM": "Add and change customers and prospects, contact people and activities in the CRM",
-    "Kunder och prospekt, med nästa steg och vad de är värda i bokföringen.": "Customers and prospects, with the next step and what they are worth in the books."
+    "Kunder och prospekt, med nästa steg och vad de är värda i bokföringen.": "Customers and prospects, with the next step and what they are worth in the books.",
+    "Ange om personen har invänt eller begärt begränsad behandling.": "State whether the person objected or asked for restricted processing.",
+    "Det här är ett personnummer. CRM sparar inga personnummer; för en enskild firma står numret i kundregistret när den blir kund.": "This is a personal identity number. The CRM keeps no personal identity numbers; for a sole trader the number is in the customer register once it becomes a customer.",
+    "Personen har bett att inte bli kontaktad. Du kan bara skriva en anteckning om personen.": "The person asked not to be contacted. You can only write a note about the person.",
+    "Kontakta inte": "Do not contact",
+    "Kunden får nästa kundnummer och kan faktureras direkt. Betalningsvillkor och moms ställer du in på kundens kort.": "The customer gets the next customer number and can be invoiced at once. Set payment terms and VAT on the customer's card.",
+    "Informerad den (valfritt)": "Informed on (optional)",
+    "Dagen personen fick information om hur ni behandlar uppgifterna (GDPR artikel 14), senast en månad efter att ni sparade dem.": "The day the person was told how you process the data (GDPR article 14), at the latest one month after you saved it.",
+    "Personen har invänt mot behandlingen eller begärt begränsad behandling. Inga nya samtal, möten, mejl eller uppgifter kan loggas för personen, bara anteckningar.": "The person objected to the processing or asked for it to be restricted. No new calls, meetings, e-mails or tasks can be logged for the person, only notes.",
+    "Radera personen enligt GDPR? Personen tas bort från alla kunder, och aktiviteterna som är kopplade till personen blir kvar utan namn och text. Fritext i andra aktiviteter som nämner personen ändras inte. Det går inte att ångra.": "Erase the person under the GDPR? The person is removed from every customer, and the activities linked to the person remain without name and text. Free text in other activities that mention the person is not changed. It cannot be undone.",
+    "Vill inte bli kontaktad (invändning)": "Does not want to be contacted (objection)",
+    ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.": ":count activity not linked to the person mentions the name. It is not changed by the erasure; go through it by hand.|:count activities not linked to the person mention the name. They are not changed by the erasure; go through them by hand."
 }

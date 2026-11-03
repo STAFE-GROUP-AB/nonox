@@ -28,8 +28,11 @@ final class Timeline
 {
     public const int PER_PAGE = 20;
 
-    /** @return LengthAwarePaginator<int, object> */
-    public function for(Account $account, int $perPage = self::PER_PAGE, string $pageName = 'tidslinje'): LengthAwarePaginator
+    /**
+     * @param  bool  $withReminders  false leaves reminders out (a private person's account for someone who may not see invoices)
+     * @return LengthAwarePaginator<int, object>
+     */
+    public function for(Account $account, int $perPage = self::PER_PAGE, string $pageName = 'tidslinje', bool $withReminders = true): LengthAwarePaginator
     {
         $union = $this->activities($account);
 
@@ -37,14 +40,24 @@ final class Timeline
             $customer = $account->customer_id;
             $union->unionAll($this->documents($customer))
                 ->unionAll($this->invoices($customer))
-                ->unionAll($this->payments($customer))
-                ->unionAll($this->reminders($customer));
+                ->unionAll($this->payments($customer));
+
+            if ($withReminders) {
+                $union->unionAll($this->reminders($customer));
+            }
         }
 
         return DB::query()->fromSub($union, 'timeline')
             ->orderByDesc('at')
+            ->orderByDesc('kind')
             ->orderByDesc('ref')
             ->paginate($perPage, ['*'], $pageName);
+    }
+
+    /** The app's time zone: dates and local timestamps are read in it, whatever the session's zone. */
+    private static function zone(): string
+    {
+        return (string) config('app.timezone');
     }
 
     private function activities(Account $account): Builder
@@ -56,7 +69,6 @@ final class Timeline
             ->select([
                 DB::raw("'activity' AS kind"),
                 DB::raw('crm_activities.id::text AS ref'),
-                DB::raw('COALESCE(crm_activities.done_at, crm_activities.created_at) AS at'),
                 DB::raw('NULL::text AS number'),
                 DB::raw('NULL::bigint AS amount_ore'),
                 DB::raw('crm_activities.type::text AS status'),
@@ -67,7 +79,9 @@ final class Timeline
                 DB::raw('crm_activities.due_at AS due_at'),
                 DB::raw('users.name::text AS user_name'),
                 DB::raw('crm_people.name::text AS person_name'),
-            ]);
+            ])
+            // created_at is a local timestamp without zone (app.timezone); make it timestamptz like done_at, whatever the session's zone.
+            ->selectRaw('COALESCE(crm_activities.done_at, crm_activities.created_at AT TIME ZONE ?) AS at', [self::zone()]);
     }
 
     private function documents(int $customerId): Builder
@@ -77,12 +91,13 @@ final class Timeline
             ->select([
                 DB::raw('LOWER(kind) AS kind'),
                 DB::raw('id::text AS ref'),
-                DB::raw('document_date::timestamp AT TIME ZONE \'Europe/Stockholm\' AS at'),
                 DB::raw('number::text AS number'),
                 DB::raw('net_ore AS amount_ore'),
                 DB::raw('status::text AS status'),
                 ...$this->empty(),
-            ]);
+            ])
+            // Last in every part, so the columns of the UNION line up; the zone is a binding.
+            ->selectRaw('document_date::timestamp AT TIME ZONE ? AS at', [self::zone()]);
     }
 
     private function invoices(int $customerId): Builder
@@ -93,12 +108,13 @@ final class Timeline
             ->select([
                 DB::raw("CASE WHEN kind = '".Invoice::CREDIT."' THEN 'credit' ELSE 'invoice' END AS kind"),
                 DB::raw('id::text AS ref'),
-                DB::raw('invoice_date::timestamp AT TIME ZONE \'Europe/Stockholm\' AS at'),
                 DB::raw('number::text AS number'),
                 DB::raw('net_ore AS amount_ore'),
                 DB::raw('status::text AS status'),
                 ...$this->empty(),
-            ]);
+            ])
+            // Last in every part, so the columns of the UNION line up; the zone is a binding.
+            ->selectRaw('invoice_date::timestamp AT TIME ZONE ? AS at', [self::zone()]);
     }
 
     private function payments(int $customerId): Builder
@@ -109,12 +125,13 @@ final class Timeline
             ->select([
                 DB::raw("'payment' AS kind"),
                 DB::raw('invoice_payments.invoice_id::text AS ref'),
-                DB::raw('invoice_payments.paid_on::timestamp AT TIME ZONE \'Europe/Stockholm\' AS at'),
                 DB::raw('invoices.number::text AS number'),
                 DB::raw('invoice_payments.amount_ore AS amount_ore'),
                 DB::raw('NULL::text AS status'),
                 ...$this->empty(),
-            ]);
+            ])
+            // Last in every part, so the columns of the UNION line up; the zone is a binding.
+            ->selectRaw('invoice_payments.paid_on::timestamp AT TIME ZONE ? AS at', [self::zone()]);
     }
 
     private function reminders(int $customerId): Builder
@@ -125,12 +142,13 @@ final class Timeline
             ->select([
                 DB::raw("'reminder' AS kind"),
                 DB::raw('invoice_reminders.invoice_id::text AS ref'),
-                DB::raw('invoice_reminders.sent_on::timestamp AT TIME ZONE \'Europe/Stockholm\' AS at'),
                 DB::raw('invoices.number::text AS number'),
                 DB::raw('invoice_reminders.remaining_ore AS amount_ore'),
                 DB::raw('invoice_reminders.sequence::text AS status'),
                 ...$this->empty(),
-            ]);
+            ])
+            // Last in every part, so the columns of the UNION line up; the zone is a binding.
+            ->selectRaw('invoice_reminders.sent_on::timestamp AT TIME ZONE ? AS at', [self::zone()]);
     }
 
     /** @return list<Expression> the activity columns, empty for a ledger entry */

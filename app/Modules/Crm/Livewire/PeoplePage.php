@@ -7,6 +7,7 @@ namespace App\Modules\Crm\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Livewire\Concerns\EditsPeople;
 use App\Modules\Crm\Models\Person;
@@ -90,6 +91,7 @@ class PeoplePage extends Component
             'prospects' => $pruning ? PruneCandidates::prospects($cutoff)->orderBy('name')->limit(200)->get(['id', 'name', 'last_activity_at', 'updated_at']) : collect(),
             'canManage' => $this->user()->can('manage', [Person::class, $this->company()]),
             'pruning' => $pruning,
+            'mentions' => $this->panel === 'person' && $this->editingPersonId !== null ? app(EraseCrmData::class)->mentions(Person::query()->findOrFail($this->editingPersonId)) : 0,
             'months' => CrmSettings::for($this->company())['prune_after_months'],
         ]);
     }

@@ -13,8 +13,9 @@ use Illuminate\Database\Eloquent\Builder;
 /**
  * The CRM's part of the register extract (GDPR art. 15 and 20, ADR-043): a
  * customer's account with its activities, and a contact person with the
- * accounts they are at and the activities about them. Read whether the
- * module is on or off: the data is kept either way.
+ * accounts they are at and the activities about them. Available whether
+ * the module is on or off: the data is kept either way, and the rights in
+ * GDPR do not stop when a module is switched off (CrmPersonExportController).
  */
 final class CrmExport
 {
@@ -62,6 +63,9 @@ final class CrmExport
                 'rattslig_grund' => $person->legal_basis->label(),
                 'anteckning_om_grunden' => $person->legal_basis_note,
                 'samtycke_datum' => $person->consent_at?->toDateString(),
+                'informerad_datum' => $person->informed_at?->toDateString(),
+                'kontakta_inte' => $person->do_not_contact_reason?->label(),
+                'kontakta_inte_sedan' => $person->do_not_contact_at?->toIso8601String(),
                 'aktiv' => $person->is_active,
                 'skapat' => $person->created_at?->toIso8601String(),
             ],

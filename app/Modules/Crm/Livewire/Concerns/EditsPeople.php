@@ -44,6 +44,9 @@ trait EditsPeople
             'legal_basis_note' => (string) $person?->legal_basis_note,
             'consent_at' => (string) $person?->consent_at?->toDateString(),
             'is_active' => $person->is_active ?? true,
+            'informed_at' => (string) $person?->informed_at?->toDateString(),
+            'do_not_contact' => $person?->doNotContact() ?? false,
+            'do_not_contact_reason' => (string) $person?->do_not_contact_reason?->value,
             'role' => PersonRole::Other->value,
         ];
         $this->panel = 'person';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Models;
 
+use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Domain\LegalBasis;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
@@ -27,6 +28,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $consent_at
  * @property bool $is_active
  * @property ?CarbonImmutable $last_activity_at
+ * @property ?CarbonImmutable $informed_at when the person was given the information in GDPR art. 14
+ * @property ?CarbonImmutable $do_not_contact_at
+ * @property ?DoNotContact $do_not_contact_reason
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  * @property-read AccountPerson $link the person's place at the account, when read through Account::people()
@@ -50,6 +54,9 @@ class Person extends Model
         'consent_at',
         'is_active',
         'last_activity_at',
+        'informed_at',
+        'do_not_contact_at',
+        'do_not_contact_reason',
     ];
 
     /** @return array<string, string> */
@@ -60,6 +67,9 @@ class Person extends Model
             'consent_at' => 'immutable_date',
             'is_active' => 'boolean',
             'last_activity_at' => 'immutable_datetime',
+            'informed_at' => 'immutable_date',
+            'do_not_contact_at' => 'immutable_datetime',
+            'do_not_contact_reason' => DoNotContact::class,
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
@@ -78,6 +88,12 @@ class Person extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(Activity::class);
+    }
+
+    /** The person asked not to be contacted (art. 21) or restricted the processing (art. 18). */
+    public function doNotContact(): bool
+    {
+        return $this->do_not_contact_at !== null;
     }
 
     /** The number to call: the mobile first. */

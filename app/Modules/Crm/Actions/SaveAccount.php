@@ -10,6 +10,7 @@ use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Crm\Domain\AccountKind;
+use App\Modules\Crm\Domain\IdentityNumber;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Support\CompanyMembers;
 use App\Support\Audit\Audit;
@@ -54,6 +55,12 @@ final class SaveAccount
             'org_number' => ['nullable', 'string', function (string $attribute, mixed $value, Closure $fail): void {
                 if (OrganisationNumber::tryFrom((string) $value) === null) {
                     $fail(__('Organisationsnumret stämmer inte. Kontrollera siffrorna.'));
+
+                    return;
+                }
+
+                if (IdentityNumber::isPersonal((string) $value)) {
+                    $fail(__('Det här är ett personnummer. CRM sparar inga personnummer; för en enskild firma står numret i kundregistret när den blir kund.'));
                 }
             }],
             'kind' => ['sometimes', Rule::enum(AccountKind::class)],
@@ -107,7 +114,7 @@ final class SaveAccount
             if ($account === null) {
                 $account = Account::create([...$attributes, 'owner_id' => $attributes['owner_id'] ?? $user->id, 'last_activity_at' => now()]);
 
-                Audit::record('crm.account_created', $account, ['name' => $account->name], $company, $user);
+                Audit::record('crm.account_created', $account, ['account_id' => $account->id, 'kind' => $account->kind->value], $company, $user);
 
                 return $account;
             }
@@ -122,7 +129,8 @@ final class SaveAccount
 
             $account->fill($own)->forceFill(['last_activity_at' => now()])->save();
 
-            Audit::record('crm.account_updated', $account, Audit::changes($before, $account->only(array_keys($own))), $company, $user);
+            // Field names only: the append-only log must not keep names, numbers or contact details.
+            Audit::record('crm.account_updated', $account, ['fields' => array_keys(Audit::changes($before, $account->only(array_keys($own))))], $company, $user);
 
             return $account->refresh();
         }));
@@ -137,6 +145,11 @@ final class SaveAccount
     private function saveSharedFields(User $user, Company $company, Customer $customer, array $attributes): void
     {
         $shared = array_intersect_key($attributes, array_flip(Account::CUSTOMER_FIELDS));
+
+        // A sole trader's personal number is never on the account; an empty field must not erase it from the register.
+        if (($shared['org_number'] ?? null) === null && IdentityNumber::isPersonal($customer->org_number)) {
+            unset($shared['org_number']);
+        }
         $current = $customer->only(array_keys($shared));
 
         if ($shared === [] || $shared == $current) {

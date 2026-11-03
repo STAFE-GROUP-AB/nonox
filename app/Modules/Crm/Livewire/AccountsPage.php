@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Crm\Livewire;
 
 use App\Models\Company;
+use App\Models\Customer;
 use App\Models\User;
+use App\Modules\Crm\Actions\ConvertToCustomer;
 use App\Modules\Crm\Actions\SaveAccount;
 use App\Modules\Crm\Domain\AccountFigures;
 use App\Modules\Crm\Domain\AccountKind;
@@ -62,6 +64,8 @@ class AccountsPage extends Component
 
     public bool $showForm = false;
 
+    public bool $asCustomer = false;
+
     /** @var array<string, string> */
     public array $form = [];
 
@@ -81,8 +85,9 @@ class AccountsPage extends Component
             }
         }
 
+        // The register's "Lägg till kund" (?ny=1): a customer for those who may add customers, else a prospect.
         if (request()->boolean('ny') && $this->canManage()) {
-            $this->create();
+            $this->create($this->canCreateCustomer());
         }
     }
 
@@ -99,8 +104,10 @@ class AccountsPage extends Component
         $this->resetPage();
     }
 
-    public function create(): void
+    /** @param  bool  $asCustomer  a customer at once (with the next customer number), not a prospect */
+    public function create(bool $asCustomer = false): void
     {
+        $this->asCustomer = $asCustomer && $this->canCreateCustomer();
         $this->form = array_fill_keys(self::FORM_FIELDS, '');
         $this->form['kind'] = AccountKind::Company->value;
         $this->form['owner_id'] = (string) $this->user()->id;
@@ -110,12 +117,28 @@ class AccountsPage extends Component
 
     public function cancel(): void
     {
-        $this->reset('showForm', 'form');
+        $this->reset('showForm', 'form', 'asCustomer');
     }
 
-    public function save(SaveAccount $save): void
+    public function save(SaveAccount $save, ConvertToCustomer $convert): void
     {
-        $account = $save($this->user(), $this->company(), [...$this->form, 'owner_id' => $this->form['owner_id'] === '' ? null : (int) $this->form['owner_id']]);
+        $input = [...$this->form, 'owner_id' => $this->form['owner_id'] === '' ? null : (int) $this->form['owner_id']];
+
+        if ($this->asCustomer && $this->canCreateCustomer()) {
+            // A customer straight away: the account, then the customer register's own action, all or nothing.
+            [$account, $customer] = DB::transaction(function () use ($save, $convert, $input): array {
+                $account = $save($this->user(), $this->company(), $input);
+
+                return [$account, $convert($this->user(), $this->company(), $account)];
+            });
+
+            Toast::flash(__('Kund :number :name är tillagd.', ['number' => $customer->number, 'name' => $customer->name]));
+            $this->redirectRoute('crm.accounts.show', ['account' => $account->id]);
+
+            return;
+        }
+
+        $account = $save($this->user(), $this->company(), $input);
 
         Toast::flash(__(':name är tillagt som prospekt.', ['name' => $account->name]));
         $this->redirectRoute('crm.accounts.show', ['account' => $account->id]);
@@ -136,6 +159,8 @@ class AccountsPage extends Component
             'cities' => Account::query()->whereNotNull('city')->distinct()->orderBy('city')->limit(200)->pluck('city'),
             'tags' => Account::query()->toBase()->selectRaw('DISTINCT jsonb_array_elements_text(tags) AS tag')->orderBy('tag')->limit(200)->pluck('tag'),
             'canManage' => $this->canManage(),
+            'canSeeInvoices' => $this->user()->hasTeamPermission($this->company(), 'invoices:view'),
+            'canCreateCustomer' => $this->canCreateCustomer(),
             'filtered' => $this->search !== '' || $this->status !== '' || $this->owner !== '' || $this->city !== '' || $this->tag !== '',
             'now' => CarbonImmutable::now(),
         ]);
@@ -180,6 +205,11 @@ class AccountsPage extends Component
                 default => $query->orderBy('name'),
             })
             ->orderBy('id');
+    }
+
+    private function canCreateCustomer(): bool
+    {
+        return $this->canManage() && $this->user()->can('create', [Customer::class, $this->company()]);
     }
 
     private function canManage(): bool

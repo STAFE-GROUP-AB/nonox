@@ -102,7 +102,7 @@ class ActivitiesPage extends Component
         $open = $this->scoped()
             ->whereNull('done_at')
             ->where(fn (Builder $query) => $query->whereNull('due_at')->orWhere('due_at', '<=', $startOfToday->addDays(self::UPCOMING_DAYS)))
-            ->with(['account:id,name,phone', 'person:id,name,phone,mobile', 'assignee:id,name'])
+            ->with(['account:id,name,phone', 'person:id,name,phone,mobile,do_not_contact_at', 'assignee:id,name'])
             ->orderByRaw('due_at ASC NULLS LAST')
             ->orderBy('id')
             ->limit(300)

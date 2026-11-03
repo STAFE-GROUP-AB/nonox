@@ -6,6 +6,7 @@ namespace App\Support\Navigation;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\CrmModule;
 use App\Modules\ModuleManager;
 use App\Modules\ModuleRegistry;
 use App\Support\Hq\HqAccess;
@@ -96,6 +97,7 @@ final class Navigation
     private function sections(User $user, ?Company $company): array
     {
         $can = fn (string $permission): bool => $company !== null && $user->hasTeamPermission($company, $permission);
+        $crm = $company !== null && $this->modules->isEnabled(CrmModule::KEY, $company) && $can('crm:view');
 
         $sections = [
             [
@@ -125,7 +127,16 @@ final class Navigation
                     ['label' => __('Betalfiler'), 'route' => 'payables.batches.index'],
                 ],
             ],
-            [
+            // With CRM on, Kunder lives in the CRM section for those who see it (ADR-043); one way to /kunder.
+            $crm ? [
+                'label' => __('Register'),
+                'route' => 'invoicing.articles',
+                'patterns' => ['invoicing.articles*', 'payables.suppliers*'],
+                'children' => fn (User $user, Company $company): array => [
+                    ['label' => __('Artiklar'), 'route' => 'invoicing.articles'],
+                    ['label' => __('Leverantörer'), 'route' => 'payables.suppliers'],
+                ],
+            ] : [
                 'label' => __('Register'),
                 'route' => 'invoicing.customers',
                 'patterns' => ['invoicing.customers*', 'invoicing.articles*', 'payables.suppliers*'],

@@ -11836,6 +11836,20 @@ components:
           format: date
         is_active:
           type: boolean
+        informed_at:
+          type:
+            - string
+            - 'null'
+          format: date
+          description: 'When the person was given the information in GDPR art. 14.'
+        do_not_contact:
+          type: boolean
+          description: 'The person objected (art. 21) or restricted the processing (art. 18): no new calls, meetings, e-mails or tasks, only notes.'
+        do_not_contact_reason:
+          type:
+            - string
+            - 'null'
+          description: 'OBJECTION or RESTRICTION.'
         accounts:
           type: array
           items:
@@ -11882,6 +11896,18 @@ components:
           description: 'Required with CONSENT.'
         is_active:
           type: boolean
+        informed_at:
+          type: string
+          format: date
+          description: 'When the person was given the information in GDPR art. 14.'
+        do_not_contact:
+          type: boolean
+          description: 'The person objected (art. 21) or restricted the processing (art. 18): no new calls, meetings, e-mails or tasks, only notes.'
+        do_not_contact_reason:
+          type: string
+          enum:
+            - OBJECTION
+            - RESTRICTION
         account_id:
           type: integer
           description: 'Place the new person at this account.'
@@ -11913,6 +11939,18 @@ components:
           format: date
         is_active:
           type: boolean
+        informed_at:
+          type: string
+          format: date
+          description: 'When the person was given the information in GDPR art. 14.'
+        do_not_contact:
+          type: boolean
+          description: 'The person objected (art. 21) or restricted the processing (art. 18): no new calls, meetings, e-mails or tasks, only notes.'
+        do_not_contact_reason:
+          type: string
+          enum:
+            - OBJECTION
+            - RESTRICTION
     CrmActivity:
       type: object
       properties:

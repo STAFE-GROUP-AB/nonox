@@ -81,6 +81,7 @@ use App\Modules\Crm\Models\Account as CrmAccount;
 use App\Modules\Crm\Models\AccountPerson as CrmAccountPerson;
 use App\Modules\Crm\Models\Activity as CrmActivity;
 use App\Modules\Crm\Models\Person as CrmPerson;
+use App\Modules\Crm\Models\Suppression as CrmSuppression;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMailbox;
@@ -294,6 +295,7 @@ const COMPANY_SCOPED_MODELS = [
     CrmPerson::class => ['name' => 'Hemlig kontakt', 'legal_basis' => 'LEGITIMATE_INTEREST'],
     CrmAccountPerson::class => 'crmAccountPersonAttributes',
     CrmActivity::class => 'crmActivityAttributes',
+    CrmSuppression::class => ['kind' => 'EMAIL', 'hash' => 'hemlig-hash', 'reason' => 'OBJECTION'],
     PosConnection::class => 'posConnectionAttributes',
     PosProductLink::class => 'posProductLinkAttributes',
     PosSale::class => 'posSaleAttributes',

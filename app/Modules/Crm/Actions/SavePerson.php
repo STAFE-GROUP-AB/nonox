@@ -6,10 +6,13 @@ namespace App\Modules\Crm\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Domain\LegalBasis;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Models\Suppression;
+use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -45,11 +48,15 @@ final class SavePerson
             'legal_basis_note' => ['nullable', 'string', 'max:1000'],
             'consent_at' => ['nullable', 'required_if:legal_basis,'.LegalBasis::Consent->value, 'date', 'before_or_equal:today'],
             'is_active' => ['sometimes', 'boolean'],
+            'informed_at' => ['nullable', 'date', 'before_or_equal:today'],
+            'do_not_contact' => ['sometimes', 'boolean'],
+            'do_not_contact_reason' => ['nullable', 'required_if_accepted:do_not_contact', Rule::enum(DoNotContact::class)],
             'account_id' => ['nullable', 'integer'],
             'role' => ['nullable', Rule::enum(PersonRole::class)],
         ], [
             'legal_basis.required' => __('Ange den rättsliga grunden för att spara personen.'),
             'consent_at.required_if' => __('Ange datumet då personen samtyckte.'),
+            'do_not_contact_reason.required_if_accepted' => __('Ange om personen har invänt eller begärt begränsad behandling.'),
         ], [
             'name' => __('namn'),
             'email' => __('e-post'),
@@ -62,13 +69,34 @@ final class SavePerson
         $role = $attributes['role'] ?? null;
         unset($attributes['account_id'], $attributes['role']);
 
+        if (array_key_exists('do_not_contact', $attributes)) {
+            $flag = (bool) $attributes['do_not_contact'];
+            $attributes['do_not_contact_at'] = $flag ? ($person->do_not_contact_at ?? now()) : null;
+            $attributes['do_not_contact_reason'] = $flag ? $attributes['do_not_contact_reason'] : null;
+        } else {
+            unset($attributes['do_not_contact_reason']);
+        }
+
+        unset($attributes['do_not_contact']);
+
         if (($attributes['legal_basis'] ?? null) !== LegalBasis::Consent->value) {
             $attributes['consent_at'] = null;
         }
 
         return DB::transaction(fn (): Person => CurrentCompany::run($company, function () use ($user, $company, $attributes, $person, $accountId, $role): Person {
             if ($person === null) {
+                // Someone who asked not to be contacted and was erased is flagged again when added back.
+                $suppressed = ($attributes['do_not_contact_at'] ?? null) === null
+                    ? SuppressionList::match($attributes['email'] ?? null, $attributes['phone'] ?? null, $attributes['mobile'] ?? null)
+                    : null;
+
+                if ($suppressed !== null) {
+                    $attributes['do_not_contact_at'] = now();
+                    $attributes['do_not_contact_reason'] = $suppressed;
+                }
+
                 $person = Person::create([...$attributes, 'last_activity_at' => now()]);
+                $this->syncSuppression($person);
 
                 Audit::record('crm.person_created', $person, ['legal_basis' => $person->legal_basis->value], $company, $user);
 
@@ -80,12 +108,28 @@ final class SavePerson
             }
 
             $before = $person->only(array_keys($attributes));
+            $wasFlagged = $person->doNotContact();
             $person->fill($attributes)->forceFill(['last_activity_at' => now()])->save();
+
+            if ($wasFlagged && ! $person->doNotContact()) {
+                // The person withdrew the objection: their details leave the suppression list.
+                Suppression::query()->whereIn('hash', array_keys(SuppressionList::hashes($person->email, $person->phone, $person->mobile)))->delete();
+            }
+
+            $this->syncSuppression($person);
 
             // Names and contact details stay out of the append-only log: only which fields changed.
             Audit::record('crm.person_updated', $person, ['fields' => array_keys(Audit::changes($before, $person->only(array_keys($attributes))))], $company, $user);
 
             return $person;
         }));
+    }
+
+    /** A person flagged "Kontakta inte" is on the suppression list, so the flag outlives an erasure. */
+    private function syncSuppression(Person $person): void
+    {
+        if ($person->do_not_contact_reason !== null) {
+            SuppressionList::remember($person, $person->do_not_contact_reason->value);
+        }
     }
 }

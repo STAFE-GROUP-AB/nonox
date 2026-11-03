@@ -2939,7 +2939,11 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
 - **Behörigheter:** `crm:view` (läsa, även nyckeltal), `crm:manage` (skriva),
   `crm:settings`. Ägare, administratör, redovisningskonsult och bokförare får
   alla tre, revisor `crm:view`, rollen Säljare (`sales`) `crm:view` och
-  `crm:manage` och inget i bokföringen.
+  `crm:manage`. Säljaren ser fakturerat, obetalt och betaltid per kund men
+  inga verifikationer eller rapporter; för en privatperson visas obetalt,
+  förfallet, betaltid, påminnelser och belopp i tidslinjen bara för den som
+  har `invoices:view`. Länkar till fakturor visas bara för den som får öppna
+  dem.
 - **API:** `/api/v1/crm/accounts`, `/crm/people` och `/crm/activities` med
   `crm:view` och `crm:manage`, genom samma Actions.
 - **GDPR:** rättslig grund krävs per person (avtal, berättigat intresse eller
@@ -2952,8 +2956,21 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   blivit kunder och fakturamottagare hos kunder. De visas under Att göra 30
   dagar innan. Namn och kontaktuppgifter skrivs aldrig till
   behandlingshistoriken, bara id och vilka fält som ändrats.
-- Allt skrivs till behandlingshistoriken (`crm.*`, `privacy.*`).
-- `TODO(legal-verify)`: texten om intresseavvägningen för kontaktpersoner,
+- **Kontakta inte:** en person kan märkas med invändning (art. 21) eller
+  begränsning (art. 18). Då kan inga nya samtal, möten, mejl eller uppgifter
+  loggas för personen, bara anteckningar. Personens e-post och telefonnummer
+  sparas som HMAC-SHA256 med appens nyckel i `crm_suppressions`, även efter
+  radering, så att personen märks igen om den läggs till på nytt.
+- **Anonymiserad kund:** `EraseRegisterEntry` skickar `CustomerAnonymised` i
+  samma transaktion; CRM tömmer webbplats, källa, taggar, SNI-kod, orsak,
+  personkopplingar och aktiviteternas rubrik och text. Anonymiserade och
+  begränsade kunder får inget konto när modulen slås på.
+- **Personnummer:** CRM tar inte emot personnummer i organisationsnummer och
+  kopierar inte en enskild firmas personnummer från kundregistret.
+- Allt skrivs till behandlingshistoriken (`crm.*`, `privacy.*`) med id,
+  fältnamn och status, aldrig namn, nummer, kontaktuppgifter eller fritext.
+- `TODO(legal-verify)`: hur länge spärrlistan sparas, mallen för information
+  enligt artikel 14, texten om intresseavvägningen för kontaktpersoner,
   standardtiden för gallring av prospekt och kontaktpersoner, och vilka
   kopplingar till bokföringen som ska hindra gallring av en kontaktperson.
 

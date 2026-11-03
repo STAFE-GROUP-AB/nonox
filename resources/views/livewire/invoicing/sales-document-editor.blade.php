@@ -49,7 +49,7 @@
             <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <x-ui.field for="document_customer" :label="__('Kund')" error="customer_id" class="sm:col-span-2">
                     @if($customers->isEmpty())
-                        <p class="mt-2 text-sm text-gray-600">{{ __('Du har inga kunder ännu.') }} <a href="{{ route('invoicing.customers') }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Lägg till en kund') }}</a></p>
+                        <p class="mt-2 text-sm text-gray-600">{{ __('Du har inga kunder ännu.') }} <a href="{{ route('invoicing.customers', ['ny' => 1]) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Lägg till en kund') }}</a></p>
                     @else
                         <select id="document_customer" class="{{ $input }} mt-1" wire:model="customerId">
                             <option value="">{{ __('Välj kund…') }}</option>

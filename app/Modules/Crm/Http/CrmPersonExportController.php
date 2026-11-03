@@ -6,8 +6,10 @@ namespace App\Modules\Crm\Http;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\CrmExport;
+use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\ArchivedCompany;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +18,8 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * Registerutdrag for a CRM contact person (GDPR art. 15 and 20, ADR-043),
- * for those who manage the CRM. Another company's person answers 404. The
+ * for those who manage the CRM, and while the module is off for those who
+ * manage the company's settings. Another company's person answers 404. The
  * export is written to the audit log by the person's id.
  */
 final class CrmPersonExportController
@@ -24,7 +27,16 @@ final class CrmPersonExportController
     public function __invoke(Request $request, int $person): JsonResponse
     {
         $model = Person::query()->findOrFail($person);
-        ArchivedCompany::reading(fn () => Gate::authorize('update', $model));
+        $company = Company::query()->findOrFail($model->company_id);
+        /** @var User $requester */
+        $requester = $request->user();
+
+        // With the module on: those who manage the CRM. With it off: those who manage the company's settings, since the data is still kept.
+        $allowed = ArchivedCompany::reading(fn (): bool => app(ModuleManager::class)->isEnabled(CrmModule::KEY, $company)
+            ? Gate::forUser($requester)->allows('update', $model)
+            : $requester->hasTeamPermission($company, 'settings:manage'));
+
+        abort_unless($allowed, 403);
 
         /** @var User $user */
         $user = $request->user();

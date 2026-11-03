@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Logs an activity on an account, or changes one (ADR-043). A note is done
@@ -69,6 +70,13 @@ final class LogActivity
         ])->validate();
 
         $type = ActivityType::from((string) ($validated['type'] ?? $activity?->type->value));
+        $personId = array_key_exists('person_id', $validated) ? $validated['person_id'] : $activity?->person_id;
+
+        // Art. 21/18: no new call, meeting, e-mail or task with a person who asked not to be contacted; a note is still allowed.
+        if ($type !== ActivityType::Note && $personId !== null && ($activity === null || $activity->person_id !== (int) $personId || $activity->type === ActivityType::Note)
+            && CurrentCompany::run($company, fn (): bool => Person::query()->whereKey((int) $personId)->whereNotNull('do_not_contact_at')->exists())) {
+            throw ValidationException::withMessages(['person_id' => __('Personen har bett att inte bli kontaktad. Du kan bara skriva en anteckning om personen.')]);
+        }
         $subject = trim((string) ($validated['subject'] ?? $activity->subject ?? ''));
         $dueAt = array_key_exists('due_at', $validated)
             ? (blank($validated['due_at']) ? null : CarbonImmutable::parse((string) $validated['due_at'], self::ZONE))

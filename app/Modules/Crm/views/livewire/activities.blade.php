@@ -63,14 +63,14 @@
                         <span class="min-w-0 flex-1 basis-52">
                             <a href="{{ route('crm.accounts.show', $activity->account_id) }}" class="block font-medium text-gray-900 hover:text-accent-700">{{ $activity->subject }}</a>
                             <span class="block text-sm text-gray-600">
-                                {{ $activity->type->label() }} · {{ $activity->account?->name }}@if($activity->person) · {{ $activity->person->name }}@endif
+                                {{ $activity->type->label() }} · {{ $activity->account?->name }}@if($activity->person) · {{ $activity->person->name }}@if($activity->person->doNotContact()) ({{ __("Kontakta inte") }})@endif @endif
                                 @if($who === 'alla' && $activity->assignee) · {{ $activity->assignee->name }}@endif
                             </span>
                             @if($activity->due_at)
                                 <span @class(['block text-sm', 'font-medium text-accent-700' => $group['late'], 'text-gray-500' => ! $group['late']])>{{ $activity->due_at->setTimezone($zone)->translatedFormat('D j M H:i') }}</span>
                             @endif
                         </span>
-                        @if($number && in_array($activity->type->value, ['CALL', 'TASK'], true))
+                        @if($number && ! ($activity->person?->doNotContact() ?? false) && in_array($activity->type->value, ['CALL', 'TASK'], true))
                             <a href="tel:{{ preg_replace('/[^\d+]/', '', $number) }}" class="inline-flex min-h-11 items-center rounded-xl bg-stone-100 px-4 text-sm font-medium text-ink hover:bg-stone-200">{{ __('Ring') }}</a>
                         @endif
                     </li>

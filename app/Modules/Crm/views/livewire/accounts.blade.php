@@ -5,7 +5,7 @@
 
 <div class="space-y-6">
     @if($showForm)
-        <x-ui.card :title="__('Nytt prospekt')" :description="__('Ett företag eller en person du vill göra affärer med. Det får ett kundnummer först när det blir kund.')">
+        <x-ui.card :title="$asCustomer ? __('Ny kund') : __('Nytt prospekt')" :description="$asCustomer ? __('Kunden får nästa kundnummer och kan faktureras direkt. Betalningsvillkor och moms ställer du in på kundens kort.') : __('Ett företag eller en person du vill göra affärer med. Det får ett kundnummer först när det blir kund.')">
             <form wire:submit="save" class="grid gap-4 sm:grid-cols-2">
                 <x-ui.field for="account_name" :label="__('Namn')" error="name" class="sm:col-span-2">
                     <input id="account_name" type="text" class="{{ $input }} mt-1" wire:model="form.name" autocomplete="organization" required>
@@ -54,6 +54,9 @@
     <x-ui.card>
         <div class="flex flex-wrap items-center gap-3">
             @if($canManage && ! $showForm)
+                @if($canCreateCustomer)
+                    <x-button type="button" wire:click="create(true)">{{ __('Ny kund') }}</x-button>
+                @endif
                 <x-button type="button" wire:click="create">{{ __('Nytt prospekt') }}</x-button>
             @endif
             <input type="search" class="{{ $input }} min-h-11 w-full sm:min-h-0 sm:max-w-sm" wire:model.live.debounce.300ms="search" placeholder="{{ __('Sök på namn, person, ort eller e-post') }}" aria-label="{{ __('Sök kund') }}">
@@ -140,10 +143,13 @@
                                 <span class="block text-gray-500">{{ __('Fakturerat 12 mån') }}</span>
                                 <x-ui.amount :money="App\Support\Money\Money::ofOre((int) ($row->invoiced_12m ?? 0))" class="font-medium text-gray-900" />
                             </span>
-                            <span class="text-left text-sm sm:w-32 sm:text-right">
-                                <span class="block text-gray-500">{{ __('Obetalt') }}</span>
-                                <x-ui.amount :money="App\Support\Money\Money::ofOre((int) ($row->open ?? 0))" @class(['font-medium', 'text-accent-700' => (int) ($row->overdue ?? 0) > 0, 'text-gray-900' => (int) ($row->overdue ?? 0) === 0]) />
-                            </span>
+                            {{-- A private person's debts only for those who may see the invoices. --}}
+                            @if($canSeeInvoices || $account->kind !== App\Modules\Crm\Domain\AccountKind::Person)
+                                <span class="text-left text-sm sm:w-32 sm:text-right">
+                                    <span class="block text-gray-500">{{ __('Obetalt') }}</span>
+                                    <x-ui.amount :money="App\Support\Money\Money::ofOre((int) ($row->open ?? 0))" @class(['font-medium', 'text-accent-700' => (int) ($row->overdue ?? 0) > 0, 'text-gray-900' => (int) ($row->overdue ?? 0) === 0]) />
+                                </span>
+                            @endif
                         @endif
                     </li>
                 @endforeach

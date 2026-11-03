@@ -36,7 +36,7 @@ final class RefreshStatuses
                 ->where('status', '<>', InvoiceStatus::Draft->value)
                 ->groupBy('customer_id')
                 ->select('customer_id')
-                ->selectRaw('MAX(invoice_date) AS last_invoice_date, MAX(issued_at) AS last_issued_at');
+                ->selectRaw('MAX(invoice_date) AS last_invoice_date, MAX(COALESCE(issued_at, invoice_date::timestamp)) AS last_issued_at');
 
             $accounts = Account::query()
                 ->leftJoinSub($latest, 'latest', 'latest.customer_id', '=', 'crm_accounts.customer_id')
