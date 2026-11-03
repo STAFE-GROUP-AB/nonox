@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-svensk-tid-overallt",
+      "datum": "2026-11-03T15:48:00+01:00",
+      "rubrik": "Svensk tid även när databasservern står på en annan tidszon",
+      "beskrivning": "NONOX räknar nu alltid i svensk tid, också i databasen, oavsett vilken tidszon servern har. Tidigare kunde en egen installation på en server i UTC visa en påminnelse en timme fel, räkna en aktivitet till fel vecka eller godta en API-nyckel en stund efter att den gått ut.",
+      "typ": "Rättat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-03-crm-hav-begransning",
       "datum": "2026-11-03T12:50:00+01:00",
       "rubrik": "CRM: en begränsning hävs med ett eget steg",
