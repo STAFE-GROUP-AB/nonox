@@ -35,3 +35,16 @@ Prices change; the comparison shows the date and time each was fetched and
 must be refreshed when they change. TODO(legal-verify): review the
 comparison against Marknadsföringslagen and the trademark use before wide
 promotion.
+
+## Addendum 2026-11-03: a row per module, two programs per "alternativ till" page
+
+- Every live module has its own row in `docs/migration/jamforelse.json`. Each
+  row lists the `Features` keys it stands for (`keys`), and a test fails when a
+  live module has no row, so a new module cannot ship without one.
+- Competitor values for the rows added on this date (inventory, barcode
+  scanning, CRM, API, bank feed, scheduling, inbox, interpretation) come from
+  the vendors' own price and product pages, recorded with quotes in
+  `docs/migration/jamforelse-funktioner.md`; the check time is
+  `features_checked_at` and is shown under the table.
+- An `/alternativ-till-*` page compares only NONOX and that program. The start
+  page compares all of them.

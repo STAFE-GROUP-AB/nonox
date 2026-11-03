@@ -191,7 +191,7 @@ it('compares NONOX with the other programs, with sources and the time the prices
         ->assertSee('Ett gratis alternativ till Fortnox, Visma och Bokio.')
         ->assertSee("10\u{a0}596\u{a0}kr")
         ->assertSee('2026-10-31 kl. 11:47')
-        ->assertSee('https://www.fortnox.se/prislista')
+        ->assertSee('https://www.fortnox.se/produkt/prislista')
         ->assertSee('application/ld+json', false)
         ->assertSee('"@type":"FAQPage"', false)
         ->assertSee('Alla dina bolag. En skärm.')

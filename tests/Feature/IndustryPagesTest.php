@@ -273,3 +273,40 @@ it('explains how the sales from the till reach NONOX on the pages for businesses
 
     $this->get('/'.$slug)->assertOk()->assertSee($industry['pos']['heading'])->assertSee('SIE-fil från kassan');
 })->with(['bokforing-for-restauranger', 'bokforing-for-cafeer', 'bokforing-for-butiker', 'bokforing-for-frisorer']);
+
+it('gives every live module a row in the comparison table, tied to live features', function () {
+    $rows = Comparison::data()['features'];
+    $covered = [];
+
+    foreach ($rows as $row) {
+        expect($row)->toHaveKey('keys');
+
+        foreach ($row['keys'] as $key) {
+            expect(Features::isLive($key))->toBeTrue("Comparison row \"{$row['name']}\" names {$key}, which is not live");
+            $covered[] = $key;
+        }
+    }
+
+    $modules = collect(Features::all())
+        ->filter(fn (array $feature, string $key): bool => Features::isLive($key) && isset($feature['module']))
+        ->groupBy(fn (array $feature): string => $feature['module'], preserveKeys: true);
+
+    foreach ($modules as $module => $features) {
+        expect(array_intersect(array_keys($features->all()), $covered))
+            ->not->toBeEmpty("The module {$module} is live but has no row in docs/migration/jamforelse.json");
+    }
+});
+
+it('compares only NONOX and the named program on an alternative page', function () {
+    $html = $this->get(route('alternative', 'fortnox'))->assertOk()->getContent();
+    $table = substr($html, (int) strpos($html, 'class="cmp-table"'));
+    $table = substr($table, 0, (int) strpos($table, '</table>'));
+
+    expect($table)->toContain('>NONOX</th>')->toContain('>Fortnox</th>');
+
+    foreach (Comparison::others() as $slug) {
+        if ($slug !== 'fortnox') {
+            expect($table)->not->toContain('>'.Comparison::program($slug)['name'].'</th>');
+        }
+    }
+});

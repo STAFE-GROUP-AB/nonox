@@ -24,18 +24,19 @@ final class Comparison
     /**
      * @return array{
      *     fetched_at: string,
+     *     features_checked_at?: string,
      *     timezone: string,
      *     scenario_employees: int,
      *     scenario: string,
      *     programs: list<Program>,
      *     price_model_note: string,
      *     legend: array<string, string>,
-     *     features: list<array{name: string, values: array<string, string>}>
+     *     features: list<array{name: string, keys: list<string>, values: array<string, string>}>
      * }
      */
     public static function data(): array
     {
-        /** @var array{fetched_at: string, timezone: string, scenario_employees: int, scenario: string, programs: list<Program>, price_model_note: string, legend: array<string, string>, features: list<array{name: string, values: array<string, string>}>} $data */
+        /** @var array{fetched_at: string, features_checked_at?: string, timezone: string, scenario_employees: int, scenario: string, programs: list<Program>, price_model_note: string, legend: array<string, string>, features: list<array{name: string, keys: list<string>, values: array<string, string>}>} $data */
         $data = json_decode((string) file_get_contents(base_path('docs/migration/jamforelse.json')), true, flags: JSON_THROW_ON_ERROR);
 
         return $data;

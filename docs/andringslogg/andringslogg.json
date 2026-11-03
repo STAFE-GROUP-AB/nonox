@@ -32,6 +32,30 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-jamforelse-moduler",
+      "datum": "2026-11-03T10:28:00+01:00",
+      "rubrik": "Jämförelsen visar lager, CRM, API och de andra modulerna",
+      "beskrivning": "Jämförelsen med andra program har fått rader för lager, streckkodsskanning, CRM, öppet API, bankkoppling, schema, inkorg och tolkning av underlag, med värden från leverantörernas egna sidor. Sidorna om alternativ till ett visst program jämför nu bara NONOX och det programmet.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt"
+    },
+    {
+      "id": "2026-11-03-meny-dokumentation",
+      "datum": "2026-11-03T10:20:00+01:00",
+      "rubrik": "Ny meny Dokumentation på webbplatsen",
+      "beskrivning": "Huvudmenyn har fått Dokumentation med manualen, API:et, källkoden på GitHub, säkerhet och regelverk, färdplanen, ändringsloggen och alla villkor och avtal samlade. Kom igång visar också flyttguiden.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt"
+    },
+    {
+      "id": "2026-11-03-api-nyckel-behorigheter",
+      "datum": "2026-11-03T10:00:00+01:00",
+      "rubrik": "Tydligare behörigheter när du skapar en API-nyckel",
+      "beskrivning": "Behörigheterna för en ny API-nyckel är grupperade efter del, som Bokföring, Kunder och fakturering och Lager. Bara det du själv har visas, så behörigheter i avstängda moduler syns inte. Med Välj allt under Full behörighet, eller Välj alla per grupp, kryssar du i allt på en gång.",
+      "typ": "Förbättrat",
+      "omrade": "Connect/API"
+    },
+    {
       "id": "2026-11-03-crm",
       "datum": "2026-11-03T02:30:00+01:00",
       "rubrik": "CRM: kunder och prospekt med aktiviteter och nyckeltal ur bokföringen",

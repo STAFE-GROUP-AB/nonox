@@ -221,7 +221,7 @@
           </tbody>
         </table>
       </div>
-      <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">"Anges inte på prissidan" betyder att funktionen inte står på prissidan för det jämförda paketet, inte att den saknas.</p>
+      <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">"Anges inte på leverantörens pris- eller produktsidor" betyder att funktionen inte står där för det jämförda paketet, inte att den saknas.</p>
     @endif
     <nav aria-label="Jämför med andra program" style="margin-top:24px;display:flex;flex-wrap:wrap;gap:10px">
       <a href="{{ url('/') }}#jamfor" class="in-link">Hela jämförelsen →</a>
