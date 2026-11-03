@@ -1,6 +1,6 @@
 # ADR-043: NONOX CRM
 
-- Status: **Accepted for stage 1, implemented** (see Implementation); stages 2–6 are proposals, decided one at a time
+- Status: **Accepted for stages 1 and 2, implemented** (see Implementation and Stage 2: implementation); stages 3–6 are proposals, decided one at a time
 - Date: 2026-11-03
 - Builds on: ADR-017 (module framework), ADR-032 (NONOX Connect), ADR-035
   (company registry), the customer register and quotes/orders (Phase 2),
@@ -43,7 +43,7 @@ invoicing core. Turning it off hides it and keeps every row.
    status rules, key figures from the ledger, activities with a next step,
    phone-first screens, GDPR.
 2. Pipelines and deals, loss reasons and win-back, forecast, goals per
-   seller, dashboard.
+   seller, dashboard (decided 2026-11-03, see Stage 2: implementation).
 3. Quote and agreement signing with a signature pad; a signed quote becomes
    an order and then an invoice; agreement register with renewal reminders.
 4. Prospecting: a company register from open data with filters, look-alike
@@ -236,3 +236,163 @@ building, where this ADR left them open or the code required a change:
   others still find it under Register.
 - **Person extract while off.** The contact-person extract works with the
   module off, for those with `settings:manage`.
+
+## Stage 2: implementation (2026-11-03)
+
+The owner's brief for stage 2: a visual pipeline with customisable stages
+(at most seven, several pipelines per business area), deals with value,
+probability per stage, close date and owner, a mandatory next step for
+every open deal, a loss reason and a win-back flow, goals per seller, a
+dashboard and a forecast. No AI. The economy is the advantage: a won deal
+links to the quote, order or invoice, and goals are measured from real
+data.
+
+### Data model
+
+All tables are company-scoped (`BelongsToCompany`; tenancy tests in
+`tests/Tenancy/CrmDealTenancyTest.php` and `TenancyIsolationTest`), money is
+integer öre.
+
+- **`crm_pipelines`**: name, sort, `is_default`, `archived_at`. Exactly one
+  active pipeline is the default.
+- **`crm_pipeline_stages`**: pipeline, name, sort, `probability` (whole
+  percent, CHECK 0–100). At most seven per pipeline (`Pipeline::MAX_STAGES`),
+  enforced in `SavePipeline`. Won and lost are the deal's status, not stages.
+- **`crm_deals`**: account (required), person (nullable, must be linked to
+  the account), pipeline, stage, title, `value_ore` (excluding VAT, CHECK
+  ≥ 0), `expected_close_date`, owner, status `OPEN`/`WON`/`LOST`, `won_at`,
+  `lost_at`, `loss_reason_id`, `loss_note`, `quote_id`/`order_id`
+  (`sales_documents`) and `invoice_id`, `win_back_at`, `win_back_task_at`.
+- **`crm_loss_reasons`**: the company's list, archivable.
+- **`crm_deal_stage_changes`**: deal, from stage (null on creation), to
+  stage, user, time. History only; never updated.
+- **`crm_goals`**: user, month (first day), metric
+  `MEETINGS`/`QUOTES`/`ORDER_VALUE`, target (count, or öre). Unique per user,
+  month and metric.
+- `crm_activities.deal_id` (nullable) makes an activity a step of a deal;
+  `crm_accounts.win_back_at`/`win_back_task_at` give a lost account the same
+  win-back flow as a lost deal.
+
+The default pipeline **Försäljning** (Ny kontakt 10 %, Behov 25 %, Offert
+50 %, Förhandling 75 %) and six loss reasons are created by
+`EnsurePipelineDefaults` in the module's enable hook (idempotent), and by
+the migration for companies that already had CRM on (the values are written
+out in the migration so it never changes with the action).
+
+### Behaviour
+
+- **Mandatory next step** (`DealNextStep`). `SaveDeal` refuses a new deal
+  without `next_step` and creates the deal and its open activity in one
+  transaction. `CompleteActivity` refuses the last open step of an open deal
+  unless `next` is given, and then completes it and creates the next in one
+  transaction (a note is not accepted as the next step: it is done when
+  written). `LogActivity` refuses to mark that step done, turn it into a
+  note or move it off the deal. On every screen (deal card, account card,
+  Mina aktiviteter) completing the last step shows the next-step fields
+  with no skip, and a way to win or lose the deal instead. Deals that still
+  end up without a step (a restriction closes a person's activities,
+  imported data) are listed in Att göra (the owner's own for everyone, all
+  of them for `crm:settings`) and red on the board.
+- **Board** (`/kunder/affarer`): a column per stage with count, value and
+  weighted value; cards with account, value, close date (red when passed)
+  and next step (red when overdue or missing). Desktop drags with plain
+  HTML5 drag and drop in Alpine; every card also has a **Flytta** select,
+  which the phone and the keyboard use. The phone shows one stage at a time
+  with a switcher. No package was added (SortableJS is not in
+  `package.json`). Filters for pipeline, owner and "utan nästa steg" live in
+  the query string. At most 500 cards per board.
+- **Win** (`WinDeal`): optional agreed value; optional quote, order or
+  invoice, each checked to be the account's customer's (a credit invoice
+  cannot be linked). A prospect becomes a customer through the existing
+  `ConvertToCustomer` when `make_customer` is set *and* the user may add
+  customers; a seller (no `invoices:create`) wins the deal without
+  converting. Nothing is written to the ledger.
+- **Lose** (`LoseDeal`): a reason from the active list is required, the
+  note optional; `win_back_at` defaults to the setting `win_back_months`
+  (default 6, 1–36) after today, can be given or cleared, and `SetWinBack`
+  changes it later. A lost account (`SetAccountStatus` LOST) gets the same
+  default date; a new reason keeps the date, another status clears it.
+- **Win-back** (`crm:win-back`, daily at 05:40 after the status rules): one
+  task "Vinn tillbaka" due at 09:00 for the deal's owner (else the
+  account's, else the company owner; members only) on or after the date.
+  `win_back_task_at`, set under a row lock, makes it idempotent; a new date
+  allows a new task. Archived companies and companies with CRM off are
+  skipped.
+- **Settings** (`/kunder/installningar`, `crm:settings`): pipelines and
+  stages (rename, reorder, probability, add up to seven, default, archive
+  and restore), loss reasons (add, rename, archive), win-back months. A
+  stage with deals (open or closed) is removed only by moving them to
+  another stage of the same pipeline (`RemoveStage`; each open deal's move
+  is in its history). A pipeline with open deals cannot be archived, nor
+  the last active one.
+
+### Figures
+
+- **Forecast** (`Forecast`, `/kunder/prognos`): per month by expected close
+  date, Σ(value × stage probability), rounded half up to whole öre once per
+  month (never per deal), next to the value won that month; three months
+  back and 6 or 12 ahead. Open deals whose close date has passed, deals
+  without a date and deals beyond the last month are buckets of their own.
+  Two queries.
+- **Dashboard** (`/kunder/oversikt`, the CRM section's start): open value
+  and weighted value, win rate = won / (won + lost) closed in the chosen
+  period (30, 90 or 365 days), average sales cycle (calendar days in Swedish
+  time from created to won, for deals won in the period; `SalesCycle`),
+  completed activities per ISO week for the last eight weeks (notes
+  included), the month's goals and the deals without a next step.
+  Company-wide or "Mina". A fixed number of queries (tested).
+- **Goals** (`GoalProgress`): set per seller and month by `crm:settings`;
+  sellers see their own. MEETINGS = meeting activities assigned to the
+  seller and completed in the month. QUOTES = quotes in the ledger with
+  `created_by` = the seller and a quote date in the month:
+  `sales_documents.created_by` records who made each quote, so no deal link
+  is needed (a seller without `invoices:create` cannot make quotes and sees
+  0; a company that wants this goal gives its sellers that right).
+  ORDER_VALUE = the value of the deals the seller owns that were won in the
+  month; next to it, the net invoiced on issued invoices dated in the month
+  that are linked to the seller's won deals (directly, or as the invoice of
+  the deal's order or quote), each invoice once per seller. Invoices have no
+  seller, so that link is the only honest attribution.
+
+### Permissions, audit, API, GDPR
+
+- `crm:view` sees deals, the board, the forecast and the dashboard;
+  `crm:manage` creates, moves, wins and loses; `crm:settings` changes
+  pipelines, stages, loss reasons and goals. **A seller sees every deal of
+  the company** (the simple model, so colleagues can take over a deal);
+  "Mina affärer" is a filter, not a permission.
+- Audit: `crm.deal_created`, `crm.deal_updated` (field names only),
+  `crm.deal_moved`, `crm.deal_won` (ids of linked documents),
+  `crm.deal_lost` (reason id, whether a note was given), `crm.win_back_set`,
+  `crm.win_back_task`, `crm.pipeline_*`, `crm.stage_removed`,
+  `crm.loss_reason_*`, `crm.goal_*`: ids, stages and statuses only, never
+  titles, notes or names.
+- API (Connect v1.6.0): `GET`/`POST /crm/deals`, `GET`/`PATCH
+  /crm/deals/{deal}` (fields, `stage_id` moves, `status` `WON`/`LOST`,
+  `win_back_at`), `GET /crm/pipelines`, `/crm/pipelines/{pipeline}`,
+  `/crm/stages`, `/crm/loss-reasons`, and `deal_id` on activities;
+  `PATCH /crm/activities/{id}` with `"done": true` and `next_step` completes
+  a deal's last step. Same Actions and scopes; Idempotency-Key on POST.
+- GDPR: erasing a person nulls `person_id` on their deals; an anonymised
+  customer's deals get the title "Anonymiserad affär" and no loss note; a
+  prospect's deals are deleted with it (foreign key cascade); the register
+  extracts (customer and contact person) list the deals with their free
+  text; pruning keeps prospects with an open deal and the contact person of
+  an open deal. `TODO(legal-verify)`: whether names mentioned only in a
+  deal's title must be found by hand at erasure, as for activities.
+
+### Deviations from the brief, with reasons
+
+- **URLs.** The CRM already lives under `/kunder`, so stage 2 uses
+  `/kunder/oversikt`, `/kunder/affarer`, `/kunder/affarer/{id}` and
+  `/kunder/prognos` rather than `/crm/...`; the CRM section in the sidebar
+  now starts on Översikt.
+- **Forecast and goals share one page** (Prognos och mål); the dashboard
+  shows the month's goals as well.
+- **Removing a stage** needs a target stage for closed deals too:
+  `stage_id` is not nullable, so a won or lost deal keeps a real stage for
+  its history.
+- **People on open deals are not pruned**, besides the accounts the brief
+  named: the business with them is still going on.
+- **No "reopen" for a closed deal.** A mistake is corrected with a new deal;
+  the history stays as it was.

@@ -12,16 +12,20 @@ use App\Models\Customer;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Modules\Crm\Actions\SaveAccount;
+use App\Modules\Crm\Actions\SaveDeal;
 use App\Modules\Crm\Actions\SavePerson;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Account;
+use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Models\Pipeline;
+use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 
 /**
- * CRM in tests (ADR-043): the module on, customers, prospects, people and
- * issued invoices.
+ * CRM in tests (ADR-043): the module on, customers, prospects, people,
+ * issued invoices, and in stage 2 deals with their next step.
  */
 final class Crm
 {
@@ -67,5 +71,33 @@ final class Crm
             'due_date' => $due,
             'rows' => $rows,
         ], fn (mixed $value): bool => $value !== null)));
+    }
+
+    /**
+     * An open deal with its next step (a task tomorrow at nine), in the
+     * default pipeline's first stage unless a stage is given.
+     *
+     * @param  array<string, mixed>  $extra
+     */
+    public static function deal(Company $company, User $owner, Account $account, string $title = 'Ramavtal', int $valueOre = 1_000_000, array $extra = []): Deal
+    {
+        return app(SaveDeal::class)($owner, $company, [
+            'account_id' => $account->id,
+            'title' => $title,
+            'value_ore' => $valueOre,
+            'next_step' => ['type' => 'CALL', 'subject' => 'Följ upp', 'due_at' => now()->addDay()->setTime(9, 0)->format('Y-m-d\TH:i')],
+            ...$extra,
+        ]);
+    }
+
+    public static function pipeline(): Pipeline
+    {
+        return Pipeline::query()->where('is_default', true)->firstOrFail();
+    }
+
+    /** The default pipeline's stage at $index (0 is the first). */
+    public static function stage(int $index = 0): PipelineStage
+    {
+        return self::pipeline()->stages()->get()->values()[$index];
     }
 }

@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.5.0
+  version: 1.6.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -7647,6 +7647,12 @@ paths:
           description: 'true for open, false for done.'
           schema:
             type: boolean
+        - name: deal_id
+          in: query
+          required: false
+          description: 'The steps of one deal.'
+          schema:
+            type: integer
       responses:
         200:
           description: 'A page of results.'
@@ -7680,6 +7686,7 @@ paths:
                       - id: 93
                         account_id: 41
                         person_id: 7
+                        deal_id: null
                         type: 'MEETING'
                         call_outcome: null
                         subject: 'Visning'
@@ -7765,6 +7772,7 @@ paths:
                       id: 93
                       account_id: 41
                       person_id: 7
+                      deal_id: null
                       type: 'MEETING'
                       call_outcome: null
                       subject: 'Visning'
@@ -7843,6 +7851,7 @@ paths:
                       id: 93
                       account_id: 41
                       person_id: 7
+                      deal_id: null
                       type: 'MEETING'
                       call_outcome: null
                       subject: 'Visning'
@@ -7866,7 +7875,7 @@ paths:
       tags:
         - CRM
       summary: 'Change or complete an activity'
-      description: 'Changes the given fields. "done": true completes an open activity (with call_outcome for a CALL); "done": false opens it again. Needs crm:manage, which no one has while the CRM module is off.'
+      description: 'Changes the given fields. "done": true completes an open activity (with call_outcome for a CALL); "done": false opens it again. The last open step of an open deal is completed only with next_step, which plans the next one in the same transaction; without it the answer is 422. Needs crm:manage, which no one has while the CRM module is off.'
       x-sv-summary: 'Ändra eller klarmarkera aktivitet'
       x-sv-description: 'Ändrar de fält som skickas. "done": true klarmarkerar.'
       security:
@@ -7916,6 +7925,7 @@ paths:
                       id: 93
                       account_id: 41
                       person_id: 7
+                      deal_id: null
                       type: 'MEETING'
                       call_outcome: null
                       subject: 'Visning'
@@ -7934,6 +7944,694 @@ paths:
           $ref: '#/components/responses/NotFound'
         415:
           $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /crm/deals:
+    get:
+      operationId: listCrmDeals
+      tags:
+        - CRM
+      summary: 'List deals'
+      description: 'Deals in the pipelines: OPEN in a stage, or WON or LOST. value_ore is öre excluding VAT. Filter on status, pipeline_id, stage_id, owner_id or account_id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista affärer'
+      x-sv-description: 'Affärer i säljtrattarna, öppna, vunna eller förlorade. value_ore är öre utan moms.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: status
+          in: query
+          required: false
+          description: 'OPEN, WON or LOST.'
+          schema:
+            type: string
+        - name: pipeline_id
+          in: query
+          required: false
+          description: 'The deals of one pipeline.'
+          schema:
+            type: integer
+        - name: stage_id
+          in: query
+          required: false
+          description: 'The deals in one stage.'
+          schema:
+            type: integer
+        - name: owner_id
+          in: query
+          required: false
+          description: 'The deals of one owner.'
+          schema:
+            type: integer
+        - name: account_id
+          in: query
+          required: false
+          description: 'The deals of one account.'
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmDeal'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 57
+                        account_id: 41
+                        person_id: 7
+                        pipeline_id: 3
+                        stage_id: 12
+                        title: 'Ramavtal 2027'
+                        value_ore: 12500000
+                        expected_close_date: '2026-12-31'
+                        owner_id: 3
+                        status: 'OPEN'
+                        won_at: null
+                        lost_at: null
+                        loss_reason_id: null
+                        loss_note: null
+                        quote_id: null
+                        order_id: null
+                        invoice_id: null
+                        win_back_at: null
+                        created_by: 3
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createCrmDeal
+      tags:
+        - CRM
+      summary: 'Create a deal'
+      description: 'Creates an open deal at an account, in the default pipeline''s first stage unless pipeline_id or stage_id is given. next_step is required: an open activity (CALL, MEETING, EMAIL or TASK) linked to the deal, created in the same transaction, so no deal starts without one. owner_id defaults to the person behind the credential. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Skapa affär'
+      x-sv-description: 'Skapar en öppen affär. next_step krävs: en planerad aktivitet som kopplas till affären.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmDealInput'
+            examples:
+              example:
+                value:
+                  account_id: 41
+                  title: 'Ramavtal 2027'
+                  value_ore: 12500000
+                  expected_close_date: '2026-12-31'
+                  next_step:
+                    type: 'MEETING'
+                    subject: 'Genomgång'
+                    due_at: '2026-11-20T10:00'
+      responses:
+        201:
+          description: 'The deal.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmDeal'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 57
+                      account_id: 41
+                      person_id: 7
+                      pipeline_id: 3
+                      stage_id: 12
+                      title: 'Ramavtal 2027'
+                      value_ore: 12500000
+                      expected_close_date: '2026-12-31'
+                      owner_id: 3
+                      status: 'OPEN'
+                      won_at: null
+                      lost_at: null
+                      loss_reason_id: null
+                      loss_note: null
+                      quote_id: null
+                      order_id: null
+                      invoice_id: null
+                      win_back_at: null
+                      created_by: 3
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/crm/deals/{deal}':
+    parameters:
+      - name: deal
+        in: path
+        required: true
+        description: 'Deal id.'
+        schema:
+          type: integer
+        example: 57
+    get:
+      operationId: getCrmDeal
+      tags:
+        - CRM
+      summary: 'Get a deal'
+      description: 'One deal by id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Hämta affär'
+      x-sv-description: 'En affär, utifrån id.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      responses:
+        200:
+          description: 'The deal.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmDeal'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 57
+                      account_id: 41
+                      person_id: 7
+                      pipeline_id: 3
+                      stage_id: 12
+                      title: 'Ramavtal 2027'
+                      value_ore: 12500000
+                      expected_close_date: '2026-12-31'
+                      owner_id: 3
+                      status: 'OPEN'
+                      won_at: null
+                      lost_at: null
+                      loss_reason_id: null
+                      loss_note: null
+                      quote_id: null
+                      order_id: null
+                      invoice_id: null
+                      win_back_at: null
+                      created_by: 3
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateCrmDeal
+      tags:
+        - CRM
+      summary: 'Change, move, win or lose a deal'
+      description: 'Changes the given fields of an open deal; stage_id moves it (also to another pipeline that is not archived). "status": "WON" wins it, with optional value_ore, quote_id, order_id, invoice_id (the account''s customer''s) and make_customer; "status": "LOST" loses it, with loss_reason_id (required), loss_note and win_back_at (the company''s default months ahead when left out, none when null). On a lost deal, win_back_at alone changes or clears the win-back date. A won or lost deal is not changed otherwise. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Ändra, flytta, vinn eller förlora affär'
+      x-sv-description: 'Ändrar de fält som skickas; stage_id flyttar affären. status WON eller LOST avslutar den.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmDealPatch'
+            examples:
+              example:
+                value:
+                  status: 'WON'
+                  value_ore: 11800000
+      responses:
+        200:
+          description: 'The deal.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmDeal'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 57
+                      account_id: 41
+                      person_id: 7
+                      pipeline_id: 3
+                      stage_id: 12
+                      title: 'Ramavtal 2027'
+                      value_ore: 11800000
+                      expected_close_date: '2026-12-31'
+                      owner_id: 3
+                      status: 'WON'
+                      won_at: '2026-12-10T14:00:00+01:00'
+                      lost_at: null
+                      loss_reason_id: null
+                      loss_note: null
+                      quote_id: null
+                      order_id: null
+                      invoice_id: null
+                      win_back_at: null
+                      created_by: 3
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /crm/pipelines:
+    get:
+      operationId: listCrmPipelines
+      tags:
+        - CRM
+      summary: 'List pipelines'
+      description: 'The company''s pipelines with their open stages in order, each with its probability in whole percent. Archived pipelines only with archived=true. Read only over the API. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista säljtrattar'
+      x-sv-description: 'Säljtrattarna med sina steg och sannolikheter.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: archived
+          in: query
+          required: false
+          description: 'true to include archived pipelines.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmPipeline'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 3
+                        name: 'Försäljning'
+                        is_default: true
+                        archived: false
+                        stages:
+                          - id: 12
+                            pipeline_id: 3
+                            name: 'Offert'
+                            sort: 2
+                            probability: 50
+                            created_at: '2026-11-02T09:00:00+01:00'
+                            updated_at: '2026-11-02T09:00:00+01:00'
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/crm/pipelines/{pipeline}':
+    parameters:
+      - name: pipeline
+        in: path
+        required: true
+        description: 'Pipeline id.'
+        schema:
+          type: integer
+        example: 3
+    get:
+      operationId: getCrmPipeline
+      tags:
+        - CRM
+      summary: 'Get a pipeline'
+      description: 'One pipeline with its stages. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Hämta säljtratt'
+      x-sv-description: 'En säljtratt med sina steg.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      responses:
+        200:
+          description: 'The pipeline.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmPipeline'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 3
+                      name: 'Försäljning'
+                      is_default: true
+                      archived: false
+                      stages:
+                        - id: 12
+                          pipeline_id: 3
+                          name: 'Offert'
+                          sort: 2
+                          probability: 50
+                          created_at: '2026-11-02T09:00:00+01:00'
+                          updated_at: '2026-11-02T09:00:00+01:00'
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /crm/stages:
+    get:
+      operationId: listCrmStages
+      tags:
+        - CRM
+      summary: 'List stages'
+      description: 'The open stages of every pipeline, or of one with pipeline_id. Won and lost are a deal''s status, not stages. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista steg'
+      x-sv-description: 'Stegen i säljtrattarna.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: pipeline_id
+          in: query
+          required: false
+          description: 'The stages of one pipeline.'
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmStage'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 12
+                        pipeline_id: 3
+                        name: 'Offert'
+                        sort: 2
+                        probability: 50
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /crm/loss-reasons:
+    get:
+      operationId: listCrmLossReasons
+      tags:
+        - CRM
+      summary: 'List loss reasons'
+      description: 'The company''s reasons for a lost deal, for loss_reason_id. Archived ones only with archived=true. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista orsaker till förlorade affärer'
+      x-sv-description: 'Företagets orsaker till förlorade affärer.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: archived
+          in: query
+          required: false
+          description: 'true to include archived reasons.'
+          schema:
+            type: boolean
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmLossReason'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 4
+                        name: 'Priset'
+                        archived: false
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
         422:
           $ref: '#/components/responses/Unprocessable'
         429:
@@ -8472,8 +9170,8 @@ components:
         'planning:view': 'Läsa schemat i Planering: pass per period, avdelningar och publiceringar'
         'inventory:view': 'Läsa lagret: lagerförda artiklar med saldo per plats, lagerställen och saldon'
         'inventory:manage': 'Skapa inleveranser och ta emot varor i lagret, och se inköpspriser'
-        'crm:view': 'Läsa CRM: kunder och prospekt, kontaktpersoner och aktiviteter'
-        'crm:manage': 'Lägga till och ändra kunder och prospekt, kontaktpersoner och aktiviteter i CRM'
+        'crm:view': 'Läsa CRM: kunder och prospekt, kontaktpersoner, aktiviteter och affärer'
+        'crm:manage': 'Lägga till och ändra kunder och prospekt, kontaktpersoner, aktiviteter och affärer i CRM'
     apiKey:
       type: http
       scheme: bearer
@@ -11962,6 +12660,11 @@ components:
           type:
             - integer
             - 'null'
+        deal_id:
+          type:
+            - integer
+            - 'null'
+          description: 'The deal this activity is a step of.'
         type:
           $ref: '#/components/schemas/CrmActivityType'
         call_outcome:
@@ -12018,6 +12721,9 @@ components:
           type: integer
         person_id:
           type: integer
+        deal_id:
+          type: integer
+          description: 'A deal at the same account.'
         type:
           $ref: '#/components/schemas/CrmActivityType'
         call_outcome:
@@ -12056,10 +12762,246 @@ components:
           type: string
         assigned_to:
           type: integer
+        deal_id:
+          type: integer
         due_at:
           type: string
         done:
           type: boolean
+        next_step:
+          $ref: '#/components/schemas/CrmNextStep'
+    CrmDeal:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        person_id:
+          type:
+            - integer
+            - 'null'
+        pipeline_id:
+          type: integer
+        stage_id:
+          type: integer
+        title:
+          type: string
+        value_ore:
+          type: integer
+          description: 'Öre, excluding VAT.'
+        expected_close_date:
+          type:
+            - string
+            - 'null'
+          format: date
+        owner_id:
+          type:
+            - integer
+            - 'null'
+        status:
+          type: string
+          enum:
+            - OPEN
+            - WON
+            - LOST
+        won_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        lost_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        loss_reason_id:
+          type:
+            - integer
+            - 'null'
+        loss_note:
+          type:
+            - string
+            - 'null'
+        quote_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        order_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        invoice_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        win_back_at:
+          type:
+            - string
+            - 'null'
+          format: date
+          description: 'A lost deal: the day a "Vinn tillbaka" task is made for the owner.'
+        created_by:
+          type:
+            - integer
+            - 'null'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CrmNextStep:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+          enum:
+            - CALL
+            - MEETING
+            - EMAIL
+            - TASK
+        subject:
+          type: string
+        due_at:
+          type: string
+          description: 'Date and time; Europe/Stockholm when no offset is given.'
+        assigned_to:
+          type: integer
+    CrmDealInput:
+      type: object
+      required:
+        - account_id
+        - title
+        - next_step
+      properties:
+        account_id:
+          type: integer
+        person_id:
+          type: integer
+          description: 'A person linked to the account.'
+        pipeline_id:
+          type: integer
+        stage_id:
+          type: integer
+        title:
+          type: string
+        value_ore:
+          type: integer
+          minimum: 0
+        expected_close_date:
+          type: string
+          format: date
+        owner_id:
+          type: integer
+        next_step:
+          $ref: '#/components/schemas/CrmNextStep'
+    CrmDealPatch:
+      type: object
+      properties:
+        person_id:
+          type: integer
+        pipeline_id:
+          type: integer
+        stage_id:
+          type: integer
+        title:
+          type: string
+        value_ore:
+          type: integer
+          minimum: 0
+        expected_close_date:
+          type: string
+          format: date
+        owner_id:
+          type: integer
+        status:
+          type: string
+          enum:
+            - WON
+            - LOST
+        quote_id:
+          type: string
+          format: uuid
+        order_id:
+          type: string
+          format: uuid
+        invoice_id:
+          type: string
+          format: uuid
+        make_customer:
+          type: boolean
+          description: 'WON: make a prospect a customer when the credential may add customers.'
+        loss_reason_id:
+          type: integer
+        loss_note:
+          type: string
+        win_back_at:
+          type:
+            - string
+            - 'null'
+          format: date
+    CrmStage:
+      type: object
+      properties:
+        id:
+          type: integer
+        pipeline_id:
+          type: integer
+        name:
+          type: string
+        sort:
+          type: integer
+        probability:
+          type: integer
+          description: 'Whole percent, 0 to 100.'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CrmPipeline:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        is_default:
+          type: boolean
+        archived:
+          type: boolean
+        stages:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrmStage'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CrmLossReason:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        archived:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
 x-oauth:
   description: 'OAuth 2.0 endpoints, outside /api/v1. Documented here for reference; they are not part of `paths`.'
   x-sv-description: 'OAuth-adresserna, utanför /api/v1.'

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Connect\Http\Controllers\Api\V1\ArticleController;
 use App\Modules\Connect\Http\Controllers\Api\V1\CrmController;
+use App\Modules\Connect\Http\Controllers\Api\V1\CrmDealController;
 use App\Modules\Connect\Http\Controllers\Api\V1\CustomerController;
 use App\Modules\Connect\Http\Controllers\Api\V1\DimensionController;
 use App\Modules\Connect\Http\Controllers\Api\V1\FiscalYearController;
@@ -157,6 +158,13 @@ Route::middleware('connect.scope:crm:view')->group(function (): void {
     Route::get('/crm/people/{person}', [CrmController::class, 'person'])->whereNumber('person')->name('crm.people.show');
     Route::get('/crm/activities', [CrmController::class, 'activities'])->name('crm.activities.index');
     Route::get('/crm/activities/{activity}', [CrmController::class, 'activity'])->whereNumber('activity')->name('crm.activities.show');
+    // Stage 2: deals, and the pipelines, stages and loss reasons they use (read only).
+    Route::get('/crm/deals', [CrmDealController::class, 'deals'])->name('crm.deals.index');
+    Route::get('/crm/deals/{deal}', [CrmDealController::class, 'deal'])->whereNumber('deal')->name('crm.deals.show');
+    Route::get('/crm/pipelines', [CrmDealController::class, 'pipelines'])->name('crm.pipelines.index');
+    Route::get('/crm/pipelines/{pipeline}', [CrmDealController::class, 'pipeline'])->whereNumber('pipeline')->name('crm.pipelines.show');
+    Route::get('/crm/stages', [CrmDealController::class, 'stages'])->name('crm.stages.index');
+    Route::get('/crm/loss-reasons', [CrmDealController::class, 'lossReasons'])->name('crm.loss-reasons.index');
 });
 
 Route::middleware('connect.scope:crm:manage')->group(function () use ($idempotent): void {
@@ -166,4 +174,6 @@ Route::middleware('connect.scope:crm:manage')->group(function () use ($idempoten
     Route::patch('/crm/people/{person}', [CrmController::class, 'updatePerson'])->whereNumber('person')->name('crm.people.update');
     Route::post('/crm/activities', [CrmController::class, 'storeActivity'])->middleware($idempotent)->name('crm.activities.store');
     Route::patch('/crm/activities/{activity}', [CrmController::class, 'updateActivity'])->whereNumber('activity')->name('crm.activities.update');
+    Route::post('/crm/deals', [CrmDealController::class, 'storeDeal'])->middleware($idempotent)->name('crm.deals.store');
+    Route::patch('/crm/deals/{deal}', [CrmDealController::class, 'updateDeal'])->whereNumber('deal')->name('crm.deals.update');
 });

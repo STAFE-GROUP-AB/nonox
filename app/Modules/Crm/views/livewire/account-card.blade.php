@@ -25,6 +25,14 @@
                 @if($account->status === App\Modules\Crm\Domain\AccountStatus::Lost && $account->lost_reason)
                     <p class="mt-2 text-sm text-gray-600">{{ __('Förlorad') }}: {{ $account->lost_reason }}</p>
                 @endif
+                @if($account->status === App\Modules\Crm\Domain\AccountStatus::Lost)
+                    <p class="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                        <span>{{ $account->win_back_at ? __('Vinn tillbaka: :date', ['date' => $account->win_back_at->translatedFormat('j F Y')]) : __('Ingen påminnelse om att vinna tillbaka kunden.') }}</span>
+                        @if($canManage)
+                            <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startWinBack">{{ __('Ändra datum') }}</button>
+                        @endif
+                    </p>
+                @endif
                 @if($account->tags !== [])
                     <p class="mt-2 flex flex-wrap gap-1.5">
                         @foreach($account->tags as $tag)
@@ -144,8 +152,46 @@
                 <x-ui.field for="completion_note" :label="__('Hur gick det? (valfritt)')" error="note" class="sm:col-span-2">
                     <textarea id="completion_note" rows="2" class="{{ $input }} mt-1" wire:model="completion.note"></textarea>
                 </x-ui.field>
+                @if($dealStepRequired)
+                    {{-- The deal's last open step: the next one is planned in the same go (ADR-043 stage 2). --}}
+                    <fieldset class="grid gap-4 rounded-2xl bg-stone-50 p-4 sm:col-span-2 sm:grid-cols-3">
+                        <legend class="px-1 text-sm font-semibold text-ink">{{ __('Nästa steg i affären') }}</legend>
+                        <p class="text-sm text-gray-600 sm:col-span-3">{{ __('Det här är affärens enda planerade steg. Planera nästa, eller avsluta affären som vunnen eller förlorad.') }}</p>
+                        <x-ui.field for="completion_next_type" :label="__('Typ')" :error="$errors->has('next.type') ? 'next.type' : 'type'">
+                            <select id="completion_next_type" class="{{ $input }} mt-1" wire:model="activity.type">
+                                @foreach($types as $type)
+                                    @continue(! $type->canBePlanned())
+                                    <option value="{{ $type->value }}">{{ $type->label() }}</option>
+                                @endforeach
+                            </select>
+                        </x-ui.field>
+                        <x-ui.field for="completion_next_subject" :label="__('Vad')" error="subject">
+                            <input id="completion_next_subject" type="text" class="{{ $input }} mt-1" wire:model="activity.subject">
+                        </x-ui.field>
+                        <x-ui.field for="completion_next_due" :label="__('När')" error="due_at">
+                            <input id="completion_next_due" type="datetime-local" class="{{ $input }} mt-1" wire:model="activity.due_at">
+                        </x-ui.field>
+                        @error('next')<p class="text-sm text-accent-700 sm:col-span-3">{{ $message }}</p>@enderror
+                        @error('person_id')<p class="text-sm text-accent-700 sm:col-span-3">{{ $message }}</p>@enderror
+                    </fieldset>
+                @endif
                 <div class="flex flex-wrap items-center gap-4 sm:col-span-2">
-                    <x-button wire:loading.attr="disabled">{{ __('Klar') }}</x-button>
+                    <x-button wire:loading.attr="disabled">{{ $dealStepRequired ? __('Klar och planera nästa') : __('Klar') }}</x-button>
+                    @if($dealStepRequired && $nextDealId)
+                        <a href="{{ route('crm.deals.show', $nextDealId) }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Avsluta affären') }}</a>
+                    @endif
+                    <button type="button" class="min-h-11 text-sm text-gray-600 underline" wire:click="closePanel">{{ __('Avbryt') }}</button>
+                </div>
+            </form>
+        </x-ui.card>
+    @elseif($panel === 'winback')
+        <x-ui.card :title="__('Vinn tillbaka')" :description="__('Den dagen får den ansvarige en uppgift att höra av sig till kunden igen.')">
+            <form wire:submit="saveWinBack" class="grid gap-4 sm:grid-cols-2">
+                <x-ui.field for="winback_date" :label="__('Datum')" error="win_back_at" :hint="__('Lämna tomt om du inte vill ha någon påminnelse.')">
+                    <input id="winback_date" type="date" class="{{ $input }} mt-1" wire:model="winBackAt">
+                </x-ui.field>
+                <div class="flex flex-wrap items-center gap-4 sm:col-span-2">
+                    <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
                     <button type="button" class="min-h-11 text-sm text-gray-600 underline" wire:click="closePanel">{{ __('Avbryt') }}</button>
                 </div>
             </form>
@@ -268,11 +314,38 @@
                                         @if($open->person) · {{ $open->person->name }}@endif
                                         @if($open->assignee) · {{ $open->assignee->name }}@endif
                                     </span>
+                                    @if($open->deal)
+                                        <a href="{{ route('crm.deals.show', $open->deal) }}" class="block text-sm text-accent-600 hover:text-accent-700">{{ __('Affär') }}: {{ $open->deal->title }}</a>
+                                    @endif
                                 </span>
                                 @if($canManage)
                                     <button type="button" class="inline-flex min-h-11 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-black" wire:click="startCompletion({{ $open->id }})">{{ __('Klar') }}</button>
                                     <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="editActivity({{ $open->id }})">{{ __('Ändra') }}</button>
                                 @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </x-ui.card>
+
+            {{-- Deals (ADR-043 stage 2): open first. --}}
+            <x-ui.card :title="__('Affärer')">
+                <x-slot:action>
+                    @if($canDeal)
+                        <a href="{{ route('crm.deals', ['ny' => $account->id]) }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Ny affär') }}</a>
+                    @endif
+                </x-slot:action>
+                @if($deals->isEmpty())
+                    <p class="text-sm text-gray-600">{{ __('Inga affärer ännu. En affär följer en försäljning genom säljtratten, med värde och väntat avslut.') }}</p>
+                @else
+                    <ul class="divide-y divide-gray-100" data-testid="crm-account-deals">
+                        @foreach($deals as $deal)
+                            <li wire:key="deal-{{ $deal->id }}" class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-3">
+                                <span class="min-w-0 flex-1 basis-48">
+                                    <a href="{{ route('crm.deals.show', $deal) }}" class="block font-medium text-gray-900 hover:text-accent-700">{{ $deal->title }}</a>
+                                    <span class="block text-sm text-gray-600">{{ $deal->isOpen() ? $deal->stage?->name : $deal->status->label() }}@if($deal->isOpen() && $deal->expected_close_date) · {{ __('avslut') }} {{ $deal->expected_close_date->translatedFormat('j M Y') }}@endif</span>
+                                </span>
+                                <x-ui.amount :money="$money($deal->value_ore)" class="font-semibold text-ink" />
                             </li>
                         @endforeach
                     </ul>

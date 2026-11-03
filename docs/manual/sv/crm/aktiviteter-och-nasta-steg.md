@@ -28,6 +28,8 @@ En aktivitet är något du har gjort eller ska göra med en kund: en **Antecknin
 2. NONOX frågar efter nästa steg. Välj typ, skriv en rubrik och tid och tryck på **Planera**.
 3. Finns det inget nästa steg trycker du på **Hoppa över**.
 
+Är aktiviteten det sista planerade steget i en öppen affär går det inte att hoppa över. Planera nästa steg, så klarmarkeras det gamla samtidigt, eller tryck på **Avsluta affären** och markera affären som vunnen eller förlorad. Se [Säljtratt och affärer](/manual/crm/saljtratt-och-affarer).
+
 På kortet kan du dessutom ange hur ett samtal gick och skriva en rad om hur det gick innan du klarmarkerar.
 
 ## Mina aktiviteter

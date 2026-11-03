@@ -26,3 +26,5 @@ Schedule::command('waitlist:prune')->dailyAt('04:40')->withoutOverlapping();
 Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
 // CRM (ADR-043): prospect, active and inactive from the ledger, once a day.
 Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();
+// CRM stage 2: "Vinn tillbaka" tasks for lost deals and accounts whose date has come, after the status rules.
+Schedule::command('crm:win-back')->dailyAt('05:40')->withoutOverlapping();

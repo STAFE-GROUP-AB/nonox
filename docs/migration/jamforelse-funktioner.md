@@ -6,7 +6,7 @@ Raderna nedan lades till 2026-11-03 och kontrollerades samma dag kl. 10:22–10:
 |---|---|---|---|---|---|
 | Lager med lagerställen | Tillval, "Lager 369 kr/mån" (fortnox.se/produkt/prislista) | Tillval, "Lager 249 kr/mån" (spiris.se/priser) | Anges ej | Anges ej | Anges ej |
 | Streckkodsskanning i mobilen, även utan nät | Anges ej (skanning via partner) | Anges ej | Anges ej | Anges ej | Anges ej |
-| CRM med nyckeltal ur bokföringen | Anges ej (CRM via partner) | Anges ej | Anges ej (CRM via partner) | Anges ej | Anges ej |
+| CRM med säljtratt och nyckeltal ur bokföringen | Anges ej (CRM via partner) | Anges ej | Anges ej (CRM via partner) | Anges ej | Anges ej |
 | Öppet API | Ingår i Mellan+, "Integration" (fortnox.se/paket); annars 189 kr/mån | Ingår i Växa, "Integration … Obegränsat" (spiris.se/priser) | Ingår, privata integrationer utan kostnad i Business (bokio.se/priser) | Anges ej (ingen publik API-dokumentation hittad) | Ingår, "Öppet API med tydlig dokumentation" (kleer.se/ekonomisystem/integrationer) |
 | Bankkoppling | Ingår med Bokföring (fortnox.se, automatisk bokföring från kontoutdrag); banken kan ta ut avgift | Ingår, "Bankkopplingen ingår i Spiris" (spiris.se/priser) | Ingår i Business (bokio.se/priser) | Ingår i Total, "Bank & Betalning" (bjornlunden.com) | Ingår, "Integration med bank" (kleer.se/pris-ekonomisystem) |
 | Schema och personalplanering | Anges ej (via partner) | Anges ej | Anges ej | Anges ej | Anges ej |

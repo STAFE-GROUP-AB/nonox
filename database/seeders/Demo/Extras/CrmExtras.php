@@ -6,14 +6,23 @@ namespace Database\Seeders\Demo\Extras;
 
 use App\Models\Article;
 use App\Models\Customer;
+use App\Models\User;
 use App\Modules\Crm\Actions\LinkPerson;
 use App\Modules\Crm\Actions\LogActivity;
+use App\Modules\Crm\Actions\LoseDeal;
+use App\Modules\Crm\Actions\MoveDeal;
 use App\Modules\Crm\Actions\SaveAccount;
+use App\Modules\Crm\Actions\SaveDeal;
+use App\Modules\Crm\Actions\SaveGoal;
 use App\Modules\Crm\Actions\SavePerson;
 use App\Modules\Crm\Actions\SetAccountStatus;
+use App\Modules\Crm\Actions\WinDeal;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Account;
+use App\Modules\Crm\Models\LossReason;
+use App\Modules\Crm\Models\Pipeline;
+use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\ModuleManager;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -30,6 +39,10 @@ use Illuminate\Validation\ValidationException;
  * over the last months with open next steps: one overdue, two today and
  * some coming. The consultancy hour gets an internal cost, so the
  * contribution margin shows, built on part of the sales.
+ *
+ * Stage 2: a made-up seller (Säljare), a dozen deals across the pipeline's
+ * stages with their next steps, some won and some lost with a reason and a
+ * win-back date, and this month's goals for the seller and the owner.
  *
  * Every name, number and address is made up: the organisation numbers are
  * synthetic (DemoIndustries::orgNumber), the e-mail addresses end in .test
@@ -60,6 +73,25 @@ final class CrmExtras extends DemoExtra
         'Mjukvaruhuset Exempel AB' => [['Ali Nord', 'Teknisk chef', 'DECISION_MAKER', 'AGREEMENT'], ['Ida Viklund', 'Utvecklare', 'USER', 'LEGITIMATE_INTEREST']],
     ];
 
+    /** The made-up seller, with the role Säljare. */
+    public const array SELLER = ['name' => 'Oskar Lind', 'email' => 'oskar.lind@example.test'];
+
+    /**
+     * Open deals: account name, title, value in kronor, stage index, days ago created, days to close, the seller's.
+     *
+     * @var list<array{0: string, 1: string, 2: int, 3: int, 4: int, 5: int, 6: bool}>
+     */
+    private const array OPEN_DEALS = [
+        ['Fastighetsbolaget Exempel AB', 'Nytt förvaltningssystem', 380_000, 2, 30, 20, false],
+        ['Fastighetsbolaget Exempel AB', 'Support och drift 2027', 96_000, 0, 5, 75, false],
+        ['Logistikhuset Exempel AB', 'Lagerintegration', 145_000, 1, 12, 40, true],
+        ['Tandvården Exempel AB', 'Bokningssystem för kliniken', 220_000, 1, 25, -3, true],
+        ['Kunden Exempel AB', 'Ramavtal 2027', 640_000, 3, 60, 14, false],
+        ['Kunden Exempel AB', 'Utbildning för projektledare', 48_000, 2, 9, 30, true],
+        ['Mjukvaruhuset Exempel AB', 'Säkerhetsgranskning', 120_000, 0, 3, 60, true],
+        ['Mjukvaruhuset Exempel AB', 'Fler konsulttimmar efter sommaren', 260_000, 3, 40, 10, false],
+    ];
+
     /** The next number in the range PTS keeps for fiction and examples (070-174 06 05 to 070-174 06 99). */
     private int $mobiles = 0;
 
@@ -77,6 +109,83 @@ final class CrmExtras extends DemoExtra
 
         $this->customers($c);
         $this->prospects($c);
+        $this->deals($c);
+    }
+
+    /** CRM stage 2: the seller, deals across the pipeline, won and lost ones, and the month's goals. */
+    private function deals(DemoContext $c): void
+    {
+        $seller = User::query()->firstOrCreate(['email' => self::SELLER['email']], ['name' => self::SELLER['name'], 'email_verified_at' => now()]);
+        $c->company->users()->syncWithoutDetaching([$seller->id => ['role' => 'sales']]);
+        $c->company->unsetRelation('users');
+
+        $pipeline = Pipeline::query()->where('is_default', true)->first();
+
+        if ($pipeline === null) {
+            return;
+        }
+
+        $stages = $pipeline->stages()->get()->values();
+        $account = fn (string $name): ?Account => Account::query()->where('name', $name)->first();
+
+        foreach (self::OPEN_DEALS as [$name, $title, $kronor, $stage, $daysAgo, $closeIn, $sellers]) {
+            $target = $account($name);
+
+            if ($target instanceof Account) {
+                $this->openDeal($c, $target, $title, $kronor, $stages->slice(0, $stage + 1)->values()->all(), $daysAgo, $closeIn, $sellers ? $seller : $c->user);
+            }
+        }
+
+        // Won and lost deals over the last months: the win rate, the sales cycle and the forecast's won column.
+        $won = [
+            ['Kunden Exempel AB', 'Workshop om arkitektur', 85_000, 70, 45, false],
+            ['Mjukvaruhuset Exempel AB', 'Kodgranskning', 64_000, 50, 18, true],
+            ['Kunden Exempel AB', 'Förlängning av uppdraget', 310_000, 35, 4, true],
+        ];
+
+        foreach ($won as [$name, $title, $kronor, $createdAgo, $wonAgo, $sellers]) {
+            $target = $account($name);
+
+            if ($target === null) {
+                continue;
+            }
+
+            $deal = null;
+            $this->at($c, $createdAgo, function () use ($c, $target, $title, $kronor, $sellers, $seller, $stages, &$deal): void {
+                $deal = app(SaveDeal::class)($c->user, $c->company, ['account_id' => $target->id, 'title' => $title, 'value_ore' => $kronor * 100, 'owner_id' => $sellers ? $seller->id : $c->user->id, 'stage_id' => $stages[2]->id ?? null, 'next_step' => ['type' => 'TASK', 'subject' => 'Skicka offert']]);
+            });
+            $this->at($c, $wonAgo, fn () => $deal === null ? null : app(WinDeal::class)($c->user, $c->company, $deal->fresh() ?? $deal));
+        }
+
+        $reasons = LossReason::query()->pluck('id', 'name');
+        $lost = [
+            ['Byggvaror Exempel AB', 'Webbutik', 175_000, 'Valde en annan leverantör', 40, 'Valde en leverantör de redan har.'],
+            ['Logistikhuset Exempel AB', 'Ruttplanering', 90_000, 'Fel tidpunkt', 20, 'Vill ta upp det igen efter årsskiftet.'],
+        ];
+
+        foreach ($lost as [$name, $title, $kronor, $reason, $lostAgo, $note]) {
+            $target = $account($name);
+
+            if ($target === null || ! isset($reasons[$reason])) {
+                continue;
+            }
+
+            $deal = null;
+            $this->at($c, $lostAgo + 25, function () use ($c, $target, $title, $kronor, &$deal): void {
+                $deal = app(SaveDeal::class)($c->user, $c->company, ['account_id' => $target->id, 'title' => $title, 'value_ore' => $kronor * 100, 'next_step' => ['type' => 'CALL', 'subject' => 'Följ upp']]);
+            });
+            $this->at($c, $lostAgo, fn () => $deal === null ? null : app(LoseDeal::class)($c->user, $c->company, $deal->fresh() ?? $deal, ['loss_reason_id' => $reasons[$reason], 'loss_note' => $note]));
+        }
+
+        $month = $c->today->format('Y-m');
+
+        foreach ([[$seller, 'MEETINGS', '8'], [$seller, 'QUOTES', '4'], [$seller, 'ORDER_VALUE', '400 000'], [$c->user, 'ORDER_VALUE', '600 000']] as [$user, $metric, $target]) {
+            app(SaveGoal::class)($c->user, $c->company, ['user_id' => $user->id, 'month' => $month, 'metric' => $metric, 'target' => $target]);
+        }
+
+        // Meetings the seller has held this month, for the goal's progress.
+        $this->logAt($c, 6, ['account_id' => $account('Logistikhuset Exempel AB')?->id, 'type' => 'MEETING', 'subject' => 'Behovsanalys', 'assigned_to' => $seller->id, 'done' => true]);
+        $this->logAt($c, 2, ['account_id' => $account('Tandvården Exempel AB')?->id, 'type' => 'MEETING', 'subject' => 'Visning av förslaget', 'assigned_to' => $seller->id, 'done' => true]);
     }
 
     private function customers(DemoContext $c): void
@@ -163,6 +272,38 @@ final class CrmExtras extends DemoExtra
         $this->logAt($c, 35, ['account_id' => $account->id, 'person_id' => $person, 'type' => 'CALL', 'subject' => 'Besked', 'call_outcome' => 'REACHED', 'body' => 'Valde en leverantör de redan har.', 'done' => true]);
 
         $this->at($c, 35, fn () => app(SetAccountStatus::class)($c->user, $c->company, $account->fresh() ?? $account, 'LOST', 'Valde en befintlig leverantör'));
+    }
+
+    /**
+     * An open deal created $daysAgo days ago and moved through $path, the
+     * stages up to the one it is in now, three days apart.
+     *
+     * @param  array<int, PipelineStage>  $path
+     */
+    private function openDeal(DemoContext $c, Account $account, string $title, int $kronor, array $path, int $daysAgo, int $closeIn, User $owner): void
+    {
+        $deal = null;
+        $late = count($path) >= 3;
+
+        $this->at($c, $daysAgo, function () use ($c, $account, $title, $kronor, $closeIn, $owner, $late, &$deal): void {
+            $deal = app(SaveDeal::class)($c->user, $c->company, [
+                'account_id' => $account->id,
+                'title' => $title,
+                'value_ore' => $kronor * 100,
+                'expected_close_date' => $c->today->addDays($closeIn)->toDateString(),
+                'owner_id' => $owner->id,
+                'next_step' => [
+                    'type' => $late ? 'MEETING' : 'CALL',
+                    'subject' => $late ? 'Gå igenom offerten' : 'Boka ett möte',
+                    // A deal past its close date has an overdue step, so the board shows red.
+                    'due_at' => $c->today->addDays($closeIn < 0 ? -2 : min(7, max(1, $closeIn)))->setTime(10, 0)->format('Y-m-d\TH:i'),
+                ],
+            ]);
+        });
+
+        foreach (array_slice(array_values($path), 1) as $i => $stage) {
+            $this->at($c, max(0, $daysAgo - ($i + 1) * 3), fn () => $deal === null ? null : app(MoveDeal::class)($c->user, $c->company, $deal->fresh() ?? $deal, $stage));
+        }
     }
 
     /**

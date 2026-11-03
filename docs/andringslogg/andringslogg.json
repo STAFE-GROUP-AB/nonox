@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-crm-saljtratt",
+      "datum": "2026-11-03T10:45:00+01:00",
+      "rubrik": "CRM: säljtratt med affärer, prognos och mål per säljare",
+      "beskrivning": "Affärer följs genom en säljtratt med egna steg och sannolikheter, och varje öppen affär har alltid ett planerat nästa steg. En vunnen affär kopplas till offerten, ordern eller fakturan, och en förlorad får en orsak och en påminnelse om att vinna tillbaka kunden. Prognosen per månad, målen per säljare och översikten räknas direkt ur affärerna, aktiviteterna och faktureringen.",
+      "typ": "Nytt",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-03-jamforelse-moduler",
       "datum": "2026-11-03T10:28:00+01:00",
       "rubrik": "Jämförelsen visar lager, CRM, API och de andra modulerna",

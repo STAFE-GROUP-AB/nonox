@@ -9,6 +9,9 @@
     <x-ui.field for="crm-suppression" :label="__('Granska spärrlistan, år')" error="settings.suppression_review_years" :hint="__('Spärrlistan över personer som har invänt mot att bli kontaktade visas under Att göra för granskning när en rad inte har granskats på så här många år. Standard är 3.')">
         <input id="crm-suppression" type="number" min="1" max="10" inputmode="numeric" wire:model="settings.suppression_review_years" class="{{ $input }}">
     </x-ui.field>
+    <x-ui.field for="crm-win-back" :label="__('Vinn tillbaka efter, månader')" error="settings.win_back_months" :hint="__('En förlorad affär eller kund får ett datum så här många månader fram. Då får den ansvarige en uppgift att höra av sig igen. Datumet kan ändras eller tas bort på varje affär. Standard är 6.')">
+        <input id="crm-win-back" type="number" min="1" max="36" inputmode="numeric" wire:model="settings.win_back_months" class="{{ $input }}">
+    </x-ui.field>
     <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>

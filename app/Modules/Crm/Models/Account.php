@@ -43,6 +43,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $source
  * @property list<string> $tags
  * @property ?CarbonImmutable $last_activity_at
+ * @property ?CarbonImmutable $win_back_at a lost account: when to try again (ADR-043 stage 2)
+ * @property ?CarbonImmutable $win_back_task_at when the "Vinn tillbaka" task was made
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  * @property-read AccountPerson $link the person's place here, when read through Person::accounts()
@@ -97,6 +99,8 @@ class Account extends Model
             'status' => AccountStatus::class,
             'status_set_manually_at' => 'immutable_datetime',
             'last_activity_at' => 'immutable_datetime',
+            'win_back_at' => 'immutable_date',
+            'win_back_task_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
             'tags' => 'array',
@@ -134,6 +138,12 @@ class Account extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(Activity::class);
+    }
+
+    /** @return HasMany<Deal, $this> */
+    public function deals(): HasMany
+    {
+        return $this->hasMany(Deal::class);
     }
 
     public function isCustomer(): bool

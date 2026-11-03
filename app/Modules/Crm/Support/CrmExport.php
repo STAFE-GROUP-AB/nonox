@@ -7,6 +7,7 @@ namespace App\Modules\Crm\Support;
 use App\Models\Customer;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -16,6 +17,9 @@ use Illuminate\Database\Eloquent\Builder;
  * accounts they are at and the activities about them. Available whether
  * the module is on or off: the data is kept either way, and the rights in
  * GDPR do not stop when a module is switched off (CrmPersonExportController).
+ *
+ * Stage 2: the account's deals, and the deals a person is the contact of,
+ * with their free text (title and loss note).
  */
 final class CrmExport
 {
@@ -47,6 +51,7 @@ final class CrmExport
                 'skapat' => $account->created_at?->toIso8601String(),
             ],
             'aktiviteter' => self::activities(Activity::query()->where('account_id', $account->id)),
+            'affarer' => self::deals(Deal::query()->where('account_id', $account->id)),
         ];
     }
 
@@ -73,7 +78,31 @@ final class CrmExport
                 ->map(fn (Account $account): array => ['namn' => $account->name, 'roll' => $account->link->role->label()])
                 ->all(),
             'aktiviteter' => self::activities(Activity::query()->where('person_id', $person->id)),
+            'affarer' => self::deals(Deal::query()->where('person_id', $person->id)),
         ];
+    }
+
+    /**
+     * @param  Builder<Deal>  $query
+     * @return list<array<string, mixed>>
+     */
+    private static function deals($query): array
+    {
+        return array_values($query->with(['account:id,name', 'stage:id,name', 'lossReason:id,name'])->orderBy('created_at')->get()
+            ->map(fn (Deal $deal): array => [
+                'rubrik' => $deal->title,
+                'foretag' => $deal->account?->name,
+                'varde_ore_exkl_moms' => $deal->value_ore,
+                'steg' => $deal->stage?->name,
+                'status' => $deal->status->label(),
+                'forvantat_avslut' => $deal->expected_close_date?->toDateString(),
+                'vunnen' => $deal->won_at?->toIso8601String(),
+                'forlorad' => $deal->lost_at?->toIso8601String(),
+                'orsak' => $deal->lossReason?->name,
+                'kommentar' => $deal->loss_note,
+                'vinn_tillbaka' => $deal->win_back_at?->toDateString(),
+                'skapad' => $deal->created_at?->toIso8601String(),
+            ])->all());
     }
 
     /**

@@ -9,17 +9,28 @@ use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\Customer;
 use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Console\RefreshStatusesCommand;
+use App\Modules\Crm\Console\WinBackCommand;
 use App\Modules\Crm\Http\CrmPersonExportController;
 use App\Modules\Crm\Livewire\AccountCard;
 use App\Modules\Crm\Livewire\AccountsPage;
 use App\Modules\Crm\Livewire\ActivitiesPage;
 use App\Modules\Crm\Livewire\CrmSettingsForm;
 use App\Modules\Crm\Livewire\CustomerFieldsForm;
+use App\Modules\Crm\Livewire\Dashboard;
+use App\Modules\Crm\Livewire\DealCard;
+use App\Modules\Crm\Livewire\DealsBoard;
+use App\Modules\Crm\Livewire\ForecastPage;
 use App\Modules\Crm\Livewire\PeoplePage;
+use App\Modules\Crm\Livewire\PipelineSettings;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Deal;
+use App\Modules\Crm\Models\Goal;
+use App\Modules\Crm\Models\LossReason;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Models\Pipeline;
+use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Policies\CrmPolicy;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Modules\ModuleRegistry;
@@ -46,7 +57,7 @@ class CrmServiceProvider extends ServiceProvider
         $this->loadViewsFrom(__DIR__.'/views', 'crm');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
-        foreach ([Account::class, Person::class, Activity::class, AccountPerson::class] as $model) {
+        foreach ([Account::class, Person::class, Activity::class, AccountPerson::class, Deal::class, Pipeline::class, PipelineStage::class, LossReason::class, Goal::class] as $model) {
             Gate::policy($model, CrmPolicy::class);
         }
 
@@ -59,9 +70,14 @@ class CrmServiceProvider extends ServiceProvider
         Livewire::component('crm.customer-fields', CustomerFieldsForm::class);
         Livewire::component('crm.activities', ActivitiesPage::class);
         Livewire::component('crm.people', PeoplePage::class);
+        Livewire::component('crm.dashboard', Dashboard::class);
+        Livewire::component('crm.deals', DealsBoard::class);
+        Livewire::component('crm.deal-card', DealCard::class);
+        Livewire::component('crm.forecast', ForecastPage::class);
+        Livewire::component('crm.pipeline-settings', PipelineSettings::class);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([RefreshStatusesCommand::class]);
+            $this->commands([RefreshStatusesCommand::class, WinBackCommand::class]);
         }
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.CrmModule::KEY])

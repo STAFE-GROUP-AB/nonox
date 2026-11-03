@@ -8,9 +8,11 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\CallOutcome;
+use App\Modules\Crm\Domain\DealNextStep;
 use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\CompanyMembers;
 use App\Support\Audit\Audit;
@@ -29,6 +31,11 @@ use Illuminate\Validation\ValidationException;
  * is set, and otherwise planned, with a due time if it has one. The
  * activity belongs to the person who logs it unless assigned to another
  * member. Times are entered and shown in Europe/Stockholm.
+ *
+ * Stage 2: an activity can be a step of a deal at the same account
+ * (deal_id). The last open step of an open deal is not closed or moved off
+ * the deal here; CompleteActivity closes it together with the next one
+ * (DealNextStep).
  */
 final class LogActivity
 {
@@ -56,6 +63,11 @@ final class LogActivity
                     $fail(__('Personen finns inte.'));
                 }
             }],
+            'deal_id' => ['nullable', 'integer', function (string $attribute, mixed $value, Closure $fail) use ($company): void {
+                if (! CurrentCompany::run($company, fn (): bool => Deal::query()->whereKey((int) $value)->exists())) {
+                    $fail(__('Affären finns inte.'));
+                }
+            }],
             'type' => [$activity === null ? 'required' : 'sometimes', Rule::enum(ActivityType::class)],
             'call_outcome' => ['nullable', Rule::enum(CallOutcome::class)],
             'subject' => ['nullable', 'string', 'max:255'],
@@ -74,6 +86,7 @@ final class LogActivity
         $personId = array_key_exists('person_id', $validated) ? $validated['person_id'] : $activity?->person_id;
 
         $this->guardDoNotContact($company, $type, $personId === null ? null : (int) $personId, $activity);
+        $this->guardDeal($company, $validated, $activity);
 
         $subject = trim((string) ($validated['subject'] ?? $activity->subject ?? ''));
         $dueAt = array_key_exists('due_at', $validated)
@@ -89,7 +102,7 @@ final class LogActivity
             'done_at' => $done ? ($activity->done_at ?? now()) : null,
         ];
 
-        foreach (['account_id', 'person_id', 'body', 'assigned_to'] as $field) {
+        foreach (['account_id', 'person_id', 'deal_id', 'body', 'assigned_to'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $attributes[$field] = is_string($validated[$field]) ? (trim($validated[$field]) === '' ? null : trim($validated[$field])) : $validated[$field];
             }
@@ -98,9 +111,9 @@ final class LogActivity
         return DB::transaction(fn (): Activity => CurrentCompany::run($company, function () use ($user, $company, $attributes, $activity): Activity {
             if ($activity === null) {
                 $activity = Activity::create([...$attributes, 'assigned_to' => $attributes['assigned_to'] ?? $user->id, 'created_by' => $user->id]);
-                Audit::record('crm.activity_created', $activity, ['type' => $activity->type->value, 'account_id' => $activity->account_id, 'done' => ! $activity->isOpen()], $company, $user);
+                Audit::record('crm.activity_created', $activity, ['type' => $activity->type->value, 'account_id' => $activity->account_id, 'deal_id' => $activity->deal_id, 'done' => ! $activity->isOpen()], $company, $user);
             } else {
-                $before = $activity->only(['type', 'due_at', 'done_at', 'assigned_to', 'person_id', 'account_id']);
+                $before = $activity->only(['type', 'due_at', 'done_at', 'assigned_to', 'person_id', 'account_id', 'deal_id']);
                 $activity->fill($attributes)->save();
                 Audit::record('crm.activity_updated', $activity, ['fields' => array_keys(Audit::changes(array_map(fn (mixed $value): mixed => $value instanceof \BackedEnum ? $value->value : $value, $before), array_map(fn (mixed $value): mixed => $value instanceof \BackedEnum ? $value->value : $value, $activity->only(array_keys($before)))))], $company, $user);
             }
@@ -118,6 +131,33 @@ final class LogActivity
 
         if ($activity->person_id !== null) {
             Person::query()->whereKey($activity->person_id)->update(['last_activity_at' => now()]);
+        }
+    }
+
+    /**
+     * A deal's step is at the deal's account; the last open step of an open
+     * deal is not closed or moved away here (DealNextStep).
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function guardDeal(Company $company, array $validated, ?Activity $activity): void
+    {
+        $dealId = array_key_exists('deal_id', $validated) ? $validated['deal_id'] : $activity?->deal_id;
+        $accountId = (int) ($validated['account_id'] ?? $activity?->account_id);
+
+        if ($dealId !== null && ! CurrentCompany::run($company, fn (): bool => Deal::query()->whereKey((int) $dealId)->where('account_id', $accountId)->exists())) {
+            throw ValidationException::withMessages(['deal_id' => __('Affären hör till en annan kund.')]);
+        }
+
+        if ($activity === null || ! $activity->isOpen()) {
+            return;
+        }
+
+        $closes = (bool) ($validated['done'] ?? false) || ($validated['type'] ?? null) === ActivityType::Note->value;
+        $moves = $dealId === null || (int) $dealId !== $activity->deal_id;
+
+        if ($closes || $moves) {
+            CurrentCompany::run($company, fn () => DealNextStep::guardLeaving($activity, 'done'));
         }
     }
 

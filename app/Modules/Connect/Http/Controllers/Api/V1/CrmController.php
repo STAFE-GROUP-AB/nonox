@@ -6,6 +6,7 @@ namespace App\Modules\Connect\Http\Controllers\Api\V1;
 
 use App\Modules\Connect\Http\Controllers\Api\V1\Concerns\ActsAsCredential;
 use App\Modules\Connect\Http\Resources\CursorList;
+use App\Modules\Crm\Actions\CompleteActivity;
 use App\Modules\Crm\Actions\LogActivity;
 use App\Modules\Crm\Actions\SaveAccount;
 use App\Modules\Crm\Actions\SavePerson;
@@ -32,7 +33,7 @@ final class CrmController
 
     private const array PERSON_FIELDS = ['name', 'title', 'email', 'phone', 'mobile', 'legal_basis', 'legal_basis_note', 'consent_at', 'is_active', 'informed_at', 'do_not_contact', 'do_not_contact_reason', 'account_id', 'role'];
 
-    private const array ACTIVITY_FIELDS = ['account_id', 'person_id', 'type', 'call_outcome', 'subject', 'body', 'assigned_to', 'due_at', 'done'];
+    private const array ACTIVITY_FIELDS = ['account_id', 'person_id', 'deal_id', 'type', 'call_outcome', 'subject', 'body', 'assigned_to', 'due_at', 'done'];
 
     public function accounts(Request $request): JsonResponse
     {
@@ -133,6 +134,10 @@ final class CrmController
             $query->where('assigned_to', $request->integer('assigned_to'));
         }
 
+        if ($request->filled('deal_id')) {
+            $query->where('deal_id', $request->integer('deal_id'));
+        }
+
         if ($request->has('open')) {
             $request->boolean('open') ? $query->whereNull('done_at') : $query->whereNotNull('done_at');
         }
@@ -153,10 +158,23 @@ final class CrmController
             ->header('Location', route('connect.api.crm.activities.show', $activity->id));
     }
 
-    public function updateActivity(Request $request, int $activity, LogActivity $log): JsonResponse
+    /**
+     * Changes the given fields. "done": true with next_step completes an
+     * open activity and plans the next one in the same transaction: the
+     * only way to complete the last open step of an open deal (stage 2).
+     */
+    public function updateActivity(Request $request, int $activity, LogActivity $log, CompleteActivity $complete): JsonResponse
     {
         $model = Activity::query()->findOrFail($activity);
-        $saved = $log($this->user(), $this->company(), array_intersect_key($request->json()->all(), array_flip(self::ACTIVITY_FIELDS)), $model);
+        $body = $request->json()->all();
+
+        if (isset($body['next_step']) && ($body['done'] ?? false) === true && $model->isOpen()) {
+            $saved = $complete($this->user(), $this->company(), $model, ['call_outcome' => $body['call_outcome'] ?? null, 'note' => $body['note'] ?? null, 'next' => $body['next_step']]);
+
+            return CursorList::one(self::presentActivity($saved->refresh()));
+        }
+
+        $saved = $log($this->user(), $this->company(), array_intersect_key($body, array_flip(self::ACTIVITY_FIELDS)), $model);
 
         return CursorList::one(self::presentActivity($saved->refresh()));
     }
@@ -222,6 +240,7 @@ final class CrmController
             'id' => $activity->id,
             'account_id' => $activity->account_id,
             'person_id' => $activity->person_id,
+            'deal_id' => $activity->deal_id,
             'type' => $activity->type->value,
             'call_outcome' => $activity->call_outcome?->value,
             'subject' => $activity->subject,
