@@ -50,7 +50,6 @@ final class FollowablePath
         'payables.invoices.show',
         'payables.invoices.edit',
         'payroll.runs.show',
-        'payroll.runs.imports.show',
         // Closures in app/Modules/Crm/routes/web.php that return view('crm::…').
         'crm.accounts.show',
         'crm.people.show',
@@ -63,6 +62,8 @@ final class FollowablePath
         '/^privacy\.export\./',
         '/^staff-ledger\.control-visit/',
         '/^staff-ledger\.kiosk/',
+        // Opening the absence requests is a logged read of absence causes, which can be health data.
+        '/^payroll\.requests$/',
         '/^(login|logout|register|passkeys\.challenge)$/',
         '/\.(callback|file|pdf|csv|download|sru|sie|archive|receipt|attachment|original|payment-file|certificate)$/',
     ];

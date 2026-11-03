@@ -351,6 +351,7 @@ it('logs a failure by its class only, never with the chat in it', function () {
 it('lets Följ mina sidor open only pages, never a file, a callback, an export or an audited read', function (string $path) {
     chatPost($this->joiner, 'followable', ['path' => $path])->assertOk()->assertExactJson(['followable' => false]);
 })->with([
+    '/lon/ansokningar',
     '/lon/arbetsgivardeklaration/1/fil',
     '/lonearkiv/arbetsgivardeklaration/1/fil',
     '/moms/1/fil',
