@@ -9,6 +9,7 @@ use App\Modules\Connect\Livewire\ConnectionsManager;
 use App\Modules\Connect\Mail\ApiKeyCreatedMail;
 use App\Modules\Connect\Models\ConnectApiKey;
 use App\Modules\Connect\Models\IdempotencyRecord;
+use App\Modules\Connect\Support\ConnectScopes;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -250,4 +251,45 @@ it('lets a bookkeeper see Anslutningar only when given connect:view, and never c
 
     $this->actingAs($bookkeeper)->get('/anslutningar')->assertForbidden();
     $this->actingAs($owner)->get('/anslutningar')->assertOk()->assertSee('API-nycklar');
+});
+
+it('puts every scope in exactly one group on the API key form', function () {
+    $grouped = array_merge(...array_values(ConnectScopes::GROUPS));
+
+    expect($grouped)->toHaveCount(count(array_unique($grouped)))
+        ->and(array_values(array_diff(ConnectScopes::SCOPES, $grouped)))->toBe([])
+        ->and(array_values(array_diff($grouped, ConnectScopes::SCOPES)))->toBe([])
+        ->and(array_keys(ConnectScopes::groupLabels()))->toBe(array_keys(ConnectScopes::GROUPS));
+});
+
+it('offers only the scopes the owner holds, grouped, with full access and select all per group', function () {
+    [$owner, $company] = Connect::company();
+    $modules = app(ModuleManager::class);
+
+    if ($modules->isEnabled('inventory', $company)) {
+        $modules->disable('inventory', $company, $owner);
+    }
+
+    $component = Livewire::actingAs($owner)->test(ConnectionsManager::class)
+        ->assertSee('Full behörighet')
+        ->assertSee('vouchers:post')
+        ->assertDontSee('inventory:manage');
+
+    $held = array_values(array_filter(ConnectScopes::SCOPES, fn (string $scope): bool => $owner->hasTeamPermission($company, $scope)));
+    expect($held)->toContain('vouchers:post')->not->toContain('inventory:view');
+
+    $component->call('toggleAllScopes');
+    expect($component->get('keyScopes'))->toBe($held);
+
+    $component->call('toggleAllScopes');
+    expect($component->get('keyScopes'))->toBe([]);
+
+    $component->call('toggleScopeGroup', 'bookkeeping');
+    expect($component->get('keyScopes'))->toBe(ConnectScopes::GROUPS['bookkeeping']);
+
+    $component->call('toggleScopeGroup', 'bookkeeping');
+    expect($component->get('keyScopes'))->toBe([]);
+
+    $component->call('toggleScopeGroup', 'inventory')->call('toggleScopeGroup', 'okänd');
+    expect($component->get('keyScopes'))->toBe([]);
 });

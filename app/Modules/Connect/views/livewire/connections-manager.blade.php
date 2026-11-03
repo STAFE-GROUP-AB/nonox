@@ -123,10 +123,35 @@
                 <x-ui.field for="connect_key_name" :label="__('Namn')" error="name">
                     <input id="connect_key_name" type="text" class="{{ $input }} mt-1" wire:model="keyName" maxlength="100" placeholder="{{ __('Till exempel Kassaexport') }}">
                 </x-ui.field>
-                <fieldset class="space-y-1">
+                @php($offered = array_merge(...array_values($scopeGroups ?: [[]])))
+                <fieldset class="space-y-3">
                     <legend class="text-sm font-medium text-gray-700">{{ __('Behörigheter') }}</legend>
-                    @foreach($scopeLabels as $scope => $label)
-                        <label class="flex items-start gap-2 text-sm" wire:key="scope-{{ $scope }}"><input type="checkbox" value="{{ $scope }}" wire:model="keyScopes" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500"><span>{{ $label }} <span class="font-mono text-xs text-gray-500">{{ $scope }}</span></span></label>
+                    <p class="text-sm text-gray-600">{{ __('Bara behörigheter som du själv har visas. Moduler som inte är påslagna finns inte med.') }}</p>
+                    @if($offered !== [])
+                        @php($full = array_diff($offered, $keyScopes) === [])
+                        <div class="rounded-lg border px-3 py-2 {{ $full ? 'border-accent-600 bg-accent-50' : 'border-gray-200 bg-gray-50' }}">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-gray-900">{{ __('Full behörighet: allt som du själv har') }}</span>
+                                <button type="button" wire:click="toggleAllScopes" class="text-sm font-medium text-accent-700 hover:underline">{{ $full ? __('Avmarkera allt') : __('Välj allt') }}</button>
+                            </div>
+                            <p class="mt-1 text-sm text-gray-600">{{ __('Ge bara nyckeln det den behöver. Full behörighet ger nyckeln samma åtkomst som du har, till exempel att bokföra och skicka fakturor.') }}</p>
+                        </div>
+                    @endif
+                    @foreach($scopeGroups as $group => $scopes)
+                        <fieldset class="rounded-lg border border-gray-200 p-3" wire:key="scope-group-{{ $group }}">
+                            <legend class="sr-only">{{ $groupLabels[$group] }}</legend>
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <span class="text-sm font-semibold text-gray-900" aria-hidden="true">{{ $groupLabels[$group] }}</span>
+                                <button type="button" class="text-sm font-medium text-accent-700 hover:underline" wire:click="toggleScopeGroup(@js($group))">
+                                    {{ array_diff($scopes, $keyScopes) === [] ? __('Avmarkera alla') : __('Välj alla') }}<span class="sr-only"> {{ __('i :group', ['group' => $groupLabels[$group]]) }}</span>
+                                </button>
+                            </div>
+                            <div class="mt-2 space-y-1">
+                                @foreach($scopes as $scope)
+                                    <label class="flex items-start gap-2 text-sm" wire:key="scope-{{ $scope }}"><input type="checkbox" value="{{ $scope }}" wire:model.live="keyScopes" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500"><span>{{ $scopeLabels[$scope] }} <span class="font-mono text-xs text-gray-500">{{ $scope }}</span></span></label>
+                                @endforeach
+                            </div>
+                        </fieldset>
                     @endforeach
                     @error('scopes') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror
                     @error('scopes.0') <p class="text-sm text-red-700" role="alert">{{ $message }}</p> @enderror

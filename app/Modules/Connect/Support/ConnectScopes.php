@@ -65,6 +65,34 @@ final class ConnectScopes
         ];
     }
 
+    /**
+     * The scopes grouped by the part of NONOX they belong to, for the API
+     * key form. Every scope is in exactly one group.
+     *
+     * @var array<string, list<string>> group key => scopes
+     */
+    public const array GROUPS = [
+        'bookkeeping' => ['vouchers:view', 'vouchers:create', 'vouchers:post', 'vouchers:correct', 'accounts:manage', 'reports:view', 'vat:prepare', 'export:sie'],
+        'invoicing' => ['invoices:view', 'invoices:create', 'invoices:send', 'invoices:credit', 'payments:create'],
+        'supplier-invoices' => ['supplier-invoices:create', 'supplier-invoices:approve'],
+        'planning' => ['planning:view'],
+        'inventory' => ['inventory:view', 'inventory:manage'],
+        'crm' => ['crm:view', 'crm:manage'],
+    ];
+
+    /** @return array<string, string> group key => Swedish name */
+    public static function groupLabels(): array
+    {
+        return [
+            'bookkeeping' => __('Bokföring'),
+            'invoicing' => __('Kunder och fakturering'),
+            'supplier-invoices' => __('Leverantörsfakturor'),
+            'planning' => __('Planering'),
+            'inventory' => __('Lager'),
+            'crm' => __('CRM'),
+        ];
+    }
+
     public static function label(string $scope): string
     {
         return self::labels()[$scope] ?? $scope;

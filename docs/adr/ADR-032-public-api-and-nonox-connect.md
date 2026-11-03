@@ -170,7 +170,11 @@ tokens. Instead, `connect_api_keys`:
 - bound to one company; scopes as above; **mandatory expiry** (at most
   `NONOX_CONNECT_MAX_KEY_DAYS`, default 365); optional IP allowlist;
 - created only by an owner or administrator, after a fresh passkey
-  confirmation (`CreateApiKey`), and only with scopes they hold;
+  confirmation (`CreateApiKey`), and only with scopes they hold; the form
+  offers only those scopes (a module that is switched off contributes
+  none), grouped by area (`ConnectScopes::GROUPS`), with "Full
+  behörighet" (and a least-privilege hint next to it) and "Välj alla" per
+  group (2026-11-03);
 - `nnx_` + 48 random characters, shown once; only the SHA-256 is stored
   (the key has ~285 bits of entropy, so a fast hash is the right choice and
   allows an indexed lookup);

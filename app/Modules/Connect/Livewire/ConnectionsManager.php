@@ -90,6 +90,20 @@ class ConnectionsManager extends Component
         $this->toast(__('API-nyckeln :name är skapad. Kopiera den nu, den visas bara en gång.', ['name' => $result['key']->name]));
     }
 
+    /** Ticks every scope the user holds, or clears them all when they already are. */
+    public function toggleAllScopes(): void
+    {
+        $this->keyScopes = $this->toggled($this->keyScopes, $this->availableScopes());
+    }
+
+    /** Ticks every scope in a group that the user holds, or clears them when they already are. */
+    public function toggleScopeGroup(string $group): void
+    {
+        $scopes = array_values(array_intersect(ConnectScopes::GROUPS[$group] ?? [], $this->availableScopes()));
+
+        $this->keyScopes = $this->toggled($this->keyScopes, $scopes);
+    }
+
     public function forgetNewKey(): void
     {
         $this->newKey = null;
@@ -122,11 +136,50 @@ class ConnectionsManager extends Component
             'grants' => ConnectGrant::query()->active()->with(['client', 'user'])->latest()->get(),
             'keys' => ConnectApiKey::query()->whereNull('revoked_at')->with('creator')->orderBy('expires_at')->get(),
             'scopeLabels' => ConnectScopes::labels(),
+            'scopeGroups' => $this->offeredGroups(),
+            'groupLabels' => ConnectScopes::groupLabels(),
             'canManage' => $user->hasTeamPermission($company, 'connect:manage'),
             'hasPasskey' => $user->hasPasskeysEnabled(),
             'skipPasskey' => PasskeySession::skippedLocally(),
             'userId' => $user->id,
         ]));
+    }
+
+    /**
+     * The scopes the user holds in this company right now. A key can never
+     * get more (CreateApiKey checks it again), so nothing else is offered:
+     * permissions of a module that is switched off are not shown.
+     *
+     * @return list<string>
+     */
+    private function availableScopes(): array
+    {
+        $company = $this->company();
+        $user = $this->user();
+
+        return array_values(array_filter(ConnectScopes::SCOPES, fn (string $scope): bool => $user->hasTeamPermission($company, $scope)));
+    }
+
+    /** @return array<string, list<string>> group => the user's scopes in it, empty groups left out */
+    private function offeredGroups(): array
+    {
+        $available = $this->availableScopes();
+        $groups = array_map(fn (array $scopes): array => array_values(array_intersect($scopes, $available)), ConnectScopes::GROUPS);
+
+        return array_filter($groups, fn (array $scopes): bool => $scopes !== []);
+    }
+
+    /**
+     * @param  list<string>  $selected
+     * @param  list<string>  $scopes
+     * @return list<string>
+     */
+    private function toggled(array $selected, array $scopes): array
+    {
+        $allTicked = $scopes !== [] && array_diff($scopes, $selected) === [];
+        $next = $allTicked ? array_diff($selected, $scopes) : array_merge($selected, $scopes);
+
+        return ConnectScopes::filter(array_unique($next));
     }
 
     private function company(): Company

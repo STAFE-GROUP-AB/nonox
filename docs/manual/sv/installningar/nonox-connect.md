@@ -46,7 +46,7 @@ Du skickas sedan tillbaka till appen. Appen syns under **Anslutna appar**, med v
 
 1. Öppna **Anslutningar** och gå till **API-nycklar**.
 2. Ge nyckeln ett **Namn**, till exempel "Kassaexport".
-3. Kryssa i de **Behörigheter** nyckeln ska ha. Välj så få som möjligt.
+3. Kryssa i de **Behörigheter** nyckeln ska ha. De är grupperade efter del, till exempel **Bokföring** och **Kunder och fakturering**. **Välj alla** kryssar i en hel grupp och **Välj allt** vid **Full behörighet** kryssar i allt du själv har. Bara behörigheter som du själv har visas, så en modul som inte är påslagen finns inte med. Välj så få som möjligt.
 4. Välj ett datum vid **Gäller till och med**. Alla nycklar har ett slutdatum.
 5. Fyll i **Tillåtna IP-adresser (valfritt, en per rad)** om nyckeln bara ska användas från vissa adresser.
 6. Klicka på **Skapa med passkey** och bekräfta.

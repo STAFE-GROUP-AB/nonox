@@ -7353,5 +7353,14 @@
     "Behåll": "Keep",
     "Ta bort raden från spärrlistan? Läggs personen till igen märks den inte längre Kontakta inte.": "Remove the entry from the suppression list? If the person is added again, they will no longer be marked Do not contact.",
     "Dagen personen fick information om hur ni behandlar uppgifterna (GDPR artikel 14): vilka uppgifter, varifrån, varför och med vilken rättslig grund, vilka leverantörer som behandlar dem, hur länge de sparas och personens rättigheter. Inom en månad, och senast vid första kontakten.": "The day the person was told how you process the data (GDPR article 14): which data, from where, why and on what legal basis, which providers process it, how long it is kept and the person's rights. Within one month, and at the latest at the first contact.",
-    "Behandlingen av personen är begränsad. Aktiviteter om personen kan inte ändras, bara klarmarkeras.": "The processing of the person is restricted. Activities about the person cannot be changed, only marked as done."
+    "Behandlingen av personen är begränsad. Aktiviteter om personen kan inte ändras, bara klarmarkeras.": "The processing of the person is restricted. Activities about the person cannot be changed, only marked as done.",
+    "Kunder och fakturering": "Customers and invoicing",
+    "Välj alla": "Select all",
+    "Avmarkera alla": "Clear all",
+    "Välj allt": "Select everything",
+    "Avmarkera allt": "Clear everything",
+    "Full behörighet: allt som du själv har": "Full access: everything you hold yourself",
+    "Bara behörigheter som du själv har visas. Moduler som inte är påslagna finns inte med.": "Only permissions you hold yourself are shown. Modules that are switched off are not listed.",
+    "Ge bara nyckeln det den behöver. Full behörighet ger nyckeln samma åtkomst som du har, till exempel att bokföra och skicka fakturor.": "Give the key only what it needs. Full access gives the key the same access as you, for example posting vouchers and sending invoices.",
+    "i :group": "in :group"
 }
