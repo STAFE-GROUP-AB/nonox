@@ -465,4 +465,15 @@ out in the migration so it never changes with the action).
 - **Stage 1 test adjusted:** the account-level quick action is now labelled
   "Logga samtal", so the check that a person marked Kontakta inte has no
   call button looks for that person's own button instead of the text.
+- **Review round (2026-11-03).** An edited activity and the next step after
+  a completion stay at the activity's own account (and deal), also on the
+  person page and when the person has left that account. Erasing a person
+  from their own page leads back to Personer. A person marked Kontakta inte
+  gets no tel:/mailto: links on the Personer tab. A seller limited from a
+  private person's ledger sees no first-invoice date (Kund sedan, the status
+  path). The role is saved with a button, and a changed role does not reset
+  the pruning clock (only a new link does). An unknown tab is the timeline.
+  A disabled quick action is a button with `aria-disabled`, described by a
+  visible line under the actions. Under a restriction the data may still be
+  corrected (art. 16 and 18), so **Ändra uppgifter** stays.
 

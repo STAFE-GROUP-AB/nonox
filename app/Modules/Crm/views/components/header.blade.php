@@ -33,6 +33,10 @@
             <div class="-mx-5 mt-6 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:gap-3 sm:overflow-visible sm:px-0" role="group" aria-label="{{ __('Snabbval') }}">
                 {{ $actions }}
             </div>
+            @if(isset($actionsNote) && trim((string) $actionsNote) !== '')
+                {{-- Why some quick actions cannot be used, in view: the disabled buttons point here (aria-describedby). --}}
+                <p id="crm-actions-note" class="mt-2 flex items-start gap-1.5 text-sm text-gray-600"><x-crm::icon name="block" class="mt-0.5 size-4 flex-none text-gray-500" />{{ $actionsNote }}</p>
+            @endif
         @endisset
 
         @isset($facts)

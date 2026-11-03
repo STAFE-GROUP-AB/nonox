@@ -21,7 +21,7 @@
             <p>
                 <span class="font-semibold">{{ __('Kontakta inte') }}:</span>
                 {{ $restricted
-                    ? __('Behandlingen av personens uppgifter är begränsad. Uppgifterna får bara sparas: inga samtal, mejl eller möten, och inga ändringar. En planerad aktivitet kan fortfarande klarmarkeras.')
+                    ? __('Behandlingen av personens uppgifter är begränsad. Uppgifterna får bara sparas och rättas: inga samtal, mejl eller möten. En planerad aktivitet kan fortfarande klarmarkeras.')
                     : __('Personen har bett att inte bli kontaktad. Du kan skriva anteckningar, men inte ringa, mejla eller planera möten.') }}
             </p>
         </div>
@@ -42,7 +42,8 @@
             @if($person->doNotContact())<x-ui.badge tone="accent">{{ __('Kontakta inte') }}</x-ui.badge>@endif
             @if(! $person->is_active)<x-ui.badge>{{ __('Inaktiv') }}</x-ui.badge>@endif
         </x-slot:badges>
-        @if($canManage)
+        {{-- Also under a restriction: the data may be corrected (GDPR art. 16 and 18). --}}
+        @if($canUpdate)
             <x-slot:aside>
                 <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startPerson({{ $person->id }})">{{ __('Ändra uppgifter') }}</button>
             </x-slot:aside>
@@ -55,6 +56,7 @@
             <x-crm::quick-action icon="MEETING" :label="__('Planera möte')" :disabled="$contactOff" wire:click="startActivity('MEETING')" />
             <x-crm::quick-action icon="TASK" :label="__('Uppgift')" :disabled="$contactOff" wire:click="startActivity('TASK')" />
         </x-slot:actions>
+        <x-slot:actionsNote>{{ collect([$contactOff, $callOff, $mailOff, $noteOff])->filter()->unique()->implode(' ') }}</x-slot:actionsNote>
         <x-slot:facts>
             <x-crm::fact :label="__('Titel')">{{ $person->title ?: '–' }}</x-crm::fact>
             <x-crm::fact :label="__('Företag')" wide>
@@ -82,7 +84,7 @@
     </x-crm::header>
 
     {{-- The open panel. --}}
-    @include('crm::livewire.partials.activity-panels', ['personOptions' => collect(), 'accountOptions' => $accounts])
+    @include('crm::livewire.partials.activity-panels', ['personOptions' => collect(), 'accountOptions' => $activityAccounts])
     @if($panel === 'person')
         @include('crm::livewire.partials.person-form', ['withRole' => false])
     @elseif($panel === 'kontakta')

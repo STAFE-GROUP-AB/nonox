@@ -7625,7 +7625,6 @@
     "Behandlingen av kundens uppgifter är begränsad. Inga nya offerter, order eller fakturor.": "The processing of the customer's data is restricted. No new quotes, orders or invoices.",
     "Personen har ingen e-postadress.": "The person has no e-mail address.",
     "Personen har inget telefonnummer.": "The person has no phone number.",
-    "Behandlingen av personens uppgifter är begränsad. Uppgifterna får bara sparas: inga samtal, mejl eller möten, och inga ändringar. En planerad aktivitet kan fortfarande klarmarkeras.": "The processing of the person's data is restricted. The data may only be stored: no calls, e-mails or meetings, and no changes. A planned activity can still be marked done.",
     "Personen har bett att inte bli kontaktad. Du kan skriva anteckningar, men inte ringa, mejla eller planera möten.": "The person has asked not to be contacted. You can write notes, but not call, e-mail or plan meetings.",
     "Telefon / mobil": "Phone / mobile",
     "Rättslig grund": "Legal basis",
@@ -7641,5 +7640,7 @@
     "Informerad": "Informed",
     "Registerutdrag (JSON)": "Register extract (JSON)",
     "Ta bort markeringen Kontakta inte? Gör det bara om personen själv har ändrat sig.": "Remove the Do not contact mark? Only do so if the person has changed their mind.",
-    "Ta bort Kontakta inte": "Remove Do not contact"
+    "Ta bort Kontakta inte": "Remove Do not contact",
+    "Behandlingen av personens uppgifter är begränsad. Uppgifterna får bara sparas och rättas: inga samtal, mejl eller möten. En planerad aktivitet kan fortfarande klarmarkeras.": "The processing of the person's data is restricted. The data may only be stored and corrected: no calls, e-mails or meetings. A planned activity can still be marked done.",
+    "Spara rollen för :name": "Save the role for :name"
 }

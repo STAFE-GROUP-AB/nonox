@@ -95,6 +95,7 @@ class AccountCard extends Component
         abort_unless($this->user()->can('view', $account), 403);
 
         $this->accountId = $account->id;
+        $this->tab = array_key_exists($this->tab, self::TABS) ? $this->tab : 'tidslinje';
     }
 
     /** A lost account's win-back date: changed or cleared. */
@@ -233,7 +234,7 @@ class AccountCard extends Component
 
     public function closePanel(): void
     {
-        $this->reset('panel', 'activity', 'editingActivityId', 'completion', 'edit', 'newStatus', 'lostReason', 'linkPersonId', 'linkRole', 'personForm', 'editingPersonId', 'mentionCount', 'nextDealId', 'dealStepRequired', 'winBackAt');
+        $this->reset('panel', 'activity', 'editingActivityId', 'completion', 'edit', 'newStatus', 'lostReason', 'linkPersonId', 'linkRole', 'personForm', 'editingPersonId', 'mentionCount', 'nextDealId', 'dealStepRequired', 'winBackAt', 'lockedAccountId');
         $this->resetErrorBag();
     }
 
@@ -272,7 +273,7 @@ class AccountCard extends Component
         $only = self::TABS[$this->tab] ?? null;
         $counts = $timeline->counts($account, ! $limitedLedger);
         // Who first got an issued invoice, for "Kund sedan" and the status path; one query.
-        $firstInvoice = $account->customer_id === null ? null : Invoice::query()->where('customer_id', $account->customer_id)->whereNotNull('issued_at')->where('kind', Invoice::INVOICE)->min('invoice_date');
+        $firstInvoice = $limitedLedger || $account->customer_id === null ? null : Invoice::query()->where('customer_id', $account->customer_id)->whereNotNull('issued_at')->where('kind', Invoice::INVOICE)->min('invoice_date');
 
         return view('crm::livewire.account-card', [
             'account' => $account,
@@ -310,6 +311,7 @@ class AccountCard extends Component
 
     public function updatedTab(): void
     {
+        $this->tab = array_key_exists($this->tab, self::TABS) ? $this->tab : 'tidslinje';
         $this->resetPage('tidslinje');
     }
 

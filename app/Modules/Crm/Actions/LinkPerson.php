@@ -31,7 +31,10 @@ final class LinkPerson
             $link->role = $role;
             $link->save();
 
-            $person->forceFill(['last_activity_at' => now()])->save();
+            // A new link is contact with the person (the pruning clock); a changed role is only housekeeping.
+            if ($before === null) {
+                $person->forceFill(['last_activity_at' => now()])->save();
+            }
 
             Audit::record('crm.person_linked', $account, ['person_id' => $person->id, 'before' => $before, 'role' => $role->value], $company, $user);
 

@@ -83,6 +83,12 @@ trait EditsPeople
 
         $erase->person($this->user(), $this->company(), Person::query()->findOrFail($this->editingPersonId));
 
+        $this->personErased();
+    }
+
+    /** After an erasure: the page that lists the person stays. The person's own page goes back to Personer. */
+    protected function personErased(): void
+    {
         $this->closePanel();
         $this->toast(__('Personen är raderad. Aktiviteterna om personen finns kvar utan namn och text.'));
     }

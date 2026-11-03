@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Livewire;
 
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
+use App\Models\Invoice;
 use App\Models\User;
 use App\Modules\Crm\Actions\SavePerson;
 use App\Modules\Crm\Domain\AccountFigures;
@@ -23,6 +24,7 @@ use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\CompanyMembers;
+use App\Support\Toast;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -77,10 +79,12 @@ class PersonCard extends Component
         abort_unless($this->user()->can('view', $person), 403);
 
         $this->personId = $person->id;
+        $this->tab = array_key_exists($this->tab, self::TABS) ? $this->tab : 'tidslinje';
     }
 
     public function updatedTab(): void
     {
+        $this->tab = array_key_exists($this->tab, self::TABS) ? $this->tab : 'tidslinje';
         $this->resetPage('tidslinje');
     }
 
@@ -119,7 +123,7 @@ class PersonCard extends Component
 
     public function closePanel(): void
     {
-        $this->reset('panel', 'activity', 'editingActivityId', 'completion', 'personForm', 'editingPersonId', 'mentionCount', 'nextDealId', 'dealStepRequired');
+        $this->reset('panel', 'activity', 'editingActivityId', 'completion', 'personForm', 'editingPersonId', 'mentionCount', 'nextDealId', 'dealStepRequired', 'lockedAccountId');
         $this->resetErrorBag();
     }
 
@@ -132,6 +136,13 @@ class PersonCard extends Component
     protected function personAccountId(): ?int
     {
         return null;
+    }
+
+    /** Erased from their own page: the page is gone, so back to Personer with the message. */
+    protected function personErased(): void
+    {
+        Toast::flash(__('Personen är raderad. Aktiviteterna om personen finns kvar utan namn och text.'));
+        $this->redirectRoute('crm.people');
     }
 
     public function render(AccountFigures $figures, Timeline $timeline): View
@@ -162,15 +173,19 @@ class PersonCard extends Component
         $current = $openDeals->first(fn (Deal $deal): bool => (string) $deal->id === $this->dealId) ?? $openDeals->first();
         $type = self::TABS[$this->tab] ?? null;
         $counts = $timeline->counts($person);
+        // As on the account card: the first invoice dates the status path, unless the seller may not see a private person's ledger.
+        $firstInvoice = $primary?->customer_id === null || $limitedLedger ? null : Invoice::query()->where('customer_id', $primary->customer_id)->whereNotNull('issued_at')->where('kind', Invoice::INVOICE)->min('invoice_date');
 
         return view('crm::livewire.person-card', [
             'person' => $person,
             'accounts' => $accounts,
+            // The edited activity's own account belongs in the form's choice, also when the person has left it.
+            'activityAccounts' => $this->lockedAccountId === null ? $accounts : Account::query()->whereKey($this->lockedAccountId)->get(['id', 'name']),
             'primary' => $primary,
             'deals' => $deals,
             'openDeals' => $openDeals,
             'currentDeal' => $current,
-            'steps' => $current instanceof Deal ? StepPath::forDeal($current) : StepPath::forAccount($primary),
+            'steps' => $current instanceof Deal ? StepPath::forDeal($current) : StepPath::forAccount($primary, $firstInvoice === null ? null : (string) $firstInvoice),
             'tabs' => $this->tabs($counts, $deals->count()),
             'entries' => $type === 'deals' ? null : $timeline->forPerson($person, 10, 'tidslinje', $type),
             'upcoming' => Activity::query()->where('person_id', $person->id)->whereNull('done_at')->where('type', '<>', ActivityType::Note->value)->with(['account:id,name', 'deal:id,title'])->orderByRaw('due_at ASC NULLS LAST')->orderBy('id')->limit(4)->get(),
@@ -245,9 +260,17 @@ class PersonCard extends Component
         return Activity::query()->where('person_id', $this->personId);
     }
 
-    /** The company chosen in the form, if the person is there; else their first. */
+    /**
+     * An edited activity, and the next step after one, stay at their own
+     * account (even one the person has since left); a new one is at the
+     * company chosen in the form, if the person is there, else their first.
+     */
     protected function activityAccountId(): int
     {
+        if ($this->lockedAccountId !== null) {
+            return $this->lockedAccountId;
+        }
+
         $chosen = (int) ($this->activity['account_id'] ?? 0);
         $ids = $this->accounts()->pluck('id')->all();
 

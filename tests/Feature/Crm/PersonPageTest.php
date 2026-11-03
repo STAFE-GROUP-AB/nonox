@@ -121,14 +121,14 @@ it('disables calling, mailing and planning for a person who objected, but keeps 
         ->assertSee('Personen har bett att inte bli kontaktad');
 });
 
-it('is read-only under a restriction, except completing what is already planned', function () {
+it('allows no new contact under a restriction, only correcting the data and completing what is already planned', function () {
     $task = app(LogActivity::class)($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $this->person->id, 'type' => 'TASK', 'subject' => 'Planerad innan']);
     app(SavePerson::class)($this->owner, $this->company, ['name' => 'Anna Andersson', 'legal_basis' => 'CONSENT', 'consent_at' => '2026-05-01', 'do_not_contact' => true, 'do_not_contact_reason' => 'RESTRICTION'], $this->person);
 
     personPage($this)
         ->assertSee('Behandlingen av personens uppgifter är begränsad')
         ->assertDontSeeHtml('wire:click="startActivity(\'NOTE\')"')
-        ->assertDontSeeHtml('wire:click="startPerson(')
+        ->assertSeeHtml('wire:click="startPerson(')
         ->assertDontSeeHtml('wire:click="editActivity(');
 
     expect($task->fresh()?->isOpen())->toBeFalse();

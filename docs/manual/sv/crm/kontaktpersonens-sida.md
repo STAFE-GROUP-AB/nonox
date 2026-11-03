@@ -63,9 +63,9 @@ I mobilen ligger **Ring**, **Mejla**, **Logga** och **Planera** fast längst ned
 
 ## Kontakta inte
 
-En person som har bett att inte bli kontaktad har en tydlig ruta överst. Då går det inte att ringa, mejla eller planera möten från sidan, och knapparna visar varför. Anteckningar går fortfarande att skriva.
+En person som har bett att inte bli kontaktad har en tydlig ruta överst. Då går det inte att ringa, mejla eller planera möten från sidan, och under knapparna står varför. Anteckningar går fortfarande att skriva.
 
-Är behandlingen av personens uppgifter begränsad går sidan bara att läsa: inga nya aktiviteter och inga ändringar. En aktivitet som redan var planerad går att klarmarkera. Se [GDPR i CRM](/manual/crm/gdpr-i-crm#kontakta-inte).
+Är behandlingen av personens uppgifter begränsad får uppgifterna bara sparas och rättas: inga nya samtal, mejl, möten eller anteckningar. **Ändra uppgifter** finns kvar för att rätta fel, och en aktivitet som redan var planerad går att klarmarkera. Se [GDPR i CRM](/manual/crm/gdpr-i-crm#kontakta-inte).
 
 ## Bra att veta
 

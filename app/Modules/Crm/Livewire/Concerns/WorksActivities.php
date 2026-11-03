@@ -47,6 +47,10 @@ trait WorksActivities
     /** The completed activity is the last open step of an open deal: the next one is required. */
     public bool $dealStepRequired = false;
 
+    /** The account an edited activity, or the next step after one, stays at: its own, whatever the page's default. */
+    #[Locked]
+    public ?int $lockedAccountId = null;
+
     /** Ring, Möte, Anteckning or Uppgift: the activity form, ready for that type. */
     public function startActivity(string $type, ?int $personId = null): void
     {
@@ -59,6 +63,7 @@ trait WorksActivities
         }
 
         $this->editingActivityId = null;
+        $this->lockedAccountId = null;
         $this->activity = [
             'type' => $type->value,
             'subject' => '',
@@ -80,7 +85,9 @@ trait WorksActivities
         $activity = $this->activities()->findOrFail($activityId);
 
         $this->editingActivityId = $activity->id;
+        $this->lockedAccountId = $activity->account_id;
         $this->activity = [
+            'account_id' => (string) $activity->account_id,
             'type' => $activity->type->value,
             'subject' => $activity->subject,
             'body' => (string) $activity->body,
@@ -128,6 +135,8 @@ trait WorksActivities
         }
 
         $this->editingActivityId = $activity->id;
+        $this->lockedAccountId = $activity->account_id;
+        $this->activity['account_id'] = (string) $activity->account_id;
         $this->nextDealId = $activity->deal_id;
         $this->dealStepRequired = $required;
         $this->completion = ['call_outcome' => $activity->type === ActivityType::Call ? CallOutcome::Reached->value : '', 'note' => ''];
@@ -173,6 +182,9 @@ trait WorksActivities
         $dealId = $activity->deal_id;
         $this->toast(__('Klart. Vad är nästa steg?'));
         $this->startActivity(ActivityType::Task->value, $activity->person_id);
+        // The next step is at the same account as the step it follows (and its deal), not the page's default.
+        $this->lockedAccountId = $activity->account_id;
+        $this->activity['account_id'] = (string) $activity->account_id;
         $this->nextDealId = $dealId;
         $this->panel = 'next';
     }

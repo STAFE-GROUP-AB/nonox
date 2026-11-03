@@ -52,6 +52,7 @@
                 <x-crm::quick-action icon="invoice" :label="__('Ny faktura')" :href="route('invoicing.invoices.create', ['kund' => $account->customer_id])" />
             @endif
         </x-slot:actions>
+        <x-slot:actionsNote>{{ collect([$tel ? null : __('Kunden har inget telefonnummer.'), $account->email ? null : __('Kunden har ingen e-postadress.')])->filter()->implode(' ') }}</x-slot:actionsNote>
         <x-slot:facts>
             <x-crm::fact :label="__('Kundnummer')"><span class="tabular-nums">{{ $account->customer?->number ?? '–' }}</span></x-crm::fact>
             <x-crm::fact :label="__('Org.nr')"><span class="tabular-nums">{{ $account->org_number ?: '–' }}</span></x-crm::fact>
