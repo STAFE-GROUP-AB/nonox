@@ -76,7 +76,7 @@ lager:
   ikon: box
 crm:
   titel: CRM
-  beskrivning: Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg, kundstatus, nyckeltal ur bokföringen och GDPR.
+  beskrivning: Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg, affärer i en säljtratt med prognos och mål, kundstatus, nyckeltal ur bokföringen och GDPR.
   for: foretag
   modul: crm
   ikon: users

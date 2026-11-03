@@ -1,15 +1,15 @@
 ---
-beskrivning: NONOX CRM – kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg och nyckeltal direkt ur bokföringen.
+beskrivning: NONOX CRM – kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg, affärer i en säljtratt med prognos och mål, och nyckeltal direkt ur bokföringen.
 ordning: 0
 roller: [owner, admin, accountant, bookkeeper, auditor, sales]
 modul: crm
 rutter: [invoicing.customers]
-sokord: [crm, kundregister, säljstöd, kundvård, prospekt, leads, kundkort, säljare, kontakter]
+sokord: [crm, kundregister, säljstöd, kundvård, prospekt, leads, kundkort, säljare, kontakter, affärer, säljtratt]
 ---
 
 # CRM
 
-Med CRM har du dina kunder och dina prospekt på samma ställe som bokföringen. Du ser vem du ska ringa i dag, vad som hände senast och vad kunden är värd: vad den har köpt för, vad den är skyldig och hur snabbt den brukar betala. Allt det läses direkt ur fakturorna och betalningarna, så det behövs ingen koppling mellan två system.
+Med CRM har du dina kunder och dina prospekt på samma ställe som bokföringen. Du ser vem du ska ringa i dag, vad som hände senast och vad kunden är värd: vad den har köpt för, vad den är skyldig och hur snabbt den brukar betala. Allt det läses direkt ur fakturorna och betalningarna, så det behövs ingen koppling mellan två system. Affärerna följer du i en säljtratt, med en prognos per månad och mål per säljare.
 
 ![Kunder och prospekt med status, ansvarig, nästa steg, fakturerat de senaste tolv månaderna och obetalt.](/bilder/manual/crm/kunder-och-prospekt.webp)
 
@@ -22,6 +22,8 @@ CRM är en modul. Den är avstängd tills ägaren slår på den. När den är p�
 3. Lägg till kontaktpersoner på kunderna du arbetar mest med. Se [Företag och personer](/manual/crm/foretag-och-personer).
 4. Lägg till dina prospekt med **Nytt prospekt** och planera ett första samtal.
 5. Öppna **CRM → Mina aktiviteter** varje morgon. Se [Aktiviteter och nästa steg](/manual/crm/aktiviteter-och-nasta-steg).
+6. Lägg in affärerna du arbetar med under **CRM → Affärer**. Varje affär får ett nästa steg direkt. Se [Säljtratt och affärer](/manual/crm/saljtratt-och-affarer).
+7. Följ försäljningen under **CRM → Översikt** och **CRM → Prognos och mål**. Se [Översikt för försäljningen](/manual/crm/instrumentpanel) och [Prognos och mål](/manual/crm/prognos-och-mal).
 
 ## Listan över kunder och prospekt
 
@@ -37,7 +39,7 @@ CRM är byggt för telefonen först. Knapparna är stora, telefonnummer och e-po
 
 ## Roller
 
-| Roll | Se CRM och nyckeltal | Lägga till och ändra | Inställningar |
+| Roll | Se CRM, affärer och nyckeltal | Lägga till och ändra, flytta och avsluta affärer | Inställningar, säljtrattar och mål |
 |---|---|---|---|
 | **Ägare**, **Administratör**, **Redovisningskonsult**, **Bokförare** | Ja | Ja | Ja |
 | **Revisor** | Ja | Nej | Nej |
@@ -51,6 +53,9 @@ En **Revisor** ser hela CRM, nyckeltalen och aktiviteterna, men kan inte ändra 
 
 - [Företag och personer](/manual/crm/foretag-och-personer)
 - [Aktiviteter och nästa steg](/manual/crm/aktiviteter-och-nasta-steg)
+- [Säljtratt och affärer](/manual/crm/saljtratt-och-affarer)
+- [Prognos och mål](/manual/crm/prognos-och-mal)
+- [Översikt för försäljningen](/manual/crm/instrumentpanel)
 - [Kundstatus](/manual/crm/kundstatus)
 - [Nyckeltal från bokföringen](/manual/crm/nyckeltal)
 - [GDPR i CRM](/manual/crm/gdpr-i-crm)

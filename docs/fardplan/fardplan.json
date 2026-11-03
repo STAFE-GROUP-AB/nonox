@@ -1,14 +1,6 @@
 {
   "punkter": [
     {
-      "id": "crm-saljtratt",
-      "rubrik": "CRM steg 2: affärer, säljtratt och prognos",
-      "beskrivning": "Affärer med belopp och sannolikhet i en säljtratt, orsaker till förlorade affärer och påminnelser om att vinna tillbaka kunder, prognos för kommande månader, mål per säljare och en översikt för säljarbetet.",
-      "status": "Planerat",
-      "omrade": "CRM",
-      "uppdaterad": "2026-11-03"
-    },
-    {
       "id": "crm-signering",
       "rubrik": "CRM steg 3: signera offerter och avtal",
       "beskrivning": "Kunden signerar offerten eller avtalet med fingret eller musen. En signerad offert blir order och sedan faktura, och avtalen samlas i ett register som påminner innan de ska förnyas.",

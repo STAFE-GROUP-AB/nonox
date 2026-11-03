@@ -13,6 +13,28 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-03: v1.6.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-03: v1.6.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **CRM, affärer**: `GET` och `POST /crm/deals`, `GET` och `PATCH /crm/deals/{deal}`. En ny affär kräver `next_step`, en planerad aktivitet som kopplas till affären. `PATCH` med `stage_id` flyttar affären, `"status": "WON"` vinner den (med `quote_id`, `order_id` eller `invoice_id` om du vill) och `"status": "LOST"` förlorar den med `loss_reason_id` och `win_back_at`.
+- **CRM, säljtrattar**: `GET /crm/pipelines`, `GET /crm/pipelines/{pipeline}`, `GET /crm/stages` och `GET /crm/loss-reasons`, bara läsning.
+- **Aktiviteter**: `deal_id` i svar, i `POST` och som filter. Affärens sista öppna steg klarmarkeras bara med `"done": true` och `next_step` i samma `PATCH`; annars svarar API:t 422.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **CRM, deals**: `GET` and `POST /crm/deals`, `GET` and `PATCH /crm/deals/{deal}`. A new deal needs `next_step`, a planned activity linked to the deal. `PATCH` with `stage_id` moves the deal, `"status": "WON"` wins it (optionally with `quote_id`, `order_id` or `invoice_id`) and `"status": "LOST"` loses it with `loss_reason_id` and `win_back_at`.
+- **CRM, pipelines**: `GET /crm/pipelines`, `GET /crm/pipelines/{pipeline}`, `GET /crm/stages` and `GET /crm/loss-reasons`, read only.
+- **Activities**: `deal_id` in responses, in `POST` and as a filter. A deal's last open step is completed only with `"done": true` and `next_step` in the same `PATCH`; otherwise the API answers 422.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-03: v1.5.0
 <!-- /lang -->
 <!-- lang:en -->
