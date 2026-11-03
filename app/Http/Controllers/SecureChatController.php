@@ -58,9 +58,14 @@ final class SecureChatController
             return $this->tooMany();
         }
 
+        // The starter already holds the code, so telling them it is their own chat reveals nothing.
+        if ($this->chat->startedBy($user, $room)) {
+            return response()->json(['message' => __('Det här är din egen chatt. Ge koden till den du vill chatta med.')], 409);
+        }
+
         $chat = $this->chat->join($user, $room);
 
-        // Unknown, already full and your own chat get the same answer: the code tells nobody anything.
+        // Unknown and already full get the same answer: the code tells nobody else anything.
         return $chat instanceof ChatRoom ? response()->json($this->state($chat, $user)) : $this->notFound();
     }
 

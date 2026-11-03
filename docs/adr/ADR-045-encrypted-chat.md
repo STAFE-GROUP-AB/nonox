@@ -120,9 +120,11 @@ and the server learns less.
 - Every endpoint requires a signed-in session (`auth:web`, Jetstream's session
   guard, `verified`, and the passkey step where it applies) and CSRF.
 - The starter's user id is bound to the room at creation. The first other user
-  who joins takes slot B. After that, every other user, the starter joining
-  their own room, and an unknown room get **the same 404 and the same body**:
-  no oracle. A third user cannot poll, send or end it.
+  who joins takes slot B. After that, every other user and an unknown room get
+  **the same 404 and the same body**: no oracle. The starter who types their
+  own code gets 409 "Det här är din egen chatt. Ge koden till den du vill
+  chatta med." (2026-11-03, owner's request): they already hold the code, so
+  this reveals nothing. A third user cannot poll, send or end it.
 - Starting or joining counts against a limit of **10 attempts per 10 minutes
   per user and 60 per IP address** (an office shares one address), with
   Laravel's `RateLimiter` on the chat store. The address is in the key only as

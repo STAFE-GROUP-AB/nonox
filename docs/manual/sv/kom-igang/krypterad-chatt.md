@@ -20,7 +20,7 @@ Allt som skrivs krypteras i din webbläsare innan det skickas, och bara ni två 
 3. Läs upp koden i telefon, eller klicka på **Skicka som sms** så öppnas ett sms med koden som du skickar till den andra. Med **Kopiera** kopierar du koden.
 4. När den andra har anslutit står hens namn överst, och ni kan börja skriva.
 
-Koden fungerar en gång, för en person. När någon har anslutit går den inte att använda igen.
+Koden fungerar en gång, för en person. När någon har anslutit går den inte att använda igen. Du kan inte själv ansluta till en chatt som du har startat. Prova med någon annan som är inloggad.
 
 ## Så här ansluter du till en chatt
 
