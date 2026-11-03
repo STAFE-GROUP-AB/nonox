@@ -30,6 +30,28 @@ final class LandingPage
 
     public const int DEFAULT_EMPLOYEES = 3;
 
+    /**
+     * What is included, shown under the hero so the breadth is visible above
+     * the fold. Each label names the keys in Features it stands for, and a
+     * test requires all of them to be live: nothing still coming is listed.
+     *
+     * @var list<array{label: string, keys: list<string>}>
+     */
+    public const array INCLUDED = [
+        ['label' => 'Bokföring och moms', 'keys' => ['vouchers', 'vat_return']],
+        ['label' => 'Fakturor, offerter och order', 'keys' => ['invoices', 'quotes_orders']],
+        ['label' => 'Leverantörsfakturor med attest', 'keys' => ['supplier_invoices']],
+        ['label' => 'Bokslut och årsredovisning enligt K2', 'keys' => ['year_end']],
+        ['label' => 'Lön med fil till arbetsgivardeklarationen', 'keys' => ['payroll', 'agi']],
+        ['label' => 'Schema och personalliggare', 'keys' => ['planning', 'staff_ledger']],
+        ['label' => 'Lager med mobilskanning', 'keys' => ['inventory', 'inventory_scanner']],
+        ['label' => 'NONOX AI läser kvitton', 'keys' => ['ai']],
+        ['label' => 'Min sida för anställda', 'keys' => ['employee_portal']],
+        ['label' => 'Byråläge med många klienter', 'keys' => ['firm_overview']],
+        ['label' => 'Öppet API', 'keys' => ['public_api']],
+        ['label' => 'Flytt med SIE4, eller direkt från Fortnox', 'keys' => ['sie', 'fortnox_import']],
+    ];
+
     /** @return array<string, mixed> */
     public static function data(): array
     {
@@ -42,6 +64,7 @@ final class LandingPage
             'securityTotals' => SecurityReview::totals(),
             'trust' => ['Följer Bokföringslagen', 'BAS-kontoplan', 'SIE4 in och ut', 'Peppol e-faktura', 'Arbetsgivardeklaration (AGI)', 'Data i Sverige/EU'],
             'features' => self::features(),
+            'included' => self::included(),
             'clients' => self::clients(),
             'plans' => array_map(fn (array $plan): array => self::plan($plan, $ph), self::PLANS),
             'includes' => ['Drift på servrar i Sverige/EU', 'Daglig backup', 'Uppdateringar och säkerhet', 'Support för driften', 'Fri export av all data'],
@@ -57,6 +80,12 @@ final class LandingPage
             'steps' => self::steps(),
             'faqs' => self::faqs(),
         ];
+    }
+
+    /** @return list<array{label: string, keys: list<string>}> */
+    public static function included(): array
+    {
+        return self::INCLUDED;
     }
 
     /** @return array{label: string, aria: string, employees: int, plan: string, price: string, compare: string, saving: string} */

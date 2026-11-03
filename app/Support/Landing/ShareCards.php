@@ -24,14 +24,14 @@ final class ShareCards
     public static function all(): array
     {
         $price = LandingPage::hostedPerYear(1);
-        $priceText = $price === null ? 'Gratis att köra själv.' : "Gratis att köra själv, {$price} kr om året med drift.";
+        $priceText = $price === null ? 'Gratis att köra själv.' : "Gratis att köra själv, från {$price} kr om året med drift.";
 
         $cards = [
             'start' => [
-                'eyebrow' => 'Bokföring med öppen källkod',
-                'title' => 'Bokföring, fakturering och lön.',
-                'accent' => 'Utan inlåsning.',
-                'text' => "Ett komplett svenskt ekonomisystem för småföretag och redovisningsbyråer. {$priceText}",
+                'eyebrow' => 'Ekonomisystem med öppen källkod',
+                'title' => 'Ditt företag. Din data.',
+                'accent' => 'Ditt system.',
+                'text' => "Bokföring, fakturering, lön, lager och mycket mer för småföretag och redovisningsbyråer. {$priceText}",
             ],
             'branscher' => [
                 'eyebrow' => 'Branscher',

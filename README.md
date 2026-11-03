@@ -7,9 +7,9 @@
   </picture>
 </a>
 
-### Bokföring med öppen källkod för svenska företag
+### Ditt företag. Din data. Ditt system.
 
-Bokföring, fakturor, moms, bokslut, lön och personalliggare i ett system.<br>
+Ett ekonomisystem med öppen källkod för svenska företag: bokföring, fakturor, moms, bokslut, lön, schema, personalliggare och lager i ett system.<br>
 Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 
 [![CI](https://github.com/STAFE-GROUP-AB/nonox/actions/workflows/ci.yml/badge.svg)](https://github.com/STAFE-GROUP-AB/nonox/actions/workflows/ci.yml)

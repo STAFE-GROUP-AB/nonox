@@ -16,16 +16,17 @@
 
 <main id="main">
 
-<section aria-labelledby="hero-rubrik" style="padding:clamp(56px,9vw,112px) clamp(20px,4vw,40px) clamp(48px,7vw,96px)">
+<section aria-labelledby="hero-rubrik" style="padding:clamp(40px,6vw,72px) clamp(20px,4vw,40px) clamp(48px,7vw,96px)">
   <div style="max-width:1240px;margin:0 auto">
-    <div data-reveal="" style="max-width:980px">
+   <div class="lp-hero">
+    <div data-reveal="">
       <p style="margin:0 0 28px;display:inline-flex;flex-wrap:wrap;align-items:center;gap:8px;padding:7px 14px 7px 10px;border-radius:999px;background:var(--accl);color:var(--ink);font-size:13.5px;font-weight:600">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="#FF5A36" d="M23.47 11.13 A11.5 11.5 0 1 0 23.47 12.87 L19.63 12.87 A7.68 7.68 0 1 1 19.63 11.13 Z"></path></svg>
         <span><strong style="font-weight:800">{{ App\Support\Build\BuildInfo::stage() ?: 'Version' }}</strong> · Version {{ App\Support\Build\BuildInfo::version() }} · Öppen källkod · Byggd i Sverige</span>
       </p>
-      <h1 id="hero-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(44px,8.4vw,112px);line-height:0.95;letter-spacing:-0.045em;text-wrap:balance">Bokföring som ägs av <span style="color:var(--accb)">företagaren.</span></h1>
-      <p style="margin:28px 0 0;max-width:680px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Ett komplett svenskt bokföringsprogram som du laddar ner gratis och kör var du vill: på ditt webbhotell eller din egen server, och snart som program på din dator. Eller låt oss sköta driften från 995 kr om året.</p>
-      <p style="margin:16px 0 0;max-width:680px;font-size:clamp(17px,1.8vw,19px);line-height:1.5;font-weight:600;color:var(--ink);text-wrap:pretty">Ett komplett alternativ till de stora molntjänsterna för bokföring, utan licensavgifter och utan inlåsning.</p>
+      <h1 id="hero-rubrik" style="margin:0;font-family:InterDisplay,Inter,sans-serif;font-weight:800;font-size:clamp(40px,6.6vw,92px);line-height:0.95;letter-spacing:-0.045em;text-wrap:balance"><span class="lp-line">Ditt företag.</span> <span class="lp-line">Din data.</span> <span class="lp-line" style="color:var(--accb)">Ditt system.</span></h1>
+      <p style="margin:28px 0 0;max-width:720px;font-size:clamp(18px,2vw,21px);line-height:1.5;color:var(--muted);text-wrap:pretty">Bokföring, fakturering, lön, lager och mycket mer i ett svenskt ekonomisystem. Ladda ner det gratis och kör det på ditt webbhotell eller din egen server, eller låt oss sköta driften från 995 kr om året.</p>
+      <p style="margin:16px 0 0;max-width:720px;font-size:clamp(17px,1.8vw,19px);line-height:1.5;font-weight:600;color:var(--ink);text-wrap:pretty">Ett alternativ till de stora molntjänsterna, med bokföring, lön och bokslut i ett, utan licensavgifter och utan inlåsning.</p>
       <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:36px">
         <a class="lp9" href="{{ auth()->check() ? route('dashboard') : route('waitlist') }}" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;background:#FF5A36;color:#15171C;text-decoration:none;font-size:16.5px;font-weight:700">{{ auth()->check() ? 'Till översikten' : 'Ställ dig i kö' }}</a>
         <a class="lp10" href="#kor-sjalv" style="display:inline-flex;align-items:center;gap:10px;min-height:54px;padding:0 26px;border-radius:999px;border:1.5px solid var(--ink);color:var(--ink);text-decoration:none;font-size:16.5px;font-weight:600">
@@ -34,6 +35,19 @@
       <p style="margin:18px 0 0;font-size:14px;color:var(--muted)">Ingen bindningstid. Exportera all data när du vill.</p>
       <p id="oppen-beta" style="margin:24px 0 0;max-width:680px;padding:16px 18px;border-radius:16px;border:1px solid var(--line);background:var(--card);font-size:15.5px;line-height:1.55;color:var(--ink);text-wrap:pretty"><strong>NONOX är i öppen beta.</strong> Ställ dig i kö så släpper vi in dig i den takt vi hinner hjälpa alla. Skarp lansering av version 1.0 sker den 1 januari 2027. Det du lägger in under betan ligger kvar, vi rensar ingenting när betan är över.</p>
     </div>
+    <aside data-reveal="" aria-labelledby="lp-incl-rubrik">
+      <div class="lp-incl">
+        <p id="lp-incl-rubrik" class="lp-incl-title">Allt det här ingår</p>
+        <ul role="list">
+          @foreach($included as $item)
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>{{ $item['label'] }}</li>
+          @endforeach
+        </ul>
+        <p class="lp-incl-note">Inga tilläggsmoduler att köpa, vare sig du kör själv eller låter oss sköta driften. NONOX AI använder företagets egen nyckel hos en AI-leverantör, och lönens regler bekräftar du mot Skatteverkets källor före första lönekörningen. Kör du själv betalar du tjänster från andra, som bankkoppling, direkt till dem.</p>
+        <a href="#funktioner">Se hur det ser ut →</a>
+      </div>
+    </aside>
+   </div>
 
     <div id="lp-mock" data-reveal="" aria-hidden="true" style="position:relative;margin-top:clamp(48px,7vw,88px);height:650px">
       <div style="position:absolute;left:0;top:0;width:1000px;height:640px;transform-origin:0 0;transform:scale(1)" id="lp-mock-inner">

@@ -2,9 +2,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ $pageTitle ?? 'Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod' }}</title>
-<meta name="description" content="{{ $pageDescription ?? 'NONOX är ett gratis alternativ till Fortnox, Visma och Bokio: ett komplett svenskt bokföringsprogram med öppen källkod för bokföring, fakturering, lön och bokslut. Kör själv gratis, eller låt oss sköta driften för 995 kr om året.' }}">
+<meta name="description" content="{{ $pageDescription ?? 'NONOX är ett gratis alternativ till Fortnox, Visma och Bokio: ett svenskt bokföringsprogram med öppen källkod för bokföring, fakturering, lön, lager och bokslut. Kör själv gratis, eller låt oss sköta driften för 995 kr om året.' }}">
 <meta property="og:title" content="{{ $pageTitle ?? 'Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod' }}">
-<meta property="og:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
+<meta property="og:description" content="{{ $pageDescription ?? 'Ditt företag. Din data. Ditt system. Bokföring, fakturering, lön, lager och mycket mer i ett svenskt ekonomisystem. Gratis att köra själv, från 995 kr om året med drift.' }}">
 <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="NONOX">
@@ -19,7 +19,7 @@
 <meta property="og:image:alt" content="{{ $pageTitle ?? 'NONOX – bokföring, fakturering och lön med öppen källkod' }}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ $pageTitle ?? 'Gratis alternativ till Fortnox – NONOX, bokföring med öppen källkod' }}">
-<meta name="twitter:description" content="{{ $pageDescription ?? 'Bokföring som ägs av företagaren. Gratis att köra själv, från 995 kr om året med drift.' }}">
+<meta name="twitter:description" content="{{ $pageDescription ?? 'Ditt företag. Din data. Ditt system. Bokföring, fakturering, lön, lager och mycket mer i ett svenskt ekonomisystem. Gratis att köra själv, från 995 kr om året med drift.' }}">
 <meta name="twitter:image" content="{{ $shareImage }}">
 <meta name="theme-color" content="#15171C">
 <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
@@ -125,6 +125,18 @@ input[type=range]{accent-color:#FF5A36}
 .lp16:hover{color:var(--ink) !important;background:var(--soft) !important}
 .lp17:hover{background:#FF5A36 !important;color:#15171C !important}
 /* Feature showcase: a screenshot per feature that settles in when scrolled to. */
+.lp-hero{display:grid;gap:40px;align-items:start}
+.lp-line{display:block}
+@media (min-width:1100px){.lp-hero{grid-template-columns:minmax(0,1fr) minmax(320px,400px);gap:56px}}
+.lp-incl{padding:26px 28px;border-radius:24px;border:1px solid var(--line);background:var(--card);box-shadow:0 30px 60px -40px rgba(21,23,28,.35)}
+@media (min-width:1100px){.lp-incl{margin-top:52px}}
+.lp-incl-title{margin:0 0 14px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acct)}
+.lp-incl ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px 22px}
+@media (min-width:1100px){.lp-incl ul{grid-template-columns:1fr}}
+.lp-incl li{display:flex;align-items:center;gap:10px;font-size:15.5px;font-weight:600;line-height:1.35;color:var(--ink)}
+.lp-incl li svg{flex:none;color:var(--acct)}
+.lp-incl-note{margin:16px 0 0;font-size:14px;line-height:1.45;color:var(--muted)}
+.lp-incl a{display:inline-block;margin-top:16px;font-size:15px;font-weight:600;color:var(--acct)}
 .fs-list{display:flex;flex-direction:column;gap:clamp(80px,10vw,144px);margin-top:clamp(56px,7vw,104px);overflow-x:clip}
 .fs-row{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:clamp(32px,5vw,80px);align-items:center}
 .fs-flip{grid-template-columns:minmax(0,7fr) minmax(0,5fr)}

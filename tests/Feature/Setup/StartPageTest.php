@@ -37,7 +37,7 @@ it('shows the landing page on a public installation before the first user', func
 
     $this->get('/')
         ->assertOk()
-        ->assertSee('Bokföring som ägs av')
+        ->assertSee('Ditt system.')
         ->assertDontSee('Systemet är inte färdiginstallerat');
 });
 
@@ -57,7 +57,7 @@ it('shows signed-in users the landing page with a link to the overview instead o
     $this->actingAs(User::factory()->withCompany()->create())
         ->get('/')
         ->assertOk()
-        ->assertSee('Bokföring som ägs av')
+        ->assertSee('Ditt system.')
         ->assertSee('Till översikten')
         ->assertSee(route('dashboard'))
         ->assertDontSee('>Logga in<', escape: false);
@@ -111,7 +111,7 @@ it('shows the public landing page to visitors once the system is set up', functi
 
     $this->get('/')
         ->assertOk()
-        ->assertSee('Bokföring som ägs av')
+        ->assertSee('Ditt system.')
         ->assertSee(route('login'))
         ->assertSee("995\u{a0}kr")
         ->assertSee('https://github.com/STAFE-GROUP-AB/nonox')
@@ -139,7 +139,7 @@ it('shows the sign-in page instead when the landing page is turned off', functio
 
     $this->get('/')
         ->assertOk()
-        ->assertDontSee('Bokföring som ägs av')
+        ->assertDontSee('Ditt system.')
         ->assertSee(route('login'));
 });
 

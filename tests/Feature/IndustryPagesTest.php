@@ -250,7 +250,7 @@ it('lists the industry pages on a hub page, in the menu, the footer and the site
 
     app()->detectEnvironment(fn (): string => 'production');
     User::factory()->withCompany()->create();
-    $landing = $this->get('/')->assertOk()->assertSee('Bokföring som ägs av')->assertSee('Branscher')->getContent();
+    $landing = $this->get('/')->assertOk()->assertSee('Ditt system.')->assertSee('Branscher')->getContent();
     $sitemap = $this->get('/sitemap.xml')->assertOk()->assertSee(route('industries'), false)->getContent();
 
     foreach (Industries::slugs() as $slug) {

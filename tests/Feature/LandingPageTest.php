@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Support\Landing\Features;
 use App\Support\Landing\LandingPage;
 use App\Support\Landing\SecurityReview;
 
@@ -38,5 +39,17 @@ it('shows a screenshot and a manual link for every feature on the landing page',
             ->and(base_path("docs/manual/sv/{$card['man']}.md"))->toBeFile("Landing card '{$card['t']}' links to a missing manual article")
             ->and($page)->toContain(asset("bilder/manual/{$card['img']}.webp"))
             ->and($page)->toContain(route('manual.article', [$section, $article]));
+    }
+});
+
+it('lists only built features under the hero', function () {
+    $page = $this->get('/')->assertOk()->assertSee('Ditt system.')->getContent();
+
+    foreach (LandingPage::included() as $item) {
+        foreach ($item['keys'] as $key) {
+            expect(Features::isLive($key))->toBeTrue("'{$item['label']}' names '{$key}', which is not built");
+        }
+
+        expect($page)->toContain(e($item['label']));
     }
 });

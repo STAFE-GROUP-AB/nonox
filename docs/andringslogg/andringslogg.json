@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-ny-startsida-rubrik",
+      "datum": "2026-11-03T01:31:41+01:00",
+      "rubrik": "Startsidan visar hela systemet direkt",
+      "beskrivning": "Startsidan har fått en ny rubrik om att företaget äger sitt system och sin data, och en lista över allt som ingår som syns utan att man behöver skrolla: bokföring, fakturor, leverantörsfakturor, bokslut, lön, schema och personalliggare, lager med mobilskanning, NONOX AI, Min sida, byråläge, API och flytt från ditt gamla program. Delningsbilden har fått samma budskap.",
+      "typ": "Förbättrat",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-03-nypzoom-tillbaka",
       "datum": "2026-11-03T00:49:12+01:00",
       "rubrik": "Nypzoom fungerar igen i den installerade appen",
