@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-manual-oversiktslankar",
+      "datum": "2026-11-03T10:58:00+01:00",
+      "rubrik": "Länkarna till manualens översikter fungerar igen",
+      "beskrivning": "Länkarna från startsidan till manualen för Lager och CRM gav ett felmeddelande. De går nu till rätt sida, och en gammal adress till en översikt skickas vidare dit.",
+      "typ": "Rättat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-03-crm-saljtratt",
       "datum": "2026-11-03T10:45:00+01:00",
       "rubrik": "CRM: säljtratt med affärer, prognos och mål per säljare",

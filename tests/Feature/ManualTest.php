@@ -54,11 +54,11 @@ it('answers every page with a content security policy, canonical address and Swe
     }
 });
 
-it('answers 404 for what does not exist, and for the overview under its second address', function () {
+it('answers 404 for what does not exist, and sends the overview file name to the section', function () {
     $this->get('/manual/okant')->assertNotFound();
     $this->get('/manual/ej-skrivet')->assertNotFound();
     $this->get('/manual/kom-igang/okand-artikel')->assertNotFound();
-    $this->get('/manual/kom-igang/oversikt')->assertNotFound();
+    $this->get('/manual/kom-igang/oversikt')->assertRedirect(route('manual.section', 'kom-igang'))->assertStatus(301);
     $this->get('/manual/Kom-Igang')->assertNotFound();
 });
 

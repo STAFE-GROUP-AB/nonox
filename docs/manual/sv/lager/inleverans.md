@@ -42,5 +42,5 @@ En inleverans där inget har tagits emot kan makuleras. Det som redan är mottag
 
 ## Läs också
 
-- [Leverantörsfakturor](/manual/leverantorer/oversikt)
+- [Leverantörsfakturor](/manual/leverantorer)
 - [Lagervärde vid bokslut](/manual/lager/lagervarde-vid-bokslut) – hur inköpspriset påverkar lagervärdet.
