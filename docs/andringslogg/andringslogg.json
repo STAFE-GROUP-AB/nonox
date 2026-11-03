@@ -32,11 +32,20 @@
   ],
   "poster": [
     {
+
       "id": "2026-11-03-krypterad-chatt",
       "datum": "2026-11-03T15:50:00+01:00",
       "rubrik": "Krypterad chatt med kod, som raderas helt",
       "beskrivning": "Starta en chatt från vilken sida som helst och läs upp eller sms:a koden, så kan supporten, revisorn eller kunden ansluta. Allt krypteras i webbläsaren och raderas helt när chatten avslutas, efter 30 minuter utan meddelanden eller senast efter 8 timmar. Med Följ mina sidor kommer den andra till samma sida som du.",
       "typ": "Nytt",
+      "omrade": "Övrigt"
+    },
+    {
+      "id": "2026-11-03-svensk-tid-overallt",
+      "datum": "2026-11-03T15:48:00+01:00",
+      "rubrik": "Svensk tid även när databasservern står på en annan tidszon",
+      "beskrivning": "NONOX räknar nu alltid i svensk tid, också i databasen, oavsett vilken tidszon servern har. Tidigare kunde en egen installation på en server i UTC visa en påminnelse en timme fel, räkna en aktivitet till fel vecka eller godta en API-nyckel en stund efter att den gått ut.",
+      "typ": "Rättat",
       "omrade": "Övrigt"
     },
     {

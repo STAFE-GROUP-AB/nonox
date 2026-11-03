@@ -17,6 +17,9 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
+            // NONOX always runs in Europe/Stockholm (AGENTS.md §5). Timestamps are stored without a zone
+            // and some queries use NOW(), date_trunc or AT TIME ZONE, so the session uses the same zone.
+            'timezone' => 'Europe/Stockholm',
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
     ],
