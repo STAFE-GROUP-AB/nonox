@@ -7764,5 +7764,6 @@
     "Befintlig hos driftbolaget": "Existing at the operator company",
     "Inget organisationsnummer": "No organisation number",
     "Skapa ny kund": "Create new customer",
-    "CRM är inte påslaget i driftbolaget. Anmälningarna i kön förs inte över förrän CRM slås på där; kör sedan synken av befintliga uppgifter.": "CRM is not switched on in the operator company. Queue applications are not carried over until CRM is switched on there; then run the sync of existing data."
+    "CRM är inte påslaget i driftbolaget. Anmälningarna i kön förs inte över förrän CRM slås på där; kör sedan synken av befintliga uppgifter.": "CRM is not switched on in the operator company. Queue applications are not carried over until CRM is switched on there; then run the sync of existing data.",
+    "Det här är din egen chatt. Ge koden till den du vill chatta med.": "This is your own chat. Give the code to the person you want to chat with."
 }

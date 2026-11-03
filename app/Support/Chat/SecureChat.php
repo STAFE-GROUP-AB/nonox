@@ -144,6 +144,14 @@ class SecureChat
         return $joined;
     }
 
+    /** Whether the user started this chat: only they can learn it, and they already hold its code. */
+    public function startedBy(User $user, string $room): bool
+    {
+        $chat = $this->find($room);
+
+        return $chat instanceof ChatRoom && $chat->starterId === (int) $user->getKey();
+    }
+
     /** The chat, when the user is one of its two people; null otherwise. */
     public function forParticipant(User $user, string $room): ?ChatRoom
     {

@@ -87,19 +87,27 @@ it('starts a chat that the second user joins, with names and no code', function 
         ->assertJson(['you' => 'a', 'peer' => 'Jonas Joiner', 'joined' => true, 'messages' => []]);
 });
 
+it('tells the starter that a code is their own chat, which reveals nothing they do not already know', function () {
+    chatPost($this->starter, 'start', ['room' => $this->room])->assertCreated();
+
+    chatPost($this->starter, 'join', ['room' => $this->room])
+        ->assertStatus(409)
+        ->assertExactJson(['message' => 'Det här är din egen chatt. Ge koden till den du vill chatta med.']);
+
+    // Another user still cannot tell a started chat from an unknown code before joining it.
+    chatPost($this->joiner, 'join', ['room' => $this->room])->assertOk();
+});
+
 it('refuses a third person exactly as it refuses a code that does not exist', function () {
     chatPost($this->starter, 'start', ['room' => $this->room])->assertCreated();
     chatPost($this->joiner, 'join', ['room' => $this->room])->assertOk();
 
     $full = chatPost($this->third, 'join', ['room' => $this->room]);
     $unknown = chatPost($this->third, 'join', ['room' => chatRoomId()]);
-    $own = chatPost($this->starter, 'join', ['room' => $this->room]);
 
     expect($full->status())->toBe(404)
         ->and($unknown->status())->toBe(404)
-        ->and($own->status())->toBe(404)
-        ->and($full->getContent())->toBe($unknown->getContent())
-        ->and($own->getContent())->toBe($unknown->getContent());
+        ->and($full->getContent())->toBe($unknown->getContent());
 
     // Nor can the third person read or end it.
     chatPost($this->third, 'poll', ['room' => $this->room, 'since' => 0])->assertNotFound();

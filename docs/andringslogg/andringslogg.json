@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-chatt-egen-kod",
+      "datum": "2026-11-03T17:04:00+01:00",
+      "rubrik": "Tydligare besked när du anger koden till din egen chatt",
+      "beskrivning": "Skriver du in koden till en chatt som du själv har startat står det nu att det är din egen chatt och att koden ska ges till den du vill chatta med.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt"
+    },
+    {
 
       "id": "2026-11-03-krypterad-chatt",
       "datum": "2026-11-03T15:50:00+01:00",
