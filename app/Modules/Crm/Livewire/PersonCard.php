@@ -104,7 +104,7 @@ class PersonCard extends Component
         $this->resetErrorBag();
     }
 
-    public function saveDoNotContact(SavePerson $save, bool $flag = true): void
+    public function saveDoNotContact(SavePerson $save, bool $flag = true, bool $liftRestriction = false): void
     {
         $person = $this->person();
 
@@ -115,6 +115,7 @@ class PersonCard extends Component
             'informed_at' => $person->informed_at?->toDateString(),
             'do_not_contact' => $flag,
             'do_not_contact_reason' => $flag ? $this->doNotContactReason : null,
+            'lift_restriction' => $liftRestriction,
         ], $person);
 
         $this->closePanel();

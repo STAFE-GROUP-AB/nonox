@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Adds or changes a contact person (ADR-043). The legal basis is required
@@ -50,6 +51,7 @@ final class SavePerson
             'is_active' => ['sometimes', 'boolean'],
             'informed_at' => ['nullable', 'date', 'before_or_equal:today'],
             'do_not_contact' => ['sometimes', 'boolean'],
+            'lift_restriction' => ['sometimes', 'boolean'],
             'do_not_contact_reason' => ['nullable', 'required_if_accepted:do_not_contact', Rule::enum(DoNotContact::class)],
             'account_id' => ['nullable', 'integer'],
             'role' => ['nullable', Rule::enum(PersonRole::class)],
@@ -69,9 +71,18 @@ final class SavePerson
         $role = $attributes['role'] ?? null;
         unset($attributes['account_id'], $attributes['role']);
 
+        $lift = (bool) ($attributes['lift_restriction'] ?? false);
+        unset($attributes['lift_restriction']);
+
         if (array_key_exists('do_not_contact', $attributes)) {
             $flag = (bool) $attributes['do_not_contact'];
             $attributes['do_not_contact_reason'] = $flag ? $attributes['do_not_contact_reason'] : null;
+
+            // Lifting a restriction is its own deliberate step: the person must be told first (art. 18(3)).
+            if ($person?->do_not_contact_reason === DoNotContact::Restriction && $attributes['do_not_contact_reason'] !== DoNotContact::Restriction->value && ! $lift) {
+                throw ValidationException::withMessages(['do_not_contact' => __('En begränsning hävs bara med Häv begränsningen på personens sida, och först när personen har informerats (GDPR artikel 18.3).')]);
+            }
+
             // A new reason starts its own clock: the one note allowed under a restriction counts from the restriction.
             $sameReason = $person?->do_not_contact_reason?->value === $attributes['do_not_contact_reason'];
             $attributes['do_not_contact_at'] = $flag ? ($sameReason ? ($person->do_not_contact_at ?? now()) : now()) : null;

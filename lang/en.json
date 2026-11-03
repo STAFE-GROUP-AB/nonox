@@ -7642,5 +7642,9 @@
     "Ta bort markeringen Kontakta inte? Gör det bara om personen själv har ändrat sig.": "Remove the Do not contact mark? Only do so if the person has changed their mind.",
     "Ta bort Kontakta inte": "Remove Do not contact",
     "Behandlingen av personens uppgifter är begränsad. Uppgifterna får bara sparas och rättas: inga samtal, mejl eller möten. En planerad aktivitet kan fortfarande klarmarkeras.": "The processing of the person's data is restricted. The data may only be stored and corrected: no calls, e-mails or meetings. A planned activity can still be marked done.",
-    "Spara rollen för :name": "Save the role for :name"
+    "Spara rollen för :name": "Save the role for :name",
+    "En begränsning hävs bara med Häv begränsningen på personens sida, och först när personen har informerats (GDPR artikel 18.3).": "A restriction is only lifted with Lift the restriction on the person's page, and only once the person has been informed (GDPR article 18(3)).",
+    "Personen har begärt begränsad behandling. Begränsningen hävs bara med Häv begränsningen på personens sida, och först när personen har informerats.": "The person has asked for restricted processing. The restriction is only lifted with Lift the restriction on the person's page, and only once the person has been informed.",
+    "Häva begränsningen? Gör det bara när skälet för begränsningen inte längre finns, och informera personen innan (GDPR artikel 18.3).": "Lift the restriction? Only do so when the reason for it no longer applies, and inform the person beforehand (GDPR article 18(3)).",
+    "Häv begränsningen": "Lift the restriction"
 }

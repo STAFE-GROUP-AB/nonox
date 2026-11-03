@@ -49,6 +49,9 @@
         <x-ui.field for="person_informed" :label="__('Informerad den (valfritt)')" error="informed_at" :hint="__('Dagen personen fick information om hur ni behandlar uppgifterna (GDPR artikel 14): vilka uppgifter, varifrån, varför och med vilken rättslig grund, vilka leverantörer som behandlar dem, hur länge de sparas och personens rättigheter. Inom en månad, och senast vid första kontakten.')">
             <input id="person_informed" type="date" class="{{ $input }} mt-1" wire:model="personForm.informed_at">
         </x-ui.field>
+        @if($personForm['restriction_locked'] ?? false)
+            <p class="text-sm text-gray-600 sm:col-span-2">{{ __('Personen har begärt begränsad behandling. Begränsningen hävs bara med Häv begränsningen på personens sida, och först när personen har informerats.') }}</p>
+        @else
         <label class="flex min-h-11 items-start gap-3 text-sm text-gray-800 sm:col-span-2">
             <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model.live="personForm.do_not_contact">
             <span>{{ __('Kontakta inte') }}<span class="block text-xs text-gray-500">{{ __('Personen har invänt mot behandlingen eller begärt begränsad behandling. Inga nya samtal, möten, mejl eller uppgifter kan loggas för personen, bara anteckningar.') }}</span></span>
@@ -62,6 +65,7 @@
                     @endforeach
                 </select>
             </x-ui.field>
+        @endif
         @endif
         @if($editingPersonId)
             <label class="flex min-h-11 items-center gap-3 text-sm text-gray-800 sm:col-span-2">

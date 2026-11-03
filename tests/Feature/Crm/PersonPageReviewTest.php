@@ -13,6 +13,7 @@ use App\Modules\Crm\Models\Person;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\Toast;
 use Carbon\CarbonImmutable;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
@@ -151,4 +152,39 @@ it('describes a disabled quick action with a visible reason', function () {
         ->assertSeeHtml('aria-disabled="true"')
         ->assertSeeHtml('aria-describedby="crm-actions-note"')
         ->assertSeeHtml('id="crm-actions-note"');
+});
+
+it('lifts a restriction only through Häv begränsningen, never from the ordinary form or a plain save (art. 18(3))', function () {
+    $fields = ['name' => 'Anna Andersson', 'email' => 'anna@example.test', 'legal_basis' => 'LEGITIMATE_INTEREST'];
+    app(SavePerson::class)($this->owner, $this->company, [...$fields, 'do_not_contact' => true, 'do_not_contact_reason' => 'RESTRICTION'], $this->person);
+
+    expect(fn () => app(SavePerson::class)($this->owner, $this->company, [...$fields, 'do_not_contact' => false], $this->person->fresh()))
+        ->toThrow(ValidationException::class, 'Häv begränsningen')
+        ->and(fn () => app(SavePerson::class)($this->owner, $this->company, [...$fields, 'do_not_contact' => true, 'do_not_contact_reason' => 'OBJECTION'], $this->person->fresh()))
+        ->toThrow(ValidationException::class, 'Häv begränsningen');
+
+    $page = Livewire::test(PersonCard::class, ['personId' => $this->person->id])
+        ->assertSee('Häv begränsningen')
+        ->assertSee('GDPR artikel 18.3')
+        ->call('startPerson', $this->person->id)
+        ->assertSee('Begränsningen hävs bara med Häv begränsningen')
+        ->assertDontSeeHtml('wire:model.live="personForm.do_not_contact"')
+        ->set('personForm.title', 'VD')
+        ->call('savePerson')
+        ->assertHasNoErrors();
+
+    expect($this->person->fresh()?->title)->toBe('VD')
+        ->and($this->person->fresh()?->do_not_contact_reason?->value)->toBe('RESTRICTION');
+
+    $page->call('saveDoNotContact', false, true);
+
+    expect($this->person->fresh()?->doNotContact())->toBeFalse();
+});
+
+it('tells a read-only user on the account card why the actions are disabled', function () {
+    $this->actingAs(Bookkeeping::member($this->company, 'auditor'));
+
+    Livewire::test(AccountCard::class, ['accountId' => $this->alfa->id])
+        ->assertSeeHtml('id="crm-actions-note"')
+        ->assertSee('Du kan inte ändra i CRM.');
 });

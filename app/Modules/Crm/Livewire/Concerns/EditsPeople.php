@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Livewire\Concerns;
 
 use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Actions\SavePerson;
+use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Domain\LegalBasis;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Person;
@@ -52,6 +53,7 @@ trait EditsPeople
             'informed_at' => (string) $person?->informed_at?->toDateString(),
             'do_not_contact' => $person?->doNotContact() ?? false,
             'do_not_contact_reason' => (string) $person?->do_not_contact_reason?->value,
+            'restriction_locked' => $person?->do_not_contact_reason === DoNotContact::Restriction,
             'role' => PersonRole::Other->value,
         ];
         $this->panel = 'person';

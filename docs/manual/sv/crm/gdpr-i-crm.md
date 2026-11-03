@@ -60,6 +60,8 @@ Vid en **invändning** sparas personens e-postadress och telefonnummer på en sp
 
 Vid **begränsad behandling** får uppgifterna bara sparas. Det går inte att logga några nya aktiviteter för personen, utom en enda anteckning om begränsningen, räknat från när begränsningen sattes. Befintliga aktiviteter om personen kan inte ändras, bara klarmarkeras, och när begränsningen sätts klarmarkeras personens öppna uppgifter och planerade aktiviteter, så att de försvinner från **Mina aktiviteter**. Ingenting sparas på spärrlistan; raderas personen finns inget kvar.
 
+Uppgifterna om personen får fortfarande rättas med **Ändra uppgifter**. Begränsningen går däremot inte att ta bort där. Den hävs bara med **Häv begränsningen** i rutan om personuppgifter på personens sida, och först när skälet för begränsningen inte längre finns och personen har fått veta det i förväg (artikel 18.3).
+
 Spärrlistan granskas med jämna mellanrum: en rad som inte har granskats på tre år (inställningen **Granska spärrlistan, år** under **CRM → Inställningar**) visas under **Att göra**. Under **CRM → Personer → Spärrlista** väljer du **Behåll** om invändningen fortfarande gäller eller **Ta bort**.
 ## Registerutdrag
 

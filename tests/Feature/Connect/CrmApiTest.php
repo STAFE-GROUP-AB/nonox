@@ -99,3 +99,14 @@ it('answers 403 for every CRM endpoint while the module is off', function () {
     $this->withToken($key)->getJson('/api/v1/crm/accounts')->assertForbidden();
     $this->withToken($key)->withHeader('Idempotency-Key', 'av-1')->postJson('/api/v1/crm/accounts', ['name' => 'X AB'])->assertForbidden();
 });
+
+it('lifts a restriction over the API only with lift_restriction', function () {
+    $person = Crm::person($this->company, $this->owner, 'Anna Andersson', ['do_not_contact' => true, 'do_not_contact_reason' => 'RESTRICTION']);
+    $key = Connect::apiKey($this->owner, $this->company, ['crm:view', 'crm:manage']);
+
+    $this->withToken($key)->patchJson("/api/v1/crm/people/{$person->id}", ['do_not_contact' => false])->assertUnprocessable();
+    expect($person->fresh()?->do_not_contact_reason?->value)->toBe('RESTRICTION');
+
+    $this->withToken($key)->patchJson("/api/v1/crm/people/{$person->id}", ['do_not_contact' => false, 'lift_restriction' => true])->assertOk();
+    expect($person->fresh()?->doNotContact())->toBeFalse();
+});

@@ -31,7 +31,7 @@ final class CrmController
 
     private const array ACCOUNT_FIELDS = ['name', 'org_number', 'kind', 'owner_id', 'parent_id', 'sni_code', 'website', 'email', 'phone', 'address_line1', 'postal_code', 'city', 'country', 'source', 'tags'];
 
-    private const array PERSON_FIELDS = ['name', 'title', 'email', 'phone', 'mobile', 'legal_basis', 'legal_basis_note', 'consent_at', 'is_active', 'informed_at', 'do_not_contact', 'do_not_contact_reason', 'account_id', 'role'];
+    private const array PERSON_FIELDS = ['name', 'title', 'email', 'phone', 'mobile', 'legal_basis', 'legal_basis_note', 'consent_at', 'is_active', 'informed_at', 'do_not_contact', 'do_not_contact_reason', 'lift_restriction', 'account_id', 'role'];
 
     private const array ACTIVITY_FIELDS = ['account_id', 'person_id', 'deal_id', 'type', 'call_outcome', 'subject', 'body', 'assigned_to', 'due_at', 'done'];
 

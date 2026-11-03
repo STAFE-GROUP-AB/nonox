@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-crm-hav-begransning",
+      "datum": "2026-11-03T12:50:00+01:00",
+      "rubrik": "CRM: en begränsning hävs med ett eget steg",
+      "beskrivning": "En begärd begränsning av behandlingen kan inte längre tas bort av misstag när någon rättar uppgifterna om en person. Den hävs bara med Häv begränsningen på personens sida, med en påminnelse om att personen ska informeras först. Kundkortet förklarar också varför knapparna är avstängda för den som bara kan läsa.",
+      "typ": "Förbättrat",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-03-crm-kort-och-personsida",
       "datum": "2026-11-03T11:50:00+01:00",
       "rubrik": "CRM: nytt kundkort och en egen sida för varje kontaktperson",

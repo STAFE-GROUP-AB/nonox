@@ -477,3 +477,14 @@ out in the migration so it never changes with the action).
   visible line under the actions. Under a restriction the data may still be
   corrected (art. 16 and 18), so **Ändra uppgifter** stays.
 
+
+### Lifting a restriction (2026-11-03)
+
+A restriction (art. 18) is lifted only as its own step: `SavePerson` refuses
+to remove or change a RESTRICTION unless `lift_restriction` is true. The
+person form hides the Kontakta inte fields for a restricted person (data can
+still be rectified, art. 16); the person page offers **Häv begränsningen**
+with a confirmation that the person must be informed first (art. 18(3)); the
+API takes `lift_restriction` on PATCH and answers 422 without it. The account
+card's note under the quick actions also states why they are disabled for a
+read-only user.

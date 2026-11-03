@@ -12606,6 +12606,9 @@ components:
           enum:
             - OBJECTION
             - RESTRICTION
+        lift_restriction:
+          type: boolean
+          description: 'Required (true) to remove or change a RESTRICTION. Only do so when the reason no longer applies and the person has been informed first (GDPR art. 18(3)); without it the request is refused with 422.'
         account_id:
           type: integer
           description: 'Place the new person at this account.'

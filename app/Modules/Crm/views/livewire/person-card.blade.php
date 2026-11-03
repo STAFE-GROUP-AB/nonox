@@ -203,7 +203,9 @@
                 @if($canUpdate)
                     <div class="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm">
                         <a href="{{ route('privacy.export.crmPerson', $person) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700 sm:min-h-0">{{ __('Registerutdrag (JSON)') }}</a>
-                        @if($person->doNotContact())
+                        @if($person->do_not_contact_reason === App\Modules\Crm\Domain\DoNotContact::Restriction)
+                            <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="saveDoNotContact(false, true)" wire:confirm="{{ __('Häva begränsningen? Gör det bara när skälet för begränsningen inte längre finns, och informera personen innan (GDPR artikel 18.3).') }}">{{ __('Häv begränsningen') }}</button>
+                        @elseif($person->doNotContact())
                             <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="saveDoNotContact(false)" wire:confirm="{{ __('Ta bort markeringen Kontakta inte? Gör det bara om personen själv har ändrat sig.') }}">{{ __('Ta bort Kontakta inte') }}</button>
                         @else
                             <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startDoNotContact">{{ __('Märk Kontakta inte') }}</button>
