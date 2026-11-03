@@ -42,7 +42,7 @@
                     @foreach($suppressions as $entry)
                         <li wire:key="suppression-{{ $entry->id }}" class="flex flex-wrap items-center gap-3 py-3">
                             <span class="min-w-0 flex-1 basis-52 text-sm">
-                                <span class="block font-medium text-gray-900">{{ $entry->kind === 'EMAIL' ? __('E-postadress') : __('Telefonnummer') }}</span>
+                                <span class="block font-medium text-gray-900">{{ $entry->kind === 'EMAIL' ? __('E-postadress') : __('Telefonnummer') }}@if($entry->reason === App\Modules\Crm\Support\SuppressionList::ERASURE) · {{ __('raderad på begäran') }}@endif</span>
                                 <span @class(['block', 'font-medium text-accent-700' => $entry->updated_at < $reviewBefore, 'text-gray-600' => $entry->updated_at >= $reviewBefore])>{{ __('Senast granskad :date', ['date' => $entry->updated_at?->format('Y-m-d')]) }}@if($entry->updated_at < $reviewBefore) · {{ __('ska granskas') }}@endif</span>
                             </span>
                             <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="keepSuppression({{ $entry->id }})">{{ __('Behåll') }}</button>

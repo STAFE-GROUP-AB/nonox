@@ -188,3 +188,13 @@ Every visit is audited at instance level, without personal data:
 - After 1 January 2027 the owner decides whether the queue stays, opens up or
   is removed; the date lives in `config('nonox.launch_date')` and in the
   public texts.
+
+## Addendum (2026-11-03): switches and the operator company
+
+ADR-044 makes two of the decisions above switchable in **HQ → Inställningar**
+without a deploy: the queue can be closed (`/ko` then shows a closed message
+and takes nothing in), and self-registration (§1) can be opened again behind
+the same rate limits. The defaults keep this ADR's behaviour: queue open,
+self-registration closed. HQ can also choose the **operator company**, whose
+customer register and CRM then receive every company and every queue
+applicant; see ADR-044.

@@ -49,6 +49,14 @@
       "omrade": "Övrigt"
     },
     {
+      "id": "2026-11-03-ko-och-registrering",
+      "datum": "2026-11-03T15:45:00+01:00",
+      "rubrik": "Kön kan stängas och registreringen öppnas",
+      "beskrivning": "Webbplatsen kan nu visa att kön till betan är stängd, i stället för formuläret, och knapparna på de publika sidorna följer med. När registreringen är öppen kan den som inte har ett konto skapa ett direkt på inloggningssidan med en kod till sin e-post.",
+      "typ": "Nytt",
+      "omrade": "Webbplats"
+    },
+    {
       "id": "2026-11-03-crm-hav-begransning",
       "datum": "2026-11-03T12:50:00+01:00",
       "rubrik": "CRM: en begränsning hävs med ett eget steg",

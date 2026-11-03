@@ -165,7 +165,7 @@ it('adds HQ with Kö and Kunder last for an HQ admin, also without a company', f
 
     expect($hq->label)->toBe('HQ')
         ->and($hq->active)->toBeTrue()
-        ->and(pageLabels($hq))->toBe(['Kö', 'Kunder'])
+        ->and(pageLabels($hq))->toBe(['Kö', 'Kunder', 'Inställningar'])
         ->and($hq->current()?->label)->toBe('Kunder')
         ->and(collect($sections)->filter(fn (NavSection $section): bool => $section->active))->toHaveCount(1);
 

@@ -115,6 +115,8 @@ Route::prefix('hq')->name('hq.')->middleware(EnsureHqAdmin::class)->group(functi
     Route::view('/kunder', 'hq.customers')->name('customers');
     Route::get('/kunder/foretag/{companyId}', fn (int $companyId) => view('hq.customer-company', ['companyId' => $companyId]))->whereNumber('companyId')->name('customers.company');
     Route::get('/kunder/anvandare/{userId}', fn (int $userId) => view('hq.customer-user', ['userId' => $userId]))->whereNumber('userId')->name('customers.user');
+    // The installation's own settings: the operator company, the queue and self-registration (ADR-044).
+    Route::view('/installningar', 'hq.settings')->name('settings');
 });
 // The passkey step for a signed-in session that has to pass it (RequirePasskey, ADR-029).
 Route::view('/logga-in/passkey', 'auth.passkey')->middleware('auth')->name('passkeys.challenge');

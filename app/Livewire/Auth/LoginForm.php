@@ -12,6 +12,7 @@ use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Support\Auth\PasskeySession;
 use App\Support\Branding\InvitationBrand;
+use App\Support\Instance\InstanceSettings;
 use App\Support\LoginCodeAutofill;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
@@ -25,8 +26,10 @@ use Livewire\Component;
 /**
  * Passwordless sign-in (ADR-000): email → one-time code → signed in. Only
  * existing users and people with a valid invitation to a company get a code
- * (ADR-038): there is no self-registration, new users come through the
- * waiting list. Any other address sees exactly the same next step, so the
+ * (ADR-038): by default there is no self-registration, new users come through
+ * the waiting list. HQ can open self-registration (ADR-044); then every
+ * address gets a code and an unknown one is asked for a name and gets an
+ * account, the path from before ADR-038, with the same rate limits. Any other address sees exactly the same next step, so the
  * form does not tell whether an address has an account. An invited address
  * without an account adds a name step, and not even that when the invitation
  * carries the name. The verified address is kept in the session, never
@@ -148,7 +151,7 @@ class LoginForm extends Component implements SpansCompanies
             return;
         }
 
-        if (! self::isInvited($email)) {
+        if (! self::mayRegister($email)) {
             $this->startOver();
 
             return;
@@ -176,8 +179,8 @@ class LoginForm extends Component implements SpansCompanies
             return;
         }
 
-        // Only an invitation lets a new address in; it may have been withdrawn meanwhile.
-        if (! self::isInvited($email)) {
+        // Only an invitation, or self-registration opened in /hq (ADR-044), lets a new address in; either may have changed meanwhile.
+        if (! self::mayRegister($email)) {
             $this->startOver();
 
             return;
@@ -207,6 +210,7 @@ class LoginForm extends Component implements SpansCompanies
     {
         return view('livewire.auth.login-form', [
             'autofill' => LoginCodeAutofill::enabled(),
+            'registrationOpen' => InstanceSettings::current()->selfRegistrationOpen(),
             // Reached from an invitation to a client of an accounting firm: the firm's brand (ADR-030).
             'firmBrand' => InvitationBrand::forLoginPage(),
         ]);
@@ -214,11 +218,20 @@ class LoginForm extends Component implements SpansCompanies
 
     /**
      * Who gets a code: an existing user (also one approved from the waiting
-     * list, ADR-038), or someone with a valid invitation to a company.
+     * list, ADR-038), someone with a valid invitation to a company, or,
+     * while self-registration is open in /hq (ADR-044), anyone.
      */
     public static function mayReceiveCode(string $email): bool
     {
-        return User::query()->byEmail($email)->whereNull('anonymised_at')->exists() || self::isInvited($email);
+        return InstanceSettings::current()->selfRegistrationOpen()
+            || User::query()->byEmail($email)->whereNull('anonymised_at')->exists()
+            || self::isInvited($email);
+    }
+
+    /** Whether an address without an account may get one after its code: an invitation, or open self-registration. */
+    private static function mayRegister(string $email): bool
+    {
+        return InstanceSettings::current()->selfRegistrationOpen() || self::isInvited($email);
     }
 
     private static function isInvited(string $email): bool

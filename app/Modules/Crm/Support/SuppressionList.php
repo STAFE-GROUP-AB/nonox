@@ -26,6 +26,22 @@ use App\Modules\Crm\Models\Suppression;
  */
 final class SuppressionList
 {
+    /** The reason stored for contact details kept after an erasure on request (ADR-044). */
+    public const string ERASURE = 'ERASURE';
+
+    /**
+     * Keeps these contact details on the list after the person was erased
+     * on their own request, so a later sync from the queue cannot add them
+     * again (ADR-044). Hashes only, like an objection; and like one, a
+     * person added by hand with these details is marked Kontakta inte.
+     */
+    public static function suppress(string $reason, ?string $email, ?string ...$phones): void
+    {
+        foreach (self::hashes(self::currentKey(), $email, ...$phones) as $hash => $kind) {
+            Suppression::query()->firstOrCreate(['hash' => $hash], ['kind' => $kind, 'reason' => $reason]);
+        }
+    }
+
     /** Adds the person's e-mail and numbers to the list when they objected; a restriction keeps nothing. */
     public static function remember(Person $person): void
     {

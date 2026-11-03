@@ -36,7 +36,11 @@
         @endif
     @elseif($step === 'code')
         <h1>Kolla din e-post</h1>
-        <p class="lead" id="code-help">Om <strong>{{ $email }}</strong> har ett konto eller en inbjudan har vi skickat en kod med åtta siffror dit. Skriv in den här.</p>
+        @if($registrationOpen)
+            <p class="lead" id="code-help">Vi har skickat en kod med åtta siffror till <strong>{{ $email }}</strong>. Skriv in den här. Har du inget konto skapar vi ett när koden stämmer.</p>
+        @else
+            <p class="lead" id="code-help">Om <strong>{{ $email }}</strong> har ett konto eller en inbjudan har vi skickat en kod med åtta siffror dit. Skriv in den här.</p>
+        @endif
 
         <form wire:submit="verify" novalidate>
             <div class="field">
@@ -58,7 +62,7 @@
         </div>
     @else
         <h1>Välkommen!</h1>
-        <p class="lead">Du är inbjuden men har inget konto än. Vad heter du?</p>
+        <p class="lead">{{ $registrationOpen ? 'Du har inget konto än. Vad heter du? Sedan lägger du upp ditt företag.' : 'Du är inbjuden men har inget konto än. Vad heter du?' }}</p>
 
         <form wire:submit="createAccount" novalidate>
             <div class="field">

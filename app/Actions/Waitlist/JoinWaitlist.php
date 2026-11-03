@@ -13,6 +13,8 @@ use App\Models\WaitlistEntry;
 use App\Notifications\NewWaitlistEntry;
 use App\Rules\SwedishOrganisationNumber;
 use App\Support\Hq\HqAccess;
+use App\Support\Hq\OperatorSync;
+use App\Support\Instance\InstanceSettings;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -37,6 +39,11 @@ class JoinWaitlist
      */
     public function __invoke(array $input, ?string $ip = null, ?string $userAgent = null): void
     {
+        // HQ can close the queue (ADR-044); /ko then shows no form, and nothing is taken in.
+        if (! InstanceSettings::current()->waitlistOpen()) {
+            throw ValidationException::withMessages(['form' => __('Kön är stängd just nu. Försök igen senare.')]);
+        }
+
         $validated = self::validate($input);
         $email = User::normaliseEmail($validated['email']);
 
@@ -80,6 +87,9 @@ class JoinWaitlist
         }
 
         Mail::to($created->email)->queue(new WaitlistConfirmationMail($created->name));
+
+        // The applicant as a CRM prospect of the operator company, after the commit (ADR-044).
+        OperatorSync::waitlistEntryCreated($created);
 
         $admins = User::query()->whereIn(DB::raw('lower(email)'), HqAccess::admins())->whereNull('anonymised_at')->get();
 
