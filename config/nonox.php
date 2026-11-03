@@ -45,8 +45,11 @@ return [
         'max_messages' => 500,
         // Bytes of ciphertext per message, the AES-GCM tag included.
         'max_ciphertext_bytes' => 4096,
-        // Attempts to start or join, per user and per IP address.
+        // Attempts to start or join per user, and per IP address (looser: an office shares one).
         'join_attempts' => 10,
+        'join_attempts_per_ip' => 60,
+        // How long a request waits for another one on the same chat.
+        'lock_wait_seconds' => 5,
         'join_decay_seconds' => 600,
     ],
 

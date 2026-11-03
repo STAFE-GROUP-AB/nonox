@@ -45,7 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions) {
         // The encrypted chat leaves no trace (ADR-045): its fields are never flashed to the session, and an
         // error in it is logged by class only, never with its message, trace or request, which could name a chat.
-        $exceptions->dontFlash(['room', 'iv', 'ct']);
+        $exceptions->dontFlash(['room', 'iv', 'ct', 'path']);
         $exceptions->report(function (Throwable $exception) {
             if (! app()->bound('request') || ! SecureChat::handles(request())) {
                 return null;

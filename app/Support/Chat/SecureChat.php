@@ -56,17 +56,21 @@ class SecureChat
     public function allowAttempt(User $user, string $ip): bool
     {
         $limiter = new RateLimiter($this->store());
-        $max = (int) config('nonox.chat.join_attempts', 10);
         $decay = (int) config('nonox.chat.join_decay_seconds', 600);
-        $keys = ['chat-attempt:user:'.$user->getKey(), 'chat-attempt:ip:'.hash('sha256', $ip)];
+        // Many people can share one address (an office), so the address gets a looser limit than the user.
+        // The address is keyed by an HMAC with the app key, so the counter does not hold it in a guessable form.
+        $limits = [
+            'chat-attempt:user:'.$user->getKey() => (int) config('nonox.chat.join_attempts', 10),
+            'chat-attempt:ip:'.hash_hmac('sha256', $ip, (string) config('app.key')) => (int) config('nonox.chat.join_attempts_per_ip', 60),
+        ];
 
-        foreach ($keys as $key) {
+        foreach ($limits as $key => $max) {
             if ($limiter->tooManyAttempts($key, $max)) {
                 return false;
             }
         }
 
-        foreach ($keys as $key) {
+        foreach (array_keys($limits) as $key) {
             $limiter->hit($key, $decay);
         }
 
@@ -80,9 +84,9 @@ class SecureChat
      */
     public function start(User $user, string $room): ?ChatRoom
     {
-        $this->endIndexed($user, self::SLOT_STARTER);
+        $previous = $this->store()->get($this->indexKey((int) $user->getKey(), self::SLOT_STARTER));
 
-        return $this->locked($room, function () use ($user, $room): ?ChatRoom {
+        $started = $this->locked($room, function () use ($user, $room): ?ChatRoom {
             if ($this->find($room) instanceof ChatRoom) {
                 return null;
             }
@@ -94,6 +98,12 @@ class SecureChat
 
             return $chat;
         });
+
+        if ($started instanceof ChatRoom && is_string($previous) && $previous !== $room) {
+            $this->end($user, $previous);
+        }
+
+        return $started;
     }
 
     /**
@@ -103,13 +113,9 @@ class SecureChat
     public function join(User $user, string $room): ?ChatRoom
     {
         $userId = (int) $user->getKey();
-        $current = $this->store()->get($this->indexKey($userId, self::SLOT_JOINER));
+        $previous = $this->store()->get($this->indexKey($userId, self::SLOT_JOINER));
 
-        if (is_string($current) && $current !== $room) {
-            $this->end($user, $current);
-        }
-
-        return $this->locked($room, function () use ($user, $userId, $room): ?ChatRoom {
+        $joined = $this->locked($room, function () use ($user, $userId, $room): ?ChatRoom {
             $chat = $this->find($room);
 
             if (! $chat instanceof ChatRoom || $chat->starterId === $userId) {
@@ -129,6 +135,13 @@ class SecureChat
 
             return $joined;
         });
+
+        // Only a successful join ends the chat the user had joined before: a wrong code changes nothing.
+        if ($joined instanceof ChatRoom && is_string($previous) && $previous !== $room) {
+            $this->end($user, $previous);
+        }
+
+        return $joined;
     }
 
     /** The chat, when the user is one of its two people; null otherwise. */
@@ -185,15 +198,18 @@ class SecureChat
     /** Ends the chat for both people and deletes everything in it. False when the user is not in it. */
     public function end(User $user, string $room): bool
     {
-        $chat = $this->forParticipant($user, $room);
+        // Under the chat's lock, so a send that is running cannot write it back after it is gone.
+        return $this->locked($room, function () use ($user, $room): bool {
+            $chat = $this->forParticipant($user, $room);
 
-        if (! $chat instanceof ChatRoom) {
-            return false;
-        }
+            if (! $chat instanceof ChatRoom) {
+                return false;
+            }
 
-        $this->forget($chat);
+            $this->forget($chat);
 
-        return true;
+            return true;
+        });
     }
 
     /** Ends every chat the user is in, for example when they sign out. */
@@ -221,14 +237,9 @@ class SecureChat
             return null;
         }
 
-        // The store's own expiry would remove it too; this makes the limit exact.
-        if ($this->expiresAt($chat) <= $this->now()) {
-            $this->forget($chat);
-
-            return null;
-        }
-
-        return $chat;
+        // Every key expires at this moment in the store too (save() sets it); this makes the limit exact
+        // without deleting outside the chat's lock.
+        return $this->expiresAt($chat) > $this->now() ? $chat : null;
     }
 
     /**
@@ -309,7 +320,7 @@ class SecureChat
             throw new LogicException('The chat store must support locks.');
         }
 
-        return $store->lock('chat:lock:'.$room, 10)->block(5, $callback);
+        return $store->lock('chat:lock:'.$room, 10)->block((int) config('nonox.chat.lock_wait_seconds', 5), $callback);
     }
 
     private function now(): int

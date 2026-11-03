@@ -4,11 +4,13 @@
  *
  * The code: 10 characters of Crockford base32 (50 bits), shown as
  * XXXX-XXXX-XX. From it the browser derives, and never sends:
- *   master = PBKDF2-SHA-256(code, "nonox-chat-v1", 600 000 iterations)
+ *   master = PBKDF2-SHA-256(code, "nonox-chat-v1|" + origin, 600 000 iterations)
  *   room   = HKDF-SHA-256(master, info "nonox-chat-v1 room"), 32 bytes, base64url: the server's lookup key
  *   key    = HKDF-SHA-256(master, info "nonox-chat-v1 key"), an AES-256-GCM key that never leaves the browser
  * PBKDF2 makes testing every code against a room id seen on the server
- * expensive (ADR-045, threat model); HKDF splits the result in two.
+ * expensive (ADR-045, threat model), and the origin in the salt means one
+ * precomputed table cannot serve every NONOX installation; HKDF splits the
+ * result in two.
  */
 
 export const ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
@@ -93,9 +95,13 @@ export function toBase64Url(bytes) {
  *
  * @returns {Promise<{room: string, keyBytes: Uint8Array}>}
  */
-export async function deriveSecrets(code, iterations = PBKDF2_ITERATIONS) {
+export async function deriveSecrets(code, origin, iterations = PBKDF2_ITERATIONS) {
+    if (typeof origin !== 'string' || origin === '') {
+        throw new TypeError('The origin is part of the salt.');
+    }
+
     const password = await subtle().importKey('raw', encoder.encode(code), 'PBKDF2', false, ['deriveBits']);
-    const master = await subtle().deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: encoder.encode(SALT), iterations }, password, 256);
+    const master = await subtle().deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: encoder.encode(`${SALT}|${origin}`), iterations }, password, 256);
     const hkdf = await subtle().importKey('raw', master, 'HKDF', false, ['deriveBits']);
     const expand = (info) => subtle().deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: encoder.encode(`${SALT} ${info}`) }, hkdf, 256);
 
@@ -116,7 +122,11 @@ function additionalData(room, slot) {
     return encoder.encode(`${SALT}|${room}|${slot}`);
 }
 
-/** Encrypts one event ({t: 'msg', body} or {t: 'nav', path, company}) with a fresh 96-bit IV. */
+/**
+ * Encrypts one event ({t: 'msg', id, n, body} or {t: 'nav', id, n, path,
+ * company}) with a fresh 96-bit IV. `id` is random and `n` counts the
+ * sender's events from 1, so the receiver can spot a replay and a gap.
+ */
 export async function encryptEvent(key, room, slot, event) {
     const iv = new Uint8Array(12);
     globalThis.crypto.getRandomValues(iv);
@@ -138,8 +148,21 @@ export async function decryptEvent(key, room, slot, iv, ct) {
     }
 }
 
-/** Paths that must never be opened from the chat, even on the user's own NONOX. */
-const BLOCKED_PATHS = [/^\/logga-ut(\/|$)/, /^\/logga-in(\/|$)/, /^\/chatt(\/|$)/, /^\/aktuellt-foretag(\/|$)/, /^\/livewire(\/|$)/, /^\/api(\/|$)/, /^\/oauth(\/|$)/];
+/**
+ * Paths that must never be opened from the chat, even on the user's own
+ * NONOX: files, downloads, callbacks, exports of personal data, invitations,
+ * kiosks and sign-in. The same rules as App\Support\Chat\FollowablePath,
+ * which decides on the server with an allowlist; this is only the first line.
+ */
+const BLOCKED_PATHS = [
+    /\.[a-z0-9]{2,5}$/i,
+    /\/(fil|pdf|csv|sru|sie-fil|lonefil|faktura|kvitto|original|foto|qr|qr-kort|logotyp|byrans-logotyp|provsida|arbetsgivarintyg|klar|data|ikon|manifest|serviceworker)$/i,
+    /\/(bilagor|underlag|arkivpaket|betalfiler)\//i,
+    /^\/(registerutdrag|foretagsinbjudningar|anslut|oauth|api|livewire|chatt|hq|logga-ut|logga-in|aktuellt-foretag|varumarke|sanctum|mina-uppgifter)(\/|$)/i,
+    /^\/(bank|flytt\/fortnox)\//i,
+    /^\/profil\/mina-uppgifter(\/|$)/i,
+    /\/kiosk(\/|$)/i,
+];
 
 /**
  * The same-origin path to follow, or null. The channel is encrypted, but the
@@ -195,4 +218,41 @@ export function followDecision(event, origin, currentPath, mine) {
     }
 
     return path === currentPath ? { action: 'ignore', path } : { action: 'navigate', path };
+}
+
+/**
+ * Whether a decrypted event is new, the same one fetched again (after a
+ * reload, at the same sequence number), or a replay: the same event id
+ * stored again under another sequence number by the server.
+ *
+ * @param {Record<string, number>} seen event id => sequence number it was first seen at
+ * @returns {'new'|'same'|'replay'}
+ */
+export function seenStatus(seen, id, seq) {
+    if (typeof id !== 'string' || !(id in seen)) {
+        return 'new';
+    }
+
+    return seen[id] === seq ? 'same' : 'replay';
+}
+
+/**
+ * Checks a sender's counter: the next one is 'ok', a jump means the server
+ * held back at least one event ('gap'), and one already seen is 'old'.
+ *
+ * @param {Record<string, number>} counters slot => highest counter seen
+ * @returns {'ok'|'gap'|'old'|'invalid'}
+ */
+export function counterStatus(counters, slot, n) {
+    if (!Number.isInteger(n) || n < 1) {
+        return 'invalid';
+    }
+
+    const last = counters[slot] ?? 0;
+
+    if (n <= last) {
+        return 'old';
+    }
+
+    return n === last + 1 ? 'ok' : 'gap';
 }

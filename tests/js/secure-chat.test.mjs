@@ -4,6 +4,7 @@ import {
     ALPHABET,
     CODE_LENGTH,
     cleanCode,
+    counterStatus,
     decryptEvent,
     deriveSecrets,
     encryptEvent,
@@ -14,6 +15,7 @@ import {
     importKey,
     normalizeCode,
     safeFollowPath,
+    seenStatus,
 } from '../../resources/js/secure-chat-core.js';
 
 const ORIGIN = 'https://nonox.example';
@@ -70,9 +72,9 @@ test('incomplete or foreign codes are refused', () => {
 });
 
 test('the same code gives the same room id and key on both sides; another code differs', async () => {
-    const one = await deriveSecrets('K7Q4XM9PD2', 1000);
-    const again = await deriveSecrets('K7Q4XM9PD2', 1000);
-    const other = await deriveSecrets('K7Q4XM9PD3', 1000);
+    const one = await deriveSecrets('K7Q4XM9PD2', ORIGIN, 1000);
+    const again = await deriveSecrets('K7Q4XM9PD2', ORIGIN, 1000);
+    const other = await deriveSecrets('K7Q4XM9PD3', ORIGIN, 1000);
 
     assert.match(one.room, /^[A-Za-z0-9_-]{43}$/);
     assert.equal(one.keyBytes.length, 32);
@@ -85,14 +87,14 @@ test('the same code gives the same room id and key on both sides; another code d
 });
 
 test('the real derivation uses 600 000 PBKDF2 iterations and is stable', async () => {
-    const { room } = await deriveSecrets('0000000000');
-    const { room: same } = await deriveSecrets('0000000000');
+    const { room } = await deriveSecrets('0000000000', ORIGIN);
+    const { room: same } = await deriveSecrets('0000000000', ORIGIN);
 
     assert.equal(room, same);
 });
 
 test('a message survives the round trip and every byte is protected', async () => {
-    const { room, keyBytes } = await deriveSecrets('K7Q4XM9PD2', 1000);
+    const { room, keyBytes } = await deriveSecrets('K7Q4XM9PD2', ORIGIN, 1000);
     const key = await importKey(keyBytes);
     const event = { t: 'msg', id: 'abc', body: 'Hej! Åäö 😀' };
 
@@ -108,12 +110,12 @@ test('a message survives the round trip and every byte is protected', async () =
     assert.equal(await decryptEvent(key, room, 'a', sealed.iv, tampered), null);
     assert.equal(await decryptEvent(key, room, 'b', sealed.iv, sealed.ct), null);
     assert.equal(await decryptEvent(key, 'x'.repeat(43), 'a', sealed.iv, sealed.ct), null);
-    const otherKey = await importKey((await deriveSecrets('K7Q4XM9PD3', 1000)).keyBytes);
+    const otherKey = await importKey((await deriveSecrets('K7Q4XM9PD3', ORIGIN, 1000)).keyBytes);
     assert.equal(await decryptEvent(otherKey, room, 'a', sealed.iv, sealed.ct), null);
 });
 
 test('every message gets a fresh IV', async () => {
-    const { room, keyBytes } = await deriveSecrets('K7Q4XM9PD2', 1000);
+    const { room, keyBytes } = await deriveSecrets('K7Q4XM9PD2', ORIGIN, 1000);
     const key = await importKey(keyBytes);
     const ivs = new Set();
 
@@ -146,4 +148,53 @@ test('the follower goes along, is offered a switch, or is told it is out of reac
     assert.deepEqual(followDecision({ t: 'nav', path: '/kontoplan', company: 3 }, ORIGIN, '/oversikt', mine), { action: 'denied' });
     assert.deepEqual(followDecision({ t: 'nav', path: '/profil', company: null }, ORIGIN, '/oversikt', mine), { action: 'navigate', path: '/profil' });
     assert.deepEqual(followDecision({ t: 'nav', path: 'https://evil.example', company: 1 }, ORIGIN, '/oversikt', mine), { action: 'denied' });
+});
+
+test('the site is part of the salt: the same code gives another room and key on another NONOX', async () => {
+    const here = await deriveSecrets('K7Q4XM9PD2', ORIGIN, 1000);
+    const elsewhere = await deriveSecrets('K7Q4XM9PD2', 'https://other-nonox.example', 1000);
+
+    assert.notEqual(here.room, elsewhere.room);
+    assert.notDeepEqual(here.keyBytes, elsewhere.keyBytes);
+    await assert.rejects(() => deriveSecrets('K7Q4XM9PD2', '', 1000));
+});
+
+test('an event fetched again after a reload is shown, the same event stored again is a replay', () => {
+    const seen = { abc: 4 };
+
+    assert.equal(seenStatus(seen, 'new-id', 5), 'new');
+    assert.equal(seenStatus(seen, 'abc', 4), 'same');
+    assert.equal(seenStatus(seen, 'abc', 9), 'replay');
+    assert.equal(seenStatus(seen, undefined, 9), 'new');
+});
+
+test('a jump in the sender counter is a gap, a repeated counter is old', () => {
+    const counters = { a: 3 };
+
+    assert.equal(counterStatus(counters, 'a', 4), 'ok');
+    assert.equal(counterStatus(counters, 'a', 6), 'gap');
+    assert.equal(counterStatus(counters, 'a', 3), 'old');
+    assert.equal(counterStatus(counters, 'b', 1), 'ok');
+    assert.equal(counterStatus(counters, 'b', 2), 'gap');
+    assert.equal(counterStatus(counters, 'a', 0), 'invalid');
+    assert.equal(counterStatus(counters, 'a', 'x'), 'invalid');
+});
+
+// The server answers with an allowlist (FollowablePath); the client refuses these before it asks.
+const UUID = '00000000-0000-0000-0000-000000000000';
+
+test('files, downloads, callbacks, exports and kiosks are never followed, ordinary pages are', () => {
+    for (const blocked of [
+        '/lon/arbetsgivardeklaration/1/fil', '/moms/1/fil', '/lon/korningar/1/lonefil', `/leverantorsfakturor/${UUID}/faktura`,
+        `/leverantorsfakturor/betalfiler/${UUID}`, '/registerutdrag/kund/1', '/profil/mina-uppgifter', `/inkorg/${UUID}/original`,
+        `/inkorg/${UUID}/bilagor/2`, '/planering/kalender/abc.ics', '/bank/klar', '/anslutningar/kassa/zettle/klar',
+        `/fakturor/${UUID}/pdf`, '/rakenskapsar/1/sie-fil', '/rapporter/csv', `/verifikationer/${UUID}/underlag/1`,
+        '/foretagsinbjudningar/1', '/personalliggare/kiosk/start', '/hq/kunder', '/mina-uppgifter',
+    ]) {
+        assert.equal(safeFollowPath(blocked, ORIGIN), null, blocked);
+    }
+
+    for (const page of ['/oversikt', '/kontoplan', '/verifikationer?sida=2', `/fakturor/${UUID}`, '/moms', '/bank', '/profil', '/rapporter?rapport=resultat']) {
+        assert.equal(safeFollowPath(page, ORIGIN), page, page);
+    }
 });

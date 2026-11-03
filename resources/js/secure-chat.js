@@ -17,8 +17,10 @@ import {
     fromBase64,
     generateCode,
     importKey,
+    counterStatus,
     normalizeCode,
     safeFollowPath,
+    seenStatus,
     toBase64,
 } from './secure-chat-core.js';
 
@@ -65,6 +67,19 @@ function currentPath() {
     return window.location.pathname + window.location.search;
 }
 
+// Signing out ends the chat on the server; forget it in this tab as well, before the page goes.
+document.addEventListener('submit', (event) => {
+    const action = event.target instanceof HTMLFormElement ? event.target.getAttribute('action') ?? '' : '';
+
+    try {
+        if (new URL(action, window.location.href).pathname === '/logga-ut') {
+            sessionStorage.removeItem(STORAGE_KEY);
+        }
+    } catch {
+        // No sessionStorage, or no valid action: nothing to forget.
+    }
+}, true);
+
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('secureChat', (config) => ({
         open: false,
@@ -72,8 +87,9 @@ document.addEventListener('alpine:init', () => {
         state: {},
         key: null,
         messages: [],
-        seen: new Set(),
+        counters: {},
         since: 0,
+        isPhone: false,
         peer: null,
         joined: false,
         maxAt: null,
@@ -103,6 +119,14 @@ document.addEventListener('alpine:init', () => {
             });
             // Livewire's wire:navigate keeps this panel (@persist); the starter's page changes all the same.
             document.addEventListener('livewire:navigated', () => this.shareCurrentPage());
+
+            const phone = window.matchMedia('(max-width: 639px)');
+            this.isPhone = phone.matches;
+            phone.addEventListener('change', (event) => {
+                this.isPhone = event.matches;
+                this.syncInert();
+            });
+            this.$watch('open', () => this.syncInert());
 
             this.state = readState();
 
@@ -160,12 +184,33 @@ document.addEventListener('alpine:init', () => {
         hide() {
             this.open = false;
             this.remember({ open: false });
+            this.broadcast();
             this.$nextTick(() => this.returnFocus?.focus?.());
         },
 
         focusPanel() {
-            const target = this.$refs.panel?.querySelector('[data-chat-focus]:not([disabled])');
+            const target = [...(this.$refs.panel?.querySelectorAll('[data-chat-focus]:not([disabled])') ?? [])].find((node) => node.getClientRects().length > 0);
             (target ?? this.$refs.panel)?.focus();
+        },
+
+        // On a phone the open chat covers the page: it is a modal dialog, and the page behind cannot be reached.
+        syncInert() {
+            const modal = this.open && this.isPhone;
+
+            for (const element of document.body.children) {
+                // The chat itself, and the live regions that read out toasts and form errors, stay reachable.
+                if (element.contains(this.$root) || element.matches('.nx-toaster, #nx-announcer, script')) {
+                    continue;
+                }
+
+                if (modal && !element.hasAttribute('inert')) {
+                    element.setAttribute('inert', '');
+                    element.dataset.chatInert = '';
+                } else if (!modal && 'chatInert' in element.dataset) {
+                    element.removeAttribute('inert');
+                    delete element.dataset.chatInert;
+                }
+            }
         },
 
         remember(changes) {
@@ -182,7 +227,7 @@ document.addEventListener('alpine:init', () => {
             this.key = null;
             this.state = {};
             this.messages = [];
-            this.seen = new Set();
+            this.counters = {};
             this.since = 0;
             this.peer = null;
             this.joined = false;
@@ -194,7 +239,7 @@ document.addEventListener('alpine:init', () => {
         },
 
         broadcast() {
-            window.dispatchEvent(new CustomEvent('chat-state', { detail: { active: this.key !== null, unread: this.unread } }));
+            window.dispatchEvent(new CustomEvent('chat-state', { detail: { active: this.key !== null, unread: this.unread, open: this.open } }));
         },
 
         async request(name, body) {
@@ -221,7 +266,7 @@ document.addEventListener('alpine:init', () => {
             try {
                 for (let attempt = 0; attempt < 3; attempt++) {
                     const code = generateCode();
-                    const { room, keyBytes } = await deriveSecrets(code);
+                    const { room, keyBytes } = await deriveSecrets(code, window.location.origin);
                     const { status, data } = await this.request('start', { room });
 
                     if (status === 409) {
@@ -278,7 +323,7 @@ document.addEventListener('alpine:init', () => {
             this.busy = true;
 
             try {
-                const { room, keyBytes } = await deriveSecrets(code);
+                const { room, keyBytes } = await deriveSecrets(code, window.location.origin);
                 const { status, data } = await this.request('join', { room });
 
                 if (status !== 200) {
@@ -376,13 +421,29 @@ document.addEventListener('alpine:init', () => {
                 this.since = Math.max(this.since, message.seq);
                 const event = await decryptEvent(this.key, this.state.room, message.from, message.iv, message.ct);
 
-                if (event === null || (typeof event.id === 'string' && this.seen.has(event.id))) {
+                if (event === null || typeof event.id !== 'string') {
                     continue;
                 }
 
-                if (typeof event.id === 'string') {
-                    this.seen.add(event.id);
+                // The same event stored again under a new number is a replay by the server: dropped, also after a reload.
+                const seen = this.state.seen ?? {};
+
+                if (seenStatus(seen, event.id, message.seq) === 'replay') {
+                    continue;
                 }
+
+                const counter = counterStatus(this.counters, message.from, event.n);
+
+                if (counter === 'old' || counter === 'invalid') {
+                    continue;
+                }
+
+                if (counter === 'gap') {
+                    this.messages.push({ seq: `gap-${message.seq}`, mine: false, kind: 'gap', body: this.t.gap, at: message.at });
+                }
+
+                this.counters[message.from] = event.n;
+                this.state.seen = { ...seen, [event.id]: seen[event.id] ?? message.seq };
 
                 const mine = message.from === this.state.slot;
 
@@ -445,7 +506,7 @@ document.addEventListener('alpine:init', () => {
             this.error = '';
 
             try {
-                const ok = await this.sendEvent({ t: 'msg', id: randomId(), body });
+                const ok = await this.sendEvent({ t: 'msg', body });
 
                 if (ok) {
                     this.draft = '';
@@ -459,7 +520,10 @@ document.addEventListener('alpine:init', () => {
         },
 
         async sendEvent(event) {
-            const sealed = await encryptEvent(this.key, this.state.room, this.state.slot, event);
+            // Each event gets a random id and the next number in this sender's count (replay and gap detection).
+            const n = (this.state.sent ?? 0) + 1;
+            this.remember({ sent: n });
+            const sealed = await encryptEvent(this.key, this.state.room, this.state.slot, { ...event, id: randomId(), n });
             const { status, data } = await this.request('send', { room: this.state.room, ...sealed });
 
             if (status === 404) {
@@ -503,7 +567,7 @@ document.addEventListener('alpine:init', () => {
 
             this.remember({ sharedPath: path });
 
-            const sent = await this.sendEvent({ t: 'nav', id: randomId(), path, company: config.company });
+            const sent = await this.sendEvent({ t: 'nav', path, company: config.company });
 
             if (!sent) {
                 this.remember({ sharedPath: null });
@@ -535,14 +599,45 @@ document.addEventListener('alpine:init', () => {
             this.notice = '';
             this.offer = null;
 
+            if (safeFollowPath(nav?.path, window.location.origin) === null) {
+                this.notice = this.t.notFollowable;
+
+                return;
+            }
+
             const decision = followDecision(nav, window.location.origin, currentPath(), await this.myCompanies());
 
             if (decision.action === 'denied') {
                 this.notice = this.t.noAccess;
-            } else if (decision.action === 'switch') {
+
+                return;
+            }
+
+            if (decision.action === 'ignore') {
+                return;
+            }
+
+            // The server has the last word: only pages, never a file, a callback or an audited read (ADR-045).
+            if (!(await this.followable(decision.path))) {
+                this.notice = this.t.notFollowable;
+
+                return;
+            }
+
+            if (decision.action === 'switch') {
                 this.offer = decision;
-            } else if (decision.action === 'navigate') {
+            } else {
                 window.location.assign(decision.path);
+            }
+        },
+
+        async followable(path) {
+            try {
+                const { status, data } = await this.request('followable', { path });
+
+                return status === 200 && data.followable === true;
+            } catch {
+                return false;
             }
         },
 
@@ -557,14 +652,14 @@ document.addEventListener('alpine:init', () => {
             this.$refs.switchForm.submit();
         },
 
-        followPending() {
+        async followPending() {
             const path = safeFollowPath(this.state.pendingPath, window.location.origin);
 
             if (this.state.pendingPath) {
                 this.remember({ pendingPath: null });
             }
 
-            if (path !== null && path !== currentPath()) {
+            if (path !== null && path !== currentPath() && (await this.followable(path))) {
                 window.location.assign(path);
             }
         },
@@ -594,6 +689,10 @@ document.addEventListener('alpine:init', () => {
 
             if (byOther && !wasOpen) {
                 window.dispatchEvent(new CustomEvent('toast', { detail: { message: this.t.ended, type: 'success' } }));
+            }
+
+            if (wasOpen) {
+                this.$nextTick(() => this.focusPanel());
             }
         },
 

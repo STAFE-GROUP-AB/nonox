@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Support\Chat\SecureChat;
+use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -65,7 +66,7 @@ beforeEach(function () {
 });
 
 it('answers only signed-in users', function () {
-    foreach (['start', 'join', 'poll', 'send', 'end', 'companies'] as $name) {
+    foreach (['start', 'join', 'poll', 'send', 'end', 'companies', 'followable'] as $name) {
         $this->postJson(route("chat.{$name}"), ['room' => $this->room])->assertUnauthorized();
     }
 
@@ -120,14 +121,41 @@ it('limits attempts to start or join per user', function () {
     chatPost($this->third, 'join', ['room' => chatRoomId()])->assertNotFound();
 });
 
-it('limits attempts per address too, whoever is signed in', function () {
-    $people = User::factory()->count(11)->create();
+it('limits attempts per address too, more loosely, keyed by an HMAC of the address', function () {
+    $people = User::factory()->count(61)->create();
 
-    foreach ($people->take(10) as $person) {
+    foreach ($people->take(60) as $person) {
         chatPost($person, 'join', ['room' => chatRoomId()])->assertNotFound();
     }
 
     chatPost($people->last(), 'join', ['room' => chatRoomId()])->assertStatus(429);
+
+    $hmac = 'chat-attempt:ip:'.hash_hmac('sha256', '127.0.0.1', (string) config('app.key'));
+    expect(Cache::store('chat')->has($hmac))->toBeTrue()
+        ->and(Cache::store('chat')->has('chat-attempt:ip:'.hash('sha256', '127.0.0.1')))->toBeFalse();
+});
+
+it('ends a chat under its lock, so a send running at the same time cannot bring it back', function () {
+    config(['nonox.chat.lock_wait_seconds' => 0]);
+    chatPost($this->starter, 'start', ['room' => $this->room])->assertCreated();
+    $lock = Cache::store('chat')->lock("chat:lock:{$this->room}", 10);
+    expect($lock->get())->toBeTrue();
+
+    expect(fn () => app(SecureChat::class)->end($this->starter, $this->room))->toThrow(LockTimeoutException::class)
+        ->and(Cache::store('chat')->has("chat:room:{$this->room}"))->toBeTrue();
+
+    $lock->release();
+    expect(app(SecureChat::class)->end($this->starter, $this->room))->toBeTrue()
+        ->and(Cache::store('chat')->has("chat:room:{$this->room}"))->toBeFalse();
+});
+
+it('keeps the chat you are in when you type a wrong code for another', function () {
+    chatPost($this->starter, 'start', ['room' => $this->room])->assertCreated();
+    chatPost($this->joiner, 'join', ['room' => $this->room])->assertOk();
+
+    chatPost($this->joiner, 'join', ['room' => chatRoomId()])->assertNotFound();
+
+    chatPost($this->joiner, 'poll', ['room' => $this->room])->assertOk()->assertJson(['you' => 'b']);
 });
 
 it('relays ciphertext in order and returns only what is new', function () {
@@ -320,6 +348,82 @@ it('logs a failure by its class only, never with the chat in it', function () {
         && $context === ['exception' => RuntimeException::class]);
 });
 
+it('lets Följ mina sidor open only pages, never a file, a callback, an export or an audited read', function (string $path) {
+    chatPost($this->joiner, 'followable', ['path' => $path])->assertOk()->assertExactJson(['followable' => false]);
+})->with([
+    '/lon/arbetsgivardeklaration/1/fil',
+    '/lonearkiv/arbetsgivardeklaration/1/fil',
+    '/moms/1/fil',
+    '/lon/korningar/1/lonefil',
+    '/lon/korningar/1/underlag/2/fil',
+    '/leverantorsfakturor/betalfiler/00000000-0000-0000-0000-000000000000',
+    '/leverantorsfakturor/00000000-0000-0000-0000-000000000000/faktura',
+    '/registerutdrag/kund/1',
+    '/registerutdrag/inkorg',
+    '/profil/mina-uppgifter',
+    '/inkorg/00000000-0000-0000-0000-000000000000/original',
+    '/inkorg/00000000-0000-0000-0000-000000000000/bilagor/2',
+    '/planering/kalender/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.ics',
+    '/bank/klar',
+    '/bank/testbank',
+    '/anslutningar/kassa/zettle/klar',
+    '/flytt/fortnox/klar',
+    '/fakturor/00000000-0000-0000-0000-000000000000/pdf',
+    '/arsredovisning/1/pdf',
+    '/rakenskapsar/1/sie-fil',
+    '/rapporter/csv',
+    '/verifikationer/00000000-0000-0000-0000-000000000000/underlag/1',
+    '/foretagsinbjudningar/1',
+    '/personalliggare/kiosk/start',
+    '/personalliggare/kontrollbesok',
+    '/hq/kunder',
+    '/mina-uppgifter',
+    '/logga-ut',
+    '/aktuellt-foretag',
+    '/chatt/hamta',
+    '/finns-inte/alls/har',
+    'https://evil.example/oversikt',
+    '//evil.example/oversikt',
+    '/oversikt\\x',
+    '',
+]);
+
+it('lets Följ mina sidor open ordinary pages', function (string $path) {
+    chatPost($this->joiner, 'followable', ['path' => $path])->assertOk()->assertExactJson(['followable' => true]);
+})->with([
+    '/oversikt',
+    '/kontoplan',
+    '/verifikationer',
+    '/verifikationer?sida=2',
+    '/verifikationer/00000000-0000-0000-0000-000000000000',
+    '/fakturor',
+    '/fakturor/00000000-0000-0000-0000-000000000000',
+    '/leverantorsfakturor/00000000-0000-0000-0000-000000000000',
+    '/moms',
+    '/rapporter?rapport=resultat',
+    '/bank',
+    '/uppgifter/4',
+    '/profil',
+    '/mina-foretag',
+]);
+
+it('answers whether a page can be followed without writing or logging anything', function () {
+    Log::spy();
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        $queries[] = $query->sql;
+    });
+
+    chatPost($this->joiner, 'followable', ['path' => '/kontoplan'])->assertOk();
+    chatPost($this->joiner, 'followable', ['path' => '/moms/1/fil'])->assertOk();
+
+    expect(collect($queries)->filter(fn (string $sql): bool => preg_match('/^\s*(insert|update|delete)/i', $sql) === 1)->values()->all())->toBe([]);
+
+    foreach (['emergency', 'alert', 'critical', 'error', 'warning', 'notice', 'info', 'debug', 'log', 'write'] as $level) {
+        Log::shouldNotHaveReceived($level);
+    }
+});
+
 it('deletes expired chat files when the store is files, and keeps the rest', function () {
     $path = storage_path('framework/testing/chat-'.bin2hex(random_bytes(4)));
     config(['cache.stores.chat' => ['driver' => 'file', 'path' => $path]]);
@@ -351,7 +455,7 @@ it('shows the chat on every signed-in page, also without a company', function ()
         ->assertOk()
         ->assertSee('secureChat(', false)
         ->assertSee('data-chat-trigger', false)
-        ->assertSee('Krypterad från din webbläsare till den andras. Ingenting sparas när chatten stängs.');
+        ->assertSee('Krypterad från din webbläsare till den andras. Allt raderas när chatten avslutas, och senast efter 30 minuter utan meddelanden.');
 
     $this->actingAs($this->third)->get(route('onboarding'))
         ->assertOk()

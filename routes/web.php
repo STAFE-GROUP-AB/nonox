@@ -142,6 +142,7 @@ Route::middleware([
         Route::post('/skicka', 'send')->name('send');
         Route::post('/avsluta', 'end')->name('end');
         Route::post('/mina-foretag', 'companies')->name('companies');
+        Route::post('/kan-folja', 'followable')->name('followable');
     });
     Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
     // Across every company the user belongs to (ADR-028).

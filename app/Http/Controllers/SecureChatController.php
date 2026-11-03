@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Chat\ChatRoom;
+use App\Support\Chat\FollowablePath;
 use App\Support\Chat\SecureChat;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -135,6 +136,19 @@ final class SecureChatController
                 ->values()
                 ->all(),
         ]);
+    }
+
+    /**
+     * Whether "Följ mina sidor" may open a path in this user's browser: only
+     * pages, never a file, a callback or an audited read (FollowablePath).
+     * The path is not secret from the server, since opening the page would
+     * request it anyway; nothing is written or logged.
+     */
+    public function followable(Request $request, FollowablePath $paths): JsonResponse
+    {
+        $this->user($request);
+
+        return response()->json(['followable' => $paths->allows($request->input('path'))]);
     }
 
     /**

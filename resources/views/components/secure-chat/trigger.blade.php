@@ -2,8 +2,9 @@
 @props(['label' => false])
 
 <button type="button" data-chat-trigger
-        x-data="{ active: false, unread: 0 }"
-        x-on:chat-state.window="active = $event.detail.active; unread = $event.detail.unread"
+        x-data="{ active: false, unread: 0, open: false }"
+        x-on:chat-state.window="active = $event.detail.active; unread = $event.detail.unread; open = $event.detail.open === true"
+        aria-controls="secure-chat-panel" :aria-expanded="open ? 'true' : 'false'"
         x-on:click="window.dispatchEvent(new CustomEvent('chat-open'))"
         :aria-label="unread > 0 ? @js(__('Chatt')) + ', ' + unread + ' ' + @js(__('olästa')) : (active ? @js(__('Chatt, pågår')) : @js(__('Chatt')))"
         {{ $attributes->class('relative inline-flex items-center gap-1.5 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500') }}>

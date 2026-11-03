@@ -9,7 +9,7 @@ sokord: [chatt, chatta, support, meddelande, skriva, kod, dela skärm, följ mig
 
 Med chatten kan du skriva med någon annan som har ett konto i NONOX, till exempel supporten, din revisor, din redovisningskonsult eller en kund, och samtidigt visa dem sidan du pratar om. Den ena startar chatten och får en kod. Den andra skriver in koden och är med.
 
-Allt som skrivs krypteras i din webbläsare innan det skickas, och bara ni två har nyckeln. När chatten avslutas raderas allt. Ingenting sparas i NONOX: inte meddelandena, inte vem som skrev vad och inte koden.
+Allt som skrivs krypteras i din webbläsare innan det skickas, och bara ni två har nyckeln. Medan chatten pågår finns bara den krypterade texten hos oss, och den kan vi inte läsa. När chatten avslutas raderas allt, och sedan finns ingenting kvar i NONOX: inte meddelandena, inte vem som skrev vad och inte koden.
 
 ![Chatten med koden som ska läsas upp eller skickas, nere till höger på översikten.](/bilder/manual/kom-igang/krypterad-chatt.webp)
 
@@ -46,6 +46,7 @@ För den som följer gäller:
 - Är sidan i ett företag där du är med, och det är det företag du arbetar i, öppnas sidan direkt.
 - Är du med i företaget men arbetar i ett annat, visas **Byt till … och följ**. Klicka på knappen för att byta företag och komma till sidan, eller **Inte nu** för att stanna.
 - Är du inte med i företaget visas **Du har inte tillgång till den sidan**, och du stannar där du är. Du ser aldrig mer än din egen roll ger dig.
+- Öppnar den andra något som inte är en vanlig sida, till exempel en fil som laddas ner, ett registerutdrag eller en bankkoppling, visas **Den sidan går inte att följa, den öppnar en fil eller gör en ändring.** Du följer bara till sidor som visar något.
 
 Den som följer kan klicka på **Pausa** för att stanna kvar, och **Följ igen** för att komma ikapp.
 
@@ -62,7 +63,7 @@ Chatten raderas också av sig själv:
 - senast 8 timmar efter att den startade,
 - när någon av er loggar ut.
 
-Stänger du fliken glömmer webbläsaren chatten, och den raderas efter 30 minuter.
+Stänger du fliken glömmer din webbläsare chatten. Den raderas 30 minuter efter det senaste meddelandet, om ingen av er avslutar den innan.
 
 ## Bra att veta
 

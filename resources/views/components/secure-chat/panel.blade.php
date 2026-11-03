@@ -15,12 +15,15 @@
             'send' => route('chat.send'),
             'end' => route('chat.end'),
             'companies' => route('chat.companies'),
+            'followable' => route('chat.followable'),
         ],
         't' => [
             'failed' => __('Det gick inte att nå chatten. Försök igen.'),
             'badCode' => __('Koden har tio tecken, till exempel K7Q4-XM9P-D2.'),
             'tooLong' => __('Meddelandet är för långt.'),
             'noAccess' => __('Du har inte tillgång till den sidan.'),
+            'notFollowable' => __('Den sidan går inte att följa, den öppnar en fil eller gör en ändring.'),
+            'gap' => __('Ett eller flera meddelanden saknas här.'),
             'ended' => __('Chatten är avslutad. Inget av det som skrevs finns kvar.'),
             'peerJoined' => __(':name har anslutit till chatten.'),
             'joinedAs' => __('Du är ansluten till chatten med :name.'),
@@ -41,7 +44,8 @@
         <input type="hidden" name="team_id" x-ref="switchCompany">
     </form>
 
-    <section x-ref="panel" x-show="open" x-cloak tabindex="-1" aria-labelledby="secure-chat-title"
+    <section x-ref="panel" x-show="open" x-cloak tabindex="-1" aria-labelledby="secure-chat-title" id="secure-chat-panel"
+             :role="isPhone ? 'dialog' : 'region'" :aria-modal="isPhone ? 'true' : null"
              x-transition:enter="motion-safe:transition motion-safe:ease-out motion-safe:duration-150" x-transition:enter-start="opacity-0 translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
              class="fixed inset-0 z-[60] flex flex-col bg-white pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] focus:outline-hidden sm:inset-auto sm:bottom-4 sm:right-4 sm:h-[34rem] sm:max-h-[calc(100vh-2rem)] sm:w-[24rem] sm:rounded-2xl sm:pt-0 sm:pb-0 sm:shadow-2xl sm:ring-1 sm:ring-stone-200">
         <header class="flex items-center gap-3 border-b border-stone-200 px-4 py-3">
@@ -102,7 +106,7 @@
         <div x-show="phase === 'active'" class="flex min-h-0 flex-1 flex-col">
             <ol x-ref="log" class="flex-1 space-y-3 overflow-y-auto px-4 py-4" aria-label="{{ __('Meddelanden') }}">
                 <template x-for="message in messages" :key="message.seq">
-                    <li :class="message.kind === 'nav' ? 'text-center' : (message.mine ? 'flex flex-col items-end' : 'flex flex-col items-start')">
+                    <li :class="message.kind !== 'msg' ? 'text-center' : (message.mine ? 'flex flex-col items-end' : 'flex flex-col items-start')">
                         <template x-if="message.kind === 'msg'">
                             <div class="max-w-[85%]">
                                 <p class="mb-0.5 text-xs text-gray-500" :class="message.mine ? 'text-right' : ''">
@@ -110,6 +114,9 @@
                                 </p>
                                 <p class="whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm" :class="message.mine ? 'bg-ink text-white' : 'bg-stone-100 text-ink'" x-text="message.body"></p>
                             </div>
+                        </template>
+                        <template x-if="message.kind === 'gap'">
+                            <p class="text-xs font-medium text-amber-800" x-text="message.body"></p>
                         </template>
                         <template x-if="message.kind === 'nav'">
                             <p class="text-xs text-gray-500">
@@ -165,7 +172,7 @@
 
         <footer class="flex items-start gap-2 border-t border-stone-200 bg-stone-50 px-4 py-2.5 text-xs text-gray-600 sm:rounded-b-2xl">
             <svg class="mt-0.5 size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-            <span class="flex-1" x-show="!confirmingEnd">{{ __('Krypterad från din webbläsare till den andras. Ingenting sparas när chatten stängs.') }}</span>
+            <span class="flex-1" x-show="!confirmingEnd">{{ __('Krypterad från din webbläsare till den andras. Allt raderas när chatten avslutas, och senast efter 30 minuter utan meddelanden.') }}</span>
             <button type="button" x-show="key && !confirmingEnd" x-on:click="confirmingEnd = true; $nextTick(() => $refs.confirmEnd.focus())" class="shrink-0 font-semibold text-red-700 hover:text-red-800 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500">{{ __('Avsluta chatt') }}</button>
             {{-- Ending cannot be undone: say what happens first (AGENTS.md §11.3). --}}
             <span class="flex-1 font-medium text-ink" x-show="confirmingEnd">{{ __('Avsluta chatten för er båda? Allt som skrivits raderas och kan inte tas fram igen.') }}</span>
