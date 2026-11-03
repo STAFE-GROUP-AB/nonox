@@ -301,7 +301,7 @@ class AccountCard extends Component
 
     public function closePanel(): void
     {
-        $this->reset('panel', 'activity', 'editingActivityId', 'completion', 'edit', 'newStatus', 'lostReason', 'linkPersonId', 'linkRole', 'personForm', 'editingPersonId');
+        $this->reset('panel', 'activity', 'editingActivityId', 'completion', 'edit', 'newStatus', 'lostReason', 'linkPersonId', 'linkRole', 'personForm', 'editingPersonId', 'mentionCount');
         $this->resetErrorBag();
     }
 
@@ -323,13 +323,13 @@ class AccountCard extends Component
         $user = $this->user();
         $now = CarbonImmutable::now();
         $canSeeInvoices = $user->hasTeamPermission($company, 'invoices:view');
-        // A private person's debts and payment habits are for those who may see the invoices, not for a seller.
+        // What a private person has bought and owes is for those who may see the invoices, not for a seller: the card shows only the CRM.
         $limitedLedger = ! $canSeeInvoices && $account->kind === AccountKind::Person;
 
         return view('crm::livewire.account-card', [
             'account' => $account,
             'figures' => $figures->forCustomer($account->customer_id),
-            'timeline' => $timeline->for($account, withReminders: ! $limitedLedger),
+            'timeline' => $timeline->for($account, withLedger: ! $limitedLedger),
             'canSeeInvoices' => $canSeeInvoices,
             'limitedLedger' => $limitedLedger,
             'next' => $this->activities()->whereNull('done_at')->with(['person:id,name', 'assignee:id,name'])->orderByRaw('due_at ASC NULLS LAST')->orderBy('id')->limit(5)->get(),
@@ -348,7 +348,6 @@ class AccountCard extends Component
             'otherPeople' => $this->panel === 'link' ? Person::query()->whereNotIn('id', $account->people->pluck('id'))->orderBy('name')->limit(500)->get(['id', 'name', 'title']) : collect(),
             'parents' => $this->panel === 'edit' ? Account::query()->whereKeyNot($account->id)->orderBy('name')->limit(500)->get(['id', 'name']) : collect(),
             'sharedLocked' => ! $this->canEditShared($account),
-            'mentions' => $this->panel === 'person' && $this->editingPersonId !== null ? app(EraseCrmData::class)->mentions(Person::query()->findOrFail($this->editingPersonId)) : 0,
             'now' => $now,
         ]);
     }

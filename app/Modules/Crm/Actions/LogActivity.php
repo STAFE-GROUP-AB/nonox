@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\CallOutcome;
+use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Person;
@@ -72,11 +73,8 @@ final class LogActivity
         $type = ActivityType::from((string) ($validated['type'] ?? $activity?->type->value));
         $personId = array_key_exists('person_id', $validated) ? $validated['person_id'] : $activity?->person_id;
 
-        // Art. 21/18: no new call, meeting, e-mail or task with a person who asked not to be contacted; a note is still allowed.
-        if ($type !== ActivityType::Note && $personId !== null && ($activity === null || $activity->person_id !== (int) $personId || $activity->type === ActivityType::Note)
-            && CurrentCompany::run($company, fn (): bool => Person::query()->whereKey((int) $personId)->whereNotNull('do_not_contact_at')->exists())) {
-            throw ValidationException::withMessages(['person_id' => __('Personen har bett att inte bli kontaktad. Du kan bara skriva en anteckning om personen.')]);
-        }
+        $this->guardDoNotContact($company, $type, $personId === null ? null : (int) $personId, $activity);
+
         $subject = trim((string) ($validated['subject'] ?? $activity->subject ?? ''));
         $dueAt = array_key_exists('due_at', $validated)
             ? (blank($validated['due_at']) ? null : CarbonImmutable::parse((string) $validated['due_at'], self::ZONE))
@@ -120,6 +118,38 @@ final class LogActivity
 
         if ($activity->person_id !== null) {
             Person::query()->whereKey($activity->person_id)->update(['last_activity_at' => now()]);
+        }
+    }
+
+    /**
+     * "Kontakta inte" (ADR-043). After an objection (art. 21) only notes can
+     * be written about the person: no new call, meeting, e-mail or task, and
+     * no activity changed into one. After a restriction (art. 18) the data
+     * may only be stored: one note documenting the restriction is allowed,
+     * nothing more, and no activity is changed into another type.
+     */
+    private function guardDoNotContact(Company $company, ActivityType $type, ?int $personId, ?Activity $activity): void
+    {
+        if ($personId === null) {
+            return;
+        }
+
+        $person = CurrentCompany::run($company, fn (): ?Person => Person::query()->whereKey($personId)->whereNotNull('do_not_contact_at')->first());
+
+        if ($person === null) {
+            return;
+        }
+
+        $isNew = $activity === null || $activity->person_id !== $personId;
+        $typeChanged = $activity !== null && $activity->type !== $type;
+
+        if ($type !== ActivityType::Note && ($isNew || $typeChanged)) {
+            throw ValidationException::withMessages(['person_id' => __('Personen har bett att inte bli kontaktad. Du kan bara skriva en anteckning om personen.')]);
+        }
+
+        if ($person->do_not_contact_reason === DoNotContact::Restriction && $isNew
+            && CurrentCompany::run($company, fn (): bool => Activity::query()->where('person_id', $personId)->where('type', ActivityType::Note->value)->where('created_at', '>=', $person->do_not_contact_at)->exists())) {
+            throw ValidationException::withMessages(['person_id' => __('Behandlingen av personen är begränsad. Bara en anteckning om begränsningen får skrivas, och den finns redan.')]);
         }
     }
 }

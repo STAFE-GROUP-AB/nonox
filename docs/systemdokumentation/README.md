@@ -2940,9 +2940,9 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   `crm:settings`. Ägare, administratör, redovisningskonsult och bokförare får
   alla tre, revisor `crm:view`, rollen Säljare (`sales`) `crm:view` och
   `crm:manage`. Säljaren ser fakturerat, obetalt och betaltid per kund men
-  inga verifikationer eller rapporter; för en privatperson visas obetalt,
-  förfallet, betaltid, påminnelser och belopp i tidslinjen bara för den som
-  har `invoices:view`. Länkar till fakturor visas bara för den som får öppna
+  inga verifikationer eller rapporter; för en privatperson visas inga
+  nyckeltal och bara CRM:s aktiviteter i tidslinjen för den som saknar
+  `invoices:view`. Länkar till fakturor visas bara för den som får öppna
   dem.
 - **API:** `/api/v1/crm/accounts`, `/crm/people` och `/crm/activities` med
   `crm:view` och `crm:manage`, genom samma Actions.
@@ -2959,8 +2959,16 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
 - **Kontakta inte:** en person kan märkas med invändning (art. 21) eller
   begränsning (art. 18). Då kan inga nya samtal, möten, mejl eller uppgifter
   loggas för personen, bara anteckningar. Personens e-post och telefonnummer
-  sparas som HMAC-SHA256 med appens nyckel i `crm_suppressions`, även efter
-  radering, så att personen märks igen om den läggs till på nytt.
+  sparas vid en invändning (inte vid en begränsning) som HMAC-SHA256 i
+  `crm_suppressions`, även efter radering, så att personen märks igen om den
+  läggs till på nytt (art. 21.3). Nyckeln är `NONOX_CRM_SUPPRESSION_KEY`,
+  annars härledd ur `APP_KEY`; matchningen prövar även nycklar härledda ur
+  `APP_KEY` och `APP_PREVIOUS_KEYS`, så att en nyckelrotation inte tappar
+  spärrar. Det är pseudonymisering, inte anonymisering. Raderna granskas när
+  de inte har granskats på inställt antal år (standard 3, `TODO(legal-verify)`)
+  och visas då under Att göra. Vid en begränsning får bara en anteckning om
+  begränsningen loggas, och ingen aktivitet kan byta typ till samtal, möte
+  eller e-post.
 - **Anonymiserad kund:** `EraseRegisterEntry` skickar `CustomerAnonymised` i
   samma transaktion; CRM tömmer webbplats, källa, taggar, SNI-kod, orsak,
   personkopplingar och aktiviteternas rubrik och text. Anonymiserade och

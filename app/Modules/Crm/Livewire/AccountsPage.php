@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Livewire;
 
+use App\Actions\Invoicing\SaveCustomer;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
-use App\Modules\Crm\Actions\ConvertToCustomer;
 use App\Modules\Crm\Actions\SaveAccount;
 use App\Modules\Crm\Domain\AccountFigures;
 use App\Modules\Crm\Domain\AccountKind;
@@ -120,16 +120,22 @@ class AccountsPage extends Component
         $this->reset('showForm', 'form', 'asCustomer');
     }
 
-    public function save(SaveAccount $save, ConvertToCustomer $convert): void
+    public function save(SaveAccount $save, SaveCustomer $saveCustomer): void
     {
         $input = [...$this->form, 'owner_id' => $this->form['owner_id'] === '' ? null : (int) $this->form['owner_id']];
 
         if ($this->asCustomer && $this->canCreateCustomer()) {
-            // A customer straight away: the account, then the customer register's own action, all or nothing.
-            [$account, $customer] = DB::transaction(function () use ($save, $convert, $input): array {
-                $account = $save($this->user(), $this->company(), $input);
+            // A customer straight away, as the plain register makes one: the register's own action takes the number,
+            // a sole trader's personal number included; the account (made by CustomerAccounts) never keeps that number.
+            [$account, $customer] = DB::transaction(function () use ($save, $saveCustomer, $input): array {
+                $customer = $saveCustomer($this->user(), $this->company(), [
+                    ...array_intersect_key($input, array_flip(Account::CUSTOMER_FIELDS)),
+                    'payment_terms_days' => 30,
+                ]);
+                $account = Account::query()->where('customer_id', $customer->id)->firstOrFail();
+                $crmFields = array_intersect_key($input, array_flip(SaveAccount::CRM_FIELDS));
 
-                return [$account, $convert($this->user(), $this->company(), $account)];
+                return [$save($this->user(), $this->company(), [...$crmFields, 'name' => $customer->name], $account), $customer];
             });
 
             Toast::flash(__('Kund :number :name är tillagd.', ['number' => $customer->number, 'name' => $customer->name]));

@@ -29,22 +29,19 @@ final class Timeline
     public const int PER_PAGE = 20;
 
     /**
-     * @param  bool  $withReminders  false leaves reminders out (a private person's account for someone who may not see invoices)
+     * @param  bool  $withLedger  false shows the activities only (a private person's account for someone who may not see invoices)
      * @return LengthAwarePaginator<int, object>
      */
-    public function for(Account $account, int $perPage = self::PER_PAGE, string $pageName = 'tidslinje', bool $withReminders = true): LengthAwarePaginator
+    public function for(Account $account, int $perPage = self::PER_PAGE, string $pageName = 'tidslinje', bool $withLedger = true): LengthAwarePaginator
     {
         $union = $this->activities($account);
 
-        if ($account->customer_id !== null) {
+        if ($account->customer_id !== null && $withLedger) {
             $customer = $account->customer_id;
             $union->unionAll($this->documents($customer))
                 ->unionAll($this->invoices($customer))
-                ->unionAll($this->payments($customer));
-
-            if ($withReminders) {
-                $union->unionAll($this->reminders($customer));
-            }
+                ->unionAll($this->payments($customer))
+                ->unionAll($this->reminders($customer));
         }
 
         return DB::query()->fromSub($union, 'timeline')

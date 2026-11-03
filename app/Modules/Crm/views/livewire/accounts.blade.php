@@ -138,7 +138,8 @@
                                 <span class="mt-1 block text-sm text-gray-500">{{ __('Inget nästa steg') }}</span>
                             @endif
                         </span>
-                        @if($account->customer_id !== null)
+                        {{-- What a private person has bought and owes only for those who may see the invoices. --}}
+                        @if($account->customer_id !== null && ($canSeeInvoices || $account->kind !== App\Modules\Crm\Domain\AccountKind::Person))
                             <span class="w-1/2 text-left text-sm sm:w-36 sm:text-right">
                                 <span class="block text-gray-500">{{ __('Fakturerat 12 mån') }}</span>
                                 <x-ui.amount :money="App\Support\Money\Money::ofOre((int) ($row->invoiced_12m ?? 0))" class="font-medium text-gray-900" />

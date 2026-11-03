@@ -46,7 +46,7 @@
         <x-ui.field for="person_basis_note" :label="__('Anteckning om grunden (valfritt)')" error="legal_basis_note" class="sm:col-span-2">
             <input id="person_basis_note" type="text" class="{{ $input }} mt-1" wire:model="personForm.legal_basis_note">
         </x-ui.field>
-        <x-ui.field for="person_informed" :label="__('Informerad den (valfritt)')" error="informed_at" :hint="__('Dagen personen fick information om hur ni behandlar uppgifterna (GDPR artikel 14), senast en månad efter att ni sparade dem.')">
+        <x-ui.field for="person_informed" :label="__('Informerad den (valfritt)')" error="informed_at" :hint="__('Dagen personen fick information om hur ni behandlar uppgifterna (GDPR artikel 14): vilka uppgifter, varifrån, varför och med vilken rättslig grund, vilka leverantörer som behandlar dem, hur länge de sparas och personens rättigheter. Inom en månad, och senast vid första kontakten.')">
             <input id="person_informed" type="date" class="{{ $input }} mt-1" wire:model="personForm.informed_at">
         </x-ui.field>
         <label class="flex min-h-11 items-start gap-3 text-sm text-gray-800 sm:col-span-2">
@@ -68,8 +68,8 @@
                 <input type="checkbox" class="size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="personForm.is_active">
                 <span>{{ __('Aktiv kontakt') }}</span>
             </label>
-            @if(($mentions ?? 0) > 0)
-                <p class="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:col-span-2">{{ trans_choice(':count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.', $mentions) }}</p>
+            @if($mentionCount > 0)
+                <p class="rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:col-span-2">{{ trans_choice(':count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.', $mentionCount) }}</p>
             @endif
         @endif
         <div class="flex flex-wrap items-center gap-4 sm:col-span-2">

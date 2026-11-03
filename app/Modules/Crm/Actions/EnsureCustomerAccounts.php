@@ -44,7 +44,7 @@ final class EnsureCustomerAccounts
                         'id',
                         'name',
                         // A sole trader's personal number in the register's org_number is not copied (IdentityNumber).
-                        DB::raw("CASE WHEN SUBSTRING(REGEXP_REPLACE(COALESCE(org_number, ''), '[^0-9]', '', 'g') FROM 3 FOR 1) IN ('0', '1') THEN NULL ELSE org_number END"),
+                        DB::raw("CASE WHEN SUBSTRING(RIGHT(REGEXP_REPLACE(COALESCE(org_number, ''), '[^0-9]', '', 'g'), 10) FROM 3 FOR 1) IN ('0', '1') THEN NULL ELSE org_number END"),
                         DB::raw("CASE WHEN personal_number IS NULL THEN '".AccountKind::Company->value."' ELSE '".AccountKind::Person->value."' END"),
                         DB::raw("'".AccountStatus::Prospect->value."'"),
                         'email',

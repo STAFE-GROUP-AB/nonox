@@ -27,7 +27,7 @@ Inköpspriset är det som står på artikeln i dag. Ändras inköpspriset räkna
 
 ## Bra att veta
 
-- Även en säljare ser nyckeltalen. Den som säljer behöver veta om kunden betalar.
+- Även en säljare ser nyckeltalen för företag. Den som säljer behöver veta om kunden betalar. För en privatperson visas nyckeltalen bara för den som får se fakturorna.
 - Listan under **Kunder** visar fakturerat de senaste tolv månaderna och obetalt för varje kund. Obetalt syns i rött när något har förfallit.
 
 ## Läs också

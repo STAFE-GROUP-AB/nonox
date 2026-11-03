@@ -7,6 +7,7 @@ namespace App\Modules\Crm\Actions;
 use App\Events\CustomerAnonymised;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
@@ -37,10 +38,8 @@ final class EraseCrmData
         }
 
         DB::transaction(fn () => CurrentCompany::run($company, function () use ($user, $company, $person): void {
-            // Someone who asked not to be contacted stays on the suppression list (hashes only).
-            if ($person->do_not_contact_reason !== null) {
-                SuppressionList::remember($person, $person->do_not_contact_reason->value);
-            }
+            // Someone who objected stays on the suppression list (hashes only, art. 21(3)); a restriction keeps nothing.
+            SuppressionList::remember($person);
 
             $activities = Activity::query()->where('person_id', $person->id)->update([
                 'person_id' => null,
@@ -107,6 +106,18 @@ final class EraseCrmData
             }
 
             $account->forceFill(['website' => null, 'source' => null, 'tags' => [], 'sni_code' => null, 'lost_reason' => null])->save();
+
+            // A private person's account: the people at it (the person, a relative) go too, unless they are also at another account.
+            // A company's contacts are other people, with their own legal basis, and stay.
+            if ($account->kind === AccountKind::Person) {
+                $company = Company::query()->findOrFail($event->companyId);
+                Person::query()
+                    ->whereHas('accounts', fn ($query) => $query->whereKey($account->id))
+                    ->whereDoesntHave('accounts', fn ($query) => $query->whereKeyNot($account->id))
+                    ->get()
+                    ->each(fn (Person $person) => $this->person(null, $company, $person));
+            }
+
             AccountPerson::query()->where('account_id', $account->id)->delete();
             $activities = Activity::query()->where('account_id', $account->id)->update([
                 'person_id' => null,

@@ -16,6 +16,9 @@ use App\Modules\ModuleManager;
  *   for this many months are erased by privacy:prune, unless they are linked
  *   to the ledger. TODO(legal-verify): the default retention for prospects
  *   and their contact people (docs/gdpr/lagringstider.md).
+ * - suppression_review_years: an entry on the list of people who objected
+ *   (SuppressionList) is listed in "Att göra" for review when it has not
+ *   been reviewed for this many years. TODO(legal-verify): the default.
  */
 final class CrmSettings
 {
@@ -23,12 +26,14 @@ final class CrmSettings
     public const array DEFAULTS = [
         'months_to_inactive' => 12,
         'prune_after_months' => 24,
+        'suppression_review_years' => 3,
     ];
 
     /** @var array<string, array{int, int}> key => [min, max] */
     public const array LIMITS = [
         'months_to_inactive' => [1, 120],
         'prune_after_months' => [6, 120],
+        'suppression_review_years' => [1, 10],
     ];
 
     /** Days ahead "Att göra" warns before people and prospects are erased. */

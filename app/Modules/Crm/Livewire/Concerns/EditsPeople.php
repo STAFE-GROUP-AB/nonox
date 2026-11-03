@@ -28,12 +28,17 @@ trait EditsPeople
     #[Locked]
     public ?int $editingPersonId = null;
 
+    /** Activities not linked to the person that mention the name; counted once when the form opens. */
+    #[Locked]
+    public int $mentionCount = 0;
+
     public function startPerson(?int $personId = null): void
     {
         $this->authorizeManage();
         $person = $personId === null ? null : Person::query()->findOrFail($personId);
 
         $this->editingPersonId = $person?->id;
+        $this->mentionCount = $person === null ? 0 : app(EraseCrmData::class)->mentions($person);
         $this->personForm = [
             'name' => (string) $person?->name,
             'title' => (string) $person?->title,

@@ -55,6 +55,7 @@ class CrmSettingsForm extends Component
         $validated = Validator::make(['settings' => $this->settings], $rules, [], [
             'settings.months_to_inactive' => __('månader utan faktura'),
             'settings.prune_after_months' => __('månader utan aktivitet'),
+            'settings.suppression_review_years' => __('år mellan granskningarna'),
         ])->validate();
 
         $modules->updateSettings(CrmModule::KEY, $company, $this->user(), array_map('intval', (array) $validated['settings']));

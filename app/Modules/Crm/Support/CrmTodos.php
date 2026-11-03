@@ -12,6 +12,7 @@ use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Models\Suppression;
 use Carbon\CarbonImmutable;
 
 /**
@@ -68,11 +69,24 @@ final class CrmTodos implements PersonalTodoProvider
             );
         }
 
+        $review = Suppression::query()->where('updated_at', '<', CarbonImmutable::now()->subYears(CrmSettings::for($company)['suppression_review_years']))->count();
+
+        if ($review > 0) {
+            $todos[] = new TodoItem(
+                'crm-suppressions',
+                'clock',
+                __(':count rader på spärrlistan i CRM ska granskas', ['count' => $review]),
+                __('Personer som har invänt mot att bli kontaktade. Behåll raden om invändningen fortfarande gäller, annars ta bort den.'),
+                route('crm.people', ['visa' => 'sparrlista']),
+                TodoItem::PRIORITY_OTHER,
+            );
+        }
+
         return $todos;
     }
 
     public function invalidatedBy(): array
     {
-        return [Activity::class, Person::class, Account::class];
+        return [Activity::class, Person::class, Account::class, Suppression::class];
     }
 }

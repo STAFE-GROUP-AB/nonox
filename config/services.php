@@ -181,6 +181,12 @@ return [
         'url' => env('VIES_URL', 'https://ec.europa.eu/taxation_customs/vies/rest-api/'),
     ],
 
+    // CRM (ADR-043): the key of the suppression list (HMAC of objectors' e-mail and phone).
+    // Unset: derived from APP_KEY. Old hashes still match under APP_KEY and APP_PREVIOUS_KEYS.
+    'crm' => [
+        'suppression_key' => env('NONOX_CRM_SUPPRESSION_KEY'),
+    ],
+
     // Google Chrome for the manual's screenshots (manual:screenshots), on a developer's computer.
     'chrome' => [
         'path' => env('CHROME_PATH', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),

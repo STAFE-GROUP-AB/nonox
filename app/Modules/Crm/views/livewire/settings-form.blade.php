@@ -6,6 +6,9 @@
     <x-ui.field for="crm-prune" :label="__('Gallra efter, månader utan aktivitet')" error="settings.prune_after_months" :hint="__('Kontaktpersoner och prospekt utan aktivitet på så här länge raderas. De visas under Att göra 30 dagar innan. Standard är 24.')">
         <input id="crm-prune" type="number" min="6" max="120" inputmode="numeric" wire:model="settings.prune_after_months" class="{{ $input }}">
     </x-ui.field>
+    <x-ui.field for="crm-suppression" :label="__('Granska spärrlistan, år')" error="settings.suppression_review_years" :hint="__('Spärrlistan över personer som har invänt mot att bli kontaktade visas under Att göra för granskning när en rad inte har granskats på så här många år. Standard är 3.')">
+        <input id="crm-suppression" type="number" min="1" max="10" inputmode="numeric" wire:model="settings.suppression_review_years" class="{{ $input }}">
+    </x-ui.field>
     <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>

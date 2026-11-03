@@ -27,8 +27,9 @@ use Carbon\CarbonImmutable;
  * Permissions: crm:view sees accounts, people, activities and key figures;
  * crm:manage changes them; crm:settings changes the settings. The role
  * Säljare (sales) gets view and manage: it sees invoiced, unpaid and
- * payment time per customer (not for private persons), but no invoices,
- * vouchers or reports.
+ * payment time per company customer, but no invoices, vouchers or reports.
+ * For a private person (kind PERSON) it sees no key figures and no ledger
+ * entries on the timeline at all, only the CRM's own activities.
  */
 final class CrmModule implements IsNew, Module, ProvidesTodos
 {

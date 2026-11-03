@@ -11,7 +11,6 @@ use App\Modules\Crm\Domain\LegalBasis;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Person;
-use App\Modules\Crm\Models\Suppression;
 use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
@@ -85,18 +84,15 @@ final class SavePerson
 
         return DB::transaction(fn (): Person => CurrentCompany::run($company, function () use ($user, $company, $attributes, $person, $accountId, $role): Person {
             if ($person === null) {
-                // Someone who asked not to be contacted and was erased is flagged again when added back.
-                $suppressed = ($attributes['do_not_contact_at'] ?? null) === null
-                    ? SuppressionList::match($attributes['email'] ?? null, $attributes['phone'] ?? null, $attributes['mobile'] ?? null)
-                    : null;
-
-                if ($suppressed !== null) {
+                // Someone who objected and was erased is flagged again when added back (art. 21(3)).
+                if (($attributes['do_not_contact_at'] ?? null) === null
+                    && SuppressionList::match($attributes['email'] ?? null, $attributes['phone'] ?? null, $attributes['mobile'] ?? null)) {
                     $attributes['do_not_contact_at'] = now();
-                    $attributes['do_not_contact_reason'] = $suppressed;
+                    $attributes['do_not_contact_reason'] = DoNotContact::Objection->value;
                 }
 
                 $person = Person::create([...$attributes, 'last_activity_at' => now()]);
-                $this->syncSuppression($person);
+                SuppressionList::remember($person);
 
                 Audit::record('crm.person_created', $person, ['legal_basis' => $person->legal_basis->value], $company, $user);
 
@@ -108,28 +104,21 @@ final class SavePerson
             }
 
             $before = $person->only(array_keys($attributes));
-            $wasFlagged = $person->doNotContact();
+            $objected = $person->do_not_contact_reason === DoNotContact::Objection;
+            $old = $person->only(['email', 'phone', 'mobile']);
             $person->fill($attributes)->forceFill(['last_activity_at' => now()])->save();
 
-            if ($wasFlagged && ! $person->doNotContact()) {
-                // The person withdrew the objection: their details leave the suppression list.
-                Suppression::query()->whereIn('hash', array_keys(SuppressionList::hashes($person->email, $person->phone, $person->mobile)))->delete();
+            if ($objected && $person->do_not_contact_reason !== DoNotContact::Objection) {
+                // The objection is withdrawn: the old and new details leave the list, unless another objector uses them.
+                SuppressionList::forget($person, [$old['email'], $person->email], [$old['phone'], $old['mobile'], $person->phone, $person->mobile]);
             }
 
-            $this->syncSuppression($person);
+            SuppressionList::remember($person);
 
             // Names and contact details stay out of the append-only log: only which fields changed.
             Audit::record('crm.person_updated', $person, ['fields' => array_keys(Audit::changes($before, $person->only(array_keys($attributes))))], $company, $user);
 
             return $person;
         }));
-    }
-
-    /** A person flagged "Kontakta inte" is on the suppression list, so the flag outlives an erasure. */
-    private function syncSuppression(Person $person): void
-    {
-        if ($person->do_not_contact_reason !== null) {
-            SuppressionList::remember($person, $person->do_not_contact_reason->value);
-        }
     }
 }

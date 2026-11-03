@@ -195,7 +195,7 @@ it('hides a private person\'s debts, payment time, reminders and invoice links f
     $seller = Bookkeeping::member($this->company, 'sales');
     $this->actingAs($seller);
     Livewire::test(AccountCard::class, ['accountId' => $account->id])
-        ->assertSee('Fakturerat 12 mån')
+        ->assertDontSee('Fakturerat 12 mån')
         ->assertDontSee('Förfallet')
         ->assertDontSee('Betaltid i snitt')
         ->assertDontSee(route('invoicing.invoices.index'), escape: false);

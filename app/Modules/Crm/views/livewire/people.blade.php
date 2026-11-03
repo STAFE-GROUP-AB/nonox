@@ -14,6 +14,9 @@
             <div class="flex gap-2 text-sm" role="group" aria-label="{{ __('Visa') }}">
                 <button type="button" wire:click="$set('show', '')" @class(['inline-flex min-h-11 items-center rounded-xl px-4 font-medium', 'bg-ink text-white' => ! $pruning, 'bg-white text-ink ring-1 ring-stone-200' => $pruning]) aria-pressed="{{ $pruning ? 'false' : 'true' }}">{{ __('Alla') }}</button>
                 <button type="button" wire:click="$set('show', 'gallras')" @class(['inline-flex min-h-11 items-center rounded-xl px-4 font-medium', 'bg-ink text-white' => $pruning, 'bg-white text-ink ring-1 ring-stone-200' => ! $pruning]) aria-pressed="{{ $pruning ? 'true' : 'false' }}">{{ __('Gallras snart') }}</button>
+                @if($canManage)
+                    <button type="button" wire:click="$set('show', 'sparrlista')" @class(['inline-flex min-h-11 items-center rounded-xl px-4 font-medium', 'bg-ink text-white' => $show === 'sparrlista', 'bg-white text-ink ring-1 ring-stone-200' => $show !== 'sparrlista']) aria-pressed="{{ $show === 'sparrlista' ? 'true' : 'false' }}">{{ __('Spärrlista') }}</button>
+                @endif
             </div>
         </div>
 
@@ -30,7 +33,25 @@
             @endif
         @endif
 
-        @if($people->isEmpty())
+        @if($show === 'sparrlista')
+            <p class="mt-4 text-sm text-gray-600">{{ __('E-postadresser och telefonnummer till personer som har invänt mot att bli kontaktade. Raden finns kvar när personen raderas, så att invändningen gäller om personen läggs till igen. Bara en kontrollsumma av e-postadressen eller telefonnumret finns kvar, aldrig själva uppgiften. Behåll en rad om invändningen fortfarande gäller.') }}</p>
+            @if($suppressions->isEmpty())
+                <x-ui.empty-state class="mt-6" :title="__('Spärrlistan är tom')">{{ __('Ingen som har invänt finns på listan.') }}</x-ui.empty-state>
+            @else
+                <ul class="mt-4 divide-y divide-gray-100" data-testid="crm-suppressions">
+                    @foreach($suppressions as $entry)
+                        <li wire:key="suppression-{{ $entry->id }}" class="flex flex-wrap items-center gap-3 py-3">
+                            <span class="min-w-0 flex-1 basis-52 text-sm">
+                                <span class="block font-medium text-gray-900">{{ $entry->kind === 'EMAIL' ? __('E-postadress') : __('Telefonnummer') }}</span>
+                                <span @class(['block', 'font-medium text-accent-700' => $entry->updated_at < $reviewBefore, 'text-gray-600' => $entry->updated_at >= $reviewBefore])>{{ __('Senast granskad :date', ['date' => $entry->updated_at?->format('Y-m-d')]) }}@if($entry->updated_at < $reviewBefore) · {{ __('ska granskas') }}@endif</span>
+                            </span>
+                            <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="keepSuppression({{ $entry->id }})">{{ __('Behåll') }}</button>
+                            <button type="button" class="min-h-11 text-sm text-gray-700 underline" wire:click="removeSuppression({{ $entry->id }})" wire:confirm="{{ __('Ta bort raden från spärrlistan? Läggs personen till igen märks den inte längre Kontakta inte.') }}">{{ __('Ta bort') }}</button>
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        @elseif($people->isEmpty())
             <x-ui.empty-state class="mt-6" :title="$pruning ? __('Ingen gallras de närmaste 30 dagarna') : ($search === '' ? __('Inga personer ännu') : __('Ingen person matchar sökningen'))">
                 {{ $pruning ? __('Alla kontakter har haft aktivitet nyligen.') : __('Lägg till kontaktpersoner här eller på kundens kort, med roll och rättslig grund.') }}
             </x-ui.empty-state>

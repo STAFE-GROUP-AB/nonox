@@ -11,7 +11,7 @@ sokord: [gdpr, dataskydd, personuppgifter, rättslig grund, berättigat intresse
 Kontaktpersonerna i CRM är personuppgifter. Företaget är personuppgiftsansvarigt och behöver ha en rättslig grund för varje person, spara uppgifterna så länge de behövs och inte längre, och kunna lämna ut och radera dem när någon ber om det. NONOX hjälper dig med alla fyra.
 
 > [!IMPORTANT]
-> Texten om intresseavvägningen, mallen för informationen till personen och den förvalda gallringstiden är inte granskade av en jurist än. Stäm av dem med den som ansvarar för dataskyddet hos er, eller med Integritetsskyddsmyndigheten (IMY).
+> Texten om intresseavvägningen, mallen för informationen till personen, den förvalda gallringstiden och hur länge spärrlistan sparas är inte granskade av en jurist än. Stäm av dem med den som ansvarar för dataskyddet hos er, eller med Integritetsskyddsmyndigheten (IMY).
 
 ## Rättslig grund för varje person
 
@@ -38,11 +38,13 @@ Skriv aldrig känsliga uppgifter om en person i en anteckning, till exempel om h
 
 ## Informera personen
 
-När ni samlar in uppgifter om någon från något annat håll än personen själv, till exempel från en mässa, en kollega eller företagets webbplats, ska personen få veta det (artikel 14). Det ska ske senast när ni kontaktar personen första gången, eller inom en månad. Skriv datumet i **Informerad den** på personen, så syns det i registerutdraget.
+När ni samlar in uppgifter om någon från något annat håll än personen själv, till exempel från en mässa, en kollega eller företagets webbplats, ska personen få veta det (artikel 14). Det ska ske inom en månad, och senast vid första kontakten om ni hör av er tidigare. Skriv datumet i **Informerad den** på personen, så syns det i registerutdraget.
 
 Mall att utgå från (fyll i det som står inom hakparentes):
 
-> Hej [namn]! Vi på [företagets namn, organisationsnummer, kontaktuppgifter] har sparat ditt namn, din titel och dina kontaktuppgifter i jobbet, som vi fick från [källa]. Vi gör det för att kunna ha kontakt med dig om [vad ni säljer eller samarbetar om], med stöd av vårt berättigade intresse (artikel 6.1 f i dataskyddsförordningen). Vi sparar uppgifterna så länge vi har kontakt, och tar bort dem efter [antal] månader utan kontakt. Du har rätt att få veta vad vi har sparat, få det rättat eller raderat, begära att behandlingen begränsas och att **invända mot behandlingen**, till exempel om du inte vill bli kontaktad. Säg till oss, så slutar vi. Du kan också klaga hos Integritetsskyddsmyndigheten (IMY).
+> Hej [namn]! Vi på [företagets namn, organisationsnummer, kontaktuppgifter] har sparat ditt namn, din titel, dina kontaktuppgifter i jobbet och anteckningar om våra kontakter (vad vi har pratat om). Uppgifterna fick vi från [källa]. Vi gör det för att kunna ha kontakt med dig om [vad ni säljer eller samarbetar om], med stöd av vårt berättigade intresse (artikel 6.1 f i dataskyddsförordningen). Uppgifterna finns hos våra leverantörer av [ekonomisystem och drift, till exempel NONOX och dess driftleverantör] som behandlar dem för vår räkning, och lämnas inte vidare till andra. [Har ni ett dataskyddsombud: Vårt dataskyddsombud når du på [kontaktuppgift].] Vi sparar uppgifterna så länge vi har kontakt, och tar bort dem efter [antal] månader utan kontakt. Du har rätt att få veta vad vi har sparat, få det rättat eller raderat, begära att behandlingen begränsas och att **invända mot behandlingen**, till exempel om du inte vill bli kontaktad. Säg till oss, så slutar vi. Du kan också klaga hos Integritetsskyddsmyndigheten (IMY).
+
+Har ni ett avtal med personen eller dess arbetsgivare, byt meningen om berättigat intresse mot: "Vi behöver uppgifterna för att fullgöra vårt avtal med [företaget] (artikel 6.1 b)." Bygger det på samtycke: "Du har samtyckt den [datum] (artikel 6.1 a). Du kan ta tillbaka ditt samtycke när du vill." Rätten att invända gäller berättigat intresse; vid samtycke är det att ta tillbaka samtycket som gäller.
 
 Mallen är ett förslag. Stäm av den med den som ansvarar för dataskyddet hos er.
 
@@ -54,7 +56,11 @@ Säger personen att den inte vill bli kontaktad (en invändning, artikel 21) ell
 - går det inte att logga nya samtal, möten, e-post eller uppgifter för personen, bara anteckningar,
 - försvinner knappen **Ring** för personen.
 
-Raderar ni personen sparas personens e-postadress och telefonnummer som en kontrollsumma (hash), aldrig som text. Läggs samma person till igen får den **Kontakta inte** direkt. Annars skulle en invändning glömmas bort när uppgifterna raderas. Tar ni bort krysset för att personen har ångrat sig försvinner kontrollsummorna.
+Vid en **invändning** sparas personens e-postadress och telefonnummer på en spärrlista som en kontrollsumma (hash), aldrig som text. Listan finns kvar när personen raderas, och läggs samma person till igen får den **Kontakta inte** direkt (artikel 21.3). Kontrollsumman är en pseudonymisering, inte en anonymisering: den som har nyckeln och en adress kan pröva om adressen finns på listan. Tar ni bort krysset för att personen har ångrat sig försvinner kontrollsummorna, utom de som en annan person med invändning har.
+
+Vid **begränsad behandling** får uppgifterna bara sparas. Det går inte att logga några nya aktiviteter för personen, utom en enda anteckning om begränsningen. Ingenting sparas på spärrlistan; raderas personen finns inget kvar.
+
+Spärrlistan granskas med jämna mellanrum: en rad som inte har granskats på tre år (inställningen **Granska spärrlistan, år** under **CRM → Inställningar**) visas under **Att göra**. Under **CRM → Personer → Spärrlista** väljer du **Behåll** om invändningen fortfarande gäller eller **Ta bort**.
 ## Registerutdrag
 
 - **En kontaktperson**: öppna personen och tryck på **Ladda ner registerutdrag (JSON)**. Utdraget innehåller personens uppgifter, den rättsliga grunden, vilka företag personen hör till och aktiviteterna om personen.

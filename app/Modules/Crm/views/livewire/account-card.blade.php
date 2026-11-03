@@ -344,8 +344,8 @@
 
         <div class="space-y-6">
             {{-- Key figures from the ledger. --}}
-            <x-ui.card :title="__('Nyckeltal')" :description="$account->customer ? __('Ur bokföringen, i kronor.') : __('Visas när prospektet har blivit kund och fått sin första faktura.')">
-                @if($account->customer)
+            <x-ui.card :title="__('Nyckeltal')" :description="$limitedLedger ? __('En privatpersons köp och skulder visas bara för den som får se fakturorna.') : ($account->customer ? __('Ur bokföringen, i kronor.') : __('Visas när prospektet har blivit kund och fått sin första faktura.'))">
+                @if($account->customer && ! $limitedLedger)
                     <dl class="divide-y divide-gray-100 text-sm" data-testid="crm-figures">
                         <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
                             <dt class="text-gray-500">{{ __('Fakturerat 12 mån') }}</dt>

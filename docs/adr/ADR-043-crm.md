@@ -105,8 +105,8 @@ All tables are company-scoped (`BelongsToCompany`, tenancy tests).
 - **Permissions**: `crm:view`, `crm:manage`, `crm:settings`. New role
   **Säljare** (`sales`): `crm:view` and `crm:manage`. A seller sees invoiced,
   unpaid and payment time per customer, but no invoices, vouchers or
-  reports; for a private person (kind PERSON) not even the unpaid amount,
-  the payment time or the reminders (see Implementation).
+  reports; for a private person (kind PERSON) no key figures and no ledger
+  entries on the timeline, only the CRM's activities (see Implementation).
   Key figures are visible with `crm:view`: a seller needs to know whether a
   customer pays. Owner, admin, accountant and bookkeeper get all three;
   auditor gets `crm:view`.
@@ -202,16 +202,28 @@ building, where this ADR left them open or the code required a change:
   customer register. The core register keeps it in plain `org_number`
   (a known gap outside this module).
 - **Kontakta inte.** A person can be flagged (objection, art. 21, or
-  restriction, art. 18). No new call, meeting, e-mail or task can be logged
-  for them, only notes. The flag survives erasure as an HMAC of each e-mail
-  address and phone number in `crm_suppressions`, so the person is flagged
-  again if added back. `TODO(legal-verify)`: how long the suppression list
-  is kept.
+  restriction, art. 18). After an objection only notes can be logged; after
+  a restriction one note documenting it and nothing more. No activity of a
+  flagged person can change its type. Only an objection survives erasure,
+  as an HMAC of each e-mail address and phone number in `crm_suppressions`
+  (art. 21(3)), so the person is flagged again if added back; a restriction
+  ends with the erasure. The key is `NONOX_CRM_SUPPRESSION_KEY` (else derived
+  from `APP_KEY`), and matching also tries keys derived from `APP_KEY` and
+  `APP_PREVIOUS_KEYS`. This is pseudonymisation. Entries not reviewed for
+  `suppression_review_years` (default 3) are listed in Att göra.
+  `TODO(legal-verify)`: how long the list is kept and the review default.
+- **"Ny kund" for a sole trader.** The customer form under Kunder creates
+  the customer through `SaveCustomer` with the number as typed (a sole
+  trader's personal number included); the account never keeps it.
+- **Anonymised private person.** When a PERSON account's customer is
+  anonymised, the people linked only to that account are erased too; a
+  company's contacts stay.
 - **Information duty (art. 14).** An optional "Informerad den" date on the
   person, and a template text in the manual (`TODO(legal-verify)`).
 - **Sellers and private persons.** Without `invoices:view`, a private
-  person's unpaid amount, payment time, reminders and invoice and payment
-  amounts are hidden, and no one sees links into invoices they cannot open.
+  person's account shows no key figures (not even invoiced) and a timeline
+  of CRM activities only: no quotes, orders, invoices, payments or
+  reminders. No one sees links into invoices they cannot open.
 - **Auditor** keeps `crm:view`: an auditor already sees the invoices, and
   the CRM shows how customers were followed up. The manual says so.
 - **"Lägg till kund".** `?ny=1` opens a customer form for those who may add
