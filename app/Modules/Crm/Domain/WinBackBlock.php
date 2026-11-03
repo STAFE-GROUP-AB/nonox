@@ -40,6 +40,11 @@ enum WinBackBlock: string
             if ($person instanceof Person && $person->doNotContact()) {
                 return self::fromPerson($person);
             }
+
+            // An objection by someone else sharing this address or number reaches this person too.
+            if ($person instanceof Person && SuppressionList::match($person->email, $person->phone, $person->mobile)) {
+                return self::Objection;
+            }
         }
 
         // A private person's account: the people at it are the customer.
@@ -52,6 +57,16 @@ enum WinBackBlock: string
 
             if ($person instanceof Person) {
                 return self::fromPerson($person);
+            }
+
+            $people = Person::query()
+                ->whereHas('accounts', fn ($query) => $query->whereKey($account->id))
+                ->get(['id', 'email', 'phone', 'mobile']);
+
+            foreach ($people as $person) {
+                if (SuppressionList::match($person->email, $person->phone, $person->mobile)) {
+                    return self::Objection;
+                }
             }
         }
 

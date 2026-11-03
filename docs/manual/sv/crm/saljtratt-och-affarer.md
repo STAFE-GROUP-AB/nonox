@@ -64,7 +64,7 @@ Det gäller i affärens kort, på kundens kort och under **Mina aktiviteter**.
 
 På datumet får den ansvarige en uppgift, **Vinn tillbaka**, under Mina aktiviteter. Datumet går att ändra eller ta bort på affären med **Ändra datum**. En kund som du sätter som **Förlorad** på kundkortet får samma påminnelse. Har kunden vunnits tillbaka i en annan affär före datumet kommer ingen påminnelse.
 
-Är kunden en privatperson får du bara mejla erbjudanden om personen har samtyckt eller redan är kund och fick säga nej när adressen samlades in (19 § marknadsföringslagen), och ringer du ska numret kontrolleras mot NIX. En person som är märkt Kontakta inte får ingen påminnelse, och inte heller en kund med begränsad behandling eller en kund som är inaktiv eller anonymiserad i kundregistret.
+Är mottagaren en fysisk person, även en enskild firma, får du bara mejla eller sms:a erbjudanden om personen har samtyckt, eller om personen är kund, erbjudandet gäller era egna liknande varor eller tjänster och personen fick tacka nej när adressen samlades in och kan göra det i varje utskick (19 § marknadsföringslagen). Mejl till ett företags adress ska visa vem som skickar och hur mottagaren tackar nej (20 §). Ringer du en privatperson bör numret kontrolleras mot NIX. En person som är märkt Kontakta inte får ingen påminnelse, och inte heller en kund med begränsad behandling eller en kund som är inaktiv eller anonymiserad i kundregistret.
 
 ## Inställningar
 

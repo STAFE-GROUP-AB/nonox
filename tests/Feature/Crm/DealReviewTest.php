@@ -118,6 +118,20 @@ it('skips and clears win-back for a restricted customer, a suppressed address an
         ->and(Activity::query()->where('subject', 'like', 'Vinn tillbaka%')->count())->toBe(0);
 });
 
+it('gives no reminder when the deal contact\'s own address is on the suppression list, even without the flag', function () {
+    $contact = contact($this, $this->account, 'Delad Adress');
+    $objector = Crm::person($this->company, $this->owner, 'Annan Person', ['email' => $contact->email]);
+    flagPerson($this, $objector, 'OBJECTION');
+    SuppressionList::remember($objector->fresh());
+
+    expect($contact->fresh()?->doNotContact())->toBeFalse();
+
+    $lost = app(LoseDeal::class)($this->owner, $this->company, Crm::deal($this->company, $this->owner, $this->account, 'Delad', extra: ['person_id' => $contact->id]), ['loss_reason_id' => $this->reason]);
+
+    expect($lost->win_back_at)->toBeNull()
+        ->and(fn () => app(SetWinBack::class)($this->owner, $this->company, $lost, '2026-09-01'))->toThrow(ValidationException::class, 'Personen har bett att inte bli kontaktad');
+});
+
 it('refuses a win-back date in the past or three years or more ahead', function () {
     $lost = app(LoseDeal::class)($this->owner, $this->company, Crm::deal($this->company, $this->owner, $this->account), ['loss_reason_id' => $this->reason]);
 

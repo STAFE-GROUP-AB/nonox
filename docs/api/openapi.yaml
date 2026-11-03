@@ -12772,6 +12772,7 @@ components:
           $ref: '#/components/schemas/CrmNextStep'
     CrmDeal:
       type: object
+      description: 'A deal. quote_id, order_id and invoice_id are null for a private person (account kind PERSON) when the token''s user may not read invoices (invoices:view). Creating a deal is refused for a customer whose processing is restricted or who is inactive, and a win_back_at is refused for anyone who must not be contacted.'
       properties:
         id:
           type: integer
@@ -12789,7 +12790,9 @@ components:
           type: string
         value_ore:
           type: integer
-          description: 'Öre, excluding VAT.'
+          minimum: 0
+          maximum: 10000000000000
+          description: 'Öre, excluding VAT. At most 10 000 000 000 000 öre (100 billion kronor).'
         expected_close_date:
           type:
             - string
