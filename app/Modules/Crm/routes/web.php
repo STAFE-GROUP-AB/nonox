@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 // Behind module:crm: 404 while the module is off. /kunder itself is the core register's route (ADR-043).
 Route::view('/kunder/aktiviteter', 'crm::activities')->name('crm.activities');
 Route::view('/kunder/personer', 'crm::people')->name('crm.people');
+Route::get('/kunder/personer/{person}', fn (int $person) => view('crm::person', ['personId' => $person]))->whereNumber('person')->name('crm.people.show');
 Route::view('/kunder/installningar', 'crm::settings')->name('crm.settings');
 // Stage 2: the dashboard, the pipeline board, a deal's card, and the forecast with the goals.
 Route::view('/kunder/oversikt', 'crm::dashboard')->name('crm.dashboard');

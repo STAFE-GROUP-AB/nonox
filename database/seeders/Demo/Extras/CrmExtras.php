@@ -20,7 +20,9 @@ use App\Modules\Crm\Actions\WinDeal;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Account;
+use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\LossReason;
+use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Pipeline;
 use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\ModuleManager;
@@ -110,6 +112,45 @@ final class CrmExtras extends DemoExtra
         $this->customers($c);
         $this->prospects($c);
         $this->deals($c);
+        $this->contactHistory($c);
+    }
+
+    /**
+     * The person page's example (Karin at Kunden Exempel AB): informed
+     * under art. 14, the contact on the framework agreement and the
+     * training deal, and months of calls, mail, meetings and notes.
+     */
+    private function contactHistory(DemoContext $c): void
+    {
+        $karin = Person::query()->where('name', 'Karin Exempelsson')->first();
+        $account = Account::query()->where('name', 'Kunden Exempel AB')->first();
+
+        if (! $karin instanceof Person || ! $account instanceof Account) {
+            return;
+        }
+
+        app(SavePerson::class)($c->user, $c->company, [
+            ...$karin->only(['name', 'title', 'email', 'phone', 'mobile', 'legal_basis_note', 'is_active']),
+            'legal_basis' => $karin->legal_basis->value,
+            'informed_at' => $c->today->subMonths(3)->toDateString(),
+        ], $karin);
+
+        foreach (Deal::query()->whereIn('title', ['Ramavtal 2027', 'Utbildning för projektledare'])->where('account_id', $account->id)->get() as $deal) {
+            app(SaveDeal::class)($c->user, $c->company, ['person_id' => $karin->id], $deal);
+        }
+
+        $history = [
+            [58, ['type' => 'EMAIL', 'subject' => 'Tack för mötet', 'body' => 'Skickade sammanfattningen och förslaget på upplägg för våren.', 'done' => true]],
+            [33, ['type' => 'MEETING', 'subject' => 'Genomgång av året', 'body' => "Nöjd med leveransen. Vill utöka med en projektledare under hösten.\nBeslut om ramavtal i styrelsen i december.", 'done' => true]],
+            [21, ['type' => 'CALL', 'subject' => 'Avstämning om budget', 'call_outcome' => 'REACHED', 'body' => 'Budgeten ligger kvar. Vill ha offerten före den 15:e.', 'done' => true]],
+            [9, ['type' => 'NOTE', 'subject' => 'Inför förhandlingen', 'body' => 'Karin föredrar korta möten på förmiddagen. Ekonomichefen Johan vill se prisjämförelsen.']],
+            [2, ['type' => 'CALL', 'subject' => 'Ringde om offerten', 'call_outcome' => 'LEFT_MESSAGE', 'done' => true]],
+            [0, ['type' => 'MEETING', 'subject' => 'Förhandling om ramavtalet', 'due_at' => $c->today->addDays(3)->setTime(10, 0)->format('Y-m-d\TH:i')]],
+        ];
+
+        foreach ($history as [$daysAgo, $input]) {
+            $this->logAt($c, $daysAgo, ['account_id' => $account->id, 'person_id' => $karin->id, ...$input]);
+        }
     }
 
     /** CRM stage 2: the seller, deals across the pipeline, won and lost ones, and the month's goals. */

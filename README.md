@@ -139,6 +139,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Kundstatus som följer fakturorna (prospekt, aktiv, inaktiv, förlorad med orsak), gallring av gamla kontakter, rollen Säljare som ser fakturerat, obetalt och betaltid per kund men inga verifikationer eller rapporter, byggt för mobilen och med i API:t.
 - Affärer i en säljtratt: egna steg (högst sju) med sannolikhet, flera säljtrattar per affärsområde, värde, väntat avslut och ansvarig säljare. Dra korten mellan stegen, eller flytta dem med ett tryck i mobilen. En ny affär får alltid ett planerat nästa steg, och affärer som saknar ett hamnar under Att göra.
 - Vunnen affär kopplas till offerten, ordern eller fakturan i bokföringen. Förlorad affär får en orsak och ett datum då säljaren påminns om att vinna tillbaka kunden.
+- Kundkort och en egen sida för varje kontaktperson: snabbval för att ringa, mejla, logga och planera, fakta i en rad, kundens status eller affärens steg som en stegrad, historiken i flikar med antal och nyckeltalen ur bokföringen. En person som inte vill bli kontaktad kan inte ringas eller mejlas därifrån. I mobilen ligger de vanligaste snabbvalen fast längst ned.
 - Prognos per månad (värde gånger sannolikhet, bredvid det som har vunnits), mål per säljare för möten, offerter och ordervärde som mäts ur CRM och faktureringen, och en översikt med säljtrattens värde, andel vunna, säljcykel och aktiviteter per vecka.
 
 ### Inkorg (modul)

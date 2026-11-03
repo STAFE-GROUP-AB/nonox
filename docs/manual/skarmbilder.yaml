@@ -191,6 +191,8 @@ crm/kunder-och-prospekt: { foretag: konsult, rutt: invoicing.customers }
 crm/kundkortet: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } } }
 crm/kundkortet-mobil: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Fastighetsbolaget Exempel AB' } }, enhet: mobil }
 crm/mina-aktiviteter: { foretag: konsult, rutt: crm.activities }
+crm/kontaktperson: { foretag: konsult, rutt: crm.people.show, modell: { tabell: crm_people, dar: { name: 'Karin Exempelsson' } } }
+crm/kontaktperson-mobil: { foretag: konsult, rutt: crm.people.show, modell: { tabell: crm_people, dar: { name: 'Karin Exempelsson' } }, enhet: mobil }
 crm/saljtratten: { foretag: konsult, rutt: crm.deals }
 crm/saljtratten-mobil: { foretag: konsult, rutt: crm.deals, enhet: mobil }
 crm/affarens-kort: { foretag: konsult, rutt: crm.deals.show, modell: { tabell: crm_deals, dar: { title: 'Ramavtal 2027' } } }

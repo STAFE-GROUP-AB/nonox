@@ -11,6 +11,8 @@ use App\Models\InvoiceReminder;
 use App\Models\SalesDocument;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Person;
+use Closure;
 use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
@@ -23,6 +25,11 @@ use Illuminate\Support\Facades\DB;
  * columns the screen shows, paginated: two queries per page (the count and
  * the page), whatever the number of entries. Every source is scoped to the
  * current company by its model.
+ *
+ * The account and person pages filter it into tabs: one activity type
+ * (`$only` = NOTE, CALL, …) or the ledger documents only (`$only` =
+ * 'ledger'); counts() gives every tab's count in one query. A person's
+ * timeline is the activities about them, at whichever account.
  */
 final class Timeline
 {
@@ -32,16 +39,69 @@ final class Timeline
      * @param  bool  $withLedger  false shows the activities only (a private person's account for someone who may not see invoices)
      * @return LengthAwarePaginator<int, object>
      */
-    public function for(Account $account, int $perPage = self::PER_PAGE, string $pageName = 'tidslinje', bool $withLedger = true): LengthAwarePaginator
+    public function for(Account $account, int $perPage = self::PER_PAGE, string $pageName = 'tidslinje', bool $withLedger = true, ?string $only = null): LengthAwarePaginator
     {
-        $union = $this->activities($account);
+        $customer = $withLedger ? $account->customer_id : null;
+        $parts = [];
 
-        if ($account->customer_id !== null && $withLedger) {
-            $customer = $account->customer_id;
-            $union->unionAll($this->documents($customer))
-                ->unionAll($this->invoices($customer))
-                ->unionAll($this->payments($customer))
-                ->unionAll($this->reminders($customer));
+        if ($only !== 'ledger') {
+            $parts[] = $this->activities(fn (Builder $query) => $query->where('crm_activities.account_id', $account->id), $only);
+        }
+
+        if ($customer !== null && ($only === null || $only === 'ledger')) {
+            $parts = [...$parts, $this->documents($customer), $this->invoices($customer), $this->payments($customer), $this->reminders($customer)];
+        }
+
+        return $this->page($parts, $perPage, $pageName);
+    }
+
+    /**
+     * The activities about a person, at any of their accounts, newest first;
+     * $only is one activity type.
+     *
+     * @return LengthAwarePaginator<int, object>
+     */
+    public function forPerson(Person $person, int $perPage = self::PER_PAGE, string $pageName = 'tidslinje', ?string $only = null): LengthAwarePaginator
+    {
+        return $this->page([$this->activities(fn (Builder $query) => $query->where('crm_activities.person_id', $person->id), $only)], $perPage, $pageName);
+    }
+
+    /**
+     * Every tab's count in one query: the activities per type, all of them,
+     * and (for a customer's account, when the ledger is shown) the ledger
+     * documents.
+     *
+     * @return array{all: int, ledger: int, types: array<string, int>}
+     */
+    public function counts(Account|Person $record, bool $withLedger = true): array
+    {
+        $customer = $record instanceof Account && $withLedger ? $record->customer_id : null;
+        $column = $record instanceof Account ? 'account_id' : 'person_id';
+
+        $rows = Activity::query()->toBase()
+            ->where($column, $record->id)
+            ->groupBy('type')
+            ->selectRaw('type, COUNT(*) AS total');
+
+        $types = $rows->pluck('total', 'type')->map(fn (mixed $total): int => (int) $total)->all();
+        $ledger = $customer === null ? 0 : DB::query()->fromSub(
+            $this->documents($customer)->unionAll($this->invoices($customer))->unionAll($this->payments($customer))->unionAll($this->reminders($customer)),
+            'ledger',
+        )->count();
+
+        return ['all' => array_sum($types) + $ledger, 'ledger' => $ledger, 'types' => $types];
+    }
+
+    /**
+     * @param  list<Builder>  $parts
+     * @return LengthAwarePaginator<int, object>
+     */
+    private function page(array $parts, int $perPage, string $pageName): LengthAwarePaginator
+    {
+        $union = array_shift($parts) ?? $this->activities(fn (Builder $query) => $query->whereRaw('1 = 0'), null);
+
+        foreach ($parts as $part) {
+            $union->unionAll($part);
         }
 
         return DB::query()->fromSub($union, 'timeline')
@@ -57,12 +117,18 @@ final class Timeline
         return (string) config('app.timezone');
     }
 
-    private function activities(Account $account): Builder
+    /** @param  Closure(Builder): mixed  $scope */
+    private function activities(Closure $scope, ?string $type): Builder
     {
-        return Activity::query()->toBase()
+        $query = Activity::query()->toBase()
             ->leftJoin('users', 'users.id', '=', 'crm_activities.assigned_to')
             ->leftJoin('crm_people', 'crm_people.id', '=', 'crm_activities.person_id')
-            ->where('crm_activities.account_id', $account->id)
+            ->leftJoin('crm_accounts', 'crm_accounts.id', '=', 'crm_activities.account_id')
+            ->leftJoin('crm_deals', 'crm_deals.id', '=', 'crm_activities.deal_id');
+        $scope($query);
+
+        return $query
+            ->when($type !== null, fn (Builder $query) => $query->where('crm_activities.type', $type))
             ->select([
                 DB::raw("'activity' AS kind"),
                 DB::raw('crm_activities.id::text AS ref'),
@@ -76,6 +142,11 @@ final class Timeline
                 DB::raw('crm_activities.due_at AS due_at'),
                 DB::raw('users.name::text AS user_name'),
                 DB::raw('crm_people.name::text AS person_name'),
+                DB::raw('crm_activities.person_id AS person_id'),
+                DB::raw('crm_activities.account_id AS account_id'),
+                DB::raw('crm_accounts.name::text AS account_name'),
+                DB::raw('crm_activities.deal_id AS deal_id'),
+                DB::raw('crm_deals.title::text AS deal_title'),
             ])
             // created_at is a local timestamp without zone (app.timezone); make it timestamptz like done_at, whatever the session's zone.
             ->selectRaw('COALESCE(crm_activities.done_at, crm_activities.created_at AT TIME ZONE ?) AS at', [self::zone()]);
@@ -159,6 +230,11 @@ final class Timeline
             DB::raw('NULL::timestamptz AS due_at'),
             DB::raw('NULL::text AS user_name'),
             DB::raw('NULL::text AS person_name'),
+            DB::raw('NULL::bigint AS person_id'),
+            DB::raw('NULL::bigint AS account_id'),
+            DB::raw('NULL::text AS account_name'),
+            DB::raw('NULL::bigint AS deal_id'),
+            DB::raw('NULL::text AS deal_title'),
         ];
     }
 }

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-03-crm-kort-och-personsida",
+      "datum": "2026-11-03T11:50:00+01:00",
+      "rubrik": "CRM: nytt kundkort och en egen sida för varje kontaktperson",
+      "beskrivning": "Kundkortet och den nya sidan för kontaktpersoner har snabbval för att ringa, mejla, logga och planera, fakta i en rad, kundens status eller affärens steg som en stegrad, och historiken i flikar med antal. Kontaktpersonens sida visar personens affärer, det som är planerat, företagets nyckeltal ur bokföringen och personuppgifterna, och en person som inte vill bli kontaktad kan inte ringas eller mejlas därifrån. I mobilen ligger de vanligaste snabbvalen fast längst ned på skärmen.",
+      "typ": "Nytt",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-03-manual-oversiktslankar",
       "datum": "2026-11-03T10:58:00+01:00",
       "rubrik": "Länkarna till manualens översikter fungerar igen",

@@ -8,7 +8,7 @@ sokord: [nyckeltal, kundlönsamhet, täckningsbidrag, marginal, betaltid, obetal
 
 # Nyckeltal från bokföringen
 
-På kundens kort visar **Nyckeltal** vad kunden är värd. Allt räknas ur fakturorna och betalningarna i bokföringen, i kronor, även när kunden faktureras i en annan valuta. Ett prospekt har inga nyckeltal förrän det har blivit kund och fått sin första faktura.
+På kundens kort visar **Kunden i siffror** vad kunden är värd. Samma siffror för personens företag finns på kontaktpersonens sida. Allt räknas ur fakturorna och betalningarna i bokföringen, i kronor, även när kunden faktureras i en annan valuta. Ett prospekt har inga nyckeltal förrän det har blivit kund och fått sin första faktura.
 
 | Nyckeltal | Så räknas det |
 |---|---|

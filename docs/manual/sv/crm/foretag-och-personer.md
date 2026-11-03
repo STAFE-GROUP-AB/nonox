@@ -11,7 +11,21 @@ sokord: [prospekt, kundkort, kontaktperson, beslutsfattare, roll, koncern, moder
 
 Varje kund och prospekt har ett kort. Där finns uppgifterna om företaget, personerna du pratar med och allt som har hänt. Ett **prospekt** är någon du vill göra affärer med. Det får ett kundnummer först när det blir kund.
 
-![Kundkortet med status, nyckeltal ur bokföringen, kontaktpersoner, nästa steg och tidslinjen.](/bilder/manual/crm/kundkortet.webp)
+![Kundkortet med snabbval, fakta, kundens status och nyckeltalen ur bokföringen.](/bilder/manual/crm/kundkortet.webp)
+
+## Kortet
+
+- **Överst**: namn, typ, kundnummer och organisationsnummer, ort, telefon, e-post och webbplats, statusen och taggarna.
+- **Snabbval**: **Ring**, **Mejla**, **Logga samtal**, **Anteckning**, **Planera möte**, **Uppgift** och **Ny affär**. För en kund också **Ny offert**, **Ny order** och **Ny faktura**, för ett prospekt **Gör till kund**, för den som får skapa kunder.
+- **Fakta**: kundnummer, organisationsnummer, ansvarig, källa, bransch (SNI), koncern, kund sedan och senaste kontakt.
+- **Kundens status**: stegen **Prospekt**, **Aktiv kund**, **Inaktiv** och **Förlorad**, med datum där det är känt. Har kunden öppna affärer kan du under **Visa** byta till en affärs steg i säljtratten.
+- **Kunden i siffror**: nyckeltalen ur bokföringen. Se [Nyckeltal från bokföringen](/manual/crm/nyckeltal).
+- **Flikarna**: **Tidslinje** (allt), **Anteckningar**, **Samtal**, **Möten**, **Uppgifter**, **Affärer**, **Personer** och **Dokument** (offerter, order och fakturor, för den som får se dem). Siffran visar hur många det finns.
+- **Till höger**: det som är planerat, affärerna, personerna med beslutsfattaren först och registerutdraget.
+
+I mobilen ligger **Ring**, **Mejla**, **Logga** och **Planera** fast längst ned på skärmen.
+
+![Kundkortet i mobilen.](/bilder/manual/crm/kundkortet-mobil.webp)
 
 ## Så här lägger du till ett prospekt
 
@@ -24,7 +38,7 @@ Varje kund och prospekt har ett kort. Där finns uppgifterna om företaget, pers
 ## Så här gör du ett prospekt till kund
 
 1. Öppna prospektets kort.
-2. Tryck på **Gör till kund** under **Nyckeltal**.
+2. Tryck på **Gör till kund** bland snabbvalen.
 3. Bekräfta. Kunden får nästa nummer i kundregistret och kan faktureras.
 
 Statusen blir **Aktiv kund** när den första fakturan har skapats. Från kortet kommer du sedan direkt till **Ny offert** och **Ny faktura** med kunden ifylld.
@@ -33,9 +47,10 @@ Statusen blir **Aktiv kund** när den första fakturan har skapats. Från kortet
 
 En person kan höra till flera företag och ha olika roller hos dem: **Beslutsfattare**, **Ambassadör**, **Påverkare**, **Användare**, **Fakturamottagare** eller **Övrig**.
 
+- Personens namn leder till personens egen sida. Se [Kontaktpersonens sida](/manual/crm/kontaktpersonens-sida).
 - **Ny person** på kortet lägger till en person och kopplar den till företaget med en roll.
 - **Koppla befintlig** kopplar en person som redan finns, till exempel när någon byter jobb till en annan kund.
-- Rollen ändrar du direkt i listan på kortet.
+- Rollen ändrar du under fliken **Personer** på kortet.
 - **Ta bort från kunden** tar bort kopplingen. Personen finns kvar under **CRM → Personer**.
 
 Varje person behöver en **rättslig grund** enligt GDPR. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).

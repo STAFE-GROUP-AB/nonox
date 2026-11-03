@@ -1,190 +1,84 @@
 @php
     $input = 'block w-full min-h-11 sm:min-h-0 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs';
-    $quick = 'inline-flex min-h-12 flex-1 basis-[45%] items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-ink shadow-xs ring-1 ring-stone-200 hover:ring-stone-300 sm:basis-auto sm:flex-none';
     $money = fn (int $ore) => App\Support\Money\Money::ofOre($ore);
     $zone = 'Europe/Stockholm';
     $address = collect([$account->address_line1, trim(($account->postal_code ?? '').' '.($account->city ?? ''))])->filter()->implode(', ');
+    $tel = $account->phone ? 'tel:'.preg_replace('/[^\d+]/', '', $account->phone) : null;
+    $readOnly = $canManage ? null : __('Du kan inte ändra i CRM.');
+    // The decision maker first, then by name.
+    $people = $account->people->sortBy(fn ($person) => ($person->link->role === App\Modules\Crm\Domain\PersonRole::DecisionMaker ? '0' : '1').$person->name)->values();
+    $customerSince = $firstInvoice ?? $account->customer?->created_at?->toDateString();
 @endphp
 
 <div class="space-y-6">
-    {{-- Header: who, status, owner and the ways to reach them. --}}
-    <x-ui.card>
-        <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="min-w-0">
-                <p class="text-sm text-gray-500">
-                    {{ $account->kind->label() }}@if($account->customer) · {{ __('Kund :number', ['number' => $account->customer->number]) }}@endif @if($account->org_number) · {{ $account->org_number }}@endif
-                </p>
-                <h1 class="mt-1 break-words text-2xl font-bold tracking-tight text-ink">{{ $account->name }}</h1>
-                <p class="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                    <x-ui.badge :tone="$account->status->tone()">{{ $account->status->label() }}</x-ui.badge>
-                    <span>{{ __('Ansvarig') }}: {{ $account->owner?->name ?? __('ingen') }}</span>
-                    @if($account->parent)
-                        <span>· {{ __('Del av') }} <a href="{{ route('crm.accounts.show', $account->parent) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $account->parent->name }}</a></span>
-                    @endif
-                </p>
-                @if($account->status === App\Modules\Crm\Domain\AccountStatus::Lost && $account->lost_reason)
-                    <p class="mt-2 text-sm text-gray-600">{{ __('Förlorad') }}: {{ $account->lost_reason }}</p>
-                @endif
-                @if($account->status === App\Modules\Crm\Domain\AccountStatus::Lost)
-                    <p class="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-600">
-                        <span>{{ $account->win_back_at ? __('Vinn tillbaka: :date', ['date' => $account->win_back_at->translatedFormat('j F Y')]) : __('Ingen påminnelse om att vinna tillbaka kunden.') }}</span>
-                        @if($canManage)
-                            <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startWinBack">{{ __('Ändra datum') }}</button>
-                        @endif
-                    </p>
-                @endif
-                @if($account->tags !== [])
-                    <p class="mt-2 flex flex-wrap gap-1.5">
-                        @foreach($account->tags as $tag)
-                            <a href="{{ route('invoicing.customers', ['tagg' => $tag]) }}" class="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-gray-700 hover:bg-stone-200">{{ $tag }}</a>
-                        @endforeach
-                    </p>
-                @endif
-            </div>
+    <x-crm::header :name="$account->name" :shape="$account->kind === App\Modules\Crm\Domain\AccountKind::Person ? 'round' : 'square'" :kicker="collect([$account->kind->label(), $account->customer ? __('Kund :number', ['number' => $account->customer->number]) : null, $account->org_number])->filter()->implode(' · ')">
+        <x-slot:subtitle>
+            @if($account->city)<span class="inline-flex items-center gap-1.5"><x-crm::icon name="pin" class="size-4 text-gray-500" />{{ $account->city }}</span>@endif
+            @if($account->phone)<a href="{{ $tel }}" class="inline-flex items-center gap-1.5 font-medium text-ink tabular-nums hover:text-accent-700"><x-crm::icon name="phone" class="size-4 text-gray-500" />{{ $account->phone }}</a>@endif
+            @if($account->email)<a href="mailto:{{ $account->email }}" class="inline-flex items-center gap-1.5 break-all font-medium text-ink hover:text-accent-700"><x-crm::icon name="mail" class="size-4 text-gray-500" />{{ $account->email }}</a>@endif
+            @if($account->website)<a href="{{ str_starts_with($account->website, 'http') ? $account->website : 'https://'.$account->website }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 font-medium text-ink hover:text-accent-700"><x-crm::icon name="globe" class="size-4 text-gray-500" />{{ $account->website }}</a>@endif
+            @if($address !== '')<a href="https://www.openstreetmap.org/search?query={{ urlencode($address) }}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 hover:text-accent-700">{{ __('Karta') }}: {{ $address }}</a>@endif
+        </x-slot:subtitle>
+        <x-slot:badges>
+            <x-ui.badge :tone="$account->status->tone()">{{ $account->status->label() }}</x-ui.badge>
+            @foreach($account->tags as $tag)
+                <a href="{{ route('invoicing.customers', ['tagg' => $tag]) }}" class="rounded-full bg-stone-100 px-2.5 py-0.5 text-xs text-gray-700 ring-1 ring-stone-200 hover:bg-stone-200">{{ $tag }}</a>
+            @endforeach
+        </x-slot:badges>
+        @if($canManage)
+            <x-slot:aside>
+                <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startStatus">{{ __('Ändra status') }}</button>
+                <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startEdit">{{ __('Ändra uppgifter') }}</button>
+            </x-slot:aside>
+        @endif
+        <x-slot:actions>
+            <x-crm::quick-action icon="phone" :label="__('Ring')" :href="$tel" :disabled="$tel ? null : __('Kunden har inget telefonnummer.')" primary />
+            <x-crm::quick-action icon="mail" :label="__('Mejla')" :href="$account->email ? 'mailto:'.$account->email : null" :disabled="$account->email ? null : __('Kunden har ingen e-postadress.')" />
             @if($canManage)
-                <div class="flex flex-wrap gap-3 text-sm">
-                    <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startStatus">{{ __('Ändra status') }}</button>
-                    <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startEdit">{{ __('Ändra uppgifter') }}</button>
-                </div>
+                <x-crm::quick-action icon="CALL" :label="__('Logga samtal')" wire:click="startActivity('CALL')" />
+                <x-crm::quick-action icon="NOTE" :label="__('Anteckning')" wire:click="startActivity('NOTE')" />
+                <x-crm::quick-action icon="MEETING" :label="__('Planera möte')" wire:click="startActivity('MEETING')" />
+                <x-crm::quick-action icon="TASK" :label="__('Uppgift')" wire:click="startActivity('TASK')" />
             @endif
-        </div>
+            @if($canDeal)
+                <x-crm::quick-action icon="deal" :label="__('Ny affär')" :href="route('crm.deals', ['ny' => $account->id])" />
+            @endif
+            @if($canConvert)
+                <x-crm::quick-action icon="person" :label="__('Gör till kund')" wire:click="convert" wire:confirm="{{ __('Göra :name till kund? Kunden får nästa kundnummer och kan faktureras.', ['name' => $account->name]) }}" />
+            @endif
+            @if($canSell)
+                <x-crm::quick-action icon="quote" :label="__('Ny offert')" :href="route('invoicing.quotes.create', ['kund' => $account->customer_id])" />
+                <x-crm::quick-action icon="order" :label="__('Ny order')" :href="route('invoicing.orders.create', ['kund' => $account->customer_id])" />
+                <x-crm::quick-action icon="invoice" :label="__('Ny faktura')" :href="route('invoicing.invoices.create', ['kund' => $account->customer_id])" />
+            @endif
+        </x-slot:actions>
+        <x-slot:facts>
+            <x-crm::fact :label="__('Kundnummer')"><span class="tabular-nums">{{ $account->customer?->number ?? '–' }}</span></x-crm::fact>
+            <x-crm::fact :label="__('Org.nr')"><span class="tabular-nums">{{ $account->org_number ?: '–' }}</span></x-crm::fact>
+            <x-crm::fact :label="__('Ansvarig')">{{ $account->owner?->name ?? __('ingen') }}</x-crm::fact>
+            <x-crm::fact :label="__('Källa')">{{ $account->source ?: '–' }}</x-crm::fact>
+            <x-crm::fact :label="__('Bransch (SNI)')"><span class="tabular-nums">{{ $account->sni_code ?: '–' }}</span></x-crm::fact>
+            <x-crm::fact :label="__('Koncern')">
+                @if($account->parent)<a href="{{ route('crm.accounts.show', $account->parent) }}" class="text-accent-600 hover:text-accent-700">{{ __('Del av') }} {{ $account->parent->name }}</a>@else–@endif
+            </x-crm::fact>
+            <x-crm::fact :label="__('Kund sedan')">{{ $customerSince ? \Carbon\CarbonImmutable::parse($customerSince)->translatedFormat('j M Y') : '–' }}</x-crm::fact>
+            <x-crm::fact :label="__('Senaste kontakt')">{{ $lastContact ? \Carbon\CarbonImmutable::parse($lastContact)->setTimezone($zone)->translatedFormat('j M Y') : '–' }}</x-crm::fact>
+        </x-slot:facts>
+    </x-crm::header>
 
-        <div class="mt-4 flex flex-wrap gap-2 text-sm">
-            @if($account->phone)
-                <a href="tel:{{ preg_replace('/[^\d+]/', '', $account->phone) }}" class="inline-flex min-h-11 items-center rounded-xl bg-stone-100 px-4 font-medium text-ink hover:bg-stone-200">{{ __('Ring') }} {{ $account->phone }}</a>
+    @if($account->status === App\Modules\Crm\Domain\AccountStatus::Lost)
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-2xl bg-stone-50 px-4 py-3 text-sm ring-1 ring-stone-200">
+            @if($account->lost_reason)<span><span class="font-medium text-ink">{{ __('Förlorad') }}:</span> {{ $account->lost_reason }}</span>@endif
+            <span>{{ $account->win_back_at ? __('Vinn tillbaka: :date', ['date' => $account->win_back_at->translatedFormat('j F Y')]) : __('Ingen påminnelse om att vinna tillbaka kunden.') }}</span>
+            @if($canManage)
+                <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startWinBack">{{ __('Ändra datum') }}</button>
             @endif
-            @if($account->email)
-                <a href="mailto:{{ $account->email }}" class="inline-flex min-h-11 items-center rounded-xl bg-stone-100 px-4 font-medium text-ink hover:bg-stone-200">{{ $account->email }}</a>
-            @endif
-            @if($address !== '')
-                <a href="https://www.openstreetmap.org/search?query={{ urlencode($address) }}" target="_blank" rel="noopener" class="inline-flex min-h-11 items-center rounded-xl bg-stone-100 px-4 font-medium text-ink hover:bg-stone-200">{{ __('Karta') }}: {{ $address }}</a>
-            @endif
-            @if($account->website)
-                <a href="{{ str_starts_with($account->website, 'http') ? $account->website : 'https://'.$account->website }}" target="_blank" rel="noopener" class="inline-flex min-h-11 items-center rounded-xl bg-stone-100 px-4 font-medium text-ink hover:bg-stone-200">{{ $account->website }}</a>
-            @endif
-        </div>
-    </x-ui.card>
-
-    {{-- Quick buttons: the phone's main way in. --}}
-    @if($canManage)
-        <div class="flex flex-wrap gap-3" role="group" aria-label="{{ __('Logga eller planera') }}">
-            <button type="button" class="{{ $quick }}" wire:click="startActivity('CALL')">{{ __('Ring') }}</button>
-            <button type="button" class="{{ $quick }}" wire:click="startActivity('MEETING')">{{ __('Möte') }}</button>
-            <button type="button" class="{{ $quick }}" wire:click="startActivity('NOTE')">{{ __('Anteckning') }}</button>
-            <button type="button" class="{{ $quick }}" wire:click="startActivity('TASK')">{{ __('Uppgift') }}</button>
         </div>
     @endif
 
     {{-- The open panel. --}}
-    @if(in_array($panel, ['activity', 'next'], true))
-        <x-ui.card :title="$panel === 'next' ? __('Nästa steg') : ($editingActivityId ? __('Ändra aktivitet') : App\Modules\Crm\Domain\ActivityType::from($activity['type'])->label())" :description="$panel === 'next' ? __('Vad ska hända härnäst med kunden? Planera det nu, eller hoppa över.') : null">
-            <form wire:submit="saveActivity" class="grid gap-4 sm:grid-cols-2">
-                <x-ui.field for="activity_type" :label="__('Typ')" error="type">
-                    <select id="activity_type" class="{{ $input }} mt-1" wire:model.live="activity.type">
-                        @foreach($types as $type)
-                            <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                        @endforeach
-                    </select>
-                </x-ui.field>
-                <x-ui.field for="activity_person" :label="__('Person')" error="person_id">
-                    <select id="activity_person" class="{{ $input }} mt-1" wire:model="activity.person_id">
-                        <option value="">{{ __('Ingen särskild') }}</option>
-                        @foreach($account->people as $person)
-                            <option value="{{ $person->id }}">{{ $person->name }}</option>
-                        @endforeach
-                    </select>
-                </x-ui.field>
-                <x-ui.field for="activity_subject" :label="__('Rubrik')" error="subject" class="sm:col-span-2">
-                    <input id="activity_subject" type="text" class="{{ $input }} mt-1" wire:model="activity.subject" placeholder="{{ App\Modules\Crm\Domain\ActivityType::from($activity['type'])->label() }}">
-                </x-ui.field>
-                <x-ui.field for="activity_body" :label="__('Anteckning')" error="body" class="sm:col-span-2">
-                    <textarea id="activity_body" rows="3" class="{{ $input }} mt-1" wire:model="activity.body"></textarea>
-                </x-ui.field>
-                @if($activity['type'] !== 'NOTE')
-                    <label class="flex min-h-11 items-center gap-3 text-sm text-gray-800 sm:col-span-2">
-                        <input type="checkbox" class="size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model.live="activity.done">
-                        <span>{{ __('Redan gjort') }}</span>
-                    </label>
-                    @if($activity['type'] === 'CALL' && $activity['done'])
-                        <x-ui.field for="activity_outcome" :label="__('Hur gick samtalet?')" error="call_outcome">
-                            <select id="activity_outcome" class="{{ $input }} mt-1" wire:model="activity.call_outcome">
-                                @foreach($outcomes as $outcome)
-                                    <option value="{{ $outcome->value }}">{{ $outcome->label() }}</option>
-                                @endforeach
-                            </select>
-                        </x-ui.field>
-                    @endif
-                    @if(! $activity['done'])
-                        <x-ui.field for="activity_due" :label="__('När')" error="due_at">
-                            <input id="activity_due" type="datetime-local" class="{{ $input }} mt-1" wire:model="activity.due_at">
-                        </x-ui.field>
-                    @endif
-                    <x-ui.field for="activity_assigned" :label="__('Vem gör det')" error="assigned_to">
-                        <select id="activity_assigned" class="{{ $input }} mt-1" wire:model="activity.assigned_to">
-                            @foreach($members as $member)
-                                <option value="{{ $member->id }}">{{ $member->name }}</option>
-                            @endforeach
-                        </select>
-                    </x-ui.field>
-                @endif
-                <div class="flex flex-wrap items-center gap-4 sm:col-span-2">
-                    <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
-                    @if($panel === 'next')
-                        <button type="button" class="min-h-11 text-sm font-medium text-gray-700 underline" wire:click="skipNextStep">{{ __('Hoppa över') }}</button>
-                    @else
-                        <button type="button" class="min-h-11 text-sm text-gray-600 underline" wire:click="closePanel">{{ __('Avbryt') }}</button>
-                    @endif
-                </div>
-            </form>
-        </x-ui.card>
-    @elseif($panel === 'complete')
-        <x-ui.card :title="__('Klarmarkera')">
-            <form wire:submit="complete" class="grid gap-4 sm:grid-cols-2">
-                @if($completion['call_outcome'] !== '')
-                    <x-ui.field for="completion_outcome" :label="__('Hur gick samtalet?')" error="call_outcome">
-                        <select id="completion_outcome" class="{{ $input }} mt-1" wire:model="completion.call_outcome">
-                            @foreach($outcomes as $outcome)
-                                <option value="{{ $outcome->value }}">{{ $outcome->label() }}</option>
-                            @endforeach
-                        </select>
-                    </x-ui.field>
-                @endif
-                <x-ui.field for="completion_note" :label="__('Hur gick det? (valfritt)')" error="note" class="sm:col-span-2">
-                    <textarea id="completion_note" rows="2" class="{{ $input }} mt-1" wire:model="completion.note"></textarea>
-                </x-ui.field>
-                @if($dealStepRequired)
-                    {{-- The deal's last open step: the next one is planned in the same go (ADR-043 stage 2). --}}
-                    <fieldset class="grid gap-4 rounded-2xl bg-stone-50 p-4 sm:col-span-2 sm:grid-cols-3">
-                        <legend class="px-1 text-sm font-semibold text-ink">{{ __('Nästa steg i affären') }}</legend>
-                        <p class="text-sm text-gray-600 sm:col-span-3">{{ __('Det här är affärens enda planerade steg. Planera nästa, eller avsluta affären som vunnen eller förlorad.') }}</p>
-                        <x-ui.field for="completion_next_type" :label="__('Typ')" :error="$errors->has('next.type') ? 'next.type' : 'type'">
-                            <select id="completion_next_type" class="{{ $input }} mt-1" wire:model="activity.type">
-                                @foreach($types as $type)
-                                    @continue(! $type->canBePlanned())
-                                    <option value="{{ $type->value }}">{{ $type->label() }}</option>
-                                @endforeach
-                            </select>
-                        </x-ui.field>
-                        <x-ui.field for="completion_next_subject" :label="__('Vad')" error="subject">
-                            <input id="completion_next_subject" type="text" class="{{ $input }} mt-1" wire:model="activity.subject">
-                        </x-ui.field>
-                        <x-ui.field for="completion_next_due" :label="__('När')" error="due_at">
-                            <input id="completion_next_due" type="datetime-local" class="{{ $input }} mt-1" wire:model="activity.due_at">
-                        </x-ui.field>
-                        @error('next')<p class="text-sm text-accent-700 sm:col-span-3">{{ $message }}</p>@enderror
-                        @error('person_id')<p class="text-sm text-accent-700 sm:col-span-3">{{ $message }}</p>@enderror
-                    </fieldset>
-                @endif
-                <div class="flex flex-wrap items-center gap-4 sm:col-span-2">
-                    <x-button wire:loading.attr="disabled">{{ $dealStepRequired ? __('Klar och planera nästa') : __('Klar') }}</x-button>
-                    @if($dealStepRequired && $nextDealId)
-                        <a href="{{ route('crm.deals.show', $nextDealId) }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Avsluta affären') }}</a>
-                    @endif
-                    <button type="button" class="min-h-11 text-sm text-gray-600 underline" wire:click="closePanel">{{ __('Avbryt') }}</button>
-                </div>
-            </form>
-        </x-ui.card>
-    @elseif($panel === 'winback')
+    @include('crm::livewire.partials.activity-panels', ['personOptions' => $account->people, 'accountOptions' => null])
+    @if($panel === 'winback')
         <x-ui.card :title="__('Vinn tillbaka')" :description="__('Den dagen får den ansvarige en uppgift att höra av sig till kunden igen.')">
             <form wire:submit="saveWinBack" class="grid gap-4 sm:grid-cols-2">
                 <x-ui.field for="winback_date" :label="__('Datum')" error="win_back_at" :hint="__('Lämna tomt om du inte vill ha någon påminnelse.')">
@@ -297,212 +191,122 @@
         </x-ui.card>
     @endif
 
+    {{-- Where the customer stands: the status path, or an open deal's pipeline. --}}
+    <section class="rounded-3xl bg-white p-5 shadow-xs ring-1 ring-stone-200 sm:p-6" aria-labelledby="crm-path-title">
+        <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+                <p class="text-xs font-medium text-gray-500">{{ $stepperDeal ? __('Affär') : __('Kundens status') }}</p>
+                <h2 id="crm-path-title" class="mt-0.5 text-lg font-bold tracking-tight text-ink">
+                    @if($stepperDeal)
+                        <a href="{{ route('crm.deals.show', $stepperDeal) }}" class="hover:text-accent-700">{{ $stepperDeal->title }}</a>
+                    @else
+                        {{ $account->status->label() }}
+                    @endif
+                </h2>
+                @if($stepperDeal)
+                    <p class="mt-1 flex flex-wrap gap-x-3 text-sm text-gray-600">
+                        <x-ui.amount :money="$money($stepperDeal->value_ore)" class="font-semibold text-ink" />
+                        @if($stepperDeal->expected_close_date)<span>{{ __('Väntat avslut :date', ['date' => $stepperDeal->expected_close_date->translatedFormat('j M Y')]) }}</span>@endif
+                    </p>
+                @endif
+            </div>
+            @if($openDeals->isNotEmpty())
+                <label class="flex items-center gap-2 text-sm text-gray-600">
+                    <span>{{ __('Visa') }}</span>
+                    <select class="min-h-11 max-w-[14rem] rounded-lg border-gray-300 text-sm focus:border-accent-500 focus:ring-accent-500 sm:min-h-9" wire:model.live="path">
+                        <option value="">{{ __('Kundens status') }}</option>
+                        @foreach($openDeals as $deal)
+                            <option value="{{ $deal->id }}">{{ __('Affär') }}: {{ $deal->title }}</option>
+                        @endforeach
+                    </select>
+                </label>
+            @endif
+        </div>
+        <x-crm::stepper class="mt-4" :steps="$steps" :label="$stepperDeal ? __('Steg i säljtratten') : __('Kundens status')" />
+    </section>
+
+    {{-- Key figures from the ledger, first-class. --}}
+    <x-crm::figures :figures="$figures" :limited="$limitedLedger" :is-customer="$account->customer !== null" />
+
     <div class="grid gap-6 lg:grid-cols-3">
-        <div class="space-y-6 lg:col-span-2">
-            {{-- Next step: the open activities, due first. --}}
-            <x-ui.card :title="__('Nästa steg')">
+        <section class="min-w-0 rounded-3xl bg-white p-5 shadow-xs ring-1 ring-stone-200 sm:p-6 lg:col-span-2">
+            <x-crm::tabs :tabs="$tabs" :active="$tab" model="tab" id="crm-account" :label="__('Historik')">
+                @if($tab === 'affarer')
+                    <x-crm::deal-list :deals="$deals" :now="$now" :empty="__('Inga affärer ännu. En affär följer en försäljning genom säljtratten, med värde och väntat avslut.')" />
+                @elseif($tab === 'personer')
+                    @include('crm::livewire.partials.account-people')
+                @elseif($timeline === null || $timeline->isEmpty())
+                    <x-ui.empty-state :title="__('Inget här ännu')">{{ __('Inget har hänt ännu. Aktiviteter, offerter, order, fakturor, betalningar och påminnelser visas här.') }}</x-ui.empty-state>
+                @else
+                    <ol class="space-y-3" data-testid="crm-timeline">
+                        @foreach($timeline as $entry)
+                            <li wire:key="t-{{ $entry->kind }}-{{ $entry->ref }}-{{ $loop->index }}">
+                                <x-crm::activity-card :entry="$entry" :can-manage="$canManage" :can-see-invoices="$canSeeInvoices" :limited-ledger="$limitedLedger" :now="$now" />
+                            </li>
+                        @endforeach
+                    </ol>
+                    <div class="mt-4">{{ $timeline->links() }}</div>
+                @endif
+            </x-crm::tabs>
+        </section>
+
+        <aside class="space-y-6" aria-label="{{ __('Om kunden') }}">
+            <x-ui.card :title="__('Kommande')">
                 @if($next->isEmpty())
                     <p class="text-sm text-gray-600">{{ $account->status->isOpen() ? __('Inget planerat. Lägg till ett samtal, ett möte eller en uppgift, så glöms kunden inte bort.') : __('Inget planerat.') }}</p>
                 @else
-                    <ul class="divide-y divide-gray-100">
+                    <ul class="space-y-3">
                         @foreach($next as $open)
-                            <li wire:key="next-{{ $open->id }}" class="flex flex-wrap items-center gap-3 py-3">
-                                <span class="min-w-0 flex-1 basis-48">
-                                    <span class="block font-medium text-gray-900">{{ $open->subject }}</span>
-                                    <span @class(['block text-sm', 'font-medium text-accent-700' => $open->isOverdue($now), 'text-gray-600' => ! $open->isOverdue($now)])>
-                                        {{ $open->type->label() }}@if($open->due_at) · {{ $open->due_at->setTimezone($zone)->translatedFormat('j M Y H:i') }}@if($open->isOverdue($now)) · {{ __('försenad') }}@endif @endif
+                            @php $late = $open->isOverdue($now); @endphp
+                            <li wire:key="next-{{ $open->id }}" class="flex gap-3">
+                                <span class="inline-flex size-9 flex-none items-center justify-center rounded-xl bg-stone-100 text-ink ring-1 ring-stone-200"><x-crm::icon :name="$open->type->value" class="size-4" /></span>
+                                <span class="min-w-0 flex-1 text-sm">
+                                    <span class="block font-medium text-ink">{{ $open->subject }}</span>
+                                    <span @class(['block', 'font-medium text-accent-700' => $late, 'text-gray-600' => ! $late])>
+                                        {{ $open->due_at?->setTimezone($zone)->translatedFormat('j M H:i') ?? __('Utan datum') }}@if($late) · {{ __('försenad') }}@endif
                                         @if($open->person) · {{ $open->person->name }}@endif
-                                        @if($open->assignee) · {{ $open->assignee->name }}@endif
                                     </span>
                                     @if($open->deal)
-                                        <a href="{{ route('crm.deals.show', $open->deal) }}" class="block text-sm text-accent-600 hover:text-accent-700">{{ __('Affär') }}: {{ $open->deal->title }}</a>
+                                        <a href="{{ route('crm.deals.show', $open->deal) }}" class="block text-accent-600 hover:text-accent-700">{{ __('Affär') }}: {{ $open->deal->title }}</a>
+                                    @endif
+                                    @if($canManage)
+                                        <span class="mt-1 flex gap-3">
+                                            <button type="button" class="min-h-11 font-semibold text-ink underline decoration-stone-300 underline-offset-4 hover:decoration-ink sm:min-h-0" wire:click="startCompletion({{ $open->id }})">{{ __('Klar') }}</button>
+                                            <button type="button" class="min-h-11 text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="editActivity({{ $open->id }})">{{ __('Ändra') }}</button>
+                                        </span>
                                     @endif
                                 </span>
-                                @if($canManage)
-                                    <button type="button" class="inline-flex min-h-11 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-black" wire:click="startCompletion({{ $open->id }})">{{ __('Klar') }}</button>
-                                    <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="editActivity({{ $open->id }})">{{ __('Ändra') }}</button>
-                                @endif
                             </li>
                         @endforeach
                     </ul>
                 @endif
             </x-ui.card>
 
-            {{-- Deals (ADR-043 stage 2): open first. --}}
             <x-ui.card :title="__('Affärer')">
                 <x-slot:action>
                     @if($canDeal)
                         <a href="{{ route('crm.deals', ['ny' => $account->id]) }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Ny affär') }}</a>
                     @endif
                 </x-slot:action>
-                @if($deals->isEmpty())
-                    <p class="text-sm text-gray-600">{{ __('Inga affärer ännu. En affär följer en försäljning genom säljtratten, med värde och väntat avslut.') }}</p>
-                @else
-                    <ul class="divide-y divide-gray-100" data-testid="crm-account-deals">
-                        @foreach($deals as $deal)
-                            <li wire:key="deal-{{ $deal->id }}" class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-3">
-                                <span class="min-w-0 flex-1 basis-48">
-                                    <a href="{{ route('crm.deals.show', $deal) }}" class="block font-medium text-gray-900 hover:text-accent-700">{{ $deal->title }}</a>
-                                    <span class="block text-sm text-gray-600">{{ $deal->isOpen() ? $deal->stage?->name : $deal->status->label() }}@if($deal->isOpen() && $deal->expected_close_date) · {{ __('avslut') }} {{ $deal->expected_close_date->translatedFormat('j M Y') }}@endif</span>
-                                </span>
-                                <x-ui.amount :money="$money($deal->value_ore)" class="font-semibold text-ink" />
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
+                <x-crm::deal-list :deals="$deals" :now="$now" :empty="__('Inga affärer ännu. En affär följer en försäljning genom säljtratten, med värde och väntat avslut.')" data-testid="crm-account-deals" />
             </x-ui.card>
 
-            {{-- Timeline: activities and the ledger, newest first. --}}
-            <x-ui.card :title="__('Tidslinje')">
-                @if($timeline->isEmpty())
-                    <p class="text-sm text-gray-600">{{ __('Inget har hänt ännu. Aktiviteter, offerter, order, fakturor, betalningar och påminnelser visas här.') }}</p>
-                @else
-                    <ol class="space-y-4" data-testid="crm-timeline">
-                        @foreach($timeline as $entry)
-                            @php
-                                $at = \Carbon\CarbonImmutable::parse($entry->at)->setTimezone($zone);
-                                $label = match ($entry->kind) {
-                                    'activity' => App\Modules\Crm\Domain\ActivityType::from($entry->status)->label(),
-                                    'quote' => __('Offert :number', ['number' => $entry->number]),
-                                    'order' => __('Order :number', ['number' => $entry->number]),
-                                    'invoice' => __('Faktura :number', ['number' => $entry->number]),
-                                    'credit' => __('Kreditfaktura :number', ['number' => $entry->number]),
-                                    'payment' => __('Betalning av faktura :number', ['number' => $entry->number]),
-                                    'reminder' => __('Påminnelse :sequence för faktura :number', ['sequence' => $entry->status, 'number' => $entry->number]),
-                                    default => '',
-                                };
-                                // Links into the ledger only for those who may open it; others would get 403.
-                                $url = ! $canSeeInvoices ? null : match ($entry->kind) {
-                                    'quote' => route('invoicing.quotes.show', $entry->ref),
-                                    'order' => route('invoicing.orders.show', $entry->ref),
-                                    'invoice', 'credit', 'payment', 'reminder' => route('invoicing.invoices.show', $entry->ref),
-                                    default => null,
-                                };
-                            @endphp
-                            <li wire:key="t-{{ $entry->kind }}-{{ $entry->ref }}-{{ $loop->index }}" class="flex gap-3">
-                                <span @class(['mt-1.5 size-2.5 flex-none rounded-full', 'bg-accent-500' => $entry->kind === 'activity', 'bg-stone-400' => $entry->kind !== 'activity'])></span>
-                                <span class="min-w-0 flex-1">
-                                    <span class="flex flex-wrap items-baseline justify-between gap-x-3">
-                                        <span class="font-medium text-gray-900">
-                                            @if($url)<a href="{{ $url }}" class="hover:text-accent-700">{{ $label }}</a>@else{{ $label }}@endif
-                                            @if($entry->kind === 'activity' && $entry->subject !== $label) · {{ $entry->subject }}@endif
-                                        </span>
-                                        <span class="text-sm text-gray-500">{{ $entry->kind === 'activity' ? $at->translatedFormat('j M Y H:i') : $at->translatedFormat('j M Y') }}</span>
-                                    </span>
-                                    <span class="block text-sm text-gray-600">
-                                        @if($entry->kind === 'activity')
-                                            {{ collect([
-                                                $entry->done_at === null ? ($entry->due_at ? __('Planerad till :time', ['time' => \Carbon\CarbonImmutable::parse($entry->due_at)->setTimezone($zone)->translatedFormat('j M H:i')]) : __('Inte gjord än')) : null,
-                                                $entry->outcome ? App\Modules\Crm\Domain\CallOutcome::from($entry->outcome)->label() : null,
-                                                $entry->person_name,
-                                                $entry->user_name,
-                                            ])->filter()->implode(' · ') }}
-                                        @elseif($entry->amount_ore !== null && ! ($limitedLedger && in_array($entry->kind, ['invoice', 'credit', 'payment'], true)))
-                                            <x-ui.amount :money="$money((int) $entry->amount_ore)" />
-                                            @if(in_array($entry->kind, ['invoice', 'credit', 'quote', 'order'], true)) {{ __('exkl. moms') }}@endif
-                                            @if($entry->kind === 'reminder') {{ __('kvar att betala') }}@endif
-                                        @endif
-                                    </span>
-                                    @if($entry->kind === 'activity' && $entry->body)
-                                        <span class="mt-1 block whitespace-pre-line text-sm text-gray-800">{{ $entry->body }}</span>
-                                    @endif
-                                </span>
-                            </li>
-                        @endforeach
-                    </ol>
-                    <div class="mt-4">{{ $timeline->links() }}</div>
-                @endif
-            </x-ui.card>
-        </div>
-
-        <div class="space-y-6">
-            {{-- Key figures from the ledger. --}}
-            <x-ui.card :title="__('Nyckeltal')" :description="$limitedLedger ? __('En privatpersons köp och skulder visas bara för den som får se fakturorna.') : ($account->customer ? __('Ur bokföringen, i kronor.') : __('Visas när prospektet har blivit kund och fått sin första faktura.'))">
-                @if($account->customer && ! $limitedLedger)
-                    <dl class="divide-y divide-gray-100 text-sm" data-testid="crm-figures">
-                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-                            <dt class="text-gray-500">{{ __('Fakturerat 12 mån') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->invoiced12Months)" class="text-base font-bold text-ink" /></dd>
-                        </div>
-                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-                            <dt class="text-gray-500">{{ __('Fakturerat totalt') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->invoicedTotal)" class="text-base font-bold text-ink" /></dd>
-                        </div>
-                        @if(! $limitedLedger)
-                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-                            <dt class="text-gray-500">{{ __('Obetalt') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->open)" class="text-base font-bold text-ink" /></dd>
-                        </div>
-                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-                            <dt class="text-gray-500">{{ __('Förfallet') }}</dt>
-                            <dd><x-ui.amount :money="$money($figures->overdue)" @class(['text-base font-bold', 'text-accent-700' => $figures->overdue > 0, 'text-ink' => $figures->overdue === 0]) /></dd>
-                        </div>
-                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-                            <dt class="text-gray-500">{{ __('Betaltid i snitt') }}</dt>
-                            <dd class="text-base font-bold text-ink tabular-nums">{{ $figures->paymentDays === null ? '–' : __(':days dagar', ['days' => number_format($figures->paymentDays, 1, ',', ' ')]) }}</dd>
-                        </div>
-                        @endif
-                        <div class="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-                            <dt class="text-gray-500">{{ __('Täckningsbidrag 12 mån') }}</dt>
-                            <dd class="text-right">
-                                @if($figures->margin === null)
-                                    <span class="text-base font-bold text-ink">–</span>
-                                @else
-                                    <x-ui.amount :money="$money($figures->margin)" class="text-base font-bold text-ink" />
-                                    @if($figures->marginRate() !== null)<span class="ms-1 text-xs text-gray-500">{{ number_format($figures->marginRate() * 100, 0, ',', ' ') }} %</span>@endif
-                                @endif
-                            </dd>
-                        </div>
-                    </dl>
-                    @if($figures->marginCoverage !== null)
-                        <p class="mt-3 text-xs text-gray-500">{{ __('Täckningsbidraget bygger på :share % av försäljningen: raderna med en artikel som har inköpspris.', ['share' => number_format($figures->marginCoverage * 100, 0, ',', ' ')]) }}</p>
-                    @endif
-                @endif
-                @if($canConvert)
-                    <div class="mt-4">
-                        <x-button type="button" wire:click="convert" wire:confirm="{{ __('Göra :name till kund? Kunden får nästa kundnummer och kan faktureras.', ['name' => $account->name]) }}">{{ __('Gör till kund') }}</x-button>
-                    </div>
-                @endif
-                @if($canSell)
-                    <div class="mt-4 flex flex-wrap gap-3 text-sm">
-                        <a href="{{ route('invoicing.quotes.create', ['kund' => $account->customer_id]) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700">{{ __('Ny offert') }}</a>
-                        <a href="{{ route('invoicing.orders.create', ['kund' => $account->customer_id]) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700">{{ __('Ny order') }}</a>
-                        <a href="{{ route('invoicing.invoices.create', ['kund' => $account->customer_id]) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700">{{ __('Ny faktura') }}</a>
-                    </div>
-                @endif
-            </x-ui.card>
-
-            {{-- People and their roles. --}}
             <x-ui.card :title="__('Personer')">
-                @if($account->people->isEmpty())
+                @if($people->isEmpty())
                     <p class="text-sm text-gray-600">{{ __('Inga kontaktpersoner ännu.') }}</p>
                 @else
-                    <ul class="divide-y divide-gray-100">
-                        @foreach($account->people as $person)
-                            <li wire:key="person-{{ $person->id }}" class="py-3">
-                                <span class="flex flex-wrap items-baseline justify-between gap-2">
-                                    <span class="font-medium text-gray-900">{{ $person->name }}@if($person->doNotContact()) <x-ui.badge tone="accent" class="ms-1">{{ __('Kontakta inte') }}</x-ui.badge>@endif</span>
-                                    @if($canManage)
-                                        <select class="rounded-lg border-gray-300 py-1 text-xs focus:border-accent-500 focus:ring-accent-500" aria-label="{{ __('Roll för :name', ['name' => $person->name]) }}" wire:change="changeRole({{ $person->id }}, $event.target.value)">
-                                            @foreach($roles as $role)
-                                                <option value="{{ $role->value }}" @selected($person->link->role === $role)>{{ $role->label() }}</option>
-                                            @endforeach
-                                        </select>
-                                    @else
-                                        <span class="text-xs text-gray-500">{{ $person->link->role->label() }}</span>
-                                    @endif
+                    <ul class="space-y-3">
+                        @foreach($people as $person)
+                            <li wire:key="side-person-{{ $person->id }}" class="flex items-center gap-3">
+                                <x-crm::avatar :name="$person->name" size="sm" />
+                                <span class="min-w-0 flex-1 text-sm">
+                                    <a href="{{ route('crm.people.show', $person) }}" class="block truncate font-medium text-ink hover:text-accent-700">{{ $person->name }}</a>
+                                    <span class="block truncate text-gray-600">{{ $person->link->role->label() }}@if($person->title) · {{ $person->title }}@endif</span>
                                 </span>
-                                @if($person->title)<span class="block text-sm text-gray-600">{{ $person->title }}</span>@endif
-                                <span class="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                                    @if($person->callNumber())<a href="tel:{{ preg_replace('/[^\d+]/', '', (string) $person->callNumber()) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 sm:min-h-0">{{ $person->callNumber() }}</a>@endif
-                                    @if($person->email)<a href="mailto:{{ $person->email }}" class="inline-flex min-h-11 items-center break-all font-medium text-accent-600 sm:min-h-0">{{ $person->email }}</a>@endif
-                                </span>
-                                @if($canManage)
-                                    <span class="mt-1 flex flex-wrap gap-x-4 text-sm">
-                                        @unless($person->doNotContact())<button type="button" class="min-h-11 text-gray-700 underline sm:min-h-0" wire:click="startActivity('CALL', {{ $person->id }})">{{ __('Logga samtal') }}</button>@endunless
-                                        <button type="button" class="min-h-11 text-gray-700 underline sm:min-h-0" wire:click="startPerson({{ $person->id }})">{{ __('Ändra') }}</button>
-                                        <button type="button" class="min-h-11 text-gray-700 underline sm:min-h-0" wire:click="unlink({{ $person->id }})" wire:confirm="{{ __('Ta bort :name från kunden? Personen finns kvar under Personer.', ['name' => $person->name]) }}">{{ __('Ta bort från kunden') }}</button>
-                                    </span>
+                                @if($person->doNotContact())
+                                    <x-ui.badge tone="accent">{{ __('Kontakta inte') }}</x-ui.badge>
+                                @elseif($person->callNumber())
+                                    <a href="tel:{{ preg_replace('/[^\d+]/', '', (string) $person->callNumber()) }}" class="inline-flex size-11 flex-none items-center justify-center rounded-full bg-stone-100 text-ink ring-1 ring-stone-200 hover:bg-white sm:size-9" aria-label="{{ __('Ring :name', ['name' => $person->name]) }}" title="{{ $person->callNumber() }}"><x-crm::icon name="phone" class="size-4" /></a>
                                 @endif
                             </li>
                         @endforeach
@@ -516,11 +320,25 @@
                 @endif
             </x-ui.card>
 
-            @if($canExport)
-                <p class="text-sm"><a href="{{ route('privacy.export.customer', $account->customer_id) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Ladda ner registerutdrag (JSON)') }}</a></p>
+            @if($canExport || $account->customer?->isRestricted())
+                <x-ui.card :title="__('Personuppgifter')">
+                    @if($account->customer?->isRestricted())
+                        <p class="text-sm text-accent-800">{{ __('Behandlingen av kundens uppgifter är begränsad. Inga nya offerter, order eller fakturor.') }}</p>
+                    @endif
+                    @if($canExport)
+                        <p class="text-sm"><a href="{{ route('privacy.export.customer', $account->customer_id) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700 sm:min-h-0">{{ __('Ladda ner registerutdrag (JSON)') }}</a></p>
+                    @endif
+                </x-ui.card>
             @endif
-        </div>
+        </aside>
     </div>
+
+    <x-crm::action-bar>
+        <x-crm::quick-action icon="phone" :label="__('Ring')" :href="$tel" :disabled="$tel ? null : __('Kunden har inget telefonnummer.')" primary />
+        <x-crm::quick-action icon="mail" :label="__('Mejla')" :href="$account->email ? 'mailto:'.$account->email : null" :disabled="$account->email ? null : __('Kunden har ingen e-postadress.')" />
+        <x-crm::quick-action icon="CALL" :label="__('Logga')" :disabled="$readOnly" wire:click="startActivity('CALL')" />
+        <x-crm::quick-action icon="MEETING" :label="__('Planera')" :disabled="$readOnly" wire:click="startActivity('MEETING')" />
+    </x-crm::action-bar>
 
     {{-- The ledger fields, through the customer register's own form. --}}
     @if($canEditCustomer)

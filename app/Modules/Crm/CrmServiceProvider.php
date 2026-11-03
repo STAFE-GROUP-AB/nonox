@@ -21,6 +21,7 @@ use App\Modules\Crm\Livewire\DealCard;
 use App\Modules\Crm\Livewire\DealsBoard;
 use App\Modules\Crm\Livewire\ForecastPage;
 use App\Modules\Crm\Livewire\PeoplePage;
+use App\Modules\Crm\Livewire\PersonCard;
 use App\Modules\Crm\Livewire\PipelineSettings;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
@@ -34,6 +35,7 @@ use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Policies\CrmPolicy;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Modules\ModuleRegistry;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -55,6 +57,8 @@ class CrmServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadViewsFrom(__DIR__.'/views', 'crm');
+        // <x-crm::…>: the parts the account card and the person page share.
+        Blade::anonymousComponentPath(__DIR__.'/views/components', 'crm');
         $this->loadMigrationsFrom(__DIR__.'/database/migrations');
 
         foreach ([Account::class, Person::class, Activity::class, AccountPerson::class, Deal::class, Pipeline::class, PipelineStage::class, LossReason::class, Goal::class] as $model) {
@@ -70,6 +74,7 @@ class CrmServiceProvider extends ServiceProvider
         Livewire::component('crm.customer-fields', CustomerFieldsForm::class);
         Livewire::component('crm.activities', ActivitiesPage::class);
         Livewire::component('crm.people', PeoplePage::class);
+        Livewire::component('crm.person-card', PersonCard::class);
         Livewire::component('crm.dashboard', Dashboard::class);
         Livewire::component('crm.deals', DealsBoard::class);
         Livewire::component('crm.deal-card', DealCard::class);

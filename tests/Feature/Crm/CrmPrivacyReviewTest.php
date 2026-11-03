@@ -162,7 +162,7 @@ it('flags a person Kontakta inte: only notes, shown on card and list, and flagge
     expect(fn () => $log($this->owner, $this->company, ['account_id' => $account->id, 'person_id' => $person->id, 'type' => 'CALL']))->toThrow(ValidationException::class, 'inte bli kontaktad');
     expect($log($this->owner, $this->company, ['account_id' => $account->id, 'person_id' => $person->id, 'type' => 'NOTE', 'body' => 'Ville inte bli kontaktad.'])->isOpen())->toBeFalse();
 
-    Livewire::test(AccountCard::class, ['accountId' => $account->id])->assertSee('Kontakta inte')->assertDontSee('Logga samtal');
+    Livewire::test(AccountCard::class, ['accountId' => $account->id])->set('tab', 'personer')->assertSee('Kontakta inte')->assertDontSeeHtml("startActivity('CALL', {$person->id})");
     Livewire::test(PeoplePage::class)->assertSee('Kontakta inte');
 
     app(EraseCrmData::class)->person($this->owner, $this->company, $person->fresh());

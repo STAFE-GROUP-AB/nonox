@@ -7,12 +7,11 @@ namespace App\Modules\Crm\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\Invoice;
 use App\Models\User;
-use App\Modules\Crm\Actions\CompleteActivity;
 use App\Modules\Crm\Actions\ConvertToCustomer;
 use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Actions\LinkPerson;
-use App\Modules\Crm\Actions\LogActivity;
 use App\Modules\Crm\Actions\SaveAccount;
 use App\Modules\Crm\Actions\SetAccountStatus;
 use App\Modules\Crm\Actions\SetWinBack;
@@ -23,8 +22,10 @@ use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\CallOutcome;
 use App\Modules\Crm\Domain\DealNextStep;
 use App\Modules\Crm\Domain\PersonRole;
+use App\Modules\Crm\Domain\StepPath;
 use App\Modules\Crm\Domain\Timeline;
 use App\Modules\Crm\Livewire\Concerns\EditsPeople;
+use App\Modules\Crm\Livewire\Concerns\WorksActivities;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Deal;
@@ -37,6 +38,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -56,21 +58,23 @@ class AccountCard extends Component
     use EditsPeople;
     use ShowsToasts;
     use WithPagination;
+    use WorksActivities;
+
+    /** The tabs: the timeline, one per activity type, deals, people and the ledger documents. */
+    public const array TABS = ['tidslinje' => null, 'anteckningar' => 'NOTE', 'samtal' => 'CALL', 'moten' => 'MEETING', 'uppgifter' => 'TASK', 'affarer' => 'deals', 'personer' => 'people', 'dokument' => 'ledger'];
 
     #[Locked]
     public int $accountId;
 
+    #[Url(as: 'flik', except: 'tidslinje')]
+    public string $tab = 'tidslinje';
+
+    /** The stepper: '' for the status path, or an open deal's id for its pipeline. */
+    #[Url(as: 'steg', except: '')]
+    public string $path = '';
+
     /** The open panel: activity, complete, next, person, link, edit or status; '' for none. */
     public string $panel = '';
-
-    /** @var array<string, mixed> */
-    public array $activity = [];
-
-    #[Locked]
-    public ?int $editingActivityId = null;
-
-    /** @var array<string, string> */
-    public array $completion = ['call_outcome' => '', 'note' => ''];
 
     /** @var array<string, mixed> */
     public array $edit = [];
@@ -83,13 +87,6 @@ class AccountCard extends Component
 
     public string $linkRole = 'OTHER';
 
-    /** The deal of the completed activity: its next step is linked to it. */
-    #[Locked]
-    public ?int $nextDealId = null;
-
-    /** The completed activity is the last open step of an open deal: the next one is required. */
-    public bool $dealStepRequired = false;
-
     public string $winBackAt = '';
 
     public function mount(int $accountId): void
@@ -98,131 +95,6 @@ class AccountCard extends Component
         abort_unless($this->user()->can('view', $account), 403);
 
         $this->accountId = $account->id;
-    }
-
-    /** Ring, Möte, Anteckning or Uppgift: the activity form, ready for that type. */
-    public function startActivity(string $type, ?int $personId = null): void
-    {
-        $this->authorizeManage();
-        $type = ActivityType::tryFrom($type) ?? ActivityType::Note;
-
-        $this->editingActivityId = null;
-        $this->activity = [
-            'type' => $type->value,
-            'subject' => '',
-            'body' => '',
-            'person_id' => $personId === null ? '' : (string) $personId,
-            'call_outcome' => $type === ActivityType::Call ? CallOutcome::Reached->value : '',
-            'due_at' => $type === ActivityType::Meeting || $type === ActivityType::Task ? CarbonImmutable::now(LogActivity::ZONE)->addDay()->setTime(9, 0)->format('Y-m-d\TH:i') : '',
-            'assigned_to' => (string) $this->user()->id,
-            // A call or an e-mail is usually logged afterwards; a meeting or a task is planned.
-            'done' => $type === ActivityType::Call || $type === ActivityType::Email,
-        ];
-        $this->panel = 'activity';
-        $this->resetErrorBag();
-    }
-
-    public function editActivity(int $activityId): void
-    {
-        $this->authorizeManage();
-        $activity = $this->activities()->findOrFail($activityId);
-
-        $this->editingActivityId = $activity->id;
-        $this->activity = [
-            'type' => $activity->type->value,
-            'subject' => $activity->subject,
-            'body' => (string) $activity->body,
-            'person_id' => (string) $activity->person_id,
-            'call_outcome' => (string) $activity->call_outcome?->value,
-            'due_at' => (string) $activity->due_at?->setTimezone(LogActivity::ZONE)->format('Y-m-d\TH:i'),
-            'assigned_to' => (string) $activity->assigned_to,
-            'done' => ! $activity->isOpen(),
-        ];
-        $this->panel = 'activity';
-        $this->resetErrorBag();
-    }
-
-    public function saveActivity(LogActivity $log): void
-    {
-        $existing = $this->editingActivityId === null ? null : $this->activities()->findOrFail($this->editingActivityId);
-        $saved = $log($this->user(), $this->company(), [
-            ...$this->activity,
-            ...($this->panel === 'next' && $this->nextDealId !== null ? ['deal_id' => $this->nextDealId] : []),
-            'account_id' => $this->accountId,
-            'person_id' => ($this->activity['person_id'] ?? '') === '' ? null : (int) $this->activity['person_id'],
-            'assigned_to' => ($this->activity['assigned_to'] ?? '') === '' ? null : (int) $this->activity['assigned_to'],
-            'call_outcome' => ($this->activity['call_outcome'] ?? '') === '' ? null : $this->activity['call_outcome'],
-        ], $existing);
-
-        $this->closePanel();
-        $this->toast(match (true) {
-            $existing !== null => __('Aktiviteten är sparad.'),
-            $saved->isOpen() => __(':type är planerad.', ['type' => $saved->type->label()]),
-            default => __(':type är loggad.', ['type' => $saved->type->label()]),
-        });
-    }
-
-    /** Klar: asks for the outcome and a short note, then the next step. */
-    public function startCompletion(int $activityId): void
-    {
-        $this->authorizeManage();
-        $activity = $this->activities()->whereNull('done_at')->findOrFail($activityId);
-
-        $required = DealNextStep::isLastStep($activity);
-
-        if ($required) {
-            // The form's next-step fields: a task tomorrow at nine, for the same person.
-            $this->startActivity(ActivityType::Task->value, $activity->person_id);
-        }
-
-        $this->editingActivityId = $activity->id;
-        $this->nextDealId = $activity->deal_id;
-        $this->dealStepRequired = $required;
-        $this->completion = ['call_outcome' => $activity->type === ActivityType::Call ? CallOutcome::Reached->value : '', 'note' => ''];
-        $this->panel = 'complete';
-        $this->resetErrorBag();
-    }
-
-    public function complete(CompleteActivity $complete): void
-    {
-        $activity = $this->activities()->findOrFail((int) $this->editingActivityId);
-
-        try {
-            $complete($this->user(), $this->company(), $activity, [
-                'call_outcome' => $this->completion['call_outcome'] === '' ? null : $this->completion['call_outcome'],
-                'note' => $this->completion['note'],
-                ...($this->dealStepRequired ? ['next' => [
-                    'type' => $this->activity['type'] ?? ActivityType::Task->value,
-                    'subject' => $this->activity['subject'] ?? '',
-                    'due_at' => $this->activity['due_at'] ?? null,
-                    'assigned_to' => ($this->activity['assigned_to'] ?? '') === '' ? null : (int) $this->activity['assigned_to'],
-                    'person_id' => ($this->activity['person_id'] ?? '') === '' ? null : (int) $this->activity['person_id'],
-                ]] : []),
-            ]);
-        } catch (ValidationException $exception) {
-            // The next step's fields stay open with their errors; anything else closes the panel.
-            if ($this->dealStepRequired) {
-                throw $exception;
-            }
-
-            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
-            $this->closePanel();
-
-            return;
-        }
-
-        if ($this->dealStepRequired) {
-            $this->closePanel();
-            $this->toast(__('Klart, och nästa steg är planerat.'));
-
-            return;
-        }
-
-        $dealId = $activity->deal_id;
-        $this->toast(__('Klart. Vad är nästa steg?'));
-        $this->startActivity(ActivityType::Task->value, $activity->person_id);
-        $this->nextDealId = $dealId;
-        $this->panel = 'next';
     }
 
     /** A lost account's win-back date: changed or cleared. */
@@ -242,12 +114,6 @@ class AccountCard extends Component
 
         $this->closePanel();
         $this->toast($date === '' ? __('Ingen påminnelse om att vinna tillbaka kunden.') : __('Påminnelsen är flyttad till :date.', ['date' => CarbonImmutable::parse($date)->translatedFormat('j F Y')]));
-    }
-
-    public function skipNextStep(): void
-    {
-        $this->closePanel();
-        $this->toast(__('Inget nästa steg planerat.'), 'info');
     }
 
     public function startEdit(): void
@@ -392,14 +258,36 @@ class AccountCard extends Component
         // What a private person has bought and owes is for those who may see the invoices, not for a seller: the card shows only the CRM.
         $limitedLedger = ! $canSeeInvoices && $account->kind === AccountKind::Person;
 
+        $deals = Deal::query()
+            ->where('account_id', $account->id)
+            ->with(['stage:id,name', 'person:id,name'])
+            ->withMin(['activities as next_due_at' => fn (Builder $query) => $query->whereNull('done_at')], 'due_at')
+            ->withCount(['activities as open_steps' => fn (Builder $query) => $query->whereNull('done_at')])
+            ->orderByRaw("CASE status WHEN 'OPEN' THEN 0 ELSE 1 END")
+            ->orderByDesc('updated_at')
+            ->limit(30)
+            ->get();
+        $openDeals = $deals->filter(fn (Deal $deal): bool => $deal->isOpen())->values();
+        $stepperDeal = $openDeals->first(fn (Deal $deal): bool => (string) $deal->id === $this->path);
+        $only = self::TABS[$this->tab] ?? null;
+        $counts = $timeline->counts($account, ! $limitedLedger);
+        // Who first got an issued invoice, for "Kund sedan" and the status path; one query.
+        $firstInvoice = $account->customer_id === null ? null : Invoice::query()->where('customer_id', $account->customer_id)->whereNotNull('issued_at')->where('kind', Invoice::INVOICE)->min('invoice_date');
+
         return view('crm::livewire.account-card', [
             'account' => $account,
             'figures' => $figures->forCustomer($account->customer_id),
-            'timeline' => $timeline->for($account, withLedger: ! $limitedLedger),
+            'timeline' => in_array($only, ['deals', 'people'], true) || ($only === 'ledger' && ! $canSeeInvoices) ? null : $timeline->for($account, 10, 'tidslinje', ! $limitedLedger, $only),
+            'tabs' => $this->tabs($counts, $deals->count(), $account->people->count(), $canSeeInvoices && ! $limitedLedger && $account->customer_id !== null),
+            'steps' => $stepperDeal instanceof Deal ? StepPath::forDeal($stepperDeal) : StepPath::forAccount($account, $firstInvoice),
+            'stepperDeal' => $stepperDeal,
+            'openDeals' => $openDeals,
+            'firstInvoice' => $firstInvoice,
+            'lastContact' => $this->activities()->whereNotNull('done_at')->max('done_at'),
             'canSeeInvoices' => $canSeeInvoices,
             'limitedLedger' => $limitedLedger,
             'next' => $this->activities()->whereNull('done_at')->with(['person:id,name', 'assignee:id,name', 'deal:id,title'])->orderByRaw('due_at ASC NULLS LAST')->orderBy('id')->limit(5)->get(),
-            'deals' => Deal::query()->where('account_id', $account->id)->with('stage:id,name')->orderByRaw("CASE status WHEN 'OPEN' THEN 0 ELSE 1 END")->orderByDesc('updated_at')->limit(20)->get(),
+            'deals' => $deals,
             'canDeal' => $user->can('manage', [Deal::class, $company]),
             'canManage' => $user->can('update', $account),
             'canEditCustomer' => $account->customer instanceof Customer && $user->can('update', $account->customer),
@@ -420,6 +308,37 @@ class AccountCard extends Component
         ]);
     }
 
+    public function updatedTab(): void
+    {
+        $this->resetPage('tidslinje');
+    }
+
+    /**
+     * @param  array{all: int, ledger: int, types: array<string, int>}  $counts
+     * @return list<array{key: string, label: string, count: int}>
+     */
+    private function tabs(array $counts, int $deals, int $people, bool $documents): array
+    {
+        $labels = ['tidslinje' => __('Tidslinje'), 'anteckningar' => __('Anteckningar'), 'samtal' => __('Samtal'), 'moten' => __('Möten'), 'uppgifter' => __('Uppgifter'), 'affarer' => __('Affärer'), 'personer' => __('Personer'), 'dokument' => __('Dokument')];
+        $tabs = [];
+
+        foreach (self::TABS as $key => $only) {
+            if ($key === 'dokument' && ! $documents) {
+                continue;
+            }
+
+            $tabs[] = ['key' => $key, 'label' => $labels[$key], 'count' => match ($only) {
+                null => $counts['all'],
+                'deals' => $deals,
+                'people' => $people,
+                'ledger' => $counts['ledger'],
+                default => $counts['types'][$only] ?? 0,
+            }];
+        }
+
+        return $tabs;
+    }
+
     private function canEditShared(Account $account): bool
     {
         if ($account->customer_id === null) {
@@ -432,9 +351,14 @@ class AccountCard extends Component
     }
 
     /** @return Builder<Activity> */
-    private function activities(): Builder
+    protected function activities(): Builder
     {
         return Activity::query()->where('account_id', $this->accountId);
+    }
+
+    protected function activityAccountId(): int
+    {
+        return $this->accountId;
     }
 
     private function account(): Account
@@ -442,12 +366,12 @@ class AccountCard extends Component
         return Account::query()->findOrFail($this->accountId);
     }
 
-    private function authorizeManage(): void
+    protected function authorizeManage(): void
     {
         abort_unless($this->user()->can('update', $this->account()), 403);
     }
 
-    private function user(): User
+    protected function user(): User
     {
         /** @var User $user */
         $user = Auth::user();
@@ -455,7 +379,7 @@ class AccountCard extends Component
         return $user;
     }
 
-    private function company(): Company
+    protected function company(): Company
     {
         /** @var Company $company */
         $company = $this->user()->currentCompany();

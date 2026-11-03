@@ -60,7 +60,7 @@
                 @foreach($people as $person)
                     <li wire:key="person-{{ $person->id }}" class="flex flex-wrap items-center gap-x-4 gap-y-1 py-3">
                         <span class="min-w-0 flex-1 basis-52">
-                            <span class="block font-medium text-gray-900">{{ $person->name }}@if(! $person->is_active) <span class="ms-1 text-xs font-normal text-gray-500">({{ __('inaktiv') }})</span>@endif @if($person->doNotContact())<x-ui.badge tone="accent" class="ms-1">{{ __('Kontakta inte') }}</x-ui.badge>@endif</span>
+                            <span class="block font-medium text-gray-900"><a href="{{ route('crm.people.show', $person) }}" class="hover:text-accent-700">{{ $person->name }}</a>@if(! $person->is_active) <span class="ms-1 text-xs font-normal text-gray-500">({{ __('inaktiv') }})</span>@endif @if($person->doNotContact())<x-ui.badge tone="accent" class="ms-1">{{ __('Kontakta inte') }}</x-ui.badge>@endif</span>
                             <span class="block text-sm text-gray-600">
                                 {{ collect([$person->title, $person->legal_basis->label()])->filter()->implode(' · ') }}
                             </span>

@@ -20,7 +20,7 @@ Under **CRM → Affärer** ser du säljtratten. Varje kolumn är ett steg, med a
 - Är nästa steg försenat, eller saknas det, står det i rött.
 - Har väntat avslut passerat står datumet i rött.
 
-Flytta en affär till ett annat steg genom att dra kortet dit, eller välj steg under **Flytta** på kortet. I mobilen visas ett steg i taget: välj steg med knapparna överst.
+Flytta en affär till ett annat steg genom att dra kortet dit, eller välj steg på kortet och tryck på **Flytta**. I mobilen visas ett steg i taget: välj steg med knapparna överst.
 
 ![Säljtratten i mobilen med ett steg i taget och Flytta på varje kort.](/bilder/manual/crm/saljtratten-mobil.webp)
 

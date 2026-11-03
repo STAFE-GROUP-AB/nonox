@@ -13,7 +13,7 @@
             <div class="min-w-0">
                 <p class="text-sm text-gray-500">
                     <a href="{{ route('crm.accounts.show', $deal->account_id) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $deal->account?->name }}</a>
-                    @if($deal->person) · {{ $deal->person->name }}@endif
+                    @if($deal->person) · <a href="{{ route('crm.people.show', $deal->person) }}" class="font-medium text-accent-600 hover:text-accent-700">{{ $deal->person->name }}</a>@endif
                     · {{ $deal->pipeline?->name }}
                 </p>
                 <h1 class="mt-1 break-words text-2xl font-bold tracking-tight text-ink">{{ $deal->title }}</h1>

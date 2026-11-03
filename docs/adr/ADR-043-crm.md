@@ -436,3 +436,33 @@ out in the migration so it never changes with the action).
   named: the business with them is still going on.
 - **No "reopen" for a closed deal.** A mistake is corrected with a new deal;
   the history stays as it was.
+
+### Account card and person page (2026-11-03)
+
+- **One design for both.** The account card (`/kunder/{account}`) and the
+  new person page (`/kunder/personer/{person}`, `crm.people.show`, linked
+  from Personer, the account card, the deal card and the timeline) share
+  Blade components under `app/Modules/Crm/views/components` (`x-crm::…`):
+  header with initials, quick actions and facts strip; a stepper (an ordered
+  list with `aria-current="step"`) for the account's status path or an open
+  deal's pipeline (`StepPath`); real tabs with counts (WAI-ARIA, arrow keys,
+  one tabpanel); activity cards with a type icon and colour; deal list; key
+  figures band; a fixed action bar on the phone with safe-area insets.
+  Logging and completing activities is one trait (`WorksActivities`) on
+  both pages, over LogActivity and CompleteActivity; the deal rule applies.
+- **Timeline** filters by activity type or ledger documents, and gives a
+  person's activities at any account; `Timeline::counts()` gives every tab's
+  count in one query. Both pages render with a fixed number of queries
+  (tested).
+- **Person page rules.** Kontakta inte: a banner, and Ring, Mejla, Logga
+  samtal, Planera möte and Uppgift are disabled with the reason (notes stay
+  after an objection). Under a restriction the page is read-only except
+  completing what was planned (stage 1). A seller without `invoices:view`
+  sees no key figures for a private person's company. Another company's
+  person answers 404.
+- **Light theme only.** The app has one theme (stage 1); the pages use its
+  tokens and add no dark-mode styles.
+- **Stage 1 test adjusted:** the account-level quick action is now labelled
+  "Logga samtal", so the check that a person marked Kontakta inte has no
+  call button looks for that person's own button instead of the text.
+

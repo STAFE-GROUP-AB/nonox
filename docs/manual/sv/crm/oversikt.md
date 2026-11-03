@@ -35,7 +35,9 @@ Sök på namn, ort, e-post eller namnet på en kontaktperson. Filtrera på **Sta
 
 CRM är byggt för telefonen först. Knapparna är stora, telefonnummer och e-postadresser går att trycka på för att ringa eller mejla, och en adress öppnar kartan. Har du installerat NONOX som app på hemskärmen fungerar CRM där utan något mer.
 
-![Kundkortet i mobilen med knapparna Ring, Möte, Anteckning och Uppgift.](/bilder/manual/crm/kundkortet-mobil.webp)
+![Kundkortet i mobilen med Ring, Mejla, Logga och Planera fast längst ned.](/bilder/manual/crm/kundkortet-mobil.webp)
+
+Varje kontaktperson har också en egen sida med historik, affärer och personuppgifter. Se [Kontaktpersonens sida](/manual/crm/kontaktpersonens-sida).
 
 ## Roller
 
@@ -52,6 +54,7 @@ En **Revisor** ser hela CRM, nyckeltalen och aktiviteterna, men kan inte ändra 
 ## Läs också
 
 - [Företag och personer](/manual/crm/foretag-och-personer)
+- [Kontaktpersonens sida](/manual/crm/kontaktpersonens-sida)
 - [Aktiviteter och nästa steg](/manual/crm/aktiviteter-och-nasta-steg)
 - [Säljtratt och affärer](/manual/crm/saljtratt-och-affarer)
 - [Prognos och mål](/manual/crm/prognos-och-mal)

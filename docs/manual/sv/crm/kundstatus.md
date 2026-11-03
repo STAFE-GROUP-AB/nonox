@@ -9,7 +9,7 @@ sokord: [status, aktiv kund, inaktiv kund, förlorad affär, prospekt, förlorad
 
 # Kundstatus
 
-Varje kund och prospekt har en status. Den sätts för det mesta av sig själv, efter fakturorna i bokföringen.
+Varje kund och prospekt har en status. Den sätts för det mesta av sig själv, efter fakturorna i bokföringen. På kundkortet och kontaktpersonens sida visas statusen som steg, med datum där det är känt: när kunden lades till, den första fakturan och en status du har satt själv.
 
 | Status | Betyder |
 |---|---|

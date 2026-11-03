@@ -67,6 +67,8 @@ it('shows only A\'s records on the pages, and answers 404 for B\'s card and B\'s
     $this->get(route('crm.people'))->assertOk()->assertSee('Alfa Kontaktsson')->assertDontSee('Beta Kontaktsson');
     $this->get(route('crm.accounts.show', $this->a['account']))->assertOk();
     $this->get(route('crm.accounts.show', $this->b['account']))->assertNotFound();
+    $this->get(route('crm.people.show', $this->a['person']))->assertOk()->assertDontSee('Beta Kontaktsson');
+    $this->get(route('crm.people.show', $this->b['person']))->assertNotFound();
     $this->get(route('privacy.export.crmPerson', $this->b['person']))->assertNotFound();
     $this->get(route('invoicing.customers', ['redigera' => $this->b['customer']->id]))->assertOk()->assertDontSee('Betakunden AB');
 
