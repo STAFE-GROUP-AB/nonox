@@ -35,6 +35,7 @@ use App\Http\Controllers\RoadmapController;
 use App\Http\Controllers\RunMigrationsController;
 use App\Http\Controllers\Search\RecentItemController;
 use App\Http\Controllers\Search\SearchController;
+use App\Http\Controllers\SecureChatController;
 use App\Http\Controllers\SecurityPageController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StartController;
@@ -132,6 +133,17 @@ Route::middleware([
     // The logo of the accounting firm the company shows its people (ADR-030).
     Route::get('/foretag/{company}/byrans-logotyp', [FirmLogoController::class, 'member'])->whereNumber('company')->name('teams.firm-logo');
     Route::put('/aktuellt-foretag', [CompanyController::class, 'switch'])->name('current-team.update');
+
+    // The encrypted chat (ADR-045): technical JSON endpoints, any signed-in user, the room id only in the POST body.
+    Route::prefix('chatt')->name('chat.')->middleware('throttle:chat')->controller(SecureChatController::class)->group(function () {
+        Route::post('/starta', 'start')->name('start');
+        Route::post('/anslut', 'join')->name('join');
+        Route::post('/hamta', 'poll')->name('poll');
+        Route::post('/skicka', 'send')->name('send');
+        Route::post('/avsluta', 'end')->name('end');
+        Route::post('/mina-foretag', 'companies')->name('companies');
+        Route::post('/kan-folja', 'followable')->name('followable');
+    });
     Route::view('/mina-foretag', 'companies.overview')->name('companies.overview');
     // Across every company the user belongs to (ADR-028).
     Route::view('/uppgifter', 'tasks.index')->name('tasks.index');

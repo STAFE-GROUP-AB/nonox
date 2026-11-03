@@ -30,6 +30,7 @@ Sedan går det mesta fort: du loggar in med en kod som du får i mejlet, skapar 
 
 - [Sök](/manual/kom-igang/sok) – hitta allt med <kbd>⌘</kbd> + <kbd>K</kbd> eller <kbd>Ctrl</kbd> + <kbd>K</kbd>.
 - [Notiser](/manual/kom-igang/notiser) – när någon lämnar en uppgift till dig eller blir klar med något.
+- [Krypterad chatt](/manual/kom-igang/krypterad-chatt) – chatta med supporten, revisorn eller en kund med en kod, och låt den andra följa dina sidor.
 - [Installera NONOX som app](/manual/kom-igang/installera-som-app) – på mobilen, surfplattan och datorn.
 - [Din profil](/manual/kom-igang/din-profil) – ditt namn, dina passkeys och dina egna uppgifter.
 

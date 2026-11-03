@@ -25,6 +25,8 @@ kom-igang/oversikten: { foretag: restaurang, rutt: dashboard }
 kom-igang/skapa-ett-foretag: { foretag: konsult, rutt: teams.create }
 kom-igang/din-profil: { foretag: konsult, rutt: profile.show }
 kom-igang/oversikten-mobil: { foretag: cafe, rutt: dashboard, enhet: mobil }
+kom-igang/krypterad-chatt: { foretag: konsult, rutt: dashboard, klick: ['[data-chat-trigger]', 'text=Starta chatt'] }
+kom-igang/krypterad-chatt-mobil: { foretag: cafe, rutt: dashboard, enhet: mobil, klick: ['[data-chat-trigger]', 'text=Anslut till chatt'] }
 
 bokforing/verifikationer: { foretag: cafe, rutt: accounting.vouchers.index }
 bokforing/bokfor-en-verifikation: { foretag: cafe, rutt: accounting.vouchers.create }

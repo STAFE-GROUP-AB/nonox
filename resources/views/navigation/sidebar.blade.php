@@ -105,6 +105,8 @@
                 <span class="block truncate text-sm font-medium text-white">{{ Auth::user()->name }}</span>
                 <span class="block truncate text-xs text-stone-400">{{ Auth::user()->email }}</span>
             </span>
+            {{-- The encrypted chat (ADR-045). --}}
+            <x-secure-chat.trigger class="rounded-lg p-2 text-stone-300 hover:bg-white/10 hover:text-white" />
             @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
         </div>
         {{-- At least 24 px high, so each link is easy to hit (WCAG 2.5.8). --}}

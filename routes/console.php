@@ -12,6 +12,8 @@ Schedule::command('invoices:run-agreements')->dailyAt('06:00')->withoutOverlappi
 // Personal data without a remaining purpose (GDPR art. 5.1 e), see docs/gdpr/lagringstider.md.
 Schedule::command('privacy:prune')->dailyAt('04:10')->withoutOverlapping();
 Schedule::command('connect:prune')->dailyAt('04:25')->withoutOverlapping();
+// The encrypted chat (ADR-045): expired chats in a file store, which does not expire them by itself.
+Schedule::command('chat:prune')->everyFiveMinutes()->withoutOverlapping();
 // NONOX Connect webhooks (ADR-032): retries whose wait is over.
 Schedule::command('connect:webhooks')->everyMinute()->withoutOverlapping();
 // NONOX Inbox (ADR-023): IMAP mailboxes of self-hosted inboxes, the daily summary and retention.

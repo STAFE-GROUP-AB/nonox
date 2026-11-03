@@ -12,6 +12,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Support\Audit\AuditSubscriber;
 use App\Support\Build\VersionRecorder;
+use App\Support\Chat\SecureChat;
 use App\Support\Files\EncryptedAdapter;
 use App\Support\Overview\TaskTodoProvider;
 use App\Support\Tenancy\CompanyContext;
@@ -19,6 +20,7 @@ use App\Support\Tenancy\CurrentCompany;
 use App\Support\Tenancy\LivewireCompanyGuard;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Events\MigrationsEnded;
 use Illuminate\Database\Events\NoPendingMigrations;
@@ -27,6 +29,7 @@ use Illuminate\Http\Request;
 use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Jetstream\Events\TeamMemberRemoved;
@@ -79,6 +82,14 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen([Login::class, Logout::class], fn () => CurrentCompany::forget());
+        // Signing out ends the user's encrypted chats, and everything in them is deleted (ADR-045).
+        Event::listen(Logout::class, function (Logout $event): void {
+            if ($event->user instanceof User) {
+                app(SecureChat::class)->endAllFor($event->user);
+            }
+        });
+        // The chat polls every two seconds while it is open; bounded per user, on top of its own join limit.
+        RateLimiter::for('chat', fn (Request $request): Limit => Limit::perMinute(240)->by('chat:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
         Event::subscribe(AuditSubscriber::class);
         // Record a new version of the systemdokumentation after every migrate, also when nothing was pending (#44).
         Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function (MigrationsEnded|NoPendingMigrations $event): void {
