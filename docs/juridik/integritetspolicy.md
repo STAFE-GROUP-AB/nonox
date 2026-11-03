@@ -50,7 +50,7 @@ Inloggad kan du ladda ner dina kontouppgifter under **Profil → Mina uppgifter*
 
 Står du i kö kan du när som helst ta tillbaka ditt samtycke och be oss ta bort anmälan. Svara på bekräftelsemejlet eller kontakta oss på {epost}, så raderar vi anmälan med alla svar.
 
-Ber du oss radera anmälan raderar vi också dina uppgifter i tjänstens CRM. Vi sparar bara en kontrollsumma av din e-postadress och ditt telefonnummer, aldrig uppgifterna själva, så att du inte läggs till där igen av misstag. Har vi haft kontakt med ditt företag finns företagets uppgifter kvar, men inte du.
+Ber du oss radera anmälan raderar vi också dina uppgifter i tjänstens CRM. Vi sparar bara en kontrollsumma av din e-postadress och ditt telefonnummer, aldrig uppgifterna själva, så att du inte läggs till där igen av misstag. Har vi haft kontakt med ditt företag finns företagets uppgifter kvar, men inte du (för en enskild firma raderas även företagets uppgifter).
 
 Du har också rätt att klaga till Integritetsskyddsmyndigheten (IMY), www.imy.se.
 
