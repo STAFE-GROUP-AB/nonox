@@ -279,3 +279,8 @@ permissions). Receiving needs the inbox module.
   version, and then mark the feature live.
 - Self-hosters can write a driver for their own provider behind the same
   interface.
+- Public pages: `Features::peppol` is "soon" (README "På väg"), and the
+  comparison table gets no Peppol row yet, because a comparison row may only
+  name live features (`IndustryPagesTest`). When the feature goes live: mark
+  it live, add a landing card with a real screenshot, and add a neutral
+  comparison row with competitor values taken only from their own pages.

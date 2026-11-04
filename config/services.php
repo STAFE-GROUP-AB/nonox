@@ -154,10 +154,11 @@ return [
      * access point. driver: 'qvalia' or 'log' (local and tests only; empty
      * means log locally and no access point elsewhere, so the module cannot
      * be turned on). Qvalia: the operator's Partner API account
-     * (partnerRegNo), its API key and the webhook signing secret Qvalia
-     * returns once, when the webhook subscription is created. The URL
-     * defaults to Qvalia's sandbox; set https://api.qvalia.com to go live.
-     * Webhook URL to subscribe: APP_URL/webhooks/peppol/qvalia.
+     * (partnerRegNo) and its API key. `peppol:link` subscribes
+     * APP_URL/webhooks/peppol/qvalia for each company account and keeps that
+     * subscription's signing secret on the company; webhook_secret is only a
+     * fallback for a subscription made by hand. The URL defaults to Qvalia's
+     * sandbox; set https://api.qvalia.com to go live.
      */
     'peppol' => [
         'driver' => env('NONOX_PEPPOL_DRIVER'),
