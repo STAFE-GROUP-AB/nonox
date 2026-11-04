@@ -17,6 +17,8 @@ use Carbon\CarbonImmutable;
 /**
  * Företagsguiden's start plan (ADR-051) while steps remain, for those who
  * may tick them, unless the company has turned the guide off. One query.
+ * The plan itself is files: Overview puts Guide::version() in its cache key,
+ * so an edited startplan.json gives a new count.
  */
 final class GuideTodos implements TodoProvider
 {

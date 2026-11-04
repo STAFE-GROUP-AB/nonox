@@ -70,8 +70,10 @@ about what has been checked and by whom.
      (`StepGroups`), with "Fler steg" for a step that is not mapped, so the
      content format of startplan.json stays as it is. Steps are numbered in
      the order the groups show them, here and on the public timeline.
-     The address is reserved: no section may be called `min-startplan`, and
-     the route is registered before the section route.
+     The address is reserved three times: the validator refuses a section
+     called `min-startplan`, the section and article routes refuse it as
+     the section segment (with or without an article after it), and the
+     controller answers 404 for it.
    - **Progress** is `company_guide_steps` (`CompanyGuideStep`, company
      scoped, unique per company and step key). The step key in
      startplan.json is stable forever.
@@ -93,11 +95,13 @@ about what has been checked and by whom.
      show them again from Min startplan.
 6. **Company fields**: `teams.industry` (`App\Domain\Company\Industry`, with
    "Annan bransch"; every other case maps to a page in docs/branscher),
-   `teams.started_on` and `teams.guide_enabled` (default on). Industry and
-   start date are asked for, optionally, when a company is created and can
-   be changed with "Visa Företagsguiden" on the company's details page. All
-   three are audited with the existing `company.created` /
-   `company.updated` entries.
+   `teams.started_on` and `teams.guide_enabled` (default on). The industry
+   is asked for, optionally, when a company is created, and it and "Visa
+   Företagsguiden" can be changed in the **Företagsguiden** section of the
+   company's details page; both are audited with the existing
+   `company.created` / `company.updated` entries. `started_on` is a column
+   only: nothing reads it yet, so no form asks for it (data minimisation).
+   Stage 2 (Mina datum) will ask for it when it uses it.
 7. **Core, not a module.** The guide is not a feature a company buys or
    turns on: it is how NONOX explains a new company's obligations, it links
    to every part of the core, and its tips sit in the app layout. A company
@@ -107,15 +111,24 @@ about what has been checked and by whom.
 8. **Cheap to show.** The content is files, read once and cached in the
    file store under a hash of the files (as the manual), so the tips add no
    database query to a page, and Min startplan reads the company's progress
-   with a fixed number of queries whatever it holds.
+   with a fixed number of queries whatever it holds. Översikt's cached
+   "Att göra" carries the guide's content version (`Guide::version()`) in
+   its key, so an edited startplan.json gives a new count at once.
 
 ## Privacy
 
-- The industry and the start date are company data, not personal data:
-  they describe the business, like the legal form.
+- The industry describes the company. For an aktiebolag or a förening it
+  is company data; for an enskild firma, or a natural person who owns a
+  handels- or kommanditbolag, it is also personal data about the owner
+  (GDPR art. 4.1), processed for the company like the rest of its
+  bookkeeping and recorded in docs/gdpr/registerforteckning.md and
+  lagringstider.md. The privacy policy needs no change: it already covers
+  the companies' data that NONOX processes on their behalf.
 - Progress stores the company, the step key, the time and the user id of
-  who ticked the step. No names or free text, and the audit entry holds the
-  step key only. The user id is set to null if the user is deleted.
+  who ticked the step. No names or free text. Every tick and reopening is
+  also an audit log entry, like every action: it holds the step key, and
+  the audit log records who and when. The user id is set to null if the
+  user is deleted.
 - Hiding the tips is a per-user, per-company flag in `users.hidden_panels`,
   as the overview's panel already is.
 
@@ -125,7 +138,7 @@ about what has been checked and by whom.
    public pages, Min startplan, the todo, tips, company fields.
 2. **Mina datum**: a deadline engine for the company's own dates (VAT,
    employer declarations, income tax, annual report), a calendar and
-   reminders. Amounts and thresholds that change by year move into data
+   reminders. This stage asks for the company's start date. Amounts and thresholds that change by year move into data
    with a validity year.
 3. **The VAT and tax set-aside box**: how much of what has been sold is VAT
    and preliminary tax, from the bookkeeping.

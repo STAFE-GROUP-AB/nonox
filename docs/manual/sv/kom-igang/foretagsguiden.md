@@ -32,7 +32,7 @@ Min startplan är en lista över det ett nytt företag behöver göra, i den ord
 4. Kryssade du fel klickar du i rutan igen. Då står det **Steget är öppnat igen.**
 
 > [!TIP]
-> Ange bransch och när företaget startade under företagets uppgifter, så passar stegen och tipsen bättre. Läs mer i [Företagets uppgifter](/manual/installningar/foretagets-uppgifter).
+> Ange företagets bransch under företagets uppgifter, så visas de steg och tips som gäller din bransch. Läs mer i [Företagets uppgifter](/manual/installningar/foretagets-uppgifter).
 
 Bara ägare och administratörer kan kryssa i steg. Andra i företaget ser startplanen men kan inte ändra den.
 
@@ -48,5 +48,5 @@ Vill företaget inte använda Företagsguiden avmarkerar en ägare eller adminis
 
 ## Bra att veta
 
-- Det som sparas är vilka steg som är klara, när och av vem. Inget annat.
-- Bransch och startdatum är uppgifter om företaget, inte om dig.
+- Det som sparas om startplanen är vilka steg som är klara, när och av vem. Varje bock och varje öppnat steg skrivs också i [behandlingshistoriken](/manual/bokforing/behandlingshistorik), med vem som gjorde det och när, som alla åtgärder i NONOX. Döljer du tipsen sparas det på ditt konto.
+- Branschen är en uppgift om företaget. Driver du en enskild firma är den också en uppgift om dig, eftersom du och firman är samma person.

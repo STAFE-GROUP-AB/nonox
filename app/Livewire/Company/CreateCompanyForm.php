@@ -41,8 +41,6 @@ class CreateCompanyForm extends Component implements SpansCompanies
 
     public string $industry = '';
 
-    public string $started_on = '';
-
     public int $fiscal_year_start_month = 1;
 
     public string $accounting_method = 'FAKTURAMETODEN';
@@ -118,7 +116,6 @@ class CreateCompanyForm extends Component implements SpansCompanies
             'calendar_year_exempt' => $this->calendar_year_exempt,
             'employer_registered' => $this->employer_registered,
             'industry' => $this->industry ?: null,
-            'started_on' => $this->started_on ?: null,
         ]);
 
         Toast::flash(__(':company är skapat. Du arbetar nu i det företaget.', ['company' => $company->name]));

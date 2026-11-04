@@ -62,7 +62,6 @@ class CompanyDetailsForm extends Component
             'eu_sales_quarterly_goods' => $company->eu_sales_quarterly_goods,
             'eu_sales_quarterly_goods_from' => (string) $company->eu_sales_quarterly_goods_from?->toDateString(),
             'industry' => (string) $company->industry?->value,
-            'started_on' => (string) $company->started_on?->toDateString(),
             'guide_enabled' => $company->guide_enabled,
         ];
     }

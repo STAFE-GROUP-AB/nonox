@@ -16,7 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Marks a step of the start plan as done for the company (ADR-051). Needs
- * company:update; a step that is already done stays as it was.
+ * company:update; a step that is already done stays as it was, also when
+ * two requests tick it at the same time.
  */
 class CompleteGuideStep
 {
@@ -25,14 +26,20 @@ class CompleteGuideStep
         self::authorize($actor, $company, $stepKey);
 
         return CurrentCompany::run($company, fn (): CompanyGuideStep => DB::transaction(function () use ($actor, $company, $stepKey): CompanyGuideStep {
-            $existing = CompanyGuideStep::query()->where('step_key', $stepKey)->lockForUpdate()->first();
+            // ON CONFLICT DO NOTHING: a step ticked twice at once (a double click) gets one row and one audit entry, and no error.
+            $inserted = CompanyGuideStep::query()->insertOrIgnore([
+                'company_id' => $company->id,
+                'step_key' => $stepKey,
+                'completed_at' => now(),
+                'completed_by' => $actor->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $step = CompanyGuideStep::query()->where('step_key', $stepKey)->sole();
 
-            if ($existing instanceof CompanyGuideStep) {
-                return $existing;
+            if ($inserted === 1) {
+                Audit::record('guide.step_completed', $step, ['step_key' => $stepKey], $company, $actor);
             }
-
-            $step = CompanyGuideStep::query()->create(['step_key' => $stepKey, 'completed_at' => now(), 'completed_by' => $actor->id]);
-            Audit::record('guide.step_completed', $step, ['step_key' => $stepKey], $company, $actor);
 
             return $step;
         }));

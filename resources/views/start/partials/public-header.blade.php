@@ -35,7 +35,7 @@
                 ['href' => $home.'#kor-sjalv', 'title' => 'Webbhotell', 'text' => 'Ladda upp och följ installationsguiden i webbläsaren.', 'icon' => 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z'],
                 ['href' => $home.'#kor-sjalv', 'title' => 'Egen server', 'text' => 'Med PHP och PostgreSQL. Färdigt Docker-paket kommer snart.', 'icon' => 'M3 4h18v7H3zM3 13h18v7H3zM7 7.5h.01M7 16.5h.01'],
                 ['href' => $home.'#kor-sjalv', 'title' => 'Lokalt på datorn', 'text' => 'Program för Windows, Mac och Linux. Kommer snart.', 'icon' => 'M4 5h16v11H4zM2 19h20M10 16v3M14 16v3'],
-                ['href' => route('guide.home'), 'title' => 'Företagsguiden', 'text' => 'Starta och driv företaget rätt: moms, skatt och ansvar, med källor.', 'icon' => 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2'],
+                ['href' => route('guide.home'), 'title' => 'Företagsguiden', 'text' => 'Moms, skatt och ansvar förklarat steg för steg, med källor.', 'icon' => 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2'],
                 ['href' => $ph['flytt'], 'title' => 'Flyttguide', 'text' => 'Byt från ditt gamla program steg för steg, med SIE4 och importverktyget.', 'icon' => 'M4 7h13l-3-3M20 17H7l3 3'],
                 ['href' => $home.'#priser', 'title' => 'Vi sköter driften', 'text' => 'Servrar i Sverige/EU, backup och uppdateringar. Från 995 kr/år.', 'icon' => 'M12 3l8 4v5c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V7z'],
             ],

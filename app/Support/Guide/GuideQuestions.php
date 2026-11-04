@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Support\Guide;
 
 /**
- * "Frågor vi får" on Företagsguiden's start page: the questions founders
- * actually ask, each answered by an article. A test checks that every
+ * "Vanliga frågor" on Företagsguiden's start page: common questions in a
+ * new company owner's words, chosen by the editors, each answered by an
+ * article. A test checks that every
  * article exists; a question whose article is not written is left out.
  */
 final class GuideQuestions

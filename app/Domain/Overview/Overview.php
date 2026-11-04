@@ -6,6 +6,7 @@ namespace App\Domain\Overview;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Guide\Guide;
 use App\Support\Tenancy\AccessFingerprint;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -41,7 +42,8 @@ final class Overview
     {
         $today ??= CarbonImmutable::today();
         $fingerprint = AccessFingerprint::for($user, $company->id);
-        $day = $today->toDateString();
+        // Företagsguiden's start plan is files (GuideTodos): an edited plan is a new list.
+        $day = $today->toDateString().':'.Guide::version();
 
         /** @var array{generated_at: string, kpis: list<array{key: string, label: string, value: int, hint: ?string, tone: string, link: ?string}>, todos: list<array{key: string, icon: string, title: string, subtitle: ?string, url: string, priority: int, due: ?string}>, vouchers: ?list<array{id: string, series: string, number: ?int, description: string, date: string, amount: int, signed: bool}>} $shared */
         $shared = OverviewCache::remember($company->id, "shared:{$fingerprint}:{$day}", fn (): array => CurrentCompany::run($company, fn (): array => [

@@ -8823,9 +8823,7 @@
     "E-fakturan är adresserad till företagets tidigare Peppol-ID :id. Originalet är sparat; släpp den om den ska bokföras.": "The e-invoice is addressed to the company's earlier Peppol ID :id. The original is kept; release it if it is to be booked.",
     "Peppol-operatören svarade inte. Registreringen kontrolleras igen.": "The Peppol service provider did not answer. The registration is checked again.",
     "Annan bransch": "Other industry",
-    "Används av Företagsguiden för att visa de steg och tips som gäller just ditt företag.": "Used by Företagsguiden to show the steps and tips that apply to your company.",
     "Bransch (frivilligt)": "Industry (optional)",
-    "Bransch och startdatum avgör vilka steg i startplanen och vilka tips som visas för företaget.": "The industry and start date decide which steps of the start plan and which tips are shown for the company.",
     "Butik och e-handel": "Retail and e-commerce",
     "Det ett nytt företag behöver göra, i den ordning det brukar göras. Stegen väljs efter företagsform, bransch och om företaget är momsregistrerat eller arbetsgivare.": "What a new company needs to do, in the order it is usually done. The steps are chosen by legal form, industry and whether the company is registered for VAT or as an employer.",
     "Det ett nytt företag behöver göra, steg för steg, i Företagsguiden.": "What a new company needs to do, step by step, in Företagsguiden.",
@@ -8834,8 +8832,6 @@
     "Ekonomikonsult": "Finance consultant",
     "Fortsätt din startplan (:done av :total klara)": "Continue your start plan (:done of :total done)",
     "Frisör och skönhet": "Hair and beauty",
-    "Företaget startade": "The company started",
-    "Företaget startade (frivilligt)": "The company started (optional)",
     "Företagsguiden": "Företagsguiden",
     "Företagsguiden är i beta. Texterna är kontrollerade mot källorna men ännu inte granskade av en redovisningskonsult.": "Företagsguiden is in beta. The texts have been checked against their sources but not yet reviewed by an accountant.",
     "Gör det i NONOX": "Do it in NONOX",
@@ -8860,7 +8856,6 @@
     "Visa Företagsguiden": "Show Företagsguiden",
     "Visa tipsen igen": "Show the tips again",
     "Välj bransch": "Choose industry",
-    "datum då företaget startade": "date the company started",
     ":done av :total": ":done of :total",
     "Alla steg är klara.": "Every step is done.",
     "Avtal och skydd": "Agreements and protection",
@@ -8871,5 +8866,7 @@
     "Registrering": "Registration",
     "om du har anställda": "if you have employees",
     "om du inte är momsregistrerad": "if you are not registered for VAT",
-    "om du är momsregistrerad": "if you are registered for VAT"
+    "om du är momsregistrerad": "if you are registered for VAT",
+    "Branschen avgör, tillsammans med företagsform och moms, vilka steg i startplanen och vilka tips som visas för företaget.": "The industry, together with the legal form and VAT, decides which steps of the start plan and which tips are shown for the company.",
+    "Företagsguiden väljer steg och tips efter branschen, företagsformen och om företaget är momsregistrerat.": "Företagsguiden chooses steps and tips by the industry, the legal form and whether the company is registered for VAT."
 }

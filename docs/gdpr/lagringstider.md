@@ -27,6 +27,7 @@
 | Passkeys (publik nyckel, namn, senast använd) | Tills användaren tar bort den, den återställs eller kontot raderas | Säkerhet vid inloggning | Profil → Passkeys; återställning av ägare eller administratör; "Radera mitt konto" tar bort alla |
 | Senast öppnade i sökningen (titel, adress, tid) | Högst 50 rader per användare och företag | Visa det användaren nyss öppnat | Äldre rader trängs undan; tas bort med företaget och när användaren raderar sitt konto |
 | Uppgifter, kommentarer och checklistor | Så länge uppgiften finns | Arbetet mellan byrå och kund | Tas bort med uppgiften eller företaget; inte räkenskapsinformation |
+| Företagsguiden: företagets bransch och startplanens framsteg (stegets nyckel, tidpunkt, användar-id) | Så länge företaget finns; ett steg tas bort när det öppnas igen | Visa företaget vad som är gjort | Tas bort med företaget; användar-id blir tomt när användaren raderas. Bocken i behandlingshistoriken följer behandlingshistorikens tid. Inte räkenskapsinformation |
 | Notiser och sparade vyer | Tills användaren raderar sitt konto | Visa användaren vad som hänt | "Radera mitt konto" |
 | Personalliggare: kioskens kopia för offlineläge | Personnummer och de senaste 31 dagarnas pass, ersätts vid varje ny hämtning | Kontrollbesök även utan internet | Krypterad på kiosken (AES-256-GCM) med en nyckel som bara öppnas med en chefs kod |
 | Kunder och leverantörer | Tills de raderas eller anonymiseras på begäran | Avtal | Radera enligt GDPR i registret |

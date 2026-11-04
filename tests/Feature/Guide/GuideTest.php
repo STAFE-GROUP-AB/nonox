@@ -10,6 +10,7 @@ use App\Support\Guide\GuideValidator;
 use App\Support\Guide\StartPlanStep;
 use App\Support\Guide\StepGroups;
 use App\Support\Manual\Manual;
+use Illuminate\Http\Request;
 use Tests\Support\Bookkeeping;
 
 /*
@@ -301,4 +302,36 @@ it('right-aligns amount columns with tabular numbers, and leaves text columns al
         ->and(GuideTables::isNumber('25 %'))->toBeTrue()
         ->and(GuideTables::isNumber('Ingen moms'))->toBeFalse()
         ->and(GuideTables::isNumber('5410 Förbrukningsinventarier'))->toBeFalse();
+});
+
+it('ignores a search, legal form or industry sent as a list, and answers the page', function () {
+    $this->get('/foretagsguiden?sok[]=moms')->assertOk()->assertDontSee('artiklar om');
+    $this->get('/foretagsguiden?bolagsform[]=EF&bransch[]=cafe')->assertOk()
+        ->assertSee('Tills du har valt visar vi vägen för ett aktiebolag.')
+        ->assertDontSee('Rensa valet');
+});
+
+it('offers only the legal forms the guide has a path for, and gives a limited partnership the trading partnership\'s', function () {
+    foreach (['STIFTELSE', 'IDEELL_FORENING'] as $form) {
+        $this->get("/foretagsguiden?bolagsform={$form}")->assertOk()
+            ->assertSee('Tills du har valt visar vi vägen för ett aktiebolag.')
+            ->assertDontSee('stiftelse')
+            ->assertDontSee('IDEELL_FORENING');
+    }
+
+    expect((string) $this->get('/foretagsguiden?bolagsform=KB')->assertOk()->getContent())
+        ->toMatch('#aria-current="true"\s*>Handelsbolag eller kommanditbolag</a>#');
+});
+
+it('keeps the start plan\'s address out of the section and article routes', function () {
+    $this->get('/foretagsguiden/min-startplan/oversikt')->assertNotFound();
+    $this->get('/foretagsguiden/min-startplan/en-artikel')->assertNotFound();
+    $this->get('/foretagsguiden/min-startplan/tips')->assertMethodNotAllowed();
+
+    $route = fn (string $path): ?string => rescue(fn () => app('router')->getRoutes()->match(Request::create($path))->getName(), null, false);
+
+    expect($route('/foretagsguiden/min-startplan'))->toBe('guide.plan')
+        ->and($route('/foretagsguiden/min-startplan/oversikt'))->toBeNull()
+        ->and($route('/foretagsguiden/starta/registrera-foretaget'))->toBe('guide.article')
+        ->and($route('/foretagsguiden/min-startplanen'))->toBe('guide.section');
 });

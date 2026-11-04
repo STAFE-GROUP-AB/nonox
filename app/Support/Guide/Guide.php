@@ -67,6 +67,12 @@ final class Guide
         return hash('sha256', implode("\n", $parts));
     }
 
+    /** A short form of the hash, for cache keys that depend on the guide's content. */
+    public static function version(): string
+    {
+        return substr(self::hash(), 0, 12);
+    }
+
     /** @return Index */
     public static function data(): array
     {

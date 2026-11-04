@@ -60,7 +60,7 @@ Uppgifterna ska stämma med Skatteverkets beslut. Är du osäker, fråga din red
 
 ## Företagsguiden
 
-Under **Företagsguiden** väljer du **Bransch** och anger när **Företaget startade**. Uppgifterna avgör vilka steg i startplanen och vilka tips som visas för företaget. Avmarkera **Visa Företagsguiden** om företaget inte vill ha startplanen under Att göra och tipsen längst ner på sidorna; guiden på webbplatsen finns kvar. Klicka på **Spara**. Se [Företagsguiden och Min startplan](/manual/kom-igang/foretagsguiden).
+Under **Företagsguiden** väljer du **Bransch**. Branschen avgör, tillsammans med företagsform och moms, vilka steg i startplanen och vilka tips som visas för företaget. Avmarkera **Visa Företagsguiden** om företaget inte vill ha startplanen under Att göra och tipsen längst ner på sidorna; guiden på webbplatsen finns kvar. Klicka på **Spara**. Se [Företagsguiden och Min startplan](/manual/kom-igang/foretagsguiden).
 
 ## Personer och inloggning
 

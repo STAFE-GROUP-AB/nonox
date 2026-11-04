@@ -56,7 +56,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ?array<int, array{0: int, 1: int}> $asset_acquisition_accounts
  * @property ?int $asset_small_value_threshold_ore
  * @property ?Industry $industry what the company does, for Företagsguiden (ADR-051)
- * @property ?CarbonImmutable $started_on the day the company started, as the company states it
+ * @property ?CarbonImmutable $started_on the day the company started; not asked for until stage 2 of Företagsguiden (ADR-051)
  * @property bool $guide_enabled whether Företagsguiden is shown in the app
  */
 class Company extends JetstreamTeam
@@ -101,7 +101,6 @@ class Company extends JetstreamTeam
         'brand_color',
         'brand_accent_color',
         'industry',
-        'started_on',
         'guide_enabled',
     ];
 

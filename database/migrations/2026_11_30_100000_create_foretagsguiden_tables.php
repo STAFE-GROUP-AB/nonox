@@ -7,10 +7,11 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Företagsguiden (ADR-051): the company's industry and start date, which
- * decide the steps and tips that apply, whether the guide is shown, and the
- * steps of the start plan the company has done. Progress stores who ticked
- * a step as a user id only.
+ * Företagsguiden (ADR-051): the company's industry, which with the legal
+ * form decides the steps and tips that apply; its start date, which stage 2
+ * (Mina datum) will ask for; whether the guide is shown; and the steps of
+ * the start plan the company has done. Progress stores who ticked a step as
+ * a user id only.
  */
 return new class extends Migration
 {

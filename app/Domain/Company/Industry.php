@@ -7,8 +7,10 @@ namespace App\Domain\Company;
 /**
  * What the company does, as the company itself states it (ADR-051). It
  * decides which steps of the start plan and which tips of Företagsguiden
- * apply. Company data, not personal data. Every case but Other has a
- * public industry page in docs/branscher.
+ * apply. For an aktiebolag or a förening it describes the company; for an
+ * enskild firma, or a person who owns a handels- or kommanditbolag, it is
+ * also personal data about the owner (docs/gdpr/registerforteckning.md).
+ * Every case but Other has a public industry page in docs/branscher.
  */
 enum Industry: string
 {

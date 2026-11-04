@@ -6,6 +6,7 @@ use App\Actions\Guide\CompleteGuideStep;
 use App\Actions\Guide\UncompleteGuideStep;
 use App\Domain\Company\Industry;
 use App\Domain\Company\VatPeriod;
+use App\Domain\Overview\Overview;
 use App\Domain\Overview\TodoProviders;
 use App\Domain\Overview\Todos\GuideTodos;
 use App\Livewire\Company\CompanyDetailsForm;
@@ -198,59 +199,59 @@ it('offers to show hidden tips again on Min startplan', function () {
         ->assertSee('Visa tipsen igen');
 });
 
-it('saves the industry, the start date and the guide setting on the company details page', function () {
+it('saves the industry and the guide setting on the company details page, and asks for no start date', function () {
     $this->actingAs($this->owner);
 
     Livewire::test(CompanyDetailsForm::class, ['company' => $this->company])
         ->assertSee('Visa Företagsguiden')
+        ->assertDontSee('Företaget startade')
+        ->assertDontSee('startdatum')
         ->set('state.industry', 'restaurant')
-        ->set('state.started_on', '2026-03-01')
         ->set('state.guide_enabled', false)
+        ->set('state.started_on', '2026-03-01')
         ->call('save')
         ->assertHasNoErrors();
 
     $company = $this->company->fresh();
     expect($company->industry)->toBe(Industry::Restaurant)
-        ->and($company->started_on?->toDateString())->toBe('2026-03-01')
+        ->and($company->started_on)->toBeNull()
         ->and($company->guide_enabled)->toBeFalse()
-        ->and(AuditLog::query()->where('action', 'company.updated')->latest('id')->first()->payload['after'])->toMatchArray(['industry' => 'restaurant', 'started_on' => '2026-03-01', 'guide_enabled' => false]);
+        ->and(AuditLog::query()->where('action', 'company.updated')->latest('id')->first()->payload['after'])->toMatchArray(['industry' => 'restaurant', 'guide_enabled' => false])
+        ->not->toHaveKey('started_on');
 
     Livewire::test(CompanyDetailsForm::class, ['company' => $company])
         ->set('state.industry', '')
-        ->set('state.started_on', '')
         ->call('save')
         ->assertHasNoErrors();
 
-    expect($company->fresh()->industry)->toBeNull()
-        ->and($company->fresh()->started_on)->toBeNull();
+    expect($company->fresh()->industry)->toBeNull();
 
     Livewire::test(CompanyDetailsForm::class, ['company' => $company])
         ->set('state.industry', 'bageri')
-        ->set('state.started_on', 'igår')
         ->call('save')
-        ->assertHasErrors(['industry', 'started_on']);
+        ->assertHasErrors(['industry']);
 });
 
-it('asks for the industry and the start date when a company is created, both optional', function () {
+it('asks for the industry, optionally, when a company is created, and not for a start date', function () {
     $this->actingAs(User::factory()->create());
 
     Livewire::test(CreateCompanyForm::class)
         ->assertSee('Bransch (frivilligt)')
         ->assertSee('Annan bransch')
-        ->assertSee('Företaget startade (frivilligt)')
+        ->assertDontSee('Företaget startade')
         ->set('name', 'Kafé Linden AB')
         ->set('org_number', CompanyFactory::organisationNumber()->formatted())
         ->set('framework_confirmed', true)
         ->set('industry', 'cafe')
-        ->set('started_on', '2026-10-01')
         ->call('create')
         ->assertHasNoErrors();
 
     $company = Company::query()->where('name', 'Kafé Linden AB')->sole();
     expect($company->industry)->toBe(Industry::Cafe)
-        ->and($company->started_on?->toDateString())->toBe('2026-10-01')
+        ->and($company->started_on)->toBeNull()
         ->and($company->refresh()->guide_enabled)->toBeTrue()
-        ->and(AuditLog::query()->where('action', 'company.created')->latest('id')->first()->payload)->toMatchArray(['industry' => 'cafe', 'started_on' => '2026-10-01']);
+        ->and(AuditLog::query()->where('action', 'company.created')->latest('id')->first()->payload)->toMatchArray(['industry' => 'cafe'])
+        ->not->toHaveKey('started_on');
 
     Livewire::test(CreateCompanyForm::class)
         ->set('name', 'Utan bransch AB')
@@ -265,4 +266,35 @@ it('asks for the industry and the start date when a company is created, both opt
 it('links Företagsguiden from the app menu while the company shows the guide', function () {
     $this->actingAs($this->owner)->get(route('dashboard'))->assertOk()
         ->assertSee('href="'.route('guide.plan').'"', false);
+});
+
+it('ticks a step once when two requests tick it at the same time', function () {
+    // The other request's row is already there when this one inserts: no error, no second row, no second audit entry.
+    DB::table('company_guide_steps')->insert(['company_id' => $this->company->id, 'step_key' => 'registrera-foretaget', 'completed_at' => now(), 'completed_by' => $this->owner->id, 'created_at' => now(), 'updated_at' => now()]);
+
+    $this->actingAs($this->owner);
+    Livewire::test(StartPlan::class)
+        ->call('toggle', 'registrera-foretaget', true)
+        ->assertDispatched('toast', message: 'Steget är markerat som klart.')
+        ->assertSee('1 av 5 klara');
+
+    expect(CompanyGuideStep::query()->count())->toBe(1)
+        ->and(AuditLog::query()->where('action', 'guide.step_completed')->count())->toBe(0);
+});
+
+it('counts the start plan in Att göra from the plan as it is now, also right after it is edited', function () {
+    $overview = app(Overview::class);
+    $title = fn (): ?string => collect($overview->for($this->owner, $this->company->refresh())['todos'])->firstWhere('key', 'guide-start-plan')['title'] ?? null;
+
+    expect($title())->toBe('Fortsätt din startplan (0 av 5 klara)');
+
+    $plan = json_decode((string) file_get_contents(base_path('tests/Fixtures/foretagsguiden/startplan.json')), true);
+    array_pop($plan['steg']);
+    $file = sys_get_temp_dir().'/guide-plan-'.bin2hex(random_bytes(4)).'.json';
+    file_put_contents($file, json_encode($plan));
+    config(['app.guide.start_plan' => $file]);
+    Guide::flush();
+
+    expect($title())->toBe('Fortsätt din startplan (0 av 4 klara)');
+    unlink($file);
 });

@@ -24,7 +24,7 @@
   <div class="gd-wrap gd-hero-grid">
     <div class="gd-hero-inner">
       <p class="mn-eyebrow">{!! Icons::svg('rocket', 18) !!}<span>Företagsguiden</span> <span class="gd-badge">Beta</span></p>
-      <h1 id="gd-title">Starta och driv ditt företag <em>rätt från början</em></h1>
+      <h1 id="gd-title">Så startar och driver du <em>ditt företag</em></h1>
       <p class="mn-lead">Vad lagen kräver av dig, hur moms och skatt fungerar och i vilken ordning du gör det, förklarat på vanlig svenska. Varje artikel hänvisar till Skatteverket, Bolagsverket eller lagtexten.</p>
 
       <form class="gd-search" role="search" method="get" action="{{ route('guide.home') }}#sok">
@@ -142,18 +142,18 @@
             <h3 class="gd-phase-title" id="gd-phase-{{ $group['key'] }}">{{ $group['label'] }}</h3>
             <ol class="gd-steps">
               @foreach($group['steps'] as $item)
-                @php $step = $item['step']; @endphp
+                @php $step = $item['step']; $stepUrl = $step->articleUrl(); @endphp
                 <li class="gd-step" value="{{ $item['number'] }}">
                   <span @class(['gd-num-badge', 'is-first' => $item['number'] === 1]) aria-hidden="true">{{ $item['number'] }}</span>
                   <div>
-                    <h3><span class="mn-sr">Steg {{ $item['number'] }}: </span>{{ $step->title }}</h3>
+                    <h4><span class="mn-sr">Steg {{ $item['number'] }}: </span>{{ $step->title }}</h4>
                     <p>{{ $step->text }}</p>
                     <div class="gd-step-foot">
                       @if(StepGroups::conditionLabel($step->condition))
                         <span class="gd-tag">{{ ucfirst(StepGroups::conditionLabel($step->condition)) }}</span>
                       @endif
-                      @if($step->articleUrl())
-                        <a class="gd-link" href="{{ $keep($step->articleUrl()) }}">Läs mer<span class="mn-sr">: {{ $step->title }}</span> {!! $arrow !!}</a>
+                      @if($stepUrl)
+                        <a class="gd-link" href="{{ $keep($stepUrl) }}">Läs mer<span class="mn-sr">: {{ $step->title }}</span> {!! $arrow !!}</a>
                       @endif
                     </div>
                   </div>
@@ -170,8 +170,8 @@
           <p>Samma steg, för just ditt företag. Du bockar av dem när de är gjorda och ser hur långt företaget har kommit.</p>
           <ul>
             <li>{!! $check !!}<span>Stegen väljs efter företagsform, bransch och moms</span></li>
-            <li>{!! $check !!}<span>Ser vem som gjorde vad, och när</span></li>
-            <li>{!! $check !!}<span>Tips från guiden på rätt sida i bokföringen</span></li>
+            <li>{!! $check !!}<span>Du ser vem som bockade av vad, och när</span></li>
+            <li>{!! $check !!}<span>Tips från guiden på sidorna i NONOX där de hör hemma</span></li>
           </ul>
           <div class="gd-cta-actions">
             @auth
@@ -202,8 +202,8 @@
 
   @if($questions !== [])
     <section class="gd-band" aria-labelledby="gd-questions-title">
-      <p class="gd-kicker">Frågor vi får</p>
-      <h2 class="gd-h2" id="gd-questions-title">Det alla undrar första året</h2>
+      <p class="gd-kicker">Vanliga frågor</p>
+      <h2 class="gd-h2" id="gd-questions-title">Frågor många har det första året</h2>
       <ul class="gd-qs">
         @foreach($questions as $item)
           <li>

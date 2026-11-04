@@ -95,7 +95,7 @@
 .gd-step:last-child::before{display:none}
 .gd-num-badge{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--card);border:1.5px solid var(--line);font-weight:800;font-size:16px;font-variant-numeric:tabular-nums;color:var(--ink)}
 .gd-num-badge.is-first{background:#FF5A36;border-color:#FF5A36;color:#15171C}
-.gd-step h3{margin:9px 0 0;font-size:18px;line-height:1.3;letter-spacing:-0.01em}
+.gd-step h4{margin:9px 0 0;font-size:18px;line-height:1.3;letter-spacing:-0.01em}
 .gd-step p{margin:6px 0 0;font-size:15.5px;line-height:1.6;color:var(--muted);text-wrap:pretty}
 .gd-step-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px}
 .gd-tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:999px;background:var(--soft);color:var(--ink);font-size:12.5px;font-weight:700}

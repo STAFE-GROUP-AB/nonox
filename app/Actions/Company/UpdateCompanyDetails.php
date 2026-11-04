@@ -38,7 +38,7 @@ class UpdateCompanyDetails
         Gate::forUser($user)->authorize('update', $company);
 
         $dependent = $this->dependentRules($company, $input);
-        foreach (['oss_elected_from', 'eu_sales_quarterly_goods_from', 'started_on', 'industry'] as $optional) {
+        foreach (['oss_elected_from', 'eu_sales_quarterly_goods_from', 'industry'] as $optional) {
             if (($input[$optional] ?? null) === '') {
                 $input[$optional] = null;
             }
@@ -69,7 +69,6 @@ class UpdateCompanyDetails
             'eu_sales_quarterly_goods' => ['sometimes', 'boolean'],
             'eu_sales_quarterly_goods_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'industry' => ['sometimes', 'nullable', Rule::enum(Industry::class)],
-            'started_on' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'before_or_equal:'.now()->addYear()->toDateString()],
             'guide_enabled' => ['sometimes', 'boolean'],
         ], CompanySetupRules::messages(), [
             'oss_elected_from' => __('datum för beskattning i köparens land'),
@@ -77,7 +76,6 @@ class UpdateCompanyDetails
             'name' => __('företagsnamn'),
             'website' => __('webbplats'),
             'industry' => __('bransch'),
-            'started_on' => __('datum då företaget startade'),
         ])->validateWithBag('updateCompanyDetails');
 
         $confirmed = [
@@ -166,7 +164,7 @@ class UpdateCompanyDetails
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
             'f_skatt', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
             'eu_sales_quarterly_goods', 'eu_sales_quarterly_goods_from',
-            'industry', 'started_on', 'guide_enabled',
+            'industry', 'guide_enabled',
         ]))->map(fn (mixed $value) => match (true) {
             $value instanceof \BackedEnum => $value->value,
             $value instanceof \DateTimeInterface => $value->format('Y-m-d'),

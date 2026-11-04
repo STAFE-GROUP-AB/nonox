@@ -96,7 +96,7 @@ Route::prefix('manual')->name('manual.')->controller(ManualController::class)->g
     Route::get('/{section}', 'section')->where('section', '[a-z0-9-]+')->name('section');
     Route::get('/{section}/{article}', 'article')->where(['section' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
 });
-// Företagsguiden (ADR-051): docs/foretagsguiden as pages. The personal start plan comes first, so no section can take its address.
+// Företagsguiden (ADR-051): docs/foretagsguiden as pages. The personal start plan's address is reserved: no section route matches it, with or without an article after it.
 Route::prefix('foretagsguiden')->name('guide.')->group(function () {
     Route::view('/'.Guide::START_PLAN_SLUG, 'guide.start-plan')
         ->middleware(['auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class])
@@ -106,8 +106,8 @@ Route::prefix('foretagsguiden')->name('guide.')->group(function () {
         ->name('tips');
     Route::controller(GuideController::class)->group(function () {
         Route::get('/', 'home')->name('home');
-        Route::get('/{section}', 'section')->where('section', '(?!'.Guide::START_PLAN_SLUG.'$)[a-z0-9-]+')->name('section');
-        Route::get('/{section}/{article}', 'article')->where(['section' => '(?!'.Guide::START_PLAN_SLUG.'$)[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
+        Route::get('/{section}', 'section')->where('section', '(?!'.Guide::START_PLAN_SLUG.'(?:/|$))[a-z0-9-]+')->name('section');
+        Route::get('/{section}/{article}', 'article')->where(['section' => '(?!'.Guide::START_PLAN_SLUG.'(?:/|$))[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
     });
 });
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');

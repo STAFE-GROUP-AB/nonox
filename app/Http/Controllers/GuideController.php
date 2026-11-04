@@ -49,7 +49,9 @@ class GuideController
         $selection = self::selection($request);
         $legalForm = $selection['bolagsform'] ?? self::DEFAULT_LEGAL_FORM;
         $industry = isset($selection['bransch']) ? Industry::from($selection['bransch']) : null;
-        $query = trim(mb_substr((string) $request->query('sok', ''), 0, 100));
+        // A query string can carry an array (?sok[]=x): only a string is a search.
+        $raw = $request->query('sok');
+        $query = is_string($raw) ? trim(mb_substr($raw, 0, 100)) : '';
 
         return view('guide.home', [
             ...$this->frame(null, null),
@@ -116,8 +118,11 @@ class GuideController
         $form = $request->query('bolagsform');
         $industry = $request->query('bransch');
 
-        if (is_string($form) && LegalForm::tryFrom($form) !== null) {
-            $selection['bolagsform'] = $form === 'KB' ? 'HB' : $form;
+        // Only the legal forms the guide has a path for; a limited partnership shares the trading partnership's.
+        $form = $form === 'KB' ? 'HB' : $form;
+
+        if (is_string($form) && array_key_exists($form, self::LEGAL_FORMS)) {
+            $selection['bolagsform'] = $form;
         }
 
         if (is_string($industry) && Industry::tryFrom($industry) !== null) {
@@ -130,6 +135,8 @@ class GuideController
     private function show(string $sectionKey, string $slug): View
     {
         $this->ensureReadable();
+        // The start plan's address is never a section, whatever the content says.
+        abort_if($sectionKey === Guide::START_PLAN_SLUG, 404);
 
         $section = Guide::section($sectionKey);
         $article = Guide::article($sectionKey, $slug);

@@ -77,7 +77,6 @@ class CreateCompany implements CreatesTeams
                 'calendar_year_exempt_confirmed' => $validated['calendar_year_exempt'] ?? false,
                 'agreement_version' => $company->agreement_version,
                 'industry' => $company->industry?->value,
-                'started_on' => $company->started_on?->toDateString(),
             ], $company, $user);
 
             $user->switchCompany($company);
@@ -131,7 +130,6 @@ class CreateCompany implements CreatesTeams
             'employer_registered' => ['required', 'boolean'],
             'accept_agreement' => config('app.landing.hosted') ? ['accepted'] : ['nullable'],
             'industry' => ['nullable', Rule::enum(Industry::class)],
-            'started_on' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:'.now()->addYear()->toDateString()],
         ], [
             ...CompanySetupRules::messages(),
             'org_number.unique' => __('Det finns redan ett företag med det här organisationsnumret.'),
@@ -145,7 +143,6 @@ class CreateCompany implements CreatesTeams
             'vat_period' => __('momsperiod'),
             'reporting_framework' => __('regelverk'),
             'industry' => __('bransch'),
-            'started_on' => __('datum då företaget startade'),
         ])->validateWithBag('createTeam');
     }
 

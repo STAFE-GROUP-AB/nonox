@@ -225,7 +225,7 @@
     <section class="bg-white border border-gray-200 sm:rounded-xl p-6 space-y-5" data-guide-settings>
         <div>
             <h3 class="text-lg font-semibold text-gray-900">{{ __('Företagsguiden') }}</h3>
-            <p class="mt-1 text-sm text-gray-600">{{ __('Bransch och startdatum avgör vilka steg i startplanen och vilka tips som visas för företaget.') }}</p>
+            <p class="mt-1 text-sm text-gray-600">{{ __('Branschen avgör, tillsammans med företagsform och moms, vilka steg i startplanen och vilka tips som visas för företaget.') }}</p>
         </div>
 
         <div class="grid gap-5 sm:grid-cols-2">
@@ -238,11 +238,6 @@
                     @endforeach
                 </select>
                 <x-input-error for="industry" class="mt-2" />
-            </div>
-            <div>
-                <x-label for="details_started_on" value="{{ __('Företaget startade') }}" />
-                <input id="details_started_on" type="date" class="{{ $field }}" wire:model="state.started_on" @disabled(! $canUpdate)>
-                <x-input-error for="started_on" class="mt-2" />
             </div>
         </div>
 

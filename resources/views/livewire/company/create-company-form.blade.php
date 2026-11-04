@@ -72,14 +72,8 @@
                 </select>
                 <x-input-error for="industry" class="mt-2" />
             </div>
-
-            <div>
-                <x-label for="started_on" value="{{ __('Företaget startade (frivilligt)') }}" />
-                <x-input id="started_on" type="date" class="mt-1 block w-full" wire:model="started_on" />
-                <x-input-error for="started_on" class="mt-2" />
-            </div>
         </div>
-        <p id="industry_help" class="-mt-3 text-sm text-gray-600">{{ __('Används av Företagsguiden för att visa de steg och tips som gäller just ditt företag.') }}</p>
+        <p id="industry_help" class="-mt-3 text-sm text-gray-600">{{ __('Företagsguiden väljer steg och tips efter branschen, företagsformen och om företaget är momsregistrerat.') }}</p>
     </section>
 
     <section class="bg-white shadow-sm sm:rounded-lg p-6 space-y-6">
