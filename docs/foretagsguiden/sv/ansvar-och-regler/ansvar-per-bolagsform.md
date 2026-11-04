@@ -13,13 +13,12 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
   - titel: Riksdagen – Prop. 2025/26:52 Det skatterättsliga företrädaransvaret – nya regler om befrielse och rådrum
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/proposition/det-skatterattsliga-foretradaransvaret--nya_hd0352/
+  - titel: Riksdagen – Lag (2018:672) om ekonomiska föreningar
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018672-om-ekonomiska-foreningar_sfs-2018-672/
   - titel: Riksdagen – Lag (1980:1102) om handelsbolag och enkla bolag
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19801102-om-handelsbolag-och-enkla-bolag_sfs-1980-1102/
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Ansvaret för medlemmar i en ekonomisk förening beskrivs bara kort; bör en jurist bekräfta formuleringen?
-  - Hur granskas kontrollbalansräkningen i ett aktiebolag som har valt bort revisor? Lagen (25 kap. 13 §) talar om bolagets revisor.
 ---
 
 # Ansvar per bolagsform
@@ -40,7 +39,7 @@ I ett handelsbolag svarar varje delägare personligt och solidariskt för bolage
 
 Ett aktiebolag är en egen juridisk person. Som huvudregel är det bara bolaget som svarar för sina skulder, och du som aktieägare riskerar det du har satt in. Men det skyddet gäller inte alltid.
 
-**Kontrollbalansräkning.** Enligt aktiebolagslagen 25 kap. 13 § ska styrelsen genast upprätta en kontrollbalansräkning och låta bolagets revisor granska den, när det finns skäl att anta att det egna kapitalet är mindre än hälften av det registrerade aktiekapitalet. Visar den att det är så ska styrelsen snarast möjligt kalla till en första kontrollstämma, som prövar om bolaget ska gå i likvidation (15 §). Går bolaget inte i likvidation ska en andra kontrollstämma hållas inom åtta månader från den första. Där prövas frågan igen. Visar en granskad kontrollbalansräkning då inte att kapitalet är återställt, och beslutar stämman inte själv om likvidation, ska styrelsen inom två veckor ansöka hos tingsrätten, som beslutar att bolaget ska gå i likvidation (16–17 §§). Har bolaget ingen revisor, fråga din redovisningskonsult hur granskningen ordnas. Bolagsverket beskriver hur det går till steg för steg.
+**Kontrollbalansräkning.** Enligt aktiebolagslagen 25 kap. 13 § ska styrelsen genast upprätta en kontrollbalansräkning och låta bolagets revisor granska den, när det finns skäl att anta att det egna kapitalet är mindre än hälften av det registrerade aktiekapitalet. Visar den att det är så ska styrelsen snarast möjligt kalla till en första kontrollstämma, som prövar om bolaget ska gå i likvidation (15 §). Går bolaget inte i likvidation ska en andra kontrollstämma hållas inom åtta månader från den första. Där prövas frågan igen. Visar en granskad kontrollbalansräkning då inte att kapitalet är återställt, och beslutar stämman inte själv om likvidation, ska styrelsen inom två veckor ansöka hos tingsrätten, som beslutar att bolaget ska gå i likvidation (16–17 §§). Har bolaget ingen revisor och behöver inte ha någon, gäller inte lagens regler om revisorns granskning (aktiebolagslagen 1 kap. 12 b §). Styrelsen upprättar då kontrollbalansräkningen och skriver under den, men ingen revisor granskar den. Har bolaget ändå valt en revisor ska hen granska den. Bolagsverket beskriver hur det går till steg för steg.
 
 **Personligt ansvar för styrelsen.** Upprättar styrelsen inte kontrollbalansräkningen i tid, eller följer den inte de steg som lagen kräver, kan styrelseledamöterna bli personligt och solidariskt ansvariga för de skulder som bolaget får medan underlåtenheten pågår (aktiebolagslagen 25 kap. 18 §). Ansvaret kan också gälla den som handlar för bolaget och vet om att styrelsen har underlåtit detta. Den som visar att hen inte har varit försumlig går fri. Ansvaret upphör för nya skulder när till exempel en granskad kontrollbalansräkning som visar att kapitalet är återställt har lagts fram på en stämma, eller när bolaget har beslutat om likvidation (25 kap. 20 §). Därför är det viktigt att följa ekonomin löpande – inte bara vid bokslutet.
 
@@ -59,7 +58,9 @@ I ett handelsbolag behövs ingen särskild regel: delägarna svarar redan själv
 
 ### Ekonomisk förening
 
-I en ekonomisk förening svarar föreningen för sina skulder och medlemmarna riskerar i regel sin insats. Styrelsen har en liknande skyldighet att följa ekonomin som i ett aktiebolag, se [Styrelse och VD](/foretagsguiden/ansvar-och-regler/styrelse-och-vd).
+En ekonomisk förening är en egen juridisk person. Enligt lagen om ekonomiska föreningar 1 kap. 9 § får bara föreningens tillgångar användas för att betala dess skulder; medlemmarna svarar inte personligen. Till tillgångarna räknas insatser och medlemsavgifter som medlemmarna redan ska ha betalat. Den som har gått ur föreningen och fått tillbaka sin insats kan få betala tillbaka den, om föreningen går i konkurs efter en ansökan inom ett år (10 kap. 15 §).
+
+Lagen har inga regler om kontrollbalansräkning som aktiebolagslagen. Styrelsen ska i stället fortlöpande bedöma föreningens ekonomi (7 kap. 4 §), och genast låta föreningsstämman pröva om föreningen ska gå i likvidation när det finns skäl att anta att skulderna inte kommer att täckas av tillgångarna (17 kap. 3 §). Se [Styrelse och VD](/foretagsguiden/ansvar-och-regler/styrelse-och-vd).
 
 ## Så här gör du
 

@@ -15,8 +15,6 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Undantagen från låneförbudet i ABL 21 kap. 2 § (bland annat små ägarandelar och kommersiellt betingade lån för låntagarens rörelse) beskrivs bara översiktligt; behöver granskas innan artikeln säger mer.
 ---
 
 # Företagskonto och pengar
@@ -31,7 +29,15 @@ Företagets pengar och dina egna pengar ska hållas isär. I ett aktiebolag är 
 
 **Pengar ut till ägaren.** Pengarna i bolaget tillhör bolaget. Du kan få ut dem på de sätt aktiebolagslagen tillåter, i praktiken som **lön** (då är bolaget arbetsgivare och drar skatt och betalar arbetsgivaravgifter, se [Registrera dig som arbetsgivare](/foretagsguiden/starta/arbetsgivare)) eller som **utdelning**, som bolagsstämman beslutar om och som bara får lämnas ur fritt eget kapital enligt reglerna i 17 och 18 kap. aktiebolagslagen. Har du lagt ut pengar för bolaget får du dem tillbaka mot kvitto, som ett utlägg.
 
-**Låneförbudet.** Ett aktiebolag får som huvudregel inte låna ut pengar till sina aktieägare, styrelseledamöter eller vd, och inte heller till deras närstående, till exempel make, sambo, barn och syskon (aktiebolagslagen 21 kap. 1 §). Det finns snäva undantag i 21 kap. 2 §. Ett lån i strid med förbudet ska betalas tillbaka (21 kap. 11 §). Enligt Skatteverket beskattas ett sådant lån dessutom hos delägaren som inkomst av tjänst. Ett negativt saldo på ditt avräkningskonto, alltså att du har tagit ut mer än bolaget är skyldigt dig, räknas också som ett lån.
+**Låneförbudet.** Ett aktiebolag får som huvudregel inte låna ut pengar till sina aktieägare, styrelseledamöter eller vd, och inte heller till deras närstående, till exempel make, sambo, barn och syskon (aktiebolagslagen 21 kap. 1 §). Förbudet gäller också om bolaget ställer säkerhet, till exempel går i borgen, för ett sådant lån (21 kap. 3 §).
+
+Undantagen i 21 kap. 2 § är få. De som kan bli aktuella i ett litet bolag är:
+
+- **Lån till din egen rörelse.** Lånet ska vara avsett bara för låntagarens rörelse, och bolaget ska lämna det av rent affärsmässiga skäl, alltså på villkor som bolaget skulle ha gett vem som helst. Styrelsen och vd ska då föra en särskild förteckning över lånet varje år och spara den i minst tio år (21 kap. 10 §).
+- **Lån inom en koncern**, till exempel från ett dotterbolag till moderbolaget.
+- **Mycket små ägare.** Förbudet gäller inte en aktieägare som tillsammans med sina närstående äger mindre än en procent av aktiekapitalet.
+
+Skatteverket kan också ge dispens, men bara om det finns synnerliga skäl (21 kap. 8 §). Att du behöver pengar privat räcker inte. Ett lån i strid med förbudet ska betalas tillbaka (21 kap. 11 §). Enligt Skatteverket beskattas ett sådant lån dessutom hos delägaren som inkomst av tjänst. Ett negativt saldo på ditt avräkningskonto, alltså att du har tagit ut mer än bolaget är skyldigt dig, räknas också som ett lån.
 
 ### Enskild firma
 

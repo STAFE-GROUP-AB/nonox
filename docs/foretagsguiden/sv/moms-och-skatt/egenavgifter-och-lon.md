@@ -19,8 +19,8 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Egenavgifter 28,97 %, schablonavdrag 25 %, arbetsgivaravgifter 31,42 % och bolagsskatt 20,6 % gäller inkomstår 2026. Uppdatera inför 2027.
-  - De nya 3:12-reglerna gäller från inkomstår 2026 (grundbelopp 322 400 kronor för 2026). Låt en redovisningskonsult granska att sammanfattningen är rättvisande innan artikeln lämnar beta.
+  - Egenavgifter 28,97 %, schablonavdrag 25 %, arbetsgivaravgifter 31,42 % och bolagsskatt 20,6 % står i lag och gäller tills riksdagen ändrar dem. Den 4 november 2026 fanns inget beslut om ändrade satser för 2027; kontrollera budgetpropositionen för 2027 och riksdagens beslut.
+  - De nya 3:12-reglerna gäller från inkomstår 2026 (grundbelopp 322 400 kronor för 2026, 333 600 kronor för 2027 enligt Skatteverket). Låt en redovisningskonsult granska att sammanfattningen är rättvisande innan artikeln lämnar beta.
 ---
 
 # Egenavgifter och lön
@@ -50,7 +50,7 @@ Du betalar skatten och avgifterna i förväg via F-skatten varje månad. Läs [S
 
 Från och med inkomstår 2026 räknas gränsbeloppet på ett nytt sätt. Enligt Skatteverket:
 
-- Ett **grundbelopp** ersätter den tidigare förenklingsregeln. För inkomstår 2026 är grundbeloppet 322 400 kronor, och det fördelas mellan ägarna efter hur stor del de äger.
+- Ett **grundbelopp** ersätter den tidigare förenklingsregeln. För inkomstår 2026 är grundbeloppet 322 400 kronor och för inkomstår 2027 är det 333 600 kronor, alltså fyra inkomstbasbelopp. Det fördelas mellan ägarna efter hur stor del de äger.
 - Det **lönebaserade utrymmet** räknas på ett nytt sätt, och flera tidigare krav för att få räkna med lönerna har tagits bort.
 - Utdelningsutrymme som du inte har använt förs fortfarande vidare, men räknas inte längre upp med ränta.
 

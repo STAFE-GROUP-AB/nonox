@@ -15,12 +15,12 @@ kallor:
     url: https://bolagsverket.se/foretag/aktiebolag/arsredovisningforaktiebolag/kontrollbalansrakningvidmisstankeomatthalftenavdetregistreradeaktiekapitaletarforbrukat.3074.html
   - titel: Bolagsverket – Tvångslikvidation av aktiebolag
     url: https://bolagsverket.se/foretag/aktiebolag/avvecklaaktiebolag/likvidationavaktiebolag/tvangslikvidationavaktiebolag.719.html
+  - titel: Riksdagen – Kreditupplysningslag (1973:1173), 7 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/kreditupplysningslag-19731173_sfs-1973-1173/
   - titel: Kronofogden – Du har fått ett krav
     url: https://kronofogden.se/sa-funkar-det-hos-kronofogden/du-har-fatt-ett-krav---sa-funkar-det
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Kronofogden anger att ett företag kan få en betalningsanmärkning redan när en ansökan om betalningsföreläggande kommer in. Bör det formuleras mer exakt med kreditupplysningslagen som källa?
 ---
 
 # När något går fel
@@ -35,7 +35,7 @@ De flesta företagare missar någon gång ett datum eller får en månad då pen
 
 **Sen årsredovisning.** Ett aktiebolag eller en ekonomisk förening som lämnar årsredovisningen till Bolagsverket för sent får en förseningsavgift, se [Årsredovisning och bokslut](/foretagsguiden/ansvar-och-regler/arsredovisning-och-bokslut). Avgiften ska betalas även om du överklagar beslutet (årsredovisningslagen 8 kap. 11 §). Bolagsverket ska efterge den om förseningen berodde på något som bolaget inte kunde råda över, eller om det är uppenbart oskäligt att ta ut den (8 kap. 9 §). Räkna inte med det: vanlig tidsbrist räcker inte. Ett bolag som inte lämnar in årsredovisningen alls kan till slut tvångslikvideras.
 
-**Krav via Kronofogden.** En borgenär som inte får betalt kan ansöka om betalningsföreläggande hos Kronofogden. Kronofogden prövar inte om kravet är riktigt, bara om du bestrider det. Bestrider du inte i tid kan kravet bli ett utslag som går att verkställa. Enligt Kronofogden kan ett företag få en betalningsanmärkning redan när ansökan kommer in. Betalningsanmärkningar sätts av kreditupplysningsföretag, inte av Kronofogden.
+**Krav via Kronofogden.** En borgenär som inte får betalt kan ansöka om betalningsföreläggande hos Kronofogden. Kronofogden prövar inte om kravet är riktigt, bara om du bestrider det. Bestrider du inte i tid kan kravet bli ett utslag som går att verkställa. Betalningsanmärkningar sätts av kreditupplysningsföretag, inte av Kronofogden. För en privatperson som inte driver näringsverksamhet får en kreditupplysning bara ta med en obetald skuld när en domstol eller myndighet har slagit fast den (kreditupplysningslagen 7 §). Det skyddet gäller inte företag och inte dig som näringsidkare. Därför kan en uppgift om ditt företag hamna hos kreditupplysningsföretagen redan när ansökan kommer in till Kronofogden, innan kravet är avgjort, vilket Kronofogden också skriver.
 
 **När aktiekapitalet håller på att förbrukas.** Har ett aktiebolag gått så dåligt att det egna kapitalet kan vara mindre än hälften av aktiekapitalet ska styrelsen genast upprätta en kontrollbalansräkning. Annars riskerar styrelsen personligt ansvar. Se [Ansvar per bolagsform](/foretagsguiden/ansvar-och-regler/ansvar-per-bolagsform).
 

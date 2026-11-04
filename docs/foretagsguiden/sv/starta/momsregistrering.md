@@ -11,12 +11,12 @@ kallor:
     url: https://www.skatteverket.se/omoss/pressochmedia/nyheter/2024/nyheter/hojdomsattningsgransformoms.5.262c54c219391f2e9633e61.html
   - titel: Riksdagen – Mervärdesskattelag (2023:200), 3 kap. 7 § och 18 kap. 4 §
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/
+  - titel: Skatteförfarandelag (2011:1244), 26 kap. 33–33 b §§
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
   - titel: Skatteverket – När ska jag deklarera moms
     url: https://www.skatteverket.se/foretag/moms/deklareramoms/narskajagdeklareramoms.4.6d02084411db6e252fe80008988.html
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Vilka exakta deklarationsdagar gäller för årsredovisning av moms för aktiebolag respektive enskild firma, med och utan EU-handel?
 ---
 
 # Momsregistrering
@@ -42,6 +42,14 @@ Undantaget är frivilligt. Du kan registrera dig för moms även med lägre oms�
 | Över 40 miljoner kronor | Varje månad |
 
 Enligt Skatteverket kan du byta till en tätare period, men vill du sedan gå tillbaka till en glesare måste det ha gått 24 månader.
+
+**När helårsmomsen ska vara inne.** Med en gång per år beror datumet på bolagsformen och på om du har handlat med andra EU-länder under året (skatteförfarandelagen 26 kap. 33–33 b §§):
+
+- **Enskild firma utan EU-handel:** senast 12 maj året efter (33 a §).
+- **Aktiebolag och ekonomisk förening utan EU-handel:** samma period som inkomstdeklarationen, alltså beroende på när räkenskapsåret slutar och om du deklarerar digitalt eller på papper (33 b §).
+- **Med EU-handel, och för handelsbolag:** senast den 26 i andra månaden efter räkenskapsåret, i december den 27 (33 §). För en enskild firma med kalenderår blir det 26 februari.
+
+Alla datum står i [Momsdeklarationens datum](/foretagsguiden/viktiga-datum/momsdeklarationens-datum).
 
 ## Så här gör du
 

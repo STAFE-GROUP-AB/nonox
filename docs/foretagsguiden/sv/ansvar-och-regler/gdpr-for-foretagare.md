@@ -9,6 +9,8 @@ kallor:
     url: https://www.imy.se/verksamhet/dataskydd/det-har-galler-enligt-gdpr/grundlaggande-principer/
   - titel: IMY – Dataskyddsförordningen i fulltext
     url: https://www.imy.se/verksamhet/dataskydd/det-har-galler-enligt-gdpr/introduktion-till-gdpr/dataskyddsforordningen-i-fulltext/
+  - titel: IMY – Föra register över behandling
+    url: https://www.imy.se/verksamhet/dataskydd/det-har-galler-enligt-gdpr/fora-register-over-behandling
   - titel: Bolagsverket – Organisationsnummer
     url: https://bolagsverket.se/foretag/organisationsnummer.1207.html
   - titel: Riksdagen – Bokföringslag (1999:1078), 7 kap.
@@ -16,8 +18,7 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Undantaget från kravet att föra register över behandlingar (artikel 30.5) för företag med färre än 250 anställda nämns inte, eftersom det har flera villkor. Bör guiden förklara det?
-  - Tidsgränsen för att anmäla en personuppgiftsincident till IMY (artikel 33) nämns bara som "snabbt" – bör 72 timmar anges med artikeln som källa?
+  - EU-kommissionen har föreslagit att undantaget i artikel 30.5 ska gälla företag med färre än 750 anställda och att villkoret om tillfällig behandling tas bort (IMY, februari 2026). Har ändringen antagits, och från när gäller den?
 ---
 
 # GDPR för företagare
@@ -43,11 +44,13 @@ Nästan alla företag hanterar personuppgifter: kundernas namn och mejladresser,
 
 **Rättigheter.** Personen har bland annat rätt att få ett registerutdrag, få fel rättade och få uppgifter raderade när ingen annan lag kräver att de sparas.
 
-**Säkerhet och incidenter.** Du ska skydda uppgifterna, till exempel med behörigheter och säkra inloggningar. Försvinner eller sprids uppgifter av misstag kan det vara en personuppgiftsincident som ska anmälas till IMY snabbt. Läs IMY:s vägledning om det händer.
+**Register över behandlingar.** Enligt artikel 30 ska du föra ett register över hur du behandlar personuppgifter. Ett företag med färre än 250 anställda slipper registret bara för behandlingar som är tillfälliga, inte medför risk för de registrerade och inte gäller känsliga uppgifter eller brott (artikel 30.5). Det mesta ett företag gör är inte tillfälligt: kundregistret, fakturorna och lönen används hela tiden. IMY tar lönehanteringen som exempel på en behandling som ska finnas i registret. Räkna därför med att du behöver ett register, även om det är kort. EU har föreslagit lättnader i just den här regeln för mindre företag; kontrollera hos IMY om de har börjat gälla.
+
+**Säkerhet och incidenter.** Du ska skydda uppgifterna, till exempel med behörigheter och säkra inloggningar. Försvinner eller sprids uppgifter av misstag kan det vara en personuppgiftsincident. Den ska anmälas till IMY utan onödigt dröjsmål och om möjligt inom 72 timmar från att du fick veta om den, om det inte är osannolikt att den innebär en risk för de berörda (artikel 33.1). Kommer anmälan senare ska du förklara varför. Alla incidenter ska dessutom dokumenteras, även de som inte behöver anmälas (artikel 33.5). Innebär incidenten en hög risk ska du också informera de personer som berörs (artikel 34). Läs IMY:s vägledning om det händer.
 
 ## Så här gör du
 
-1. Skriv en lista över vilka personuppgifter du har, var de finns och varför: kunder, leverantörer, anställda, nyhetsbrev.
+1. Skriv en lista över vilka personuppgifter du har, var de finns och varför: kunder, leverantörer, anställda, nyhetsbrev. Listan blir grunden för ditt register över behandlingar.
 2. Skriv in en rättslig grund och en lagringstid för varje rad.
 3. Skriv en integritetspolicy i klarspråk och visa den där du samlar in uppgifter.
 4. Bestäm hur du svarar på en begäran om registerutdrag eller radering. I NONOX kan du ta ut ett registerutdrag för en kund, leverantör eller anställd. Se [Personuppgifter](/manual/installningar/personuppgifter).

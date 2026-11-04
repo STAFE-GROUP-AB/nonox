@@ -10,6 +10,8 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2017631-om-registrering-av-verkliga_sfs-2017-631/
   - titel: Riksdagen – Lag (2018:672) om ekonomiska föreningar
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018672-om-ekonomiska-foreningar_sfs-2018-672/
+  - titel: Riksdagen – Prop. 2025/26:129 Utlämnande av uppgifter ur registret över verkliga huvudmän
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/proposition/utlamnande-av-uppgifter-ur-registret-over-verkliga_hd03129/html/
   - titel: Bolagsverket – Om verklig huvudman i aktiebolag
     url: https://bolagsverket.se/foretag/aktiebolag/omverklighuvudmaniaktiebolag.811.html
   - titel: Bolagsverket – Om verklig huvudman i ekonomisk förening
@@ -17,13 +19,12 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Reglerna i artikeln är hämtade ur aktiebolagslagen. Lagen om ekonomiska föreningar (2018:672) har motsvarande regler men andra paragrafer och vissa skillnader – bör de anges var för sig?
-  - Bolagsverket aviserar ändringar i registret över verkliga huvudmän från den 1 juli 2026 och i e-tjänsten hösten 2026. Påverkar de anmälningsskyldigheten för små bolag?
+  - EU:s sjätte penningtvättsdirektiv ska vara helt genomfört i svensk rätt senast i juli 2027 (prop. 2025/26:129). Ändrar det vem som ska anmäla verklig huvudman, eller vad som ska anmälas?
 ---
 
 # Styrelse och VD
 
-I ett aktiebolag eller en ekonomisk förening är det styrelsen som bär ansvaret för företaget, även när bolaget har en enda ägare som sitter i styrelsen själv. Här är de plikter som gäller från första dagen. Beskrivningen följer aktiebolagslagen. En ekonomisk förening har liknande regler i lagen om ekonomiska föreningar; kontrollera detaljerna hos Bolagsverket.
+I ett aktiebolag eller en ekonomisk förening är det styrelsen som bär ansvaret för företaget, även när bolaget har en enda ägare som sitter i styrelsen själv. Här är de plikter som gäller från första dagen. Beskrivningen följer aktiebolagslagen. Vad som skiljer en ekonomisk förening står i ett eget avsnitt längre ned.
 
 ## Det här säger reglerna
 
@@ -41,7 +42,19 @@ I ett aktiebolag eller en ekonomisk förening är det styrelsen som bär ansvare
 
 **Aktiebok.** I ett aktiebolag ska det finnas en aktiebok som visar bolagets aktier och vem som äger dem (5 kap. 1 §). I ett bolag som inte är avstämningsbolag, vilket de flesta små bolag inte är, ansvarar styrelsen för att aktieboken förs, sparas och hålls tillgänglig (5 kap. 7 §). Uppdatera den när aktier byter ägare.
 
-**Verklig huvudman.** Aktiebolag och ekonomiska föreningar ska, liksom handels- och kommanditbolag, anmäla sin verkliga huvudman till Bolagsverket (lagen om registrering av verkliga huvudmän 1 kap. 2 §; börsnoterade bolag och företag som staten eller kommuner kontrollerar är undantagna). Det är den som ytterst äger eller kontrollerar företaget, i regel genom mer än 25 procent av rösterna. Anmälan görs samtidigt som företaget anmäls för registrering, och ändringar anmäls utan dröjsmål (2 kap. 3 §). Anmälan ska göras även om det inte finns någon verklig huvudman. Anmälan görs i Bolagsverkets e-tjänst av en behörig företrädare.
+**Verklig huvudman.** Aktiebolag och ekonomiska föreningar ska, liksom handels- och kommanditbolag, anmäla sin verkliga huvudman till Bolagsverket (lagen om registrering av verkliga huvudmän 1 kap. 2 §; börsnoterade bolag och företag som staten eller kommuner kontrollerar är undantagna). Det är den som ytterst äger eller kontrollerar företaget, i regel genom mer än 25 procent av rösterna. Anmälan görs samtidigt som företaget anmäls för registrering, och ändringar anmäls utan dröjsmål (2 kap. 3 §). Anmälan ska göras även om det inte finns någon verklig huvudman. Anmälan görs i Bolagsverkets e-tjänst av en behörig företrädare. De ändringar som började gälla den 1 juli 2026 gäller vem som får ta del av uppgifterna i registret, inte vem som ska anmäla (prop. 2025/26:129). Fler ändringar kan komma när EU:s nya penningtvättsregler genomförs fullt ut till juli 2027; kontrollera hos Bolagsverket.
+
+### Ekonomisk förening
+
+Lagen om ekonomiska föreningar har motsvarande regler, med några skillnader:
+
+- **Styrelsen** ska ha minst tre ledamöter (7 kap. 1 §), och ledamöterna ska som huvudregel vara medlemmar i föreningen (7 kap. 7 §). Styrelsens uppgifter är desamma som i ett aktiebolag: organisation, fortlöpande bedömning av ekonomin och kontroll av bokföring och medelsförvaltning (7 kap. 4 §).
+- **VD** får styrelsen utse men måste inte (7 kap. 27 §).
+- **Firmateckning:** styrelsen företräder föreningen och tecknar firman (7 kap. 35 §), VD får företräda den i den löpande förvaltningen (7 kap. 36 §), och minst en särskild firmatecknare ska som huvudregel bo inom EES (7 kap. 38 §).
+- **Protokoll** från styrelsemöten justeras av ordföranden och ytterligare en ledamot, förs i nummerföljd och förvaras betryggande (7 kap. 24–25 §§).
+- **Föreningsstämman** ska hållas inom sex månader efter räkenskapsårets slut (6 kap. 9 §).
+- **Medlemsförteckning** i stället för aktiebok: styrelsen ska föra en förteckning över medlemmarna (5 kap. 1 §).
+- **Ekonomin:** det finns ingen kontrollbalansräkning. Styrelsen ska i stället genast låta stämman pröva om föreningen ska gå i likvidation när det finns skäl att anta att skulderna inte kommer att täckas av tillgångarna (17 kap. 3 §). Se [Ansvar per bolagsform](/foretagsguiden/ansvar-och-regler/ansvar-per-bolagsform).
 
 ## Så här gör du
 

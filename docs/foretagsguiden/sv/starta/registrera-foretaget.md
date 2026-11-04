@@ -16,6 +16,8 @@ kallor:
     url: https://verksamt.se/en/setting-up/choose-business-type/trading-partnership
   - titel: Verksamt.se – Starting and registering a limited partnership
     url: https://verksamt.se/en/setting-up/choose-business-type/limited-partnership
+  - titel: Verksamt.se – Starta ekonomisk förening
+    url: https://verksamt.se/starta/valj-foretagsform/ekonomisk-forening
   - titel: Bolagsverket – Organisationsnummer
     url: https://bolagsverket.se/foretag/organisationsnummer.1207.html
   - titel: Aktiebolagslag (2005:551)
@@ -26,8 +28,6 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2017631-om-registrering-av-verkliga_sfs-2017-631/
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Bolagsverkets avgifter för handelsbolag, kommanditbolag och ekonomisk förening har inte bekräftats för 2026 och anges därför inte.
 ---
 
 # Registrera företaget
@@ -38,9 +38,9 @@ När du har valt bolagsform ska företaget registreras. Ett aktiebolag, ett hand
 
 **Aktiebolag.** Bolaget bildas när alla stiftare har skrivit under stiftelseurkunden (aktiebolagslagen 2 kap. 4 §). Styrelsen ska sedan ansöka om registrering hos Bolagsverket inom sex månader (2 kap. 22 §). Före ansökan ska aktiekapitalet vara inbetalt till ett bankkonto, och banken intygar det för Bolagsverket. Enligt verksamt.se kostar registreringen i november 2026 från 2 400 kronor. Samtidigt ska bolaget anmäla sin *verkliga huvudman*, alltså den eller de personer som ytterst äger eller kontrollerar bolaget (se nedan). När bolaget är registrerat får du ett registreringsbevis.
 
-**Handelsbolag och kommanditbolag.** Bolaget finns först när det har förts in i handelsregistret hos Bolagsverket (lagen om handelsbolag och enkla bolag, 1 kap. 1 §). Det är då det får sitt organisationsnummer. Verklig huvudman anmäls samtidigt som bolaget anmäls för registrering. Ta reda på den aktuella avgiften på verksamt.se.
+**Handelsbolag och kommanditbolag.** Bolaget finns först när det har förts in i handelsregistret hos Bolagsverket (lagen om handelsbolag och enkla bolag, 1 kap. 1 §). Det är då det får sitt organisationsnummer. Verklig huvudman anmäls samtidigt som bolaget anmäls för registrering. Enligt verksamt.se kostar registreringen i november 2026 från 1 800 kronor, både för ett handelsbolag och för ett kommanditbolag.
 
-**Ekonomisk förening.** Stadgarna och protokollet från det konstituerande mötet ska vara klara innan föreningen anmäls till Bolagsverket, enligt verksamt.se. Även föreningen anmäler verklig huvudman samtidigt med registreringen.
+**Ekonomisk förening.** Stadgarna och protokollet från det konstituerande mötet ska vara klara innan föreningen anmäls till Bolagsverket, enligt verksamt.se. Även föreningen anmäler verklig huvudman samtidigt med registreringen. Enligt verksamt.se kostar registreringen i november 2026 från 1 900 kronor.
 
 **Verklig huvudman.** Lagen om registrering av verkliga huvudmän gäller svenska juridiska personer, alltså bland annat aktiebolag, handelsbolag, kommanditbolag och ekonomiska föreningar (1 kap. 2 §). Undantagna är bland annat börsnoterade bolag och företag som staten eller kommuner kontrollerar. När Bolagsverket registrerar företaget ska anmälan göras samtidigt som du anmäler företaget för registrering, och ändras något ska det anmälas utan dröjsmål (2 kap. 3 §). En enskild firma är ingen juridisk person och anmäler ingen verklig huvudman.
 

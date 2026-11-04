@@ -19,10 +19,10 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/
   - titel: Skatteverket – Skatteregler för aktie- och handelsbolag (SKV 294)
     url: https://www.skatteverket.se/download/18.6491ed82199c4722daef0c/1761209691103/skatteregler-for-aktie-och-handelsbolag-skv294-utgava24.pdf
+  - titel: Skatteverket – Ombilda enskild näringsverksamhet till aktiebolag
+    url: https://www.skatteverket.se/foretag/drivaforetag/andraochombilda/ombildaenskildnaringsverksamhettillaktiebolag.4.70ac421612e2a997f85800085368.html
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Hur ombildning från enskild firma till aktiebolag går till skattemässigt (överlåtelse av tillgångar, underprisöverlåtelse) – inte beskrivet här, behöver en egen granskad artikel.
 ---
 
 # Välj bolagsform
@@ -84,4 +84,4 @@ En ideell förening och en stiftelse har egna regler och är sällan rätt form 
 
 ## Bra att veta
 
-Många börjar med enskild firma för att det är enkelt och billigt, och byter till aktiebolag när verksamheten växer eller riskerna ökar. Ett byte innebär i praktiken att du startar ett nytt företag och för över verksamheten till det. Hur tillgångar och avtal flyttas och vad det får för skattekonsekvenser bör du gå igenom med en redovisningskonsult innan du byter.
+Många börjar med enskild firma för att det är enkelt och billigt, och byter till aktiebolag när verksamheten växer eller riskerna ökar. Ett byte innebär i praktiken att du startar ett nytt företag och för över verksamheten till det. Enligt Skatteverket ska aktiebolaget vara bildat och registrerat hos Bolagsverket innan du byter. Säljer du tillgångarna till bolaget för mindre än marknadsvärdet beskattas du normalt som om du hade tagit ut dem till marknadsvärdet. Det gäller inte om hela verksamheten, eller en hel verksamhetsgren, förs över, bolaget betalar svensk skatt på näringsverksamhet, aktierna är kvalificerade enligt reglerna för fåmansföretag och bolaget inte har något underskott från tidigare år. Någon moms tas inte ut när verksamheten fortsätter i aktiebolaget. Har du periodiseringsfonder eller expansionsfond i firman finns särskilda villkor för att föra över dem. Gå igenom bytet med en redovisningskonsult innan du gör det.

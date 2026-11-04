@@ -8,14 +8,12 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/
   - titel: Riksdagen – Bokföringslag (1999:1078)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
-  - titel: Riksdagen – Mervärdesskattelag (2023:200)
+  - titel: Riksdagen – Mervärdesskattelag (2023:200), bland annat 13 kap. 24–25 §§
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/
   - titel: Skatteverket – Avdrag för moms vid representation
     url: https://www.skatteverket.se/foretag/moms/kopavarorochtjanster/avdragformomsvidrepresentation.4.15532c7b1442f256baec84b.html
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Beloppen för representation (300 kronor exklusive moms per person för momsavdraget, 60 kronor per person för enklare förtäring i inkomstdeklarationen) kommer från Skatteverkets sida och anges där utan år. Kontrollera att de gäller 2026 och 2027.
 ---
 
 # Avdrag och kvitton
@@ -43,7 +41,8 @@ Köper du något som används både privat och i företaget, gäller avdraget ba
 Representation är till exempel en lunch med en kund eller en fika när du har möte med en leverantör.
 
 - **Inkomstskatt.** Enligt inkomstskattelagen 16 kap. 2 § får representation dras av bara när den har omedelbart samband med verksamheten. Måltider får inte dras av, bara förfriskningar och enklare förtäring av mindre värde. Enligt Skatteverket är gränsen för sådan förtäring 60 kronor per person.
-- **Moms.** Enligt Skatteverket får du dra av momsen på högst 300 kronor exklusive moms per person och tillfälle. Är maten och drycken dyrare än så får du bara dra av momsen på de första 300 kronorna per person. Skatteverket beskriver också en schablon, och hur den har ändrats sedan livsmedelsmomsen sänktes 1 april 2026.
+- **Moms.** Enligt mervärdesskattelagen 13 kap. 25 § får du dra av momsen på måltider vid representation med högst momsen på 300 kronor per person och tillfälle, om måltiden har omedelbart samband med verksamheten och avdraget är skäligt. Är maten och drycken dyrare än så får du bara dra av momsen på de första 300 kronorna, exklusive moms, per person. Beloppet står i lagen och räknas inte om varje år. När både mat och alkohol ingår och kostnaden är högre än 300 kronor per person får du enligt Skatteverket i stället använda en schablon: 46 kronor i avdrag per person och tillfälle, eller 33 kronor när momsen på maten är 6 procent, som den är på livsmedel sedan 1 april 2026. Schablonen förutsätter att momsen på måltiden är minst lika stor som schablonbeloppet.
+- **Gränsen på 60 kronor** för enklare förtäring står inte i lagen. Den är Skatteverkets bedömning och anges på deras sida utan år; den gällde när artikeln granskades i november 2026.
 
 ### Kvittot är en verifikation
 

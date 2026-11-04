@@ -41,7 +41,7 @@ Sista dagen beror på period, bolagsform, storlek och om företaget handlar med 
 Datumen för kvartal och månad står i skatteförfarandelagen 26 kap. 26–27 och 30 §§.
 - **Helår:** dagen beror på bolagsform, när räkenskapsåret slutar, om du deklarerar digitalt och om företaget handlar med andra EU-länder.
 
-Exakta datum för ditt företag hittar du på Skatteverkets sida om när du ska deklarera moms. De kommer också att finnas i Företagsguidens avsnitt om viktiga datum.
+Alla datum, också för helårsmoms, står i [Momsdeklarationens datum](/foretagsguiden/viktiga-datum/momsdeklarationens-datum). Kontrollera dem mot Skatteverkets sida om när du ska deklarera moms.
 
 ### Betalningen
 
