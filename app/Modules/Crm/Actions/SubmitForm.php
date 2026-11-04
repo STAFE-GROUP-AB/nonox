@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\DoNotContact;
+use App\Modules\Crm\Domain\HeldSubmissionOutcome;
 use App\Modules\Crm\Domain\IdentityNumber;
 use App\Modules\Crm\Domain\LegalBasis;
 use App\Modules\Crm\Domain\PersonRole;
@@ -153,11 +154,11 @@ final class SubmitForm
      *
      * @throws ValidationException when it was already accepted or deleted (a double click, or someone else first)
      */
-    public function accept(User $user, Company $company, int $submissionId): void
+    public function accept(User $user, Company $company, int $submissionId): HeldSubmissionOutcome
     {
         abort_unless($user->hasTeamPermission($company, 'crm:settings'), 403);
 
-        [$task, $ownerId, $form] = DB::transaction(function () use ($company, $submissionId): array {
+        [$task, $ownerId, $form, $personCreated] = DB::transaction(function () use ($company, $submissionId): array {
             $held = FormSubmission::query()->held()->whereKey($submissionId)->lockForUpdate()->first();
 
             if (! $held instanceof FormSubmission || ! is_array($held->held_payload)) {
@@ -167,16 +168,20 @@ final class SubmitForm
             $form = Form::query()->findOrFail($held->form_id);
             $payload = $held->held_payload;
 
-            [$task, $ownerId] = $this->take($company, $form, $payload['data'], $payload['org_number'], $payload['newsletter'], $held);
+            [$task, $ownerId, $personCreated] = $this->take($company, $form, $payload['data'], $payload['org_number'], $payload['newsletter'], $held);
 
             Audit::record('crm.form_submission_accepted', $held, ['form_id' => $held->form_id, 'submission_id' => $held->id], $company);
 
-            return [$task, $ownerId, $form];
+            return [$task, $ownerId, $form, $personCreated];
         });
 
-        if ($task instanceof Activity) {
-            $this->notify($company, $form, $ownerId, $task);
+        if (! $task instanceof Activity) {
+            return HeldSubmissionOutcome::DoNotContact;
         }
+
+        $this->notify($company, $form, $ownerId, $task);
+
+        return $personCreated ? HeldSubmissionOutcome::NewLead : HeldSubmissionOutcome::ExistingPerson;
     }
 
     /**
@@ -267,7 +272,7 @@ final class SubmitForm
 
     /**
      * @param  array<string, ?string>  $data
-     * @return array{?Activity, ?int}
+     * @return array{?Activity, ?int, bool} the task, its owner, and whether the person was created
      */
     private function take(Company $company, Form $form, array $data, ?string $orgNumber, bool $newsletter, ?FormSubmission $held = null): array
     {
@@ -280,6 +285,7 @@ final class SubmitForm
         $formName = is_string($heldName) ? $heldName : $form->name;
         $person = Person::query()->whereRaw('lower(email) = ?', [$email])->orderBy('id')->first();
         $account = null;
+        $personCreated = ! $person instanceof Person;
 
         if ($person instanceof Person) {
             // The documented basis, the pruning clock and the marketing consent stay: anyone can type a known
@@ -365,7 +371,7 @@ final class SubmitForm
         Form::query()->whereKey($form->id)->increment('submission_count');
         Audit::record('crm.form_submitted', $task, ['form_id' => $form->id, 'account_id' => $account?->id, 'person_id' => $person->id, 'consent_version' => $consentVersion, 'newsletter' => $newsletter, 'task' => $task !== null], $company);
 
-        return [$task, $task === null ? null : $ownerId];
+        return [$task, $task === null ? null : $ownerId, $personCreated];
     }
 
     private function notify(Company $company, Form $form, ?int $ownerId, Activity $task): void

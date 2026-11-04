@@ -185,7 +185,7 @@ it('shows held submissions to the form owner, who accepts one as a lead with its
         ->assertSee('Rut Riktig')
         ->assertSee('rut@lead.example')
         ->call('acceptHeld', $held->id)
-        ->assertDispatched('toast')
+        ->assertDispatched('toast', message: 'Anmälan är mottagen: prospekt, kontaktperson och uppgift är skapade.')
         ->assertDontSee('Anmälningar att granska');
 
     $person = Person::query()->sole();
@@ -310,6 +310,26 @@ it('keeps only the submission for a person marked Kontakta inte: nothing on thei
         ->and(FormSubmission::query()->sole()->person_id)->toBe($flagged->id)
         ->and($flagged->fresh()->marketing_consent_at)->toBeNull();
     Mail::assertNothingSent();
+});
+
+it('says only what accepting a held submission created, for a known person and one marked Kontakta inte', function () {
+    Crm::person($this->company, $this->owner, 'Kim Känd', ['email' => 'kim@lead.example']);
+    Crm::person($this->company, $this->owner, 'Klas Kontaktainte', ['email' => 'klas@lead.example', 'do_not_contact' => true, 'do_not_contact_reason' => 'OBJECTION']);
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Kim', 'email' => 'kim@lead.example', 'message' => 'Hej']);
+    submitForm($this->form, ['name' => 'Klas', 'email' => 'klas@lead.example', 'message' => 'Hej']);
+    CurrentCompany::set($this->company);
+    $known = FormSubmission::query()->held()->orderBy('id')->firstOrFail();
+    $flagged = FormSubmission::query()->held()->orderByDesc('id')->firstOrFail();
+
+    Livewire::test(FormsPage::class)
+        ->call('acceptHeld', $known->id)
+        ->assertDispatched('toast', message: 'Anmälan är mottagen. Personen fanns redan, så en uppgift är skapad på den befintliga kontakten.')
+        ->call('acceptHeld', $flagged->id)
+        ->assertDispatched('toast', message: 'Anmälan är mottagen. Personen har bett att inte bli kontaktad, så ingen uppgift är skapad.');
+
+    expect(Person::query()->count())->toBe(2)
+        ->and(Activity::query()->count())->toBe(1);
 });
 
 it('never lifts an objection or an unsubscribe for an address the CRM already has', function () {

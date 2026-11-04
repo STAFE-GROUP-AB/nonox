@@ -21,10 +21,10 @@ use Illuminate\Support\Facades\RateLimiter;
  * still-valid code sent within the cooldown is reused instead of sending a
  * new one, and a lock serialises concurrent requests (double clicks, Enter).
  *
- * Caps keep the form from flooding an inbox. They count mails actually
- * sent, never requests: a few per address in ten minutes, a number per
- * address and day from one client address (IPv6 per /64) with a higher
- * ceiling per address from all of them, and, for addresses without an
+ * Caps keep the form from flooding an inbox. They count mails handed over
+ * for sending (scheduled with defer), never requests: a few per address in
+ * ten minutes, a number per address and day from one client address
+ * (IPv6 per /64) with a higher ceiling per address from all of them, and, for addresses without an
  * account (open self-registration), a ceiling for the whole service per
  * hour. When a cap is reached nothing new is sent and the latest code stays
  * valid until it expires. That makes it harder for someone asking for codes

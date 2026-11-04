@@ -103,14 +103,14 @@ class FormsPage extends Component
         $submission = FormSubmission::query()->findOrFail($id);
 
         try {
-            $submit->accept($this->user(), $this->company(), $submission->id);
+            $outcome = $submit->accept($this->user(), $this->company(), $submission->id);
         } catch (ValidationException $exception) {
             $this->toast($this->firstError($exception), 'error');
 
             return;
         }
 
-        $this->toast(__('Anmälan är mottagen: prospekt, kontaktperson och uppgift är skapade.'));
+        $this->toast($outcome->message());
     }
 
     /** Deletes a held submission and what was typed in it. */

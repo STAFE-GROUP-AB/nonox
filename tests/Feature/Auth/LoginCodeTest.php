@@ -11,11 +11,14 @@ use App\Models\TeamInvitation;
 use App\Models\User;
 use App\Support\Auth\ClientAddressBucket;
 use App\Support\LoginCodeAutofill;
+use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks;
 use Illuminate\Support\Defer\DeferredCallbackCollection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Livewire\Livewire;
 
 beforeEach(function () {
@@ -405,6 +408,22 @@ it('sends the code mail after the response, not on the queue, so no answer waits
 
     Mail::assertSent(LoginCodeMail::class, fn (LoginCodeMail $mail): bool => $mail->hasTo('anna@example.com'));
     expect(new LoginCodeMail('12345678'))->not->toBeInstanceOf(ShouldQueue::class);
+});
+
+it('sends the deferred code mail at the end of a real HTTP request', function () {
+    $this->withDefer();
+
+    expect(app(HttpKernel::class)->hasMiddleware(InvokeDeferredCallbacks::class))->toBeTrue();
+
+    Route::get('/test-login-code', function (SendLoginCode $sendLoginCode): string {
+        $sendLoginCode('anna@example.com');
+
+        return 'ok';
+    });
+
+    $this->get('/test-login-code')->assertOk();
+
+    Mail::assertSent(LoginCodeMail::class, fn (LoginCodeMail $mail): bool => $mail->hasTo('anna@example.com'));
 });
 
 it('caps the codes sent to one address per day and client address without refusing the owner', function () {
