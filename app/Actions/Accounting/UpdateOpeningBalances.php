@@ -53,7 +53,9 @@ class UpdateOpeningBalances
             CreateNextFiscalYear::lock($company->id);
             $loaded = FiscalYear::query()->with('company')->orderBy('start_date')->lockForUpdate()->get()->keyBy('id');
             /** @var Company $company */
-            $company = Company::query()->whereKey($company->id)->lockForUpdate()->firstOrFail();
+            // FOR NO KEY UPDATE: blocks period locks, closing and SIE import (FOR UPDATE) but not the
+            // FOR KEY SHARE that every posting or insert with a company foreign key takes.
+            $company = Company::query()->whereKey($company->id)->lock('for no key update')->firstOrFail();
             $year = fn (int $id): FiscalYear => $loaded->get($id) ?? throw new LogicException("Fiscal year {$id} is not in the company.");
             $stale = StaleOpeningBalances::compute($company);
 

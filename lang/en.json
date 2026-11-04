@@ -8722,5 +8722,6 @@
     "Skillnaden mot de utgående balanserna för :from har ändrats sedan den bekräftades som avsiktlig. Uppdatera de ingående balanserna under Räkenskapsår, eller bekräfta skillnaden på nytt med skäl.": "The difference from the closing balances for :from has changed since it was confirmed as intended. Update the opening balances under Fiscal years, or confirm the difference again with a reason.",
     "Skäl till att skillnaden är avsiktlig": "Reason the difference is intended",
     "Skillnaden är bekräftad som avsiktlig. Lämna skälet i en not i årsredovisningen.": "The difference is confirmed as intended. Give the reason in a note in the annual report.",
-    "Kontot har bokföring eller ingående balanser, så det kan inte byta mellan balanskonto och resultatkonto. Lägg upp ett nytt konto i stället.": "The account has postings or opening balances, so it cannot move between balance sheet and income statement. Create a new account instead."
+    "Kontot har bokföring eller ingående balanser, så det kan inte byta mellan balanskonto och resultatkonto. Lägg upp ett nytt konto i stället.": "The account has postings or opening balances, so it cannot move between balance sheet and income statement. Create a new account instead.",
+    "Skriv inte personuppgifter i skälet.": "Do not write personal data in the reason."
 }

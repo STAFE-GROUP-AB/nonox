@@ -50,6 +50,7 @@
                             <label for="opening_reason" class="block w-full text-sm text-gray-800 sm:w-auto sm:flex-1">
                                 {{ __('Skäl till att skillnaden är avsiktlig') }}
                                 <input id="opening_reason" type="text" maxlength="1000" wire:model="openingReason" class="mt-1 block w-full rounded-lg border-stone-300 text-sm shadow-xs focus:border-accent-500 focus:ring-accent-500">
+                                <span class="mt-1 block text-xs text-gray-600">{{ __('Skriv inte personuppgifter i skälet.') }}</span>
                             </label>
                             <x-button wire:loading.attr="disabled">{{ $item['confirm'] }}</x-button>
                             <a href="{{ route($item['route']) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Gå dit') }}</a>

@@ -824,9 +824,11 @@ balances").
   som jämförs är det som ändras. Beloppen efter i behandlingshistoriken läses
   från de rader som faktiskt skrevs. Överföringen tar själv samma lås för att
   skapa år och låser det tidigare året innan saldona läses. Även bokslutets
-  stängning tar låset för att skapa år först. Ordningen är densamma som
-  SIE-inläsningens (lås för att skapa år, år, företag) och bokföringens (år,
-  företag), så ingen av dem väntar på den andra i omvänd ordning.
+  stängning tar låset för att skapa år först. Alla vägar som skapar år, för
+  över, stänger eller läser in SIE tar låset för att skapa år först och väntar
+  därför inte på varandra. Bokföringen låser år och sedan företaget med FOR KEY
+  SHARE; uppdateringen låser företagsraden med FOR NO KEY UPDATE, som inte
+  krockar med det.
 - **Aldrig automatiskt.** NONOX uppdaterar inte ingående balanser av sig
   självt. Nya ingående balanser ändrar balansrapporten, huvudboken och
   underlag för avstämningar och bokslutsarbete som redan gjorts i det senare
