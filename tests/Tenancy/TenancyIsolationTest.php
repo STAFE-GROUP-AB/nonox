@@ -20,6 +20,8 @@ use App\Models\CompanyGuideStep;
 use App\Models\CompanyModule;
 use App\Models\CostCenter;
 use App\Models\Customer;
+use App\Models\DeadlineCalendarFeed;
+use App\Models\DeadlineReminder;
 use App\Models\FiscalYear;
 use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
@@ -256,6 +258,8 @@ const COMPANY_SCOPED_MODELS = [
     RecurringInvoice::class => 'agreementAttributes',
     CompanyModule::class => ['module_key' => 'hemlig', 'enabled' => true],
     CompanyGuideStep::class => 'companyGuideStepAttributes',
+    DeadlineCalendarFeed::class => 'deadlineCalendarFeedAttributes',
+    DeadlineReminder::class => 'deadlineReminderAttributes',
     WorkSchedule::class => 'payrollWorkScheduleAttributes',
     PeppolParticipant::class => 'peppolParticipantAttributes',
     PeppolTransmission::class => 'peppolTransmissionAttributes',
@@ -384,6 +388,16 @@ const COMPANY_SCOPED_MODELS = [
     ConnectSftpKey::class => 'connectSftpKeyAttributes',
     ConnectSftpUpload::class => 'connectSftpUploadAttributes',
 ];
+
+function deadlineCalendarFeedAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'token_hash' => hash('sha256', bin2hex(random_bytes(16)))];
+}
+
+function deadlineReminderAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'deadline_key' => 'vat:2026-09-30', 'deadline_date' => '2026-11-12', 'days_before' => 7, 'sent_at' => now()];
+}
 
 function companyGuideStepAttributes(): array
 {

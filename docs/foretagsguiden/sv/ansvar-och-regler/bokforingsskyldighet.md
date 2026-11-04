@@ -8,13 +8,14 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
   - titel: Bokföringsnämnden – Vägledning Bokföring (BFNAR 2013:2)
     url: https://www.bfn.se/wp-content/uploads/vl13-2-bokforing.pdf
+  - titel: Bokföringsnämnden – Vägledning Enskilda näringsidkare som upprättar förenklat årsbokslut (BFNAR 2006:1)
+    url: https://www.bfn.se/wp-content/uploads/vl06-1-k1enskilda-kons2025.pdf
   - titel: Bokföringsnämnden – Beslutade redovisningsregler
     url: https://www.bfn.se/redovisningsregler/beslutade-redovisningsregler/
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Exakt vilka senare tidpunkter för bokföring av andra affärshändelser än kontanta som BFNAR 2013:2 godtar för mindre företag (månadsvis bokföring och tidsgränser) – guiden hänvisar till BFN i stället för att ange dem.
-  - Ska tregränsen i 5 kap. 2 § (nettoomsättning "normalt" högst tre miljoner kronor) beskrivas närmare, till exempel för första året?
+  - Hur bedöms "normalt högst tre miljoner kronor" det första räkenskapsåret, när det inte finns några tidigare år att jämföra med? BFN:s vägledning till K1 beskriver bara enstaka år över gränsen. Fråga Bokföringsnämnden.
 ---
 
 # Bokföringsskyldighet
@@ -27,9 +28,16 @@ Bokföringen är företagets minne. Den visar vad som har hänt med pengarna, de
 
 **Löpande.** Alla affärshändelser ska bokföras löpande (4 kap. 1 §). En affärshändelse är allt som ändrar företagets pengar, skulder eller tillgångar: en försäljning, ett inköp, en lön, ett lån.
 
-**Hur snabbt.** Enligt 5 kap. 2 § ska kontanta in- och utbetalningar bokföras senast påföljande arbetsdag. Andra affärshändelser ska bokföras så snart det kan ske, men en senare tidpunkt är tillåten om det finns goda skäl och det stämmer med god redovisningssed. BFN beskriver i sina allmänna råd (BFNAR 2013:2) när det är godtagbart att vänta, till exempel att bokföra en gång i månaden. Kontrollera vad som gäller för ditt företag där innan du väljer en rytm.
+**Hur snabbt.** Enligt 5 kap. 2 § ska kontanta in- och utbetalningar bokföras senast påföljande arbetsdag. Andra affärshändelser ska bokföras så snart det kan ske, men en senare tidpunkt är tillåten om det finns skäl för det och det stämmer med god redovisningssed. BFN anger i sina allmänna råd (BFNAR 2013:2, punkterna 3.6–3.9) hur länge du får vänta:
 
-Ett företag vars nettoomsättning normalt är högst tre miljoner kronor om året får vänta med att bokföra fakturor tills de betalas. Det kallas kontantmetoden. Obetalda kund- och leverantörsfakturor ska då ändå bokföras vid räkenskapsårets slut.
+- **Alla företag:** till 50 dagar efter utgången av den månad då affärshändelsen inträffade. En faktura från mars ska alltså vara bokförd senast den 20 maj.
+- **Nettoomsättning normalt högst tre miljoner kronor:** till 50 dagar efter utgången av kvartalet. Det passar dig som redovisar moms en gång per kvartal.
+- **Högst 50 verifikationer med sammanlagt högst 250 affärshändelser per år och en nettoomsättning på normalt högst en miljon kronor:** till 60 dagar efter räkenskapsårets slut.
+- **Enskild firma** med samma små volymer, som varken köper eller säljer varor som transporteras mellan EU-länder eller tjänster med omvänd skattskyldighet inom EU (skatteförfarandelagen 26 kap. 33 a § andra stycket): till den dag inkomstdeklarationen ska lämnas.
+
+Två villkor gäller alltid. Kontanta betalningar ska ändå föras in i tidsordning senast nästa arbetsdag, till exempel i en kassabok; det är bara uppdelningen per konto som får vänta. Är försäljningen registrerad i ett certifierat kassaregister får även tidsordningen vänta till 50 dagar efter månadens slut (punkt 3.10). Och medan du väntar ska underlagen hållas i ordning i takt med att de kommer in (punkt 3.5). Längre än så får du bara vänta vid ett särskilt hinder av tillfällig natur, till exempel akut sjukdom, och då bara några dagar (punkt 3.13).
+
+Ett företag vars nettoomsättning normalt är högst tre miljoner kronor om året får vänta med att bokföra fakturor tills de betalas. Det kallas kontantmetoden. Obetalda kund- och leverantörsfakturor ska då ändå bokföras vid räkenskapsårets slut. Med "normalt" menar BFN att ett enstaka år över gränsen, till exempel ett ovanligt bra år, inte gör något, men att flera år över gränsen gör att möjligheten försvinner. Är du nystartad och osäker på var omsättningen hamnar, fråga din redovisningskonsult.
 
 **Verifikationer.** För varje affärshändelse ska det finnas en verifikation (5 kap. 6 §). Den ska bland annat visa när den sammanställdes, när affärshändelsen inträffade, vad den gäller, beloppet och vem som är motpart (5 kap. 7 §). Kvittot eller fakturan är underlaget, och verifikationen är posten i bokföringen som hänvisar till det.
 
@@ -39,7 +47,7 @@ Ett företag vars nettoomsättning normalt är högst tre miljoner kronor om år
 
 ## Så här gör du
 
-1. Bestäm en fast rytm, till exempel varje vecka. Kontanta betalningar bokförs senast nästa arbetsdag.
+1. Bestäm en fast rytm, till exempel varje vecka eller i samband med momsdeklarationen, och håll dig inom BFN:s tidsgränser ovan. Kontanta betalningar förs in senast nästa arbetsdag.
 2. Spara underlaget direkt när du får det. I NONOX lägger du kvittot på verifikationen, se [Underlag](/manual/bokforing/underlag).
 3. Bokför verifikationen, se [Bokför en verifikation](/manual/bokforing/bokfor-en-verifikation). NONOX ger den nästa nummer i serien när den bokförs, så att numren följer varandra utan luckor.
 4. Upptäcker du ett fel efteråt: rätta med en ny verifikation, inte genom att ändra den gamla. Se [Rätta en verifikation](/manual/bokforing/ratta-en-verifikation).

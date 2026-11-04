@@ -7,12 +7,14 @@ kallor:
     url: https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html
   - titel: Skatteverket – Momssats på varor och tjänster
     url: https://www.skatteverket.se/foretag/moms/saljavarorochtjanster/momssatspavarorochtjanster.4.58d555751259e4d66168000409.html
+  - titel: Riksdagen – Socialavgiftslag (2000:980), 2 kap. 26 § och 3 kap. 13 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/socialavgiftslag-2000980_sfs-2000-980/
   - titel: Riksdagen – Skatteförfarandelag (2011:1244)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Procentsatserna för egenavgifter, arbetsgivaravgifter och bolagsskatt gäller inkomstår 2026. Uppdatera dem inför 2027.
+  - Procentsatserna står i lag och gäller tills riksdagen ändrar dem. Den 4 november 2026 fanns inget beslut om ändrade satser för 2027; kontrollera budgetpropositionen för 2027 och riksdagens beslut innan satserna märks med 2027.
 ---
 
 # Sätt undan pengar

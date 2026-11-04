@@ -154,6 +154,9 @@
 .gd-soon li{padding:24px;border-radius:22px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
 .gd-soon-badge{display:inline-flex;padding:3px 10px;border-radius:999px;background:rgba(255,138,109,.16);color:#FFB39F;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
 .gd-soon h3{margin:16px 0 0;font-size:19px;line-height:1.25;color:#fff}
+.gd-soon li.gd-live{border-color:rgba(255,138,109,.5);background:rgba(255,138,109,.08)}
+.gd-live-badge{background:#FF5A36;color:#15171C}
+.gd-dark .gd-live-link{display:inline-flex;margin-top:14px;color:#FFB39F}
 .gd-soon p{margin:8px 0 0;font-size:14.5px;line-height:1.55;color:#C9CCD3}
 
 /* Beta notice, sources, numbers (also on the article pages) */

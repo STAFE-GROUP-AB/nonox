@@ -11,3 +11,7 @@ ansvar-och-regler:
   titel: Ansvar och regler
   beskrivning: Vad lagen kräver av dig som driver företag, från bokföring och arkivering till ditt personliga ansvar.
   ikon: scale
+viktiga-datum:
+  titel: Viktiga datum
+  beskrivning: När moms, arbetsgivardeklaration, preliminärskatt, inkomstdeklaration och årsredovisning ska vara inne och betalda, och vad du gör om du missar ett datum.
+  ikon: calendar

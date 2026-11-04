@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
  * of yearly VAT (SFL 26 kap. 33 a § andra stycket, 33 b § tredje stycket):
  * goods transported between EU countries and services under article 196 of
  * the VAT directive, bought or sold. Read from the ledger: a posted row on an
- * account that feeds box 20, 21, 35, 37, 38 or 39 (#60).
+ * account that feeds box 20, 21, 22, 35, 37, 38 or 39 (#60).
  *
  * TODO(legal-verify): whether distance sales of goods through OSS (3106)
  * also count as "leveranser av varor som transporteras mellan EU-länder";
@@ -22,7 +22,12 @@ use Illuminate\Database\Eloquent\Builder;
  */
 final class EuTrade
 {
-    public const array BOXES = [20, 21, 35, 37, 38, 39];
+    /**
+     * TODO(legal-verify): box 22, services bought from outside the EU, is
+     * counted because art. 196 covers any supplier not established in
+     * Sweden (REGLER.md §1); domestic reverse charge (24, 41; art. 199) is not.
+     */
+    public const array BOXES = [20, 21, 22, 35, 37, 38, 39];
 
     /**
      * The fiscal years with EU trade, for many companies in one query, as

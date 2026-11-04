@@ -41,7 +41,7 @@ Det är ägaren, redovisningskonsulten och löneadministratören som kan skapa o
 
 ## Deklarationsdagen
 
-Vilken dag deklarationen ska vara inne beror på företagets omsättning. Välj rätt alternativ i löneinställningarna under **Deklarationsdag för arbetsgivardeklarationen**, så visar NONOX rätt dag för varje månad. Datumen kommer från reglerna och är hämtade från Skatteverket. En månad som är sen visas med **skulle ha lämnats senast** och datumet.
+Vilken dag deklarationen ska vara inne beror på om företaget är momsregistrerat och omsätter mer än 40 miljoner kronor om året. Det anger du under företagets uppgifter (**Omsättningen är över 40 miljoner kronor om året**), och NONOX visar rätt dag för varje månad: den 12:e, eller den 26:e för större företag, som då betalar skatten redan den 12:e. Datumen räknas enligt skatteförfarandelagen och stäms av mot Skatteverkets lista. En månad som är sen visas med **skulle ha lämnats senast** och datumet.
 
 ## Vad står i filen?
 

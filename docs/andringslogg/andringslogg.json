@@ -32,6 +32,38 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-agi-grupp-fran-foretaget",
+      "datum": "2026-11-04T22:00:00+01:00",
+      "rubrik": "Arbetsgivardeklarationens dag följer företagets uppgifter",
+      "beskrivning": "Om arbetsgivardeklarationen ska lämnas den 12:e eller den 26:e avgörs nu av företagets uppgifter: momsregistrerat och omsättning över 40 miljoner kronor. Sidan Arbetsgivardeklaration, Mina företag och Mina datum visar därför alltid samma dag, och löneinställningen visar gruppen utan att avgöra den. Hade löneinställningen en annan grupp än företagets uppgifter säger sidan Arbetsgivardeklaration till.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-04-helarsmoms-foreningar-eu-tjanster",
+      "datum": "2026-11-04T21:40:00+01:00",
+      "rubrik": "Helårsmoms för ideella föreningar och stiftelser, och tjänster köpta utanför EU",
+      "beskrivning": "En ideell förening eller stiftelse med helårsmoms ser nu den tidigare sista dagen, den 26:e i andra månaden efter året, eftersom den senare dagen bara gäller den som lämnar inkomstdeklaration. Köp av tjänster från länder utanför EU räknas som EU-handel när dagen för helårsmoms räknas fram, vilket också ger den tidigare dagen.",
+      "typ": "Rättat",
+      "omrade": "Moms"
+    },
+    {
+      "id": "2026-11-04-agi-datum-enligt-lagen",
+      "datum": "2026-11-04T21:00:00+01:00",
+      "rubrik": "Arbetsgivardeklarationens sista dag för alla år, och betaldagen för stora arbetsgivare",
+      "beskrivning": "Sista dagen för arbetsgivardeklarationen räknas nu enligt skatteförfarandelagen för varje år, också när Skatteverkets lista för året inte finns i NONOX ännu. En arbetsgivare med en omsättning över 40 miljoner kronor ser att skatten ska betalas den 12:e, två veckor före deklarationen den 26:e. Sista dagar som infaller på midsommarafton, julafton eller nyårsafton flyttas till nästa vardag, som lagen säger.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-04-mina-datum",
+      "datum": "2026-11-04T20:30:00+01:00",
+      "rubrik": "Mina datum: företagets frister på en sida och i din kalender",
+      "beskrivning": "Mina datum i Företagsguiden visar företagets sista dagar de kommande 15 månaderna: moms, periodisk sammanställning, arbetsgivardeklaration, preliminärskatt, inkomstdeklaration, årsstämma och årsredovisning, med varför varje datum gäller och var du gör det i NONOX. Datumen räknas fram ur företagets inställningar och räkenskapsår enligt reglerna i lagen, och de som ännu inte är bekräftade är märkta så att du kontrollerar dem hos Skatteverket. Du kan prenumerera på dem i din egen kalender, och NONOX påminner under klockan och under Att göra innan ett datum.",
+      "typ": "Nytt",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-04-foretagsguiden",
       "datum": "2026-11-04T18:00:00+01:00",
       "rubrik": "Företagsguiden och Min startplan",

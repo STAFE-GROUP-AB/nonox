@@ -8,17 +8,28 @@
     ];
 @endphp
 <div class="space-y-6">
+    @if($groupNotice)
+        <div class="rounded-2xl bg-amber-50 p-4 text-sm text-amber-950 ring-1 ring-amber-200" role="status" data-agi-group-notice>
+            <p class="font-semibold">{{ __('Deklarationsdagen styrs nu av företagets uppgifter') }}</p>
+            <p class="mt-1">{{ __('Löneinställningarna sa att företaget omsätter mer än 40 miljoner kronor, men under företagets uppgifter är det inte angivet (eller så är företaget inte momsregistrerat). Därför gäller den 12:e. Stämmer det inte, ändra under företagets uppgifter.') }}</p>
+            <div class="mt-3 flex flex-wrap gap-3">
+                <a href="{{ route('teams.show', $companyId) }}" class="font-semibold text-accent-700 underline">{{ __('Öppna företagets uppgifter') }}</a>
+                <button type="button" wire:click="acknowledgeGroup" class="font-semibold text-gray-800 underline">{{ __('Uppfattat') }}</button>
+            </div>
+        </div>
+    @endif
     <x-ui.card>
         @if($next)
             <p class="text-sm text-gray-600">{{ __('Nästa arbetsgivardeklaration') }}</p>
             <p class="mt-1 text-2xl font-semibold text-gray-900">
                 {{ $next['period'] }}
-                @if($next['deadline'])
-                    <span @class(['ml-2 text-base font-medium', 'text-accent-700' => $next['overdue'], 'text-gray-600' => ! $next['overdue']])>
-                        {{ $next['overdue'] ? __('skulle ha lämnats senast :date', ['date' => $next['deadline']->toDateString()]) : __('lämnas senast :date', ['date' => $next['deadline']->toDateString()]) }}
-                    </span>
-                @endif
+                <span @class(['ml-2 text-base font-medium', 'text-accent-700' => $next['overdue'], 'text-gray-600' => ! $next['overdue']])>
+                    {{ $next['overdue'] ? __('skulle ha lämnats senast :date', ['date' => $next['deadline']->toDateString()]) : __('lämnas senast :date', ['date' => $next['deadline']->toDateString()]) }}
+                </span>
             </p>
+            @if($next['payment'])
+                <p class="mt-1 text-sm font-medium text-gray-700" data-agi-payment>{{ __('Skatten och avgifterna betalas senast :date, två veckor före deklarationen.', ['date' => $next['payment']->toDateString()]) }}</p>
+            @endif
         @else
             <p class="text-sm text-gray-900">{{ __('Alla månader med utbetald lön är deklarerade.') }}</p>
         @endif
@@ -46,7 +57,7 @@
                         @foreach($periods as $row)
                             <tr wire:key="agi-{{ $row['period'] }}">
                                 <td class="py-3 pr-4 align-top font-medium text-gray-900">{{ $row['period'] }}</td>
-                                <td @class(['py-3 pr-4 align-top tabular-nums whitespace-nowrap', 'text-accent-700 font-medium' => $row['overdue']])>{{ $row['deadline']?->toDateString() ?? '–' }}</td>
+                                <td @class(['py-3 pr-4 align-top tabular-nums whitespace-nowrap', 'text-accent-700 font-medium' => $row['overdue']])>{{ $row['deadline']->toDateString() }}@if($row['payment'])<span class="block text-xs font-normal text-gray-600">{{ __('betala :date', ['date' => $row['payment']->toDateString()]) }}</span>@endif</td>
                                 <td class="py-3 pr-4 align-top text-right">@if($row['latest'])<x-ui.amount :money="App\Support\Money\Money::ofOre($row['latest']->tax_ore)" />@endif</td>
                                 <td class="py-3 pr-4 align-top text-right">@if($row['latest'])<x-ui.amount :money="App\Support\Money\Money::ofOre($row['latest']->contributions_ore)" />@endif</td>
                                 <td class="py-3 align-top">

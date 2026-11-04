@@ -12,14 +12,18 @@ kallor:
     url: https://www.skatteverket.se/foretag/arbetsgivare/personalliggare.4.4f3d00a710cc9ae1c9c80007271.html
   - titel: Skatteverket – Så fungerar personalliggare
     url: https://www.skatteverket.se/foretag/arbetsgivare/personalliggare/safungerarpersonalliggare.4.3810a01c150939e893f224b.html
+  - titel: Skatteverket – Blandad verksamhet (personalliggare)
+    url: https://www.skatteverket.se/foretag/arbetsgivare/personalliggare/blandadverksamhet.4.22501d9e166a8cb399f2c99.html
+  - titel: Riksdagen – Skatteförfarandeförordning (2011:1261), 9 kap. 5 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandeforordning-20111261_sfs-2011-1261/
+  - titel: Riksdagen – Prop. 2017/18:82 Personalliggare i fler verksamheter
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/proposition/personalliggare-i-fler-verksamheter_h50382/html/
   - titel: Riksdagen – Skatteförfarandelag (2011:1244)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Skatteverket beskriver fler undantag från personalliggare än de i skatteförfarandelagen 39 kap. 11 §, till exempel när verksamheten till största delen är annat. Vilka villkor gäller, och var står de?
-  - Var står att personalliggaren ska sparas i två år (skatteförfarandeförordningen)? Uppgiften kommer från Skatteverket.
-  - Byggbranschen har egna regler (byggherrens anmälan, elektronisk liggare, andra kontrollavgifter). De beskrivs inte här.
+  - Byggbranschen har egna regler (byggherrens anmälan, elektronisk liggare, andra kontrollavgifter). De beskrivs inte här och behöver en egen granskad artikel.
 ---
 
 # Kassaregister och personalliggare
@@ -54,9 +58,11 @@ En personalliggare är en löpande lista över vem som arbetar och när varje pe
 - fordonsservice,
 - livsmedels- och tobaksgrossister.
 
-Liggaren ska föras varje dag och finnas lätt tillgänglig när Skatteverket kommer. Liggare behöver inte föras i en enskild firma där bara du, din make eller maka och dina barn under 16 år arbetar, och inte heller i ett fåmansföretag där bara företagsledaren, dennes make eller maka och barn under 16 år arbetar (skatteförfarandelagen 39 kap. 11 §). Hjälper ett vuxet barn eller en förälder till gäller alltså kravet. Undantaget gäller inte i byggbranschen. Kontrollera hos Skatteverket om ett undantag passar dig. Så fort någon annan arbetar, även en enda dag, ska liggaren föras.
+Liggaren ska föras varje dag och finnas lätt tillgänglig när Skatteverket kommer. Liggare behöver inte föras i en enskild firma där bara du, din make eller maka och dina barn under 16 år arbetar, och inte heller i ett fåmansföretag där bara företagsledaren, dennes make eller maka och barn under 16 år arbetar (skatteförfarandelagen 39 kap. 11 §). Hjälper ett vuxet barn eller en förälder till gäller alltså kravet. Undantaget gäller inte i byggbranschen. Så fort någon annan arbetar, även en enda dag, ska liggaren föras.
 
-Liggaren ska sparas i två år efter utgången av det kalenderår då beskattningsåret gick ut.
+**Blandad verksamhet.** Består din näringsverksamhet huvudsakligen av något annat än de här branscherna räknas den inte som en sådan verksamhet, och då behövs ingen liggare (skatteförfarandelagen 39 kap. 2 § sista stycket). Med huvudsakligen menas enligt förarbetena ungefär 75 procent eller mer (prop. 2017/18:82). Ett konstgalleri med ett litet kafé behöver alltså en liggare först när kaféet är mer än en fjärdedel av verksamheten. Skatteverket mäter andelen på omsättningen. Ligger du nära gränsen, fråga Skatteverket. Undantaget gäller inte byggbranschen.
+
+Liggaren ska sparas i två år efter utgången av det kalenderår då beskattningsåret gick ut (skatteförfarandeförordningen 9 kap. 5 §).
 
 **Kontrollavgift.** Saknas liggaren eller är den inte korrekt kan Skatteverket ta ut en kontrollavgift. Den är 12 500 kronor plus 2 500 kronor för varje person som arbetar men inte står i liggaren, och 25 000 kronor i stället för 12 500 kronor om en ny överträdelse sker inom ett år (skatteförfarandelagen 50 kap. 4 §).
 

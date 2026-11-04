@@ -28,6 +28,8 @@ Schedule::command('peppol:sync')->everyFifteenMinutes()->withoutOverlapping();
 // Tasks (ADR-028): this period's recurring tasks, and the morning digest for those who asked for it.
 Schedule::command('tasks:generate-recurring')->dailyAt('05:10')->withoutOverlapping();
 Schedule::command('tasks:send-digest')->weekdays()->at('06:45')->withoutOverlapping();
+// Mina datum (ADR-051, stage 2): notices 7 days and 1 day before a company's deadlines.
+Schedule::command('guide:send-deadline-reminders')->dailyAt('06:50')->withoutOverlapping();
 // The waiting list of the open beta (ADR-038): retention, and one summary a day for the HQ admins.
 Schedule::command('waitlist:prune')->dailyAt('04:40')->withoutOverlapping();
 Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();

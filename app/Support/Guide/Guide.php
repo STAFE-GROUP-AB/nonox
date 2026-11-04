@@ -33,6 +33,21 @@ final class Guide
     /** The personal start plan's address; no section may take it. */
     public const string START_PLAN_SLUG = 'min-startplan';
 
+    /** Mina datum's address (ADR-051, stage 2). */
+    public const string DATES_SLUG = 'mina-datum';
+
+    /** The calendar subscription's address, under the guide. */
+    public const string CALENDAR_SLUG = 'kalender';
+
+    /** Addresses under /foretagsguiden that belong to the app, so no section may take them. */
+    public const array RESERVED = [self::START_PLAN_SLUG, self::DATES_SLUG, self::CALENDAR_SLUG];
+
+    /** The route pattern for a section: any key but a reserved one. */
+    public static function sectionPattern(): string
+    {
+        return '(?!(?:'.implode('|', self::RESERVED).')(?:/|$))[a-z0-9-]+';
+    }
+
     /** At most this many tips are shown on a page of the app. */
     public const int TIPS = 3;
 
@@ -362,7 +377,7 @@ final class Guide
         foreach (is_array($yaml) ? $yaml : [] as $key => $config) {
             $key = (string) $key;
 
-            if (! is_array($config) || $key === self::START_PLAN_SLUG || ! is_file("{$root}/{$key}/".self::OVERVIEW.'.md')) {
+            if (! is_array($config) || in_array($key, self::RESERVED, true) || ! is_file("{$root}/{$key}/".self::OVERVIEW.'.md')) {
                 continue;
             }
 

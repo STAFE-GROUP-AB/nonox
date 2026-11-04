@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Livewire\Overview;
 
+use App\Domain\Deadlines\CompanyDeadlines;
+use App\Domain\Deadlines\Deadline;
+use App\Domain\Deadlines\DeadlineCompletion;
 use App\Domain\Overview\Overview;
+use App\Domain\Overview\OverviewCache;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Guide\Guide;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -25,11 +30,24 @@ class OverviewPage extends Component
         $this->dispatch('overview-refreshed');
     }
 
-    public function render(Overview $overview): View
+    public function render(Overview $overview, CompanyDeadlines $deadlines): View
     {
         $user = $this->user();
         $company = $this->company();
         $data = $overview->for($user, $company);
+        $today = CarbonImmutable::today();
+        // Nästa datum (ADR-051, stage 2): the next three dates on Mina datum, cached with the overview.
+        /** @var list<array{key: string, type: string, title: string, date: string, period: string, applies_because: string, route: ?string, article: ?string, source_url: ?string, recommendation: bool, legal_verify: bool}> $nextDates */
+        $nextDates = $company->guide_enabled
+            ? OverviewCache::remember($company->id, "deadlines:{$today->toDateString()}:".Guide::version(), function () use ($company, $today, $deadlines): array {
+                $upcoming = $deadlines->upcoming($company, $today);
+                // A VAT or AGI period that is already reported is not next (as Mina datum and the reminders treat it).
+                $done = DeadlineCompletion::done($company, $upcoming);
+                $open = array_values(array_filter($upcoming, fn (Deadline $deadline): bool => ! in_array($deadline->key, $done, true)));
+
+                return array_map(fn (Deadline $deadline): array => $deadline->toArray(), array_slice($open, 0, 3));
+            })
+            : [];
 
         return view('livewire.overview.page', [
             'user' => $user,
@@ -40,6 +58,7 @@ class OverviewPage extends Component
             'todos' => $data['todos'],
             'vouchers' => $data['vouchers'],
             'canSeeStatistics' => $user->hasTeamPermission($company, 'reports:view'),
+            'nextDates' => array_map(fn (array $item): Deadline => Deadline::fromArray($item), $nextDates),
         ]);
     }
 

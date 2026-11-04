@@ -42,7 +42,7 @@ it('links only to guide articles and manual pages that exist', function () {
         foreach ($links[1] as $link) {
             $parts = explode('/', trim($link, '/'));
             $exists = $parts[0] === 'foretagsguiden'
-                ? count($parts) === 1 || $parts[1] === Guide::START_PLAN_SLUG || in_array(count($parts) === 2 ? "{$parts[1]}/oversikt" : "{$parts[1]}/{$parts[2]}", $articles, true)
+                ? count($parts) === 1 || in_array($parts[1], Guide::RESERVED, true) || in_array(count($parts) === 2 ? "{$parts[1]}/oversikt" : "{$parts[1]}/{$parts[2]}", $articles, true)
                 : count($parts) === 1 || is_file(count($parts) === 2 ? "{$manual}/{$parts[1]}/oversikt.md" : "{$manual}/{$parts[1]}/{$parts[2]}.md");
 
             expect($exists)->toBeTrue(basename(dirname($file)).'/'.basename($file)." links to {$link}, which does not exist.");

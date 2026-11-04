@@ -33,7 +33,7 @@ När du driver ett företag följer det med ett antal skyldigheter som gäller o
 
 1. Läs artikeln om [ansvar per bolagsform](/foretagsguiden/ansvar-och-regler/ansvar-per-bolagsform) för den form du har eller funderar på.
 2. Bestäm redan nu var underlagen ska sparas, så att arkiveringen inte blir ett problem vid första bokslutet.
-3. Skriv in de datum som gäller ditt företag i en kalender: deklarationer, årsstämma och inlämning av årsredovisningen.
+3. Skriv in de datum som gäller ditt företag i en kalender: deklarationer, årsstämma och inlämning av årsredovisningen. Vilka de är står i [Viktiga datum](/foretagsguiden/viktiga-datum).
 4. Har du missat något? Läs [När något går fel](/foretagsguiden/ansvar-och-regler/nar-nagot-gar-fel). Det går nästan alltid att rätta till.
 
 > [!NOTE]

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Migration\Fortnox\FortnoxConnection;
+use App\Models\DeadlineCalendarFeed;
 use App\Models\LoginCode;
 use App\Models\TeamInvitation;
 use App\Modules\Crm\Actions\PruneCrm;
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\DB;
  * stale invitations, tokens of moves that were abandoned, and rejected
  * absence and outlay requests that never reached the payroll or the books,
  * and staff ledger entries and people whose retention period is over
- * (PruneStaffLedger), and CRM contact people and prospects with no
+ * (PruneStaffLedger), Mina datum calendar links stopped 30 days ago, and CRM contact people and prospects with no
  * activity for the company's set number of months (PruneCrm, ADR-043).
  *
  * TODO(legal-verify): the periods in RETENTION (see docs/gdpr/lagringstider.md).
@@ -38,6 +39,8 @@ class PrunePersonalDataCommand extends Command
         'invitations' => TeamInvitation::VALID_DAYS,
         'abandoned_fortnox_tokens' => 30,
         'rejected_requests' => 365,
+        // A stopped Mina datum calendar link has no use left (ADR-051, stage 2).
+        'revoked_calendar_links' => 30,
     ];
 
     protected $signature = 'privacy:prune';
@@ -75,7 +78,9 @@ class PrunePersonalDataCommand extends Command
                 $expenses++;
             });
 
-            return ['login_codes' => $codes, 'invitations' => $invitations, 'fortnox_tokens' => $tokens, 'absences' => $absences, 'expenses' => $expenses];
+            $calendarLinks = DeadlineCalendarFeed::query()->whereNotNull('revoked_at')->where('revoked_at', '<', $now->subDays(self::RETENTION['revoked_calendar_links']))->delete();
+
+            return ['login_codes' => $codes, 'invitations' => $invitations, 'fortnox_tokens' => $tokens, 'absences' => $absences, 'expenses' => $expenses, 'calendar_links' => $calendarLinks];
         }));
 
         $staffLedger = ArchivedCompany::maintenance(fn (): array => app(PruneStaffLedger::class)());

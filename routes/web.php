@@ -104,10 +104,14 @@ Route::prefix('foretagsguiden')->name('guide.')->group(function () {
     Route::put('/'.Guide::START_PLAN_SLUG.'/tips', [GuideTipsController::class, 'update'])
         ->middleware(['auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class])
         ->name('tips');
+    // Mina datum (ADR-051, stage 2). Its calendar link has no session and is in routes/guide-calendar.php.
+    Route::view('/'.Guide::DATES_SLUG, 'guide.my-dates')
+        ->middleware(['auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class])
+        ->name('dates');
     Route::controller(GuideController::class)->group(function () {
         Route::get('/', 'home')->name('home');
-        Route::get('/{section}', 'section')->where('section', '(?!'.Guide::START_PLAN_SLUG.'(?:/|$))[a-z0-9-]+')->name('section');
-        Route::get('/{section}/{article}', 'article')->where(['section' => '(?!'.Guide::START_PLAN_SLUG.'(?:/|$))[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
+        Route::get('/{section}', 'section')->where('section', Guide::sectionPattern())->name('section');
+        Route::get('/{section}/{article}', 'article')->where(['section' => Guide::sectionPattern(), 'article' => '[a-z0-9-]+'])->name('article');
     });
 });
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');

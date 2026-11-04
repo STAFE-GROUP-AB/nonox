@@ -65,7 +65,9 @@ class AgiPage extends Component
     {
         $today = CarbonImmutable::today();
         $from = $today->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1);
-        $group = (string) (app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company())['agi_deadline_group'] ?? AgiDeadlines::SMALL);
+        // The company's own VAT and turnover settings decide (AgiDates::isLarge); the old payroll setting no longer does.
+        $group = AgiDeadlines::groupFor($this->company());
+        $saved = (string) (app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company())['agi_deadline_group'] ?? AgiDeadlines::SMALL);
         $runs = PayrollRun::query()->whereDate('payment_date', '>=', $from->toDateString())->get()->groupBy(fn (PayrollRun $run): string => $run->payment_date->format('Y-m'));
         $submissions = AgiSubmission::query()->where('period', '>=', $from->format('Y-m'))->orderByDesc('sequence')->get()->groupBy('period');
         $periods = [];
@@ -77,10 +79,14 @@ class AgiPage extends Component
             $reported = $periodSubmissions->contains(fn (AgiSubmission $submission): bool => in_array($submission->status, AgiSubmission::REPORTED, true) || $submission->status === AgiSubmission::CORRECTED);
             $deadline = AgiDeadlines::for((string) $period, $group);
 
+            // A large employer pays two weeks before declaring (SFL 62 kap. 3 § andra stycket).
+            $payment = AgiDeadlines::paymentDate((string) $period, $group);
+
             $periods[] = [
                 'period' => (string) $period,
                 'deadline' => $deadline,
-                'overdue' => $deadline !== null && $deadline->lt($today) && ! $reported,
+                'payment' => $payment->equalTo($deadline) ? null : $payment,
+                'overdue' => $deadline->lt($today) && ! $reported,
                 'runs' => $periodRuns->count(),
                 'open_runs' => $periodRuns->reject(fn (PayrollRun $run): bool => in_array($run->status, [PayrollRun::APPROVED, PayrollRun::PAID, PayrollRun::POSTED], true))->count(),
                 'reported' => $reported,
@@ -92,10 +98,22 @@ class AgiPage extends Component
         $next = collect($periods)->first(fn (array $row): bool => ! $row['reported'] && $row['runs'] > 0);
 
         return view('payroll::livewire.agi', [
+            // Said once, until someone acknowledges it: a large group saved in payroll that the company's settings do not support.
+            'groupNotice' => $saved === AgiDeadlines::LARGE && $group === AgiDeadlines::SMALL,
             'periods' => $periods,
             'next' => $next,
             'canSubmit' => $this->can('payroll:agi-submit'),
+            'companyId' => $this->company()->id,
         ]);
+    }
+
+    /** Aligns the saved payroll group with the company's, which ends the notice. Nothing changes without this click. */
+    public function acknowledgeGroup(ModuleManager $modules): void
+    {
+        abort_unless($this->can('payroll:settings') || $this->can('payroll:agi-submit'), 403);
+
+        $modules->updateSettings(PayrollModule::KEY, $this->company(), $this->user(), ['agi_deadline_group' => AgiDeadlines::groupFor($this->company())]);
+        $this->toast(__('Uppfattat. Deklarationsdagen följer företagets uppgifter.'));
     }
 
     private function can(string $permission): bool

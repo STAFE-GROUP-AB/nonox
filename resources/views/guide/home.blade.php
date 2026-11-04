@@ -250,9 +250,20 @@
   <div class="gd-wrap">
     <p class="gd-kicker">På väg in i guiden</p>
     <h2 class="gd-h2" id="gd-soon-title">Det här bygger vi härnäst</h2>
-    <p class="gd-sub">Guiden växer i steg. Det här kommer, men vi lovar inga datum förrän det är klart.</p>
+    <p class="gd-sub">Guiden växer i steg. Mina datum finns nu i NONOX; resten kommer, men vi lovar inga datum förrän det är klart.</p>
     <ul class="gd-soon">
-      <li><span class="gd-soon-badge">Kommer</span><h3>Mina datum</h3><p>Alla frister för ditt företag i en kalender: moms, arbetsgivardeklaration, deklaration och årsredovisning.</p></li>
+      <li class="gd-live" data-guide-dates-teaser>
+        <span class="gd-soon-badge gd-live-badge">Nu i NONOX</span>
+        <h3>Mina datum</h3>
+        <p>Företagets frister på en sida och i din egen kalender: moms, arbetsgivardeklaration, deklaration, årsstämma och årsredovisning, räknade ur företagets inställningar.</p>
+        @auth
+          <a class="gd-link gd-live-link" href="{{ route('guide.dates') }}">Till Mina datum {!! $arrow !!}</a>
+        @else
+          @if($signupUrl)
+            <a class="gd-link gd-live-link" href="{{ $signupUrl }}">{{ $signupLabel }} {!! $arrow !!}</a>
+          @endif
+        @endauth
+      </li>
       <li><span class="gd-soon-badge">Kommer</span><h3>Momsbufferten</h3><p>Hur mycket av pengarna på kontot som inte är dina, räknat ur bokföringen.</p></li>
       <li><span class="gd-soon-badge">Kommer</span><h3>Branschspåren</h3><p>Fördjupade steg för kaféer, restauranger, hantverkare och de andra branscherna.</p></li>
       <li><span class="gd-soon-badge">Kommer</span><h3>Att växa</h3><p>Första anställningen, att byta företagsform och att finansiera nästa steg.</p></li>

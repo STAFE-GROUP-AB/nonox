@@ -17,7 +17,7 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Momssatserna gäller 2026 enligt Skatteverkets sida. Kontrollera att exemplen per sats fortfarande stämmer inför 2027.
+  - Den 4 november 2026 hittades inget riksdagsbeslut om andra ändrade momssatser för 2027 än att den sänkta livsmedelsmomsen gäller hela 2027. Kontrollera budgetpropositionen för 2027 och riksdagens beslut om den innan tabellen märks med 2027.
 ---
 
 # Så fungerar moms

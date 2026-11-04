@@ -16,14 +16,16 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/
   - titel: Skatteverket – Belopp och procent inkomstår 2026
     url: https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html
+  - titel: Bokföringsnämnden – Vägledning Årsredovisning i mindre företag (K2), BFNAR 2016:10 punkt 10.5
+    url: https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
   - Aktiebolag – får bolaget dra av kostnader och ingående moms för inköp som grundaren gjorde innan stiftelseurkunden skrevs under, när bolaget tar över dem efter registreringen? Vilka villkor gäller?
   - Aktiebolag – får bolaget dra av ingående moms på en faktura som är ställd till grundaren och inte till bolaget? Guiden visar därför aktiebolagsexemplet utan momsavdrag.
   - Vilket verifikationsdatum ska inköp före räkenskapsårets första dag få – inköpsdagen, dagen då bolaget tog över inköpet eller räkenskapsårets första dag?
-  - Finns en tidsgräns för hur långt före starten ett inköp får vara gjort för att momsen ska få dras av?
-  - Inkomstskattelagens gräns för inventarier av mindre värde är skattereglerna. Kan K2/K3 ge en annan gräns i bokföringen?
+  - Finns en tidsgräns för hur långt före starten ett inköp får vara gjort för att momsen ska få dras av? Skatteverkets sida om inköp före starten anger ingen.
+  - K2 (BFNAR 2016:10 punkt 10.5) har en motsvarande gräns som skattereglerna. Vilken gräns gäller i bokföringen för ett företag som tillämpar K3, där motsvarande fasta beloppsgräns saknas i artikelns källor?
 ---
 
 # Bokför inköp du gjort innan företaget startade
@@ -98,7 +100,7 @@ När bolaget betalar tillbaka till Sara:
 **Om momsen inte får dras av**, till exempel för att företaget inte är momsregistrerat, bokförs hela beloppet, 12 500 kronor, som kostnad, och raden för ingående moms utgår.
 
 > [!NOTE]
-> Kontona är exempel ur BAS-kontoplanen. En dyrare dator som ska användas i flera år kan i stället vara en anläggningstillgång som skrivs av, till exempel på konto 1250 Datorer. Skattereglernas gräns är ett halvt prisbasbelopp (inkomstskattelagen 18 kap. 4 §); hur gränsen sätts i bokföringen, fråga din redovisningskonsult. Hur du lägger in en anläggningstillgång i NONOX står i [Skapa en anläggningstillgång från ett inköp](/manual/bokforing/anlaggningstillgang-fran-inkop).
+> Kontona är exempel ur BAS-kontoplanen. En dyrare dator som ska användas i flera år kan i stället vara en anläggningstillgång som skrivs av, till exempel på konto 1250 Datorer. Skattereglernas gräns är ett halvt prisbasbelopp (inkomstskattelagen 18 kap. 4 §). Ett företag som gör sin årsredovisning enligt K2 har en motsvarande gräns i bokföringen: enligt BFNAR 2016:10 punkt 10.5 får en inventarie redovisas som kostnad när anskaffningsvärdet är lägre än ett halvt prisbasbelopp, räknat med den moms som företaget inte får dra av (skattereglerna räknar beloppet utan moms). Hör flera saker ihop, till exempel ett bord med stolar, räknas de tillsammans. Enligt punkt 10.6 får också en inventarie som kan antas hålla i högst tre år redovisas som kostnad. Tillämpar företaget K3, fråga din redovisningskonsult. Hur du lägger in en anläggningstillgång i NONOX står i [Skapa en anläggningstillgång från ett inköp](/manual/bokforing/anlaggningstillgang-fran-inkop).
 
 ## Så här gör du i NONOX
 

@@ -5,7 +5,7 @@
 
 @php
     $isOverview = $article->isOverview();
-    $checked = $article->reviewedOn ? Carbon\CarbonImmutable::parse($article->reviewedOn)->locale('sv')->translatedFormat('j F Y') : null;
+    $checked = $article->reviewedOn ? Carbon\CarbonImmutable::parse($article->reviewedOn)->translatedFormat('j F Y') : null;
 @endphp
 
 @section('content')

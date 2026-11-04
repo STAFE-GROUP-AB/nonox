@@ -28,10 +28,14 @@ final class PayrollSettings
         'payslip_delivery' => ['PORTAL', 'PORTAL_AND_EMAIL_NOTICE'],
         'employee_self_service' => null,
         'agi_submission_mode' => ['FILE', 'API'],
+        // Shown, not chosen: the company's VAT and turnover settings decide (AgiDates::isLarge, ADR-051 stage 2).
         'agi_deadline_group' => ['TURNOVER_UP_TO_40_MSEK', 'TURNOVER_OVER_40_MSEK'],
         'holiday_calendar' => ['SE'],
         'regional_support' => null,
     ];
+
+    /** Settings that are shown but decided elsewhere, so the form does not save them. */
+    public const array DERIVED = ['agi_deadline_group'];
 
     /** @var array<string, mixed> */
     public const array DEFAULTS = [

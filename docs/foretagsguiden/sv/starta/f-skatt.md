@@ -38,7 +38,7 @@ Enligt Skatteverket innebär godkännande för F-skatt att du själv betalar fö
 4. Skriv "Godkänd för F-skatt" på fakturorna, så att kunden ser det direkt.
 5. Följ upp vinsten under året. Blir den en annan än du trodde, lämna en ny preliminär inkomstdeklaration.
 
-Vilket datum skatten ska vara betald varje månad kommer i avsnittet om viktiga datum; till dess hittar du det på ditt skattekonto hos Skatteverket.
+Vilket datum skatten ska vara betald varje månad står i [Preliminärskatt](/foretagsguiden/viktiga-datum/preliminarskatt). Beloppet och datumen för ditt företag står i Skatteverkets beslut.
 
 ## Vanliga misstag
 

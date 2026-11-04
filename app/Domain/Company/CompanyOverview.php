@@ -6,6 +6,7 @@ namespace App\Domain\Company;
 
 use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Accounting\VoucherStatus;
+use App\Domain\Deadlines\AgiDates;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Domain\Payables\SupplierInvoiceStatus;
 use App\Domain\Vat\EuTrade;
@@ -71,6 +72,8 @@ final class CompanyOverview
         'crm-agreements' => 'crm.agreements',
         // Web form submissions held for review (ADR-048).
         'crm-forms' => 'crm.forms',
+        // Reminders of a company's dates (ADR-051, stage 2).
+        'mina-datum' => 'guide.dates',
     ];
 
     /** A deadline this close counts as urgent. */
@@ -79,8 +82,8 @@ final class CompanyOverview
     /** @var array<int, array<int, string>> enabled module keys per company */
     private array $modules = [];
 
-    /** @var array<int, array<string, mixed>> payroll settings per company */
-    private array $payrollSettings = [];
+    /** @var array<int, bool> whether each company is a large employer (AgiDates::isLarge) */
+    private array $largeEmployer = [];
 
     /** @var Collection<int, PayrollRuleVersion> */
     private Collection $agiRules;
@@ -455,6 +458,7 @@ final class CompanyOverview
 
         foreach ($companies as $company) {
             $this->roles[$company->id] = $user->ownsTeam($company) ? null : (string) $company->getRelationValue('membership')?->getAttribute('role');
+            $this->largeEmployer[$company->id] = AgiDates::isLarge($company);
         }
 
         return $companies;
@@ -465,9 +469,8 @@ final class CompanyOverview
      */
     private function loadModules(array $ids): void
     {
-        $modules = CompanyModule::query()->whereIn('company_id', $ids)->where('enabled', true)->get(['company_id', 'module_key', 'settings']);
+        $modules = CompanyModule::query()->whereIn('company_id', $ids)->where('enabled', true)->get(['company_id', 'module_key']);
         $this->modules = $modules->groupBy('company_id')->map(fn (Collection $rows): array => $rows->pluck('module_key')->all())->all();
-        $this->payrollSettings = $modules->where('module_key', PayrollModule::KEY)->mapWithKeys(fn (CompanyModule $module): array => [$module->company_id => (array) $module->settings])->all();
     }
 
     /**
@@ -488,7 +491,8 @@ final class CompanyOverview
     /**
      * The last day to declare a payment month, from the agi.deadlines rule
      * verified for the installation or by the company itself (as RuleSet
-     * reads it), without a query per company. Null without a checked rule.
+     * reads it), without a query per company; without a checked rule, the
+     * day the law gives (AgiDeadlines::lawDate). Null without a month.
      */
     private function agiDeadline(int $companyId, ?string $month): ?CarbonImmutable
     {
@@ -503,11 +507,9 @@ final class CompanyOverview
                 && ($version->isVerified() || in_array($version->id, $this->agiVerified[$companyId] ?? [], true)))
             ->last();
 
-        if (! $rule instanceof PayrollRuleVersion) {
-            return null;
-        }
+        $group = ($this->largeEmployer[$companyId] ?? false) ? AgiDeadlines::LARGE : AgiDeadlines::SMALL;
 
-        return AgiDeadlines::fromRule((array) $rule->value, $month, (string) ($this->payrollSettings[$companyId]['agi_deadline_group'] ?? AgiDeadlines::SMALL));
+        return $rule instanceof PayrollRuleVersion ? AgiDeadlines::fromRule((array) $rule->value, $month, $group) : AgiDeadlines::lawDate($month, $group);
     }
 
     /**
