@@ -57,7 +57,10 @@ use Illuminate\Validation\ValidationException;
 class AcceptPeppolDocument
 {
     /** An e-invoice with its embedded PDF can be larger than an e-mail; above this it is refused and stays at the access point. */
-    public const int MAX_BYTES = 100 * 1024 * 1024;
+    public static function maxBytes(): int
+    {
+        return (int) config('services.peppol.max_document_kb', 102_400) * 1024;
+    }
 
     public function __construct(
         private readonly ModuleManager $modules,
@@ -71,7 +74,7 @@ class AcceptPeppolDocument
      */
     public function __invoke(Company $company, InboundDocument $document): ?InboxMessage
     {
-        if (strlen($document->xml) > self::MAX_BYTES) {
+        if (strlen($document->xml) > self::maxBytes()) {
             Log::alert('Peppol: a received document is too large to take; it stays at the access point.', ['company_id' => $company->id, 'reference' => $document->reference, 'size' => strlen($document->xml)]);
             Audit::record('peppol.too_large', null, ['reference' => mb_substr($document->reference, 0, 120), 'size' => strlen($document->xml)], $company);
 

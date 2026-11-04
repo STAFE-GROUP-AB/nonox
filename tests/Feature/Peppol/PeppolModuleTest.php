@@ -387,7 +387,8 @@ describe('receiving', function () {
 
     it('leaves a document that is too large at the access point and holds the poll window open', function () {
         $before = $this->participant->fresh()->last_polled_at;
-        LogAccessPoint::$inbox['acct-R'] = [new InboundDocument('big', str_repeat('x', AcceptPeppolDocument::MAX_BYTES + 1))];
+        config(['services.peppol.max_document_kb' => 1]);
+        LogAccessPoint::$inbox['acct-R'] = [new InboundDocument('big', str_repeat('x', AcceptPeppolDocument::maxBytes() + 1))];
 
         $this->artisan('peppol:sync')->assertSuccessful();
 

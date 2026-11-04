@@ -162,6 +162,8 @@ return [
      */
     'peppol' => [
         'driver' => env('NONOX_PEPPOL_DRIVER'),
+        // A received e-invoice above this is left at the access point and the operator is alerted (100 MB).
+        'max_document_kb' => (int) env('NONOX_PEPPOL_MAX_DOCUMENT_KB', 102400),
         'qvalia' => [
             'url' => env('QVALIA_API_URL', 'https://api-test.qvalia.com'),
             'partner_reg_no' => env('QVALIA_PARTNER_REG_NO'),

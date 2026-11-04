@@ -7,7 +7,7 @@ namespace App\Modules\Peppol\Domain;
 use RuntimeException;
 
 /**
- * A received document is larger than NONOX takes (AcceptPeppolDocument::MAX_BYTES).
+ * A received document is larger than NONOX takes (AcceptPeppolDocument::maxBytes()).
  * It stays at the access point; polling keeps its window open and the
  * operator is alerted, so it is not passed by.
  */
