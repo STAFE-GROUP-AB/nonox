@@ -144,6 +144,8 @@
                 data-busy-text="{{ __('Signerar…') }}">
                 @csrf
                 <input type="hidden" name="document_sha256" value="{{ $request->document_sha256 }}">
+                <input type="hidden" name="acceptance_text" value="{{ $acceptance }}">
+                <input type="hidden" name="acceptance_mac" value="{{ $acceptanceMac }}">
                 <input type="hidden" name="signature" value="" data-signature-input>
 
                 <div class="grid gap-4 sm:grid-cols-2">
@@ -188,7 +190,7 @@
                     <span>{{ $acceptance }}</span>
                 </label>
 
-                <p class="text-xs text-gray-600">{{ __('När du signerar sparas ditt namn, din titel, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på att avtalet ingicks, tillsammans med dokumentets kontrollsumma. Personuppgiftsansvarig är :company (org.nr :org, :email). Uppgifterna behandlas för att ingå avtalet och kunna visa att det ingicks (artikel 6.1 b och f i dataskyddsförordningen) och sparas så länge avtalet och bokföringslagen kräver, normalt sju år. NONOX behandlar dem för :company:s räkning. Du har rätt att begära tillgång, rättelse och i vissa fall radering eller begränsning, och att klaga hos Integritetsskyddsmyndigheten (IMY). Du får en kopia med e-post.', ['company' => $companyName, 'org' => (string) $company->org_number, 'email' => (string) ($company->email ?: '–')]) }}</p>
+                <p class="text-xs text-gray-600">{{ __('När du signerar sparas ditt namn, din titel, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på att avtalet ingicks, tillsammans med dokumentets kontrollsumma. Personuppgiftsansvarig är :controller. Uppgifterna behandlas för att ingå avtalet och kunna visa att det ingicks (artikel 6.1 b och f i dataskyddsförordningen) och sparas så länge avtalet och bokföringslagen kräver, normalt sju år. NONOX behandlar dem för :company:s räkning. Du har rätt att begära tillgång, rättelse och i vissa fall radering eller begränsning, och att klaga hos Integritetsskyddsmyndigheten (IMY). Du får en kopia med e-post.', ['company' => $companyName, 'controller' => $controller]) }}</p>
 
                 <button type="submit" data-signing-submit class="inline-flex min-h-12 w-full items-center justify-center rounded-lg px-5 text-base font-semibold text-white sm:w-auto" style="background: {{ $color }}">{{ __('Signera') }}</button>
             </form>

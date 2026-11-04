@@ -97,21 +97,48 @@ final class SigningPdfs
      */
     public static function acceptance(SigningRequest $request): string
     {
-        $request->loadMissing(['quote', 'agreement']);
-        $account = $request->isQuote()
-            ? ($request->quote === null ? null : Account::query()->where('customer_id', $request->quote->customer_id)->first())
-            : Account::query()->find($request->agreement?->account_id);
-        $company = $account instanceof Account && $account->kind === AccountKind::Company;
+        $request->loadMissing(['quote.customer', 'agreement']);
 
         if ($request->isQuote()) {
-            return $company
-                ? __('Jag har läst och godkänner offerten och har rätt att godkänna den för :customer.', ['customer' => $account->name])
+            $customer = $request->quote?->customer;
+            $account = $customer === null ? null : Account::query()->where('customer_id', $customer->id)->first();
+            // The CRM account's kind, else the customer register's: a legal person has an organisation number and no personal number.
+            $legalPerson = $account instanceof Account
+                ? $account->kind === AccountKind::Company
+                : $customer !== null && $customer->org_number !== null && $customer->personal_number === null;
+
+            return $legalPerson
+                ? __('Jag har läst och godkänner offerten och har rätt att godkänna den för :customer.', ['customer' => $account->name ?? $customer?->name])
                 : __('Jag har läst och godkänner offerten.');
         }
 
-        return $company
+        $account = Account::query()->find($request->agreement?->account_id);
+
+        return $account instanceof Account && $account->kind === AccountKind::Company
             ? __('Jag har läst och godkänner avtalet och har rätt att ingå det för :account.', ['account' => $account->name])
             : __('Jag har läst och godkänner avtalet.');
+    }
+
+    /**
+     * A MAC over the confirmation shown on the page, so the text stored with
+     * the signature is exactly the one displayed, even if a name changed in
+     * between; the form carries both and the server checks them.
+     */
+    public static function acceptanceMac(SigningRequest $request, string $text): string
+    {
+        return hash_hmac('sha256', "crm-signing-acceptance|{$request->id}|{$text}", (string) config('app.key'));
+    }
+
+    /**
+     * The confirmation and its MAC as the page's form posts them.
+     *
+     * @return array{acceptance_text: string, acceptance_mac: string}
+     */
+    public static function acceptanceFields(SigningRequest $request): array
+    {
+        $text = self::acceptance($request);
+
+        return ['acceptance_text' => $text, 'acceptance_mac' => self::acceptanceMac($request, $text)];
     }
 
     public static function certificateFilename(SigningRequest $request): string

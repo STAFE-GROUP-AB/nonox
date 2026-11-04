@@ -8036,5 +8036,8 @@
     "Avböjer du sparas tidpunkten och ditt skäl hos :company i högst ett år.": "If you decline, the time and your reason are kept by :company for at most one year.",
     "med bekräftelsen ”:text”": "with the confirmation “:text”",
     "Signerad – ordern är inte skapad": "Signed – the order is not created",
-    "Länken hämtades första gången": "The link was first fetched"
+    "Länken hämtades första gången": "The link was first fetched",
+    "org.nr :number": "org. no. :number",
+    "Sidan är för gammal. Ladda om den och signera igen.": "The page is out of date. Reload it and sign again.",
+    "När du signerar sparas ditt namn, din titel, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på att avtalet ingicks, tillsammans med dokumentets kontrollsumma. Personuppgiftsansvarig är :controller. Uppgifterna behandlas för att ingå avtalet och kunna visa att det ingicks (artikel 6.1 b och f i dataskyddsförordningen) och sparas så länge avtalet och bokföringslagen kräver, normalt sju år. NONOX behandlar dem för :company:s räkning. Du har rätt att begära tillgång, rättelse och i vissa fall radering eller begränsning, och att klaga hos Integritetsskyddsmyndigheten (IMY). Du får en kopia med e-post.": "When you sign, your name, your title, your signature, the time, your IP address and your browser are kept as evidence that the agreement was made, together with the document's checksum. The controller is :controller. The data is processed to enter into the agreement and to be able to show that it was made (articles 6.1 b and f of the GDPR) and kept as long as the agreement and the Swedish Bookkeeping Act require, normally seven years. NONOX processes it on behalf of :company. You have the right to request access, rectification and in some cases erasure or restriction, and to complain to the Swedish Authority for Privacy Protection (IMY). You get a copy by e-mail."
 }

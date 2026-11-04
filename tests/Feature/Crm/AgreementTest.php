@@ -16,6 +16,7 @@ use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\SigningRequest;
 use App\Modules\Crm\Support\CrmTodos;
 use App\Modules\Crm\Support\PruneCandidates;
+use App\Modules\Crm\Support\SigningPdfs;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -162,7 +163,7 @@ it('signs an agreement through the same flow and then locks its terms', function
     $token = basename((string) parse_url($sent['url'], PHP_URL_PATH));
 
     $this->get("/signera/{$token}")->assertOk()->assertSee('Serviceavtal kaffemaskiner')->assertSee('Leverantören servar')->assertSee('Jag har läst och godkänner avtalet och har rätt att ingå det för Kontorshuset AB.');
-    $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $sent['request']->document_sha256])->assertOk();
+    $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $sent['request']->document_sha256, ...SigningPdfs::acceptanceFields($sent['request'])])->assertOk();
     CurrentCompany::set($this->company);
 
     $agreement->refresh();

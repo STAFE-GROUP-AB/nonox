@@ -16,11 +16,13 @@ use App\Modules\Crm\Events\QuoteSigned;
 use App\Modules\Crm\Jobs\FollowUpSigning;
 use App\Modules\Crm\Mail\SignedDocumentMail;
 use App\Modules\Crm\Mail\SigningRequestMail;
+use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\SigningEvent;
 use App\Modules\Crm\Models\SigningRequest;
 use App\Modules\Crm\Notifications\SigningNotice;
 use App\Modules\Crm\Support\SigningFollowUp;
+use App\Modules\Crm\Support\SigningPdfs;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -85,7 +87,7 @@ function sendQuote(object $test, array $extra = []): array
 
 function signInput(SigningRequest $request, array $extra = []): array
 {
-    return ['name' => 'Anna Andersson', 'title' => 'Inköpschef', 'accept' => '1', 'method' => 'DRAWN', 'signature' => signaturePng(), 'document_sha256' => $request->document_sha256, ...$extra];
+    return ['name' => 'Anna Andersson', 'title' => 'Inköpschef', 'accept' => '1', 'method' => 'DRAWN', 'signature' => signaturePng(), 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request), ...$extra];
 }
 
 it('sends a quote for signing: the exact PDF with its hash, a hashed 256-bit token, a SENT event and a queued mail', function () {
@@ -385,4 +387,58 @@ it('protects every part of the evidence except the deal and the sender', functio
 
 it('refuses a last day to sign after the quote\'s validity', function () {
     expect(fn () => sendQuote($this, ['expires_on' => '2026-07-20']))->toThrow(ValidationException::class, 'giltighetsdag');
+});
+
+/** Runs $callback as a web request would, so the audit log would keep the request's IP address. */
+function asWebRequest(callable $callback): mixed
+{
+    $property = new ReflectionProperty(app(), 'isRunningInConsole');
+    $before = $property->getValue(app());
+    $property->setValue(app(), false);
+
+    try {
+        return $callback();
+    } finally {
+        $property->setValue(app(), $before);
+    }
+}
+
+it('writes no IP address or browser to the audit log from the public page, for signing or declining', function () {
+    // Outside the console Laravel checks the CSRF token, as for the signer's browser.
+    $this->withSession(['_token' => 'csrf-test']);
+    [$other, $otherToken] = sendQuote($this);
+
+    asWebRequest(fn () => $this->post("/signera/{$otherToken}", [...signInput($other), '_token' => 'csrf-test'], ['User-Agent' => 'Testläsare/1.0'])->assertOk());
+    CurrentCompany::set($this->company);
+
+    $public = AuditLog::query()->whereIn('action', ['crm.signing_signed', 'crm.signing_followed_up', 'quote.accepted'])->get();
+    expect($public)->not->toBeEmpty()
+        ->and($public->pluck('ip_address')->filter()->all())->toBe([])
+        ->and($public->pluck('user_agent')->filter()->all())->toBe([]);
+
+    $sent = app(SendForSigning::class)($this->owner, $this->company, app(SaveSalesDocument::class)($this->owner, $this->company, SalesDocument::QUOTE, ['customer_id' => $this->customer->id, 'document_date' => '2026-06-15', 'rows' => [['description' => 'X', 'quantity' => '1', 'price' => '10', 'vat_rate' => 2500]]]), ['email' => 'a@b.test']);
+    asWebRequest(fn () => $this->post('/signera/'.basename((string) parse_url($sent['url'], PHP_URL_PATH)).'/avboj', ['reason' => 'Nej', '_token' => 'csrf-test'], ['User-Agent' => 'Testläsare/1.0'])->assertOk());
+    CurrentCompany::set($this->company);
+
+    $declined = AuditLog::query()->where('action', 'crm.signing_declined')->sole();
+    expect($declined->ip_address)->toBeNull()->and($declined->user_agent)->toBeNull();
+});
+
+it('stores the confirmation exactly as the page showed it, even if the customer is renamed before signing', function () {
+    [$request, $token] = sendQuote($this);
+    $fields = SigningPdfs::acceptanceFields($request);
+
+    $this->post("/signera/{$token}", [...signInput($request), 'acceptance_text' => 'Något annat', 'acceptance_mac' => $fields['acceptance_mac']])->assertSessionHasErrors('accept');
+
+    Account::query()->whereKey($this->account->id)->update(['name' => 'Nytt Namn AB']);
+    $this->post("/signera/{$token}", [...signInput($request), ...$fields])->assertOk();
+    CurrentCompany::set($this->company);
+    expect($request->refresh()->acceptance_text)->toContain('för Kontorshuset AB.');
+});
+
+it('leaves out the organisation number and e-mail in the information when the company has none', function () {
+    $this->company->forceFill(['org_number' => '', 'email' => null])->save();
+    [, $token] = sendQuote($this);
+
+    $this->get("/signera/{$token}")->assertOk()->assertDontSee('org.nr')->assertSee('Personuppgiftsansvarig är '.($this->company->legal_name ?: $this->company->name).'.');
 });

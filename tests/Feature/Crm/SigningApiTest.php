@@ -9,6 +9,7 @@ use App\Modules\Crm\Actions\SendForSigning;
 use App\Modules\Crm\Mail\SigningRequestMail;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\SigningRequest;
+use App\Modules\Crm\Support\SigningPdfs;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -91,7 +92,7 @@ it('sends quote.signed to the company\'s webhooks with ids and the hash, never t
         return true;
     });
 
-    $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $request->document_sha256])->assertOk();
+    $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $request->document_sha256, ...SigningPdfs::acceptanceFields($request)])->assertOk();
 
     $delivery = CompanyScope::bypass(fn () => ConnectWebhookDelivery::query()->where('event_type', 'quote.signed')->sole());
     $body = json_decode($delivery->body, true);

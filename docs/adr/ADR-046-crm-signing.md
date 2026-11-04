@@ -260,9 +260,6 @@ personal data.
   declined link's reason should be kept shorter.
 - `TODO(legal-verify)`: whether BFL 1 kap. 2 § första stycket 6 p. makes
   signed agreements räkenskapsinformation in general, or only some.
-- `TODO(legal-verify)`: the audit log keeps the request's IP address on
-  every entry, also `crm.signing_declined`; whether that should be dropped
-  for a decline as it is on the signing event.
 
 ## Consequences
 
@@ -321,4 +318,22 @@ personal data.
   queue sends it (the job would need to re-check; the link then answers
   410 anyway). The DPA text is updated; `LegalPageController` is bumped once
   at the final merge.
+
+### Second review round (2026-11-04)
+
+- **No visitor IP in the audit log.** `Audit::withoutRequest()` writes
+  entries without the request's IP address and user agent; the public
+  signing routes run inside it (`WithoutAuditRequest` middleware), so
+  `crm.signing_signed`, `crm.signing_declined`, `crm.signing_revoked` from a
+  stale document, and the follow-up's entries when the queue runs in the
+  request (order, deal) keep neither. The signer's IP stays only as evidence
+  on the request and its SIGNED event.
+- **The information text** names the controller with organisation number
+  and e-mail only when the company has them.
+- **The confirmation** is rendered once on the page and posted with an HMAC
+  (`SigningPdfs::acceptanceMac`, app key, bound to the request id); the
+  server stores the posted text only when the MAC matches, so a rename
+  between showing and signing cannot change it. A quote customer without a
+  CRM account gets the long form when the customer register shows a legal
+  person (an organisation number and no personal number).
 

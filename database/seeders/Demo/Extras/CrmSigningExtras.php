@@ -15,6 +15,7 @@ use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\QuoteTemplate;
 use App\Modules\Crm\Models\SigningRequest;
+use App\Modules\Crm\Support\SigningPdfs;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -210,6 +211,7 @@ final class CrmSigningExtras extends DemoExtra
             'signature' => $drawn ? self::drawnSignature() : null,
             'typed_signature' => $drawn ? null : $name,
             'document_sha256' => $request->document_sha256,
+            ...SigningPdfs::acceptanceFields($request),
         ], '192.0.2.10', 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Exempel');
     }
 

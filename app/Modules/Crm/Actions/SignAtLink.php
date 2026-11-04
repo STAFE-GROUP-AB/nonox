@@ -134,6 +134,8 @@ final class SignAtLink
             'signature' => ['nullable', 'string', 'max:300000'],
             'typed_signature' => ['nullable', 'string', 'max:120'],
             'document_sha256' => ['required', 'string', 'size:64'],
+            'acceptance_text' => ['required', 'string', 'max:500'],
+            'acceptance_mac' => ['required', 'string', 'size:64'],
         ], [
             'accept.accepted' => __('Bekräfta att du har läst och godkänner dokumentet.'),
             'name.required' => __('Skriv ditt namn.'),
@@ -152,6 +154,11 @@ final class SignAtLink
         $signed = CurrentCompany::run($request->company_id, fn (): SigningRequest => DB::transaction(function () use ($request, $validated, $name, $image, $ip, $userAgent): SigningRequest {
             $locked = $this->lockUsable($request);
 
+            // The confirmation stored is the one the page showed; its MAC proves the page made it.
+            if (! hash_equals(SigningPdfs::acceptanceMac($locked, (string) $validated['acceptance_text']), (string) $validated['acceptance_mac'])) {
+                throw ValidationException::withMessages(['accept' => __('Sidan är för gammal. Ladda om den och signera igen.')]);
+            }
+
             if (! hash_equals($locked->document_sha256, strtolower((string) $validated['document_sha256']))) {
                 throw ValidationException::withMessages(['document_sha256' => __('Dokumentet har ändrats sedan sidan öppnades. Ladda om sidan och läs det igen.')]);
             }
@@ -166,7 +173,7 @@ final class SignAtLink
 
             $locked->forceFill([
                 'status' => SigningStatus::Signed,
-                'acceptance_text' => SigningPdfs::acceptance($locked),
+                'acceptance_text' => (string) $validated['acceptance_text'],
                 'signer_name' => $name,
                 'signer_title' => blank($validated['title'] ?? null) ? null : trim((string) $validated['title']),
                 'signature_method' => $validated['method'],

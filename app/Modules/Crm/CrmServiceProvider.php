@@ -14,6 +14,7 @@ use App\Modules\Crm\Console\WinBackCommand;
 use App\Modules\Crm\Domain\SigningToken;
 use App\Modules\Crm\Http\CrmPersonExportController;
 use App\Modules\Crm\Http\SigningPageController;
+use App\Modules\Crm\Http\WithoutAuditRequest;
 use App\Modules\Crm\Livewire\AccountCard;
 use App\Modules\Crm\Livewire\AccountsPage;
 use App\Modules\Crm\Livewire\ActivitiesPage;
@@ -128,7 +129,7 @@ class CrmServiceProvider extends ServiceProvider
         RateLimiter::for('crm-signing', fn (Request $request): Limit => Limit::perMinute(60)->by('crm-signing:'.$request->ip()));
         RateLimiter::for('crm-signing-submit', fn (Request $request): Limit => Limit::perMinute(10)->by('crm-signing-submit:'.$request->ip()));
 
-        Route::middleware(['web', 'throttle:crm-signing'])->group(function (): void {
+        Route::middleware(['web', 'throttle:crm-signing', WithoutAuditRequest::class])->group(function (): void {
             Route::get('/signera/{token}', [SigningPageController::class, 'show'])->where('token', '[^/]{1,100}')->name('crm.signing.show');
             Route::get('/signera/{token}/dokument', [SigningPageController::class, 'document'])->where('token', SigningToken::PATTERN)->name('crm.signing.document');
             Route::post('/signera/{token}', [SigningPageController::class, 'sign'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('crm.signing.sign');

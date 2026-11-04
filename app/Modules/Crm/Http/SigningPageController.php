@@ -90,7 +90,7 @@ final class SigningPageController
         }
 
         try {
-            $this->links->sign($request, $http->only(['name', 'title', 'accept', 'method', 'signature', 'typed_signature', 'document_sha256']), $http->ip(), $http->userAgent());
+            $this->links->sign($request, $http->only(['name', 'title', 'accept', 'method', 'signature', 'typed_signature', 'document_sha256', 'acceptance_text', 'acceptance_mac']), $http->ip(), $http->userAgent());
         } catch (SigningUnavailable $unavailable) {
             if ($unavailable->reason === SigningUnavailable::CHANGED) {
                 $this->links->revokeStale($request);
@@ -146,6 +146,8 @@ final class SigningPageController
             $company = Company::query()->findOrFail($request->company_id);
             $request->load(['quote.rows', 'quote.customer', 'agreement.account']);
             $quote = $request->quote;
+            $acceptance = SigningPdfs::acceptance($request);
+            $contact = implode(', ', array_filter([$company->org_number ? (string) __('org.nr :number', ['number' => $company->org_number]) : null, $company->email ?: null]));
 
             return $this->private(response()->view('crm::signing.page', [
                 'request' => $request,
@@ -155,7 +157,9 @@ final class SigningPageController
                 'brand' => Brand::for($company),
                 'color' => Brand::readable(Brand::for($company)->color),
                 'title' => SigningPdfs::title($request),
-                'acceptance' => SigningPdfs::acceptance($request),
+                'acceptance' => $acceptance,
+                'acceptanceMac' => SigningPdfs::acceptanceMac($request, $acceptance),
+                'controller' => ($company->legal_name ?: $company->name).($contact === '' ? '' : " ({$contact})"),
                 'quote' => $quote,
                 'agreement' => $request->agreement,
                 'vat' => $quote instanceof SalesDocument ? InvoiceCalculator::totals($quote->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all()) : null,
