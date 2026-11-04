@@ -14,6 +14,7 @@ use App\Support\CompanyRegistry\Import\ScbApi;
 use App\Support\CompanyRegistry\Import\ScbBulkFile;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -36,6 +37,9 @@ class RegistryImportCommand extends Command
     public const int CHUNK = 1000;
 
     public const int KEEP_CHANGES_DAYS = 400;
+
+    /** A complete file has at least this share of the companies in the register; a smaller one (a cut download) marks nothing gone. */
+    public const float GONE_MIN_SHARE = 0.8;
 
     protected $signature = 'registry:import
         {source : scb-bulk, bolagsverket-bulk eller scb-api}
@@ -77,6 +81,15 @@ class RegistryImportCommand extends Command
         }
 
         $writer = new RegistryWriter($source, $import, $this->watched());
+        // One import at a time, whichever source: they share rows, the sources list and the change log.
+        $lock = Cache::lock('registry-import', 6 * 3600);
+
+        if (! $lock->get()) {
+            $import->forceFill(['status' => RegistryImport::FAILED, 'error' => 'Another import was running.'])->save();
+            $this->error('En annan inläsning av registret pågår. Försök igen när den är klar (eller fortsätt med --resume).');
+
+            return self::FAILURE;
+        }
 
         try {
             $this->load($source, $import, $writer);
@@ -85,6 +98,8 @@ class RegistryImportCommand extends Command
             $this->error("Körningen avbröts: {$exception->getMessage()} Fortsätt med --resume.");
 
             return self::FAILURE;
+        } finally {
+            $lock->release();
         }
 
         $gone = $source->key() === ScbBulkFile::KEY ? $this->markGone($import) : 0;
@@ -145,7 +160,7 @@ class RegistryImportCommand extends Command
     {
         $present = DB::table('company_registry')->whereNull('gone_at')->count();
 
-        if ($present > 0 && $import->rows_written < $present / 2) {
+        if ($present > 0 && $import->rows_written < $present * self::GONE_MIN_SHARE) {
             $this->warn("Filen hade bara {$import->rows_written} av {$present} företag. Inga markeras som borta.");
 
             return 0;

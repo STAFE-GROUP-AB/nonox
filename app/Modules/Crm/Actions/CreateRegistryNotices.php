@@ -43,13 +43,13 @@ final class CreateRegistryNotices
                 return 0;
             }
 
-            $noticed = RegistryNotice::query()->pluck('registry_change_id')->flip();
+            // Changes for the company's organisation numbers (a subquery, however many accounts), not yet noticed here.
             $changes = RegistryChange::query()
-                ->whereIn('org_number', $accounts->keys()->all())
+                ->whereIn('org_number', Account::query()->toBase()->whereNotNull('org_number')->selectRaw("regexp_replace(org_number, '\\D', '', 'g')"))
                 ->where('detected_at', '>=', $accounts->min('created_at'))
+                ->whereNotIn('id', RegistryNotice::query()->toBase()->select('registry_change_id'))
                 ->orderBy('id')
                 ->get()
-                ->reject(fn (RegistryChange $change): bool => $noticed->has($change->id))
                 ->filter(function (RegistryChange $change) use ($accounts): bool {
                     $account = $accounts->get($change->org_number);
 

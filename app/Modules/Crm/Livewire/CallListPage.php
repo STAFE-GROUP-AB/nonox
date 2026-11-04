@@ -85,8 +85,9 @@ class CallListPage extends Component
     public function archive(WorkCallList $work): void
     {
         $list = $this->list();
-        $work->archive($this->user(), $this->company(), $list, $list->archived_at === null);
-        $this->toast($list->archived_at === null ? __('Ringlistan är arkiverad.') : __('Ringlistan är återställd.'));
+        $archiving = $list->archived_at === null;
+        $work->archive($this->user(), $this->company(), $list, $archiving);
+        $this->toast($archiving ? __('Ringlistan är arkiverad.') : __('Ringlistan är återställd.'));
     }
 
     public function render(): View

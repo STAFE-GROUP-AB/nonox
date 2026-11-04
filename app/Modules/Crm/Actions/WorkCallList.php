@@ -55,6 +55,12 @@ final class WorkCallList
 
         return DB::transaction(fn (): CallListItem => CurrentCompany::run($company, function () use ($user, $company, $item, $validated, $outcome): CallListItem {
             $item = CallListItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+
+            // A double tap or a second tab: the first call wins, the second is refused under the lock.
+            if ($item->status !== CallListItem::PENDING) {
+                throw ValidationException::withMessages(['item' => __('Företaget är redan avklarat på ringlistan, eller listan är arkiverad.')]);
+            }
+
             $personId = filled($validated['person_id'] ?? null) ? (int) $validated['person_id'] : null;
 
             $activity = ($this->logActivity)($user, $company, [
@@ -102,12 +108,18 @@ final class WorkCallList
         Gate::forUser($user)->authorize('manage', [Account::class, $company]);
         $this->guardOpen($company, $item);
 
-        return CurrentCompany::run($company, function () use ($user, $company, $item): CallListItem {
+        return DB::transaction(fn (): CallListItem => CurrentCompany::run($company, function () use ($user, $company, $item): CallListItem {
+            $item = CallListItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+
+            if ($item->status !== CallListItem::PENDING) {
+                throw ValidationException::withMessages(['item' => __('Företaget är redan avklarat på ringlistan, eller listan är arkiverad.')]);
+            }
+
             $item->forceFill(['status' => CallListItem::SKIPPED, 'done_at' => now(), 'done_by' => $user->id])->save();
             Audit::record('crm.call_list_skip', $item, ['call_list_id' => $item->call_list_id, 'account_id' => $item->account_id], $company, $user);
 
             return $item;
-        });
+        }));
     }
 
     public function archive(User $user, Company $company, CallList $list, bool $archived = true): void

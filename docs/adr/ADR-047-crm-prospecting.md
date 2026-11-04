@@ -242,7 +242,11 @@ notices are tenant data and company-scoped.
   `--resume`, an unfinished run of the same source and file continues from
   its position.
 - **Gone rows**: after a complete SCB run, rows not seen in it get
-  `gone_at`; search hides them.
+  `gone_at`; search hides them. A file with fewer than 80 % of the
+  register's companies (a cut download) marks nothing.
+- **One import at a time**: a cache lock across sources, since they share
+  rows, the sources list and the change log. A completing source never
+  blanks a registration date it lacks.
 - **Changes for monitoring** are written only for organisation numbers that
   some company watches (the CRM accounts with an organisation number), as
   `company_registry_changes`: field, old and new value, time and source. The

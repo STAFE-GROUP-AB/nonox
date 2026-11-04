@@ -33,7 +33,7 @@ final class AddProspects
 
     /**
      * @param  list<string>  $orgNumbers  ten digits each
-     * @return array{added: list<int>, existing: list<int>, suppressed: int}
+     * @return array{added: list<int>, existing: list<int>, suppressed: int, missing: int}
      */
     public function __invoke(User $user, Company $company, array $orgNumbers, ?int $ownerId = null): array
     {
@@ -60,6 +60,7 @@ final class AddProspects
             $added = [];
             $found = [];
             $suppressed = 0;
+            $missing = 0;
 
             foreach ($orgNumbers as $org) {
                 if ($existing->has($org)) {
@@ -71,6 +72,8 @@ final class AddProspects
                 $row = $register->get($org);
 
                 if (! $row instanceof RegistryCompany) {
+                    $missing++;
+
                     continue;
                 }
 
@@ -99,7 +102,7 @@ final class AddProspects
             // Counts only: the append-only log keeps no names or numbers.
             Audit::record('crm.prospects_added', null, ['added' => count($added), 'existing' => count($found), 'suppressed' => $suppressed], $company, $user);
 
-            return ['added' => $added, 'existing' => $found, 'suppressed' => $suppressed];
+            return ['added' => $added, 'existing' => $found, 'suppressed' => $suppressed, 'missing' => $missing];
         }));
     }
 }

@@ -55,7 +55,7 @@ final class LookAlike
         /** @var Collection<int, object{account_id: int, name: string, org_number: ?string, invoiced: int}> */
         return Invoice::query()
             ->toBase()
-            ->join('crm_accounts', 'crm_accounts.customer_id', '=', 'invoices.customer_id')
+            ->join('crm_accounts', fn ($join) => $join->on('crm_accounts.customer_id', '=', 'invoices.customer_id')->on('crm_accounts.company_id', '=', 'invoices.company_id'))
             ->where('invoices.status', '<>', InvoiceStatus::Draft->value)
             ->where('invoices.invoice_date', '>=', $from)
             ->where('crm_accounts.kind', AccountKind::Company->value)

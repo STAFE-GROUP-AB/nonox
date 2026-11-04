@@ -148,6 +148,12 @@ class ProspectingPage extends Component
         $result = $add($this->user(), $this->company(), [$orgNumber], $this->owner());
         $id = $result['added'][0] ?? $result['existing'][0] ?? null;
 
+        if ($id === null && $result['missing'] > 0) {
+            $this->toast(__('Företaget finns inte längre i registret.'), 'error');
+
+            return;
+        }
+
         if ($id === null) {
             $this->toast(__('Företaget lades inte till: dess telefonnummer eller e-post finns på listan Kontakta inte.'), 'error');
 

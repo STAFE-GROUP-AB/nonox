@@ -7926,5 +7926,6 @@
     "{1} 1 företag|[2,*] :count företag": "{1} 1 company|[2,*] :count companies",
     "{0} Lägg till markerade|[1,*] Lägg till markerade (:count)": "{0} Add selected|[1,*] Add selected (:count)",
     "{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.": "{0} No company matches.|{1} 1 company will be included.|[2,*] :count companies will be included.",
-    "{1} ringd en gång förut|[2,*] ringd :count gånger förut": "{1} called once before|[2,*] called :count times before"
+    "{1} ringd en gång förut|[2,*] ringd :count gånger förut": "{1} called once before|[2,*] called :count times before",
+    "Företaget finns inte längre i registret.": "The company is no longer in the register."
 }

@@ -160,11 +160,14 @@ final class RegistryWriter
             }
         }
 
-        $set = implode(', ', array_map(fn (string $column): string => "\"{$column}\" = v.\"{$column}\"::".self::TYPES[$column], $columns));
+        // An empty date in the completing file never erases a date the register already has (the registration date).
+        $set = implode(', ', array_map(fn (string $column): string => $column === 'registered_on'
+            ? "\"{$column}\" = COALESCE(v.\"{$column}\"::date, company_registry.\"{$column}\")"
+            : "\"{$column}\" = v.\"{$column}\"::".self::TYPES[$column], $columns));
         $names = implode(', ', ['org_number', ...array_map(fn (string $column): string => "\"{$column}\"", $columns)]);
         $rows = implode(', ', array_fill(0, count($values), $placeholders));
 
-        DB::update("UPDATE company_registry SET {$set} FROM (VALUES {$rows}) AS v({$names}) WHERE company_registry.org_number = v.org_number", $bindings);
+        DB::update("UPDATE company_registry SET {$set} FROM (VALUES {$rows}) AS v({$names}) WHERE company_registry.org_number = v.org_number::char(10)", $bindings);
     }
 
     private static function column(mixed $value): mixed

@@ -179,7 +179,7 @@ it('does not add a company whose register phone or e-mail someone has objected t
 
     $result = app(AddProspects::class)($this->owner, $this->company, [prospectOrg(1)]);
 
-    expect($result)->toBe(['added' => [], 'existing' => [], 'suppressed' => 1])
+    expect($result)->toBe(['added' => [], 'existing' => [], 'suppressed' => 1, 'missing' => 0])
         ->and(Account::query()->count())->toBe(0);
 });
 
@@ -313,9 +313,19 @@ it('skips a company, refuses a person marked Kontakta inte, and leaves out phone
     expect(fn () => app(WorkCallList::class)->call($this->owner, $this->company, $item, ['outcome' => 'REACHED', 'person_id' => $person->id]))
         ->toThrow(ValidationException::class);
 
+    $stale = $item->fresh();
     app(WorkCallList::class)->skip($this->owner, $this->company, $item);
     expect($item->fresh()?->status)->toBe(CallListItem::SKIPPED);
     expect(fn () => app(WorkCallList::class)->skip($this->owner, $this->company, $item->fresh()))->toThrow(ValidationException::class);
+
+    // A second tab still holding the item as pending: refused under the lock, no call logged.
+    $stale?->forceFill(['status' => CallListItem::PENDING]);
+    expect(fn () => app(WorkCallList::class)->call($this->owner, $this->company, $stale, ['outcome' => 'REACHED']))->toThrow(ValidationException::class)
+        ->and(Activity::query()->where('type', 'CALL')->count())->toBe(0);
+
+    Livewire::test(CallListPage::class, ['callListId' => $made['list']->id])
+        ->call('archive')->assertDispatched('toast', message: 'Ringlistan är arkiverad.')
+        ->call('archive')->assertDispatched('toast', message: 'Ringlistan är återställd.');
 });
 
 it('builds a call list from the CRM\'s own prospects', function () {
