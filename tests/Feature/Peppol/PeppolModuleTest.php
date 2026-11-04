@@ -378,7 +378,7 @@ describe('receiving', function () {
 
     it('keeps a rejected e-invoice past the seven days rejected e-mail is kept', function () {
         $message = app(AcceptPeppolDocument::class)($this->company, peppolInbound());
-        $message?->forceFill(['status' => App\Modules\Inbox\Domain\MessageStatus::Rejected, 'handled_at' => now()->subDays(30)])->save();
+        $message?->forceFill(['status' => MessageStatus::Rejected, 'handled_at' => now()->subDays(30)])->save();
 
         $this->artisan('inbox:prune')->assertSuccessful();
 
