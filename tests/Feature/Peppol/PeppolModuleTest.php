@@ -132,12 +132,12 @@ describe('sole traders and personal data', function () {
     beforeEach(fn () => app(ModuleManager::class)->enable(PeppolModule::KEY, $this->company, $this->owner));
 
     it('never publishes a sole trader\'s personal identity number as a Peppol ID', function () {
-        $this->company->forceFill(['legal_form' => 'EF', 'org_number' => '640823-3234'])->save();
+        $this->company->forceFill(['legal_form' => 'EF', 'org_number' => '811218-9876'])->save();
         app(ModuleManager::class)->enable('inbox', $this->company, $this->owner);
         $save = app(SavePeppolSettings::class);
 
-        expect($save($this->owner, $this->company->fresh(), '0007:6408233234', false)->identifier)->toBe('0007:6408233234')
-            ->and(fn () => $save($this->owner, $this->company->fresh(), '0007:6408233234', true))->toThrow(ValidationException::class, 'GLN (0088)')
+        expect($save($this->owner, $this->company->fresh(), '0007:8112189876', false)->identifier)->toBe('0007:8112189876')
+            ->and(fn () => $save($this->owner, $this->company->fresh(), '0007:8112189876', true))->toThrow(ValidationException::class, 'GLN (0088)')
             ->and($save($this->owner, $this->company->fresh(), '0088:7300009000005', true, register: true, consent: true)->identifier)->toBe('0088:7300009000005');
 
         CurrentCompany::run($this->company, fn () => PeppolParticipant::query()->delete());
@@ -145,13 +145,13 @@ describe('sole traders and personal data', function () {
     });
 
     it('leaves a buyer\'s personal identity number out of the e-invoice and the derived Peppol ID', function () {
-        $soleTrader = PeppolFixtures::customer($this->owner, $this->company, ['name' => 'Firma Test', 'org_number' => '640823-3234', 'vat_number' => 'SE640823323401', 'invoice_delivery' => 'PEPPOL', 'peppol_id' => '0088:7300009000005']);
+        $soleTrader = PeppolFixtures::customer($this->owner, $this->company, ['name' => 'Firma Test', 'org_number' => '811218-9876', 'vat_number' => 'SE811218987601', 'invoice_delivery' => 'PEPPOL', 'peppol_id' => '0088:7300009000005']);
         $invoice = PeppolFixtures::invoice($this->owner, $this->company, $soleTrader, [['description' => 'Arbete', 'quantity' => '1', 'unit' => 'st', 'price' => '100', 'vat_rate' => 2500]]);
         $xml = app(UblInvoiceWriter::class)->write($invoice, $this->company, PeppolIdentifier::make('0007', PeppolFixtures::SELLER_ORG), PeppolIdentifier::make('0088', '7300009000005'), null);
 
-        expect($xml)->not->toContain('<cbc:CompanyID schemeID="0007">6408233234</cbc:CompanyID>')
+        expect($xml)->not->toContain('<cbc:CompanyID schemeID="0007">8112189876</cbc:CompanyID>')
             ->and(PeppolDocumentRules::check($xml))->toBe([])
-            ->and(fn () => app(SaveCustomer::class)($this->owner, $this->company, ['name' => 'Firma Två', 'org_number' => '640823-3234', 'payment_terms_days' => 30, 'invoice_delivery' => 'PEPPOL', 'peppol_id' => '']))->toThrow(ValidationException::class, 'Peppol-ID');
+            ->and(fn () => app(SaveCustomer::class)($this->owner, $this->company, ['name' => 'Firma Två', 'org_number' => '811218-9876', 'payment_terms_days' => 30, 'invoice_delivery' => 'PEPPOL', 'peppol_id' => '']))->toThrow(ValidationException::class, 'Peppol-ID');
     });
 
     it('erases the Peppol ID with the customer and includes it in the register extract', function () {
@@ -376,6 +376,25 @@ describe('receiving', function () {
             ->and(Storage::disk('local')->get((string) $kept?->eml_path))->toBe(peppolInbound()->xml);
     });
 
+    it('keeps a document addressed to the company\'s earlier Peppol ID in quarantine', function () {
+        app(SavePeppolSettings::class)($this->owner, $this->company, '0088:7300009000005', true, register: true, consent: true);
+        $kept = app(AcceptPeppolDocument::class)($this->company, peppolInbound());
+
+        expect($this->participant->fresh()->previous_identifiers)->toBe(['0007:5566778808'])
+            ->and($kept?->status)->toBe(MessageStatus::Quarantine)
+            ->and(collect($kept?->quarantine_reasons)->pluck('code')->all())->toBe(['PEPPOL_OLD_ID']);
+    });
+
+    it('polls a linked company with the module off, into quarantine', function () {
+        app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5566778808', false);
+        app(ModuleManager::class)->disable(PeppolModule::KEY, $this->company, $this->owner, confirmed: true);
+        LogAccessPoint::$inbox['acct-R'] = [peppolInbound()];
+
+        $this->artisan('peppol:sync')->assertSuccessful();
+
+        expect(CurrentCompany::run($this->company, fn () => InboxMessage::query()->sole()->status))->toBe(MessageStatus::Quarantine);
+    });
+
     it('keeps a rejected e-invoice past the seven days rejected e-mail is kept', function () {
         $message = app(AcceptPeppolDocument::class)($this->company, peppolInbound());
         $message?->forceFill(['status' => MessageStatus::Rejected, 'handled_at' => now()->subDays(30)])->save();
@@ -392,7 +411,12 @@ describe('receiving', function () {
 
         $this->artisan('peppol:sync')->assertSuccessful();
 
+        // The next poll meets it again: no second alert.
+        LogAccessPoint::$inbox['acct-R'] = [new InboundDocument('big', str_repeat('x', AcceptPeppolDocument::maxBytes() + 1))];
+        $this->artisan('peppol:sync')->assertSuccessful();
+
         expect(CurrentCompany::run($this->company, fn () => InboxMessage::query()->count()))->toBe(0)
+            ->and(AuditLog::query()->where('action', 'peppol.too_large')->count())->toBe(1)
             ->and($this->participant->fresh()->last_polled_at)->toEqual($before)
             ->and($this->participant->fresh()->last_error)->toContain('för stor')
             ->and(AuditLog::query()->where('action', 'peppol.too_large')->exists())->toBeTrue();

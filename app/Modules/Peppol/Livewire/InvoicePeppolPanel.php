@@ -60,6 +60,7 @@ class InvoicePeppolPanel extends Component
     public function send(SendInvoiceViaPeppol $send): void
     {
         $send($this->user(), $this->invoice());
+        $this->loaded = null;
 
         $this->toast(__(':title är på väg till kunden via Peppol.', ['title' => $this->invoice()->title()]));
     }
@@ -79,9 +80,12 @@ class InvoicePeppolPanel extends Component
         ]);
     }
 
+    private ?Invoice $loaded = null;
+
+    /** Read once per request (inside the current company: another company's invoice answers 404). */
     private function invoice(): Invoice
     {
-        return Invoice::query()->findOrFail($this->invoiceId);
+        return $this->loaded ??= Invoice::query()->findOrFail($this->invoiceId);
     }
 
     private function customer(): Customer

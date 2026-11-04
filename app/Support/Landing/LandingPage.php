@@ -65,7 +65,7 @@ final class LandingPage
             'dockerCommands' => "git clone {$ph['github']}",
             'securityReview' => SecurityReview::data(),
             'securityTotals' => SecurityReview::totals(),
-            'trust' => ['Följer Bokföringslagen', 'BAS-kontoplan', 'SIE4 in och ut', 'Peppol e-faktura', 'Arbetsgivardeklaration (AGI)', 'Data i Sverige/EU'],
+            'trust' => ['Följer Bokföringslagen', 'BAS-kontoplan', 'SIE4 in och ut', 'Läser Peppol-fakturor', 'Arbetsgivardeklaration (AGI)', 'Data i Sverige/EU'],
             'features' => self::features(),
             'included' => self::included(),
             'clients' => self::clients(),

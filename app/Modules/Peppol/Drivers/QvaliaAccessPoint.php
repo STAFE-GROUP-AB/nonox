@@ -133,7 +133,12 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
 
         foreach (['invoices' => 'Invoice', 'creditnotes' => 'CreditNote'] as $path => $type) {
             // Every page of the window, so a busy account never has a document skipped.
-            for ($offset = 0; $offset < self::MAX_LISTED; $offset += self::PAGE) {
+            for ($offset = 0; ; $offset += self::PAGE) {
+                // Never advance the window past documents not seen: stop with an error instead.
+                if ($offset >= self::MAX_LISTED) {
+                    throw new AccessPointFailed('Qvalia listed more documents than one poll takes; the window is kept.', retryable: true);
+                }
+
                 $list = $this->json($this->http()->get($this->transactionPath($receiver, $path, 'incoming').'/status', ['updatedAtFrom' => $since, 'includeRead' => 'true', 'limit' => self::PAGE, 'offset' => $offset]), 'incoming');
                 $entries = (array) ($list['data'] ?? []);
 

@@ -63,7 +63,7 @@
                     <option value="PEPPOL">{{ __('Fakturera via Peppol (e-faktura)') }}</option>
                 </select>
             </x-ui.field>
-            <x-ui.field for="customer_peppol_id" :label="__('Kundens Peppol-ID')" error="peppol_id" :hint="__('Till exempel 0007:5599000006 för ett svenskt organisationsnummer. Lämnas tomt för en svensk kund används organisationsnumret.')">
+            <x-ui.field for="customer_peppol_id" :label="__('Kundens Peppol-ID')" error="peppol_id" :hint="__('Till exempel 0007:5561234567 för ett svenskt organisationsnummer. Lämnas tomt för en svensk kund används organisationsnumret.')">
                 <input id="customer_peppol_id" type="text" class="{{ $input }} mt-1" wire:model="form.peppol_id" autocomplete="off" spellcheck="false">
             </x-ui.field>
         @endif

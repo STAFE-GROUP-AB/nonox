@@ -10,7 +10,7 @@ use App\Models\Company;
 
 /**
  * A Peppol participant identifier: an electronic address scheme (EAS,
- * ISO 6523 ICD) and the identifier in it, written "0007:5560360793".
+ * ISO 6523 ICD) and the identifier in it, written "0007:5561234567".
  *
  * Swedish companies are addressed by their organisation number (0007,
  * ten digits, no hyphen) or a GLN (0088, thirteen digits with a GS1 check
@@ -43,7 +43,7 @@ final readonly class PeppolIdentifier
     ) {}
 
     /**
-     * "0007:5560360793", "0007:556036-0793" or "iso6523-actorid-upis::0007:5560360793";
+     * "0007:5561234567", "0007:556123-4567" or "iso6523-actorid-upis::0007:5561234567";
      * null when it is not a valid identifier.
      */
     public static function tryFrom(?string $input): ?self

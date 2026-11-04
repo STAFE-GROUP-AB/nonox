@@ -25,6 +25,7 @@ use App\Support\Peppol\PeppolParseException;
 use App\Support\Peppol\UblInvoiceParser;
 use App\Support\Tenancy\CurrentCompany;
 use App\Support\WorkQuota;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -75,8 +76,11 @@ class AcceptPeppolDocument
     public function __invoke(Company $company, InboundDocument $document): ?InboxMessage
     {
         if (strlen($document->xml) > self::maxBytes()) {
-            Log::alert('Peppol: a received document is too large to take; it stays at the access point.', ['company_id' => $company->id, 'reference' => $document->reference, 'size' => strlen($document->xml)]);
-            Audit::record('peppol.too_large', null, ['reference' => mb_substr($document->reference, 0, 120), 'size' => strlen($document->xml)], $company);
+            // Once per document: the poll meets it again every 15 minutes until the operator has handled it.
+            if (Cache::add("peppol:too-large:{$company->id}:".hash('sha256', $document->reference), true, now()->addDays(90))) {
+                Log::alert('Peppol: a received document is too large to take; it stays at the access point.', ['company_id' => $company->id, 'reference' => $document->reference, 'size' => strlen($document->xml)]);
+                Audit::record('peppol.too_large', null, ['reference' => mb_substr($document->reference, 0, 120), 'size' => strlen($document->xml)], $company);
+            }
 
             throw new PeppolDocumentTooLarge($document->reference);
         }
@@ -85,7 +89,7 @@ class AcceptPeppolDocument
             $participant = PeppolParticipant::query()->first();
             [$sender, $receiver, $number, $supplier] = $this->envelope($document);
 
-            if (! $participant instanceof PeppolParticipant || ($receiver !== null && ! $receiver->equals($participant->participant()))) {
+            if (! $participant instanceof PeppolParticipant || ($receiver !== null && ! $participant->isOwnIdentifier($receiver))) {
                 Log::warning('Peppol: a document for another participant was refused.', ['company_id' => $company->id, 'reference' => $document->reference]);
                 Audit::record('peppol.dropped', null, ['reason' => 'wrong_receiver', 'reference' => mb_substr($document->reference, 0, 120)], $company);
 
@@ -110,6 +114,11 @@ class AcceptPeppolDocument
             $inboxOn = $this->modules->isEnabled(InboxModule::KEY, $company);
             $receiving = $this->modules->isEnabled(PeppolModule::KEY, $company) && $inboxOn && $participant->receive_enabled && ! $company->isArchived();
             $reasons = $receiving ? [] : [['code' => 'PEPPOL_NOT_RECEIVING', 'message' => __('E-fakturan kom via Peppol när företaget inte tog emot e-fakturor. Originalet är sparat; släpp den om den ska bokföras.')]];
+
+            // Addressed to an ID the company had before: kept, and a person decides.
+            if ($receiver !== null && ! $receiver->equals($participant->participant())) {
+                $reasons[] = ['code' => 'PEPPOL_OLD_ID', 'message' => __('E-fakturan är adresserad till företagets tidigare Peppol-ID :id. Originalet är sparat; släpp den om den ska bokföras.', ['id' => $receiver->toString()])];
+            }
 
             $id = Str::uuid()->toString();
             $path = "inkorg/{$company->id}/{$id}/original.xml";

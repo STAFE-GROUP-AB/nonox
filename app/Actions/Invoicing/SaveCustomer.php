@@ -64,7 +64,7 @@ class SaveCustomer
             // Peppol (ADR-050): the customer's participant id, and whether invoices go there by default.
             'peppol_id' => ['nullable', 'string', 'max:80', function (string $attribute, mixed $value, \Closure $fail): void {
                 if (PeppolIdentifier::tryFrom((string) $value) === null) {
-                    $fail(__('Peppol-ID:t stämmer inte. Skriv schema och nummer, till exempel 0007:5599000006.'));
+                    $fail(__('Peppol-ID:t stämmer inte. Skriv schema och nummer, till exempel 0007:5561234567.'));
                 }
             }],
             'invoice_delivery' => ['nullable', 'in:EMAIL,PEPPOL'],

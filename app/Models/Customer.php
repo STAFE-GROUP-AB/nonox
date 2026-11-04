@@ -33,7 +33,7 @@ use Illuminate\Validation\ValidationException;
  * @property int $payment_terms_days
  * @property bool $is_active
  * @property ?CarbonImmutable $processing_restricted_at
- * @property ?string $peppol_id the customer's Peppol participant id, "0007:5599000006" (ADR-050)
+ * @property ?string $peppol_id the customer's Peppol participant id, "0007:5561234567" (ADR-050)
  * @property string $invoice_delivery EMAIL or PEPPOL: how invoices go to the customer by default
  */
 class Customer extends Model

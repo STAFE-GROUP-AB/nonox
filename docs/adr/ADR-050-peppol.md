@@ -62,7 +62,7 @@ for redistribution in an AGPL repository. So nothing is vendored:
 **Swedish participant identifiers** (Peppol Code Lists v9.7, participant
 identifier schemes; Upphandlingsmyndigheten, "Instruktion för val av
 Peppol-ID"): `0007` Swedish organisation number, ten digits with no hyphen
-(`0007:5599000006`), is the first choice; `0088` GLN (13 digits, GS1 check
+(`0007:5561234567`), is the first choice; `0088` GLN (13 digits, GS1 check
 digit) is advised for sole traders instead of the personal identity number;
 `9955` (Swedish VAT number) was removed 2023-07-31. A company that only sends
 does not need a registered (findable) Peppol ID.
@@ -300,6 +300,15 @@ permissions). Receiving needs the inbox module.
 - Answered: G for services outside the EU, E with explicit text for outlays,
   and no buyer VAT number for exports are right.
 - Rejected or quarantined Peppol documents are not pruned by `inbox:prune`.
+- Re-check: documents addressed to one of the company's earlier Peppol IDs
+  are kept in quarantine (`PEPPOL_OLD_ID`, history in
+  `previous_identifiers`); `peppol:sync` polls every company linked to the
+  operator whether the module is on or not; a registration that timed out is
+  Pending and is deregistered like a registered one (Failed too); a document
+  too large is alerted once per reference; the poll fails rather than passing
+  the window when Qvalia lists more than 10 000 documents.
+- The landing page's trust badge reads "Läser Peppol-fakturor" (the inbox
+  reads Peppol invoices sent by e-mail today) until the module is live.
 
 ## Known limits
 

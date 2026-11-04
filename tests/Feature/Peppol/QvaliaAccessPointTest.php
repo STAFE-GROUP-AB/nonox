@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\ModuleManager;
+use App\Modules\Peppol\Actions\SavePeppolSettings;
 use App\Modules\Peppol\Actions\SendInvoiceViaPeppol;
 use App\Modules\Peppol\Domain\AccessPointFailed;
 use App\Modules\Peppol\Domain\RegistrationStatus;
@@ -14,6 +15,7 @@ use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Support\Peppol\PeppolIdentifier;
 use App\Support\Peppol\UblInvoiceWriter;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -209,6 +211,16 @@ it('reads the signature header with several secrets during rotation', function (
         ->and(QvaliaAccessPoint::parseSignature('garbage'))->toBe([null, []]);
 });
 
+it('refuses to pass the window when the provider lists too many documents', function () {
+    Http::fake(fn (Request $request) => str_contains($request->url(), '/status')
+        ? Http::response(['status' => 'success', 'data' => array_map(fn (int $i): array => ['integrationId' => 'x'], range(1, 100))])
+        : Http::response('<Invoice/>', 200));
+    $participant = new PeppolParticipant;
+    $participant->provider_account = 'SE5599000006';
+
+    expect(fn () => QvaliaAccessPoint::fromConfig()->incoming($participant))->toThrow(AccessPointFailed::class, 'window is kept');
+});
+
 it('pages through every document in the polling window', function () {
     Http::fake(function (Request $request) {
         if (str_contains($request->url(), '/invoices/incoming/status')) {
@@ -230,11 +242,26 @@ it('pages through every document in the polling window', function () {
     expect(QvaliaAccessPoint::fromConfig()->incoming($participant))->toHaveCount(103);
 });
 
+it('treats a registration that timed out as pending, so it is deregistered later', function () {
+    Http::fake(fn () => throw new ConnectionException('timed out'));
+    app(ModuleManager::class)->enable('peppol', $this->company, $this->owner);
+    app(ModuleManager::class)->enable('inbox', $this->company, $this->owner);
+    CurrentCompany::run($this->company, function () {
+        $participant = new PeppolParticipant(['identifier' => '0007:5599000006']);
+        $participant->forceFill(['provider' => 'qvalia', 'provider_account' => 'SE5599000006'])->save();
+    });
+
+    $saved = app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5599000006', true, register: true, consent: true);
+
+    expect($saved->registration_status)->toBe(RegistrationStatus::Pending)
+        ->and(app(ModuleManager::class)->disableCheck('peppol', $this->company)->allowed())->toBeFalse();
+});
+
 it('omits a sole trader\'s number from the business card and deregisters with DELETE', function () {
     Http::fake(['*' => Http::response(['status' => 'registered'])]);
-    $this->company->forceFill(['legal_form' => 'EF', 'org_number' => '640823-3234', 'vat_number' => 'SE640823323401'])->save();
+    $this->company->forceFill(['legal_form' => 'EF', 'org_number' => '811218-9876', 'vat_number' => 'SE811218987601'])->save();
     $participant = new PeppolParticipant(['identifier' => '0088:7300009000005']);
-    $participant->provider_account = 'SE6408233234';
+    $participant->provider_account = 'SE8112189876';
     $driver = QvaliaAccessPoint::fromConfig();
 
     $driver->register($participant, $this->company->fresh());

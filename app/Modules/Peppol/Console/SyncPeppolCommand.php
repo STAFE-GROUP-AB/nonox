@@ -16,15 +16,17 @@ use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Peppol\PeppolModule;
 use App\Modules\Peppol\Support\AccessPoints;
+use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\ConnectionException;
 use Throwable;
 
 /**
- * The safety net under the webhook (ADR-050): for every company with
- * Peppol on and an account with the access point, fetches documents that
- * have arrived and asks how documents sent in the last 14 days fared.
+ * The safety net under the webhook (ADR-050): for every company with an
+ * account at the access point (module on or off), fetches documents that
+ * have arrived, and while the module is on asks how documents sent in the
+ * last 14 days fared.
  * Scheduled every 15 minutes; each company runs in its own context.
  */
 class SyncPeppolCommand extends Command
@@ -41,19 +43,24 @@ class SyncPeppolCommand extends Command
             return self::SUCCESS;
         }
 
-        $ids = $this->argument('company') !== null ? [(int) $this->argument('company')] : $modules->companiesWith(PeppolModule::KEY);
+        // Every company linked to the access point, whether the module is on or not: a document that arrives for a
+        // company must never be left behind (it goes to quarantine when the company does not receive).
+        $ids = $this->argument('company') !== null
+            ? [(int) $this->argument('company')]
+            : array_map('intval', CompanyScope::bypass(fn (): array => PeppolParticipant::query()->whereNotNull('provider_account')->orderBy('company_id')->pluck('company_id')->all()));
         $driver = AccessPoints::make();
 
         foreach ($ids as $id) {
             $company = Company::query()->find($id);
 
-            if (! $company instanceof Company || ! $modules->isEnabled(PeppolModule::KEY, $company)) {
+            if (! $company instanceof Company) {
                 continue;
             }
 
             $this->info("Syncing company `{$company->id}`...");
+            $moduleOn = $modules->isEnabled(PeppolModule::KEY, $company);
 
-            CurrentCompany::run($company, function () use ($company, $driver, $accept, $record): void {
+            CurrentCompany::run($company, function () use ($company, $driver, $accept, $record, $moduleOn): void {
                 $participant = PeppolParticipant::query()->first();
 
                 if (! $participant instanceof PeppolParticipant || ! $participant->canSend()) {
@@ -75,7 +82,9 @@ class SyncPeppolCommand extends Command
                         }
                     }
 
+                    // Delivery status only while the module is on; the documents sent stay as they are.
                     PeppolTransmission::query()
+                        ->when(! $moduleOn, fn ($query) => $query->whereRaw('false'))
                         ->where('status', TransmissionStatus::Sent->value)
                         ->where('driver', $driver->key())
                         ->whereNotNull('provider_reference')

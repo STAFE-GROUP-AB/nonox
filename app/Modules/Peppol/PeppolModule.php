@@ -105,7 +105,7 @@ final class PeppolModule implements Module
         $warnings = [__('Inga fler fakturor skickas eller tas emot via Peppol. Det som redan har skickats och tagits emot finns kvar.')];
 
         // Turning the module off must not leave the company in the Peppol Directory: receiving is switched off (and deregistered) first.
-        if ($participant instanceof PeppolParticipant && ($participant->receive_enabled || in_array($participant->registration_status, [RegistrationStatus::Registered, RegistrationStatus::Pending], true))) {
+        if ($participant instanceof PeppolParticipant && ($participant->receive_enabled || $participant->registration_status !== RegistrationStatus::NotRegistered)) {
             return new ModuleCheck(blockers: [__('Stäng först av mottagningen så att företaget tas bort ur Peppols adressbok. Annars kan leverantörer fortsätta skicka e-fakturor hit.')], warnings: $warnings);
         }
 

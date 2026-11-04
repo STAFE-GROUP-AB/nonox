@@ -18,8 +18,10 @@ return new class extends Migration
         Schema::create('peppol_participants', function (Blueprint $table) {
             $table->id();
             $table->foreignId('company_id')->unique()->constrained('teams')->cascadeOnDelete();
-            // "0007:5599000006": one company per identifier on the installation, so an inbound document has one receiver.
+            // "0007:5561234567": one company per identifier on the installation, so an inbound document has one receiver.
             $table->string('identifier', 60)->unique();
+            // The company's earlier Peppol IDs: documents still addressed to them are kept, never refused.
+            $table->jsonb('previous_identifiers')->default('[]');
             $table->boolean('receive_enabled')->default(false);
             // The access-point provider's own id for the company's account, set by the operator (peppol:link).
             $table->string('provider', 30)->nullable();

@@ -49,7 +49,7 @@ class SavePeppolSettings
         $own = OrganisationNumber::tryFrom((string) $company->org_number);
 
         $error = match (true) {
-            $participant === null => __('Skriv Peppol-ID som schema och nummer, till exempel 0007:5599000006.'),
+            $participant === null => __('Skriv Peppol-ID som schema och nummer, till exempel 0007:5561234567.'),
             ! in_array($participant->scheme, [PeppolIdentifier::ORGANISATION_NUMBER, PeppolIdentifier::GLN], true) => __('Ett svenskt företag har organisationsnummer (0007) eller GLN (0088) som Peppol-ID.'),
             $participant->scheme === PeppolIdentifier::ORGANISATION_NUMBER && $participant->value !== $own?->digits => __('Peppol-ID med 0007 måste vara företagets eget organisationsnummer.'),
             // Sending may use 0007; receiving publishes the ID in the open Peppol Directory.
@@ -80,6 +80,10 @@ class SavePeppolSettings
                 $this->deregister($user, $company, $record);
             }
 
+            if ($changed) {
+                $record->previous_identifiers = array_values(array_unique([...$record->previous_identifiers, $record->identifier]));
+            }
+
             $record->fill(['identifier' => $participant->toString(), 'receive_enabled' => $receive]);
 
             $record->save();
@@ -97,7 +101,8 @@ class SavePeppolSettings
     /** @throws ValidationException when the access point could not remove the registration; nothing is changed then */
     public function deregister(User $user, Company $company, PeppolParticipant $participant): void
     {
-        if (! in_array($participant->registration_status, [RegistrationStatus::Registered, RegistrationStatus::Pending], true)) {
+        // Failed and Pending too: a registration that timed out may have gone through at the operator.
+        if ($participant->registration_status === RegistrationStatus::NotRegistered) {
             return;
         }
 
@@ -129,6 +134,9 @@ class SavePeppolSettings
         try {
             $status = AccessPoints::make($participant->provider)->register($participant, $company);
             $participant->forceFill(['registration_status' => $status, 'registered_at' => $status === RegistrationStatus::Registered ? now() : null, 'last_error' => null])->save();
+        } catch (ConnectionException) {
+            // No answer: it may have been registered. Pending, so turning receiving off deregisters it.
+            $participant->forceFill(['registration_status' => RegistrationStatus::Pending, 'last_error' => __('Peppol-operatören svarade inte. Registreringen kontrolleras igen.')])->save();
         } catch (AccessPointFailed $exception) {
             $participant->forceFill(['registration_status' => RegistrationStatus::Failed, 'last_error' => $exception->getMessage()])->save();
         }

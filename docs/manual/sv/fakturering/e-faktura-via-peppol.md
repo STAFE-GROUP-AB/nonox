@@ -18,7 +18,7 @@ NONOX skickar fakturan enligt Peppol BIS Billing 3.0, med PDF:en bifogad, genom 
 ## Så här kommer du igång
 
 1. Slå på **Peppol e-faktura** under **Inställningar för företaget → Moduler**.
-2. Kontrollera **Företagets Peppol-ID** i modulens inställningar. Det är organisationsnumret med 0007 framför, till exempel 0007:5599000006. En enskild firma kan använda ett GLN (0088) i stället för personnumret.
+2. Kontrollera **Företagets Peppol-ID** i modulens inställningar. Det är organisationsnumret med 0007 framför, till exempel 0007:5561234567. En enskild firma kan använda ett GLN (0088) i stället för personnumret.
 3. Tryck på **Spara**.
 
 Innan första fakturan kan gå iväg kopplar den som driftar NONOX företaget till ett konto hos Peppol-operatören. Tills det är gjort står det *Inte kopplat än* under **Konto hos Peppol-operatören**.

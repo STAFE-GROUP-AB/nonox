@@ -19,6 +19,7 @@ use LogicException;
  * @property int $id
  * @property int $company_id
  * @property string $identifier
+ * @property list<string> $previous_identifiers the company's earlier Peppol IDs
  * @property bool $receive_enabled
  * @property ?string $provider
  * @property ?string $provider_account
@@ -45,6 +46,7 @@ class PeppolParticipant extends Model
     protected $attributes = [
         'receive_enabled' => false,
         'registration_status' => 'NOT_REGISTERED',
+        'previous_identifiers' => '[]',
     ];
 
     /** @return array<string, string> */
@@ -52,6 +54,7 @@ class PeppolParticipant extends Model
     {
         return [
             'receive_enabled' => 'boolean',
+            'previous_identifiers' => 'array',
             'webhook_secret' => 'encrypted',
             'registration_status' => RegistrationStatus::class,
             'registered_at' => 'immutable_datetime',
@@ -63,6 +66,12 @@ class PeppolParticipant extends Model
     public function participant(): PeppolIdentifier
     {
         return PeppolIdentifier::tryFrom($this->identifier) ?? throw new LogicException("Stored Peppol identifier {$this->id} is not valid.");
+    }
+
+    /** The company's current Peppol ID or one it had before. */
+    public function isOwnIdentifier(PeppolIdentifier $identifier): bool
+    {
+        return $identifier->equals($this->participant()) || in_array($identifier->toString(), $this->previous_identifiers, true);
     }
 
     /** Linked to an account with the access-point provider, so documents can go out. */

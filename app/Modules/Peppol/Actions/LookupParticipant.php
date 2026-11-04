@@ -31,7 +31,7 @@ class LookupParticipant
         $this->modules->ensureEnabled(PeppolModule::KEY, $company);
 
         $participant = PeppolIdentifier::tryFrom($identifier)
-            ?? throw ValidationException::withMessages(['peppol_id' => __('Skriv Peppol-ID som schema och nummer, till exempel 0007:5599000006.')]);
+            ?? throw ValidationException::withMessages(['peppol_id' => __('Skriv Peppol-ID som schema och nummer, till exempel 0007:5561234567.')]);
 
         if (RateLimiter::tooManyAttempts("peppol-lookup:{$company->id}", 30)) {
             throw ValidationException::withMessages(['peppol_id' => __('För många kontroller just nu. Försök igen om en minut.')]);
