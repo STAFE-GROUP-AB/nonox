@@ -219,7 +219,7 @@ it('signs in a user whose stored address has capitals', function () {
     $component = Livewire::test(LoginForm::class)->set('email', 'Cecilia@Firma.se')->call('sendCode');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function ($mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function ($mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -279,6 +279,7 @@ it('ships an example environment that is safe on a server', function () {
     expect($example)->toMatch('/^APP_ENV=production$/m')
         ->toMatch('/^APP_DEBUG=false$/m')
         ->toMatch('/^OTP_AUTOFILL=false$/m')
+        ->toMatch('/^SESSION_SECURE_COOKIE=true$/m')
         ->toMatch('/^# TRUSTED_PROXIES=$/m');
 });
 

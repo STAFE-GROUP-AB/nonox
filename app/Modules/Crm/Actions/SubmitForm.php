@@ -58,16 +58,28 @@ use Throwable;
  *
  * Spam protection (honeypot, timing, rate limits) is in the controller;
  * this runs only for a submission that passed it.
+ *
+ * A submission over the form's or the company's hourly cap is held instead
+ * (security review 2026-11-04): the cap is shared, so dropping would also
+ * drop real leads while someone floods the form. A held submission creates
+ * no person, account, task or mail; what was typed is kept encrypted on the
+ * submission until someone with crm:settings accepts it (then it is taken as
+ * above) or deletes it, and for at most QUARANTINE_DAYS (crm:prune-mail).
+ * At most MAX_HELD per company are kept; beyond that a submission is dropped.
  */
 final class SubmitForm
 {
+    public const int QUARANTINE_DAYS = 14;
+
+    public const int MAX_HELD = 500;
+
     public function __construct(private readonly ModuleManager $modules) {}
 
     /**
      * @param  array<string, mixed>  $input
-     * @return array<string, list<string>> validation errors, empty when the lead was taken
+     * @return array<string, list<string>> validation errors, empty when the lead was taken or held
      */
-    public function __invoke(Form $form, array $input): array
+    public function __invoke(Form $form, array $input, bool $hold = false): array
     {
         $company = Company::query()->find($form->company_id);
 
@@ -115,6 +127,12 @@ final class SubmitForm
         $orgNumber = $data['org_number'] ?? null;
         $orgNumber = $orgNumber !== null && ! IdentityNumber::isPersonal($orgNumber) ? OrganisationNumber::tryFrom($orgNumber)?->formatted() : null;
 
+        if ($hold) {
+            CurrentCompany::run($company, fn () => $this->hold($company, $form, $data, $orgNumber, $newsletter));
+
+            return [];
+        }
+
         [$task, $ownerId] = DB::transaction(fn (): array => CurrentCompany::run($company, fn (): array => $this->take($company, $form, $data, $orgNumber, $newsletter)));
 
         if ($task instanceof Activity) {
@@ -125,10 +143,79 @@ final class SubmitForm
     }
 
     /**
+     * Takes a held submission as a lead, as if it had just come in: a
+     * person, an account and a task. The submission keeps its time and the
+     * consent text it was given under. crm:settings.
+     */
+    public function accept(User $user, Company $company, FormSubmission $submission): void
+    {
+        abort_unless($user->hasTeamPermission($company, 'crm:settings'), 403);
+
+        [$task, $ownerId, $form] = DB::transaction(function () use ($company, $submission): array {
+            $held = FormSubmission::query()->held()->whereKey($submission->id)->lockForUpdate()->first();
+            abort_unless($held instanceof FormSubmission && is_array($held->held_payload), 404);
+
+            $form = Form::query()->findOrFail($held->form_id);
+            $payload = $held->held_payload;
+
+            [$task, $ownerId] = $this->take($company, $form, $payload['data'], $payload['org_number'], $payload['newsletter'], $held);
+
+            return [$task, $ownerId, $form];
+        });
+
+        Audit::record('crm.form_submission_accepted', $submission, ['form_id' => $submission->form_id, 'submission_id' => $submission->id], $company);
+
+        if ($task instanceof Activity) {
+            $this->notify($company, $form, $ownerId, $task);
+        }
+    }
+
+    /** Deletes a held submission and what was typed in it. crm:settings. */
+    public function discard(User $user, Company $company, FormSubmission $submission): void
+    {
+        abort_unless($user->hasTeamPermission($company, 'crm:settings'), 403);
+
+        DB::transaction(function () use ($company, $submission): void {
+            $deleted = FormSubmission::query()->held()->whereKey($submission->id)->delete();
+            abort_unless($deleted === 1, 404);
+
+            Audit::record('crm.form_submission_discarded', null, ['form_id' => $submission->form_id, 'submission_id' => $submission->id], $company);
+        });
+    }
+
+    /** @param  array<string, ?string>  $data */
+    private function hold(Company $company, Form $form, array $data, ?string $orgNumber, bool $newsletter): void
+    {
+        DB::transaction(function () use ($company, $form, $data, $orgNumber, $newsletter): void {
+            // One company's held submissions at a time, so the ceiling holds under parallel requests.
+            Company::query()->whereKey($company->id)->lockForUpdate()->first();
+
+            if (FormSubmission::query()->held()->count() >= self::MAX_HELD) {
+                Log::warning('CRM form: the ceiling on held submissions was reached; a submission was dropped.', ['company_id' => $company->id, 'form_id' => $form->id]);
+
+                return;
+            }
+
+            $submission = FormSubmission::create([
+                'form_id' => $form->id,
+                'consent_text' => $form->consent_text,
+                'consent_version' => $form->consent_version,
+                'privacy_url' => $form->privacy_url,
+                'consented_at' => CarbonImmutable::now(),
+                'marketing_consent' => $newsletter,
+                'quarantined_at' => CarbonImmutable::now(),
+                'held_payload' => ['data' => $data, 'org_number' => $orgNumber, 'newsletter' => $newsletter],
+            ]);
+
+            Audit::record('crm.form_submission_held', $submission, ['form_id' => $form->id, 'submission_id' => $submission->id], $company);
+        });
+    }
+
+    /**
      * @param  array<string, ?string>  $data
      * @return array{?Activity, ?int}
      */
-    private function take(Company $company, Form $form, array $data, ?string $orgNumber, bool $newsletter): array
+    private function take(Company $company, Form $form, array $data, ?string $orgNumber, bool $newsletter, ?FormSubmission $held = null): array
     {
         $now = CarbonImmutable::now();
         $email = mb_strtolower((string) $data['email']);
@@ -149,8 +236,9 @@ final class SubmitForm
                 'email' => $email,
                 'phone' => $data['phone'] ?? null,
                 'legal_basis' => $newsletter ? LegalBasis::Consent : LegalBasis::LegitimateInterest,
-                'consent_at' => $newsletter ? $now->toDateString() : null,
-                'marketing_consent_at' => $newsletter && ! $objected ? $now : null,
+                // A held submission's consent was given when the form was sent, not when it was accepted.
+                'consent_at' => $newsletter ? ($held->consented_at ?? $now)->toDateString() : null,
+                'marketing_consent_at' => $newsletter && ! $objected ? ($held->consented_at ?? $now) : null,
                 'legal_basis_note' => mb_substr($newsletter
                     ? __('Samtycke via webbformuläret :form (version :version).', ['form' => $form->name, 'version' => $form->consent_version])
                     : __('Kontaktförfrågan via webbformuläret :form', ['form' => $form->name]), 0, 1000),
@@ -195,16 +283,26 @@ final class SubmitForm
             ]);
         }
 
-        FormSubmission::create([
-            'form_id' => $form->id,
-            'account_id' => $account?->id,
-            'person_id' => $person->id,
-            'consent_text' => $form->consent_text,
-            'consent_version' => $form->consent_version,
-            'privacy_url' => $form->privacy_url,
-            'consented_at' => $now,
-            'marketing_consent' => $newsletter,
-        ]);
+        if ($held instanceof FormSubmission) {
+            // The proof stays as it was when the form was sent: its text, version, link and time.
+            $held->forceFill([
+                'account_id' => $account?->id,
+                'person_id' => $person->id,
+                'quarantined_at' => null,
+                'held_payload' => null,
+            ])->save();
+        } else {
+            FormSubmission::create([
+                'form_id' => $form->id,
+                'account_id' => $account?->id,
+                'person_id' => $person->id,
+                'consent_text' => $form->consent_text,
+                'consent_version' => $form->consent_version,
+                'privacy_url' => $form->privacy_url,
+                'consented_at' => $now,
+                'marketing_consent' => $newsletter,
+            ]);
+        }
 
         Form::query()->whereKey($form->id)->increment('submission_count');
         Audit::record('crm.form_submitted', $task, ['form_id' => $form->id, 'account_id' => $account?->id, 'person_id' => $person->id, 'consent_version' => $form->consent_version, 'newsletter' => $newsletter, 'task' => $task !== null], $company);

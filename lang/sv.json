@@ -153,5 +153,6 @@
     "{0} Lägg till markerade|[1,*] Lägg till markerade (:count)": "{0} Lägg till markerade|[1,*] Lägg till markerade (:count)",
     "{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.": "{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.",
     "{1} ringd en gång förut|[2,*] ringd :count gånger förut": "{1} ringd en gång förut|[2,*] ringd :count gånger förut",
-    ":count anmälan|:count anmälningar": ":count anmälan|:count anmälningar"
+    ":count anmälan|:count anmälningar": ":count anmälan|:count anmälningar",
+    ":count anmälan kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.|:count anmälningar kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.": ":count anmälan kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.|:count anmälningar kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig."
 }

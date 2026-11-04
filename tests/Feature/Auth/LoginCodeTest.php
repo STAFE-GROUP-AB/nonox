@@ -9,7 +9,10 @@ use App\Mail\LoginCodeMail;
 use App\Models\LoginCode;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use App\Support\Auth\ClientAddressBucket;
 use App\Support\LoginCodeAutofill;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Livewire;
@@ -27,7 +30,7 @@ function sendCodeTo(string $email): string
 
     $code = null;
 
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -46,7 +49,7 @@ it('emails an eight-digit code and stores only its hash', function () {
     expect($stored->code_hash)->not->toBe($code)
         ->and($stored->code_hash)->toBe(LoginCode::hash($code));
 
-    Mail::assertSent(LoginCodeMail::class, fn (LoginCodeMail $mail) => $mail->hasTo('anna@example.com')
+    Mail::assertQueued(LoginCodeMail::class, fn (LoginCodeMail $mail) => $mail->hasTo('anna@example.com')
         && $mail->envelope()->subject === 'Din inloggningskod' && ! str_contains($mail->envelope()->subject, $code));
 });
 
@@ -57,7 +60,7 @@ it('sends at most one email when the code is requested twice within the cooldown
     $send('anna@example.com');
     $send('ANNA@example.com ');
 
-    Mail::assertSentCount(1);
+    Mail::assertQueuedCount(1);
     expect(LoginCode::where('email', 'anna@example.com')->count())->toBe(1);
 });
 
@@ -67,7 +70,7 @@ it('sends a new code after the cooldown and retires the old one', function () {
     $this->travel(61)->seconds();
     app(SendLoginCode::class)('anna@example.com');
 
-    Mail::assertSentCount(2);
+    Mail::assertQueuedCount(2);
     expect(app(VerifyLoginCode::class)('anna@example.com', $first))->toBeFalse();
 });
 
@@ -114,7 +117,7 @@ it('signs in an existing user with the emailed code', function () {
         ->assertSet('step', 'code');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -135,7 +138,7 @@ it('shows a Swedish error for a wrong code and stays signed out', function () {
         ->call('sendCode');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -153,10 +156,10 @@ it('sends no code and creates no account for an unknown address, and answers exa
     User::factory()->withCompany()->create(['email' => 'finns@example.com']);
 
     $unknown = Livewire::test(LoginForm::class)->set('email', 'okand@example.com')->call('sendCode')->assertHasNoErrors()->assertSet('step', 'code');
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
 
     $known = Livewire::test(LoginForm::class)->set('email', 'finns@example.com')->call('sendCode')->assertSet('step', 'code');
-    Mail::assertSentCount(1);
+    Mail::assertQueuedCount(1);
 
     $neutral = fn (string $html, string $email): string => str_replace($email, 'ADRESS', preg_replace('/wire:[a-z:.]+="[^"]*"|wire:id="[^"]*"|wire:snapshot="[^"]*"|wire:effects="[^"]*"/', '', $html) ?? '');
 
@@ -201,7 +204,7 @@ it('creates a verified account for an invited address without a name and sends i
         ->call('sendCode');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -232,7 +235,7 @@ it('skips the name step when an invitation already carries the name', function (
         ->call('sendCode');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -254,7 +257,7 @@ it('creates no account when the invitation is withdrawn before the name step', f
     $component = Livewire::test(LoginForm::class)->set('email', 'ny@example.com')->call('sendCode');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -277,7 +280,7 @@ it('sends no code for an expired invitation', function () {
 
     Livewire::test(LoginForm::class)->set('email', 'gammal@example.com')->call('sendCode')->assertSet('step', 'code');
 
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
 });
 
 it('creates the account for the verified address even if the email field is tampered with', function () {
@@ -289,7 +292,7 @@ it('creates the account for the verified address even if the email field is tamp
         ->call('sendCode');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;
@@ -318,7 +321,8 @@ it('refuses to skip straight to account creation without a verified code', funct
 
 it('signs in with one click when local autofill is on', function () {
     app()->detectEnvironment(fn () => 'local');
-    config(['auth.login_codes.autofill' => true, 'app.admin_email' => 'admin@example.com']);
+    // PASSKEYS_SKIP_LOCALLY follows OTP_AUTOFILL: the admin is an HQ admin, who otherwise needs a passkey.
+    config(['auth.login_codes.autofill' => true, 'auth.passkeys.skip_locally' => true, 'app.admin_email' => 'admin@example.com']);
     $admin = User::factory()->withCompany()->create(['email' => 'admin@example.com']);
 
     Livewire::test(LoginForm::class)
@@ -380,13 +384,105 @@ it('stops a session after too many wrong codes, without locking the owner out', 
         ->assertHasErrors(['code' => 'Koden stämmer inte eller har slutat gälla. Kontrollera mejlet eller skicka en ny kod.']);
 });
 
-it('caps the codes sent to one address per day', function () {
+it('keeps a code valid when a new one is requested within the cooldown', function () {
+    $code = sendCodeTo('anna@example.com');
+
+    $this->travel(30)->seconds();
+    app(SendLoginCode::class)('anna@example.com');
+
+    expect(app(VerifyLoginCode::class)('anna@example.com', $code))->toBeTrue();
+});
+
+it('queues the code mail, encrypted, so the answer takes as long for every address', function () {
+    expect(new LoginCodeMail('12345678'))
+        ->toBeInstanceOf(ShouldQueue::class)
+        ->toBeInstanceOf(ShouldBeEncrypted::class);
+});
+
+it('caps the codes sent to one address per day without refusing the owner', function () {
     User::factory()->create(['email' => 'daglig@example.test']);
-    RateLimiter::increment('login-code:day:daglig@example.test', 86400, LoginForm::MAX_SENDS_PER_DAY);
+    RateLimiter::increment(SendLoginCode::dayKey('daglig@example.test'), 86400, SendLoginCode::MAX_SENDS_PER_DAY);
 
     Livewire::test(LoginForm::class)->set('email', 'daglig@example.test')->call('sendCode')
+        ->assertHasNoErrors()
+        ->assertSet('step', 'code');
+    Mail::assertNothingOutgoing();
+});
+
+it('keeps the latest code valid when someone else exhausts the caps for an address', function () {
+    $user = User::factory()->withCompany()->create(['email' => 'offer@example.test']);
+    $code = sendCodeTo('offer@example.test');
+
+    // Someone asks for codes in the owner's name, past the cooldown and past the ten-minute cap.
+    RateLimiter::increment(SendLoginCode::tenMinuteKey('offer@example.test'), 600, SendLoginCode::MAX_SENDS_PER_TEN_MINUTES);
+    $this->travel(61)->seconds();
+
+    foreach (range(1, 3) as $attempt) {
+        Livewire::test(LoginForm::class)->set('email', 'offer@example.test')->call('sendCode')
+            ->assertHasNoErrors()
+            ->assertSet('step', 'code');
+    }
+
+    Mail::assertQueuedCount(1);
+
+    // The owner still signs in with the code in their inbox.
+    Livewire::test(LoginForm::class)->set('email', 'offer@example.test')->call('sendCode')
+        ->set('code', $code)
+        ->call('verify')
+        ->assertRedirect(route('dashboard'));
+
+    $this->assertAuthenticatedAs($user);
+});
+
+it('counts the service-wide cap only for mails that are sent', function () {
+    foreach (range(1, 5) as $attempt) {
+        Livewire::test(LoginForm::class)->set('email', "okand{$attempt}@example.test")->call('sendCode')->assertSet('step', 'code');
+    }
+
+    expect(RateLimiter::attempts(SendLoginCode::GLOBAL_KEY))->toBe(0);
+
+    User::factory()->create(['email' => 'finns@example.test']);
+    Livewire::test(LoginForm::class)->set('email', 'finns@example.test')->call('sendCode');
+
+    expect(RateLimiter::attempts(SendLoginCode::GLOBAL_KEY))->toBe(1);
+});
+
+it('cannot be locked for everyone by requests for unknown addresses', function () {
+    RateLimiter::increment(SendLoginCode::GLOBAL_KEY, 3600, SendLoginCode::MAX_SENDS_PER_HOUR_GLOBAL - 1);
+
+    foreach (range(1, 5) as $attempt) {
+        Livewire::test(LoginForm::class)->set('email', "okand{$attempt}@example.test")->call('sendCode');
+    }
+
+    User::factory()->create(['email' => 'finns@example.test']);
+    Livewire::test(LoginForm::class)->set('email', 'finns@example.test')->call('sendCode')->assertHasNoErrors();
+
+    Mail::assertQueued(LoginCodeMail::class, fn (LoginCodeMail $mail): bool => $mail->hasTo('finns@example.test'));
+});
+
+it('sends nothing and answers neutrally once the service-wide cap is reached', function () {
+    RateLimiter::increment(SendLoginCode::GLOBAL_KEY, 3600, SendLoginCode::MAX_SENDS_PER_HOUR_GLOBAL);
+    User::factory()->create(['email' => 'finns@example.test']);
+
+    Livewire::test(LoginForm::class)->set('email', 'finns@example.test')->call('sendCode')
+        ->assertHasNoErrors()
+        ->assertSet('step', 'code');
+
+    Mail::assertNothingOutgoing();
+});
+
+it('buckets IPv6 addresses by /64 for the per-address limit', function () {
+    expect(ClientAddressBucket::for('2001:db8:1:2::1'))->toBe('2001:db8:1:2::/64')
+        ->and(ClientAddressBucket::for('2001:db8:1:2:ffff:ffff:ffff:ffff'))->toBe('2001:db8:1:2::/64')
+        ->and(ClientAddressBucket::for('2001:db8:1:3::1'))->toBe('2001:db8:1:3::/64')
+        ->and(ClientAddressBucket::for('203.0.113.7'))->toBe('203.0.113.7')
+        ->and(ClientAddressBucket::for(null))->toBe('unknown');
+
+    // The form counts requests under the bucket of the client address (Livewire's test requests come from 127.0.0.1).
+    RateLimiter::increment('login-code:send:'.ClientAddressBucket::for('127.0.0.1'), 600, 10);
+
+    Livewire::test(LoginForm::class)->set('email', 'okand@example.test')->call('sendCode')
         ->assertHasErrors(['email' => 'För många försök. Vänta en stund och försök igen.']);
-    Mail::assertNothingSent();
 });
 
 it('never fills in codes on a server address, even with the local settings', function () {

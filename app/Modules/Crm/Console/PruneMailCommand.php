@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Console;
 
+use App\Modules\Crm\Actions\SubmitForm;
 use App\Modules\Crm\Domain\EmailStatus;
 use App\Modules\Crm\Models\Email;
+use App\Modules\Crm\Models\FormSubmission;
 use App\Modules\Crm\Models\Mailing;
 use App\Modules\Crm\Models\MailingRecipient;
 use App\Modules\Crm\Support\SuppressionList;
@@ -23,9 +25,11 @@ use Illuminate\Console\Command;
  *   give way to the suppression list's keyed hash of the address: a stub
  *   that keeps the unsubscribe link in the message working
  *   (marknadsföringslagen 20 §) without saying who it was for;
- * - after three years the stub goes too; the mailing keeps its counts.
+ * - after three years the stub goes too; the mailing keeps its counts;
+ * - a web form submission held over a cap (SubmitForm) that nobody
+ *   accepted or deleted is removed after 14 days.
  *
- * TODO(legal-verify): the 30-day, 90-day and three-year periods
+ * TODO(legal-verify): the 14-day, 30-day, 90-day and three-year periods
  * (docs/gdpr/lagringstider.md).
  */
 class PruneMailCommand extends Command
@@ -45,7 +49,7 @@ class PruneMailCommand extends Command
         $now = CarbonImmutable::now();
 
         // Retention runs over every company's rows at once; nothing is read across companies, only removed by age.
-        [$waiting, $orphans, $addresses, $rows] = CompanyScope::bypass(function () use ($now): array {
+        [$waiting, $orphans, $addresses, $rows, $held] = CompanyScope::bypass(function () use ($now): array {
             $this->info('Removing unhandled e-mail...');
             $waiting = Email::query()->whereIn('status', [EmailStatus::Unmatched->value, EmailStatus::Held->value])->where('created_at', '<', $now->subDays(self::WAITING_DAYS))->delete();
 
@@ -74,10 +78,13 @@ class PruneMailCommand extends Command
 
             $rows = MailingRecipient::query()->whereIn('mailing_id', $finished($now->subYears(self::RECIPIENT_YEARS)))->delete();
 
-            return [$waiting, $orphans, $addresses, $rows];
+            $this->info('Removing held web form submissions nobody reviewed...');
+            $held = FormSubmission::query()->held()->where('quarantined_at', '<', $now->subDays(SubmitForm::QUARANTINE_DAYS))->delete();
+
+            return [$waiting, $orphans, $addresses, $rows, $held];
         });
 
-        $this->comment("Removed {$waiting} unhandled and {$orphans} unlinked e-mails, {$addresses} recipients made stubs and {$rows} stubs removed.");
+        $this->comment("Removed {$waiting} unhandled and {$orphans} unlinked e-mails, {$addresses} recipients made stubs, {$rows} stubs and {$held} held form submissions removed.");
 
         return self::SUCCESS;
     }

@@ -46,6 +46,15 @@ it('signs out every other session but keeps this one', function () {
         ->assertRedirect(route('login'));
 });
 
+it('says next to the button that API keys and connected apps keep working, with a link to Anslutningar', function () {
+    $user = User::factory()->withCompany()->create();
+    $this->actingAs($user);
+
+    Livewire::test(SignOutEverywhere::class)
+        ->assertSee('API-nycklar och anslutna appar påverkas inte')
+        ->assertSeeHtml('href="'.route('connect.index').'"');
+});
+
 it('keeps employees who only use Min sida out of staff pages', function () {
     [$owner, $company] = Bookkeeping::company();
     CurrentCompany::set($company);

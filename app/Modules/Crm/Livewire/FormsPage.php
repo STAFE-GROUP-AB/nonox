@@ -6,9 +6,11 @@ namespace App\Modules\Crm\Livewire;
 
 use App\Livewire\Concerns\ShowsToasts;
 use App\Modules\Crm\Actions\SaveForm;
+use App\Modules\Crm\Actions\SubmitForm;
 use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Livewire\Concerns\ActsInCompany;
 use App\Modules\Crm\Models\Form;
+use App\Modules\Crm\Models\FormSubmission;
 use App\Modules\Crm\Support\CompanyMembers;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -17,7 +19,8 @@ use Livewire\Component;
 /**
  * Webbformulär (ADR-048): forms that create leads, with their address, an
  * iframe snippet for the company's own site and the number of
- * submissions. crm:settings.
+ * submissions, and the submissions held while a cap was reached, to accept
+ * or delete (SubmitForm). crm:settings.
  */
 class FormsPage extends Component
 {
@@ -92,9 +95,31 @@ class FormsPage extends Component
         $this->toast(__('Formuläret är borttaget.'));
     }
 
+    /** Takes a submission held while the form's or the company's cap was reached as a lead. */
+    public function acceptHeld(int $id, SubmitForm $submit): void
+    {
+        $this->authorizeSettings();
+        $submit->accept($this->user(), $this->company(), FormSubmission::query()->held()->findOrFail($id));
+
+        $this->toast(__('Anmälan är mottagen: prospekt, kontaktperson och uppgift är skapade.'));
+    }
+
+    /** Deletes a held submission and what was typed in it. */
+    public function discardHeld(int $id, SubmitForm $submit): void
+    {
+        $this->authorizeSettings();
+        $submit->discard($this->user(), $this->company(), FormSubmission::query()->held()->findOrFail($id));
+
+        $this->toast(__('Anmälan är borttagen.'));
+    }
+
     public function render(): View
     {
         return view('crm::livewire.forms', [
+            // At most a page of held submissions, oldest first; the form is eager-loaded for its name.
+            'held' => FormSubmission::query()->held()->with('form')->orderBy('quarantined_at')->orderBy('id')->limit(50)->get(),
+            'heldCount' => FormSubmission::query()->held()->count(),
+            'heldDays' => SubmitForm::QUARANTINE_DAYS,
             'forms' => Form::query()->orderBy('name')->get(),
             'members' => CompanyMembers::all($this->company()),
             'labels' => ['phone' => __('Telefon'), 'company' => __('Företag'), 'org_number' => __('Organisationsnummer'), 'message' => __('Meddelande')],

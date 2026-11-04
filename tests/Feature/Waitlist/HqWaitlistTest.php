@@ -186,7 +186,7 @@ it('lets an approved applicant log in with a code and sends them on to create th
     $component = Livewire::test(LoginForm::class)->set('email', 'kim@example.test')->call('sendCode')->assertSet('step', 'code');
 
     $code = null;
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code): bool {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code): bool {
         $code = $mail->code;
 
         return $mail->hasTo('kim@example.test');

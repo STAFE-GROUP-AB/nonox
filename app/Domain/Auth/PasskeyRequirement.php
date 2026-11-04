@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\CompanyModule;
 use App\Models\User;
 use App\Modules\ModuleRegistry;
+use App\Support\Hq\HqAccess;
 use App\Support\Tenancy\CompanyScope;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 
@@ -45,6 +46,11 @@ final class PasskeyRequirement
      */
     public static function appliesTo(User $user): bool
     {
+        // An HQ admin reads every company and user of the instance (ADR-038): never on an email code alone (security review 2026-11-04).
+        if (HqAccess::allows($user)) {
+            return true;
+        }
+
         // Members are loaded once for all companies: the permission check reads each company's members.
         $companies = (new EloquentCollection($user->companies()->all()))->loadMissing('users');
 

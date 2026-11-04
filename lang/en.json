@@ -8692,5 +8692,14 @@
     "Räkenskapsåret :period är skapat": "The fiscal year :period has been created",
     "Det förra året stängs fortfarande i bokslutet.": "The previous year is still closed in the year-end closing.",
     "Öppna Räkenskapsår": "Open Fiscal years",
-    "Nästa räkenskapsår skapas automatiskt 30 dagar innan det senaste året slutar, om det är ett vanligt år på tolv månader. Bokslutet och de ingående balanserna gör du själv, som tidigare.": "The next fiscal year is created automatically 30 days before the latest year ends, if it is an ordinary twelve-month year. You still do the year-end closing and the opening balances yourself."
+    "Nästa räkenskapsår skapas automatiskt 30 dagar innan det senaste året slutar, om det är ett vanligt år på tolv månader. Bokslutet och de ingående balanserna gör du själv, som tidigare.": "The next fiscal year is created automatically 30 days before the latest year ends, if it is an ordinary twelve-month year. You still do the year-end closing and the opening balances yourself.",
+    "API-nycklar och anslutna appar påverkas inte: de fortsätter fungera tills du tar bort dem.": "API keys and connected apps are not affected: they keep working until you remove them.",
+    "Hantera dem under Anslutningar": "Manage them under Connections",
+    "Anmälan är mottagen: prospekt, kontaktperson och uppgift är skapade.": "The submission is accepted: the prospect, contact person and task are created.",
+    "Anmälan är borttagen.": "The submission is deleted.",
+    "Anmälningar att granska": "Submissions to review",
+    ":count anmälan kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.|:count anmälningar kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.": ":count submission came in while the form was receiving unusually many in a short time and is waiting for you.|:count submissions came in while the form was receiving unusually many in a short time and are waiting for you.",
+    "Inget prospekt och ingen uppgift skapas förrän du tar emot anmälan. Det kan vara skräp. Det som inte granskas tas bort efter :days dagar.": "No prospect and no task is created until you accept the submission. It may be spam. Anything not reviewed is deleted after :days days.",
+    "Ta bort anmälan? Det som skrevs i formuläret raderas och kan inte återställas.": "Delete the submission? What was typed in the form is erased and cannot be restored.",
+    "Visar de :shown äldsta av :count.": "Showing the :shown oldest of :count."
 }

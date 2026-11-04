@@ -272,12 +272,13 @@ composer install
 cp .env.example .env
 ```
 
-Öppna nu filen `.env` i en textredigerare. Den är inställd för en server, så ändra först tre rader för din egen dator:
+Öppna nu filen `.env` i en textredigerare. Den är inställd för en server, så ändra först fyra rader för din egen dator:
 
 ```dotenv
 APP_ENV=local        # guiden för första start och automatisk inloggningskod fungerar bara lokalt
 APP_DEBUG=true       # visar felets detaljer i webbläsaren, aldrig på en server
 OTP_AUTOFILL=true    # fyller i inloggningskoden åt dig
+SESSION_SECURE_COOKIE=false  # inloggningen fungerar då över http://….test; en server använder alltid https
 ```
 
 `OTP_AUTOFILL=true` hoppar också över passkey-steget lokalt, eftersom passkeys kräver en säker adress och `http://….test` inte är det. Vill du prova passkeys lokalt: sätt `PASSKEYS_SKIP_LOCALLY=false` och öppna NONOX på `http://localhost:8000` (`php artisan serve`, med `APP_URL=http://localhost:8000`).

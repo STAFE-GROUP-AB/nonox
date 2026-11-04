@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\AuditLog;
 use App\Modules\Crm\Actions\LinkPerson;
 use App\Modules\Crm\Actions\SaveForm;
+use App\Modules\Crm\Actions\SubmitForm;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Http\PublicFormController;
@@ -20,10 +21,13 @@ use App\Modules\Crm\Support\SuppressionList;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
 
@@ -131,7 +135,104 @@ it('takes nothing from a filled honeypot, a form sent too fast or too late, or b
         submitForm($this->form, [...$valid, 'email' => "person{$i}@lead.example"]);
     }
 
-    expect(Person::query()->count())->toBe(5);
+    // The sixth from the same address is dropped, not held: that limit only stops the one sending.
+    expect(Person::query()->count())->toBe(5)
+        ->and(FormSubmission::query()->held()->count())->toBe(0);
+});
+
+it('holds a submission over the form\'s shared cap for review instead of dropping it, and creates nothing yet', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    auth()->logout();
+
+    submitForm($this->form, ['name' => 'Rut Riktig', 'email' => 'rut@lead.example', 'phone' => '070-111 22 33', 'message' => 'Ring mig.', 'newsletter' => '1'])
+        ->assertOk()->assertSee('Tack!');
+
+    CurrentCompany::set($this->company);
+    $held = FormSubmission::query()->held()->sole();
+
+    expect(Person::query()->count())->toBe(0)
+        ->and(Account::query()->count())->toBe(0)
+        ->and(Activity::query()->count())->toBe(0)
+        ->and($held->person_id)->toBeNull()
+        ->and($held->held_payload['data']['email'] ?? null)->toBe('rut@lead.example')
+        ->and($held->marketing_consent)->toBeTrue()
+        ->and($this->form->fresh()->submission_count)->toBe(0)
+        ->and(DB::table('crm_form_submissions')->value('held_payload'))->not->toContain('rut@lead.example')
+        ->and(json_encode(AuditLog::query()->where('action', 'crm.form_submission_held')->sole()->payload))->not->toContain('rut');
+    Mail::assertNothingSent();
+
+    // The company's cap holds too.
+    RateLimiter::clear('crm-form:'.$this->form->id);
+    RateLimiter::increment('crm-form-company:'.$this->company->id, 3600, 200);
+    submitForm($this->form, ['name' => 'Sam', 'email' => 'sam@lead.example', 'message' => 'Hej'])->assertOk();
+
+    expect(FormSubmission::query()->held()->count())->toBe(2);
+});
+
+it('shows held submissions to the form owner, who accepts one as a lead with its original consent time', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Rut Riktig', 'email' => 'rut@lead.example', 'message' => 'Ring mig.', 'newsletter' => '1']);
+    $this->travel(2)->days();
+
+    CurrentCompany::set($this->company);
+    $held = FormSubmission::query()->held()->sole();
+
+    Livewire::test(FormsPage::class)
+        ->assertSee('Anmälningar att granska')
+        ->assertSee('Rut Riktig')
+        ->assertSee('rut@lead.example')
+        ->call('acceptHeld', $held->id)
+        ->assertDispatched('toast')
+        ->assertDontSee('Anmälningar att granska');
+
+    $person = Person::query()->sole();
+    $submission = $held->fresh();
+
+    expect($person->email)->toBe('rut@lead.example')
+        ->and($person->legal_basis->value)->toBe('CONSENT')
+        ->and($person->consent_at?->toDateString())->toBe('2026-06-15')
+        ->and(Activity::query()->sole()->body)->toContain('Ring mig.')
+        ->and($submission->quarantined_at)->toBeNull()
+        ->and($submission->held_payload)->toBeNull()
+        ->and($submission->person_id)->toBe($person->id)
+        ->and($submission->consented_at->toDateString())->toBe('2026-06-15')
+        ->and($this->form->fresh()->submission_count)->toBe(1)
+        ->and(AuditLog::query()->where('action', 'crm.form_submission_accepted')->exists())->toBeTrue();
+    Mail::assertSent(FormLeadMail::class);
+});
+
+it('deletes a held submission on request, and removes unreviewed ones after 14 days', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Skräp', 'email' => 'skrap@spam.example', 'message' => 'x']);
+    submitForm($this->form, ['name' => 'Glömd', 'email' => 'glomd@lead.example', 'message' => 'y'], 20);
+
+    CurrentCompany::set($this->company);
+    $first = FormSubmission::query()->held()->orderBy('id')->first();
+
+    Livewire::test(FormsPage::class)->call('discardHeld', $first->id)->assertDispatched('toast');
+
+    expect(FormSubmission::query()->held()->count())->toBe(1)
+        ->and(Person::query()->count())->toBe(0)
+        ->and(AuditLog::query()->where('action', 'crm.form_submission_discarded')->exists())->toBeTrue();
+
+    $this->travel(13)->days();
+    $this->artisan('crm:prune-mail')->assertSuccessful();
+    expect(FormSubmission::query()->held()->count())->toBe(1);
+
+    $this->travel(2)->days();
+    $this->artisan('crm:prune-mail')->assertSuccessful();
+    expect(FormSubmission::query()->held()->count())->toBe(0);
+});
+
+it('lets only crm:settings review held submissions', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Rut', 'email' => 'rut@lead.example', 'message' => 'Hej']);
+    CurrentCompany::set($this->company);
+    $held = FormSubmission::query()->held()->sole();
+
+    expect(fn () => app(SubmitForm::class)->accept(Bookkeeping::member($this->company, 'sales'), $this->company, $held))
+        ->toThrow(HttpException::class);
+    expect(Person::query()->count())->toBe(0);
 });
 
 it('never changes the documented legal basis of a person the CRM already has', function () {

@@ -25,8 +25,10 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Puts someone on the waiting list of the open beta (ADR-038). Idempotent
- * per e-mail address: sending the form again updates the live entry instead
- * of adding one, and an approved entry is left as it is. The caller always
+ * per e-mail address: sending the form again for an address with a live
+ * entry (open or approved) leaves that entry exactly as it is, since anyone
+ * who knows the address could send the form (security review 2026-11-04).
+ * The caller always
  * shows the same answer, so the form does not reveal whether an address is
  * already in the queue.
  */
@@ -75,10 +77,7 @@ class JoinWaitlist
                 return WaitlistEntry::create([...$attributes, 'status' => WaitlistStatus::Pending]);
             }
 
-            if ($existing->status->isOpen()) {
-                $existing->update($attributes);
-            }
-
+            // An entry already in the queue is left as it is: the form proves nothing about who sends it.
             return null;
         }));
 

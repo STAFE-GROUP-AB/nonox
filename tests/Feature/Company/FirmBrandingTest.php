@@ -225,14 +225,14 @@ it('sends the login code in the firm\'s brand to the client side, and plain to t
     Livewire::test(LoginForm::class)->set('email', $this->clientOwner->email)->call('sendCode');
     Livewire::test(LoginForm::class)->set('email', $this->consultant->email)->call('sendCode');
 
-    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail): bool {
+    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail): bool {
         // The logo is an inline attachment (cid: when sent; a preview renders it as data).
         return $mail->hasTo($this->clientOwner->email)
             && $mail->mailBrand?->firmName === 'Byrå AB'
             && str_contains($mail->render(), 'Byrå AB · för Kund AB')
             && preg_match('/<img src="(cid:|data:image\/png)/', $mail->render()) === 1;
     });
-    Mail::assertSent(LoginCodeMail::class, fn (LoginCodeMail $mail): bool => $mail->hasTo($this->consultant->email) && $mail->mailBrand === null && ! str_contains($mail->render(), 'Byrå AB'));
+    Mail::assertQueued(LoginCodeMail::class, fn (LoginCodeMail $mail): bool => $mail->hasTo($this->consultant->email) && $mail->mailBrand === null && ! str_contains($mail->render(), 'Byrå AB'));
 });
 
 it('shows the firm\'s brand on the login page reached from an invitation to the client', function () {

@@ -142,13 +142,14 @@ it('shows the same thank-you to a filled-in honeypot but stores nothing', functi
     Mail::assertNothingQueued();
 });
 
-it('updates the live entry when the same address sends the form again, with the same answer', function () {
+it('leaves an open entry unchanged when the same address sends the form again, with the same answer', function () {
     fillWaitlist()->call('submit')->assertSet('done', true);
-    fillWaitlist(['email' => ' KIM@example.test ', 'company_name' => 'Nytt namn AB'])->call('submit')->assertSet('done', true)->assertSee('Du står i kö');
+    $before = WaitlistEntry::query()->sole()->only(['name', 'company_name', 'phone', 'consent_at', 'ip_hash']);
 
-    $entry = WaitlistEntry::query()->sole();
+    // Anyone who knows the address could otherwise overwrite the applicant's answers (security review 2026-11-04).
+    fillWaitlist(['email' => ' KIM@example.test ', 'company_name' => 'Nytt namn AB', 'name' => 'Någon annan'])->call('submit')->assertSet('done', true)->assertSee('Du står i kö');
 
-    expect($entry->company_name)->toBe('Nytt namn AB');
+    expect(WaitlistEntry::query()->sole()->only(['name', 'company_name', 'phone', 'consent_at', 'ip_hash']))->toEqual($before);
     Mail::assertQueuedCount(1);
 });
 

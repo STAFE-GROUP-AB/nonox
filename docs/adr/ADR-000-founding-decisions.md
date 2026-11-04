@@ -39,6 +39,15 @@ owner, admin and accountant roles.
 - Locally (`APP_ENV=local`, controlled by `OTP_AUTOFILL=true`) the code is
   filled in and verified automatically, and the email field is prefilled with the
   seeded admin address, so local sign-in is one click.
+- Addendum (security review 2026-11-04): the caps that keep the form from
+  flooding inboxes count mails actually sent (5 per address in ten minutes,
+  20 per address and day, 500 for the service per hour), not requests. A
+  reached cap never refuses: nothing new is sent and the latest code stays
+  valid, so asking for codes in someone else's name cannot lock them out, and
+  requests for unknown addresses cannot use up the service-wide cap. Only the
+  per-IP request limit (IPv6 counted per /64) answers "För många försök". The
+  code mail is queued (and encrypted on the queue), so the answer takes as
+  long whether or not an address has an account.
 
 `AGENTS.md` §2 and task T-0.3 were updated accordingly. §1 is unaffected.
 

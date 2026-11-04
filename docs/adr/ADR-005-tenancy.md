@@ -52,3 +52,15 @@ Each guard was removed once on purpose to confirm the suite fails without it.
   by a test that scans `app/`.
 - API tokens bound to a company are resolved in §12 (marked TODO in
   `CurrentCompany`).
+
+## Addendum (2026-11-04): Livewire components for a non-current company
+
+`LivewireCompanyGuard` ties every Livewire component to the current company
+and the user's access fingerprint there, in the signed memo. The settings
+page `/foretag/{company}` also renders forms for a company the user belongs
+to but has not switched to. Such a component names its company in a
+`#[Locked] companyId` or a `Company` property; the guard then also keeps that
+company and the user's fingerprint in it in the memo, and a later request
+answers 404 unless the user still belongs to that company with the same
+access. A snapshot replayed after the user was removed from the company, or
+lost the role, no longer shows its data.

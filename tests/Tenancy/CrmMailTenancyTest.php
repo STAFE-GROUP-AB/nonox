@@ -19,6 +19,7 @@ use App\Modules\Crm\Livewire\TemplatesPage;
 use App\Modules\Crm\Models\Email;
 use App\Modules\Crm\Models\EmailTemplate;
 use App\Modules\Crm\Models\Form;
+use App\Modules\Crm\Models\FormSubmission;
 use App\Modules\Crm\Models\Mailing;
 use App\Modules\Crm\Models\MailingLink;
 use App\Modules\Crm\Models\MailingRecipient;
@@ -30,6 +31,7 @@ use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
@@ -153,4 +155,18 @@ it('keeps every public endpoint inside the company its token or id belongs to', 
     $this->post("/formular/{$form->token}", ['t' => PublicFormController::stamp($form, now()->getTimestamp() - 10), 'name' => 'Ny', 'email' => 'ny@lead.example'])->assertOk();
     expect(CurrentCompany::run($this->b['company'], fn () => Person::query()->where('email', 'ny@lead.example')->exists()))->toBeTrue()
         ->and(CurrentCompany::run($this->a['company'], fn () => Person::query()->where('email', 'ny@lead.example')->exists()))->toBeFalse();
+});
+
+it('keeps B\'s held form submissions out of A\'s review: not listed, and 404 on accept or delete', function () {
+    $form = $this->b['form'];
+    RateLimiter::increment('crm-form:'.$form->id, 3600, 60);
+    $this->post("/formular/{$form->token}", ['t' => PublicFormController::stamp($form, now()->getTimestamp() - 10), 'name' => 'Hållen Beta', 'email' => 'hallen@lead.example'])->assertOk();
+    $heldId = CurrentCompany::run($this->b['company'], fn () => FormSubmission::query()->held()->sole()->id);
+
+    expect(FormSubmission::query()->held()->count())->toBe(0);
+
+    Livewire::test(FormsPage::class)->assertDontSee('Hållen Beta')->call('acceptHeld', $heldId)->assertNotFound();
+    Livewire::test(FormsPage::class)->call('discardHeld', $heldId)->assertNotFound();
+
+    expect(CurrentCompany::run($this->b['company'], fn () => FormSubmission::query()->held()->count()))->toBe(1);
 });

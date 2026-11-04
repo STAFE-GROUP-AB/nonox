@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Auth\PasskeyRequirement;
 use App\Domain\Company\LegalForm;
 use App\Domain\Waitlist\WaitlistStatus;
 use App\Livewire\Hq\CustomerCompany;
@@ -68,6 +69,18 @@ it('shows HQ with Kö and Kunder in the sidebar of an HQ admin, whatever company
     $this->admin->fresh()->switchCompany($this->companyB);
 
     $this->get(route('dashboard'))->assertOk()->assertSee('href="'.route('hq.waitlist').'"', false);
+});
+
+it('lets an HQ admin read nothing in HQ on an email code alone: first a passkey, registered if there is none', function () {
+    // Signed in with the code only, not with a passkey (be() leaves the passkey step open).
+    $this->be($this->admin);
+
+    $this->get(route('hq.customers'))->assertRedirect(route('passkeys.challenge'));
+    $this->get(route('hq.waitlist'))->assertRedirect(route('passkeys.challenge'));
+    $this->get(route('passkeys.challenge'))->assertOk()->assertSee('Lägg till en passkey');
+
+    expect(PasskeyRequirement::appliesTo($this->admin))->toBeTrue()
+        ->and(PasskeyRequirement::appliesTo(User::factory()->withCompany()->create()))->toBeFalse();
 });
 
 it('hides HQ from everyone who is not an HQ admin', function () {

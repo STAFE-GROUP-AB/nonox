@@ -38,7 +38,19 @@ Ett webbformulär lägger ni på er egen webbplats. När någon fyller i det ska
 
 ## Skräppost
 
-Formuläret stoppar robotar utan skript från andra: ett dolt fält, en kontroll av hur snabbt formuläret skickas och en gräns för hur många anmälningar som tas emot. Det som stoppas får samma tack-sida men sparas inte.
+Formuläret stoppar robotar utan skript från andra: ett dolt fält, en kontroll av hur snabbt formuläret skickas och en gräns för hur många anmälningar som tas emot från samma uppkoppling. Det som stoppas får samma tack-sida men sparas inte.
+
+## Anmälningar att granska
+
+Formuläret har också en gräns för hur många anmälningar det tar emot per timme, och ert företag har en gemensam gräns för alla formulär. Kommer det fler än så, till exempel när någon fyller formuläret med skräp, stoppas inte de riktiga anmälningarna. De sparas i stället för granskning:
+
+- Inget prospekt, ingen kontaktperson och ingen uppgift skapas, och ingen får mejl.
+- Överst på **CRM → Webbformulär** visas **Anmälningar att granska** med namn, e-post, formulär, tid och meddelande.
+- Välj **Ta emot** för en riktig anmälan. Då skapas prospekt, kontaktperson och uppgift som vanligt, med samtycket från när formuläret skickades.
+- Välj **Ta bort** för skräp. Det som skrevs raderas.
+- Det som ingen har granskat tas bort automatiskt efter 14 dagar.
+
+Den som får ändra CRM-inställningarna kan granska.
 
 ## Bra att veta
 

@@ -16,6 +16,7 @@ En passkey sparas i din enhet, inte i NONOX. NONOX sparar bara en offentlig nyck
 
 - Den som kan se sjukfrånvaro, lönebesked eller fullständiga personnummer, i något av sina företag. Det följer av rollen; se [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter#passkey-for-kansliga-uppgifter).
 - Alla i ett företag där ägaren har slagit på **Kräv passkey för alla i företaget**.
+- Den som sköter installationen i HQ, eftersom HQ visar alla företag och användare.
 
 Alla andra kan lägga till en passkey frivilligt. När du har en frågar NONOX efter den varje gång du loggar in.
 
@@ -66,6 +67,8 @@ Har du tappat bort telefonen eller loggat in på en dator som inte är din?
 2. Under **Inloggningar** klickar du på **Logga ut från andra enheter** och bekräftar.
 
 Du är kvar inloggad där du är; alla andra inloggningar avslutas. En inloggning gäller annars i högst tolv timmar, och kortare om den inte används.
+
+API-nycklar och anslutna appar påverkas inte: de fortsätter fungera tills du tar bort dem. Det gör du under [Anslutningar](/manual/installningar/nonox-connect), via länken **Hantera dem under Anslutningar** bredvid knappen.
 
 ## Vanliga frågor
 
