@@ -32,15 +32,15 @@ beforeEach(function () {
 
     [$this->ownerA, $this->a] = PeppolFixtures::company();
     [$this->ownerB, $this->b] = Bookkeeping::company();
-    // The golden invoice is addressed to 0007:5566778808, which is B.
-    $this->b->forceFill(['org_number' => '556677-8808', 'vat_number' => 'SE556677880801'])->save();
+    // The golden invoice is addressed to 0007:5563343689, which is B.
+    $this->b->forceFill(['org_number' => '556334-3689', 'vat_number' => 'SE556334368901'])->save();
 
     Peppol::ready($this->a, $this->ownerA, 'acct-A', receive: true);
     Peppol::ready($this->b->fresh(), $this->ownerB, 'acct-B', receive: true);
 
     CurrentCompany::set($this->b);
     $this->actingAs($this->ownerB);
-    $customer = PeppolFixtures::customer($this->ownerB, $this->b, ['peppol_id' => '0007:5599000006']);
+    $customer = PeppolFixtures::customer($this->ownerB, $this->b, ['peppol_id' => '0007:5599996013']);
     $this->invoiceB = PeppolFixtures::invoice($this->ownerB, $this->b, $customer, [['description' => 'Arbete', 'quantity' => '1', 'unit' => 'st', 'price' => '1 000', 'vat_rate' => 2500]]);
     app(SendInvoiceViaPeppol::class)($this->ownerB, $this->invoiceB);
 

@@ -1014,7 +1014,7 @@ function peppolTransmissionAttributes(): array
     return [
         'invoice_id' => Invoice::create(invoiceAttributes())->id,
         'document_type' => 'INVOICE',
-        'receiver' => '0007:5566778808',
+        'receiver' => '0007:5563343689',
         'status' => 'SENT',
         'driver' => 'log',
         'xml_path' => 'peppol/hemlig.xml',

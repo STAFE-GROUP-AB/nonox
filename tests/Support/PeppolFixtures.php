@@ -22,9 +22,9 @@ use Carbon\CarbonImmutable;
  */
 final class PeppolFixtures
 {
-    public const string SELLER_ORG = '5599000006';
+    public const string SELLER_ORG = '5599996013';
 
-    public const string BUYER_ORG = '5566778808';
+    public const string BUYER_ORG = '5563343689';
 
     /** @return array{0: User, 1: Company} */
     public static function company(): array
@@ -34,8 +34,8 @@ final class PeppolFixtures
         $company->forceFill([
             'name' => 'Exempelbolaget',
             'legal_name' => 'Exempelbolaget AB',
-            'org_number' => '559900-0006',
-            'vat_number' => 'SE559900000601',
+            'org_number' => '559999-6013',
+            'vat_number' => 'SE559999601301',
             'address_line1' => 'Provgatan 1',
             'address_line2' => null,
             'postal_code' => '111 11',
@@ -60,8 +60,8 @@ final class PeppolFixtures
     {
         return app(SaveCustomer::class)($owner, $company, [
             'name' => 'Kundbolaget AB',
-            'org_number' => '556677-8808',
-            'vat_number' => 'SE556677880801',
+            'org_number' => '556334-3689',
+            'vat_number' => 'SE556334368901',
             'address_line1' => 'Kundvägen 2',
             'postal_code' => '222 22',
             'city' => 'Malmö',

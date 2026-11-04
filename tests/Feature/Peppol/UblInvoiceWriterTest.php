@@ -189,14 +189,14 @@ it('maps Swedish units to UN/ECE Recommendation 20', function () {
 });
 
 it('reads and validates participant identifiers', function () {
-    expect(PeppolIdentifier::tryFrom('0007:559900-0006')?->toString())->toBe('0007:5599000006')
-        ->and(PeppolIdentifier::tryFrom('iso6523-actorid-upis::0007:5599000006')?->toString())->toBe('0007:5599000006')
+    expect(PeppolIdentifier::tryFrom('0007:559999-6013')?->toString())->toBe('0007:5599996013')
+        ->and(PeppolIdentifier::tryFrom('iso6523-actorid-upis::0007:5599996013')?->toString())->toBe('0007:5599996013')
         ->and(PeppolIdentifier::tryFrom('0007:5599000007'))->toBeNull()
         ->and(PeppolIdentifier::tryFrom('0088:7300009000005')?->value)->toBe('7300009000005')
         ->and(PeppolIdentifier::tryFrom('0088:7300009000006'))->toBeNull()
-        ->and(PeppolIdentifier::tryFrom('9955:SE559900000601'))->toBeNull()
+        ->and(PeppolIdentifier::tryFrom('9955:SE559999601301'))->toBeNull()
         ->and(PeppolIdentifier::tryFrom('9930:DE123456789')?->urn())->toBe('iso6523-actorid-upis::9930:DE123456789')
-        ->and(PeppolIdentifier::tryFrom('5599000006'))->toBeNull();
+        ->and(PeppolIdentifier::tryFrom('5599996013'))->toBeNull();
 });
 
 it('catches documents that break the rules', function () {

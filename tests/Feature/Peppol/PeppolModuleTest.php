@@ -83,7 +83,7 @@ describe('the company settings', function () {
     it('takes the company\'s own organisation number or a GLN, never another company\'s number', function () {
         $save = app(SavePeppolSettings::class);
 
-        expect($save($this->owner, $this->company, '0007:559900-0006', false)->identifier)->toBe('0007:5599000006')
+        expect($save($this->owner, $this->company, '0007:559999-6013', false)->identifier)->toBe('0007:5599996013')
             ->and($save($this->owner, $this->company, '0088:7300009000005', false)->identifier)->toBe('0088:7300009000005')
             ->and(fn () => $save($this->owner, $this->company, '0007:'.PeppolFixtures::BUYER_ORG, false))->toThrow(ValidationException::class, 'eget organisationsnummer')
             ->and(fn () => $save($this->owner, $this->company, '9930:DE123456789', false))->toThrow(ValidationException::class);
@@ -100,25 +100,25 @@ describe('the company settings', function () {
     it('needs the inbox to receive, and consent to register', function () {
         $save = app(SavePeppolSettings::class);
 
-        expect(fn () => $save($this->owner, $this->company, '0007:5599000006', true))->toThrow(ValidationException::class, 'Inkorg');
+        expect(fn () => $save($this->owner, $this->company, '0007:5599996013', true))->toThrow(ValidationException::class, 'Inkorg');
 
         app(ModuleManager::class)->enable('inbox', $this->company, $this->owner);
-        expect(fn () => $save($this->owner, $this->company, '0007:5599000006', true, register: true))->toThrow(ValidationException::class, 'godkänner');
+        expect(fn () => $save($this->owner, $this->company, '0007:5599996013', true, register: true))->toThrow(ValidationException::class, 'godkänner');
 
-        $waiting = $save($this->owner, $this->company, '0007:5599000006', true, register: true, consent: true);
+        $waiting = $save($this->owner, $this->company, '0007:5599996013', true, register: true, consent: true);
         expect($waiting->registration_status)->toBe(RegistrationStatus::Pending)
             ->and($waiting->consent_by)->toBe($this->owner->id);
 
         Peppol::ready($this->company, $this->owner, 'acct-A', receive: true);
-        $registered = $save($this->owner, $this->company, '0007:5599000006', true, register: true, consent: true);
+        $registered = $save($this->owner, $this->company, '0007:5599996013', true, register: true, consent: true);
         expect($registered->registration_status)->toBe(RegistrationStatus::Registered)
             ->and(AuditLog::query()->where('action', 'peppol.registered')->exists())->toBeTrue();
     });
 
     it('is a settings form for those who manage settings', function () {
         Livewire::test(PeppolSettingsForm::class, ['company' => $this->company])
-            ->assertSet('identifier', '0007:5599000006')
-            ->set('identifier', '0007:5599000006')
+            ->assertSet('identifier', '0007:5599996013')
+            ->set('identifier', '0007:5599996013')
             ->call('save')
             ->assertHasNoErrors();
 
@@ -171,15 +171,15 @@ describe('sole traders and personal data', function () {
 describe('the customer register', function () {
     it('validates the Peppol ID and derives it from a Swedish organisation number', function () {
         $save = app(SaveCustomer::class);
-        $derived = $save($this->owner, $this->company, ['name' => 'Kommunen', 'org_number' => '212000-0001', 'payment_terms_days' => 30, 'invoice_delivery' => 'PEPPOL', 'peppol_id' => '']);
+        $derived = $save($this->owner, $this->company, ['name' => 'Kommunen', 'org_number' => '556036-0793', 'payment_terms_days' => 30, 'invoice_delivery' => 'PEPPOL', 'peppol_id' => '']);
 
-        expect($derived->peppol_id)->toBe('0007:2120000001')
+        expect($derived->peppol_id)->toBe('0007:5560360793')
             ->and($derived->invoice_delivery)->toBe('PEPPOL')
             ->and(fn () => $save($this->owner, $this->company, ['name' => 'Fel', 'payment_terms_days' => 30, 'peppol_id' => '0007:2120000002']))->toThrow(ValidationException::class, 'Peppol-ID')
             ->and(fn () => $save($this->owner, $this->company, ['name' => 'Utan', 'country' => 'DE', 'payment_terms_days' => 30, 'invoice_delivery' => 'PEPPOL', 'peppol_id' => '']))->toThrow(ValidationException::class, 'Peppol-ID');
 
         $audit = AuditLog::query()->where('action', 'customer.updated')->latest('id')->first();
-        expect(json_encode($audit?->payload))->not->toContain('2120000001');
+        expect(json_encode($audit?->payload))->not->toContain('5560360793');
     });
 
     it('shows the Peppol fields only while the module is on', function () {
@@ -332,8 +332,8 @@ describe('sending', function () {
 
 describe('receiving', function () {
     beforeEach(function () {
-        // The golden invoice is addressed to 0007:5566778808: this company receives it.
-        $this->company->forceFill(['org_number' => '556677-8808', 'vat_number' => 'SE556677880801'])->save();
+        // The golden invoice is addressed to 0007:5563343689: this company receives it.
+        $this->company->forceFill(['org_number' => '556334-3689', 'vat_number' => 'SE556334368901'])->save();
         $this->participant = Peppol::ready($this->company->fresh(), $this->owner, 'acct-R', receive: true);
     });
 
@@ -345,8 +345,8 @@ describe('receiving', function () {
         $xml = (string) file_get_contents(base_path('tests/Fixtures/peppol/inrikes-25-12-6.xml'));
 
         expect($message->channel)->toBe(Channel::Peppol)
-            ->and($message->from_email)->toBe('0007:5599000006')
-            ->and($message->recipient)->toBe('0007:5566778808')
+            ->and($message->from_email)->toBe('0007:5599996013')
+            ->and($message->recipient)->toBe('0007:5563343689')
             ->and($message->eml_sha256)->toBe(hash('sha256', $xml))
             ->and(Storage::disk('local')->get($message->eml_path))->toBe($xml)
             ->and($message->quarantine_reasons)->toBe([])
@@ -362,7 +362,7 @@ describe('receiving', function () {
     });
 
     it('refuses a document addressed to another participant, and keeps one for the company in quarantine while it does not receive', function () {
-        $other = new InboundDocument('x', str_replace('<cbc:EndpointID schemeID="0007">5566778808</cbc:EndpointID>', '<cbc:EndpointID schemeID="0007">2120000001</cbc:EndpointID>', peppolInbound()->xml));
+        $other = new InboundDocument('x', str_replace('<cbc:EndpointID schemeID="0007">5563343689</cbc:EndpointID>', '<cbc:EndpointID schemeID="0007">5560360793</cbc:EndpointID>', peppolInbound()->xml));
 
         expect(app(AcceptPeppolDocument::class)($this->company, $other))->toBeNull()
             ->and(AuditLog::query()->where('action', 'peppol.dropped')->count())->toBe(1);
@@ -380,13 +380,13 @@ describe('receiving', function () {
         app(SavePeppolSettings::class)($this->owner, $this->company, '0088:7300009000005', true, register: true, consent: true);
         $kept = app(AcceptPeppolDocument::class)($this->company, peppolInbound());
 
-        expect($this->participant->fresh()->previous_identifiers)->toBe(['0007:5566778808'])
+        expect($this->participant->fresh()->previous_identifiers)->toBe(['0007:5563343689'])
             ->and($kept?->status)->toBe(MessageStatus::Quarantine)
             ->and(collect($kept?->quarantine_reasons)->pluck('code')->all())->toBe(['PEPPOL_OLD_ID']);
     });
 
     it('polls a linked company with the module off, into quarantine', function () {
-        app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5566778808', false);
+        app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5563343689', false);
         app(ModuleManager::class)->disable(PeppolModule::KEY, $this->company, $this->owner, confirmed: true);
         LogAccessPoint::$inbox['acct-R'] = [peppolInbound()];
 
@@ -428,15 +428,15 @@ describe('receiving', function () {
         expect($modules->disableCheck(PeppolModule::KEY, $this->company)->blockers[0] ?? '')->toContain('Stäng först av mottagningen');
 
         LogAccessPoint::$failDeregister = 'HTTP 503';
-        expect(fn () => app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5566778808', false))->toThrow(ValidationException::class, 'kunde inte ta bort');
+        expect(fn () => app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5563343689', false))->toThrow(ValidationException::class, 'kunde inte ta bort');
         expect($this->participant->fresh()->receive_enabled)->toBeTrue();
 
         LogAccessPoint::$failDeregister = null;
-        $off = app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5566778808', false);
+        $off = app(SavePeppolSettings::class)($this->owner, $this->company, '0007:5563343689', false);
 
         expect($off->receive_enabled)->toBeFalse()
             ->and($off->registration_status)->toBe(RegistrationStatus::NotRegistered)
-            ->and(LogAccessPoint::$deregistered)->toBe(['0007:5566778808'])
+            ->and(LogAccessPoint::$deregistered)->toBe(['0007:5563343689'])
             ->and($modules->disableCheck(PeppolModule::KEY, $this->company)->allowed())->toBeTrue();
     });
 
