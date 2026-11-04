@@ -8882,7 +8882,7 @@
     "Blir skatten för året högre än preliminärskatten kan du betala in skillnaden senast den här dagen, innan kostnadsränta börjar räknas.": "If the tax for the year is higher than the preliminary tax, you can pay the difference by this day, before cost interest starts.",
     "Datum i lagen": "Date in law",
     "Datumen räknas fram ur företagets inställningar och räkenskapsår i NONOX. Kontrollera dem hos Skatteverket, som kan ha beslutat något annat för just ditt företag.": "The dates are computed from the company's settings and fiscal years in NONOX. Check them with Skatteverket, which may have decided otherwise for your company.",
-    "Datumen som gäller företaget de kommande 15 månaderna: moms, deklarationer, årsstämma och annat som har en sista dag.": "The dates that apply to the company over the next 15 months: VAT, tax returns, the annual general meeting and anything else with a last day.",
+    "Datumen som gäller företaget: moms, deklarationer, årsstämma och annat som har en sista dag, de kommande sex månaderna eller längre.": "The dates that apply to the company: VAT, tax returns, the annual general meeting and anything else with a last day, for the next six months or longer.",
     "Datumet beror på när räkenskapsåret slutar. Det gäller när deklarationen lämnas elektroniskt; på papper är det en månad tidigare.": "The date depends on when the fiscal year ends. It applies when the return is filed electronically; on paper it is one month earlier.",
     "Det fanns ingen kalenderlänk att stänga av.": "There was no calendar link to switch off.",
     "Det här är en rekommendation, inte ett datum i lagen.": "This is a recommendation, not a date in law.",
