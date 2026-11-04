@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $xml_path
  * @property string $xml_sha256
  * @property int $attempts
+ * @property bool $refused the access point refused the document; a time-out is not a refusal
  * @property ?string $last_error
  * @property ?int $queued_by
  * @property CarbonImmutable $queued_at
@@ -52,6 +53,7 @@ class PeppolTransmission extends Model
         return [
             'status' => TransmissionStatus::class,
             'attempts' => 'integer',
+            'refused' => 'boolean',
             'queued_at' => 'immutable_datetime',
             'sent_at' => 'immutable_datetime',
             'delivered_at' => 'immutable_datetime',

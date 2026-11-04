@@ -29,8 +29,10 @@ use App\Modules\Peppol\Jobs\TransmitPeppolDocument;
 use App\Modules\Peppol\Livewire\InvoicePeppolPanel;
 use App\Modules\Peppol\Livewire\PeppolSettingsForm;
 use App\Modules\Peppol\Models\PeppolParticipant;
+use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Peppol\PeppolModule;
 use App\Support\Peppol\PeppolDocumentRules;
+use App\Support\Peppol\UblInvoiceWriter;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
@@ -204,9 +206,42 @@ describe('sending', function () {
         LogAccessPoint::$failRetryable = false;
         $failed = app(SendInvoiceViaPeppol::class)($this->owner, $second)->fresh();
 
+        $again = app(SendInvoiceViaPeppol::class)($this->owner, $second)->fresh();
+
         expect($failed->status)->toBe(TransmissionStatus::Failed)
+            ->and($failed->refused)->toBeTrue()
             ->and($failed->failed_at)->not->toBeNull()
-            ->and(app(SendInvoiceViaPeppol::class)($this->owner, $second)->fresh()->status)->toBe(TransmissionStatus::Sent);
+            ->and($again->status)->toBe(TransmissionStatus::Sent)
+            ->and($again->id)->not->toBe($failed->id);
+    });
+
+    it('sends a sending that timed out again as the same transmission, so the access point can drop the duplicate', function () {
+        LogAccessPoint::$failNext = 'The access point did not answer.';
+        LogAccessPoint::$failRetryable = true;
+        $first = app(SendInvoiceViaPeppol::class)($this->owner, $this->invoice);
+        // The retries ran out: failed, but not refused.
+        app(RecordTransmissionStatus::class)($first->fresh(), TransmissionStatus::Failed, error: 'The access point did not answer.');
+
+        $again = app(SendInvoiceViaPeppol::class)($this->owner, $this->invoice)->fresh();
+
+        expect($again->id)->toBe($first->id)
+            ->and($again->status)->toBe(TransmissionStatus::Sent)
+            ->and(LogAccessPoint::$sent[0]['key'])->toBe($first->id)
+            ->and(PeppolTransmission::query()->count())->toBe(1)
+            ->and(AuditLog::query()->where('action', 'invoice.peppol_requeued')->exists())->toBeTrue();
+    });
+
+    it('refuses reverse charge without the buyer\'s VAT number', function () {
+        $builder = PeppolFixtures::customer($this->owner, $this->company, ['name' => 'Bygg AB', 'reverse_charge_construction' => true]);
+        $invoice = PeppolFixtures::invoice($this->owner, $this->company, $builder, [['description' => 'Takarbete', 'quantity' => '1', 'unit' => 'st', 'price' => '1 000', 'vat_rate' => 2500]], ['reverse_charge' => true]);
+        // Issuing already demands the number; the writer refuses on its own as well (an in-memory copy, never saved).
+        $copy = $invoice->replicate();
+        $copy->number = $invoice->number;
+        $copy->status = $invoice->status;
+        $copy->customer_snapshot = [...$invoice->customer_snapshot, 'vat_number' => null];
+
+        expect(UblInvoiceWriter::unsupportedReason($invoice, $this->company))->toBeNull()
+            ->and(UblInvoiceWriter::unsupportedReason($copy, $this->company))->toContain('momsregistreringsnummer');
     });
 
     it('records delivery from the access point and never goes back', function () {

@@ -93,6 +93,8 @@ final class UblInvoiceWriter
             OrganisationNumber::tryFrom((string) $company->org_number) === null => __('Företagets organisationsnummer saknas eller är fel.'),
             $invoice->vat_ore->ore !== 0 && blank($company->vat_number) => __('En faktura med moms kräver företagets momsregistreringsnummer i Peppol.'),
             $invoice->isCredit() && $invoice->credits_invoice_id === null => __('Kreditfakturan saknar den faktura den krediterar.'),
+            // ML 17 kap. 24 §: the buyer's VAT number when the buyer accounts for the VAT. TODO(legal-verify): export (G) needs none.
+            ($invoice->reverse_charge || in_array($invoice->bookedForeignSale(), [ForeignSale::EuGoods, ForeignSale::EuServices, ForeignSale::EuTriangular], true)) && blank($invoice->customer_snapshot['vat_number'] ?? null) => __('Omvänd betalningsskyldighet kräver kundens momsregistreringsnummer på fakturan.'),
             default => null,
         };
 
@@ -493,7 +495,7 @@ final class UblInvoiceWriter
         $payable = $foreign ? (int) $invoice->foreign_total_minor * $sign : $invoice->total_ore->ore * $sign;
         $rounding = $payable - $net - $vat;
 
-        if (! $foreign && $rounding !== $invoice->rounding_ore->ore * $sign) {
+        if ($foreign ? $rounding !== 0 : $rounding !== $invoice->rounding_ore->ore * $sign) {
             throw new LogicException("Invoice {$invoice->id}: the rows and VAT do not add up to the invoice total.");
         }
 

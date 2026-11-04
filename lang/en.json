@@ -8793,5 +8793,6 @@
     "Med e-post (PDF)": "By e-mail (PDF)",
     "Fakturera via Peppol (e-faktura)": "Invoice through Peppol (e-invoice)",
     "Kundens Peppol-ID": "The customer's Peppol ID",
-    "Till exempel 0007:5599000006 för ett svenskt organisationsnummer. Lämnas tomt för en svensk kund används organisationsnumret.": "For example 0007:5599000006 for a Swedish organisation number. Left empty for a Swedish customer, the organisation number is used."
+    "Till exempel 0007:5599000006 för ett svenskt organisationsnummer. Lämnas tomt för en svensk kund används organisationsnumret.": "For example 0007:5599000006 for a Swedish organisation number. Left empty for a Swedish customer, the organisation number is used.",
+    "Omvänd betalningsskyldighet kräver kundens momsregistreringsnummer på fakturan.": "Reverse charge needs the customer's VAT registration number on the invoice."
 }

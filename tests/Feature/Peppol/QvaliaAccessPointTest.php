@@ -147,8 +147,9 @@ describe('the webhook', function () {
         expect($message->channel)->toBe(Channel::Peppol)
             ->and($message->message_id)->toBe('peppol:in-1');
 
-        // The same event again is acknowledged and not handled twice.
+        // The same event again is acknowledged and not handled twice, also with another (unsigned) event id header.
         qvaliaWebhook($this, $this->event)->assertOk();
+        qvaliaWebhook($this, $this->event, eventId: 'forged-new-id')->assertOk();
         Http::assertSentCount(1);
     });
 

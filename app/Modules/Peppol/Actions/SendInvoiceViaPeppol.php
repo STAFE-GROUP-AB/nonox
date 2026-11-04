@@ -71,22 +71,37 @@ class SendInvoiceViaPeppol
 
             /** @var PeppolParticipant $participant */
             /** @var PeppolIdentifier $receiver */
-            $active = PeppolTransmission::query()->where('invoice_id', $invoice->id)->whereIn('status', [TransmissionStatus::Queued->value, TransmissionStatus::Sent->value, TransmissionStatus::Delivered->value])->exists();
+            $pdf = InvoicePdf::render($invoice);
 
-            if ($active) {
-                throw ValidationException::withMessages(['peppol' => __(':title är redan skickad via Peppol.', ['title' => $invoice->title()])]);
-            }
+            $transmission = DB::transaction(function () use ($user, $invoice, $company, $participant, $receiver, $pdf): PeppolTransmission {
+                // One sending at a time per invoice: a double click or a parallel API call waits here and then sees the first.
+                Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+                $earlier = PeppolTransmission::query()->where('invoice_id', $invoice->id)->orderByDesc('queued_at')->get();
 
-            $xml = $this->writer->write($invoice, $company, $participant->participant(), $receiver, InvoicePdf::render($invoice));
-            $broken = PeppolDocumentRules::check($xml);
+                if ($earlier->contains(fn (PeppolTransmission $transmission): bool => $transmission->status->isActive())) {
+                    throw ValidationException::withMessages(['peppol' => __(':title är redan skickad via Peppol.', ['title' => $invoice->title()])]);
+                }
 
-            if ($broken !== []) {
-                throw ValidationException::withMessages(['peppol' => __('E-fakturan följer inte Peppol-reglerna: :rules', ['rules' => implode('; ', array_slice($broken, 0, 5))])]);
-            }
+                // A sending that failed without the access point ever confirming it (a time-out) may still have
+                // arrived: it is sent again as the same transmission, same document and same idempotency key.
+                $ambiguous = $earlier->first();
 
-            MailQuota::take($company, 'documents');
+                if ($ambiguous instanceof PeppolTransmission && $ambiguous->provider_reference === null && ! $ambiguous->refused && $ambiguous->receiver === $receiver->toString()) {
+                    $ambiguous->forceFill(['status' => TransmissionStatus::Queued, 'failed_at' => null, 'last_error' => null])->save();
+                    Audit::record('invoice.peppol_requeued', $ambiguous, ['invoice_id' => $invoice->id, 'number' => $invoice->number], $company, $user);
 
-            $transmission = DB::transaction(function () use ($user, $invoice, $company, $receiver, $xml): PeppolTransmission {
+                    return $ambiguous;
+                }
+
+                $xml = $this->writer->write($invoice, $company, $participant->participant(), $receiver, $pdf);
+                $broken = PeppolDocumentRules::check($xml);
+
+                if ($broken !== []) {
+                    throw ValidationException::withMessages(['peppol' => __('E-fakturan följer inte Peppol-reglerna: :rules', ['rules' => implode('; ', array_slice($broken, 0, 5))])]);
+                }
+
+                MailQuota::take($company, 'documents');
+
                 $id = Str::uuid()->toString();
                 $path = "peppol/{$company->id}/utgaende/{$id}.xml";
                 Storage::disk(PeppolTransmission::DISK)->put($path, $xml);

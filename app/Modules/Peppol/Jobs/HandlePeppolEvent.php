@@ -16,12 +16,15 @@ use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Peppol\PeppolModule;
 use App\Modules\Peppol\Support\AccessPoints;
+use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Acts on one verified webhook event inside the company it belongs to (the
@@ -49,6 +52,13 @@ class HandlePeppolEvent implements ShouldQueue
         public readonly ?string $error = null,
     ) {}
 
+    /** Every release used up: the document stays at the access point and peppol:sync fetches it again. */
+    public function failed(?Throwable $exception): void
+    {
+        Log::warning('Peppol: an event could not be handled.', ['company_id' => $this->companyId, 'type' => $this->type, 'reference' => $this->reference]);
+        Audit::record('peppol.event_failed', null, ['type' => $this->type, 'reference' => mb_substr($this->reference, 0, 120)], Company::query()->find($this->companyId));
+    }
+
     public static function for(int $companyId, WebhookEvent $event): self
     {
         return new self($companyId, $event->type, $event->reference, $event->documentType, $event->status?->value, $event->error);
@@ -69,6 +79,9 @@ class HandlePeppolEvent implements ShouldQueue
 
                 if ($transmission instanceof PeppolTransmission && $status !== null) {
                     $record($transmission, $status, error: $this->error);
+                } elseif ($status !== null && $this->attempts() < 3) {
+                    // The event can arrive before the sending job has stored the reference; peppol:sync is the net after that.
+                    $this->release(60);
                 }
 
                 return;

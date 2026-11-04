@@ -59,7 +59,7 @@ final class PeppolDocumentRules
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        if (! $loaded || ! $document->documentElement instanceof DOMElement) {
+        if (! $loaded || ! $document->documentElement instanceof DOMElement || $document->doctype !== null) {
             return ['XML: the document cannot be read.'];
         }
 

@@ -241,7 +241,8 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
         }
 
         $payload = $unverified;
-        $eventId = (string) ($request->header('X-Qvalia-Event-Id') ?: (is_array($payload) ? ($payload['eventId'] ?? '') : ''));
+        // Only the signed body is trusted: the X-Qvalia-Event-Id header is not covered by the signature.
+        $eventId = is_array($payload) ? (string) ($payload['eventId'] ?? '') : '';
 
         if (! is_array($payload) || $eventId === '') {
             throw new AccessPointFailed('The webhook body cannot be read.');

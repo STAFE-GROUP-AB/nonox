@@ -51,7 +51,7 @@ final class UblInvoiceParser implements InvoiceDocumentParser
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        if (! $loaded || ! $document->documentElement instanceof DOMElement) {
+        if (! $loaded || ! $document->documentElement instanceof DOMElement || $document->doctype !== null) {
             throw new PeppolParseException('The XML cannot be read.');
         }
 
@@ -152,7 +152,7 @@ final class UblInvoiceParser implements InvoiceDocumentParser
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        if (! $loaded || ! $document->documentElement instanceof DOMElement) {
+        if (! $loaded || ! $document->documentElement instanceof DOMElement || $document->doctype !== null) {
             return null;
         }
 

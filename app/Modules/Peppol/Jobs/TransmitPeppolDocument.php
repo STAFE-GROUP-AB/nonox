@@ -106,6 +106,7 @@ class TransmitPeppolDocument implements ShouldQueue
             return;
         }
 
+        $transmission->forceFill(['refused' => ! $exception->retryable])->save();
         $record($transmission, TransmissionStatus::Failed, error: $exception->getMessage());
     }
 }

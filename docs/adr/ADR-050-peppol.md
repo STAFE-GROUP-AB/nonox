@@ -173,6 +173,12 @@ self-hosters.
   growing pauses (1 min … 3 h, six tries), and fails at once on a refused
   document. `peppol_transmissions.status` QUEUED → SENT → DELIVERED, or
   FAILED, never backwards; a failed sending can be sent again.
+- Two people (or an API call and a person) sending the same invoice at once
+  are serialised by a row lock on the invoice. A sending that failed without
+  the access point ever confirming it (time-outs) and was not refused is sent
+  again as **the same transmission**: the same stored document and the same
+  idempotency key, so the provider can drop a duplicate. Only a refused
+  document gets a new transmission.
 - **Nothing in the accounting changes.** The invoice was booked when issued;
   sending through Peppol is a delivery channel like e-mail. The invoice row
   is not touched (it is immutable once issued).
@@ -199,6 +205,13 @@ self-hosters.
   event id not seen before) or from
   `peppol:sync`. The provider account in the event says which company; an
   account no company has is answered 200 and ignored.
+- The webhook's event id is read from the signed body, never from the
+  unsigned header. Polling marks nothing as read at the provider: documents
+  updated since the last poll (less an hour) are listed again and the same
+  bytes are taken once, so a document the inbox could not take (quota) is not
+  lost. A document refused here (receiving off, wrong receiver, over 100 MB)
+  stays at the provider and is audited (`peppol.dropped`); an event whose
+  retries ran out is audited as `peppol.event_failed`.
 - `AcceptPeppolDocument` takes a document only when the Peppol module, the
   inbox module and receiving are on, and only when the receiver in the
   document (BT-49, or the envelope) is the company's own Peppol ID. **It is
@@ -265,6 +278,15 @@ permissions). Receiving needs the inbox module.
   the receiver consent; (6) whether storing the provider's copy in the EU
   (Qvalia, Sweden) needs any notice under BFL 7 kap. 3 a § (it should not:
   NONOX keeps the original itself).
+
+## Known limits
+
+- A GLN (0088) cannot be checked against its owner in NONOX, so a company
+  could claim another's GLN first and block it on the installation; the
+  provider's identification stops it from being registered in the SMP, and
+  the operator can clear it. Organisation numbers (0007) are checked.
+- The delivery date (BT-72) is the invoice's delivery date, or the invoice
+  date when none is entered, exactly as the PDF prints it.
 
 ## Consequences
 

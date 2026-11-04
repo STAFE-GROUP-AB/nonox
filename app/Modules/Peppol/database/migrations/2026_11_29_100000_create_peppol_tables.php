@@ -51,6 +51,8 @@ return new class extends Migration
             $table->string('xml_path', 500);
             $table->char('xml_sha256', 64);
             $table->unsignedSmallInteger('attempts')->default(0);
+            // The access point refused the document (as opposed to not answering): sending it again unchanged cannot help.
+            $table->boolean('refused')->default(false);
             $table->string('last_error', 500)->nullable();
             $table->foreignId('queued_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestampTz('queued_at');
