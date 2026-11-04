@@ -34,7 +34,7 @@ Ett webbformulär lägger ni på er egen webbplats. När någon fyller i det ska
 - Kryssar personen i rutan för nyhetsbrev blir grunden **samtycke** med dagens datum, och personen får **Samtycke till e-postreklam**, som behövs för utskick till privatpersoner.
 - Texten vid rutan sparas precis som den visades, med version, om rutan var ikryssad och länken till integritetspolicyn. Ändrar ni texten får den en ny version.
 - Den ansvarige får en **uppgift** till nästa morgon med meddelandet, och ett mejl om att en ny intresseanmälan har kommit. Mejlet innehåller inga uppgifter om personen.
-- Finns adressen redan i CRM skapas ingen dubblett, och personens rättsliga grund ändras inte, eftersom vem som helst kan skriva in vems adress som helst. En avregistrering, invändning eller begränsning ändras aldrig av formuläret. Är personen märkt **Kontakta inte** sparas bara anmälan: ingen uppgift och inget i historiken.
+- Finns adressen redan i CRM skapas ingen dubblett, och personens rättsliga grund ändras inte, eftersom vem som helst kan skriva in vems adress som helst. Kryssar personen i rutan för nyhetsbrev visar personens sida **Anmälde sig till nyhetsbrev via formulär** med datumet. Välj **Bekräfta** när du vet att det var personen själv; först då får personen samtycke till e-postreklam. En avregistrering, invändning eller begränsning ändras aldrig av formuläret. Är personen märkt **Kontakta inte** sparas bara anmälan: ingen uppgift och inget i historiken.
 
 ## Skräppost
 

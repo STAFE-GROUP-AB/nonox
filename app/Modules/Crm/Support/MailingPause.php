@@ -20,6 +20,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
@@ -34,7 +35,11 @@ use Throwable;
  * mailing can start. The owner and the administrators get an e-mail, and
  * the operator company (ADR-044) gets a note on the company's account in
  * its CRM. Someone with crm:mailings resumes after dealing with the cause;
- * that is audited and noted for the operator too.
+ * that is audited and noted for the operator too. A company lifts a
+ * complaint pause at most once per 30 days: a second complaint pause in
+ * that window is lifted only by an HQ admin (HQ → Inställningar, with a
+ * passkey). A bounce pause the company can always lift. A pause needs at
+ * least 3 complaints, or 10 hard bounces, besides the rate.
  *
  * Kept in the CRM module's settings (mailings_paused_at, _reason).
  */
@@ -45,6 +50,11 @@ final class MailingPause
     public const float BOUNCE_RATE = 0.05;
 
     public const int WINDOW_DAYS = 30;
+
+    /** A rate alone never pauses a small sender: at least this many complaints, or hard bounces. */
+    public const int MIN_COMPLAINTS = 3;
+
+    public const int MIN_BOUNCES = 10;
 
     public static function pausedAt(Company $company): ?CarbonImmutable
     {
@@ -79,11 +89,13 @@ final class MailingPause
             return false;
         }
 
-        $complaints = (int) ($totals->complaints ?? 0) / $sent;
-        $bounces = (int) ($totals->bounces ?? 0) / $sent;
+        $complaintCount = (int) ($totals->complaints ?? 0);
+        $bounceCount = (int) ($totals->bounces ?? 0);
+        $complaints = $complaintCount / $sent;
+        $bounces = $bounceCount / $sent;
         $reason = match (true) {
-            $complaints > self::COMPLAINT_RATE => 'COMPLAINTS',
-            $bounces > self::BOUNCE_RATE => 'BOUNCES',
+            $complaintCount >= self::MIN_COMPLAINTS && $complaints > self::COMPLAINT_RATE => 'COMPLAINTS',
+            $bounceCount >= self::MIN_BOUNCES && $bounces > self::BOUNCE_RATE => 'BOUNCES',
             default => null,
         };
 
@@ -91,7 +103,11 @@ final class MailingPause
             return false;
         }
 
-        $this->write($company, ['mailings_paused_at' => CarbonImmutable::now()->toIso8601String(), 'mailings_paused_reason' => $reason]);
+        // A second complaint pause within 30 days of the company lifting one is lifted only by an HQ admin.
+        $lifted = self::settings($company)['complaint_pause_lifted_at'] ?? null;
+        $hqOnly = $reason === 'COMPLAINTS' && is_string($lifted) && CarbonImmutable::parse($lifted)->greaterThan(CarbonImmutable::now()->subDays(self::WINDOW_DAYS));
+
+        $this->write($company, ['mailings_paused_at' => CarbonImmutable::now()->toIso8601String(), 'mailings_paused_reason' => $reason, 'mailings_paused_hq' => $hqOnly]);
         Audit::record('crm.mailings_paused', null, ['reason' => $reason, 'sent' => $sent, 'complaints_per_mille' => (int) round($complaints * 1000), 'bounces_per_mille' => (int) round($bounces * 1000)], $company);
         Log::warning('CRM mailings paused for a company.', ['company_id' => $company->id, 'reason' => $reason]);
 
@@ -111,13 +127,66 @@ final class MailingPause
             return;
         }
 
-        $this->write($company, ['mailings_paused_at' => null, 'mailings_paused_reason' => null]);
-        Audit::record('crm.mailings_resumed', null, [], $company, $user);
+        if (self::hqOnly($company)) {
+            throw ValidationException::withMessages(['mailing' => __('Utskicken har pausats för klagomål två gånger på 30 dagar. Bara NONOX kan häva pausen; kontakta supporten.')]);
+        }
+
+        $complaint = self::reason($company) === 'COMPLAINTS';
+        $this->write($company, [
+            'mailings_paused_at' => null,
+            'mailings_paused_reason' => null,
+            'mailings_paused_hq' => false,
+            ...($complaint ? ['complaint_pause_lifted_at' => CarbonImmutable::now()->toIso8601String()] : []),
+        ]);
+        Audit::record('crm.mailings_resumed', null, ['reason' => $complaint ? 'COMPLAINTS' : 'BOUNCES'], $company, $user);
         $this->noteForOperator($company, __('Utskicken återupptogs av företaget efter en automatisk paus.'));
+    }
+
+    /** A second complaint pause within 30 days: only an HQ admin lifts it. */
+    public static function hqOnly(Company $company): bool
+    {
+        return (bool) (self::settings($company)['mailings_paused_hq'] ?? false);
+    }
+
+    /**
+     * An HQ admin lifts a pause the company cannot (HQ → Inställningar,
+     * confirmed with a passkey by the caller). Audited for the instance and
+     * in the company.
+     */
+    public function liftByHq(User $admin, Company $company): void
+    {
+        if (self::pausedAt($company) === null) {
+            return;
+        }
+
+        $this->write($company, ['mailings_paused_at' => null, 'mailings_paused_reason' => null, 'mailings_paused_hq' => false]);
+        Audit::instance('hq.crm_mailings_resumed', $company, ['company_id' => $company->id], $admin);
+        Audit::record('crm.mailings_resumed', null, ['by' => 'hq'], $company);
+        $this->noteForOperator($company, __('Utskicken återupptogs av NONOX efter en upprepad paus för klagomål.'));
+    }
+
+    /**
+     * The companies whose mailings only an HQ admin can resume, read across
+     * companies for HQ.
+     *
+     * @return list<int>
+     */
+    public static function hqOnlyCompanyIds(): array
+    {
+        // HQ looks across companies; nothing of a company is shown but its name.
+        return array_values(array_map('intval', CompanyScope::bypass(fn (): array => CompanyModule::query()
+            ->where('module_key', CrmModule::KEY)
+            ->where('settings->mailings_paused_hq', true)
+            ->pluck('company_id')
+            ->all())));
     }
 
     public static function message(Company $company): string
     {
+        if (self::hqOnly($company)) {
+            return __('Utskicken har pausats för klagomål två gånger på 30 dagar. Bara NONOX kan häva pausen; kontakta supporten.');
+        }
+
         return self::reason($company) === 'COMPLAINTS'
             ? __('Utskicken är pausade: fler än 0,3 procent av mottagarna har anmält utskick som skräppost de senaste 30 dagarna. Gå igenom segmenten och samtyckena innan ni återupptar.')
             : __('Utskicken är pausade: fler än 5 procent av adresserna studsade de senaste 30 dagarna. Rensa gamla adresser innan ni återupptar.');
@@ -129,7 +198,7 @@ final class MailingPause
         return CurrentCompany::run($company, fn (): array => (array) CompanyModule::query()->where('module_key', CrmModule::KEY)->first()?->settings);
     }
 
-    /** @param  array<string, ?string>  $values */
+    /** @param  array<string, string|bool|null>  $values */
     private function write(Company $company, array $values): void
     {
         CurrentCompany::run($company, function () use ($values): void {

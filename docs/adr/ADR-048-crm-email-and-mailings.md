@@ -363,6 +363,32 @@ counts, and `PrepareMailing` writes the recipients in bulk on the queue
 query; tenancy tests for every public endpoint; `?visa=` of waiting mail
 needs `crm:manage`; the event webhook allows 6 000 requests a minute.
 
+## Final re-check (2026-11-04)
+
+- A bare address that GitHub-flavoured Markdown links by itself
+  (`https://x.se/?u={namn}`, `www.x.se/{namn}`) is also refused with a
+  merge field in it.
+- **Owner decision (a)**: a ticked newsletter box from an address the CRM
+  already has is kept only on the submission (`marketing_consent = true`).
+  The person page shows "Anmälde sig till nyhetsbrev via formulär :date –
+  bekräfta"; someone with `crm:manage` confirms it
+  (`ConfirmMarketingConsent`, audited with ids), which sets
+  `marketing_consent_at` to the submission's time. New people keep the
+  behaviour above.
+- **Owner decision (b)**: a company lifts a **complaint** pause at most
+  once per rolling 30 days. A second complaint pause in that window is
+  marked HQ-only and listed under HQ → Inställningar → Pausade utskick,
+  where an HQ admin lifts it with a passkey step (audited for the instance
+  as `hq.crm_mailings_resumed`, noted for the operator). A **bounce**
+  pause the company can always lift.
+- The pause needs at least 3 complaints, or 10 hard bounces, besides the
+  rate, so one complaint never pauses a small sender.
+- On the hosted service the CRM mailer counts as configured only with
+  both a transport and `NONOX_CRM_MAIL_FROM`.
+- A batch re-hashes a recipient's unsubscribe token when `APP_KEY` was
+  rotated after the mailing was prepared, so the link in every message
+  works.
+
 ## What a company can and cannot do (deliverability)
 
 - On the hosted service CRM mail goes through its own Mailgun domain

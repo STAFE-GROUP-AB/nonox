@@ -10,14 +10,19 @@ use App\Livewire\Waitlist\JoinForm;
 use App\Mail\LoginCodeMail;
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\CompanyModule;
 use App\Models\InstanceSetting;
 use App\Models\User;
 use App\Models\WaitlistEntry;
+use App\Modules\Crm\Support\MailingPause;
 use App\Support\Instance\InstanceSettings;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Tests\Support\Bookkeeping;
+use Tests\Support\Crm;
 
 /*
  * Inställningar in /hq (ADR-044): only HQ admins, every change audited
@@ -200,4 +205,25 @@ it('sends no code to an unknown address while self-registration is closed', func
 
     Mail::assertNothingSent();
     expect(User::query()->where('email', 'okand@example.test')->exists())->toBeFalse();
+});
+
+it('lists companies whose mailings only HQ may resume, and lifts the pause with a passkey step', function () {
+    [$owner, $company] = Bookkeeping::company();
+    Crm::enable($company, $owner);
+    CurrentCompany::run($company, function (): void {
+        $row = CompanyModule::query()->where('module_key', 'crm')->firstOrFail();
+        $row->forceFill(['settings' => [...(array) $row->settings, 'mailings_paused_at' => now()->toIso8601String(), 'mailings_paused_reason' => 'COMPLAINTS', 'mailings_paused_hq' => true]])->save();
+    });
+    CurrentCompany::forget();
+
+    $this->actingAs($this->admin);
+    Livewire::test(Settings::class)->assertSee('Pausade utskick')->assertSee($company->name)
+        ->call('liftMailingPause', null, $company->id)->assertHasErrors('passkey');
+    expect(MailingPause::pausedAt($company))->not->toBeNull();
+
+    session()->put('hq.step_up', ['user_id' => $this->admin->id, 'at' => now()->subMinute()->getTimestamp()]);
+    Livewire::test(Settings::class)->call('liftMailingPause', null, $company->id)->assertHasNoErrors();
+
+    expect(MailingPause::pausedAt($company))->toBeNull()
+        ->and(AuditLog::query()->where('action', 'hq.crm_mailings_resumed')->sole()->user_id)->toBe($this->admin->id);
 });

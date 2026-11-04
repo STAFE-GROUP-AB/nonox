@@ -75,7 +75,9 @@ För varje utskick ser du **Mottagare**, **Skickade**, **Levererade**, **Studsad
 
 ## Automatisk paus
 
-Anmäler fler än 0,3 procent av mottagarna era utskick som skräppost, eller studsar fler än 5 procent av adresserna, räknat på de senaste 30 dagarna, pausas utskicken. Ägaren och administratörerna får ett mejl. Gå igenom segmenten och samtyckena, och välj sedan **Återuppta utskicken** under **CRM → Utskick**.
+Anmäler fler än 0,3 procent av mottagarna era utskick som skräppost (och minst tre mottagare), eller studsar fler än 5 procent av adresserna (och minst tio), räknat på de senaste 30 dagarna, pausas utskicken. Ägaren och administratörerna får ett mejl. Gå igenom segmenten och samtyckena, och välj sedan **Återuppta utskicken** under **CRM → Utskick**.
+
+En paus för skräppostanmälningar kan ni häva själva en gång på 30 dagar. Pausas utskicken för anmälningar igen inom den tiden kan bara NONOX häva pausen; kontakta supporten. En paus för studsar kan ni alltid häva själva.
 
 En adress som studsar får inga fler utskick förrän den har ändrats.
 

@@ -152,4 +152,17 @@
             </div>
         @endif
     </x-ui.card>
+
+    @if($pausedMailings->isNotEmpty())
+        <x-ui.card :title="__('Pausade utskick')" :description="__('Företag vars CRM-utskick har pausats för klagomål två gånger på 30 dagar. Bara HQ kan häva pausen. Kontrollera segmenten och samtyckena med företaget först.')">
+            <ul class="mt-4 divide-y divide-gray-100" data-testid="hq-paused-mailings">
+                @foreach($pausedMailings as $paused)
+                    <li wire:key="paused-{{ $paused->id }}" class="flex flex-wrap items-center justify-between gap-3 py-3">
+                        <span class="font-medium text-gray-900">{{ $paused->name }}</span>
+                        <button type="button" class="rounded-xl bg-white px-4 py-2 text-sm font-semibold text-gray-800 ring-1 ring-stone-300 hover:ring-stone-400 disabled:opacity-60" x-bind:disabled="busy" x-on:click="withPasskey((credential) => $wire.liftMailingPause(credential, {{ $paused->id }}))">{{ __('Häv pausen') }}</button>
+                    </li>
+                @endforeach
+            </ul>
+        </x-ui.card>
+    @endif
 </div>

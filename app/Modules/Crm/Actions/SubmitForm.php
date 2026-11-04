@@ -46,9 +46,9 @@ use Throwable;
  *   via webbformuläret …", and no e-mail marketing.
  * - An address the CRM already has: no duplicate, and the person's legal
  *   basis and pruning clock are never changed (anyone can type anyone's
- *   address into a form, and there is no double opt-in). A ticked box sets
- *   `marketing_consent_at` unless the person unsubscribed, objected or is
- *   restricted. For a person marked Kontakta inte only the submission is
+ *   address into a form, and there is no double opt-in). A ticked box is only kept on
+ *   the submission; the person page asks someone to confirm it before it
+ *   becomes `marketing_consent_at`. For a person marked Kontakta inte only the submission is
  *   kept: no task, nothing on their timeline.
  * - The submission keeps the box's text and version, whether it was
  *   ticked, the privacy policy link and the time.
@@ -137,13 +137,8 @@ final class SubmitForm
         $account = null;
 
         if ($person instanceof Person) {
-            // The documented basis and the pruning clock stay: anyone can type a known address into a form.
-            $blocked = $person->doNotContact() || $person->marketing_opt_out_at !== null || SuppressionList::marketingBlocked([$email]) !== [];
-
-            if ($newsletter && ! $blocked && $person->marketing_consent_at === null) {
-                $person->forceFill(['marketing_consent_at' => $now])->save();
-            }
-
+            // The documented basis, the pruning clock and the marketing consent stay: anyone can type a known
+            // address into a form. A ticked box is kept on the submission for a person to confirm (ConfirmMarketingConsent).
             if (! $person->doNotContact()) {
                 $account = $person->accounts()->orderBy('crm_accounts.id')->first();
             }

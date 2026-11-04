@@ -130,7 +130,7 @@ it('shows images as their alt text and refuses merge fields in link addresses', 
 
     expect($html)->not->toContain('<img')->and($html)->not->toContain('bilder.example')->and($html)->toContain('Vår nya lokal');
 
-    foreach (['[x](https://a.example/?n={namn})', '![x](https://a.example/{förnamn}.png)', "[x][1]\n\n[1]: https://a.example/{namn}", '<https://a.example/{namn}>'] as $body) {
+    foreach (['[x](https://a.example/?n={namn})', '![x](https://a.example/{förnamn}.png)', "[x][1]\n\n[1]: https://a.example/{namn}", '<https://a.example/{namn}>', 'Läs https://x.se/?u={namn} nu', 'Se www.x.se/{namn}'] as $body) {
         expect(fn () => app(SaveMailing::class)($this->owner, $this->company, ['name' => 'Fel', 'subject' => 'X', 'body' => $body]))->toThrow(ValidationException::class, 'Fält som {namn} kan inte stå i en länkadress.');
     }
 });
@@ -343,14 +343,19 @@ it('forgets the address on the mailing rows when the person is erased', function
     expect(MailingRecipient::query()->where('email', 'berit@ab.example')->exists())->toBeFalse();
 });
 
-it('pauses the mailings when complaints pass 0.3 percent, tells the owner, and resumes on request', function () {
+it('pauses the mailings on complaints, tells the owner, lets the company resume once in 30 days, then only HQ', function () {
     app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
-    $berit = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
+    $pause = app(MailingPause::class);
 
+    // Two complaints in 2 sent are far above 0.3 percent, but under the minimum of three.
+    $this->mailing->forceFill(['complaint_count' => 2])->save();
+    expect($pause->check($this->company))->toBeFalse();
+
+    $berit = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
     $this->postJson('/webhooks/utskick/mailgun', CrmMail::event(['event' => 'complained', 'recipient' => 'berit@ab.example', 'user-variables' => ['nonox_recipient' => $berit->id]]))->assertOk();
 
     expect(MailingPause::pausedAt($this->company))->not->toBeNull()
-        ->and($this->mailing->fresh()->complaint_count)->toBe(1);
+        ->and($this->mailing->fresh()->complaint_count)->toBe(3);
     Mail::assertSent(MailingsPausedMail::class, fn ($mail): bool => $mail->hasTo($this->owner->email));
 
     $next = app(SaveMailing::class)($this->owner, $this->company, ['name' => 'Juli', 'subject' => 'X', 'body' => 'Y', 'segment_id' => $this->segment->id]);
@@ -358,6 +363,46 @@ it('pauses the mailings when complaints pass 0.3 percent, tells the owner, and r
 
     Livewire::test(MailingsPage::class)->assertSee('Utskicken är pausade')->call('resume')->assertDispatched('toast');
     expect(MailingPause::pausedAt($this->company))->toBeNull();
+
+    // A second complaint pause within 30 days: the company cannot lift it, HQ can.
+    $this->travel(5)->days();
+    expect($pause->check($this->company))->toBeTrue()
+        ->and(MailingPause::hqOnly($this->company))->toBeTrue()
+        ->and(fn () => $pause->resume($this->owner, $this->company))->toThrow(ValidationException::class, 'Bara NONOX');
+    Livewire::test(MailingsPage::class)->assertSee('Bara NONOX')->assertDontSee('Återuppta utskicken');
+
+    expect(MailingPause::hqOnlyCompanyIds())->toBe([$this->company->id]);
+    $pause->liftByHq($this->owner, $this->company);
+    expect(MailingPause::pausedAt($this->company))->toBeNull()
+        ->and(AuditLog::query()->where('action', 'hq.crm_mailings_resumed')->exists())->toBeTrue();
+});
+
+it('keeps a bounce pause liftable by the company and needs ten hard bounces', function () {
+    app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
+    $pause = app(MailingPause::class);
+
+    $this->mailing->forceFill(['sent_count' => 100, 'bounced_count' => 9])->save();
+    expect($pause->check($this->company))->toBeFalse();
+
+    $this->mailing->forceFill(['bounced_count' => 10])->save();
+    expect($pause->check($this->company))->toBeTrue();
+    $pause->resume($this->owner, $this->company);
+
+    $this->mailing->forceFill(['bounced_count' => 12])->save();
+    expect($pause->check($this->company))->toBeTrue()->and(MailingPause::hqOnly($this->company))->toBeFalse();
+});
+
+it('re-hashes the unsubscribe token when APP_KEY was rotated after the mailing was prepared', function () {
+    config(['services.crm.mailing_hourly_cap' => 0]);
+    app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
+
+    config(['app.previous_keys' => [config('app.key')], 'app.key' => 'base64:'.base64_encode(random_bytes(32)), 'services.crm.mailing_hourly_cap' => 500]);
+    $this->artisan('crm:send-mailings');
+
+    $recipient = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
+    $token = MailingTokens::token($recipient->mailing_id, (int) $recipient->person_id);
+    Mail::assertSent(MailingMail::class, fn (MailingMail $mail): bool => $mail->hasTo('berit@ab.example') && str_contains((string) $mail->unsubscribeUrl, $token));
+    $this->post("/utskick/avregistrera/{$token}")->assertOk()->assertSee('Du är avregistrerad');
 });
 
 it('refuses mailings and template mail on the hosted service until the CRM mailer is configured', function () {
@@ -366,7 +411,11 @@ it('refuses mailings and template mail on the hosted service until the CRM maile
     expect(fn () => app(SendMailing::class)->start($this->owner, $this->company, $this->mailing))->toThrow(ValidationException::class, 'egen avsändardomän');
     Livewire::test(MailingsPage::class)->assertSee('egen avsändardomän');
 
-    config(['services.crm.mailer' => 'array', 'services.crm.mail_from' => 'utskick@utskick.nonox.example']);
+    // A transport alone is not enough on the hosted service: the From address on the CRM domain is needed too.
+    config(['services.crm.mailer' => 'array']);
+    expect(fn () => app(SendMailing::class)->start($this->owner, $this->company, $this->mailing))->toThrow(ValidationException::class, 'egen avsändardomän');
+
+    config(['services.crm.mail_from' => 'utskick@utskick.nonox.example']);
     app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
     Mail::assertSent(MailingMail::class, fn (MailingMail $mail): bool => $mail->envelope()->from->address === 'utskick@utskick.nonox.example');
 });

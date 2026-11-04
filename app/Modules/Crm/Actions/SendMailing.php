@@ -322,7 +322,14 @@ final class SendMailing
     private function sendOne(Company $company, Mailing $mailing, MailingRecipient $recipient, Person $person, array $links): void
     {
         // The personal token is only in the unsubscribe link; the click links are the same for everyone.
-        $unsubscribe = MailingTokens::unsubscribeUrl(MailingTokens::token($mailing->id, $person->id));
+        $token = MailingTokens::token($mailing->id, $person->id);
+
+        // APP_KEY rotated since the mailing was prepared: the stored hash follows, so the link in this message works.
+        if (MailingTokens::hash($token) !== $recipient->token_hash) {
+            MailingRecipient::query()->whereKey($recipient->id)->update(['token_hash' => MailingTokens::hash($token)]);
+        }
+
+        $unsubscribe = MailingTokens::unsubscribeUrl($token);
         $account = $person->accounts->firstWhere('id', $recipient->account_id) ?? $person->accounts->first();
         $values = MergeFields::values($company, null, $person, $account);
         $track = fn (string $url): ?string => isset($links[$url]) ? MailingTokens::clickUrl($links[$url]) : null;

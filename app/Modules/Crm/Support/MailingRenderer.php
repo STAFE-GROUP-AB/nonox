@@ -144,8 +144,10 @@ final class MailingRenderer
         $inline = preg_match('/\]\(\s*<?[^)\s>]*\{[^}]*\}/u', $markdown) === 1;
         $reference = preg_match('/^\s{0,3}\[[^\]]+\]:\s*<?\S*\{[^}]*\}/mu', $markdown) === 1;
         $auto = preg_match('/<https?:[^>]*\{[^}]*\}[^>]*>/iu', $markdown) === 1;
+        // A bare address, which GitHub-flavoured Markdown turns into a link by itself.
+        $bare = preg_match('/(?:https?:\/\/|www\.)[^\s<>()]*\{[^}]*\}/iu', $markdown) === 1;
 
-        return $inline || $reference || $auto;
+        return $inline || $reference || $auto || $bare;
     }
 
     /** A merge value is text, never Markdown: a name cannot become a link. */
