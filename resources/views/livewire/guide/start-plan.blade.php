@@ -37,6 +37,7 @@
                     @if($nextUrl)
                         <a href="{{ $nextUrl }}" class="inline-flex min-h-10 items-center rounded-full bg-ink px-4 font-semibold text-white hover:bg-accent-600">{{ __('Läs om nästa steg') }}</a>
                     @endif
+                    <a href="{{ route('guide.dates') }}" class="font-medium text-accent-700 underline hover:text-accent-800">{{ __('Mina datum') }}</a>
                     <a href="{{ route('guide.home') }}" class="font-medium text-accent-700 underline hover:text-accent-800">{{ __('Hela Företagsguiden') }}</a>
                     @if($tipsHidden)
                         <form method="POST" action="{{ route('guide.tips') }}">

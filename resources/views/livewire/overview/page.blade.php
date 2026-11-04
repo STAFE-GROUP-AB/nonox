@@ -160,6 +160,39 @@
                     @endif
                 </x-ui.card>
             @endif
+
+            @if($nextDates !== [])
+                {{-- Nästa datum (ADR-051, stage 2): the next dates on Mina datum. --}}
+                <x-ui.card :title="__('Nästa datum')" class="min-w-0" data-next-dates>
+                    <x-slot:action>
+                        <x-ui.link :href="route('guide.dates')">{{ __('Alla datum') }}</x-ui.link>
+                    </x-slot:action>
+                    <ul class="-my-3 divide-y divide-gray-100">
+                        @foreach($nextDates as $deadline)
+                            @php($days = $deadline->daysLeft($today))
+                            <li class="flex items-center gap-4 py-3">
+                                <span @class(['flex size-12 flex-none flex-col items-center justify-center rounded-2xl leading-none', 'bg-accent-100 text-accent-800' => $days <= 7, 'bg-stone-100 text-gray-800' => $days > 7])>
+                                    <span class="text-lg font-bold tabular-nums">{{ $deadline->date->day }}</span>
+                                    <span class="text-[11px] font-semibold uppercase">{{ $deadline->date->translatedFormat('M') }}</span>
+                                </span>
+                                <span class="min-w-0 flex-1">
+                                    <span class="block font-semibold text-ink">{{ $deadline->title }}</span>
+                                    <span class="block text-sm text-gray-600">
+                                        @if($days === 0)
+                                            {{ __('I dag') }}
+                                        @elseif($days === 1)
+                                            {{ __('I morgon') }}
+                                        @else
+                                            {{ __('Om :days dagar', ['days' => $days]) }}
+                                        @endif
+                                        @if($deadline->isRecommendation) · {{ __('Rekommendation') }} @endif
+                                    </span>
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-ui.card>
+            @endif
         </div>
     </div>
 </div>

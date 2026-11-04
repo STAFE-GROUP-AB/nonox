@@ -71,6 +71,8 @@ final class CompanyOverview
         'crm-agreements' => 'crm.agreements',
         // Web form submissions held for review (ADR-048).
         'crm-forms' => 'crm.forms',
+        // Reminders of a company's dates (ADR-051, stage 2).
+        'mina-datum' => 'guide.dates',
     ];
 
     /** A deadline this close counts as urgent. */

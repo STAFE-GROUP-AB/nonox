@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Actions\Company\ReconcileFirmLinks;
+use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Overview\TodoProviders;
+use App\Events\UserAccountDeleting;
+use App\Http\Middleware\SecurityHeaders;
 use App\Livewire\Company\MemberManager;
 use App\Livewire\Profile\ProfileInformationForm;
 use App\Models\Company;
@@ -14,6 +17,7 @@ use App\Support\Audit\AuditSubscriber;
 use App\Support\Build\VersionRecorder;
 use App\Support\Chat\SecureChat;
 use App\Support\Files\EncryptedAdapter;
+use App\Support\Guide\ForgetUserDeadlines;
 use App\Support\Instance\InstanceSettings;
 use App\Support\Overview\TaskTodoProvider;
 use App\Support\Tenancy\CompanyContext;
@@ -31,6 +35,7 @@ use Illuminate\Mail\Markdown;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\ServiceProvider;
 use Laravel\Jetstream\Events\TeamMemberRemoved;
@@ -48,6 +53,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Mina datum (ADR-051, stage 2): one engine per request or job, so the overview's two readers share its answer.
+        $this->app->scoped(CompanyDeadlines::class);
         // Registered before Livewire boots, which binds its hooks at boot time.
         Livewire::componentHook(LivewireCompanyGuard::class);
 
@@ -95,6 +102,11 @@ class AppServiceProvider extends ServiceProvider
         // The chat polls every two seconds while it is open; bounded per user, on top of its own join limit.
         RateLimiter::for('chat', fn (Request $request): Limit => Limit::perMinute(240)->by('chat:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
         Event::subscribe(AuditSubscriber::class);
+        Event::listen(TeamMemberRemoved::class, [ForgetUserDeadlines::class, 'memberRemoved']);
+        Event::listen(UserAccountDeleting::class, [ForgetUserDeadlines::class, 'accountDeleting']);
+        // Mina datum's calendar link (ADR-051, stage 2): per address and link, like the CRM's; unknown links have a stricter limit of their own.
+        RateLimiter::for('guide-calendar', fn (Request $request): Limit => Limit::perMinute(30)->by('guide-calendar:'.$request->ip().'|'.hash('sha256', (string) $request->route('token'))));
+        Route::middleware([SecurityHeaders::class, 'throttle:guide-calendar'])->group(base_path('routes/guide-calendar.php'));
         // Record a new version of the systemdokumentation after every migrate, also when nothing was pending (#44).
         Event::listen([MigrationsEnded::class, NoPendingMigrations::class], function (MigrationsEnded|NoPendingMigrations $event): void {
             if ($event->method === 'up') {

@@ -138,8 +138,8 @@ about what has been checked and by whom.
    public pages, Min startplan, the todo, tips, company fields.
 2. **Mina datum**: a deadline engine for the company's own dates (VAT,
    employer declarations, income tax, annual report), a calendar and
-   reminders. This stage asks for the company's start date. Amounts and thresholds that change by year move into data
-   with a validity year.
+   reminders (built; see the addendum below). The rules turned out to
+   have no yearly parameters (REGLER.md §12).
 3. **The VAT and tax set-aside box**: how much of what has been sold is VAT
    and preliminary tax, from the bookkeeping.
 4. **Industry tracks**: deeper steps per industry (café, restaurant,
@@ -156,3 +156,85 @@ about what has been checked and by whom.
 - The tip panel and the todo are visible on every company until it turns
   the guide off; the "Dölj tips" control keeps it from becoming noise for
   experienced users.
+
+## Addendum: stage 2, Mina datum (2026-11-04)
+
+### Decision
+
+1. **A deadline engine in core** (`app/Domain/Deadlines`). `CompanyDeadlines::upcoming(company, from, months = 15)`
+   asks one provider per kind of date (`Contracts\DeadlineProvider`) and
+   sorts the answers. Each answer is a `Deadline`: a stable key (type and
+   period, for example `vat:2026-09-30`), the type, a title, the date, the
+   period, why it applies to this company, where to do it in NONOX, the
+   guide article, the source, and two flags: `isRecommendation` (product
+   advice, not law) and `legalVerify` (a rule that is not settled, shown as
+   "Kontrollera datumet hos Skatteverket"). Nothing is stored: the dates
+   are computed from the company's settings and fiscal years every time.
+2. **The rules are `docs/foretagsguiden/datum/REGLER.md`**, written and
+   checked against the law and the authorities by the content side, and
+   implemented exactly, with its §11 test vectors as tests:
+   - VAT keeps `VatDeadlines` (the spec verified it); only yearly VAT for a
+     legal person whose year end the law does not name is flagged.
+   - Periodisk sammanställning only for periods with invoiced EU sales.
+   - The employer declaration is computed from the law (SFL 26 kap. 26,
+     30, 32 §§, 62 kap. 3 §), not from Skatteverket's yearly list, so it
+     works for years the payroll rules do not cover yet and without the
+     payroll module; a large employer gets the payment day and the
+     declaration day as two dates.
+   - Preliminary tax monthly from the second month of the beskattningsår,
+     flagged, because NONOX cannot know the decision; a top-up payment as a
+     recommendation.
+   - Income tax return, årsstämma, the seven-month limit for the annual
+     report (unmoved and flagged, §0.1–0.2) and "Gör bokslutet" as a
+     recommendation.
+   - Every date that the law lets move moves to the next working day,
+     counting midsommarafton, julafton and nyårsafton (`Workdays`).
+   No rule has a yearly parameter (REGLER.md §12), so there is no rules
+   data file; the constants name their paragraph.
+3. **Modules contribute through `Modules\Contracts\ProvidesDeadlines`**,
+   like todos, asked only while the module is on. No module needs it
+   today: the employer declaration is law, not payroll data.
+4. **The page** is `/foretagsguiden/mina-datum` (`guide.dates`); the
+   addresses `mina-datum` and `kalender` are reserved under the guide like
+   `min-startplan` (`Guide::RESERVED`, the validator, both routes and the
+   controller). It shows two weeks back and 15 months ahead.
+5. **The calendar link** is a per-user, per-company ICS feed at
+   `/foretagsguiden/kalender/{token}.ics`, the same pattern as the CRM's
+   (ADR-049): a 48-character token of which only the SHA-256 is stored,
+   shown once, replaced by a new link, revoked with "Stäng av länken" and
+   when the user leaves the company, deleted with the account. A wrong,
+   revoked or orphaned link, an archived company and a company that has
+   turned the guide off all answer 404; misses are throttled harder. All-day
+   events with a UID stable per company and deadline key, alarms 7 days and
+   1 day before, no personal data beyond the company's name.
+6. **Reminders**: two channels, both off when `guide_enabled` is off.
+   - "Att göra": dates within 14 days (`DeadlineTodos`), except VAT and the
+     employer declaration, which already have items that also know whether
+     the period is reported.
+   - In-app notices (the bell): `guide:send-deadline-reminders` runs every
+     morning and sends 30 days before the income tax return and the annual
+     report, 7 days before, and on the last working day before (REGLER.md
+     §10), to the owner and members with `company:update` or
+     `fiscal-years:manage`; recommendations get none. Each is recorded in
+     `deadline_reminders`, unique per user, deadline, date and kind, so
+     nothing is sent twice; a missed day is caught up while the date is
+     ahead. The daily task digest e-mail was not used: it is opt-in, per
+     assigned task, and sends nothing to users without tasks, so a
+     database notice reaches the right people with less machinery. E-mail
+     reminders can follow when the notification preferences allow it.
+7. **Översikt** shows "Nästa datum", the next three dates, cached with the
+   overview (its key carries `Guide::version()`), in a fixed number of
+   queries.
+8. **The start date stays hidden.** REGLER.md needs `started_on` only for a
+   hint about the first F-skatt payment, which the engine does not compute
+   (it shows the series from the fiscal year's second month, flagged). The
+   column remains for a later stage.
+
+### Privacy
+
+The calendar link is personal data about the user who made it (a hash of
+the token, when it was made and last used); the reminders record which user
+was told about which deadline and when. Both are deleted with the account
+and with the company, and recorded in docs/gdpr/registerforteckning.md and
+lagringstider.md. The feed itself holds only the company's name and its
+dates.

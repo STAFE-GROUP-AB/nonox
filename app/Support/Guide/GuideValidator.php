@@ -74,8 +74,8 @@ final class GuideValidator
                 $errors[] = "avsnitt.yaml: section key '{$key}' must be lowercase ASCII with hyphens.";
             }
 
-            if ($key === Guide::START_PLAN_SLUG) {
-                $errors[] = "avsnitt.yaml: '{$key}' is the address of the start plan and cannot be a section.";
+            if (in_array($key, Guide::RESERVED, true)) {
+                $errors[] = "avsnitt.yaml: '{$key}' is the address of the start plan or another page of the app and cannot be a section.";
             }
 
             if (! is_array($section) || ! is_string($section['titel'] ?? null) || ! is_string($section['beskrivning'] ?? null)) {

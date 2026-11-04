@@ -136,7 +136,7 @@ class GuideController
     {
         $this->ensureReadable();
         // The start plan's address is never a section, whatever the content says.
-        abort_if($sectionKey === Guide::START_PLAN_SLUG, 404);
+        abort_if(in_array($sectionKey, Guide::RESERVED, true), 404);
 
         $section = Guide::section($sectionKey);
         $article = Guide::article($sectionKey, $slug);

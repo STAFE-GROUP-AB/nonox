@@ -127,6 +127,10 @@
                 <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
                 <span>{{ __('Företagsguiden') }}</span>
             </a>
+            <a href="{{ route('guide.dates') }}" class="mx-2 -mt-3 flex items-center gap-1.5 rounded py-1 text-sm text-stone-300 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500" data-guide-dates-link>
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 5h16v16H4zM4 10h16M8 3v4M16 3v4M8 14h3M8 17h6" /></svg>
+                <span>{{ __('Mina datum') }}</span>
+            </a>
         @endif
         @if($currentYear)
             <p class="px-2 text-sm text-stone-400">{{ __('Räkenskapsår :year', ['year' => $currentYear->label()]) }}</p>

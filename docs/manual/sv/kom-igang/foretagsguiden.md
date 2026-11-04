@@ -36,6 +36,10 @@ Min startplan är en lista över det ett nytt företag behöver göra, i den ord
 
 Bara ägare och administratörer kan kryssa i steg. Andra i företaget ser startplanen men kan inte ändra den.
 
+## Mina datum
+
+Under **Mina datum** ser du företagets sista dagar för moms, deklarationer och årsredovisning, och du kan få dem i din egen kalender. Läs mer i [Mina datum](/manual/kom-igang/mina-datum).
+
 ## Tips från Företagsguiden
 
 Längst ner på vissa sidor i NONOX står **Tips från Företagsguiden** med upp till tre artiklar som handlar om just den sidan, till exempel momsdeklarationen på momssidan. Tipsen väljs efter företagets företagsform och bransch.
