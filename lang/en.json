@@ -8896,7 +8896,6 @@
     "Företaget är registrerat som arbetsgivare. Deklarationen lämnas och skatten betalas samma dag, också en nolldeklaration för en månad utan löner.": "The company is registered as an employer. The declaration is filed and the tax paid on the same day, also a zero declaration for a month without salaries.",
     "Förklaring": "Legend",
     "Gör bokslutet för :year": "Close the books for :year",
-    "Handelsbolaget deklarerar efter räkenskapsårets slut, och delägarna deklarerar sin del själva.": "The partnership files after the fiscal year ends, and the partners declare their share themselves.",
     "I dag: :title": "Today: :title",
     "I morgon: :title": "Tomorrow: :title",
     "Inga datum de kommande 15 månaderna": "No dates in the next 15 months",
@@ -8941,5 +8940,8 @@
     "Inom 30 dagar": "Within 30 days",
     "Om datumen": "About the dates",
     "Regeln är inte bekräftad ännu, eller beror på ett beslut om just ditt företag.": "The rule is not confirmed yet, or depends on a decision about your company.",
-    "Står i lag eller i Skatteverkets regler.": "Stated in law or in Skatteverket's rules."
+    "Står i lag eller i Skatteverkets regler.": "Stated in law or in Skatteverket's rules.",
+    "Skatten och avgifterna betalas senast :date, två veckor före deklarationen.": "The tax and contributions are paid by :date, two weeks before the declaration.",
+    "Handelsbolaget lämnar särskilda uppgifter på Inkomstdeklaration 4, och delägarna deklarerar sin del själva. Datumet gäller både digitalt och på papper.": "The partnership files special information on Income tax return 4, and the partners declare their share themselves. The date applies both digitally and on paper.",
+    "betala :date": "pay :date"
 }

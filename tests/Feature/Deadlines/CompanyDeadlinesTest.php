@@ -81,7 +81,7 @@ it('dates monthly VAT above 40 million kronor on the 26th of the next month, the
         ->toBe('Ni redovisar moms varje månad och omsätter mer än 40 miljoner kronor om året.');
 });
 
-it('dates yearly VAT by legal form, and flags only the year ends the law does not name', function () {
+it('dates yearly VAT by legal form, a broken year by the next named year end (SFL 3 kap. 5 §)', function () {
     ($this->set)(['legal_form' => LegalForm::Ef, 'vat_registered' => true, 'vat_period' => VatPeriod::Yearly]);
     expect(($this->dates)('2026-11-04', 15, DeadlineType::Vat))->toBe(['vat:2026-12-31 2027-05-12']);
 
@@ -94,7 +94,9 @@ it('dates yearly VAT by legal form, and flags only the year ends the law does no
     FiscalYear::query()->delete();
     FiscalYear::create(['start_date' => '2026-04-01', 'end_date' => '2027-03-31']);
     ($this->set)(['fiscal_year_start_month' => 4]);
-    expect(collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2026-11-04')))->firstWhere('type', DeadlineType::Vat)->legalVerify)->toBeTrue();
+    // A year ending 31 March counts as ending 30 April: 12 December 2027 is a Sunday → 13 December.
+    $deadline = collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2026-11-04')))->firstWhere('type', DeadlineType::Vat);
+    expect($deadline->date->toDateString())->toBe('2027-12-13')->and($deadline->legalVerify)->toBeFalse();
 });
 
 it('dates a sole trader\'s yearly VAT with EU trade on the 26th of the second month (REGLER.md §11)', function () {
@@ -197,7 +199,7 @@ it('dates the income tax return, the meeting, the annual report and the closing 
     ($this->set)(['legal_form' => LegalForm::Hb]);
     $dates = $byType();
     expect($dates['income_tax_return']->date->toDateString())->toBe('2027-08-02')
-        ->and($dates['income_tax_return']->legalVerify)->toBeTrue()
+        ->and($dates['income_tax_return']->legalVerify)->toBeFalse()
         ->and($dates)->not->toHaveKey('annual_meeting');
 
     ($this->set)(['legal_form' => LegalForm::Stiftelse]);
@@ -215,8 +217,22 @@ it('dates the year-end dates of a broken fiscal year (REGLER.md §11)', function
 
     expect($dates['income_tax_return']->date->toDateString())->toBe('2027-12-01')
         ->and($dates['annual_meeting']->date->toDateString())->toBe('2027-10-30')
-        ->and($dates['annual_meeting']->legalVerify)->toBeTrue()
-        ->and($dates['annual_report']->date->toDateString())->toBe('2027-11-30');
+        ->and($dates['annual_meeting']->legalVerify)->toBeFalse()
+        ->and($dates['annual_report']->date->toDateString())->toBe('2027-11-30')
+        ->and($dates['annual_report']->legalVerify)->toBeTrue();
+});
+
+it('counts the stämma\'s six months to the same day number for a year ending 30 June (lag (1930:173) 1 §)', function () {
+    FiscalYear::query()->delete();
+    FiscalYear::create(['start_date' => '2026-07-01', 'end_date' => '2027-06-30']);
+    ($this->set)(['legal_form' => LegalForm::Ab, 'fiscal_year_start_month' => 7]);
+
+    $meeting = collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2027-07-01')))->firstWhere('key', 'annual_meeting:2027-06-30');
+    $report = collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2027-07-01')))->firstWhere('key', 'annual_report:2027-06-30');
+
+    expect($meeting->date->toDateString())->toBe('2027-12-30')
+        ->and($meeting->legalVerify)->toBeFalse()
+        ->and($report->date->toDateString())->toBe('2028-01-30');
 });
 
 it('dates periodisk sammanställning on the 25th after a period with EU sales only (REGLER.md §7, §11)', function () {
@@ -252,6 +268,8 @@ it('moves a date that falls on a weekend, a public holiday or one of the three e
         ->and(Workdays::next(CarbonImmutable::parse('2026-12-24'))->toDateString())->toBe('2026-12-28')
         ->and(Workdays::next(CarbonImmutable::parse('2026-12-31'))->toDateString())->toBe('2027-01-04')
         ->and(Workdays::next(CarbonImmutable::parse('2027-06-25'))->toDateString())->toBe('2027-06-28')
+        ->and(Workdays::next(CarbonImmutable::parse('2028-07-01'))->toDateString())->toBe('2028-07-03')
+        ->and(Workdays::next(CarbonImmutable::parse('2027-01-31'))->toDateString())->toBe('2027-02-01')
         ->and(Workdays::next(CarbonImmutable::parse('2027-02-12'))->toDateString())->toBe('2027-02-12')
         ->and(Workdays::before(CarbonImmutable::parse('2027-02-15'))->toDateString())->toBe('2027-02-12');
 });

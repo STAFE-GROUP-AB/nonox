@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Deadlines\Providers;
 
-use App\Domain\Company\LegalForm;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Deadlines\Contracts\DeadlineProvider;
 use App\Domain\Deadlines\Deadline;
@@ -60,7 +59,6 @@ final class VatDeadlineProvider implements DeadlineProvider
                     'vat.index',
                     self::ARTICLE,
                     self::SOURCE,
-                    legalVerify: self::unnamedYearEnd($company, $period['end']),
                 );
             }
         }
@@ -75,18 +73,6 @@ final class VatDeadlineProvider implements DeadlineProvider
             VatPeriod::Quarterly => __('kvartal :quarter :year', ['quarter' => $start->quarter, 'year' => $start->year]),
             default => $start->year === $end->year ? (string) $start->year : "{$start->year}/{$end->year}",
         };
-    }
-
-    /**
-     * Yearly VAT for a legal person other than a partnership follows SFL 26
-     * kap. 33 b §, which names four year ends; for the others the month
-     * ranges are Skatteverket's (REGLER.md §1).
-     */
-    private static function unnamedYearEnd(Company $company, CarbonImmutable $end): bool
-    {
-        return $company->vat_period === VatPeriod::Yearly
-            && ! in_array($company->legal_form, [LegalForm::Ef, LegalForm::Hb, LegalForm::Kb], true)
-            && ! in_array($end->format('m-d'), ['04-30', '06-30', '08-31', '12-31'], true);
     }
 
     private static function because(Company $company): string

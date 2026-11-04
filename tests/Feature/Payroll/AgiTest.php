@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use App\Actions\Accounting\CreateArchivePackage;
 use App\Domain\Company\CompanyOverview;
+use App\Domain\Company\VatPeriod;
 use App\Models\FiscalYear;
+use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\AgiPage;
@@ -12,6 +14,7 @@ use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\Payslip;
+use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\Support\Agi\AgiDeadlines;
 use App\Modules\Payroll\Support\Agi\AgiXml;
 use App\Modules\Payroll\Support\Insights\PayrollKpis;
@@ -143,10 +146,34 @@ it('replaces an unsubmitted file and corrects a submitted one with the same spec
 });
 
 it('knows the declaration day from the rules', function () {
-    expect(AgiDeadlines::for('2026-04', AgiDeadlines::SMALL)?->toDateString())->toBe('2026-05-12')
-        ->and(AgiDeadlines::for('2025-12', AgiDeadlines::SMALL)?->toDateString())->toBe('2026-01-19')
-        ->and(AgiDeadlines::for('2026-04', AgiDeadlines::LARGE)?->toDateString())->toBe('2026-05-26')
-        ->and(AgiDeadlines::for('2026-06', AgiDeadlines::SMALL))->toBeNull();
+    expect(AgiDeadlines::for('2026-04', AgiDeadlines::SMALL)->toDateString())->toBe('2026-05-12')
+        ->and(AgiDeadlines::for('2025-12', AgiDeadlines::SMALL)->toDateString())->toBe('2026-01-19')
+        ->and(AgiDeadlines::for('2026-04', AgiDeadlines::LARGE)->toDateString())->toBe('2026-05-26');
+});
+
+it('dates every month from the law, also a year without a published list (SFL 26 kap. 26, 30 och 32 §§)', function () {
+    // 2027 has no agi.deadlines list: the 12th of the month after, the 17th in January and August, moved to a weekday.
+    expect(AgiDeadlines::for('2026-06', AgiDeadlines::SMALL)->toDateString())->toBe('2026-07-13')
+        ->and(AgiDeadlines::for('2026-12', AgiDeadlines::SMALL)->toDateString())->toBe('2027-01-18')
+        ->and(AgiDeadlines::for('2027-07', AgiDeadlines::SMALL)->toDateString())->toBe('2027-08-17')
+        ->and(AgiDeadlines::for('2027-04', AgiDeadlines::SMALL)->toDateString())->toBe('2027-05-12')
+        // Large employers declare on the 26th, the 27th in December (26 kap. 30 §).
+        ->and(AgiDeadlines::for('2026-12', AgiDeadlines::LARGE)->toDateString())->toBe('2027-01-26')
+        ->and(AgiDeadlines::for('2027-11', AgiDeadlines::LARGE)->toDateString())->toBe('2027-12-27');
+
+    // The law and Skatteverket's 2026 list agree on every month.
+    $list = AgiDeadlines::publishedList(2026);
+    foreach (range(0, 11) as $offset) {
+        $period = CarbonImmutable::parse('2025-12-01')->addMonths($offset)->format('Y-m');
+        expect(AgiDeadlines::lawDate($period, AgiDeadlines::SMALL)->toDateString())->toBe($list[$offset], "Payment month {$period}");
+    }
+});
+
+it('makes a large employer pay on the 12th, the 17th in January, two weeks before declaring (SFL 62 kap. 3 § andra stycket)', function () {
+    expect(AgiDeadlines::paymentDate('2026-12', AgiDeadlines::LARGE)->toDateString())->toBe('2027-01-18')
+        ->and(AgiDeadlines::paymentDate('2027-07', AgiDeadlines::LARGE)->toDateString())->toBe('2027-08-12')
+        ->and(AgiDeadlines::paymentDate('2026-12', AgiDeadlines::SMALL)->toDateString())->toBe('2027-01-18')
+        ->and(AgiDeadlines::paymentDate('2027-07', AgiDeadlines::SMALL)->toDateString())->toBe('2027-08-17');
 });
 
 it('lets the declarer download the file and keeps it from other companies', function () {
@@ -230,4 +257,21 @@ it('shows schema errors without the values, so no personal number reaches the sc
     $message = AgiXml::withoutValues("Element '{http://xmls.skatteverket.se/se/skatteverket/da/komponent/schema/1.1}BetalningsmottagarId': [facet 'pattern'] The value '198001011234' is not accepted by the pattern '[0-9]{12}'.");
 
     expect($message)->toContain('BetalningsmottagarId')->not->toContain('198001011234');
+});
+
+it('shows a large employer when to pay, and treats a company without VAT as small', function () {
+    $this->actingAs($this->owner);
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['agi_deadline_group' => AgiDeadlines::LARGE]);
+    $this->company->forceFill(['vat_registered' => true, 'vat_period' => VatPeriod::Monthly])->save();
+
+    Livewire::test(AgiPage::class)
+        ->assertSee('lämnas senast 2026-05-26')
+        ->assertSee('Skatten och avgifterna betalas senast 2026-05-12, två veckor före deklarationen.');
+
+    $this->company->forceFill(['vat_registered' => false, 'vat_period' => VatPeriod::None])->save();
+    $this->actingAs($this->owner->fresh());
+
+    Livewire::test(AgiPage::class)
+        ->assertSee('lämnas senast 2026-05-12')
+        ->assertDontSee('två veckor före deklarationen');
 });

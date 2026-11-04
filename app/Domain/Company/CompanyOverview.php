@@ -490,7 +490,8 @@ final class CompanyOverview
     /**
      * The last day to declare a payment month, from the agi.deadlines rule
      * verified for the installation or by the company itself (as RuleSet
-     * reads it), without a query per company. Null without a checked rule.
+     * reads it), without a query per company; without a checked rule, the
+     * day the law gives (AgiDeadlines::lawDate). Null without a month.
      */
     private function agiDeadline(int $companyId, ?string $month): ?CarbonImmutable
     {
@@ -505,11 +506,9 @@ final class CompanyOverview
                 && ($version->isVerified() || in_array($version->id, $this->agiVerified[$companyId] ?? [], true)))
             ->last();
 
-        if (! $rule instanceof PayrollRuleVersion) {
-            return null;
-        }
+        $group = (string) ($this->payrollSettings[$companyId]['agi_deadline_group'] ?? AgiDeadlines::SMALL);
 
-        return AgiDeadlines::fromRule((array) $rule->value, $month, (string) ($this->payrollSettings[$companyId]['agi_deadline_group'] ?? AgiDeadlines::SMALL));
+        return $rule instanceof PayrollRuleVersion ? AgiDeadlines::fromRule((array) $rule->value, $month, $group) : AgiDeadlines::lawDate($month, $group);
     }
 
     /**

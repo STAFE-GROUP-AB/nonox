@@ -66,6 +66,8 @@ class AgiPage extends Component
         $today = CarbonImmutable::today();
         $from = $today->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1);
         $group = (string) (app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company())['agi_deadline_group'] ?? AgiDeadlines::SMALL);
+        // Only a VAT-registered company can have a VAT base above 40 million kronor (SFL 26 kap. 32 §).
+        $group = $this->company()->isVatRegistered() ? $group : AgiDeadlines::SMALL;
         $runs = PayrollRun::query()->whereDate('payment_date', '>=', $from->toDateString())->get()->groupBy(fn (PayrollRun $run): string => $run->payment_date->format('Y-m'));
         $submissions = AgiSubmission::query()->where('period', '>=', $from->format('Y-m'))->orderByDesc('sequence')->get()->groupBy('period');
         $periods = [];
@@ -77,10 +79,14 @@ class AgiPage extends Component
             $reported = $periodSubmissions->contains(fn (AgiSubmission $submission): bool => in_array($submission->status, AgiSubmission::REPORTED, true) || $submission->status === AgiSubmission::CORRECTED);
             $deadline = AgiDeadlines::for((string) $period, $group);
 
+            // A large employer pays two weeks before declaring (SFL 62 kap. 3 § andra stycket).
+            $payment = AgiDeadlines::paymentDate((string) $period, $group);
+
             $periods[] = [
                 'period' => (string) $period,
                 'deadline' => $deadline,
-                'overdue' => $deadline !== null && $deadline->lt($today) && ! $reported,
+                'payment' => $payment->equalTo($deadline) ? null : $payment,
+                'overdue' => $deadline->lt($today) && ! $reported,
                 'runs' => $periodRuns->count(),
                 'open_runs' => $periodRuns->reject(fn (PayrollRun $run): bool => in_array($run->status, [PayrollRun::APPROVED, PayrollRun::PAID, PayrollRun::POSTED], true))->count(),
                 'reported' => $reported,

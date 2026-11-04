@@ -17,19 +17,22 @@ use Carbon\CarbonImmutable;
  * The dates after a fiscal year ends (REGLER.md §4–6 and §9):
  *
  * - Inkomstdeklaration: AB and ekonomisk förening by the year-end group of
- *   SFL 32 kap. 2 § (electronic, the later date), handelsbolag and
- *   kommanditbolag on the same dates (flagged, §4.2), a sole trader 2 May
- *   the year after (32 kap. 1 §); moved to a working day.
+ *   SFL 32 kap. 2 § (electronic, the later date; a year ending on another
+ *   day counts as ending on the next named one, SFL 3 kap. 5 §), handelsbolag
+ *   and kommanditbolag on the same dates for their särskilda uppgifter (33
+ *   kap. 6 och 10 §§), a sole trader 2 May the year after (32 kap. 1 §);
+ *   moved to a working day.
  * - Årsstämma (AB, ekonomisk förening): within six months (ABL 7 kap. 10 §,
- *   EFL 6 kap. 9 §), not moved.
+ *   EFL 6 kap. 9 §), counted to the same day number (lag (1930:173) 1 §),
+ *   not moved.
  * - Årsredovisning to Bolagsverket (AB, ekonomisk förening): the
  *   seven-month limit before förseningsavgift (ÅRL 8 kap. 6 §), not moved,
  *   always flagged (§0.1, §0.2).
  * - Bokslut, a recommendation: three months after the year for AB and
  *   ekonomisk förening, otherwise one month before the income tax return.
  *
- * Ideell förening and stiftelse get no date: NONOX cannot tell whether they
- * must file. One query.
+ * Ideell förening and stiftelse get no date: whether they must file depends
+ * on their income (SFL 30 kap. 4 §), which NONOX does not ask. One query.
  */
 final class YearEndDeadlineProvider implements DeadlineProvider
 {
@@ -46,9 +49,6 @@ final class YearEndDeadlineProvider implements DeadlineProvider
     private const string ARTICLE_TAX = 'viktiga-datum/inkomstdeklarationen';
 
     private const string ARTICLE_MEETING = 'viktiga-datum/arsstamma-och-arsredovisning';
-
-    /** The year ends SFL 32 kap. 2 § names; the month ranges around them are Skatteverket's. */
-    private const array NAMED_YEAR_ENDS = ['04-30', '06-30', '08-31', '12-31'];
 
     public function deadlines(Company $company, CarbonImmutable $from, CarbonImmutable $to): array
     {
@@ -85,7 +85,6 @@ final class YearEndDeadlineProvider implements DeadlineProvider
                     'accounting.annualReport',
                     self::ARTICLE_MEETING,
                     self::LAW_ABL,
-                    legalVerify: self::monthCountUnclear($end, $meeting),
                 );
                 $deadlines[] = new Deadline(
                     'annual_report:'.$end->toDateString(),
@@ -145,12 +144,11 @@ final class YearEndDeadlineProvider implements DeadlineProvider
             Workdays::next(self::legalPersonDate($end)),
             $label,
             $partnership
-                ? __('Handelsbolaget deklarerar efter räkenskapsårets slut, och delägarna deklarerar sin del själva.')
+                ? __('Handelsbolaget lämnar särskilda uppgifter på Inkomstdeklaration 4, och delägarna deklarerar sin del själva. Datumet gäller både digitalt och på papper.')
                 : __('Datumet beror på när räkenskapsåret slutar. Det gäller när deklarationen lämnas elektroniskt; på papper är det en månad tidigare.'),
             'accounting.incomeTax',
             self::ARTICLE_TAX,
             $partnership ? self::INCOME_TAX_HB : self::INCOME_TAX_AB,
-            legalVerify: $partnership || ! in_array($end->format('m-d'), self::NAMED_YEAR_ENDS, true),
         );
     }
 
@@ -163,15 +161,5 @@ final class YearEndDeadlineProvider implements DeadlineProvider
             $end->month <= 8 => $end->setDate($end->year + 1, 4, 1)->startOfDay(),
             default => $end->setDate($end->year + 1, 8, 1)->startOfDay(),
         };
-    }
-
-    /**
-     * Lag (1930:173) 1 § counts to the same day number; for a year ending on
-     * the last day of a shorter month the last day of the target month may
-     * be meant instead (REGLER.md §0.2). Flag those.
-     */
-    private static function monthCountUnclear(CarbonImmutable $end, CarbonImmutable $limit): bool
-    {
-        return $end->isLastOfMonth() && $limit->day < $limit->daysInMonth;
     }
 }

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-agi-datum-enligt-lagen",
+      "datum": "2026-11-04T21:00:00+01:00",
+      "rubrik": "Arbetsgivardeklarationens sista dag för alla år, och betaldagen för stora arbetsgivare",
+      "beskrivning": "Sista dagen för arbetsgivardeklarationen räknas nu enligt skatteförfarandelagen för varje år, också när Skatteverkets lista för året inte finns i NONOX ännu. En arbetsgivare med en omsättning över 40 miljoner kronor ser att skatten ska betalas den 12:e, två veckor före deklarationen den 26:e. Sista dagar som infaller på midsommarafton, julafton eller nyårsafton flyttas till nästa vardag, som lagen säger.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
       "id": "2026-11-04-mina-datum",
       "datum": "2026-11-04T20:30:00+01:00",
       "rubrik": "Mina datum: företagets frister på en sida och i din kalender",

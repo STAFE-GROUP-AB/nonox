@@ -6,7 +6,7 @@ namespace App\Domain\Vat;
 
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\VatPeriod;
-use App\Modules\Payroll\Support\Calendar\SwedishHolidays;
+use App\Domain\Deadlines\Workdays;
 use Carbon\CarbonImmutable;
 
 /**
@@ -32,14 +32,17 @@ use Carbon\CarbonImmutable;
  *     January–April 12 November / 12 December, May–June 27 December /
  *     17 January, July–August 12 March / 12 April, September–December
  *     12 July / 17 August.
- * - A 12th, 17th, 26th or 27th on a holiday or weekend moves to the next
- *   weekday.
+ * - A day on a Saturday, a Sunday, a holiday, midsommarafton, julafton or
+ *   nyårsafton moves to the next weekday (lag (1930:173) 2 §, Workdays).
  *
- * TODO(legal-verify): 33 b § names four year ends (31 December, 30 April,
- * 30 June, 31 August); the month ranges are Skatteverket's. Not handled: a
- * decision under 33 c § (the earlier date on request), byråanstånd for a
- * sole trader (26 June), a juridisk person that does not file an income tax
- * return (33 §), and dödsbon. Which trade counts as EU trade is decided by
+ * 33 b § names four year ends (31 December, 30 April, 30 June, 31 August);
+ * a year ending on another day counts as ending on the next of them (SFL 3
+ * kap. 5 §), which gives Skatteverket's month ranges (REGLER.md §1). Not
+ * handled: a monthly filer who has asked to declare on the 26th (26 kap.
+ * 28 §), a decision under 33 c § (the earlier date on request) and the
+ * catch-up dates of 29 and 33 e §§, byråanstånd for a sole trader (26
+ * June), a juridisk person that does not file an income tax return (33 §),
+ * and dödsbon. Which trade counts as EU trade is decided by
  * the caller (EuTrade); distance sales of goods through OSS are not counted.
  *
  * @see https://www.skatteverket.se/foretag/moms/deklareramoms/narskajagdeklareramoms.4.6d02084411db6e252fe80008988.html
@@ -70,11 +73,7 @@ final class VatDeadlines
             default => null,
         };
 
-        while ($day !== null && ($day->isWeekend() || SwedishHolidays::isHoliday($day))) {
-            $day = $day->addDay();
-        }
-
-        return $day;
+        return $day === null ? null : Workdays::next($day);
     }
 
     private static function yearly(CarbonImmutable $lastMonth, ?LegalForm $legalForm, bool $euTrade, bool $electronic): ?CarbonImmutable

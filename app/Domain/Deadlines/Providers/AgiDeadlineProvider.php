@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Domain\Deadlines\Providers;
 
+use App\Domain\Deadlines\AgiDates;
 use App\Domain\Deadlines\Contracts\DeadlineProvider;
 use App\Domain\Deadlines\Deadline;
 use App\Domain\Deadlines\DeadlineType;
-use App\Domain\Deadlines\Workdays;
 use App\Models\Company;
 use Carbon\CarbonImmutable;
 
@@ -44,14 +44,13 @@ final class AgiDeadlineProvider implements DeadlineProvider
         for ($month = $from->subMonthNoOverflow()->startOfMonth(); $month->lessThanOrEqualTo($to); $month = $month->addMonthNoOverflow()) {
             $period = $month->format('Y-m');
             $label = $month->translatedFormat('F Y');
-            $next = $month->addMonthNoOverflow();
 
             if (! $large) {
                 $deadlines[] = new Deadline(
                     "agi:{$period}",
                     DeadlineType::Agi,
                     __('Arbetsgivardeklaration för :month', ['month' => $label]),
-                    Workdays::onDay($next, 12, [1 => 17, 8 => 17]),
+                    AgiDates::declaration($period, false),
                     $label,
                     __('Företaget är registrerat som arbetsgivare. Deklarationen lämnas och skatten betalas samma dag, också en nolldeklaration för en månad utan löner.'),
                     'payroll.agi',
@@ -66,7 +65,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                 "agi-payment:{$period}",
                 DeadlineType::Agi,
                 __('Betala skatteavdrag och arbetsgivaravgifter för :month', ['month' => $label]),
-                Workdays::onDay($next, 12, [1 => 17]),
+                AgiDates::payment($period, true),
                 $label,
                 __('Företaget är arbetsgivare och omsätter mer än 40 miljoner kronor om året: skatten betalas två veckor före deklarationen.'),
                 'payroll.agi',
@@ -77,7 +76,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                 "agi:{$period}",
                 DeadlineType::Agi,
                 __('Arbetsgivardeklaration för :month', ['month' => $label]),
-                Workdays::onDay($next, 26, [12 => 27]),
+                AgiDates::declaration($period, true),
                 $label,
                 __('Företaget är arbetsgivare och omsätter mer än 40 miljoner kronor om året.'),
                 'payroll.agi',
