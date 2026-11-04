@@ -89,7 +89,16 @@ Följande gallras aldrig:
 - ett prospekt som har blivit kund, eftersom det finns i kundregistret,
 - en person som är **Fakturamottagare** hos en kund, eftersom namnet kan stå på fakturorna.
 
+## Prospekt från företagsregistret
+
+Företagsregistret under **CRM → Prospektera** innehåller bara juridiska personer, som aktiebolag och föreningar. Enskilda firmor är privatpersoner och finns inte med, och inga namn på styrelseledamöter eller andra personer hämtas. Ett prospekt som du lägger till därifrån är alltså ett företag, inte en person.
+
+Kontaktpersoner hos prospektet lägger du till själv, med rättslig grund som för alla andra. Hittar du personen på företagets webbplats eller någon annanstans är det artikel 14 som gäller: informera personen inom en månad och skriv datumet i **Informerad den**.
+
+Har ett företag frånsagt sig reklam eller telefonförsäljning i SCB:s register visar NONOX det, och sådana företag tas inte med i sökningen eller ringlistorna om du inte väljer det. Vad spärrarna innebär för just er marknadsföring är inte granskat av en jurist än; stäm av med den som ansvarar för dataskyddet hos er.
+
 ## Läs också
 
 - [Företag och personer](/manual/crm/foretag-och-personer)
+- [Prospektera i företagsregistret](/manual/crm/prospektera)
 - [Personuppgifter](/manual/installningar/personuppgifter)

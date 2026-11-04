@@ -180,6 +180,12 @@ class ProspectingPage extends Component
 
         if ($this->mode === 'liknande') {
             $best = $lookAlike->bestCustomers();
+
+            // The first five are chosen until the user picks: tick them, so the boxes show what is compared.
+            if ($this->chosen === []) {
+                $this->chosen = array_values(array_map(fn (object $row): string => (string) $row->account_id, $best->take(LookAlike::DEFAULT_CHOSEN)->all()));
+            }
+
             $chosen = $this->chosenAccounts($best);
             $names = $chosen->mapWithKeys(fn (object $row): array => [(string) RegistryCompany::digits($row->org_number) => $row->name])->all();
             $profiles = $lookAlike->profiles($this->orgNumbers($chosen));

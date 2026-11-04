@@ -488,3 +488,9 @@ with a confirmation that the person must be informed first (art. 18(3)); the
 API takes `lift_restriction` on PATCH and answers 422 without it. The account
 card's note under the quick actions also states why they are disabled for a
 read-only user.
+
+## Stage 4
+
+Researched, decided and implemented in ADR-047 (prospecting from open data:
+the company register, prospect and look-alike search, call lists and
+monitoring).

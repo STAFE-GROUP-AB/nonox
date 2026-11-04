@@ -140,7 +140,7 @@ php artisan registry:import bolagsverket-bulk</pre>
                             @php($inRegister = $profiles->has((string) App\Models\RegistryCompany::digits($customer->org_number)))
                             <li wire:key="best-{{ $customer->account_id }}">
                                 <label class="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 ring-1 ring-stone-200">
-                                    <input type="checkbox" class="size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $customer->account_id }}" wire:model.live="chosen" @checked(in_array($customer->account_id, $chosenIds, true))>
+                                    <input type="checkbox" class="size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $customer->account_id }}" wire:model.live="chosen">
                                     <span class="min-w-0 flex-1 text-sm">
                                         <span class="block truncate font-medium text-ink">{{ $customer->name }}</span>
                                         <span class="block text-gray-600"><x-ui.amount :money="App\Support\Money\Money::ofOre($customer->invoiced)" /> {{ __('senaste 12 mån') }}@if(in_array($customer->account_id, $chosenIds, true) && ! $inRegister) · {{ __('finns inte i registret') }}@endif</span>
@@ -172,7 +172,7 @@ php artisan registry:import bolagsverket-bulk</pre>
         </x-ui.card>
     @endif
 
-    <x-ui.card>
+    <x-ui.card data-testid="prospect-hits">
         <p class="text-sm text-gray-600" data-testid="register-source">
             {{ __('Källa: SCB:s företagsregister och Bolagsverket, öppna data.') }}
             @if($sourceDate) {{ __('Uppdaterat :date.', ['date' => $sourceDate->setTimezone('Europe/Stockholm')->translatedFormat('j M Y')]) }}@endif

@@ -247,8 +247,9 @@ notices are tenant data and company-scoped.
   some company watches (the CRM accounts with an organisation number), as
   `company_registry_changes`: field, old and new value, time and source. The
   first load writes none. Kept 400 days (`registry:import` prunes them).
-- **Schedule**: weekly (Monday 03:30 SCB file, 04:10 Bolagsverket file;
-  the API at 05:00 when a key is set), only when
+- **Schedule**: weekly (Monday 03:30 SCB file, 04:40 Bolagsverket file;
+  the API at 05:00, after its nightly 04:00–04:30 window, when a key is
+  set), only when
   `COMPANY_REGISTER_IMPORT=true`. Off by default: a self-hosted instance
   chooses to load 1.8 million rows. The hosted instance turns it on.
 - **Rate limits**: the API driver keeps under 5 calls per second and waits
@@ -341,6 +342,36 @@ by any CRM user of any company: it is public data.
   opt-out in SCB's register binds a seller under marknadsföringslagen and
   good marketing practice, and whether a postal opt-out should also hide a
   company from call lists.
+
+## Implementation notes (2026-11-04)
+
+- Code: `app/Support/CompanyRegistry/Import` (sources, `RegistryWriter`),
+  `app/Console/Commands/RegistryImportCommand.php`, models
+  `RegistryCompany`/`RegistryImport`/`RegistryChange`, `Sni` and
+  `RegistryCodes`; in the CRM module `ProspectSearch`, `LookAlike`,
+  `AddProspects`, `CreateCallList`, `WorkCallList`,
+  `CreateRegistryNotices`, `crm:registry-watch`, the pages `ProspectingPage`,
+  `CallListsPage`, `CallListPage`, and the `x-crm::registry-facts` card on the
+  account card and the call list. `App\Support\CreditData` holds the
+  interface and the null driver.
+- A completing source (Bolagsverket's file) updates rows with one
+  `UPDATE … FROM (VALUES …)` per chunk: an upsert would check the NOT NULL
+  name of the new row before it sees the conflict.
+- The bulk file's opt-out column takes 1 and 2 (2 read as an opt-out), the
+  API's 3 and 4 (4). `TODO(legal-verify)`: SCB's code list for the bulk
+  file's `Reklamsparrtyp`.
+- The SCB file's own registration date (`RegDatKtid`, the date in SCB's
+  register) is written only when a row is created; Bolagsverket's date
+  replaces it.
+- A suppression-list match is checked on the register's phone and e-mail,
+  which only the API provides; without the key the check has nothing to
+  match.
+- The privacy policy (`docs/juridik/`) is not changed in this branch: the
+  register's residual personal data and art. 14(5)(b) are for the lawyer
+  first (see GDPR above), and a policy change bumps the legal version.
+- Tests: `tests/Feature/Crm/RegistryImportTest.php` (synthetic fixtures in
+  `tests/Fixtures/registry/`), `ProspectingTest.php`,
+  `tests/Tenancy/CrmProspectingTenancyTest.php`.
 
 ## Consequences
 

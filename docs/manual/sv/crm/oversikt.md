@@ -24,6 +24,7 @@ CRM är en modul. Den är avstängd tills ägaren slår på den. När den är p�
 5. Öppna **CRM → Mina aktiviteter** varje morgon. Se [Aktiviteter och nästa steg](/manual/crm/aktiviteter-och-nasta-steg).
 6. Lägg in affärerna du arbetar med under **CRM → Affärer**. Varje affär får ett nästa steg direkt. Se [Säljtratt och affärer](/manual/crm/saljtratt-och-affarer).
 7. Följ försäljningen under **CRM → Översikt** och **CRM → Prognos och mål**. Se [Översikt för försäljningen](/manual/crm/instrumentpanel) och [Prognos och mål](/manual/crm/prognos-och-mal).
+8. Hitta nya kunder under **CRM → Prospektera** och ring dem med **CRM → Ringlistor**. Se [Prospektera i företagsregistret](/manual/crm/prospektera) och [Ringlistor](/manual/crm/ringlistor).
 
 ## Listan över kunder och prospekt
 
@@ -58,6 +59,9 @@ En **Revisor** ser hela CRM, nyckeltalen och aktiviteterna, men kan inte ändra 
 - [Aktiviteter och nästa steg](/manual/crm/aktiviteter-och-nasta-steg)
 - [Säljtratt och affärer](/manual/crm/saljtratt-och-affarer)
 - [Prognos och mål](/manual/crm/prognos-och-mal)
+- [Prospektera i företagsregistret](/manual/crm/prospektera)
+- [Ringlistor](/manual/crm/ringlistor)
+- [Bevakning av kunder](/manual/crm/bevakning)
 - [Översikt för försäljningen](/manual/crm/instrumentpanel)
 - [Kundstatus](/manual/crm/kundstatus)
 - [Nyckeltal från bokföringen](/manual/crm/nyckeltal)
