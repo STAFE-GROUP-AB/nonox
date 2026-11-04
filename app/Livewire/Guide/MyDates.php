@@ -6,9 +6,13 @@ namespace App\Livewire\Guide;
 
 use App\Actions\Guide\IssueDeadlineFeed;
 use App\Actions\Guide\RevokeDeadlineFeed;
+use App\Domain\Deadlines\AgiDates;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\Deadline;
+use App\Domain\Deadlines\DeadlineCategory;
 use App\Domain\Deadlines\DeadlineCompletion;
+use App\Domain\Deadlines\DeadlineFilter;
+use App\Domain\Deadlines\YearAtAGlance;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\DeadlineCalendarFeed;
@@ -26,6 +30,12 @@ use Livewire\Component;
  * each applies, how many days are left, whether a VAT or AGI period is
  * already reported, and the user's calendar link. Computed from the company's
  * settings and fiscal years on every view; nothing is stored but the link.
+ *
+ * The page also teaches (ADR-051 addendum): "Ditt år i korthet" says what
+ * kinds of dates the company has and which setting decides them, every row
+ * carries a chip for its kind and whether it is a payment or a declaration,
+ * the first row of each kind explains it, a flag that repeats in a series is
+ * shown once, and ?visa=… filters by kind (a GET link, no JavaScript).
  */
 class MyDates extends Component
 {
@@ -37,12 +47,24 @@ class MyDates extends Component
     /** All 15 months (?alla=1) instead of the next six. */
     public bool $showAll = false;
 
+    /** The kind of dates shown (?visa=moms …), or '' for all of them. */
+    public string $filter = '';
+
     /** Months shown by default; the page links to all of them. */
     public const int DEFAULT_MONTHS = 6;
+
+    /** The "Så läser du sidan" panel, remembered closed per user and company (User::hidden_panels). */
+    public const string HELP_PANEL = 'guide-dates-help';
 
     public function mount(): void
     {
         $this->showAll = request()->boolean('alla');
+        $this->filter = DeadlineFilter::tryFrom((string) request()->query('visa', ''))->value ?? '';
+    }
+
+    public function rememberHelp(bool $open): void
+    {
+        $this->user()->setPanelHidden(self::HELP_PANEL, $this->company(), ! $open);
     }
 
     public function issueLink(IssueDeadlineFeed $issue): void
@@ -71,13 +93,44 @@ class MyDates extends Component
         }
 
         $today = CarbonImmutable::today();
-        $months = [];
-
         // Two weeks back as well, so a date that has just passed is still in sight, marked as passed.
-        $upcoming = $deadlines->upcoming($company, $today->subDays(14), ($this->showAll ? CompanyDeadlines::MONTHS : self::DEFAULT_MONTHS));
+        $from = $today->subDays(14)->startOfDay();
+        // One computation for both the summary of the year (fifteen months) and the list (six, or all fifteen).
+        $year = $deadlines->upcoming($company, $from);
+        $until = $from->addMonthsNoOverflow($this->showAll ? CompanyDeadlines::MONTHS : self::DEFAULT_MONTHS);
+        $window = array_values(array_filter($year, fn (Deadline $deadline): bool => $deadline->date->lessThanOrEqualTo($until)));
+        $filter = DeadlineFilter::tryFrom($this->filter);
+        $shown = $filter === null ? $window : array_values(array_filter($window, fn (Deadline $deadline): bool => $filter->matches($deadline)));
 
-        foreach ($upcoming as $deadline) {
+        $counts = [];
+
+        foreach (DeadlineFilter::cases() as $case) {
+            $counts[$case->value] = count(array_filter($window, fn (Deadline $deadline): bool => $case->matches($deadline)));
+        }
+
+        $months = [];
+        // A flag that repeats in a series (every F-skatt month) is shown on its first row only; a one-off keeps it.
+        $flagged = [];
+        // "Vad är det här?" on the first row of each kind.
+        $explained = [];
+        // The reason is written once per series: the next F-skatt month says the same as the first.
+        $described = [];
+        $lastReason = [];
+
+        foreach ($shown as $deadline) {
             $months[$deadline->date->format('Y-m')][] = $deadline;
+            $series = strstr($deadline->key, ':', true) ?: $deadline->key;
+
+            if ($deadline->legalVerify && ! isset($flagged[$series])) {
+                $flagged[$series] = $deadline->key;
+            }
+
+            $explained[DeadlineCategory::of($deadline)->value] ??= $deadline->key;
+
+            if (($lastReason[$series] ?? null) !== $deadline->appliesBecause) {
+                $described[] = $deadline->key;
+                $lastReason[$series] = $deadline->appliesBecause;
+            }
         }
 
         $firstYear = FiscalYear::query()->orderBy('start_date')->value('start_date');
@@ -87,22 +140,41 @@ class MyDates extends Component
             'company' => $company,
             'today' => $today,
             'months' => $months,
-            'reported' => DeadlineCompletion::done($company, $upcoming),
+            'shown' => $shown,
+            'filterCase' => $filter,
+            'counts' => $counts,
+            'windowCount' => count($window),
+            'lines' => YearAtAGlance::lines($company, $year, $today),
+            'flagged' => array_values($flagged),
+            'explained' => array_values($explained),
+            'described' => $described,
+            'until' => $until,
+            'largeEmployer' => AgiDates::isLarge($company),
+            'helpHidden' => $this->user()->hidesPanel(self::HELP_PANEL, $company),
+            // Counted on the whole window, whatever the filter, so every filter runs the same queries.
+            'reported' => DeadlineCompletion::done($company, $window),
             // Dates of a year before the first one in NONOX can still be ahead (REGLER.md review 2026-11-04).
             'missingEarlierYear' => $firstYear !== null && $firstYear->greaterThan($today->subMonthsNoOverflow(16)) ? $firstYear : null,
             'feed' => DeadlineCalendarFeed::query()->where('user_id', $this->user()->id)->whereNull('revoked_at')->latest('id')->first(),
-            'articleUrl' => fn (Deadline $deadline): ?string => self::articleUrl($deadline),
+            'articleUrl' => fn (Deadline $deadline): ?string => self::articleUrl($deadline->article),
+            'categoryUrl' => fn (DeadlineCategory $category): ?string => self::articleUrl($category->article()),
             'missedUrl' => Guide::article('viktiga-datum', 'om-du-missar-ett-datum', false) === null ? null : Guide::url('viktiga-datum', 'om-du-missar-ett-datum'),
         ]);
     }
 
-    private static function articleUrl(Deadline $deadline): ?string
+    /** The page's own address with the filter and the span, for the GET links. */
+    public function link(?string $filter, ?bool $all = null): string
     {
-        if ($deadline->article === null || ! str_contains($deadline->article, '/')) {
+        return route('guide.dates', array_filter(['visa' => $filter, 'alla' => ($all ?? $this->showAll) ? 1 : null]));
+    }
+
+    private static function articleUrl(?string $article): ?string
+    {
+        if ($article === null || ! str_contains($article, '/')) {
             return null;
         }
 
-        [$section, $slug] = explode('/', $deadline->article, 2);
+        [$section, $slug] = explode('/', $article, 2);
 
         return Guide::article($section, $slug, false) === null ? null : Guide::url($section, $slug);
     }

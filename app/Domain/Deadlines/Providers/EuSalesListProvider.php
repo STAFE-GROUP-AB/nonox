@@ -58,7 +58,7 @@ final class EuSalesListProvider implements DeadlineProvider
             $deadlines[] = new Deadline(
                 'eu_sales_list:'.$start->format('Y-m').($quarter ? '-q' : ''),
                 DeadlineType::EuSalesList,
-                __('Periodisk sammanställning för :period', ['period' => $label]),
+                __('Lämna periodisk sammanställning för :period', ['period' => $label]),
                 Workdays::onDay($end->addMonthNoOverflow(), 25),
                 $label,
                 __('Företaget har fakturerat varor eller tjänster till företag i andra EU-länder under perioden.'),

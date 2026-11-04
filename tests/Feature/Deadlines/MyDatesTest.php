@@ -42,7 +42,7 @@ it('shows the dates by month, why they apply, the days left, links and the notic
     $this->actingAs($this->owner)->get(route('guide.dates'))->assertOk()
         ->assertSee('Mina datum')
         ->assertSee('November 2026')
-        ->assertSee('Momsdeklaration för kvartal 3 2026')
+        ->assertSee('Deklarera och betala moms för kvartal 3 2026')
         ->assertSee('Ni redovisar moms varje kvartal.')
         ->assertSee('Om 8 dagar')
         ->assertSee('Gör det i NONOX')
@@ -96,7 +96,7 @@ it('serves the dates as all-day events with stable ids and alarms a week and a d
         ->toContain('UID:deadline-'.$this->company->id.'-vat-2026-09-30@'.parse_url(url('/'), PHP_URL_HOST))
         ->toContain('DTSTART;VALUE=DATE:20261112')
         ->toContain('DTEND;VALUE=DATE:20261113')
-        ->toContain('SUMMARY:Momsdeklaration för kvartal 3 2026')
+        ->toContain('SUMMARY:Moms: Deklarera och betala moms för kvartal 3 2026')
         ->toContain('TRIGGER:-P7D')
         ->toContain('TRIGGER:-P1D')
         ->not->toContain($this->owner->email)
@@ -162,7 +162,7 @@ it('reminds the owner and those who look after the company a week and a day befo
         ->filter(fn ($data): bool => str_starts_with($data['deadline_key'], 'vat:'))->map(fn ($data): string => $data['title'])->values()->all();
     $vatReminders = fn (): int => CompanyScope::bypass(fn (): int => DeadlineReminder::query()->where('deadline_key', 'like', 'vat:%')->count());
 
-    expect($notices($this->owner))->toBe(['Momsdeklaration för kvartal 3 2026: sista dagen är om 7 dagar, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.'])
+    expect($notices($this->owner))->toBe(['Moms: Deklarera och betala moms för kvartal 3 2026. Sista dagen är om 7 dagar, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.'])
         ->and($notices($accountant))->toHaveCount(1)
         ->and($notices($bookkeeper))->toBe([])
         ->and($vatReminders())->toBe(2);
@@ -170,7 +170,7 @@ it('reminds the owner and those who look after the company a week and a day befo
     $this->travelTo(CarbonImmutable::parse('2026-11-11 06:50:00'));
     $this->artisan(SendDeadlineRemindersCommand::class)->assertSuccessful();
 
-    expect($notices($this->owner))->toContain('Momsdeklaration för kvartal 3 2026: sista dagen är i morgon, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.')
+    expect($notices($this->owner))->toContain('Moms: Deklarera och betala moms för kvartal 3 2026. Sista dagen är i morgon, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.')
         ->and($notices($this->owner))->toHaveCount(2);
 
     $this->company->forceFill(['guide_enabled' => false])->save();
@@ -187,8 +187,8 @@ it('sends a missed reminder late, with the days that are left, and never the wee
     $this->artisan(SendDeadlineRemindersCommand::class)->assertSuccessful();
 
     expect($this->owner->fresh()->notifications()->pluck('data')->filter(fn ($data): bool => str_starts_with($data['deadline_key'], 'vat:'))->map(fn ($data): string => $data['title'])->values()->all())->toEqualCanonicalizing([
-        'Momsdeklaration för kvartal 3 2026: sista dagen är om 3 dagar, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.',
-        'Momsdeklaration för kvartal 3 2026: sista dagen är i morgon, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.',
+        'Moms: Deklarera och betala moms för kvartal 3 2026. Sista dagen är om 3 dagar, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.',
+        'Moms: Deklarera och betala moms för kvartal 3 2026. Sista dagen är i morgon, 12 november. Betala i god tid: en betalning räknas när den har kommit in på skattekontot. Beräknat från företagets inställningar.',
     ]);
 });
 
@@ -228,7 +228,7 @@ it('shows the next dates on Översikt with a fixed number of queries', function 
     $count = function (): int {
         DB::flushQueryLog();
         DB::enableQueryLog();
-        $this->actingAs($this->owner->fresh())->get(route('dashboard'))->assertOk()->assertSee('Nästa datum')->assertSee('Momsdeklaration för kvartal 3 2026');
+        $this->actingAs($this->owner->fresh())->get(route('dashboard'))->assertOk()->assertSee('Nästa datum')->assertSee('Deklarera och betala moms för kvartal 3 2026');
 
         return count(DB::getQueryLog());
     };

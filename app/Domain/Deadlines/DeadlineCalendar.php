@@ -54,9 +54,9 @@ final class DeadlineCalendar
                 'DTSTAMP:'.$stamp,
                 'DTSTART;VALUE=DATE:'.$deadline->date->format('Ymd'),
                 'DTEND;VALUE=DATE:'.$deadline->date->addDay()->format('Ymd'),
-                'SUMMARY:'.Ics::text($deadline->title),
+                'SUMMARY:'.Ics::text($deadline->summary()),
                 'DESCRIPTION:'.Ics::text(trim($description)),
-                'CATEGORIES:'.Ics::text($deadline->type->label()),
+                'CATEGORIES:'.Ics::text(DeadlineCategory::of($deadline)->label()),
                 'CLASS:PRIVATE',
                 'TRANSP:TRANSPARENT',
             );
@@ -65,7 +65,7 @@ final class DeadlineCalendar
                 array_push($lines,
                     'BEGIN:VALARM',
                     'ACTION:DISPLAY',
-                    'DESCRIPTION:'.Ics::text($deadline->title),
+                    'DESCRIPTION:'.Ics::text($deadline->summary()),
                     "TRIGGER:-P{$days}D",
                     'END:VALARM',
                 );

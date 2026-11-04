@@ -55,7 +55,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                 $deadlines[] = new Deadline(
                     "agi:{$period}",
                     DeadlineType::Agi,
-                    __('Arbetsgivardeklaration för :month', ['month' => $label]),
+                    __('Lämna arbetsgivardeklarationen och betala för :month', ['month' => $label]),
                     AgiDates::declaration($period, false),
                     $label,
                     __('Företaget är registrerat som arbetsgivare. Deklarationen lämnas och skatten betalas samma dag, också en nolldeklaration för en månad utan löner.'),
@@ -83,7 +83,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
             $deadlines[] = new Deadline(
                 "agi:{$period}",
                 DeadlineType::Agi,
-                __('Arbetsgivardeklaration för :month', ['month' => $label]),
+                __('Lämna arbetsgivardeklarationen för :month', ['month' => $label]),
                 AgiDates::declaration($period, true),
                 $label,
                 __('Företaget är arbetsgivare och omsätter mer än 40 miljoner kronor om året.'),

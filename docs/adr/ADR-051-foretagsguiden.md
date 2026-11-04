@@ -263,6 +263,22 @@ about what has been checked and by whom.
    hint about the first F-skatt payment, which the engine does not compute
    (it shows the series from the fiscal year's second month, flagged). The
    column remains for a later stage.
+11. **The page teaches (2026-11-04, after the owner's own use).** An AB with
+   quarterly VAT read the monthly F-skatt rows as VAT. The engine was right;
+   the page did not explain. Now: "Ditt år i korthet" (`YearAtAGlance`) gives
+   one line per kind of date with its frequency, the setting that decides it
+   and the next date; every row has a kind chip (`DeadlineCategory`: icon and
+   word, one colour per kind) and says payment, declaration or both
+   (`DeadlineAction`); titles start with the verb ("Betala F-skatt för …",
+   "Deklarera och betala moms för …") and calendar events and reminders are
+   prefixed with the kind ("Moms: …"); "Vad är det här?" on the first row of
+   each kind; a flag or a reason that repeats in a series is shown once (the
+   F-skatt decision note moves to Ditt år and the first month); `?visa=`
+   filters by kind as GET links that combine with `?alla=1`; a "Så läser du
+   sidan" panel remembered closed per user (`hidden_panels`). The explaining
+   texts live in `DeadlineCategory` and `YearAtAGlance` only, with facts from
+   REGLER.md and the viktiga-datum articles. Filters run in PHP over one
+   engine call, so every filter makes the same queries.
 
 ### Privacy
 

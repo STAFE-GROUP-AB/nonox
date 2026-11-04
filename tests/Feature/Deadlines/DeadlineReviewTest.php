@@ -97,7 +97,7 @@ it('asks a handelsbolag whether a legal person is a partner, with the six-month 
     ($this->set)(['legal_form' => LegalForm::Hb]);
 
     $entry = ($this->find)('2027-01-01', 'annual_report:2026-12-31');
-    expect($entry->title)->toBe('Har handelsbolaget en juridisk person som delägare?')
+    expect($entry->title)->toBe('Kontrollera om handelsbolaget ska skicka in årsredovisningen')
         ->and($entry->date->toDateString())->toBe('2027-06-30')
         ->and($entry->isRecommendation)->toBeTrue()
         ->and($entry->legalVerify)->toBeTrue()

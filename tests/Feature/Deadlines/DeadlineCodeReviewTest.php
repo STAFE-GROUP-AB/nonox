@@ -102,7 +102,7 @@ it('leaves reported VAT and AGI periods out of Nästa datum on Översikt', funct
     $html = (string) $this->actingAs($this->owner->fresh())->get(route('dashboard'))->assertOk()->getContent();
     $card = substr($html, (int) strpos($html, 'data-next-dates'));
 
-    expect($card)->not->toContain('Momsdeklaration för kvartal 3 2026');
+    expect($card)->not->toContain('Deklarera och betala moms för kvartal 3 2026');
 });
 
 it('never counts a large employer\'s payment date as done because the declaration is filed', function () {

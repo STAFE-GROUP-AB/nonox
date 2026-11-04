@@ -50,10 +50,10 @@ final class PreliminaryTaxProvider implements DeadlineProvider
                 $deadlines[] = new Deadline(
                     'preliminary_tax:'.$month->format('Y-m'),
                     DeadlineType::PreliminaryTax,
-                    __('Betala preliminärskatt för :month', ['month' => $label]),
+                    __('Betala F-skatt för :month', ['month' => $label]),
                     Workdays::onDay($month, 12, $large ? [1 => 17] : [1 => 17, 8 => 17]),
                     $label,
-                    __('Företaget har F-skatt. Beloppet och den första månaden står i ditt beslut om preliminärskatt från Skatteverket.'),
+                    __('F-skatt är företagets skatt i förskott (preliminärskatt), samma belopp varje månad. Beloppet och den första månaden står i ert beslut om F-skatt från Skatteverket.'),
                     null,
                     self::ARTICLE,
                     self::SOURCE,
@@ -65,7 +65,7 @@ final class PreliminaryTaxProvider implements DeadlineProvider
             $deadlines[] = new Deadline(
                 'preliminary_tax_top_up:'.$end->toDateString(),
                 DeadlineType::PreliminaryTax,
-                __('Fyllnadsinbetalning för :year?', ['year' => self::yearLabel($start, $end)]),
+                __('Överväg en fyllnadsinbetalning för :year', ['year' => self::yearLabel($start, $end)]),
                 self::topUpDay($topUp->setDay(12)),
                 self::yearLabel($start, $end),
                 __('Blir skatten för året högre än preliminärskatten kan du betala in skillnaden senast den här dagen, innan kostnadsränta börjar räknas.'),

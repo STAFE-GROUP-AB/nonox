@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-mina-datum-ditt-ar",
+      "datum": "2026-11-04T23:50:00+01:00",
+      "rubrik": "Mina datum förklarar ditt år",
+      "beskrivning": "Överst på Mina datum står nu Ditt år i korthet: vilka sorters datum företaget har, hur ofta och vilken inställning som styr dem. Varje datum har ett märke som Moms eller F-skatt, säger om det är en betalning eller en deklaration och börjar med vad du ska göra, och du kan visa en sort i taget. Att kontrollera F-skatten mot beslutet från Skatteverket står en gång i stället för varje månad.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-04-inloggningskoden-kommer-fram",
       "datum": "2026-11-04T23:10:00+01:00",
       "rubrik": "Inloggningskoden kommer fram igen",

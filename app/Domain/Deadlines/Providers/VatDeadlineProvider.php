@@ -65,7 +65,7 @@ final class VatDeadlineProvider implements DeadlineProvider
                 $deadlines[] = new Deadline(
                     'vat:'.$period['end']->toDateString(),
                     DeadlineType::Vat,
-                    __('Momsdeklaration för :period', ['period' => $label]),
+                    __('Deklarera och betala moms för :period', ['period' => $label]),
                     $date,
                     $label,
                     $because,
