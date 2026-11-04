@@ -40,7 +40,8 @@ class InvoicePeppolPanel extends Component
 
     public function mount(Invoice $invoice): void
     {
-        $this->invoiceId = $invoice->id;
+        // Read again inside the current company: another company's invoice answers 404.
+        $this->invoiceId = Invoice::query()->findOrFail($invoice->id)->id;
     }
 
     public function check(LookupParticipant $lookup): void

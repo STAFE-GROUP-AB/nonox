@@ -85,7 +85,7 @@ final class LogAccessPoint implements PeppolAccessPoint
         return $reference;
     }
 
-    public function deliveryStatus(PeppolParticipant $sender, string $reference, bool $creditNote): ?TransmissionStatus
+    public function deliveryStatus(PeppolParticipant $sender, string $reference, bool $creditNote): TransmissionStatus
     {
         return TransmissionStatus::Delivered;
     }

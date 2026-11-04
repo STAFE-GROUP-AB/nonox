@@ -36,16 +36,16 @@ class LinkPeppolAccountCommand extends Command
         }
 
         return CurrentCompany::run($company, function () use ($company): int {
-            $participant = PeppolParticipant::query()->first() ?? new PeppolParticipant([
-                'identifier' => PeppolIdentifier::forOrganisationNumber($company->org_number)?->toString(),
-            ]);
+            $participant = PeppolParticipant::query()->first();
+            $identifier = $participant instanceof PeppolParticipant ? $participant->identifier : PeppolIdentifier::forOrganisationNumber($company->org_number)?->toString();
 
-            if ($participant->identifier === null) {
+            if ($identifier === null) {
                 $this->error('The company has no valid organisation number; set its Peppol ID under Moduler first.');
 
                 return self::FAILURE;
             }
 
+            $participant ??= new PeppolParticipant(['identifier' => $identifier]);
             $account = $this->option('unlink') ? null : trim((string) $this->argument('account'));
             $participant->forceFill(['provider' => $account === null ? null : AccessPoints::driver(), 'provider_account' => $account])->save();
 

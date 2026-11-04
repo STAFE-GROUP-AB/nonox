@@ -13,6 +13,8 @@ use App\Models\NumberSeries;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
 use App\Models\User;
+use App\Modules\ModuleManager;
+use App\Modules\Peppol\PeppolModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -69,7 +71,10 @@ class SaveRecurringInvoice
 
             $customer->ensureNotRestricted('customer_id');
 
-            if ((bool) ($validated['send_automatically'] ?? false) && blank($customer->email)) {
+            // A customer invoiced via Peppol needs no e-mail address (ADR-050).
+            $viaPeppol = $customer->invoice_delivery === 'PEPPOL' && filled($customer->peppol_id) && app(ModuleManager::class)->isEnabled(PeppolModule::KEY, $company);
+
+            if ((bool) ($validated['send_automatically'] ?? false) && blank($customer->email) && ! $viaPeppol) {
                 throw ValidationException::withMessages(['send_automatically' => __(':name har ingen e-postadress, så fakturorna kan inte skickas automatiskt.', ['name' => $customer->name])]);
             }
 

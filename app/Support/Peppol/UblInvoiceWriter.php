@@ -86,7 +86,7 @@ final class UblInvoiceWriter
      */
     public static function unsupportedReason(Invoice $invoice, Company $company): ?string
     {
-        return match (true) {
+        $reason = match (true) {
             $invoice->isDraft() || $invoice->number === null => __('Fakturan måste vara utfärdad innan den kan skickas.'),
             $invoice->tax_reduction !== null => __('En faktura med ROT- eller RUT-avdrag går till en privatperson och kan inte skickas via Peppol.'),
             $invoice->foreign_sale === ForeignSale::EuConsumerOss => __('En faktura till en privatperson i ett annat EU-land (OSS) kan inte skickas via Peppol.'),
@@ -95,6 +95,8 @@ final class UblInvoiceWriter
             $invoice->isCredit() && $invoice->credits_invoice_id === null => __('Kreditfakturan saknar den faktura den krediterar.'),
             default => null,
         };
+
+        return is_string($reason) ? $reason : null;
     }
 
     /**

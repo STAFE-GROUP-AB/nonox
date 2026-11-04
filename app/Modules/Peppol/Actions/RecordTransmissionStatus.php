@@ -10,6 +10,7 @@ use App\Modules\Peppol\Domain\TransmissionStatus;
 use App\Modules\Peppol\Events\PeppolTransmissionChanged;
 use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Support\Audit\Audit;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -41,7 +42,7 @@ class RecordTransmissionStatus
                 return $transmission;
             }
 
-            $now = now();
+            $now = CarbonImmutable::now();
             $transmission->status = $status;
             $transmission->provider_reference ??= $reference;
 

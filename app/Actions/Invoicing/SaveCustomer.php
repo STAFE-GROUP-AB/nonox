@@ -97,7 +97,7 @@ class SaveCustomer
         }
 
         // A Swedish customer invoiced via Peppol is addressed by its organisation number unless another id is given.
-        if (($attributes['invoice_delivery'] ?? null) === 'PEPPOL' && array_key_exists('peppol_id', $attributes) && $attributes['peppol_id'] === null && strtoupper((string) ($attributes['country'] ?? $customer?->country ?? 'SE')) === 'SE') {
+        if (($attributes['invoice_delivery'] ?? null) === 'PEPPOL' && array_key_exists('peppol_id', $attributes) && $attributes['peppol_id'] === null && strtoupper((string) ($attributes['country'] ?? ($customer === null ? 'SE' : $customer->country))) === 'SE') {
             $attributes['peppol_id'] = PeppolIdentifier::forOrganisationNumber((string) ($attributes['org_number'] ?? $customer?->org_number))?->toString();
         }
 

@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Peppol;
 
-use App\Models\Invoice;
 use App\Modules\ModuleRegistry;
 use App\Modules\Peppol\Console\LinkPeppolAccountCommand;
 use App\Modules\Peppol\Console\SyncPeppolCommand;
 use App\Modules\Peppol\Http\PeppolWebhookController;
 use App\Modules\Peppol\Livewire\InvoicePeppolPanel;
 use App\Modules\Peppol\Livewire\PeppolSettingsForm;
-use App\Modules\Peppol\Models\PeppolTransmission;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
@@ -37,9 +34,6 @@ class PeppolServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([SyncPeppolCommand::class, LinkPeppolAccountCommand::class]);
         }
-
-        // The sendings of an invoice through Peppol, for the API and the invoice page (no column on invoices).
-        Invoice::resolveRelationUsing('peppolTransmissions', fn (Invoice $invoice): HasMany => $invoice->hasMany(PeppolTransmission::class));
 
         Livewire::component(PeppolSettingsForm::NAME, PeppolSettingsForm::class);
         Livewire::component(InvoicePeppolPanel::NAME, InvoicePeppolPanel::class);
