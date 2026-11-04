@@ -481,6 +481,35 @@ probably inverted) it warns and stores the warning on the import row
 - **Sole traders by hand.** `CreateCallList::isPrivate` also treats an
   account whose own `org_number` is a personal number as private.
 
+## Addendum: name search and page size (2026-11-04)
+
+The owner's request: with hundreds of hits, find one company by typing part
+of its name instead of paging, and choose how many hits a page shows.
+
+- **"Sök på namn eller organisationsnummer"** (query string `sok`) on both
+  tabs, combined with the filters and the look-alike criteria, and enough
+  on its own (it counts as a filter, so it searches the whole register).
+  At least two characters. `ProspectSearch::matching`: `name ILIKE
+  '%term%'` (case-insensitive; not accent-insensitive, since `unaccent` is
+  not immutable and cannot be indexed without a wrapper), with `%`, `_` and
+  `\` in the term escaped; a term of digits with or without a hyphen also
+  matches organisation numbers that start with it, as a `BETWEEN` range on
+  the unique index (a prefix `LIKE` would need `bpchar_pattern_ops` under a
+  non-C collation). Debounced 400 ms.
+- **Index**: `company_registry_name_trgm_index`, GIN `name gin_trgm_ops`
+  (migration `2026_11_25_100400`), built `CONCURRENTLY` outside a
+  transaction so the weekly import is not blocked. pg_trgm is already
+  created by the spotlight search (ADR-026); if it is missing and cannot be
+  created, the migration logs a warning and skips the index (the search
+  then works with a sequential scan). Measured locally on 1.17 million
+  synthetic names: the build took about 4 s (`maintenance_work_mem` 64 MB);
+  a search for a rare name took under 1 ms, a common word ("bygg", 97 000
+  hits) about 7 ms for the capped count.
+- **"Visa per sida"** (query string `per-sida`): 25, 50, 100 or 200; any
+  other value shows 25. The count stays capped at 10 000, the queries per
+  page stay fixed (tested), and "Lägg till alla träffar" still adds at most
+  500, whatever the page size.
+
 ## Consequences
 
 - An instance with `COMPANY_REGISTER_IMPORT=true` has a register of about

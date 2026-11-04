@@ -21,7 +21,9 @@ use Illuminate\Support\Facades\DB;
  * company-specific part is "not already in our CRM", which reads the
  * company's own accounts with an explicit company_id.
  *
- * Filters: sni (five-digit code or two-digit division), town, postal (a
+ * Filters: search (a name contains it, case-insensitive; or, when it is
+ * digits with or without a hyphen, an organisation number starts with it;
+ * at least two characters), sni (five-digit code or two-digit division), town, postal (a
  * prefix of the postal code), county, municipality, form (SCB legal form),
  * from/to (registration date), employees_min/max and turnover_min/max
  * (size classes), and the switches all (include companies not in
@@ -36,9 +38,16 @@ final class ProspectSearch
     /** The filters that narrow a search; a search needs at least one. */
     public const array NARROWING = ['sni', 'town', 'postal', 'county', 'municipality', 'form', 'from', 'to', 'employees_min', 'employees_max', 'turnover_min', 'turnover_max'];
 
+    /** The shortest name search: one character would match most of the register. */
+    public const int MIN_SEARCH = 2;
+
     /** @param  array<string, mixed>  $filters */
     public static function hasFilter(array $filters): bool
     {
+        if (self::searchTerm((string) ($filters['search'] ?? '')) !== null) {
+            return true;
+        }
+
         foreach (self::NARROWING as $key) {
             if (trim((string) ($filters[$key] ?? '')) !== '') {
                 return true;
@@ -75,11 +84,51 @@ final class ProspectSearch
             ->when($int('turnover_min') !== null, fn (Builder $query) => $query->where('turnover_class', '>=', $int('turnover_min')))
             ->when($int('turnover_max') !== null, fn (Builder $query) => $query->where('turnover_class', '<=', $int('turnover_max')));
 
+        self::matching($query, (string) ($filters['search'] ?? ''));
+
         if ((bool) ($filters['new'] ?? true)) {
             self::notInCrm($query, $company);
         }
 
         return $query;
+    }
+
+    /**
+     * The free-text search: the name contains the term (ILIKE, answered by
+     * the trigram index company_registry_name_trgm_index), or, for a term of
+     * digits with or without a hyphen, the organisation number starts with
+     * it (a range on the unique index, whatever the collation). LIKE's
+     * wildcards in the term are matched literally. A term shorter than
+     * MIN_SEARCH characters is ignored.
+     *
+     * @param  Builder<RegistryCompany>  $query
+     */
+    public static function matching(Builder $query, string $search): void
+    {
+        $term = self::searchTerm($search);
+
+        if ($term === null) {
+            return;
+        }
+
+        $digits = preg_match('/^[\d\s-]+$/', $term) === 1 ? (string) preg_replace('/\D/', '', $term) : '';
+        $pattern = '%'.addcslashes($term, '\\%_').'%';
+
+        $query->where(function (Builder $any) use ($pattern, $digits): void {
+            $any->where('name', 'ilike', $pattern);
+
+            if ($digits !== '' && strlen($digits) <= 10) {
+                $any->orWhereBetween('org_number', [str_pad($digits, 10, '0'), str_pad($digits, 10, '9')]);
+            }
+        });
+    }
+
+    /** The search term, trimmed, or null when it is too short to search on. */
+    public static function searchTerm(string $search): ?string
+    {
+        $term = trim((string) preg_replace('/\s+/u', ' ', $search));
+
+        return mb_strlen($term) >= self::MIN_SEARCH ? mb_substr($term, 0, 100) : null;
     }
 
     /**

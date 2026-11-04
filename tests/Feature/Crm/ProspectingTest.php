@@ -91,7 +91,7 @@ it('answers 404 while CRM is off and shows the pages while it is on', function (
     $this->get(route('crm.call-lists'))->assertNotFound();
 
     app(ModuleManager::class)->enable(CrmModule::KEY, $this->company, $this->owner);
-    $this->get('/kunder/prospektera')->assertOk()->assertSee('Prospektera')->assertSee('Välj ett filter för att söka');
+    $this->get('/kunder/prospektera')->assertOk()->assertSee('Prospektera')->assertSee('Sök eller välj ett filter');
     $this->get('/kunder/ringlistor')->assertOk()->assertSee('Inga ringlistor ännu');
 });
 
@@ -462,4 +462,158 @@ it('saves the monitoring setting from the CRM settings', function () {
 
     expect(CrmSettings::for($this->company)['registry_monitoring'])->toBe(0)
         ->and(CrmSettings::for($this->company)['registry_monitoring_prospects'])->toBe(1);
+});
+
+it('searches the whole register on part of a name, case-insensitively, without any other filter', function () {
+    registryRow(1, 'Grönvåg Återvinning Exempel AB');
+    registryRow(2, 'Kodverket Exempel AB');
+    registryRow(3, 'Gamla Grönvåg Exempel AB', ['scb_status' => 9]);
+
+    Livewire::test(ProspectingPage::class)->assertSee('Sök eller välj ett filter')
+        ->set('search', 'grönvåg')
+        ->assertSee('Grönvåg Återvinning Exempel AB')
+        ->assertDontSee('Kodverket Exempel AB')
+        ->assertDontSee('Gamla Grönvåg Exempel AB')
+        ->assertSee('1 företag');
+
+    Livewire::test(ProspectingPage::class)->set('search', 'ÅTERVINN')->assertSee('Grönvåg Återvinning Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', '  vÅg  ')->assertSee('Grönvåg Återvinning Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', 'Okänt namn')->assertSee('Inget företag matchar sökningen');
+});
+
+it('needs two characters before it searches on a name', function () {
+    registryRow(1, 'Kodverket Exempel AB');
+
+    Livewire::test(ProspectingPage::class)->set('search', 'k')
+        ->assertSee('Skriv minst två tecken för att söka.')
+        ->assertDontSee('Kodverket Exempel AB')
+        ->assertSee('Sök eller välj ett filter');
+});
+
+it('searches on the start of an organisation number with or without a hyphen', function () {
+    registryRow(1, 'Första Exempel AB');
+    registryRow(12, 'Tolfte Exempel AB');
+    $first = prospectOrg(1);
+
+    Livewire::test(ProspectingPage::class)->set('search', substr($first, 0, 6).'-'.substr($first, 6))
+        ->assertSee('Första Exempel AB')->assertDontSee('Tolfte Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', $first)
+        ->assertSee('Första Exempel AB')->assertDontSee('Tolfte Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', '559999-61')
+        ->assertSee('Tolfte Exempel AB')->assertDontSee('Första Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', '5599996')
+        ->assertSee('Tolfte Exempel AB')->assertSee('Första Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', '4499')->assertSee('Inget företag matchar sökningen');
+});
+
+it('matches LIKE wildcards in the search literally', function () {
+    registryRow(1, 'Hundra% Exempel AB');
+    registryRow(2, 'Hundra procent Exempel AB');
+    registryRow(3, 'Under_strecket Exempel AB');
+    registryRow(4, 'Underxstrecket Exempel AB');
+    registryRow(5, 'Snedstreck\\Exempel AB');
+
+    Livewire::test(ProspectingPage::class)->set('search', 'a%')->assertSee('Hundra% Exempel AB')->assertDontSee('Hundra procent Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', 'r_s')->assertSee('Under_strecket Exempel AB')->assertDontSee('Underxstrecket Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', '%%')->assertSee('Inget företag matchar sökningen');
+    Livewire::test(ProspectingPage::class)->set('search', 'k\\E')->assertSee('Snedstreck\\Exempel AB')->assertDontSee('Hundra% Exempel AB');
+});
+
+it('combines the search with the filters and with look-alike', function () {
+    registryRow(1, 'Kundbolaget Exempel AB');
+    registryRow(2, 'Norrsken Data Exempel AB');
+    registryRow(3, 'Norrsken Bygg Exempel AB', ['sni_code' => '41200', 'sni_division' => '41']);
+    registryRow(4, 'Söderljus Data Exempel AB');
+
+    Livewire::withQueryParams(['sok' => 'norrsken', 'huvudgrupp' => '62'])->test(ProspectingPage::class)
+        ->assertSee('Norrsken Data Exempel AB')
+        ->assertDontSee('Norrsken Bygg Exempel AB')
+        ->assertDontSee('Söderljus Data Exempel AB')
+        ->call('clearFilters')
+        ->assertSet('search', '')
+        ->assertSee('Sök eller välj ett filter');
+
+    $customer = Crm::customer($this->company, $this->owner, 'Kundbolaget Exempel AB', ['org_number' => prospectOrg(1)]);
+    Crm::invoice($this->owner, $this->company, $customer, '2026-10-01', [['description' => 'Tjänst', 'quantity' => '1', 'price' => '1000', 'vat_rate' => 2500]]);
+
+    Livewire::withQueryParams(['lage' => 'liknande'])->test(ProspectingPage::class)
+        ->assertSee('Norrsken Data Exempel AB')->assertSee('Söderljus Data Exempel AB')
+        ->set('search', 'söder')
+        ->assertSee('Söderljus Data Exempel AB')->assertDontSee('Norrsken Data Exempel AB');
+});
+
+it('keeps the search and the page size in the query string', function () {
+    registryRow(1, 'Norrsken Data Exempel AB');
+
+    Livewire::withQueryParams(['sok' => 'norrsken', 'per-sida' => '100'])->test(ProspectingPage::class)
+        ->assertSet('search', 'norrsken')
+        ->assertSet('perPage', '100')
+        ->assertSee('Norrsken Data Exempel AB');
+
+    $this->get('/kunder/prospektera?sok=norrsken&per-sida=50')->assertOk()
+        ->assertSee('Norrsken Data Exempel AB')
+        ->assertSee('Visa per sida');
+});
+
+it('shows 25, 50, 100 or 200 per page and falls back to 25 for anything else', function () {
+    foreach (range(1, 60) as $i) {
+        registryRow($i, sprintf('Bolag %02d Exempel AB', $i));
+    }
+
+    Livewire::test(ProspectingPage::class)->set('division', '62')
+        ->assertSee('Bolag 25 Exempel AB')->assertDontSee('Bolag 26 Exempel AB')
+        ->set('perPage', '50')
+        ->assertSet('perPage', '50')
+        ->assertSee('Bolag 50 Exempel AB')->assertDontSee('Bolag 51 Exempel AB')
+        ->set('perPage', '100')
+        ->assertSee('Bolag 60 Exempel AB')
+        ->set('perPage', '37')
+        ->assertSet('perPage', '25')
+        ->assertDontSee('Bolag 26 Exempel AB');
+
+    foreach (['13', 'abc', '-50', '1000', ''] as $invalid) {
+        Livewire::withQueryParams(['huvudgrupp' => '62', 'per-sida' => $invalid])->test(ProspectingPage::class)
+            ->assertSet('perPage', '25')
+            ->assertSee('Bolag 25 Exempel AB')->assertDontSee('Bolag 26 Exempel AB');
+    }
+});
+
+it('adds the ticked and all hits of a search shown with a larger page', function () {
+    foreach (range(1, 30) as $i) {
+        registryRow($i, sprintf('Norrsken %02d Exempel AB', $i));
+    }
+    registryRow(31, 'Söderljus Exempel AB');
+
+    Livewire::withQueryParams(['sok' => 'norrsken', 'per-sida' => '50'])->test(ProspectingPage::class)
+        ->assertSee('Norrsken 30 Exempel AB')
+        ->set('selected', [prospectOrg(30)])
+        ->call('addSelected')
+        ->call('addAll');
+
+    expect(Account::query()->where('name', 'like', 'Norrsken%')->count())->toBe(30)
+        ->and(Account::query()->where('name', 'Söderljus Exempel AB')->exists())->toBeFalse();
+});
+
+it('keeps a fixed number of queries with a search and 200 per page', function () {
+    $count = function (): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        Livewire::withQueryParams(['sok' => 'exempel', 'per-sida' => '200'])->test(ProspectingPage::class);
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        return $queries;
+    };
+
+    foreach (range(1, 3) as $i) {
+        registryRow($i, "Företag {$i} Exempel AB");
+    }
+    $count();
+    $few = $count();
+
+    foreach (range(4, 60) as $i) {
+        registryRow($i, "Företag {$i} Exempel AB", ['employee_class' => 3]);
+    }
+
+    expect($count())->toBe($few);
 });

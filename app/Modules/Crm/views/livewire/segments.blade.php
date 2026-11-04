@@ -1,8 +1,10 @@
 @php($input = 'block w-full min-h-11 sm:min-h-0 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 
 <div class="space-y-6">
+    <x-crm::segment-guide :open="$segments->isEmpty() || $open" />
+
     @if($open)
-        <x-ui.card :title="$editingId ? __('Ändra segment') : __('Nytt segment')" :description="__('Ett segment är personerna på de kunder och prospekt som matchar filtren. Ett tomt filter tar med alla.')">
+        <x-ui.card :title="$editingId ? __('Ändra segment') : __('Nytt segment')" :description="__('Fyll bara i de filter du behöver. Ett tomt filter tar med alla. Rutan Personer i segmentet visar hur många som är med just nu; när utskicket skickas räknas det om.')">
             <form wire:submit="save" class="mt-4 grid gap-5 lg:grid-cols-3">
                 <div class="grid gap-4 sm:grid-cols-2 lg:col-span-2">
                     <x-ui.field for="segment_name" :label="__('Namn')" error="name" class="sm:col-span-2">

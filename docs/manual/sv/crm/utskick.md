@@ -17,9 +17,46 @@ Utskick kan göras av **Ägare** och **Administratör**.
 
 ## Segment
 
-Ett segment väljer vilka ett utskick går till. Under **CRM → Utskick → Segment** gör du ett nytt segment med filter för status, typ, roll, rättslig grund, taggar, ansvarig säljare, SNI-kod och ort. Alla filter du fyller i måste stämma; inom ett filter räcker något av valen. Medan du ändrar visar rutan **Personer i segmentet** hur många som finns och hur många som kan få ett utskick.
+Ett utskick går alltid till ett **segment**. Ett segment är ett sparat filter som beskriver vilka du vill nå, till exempel "aktiva kunder i Stockholm med taggen kaffe". NONOX tar med kontaktpersonerna på de kunder och prospekt som stämmer med filtret. Överst på sidan **Segment** finns rutan **Så fungerar segment**; välj **Visa** om den är stängd.
 
-![Segment.](/bilder/manual/crm/segment.webp)
+![Sidan Segment med rutan Så fungerar segment öppen: vad ett segment är, tre exempel och vilka som aldrig får utskicket.](/bilder/manual/crm/segment.webp)
+
+### Ett filter, inte en lista
+
+Ett segment är ingen fast lista med namn. Vilka som är med räknas fram när du skickar utskicket, det vill säga när du väljer **Ja, skicka**. Det gäller också ett schemalagt utskick: mottagarna bestäms när du väljer **Ja, skicka**, inte när det går iväg. Den som avregistrerar sig efter det hoppas ändå över.
+
+Det betyder att du kan använda samma segment många gånger. En kund som får taggen i morgon kommer med i nästa utskick, och en kund som har slutat stämma med filtret följer inte med.
+
+### Tre exempel
+
+| Du vill nå | Så fyller du i segmentet |
+|---|---|
+| Alla kunder i Stockholm med taggen Kaffe | **Status**: Aktiv kund. **Ort**: Stockholm. **Taggar**: kaffe. |
+| Prospekt där du är ansvarig | **Status**: Prospekt. **Ansvarig säljare**: du själv. |
+| Beslutsfattare hos byggföretag | **Roll**: Beslutsfattare. **SNI-kod börjar med**: 41. |
+
+### Så här gör du ett segment
+
+1. Öppna **CRM → Utskick** och välj **Segment**.
+2. Välj **Nytt segment** och ge det ett **Namn** som säger vilka det gäller.
+3. Fyll i de filter du behöver: **Status**, **Typ**, **Roll**, **Rättslig grund**, **Taggar**, **Ansvarig säljare**, **SNI-kod börjar med** och **Ort**. Ett filter som du lämnar tomt tar med alla.
+4. Titta i rutan **Personer i segmentet**. Den visar hur många som är med just nu, hur många av dem som kan få ett utskick och varför de andra inte kan det.
+5. Välj **Spara segmentet**.
+
+Alla filter du fyller i måste stämma. Inom ett filter räcker ett av valen: kryssar du både **Prospekt** och **Aktiv kund** kommer båda med. Under **Taggar** skriver du flera taggar med kommatecken emellan, och då räcker det att kunden har en av dem.
+
+### Vilka som aldrig får utskicket
+
+Alla i ett segment får inte utskicket. NONOX lämnar alltid utanför:
+
+- den som saknar e-postadress eller är markerad som inaktiv;
+- den som är markerad **Kontakta inte** eller har **begränsad behandling**, eftersom personen har invänt eller bett er att inte använda uppgifterna;
+- den som har **avregistrerat sig** från utskick, vars adress står på spärrlistan eller har studsat;
+- en privatperson, en enskild firma eller en kund utan organisationsnummer som inte har samtyckt till e-postreklam, eftersom marknadsföringslagen kräver samtycke för e-postreklam till en fysisk person (se [Samtycke och marknadsföringslagen](#samtycke-och-marknadsforingslagen));
+- den vars kund är begränsad, inaktiv eller anonymiserad i kundregistret;
+- en adress som redan finns bland mottagarna, så att ingen får samma mejl två gånger.
+
+Du behöver inte göra något själv för att de ska lämnas utanför. Rutan **Personer i segmentet** och rutan **Mottagare** i utskicket visar hur många som lämnas utanför och av vilket skäl.
 
 ## Så här skickar du
 

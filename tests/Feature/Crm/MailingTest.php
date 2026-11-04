@@ -488,3 +488,20 @@ it('composes, previews and sends from the pages', function () {
     $this->actingAs($seller);
     $this->get(route('crm.mailings'))->assertForbidden();
 });
+
+it('explains segments on the segment, mailing list and mailing pages', function () {
+    $this->get(route('crm.segments'))->assertOk()
+        ->assertSee('Så fungerar segment')
+        ->assertSee('Ett sparat filter, inte en lista')
+        ->assertSee('Vilka som är med räknas fram när du skickar utskicket, inte när du sparar segmentet.')
+        ->assertSee('Alla kunder i Stockholm med taggen Kaffe')
+        ->assertSee('Prospekt där du är ansvarig')
+        ->assertSee('Vilka som aldrig får utskicket')
+        ->assertSee('de som är markerade Kontakta inte eller har begränsad behandling;');
+
+    $this->get(route('crm.mailings'))->assertOk()->assertSee('Först gör du ett segment, ett sparat filter');
+
+    Livewire::test(MailingEditor::class, ['mailingId' => $this->mailing->id])
+        ->assertSee('Ett segment är ett sparat filter. Vilka som får utskicket räknas fram när du väljer Ja, skicka')
+        ->assertSee('Så fungerar segment');
+});

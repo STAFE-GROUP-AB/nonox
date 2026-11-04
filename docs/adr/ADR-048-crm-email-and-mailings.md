@@ -470,6 +470,20 @@ needs `crm:manage`; the event webhook allows 6 000 requests a minute.
 - Whether a template mail to a person who unsubscribed and is marked "not
   marketing" needs more than the sender's confirmation.
 
+## Addendum: explaining segments in the app (2026-11-04)
+
+The owner found segments hard to understand. The segment page now opens
+with a "Så fungerar segment" box (`x-crm::segment-guide`, open while there
+are no segments or while one is edited): a segment is a saved filter, not
+a list, evaluated when the mailing is started (**Ja, skicka**, also for a
+scheduled mailing; `SendMailing::prepare` fixes the recipients then, and an
+unsubscribe after that is still honoured), three worked examples, and who
+is always left out and why (no e-mail, Kontakta inte or restricted
+processing, unsubscribed, suppressed or bounced, and natural persons
+without consent under marketing law 19 §). The mailing list and the
+composer say the same in one sentence each and link to the segment page.
+No behaviour changed.
+
 ## Consequences
 
 - New tables: `crm_emails`, `crm_email_templates`, `crm_segments`,

@@ -12,6 +12,7 @@
             <x-button type="button" wire:click="create" wire:loading.attr="disabled">{{ __('Nytt utskick') }}</x-button>
             <a href="{{ route('crm.segments') }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700">{{ __('Segment') }}</a>
         </div>
+        <p class="mt-3 text-sm text-gray-600" data-testid="crm-mailings-intro">{{ __('Först gör du ett segment, ett sparat filter som till exempel alla kunder i Stockholm med taggen Kaffe, och sedan ett utskick till det. Vilka som får utskicket räknas fram när du skickar. Personer utan e-post, markerade Kontakta inte, avregistrerade, med begränsad behandling eller utan nödvändigt samtycke får det aldrig.') }}</p>
         @if($mailings->isEmpty())
             <x-ui.empty-state class="mt-6" :title="__('Inga utskick ännu')">{{ __('Ett utskick är ett nyhetsbrev till ett segment. Bara klick på länkar räknas, aldrig vem som öppnar.') }}</x-ui.empty-state>
         @else

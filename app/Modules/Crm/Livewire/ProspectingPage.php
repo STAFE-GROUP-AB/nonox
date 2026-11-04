@@ -30,8 +30,9 @@ use Livewire\WithPagination;
  * Prospektera (ADR-047): search the instance's company register with
  * filters, or find companies like the best customers (look-alike, no AI),
  * and add the hits as prospects, one, the ticked ones or all (at most 500),
- * optionally as a call list for a seller. The filters live in the query
- * string. A fixed number of queries per page.
+ * optionally as a call list for a seller. A name or organisation number
+ * search works alone or with the filters; 25 to 200 hits per page. The
+ * search, the filters and the page size live in the query string. A fixed number of queries per page.
  */
 class ProspectingPage extends Component
 {
@@ -41,10 +42,20 @@ class ProspectingPage extends Component
     /** Hits are counted up to this many; more shows as "fler än 10 000". */
     public const int COUNT_CAP = 10_000;
 
-    public const array FILTERS = ['division', 'sni', 'town', 'postal', 'county', 'municipality', 'form', 'from', 'to', 'employeesMin', 'employeesMax', 'turnoverMin', 'turnoverMax', 'all', 'blocked'];
+    /** The page sizes a user can choose; anything else shows the first. */
+    public const array PER_PAGE = [25, 50, 100, 200];
+
+    public const array FILTERS = ['search', 'division', 'sni', 'town', 'postal', 'county', 'municipality', 'form', 'from', 'to', 'employeesMin', 'employeesMax', 'turnoverMin', 'turnoverMax', 'all', 'blocked'];
 
     #[Url(as: 'lage', except: 'sok')]
     public string $mode = 'sok';
+
+    /** Name contains, or organisation number starts with (ProspectSearch::matching). */
+    #[Url(as: 'sok', except: '')]
+    public string $search = '';
+
+    #[Url(as: 'per-sida', except: '25')]
+    public string $perPage = '25';
 
     #[Url(as: 'huvudgrupp', except: '')]
     public string $division = '';
@@ -124,6 +135,7 @@ class ProspectingPage extends Component
             $this->mode = 'sok';
         }
 
+        $this->perPage = (string) $this->pageSize();
         $this->ownerId = (string) $this->user()->id;
         $this->listAssignee = (string) $this->user()->id;
     }
@@ -133,6 +145,11 @@ class ProspectingPage extends Component
         if (in_array($property, [...self::FILTERS, 'mode', 'likeSni', 'likeSize', 'likeRegion'], true) || str_starts_with($property, 'chosen')) {
             $this->resetPage();
             $this->selected = [];
+        }
+
+        if ($property === 'perPage') {
+            $this->perPage = (string) $this->pageSize();
+            $this->resetPage();
         }
 
         if ($property === 'division') {
@@ -205,7 +222,7 @@ class ProspectingPage extends Component
         $query = $searching ? $this->results($profiles) : null;
         // A capped count and a simple page: counting a million rows on every change of a filter is not needed.
         $total = $query === null ? 0 : DB::query()->fromSub((clone $query)->select('company_registry.id')->limit(self::COUNT_CAP + 1), 'hits')->count();
-        $results = $query === null ? null : $query->orderBy('name')->orderBy('org_number')->simplePaginate(25);
+        $results = $query === null ? null : $query->orderBy('name')->orderBy('org_number')->simplePaginate($this->pageSize());
 
         return view('crm::livewire.prospecting', [
             'state' => $state,
@@ -228,6 +245,8 @@ class ProspectingPage extends Component
             'members' => CompanyMembers::all($company),
             'canManage' => $this->user()->can('manage', [Account::class, $company]),
             'filtered' => ProspectSearch::hasFilter($this->filters()) || $this->all || $this->blocked,
+            'pageSizes' => self::PER_PAGE,
+            'shortSearch' => trim($this->search) !== '' && ProspectSearch::searchTerm($this->search) === null,
         ]);
     }
 
@@ -281,7 +300,10 @@ class ProspectingPage extends Component
                 $profiles = $lookAlike->profiles($this->orgNumbers($chosen));
             }
 
-            return $lookAlike->query($profiles, $this->criteria(), $this->company());
+            $query = $lookAlike->query($profiles, $this->criteria(), $this->company());
+            ProspectSearch::matching($query, $this->search);
+
+            return $query;
         }
 
         return ProspectSearch::query($this->filters(), $this->company());
@@ -324,6 +346,7 @@ class ProspectingPage extends Component
     private function filters(): array
     {
         return [
+            'search' => $this->search,
             'sni' => $this->sni !== '' ? $this->sni : $this->division,
             'town' => $this->town,
             'postal' => $this->postal,
@@ -340,6 +363,14 @@ class ProspectingPage extends Component
             'blocked' => $this->blocked,
             'new' => true,
         ];
+    }
+
+    /** The chosen page size, or the first allowed one for anything else (a hand-edited URL). */
+    private function pageSize(): int
+    {
+        $size = (int) $this->perPage;
+
+        return in_array($size, self::PER_PAGE, true) ? $size : self::PER_PAGE[0];
     }
 
     private function owner(): ?int

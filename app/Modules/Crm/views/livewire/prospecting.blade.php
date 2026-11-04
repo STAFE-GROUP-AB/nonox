@@ -20,8 +20,16 @@ php artisan registry:import bolagsverket-bulk</pre>
     @endunless
 
     @if($mode === 'sok')
-        <x-ui.card :title="__('Filter')" :description="__('Välj minst ett filter. Bara företag i drift visas om du inte väljer annat.')">
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <x-ui.card :title="__('Filter')" :description="__('Sök på namn eller organisationsnummer, eller välj minst ett filter. Sökningen och filtren gäller tillsammans. Bara företag i drift visas om du inte väljer annat.')">
+            <div class="max-w-xl">
+                <x-ui.field for="prospect-search" :label="__('Sök på namn eller organisationsnummer')" :hint="__('Minst två tecken, till exempel en del av namnet eller organisationsnumrets början, med eller utan bindestreck.')">
+                    <input id="prospect-search" type="search" class="{{ $input }} mt-1" wire:model.live.debounce.400ms="search" autocomplete="off" maxlength="100">
+                </x-ui.field>
+                @if($shortSearch)
+                    <p class="mt-1 text-sm text-gray-600" role="status">{{ __('Skriv minst två tecken för att söka.') }}</p>
+                @endif
+            </div>
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <x-ui.field for="prospect-division" :label="__('Bransch (SNI)')">
                     <select id="prospect-division" class="{{ $select }} mt-1" wire:model.live="division">
                         <option value="">{{ __('Alla branscher') }}</option>
@@ -168,6 +176,14 @@ php artisan registry:import bolagsverket-bulk</pre>
                     </div>
                 </div>
                 <label class="mt-2 inline-flex min-h-11 items-center gap-2 text-sm text-gray-700"><input type="checkbox" class="size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model.live="blocked"> {{ __('Visa företag med reklamspärr') }}</label>
+                <div class="mt-4 max-w-xl">
+                    <x-ui.field for="like-search" :label="__('Sök på namn eller organisationsnummer')" :hint="__('Minst två tecken, till exempel en del av namnet eller organisationsnumrets början, med eller utan bindestreck.')">
+                        <input id="like-search" type="search" class="{{ $input }} mt-1" wire:model.live.debounce.400ms="search" autocomplete="off" maxlength="100">
+                    </x-ui.field>
+                    @if($shortSearch)
+                        <p class="mt-1 text-sm text-gray-600" role="status">{{ __('Skriv minst två tecken för att söka.') }}</p>
+                    @endif
+                </div>
             @endif
         </x-ui.card>
     @endif
@@ -179,16 +195,24 @@ php artisan registry:import bolagsverket-bulk</pre>
         </p>
 
         @if(! $searching)
-            <x-ui.empty-state class="mt-6" :title="$mode === 'sok' ? __('Välj ett filter för att söka') : __('Välj minst en kund som finns i registret')">
-                {{ $mode === 'sok' ? __('Börja med en bransch eller en ort. Träffarna visas här.') : __('NONOX jämför med kundernas uppgifter i företagsregistret, så kunden måste ha ett organisationsnummer som finns där.') }}
+            <x-ui.empty-state class="mt-6" :title="$mode === 'sok' ? __('Sök eller välj ett filter') : __('Välj minst en kund som finns i registret')">
+                {{ $mode === 'sok' ? __('Sök på ett namn eller ett organisationsnummer, eller börja med en bransch eller en ort. Träffarna visas här.') : __('NONOX jämför med kundernas uppgifter i företagsregistret, så kunden måste ha ett organisationsnummer som finns där.') }}
             </x-ui.empty-state>
         @elseif($results->isEmpty())
             <x-ui.empty-state class="mt-6" :title="__('Inga företag matchar')">
-                {{ __('Ändra filtren eller välj fler kunder att jämföra med.') }}
+                {{ trim($search) !== '' ? __('Inget företag matchar sökningen. Kontrollera stavningen, sök på en kortare del av namnet eller rensa filtren.') : __('Ändra filtren eller välj fler kunder att jämföra med.') }}
             </x-ui.empty-state>
         @else
-            <div class="mt-4 flex flex-wrap items-baseline justify-between gap-2">
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
                 <p class="text-sm font-semibold text-ink" aria-live="polite">{{ $capped ? __('Fler än :count företag', ['count' => number_format(App\Modules\Crm\Livewire\ProspectingPage::COUNT_CAP, 0, ',', ' ')]) : trans_choice('{1} 1 företag|[2,*] :count företag', $total, ['count' => number_format($total, 0, ',', ' ')]) }}</p>
+                <label for="prospect-per-page" class="inline-flex items-center gap-2 text-sm text-gray-700">
+                    {{ __('Visa per sida') }}
+                    <select id="prospect-per-page" class="block min-h-11 rounded-lg border-gray-300 shadow-xs focus:border-accent-500 focus:ring-accent-500 sm:min-h-0" wire:model.live="perPage">
+                        @foreach($pageSizes as $size)
+                            <option value="{{ $size }}">{{ $size }}</option>
+                        @endforeach
+                    </select>
+                </label>
             </div>
 
             @if($canManage)

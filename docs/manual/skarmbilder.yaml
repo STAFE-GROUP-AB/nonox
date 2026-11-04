@@ -201,6 +201,7 @@ crm/affarens-kort: { foretag: konsult, rutt: crm.deals.show, modell: { tabell: c
 crm/prognos-och-mal: { foretag: konsult, rutt: crm.forecast }
 crm/oversikt-forsaljning: { foretag: konsult, rutt: crm.dashboard }
 crm/prospektera: { foretag: konsult, rutt: crm.prospecting, fraga: { huvudgrupp: '62', lan: '01' }, del: '[data-testid=prospect-hits]' }
+crm/prospektera-sok: { foretag: konsult, rutt: crm.prospecting, fraga: { sok: konsult } }
 crm/prospektera-liknande: { foretag: konsult, rutt: crm.prospecting, fraga: { lage: liknande }, del: '[data-testid=prospect-hits]' }
 crm/ringlista: { foretag: konsult, rutt: crm.call-lists.show, modell: { tabell: crm_call_lists, dar: { name: 'IT-bolag i Stockholm och Uppsala' } } }
 crm/ringlista-mobil: { foretag: konsult, rutt: crm.call-lists.show, modell: { tabell: crm_call_lists, dar: { name: 'IT-bolag i Stockholm och Uppsala' } }, enhet: mobil }
@@ -217,5 +218,5 @@ crm/logga-mejl: { foretag: konsult, rutt: crm.emails }
 crm/mejlmallar: { foretag: konsult, rutt: crm.templates }
 crm/utskick: { foretag: konsult, rutt: crm.mailings.show, modell: { tabell: crm_mailings, dar: { name: 'Nyhetsbrev juni' } } }
 crm/skriv-ett-utskick: { foretag: konsult, rutt: crm.mailings.show, modell: { tabell: crm_mailings, dar: { name: 'Inbjudan till frukostseminarium' } } }
-crm/segment: { foretag: konsult, rutt: crm.segments }
+crm/segment: { foretag: konsult, rutt: crm.segments, klick: ['[data-testid=crm-segment-guide] summary'] }
 crm/webbformular: { foretag: konsult, rutt: crm.forms }

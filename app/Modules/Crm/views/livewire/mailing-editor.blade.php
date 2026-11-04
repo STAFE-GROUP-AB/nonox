@@ -24,13 +24,14 @@
                     <x-ui.field for="mailing_name" :label="__('Namn')" error="form.name" :hint="__('Syns bara för er.')">
                         <input id="mailing_name" type="text" class="{{ $input }} mt-1" wire:model="form.name" maxlength="100">
                     </x-ui.field>
-                    <x-ui.field for="mailing_segment" :label="__('Segment')" error="form.segment_id">
+                    <x-ui.field for="mailing_segment" :label="__('Segment')" error="form.segment_id" :hint="__('Ett segment är ett sparat filter. Vilka som får utskicket räknas fram när du väljer Ja, skicka, också om det är schemalagt. Rutan Mottagare visar hur många det blir och vilka som lämnas utanför.')">
                         <select id="mailing_segment" class="{{ $input }} mt-1" wire:model.live="form.segment_id">
                             <option value="">{{ __('Välj segment') }}</option>
                             @foreach($segments as $segment)
                                 <option value="{{ $segment->id }}">{{ $segment->name }}</option>
                             @endforeach
                         </select>
+                        <a href="{{ route('crm.segments') }}" class="mt-1 inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-0">{{ __('Så fungerar segment') }}</a>
                     </x-ui.field>
                     <x-ui.field for="mailing_subject" :label="__('Ämne')" error="form.subject">
                         <input id="mailing_subject" type="text" class="{{ $input }} mt-1" wire:model="form.subject" maxlength="200">

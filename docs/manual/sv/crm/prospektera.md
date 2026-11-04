@@ -1,10 +1,10 @@
 ---
-beskrivning: Hitta nya kunder i företagsregistret med öppna data från SCB och Bolagsverket – sök på bransch, ort och bolagsform, eller hitta företag som liknar dina bästa kunder.
+beskrivning: Hitta nya kunder i företagsregistret med öppna data från SCB och Bolagsverket – sök på namn, bransch, ort och bolagsform, eller hitta företag som liknar dina bästa kunder.
 ordning: 60
 roller: [owner, admin, accountant, bookkeeper, auditor, sales]
 modul: crm
 rutter: [crm.prospecting]
-sokord: [prospektering, företagsregister, leads, nya kunder, sni, bransch, liknande kunder, drömkunder, målgrupp, företagsdatabas, scb, bolagsverket, urval]
+sokord: [prospektering, företagsregister, leads, nya kunder, sni, bransch, liknande kunder, drömkunder, målgrupp, företagsdatabas, scb, bolagsverket, urval, sök företag, organisationsnummer, fritextsök, per sida]
 ---
 
 # Prospektera i företagsregistret
@@ -13,13 +13,23 @@ Under **CRM → Prospektera** söker du bland Sveriges företag och lägger till
 
 ![Träffarna i företagsregistret med bransch, ort och registreringsdatum, och knapparna för att lägga till dem som prospekt eller i en ringlista.](/bilder/manual/crm/prospektera.webp)
 
+## Så här hittar du ett visst företag
+
+1. Öppna **CRM → Prospektera**. Fliken **Sök i registret** är vald.
+2. Skriv en del av namnet eller början på organisationsnumret i **Sök på namn eller organisationsnummer**, till exempel *kodkraft* eller *559999-6*. Stora och små bokstäver spelar ingen roll, och du kan skriva organisationsnumret med eller utan bindestreck.
+3. Träffarna visas när du slutar skriva. Du behöver skriva minst två tecken.
+
+![Fältet Sök på namn eller organisationsnummer överst bland filtren, med en del av ett företagsnamn ifyllt.](/bilder/manual/crm/prospektera-sok.webp)
+
+Sökningen gäller hela registret, så du behöver inte välja något filter. Väljer du också filter, till exempel en bransch eller en ort, visas bara de företag som stämmer med både sökningen och filtren. Sökningen fungerar på samma sätt under fliken **Liknar mina bästa kunder**.
+
 ## Så här söker du fram företag
 
 1. Öppna **CRM → Prospektera**. Fliken **Sök i registret** är vald.
 2. Välj en bransch under **Bransch (SNI)**. Vill du vara mer exakt väljer du sedan en kod under **Detaljerad bransch**.
 3. Skriv en **Ort** eller början på ett postnummer under **Postnummer börjar med**, och välj **Bolagsform** om du vill.
 4. Vill du bara ha nya eller gamla företag fyller du i **Registrerat från** och **Registrerat till**.
-5. Träffarna visas direkt under filtren, 25 i taget.
+5. Träffarna visas direkt under filtren, 25 i taget. Vill du se fler på en gång väljer du 50, 100 eller 200 under **Visa per sida**.
 
 Finns **Län**, **Kommun**, **Anställda, minst** och **Omsättning, minst** i filtren kan du också söka på storlek och region. De uppgifterna finns bara om den som driftar NONOX har läst in SCB:s API (se nedan).
 
@@ -63,7 +73,8 @@ Uppgifterna uppdateras en gång i veckan. Under listan står när de senast häm
 
 - **Bara företag i drift** visas om du inte kryssar i **Visa även företag som inte är i drift**. Då syns även vilande, avregistrerade och företag i konkurs eller likvidation, med en markering.
 - **Reklamspärr.** Företag som har frånsagt sig reklam i SCB:s register visas inte om du inte kryssar i **Visa företag med reklamspärr**. Respektera spärren i dina utskick.
-- **Många träffar.** Fler än 10 000 träffar visas som "Fler än 10 000 företag". Smalna av med fler filter.
+- **Många träffar.** Fler än 10 000 träffar visas som "Fler än 10 000 företag". Smalna av med fler filter eller en sökning.
+- **Dela en sökning.** Sökningen, filtren och **Visa per sida** står i sidans adress. Du kan spara den som bokmärke eller skicka den till en kollega, och bakåtknappen tar dig tillbaka till förra sökningen.
 - **Kontakta inte.** Har registret ett telefonnummer eller en e-postadress som finns på er lista över personer som har bett att inte bli kontaktade läggs företaget inte till. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 - **Kontaktpersoner** lägger du till själv på kortet, med rättslig grund. Den som du lägger till ska få information om behandlingen inom en månad. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 - **Alla som har CRM** kan söka i registret, även en revisor. Att lägga till prospekt och göra ringlistor kräver att du får ändra i CRM.
