@@ -33,7 +33,7 @@
   "poster": [
     {
       "id": "2026-11-04-inloggningskoden-kommer-fram",
-      "datum": "2026-11-04T23:20:00+01:00",
+      "datum": "2026-11-04T23:10:00+01:00",
       "rubrik": "Inloggningskoden kommer fram igen",
       "beskrivning": "En ändring tidigare i dag gjorde att mejlet med inloggningskoden inte gick iväg. Koden skickas nu som förut, direkt när du ber om den.",
       "typ": "Rättat",
