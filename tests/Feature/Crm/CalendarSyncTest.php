@@ -77,7 +77,7 @@ function googleConnection(array $extra = []): CalendarConnection
         'token_expires_at' => CarbonImmutable::now()->addHour(),
         'calendar_id' => 'primary',
         'calendar_name' => 'Säljaren',
-        'status' => CalendarConnection::ACTIVE,
+        'status' => CalendarConnection::ACTIVE, 'organisation_account' => true,
         ...$extra,
     ]);
 }

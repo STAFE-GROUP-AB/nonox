@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Calendar\CalendarSequence;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
@@ -48,6 +49,8 @@ final class LinkPerson
 
         DB::transaction(fn () => CurrentCompany::run($company, function () use ($user, $company, $account, $person): void {
             AccountPerson::query()->where('account_id', $account->id)->where('person_id', $person->id)->delete();
+            // ADR-049: a flag at a private person's account no longer applies to its calendar events.
+            CalendarSequence::forLink($account->id, $person->id);
 
             Audit::record('crm.person_unlinked', $account, ['person_id' => $person->id], $company, $user);
         }));

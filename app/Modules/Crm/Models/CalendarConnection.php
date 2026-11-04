@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $user_id
  * @property CalendarProviderKey $provider
  * @property ?string $account_email
+ * @property bool $organisation_account a Google Workspace or Microsoft work or school account, not a private one
  * @property string $access_token
  * @property ?string $refresh_token
  * @property ?CarbonImmutable $token_expires_at
@@ -53,6 +54,7 @@ class CalendarConnection extends Model
         'user_id',
         'provider',
         'account_email',
+        'organisation_account',
         'access_token',
         'refresh_token',
         'token_expires_at',
@@ -70,7 +72,7 @@ class CalendarConnection extends Model
     protected $hidden = ['access_token', 'refresh_token', 'sync_cursor'];
 
     /** @var array<string, mixed> */
-    protected $attributes = ['include_details' => false, 'status' => self::ACTIVE];
+    protected $attributes = ['include_details' => false, 'status' => self::ACTIVE, 'organisation_account' => false];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -82,6 +84,7 @@ class CalendarConnection extends Model
             'access_token' => 'encrypted',
             'refresh_token' => 'encrypted',
             'include_details' => 'boolean',
+            'organisation_account' => 'boolean',
             'token_expires_at' => 'immutable_datetime',
             'last_synced_at' => 'immutable_datetime',
             'cursor_started_at' => 'immutable_datetime',

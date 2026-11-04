@@ -36,7 +36,10 @@ final class CalendarJobGuard
         $user = User::query()->find($connection->user_id);
 
         // The company has switched the connections off, or the user is no longer allowed: the connection ends.
-        if (CalendarRules::syncAllowed($company) && $user instanceof User && $user->hasTeamPermission($company, 'crm:view')) {
+        // A private account only while the company allows private accounts.
+        $accountAllowed = $connection->organisation_account || CalendarRules::privateAccountsAllowed($company);
+
+        if (CalendarRules::syncAllowed($company) && $accountAllowed && $user instanceof User && $user->hasTeamPermission($company, 'crm:view')) {
             return true;
         }
 

@@ -43,7 +43,7 @@ beforeEach(function () {
     $accountB = Crm::prospect($this->b, $ownerB, 'Betakunden AB');
     $this->activityB = app(LogActivity::class)($ownerB, $this->b, ['account_id' => $accountB->id, 'type' => 'MEETING', 'subject' => 'Betamöte', 'due_at' => '2026-06-18T10:00', 'assigned_to' => $this->user->id]);
     $this->feedB = app(IssueCalendarFeed::class)($this->user, $this->b);
-    CalendarConnection::create(['user_id' => $this->user->id, 'provider' => CalendarProviderKey::Google, 'access_token' => 'b-token', 'calendar_id' => 'primary', 'status' => 'ACTIVE']);
+    CalendarConnection::create(['user_id' => $this->user->id, 'provider' => CalendarProviderKey::Google, 'access_token' => 'b-token', 'calendar_id' => 'primary', 'status' => 'ACTIVE', 'organisation_account' => true]);
 
     CurrentCompany::set($this->a);
     $this->user->switchCompany($this->a);
@@ -71,7 +71,7 @@ it('never writes B\'s activities to the calendar connected in A', function () {
     config(['services.google_calendar.client_id' => 'g', 'services.google_calendar.client_secret' => 's']);
     app(ModuleManager::class)->updateSettings(CrmModule::KEY, $this->a, $this->user, [...CrmSettings::for($this->a), 'calendar_sync' => 1]);
     Http::fake(['www.googleapis.com/calendar/v3/calendars/primary/events' => Http::response(['id' => 'evt-a'])]);
-    $connection = CalendarConnection::create(['user_id' => $this->user->id, 'provider' => CalendarProviderKey::Google, 'access_token' => 'a-token', 'calendar_id' => 'primary', 'status' => 'ACTIVE']);
+    $connection = CalendarConnection::create(['user_id' => $this->user->id, 'provider' => CalendarProviderKey::Google, 'access_token' => 'a-token', 'calendar_id' => 'primary', 'status' => 'ACTIVE', 'organisation_account' => true]);
 
     expect(app(CalendarSync::class)->pushAll($connection, true))->toBe(1);
     Http::assertSent(fn (Request $request): bool => str_contains((string) json_encode($request->data()), 'Alfakunden'));

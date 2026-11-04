@@ -53,7 +53,11 @@ final class ConnectCalendar
 
         // Organisation accounts only, unless the company has allowed private ones (ADR-049).
         if (! $account->organisation && ! CalendarRules::privateAccountsAllowed($company)) {
-            $provider->revoke($tokens->refreshToken ?? $tokens->accessToken);
+            try {
+                $provider->revoke($tokens->refreshToken ?? $tokens->accessToken);
+            } catch (\Throwable) {
+                // Best effort: the refusal is shown whatever the provider answers.
+            }
 
             throw ValidationException::withMessages(['calendar' => __('Företaget tillåter bara jobbkonton (Google Workspace eller Microsoft 365). Logga in med ditt jobbkonto.')]);
         }
@@ -68,6 +72,7 @@ final class ConnectCalendar
             $attributes = [
                 'provider' => $key,
                 'account_email' => $account->email,
+                'organisation_account' => $account->organisation,
                 'access_token' => $tokens->accessToken,
                 'refresh_token' => $tokens->refreshToken ?? ($otherAccount ? null : $existing?->refresh_token),
                 'token_expires_at' => $tokens->expiresAt,

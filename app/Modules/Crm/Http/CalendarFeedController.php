@@ -28,13 +28,11 @@ use Illuminate\Support\Facades\RateLimiter;
  */
 final class CalendarFeedController
 {
-    /** Wrong or dead links per address and minute before every link from it answers 429. */
+    /** Wrong or dead links per address and minute before further wrong links from it answer 429. */
     public const int MISSES_PER_MINUTE = 10;
 
     public function __invoke(Request $request, string $token, ModuleManager $modules): Response
     {
-        $misses = 'crm-calendar-miss:'.$request->ip();
-        abort_if(RateLimiter::tooManyAttempts($misses, self::MISSES_PER_MINUTE), 429);
 
         // The token decides the company, so it is looked up before any company is known.
         $feed = CompanyScope::bypass(fn (): ?CalendarFeed => CalendarFeed::query()->where('token_hash', CalendarFeed::hash($token))->whereNull('revoked_at')->first());
@@ -45,7 +43,10 @@ final class CalendarFeedController
             && $modules->isEnabled(CrmModule::KEY, $company) && $user->hasTeamPermission($company, 'crm:view');
 
         if (! $valid) {
-            // Guessing links costs: a stricter limit per address for those that lead nowhere.
+            // Guessing links costs: a stricter limit per address for those that lead nowhere. A valid link is never
+            // held back by misses from the same address (calendar services fetch from shared addresses).
+            $misses = 'crm-calendar-miss:'.$request->ip();
+            abort_if(RateLimiter::tooManyAttempts($misses, self::MISSES_PER_MINUTE), 429);
             RateLimiter::hit($misses, 60);
             abort(404);
         }

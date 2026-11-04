@@ -82,6 +82,8 @@ class CrmServiceProvider extends ServiceProvider
         Activity::observe(ActivityCalendarObserver::class);
         Account::updated(fn (Account $account) => app(CalendarSequence::class)->accountUpdated($account));
         Person::updated(fn (Person $person) => app(CalendarSequence::class)->personUpdated($person));
+        Deal::updated(fn (Deal $deal) => app(CalendarSequence::class)->dealUpdated($deal));
+        AccountPerson::created(fn (AccountPerson $link) => app(CalendarSequence::class)->linkCreated($link));
         Event::listen(TeamMemberRemoved::class, [ForgetUserCalendars::class, 'memberRemoved']);
         Event::listen(UserAccountDeleting::class, [ForgetUserCalendars::class, 'accountDeleting']);
 

@@ -28,6 +28,7 @@ use App\Modules\Crm\Models\CalendarEvent;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
@@ -69,7 +70,7 @@ function reviewConnection(array $extra = []): CalendarConnection
     return CalendarConnection::create([
         'user_id' => test()->owner->id, 'provider' => CalendarProviderKey::Google, 'account_email' => 'saljare@exempel.test',
         'access_token' => 'access-1', 'refresh_token' => 'refresh-1', 'token_expires_at' => CarbonImmutable::now()->addHour(),
-        'calendar_id' => 'primary', 'status' => CalendarConnection::ACTIVE, ...$extra,
+        'calendar_id' => 'primary', 'status' => CalendarConnection::ACTIVE, 'organisation_account' => true, ...$extra,
     ]);
 }
 
@@ -292,4 +293,65 @@ it('shows Lägg till i kalendern only on an open planned activity', function () 
     $meeting->forceFill(['done_at' => now()])->save();
 
     Livewire::test(AccountCard::class, ['accountId' => $this->account->id])->assertDontSee('Lägg till i kalendern');
+});
+
+it('never holds back a valid link because of misses from the same address', function () {
+    $url = app(IssueCalendarFeed::class)($this->owner, $this->company);
+
+    foreach (range(1, 12) as $guess) {
+        $this->get('/kunder/kalender/'.str_repeat('q', 47).($guess % 10).'.ics');
+    }
+
+    $this->get('/kunder/kalender/'.str_repeat('w', 48).'.ics')->assertStatus(429);
+    $this->get($url)->assertOk();
+});
+
+it('raises the sequence when a deal is renamed and when a flagged person is linked to a private person\'s account', function () {
+    $deal = Crm::deal($this->company, $this->owner, $this->account, 'Ramavtal');
+    $step = Activity::query()->where('deal_id', $deal->id)->firstOrFail();
+    $before = $step->calendar_sequence;
+
+    $deal->fresh()->forceFill(['title' => 'Ramavtal 2027'])->save();
+    expect($step->fresh()->calendar_sequence)->toBe($before + 1);
+
+    $private = Crm::prospect($this->company, $this->owner, 'Eva Privat', ['kind' => 'PERSON']);
+    $call = app(LogActivity::class)($this->owner, $this->company, ['account_id' => $private->id, 'type' => 'CALL', 'subject' => 'Ring', 'due_at' => '2026-06-18T09:00']);
+    $flagged = Crm::person($this->company, $this->owner, 'Bo Privat');
+    $flagged->forceFill(['do_not_contact_at' => now(), 'do_not_contact_reason' => 'OBJECTION'])->save();
+
+    app(LinkPerson::class)($this->owner, $this->company, $private, $flagged, PersonRole::Other);
+    expect($call->fresh()->calendar_sequence)->toBe(1);
+
+    app(LinkPerson::class)->unlink($this->owner, $this->company, $private, $flagged);
+    expect($call->fresh()->calendar_sequence)->toBe(2);
+});
+
+it('shows the refusal, not an error, when revoking a refused account fails', function () {
+    reviewGoogle();
+    Http::fake([
+        'oauth2.googleapis.com/token' => Http::response(['access_token' => 'a', 'refresh_token' => 'r', 'expires_in' => 3600]),
+        'oauth2.googleapis.com/revoke' => fn () => throw new ConnectionException('down'),
+        'openidconnect.googleapis.com/*' => Http::response(['email' => 'privat@gmail.com']),
+    ]);
+
+    expect(fn () => app(ConnectCalendar::class)($this->owner, $this->company, CalendarProviderKey::Google, 'code', 'verifier'))->toThrow(ValidationException::class, 'jobbkonton');
+});
+
+it('remembers the account type and ends a private account\'s connection when the company stops allowing private accounts', function () {
+    reviewGoogle();
+    crmSetting($this->company, $this->owner, ['calendar_private_accounts' => 1]);
+    Bus::fake([SyncCalendarConnection::class]);
+    Http::fake([
+        'oauth2.googleapis.com/token' => Http::response(['access_token' => 'a', 'refresh_token' => 'r', 'expires_in' => 3600]),
+        'oauth2.googleapis.com/revoke' => Http::response(null, 200),
+        'openidconnect.googleapis.com/*' => Http::response(['email' => 'privat@gmail.com']),
+        'www.googleapis.com/calendar/v3/users/me/calendarList*' => Http::response(['items' => [['id' => 'privat@gmail.com', 'summary' => 'Privat', 'primary' => true]]]),
+    ]);
+    $connection = app(ConnectCalendar::class)($this->owner, $this->company, CalendarProviderKey::Google, 'code', 'verifier');
+    expect($connection->fresh()->organisation_account)->toBeFalse();
+
+    crmSetting($this->company, $this->owner, ['calendar_private_accounts' => 0]);
+    (new SyncCalendarConnection($this->company->id, $connection->id))->handle(app(CalendarSync::class));
+
+    expect(CalendarConnection::query()->count())->toBe(0);
 });
