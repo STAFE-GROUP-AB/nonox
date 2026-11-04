@@ -3,10 +3,13 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Modules\Crm\Actions\LinkPerson;
 use App\Modules\Crm\Actions\SaveForm;
 use App\Modules\Crm\Domain\ActivityType;
+use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Http\PublicFormController;
 use App\Modules\Crm\Livewire\FormsPage;
+use App\Modules\Crm\Livewire\PersonCard;
 use App\Modules\Crm\Mail\FormLeadMail;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
@@ -202,4 +205,25 @@ it('lists the forms with the iframe snippet', function () {
     $this->get(route('crm.forms'))->assertOk();
     $this->actingAs(Bookkeeping::member($this->company, 'sales'));
     $this->get(route('crm.forms'))->assertForbidden();
+});
+
+it('keeps a newsletter sign-up for an existing person until someone confirms it on the person page', function () {
+    $existing = Crm::person($this->company, $this->owner, 'Bo Befintlig', ['email' => 'bo@lead.example']);
+    $account = Crm::prospect($this->company, $this->owner, 'Bos bolag');
+    app(LinkPerson::class)($this->owner, $this->company, $account, $existing, PersonRole::Other);
+
+    submitForm($this->form, ['name' => 'Bo', 'email' => 'bo@lead.example', 'message' => 'Hej', 'newsletter' => '1'])->assertOk();
+
+    CurrentCompany::set($this->company);
+    expect($existing->fresh()->marketing_consent_at)->toBeNull()
+        ->and(FormSubmission::query()->sole()->marketing_consent)->toBeTrue();
+
+    Livewire::test(PersonCard::class, ['personId' => $existing->id])
+        ->assertSee('Anmälde sig till nyhetsbrev via formulär')
+        ->call('confirmNewsletter')
+        ->assertDispatched('toast')
+        ->assertDontSee('Anmälde sig till nyhetsbrev via formulär');
+
+    expect($existing->fresh()->marketing_consent_at)->not->toBeNull()
+        ->and(AuditLog::query()->where('action', 'crm.marketing_consent_confirmed')->sole()->payload)->toEqual(['person_id' => $existing->id, 'submission_id' => FormSubmission::query()->sole()->id]);
 });

@@ -12,6 +12,7 @@ use App\Modules\Crm\Livewire\Concerns\ActsInCompany;
 use App\Modules\Crm\Models\Mailing;
 use App\Modules\Crm\Support\CrmMailer;
 use App\Modules\Crm\Support\MailingPause;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -48,7 +49,15 @@ class MailingsPage extends Component
     public function resume(MailingPause $pause): void
     {
         $this->authorizeMailings();
-        $pause->resume($this->user(), $this->company());
+
+        try {
+            $pause->resume($this->user(), $this->company());
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
+
         $this->toast(__('Utskicken är återupptagna.'));
     }
 
@@ -57,6 +66,7 @@ class MailingsPage extends Component
         return view('crm::livewire.mailings', [
             'notice' => self::notice($this->company()),
             'paused' => MailingPause::pausedAt($this->company()) !== null,
+            'hqOnly' => MailingPause::hqOnly($this->company()),
             'mailings' => Mailing::query()->with('segment:id,name')->latest('id')->paginate(25),
         ]);
     }

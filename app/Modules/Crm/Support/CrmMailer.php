@@ -33,9 +33,14 @@ final class CrmMailer
         return filled(config('services.crm.smtp.host')) || filled(config('services.crm.mailer'));
     }
 
+    /** Hosted: a transport and the From address on the CRM domain; self-hosted: always (the default mailer at worst). */
     public static function available(): bool
     {
-        return self::configured() || ! (bool) config('app.landing.hosted');
+        if (! (bool) config('app.landing.hosted')) {
+            return true;
+        }
+
+        return self::configured() && filled(config('services.crm.mail_from'));
     }
 
     /** The mailer's name, or null for the default mailer. */

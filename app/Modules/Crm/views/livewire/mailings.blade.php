@@ -2,7 +2,7 @@
     @if($notice)
         <div class="rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-900 ring-1 ring-accent-200" role="status" data-testid="crm-mailing-notice">
             <p>{{ $notice }}</p>
-            @if($paused)
+            @if($paused && ! $hqOnly)
                 <button type="button" class="mt-2 min-h-11 font-medium underline" wire:click="resume" wire:confirm="{{ __('Återuppta utskicken? Gör det bara när orsaken är åtgärdad. Upprepas det pausas utskicken igen.') }}">{{ __('Återuppta utskicken') }}</button>
             @endif
         </div>

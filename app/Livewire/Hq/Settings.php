@@ -16,6 +16,7 @@ use App\Models\WaitlistEntry;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Support\MailingPause;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Hq\HqAccess;
@@ -102,6 +103,22 @@ class Settings extends Component implements SpansCompanies
         $this->toast($decision === OperatorLink::DECISION_LINK ? __('Kopplad till den befintliga posten.') : __('En ny post skapas.'));
     }
 
+    /**
+     * Lifts a company's mailing pause that only HQ may lift (ADR-048: a
+     * second complaint pause within 30 days).
+     *
+     * @param  ?array<array-key, mixed>  $credential
+     */
+    public function liftMailingPause(?array $credential, int $companyId, MailingPause $pause): void
+    {
+        $this->confirmDecision($credential);
+
+        abort_unless(in_array($companyId, MailingPause::hqOnlyCompanyIds(), true), 404);
+        $pause->liftByHq($this->admin(), Company::query()->findOrFail($companyId));
+
+        $this->toast(__('Utskicken är återupptagna för företaget.'));
+    }
+
     public function render(): View
     {
         $admin = $this->admin();
@@ -120,6 +137,7 @@ class Settings extends Component implements SpansCompanies
             'reviews' => $operator === null ? collect() : $this->reviews($operator),
             'fresh' => HqAccess::isFresh($admin),
             'hasPasskey' => $admin->hasPasskeysEnabled(),
+            'pausedMailings' => Company::query()->whereIn('id', MailingPause::hqOnlyCompanyIds())->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

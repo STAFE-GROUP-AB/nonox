@@ -27,6 +27,13 @@
         </div>
     @endif
 
+    @if($pendingNewsletter)
+        <div class="flex flex-wrap items-center gap-3 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-ink ring-1 ring-stone-200" role="status" data-testid="crm-pending-newsletter">
+            <p class="min-w-0 flex-1">{{ __('Anmälde sig till nyhetsbrev via formulär :date – bekräfta', ['date' => $pendingNewsletter->consented_at->setTimezone('Europe/Stockholm')->translatedFormat('j M Y')]) }}</p>
+            <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700" wire:click="confirmNewsletter" wire:confirm="{{ __('Bekräfta att det var personen själv som anmälde sig? Då får personen utskick med stöd av samtycke.') }}">{{ __('Bekräfta') }}</button>
+        </div>
+    @endif
+
     <x-crm::header :name="$person->name" shape="round" :kicker="collect([$person->title, $primary?->name])->filter()->implode(' · ') ?: __('Kontaktperson')">
         <x-slot:subtitle>
             @foreach($accounts as $account)

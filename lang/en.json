@@ -8048,5 +8048,15 @@
     "Kund, 19 § andra stycket (valfritt)": "Customer, section 19 second paragraph (optional)",
     "Dagen ni fick personens e-postadress vid en försäljning, när personen fick tacka nej till reklam. Då får personen utskick om era egna liknande varor eller tjänster om ni kryssar i kundundantaget.": "The day you got the person's e-mail address at a sale, when the person could decline advertising. The person then gets mailings about your own similar goods or services if you tick the customer exception.",
     ":company använder uppgifterna för att svara på din förfrågan.": ":company uses the details to answer your enquiry.",
-    "Förbereds": "Preparing"
+    "Förbereds": "Preparing",
+    "Utskicken är återupptagna för företaget.": "Mailings have been resumed for the company.",
+    "Samtycket till e-postreklam är bekräftat.": "The consent to e-mail advertising is confirmed.",
+    "Utskicken har pausats för klagomål två gånger på 30 dagar. Bara NONOX kan häva pausen; kontakta supporten.": "Mailings have been paused for complaints twice in 30 days. Only NONOX can lift the pause; contact support.",
+    "Utskicken återupptogs av NONOX efter en upprepad paus för klagomål.": "NONOX resumed the mailings after a repeated pause for complaints.",
+    "Personen har avregistrerat sig, invänt eller begärt begränsning. Samtycket kan inte bekräftas härifrån.": "The person has unsubscribed, objected or asked for restriction. The consent cannot be confirmed from here.",
+    "Anmälde sig till nyhetsbrev via formulär :date – bekräfta": "Signed up for newsletters through a form :date – confirm",
+    "Bekräfta att det var personen själv som anmälde sig? Då får personen utskick med stöd av samtycke.": "Confirm that the person signed up themselves? They will then get mailings on the basis of consent.",
+    "Pausade utskick": "Paused mailings",
+    "Företag vars CRM-utskick har pausats för klagomål två gånger på 30 dagar. Bara HQ kan häva pausen. Kontrollera segmenten och samtyckena med företaget först.": "Companies whose CRM mailings were paused for complaints twice in 30 days. Only HQ can lift the pause. Check the segments and consents with the company first.",
+    "Häv pausen": "Lift the pause"
 }

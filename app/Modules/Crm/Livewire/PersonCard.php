@@ -8,6 +8,7 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Modules\Crm\Actions\ConfirmMarketingConsent;
 use App\Modules\Crm\Actions\SavePerson;
 use App\Modules\Crm\Actions\UnsubscribePerson;
 use App\Modules\Crm\Domain\AccountFigures;
@@ -32,6 +33,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
@@ -133,6 +135,20 @@ class PersonCard extends Component
         $this->toast(__('Personen får inga fler utskick.'));
     }
 
+    /** Confirms a newsletter sign-up from a web form (ConfirmMarketingConsent). */
+    public function confirmNewsletter(ConfirmMarketingConsent $confirm): void
+    {
+        try {
+            $confirm($this->user(), $this->company(), $this->person());
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast(__('Samtycket till e-postreklam är bekräftat.'));
+    }
+
     /** Mejla med mall: always to this person, logged at their (first) company. */
     public function startPersonMail(): void
     {
@@ -203,6 +219,7 @@ class PersonCard extends Component
             // Mejla med mall (ADR-048): only while its panel is open; the person is the recipient.
             'templates' => $this->panel === 'mall' ? EmailTemplate::query()->orderBy('name')->get(['id', 'name']) : collect(),
             'mailRecipients' => [(string) $person->id => "{$person->name} ({$person->email})"],
+            'pendingNewsletter' => $this->user()->can('update', $person) ? ConfirmMarketingConsent::pending($person) : null,
             'person' => $person,
             'accounts' => $accounts,
             // The edited activity's own account belongs in the form's choice, also when the person has left it.
