@@ -1027,6 +1027,11 @@ balances").
   nummer. Ett befintligt 3107 utan ruta kopplas till ruta 38 när en faktura
   för trepartshandel skapas, och en migrering kopplade alla befintliga 3107
   utan ruta (enligt granskning 2026-11-02, juristgranskning återstår, #97).
+  Fakturatexten (PDF och e-faktura) är sedan 2026-11-04 "Unionsintern
+  trepartshandel, förenklingsregeln i artikel 141 i mervärdesskattedirektivet.
+  Omvänd betalningsskyldighet." med engelsk översättning, och i e-fakturan
+  momskategori AE (juristgranskning 2026-11-04; slutlig text bekräftas av
+  skattejurist). Bokföringen ändras inte.
 - **Privatperson i annat EU-land (OSS):** fakturan får köparlandets
   normalskattesats (`OssRates`, per land och från-datum), försäljningen
   bokförs på 3106 och momsen på 2619. Konto 2619 räknas inte in i någon ruta
@@ -1251,7 +1256,7 @@ Peppol-operatör (accesspunkt); NONOX är inte själv en accesspunkt.
   Schematron) med `scripts/peppol-validate.sh`.
 - **Det som skickades sparas.** Dokumentet sparas exakt som det lämnades
   till accesspunkten, med SHA-256, på den krypterade privata disken
-  (`peppol/{företag}/utgaende/`), och tas aldrig bort (BFL 7 kap.).
+  (`peppol/{företag}/utgaende/`), och bevaras minst bevarandetiden (BFL 7 kap. 2 §) och tas inte bort automatiskt.
 - **Status.** I kö → Skickad till Peppol → Levererad, eller Misslyckades.
   Statusen går aldrig bakåt, och en levererad faktura blir aldrig
   misslyckad. En misslyckad sändning kan skickas igen; varje försök har samma
@@ -2621,6 +2626,8 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   företaget (BFL 7 kap. 1 § tredje stycket; BFNAR 2013:2). Samma fil två
   gånger tas emot en gång. Fakturans PDF, som ligger i filen, sparas också
   som bilaga efter samma kontroll som e-postbilagor.
+- **XML-filen är fakturan.** PDF:en i filen är en bild av den; skiljer de sig åt gäller XML-filen (BFL 5 kap. 6 §).
+- **Mottagning avstängd.** Ett dokument adresserat till företagets eget Peppol-ID tas aldrig bort: kommer det när modulen, inkorgen eller mottagningen är avstängd sparas originalet i karantän (`PEPPOL_NOT_RECEIVING`). Ett för stort dokument ligger kvar hos operatören och den som driftar NONOX larmas. När mottagningen stängs av tas företaget först bort ur Peppols adressbok, och modulen kan inte stängas av förrän det är gjort. Avvisade e-fakturor gallras inte efter sju dagar (`inbox:prune`).
 - **Tolkning och attest.** Peppol-läsaren gör ett förslag till
   leverantörsfaktura som en person attesterar som i avsnitt 5e: leverantör
   efter organisations- eller momsnummer, rader per momssats, belopp,
@@ -3819,4 +3826,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos driftbolaget som HQ pekar ut, genom dess egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Inget kopplas till en befintlig post utan HQ:s beslut, och radering på begäran tar alltid bort personen. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.4. Ändrar ingen bokföring. |
 | 0.99 | 2026-11-04 | Nästa räkenskapsår skapas automatiskt (avsnitt 3.1, ADR-010): varje morgon när det senaste året slutar inom 30 dagar, och vid bokföring av ett datum i det följande året högst 30 dagar fram. Bara ett vanligt år på tolv månader i företagets första månad (BFL 3 kap. 1 och 3 §§); en omläggning (3 kap. 6 §) görs aldrig automatiskt. Det gamla året stängs inte och inga ingående balanser förs över. Behandlingshistoriken visar `via: automatic` och vad som utlöste det. Det första året kan fortfarande ändras när nästa år skapats automatiskt och är tomt; det tomma året tas då bort (`fiscal_year.removed`). |
 | 0.100 | 2026-11-04 | Ingående balanser som inte längre stämmer (avsnitt 4.14a, ADR-010; ÅRL 2 kap. 4 § första stycket 7): NONOX jämför varje års ingående balanser med föregående års utgående balanser, räknade som vid överföringen, och varnar under Räkenskapsår, Rapporter, Att göra och i bokslutets checklista. Bara öppna år jämförs; ett stängt år behåller sina balanser i kedjan. Uppdatera ingående balanser räknar om alla år som skiljer i ordning, bara på en persons beslut, under lås på år och företag, och vägras när periodlåset omfattar årets första dag; `fiscal_year.opening_balances_updated` visar varje konto före och efter (efter = det som skrevs). En avsiktlig skillnad bekräftas med skäl och fingeravtryck, som upphör att gälla när skillnaden ändras (ÅRL 2 kap. 4 § andra stycket, 5 kap. 5 §). Överföringen för hand vägras också när nästa års första dag är låst; i bokslutet görs den som förut, och stängningen tar låset för att skapa år först. Ett använt konto kan inte byta mellan balans- och resultatkonto. |
-| 0.101 | 2026-11-04 | E-faktura via Peppol (ADR-050, avsnitt 5.4 och 5e.1): skapade kundfakturor och kreditfakturor kan skickas som Peppol BIS Billing 3.0 genom installationens accesspunkt, kontrollerade mot reglerna och sparade exakt som de skickades, utan någon ändring i bokföringen; e-fakturor som tas emot hamnar i inkorgen med XML-filen som original och blir förslag till leverantörsfakturor som attesteras. |
+| 0.101 | 2026-11-04 | E-faktura via Peppol (ADR-050, avsnitt 5.4 och 5e.1): skapade kundfakturor och kreditfakturor kan skickas som Peppol BIS Billing 3.0 genom installationens accesspunkt, kontrollerade mot reglerna och sparade exakt som de skickades, utan någon ändring i bokföringen; e-fakturor som tas emot hamnar i inkorgen med XML-filen som original och blir förslag till leverantörsfakturor som attesteras. Ett dokument adresserat till företaget sparas alltid (i karantän när mottagningen är avstängd), och mottagningen avregistreras innan den stängs av. Fakturatexten för trepartshandel hänvisar till artikel 141 och omvänd betalningsskyldighet. |

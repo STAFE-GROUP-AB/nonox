@@ -28,7 +28,7 @@ Peppol-operatören kontrollerar först vem företaget är och registrerar det se
 ## Så här godkänner du en e-faktura
 
 1. Öppna **Inkorg** i menyn. E-fakturan heter *E-faktura … via Peppol* och avsändaren är leverantörens Peppol-ID.
-2. Kontrollera förslaget bredvid fakturans PDF. Välj konto om raderna saknar ett.
+2. Kontrollera förslaget bredvid fakturans PDF. Välj konto om raderna saknar ett. Fakturan är XML-filen. PDF:en är en bild av den; skiljer de sig åt gäller XML-filen.
 3. Finns leverantören inte i registret trycker du på **Lägg till … i leverantörsregistret**.
 4. Godkänn som vanligt. Leverantörsfakturan registreras och attesteras på samma sätt som när den kommer med e-post.
 
@@ -36,6 +36,8 @@ Peppol-operatören kontrollerar först vem företaget är och registrerar det se
 
 - E-fakturans fil sparas precis som den kom, som original och underlag till leverantörsfakturan. Du hämtar den med **Ladda ner originalet (.xml)** i inkorgen.
 - Samma e-faktura två gånger tas emot en gång.
+- Kommer en e-faktura när mottagningen är avstängd sparas den ändå, i karantän i inkorgen, eftersom den är adresserad till företaget. Stänger du av mottagningen tas företaget bort ur Peppols adressbok.
+- En avvisad e-faktura tas inte bort automatiskt efter sju dagar som avvisad e-post; den sparas med räkenskapsinformationen.
 - En e-faktura till ett annat Peppol-ID än företagets tas aldrig emot.
 - Varningarna i inkorgen gäller också e-fakturor: ändrat bankgiro eller annat konto än i leverantörsregistret, möjliga dubbletter och okänd leverantör.
 - Listan med godkända avsändare och kontrollen av e-postens avsändare gäller inte Peppol. Där identifieras avsändaren av sin Peppol-operatör.

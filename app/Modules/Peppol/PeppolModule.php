@@ -9,8 +9,10 @@ use App\Models\User;
 use App\Modules\Contracts\Module;
 use App\Modules\Inbox\InboxModule;
 use App\Modules\ModuleCheck;
+use App\Modules\Peppol\Domain\RegistrationStatus;
 use App\Modules\Peppol\Domain\TransmissionStatus;
 use App\Modules\Peppol\Livewire\PeppolSettingsForm;
+use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Peppol\Support\AccessPoints;
 use App\Support\Tenancy\CurrentCompany;
@@ -99,7 +101,13 @@ final class PeppolModule implements Module
     public function canDisable(Company $company): ModuleCheck
     {
         $waiting = CurrentCompany::run($company, fn (): int => PeppolTransmission::query()->whereIn('status', [TransmissionStatus::Queued->value, TransmissionStatus::Sent->value])->count());
+        $participant = CurrentCompany::run($company, fn (): ?PeppolParticipant => PeppolParticipant::query()->first());
         $warnings = [__('Inga fler fakturor skickas eller tas emot via Peppol. Det som redan har skickats och tagits emot finns kvar.')];
+
+        // Turning the module off must not leave the company in the Peppol Directory: receiving is switched off (and deregistered) first.
+        if ($participant instanceof PeppolParticipant && ($participant->receive_enabled || in_array($participant->registration_status, [RegistrationStatus::Registered, RegistrationStatus::Pending], true))) {
+            return new ModuleCheck(blockers: [__('Stäng först av mottagningen så att företaget tas bort ur Peppols adressbok. Annars kan leverantörer fortsätta skicka e-fakturor hit.')], warnings: $warnings);
+        }
 
         if ($waiting > 0) {
             $warnings[] = __(':count fakturor är på väg via Peppol och väntar på leveransbesked.', ['count' => $waiting]);

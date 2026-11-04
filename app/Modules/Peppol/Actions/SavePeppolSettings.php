@@ -18,6 +18,7 @@ use App\Support\Audit\Audit;
 use App\Support\Peppol\PeppolIdentifier;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -51,6 +52,8 @@ class SavePeppolSettings
             $participant === null => __('Skriv Peppol-ID som schema och nummer, till exempel 0007:5599000006.'),
             ! in_array($participant->scheme, [PeppolIdentifier::ORGANISATION_NUMBER, PeppolIdentifier::GLN], true) => __('Ett svenskt företag har organisationsnummer (0007) eller GLN (0088) som Peppol-ID.'),
             $participant->scheme === PeppolIdentifier::ORGANISATION_NUMBER && $participant->value !== $own?->digits => __('Peppol-ID med 0007 måste vara företagets eget organisationsnummer.'),
+            // Sending may use 0007; receiving publishes the ID in the open Peppol Directory.
+            ($receive || $register) && $participant->scheme === PeppolIdentifier::ORGANISATION_NUMBER && PeppolIdentifier::usesPersonalIdentityNumber($company) => __('En enskild firma registreras med ett GLN (0088), så att personnumret inte publiceras i Peppols öppna adressbok.'),
             $receive && ! $this->modules->isEnabled(InboxModule::KEY, $company) => __('Slå på Inkorg först. E-fakturor som tas emot hamnar i inkorgen för attest.'),
             $register && ! $consent => __('Bekräfta att du får företräda företaget och godkänner registreringen.'),
             default => null,
@@ -71,11 +74,13 @@ class SavePeppolSettings
         return CurrentCompany::run($company, function () use ($user, $company, $participant, $receive, $register): PeppolParticipant {
             $record = PeppolParticipant::query()->first() ?? new PeppolParticipant;
             $changed = $record->exists && $record->identifier !== $participant->toString();
-            $record->fill(['identifier' => $participant->toString(), 'receive_enabled' => $receive]);
 
-            if ($changed) {
-                $record->forceFill(['registration_status' => RegistrationStatus::NotRegistered, 'registered_at' => null]);
+            // Receiving off, or another ID: the company leaves the Peppol Directory first, so suppliers stop sending here.
+            if ($record->exists && (! $receive || $changed)) {
+                $this->deregister($user, $company, $record);
             }
+
+            $record->fill(['identifier' => $participant->toString(), 'receive_enabled' => $receive]);
 
             $record->save();
 
@@ -87,6 +92,27 @@ class SavePeppolSettings
 
             return $record->refresh();
         });
+    }
+
+    /** @throws ValidationException when the access point could not remove the registration; nothing is changed then */
+    public function deregister(User $user, Company $company, PeppolParticipant $participant): void
+    {
+        if (! in_array($participant->registration_status, [RegistrationStatus::Registered, RegistrationStatus::Pending], true)) {
+            return;
+        }
+
+        if ($participant->canSend()) {
+            try {
+                AccessPoints::make($participant->provider)->deregister($participant);
+            } catch (AccessPointFailed|ConnectionException $exception) {
+                $participant->forceFill(['last_error' => mb_substr($exception->getMessage(), 0, 500)])->save();
+
+                throw ValidationException::withMessages(['identifier' => __('Peppol-operatören kunde inte ta bort registreringen i Peppols adressbok. Försök igen om en stund.')]);
+            }
+        }
+
+        $participant->forceFill(['registration_status' => RegistrationStatus::NotRegistered, 'registered_at' => null, 'last_error' => null])->save();
+        Audit::record('peppol.deregistered', $participant, ['provider' => $participant->provider], $company, $user);
     }
 
     private function register(User $user, Company $company, PeppolParticipant $participant): void

@@ -142,7 +142,7 @@ Lönen berör också skatteförfarandelagen: arbetsgivardeklaration på individn
 
 **Det här gör NONOX:**
 - Läser Peppol BIS Billing 3.0 och UBL-fakturor som kommer till inkorgen.
-- Fakturor skickas som PDF, och som e-faktura enligt Peppol BIS Billing 3.0 (EN 16931) när modulen Peppol e-faktura är på (ADR-050). Det uppfyller kravet på elektroniska fakturor till offentliga köpare (lag 2018:1277).
+- Fakturor skickas som PDF. Med modulen påslagen kan fakturor till offentliga köpare skickas som e-faktura enligt den europeiska standarden, som lag (2018:1277) 4 § kräver (Peppol BIS Billing 3.0, ADR-050).
 
 **Det här saknas:**
 - Att skicka och ta emot via Peppol-nätverket är byggt (ADR-050) men inte påslaget: det kräver ett avtal med en certifierad Peppol-operatör.

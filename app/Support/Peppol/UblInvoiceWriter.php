@@ -30,17 +30,17 @@ use LogicException;
  *
  * VAT categories (UNCL5305 as profiled by EN 16931):
  * - S standard rate, 25/12/6 % (SE-R-006);
- * - AE reverse charge: construction services (ML 16 kap.) and services to a
- *   business in another EU country;
- * - K intra-Community supply of goods (and the intermediary's sale in
- *   triangulation);
+ * - AE reverse charge: construction services (ML 16 kap.), services to a
+ *   business in another EU country, and the intermediary's sale in
+ *   triangulation (art. 141 of the VAT directive);
+ * - K intra-Community supply of goods;
  * - G export outside the EU, goods and services;
  * - E exempt, with the row's exemption text (ML 10 kap.);
  * - O not subject to VAT, for a company that is not VAT registered.
  *
- * TODO(legal-verify): category G for services supplied outside the EU and K
- * for the intermediary's sale in triangulation, and E (not O) for an outlay
- * outside the scope of VAT on an invoice from a registered company.
+ * Legal review 2026-11-04: G for services supplied outside the EU, and E
+ * with its explicit text for an outlay outside the scope of VAT, are right;
+ * an export needs no buyer VAT number.
  *
  * Swedish payment details follow the Peppol BIS Swedish rules
  * (SE-R-007…012): PaymentMeansCode 30 with FinancialInstitutionBranch
@@ -92,8 +92,10 @@ final class UblInvoiceWriter
             $invoice->foreign_sale === ForeignSale::EuConsumerOss => __('En faktura till en privatperson i ett annat EU-land (OSS) kan inte skickas via Peppol.'),
             OrganisationNumber::tryFrom((string) $company->org_number) === null => __('Företagets organisationsnummer saknas eller är fel.'),
             $invoice->vat_ore->ore !== 0 && blank($company->vat_number) => __('En faktura med moms kräver företagets momsregistreringsnummer i Peppol.'),
+            // BR-O-10: an invoice from a seller not registered for VAT says why.
+            blank($company->vat_number) && blank($invoice->vat_exemption_text) && blank($company->vat_exemption?->invoiceText()) => __('Ange varför fakturan är utan moms innan den skickas via Peppol.'),
             $invoice->isCredit() && $invoice->credits_invoice_id === null => __('Kreditfakturan saknar den faktura den krediterar.'),
-            // ML 17 kap. 24 §: the buyer's VAT number when the buyer accounts for the VAT. TODO(legal-verify): export (G) needs none.
+            // ML 17 kap. 24 §: the buyer's VAT number when the buyer accounts for the VAT; an export (G) needs none (legal review 2026-11-04).
             ($invoice->reverse_charge || in_array($invoice->bookedForeignSale(), [ForeignSale::EuGoods, ForeignSale::EuServices, ForeignSale::EuTriangular], true)) && blank($invoice->customer_snapshot['vat_number'] ?? null) => __('Omvänd betalningsskyldighet kräver kundens momsregistreringsnummer på fakturan.'),
             default => null,
         };
@@ -239,8 +241,9 @@ final class UblInvoiceWriter
 
         if ($sale !== null) {
             return match ($sale) {
-                ForeignSale::EuGoods, ForeignSale::EuTriangular => ['K', 0, $sale->invoiceText()],
-                ForeignSale::EuServices => ['AE', 0, $sale->invoiceText()],
+                ForeignSale::EuGoods => ['K', 0, $sale->invoiceText()],
+                // The intermediary's sale in triangulation: the final buyer accounts for the VAT (art. 141, 197).
+                ForeignSale::EuServices, ForeignSale::EuTriangular => ['AE', 0, $sale->invoiceText()],
                 default => ['G', 0, $sale->invoiceText()],
             };
         }
@@ -254,7 +257,7 @@ final class UblInvoiceWriter
         }
 
         if (blank($company->vat_number)) {
-            return ['O', null, $invoice->vat_exemption_text ?: 'Säljaren är inte registrerad för mervärdesskatt.'];
+            return ['O', null, $invoice->vat_exemption_text ?: (string) $company->vat_exemption?->invoiceText()];
         }
 
         return ['E', 0, $row->vat_exemption_text ?: VatExemptionReason::Other->invoiceText()];
@@ -386,7 +389,8 @@ final class UblInvoiceWriter
         $country = strtoupper((string) ($customer['country'] ?? 'SE'));
         $org = $country === 'SE' ? OrganisationNumber::tryFrom((string) ($customer['org_number'] ?? '')) : null;
 
-        if ($org !== null) {
+        // BT-47 is left out when it is a personal identity number (legal review 2026-11-04).
+        if ($org !== null && ! $org->isPersonalIdentityNumber()) {
             $this->cbc($legal, 'CompanyID', $org->digits)->setAttribute('schemeID', PeppolIdentifier::ORGANISATION_NUMBER);
         }
     }

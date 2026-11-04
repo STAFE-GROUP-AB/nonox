@@ -38,7 +38,7 @@ class LinkPeppolAccountCommand extends Command
 
         return CurrentCompany::run($company, function () use ($company): int {
             $participant = PeppolParticipant::query()->first();
-            $identifier = $participant instanceof PeppolParticipant ? $participant->identifier : PeppolIdentifier::forOrganisationNumber($company->org_number)?->toString();
+            $identifier = $participant instanceof PeppolParticipant ? $participant->identifier : (PeppolIdentifier::usesPersonalIdentityNumber($company) ? null : PeppolIdentifier::forOrganisationNumber($company->org_number)?->toString());
 
             if ($identifier === null) {
                 $this->error('The company has no valid organisation number; set its Peppol ID under Moduler first.');

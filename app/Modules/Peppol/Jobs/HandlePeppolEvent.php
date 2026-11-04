@@ -10,6 +10,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Peppol\Actions\AcceptPeppolDocument;
 use App\Modules\Peppol\Actions\RecordTransmissionStatus;
 use App\Modules\Peppol\Domain\AccessPointFailed;
+use App\Modules\Peppol\Domain\PeppolDocumentTooLarge;
 use App\Modules\Peppol\Domain\TransmissionStatus;
 use App\Modules\Peppol\Domain\WebhookEvent;
 use App\Modules\Peppol\Models\PeppolParticipant;
@@ -66,7 +67,8 @@ class HandlePeppolEvent implements ShouldQueue
 
     public function handle(ModuleManager $modules, AcceptPeppolDocument $accept, RecordTransmissionStatus $record): void
     {
-        if (! $modules->isEnabled(PeppolModule::KEY, $this->companyId)) {
+        // A delivery update needs the module; an incoming document is taken anyway (into quarantine), never dropped.
+        if ($this->type === WebhookEvent::DELIVERY && ! $modules->isEnabled(PeppolModule::KEY, $this->companyId)) {
             return;
         }
 
@@ -89,12 +91,16 @@ class HandlePeppolEvent implements ShouldQueue
 
             $participant = PeppolParticipant::query()->first();
 
-            if (! $participant instanceof PeppolParticipant || ! $participant->receive_enabled) {
+            // Fetched whatever receiving is set to: AcceptPeppolDocument keeps it in quarantine when the company does not receive.
+            if (! $participant instanceof PeppolParticipant) {
                 return;
             }
 
             try {
                 $accept($company, AccessPoints::make()->fetch($participant, $this->reference, $this->documentType));
+            } catch (PeppolDocumentTooLarge) {
+                // Alerted; left at the access point for the operator (and the poll window stays open).
+                $participant->forceFill(['last_error' => __('En mottagen e-faktura är för stor för att tas emot och ligger kvar hos Peppol-operatören. Kontakta den som driftar NONOX.')])->save();
             } catch (ConnectionException|InboxQuotaExceeded) {
                 $this->release($this->backoff[min($this->attempts() - 1, 3)]);
             } catch (AccessPointFailed $exception) {

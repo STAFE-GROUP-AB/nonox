@@ -17,8 +17,8 @@
 | Avslagna ansökningar om frånvaro och avslagna utlägg med kvitto | 1 år efter beslutet | Underlag om beslutet ifrågasätts; aldrig räkenskapsinformation | `privacy:prune` |
 | Säkerhetskopior av databas och filer | 7 dagar | Återställning vid fel; en raderad uppgift försvinner ur kopiorna inom 7 dagar | Krypterade, lagras bara i Sverige; äldre kopior raderas automatiskt varje natt |
 | Inkorgen: meddelanden som lett till bokföring (`.eml` och bilagor) | Som räkenskapsinformationen | Underlag till verifikationerna (BFL 7 kap.) | Kopplas till verifikationen; tas inte bort av gallringen |
-| E-faktura via Peppol: skickade e-fakturor (XML med PDF) | Som räkenskapsinformationen | Kopia av den utfärdade fakturan som den lämnade företaget (BFL 5 kap. 7 §, 7 kap.; ML 17 kap. 30–31 §§) | Tas inte bort |
-| E-faktura via Peppol: mottagna e-fakturor (originalfilen) | Som inkorgens meddelanden ovan | Räkenskapsinformation i det format den kom (BFL 7 kap. 1 §) | Som inkorgen |
+| E-faktura via Peppol: skickade e-fakturor (XML med PDF) | Som räkenskapsinformationen | Kopia av den utfärdade fakturan som den lämnade företaget (BFL 5 kap. 6 §, 7 kap. 1 § tredje stycket och 2 §; ML 17 kap. 30–31 §§) | Tas inte bort automatiskt |
+| E-faktura via Peppol: mottagna e-fakturor (originalfilen) | Som räkenskapsinformationen, även när den avvisas eller ligger i karantän | Räkenskapsinformation i det format den kom (BFL 5 kap. 6 §, 7 kap. 1 § tredje stycket); en bestridd faktura är fortfarande en mottagen faktura | Undantas från `inbox:prune`. TODO(legal-verify): om dubbletter och testdokument får gallras tidigare |
 | Inkorgen: avvisade meddelanden | 7 dagar efter avvisningen | Hinner ångras om avvisningen var fel; har aldrig bokförts | `inbox:prune` varje natt |
 | Inkorgen: e-post till den gemensamma adressen som inget företag hämtat | 90 dagar | Kan inte knytas till något företag | `inbox:prune` |
 | Inkorgen: meddelanden i karantän som ingen hanterat | 90 dagar efter mottagandet | Väntar på beslut | `inbox:prune` |

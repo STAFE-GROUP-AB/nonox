@@ -44,7 +44,7 @@ class PeppolSettingsForm extends Component
 
         $this->companyId = $company->id;
         $participant = CurrentCompany::run($company, fn (): ?PeppolParticipant => PeppolParticipant::query()->first());
-        $this->identifier = $participant->identifier ?? (string) PeppolIdentifier::forOrganisationNumber($company->org_number)?->toString();
+        $this->identifier = $participant->identifier ?? (PeppolIdentifier::usesPersonalIdentityNumber($company) ? '' : (string) PeppolIdentifier::forOrganisationNumber($company->org_number)?->toString());
         $this->receive = (bool) $participant?->receive_enabled;
     }
 

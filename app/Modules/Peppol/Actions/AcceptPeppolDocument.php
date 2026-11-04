@@ -16,6 +16,7 @@ use App\Modules\Inbox\Models\InboxMessage;
 use App\Modules\Inbox\Support\InboxQuotaExceeded;
 use App\Modules\ModuleManager;
 use App\Modules\Peppol\Domain\InboundDocument;
+use App\Modules\Peppol\Domain\PeppolDocumentTooLarge;
 use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Modules\Peppol\PeppolModule;
 use App\Support\Audit\Audit;
@@ -36,9 +37,13 @@ use Illuminate\Validation\ValidationException;
  * supplier invoice proposal that a person approves (attest) as today.
  *
  * - The company is the one whose participant the access point delivered
- *   to: the document is only taken when receiving is on, the inbox module
- *   is on, and the receiver in the document (BT-49) is the company's own
- *   Peppol ID. Nothing is ever routed to another company.
+ *   to, and the receiver in the document (BT-49) must be the company's own
+ *   Peppol ID; anything else is refused. Nothing is ever routed to another
+ *   company.
+ * - A document addressed to the company is never dropped: while the module,
+ *   the inbox or receiving is off (or the company is archived) the original
+ *   is kept in quarantine with the reason PEPPOL_NOT_RECEIVING. One too
+ *   large to take is left at the access point and the operator alerted.
  * - The UBL file is kept byte for byte as the original
  *   (räkenskapsinformation, BFL 7 kap.; BFNAR 2013:2) with its SHA-256,
  *   on the encrypted private disk; the invoice image embedded in it is
@@ -59,32 +64,25 @@ class AcceptPeppolDocument
         private readonly UblInvoiceParser $parser,
     ) {}
 
+    /**
+     * @return ?InboxMessage null only for a document addressed to another participant
+     *
+     * @throws PeppolDocumentTooLarge the document stays at the access point and the operator is alerted
+     */
     public function __invoke(Company $company, InboundDocument $document): ?InboxMessage
     {
-        if (! $this->modules->isEnabled(PeppolModule::KEY, $company) || ! $this->modules->isEnabled(InboxModule::KEY, $company) || $company->isArchived()) {
-            Audit::record('peppol.dropped', null, ['reason' => 'not_receiving', 'reference' => mb_substr($document->reference, 0, 120)], $company);
-
-            return null;
-        }
-
         if (strlen($document->xml) > self::MAX_BYTES) {
-            Audit::record('peppol.dropped', null, ['reason' => 'too_large', 'size' => strlen($document->xml)], $company);
+            Log::alert('Peppol: a received document is too large to take; it stays at the access point.', ['company_id' => $company->id, 'reference' => $document->reference, 'size' => strlen($document->xml)]);
+            Audit::record('peppol.too_large', null, ['reference' => mb_substr($document->reference, 0, 120), 'size' => strlen($document->xml)], $company);
 
-            return null;
+            throw new PeppolDocumentTooLarge($document->reference);
         }
 
         return CurrentCompany::run($company, function () use ($company, $document): ?InboxMessage {
             $participant = PeppolParticipant::query()->first();
-
-            if (! $participant instanceof PeppolParticipant || ! $participant->receive_enabled) {
-                Audit::record('peppol.dropped', null, ['reason' => 'not_receiving', 'reference' => mb_substr($document->reference, 0, 120)], $company);
-
-                return null;
-            }
-
             [$sender, $receiver, $number, $supplier] = $this->envelope($document);
 
-            if ($receiver !== null && ! $receiver->equals($participant->participant())) {
+            if (! $participant instanceof PeppolParticipant || ($receiver !== null && ! $receiver->equals($participant->participant()))) {
                 Log::warning('Peppol: a document for another participant was refused.', ['company_id' => $company->id, 'reference' => $document->reference]);
                 Audit::record('peppol.dropped', null, ['reason' => 'wrong_receiver', 'reference' => mb_substr($document->reference, 0, 120)], $company);
 
@@ -104,12 +102,18 @@ class AcceptPeppolDocument
                 throw new InboxQuotaExceeded;
             }
 
+            // Addressed to the company's own Peppol ID, so never dropped: while it does not receive
+            // (module, inbox or receiving off, or archived) the original is kept in quarantine.
+            $inboxOn = $this->modules->isEnabled(InboxModule::KEY, $company);
+            $receiving = $this->modules->isEnabled(PeppolModule::KEY, $company) && $inboxOn && $participant->receive_enabled && ! $company->isArchived();
+            $reasons = $receiving ? [] : [['code' => 'PEPPOL_NOT_RECEIVING', 'message' => __('E-fakturan kom via Peppol när företaget inte tog emot e-fakturor. Originalet är sparat; släpp den om den ska bokföras.')]];
+
             $id = Str::uuid()->toString();
             $path = "inkorg/{$company->id}/{$id}/original.xml";
             Storage::disk(AcceptInboundMail::DISK)->put($path, $document->xml);
             $from = $sender?->toString() ?? 'peppol';
 
-            $message = DB::transaction(function () use ($id, $participant, $from, $supplier, $number, $document, $path, $sha256): InboxMessage {
+            $message = DB::transaction(function () use ($id, $participant, $from, $supplier, $number, $document, $path, $sha256, $reasons): InboxMessage {
                 $message = new InboxMessage;
                 $message->id = $id;
                 $message->fill([
@@ -126,8 +130,8 @@ class AcceptPeppolDocument
                     'eml_size' => strlen($document->xml),
                     'body_text' => null,
                     'auth' => ['channel' => 'peppol', 'failed' => false, 'spam' => false],
-                    'status' => MessageStatus::NeedsReview,
-                    'quarantine_reasons' => [],
+                    'status' => $reasons === [] ? MessageStatus::NeedsReview : MessageStatus::Quarantine,
+                    'quarantine_reasons' => $reasons,
                     'warnings' => [],
                 ])->save();
 
@@ -150,10 +154,16 @@ class AcceptPeppolDocument
                 'sender_scheme' => $sender?->scheme,
                 'sha256' => $sha256,
                 'size' => $message->eml_size,
+                'quarantine' => array_column($reasons, 'code'),
             ], $company);
 
-            InterpretInboxMessageJob::dispatch($company->id, $message->id);
-            app(NotifyInbox::class)($company);
+            if ($reasons === []) {
+                InterpretInboxMessageJob::dispatch($company->id, $message->id);
+            }
+
+            if ($inboxOn) {
+                app(NotifyInbox::class)($company);
+            }
 
             return $message->refresh();
         });

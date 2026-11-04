@@ -22,6 +22,9 @@
         @elseif(! $participant?->canSend())
             <p class="text-sm text-gray-600">{{ __('Företaget är inte kopplat till Peppol ännu. Se Företagsinställningar → Moduler → Peppol e-faktura.') }}</p>
         @elseif($canSend)
+            @if($invoice->sent_at !== null)
+                <p class="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">{{ __('Fakturan är redan skickad med e-post. Skicka den via Peppol bara om kunden ber om det; det är samma faktura, inte en ny.') }}</p>
+            @endif
             <p class="text-sm text-gray-700">{{ __('Kundens Peppol-ID: :id', ['id' => $customer->peppol_id]) }}</p>
             @if($lookupResult !== '')
                 <p role="status" @class(['mt-2 text-sm', 'text-green-800' => $lookupOk, 'text-red-700' => ! $lookupOk])>{{ $lookupResult }}</p>

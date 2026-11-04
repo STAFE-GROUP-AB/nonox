@@ -50,6 +50,8 @@ final class LogAccessPoint implements PeppolAccessPoint
         self::$unknown = [];
         self::$failNext = null;
         self::$failRetryable = true;
+        self::$deregistered = [];
+        self::$failDeregister = null;
     }
 
     public function key(): string
@@ -113,6 +115,20 @@ final class LogAccessPoint implements PeppolAccessPoint
     public function register(PeppolParticipant $participant, Company $company): RegistrationStatus
     {
         return RegistrationStatus::Registered;
+    }
+
+    /** @var list<string> participants deregistered, for tests */
+    public static array $deregistered = [];
+
+    public static ?string $failDeregister = null;
+
+    public function deregister(PeppolParticipant $participant): void
+    {
+        if (self::$failDeregister !== null) {
+            throw new AccessPointFailed(self::$failDeregister, retryable: true);
+        }
+
+        self::$deregistered[] = $participant->identifier;
     }
 
     public function subscribeWebhook(PeppolParticipant $participant, string $url): ?array

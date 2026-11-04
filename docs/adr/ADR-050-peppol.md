@@ -268,9 +268,7 @@ permissions). Receiving needs the inbox module.
   personal data (sole traders, contact persons), as NONOX's sub-processor for
   the hosted service; text prepared in `docs/juridik/underbitraden.md` and the
   register of processing, legal version bumped at merge.
-- TODO(legal-verify): (1) G for services supplied outside the EU and K for
-  the intermediary's sale in triangulation; (2) E rather than O for an outlay
-  outside the scope of VAT on an invoice from a registered company; (3)
+- TODO(legal-verify): (1) and (2) answered in the legal review below; (3)
   whether a rejected inbound e-invoice is still räkenskapsinformation (same
   question as ADR-023); (4) whether the conversion of the received XML into a
   supplier invoice in NONOX needs a description under BFNAR 2013:2 beyond the
@@ -278,6 +276,30 @@ permissions). Receiving needs the inbox module.
   the receiver consent; (6) whether storing the provider's copy in the EU
   (Qvalia, Sweden) needs any notice under BFL 7 kap. 3 a § (it should not:
   NONOX keeps the original itself).
+
+## Legal review 2026-11-04
+
+- Never drop a document the operator accepted: receiving off (or the module
+  off) first removes the company from the SMP (`deregister()` in the driver
+  contract), and the module cannot be disabled until that has succeeded. A
+  document addressed to the company's own Peppol ID is always stored; when
+  the company does not receive it goes to quarantine (`PEPPOL_NOT_RECEIVING`).
+  One too large is left at the operator, the poll window stays open and the
+  operator is alerted. Polling pages through every document in the window.
+- Sole traders: a company whose organisation number is a personal identity
+  number (EF, or third digit below 2, SKV 709) gets no 0007 prefill, cannot
+  register or receive with 0007 (sending may), and its business card at the
+  operator carries no orgNr or VAT number. A buyer's organisation number
+  (BT-47) is left out of the e-invoice when it is a personal identity number.
+- Erasure and register extracts include the customer's Peppol ID.
+- A seller not registered for VAT must give a reason (the invoice's or the
+  company's exemption text) before sending (BR-O-10).
+- Triangulation: the invoice text (PDF and e-invoice) refers to article 141
+  of the VAT directive and reverse charge, and the e-invoice uses AE with
+  VATEX-EU-AE. TODO(legal-verify): a skattejurist confirms the final text.
+- Answered: G for services outside the EU, E with explicit text for outlays,
+  and no buyer VAT number for exports are right.
+- Rejected or quarantined Peppol documents are not pruned by `inbox:prune`.
 
 ## Known limits
 

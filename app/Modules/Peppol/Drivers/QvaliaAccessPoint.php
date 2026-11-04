@@ -47,6 +47,11 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
     /** A signed webhook older than this is refused (Qvalia recommends five minutes). */
     private const int WEBHOOK_TOLERANCE_SECONDS = 300;
 
+    /** Documents asked for per page when polling, and a guard against a provider that never stops paging. */
+    private const int PAGE = 100;
+
+    private const int MAX_LISTED = 10_000;
+
     public function __construct(
         private readonly string $url,
         private readonly string $partner,
@@ -127,13 +132,21 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
         $since = ($receiver->last_polled_at ?? now()->subDays(7))->subHour()->toIso8601String();
 
         foreach (['invoices' => 'Invoice', 'creditnotes' => 'CreditNote'] as $path => $type) {
-            $list = $this->json($this->http()->get($this->transactionPath($receiver, $path, 'incoming').'/status', ['updatedAtFrom' => $since, 'includeRead' => 'true', 'limit' => 100]), 'incoming');
+            // Every page of the window, so a busy account never has a document skipped.
+            for ($offset = 0; $offset < self::MAX_LISTED; $offset += self::PAGE) {
+                $list = $this->json($this->http()->get($this->transactionPath($receiver, $path, 'incoming').'/status', ['updatedAtFrom' => $since, 'includeRead' => 'true', 'limit' => self::PAGE, 'offset' => $offset]), 'incoming');
+                $entries = (array) ($list['data'] ?? []);
 
-            foreach ((array) ($list['data'] ?? []) as $entry) {
-                $reference = (string) ($entry['integrationId'] ?? '');
+                foreach ($entries as $entry) {
+                    $reference = (string) ($entry['integrationId'] ?? '');
 
-                if ($reference !== '') {
-                    $documents[] = $this->fetch($receiver, $reference, $type);
+                    if ($reference !== '') {
+                        $documents[] = $this->fetch($receiver, $reference, $type);
+                    }
+                }
+
+                if (count($entries) < self::PAGE) {
+                    break;
                 }
             }
         }
@@ -159,12 +172,14 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
         $org = OrganisationNumber::tryFrom((string) $company->org_number);
 
         $response = $this->http()->put($this->partnerPath('account/'.rawurlencode((string) $participant->provider_account).'/peppol/'.rawurlencode($participant->identifier)), [
-            'businessCard' => [
+            // A sole trader's number is a personal identity number: never published in the Peppol Directory.
+            // TODO(provider-verify): that Qvalia accepts a business card without orgNr for a GLN registration.
+            'businessCard' => array_filter([
                 'companyName' => (string) ($company->legal_name ?: $company->name),
                 'countryCode' => (string) ($company->country ?: 'SE'),
-                'orgNr' => (string) $org?->digits,
-                'VAT' => $company->vat_number,
-            ],
+                'orgNr' => PeppolIdentifier::usesPersonalIdentityNumber($company) ? null : $org?->digits,
+                'VAT' => PeppolIdentifier::usesPersonalIdentityNumber($company) ? null : $company->vat_number,
+            ], fn (?string $value): bool => $value !== null && $value !== ''),
             'docTypes' => [
                 ['profile' => UblInvoiceWriter::PROFILE, 'document' => UblInvoiceWriter::DOCTYPE_INVOICE],
                 ['profile' => UblInvoiceWriter::PROFILE, 'document' => UblInvoiceWriter::DOCTYPE_CREDIT_NOTE],
@@ -174,6 +189,16 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
         $status = (string) ($this->json($response, 'register')['status'] ?? '');
 
         return in_array($status, ['registered', 'updated'], true) ? RegistrationStatus::Registered : RegistrationStatus::Pending;
+    }
+
+    public function deregister(PeppolParticipant $participant): void
+    {
+        $response = $this->http()->delete($this->partnerPath('account/'.rawurlencode((string) $participant->provider_account).'/peppol/'.rawurlencode($participant->identifier)));
+
+        // Already gone counts as done.
+        if ($response->status() !== 404) {
+            $this->json($response, 'deregister');
+        }
     }
 
     /**

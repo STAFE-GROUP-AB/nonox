@@ -27,7 +27,7 @@
         <form wire:submit="register" class="mt-3 space-y-3">
             <label class="flex items-start gap-2">
                 <input type="checkbox" wire:model="consent" class="mt-0.5 rounded-sm border-gray-300 text-accent-600 focus:ring-accent-500">
-                <span>{{ __('Jag får företräda företaget och godkänner att Peppol-operatören registrerar företaget som mottagare av e-fakturor med Peppol-ID:t ovan.') }}</span>
+                <span>{{ __('Jag har rätt att företräda företaget och ger Peppol-operatören i uppdrag att registrera företaget som mottagare av e-fakturor med Peppol-ID:t ovan. Företagets namn, land och Peppol-ID blir då sökbara i Peppols öppna adressbok. Registreringen tas bort när mottagningen stängs av.') }}</span>
             </label>
             <x-input-error for="identifier" />
             <x-secondary-button type="submit">{{ __('Registrera som mottagare') }}</x-secondary-button>

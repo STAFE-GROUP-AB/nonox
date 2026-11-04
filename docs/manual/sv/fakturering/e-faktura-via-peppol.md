@@ -10,7 +10,7 @@ sokord: [peppol, e-faktura, elektronisk faktura, Svefaktura, offentlig sektor, k
 
 Peppol är ett nätverk för e-fakturor. Fakturan går som en fil som kundens ekonomisystem läser in direkt, i stället för en PDF som någon måste skriva av. Kommuner, regioner och myndigheter ska ta emot e-fakturor, och många större företag vill ha dem.
 
-NONOX skickar fakturan enligt Peppol BIS Billing 3.0, med PDF:en bifogad, genom en Peppol-operatör som NONOX har avtal med. Fakturan bokförs precis som när du mejlar den: den bokfördes redan när du skapade den, och att skicka den ändrar ingenting i bokföringen.
+NONOX skickar fakturan enligt Peppol BIS Billing 3.0, med PDF:en bifogad, genom den Peppol-operatör som den som driftar NONOX har avtal med. I den driftade tjänsten på nonox.app är modulen inte påslagen än. Fakturan bokförs precis som när du mejlar den: den bokfördes redan när du skapade den, och att skicka den ändrar ingenting i bokföringen.
 
 > [!NOTE]
 > Peppol e-faktura är en modul. Den kan bara slås på när den som driftar NONOX har ett avtal med en Peppol-operatör. Saknas det står det i modullistan under **Inställningar för företaget → Moduler**.

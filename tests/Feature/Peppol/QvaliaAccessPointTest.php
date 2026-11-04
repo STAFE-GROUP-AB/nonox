@@ -208,3 +208,38 @@ it('reads the signature header with several secrets during rotation', function (
     expect(QvaliaAccessPoint::parseSignature('t=1757846400,v1=abc,v1=def,v0=old'))->toBe([1757846400, ['abc', 'def']])
         ->and(QvaliaAccessPoint::parseSignature('garbage'))->toBe([null, []]);
 });
+
+it('pages through every document in the polling window', function () {
+    Http::fake(function (Request $request) {
+        if (str_contains($request->url(), '/invoices/incoming/status')) {
+            $offset = (int) ($request->data()['offset'] ?? 0);
+            $count = $offset === 0 ? 100 : 3;
+
+            return Http::response(['status' => 'success', 'data' => array_map(fn (int $i): array => ['integrationId' => 'in-'.($offset + $i)], range(1, $count))]);
+        }
+
+        if (str_contains($request->url(), '/creditnotes/incoming/status')) {
+            return Http::response(['status' => 'success', 'data' => []]);
+        }
+
+        return Http::response('<Invoice/>', 200, ['Content-Type' => 'application/xml']);
+    });
+    $participant = new PeppolParticipant;
+    $participant->provider_account = 'SE5599000006';
+
+    expect(QvaliaAccessPoint::fromConfig()->incoming($participant))->toHaveCount(103);
+});
+
+it('omits a sole trader\'s number from the business card and deregisters with DELETE', function () {
+    Http::fake(['*' => Http::response(['status' => 'registered'])]);
+    $this->company->forceFill(['legal_form' => 'EF', 'org_number' => '640823-3234', 'vat_number' => 'SE640823323401'])->save();
+    $participant = new PeppolParticipant(['identifier' => '0088:7300009000005']);
+    $participant->provider_account = 'SE6408233234';
+    $driver = QvaliaAccessPoint::fromConfig();
+
+    $driver->register($participant, $this->company->fresh());
+    $driver->deregister($participant);
+
+    Http::assertSent(fn (Request $request): bool => $request->method() === 'PUT' && ! isset($request['businessCard']['orgNr']) && ! isset($request['businessCard']['VAT']));
+    Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE' && str_contains($request->url(), '/peppol/'));
+});

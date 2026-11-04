@@ -196,9 +196,10 @@ Dessa frågor kräver i första hand en redovisningskonsult eller skattejurist. 
 | ROT och RUT: andelar, tak, avrundning, arbetskostnad, kontantmetoden och nekade belopp | `app/Domain/Invoicing/TaxReduction.php`, `app/Actions/Invoicing/IssueInvoice.php`, `RegisterTaxReductionPayment.php` |
 | Påminnelseavgift och dröjsmålsränta, som i dag inte tas ut | `app/Actions/Invoicing/SendReminder.php`, ADR-011 |
 | Bankgiro och plusgiro i Peppol-fakturor enligt SFTI | `app/Support/Peppol/UblInvoiceParser.php` |
-| Peppol: momskategori G för tjänster utanför EU och K för mellanmannens försäljning i trepartshandel; E eller O för utlägg utanför momsens tillämpningsområde | `app/Support/Peppol/UblInvoiceWriter.php`, ADR-050 |
-| Peppol: om en avvisad e-faktura i inkorgen är räkenskapsinformation, och om översättningen av den mottagna XML-filen till en leverantörsfaktura behöver beskrivas utöver systemdokumentationen (BFNAR 2013:2) | `app/Modules/Peppol/Actions/AcceptPeppolDocument.php`, ADR-050 |
-| Peppol: texten i samtycket när ett företag registreras som mottagare, Peppol-operatören som underbiträde och avtalet med den | `app/Modules/Peppol/views/settings-form.blade.php`, `docs/juridik/underbitraden.md`, ADR-050 |
+| Peppol: när en avvisad (bestridd) mottagen e-faktura får gallras, och om dubbletter och testdokument får gallras tidigare | `app/Modules/Inbox/Console/PruneInboxCommand.php`, `docs/gdpr/lagringstider.md`, ADR-050 |
+| Peppol: vilka punkter i BFNAR 2013:2 som gäller översättningen av den mottagna XML-filen till en leverantörsfaktura, och vad systemdokumentationen behöver beskriva | `app/Modules/Peppol/Actions/AcceptPeppolDocument.php`, systemdokumentationen 5e.1, ADR-050 |
+| Peppol: operatörens roll (biträde eller personuppgiftsansvarig för sin kundkännedom) och avtalet (DPA) med den | `docs/juridik/underbitraden.md`, `docs/gdpr/registerforteckning.md`, ADR-050 |
+| Trepartshandel: slutlig fakturatext (artikel 141, omvänd betalningsskyldighet), bekräftas av skattejurist | `app/Domain/Invoicing/ForeignSale.php`, ADR-050 |
 
 ### Lön
 

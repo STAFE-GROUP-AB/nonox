@@ -78,6 +78,9 @@ class EraseRegisterEntry
                 'address_line2' => null,
                 'postal_code' => null,
                 'city' => null,
+                // The Peppol ID can be a sole trader's personal identity number (ADR-050).
+                'peppol_id' => null,
+                'invoice_delivery' => 'EMAIL',
                 'is_active' => false,
             ])->save();
 

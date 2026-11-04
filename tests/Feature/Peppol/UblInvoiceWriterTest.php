@@ -208,3 +208,31 @@ it('catches documents that break the rules', function () {
     expect($rules)->toContain('BR-CO-16')->toContain('PEPPOL-EN16931-R003')->toContain('SE-R-009')
         ->and(PeppolDocumentRules::check('<!DOCTYPE x><x/>'))->toBe(['XML: the document cannot be read.']);
 });
+
+it('writes the intermediary\'s sale in triangulation as reverse charge with the article 141 text', function () {
+    $german = PeppolFixtures::customer($this->owner, $this->company, [
+        'name' => 'Muster GmbH', 'org_number' => null, 'vat_number' => 'DE123456789', 'country' => 'DE', 'city' => 'Berlin', 'postal_code' => '10115', 'address_line1' => 'Teststraße 1',
+        'foreign_sale' => ForeignSale::EuTriangular->value,
+    ]);
+    $invoice = PeppolFixtures::invoice($this->owner, $this->company, $german, [
+        ['description' => 'Maskiner', 'quantity' => '1', 'unit' => 'st', 'price' => '10 000', 'vat_rate' => 2500],
+    ]);
+    $this->buyer = PeppolIdentifier::make('9930', 'DE123456789');
+    $xml = peppolXml($invoice, $this->company);
+
+    expect($xml)->toContain('<cbc:ID>AE</cbc:ID>')->toContain('VATEX-EU-AE')->toContain('artikel 141')->not->toContain('VATEX-EU-IC')
+        ->and(PeppolDocumentRules::check($xml))->toBe([]);
+});
+
+it('refuses an invoice without VAT from an unregistered seller that gives no reason', function () {
+    $customer = PeppolFixtures::customer($this->owner, $this->company);
+    $invoice = PeppolFixtures::invoice($this->owner, $this->company, $customer, [
+        ['description' => 'Arbete', 'quantity' => '1', 'unit' => 'st', 'price' => '1 000', 'vat_rate' => 0, 'vat_exemption' => 'OTHER'],
+    ]);
+    $this->company->forceFill(['vat_number' => null, 'vat_exemption' => null])->save();
+
+    expect(UblInvoiceWriter::unsupportedReason($invoice, $this->company))->toContain('utan moms');
+
+    $this->company->forceFill(['vat_exemption' => 'SMALL_BUSINESS'])->save();
+    expect(UblInvoiceWriter::unsupportedReason($invoice, $this->company))->toBeNull();
+});

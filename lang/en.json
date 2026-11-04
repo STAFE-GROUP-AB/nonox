@@ -8771,7 +8771,7 @@
     "Inte kopplat än": "Not connected yet",
     "Senaste felet från Peppol-operatören: :error": "Latest error from the Peppol service provider: :error",
     "För att kunna ta emot e-fakturor måste företaget finnas i Peppols adressbok. Peppol-operatören kontrollerar först vem företaget är och registrerar det sedan. Det behövs inte för att bara skicka.": "To receive e-invoices the company must be in the Peppol address book. The Peppol service provider first verifies who the company is and then registers it. It is not needed just to send.",
-    "Jag får företräda företaget och godkänner att Peppol-operatören registrerar företaget som mottagare av e-fakturor med Peppol-ID:t ovan.": "I may represent the company and approve that the Peppol service provider registers the company as a receiver of e-invoices with the Peppol ID above.",
+    "Jag har rätt att företräda företaget och ger Peppol-operatören i uppdrag att registrera företaget som mottagare av e-fakturor med Peppol-ID:t ovan. Företagets namn, land och Peppol-ID blir då sökbara i Peppols öppna adressbok. Registreringen tas bort när mottagningen stängs av.": "I am entitled to represent the company and instruct the Peppol service provider to register the company as a receiver of e-invoices with the Peppol ID above. The company's name, country and Peppol ID then become searchable in the open Peppol Directory. The registration is removed when receiving is switched off.",
     "Registrera som mottagare": "Register as receiver",
     "Skicka som e-faktura (Peppol)": "Send as e-invoice (Peppol)",
     "till :id": "to :id",
@@ -8794,5 +8794,12 @@
     "Fakturera via Peppol (e-faktura)": "Invoice through Peppol (e-invoice)",
     "Kundens Peppol-ID": "The customer's Peppol ID",
     "Till exempel 0007:5599000006 för ett svenskt organisationsnummer. Lämnas tomt för en svensk kund används organisationsnumret.": "For example 0007:5599000006 for a Swedish organisation number. Left empty for a Swedish customer, the organisation number is used.",
-    "Omvänd betalningsskyldighet kräver kundens momsregistreringsnummer på fakturan.": "Reverse charge needs the customer's VAT registration number on the invoice."
+    "Omvänd betalningsskyldighet kräver kundens momsregistreringsnummer på fakturan.": "Reverse charge needs the customer's VAT registration number on the invoice.",
+    "Ange varför fakturan är utan moms innan den skickas via Peppol.": "State why the invoice has no VAT before it is sent through Peppol.",
+    "Stäng först av mottagningen så att företaget tas bort ur Peppols adressbok. Annars kan leverantörer fortsätta skicka e-fakturor hit.": "First switch off receiving so that the company is removed from the Peppol Directory. Otherwise suppliers may keep sending e-invoices here.",
+    "E-fakturan kom via Peppol när företaget inte tog emot e-fakturor. Originalet är sparat; släpp den om den ska bokföras.": "The e-invoice came through Peppol while the company did not receive e-invoices. The original is kept; release it if it is to be booked.",
+    "En enskild firma registreras med ett GLN (0088), så att personnumret inte publiceras i Peppols öppna adressbok.": "A sole trader is registered with a GLN (0088), so that the personal identity number is not published in the open Peppol Directory.",
+    "Peppol-operatören kunde inte ta bort registreringen i Peppols adressbok. Försök igen om en stund.": "The Peppol service provider could not remove the registration from the Peppol Directory. Try again in a while.",
+    "En mottagen e-faktura är för stor för att tas emot och ligger kvar hos Peppol-operatören. Kontakta den som driftar NONOX.": "A received e-invoice is too large to take and remains with the Peppol service provider. Contact whoever runs NONOX.",
+    "Fakturan är redan skickad med e-post. Skicka den via Peppol bara om kunden ber om det; det är samma faktura, inte en ny.": "The invoice has already been sent by e-mail. Send it through Peppol only if the customer asks for it; it is the same invoice, not a new one."
 }

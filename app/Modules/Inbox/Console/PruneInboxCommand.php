@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inbox\Console;
 
 use App\Modules\Inbox\Actions\AcceptInboundMail;
+use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\Domain\MessageStatus;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
@@ -52,6 +53,10 @@ class PruneInboxCommand extends Command
                     ->orWhere(fn ($ignored) => $ignored->where('status', MessageStatus::Quarantine->value)->whereNull('handled_at')->where('received_at', '<', now()->subDays(self::UNHANDLED_DAYS))))
                 ->whereNull('supplier_invoice_id')
                 ->whereJsonLength('voucher_ids', 0)
+                // A Peppol e-invoice addressed to the company is kept even when rejected or left in quarantine: a disputed
+                // invoice is still räkenskapsinformation (legal review 2026-11-04, ADR-050). TODO(legal-verify): whether
+                // duplicates and test documents may be removed earlier, and when the rest may go.
+                ->where('channel', '<>', Channel::Peppol->value)
                 ->with('attachments')
                 ->get();
 

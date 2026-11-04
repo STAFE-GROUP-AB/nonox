@@ -34,8 +34,8 @@
     {
       "id": "2026-11-04-peppol-e-faktura",
       "datum": "2026-11-04T15:00:00+01:00",
-      "rubrik": "E-faktura via Peppol, byggt och redo",
-      "beskrivning": "Kundfakturor och kreditfakturor kan skickas som e-faktura enligt Peppol BIS Billing 3.0, kontrollerade mot reglerna, och e-fakturor från leverantörer hamnar i inkorgen som förslag att attestera. Modulen Peppol e-faktura slås på när vi har ett avtal med en Peppol-operatör. Bokföringen påverkas inte: fakturan bokförs som förut när den skapas.",
+      "rubrik": "E-faktura via Peppol är byggt",
+      "beskrivning": "Kundfakturor och kreditfakturor kommer att kunna skickas som e-faktura enligt Peppol BIS Billing 3.0, och e-fakturor från leverantörer kommer att hamna i inkorgen som förslag att attestera; bokföringen påverkas inte. Fakturatexten för trepartshandel hänvisar nu till artikel 141 i mervärdesskattedirektivet och omvänd betalningsskyldighet. Modulen slås på när avtalet med en Peppol-operatör är klart.",
       "typ": "Nytt",
       "omrade": "Fakturering"
     },

@@ -60,6 +60,14 @@ interface PeppolAccessPoint
     public function register(PeppolParticipant $participant, Company $company): RegistrationStatus;
 
     /**
+     * Removes the company as a receiver from the provider's SMP (and so the
+     * Peppol Directory), so suppliers stop sending to it.
+     *
+     * @throws AccessPointFailed
+     */
+    public function deregister(PeppolParticipant $participant): void;
+
+    /**
      * Subscribes the installation's webhook URL to the account's events.
      *
      * @return ?array{id: string, secret: ?string} null when the provider has no webhooks

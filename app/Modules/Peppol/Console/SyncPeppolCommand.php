@@ -10,6 +10,7 @@ use App\Modules\ModuleManager;
 use App\Modules\Peppol\Actions\AcceptPeppolDocument;
 use App\Modules\Peppol\Actions\RecordTransmissionStatus;
 use App\Modules\Peppol\Domain\AccessPointFailed;
+use App\Modules\Peppol\Domain\PeppolDocumentTooLarge;
 use App\Modules\Peppol\Domain\TransmissionStatus;
 use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Modules\Peppol\Models\PeppolTransmission;
@@ -60,9 +61,17 @@ class SyncPeppolCommand extends Command
                 }
 
                 try {
-                    if ($participant->canReceive()) {
-                        foreach ($driver->incoming($participant) as $document) {
+                    // Fetched whatever receiving is set to: a document addressed to the company is kept (in quarantine when it does not receive).
+                    $held = false;
+
+                    foreach ($driver->incoming($participant) as $document) {
+                        try {
                             $accept($company, $document);
+                        } catch (PeppolDocumentTooLarge) {
+                            // Left at the access point: the window stays open so it is never passed by, and the alert is on the participant.
+                            $held = true;
+                            $participant->forceFill(['last_error' => __('En mottagen e-faktura är för stor för att tas emot och ligger kvar hos Peppol-operatören. Kontakta den som driftar NONOX.')])->save();
+                            $this->error("Company `{$company->id}`: a received document is too large.");
                         }
                     }
 
@@ -82,7 +91,9 @@ class SyncPeppolCommand extends Command
                             }
                         });
 
-                    $participant->forceFill(['last_polled_at' => now(), 'last_error' => null])->save();
+                    if (! $held) {
+                        $participant->forceFill(['last_polled_at' => now(), 'last_error' => null])->save();
+                    }
                 } catch (InboxQuotaExceeded) {
                     // Polled again next time: last_polled_at is not moved, and what was taken is not taken twice.
                     $this->warn("Company `{$company->id}`: the inbox quota is used up for this hour.");

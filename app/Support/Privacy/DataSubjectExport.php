@@ -73,7 +73,7 @@ final class DataSubjectExport
     {
         return [
             'utdrag' => self::meta('Kund'),
-            'kund' => [...$customer->only(['number', 'name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country']), 'personal_number' => $customer->personal_number],
+            'kund' => [...$customer->only(['number', 'name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'peppol_id', 'invoice_delivery']), 'personal_number' => $customer->personal_number],
             'fakturor' => Invoice::query()->where('customer_id', $customer->id)->orderBy('invoice_date')->get()
                 ->map(fn (Invoice $invoice): array => ['nummer' => $invoice->number, 'datum' => $invoice->invoice_date->toDateString(), 'belopp_ore' => $invoice->total_ore->ore, 'status' => $invoice->status->value])->all(),
             // CRM (ADR-043): the customer's account and activities, when it has one.

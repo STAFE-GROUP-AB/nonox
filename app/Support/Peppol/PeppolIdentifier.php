@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support\Peppol;
 
+use App\Domain\Company\LegalForm;
 use App\Domain\Company\OrganisationNumber;
+use App\Models\Company;
 
 /**
  * A Peppol participant identifier: an electronic address scheme (EAS,
@@ -79,6 +81,18 @@ final readonly class PeppolIdentifier
         $value = (string) preg_replace('/\s/', '', $value);
 
         return preg_match('/^[A-Za-z0-9][A-Za-z0-9.:_\-]{0,49}$/', $value) === 1 ? new self($scheme, $value) : null;
+    }
+
+    /**
+     * Whether the company's organisation number is its owner's personal
+     * identity number: a sole trader (EF), or a number whose third digit is
+     * below 2. Such a company is registered in Peppol with a GLN (0088), so
+     * the personal identity number is not published in the open Peppol
+     * Directory (Upphandlingsmyndigheten's advice; legal review 2026-11-04).
+     */
+    public static function usesPersonalIdentityNumber(Company $company): bool
+    {
+        return $company->legal_form === LegalForm::Ef || (OrganisationNumber::tryFrom((string) $company->org_number)?->isPersonalIdentityNumber() ?? false);
     }
 
     /** The identifier a Swedish company gets from its organisation number, or null when it has none. */
