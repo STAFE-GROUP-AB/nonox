@@ -1,30 +1,6 @@
 {
   "punkter": [
     {
-      "id": "crm-signering",
-      "rubrik": "CRM steg 3: signera offerter och avtal",
-      "beskrivning": "Kunden signerar offerten eller avtalet med fingret eller musen. En signerad offert blir order och sedan faktura, och avtalen samlas i ett register som påminner innan de ska förnyas.",
-      "status": "Planerat",
-      "omrade": "CRM",
-      "uppdaterad": "2026-11-03"
-    },
-    {
-      "id": "crm-prospektering",
-      "rubrik": "CRM steg 4: hitta nya kunder i öppna data",
-      "beskrivning": "Ett företagsregister från Bolagsverkets och SCB:s öppna data med filter på bransch, storlek och ort, sökning efter företag som liknar dina bästa kunder, ringlistor och bevakning av befintliga kunder när styrelse, adress eller status ändras.",
-      "status": "Planerat",
-      "omrade": "CRM",
-      "uppdaterad": "2026-11-03"
-    },
-    {
-      "id": "crm-epost",
-      "rubrik": "CRM steg 5: e-post, utskick och webbformulär",
-      "beskrivning": "Mejl loggas på kunden genom en kopia till företagets inkorgsadress, mallar för vanliga mejl, nyhetsbrev till urval av kunder där bara klick räknas och där mottagaren kan avregistrera sig, och webbformulär som skapar nya prospekt.",
-      "status": "Planerat",
-      "omrade": "CRM",
-      "uppdaterad": "2026-11-03"
-    },
-    {
       "id": "crm-kalender",
       "rubrik": "CRM steg 6: synk åt båda hållen med Google Kalender och Outlook",
       "beskrivning": "Kalenderlänken, kalenderfilerna och mötesinbjudningarna finns. Synken åt båda hållen med Google Kalender och Outlook är byggd och slås på när tjänsten är registrerad och granskad hos Google och Microsoft. Synk av e-post kommer efter det.",
