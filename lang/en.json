@@ -8966,5 +8966,6 @@
     "Uppfattat": "Understood",
     "Uppfattat. Deklarationsdagen följer företagets uppgifter.": "Understood. The declaration day follows the company's details.",
     "Ändra under företagets uppgifter": "Change under the company's details",
-    "Öppna företagets uppgifter": "Open the company's details"
+    "Öppna företagets uppgifter": "Open the company's details",
+    "Det här mejlet skickades från :app, :from. Svarar du på mejlet går svaret till :reply.": "This mail was sent from :app, :from. If you reply, your reply goes to :reply."
 }
