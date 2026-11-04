@@ -105,7 +105,7 @@
       @auth
         <a href="{{ route('guide.plan') }}">Till min startplan</a>
       @endauth
-      <a href="{{ route('guide.home') }}">Till Företagsguidens start</a>
+      <a href="{{ route('guide.home', $selection) }}">Till Företagsguidens start</a>
     </p>
   </article>
 </div>

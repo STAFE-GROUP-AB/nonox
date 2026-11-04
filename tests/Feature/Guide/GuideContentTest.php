@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Support\Guide\Guide;
+use App\Support\Guide\GuideQuestions;
 use App\Support\Guide\GuideValidator;
 
 /*
@@ -47,4 +48,14 @@ it('links only to guide articles and manual pages that exist', function () {
             expect($exists)->toBeTrue(basename(dirname($file)).'/'.basename($file)." links to {$link}, which does not exist.");
         }
     }
+});
+
+it('answers every question on the start page with a written article', function () {
+    foreach (GuideQuestions::QUESTIONS as $item) {
+        [$section, $slug] = explode('/', $item['article'], 2);
+
+        expect(Guide::article($section, $slug, false))->not->toBeNull("\"{$item['question']}\" points at {$item['article']}, which is not written.");
+    }
+
+    expect(GuideQuestions::answered())->toHaveCount(count(GuideQuestions::QUESTIONS));
 });

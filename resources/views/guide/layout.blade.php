@@ -15,15 +15,7 @@
 <head>
 @include('start.partials.public-head')
 @include('manual.partials.styles')
-<style>
-.gd-beta{display:flex;gap:10px;align-items:flex-start;margin:20px 0 0;padding:12px 16px;border-radius:14px;background:var(--soft);color:var(--ink);font-size:14.5px;line-height:1.5}
-.gd-beta svg{flex:none;margin-top:2px;color:var(--acct)}
-.gd-sources{margin-top:36px;padding-top:20px;border-top:1px solid var(--line)}
-.gd-sources ul{padding-left:20px}
-.gd-checked{color:var(--muted);font-size:14px}
-.gd-plan{display:inline-flex;align-items:center;gap:8px;margin-top:22px;padding:11px 18px;border-radius:999px;background:var(--ink);color:#fff;font-weight:600;text-decoration:none}
-.gd-plan:hover{color:#fff;opacity:.92}
-</style>
+@include('guide.partials.styles')
 @vite('resources/js/manual.js')
 </head>
 <body>

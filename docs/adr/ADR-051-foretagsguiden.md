@@ -48,11 +48,28 @@ about what has been checked and by whom.
    on (`app.landing.enabled`), like the manual; a signed-in user can read
    them either way, because the start plan and the tips link to them. Listed
    in the sitemap, the public header's "Kom igång" menu and the footer.
+   The start page is a product page, not a table of contents: a search
+   over titles, descriptions and `sokord` (`?sok=`, on the server, ignoring
+   case and diacritics), a "Vad driver du för företag?" picker for legal
+   form and industry, the start plan for that choice as a numbered timeline
+   (steps with a condition carry a tag such as "Om du är momsregistrerad"),
+   the questions founders ask (`GuideQuestions`, each pointing at a written
+   article, checked by a test), the sections and the stages still to come,
+   labelled "Kommer" without dates. The choice is the query string
+   (`?bolagsform=AB&bransch=cafe`), so the page is rendered on the server,
+   works without scripts, can be shared, and the article links carry it.
+   Amount columns in the guide's tables are right-aligned with tabular
+   numbers (`GuideTables`); the manual's tables are left alone.
 5. **A personal part for signed-in users**:
    - **Min startplan** (`/foretagsguiden/min-startplan`, `guide.plan`): the
      steps of the start plan that apply to the current company, by legal
      form, industry and condition (`vat_registered`, `not_vat_registered`,
      `employer_registered`), with progress, "Läs mer" and "Gör det i NONOX".
+     Steps are shown in groups (Registrering, Pengar och skatt, Bokföring i
+     NONOX, Avtal och skydd) by a mapping in code keyed by the step key
+     (`StepGroups`), with "Fler steg" for a step that is not mapped, so the
+     content format of startplan.json stays as it is. Steps are numbered in
+     the order the groups show them, here and on the public timeline.
      The address is reserved: no section may be called `min-startplan`, and
      the route is registered before the section route.
    - **Progress** is `company_guide_steps` (`CompanyGuideStep`, company

@@ -121,7 +121,7 @@ final class Guide
             ManualMarkdown::split((string) file_get_contents(self::path()."/{$data['path']}.md"))['body'],
         ));
 
-        return Article::fromArray($data, (string) $page['html']);
+        return Article::fromArray($data, GuideTables::alignNumbers((string) $page['html']));
     }
 
     /**
@@ -196,11 +196,79 @@ final class Guide
      */
     public static function matches(array $legalForms, array $industries, Company $company): bool
     {
-        if ($legalForms !== [] && ! in_array($company->legal_form->value, $legalForms, true)) {
+        return self::matchesKeys($legalForms, $industries, $company->legal_form->value, $company->industry?->value);
+    }
+
+    /**
+     * The same, for a legal form and an industry chosen on the public pages.
+     *
+     * @param  list<string>  $legalForms
+     * @param  list<string>  $industries
+     */
+    public static function matchesKeys(array $legalForms, array $industries, ?string $legalForm, ?string $industry): bool
+    {
+        if ($legalForms !== [] && ! in_array($legalForm, $legalForms, true)) {
             return false;
         }
 
-        return $industries === [] || ($company->industry !== null && in_array($company->industry->value, $industries, true));
+        return $industries === [] || ($industry !== null && in_array($industry, $industries, true));
+    }
+
+    /**
+     * The start plan for a legal form and an industry chosen on the public
+     * start page. Steps with a condition (VAT, employer) are kept: the page
+     * says when they apply.
+     *
+     * @return list<StartPlanStep>
+     */
+    public static function pathFor(string $legalForm, ?string $industry): array
+    {
+        return array_values(array_filter(self::steps(), fn (StartPlanStep $step): bool => self::matchesKeys($step->legalForms, $step->industries, $legalForm, $industry)));
+    }
+
+    /**
+     * The articles whose title, description or search words contain every
+     * word of the query, ignoring case and diacritics; the title counts most.
+     *
+     * @return list<Article>
+     */
+    public static function search(string $query): array
+    {
+        $words = array_values(array_filter(preg_split('/[\s,.;:!?"()]+/u', self::fold($query)) ?: [], fn (string $word): bool => $word !== ''));
+
+        if ($words === []) {
+            return [];
+        }
+
+        $hits = [];
+
+        foreach (self::ordered() as $article) {
+            $title = self::fold($article->title);
+            $text = self::fold($article->title.' '.$article->description.' '.implode(' ', $article->keywords));
+            $score = 0;
+
+            foreach ($words as $word) {
+                if (! str_contains($text, $word)) {
+                    continue 2;
+                }
+
+                $score += str_contains($title, $word) ? 3 : 1;
+            }
+
+            $hits[] = [$score, $article];
+        }
+
+        usort($hits, fn (array $a, array $b): int => $b[0] <=> $a[0]);
+
+        return array_map(fn (array $hit): Article => $hit[1], $hits);
+    }
+
+    /** Lowercase without diacritics, so "lon" finds "lön". */
+    public static function fold(string $text): string
+    {
+        $decomposed = class_exists(\Normalizer::class) ? (string) \Normalizer::normalize(mb_strtolower($text), \Normalizer::FORM_D) : mb_strtolower($text);
+
+        return (string) preg_replace('/\p{Mn}+/u', '', $decomposed);
     }
 
     /**

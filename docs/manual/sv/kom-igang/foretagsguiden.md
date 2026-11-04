@@ -9,6 +9,8 @@ sokord: [företagsguiden, startplan, min startplan, starta företag, bransch, ti
 
 Företagsguiden förklarar hur det fungerar att driva företag i Sverige: hur du registrerar företaget, hur moms och skatt fungerar och vad lagen kräver av dig. Guiden finns på webbplatsen under **Företagsguiden**, och varje artikel hänvisar till Skatteverket, Bolagsverket eller lagtexten.
 
+På Företagsguidens startsida väljer du företagsform och bransch under **Vad driver du för företag?**, så visas stegen för ett sådant företag, och du kan söka bland artiklarna.
+
 I NONOX får du dessutom en egen startplan för företaget du arbetar i, och korta tips på de sidor där de passar.
 
 > [!NOTE]
@@ -18,7 +20,7 @@ I NONOX får du dessutom en egen startplan för företaget du arbetar i, och kor
 
 Min startplan är en lista över det ett nytt företag behöver göra, i den ordning det brukar göras. Stegen väljs efter företagets företagsform och bransch, och efter om företaget är momsregistrerat eller registrerat som arbetsgivare. Ett aktiebolag ser alltså andra steg än en enskild firma.
 
-Överst står hur många steg som är klara, till exempel **3 av 9 klara**.
+Överst står hur många steg som är klara, till exempel **3 av 9 klara**, och vilket som är **Nästa steg**. **Läs om nästa steg** öppnar artikeln om det. Stegen är ordnade i grupperna Registrering, Pengar och skatt, Bokföring i NONOX och Avtal och skydd, och varje grupp visar hur många av dess steg som är klara.
 
 ## Så här gör du
 

@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Domain\Company\Industry;
 use App\Domain\Company\LegalForm;
 use App\Support\Guide\Article;
 use App\Support\Guide\Guide;
+use App\Support\Guide\GuideQuestions;
+use App\Support\Guide\StepGroups;
+use App\Support\Landing\Industries;
+use App\Support\Landing\SignupPath;
 use App\Support\Manual\Manual;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -21,12 +27,45 @@ use Illuminate\View\View;
  */
 class GuideController
 {
-    public function home(): View
+    /**
+     * The legal forms the start page lets a visitor choose, as the query
+     * string value and the chip's label. Trading and limited partnerships
+     * share one chip; their start plan is the same.
+     */
+    public const array LEGAL_FORMS = [
+        'AB' => 'Aktiebolag',
+        'EF' => 'Enskild firma',
+        'HB' => 'Handelsbolag eller kommanditbolag',
+        'EK_FORENING' => 'Ekonomisk förening',
+    ];
+
+    /** The path shown before the visitor has chosen. */
+    public const string DEFAULT_LEGAL_FORM = 'AB';
+
+    public function home(Request $request): View
     {
         $this->ensureReadable();
 
+        $selection = self::selection($request);
+        $legalForm = $selection['bolagsform'] ?? self::DEFAULT_LEGAL_FORM;
+        $industry = isset($selection['bransch']) ? Industry::from($selection['bransch']) : null;
+        $query = trim(mb_substr((string) $request->query('sok', ''), 0, 100));
+
         return view('guide.home', [
             ...$this->frame(null, null),
+            'selection' => $selection,
+            'chosenForm' => $selection['bolagsform'] ?? null,
+            'legalForm' => $legalForm,
+            'legalForms' => self::LEGAL_FORMS,
+            'industry' => $industry,
+            'industries' => Industry::cases(),
+            'path' => StepGroups::group(Guide::pathFor($legalForm, $industry?->value)),
+            'industryPage' => $this->industryPage($industry),
+            'search' => $query,
+            'results' => $query === '' ? [] : Guide::search($query),
+            'questions' => GuideQuestions::answered(),
+            'signupUrl' => config('app.landing.enabled') ? SignupPath::url() : null,
+            'signupLabel' => SignupPath::label(),
             'canonical' => route('guide.home'),
             'pageTitle' => 'Företagsguiden – starta och driva företag i Sverige – NONOX',
             'pageDescription' => 'Företagsguiden från NONOX: hur du startar företaget, hur moms och skatt fungerar och vad lagen kräver av dig, med källor från Skatteverket, Bolagsverket och lagtexten.',
@@ -48,6 +87,46 @@ class GuideController
         return $this->show($section, $article);
     }
 
+    /**
+     * The public page about the chosen industry, when it has one.
+     *
+     * @return array{url: string, name: string, text: string}|null
+     */
+    private function industryPage(?Industry $industry): ?array
+    {
+        $slug = $industry?->landingSlug();
+        $page = $slug === null ? null : Industries::find($slug);
+
+        if ($slug === null || $page === null || ! config('app.landing.enabled')) {
+            return null;
+        }
+
+        return ['url' => route('industry', $slug), 'name' => $page['name'], 'text' => $page['menu_text']];
+    }
+
+    /**
+     * The visitor's choice on the start page, from the query string: only
+     * known values, so it can be put back into links as it is.
+     *
+     * @return array{bolagsform?: string, bransch?: string}
+     */
+    public static function selection(Request $request): array
+    {
+        $selection = [];
+        $form = $request->query('bolagsform');
+        $industry = $request->query('bransch');
+
+        if (is_string($form) && LegalForm::tryFrom($form) !== null) {
+            $selection['bolagsform'] = $form === 'KB' ? 'HB' : $form;
+        }
+
+        if (is_string($industry) && Industry::tryFrom($industry) !== null) {
+            $selection['bransch'] = $industry;
+        }
+
+        return $selection;
+    }
+
     private function show(string $sectionKey, string $slug): View
     {
         $this->ensureReadable();
@@ -62,6 +141,7 @@ class GuideController
 
         return view('guide.article', [
             ...$this->frame($sectionKey, $article->path),
+            'selection' => self::selection(request()),
             'section' => $section,
             'article' => $article,
             'children' => $article->isOverview()

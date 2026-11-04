@@ -112,10 +112,6 @@
         {{-- At least 24 px high, so each link is easy to hit (WCAG 2.5.8). --}}
         <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm [&_a]:inline-block [&_a]:py-1 [&_button]:py-1">
             @include('navigation.help', ['helpClass' => 'rounded text-stone-300 hover:text-white', 'helpLabel' => true])
-            {{-- Företagsguiden's start plan (ADR-051), while the company shows the guide. --}}
-            @if($currentCompany?->guide_enabled)
-                <a href="{{ route('guide.plan') }}" class="text-stone-300 hover:text-white" data-guide-link>{{ __('Företagsguiden') }}</a>
-            @endif
             <a href="{{ route('profile.show') }}" class="text-stone-300 hover:text-white">{{ __('Profile') }}</a>
             @if (Laravel\Jetstream\Jetstream::hasApiFeatures())
                 <a href="{{ route('api-tokens.index') }}" class="text-stone-300 hover:text-white">{{ __('API Tokens') }}</a>
@@ -125,6 +121,13 @@
                 <button type="submit" class="text-stone-300 hover:text-white">{{ __('Log Out') }}</button>
             </form>
         </div>
+        {{-- Företagsguiden's start plan (ADR-051), while the company shows the guide. --}}
+        @if($currentCompany?->guide_enabled)
+            <a href="{{ route('guide.plan') }}" class="mx-2 flex items-center gap-1.5 rounded py-1 text-sm text-stone-300 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-accent-500" data-guide-link>
+                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" /></svg>
+                <span>{{ __('Företagsguiden') }}</span>
+            </a>
+        @endif
         @if($currentYear)
             <p class="px-2 text-sm text-stone-400">{{ __('Räkenskapsår :year', ['year' => $currentYear->label()]) }}</p>
         @endif

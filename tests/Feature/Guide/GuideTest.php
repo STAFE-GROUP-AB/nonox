@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Domain\Company\Industry;
 use App\Domain\Company\VatPeriod;
 use App\Support\Guide\Guide;
+use App\Support\Guide\GuideTables;
 use App\Support\Guide\GuideValidator;
 use App\Support\Guide\StartPlanStep;
+use App\Support\Guide\StepGroups;
 use App\Support\Manual\Manual;
 use Tests\Support\Bookkeeping;
 
@@ -233,4 +235,70 @@ it('refuses an article or a step that breaks the rules', function () {
     rmdir("{$root}/sv/starta");
     rmdir("{$root}/sv");
     rmdir($root);
+});
+
+it('shows the path for the chosen legal form and industry on the start page, as a shareable address', function () {
+    $this->get('/foretagsguiden')->assertOk()
+        ->assertSee('Vad driver du för företag?')
+        ->assertSee('Tills du har valt visar vi vägen för ett aktiebolag.')
+        ->assertSee('Betala in aktiekapitalet')
+        ->assertDontSee('Registrera livsmedelsanläggningen')
+        ->assertSee('Om du är momsregistrerad')
+        ->assertSee('Om du har anställda')
+        ->assertSee('Få din personliga startplan i NONOX')
+        ->assertSee('href="'.route('guide.plan').'"', false);
+
+    $html = (string) $this->get('/foretagsguiden?bolagsform=EF&bransch=cafe')->assertOk()->getContent();
+
+    expect($html)->not->toContain('Betala in aktiekapitalet')
+        ->toContain('Registrera livsmedelsanläggningen')
+        ->toMatch('#aria-current="true"\s*>Enskild firma</a>#')
+        ->toMatch('#aria-current="true"\s*>Kafé</a>#')
+        ->toContain('Branschspår för kafé kommer i Företagsguiden.')
+        ->toContain('href="'.route('industry', 'bokforing-for-cafeer').'"')
+        ->toContain(e(route('guide.article', ['starta', 'registrera-foretaget']).'?bolagsform=EF&bransch=cafe'))
+        ->toContain('Rensa valet');
+
+    $this->get('/foretagsguiden?bolagsform=XX&bransch=bageri')->assertOk()
+        ->assertSee('Tills du har valt visar vi vägen för ett aktiebolag.')
+        ->assertDontSee('Rensa valet');
+});
+
+it('numbers the path from 1 in the order its groups show it', function () {
+    $groups = StepGroups::group(Guide::pathFor('AB', 'cafe'));
+    $numbers = array_merge(...array_map(fn (array $group): array => array_column($group['steps'], 'number'), $groups));
+
+    expect($numbers)->toBe(range(1, count($numbers)))
+        ->and(array_column($groups, 'key'))->toBe(['pengar-och-skatt', 'fler-steg'])
+        ->and($groups[0]['steps'][0]['step']->key)->toBe('forsta-momsdeklarationen')
+        ->and($groups[0]['steps'][0]['number'])->toBe(1)
+        ->and(StepGroups::of('ansok-om-f-skatt'))->toBe('registrering')
+        ->and(StepGroups::of('okant-steg'))->toBe('fler-steg');
+});
+
+it('searches titles, descriptions and search words, ignoring case and diacritics', function () {
+    expect(array_map(fn ($article): string => $article->path, Guide::search('REGISTRERA')))->toContain('starta/registrera-foretaget')
+        ->and(Guide::search('momsdeklaration'))->toHaveCount(1)
+        ->and(array_map(fn ($article): string => $article->path, Guide::search('foretaget')))->toContain('starta/registrera-foretaget', 'starta/oversikt')
+        ->and(Guide::search('   '))->toBe([]);
+
+    $this->get('/foretagsguiden?sok=momsdeklaration')->assertOk()
+        ->assertSee('1 artikel om ”momsdeklaration”')
+        ->assertSee(route('guide.article', ['moms', 'momsdeklaration']), false);
+
+    $this->get('/foretagsguiden?sok=xyzzy')->assertOk()->assertSee('Inga artiklar matchar ”xyzzy”');
+});
+
+it('right-aligns amount columns with tabular numbers, and leaves text columns alone', function () {
+    $html = GuideTables::alignNumbers('<table><thead><tr><th>Konto</th><th align="right">Debet</th><th>Sats</th></tr></thead><tbody><tr><td>1930 Bank</td><td align="right">12 500,00</td><td>25 %</td></tr><tr><td>2640 Moms</td><td align="right"></td><td>Ingen moms</td></tr></tbody></table>');
+
+    expect($html)->toContain('<th class="gd-num" align="right">Debet</th>')
+        ->toContain('<td class="gd-num" align="right">12 500,00</td>')
+        ->toContain('<th>Sats</th>')
+        ->toContain('<td>25 %</td>')
+        ->toContain('<td>1930 Bank</td>')
+        ->and(GuideTables::isNumber('−1 234,50 kr'))->toBeTrue()
+        ->and(GuideTables::isNumber('25 %'))->toBeTrue()
+        ->and(GuideTables::isNumber('Ingen moms'))->toBeFalse()
+        ->and(GuideTables::isNumber('5410 Förbrukningsinventarier'))->toBeFalse();
 });
