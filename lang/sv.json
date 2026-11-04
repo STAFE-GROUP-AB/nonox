@@ -153,5 +153,8 @@
     "{0} Lägg till markerade|[1,*] Lägg till markerade (:count)": "{0} Lägg till markerade|[1,*] Lägg till markerade (:count)",
     "{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.": "{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.",
     "{1} ringd en gång förut|[2,*] ringd :count gånger förut": "{1} ringd en gång förut|[2,*] ringd :count gånger förut",
-    ":count anmälan|:count anmälningar": ":count anmälan|:count anmälningar"
+    ":count anmälan|:count anmälningar": ":count anmälan|:count anmälningar",
+    "De ingående balanserna för :to stämmer inte längre med de utgående balanserna för :from (:count konto skiljer).|De ingående balanserna för :to stämmer inte längre med de utgående balanserna för :from (:count konton skiljer).": "De ingående balanserna för :to stämmer inte längre med de utgående balanserna för :from (:count konto skiljer).|De ingående balanserna för :to stämmer inte längre med de utgående balanserna för :from (:count konton skiljer).",
+    ":count konto skiljer från de utgående balanserna för :from.|:count konton skiljer från de utgående balanserna för :from.": ":count konto skiljer från de utgående balanserna för :from.|:count konton skiljer från de utgående balanserna för :from.",
+    ":count konto skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.|:count konton skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.": ":count konto skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.|:count konton skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår."
 }

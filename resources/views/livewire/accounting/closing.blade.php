@@ -45,7 +45,16 @@
                         <p class="font-semibold text-ink">{{ $item['label'] }} <span class="sr-only">{{ match ($item['status']) { 'ok' => __('Klar'), 'na' => __('Gäller inte'), 'warn' => __('Kontrollera'), default => __('Att göra') } }}</span></p>
                         <p class="text-sm text-gray-600">{{ $item['detail'] }}</p>
                     </div>
-                    @if($item['confirm'] !== null && $fiscalYear->isOpen())
+                    @if($item['key'] === 'opening' && $item['confirm'] !== null && $item['status'] === 'todo' && $fiscalYear->isOpen())
+                        <form wire:submit="confirmOpening" class="flex w-full flex-wrap items-end gap-2 sm:ml-10" data-opening-reason>
+                            <label for="opening_reason" class="block w-full text-sm text-gray-800 sm:w-auto sm:flex-1">
+                                {{ __('Skäl till att skillnaden är avsiktlig') }}
+                                <input id="opening_reason" type="text" maxlength="1000" wire:model="openingReason" class="mt-1 block w-full rounded-lg border-stone-300 text-sm shadow-xs focus:border-accent-500 focus:ring-accent-500">
+                            </label>
+                            <x-button wire:loading.attr="disabled">{{ $item['confirm'] }}</x-button>
+                            <a href="{{ route($item['route']) }}" class="text-sm font-medium text-accent-700 hover:underline">{{ __('Gå dit') }}</a>
+                        </form>
+                    @elseif($item['confirm'] !== null && $fiscalYear->isOpen())
                         <label class="ml-10 flex min-h-11 items-center gap-2 text-sm text-gray-800 sm:ml-0 sm:min-h-0">
                             <input type="checkbox" class="rounded-sm border-stone-300 text-ink focus:ring-accent-500" @checked($item['status'] === 'ok') wire:click="check('{{ $item['key'] }}', $event.target.checked)">
                             {{ $item['confirm'] }}

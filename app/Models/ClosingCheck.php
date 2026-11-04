@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $fiscal_year_id
  * @property string $key
  * @property int $checked_by
+ * @property ?string $reason
+ * @property ?string $fingerprint
  */
 class ClosingCheck extends Model
 {
@@ -28,6 +30,8 @@ class ClosingCheck extends Model
         'fiscal_year_id',
         'key',
         'checked_by',
+        'reason',
+        'fingerprint',
     ];
 
     /** @return BelongsTo<User, $this> */

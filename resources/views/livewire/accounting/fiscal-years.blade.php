@@ -3,6 +3,8 @@
 @endphp
 
 <div class="space-y-6" @if($building) wire:poll.5s @endif>
+    <livewire:accounting.stale-opening-balances-notice />
+
     @if($calendarYearWarning)
         <div role="status" class="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950" data-calendar-year-warning>
             {{ $calendarYearWarning }}

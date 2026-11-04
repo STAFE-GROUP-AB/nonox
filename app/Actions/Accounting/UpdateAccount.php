@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Actions\Accounting;
 
 use App\Domain\Accounting\AccountType;
+use App\Domain\Accounting\LedgerBalances;
 use App\Domain\Vat\VatBoxes;
 use App\Models\Account;
+use App\Models\OpeningBalance;
 use App\Models\User;
+use App\Models\VoucherRow;
 use App\Support\Audit\Audit;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -43,6 +46,13 @@ class UpdateAccount
 
         if (($validated['vat_box'] ?? null) !== null && ! VatBoxes::canHaveBox($account->number)) {
             throw ValidationException::withMessages(['vat_box' => __('Bara intäkts- och kostnadskonton (3000–8999) kan kopplas till en momsruta. Momskontona följer BAS.')]);
+        }
+
+        // Moving a used account between the balance sheet and the income statement would change carried-forward balances and results of years already booked (AGENTS.md §6.1).
+        if (isset($validated['type'])
+            && LedgerBalances::isBalanceSheet(AccountType::from((string) $validated['type'])) !== LedgerBalances::isBalanceSheet($account->type)
+            && (VoucherRow::query()->where('account_id', $account->id)->exists() || OpeningBalance::query()->where('account_id', $account->id)->exists())) {
+            throw ValidationException::withMessages(['type' => __('Kontot har bokföring eller ingående balanser, så det kan inte byta mellan balanskonto och resultatkonto. Lägg upp ett nytt konto i stället.')]);
         }
 
         $before = $this->snapshot($account);

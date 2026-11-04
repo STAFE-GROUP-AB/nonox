@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-inaktuella-ingaende-balanser",
+      "datum": "2026-11-04T14:30:00+01:00",
+      "rubrik": "Varning när ingående balanser inte längre stämmer",
+      "beskrivning": "Bokför du något i förra året efter att balanserna förts över säger NONOX till under Räkenskapsår, i rapporterna, under Att göra och i bokslutets checklista, och visar skillnaden per konto. Med Uppdatera ingående balanser räknas de om för alla berörda år, när du bestämmer det. Inga verifikationer ändras, och ändringen syns i behandlingshistoriken.",
+      "typ": "Nytt",
+      "omrade": "Bokföring"
+    },
+    {
       "id": "2026-11-04-nasta-rakenskapsar-automatiskt",
       "datum": "2026-11-04T12:00:00+01:00",
       "rubrik": "Nästa räkenskapsår skapas automatiskt",
