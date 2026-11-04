@@ -41,7 +41,10 @@ final readonly class Deadline
     /** The kind and the title, for a calendar event or a reminder: "Moms: Deklarera och betala moms för kvartal 4 2026". */
     public function summary(): string
     {
-        return DeadlineCategory::of($this)->label().': '.$this->title;
+        $label = DeadlineCategory::of($this)->label();
+
+        // "F-skatt: Betala F-skatt …" would say it twice.
+        return str_contains($this->title, $label) ? $this->title : "{$label}: {$this->title}";
     }
 
     /** Whole days from today to the date: negative when it has passed. */

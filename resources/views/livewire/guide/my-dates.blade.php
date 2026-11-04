@@ -14,7 +14,7 @@
 
 <div class="space-y-6">
     <details class="group rounded-2xl bg-white ring-1 ring-stone-200" @if(! $helpHidden) open @endif
-             x-data x-on:toggle="$wire.rememberHelp($el.open)" data-dates-help>
+             x-data="{ open: @js(! $helpHidden) }" x-on:toggle="if ($el.open !== open) { open = $el.open; $wire.rememberHelp(open) }" data-dates-help>
         <summary class="flex min-h-11 cursor-pointer list-none items-center gap-3 px-5 py-3 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
             <svg class="size-5 flex-none text-accent-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 16v-4M12 8h.01" /></svg>
             <span class="flex-1">{{ __('Så läser du sidan') }}</span>
