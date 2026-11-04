@@ -203,7 +203,7 @@ it('sends no code to an unknown address while self-registration is closed', func
         ->assertSet('step', 'code')
         ->assertSee('har ett konto eller en inbjudan');
 
-    Mail::assertNothingSent();
+    Mail::assertNothingOutgoing();
     expect(User::query()->where('email', 'okand@example.test')->exists())->toBeFalse();
 });
 

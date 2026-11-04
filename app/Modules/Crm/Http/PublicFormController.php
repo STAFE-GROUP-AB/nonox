@@ -9,6 +9,7 @@ use App\Modules\Crm\Actions\SubmitForm;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Form;
 use App\Modules\ModuleManager;
+use App\Support\Auth\ClientAddressBucket;
 use App\Support\Tenancy\CompanyScope;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -24,8 +25,11 @@ use Illuminate\Support\Str;
  * nothing from anywhere else. Spam is kept out without third-party
  * scripts: a honeypot field, a signed time stamp (a form sent within three
  * seconds or after a day is not taken), and limits per address and form,
- * per form and per company. A submission caught by these gets the same
- * thank-you page as a real one and nothing is stored.
+ * per form and per company. A submission caught by the honeypot, the time
+ * stamp or the per-address limit gets the same thank-you page as a real one
+ * and nothing is stored. One over the per-form or per-company cap, which
+ * everyone shares, is held for review instead (SubmitForm), so a flood
+ * cannot silently swallow real leads (security review 2026-11-04).
  */
 class PublicFormController
 {
@@ -44,12 +48,13 @@ class PublicFormController
     {
         $form = $this->form($token, $modules);
 
-        if (! $this->looksHuman($request, $form) || ! $this->withinLimits($request, $form)) {
+        if (! $this->looksHuman($request, $form) || ! $this->withinAddressLimit($request, $form)) {
             return $this->page($form, ['done' => true]);
         }
 
         $input = $request->only(['name', 'email', 'phone', 'company', 'org_number', 'message', 'newsletter']);
-        $errors = $submit($form, $input);
+        // Over the shared caps the submission is held for review rather than dropped: the caps are shared, real leads too.
+        $errors = $submit($form, $input, hold: ! $this->withinSharedLimits($form));
 
         if ($errors !== []) {
             return $this->page($form, ['values' => $input, 'errors' => $errors, 'stamp' => self::stamp($form)], 422);
@@ -95,10 +100,24 @@ class PublicFormController
         return $age >= self::MIN_SECONDS && $age <= self::MAX_SECONDS;
     }
 
-    private function withinLimits(Request $request, Form $form): bool
+    /** Per address and form: a submission over it is dropped, as it only stops the one sending it. */
+    private function withinAddressLimit(Request $request, Form $form): bool
+    {
+        $key = 'crm-form-ip:'.$form->id.':'.hash('sha256', ClientAddressBucket::for($request->ip()));
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            return false;
+        }
+
+        RateLimiter::hit($key, 600);
+
+        return true;
+    }
+
+    /** Per form and per company: a submission over them is held for review (SubmitForm). */
+    private function withinSharedLimits(Form $form): bool
     {
         $keys = [
-            'crm-form-ip:'.$form->id.':'.hash('sha256', (string) $request->ip()) => [5, 600],
             'crm-form:'.$form->id => [60, 3600],
             'crm-form-company:'.$form->company_id => [200, 3600],
         ];

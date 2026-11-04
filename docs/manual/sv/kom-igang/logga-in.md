@@ -29,7 +29,8 @@ Efter inloggningen hamnar du på **Översikt**. Har du inget företag ännu komm
 ## Om koden
 
 - Koden gäller i tio minuter och kan bara användas en gång.
-- Klickar du på **Skicka kod** flera gånger i rad skickas inte flera mejl. Inom en minut får du samma kod igen, så det spelar ingen roll vilket mejl du öppnar.
+- Klickar du på **Skicka kod** flera gånger i rad skickas inte flera mejl. Inom en minut gäller samma kod, så det spelar ingen roll vilket mejl du öppnar.
+- Det går bara ut ett fåtal koder till samma adress på tio minuter och per dygn. Har gränsen nåtts skickas ingen ny kod, men den senaste koden i mejlet gäller fortfarande i tio minuter från att den skickades. Använd den. Har den hunnit sluta gälla, vänta en stund och försök igen senare.
 - Skriver du fel kod för många gånger spärras inloggningen för adressen i upp till en timme. Vänta och försök igen.
 - Fel adress eller ingen kod? Klicka på **Fel adress eller ingen kod? Börja om**.
 

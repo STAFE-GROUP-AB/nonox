@@ -1,6 +1,40 @@
 @php($input = 'block w-full min-h-11 sm:min-h-0 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs')
 
 <div class="space-y-6">
+    @if($heldCount > 0)
+        <x-ui.card :title="__('Anmälningar att granska')" data-testid="crm-forms-held">
+            <p class="mt-2 rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-900 ring-1 ring-accent-200" role="status">
+                {{ trans_choice(':count anmälan väntar på granskning. Den kom in när formuläret, eller företagets formulär tillsammans, tog emot ovanligt många på kort tid.|:count anmälningar väntar på granskning. De kom in när formuläret, eller företagets formulär tillsammans, tog emot ovanligt många på kort tid.', $heldCount, ['count' => $heldCount]) }}
+                {{ __('Inget prospekt och ingen uppgift skapas förrän du tar emot anmälan. Det kan vara skräp. Det som inte granskas tas bort efter :days dagar.', ['days' => $heldDays]) }}
+            </p>
+            <ul class="mt-4 divide-y divide-gray-100">
+                @foreach($held as $submission)
+                    @php($typed = $submission->held_payload['data'] ?? [])
+                    <li wire:key="held-{{ $submission->id }}" class="flex flex-wrap items-start gap-3 py-4">
+                        <div class="min-w-0 flex-1 basis-60 text-sm">
+                            <p class="font-medium text-gray-900">{{ $typed['name'] ?? '' }} <span class="font-normal text-gray-600">· {{ $typed['email'] ?? '' }}</span></p>
+                            <p class="text-gray-600">
+                                {{ $submission->form?->name }} · {{ $submission->quarantined_at?->setTimezone('Europe/Stockholm')->format('Y-m-d H:i') }}
+                                @if(! empty($typed['company'])) · {{ $typed['company'] }}@endif
+                                @if(! empty($typed['phone'])) · {{ $typed['phone'] }}@endif
+                            </p>
+                            @if(! empty($typed['message']))
+                                <p class="mt-1 whitespace-pre-line break-words text-gray-700">{{ \Illuminate\Support\Str::limit($typed['message'], 300) }}</p>
+                            @endif
+                        </div>
+                        <span class="flex gap-4 text-sm">
+                            <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700" wire:click="acceptHeld({{ $submission->id }})" wire:loading.attr="disabled">{{ __('Ta emot') }}</button>
+                            <button type="button" class="min-h-11 text-gray-700 underline" wire:click="discardHeld({{ $submission->id }})" wire:confirm="{{ __('Ta bort anmälan? Det som skrevs i formuläret raderas och kan inte återställas.') }}" wire:loading.attr="disabled">{{ __('Ta bort') }}</button>
+                        </span>
+                    </li>
+                @endforeach
+            </ul>
+            @if($heldCount > $held->count())
+                <p class="mt-2 text-sm text-gray-600">{{ __('Visar de :shown äldsta av :count.', ['shown' => $held->count(), 'count' => $heldCount]) }}</p>
+            @endif
+        </x-ui.card>
+    @endif
+
     @if($open)
         <x-ui.card :title="$editingId ? __('Ändra formulär') : __('Nytt formulär')" :description="__('Namn och e-post finns alltid med, och en rad om att uppgifterna används för att svara på förfrågan, med länk till er integritetspolicy. Välj vilka fält som också ska visas.')">
             @if(! $privacyUrl)

@@ -279,7 +279,50 @@ it('ships an example environment that is safe on a server', function () {
     expect($example)->toMatch('/^APP_ENV=production$/m')
         ->toMatch('/^APP_DEBUG=false$/m')
         ->toMatch('/^OTP_AUTOFILL=false$/m')
+        ->toMatch('/^SESSION_SECURE_COOKIE=true$/m')
         ->toMatch('/^# TRUSTED_PROXIES=$/m');
+});
+
+it('sends the session cookie over https only on a production server when SESSION_SECURE_COOKIE is not set', function () {
+    $read = function (array $values): mixed {
+        $saved = [];
+
+        foreach ($values as $key => $value) {
+            $saved[$key] = [$_SERVER[$key] ?? null, $_ENV[$key] ?? null, getenv($key)];
+            unset($_SERVER[$key], $_ENV[$key]);
+            putenv($key);
+
+            if ($value !== null) {
+                $_SERVER[$key] = $_ENV[$key] = $value;
+                putenv("{$key}={$value}");
+            }
+        }
+
+        try {
+            return (require base_path('config/session.php'))['secure'];
+        } finally {
+            foreach ($saved as $key => [$server, $env, $put]) {
+                unset($_SERVER[$key], $_ENV[$key]);
+                putenv($key);
+
+                if ($server !== null) {
+                    $_SERVER[$key] = $server;
+                }
+
+                if ($env !== null) {
+                    $_ENV[$key] = $env;
+                }
+
+                if ($put !== false) {
+                    putenv("{$key}={$put}");
+                }
+            }
+        }
+    };
+
+    expect($read(['APP_ENV' => 'production', 'SESSION_SECURE_COOKIE' => null]))->toBeTrue()
+        ->and($read(['APP_ENV' => 'local', 'SESSION_SECURE_COOKIE' => null]))->toBeFalse()
+        ->and($read(['APP_ENV' => 'production', 'SESSION_SECURE_COOKIE' => 'false']))->toBeFalse();
 });
 
 // 5. Trusted proxies are opt-in.

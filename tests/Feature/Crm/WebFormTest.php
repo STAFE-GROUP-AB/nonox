@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Models\User;
 use App\Modules\Crm\Actions\LinkPerson;
 use App\Modules\Crm\Actions\SaveForm;
+use App\Modules\Crm\Actions\SubmitForm;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Http\PublicFormController;
@@ -16,14 +18,19 @@ use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Form;
 use App\Modules\Crm\Models\FormSubmission;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Notifications\FormHeldNotice;
+use App\Modules\Crm\Support\CrmTodos;
 use App\Modules\Crm\Support\SuppressionList;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Testing\TestResponse;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\Support\Bookkeeping;
 use Tests\Support\Crm;
 
@@ -131,7 +138,160 @@ it('takes nothing from a filled honeypot, a form sent too fast or too late, or b
         submitForm($this->form, [...$valid, 'email' => "person{$i}@lead.example"]);
     }
 
-    expect(Person::query()->count())->toBe(5);
+    // The sixth from the same address is dropped, not held: that limit only stops the one sending.
+    expect(Person::query()->count())->toBe(5)
+        ->and(FormSubmission::query()->held()->count())->toBe(0);
+});
+
+it('holds a submission over the form\'s shared cap for review instead of dropping it, and creates nothing yet', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    auth()->logout();
+
+    submitForm($this->form, ['name' => 'Rut Riktig', 'email' => 'rut@lead.example', 'phone' => '070-111 22 33', 'message' => 'Ring mig.', 'newsletter' => '1'])
+        ->assertOk()->assertSee('Tack!');
+
+    CurrentCompany::set($this->company);
+    $held = FormSubmission::query()->held()->sole();
+
+    expect(Person::query()->count())->toBe(0)
+        ->and(Account::query()->count())->toBe(0)
+        ->and(Activity::query()->count())->toBe(0)
+        ->and($held->person_id)->toBeNull()
+        ->and($held->held_payload['data']['email'] ?? null)->toBe('rut@lead.example')
+        ->and($held->marketing_consent)->toBeTrue()
+        ->and($this->form->fresh()->submission_count)->toBe(0)
+        ->and(DB::table('crm_form_submissions')->value('held_payload'))->not->toContain('rut@lead.example')
+        ->and(json_encode(AuditLog::query()->where('action', 'crm.form_submission_held')->sole()->payload))->not->toContain('rut');
+    Mail::assertNothingSent();
+
+    // The company's cap holds too.
+    RateLimiter::clear('crm-form:'.$this->form->id);
+    RateLimiter::increment('crm-form-company:'.$this->company->id, 3600, 200);
+    submitForm($this->form, ['name' => 'Sam', 'email' => 'sam@lead.example', 'message' => 'Hej'])->assertOk();
+
+    expect(FormSubmission::query()->held()->count())->toBe(2);
+});
+
+it('shows held submissions to the form owner, who accepts one as a lead with its original consent time', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Rut Riktig', 'email' => 'rut@lead.example', 'message' => 'Ring mig.', 'newsletter' => '1']);
+    $this->travel(2)->days();
+
+    CurrentCompany::set($this->company);
+    $held = FormSubmission::query()->held()->sole();
+
+    Livewire::test(FormsPage::class)
+        ->assertSee('Anmälningar att granska')
+        ->assertSee('Rut Riktig')
+        ->assertSee('rut@lead.example')
+        ->call('acceptHeld', $held->id)
+        ->assertDispatched('toast', message: 'Anmälan är mottagen: prospekt, kontaktperson och uppgift är skapade.')
+        ->assertDontSee('Anmälningar att granska');
+
+    $person = Person::query()->sole();
+    $submission = $held->fresh();
+
+    expect($person->email)->toBe('rut@lead.example')
+        ->and($person->legal_basis->value)->toBe('CONSENT')
+        ->and($person->consent_at?->toDateString())->toBe('2026-06-15')
+        ->and(Activity::query()->sole()->body)->toContain('Ring mig.')
+        ->and($submission->quarantined_at)->toBeNull()
+        ->and($submission->held_payload)->toBeNull()
+        ->and($submission->person_id)->toBe($person->id)
+        ->and($submission->consented_at->toDateString())->toBe('2026-06-15')
+        ->and($this->form->fresh()->submission_count)->toBe(1)
+        ->and(AuditLog::query()->where('action', 'crm.form_submission_accepted')->exists())->toBeTrue();
+    Mail::assertSent(FormLeadMail::class);
+});
+
+it('deletes a held submission on request, and removes unreviewed ones after 14 days', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Skräp', 'email' => 'skrap@spam.example', 'message' => 'x']);
+    submitForm($this->form, ['name' => 'Glömd', 'email' => 'glomd@lead.example', 'message' => 'y'], 20);
+
+    CurrentCompany::set($this->company);
+    $first = FormSubmission::query()->held()->orderBy('id')->first();
+
+    Livewire::test(FormsPage::class)
+        ->call('discardHeld', $first->id)
+        ->assertDispatched('toast', message: 'Anmälan är borttagen.')
+        ->call('discardHeld', $first->id)
+        ->assertDispatched('toast', message: 'Anmälan är redan granskad. Listan är uppdaterad.', type: 'error');
+
+    expect(FormSubmission::query()->held()->count())->toBe(1)
+        ->and(Person::query()->count())->toBe(0)
+        ->and(AuditLog::query()->where('action', 'crm.form_submission_discarded')->exists())->toBeTrue();
+
+    $this->travel(13)->days();
+    $this->artisan('crm:prune-mail')->assertSuccessful();
+    expect(FormSubmission::query()->held()->count())->toBe(1);
+
+    $this->travel(2)->days();
+    $this->artisan('crm:prune-mail')->assertSuccessful();
+    expect(FormSubmission::query()->held()->count())->toBe(0);
+});
+
+it('tells those who may review once a day, in Att göra and as a notice, and again when the ceiling drops submissions', function () {
+    $seller = Bookkeeping::member($this->company, 'sales');
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+
+    submitForm($this->form, ['name' => 'Rut', 'email' => 'rut@lead.example', 'message' => 'Hej']);
+    submitForm($this->form, ['name' => 'Sam', 'email' => 'sam@lead.example', 'message' => 'Hej'], 20);
+
+    $notices = fn (User $user) => $user->fresh()->notifications()->where('type', FormHeldNotice::class)->count();
+
+    expect($notices($this->owner))->toBe(1)
+        ->and($notices($seller))->toBe(0)
+        ->and(collect(app(CrmTodos::class)->todos($this->owner, $this->company, CarbonImmutable::today()))->pluck('key')->all())->toContain('crm-forms-held')
+        ->and(collect(app(CrmTodos::class)->todos($seller, $this->company, CarbonImmutable::today()))->pluck('key')->all())->not->toContain('crm-forms-held');
+
+    // The next day, a new notice; and once the ceiling is reached, one about the dropped ones.
+    CurrentCompany::set($this->company);
+    $this->travel(1)->days();
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Ny', 'email' => 'ny@lead.example', 'message' => 'Hej']);
+    expect($notices($this->owner))->toBe(2);
+
+    $first = FormSubmission::query()->held()->first();
+    foreach (range(1, SubmitForm::MAX_HELD) as $i) {
+        FormSubmission::query()->create([...$first->only(['form_id', 'consent_text', 'consent_version', 'privacy_url', 'consented_at']), 'quarantined_at' => now(), 'held_payload' => ['data' => [], 'org_number' => null, 'newsletter' => false]]);
+    }
+    $before = FormSubmission::query()->held()->count();
+    submitForm($this->form, ['name' => 'För', 'email' => 'for@lead.example', 'message' => 'Hej'])->assertOk();
+
+    expect(FormSubmission::query()->held()->count())->toBe($before)
+        ->and($notices($this->owner))->toBe(3);
+});
+
+it('accepts with the consent version and form name the sender saw, and answers a double click with a toast', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Nora', 'email' => 'nora@lead.example', 'message' => 'Hej', 'newsletter' => '1']);
+    CurrentCompany::set($this->company);
+    $held = FormSubmission::query()->held()->sole();
+
+    // The form is renamed and gets a new newsletter text before anyone reviews.
+    app(SaveForm::class)($this->owner, $this->company, ['name' => 'Nytt namn', 'consent_text' => 'Ny text.', 'owner_id' => $this->owner->id], $this->form->fresh());
+
+    Livewire::test(FormsPage::class)
+        ->call('acceptHeld', $held->id)
+        ->assertDispatched('toast')
+        ->call('acceptHeld', $held->id)
+        ->assertDispatched('toast', message: 'Anmälan är redan granskad. Listan är uppdaterad.', type: 'error');
+
+    expect(Person::query()->sole()->legal_basis_note)->toBe('Samtycke via webbformuläret Kontakta oss (version 1).')
+        ->and(AuditLog::query()->where('action', 'crm.form_submitted')->sole()->payload['consent_version'])->toBe(1)
+        ->and(Person::query()->count())->toBe(1);
+});
+
+it('lets only crm:settings review held submissions', function () {
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Rut', 'email' => 'rut@lead.example', 'message' => 'Hej']);
+    CurrentCompany::set($this->company);
+    $held = FormSubmission::query()->held()->sole();
+
+    expect(fn () => app(SubmitForm::class)->accept(Bookkeeping::member($this->company, 'sales'), $this->company, $held->id))
+        ->toThrow(HttpException::class);
+    expect(Person::query()->count())->toBe(0);
 });
 
 it('never changes the documented legal basis of a person the CRM already has', function () {
@@ -154,6 +314,26 @@ it('keeps only the submission for a person marked Kontakta inte: nothing on thei
         ->and(FormSubmission::query()->sole()->person_id)->toBe($flagged->id)
         ->and($flagged->fresh()->marketing_consent_at)->toBeNull();
     Mail::assertNothingSent();
+});
+
+it('says only what accepting a held submission created, for a known person and one marked Kontakta inte', function () {
+    Crm::person($this->company, $this->owner, 'Kim Känd', ['email' => 'kim@lead.example']);
+    Crm::person($this->company, $this->owner, 'Klas Kontaktainte', ['email' => 'klas@lead.example', 'do_not_contact' => true, 'do_not_contact_reason' => 'OBJECTION']);
+    RateLimiter::increment('crm-form:'.$this->form->id, 3600, 60);
+    submitForm($this->form, ['name' => 'Kim', 'email' => 'kim@lead.example', 'message' => 'Hej']);
+    submitForm($this->form, ['name' => 'Klas', 'email' => 'klas@lead.example', 'message' => 'Hej']);
+    CurrentCompany::set($this->company);
+    $known = FormSubmission::query()->held()->orderBy('id')->firstOrFail();
+    $flagged = FormSubmission::query()->held()->orderByDesc('id')->firstOrFail();
+
+    Livewire::test(FormsPage::class)
+        ->call('acceptHeld', $known->id)
+        ->assertDispatched('toast', message: 'Anmälan är mottagen. Personen fanns redan, så en uppgift är skapad på den befintliga kontakten.')
+        ->call('acceptHeld', $flagged->id)
+        ->assertDispatched('toast', message: 'Anmälan är mottagen. Personen har bett att inte bli kontaktad, så ingen uppgift är skapad.');
+
+    expect(Person::query()->count())->toBe(2)
+        ->and(Activity::query()->count())->toBe(1);
 });
 
 it('never lifts an objection or an unsubscribe for an address the CRM already has', function () {

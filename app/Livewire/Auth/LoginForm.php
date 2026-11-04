@@ -10,6 +10,7 @@ use App\Domain\Auth\PasskeyRequirement;
 use App\Livewire\Auth\Concerns\HandlesPasskeyStep;
 use App\Models\TeamInvitation;
 use App\Models\User;
+use App\Support\Auth\ClientAddressBucket;
 use App\Support\Auth\PasskeySession;
 use App\Support\Branding\InvitationBrand;
 use App\Support\Instance\InstanceSettings;
@@ -17,7 +18,6 @@ use App\Support\LoginCodeAutofill;
 use App\Support\Tenancy\SpansCompanies;
 use App\Support\Toast;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -74,7 +74,8 @@ class LoginForm extends Component implements SpansCompanies
 
         $email = SendLoginCode::normalise($this->email);
 
-        if ($this->tooManyAttempts('send:'.request()->ip(), 10) || $this->tooManyAttempts('send:'.$email, 5) || self::tooManyToday($email)) {
+        // Only the requesting address is refused here. The caps per email address live in SendLoginCode and never refuse: they only stop new mails.
+        if ($this->tooManyAttempts('send:'.ClientAddressBucket::for(request()->ip()), 10)) {
             $this->addError('email', __('För många försök. Vänta en stund och försök igen.'));
 
             return;
@@ -83,6 +84,7 @@ class LoginForm extends Component implements SpansCompanies
         $mayReceiveCode = self::mayReceiveCode($email);
 
         // An unknown address gets no code and no account, but the same next step as everyone else.
+        // A capped known address gets no new code either and keeps its latest one.
         if ($mayReceiveCode) {
             $sendLoginCode($email, request()->ip(), InvitationBrand::forLoginCode($email));
         }
@@ -128,7 +130,7 @@ class LoginForm extends Component implements SpansCompanies
             return;
         }
 
-        if ($this->tooManyAttempts('verify:'.request()->ip(), 20)) {
+        if ($this->tooManyAttempts('verify:'.ClientAddressBucket::for(request()->ip()), 20)) {
             $this->addError('code', __('För många försök. Vänta en stund och försök igen.'));
 
             return;
@@ -308,29 +310,6 @@ class LoginForm extends Component implements SpansCompanies
     public static function failedKey(string $email): string
     {
         return 'login-code:failed:'.mb_strtolower(trim($email)).':'.session()->getId();
-    }
-
-    /** Codes per address and day, and for the whole service per hour, so the form cannot be used to flood inboxes. */
-    public const int MAX_SENDS_PER_DAY = 20;
-
-    public const int MAX_SENDS_PER_HOUR_GLOBAL = 500;
-
-    private static function tooManyToday(string $email): bool
-    {
-        if (RateLimiter::tooManyAttempts('login-code:global', self::MAX_SENDS_PER_HOUR_GLOBAL)) {
-            Log::warning('Login: the hourly cap on login code mails was reached.');
-
-            return true;
-        }
-
-        if (RateLimiter::tooManyAttempts('login-code:day:'.$email, self::MAX_SENDS_PER_DAY)) {
-            return true;
-        }
-
-        RateLimiter::hit('login-code:global', 3600);
-        RateLimiter::hit('login-code:day:'.$email, 86400);
-
-        return false;
     }
 
     private function tooManyAttempts(string $key, int $maxAttempts): bool

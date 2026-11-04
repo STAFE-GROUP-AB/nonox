@@ -10,6 +10,10 @@ use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
+/**
+ * Not queued: a code must never wait behind long jobs on the queue. It is
+ * sent after the response instead (SendLoginCode uses defer).
+ */
 class LoginCodeMail extends Mailable
 {
     use Queueable;

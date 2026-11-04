@@ -32,6 +32,22 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-sakerhetsgranskning-inloggning",
+      "datum": "2026-11-04T15:00:00+01:00",
+      "rubrik": "Svårare att störa någon annans inloggning",
+      "beskrivning": "Det är nu svårare att störa någon annans inloggning genom att be om koder i dennes namn: när gränsen för koder är nådd skickas ingen ny, men den senaste koden i mejlet gäller fortfarande i tio minuter. HQ kräver nu passkey, och ett formulär för ett annat företag än det du arbetar i slutar visa något när du inte längre är med i företaget. Under Logga ut från andra enheter står nu att API-nycklar och anslutna appar inte påverkas.",
+      "typ": "Säkerhet",
+      "omrade": "Övrigt"
+    },
+    {
+      "id": "2026-11-04-crm-webbformular-granska",
+      "datum": "2026-11-04T15:00:00+01:00",
+      "rubrik": "Webbformulär sparar anmälningar för granskning vid skräpflod",
+      "beskrivning": "Får ett webbformulär, eller företagets formulär tillsammans, ovanligt många anmälningar på kort tid väntar de som kommer över gränsen på granskning i stället för att försvinna, och den som sköter CRM får en notis. Under CRM → Webbformulär tar du emot de riktiga och tar bort skräpet; det som ingen har granskat raderas efter 14 dagar.",
+      "typ": "Säkerhet",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-04-peppol-e-faktura",
       "datum": "2026-11-04T15:00:00+01:00",
       "rubrik": "E-faktura via Peppol är byggt",

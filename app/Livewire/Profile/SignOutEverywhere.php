@@ -6,7 +6,10 @@ namespace App\Livewire\Profile;
 
 use App\Http\Middleware\EndExpiredSessions;
 use App\Livewire\Concerns\ShowsToasts;
+use App\Models\Company;
 use App\Models\User;
+use App\Modules\Connect\ConnectModule;
+use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\SpansCompanies;
 use Carbon\CarbonImmutable;
@@ -39,6 +42,14 @@ class SignOutEverywhere extends Component implements SpansCompanies
 
     public function render(): View
     {
-        return view('livewire.profile.sign-out-everywhere', ['hours' => EndExpiredSessions::ABSOLUTE_HOURS]);
+        /** @var User $user */
+        $user = Auth::user();
+        $company = $user->currentCompany();
+
+        return view('livewire.profile.sign-out-everywhere', [
+            'hours' => EndExpiredSessions::ABSOLUTE_HOURS,
+            // The way to the keys and apps only where Connect is on: Anslutningar answers 404 elsewhere.
+            'connectOn' => $company instanceof Company && app(ModuleManager::class)->isEnabled(ConnectModule::KEY, $company),
+        ]);
     }
 }

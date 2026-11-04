@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\Middleware\EndExpiredSessions;
 use App\Livewire\Profile\SignOutEverywhere;
 use App\Models\User;
+use App\Modules\Connect\ConnectModule;
+use App\Modules\ModuleManager;
 use App\Support\Csv;
 use App\Support\FileName;
 use App\Support\MailQuota;
@@ -15,6 +17,7 @@ use Illuminate\Mail\Markdown;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
+use Tests\Support\Connect;
 use Tests\Support\Payroll;
 
 it('sends security headers on every page', function () {
@@ -44,6 +47,23 @@ it('signs out every other session but keeps this one', function () {
     $this->withSession([EndExpiredSessions::STARTED => CarbonImmutable::now()->subMinute()->getTimestamp()])
         ->get(route('dashboard'))
         ->assertRedirect(route('login'));
+});
+
+it('says next to the button that API keys and connected apps keep working, with a link to Anslutningar', function () {
+    [$user, $company] = Bookkeeping::company();
+    $this->actingAs($user);
+
+    // Without Connect in the current company the note stays, the link to a page that answers 404 does not.
+    Livewire::test(SignOutEverywhere::class)
+        ->assertSee('API-nycklar och anslutna appar påverkas inte')
+        ->assertDontSeeHtml('href="'.route('connect.index').'"');
+
+    Connect::setUp();
+    app(ModuleManager::class)->enable(ConnectModule::KEY, $company, $user);
+
+    Livewire::test(SignOutEverywhere::class)
+        ->assertSee('API-nycklar och anslutna appar påverkas inte')
+        ->assertSeeHtml('href="'.route('connect.index').'"');
 });
 
 it('keeps employees who only use Min sida out of staff pages', function () {

@@ -198,3 +198,19 @@ the same rate limits. The defaults keep this ADR's behaviour: queue open,
 self-registration closed. HQ can also choose the **operator company**, whose
 customer register and CRM then receive every company and every queue
 applicant; see ADR-044.
+
+## Addendum (2026-11-04): security review
+
+- **The form no longer updates a live entry.** Sending `/ko` again with the
+  address of an open entry used to overwrite its answers, so anyone who knew
+  an applicant's address could change them. A live entry (open or approved)
+  is now left exactly as it is; the answer is still the same thank-you page.
+  An applicant who wants to change something writes to the operator.
+- **Reading HQ needs a passkey.** An HQ admin is now covered by
+  `PasskeyRequirement` like a role with sensitive permissions (ADR-029): the
+  session must have passed the passkey step before any `/hq` page or HQ
+  Livewire request answers, and an admin without a passkey is sent to add one
+  first (the existing first-passkey step, unchanged). This replaces "Reading
+  needs no passkey step beyond the one the session already passed" above:
+  there is now always such a step. Decisions still need the fresh
+  confirmation of `HqAccess::confirm`.

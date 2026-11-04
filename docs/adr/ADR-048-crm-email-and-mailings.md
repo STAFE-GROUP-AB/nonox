@@ -470,6 +470,30 @@ needs `crm:manage`; the event webhook allows 6 000 requests a minute.
 - Whether a template mail to a person who unsubscribed and is marked "not
   marketing" needs more than the sender's confirmation.
 
+## Addendum: held web form submissions (2026-11-04, security review)
+
+The per-form (60 an hour) and per-company (200 an hour) caps on web forms
+are shared by everyone, so a flood used to silently drop real leads with the
+spam. Now only the per-address limit (5 in ten minutes, IPv6 counted per /64)
+drops a submission. A submission over a shared cap that passes validation is
+**held**: a `crm_form_submissions` row with `quarantined_at` and what was
+typed in `held_payload` (encrypted), with the consent text, version, link and
+time as shown. No person, account, task or mail is created. The forms screen
+lists held submissions under "Anmälningar att granska"; someone with
+`crm:settings` accepts one (it is then taken exactly as a normal submission,
+with the consent dated when the form was sent, and the row becomes the
+ordinary proof) or deletes it. Unreviewed held submissions are removed after
+14 days by `crm:prune-mail`; at most 500 are held per company, beyond that a
+submission is dropped and logged. Those with `crm:settings` get an "Att göra"
+row while anything is held, and a database notice (`FormHeldNotice`) on the
+first held submission of a day and on the first dropped one of a day. An
+accepted submission keeps the consent version and the form name the sender
+saw (stored with it), in the legal basis note and the `crm.form_submitted`
+audit, even if the form changed since. Accepting or deleting one already
+handled answers with a toast. The audit log records
+`crm.form_submission_held`, `_accepted` and `_discarded` with ids only.
+TODO(legal-verify): the 14-day period.
+
 ## Addendum: explaining segments in the app (2026-11-04)
 
 The owner found segments hard to understand. The segment page now opens

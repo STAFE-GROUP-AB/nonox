@@ -18,6 +18,10 @@ abstract class TestCase extends BaseTestCase
 
         // No test fetches the ECB's rates; a test sets the ones it needs (FakeEuroRates::set).
         $this->app->instance(EuroReferenceRates::class, new FakeEuroRates);
+
+        // Work deferred until after the response (defer(), e.g. the login code mail) runs at once in tests:
+        // Livewire's test requests skip the middleware that would run it. A test of the deferral calls withDefer().
+        $this->withoutDefer();
     }
 
     /**

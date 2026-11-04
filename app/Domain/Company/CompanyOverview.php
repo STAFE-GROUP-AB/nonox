@@ -69,6 +69,8 @@ final class CompanyOverview
         // CRM signing notices (ADR-046).
         'quotes' => 'invoicing.quotes',
         'crm-agreements' => 'crm.agreements',
+        // Web form submissions held for review (ADR-048).
+        'crm-forms' => 'crm.forms',
     ];
 
     /** A deadline this close counts as urgent. */
