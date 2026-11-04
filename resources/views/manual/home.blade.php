@@ -30,6 +30,15 @@
           <span class="mn-audience-cta">Börja här {!! Icons::svg('arrow', 16) !!}</span>
         </span>
       </a>
+      <a href="{{ route('guide.home') }}">
+        <span class="mn-audience-icon">{!! Icons::svg('rocket', 28) !!}</span>
+        <span>
+          <span class="mn-audience-eyebrow">Startar du företag?</span>
+          <strong>Företagsguiden</strong>
+          <span class="mn-audience-text">Så startar och driver du företaget: moms, F-skatt, ansvar och viktiga datum, förklarat med källor. Inloggad får du Min startplan och Mina datum.</span>
+          <span class="mn-audience-cta">Till Företagsguiden {!! Icons::svg('arrow', 16) !!}</span>
+        </span>
+      </a>
       @if($staffSection)
         <a class="mn-staff" href="{{ Manual::url($staffSection['key']) }}">
           <span class="mn-audience-icon">{!! Icons::svg('person', 28) !!}</span>

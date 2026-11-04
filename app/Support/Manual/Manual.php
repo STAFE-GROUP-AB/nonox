@@ -39,6 +39,8 @@ final class Manual
     public const array POPULAR = [
         'kom-igang/logga-in',
         'kom-igang/skapa-ett-foretag',
+        'kom-igang/foretagsguiden',
+        'kom-igang/mina-datum',
         'bokforing/bokfor-en-verifikation',
         'fakturering/skapa-en-faktura',
         'leverantorer/registrera-en-leverantorsfaktura',

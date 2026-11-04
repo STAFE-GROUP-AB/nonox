@@ -20,6 +20,13 @@ Sedan går det mesta fort: du loggar in med en kod som du får i mejlet, skapar 
 - [Översikten](/manual/kom-igang/oversikten) – nyckeltal, Att göra, Kom igång-listan och statistiken.
 - [Hitta i NONOX](/manual/kom-igang/hitta-i-nonox) – menyn, vad som finns var och varför du ibland inte ser allt.
 
+## Företagsguiden
+
+Företagsguiden förklarar hur du startar och driver företaget: moms, F-skatt, ansvar och vilka datum som gäller. Artiklarna finns öppet på [nonox.app/foretagsguiden](/foretagsguiden). Inne i NONOX blir den personlig:
+
+- [Företagsguiden och Min startplan](/manual/kom-igang/foretagsguiden) – stegen ett nytt företag tar, valda efter företagsform och bransch, och tipsen på sidorna där de hör hemma.
+- [Mina datum](/manual/kom-igang/mina-datum) – företagets sista dagar för moms, F-skatt, deklarationer och årsredovisning, med påminnelser och i din egen kalender.
+
 ## Flera personer och flera företag
 
 - [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter) – de sex rollerna och regeln om att två personer ska vara inblandade i attest.
