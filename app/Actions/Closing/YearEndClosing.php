@@ -6,9 +6,11 @@ namespace App\Actions\Closing;
 
 use App\Actions\Accounting\BookVoucher;
 use App\Actions\Accounting\CarryForwardBalances;
+use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Accounting\LedgerBalances;
+use App\Domain\Accounting\StaleOpeningBalances;
 use App\Domain\Accounting\VoucherSource;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Closing\ClosingAccounts;
@@ -50,7 +52,15 @@ class YearEndClosing
         private readonly CarryForwardBalances $carryForward,
     ) {}
 
-    public function check(User $user, FiscalYear $fiscalYear, string $key, bool $checked): void
+    /**
+     * Ticks or unticks a point of the checklist. Confirming that opening
+     * balances deliberately differ from last year's closing balances
+     * ("opening", ÅRL 2 kap. 4 § andra stycket) needs the reason, which is
+     * kept with the confirmation and in the audit log, together with a
+     * fingerprint of the difference: when the difference changes, the
+     * confirmation no longer counts (ClosingChecklist).
+     */
+    public function check(User $user, FiscalYear $fiscalYear, string $key, bool $checked, ?string $reason = null): void
     {
         $company = $this->companyOf($fiscalYear);
         $this->authorize($user, $company);
@@ -60,12 +70,40 @@ class YearEndClosing
             throw ValidationException::withMessages(['key' => __('Okänd punkt i checklistan.')]);
         }
 
-        CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $key, $checked): void {
-            $checked
-                ? ClosingCheck::query()->firstOrCreate(['fiscal_year_id' => $fiscalYear->id, 'key' => $key], ['checked_by' => $user->id])
-                : ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', $key)->delete();
+        CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $key, $checked, $reason): void {
+            if (! $checked) {
+                ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->where('key', $key)->delete();
+                Audit::record('closing.unchecked', $fiscalYear, ['key' => $key], $company, $user);
 
-            Audit::record($checked ? 'closing.checked' : 'closing.unchecked', $fiscalYear, ['key' => $key], $company, $user);
+                return;
+            }
+
+            if ($key !== ClosingChecklist::OPENING) {
+                ClosingCheck::query()->firstOrCreate(['fiscal_year_id' => $fiscalYear->id, 'key' => $key], ['checked_by' => $user->id]);
+                Audit::record('closing.checked', $fiscalYear, ['key' => $key], $company, $user);
+
+                return;
+            }
+
+            $reason = trim((string) $reason);
+
+            if ($reason === '') {
+                throw ValidationException::withMessages(['reason' => __('Skriv skälet till att skillnaden är avsiktlig.')]);
+            }
+
+            if (mb_strlen($reason) > 1000) {
+                throw ValidationException::withMessages(['reason' => __('Skälet får vara högst 1 000 tecken.')]);
+            }
+
+            $stale = StaleOpeningBalances::computeForYear($company, $fiscalYear);
+
+            if ($stale === null) {
+                throw ValidationException::withMessages(['reason' => __('De ingående balanserna stämmer redan med förra årets utgående balanser.')]);
+            }
+
+            $fingerprint = StaleOpeningBalances::fingerprint($stale);
+            ClosingCheck::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id, 'key' => $key], ['checked_by' => $user->id, 'reason' => $reason, 'fingerprint' => $fingerprint]);
+            Audit::record('closing.checked', $fiscalYear, ['key' => $key, 'reason' => $reason, 'fingerprint' => $fingerprint, 'accounts' => count($stale['accounts'])], $company, $user);
         });
     }
 
@@ -322,6 +360,8 @@ class YearEndClosing
         $this->ensureOpen($fiscalYear);
 
         return CurrentCompany::run($company, fn (): FiscalYear => DB::transaction(function () use ($user, $company, $fiscalYear): FiscalYear {
+            // The year-creation lock first, as SIE import and the carry-forward take it (ADR-010): closing and an SIE import of the same year no longer wait on each other in opposite order.
+            CreateNextFiscalYear::lock($company->id);
             /** @var FiscalYear $fiscalYear */
             $fiscalYear = FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
             $earlierOpen = FiscalYear::query()->where('status', FiscalYearStatus::Open->value)->whereDate('end_date', '<', $fiscalYear->start_date->toDateString())->exists();

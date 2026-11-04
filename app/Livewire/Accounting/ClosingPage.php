@@ -41,6 +41,8 @@ class ClosingPage extends Component
 
     public string $dividend = '';
 
+    public string $openingReason = '';
+
     public function mount(): void
     {
         abort_unless($this->user()->hasTeamPermission($this->company(), 'fiscal-years:manage'), 403);
@@ -55,6 +57,16 @@ class ClosingPage extends Component
     public function check(YearEndClosing $closing, string $key, bool $checked): void
     {
         $this->attempt(fn () => $closing->check($this->user(), $this->fiscalYear(), $key, $checked));
+    }
+
+    /** Confirms, with the reason, that opening balances deliberately differ from last year's closing balances. */
+    public function confirmOpening(YearEndClosing $closing): void
+    {
+        $this->attempt(function () use ($closing): void {
+            $closing->check($this->user(), $this->fiscalYear(), ClosingChecklist::OPENING, true, $this->openingReason);
+            $this->reset('openingReason');
+            $this->toast(__('Skillnaden är bekräftad som avsiktlig. Lämna skälet i en not i årsredovisningen.'));
+        });
     }
 
     public function bookTax(YearEndClosing $closing): void

@@ -67,6 +67,9 @@ final class ClosingChecklist
         'opening' => 'Skillnaden är avsiktlig',
     ];
 
+    /** The point for opening balances that differ from last year's closing balances. */
+    public const string OPENING = 'opening';
+
     /**
      * @return list<array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string}>
      */
@@ -74,7 +77,9 @@ final class ClosingChecklist
     {
         return CurrentCompany::run($company, function () use ($company, $fiscalYear): array {
             $endMonth = $fiscalYear->end_date->format('Y-m');
-            $checks = ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->pluck('key')->all();
+            $confirmed = ClosingCheck::query()->where('fiscal_year_id', $fiscalYear->id)->get(['key', 'fingerprint']);
+            $checks = $confirmed->pluck('key')->all();
+            $openingFingerprint = $confirmed->firstWhere('key', self::OPENING)?->fingerprint;
             $items = [];
 
             $drafts = Voucher::query()->where('fiscal_year_id', $fiscalYear->id)->where('status', VoucherStatus::Draft->value)->count();
@@ -93,7 +98,7 @@ final class ClosingChecklist
                 default => __('Kvar: :periods.', ['periods' => implode(', ', array_map(fn (array $period): string => VatPeriods::label($period['start'], $period['end']), $missing))]),
             }, $periods === [] ? self::NOT_APPLICABLE : ($missing === [] ? self::OK : self::TODO), 'vat.index');
 
-            $items[] = self::opening($company, $fiscalYear, $checks);
+            $items[] = self::opening($company, $fiscalYear, $openingFingerprint);
             $items[] = self::bank($fiscalYear);
             $items[] = self::assets($endMonth);
             $items[] = self::accruals($fiscalYear, $endMonth);
@@ -146,35 +151,40 @@ final class ClosingChecklist
     /**
      * The year's opening balances agree with the closing balances of the
      * year before (ÅRL 2 kap. 4 § första stycket 7; StaleOpeningBalances).
-     * Blocks until they are updated, or a person confirms that the
-     * difference is intended: the second paragraph allows a deviation for
-     * special reasons, which the person then documents.
+     * Blocks until they are updated, or a person confirms with a reason that
+     * the difference is deliberate (second paragraph). The confirmation is
+     * tied to a fingerprint of the difference and stops counting when the
+     * difference changes. The deviation must then be explained in a note in
+     * the annual report (ÅRL 5 kap. 5 §).
      *
-     * @param  array<mixed>  $checks  confirmed checklist keys
      * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string}
      */
-    private static function opening(Company $company, FiscalYear $fiscalYear, array $checks): array
+    private static function opening(Company $company, FiscalYear $fiscalYear, ?string $confirmedFingerprint): array
     {
         $label = __('Ingående balanser stämmer med förra året');
         $previous = FiscalYear::query()->whereDate('end_date', $fiscalYear->start_date->subDay()->toDateString())->first(['id', 'start_date', 'end_date']);
 
         if (! $previous instanceof FiscalYear) {
-            return self::item('opening', $label, __('Inget tidigare räkenskapsår i NONOX att jämföra med.'), self::NOT_APPLICABLE, null);
+            return self::item(self::OPENING, $label, __('Inget tidigare räkenskapsår i NONOX att jämföra med.'), self::NOT_APPLICABLE, null);
         }
 
         $stale = StaleOpeningBalances::forYear($company, $fiscalYear);
 
         if ($stale === null) {
-            return self::item('opening', $label, __('De ingående balanserna är lika med de utgående balanserna för :from.', ['from' => $previous->label()]), self::OK, null);
+            return self::item(self::OPENING, $label, __('De ingående balanserna är lika med de utgående balanserna för :from.', ['from' => $previous->label()]), self::OK, null);
         }
 
-        $confirm = __(self::CONFIRMABLE['opening']);
+        $confirm = __(self::CONFIRMABLE[self::OPENING]);
 
-        if (in_array('opening', $checks, true)) {
-            return self::item('opening', $label, __('Bekräftat att skillnaden mot de utgående balanserna för :from är avsiktlig. Dokumentera skälet.', ['from' => $previous->label()]), self::OK, 'accounting.fiscalYears', confirm: $confirm);
+        if ($confirmedFingerprint !== null && $confirmedFingerprint === StaleOpeningBalances::fingerprint($stale)) {
+            return self::item(self::OPENING, $label, __('Bekräftat att skillnaden mot de utgående balanserna för :from är avsiktlig. Skälet och en bedömning av hur skillnaden påverkar företagets ställning och resultat ska lämnas i en not i årsredovisningen (årsredovisningslagen 5 kap. 5 §).', ['from' => $previous->label()]), self::OK, 'accounting.fiscalYears', confirm: $confirm);
         }
 
-        return self::item('opening', $label, trans_choice(':count konto skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.|:count konton skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.', count($stale['accounts']), ['count' => count($stale['accounts']), 'from' => $previous->label()]), self::TODO, 'accounting.fiscalYears', confirm: $confirm);
+        if ($confirmedFingerprint !== null) {
+            return self::item(self::OPENING, $label, __('Skillnaden mot de utgående balanserna för :from har ändrats sedan den bekräftades som avsiktlig. Uppdatera de ingående balanserna under Räkenskapsår, eller bekräfta skillnaden på nytt med skäl.', ['from' => $previous->label()]), self::TODO, 'accounting.fiscalYears', confirm: $confirm);
+        }
+
+        return self::item(self::OPENING, $label, trans_choice(':count konto skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.|:count konton skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.', count($stale['accounts']), ['count' => count($stale['accounts']), 'from' => $previous->label()]), self::TODO, 'accounting.fiscalYears', confirm: $confirm);
     }
 
     /**

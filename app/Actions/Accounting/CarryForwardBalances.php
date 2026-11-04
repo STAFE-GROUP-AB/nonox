@@ -54,6 +54,10 @@ class CarryForwardBalances
 
         return CurrentCompany::run($fiscalYear->company_id, fn (): FiscalYear => DB::transaction(function () use ($user, $fiscalYear, $partOfClosing): FiscalYear {
             $company = Company::query()->findOrFail($fiscalYear->company_id);
+            // Lock order (ADR-010): the year-creation advisory lock, then the source year, as SIE import does;
+            // a posting in the source year (which locks it first) finishes before its balances are read.
+            CreateNextFiscalYear::lock($company->id);
+            FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
             $opening = LedgerBalances::opening($fiscalYear);
             $movements = LedgerBalances::movements($fiscalYear);
 

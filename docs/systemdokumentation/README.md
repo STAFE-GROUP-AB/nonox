@@ -767,16 +767,22 @@ Regel (SFS 1995:1554, läst på riksdagen.se 2026-11-04): årsredovisningslagen
 stämma överens med den utgående balansen för närmast föregående
 räkenskapsår." Andra stycket: "Om det finns särskilda skäl för det och det är
 förenligt med 2 och 3 §§, får avvikelse göras från första stycket."
-Beskrivningen är en del av systemdokumentationen och behandlingshistoriken
-enligt BFL 5 kap. 11 § och BFNAR 2013:2 kapitel 9 (punkterna 9.9–9.10 och
-9.16) ([ADR-010](../adr/ADR-010-reports-vat-year-end.md), "Stale opening
+5 kap. 5 §: avviker ett företag med stöd av 2 kap. 4 § andra stycket "ska
+det lämna en upplysning om skälen för avvikelsen och en bedömning av effekten
+på företagets ställning och resultat". Beskrivningen är en del av
+systemdokumentationen och behandlingshistoriken enligt BFL 5 kap. 11 § och
+BFNAR 2013:2 kapitel 9 (punkterna 9.9–9.10 och 9.16, lästa i BFN:s vägledning
+vl13-2-bokforing.pdf på bfn.se 2026-11-04; 9.16: "Behandlingshistoriken ska
+visa de bokföringsposter som har tillförts bokföringssystemet samt, i
+datorbaserade system, registreringsdatum.")
+([ADR-010](../adr/ADR-010-reports-vat-year-end.md), "Stale opening
 balances").
 
 - **Hur det uppstår.** Ett år kan få verifikationer efter att dess balanser
   har förts över till nästa år: en sen leverantörsfaktura, en rättelse, en
   bokslutsverifikation eller en inläst SIE-fil. Nästa års ingående balanser
   ändras då inte av sig själva.
-- **Jämförelse.** För varje räkenskapsår som har ingående balanser och vars
+- **Jämförelse.** För varje öppet räkenskapsår som har ingående balanser och vars
   närmast föregående år finns i NONOX med något bokfört (ingående balanser
   eller bokförda verifikationer) räknar NONOX ut vad de ingående balanserna
   borde vara, på exakt samma sätt som överföringen gör (avsnitt 4.14):
@@ -787,11 +793,17 @@ balances").
   äldsta året och bygger varje år på det föregående årets rättade balanser,
   så att en kedja N → N+1 → N+2 visar alla år som en uppdatering ändrar.
 - **Vad som inte jämförs.** Det första året i NONOX (ingående balanser från
-  en SIE-fil, från ett annat program eller inlagda för hand) har inget år
-  före att jämföra med. Ett år efter ett tomt år jämförs inte heller. Ett år
+  en SIE-fil) har inget år före att jämföra med. Ett år efter ett tomt år jämförs inte heller. Ett år
   utan ingående balanser räknas inte som inaktuellt: balanserna har då inte
   förts över, och det görs i bokslutet. Ingående balanser sparas inte per
-  kostnadsställe eller projekt, så jämförelsen görs bara per konto.
+  kostnadsställe eller projekt, så jämförelsen görs bara per konto. Ett
+  stängt år jämförs inte och uppdateras aldrig; dess sparade ingående
+  balanser är det som året efter jämförs mot.
+- **Inlästa år från ett annat program.** Ingående balanser från en SIE-fil
+  för ett år efter ett som redan finns i NONOX jämförs som andra, eftersom
+  lagen inte skiljer på källan. Lämnar filens `#IB` ett obokat resultat
+  utanför Årets resultat syns det som en skillnad på bara det kontot; en
+  uppdatering lägger till det, så att de ingående balanserna går ihop.
 - **Var det visas.** Överst under Räkenskapsår (alla år som skiljer), under
   Rapporter för det valda året, under Att göra på Översikt för den som får
   hantera räkenskapsår, och som punkten "Ingående balanser stämmer med förra
@@ -802,18 +814,37 @@ balances").
   (`fiscal-years:manage`) väljer knappen och bekräftar en text som säger vad
   som händer. Alla år som skiljer räknas om i ordning, äldst först, i en
   enda transaktion, med samma överföring som i avsnitt 4.14. Uppdateringen
-  vägras helt om något av åren är stängt, eller om periodlåset omfattar dess
-  första dag; inget ändras då. Är det tidigare året öppet förs balanserna
-  ändå över på nytt när det stängs i bokslutet.
+  vägras helt om periodlåset omfattar första dagen i något av åren; inget
+  ändras då, och texten säger att balanserna förs över på nytt när det
+  tidigare året stängs i bokslutet (om det är öppet).
+- **Lås.** Uppdateringen tar i tur och ordning företagets lås för att skapa
+  år (PostgreSQL advisory lock), alla företagets räkenskapsår (FOR UPDATE, i
+  datumordning) och företagsraden (FOR UPDATE), och jämför först därefter.
+  Under tiden kan inget bokföras, låsas, föras över eller läsas in, så det
+  som jämförs är det som ändras. Beloppen efter i behandlingshistoriken läses
+  från de rader som faktiskt skrevs. Överföringen tar själv samma lås för att
+  skapa år och låser det tidigare året innan saldona läses. Även bokslutets
+  stängning tar låset för att skapa år först. Ordningen är densamma som
+  SIE-inläsningens (lås för att skapa år, år, företag) och bokföringens (år,
+  företag), så ingen av dem väntar på den andra i omvänd ordning.
 - **Aldrig automatiskt.** NONOX uppdaterar inte ingående balanser av sig
   självt. Nya ingående balanser ändrar balansrapporten, huvudboken och
   underlag för avstämningar och bokslutsarbete som redan gjorts i det senare
   året, så en person beslutar om det och när. Jämförelsen och varningen sker
   däremot alltid.
 - **Avsiktlig skillnad.** I bokslutets checklista kan en person i stället
-  kryssa i "Skillnaden är avsiktlig" (2 kap. 4 § andra stycket). Skälet
-  dokumenteras av företaget; NONOX sparar vem som kryssade och när
-  (`closing.checked`, nyckel `opening`).
+  bekräfta "Skillnaden är avsiktlig" (2 kap. 4 § andra stycket). Ett skäl
+  (högst 1 000 tecken) krävs. Skälet, vem och när sparas med bekräftelsen och
+  i behandlingshistoriken (`closing.checked` med `key: opening`, `reason`,
+  antal konton och `fingerprint`, en SHA-256 av året och varje skiljande
+  konto med båda beloppen). Ändras skillnaden efteråt stämmer inte
+  fingeravtrycket längre, och punkten blir ogjord igen. Checklistan påminner
+  om att skälet och en bedömning av effekten ska lämnas i en not i
+  årsredovisningen (5 kap. 5 §).
+- **Kontotyp.** Ett konto med bokförda verifikationer eller ingående
+  balanser kan inte byta mellan balanskonto (tillgång, eget kapital och
+  skuld) och resultatkonto, eftersom det skulle ändra överförda balanser och
+  resultat för år som redan är bokförda.
 - **Inga verifikationer ändras.** Ingående balanser är inte verifikationer
   (avsnitt 4.8). Inga bokförda verifikationer, nummer eller kontrollsummor
   ändras.
@@ -830,6 +861,9 @@ balances").
 - TODO(legal-verify): att uppdateringen vägras när periodlåset omfattar det
   senare årets första dag, men görs i bokslutet, är ett eget beslut; vi har
   inte hittat någon regel om periodlås och ingående balanser.
+- TODO(legal-verify): om K2 (BFNAR 2016:10) över huvud taget tillåter en
+  avvikelse från principen att ingående balans ska stämma med föregående års
+  utgående balans, eller om bekräftelsen bara ska gå att göra för K3.
 
 ## 5. Fakturering
 
@@ -3326,8 +3360,8 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
 - Ingående balanser (avsnitt 4.14a): att uppdateringen av inaktuella
   ingående balanser vägras när periodlåset omfattar det senare årets första
   dag men görs när det tidigare året stängs, och att en avsiktlig skillnad
-  (ÅRL 2 kap. 4 § andra stycket) bara bekräftas i checklistan utan att
-  skälet sparas i NONOX.
+  (ÅRL 2 kap. 4 § andra stycket) får bekräftas för ett K2-företag (BFNAR
+  2016:10).
 
 - CRM (ADR-043): texten om intresseavvägningen för kontaktpersoner i
   manualen (docs/manual/sv/crm/gdpr-i-crm.md), standardtiden för gallring av
@@ -3714,4 +3748,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.97 | 2026-11-02 | Lager: etiketter och etikettstudio (ADR-041), skanning med mobilen med kö utan nät som körs exakt en gång per operation (ADR-040), och modulen Kassakopplingar för Zettle och Onslip (ADR-042, avsnitt 5k): varje köp sparas en gång och dras från lagret, och dagens försäljning blir ett utkast till verifikation i serie K "Kassa" som en person granskar och bokför. Serie K skapas först när modulen slås på. |
 | 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos driftbolaget som HQ pekar ut, genom dess egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Inget kopplas till en befintlig post utan HQ:s beslut, och radering på begäran tar alltid bort personen. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.4. Ändrar ingen bokföring. |
 | 0.99 | 2026-11-04 | Nästa räkenskapsår skapas automatiskt (avsnitt 3.1, ADR-010): varje morgon när det senaste året slutar inom 30 dagar, och vid bokföring av ett datum i det följande året högst 30 dagar fram. Bara ett vanligt år på tolv månader i företagets första månad (BFL 3 kap. 1 och 3 §§); en omläggning (3 kap. 6 §) görs aldrig automatiskt. Det gamla året stängs inte och inga ingående balanser förs över. Behandlingshistoriken visar `via: automatic` och vad som utlöste det. Det första året kan fortfarande ändras när nästa år skapats automatiskt och är tomt; det tomma året tas då bort (`fiscal_year.removed`). |
-| 0.100 | 2026-11-04 | Ingående balanser som inte längre stämmer (avsnitt 4.14a, ADR-010; ÅRL 2 kap. 4 § första stycket 7): NONOX jämför varje års ingående balanser med föregående års utgående balanser, räknade som vid överföringen, och varnar under Räkenskapsår, Rapporter, Att göra och i bokslutets checklista. Uppdatera ingående balanser räknar om alla år som skiljer i ordning, bara på en persons beslut, och vägras för ett stängt år eller när periodlåset omfattar årets första dag; `fiscal_year.opening_balances_updated` visar varje konto före och efter. Överföringen för hand vägras också när nästa års första dag är låst; i bokslutet görs den som förut. |
+| 0.100 | 2026-11-04 | Ingående balanser som inte längre stämmer (avsnitt 4.14a, ADR-010; ÅRL 2 kap. 4 § första stycket 7): NONOX jämför varje års ingående balanser med föregående års utgående balanser, räknade som vid överföringen, och varnar under Räkenskapsår, Rapporter, Att göra och i bokslutets checklista. Bara öppna år jämförs; ett stängt år behåller sina balanser i kedjan. Uppdatera ingående balanser räknar om alla år som skiljer i ordning, bara på en persons beslut, under lås på år och företag, och vägras när periodlåset omfattar årets första dag; `fiscal_year.opening_balances_updated` visar varje konto före och efter (efter = det som skrevs). En avsiktlig skillnad bekräftas med skäl och fingeravtryck, som upphör att gälla när skillnaden ändras (ÅRL 2 kap. 4 § andra stycket, 5 kap. 5 §). Överföringen för hand vägras också när nästa års första dag är låst; i bokslutet görs den som förut, och stängningen tar låset för att skapa år först. Ett använt konto kan inte byta mellan balans- och resultatkonto. |

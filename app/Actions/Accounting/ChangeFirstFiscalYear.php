@@ -43,11 +43,11 @@ class ChangeFirstFiscalYear
         $end = $this->date($endDate, 'end_date');
 
         CurrentCompany::run($fiscalYear->company_id, fn () => DB::transaction(function () use ($fiscalYear, $start, $end, $user): void {
-            // The year row first, then the creation lock: the same order as closing a year (YearEndClosing::close
-            // locks the year, then CarryForwardBalances takes the creation lock), so the two never wait on each other.
+            // The creation lock first, then the year row: the order every path takes (ADR-010, "Stale opening
+            // balances"): closing, carrying forward, updating opening balances and SIE import.
+            CreateNextFiscalYear::lock($fiscalYear->company_id);
             /** @var FiscalYear $fiscalYear */
             $fiscalYear = FiscalYear::query()->whereKey($fiscalYear->id)->lockForUpdate()->firstOrFail();
-            CreateNextFiscalYear::lock($fiscalYear->company_id);
             $company = Company::query()->findOrFail($fiscalYear->company_id);
             $others = FiscalYear::query()->whereKeyNot($fiscalYear->id)->get();
 

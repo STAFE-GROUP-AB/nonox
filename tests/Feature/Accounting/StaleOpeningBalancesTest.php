@@ -11,16 +11,19 @@ declare(strict_types=1);
  */
 
 use App\Actions\Accounting\CarryForwardBalances;
+use App\Actions\Accounting\UpdateAccount;
 use App\Actions\Accounting\UpdateOpeningBalances;
 use App\Actions\Closing\YearEndClosing;
 use App\Domain\Accounting\StaleOpeningBalances;
 use App\Domain\Closing\ClosingChecklist;
 use App\Domain\Overview\Todos\OpeningBalanceTodos;
+use App\Livewire\Accounting\ClosingPage;
 use App\Livewire\Accounting\FiscalYears;
 use App\Livewire\Accounting\Reports;
 use App\Livewire\Accounting\StaleOpeningBalancesNotice;
 use App\Models\Account;
 use App\Models\AuditLog;
+use App\Models\ClosingCheck;
 use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
 use App\Models\Voucher;
@@ -71,7 +74,7 @@ it('finds the accounts that differ after a late posting in the old year', functi
     $stale = StaleOpeningBalances::for($this->company);
 
     expect($stale)->toHaveCount(1)
-        ->and($stale[0])->toMatchArray(['from_id' => $this->year->id, 'to_id' => $this->next->id, 'from' => '2026', 'to' => '2027', 'to_open' => true, 'locked' => false])
+        ->and($stale[0])->toMatchArray(['from_id' => $this->year->id, 'to_id' => $this->next->id, 'from' => '2026', 'to' => '2027', 'from_open' => true, 'locked' => false])
         ->and(array_map(fn (array $account): array => [$account['number'], $account['stored'], $account['expected']], $stale[0]['accounts']))
         ->toBe([[1930, 5_200_000, 5_250_000], [2099, -200_000, -250_000]]);
 });
@@ -102,13 +105,16 @@ it('updates the opening balances, touches no voucher and records before and afte
     expect(fn () => app(UpdateOpeningBalances::class)($this->owner, $this->company))->toThrow(ValidationException::class, 'stämmer redan');
 });
 
-it('refuses when the later year is closed', function () {
+it('does not report a closed later year, and builds the next year on its stored balances', function () {
+    $third = app(CarryForwardBalances::class)($this->owner, $this->next);
     Bookkeeping::post($this->owner, $this->company, 50_000, 1930, 3001, '2026-12-30');
     $this->next->forceFill(['status' => 'CLOSED'])->save();
 
-    expect(StaleOpeningBalances::compute($this->company)[0]['to_open'])->toBeFalse()
-        ->and(fn () => app(UpdateOpeningBalances::class)($this->owner, $this->company))->toThrow(ValidationException::class, 'Räkenskapsåret 2027 är stängt')
-        ->and(ibOf($this->next))->toBe([1930 => 5_200_000, 2081 => -5_000_000, 2099 => -200_000]);
+    // 2027 is closed and cannot change; 2028 agrees with 2027 as stored, so nothing is reported.
+    expect(StaleOpeningBalances::compute($this->company))->toBe([])
+        ->and(fn () => app(UpdateOpeningBalances::class)($this->owner, $this->company))->toThrow(ValidationException::class, 'stämmer redan')
+        ->and(ibOf($this->next))->toBe([1930 => 5_200_000, 2081 => -5_000_000, 2099 => -200_000])
+        ->and(ibOf($third))->toBe([1930 => 5_200_000, 2081 => -5_000_000, 2099 => -200_000]);
 });
 
 it('refuses when the period lock covers the first day of the later year, but the closing still carries forward', function () {
@@ -118,6 +124,7 @@ it('refuses when the period lock covers the first day of the later year, but the
     expect(StaleOpeningBalances::compute($this->company->fresh())[0]['locked'])->toBeTrue()
         ->and(fn () => app(UpdateOpeningBalances::class)($this->owner, $this->company))->toThrow(ValidationException::class, 'låst till och med 2027-01-31')
         ->and(fn () => app(CarryForwardBalances::class)($this->owner, $this->year))->toThrow(ValidationException::class, 'De förs över på nytt när du stänger 2026 under Bokslut')
+        ->and(app(OpeningBalanceTodos::class)->todos($this->owner, $this->company->fresh(), CarbonImmutable::today())[0]->subtitle)->toBe('Bokföringen är låst från första dagen i 2027. De ingående balanserna förs över på nytt när du stänger 2026 under Bokslut.')
         ->and(ibOf($this->next))->toBe([1930 => 5_200_000, 2081 => -5_000_000, 2099 => -200_000]);
 
     app(CarryForwardBalances::class)($this->owner, $this->year, partOfClosing: true);
@@ -221,9 +228,69 @@ it('lists it under Att göra and in the year-end checklist of the later year', f
     expect($item['status'])->toBe(ClosingChecklist::TODO)
         ->and($item['confirm'])->toBe('Skillnaden är avsiktlig');
 
-    // A person may confirm a deliberate difference (the second paragraph of ÅRL 2 kap. 4 §).
-    app(YearEndClosing::class)->check($this->owner, $this->next, 'opening', true);
-    expect(collect(ClosingChecklist::for($this->company, $this->next))->keyBy('key')['opening']['status'])->toBe(ClosingChecklist::OK);
+    // A person may confirm a deliberate difference (ÅRL 2 kap. 4 § andra stycket), but only with the reason.
+    expect(fn () => app(YearEndClosing::class)->check($this->owner, $this->next, 'opening', true))->toThrow(ValidationException::class, 'Skriv skälet')
+        ->and(fn () => app(YearEndClosing::class)->check($this->owner, $this->next, 'opening', true, '   '))->toThrow(ValidationException::class, 'Skriv skälet');
+
+    app(YearEndClosing::class)->check($this->owner, $this->next, 'opening', true, 'Ändrad redovisningsprincip enligt styrelsebeslut.');
+    $item = collect(ClosingChecklist::for($this->company, $this->next))->keyBy('key')['opening'];
+    $fingerprint = StaleOpeningBalances::fingerprint(StaleOpeningBalances::computeForYear($this->company, $this->next));
+
+    expect($item['status'])->toBe(ClosingChecklist::OK)
+        ->and($item['detail'])->toContain('årsredovisningslagen 5 kap. 5 §')
+        ->and(AuditLog::forCompany($this->company)->where('action', 'closing.checked')->latest('id')->first()->payload)
+        ->toMatchArray(['key' => 'opening', 'reason' => 'Ändrad redovisningsprincip enligt styrelsebeslut.', 'fingerprint' => $fingerprint, 'accounts' => 2]);
+
+    // Another late posting changes the difference: the confirmation no longer counts.
+    Bookkeeping::post($this->owner, $this->company, 10_000, 1930, 3001, '2026-12-31');
+    $item = collect(ClosingChecklist::for($this->company, $this->next))->keyBy('key')['opening'];
+
+    expect($item['status'])->toBe(ClosingChecklist::TODO)
+        ->and($item['detail'])->toContain('har ändrats sedan den bekräftades');
+});
+
+it('confirms a deliberate difference with its reason from the closing page', function () {
+    Bookkeeping::post($this->owner, $this->company, 50_000, 1930, 3001, '2026-12-30');
+
+    Livewire::withQueryParams(['ar' => $this->next->id])->test(ClosingPage::class)
+        ->assertSee('Skäl till att skillnaden är avsiktlig')
+        ->call('confirmOpening')
+        ->assertDispatched('toast', message: 'Skriv skälet till att skillnaden är avsiktlig.', type: 'error')
+        ->set('openingReason', 'Särskilda skäl enligt not 1.')
+        ->call('confirmOpening')
+        ->assertDispatched('toast', message: 'Skillnaden är bekräftad som avsiktlig. Lämna skälet i en not i årsredovisningen.');
+
+    expect(ClosingCheck::query()->where('fiscal_year_id', $this->next->id)->where('key', 'opening')->sole()->reason)->toBe('Särskilda skäl enligt not 1.');
+});
+
+it('warns about opening balances read in from another program without the unbooked result', function () {
+    // Synthetic: 2027 read in from an SIE file whose #IB leaves 2026's unbooked result off 2099.
+    OpeningBalance::query()->where('fiscal_year_id', $this->next->id)->delete();
+    OpeningBalance::create(['fiscal_year_id' => $this->next->id, 'account_id' => Account::query()->where('number', 1930)->value('id'), 'amount_ore' => 5_200_000]);
+    OpeningBalance::create(['fiscal_year_id' => $this->next->id, 'account_id' => Account::query()->where('number', 2081)->value('id'), 'amount_ore' => -5_000_000]);
+
+    $stale = StaleOpeningBalances::compute($this->company);
+
+    expect($stale)->toHaveCount(1)
+        ->and(array_map(fn (array $account): array => [$account['number'], $account['stored'], $account['expected']], $stale[0]['accounts']))
+        ->toBe([[2099, 0, -200_000]]);
+
+    app(UpdateOpeningBalances::class)($this->owner, $this->company);
+
+    expect(ibOf($this->next))->toBe([1930 => 5_200_000, 2081 => -5_000_000, 2099 => -200_000]);
+});
+
+it('keeps a used account on its side of the balance sheet and income statement', function () {
+    $bank = Account::query()->where('number', 1930)->sole();
+    $unused = Account::query()->where('number', 1910)->sole();
+
+    expect(fn () => app(UpdateAccount::class)($this->owner, $bank, ['type' => 'EXPENSE']))->toThrow(ValidationException::class, 'kan inte byta mellan balanskonto och resultatkonto');
+
+    app(UpdateAccount::class)($this->owner, $unused, ['type' => 'EXPENSE']);
+    app(UpdateAccount::class)($this->owner, $bank, ['type' => 'LIABILITY_EQUITY']);
+
+    expect($unused->fresh()->type->value)->toBe('EXPENSE')
+        ->and($bank->fresh()->type->value)->toBe('LIABILITY_EQUITY');
 });
 
 it('lets only those who manage fiscal years update, and shows others no button', function () {

@@ -97,9 +97,11 @@ De ingående balanserna räknas om på samma sätt som när du för över balans
 
 NONOX uppdaterar aldrig de ingående balanserna av sig själv, eftersom det ändrar siffrorna i rapporterna för det nya året. Det är du som bestämmer när.
 
-Det går inte att uppdatera när det nya året är stängt, eller när bokföringen är låst från det nya årets första dag. Är det gamla året fortfarande öppet förs balanserna ändå över på nytt när du stänger det under **Bokföring → Bokslut**.
+Det går inte att uppdatera när bokföringen är låst från det nya årets första dag. Då står det "Bokföringen är låst från första dagen i 2027. De ingående balanserna förs över på nytt när du stänger 2026 under Bokslut." Ett stängt år jämförs inte: dess ingående balanser kan inte längre ändras, och året efter bygger på dem som de är sparade.
 
-Det första året i NONOX jämförs inte med något: dess ingående balanser kommer från en SIE-fil eller från ett annat program, och det finns inget år före att jämföra med.
+Det första året i NONOX jämförs inte med något: dess ingående balanser kommer från en SIE-fil, och det finns inget år före att jämföra med.
+
+Har du läst in flera år från ett annat program jämförs de som vanligt, eftersom lagen kräver att de stämmer oavsett var de kommer ifrån. Lämnade det andra programmet ett obokat resultat utanför de ingående balanserna syns det som en skillnad på kontot för Årets resultat, och **Uppdatera ingående balanser** lägger till det.
 
 > [!NOTE]
 > Ingående balanser har inga kostnadsställen eller projekt, så skillnaden visas bara per konto. En jurist har ännu inte granskat att uppdateringen vägras när det nya årets första dag är låst.

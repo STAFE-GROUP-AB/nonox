@@ -19,11 +19,18 @@ use App\Support\Tenancy\CurrentCompany;
  * the year before (ÅRL 2 kap. 4 § första stycket 7): something was posted
  * in the old year, or corrected, after its balances were carried forward.
  *
- * A year is compared only when the year right before it is in NONOX and has
- * something booked, and when the year itself already has opening balances.
- * The first year in NONOX (opening balances from an SIE file or typed in) has
- * nothing to compare with; a year whose balances were never carried forward
- * is not stale, it waits for the closing.
+ * A year is compared only when it is open, already has opening balances, and
+ * the year right before it is in NONOX with something booked. The first year
+ * in NONOX (opening balances from an SIE file) has nothing to compare with; a
+ * year whose balances were never carried forward is not stale, it waits for
+ * the closing; a closed year cannot change, and its stored balances are what
+ * the next year builds on.
+ *
+ * Opening balances read in from an SIE file for a year after one already in
+ * NONOX are compared like carried-forward ones: the law asks for agreement
+ * whatever their source, and a file from another program that leaves an
+ * unbooked result out of its opening balances shows up as a difference on
+ * the result account only.
  *
  * The expected balances are computed exactly as CarryForwardBalances writes
  * them (CarriedBalances), from the corrected balances of the year before, so
@@ -37,7 +44,7 @@ use App\Support\Tenancy\CurrentCompany;
 final class StaleOpeningBalances
 {
     /**
-     * @return list<array{from_id: int, to_id: int, from: string, to: string, to_open: bool, locked: bool, accounts: list<array{number: int, name: string, stored: int, expected: int}>}>
+     * @return list<array{from_id: int, to_id: int, from: string, to: string, from_open: bool, locked: bool, accounts: list<array{number: int, name: string, stored: int, expected: int}>}>
      */
     public static function for(Company $company): array
     {
@@ -47,7 +54,7 @@ final class StaleOpeningBalances
     /**
      * The stale pair whose later year is the given one, if any.
      *
-     * @return ?array{from_id: int, to_id: int, from: string, to: string, to_open: bool, locked: bool, accounts: list<array{number: int, name: string, stored: int, expected: int}>}
+     * @return ?array{from_id: int, to_id: int, from: string, to: string, from_open: bool, locked: bool, accounts: list<array{number: int, name: string, stored: int, expected: int}>}
      */
     public static function forYear(Company $company, FiscalYear $year): ?array
     {
@@ -61,9 +68,39 @@ final class StaleOpeningBalances
     }
 
     /**
+     * What a confirmation of a deliberate difference is tied to: the later
+     * year and every differing account with both amounts. Any change voids it.
+     *
+     * @param  array{to_id: int, accounts: list<array{number: int, name: string, stored: int, expected: int}>}  $stale
+     */
+    public static function fingerprint(array $stale): string
+    {
+        return hash('sha256', (string) json_encode([
+            $stale['to_id'],
+            array_map(fn (array $account): array => [$account['number'], $account['stored'], $account['expected']], $stale['accounts']),
+        ]));
+    }
+
+    /**
+     * The stale pair whose later year is the given one, uncached.
+     *
+     * @return ?array{from_id: int, to_id: int, from: string, to: string, from_open: bool, locked: bool, accounts: list<array{number: int, name: string, stored: int, expected: int}>}
+     */
+    public static function computeForYear(Company $company, FiscalYear $year): ?array
+    {
+        foreach (self::compute($company) as $stale) {
+            if ($stale['to_id'] === $year->id) {
+                return $stale;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Uncached, for the update itself.
      *
-     * @return list<array{from_id: int, to_id: int, from: string, to: string, to_open: bool, locked: bool, accounts: list<array{number: int, name: string, stored: int, expected: int}>}>
+     * @return list<array{from_id: int, to_id: int, from: string, to: string, from_open: bool, locked: bool, accounts: list<array{number: int, name: string, stored: int, expected: int}>}>
      */
     public static function compute(Company $company): array
     {
@@ -108,7 +145,8 @@ final class StaleOpeningBalances
                 $corrected[$year->id] = $own;
                 $previous = $byEnd->get($year->start_date->subDay()->toDateString());
 
-                if (! $previous instanceof FiscalYear || $own === []) {
+                // A closed year keeps its stored balances in the chain; they can no longer change (ADR-008).
+                if (! $previous instanceof FiscalYear || $own === [] || ! $year->isOpen()) {
                     continue;
                 }
 
@@ -144,7 +182,7 @@ final class StaleOpeningBalances
                     'to_id' => $year->id,
                     'from' => $previous->label(),
                     'to' => $year->label(),
-                    'to_open' => $year->isOpen(),
+                    'from_open' => $previous->isOpen(),
                     'locked' => CarryForwardBalances::lockedFirstDay($company, $year),
                     'accounts' => $differing,
                 ];

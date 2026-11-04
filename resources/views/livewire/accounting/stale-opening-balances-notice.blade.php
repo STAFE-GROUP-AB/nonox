@@ -12,10 +12,8 @@
                         {{ trans_choice('De ingående balanserna för :to stämmer inte längre med de utgående balanserna för :from (:count konto skiljer).|De ingående balanserna för :to stämmer inte längre med de utgående balanserna för :from (:count konton skiljer).', count($stale['accounts']), ['to' => $stale['to'], 'from' => $stale['from'], 'count' => count($stale['accounts'])]) }}
                     </p>
                     <p>{{ __('Något har bokförts eller rättats i :from efter att balanserna fördes över, till exempel en sen leverantörsfaktura eller en rättelse. NONOX ändrar inte de ingående balanserna av sig själv, eftersom det ändrar siffrorna i rapporterna för :to.', ['from' => $stale['from'], 'to' => $stale['to']]) }}</p>
-                    @if(! $stale['to_open'])
-                        <p>{{ __('Räkenskapsåret :label är stängt, så dess ingående balanser kan inte ändras.', ['label' => $stale['to']]) }}</p>
-                    @elseif($stale['locked'])
-                        <p>{{ __('Bokföringen är låst från :to:s första dag, så de ingående balanserna kan inte ändras här.', ['to' => $stale['to']]) }}</p>
+                    @if($stale['locked'])
+                        <p>{{ ($stale['from_open'] ? __('Bokföringen är låst från första dagen i :to. De ingående balanserna förs över på nytt när du stänger :from under Bokslut.', ['to' => $stale['to'], 'from' => $stale['from']]) : __('Bokföringen är låst från första dagen i :to, så de ingående balanserna kan inte uppdateras.', ['to' => $stale['to']])) }}</p>
                     @endif
                     <details class="group">
                         <summary class="cursor-pointer font-medium text-amber-900 underline">{{ __('Visa skillnaden per konto') }}</summary>
@@ -46,7 +44,7 @@
                 </div>
             @endforeach
 
-            @if($canUpdate && collect($shown)->every(fn (array $stale): bool => $stale['to_open'] && ! $stale['locked']))
+            @if($canUpdate && collect($shown)->every(fn (array $stale): bool => ! $stale['locked']))
                 <div x-data="{ confirming: false }" class="flex flex-wrap items-center gap-3">
                     <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Uppdatera ingående balanser') }}</x-button>
                     <div x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3">

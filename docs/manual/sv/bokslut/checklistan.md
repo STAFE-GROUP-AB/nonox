@@ -48,7 +48,7 @@ Bockarna kan tas bort igen så länge året är öppet. NONOX sparar vem som kry
 
 Två av punkterna som NONOX kontrollerar själv kan du också bekräfta: **Obetalda fakturor vid årets slut är bokförda** och **Valutafordringar och valutaskulder är omvärderade**. Har du bokfört verifikationen själv – till exempel för att Riksbanken saknar kurs för en valuta den sista dagen – kryssar du i **Bokfört för hand** eller **Omvärderingen är bokförd för hand** vid punkten. Då räknas punkten som klar. Kryssa bara i när verifikationen verkligen är bokförd.
 
-Vid **Ingående balanser stämmer med förra året** finns på samma sätt **Skillnaden är avsiktlig**. Årsredovisningslagen kräver att ingående balans stämmer med förra årets utgående balans, men tillåter en avvikelse om det finns särskilda skäl (2 kap. 4 §). Kryssa bara i om skillnaden är ett medvetet beslut, och dokumentera skälet.
+Vid **Ingående balanser stämmer med förra året** finns i stället fältet **Skäl till att skillnaden är avsiktlig** och knappen **Skillnaden är avsiktlig**. Årsredovisningslagen kräver att ingående balans stämmer med förra årets utgående balans, men tillåter en avvikelse om det finns särskilda skäl (2 kap. 4 §). Kryssa bara i om det finns särskilda skäl för skillnaden. Skriv skälet när du kryssar i. I årsredovisningen ska du lämna en upplysning i en not om skälet och om hur skillnaden påverkar företagets ställning och resultat (årsredovisningslagen 5 kap. 5 §). Ändras skillnaden efteråt, till exempel av en ny verifikation i förra året, räknas bekräftelsen inte längre och punkten blir ogjord igen.
 
 ## Så här tar du dig igenom checklistan
 
