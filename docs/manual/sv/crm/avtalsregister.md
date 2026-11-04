@@ -57,6 +57,7 @@ Under **CRM → Avtal** väljer du **Löpande**, **Löper ut snart** (inom 30 ti
 
 - En **Säljare** kan lägga till, ändra och skicka avtal för signering. Avtalsfakturering visas bara för den som ser fakturorna.
 - Ett prospekt med ett signerat avtal raderas inte och gallras inte, eftersom avtalet behövs som bevis.
+- Ett avtal som har upphört raderas inte automatiskt. Radera de avtal som företaget inte längre behöver spara.
 
 ## Läs också
 

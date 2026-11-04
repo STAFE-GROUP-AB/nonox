@@ -6,8 +6,8 @@ Den här policyn beskriver hur {foretag} ({orgnr}) behandlar personuppgifter i t
 
 ## 1. Två roller
 
-- **Personuppgiftsansvarig:** för dig som besöker webbplatsen, ställer dig i kö, har ett konto och loggar in, och för vår egen kundrelation och fakturering är {foretag} personuppgiftsansvarig.
-- **Personuppgiftsbiträde:** för de uppgifter ett företag lägger in i NONOX om sina kunder, leverantörer och anställda är företaget personuppgiftsansvarigt och {foretag} personuppgiftsbiträde. Den behandlingen styrs av vårt [personuppgiftsbiträdesavtal]({pub}). Vill du utöva dina rättigheter för sådana uppgifter, till exempel som anställd hos en av våra kunder, vänder du dig i första hand till det företaget.
+- **Personuppgiftsansvarig:** för dig som besöker webbplatsen, ställer dig i kö, har ett konto och loggar in, för vår egen kundrelation och fakturering och för företagsregistret som vi erbjuder användarna av CRM är {foretag} personuppgiftsansvarig.
+- **Personuppgiftsbiträde:** för de uppgifter om sina kunder, leverantörer, anställda och andra som företaget lägger in i NONOX eller samlar in genom tjänsten, till exempel när någon signerar en offert, fyller i företagets webbformulär eller får ett utskick, är företaget personuppgiftsansvarigt och {foretag} personuppgiftsbiträde. Den behandlingen styrs av vårt [personuppgiftsbiträdesavtal]({pub}). Vill du utöva dina rättigheter för sådana uppgifter, till exempel som anställd hos en av våra kunder, vänder du dig i första hand till det företaget.
 
 ## 2. Vilka uppgifter, varför och med vilken rätt
 
@@ -26,7 +26,7 @@ Den här policyn beskriver hur {foretag} ({orgnr}) behandlar personuppgifter i t
 | Företagsregistret för prospektering: uppgifter om svenska juridiska personer ur Statistiska centralbyråns (SCB) och Bolagsverkets öppna register – organisationsnummer, företagsnamn, bolagsform, postadress och ort, bransch, om företaget är i drift, registrerings- och avregistreringsdatum, konkurs, likvidation och rekonstruktion samt reklamspärr; om vi har SCB:s API även storleksklass för anställda och omsättning, län, kommun, företagets telefonnummer och e-postadress och spärrar mot telefon- och e-postreklam. Ett företagsnamn kan innehålla en delägares namn, och ett företags telefonnummer eller e-postadress kan vara en persons egen. Enskilda firmor, dödsbon och namn på styrelseledamöter eller andra personer läses aldrig in | Låta användarna av tjänstens CRM hitta nya företagskunder och hålla registeruppgifterna om sina kunder aktuella | Berättigat intresse (art. 6.1 f) | Så länge företaget finns i SCB:s register; ett företag som har försvunnit därifrån raderas när det saknats i två fullständiga veckovisa inläsningar i rad. Ändringar för företag som någon användare har i CRM sparas 400 dagar |
 | Kontakt med oss (e-post) | Svara på frågor och ge support | Berättigat intresse | Så länge ärendet pågår, därefter högst två år |
 
-Vi använder inte dina uppgifter för reklam, säljer dem inte och gör inga automatiserade beslut med rättsliga följder för dig.
+Vi använder inte dina uppgifter för vår egen reklam, säljer dem inte och gör inga automatiserade beslut med rättsliga följder för dig. Företagsregistret ovan är till för att användarna av tjänstens CRM ska kunna hitta och kontakta företag.
 
 ## 3. Cookies
 
@@ -36,7 +36,7 @@ Vi använder bara cookies som behövs för att webbplatsen och inloggningen ska 
 
 Vi lämnar bara ut uppgifter till de underbiträden som behövs för att driva tjänsten, och till myndigheter när lag kräver det. Aktuell lista finns på sidan [underbiträden]({underbitraden}). Tjänsten och databasen körs på servrar i Sverige. Några underbiträden, till exempel den som administrerar servern, kan finnas utanför EU/EES; då sker överföringen med stöd av EU–US Data Privacy Framework eller EU-kommissionens standardavtalsklausuler.
 
-Uppgifterna i företagsregistret visas för alla användare av CRM i tjänsten.
+Uppgifterna i företagsregistret visas för alla användare av CRM i tjänsten. När en användare lägger till ett företag därifrån i sitt CRM ansvarar användarens företag sedan självt för de uppgifterna.
 
 När funktionen slås på (den är inte tillgänglig ännu) kan en användare, om företaget tillåter det i CRM, koppla sin egen Google- eller Microsoft-kalender. Då skrivs användarens planerade samtal, möten och uppgifter dit, som standard bara med typ och företag. Google och Microsoft är då företagets eller användarens egen leverantör och kan lagra uppgifterna utanför EU/EES; kopplingens åtkomst sparas krypterad och tas bort när kopplingen tas bort. En kalenderlänk som en användare prenumererar på hämtas av den kalendertjänst användaren väljer.
 

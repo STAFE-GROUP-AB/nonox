@@ -14,11 +14,13 @@ NONOX är ett bokförings-, fakturerings- och lönesystem med öppen källkod (A
 
 Kunden ansvarar för sin bokföring, sina deklarationer och sina beslut i tjänsten, precis som med alla bokföringsprogram. Kunden ansvarar för vilka användare som får tillgång och med vilken roll, och för att uppgifter om kunder, leverantörer och anställda behandlas lagligt.
 
-Skickar kunden utskick eller mejl med mall från CRM ansvarar kunden för att de följer marknadsföringslagen och dataskyddsförordningen: att mottagarna har samtyckt eller att ett undantag gäller, att texten är korrekt och att den som vill slippa utskick tas bort. Utskick får inte användas för skräppost eller för att skicka till köpta eller insamlade adresslistor utan samtycke. Leverantören får pausa ett företags utskick när mottagarna klagar eller adresser studsar över de gränser som e-posttjänsterna tillämpar, eller vid missbruk, och meddelar kunden när det sker.
+Skickar Kunden utskick eller mejl med mall från CRM ansvarar Kunden för att de följer marknadsföringslagen och dataskyddsförordningen: att det finns stöd i lag för att skicka till varje mottagare, till exempel samtycke eller kundundantaget, att innehållet är korrekt och att den som inte vill ha fler utskick tas bort. Utskick får inte användas för skräppost, och inte till köpta eller hyrda adresslistor eller till adresser som samlats in automatiskt, till exempel från webbplatser. Vi får pausa Kundens utskick när mottagarna klagar eller adresser studsar över de gränser som e-posttjänsterna tillämpar, eller vid missbruk, och meddelar Kunden när det sker.
 
 ## 3. Personuppgifter
 
 När Kunden lägger in personuppgifter är Kunden personuppgiftsansvarig och vi personuppgiftsbiträde. [Personuppgiftsbiträdesavtalet]({pub}) är en del av dessa villkor och godkänns när företaget skapas. Hur vi själva behandlar personuppgifter beskrivs i [integritetspolicyn]({integritet}).
+
+Företagsregistret för prospektering i CRM är vårt eget, och för det är vi personuppgiftsansvariga. När Kunden för över uppgifter därifrån till sitt CRM ansvarar Kunden för den behandlingen.
 
 ## 4. Pris och betalning
 
@@ -42,7 +44,7 @@ Avtalet löper ett år i taget och förlängs automatiskt. Det kan sägas upp n�
 
 ## 9. Ändringar och tvist
 
-Vi kan ändra villkoren med 60 dagars varsel. Svensk lag gäller. Tvist avgörs av svensk allmän domstol.
+Vi kan ändra villkoren med 60 dagars varsel. Varsel lämnas med e-post till Kundens ägare och på {webbplats}. Fram till dess gäller den tidigare versionen för befintliga kunder. Svensk lag gäller. Tvist avgörs av svensk allmän domstol.
 
 Kontakt: {foretag}, {adress}, {epost}.
 
