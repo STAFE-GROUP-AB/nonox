@@ -481,6 +481,9 @@ year").
   transaktion och skrivs som `fiscal_year.removed` (årets id, det första årets
   id, datumen och `reason: first_year_changed`, med användaren som ändrade).
   Därefter skapas nästa vanliga år igen enligt reglerna ovan, om det är dags.
+  Det år som skapas igen skrivs i behandlingshistoriken med `trigger: schedule`
+  utan användare, eftersom samma regel som morgonkörningen avgör det; ändringen
+  som orsakade det står i posten `fiscal_year.removed` direkt före.
   Ett år som en person har skapat, eller som något finns i, tas aldrig bort,
   och då kan det första året inte ändras. Samma regel gör att rådet vid
   SIE-inläsning, att ändra datumen under Räkenskapsår så att de stämmer med

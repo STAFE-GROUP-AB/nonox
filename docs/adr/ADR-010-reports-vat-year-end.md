@@ -521,7 +521,7 @@ räkenskapsår som omfattar …") until someone created it.
   is shown under the same rule. This keeps the SIE review's advice ("Ändra
   datumen under Räkenskapsår") workable.
 
-**Concurrency.** Every creation or removal of a fiscal year (manual,
+**Concurrency.** SIE import into an existing year locks that year after the advisory lock, while closing and changing the first year lock the year before it; a simultaneous SIE import and closing of the same year can therefore deadlock, which PostgreSQL breaks by rolling one transaction back (it can be run again; nothing is changed silently). Every creation or removal of a fiscal year (manual,
 scheduled, booking, `CarryForwardBalances`, `ChangeFirstFiscalYear`, and SIE
 import before its company lock and analyser re-check) takes
 `pg_advisory_xact_lock(4202, company_id)` and
