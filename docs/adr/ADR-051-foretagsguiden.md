@@ -173,20 +173,25 @@ about what has been checked and by whom.
 2. **The rules are `docs/foretagsguiden/datum/REGLER.md`**, written and
    checked against the law and the authorities by the content side, and
    implemented exactly, with its §11 test vectors as tests:
-   - VAT keeps `VatDeadlines` (the spec verified it); only yearly VAT for a
-     legal person whose year end the law does not name is flagged.
+   - VAT keeps `VatDeadlines` (the spec verified it); a year ending on a
+     day the law does not name counts as ending on the next named one (SFL
+     3 kap. 5 §), so nothing is flagged.
    - Periodisk sammanställning only for periods with invoiced EU sales.
    - The employer declaration is computed from the law (SFL 26 kap. 26,
      30, 32 §§, 62 kap. 3 §), not from Skatteverket's yearly list, so it
      works for years the payroll rules do not cover yet and without the
      payroll module; a large employer gets the payment day and the
-     declaration day as two dates.
+     declaration day as two dates. The payroll module's `AgiDeadlines` uses
+     the same rule (`AgiDates`), with Skatteverket's list as a cross-check,
+     so its AGI page has a date for every year and shows the payment day.
    - Preliminary tax monthly from the second month of the beskattningsår,
      flagged, because NONOX cannot know the decision; a top-up payment as a
      recommendation.
-   - Income tax return, årsstämma, the seven-month limit for the annual
-     report (unmoved and flagged, §0.1–0.2) and "Gör bokslutet" as a
-     recommendation.
+   - Income tax return (a handelsbolag's särskilda uppgifter on the same
+     dates), årsstämma counted to the same day number (lag (1930:173) 1 §),
+     the seven-month limit for the annual report (unmoved and flagged:
+     whether Bolagsverket moves it past a weekend is open, §0.1) and "Gör
+     bokslutet" as a recommendation.
    - Every date that the law lets move moves to the next working day,
      counting midsommarafton, julafton and nyårsafton (`Workdays`).
    No rule has a yearly parameter (REGLER.md §12), so there is no rules
