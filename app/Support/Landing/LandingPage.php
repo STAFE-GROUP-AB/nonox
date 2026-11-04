@@ -53,6 +53,7 @@ final class LandingPage
         ['label' => 'Öppet API', 'keys' => ['public_api']],
         ['label' => 'Krypterad chatt med support, revisor och kund', 'keys' => ['secure_chat']],
         ['label' => 'Flytt med SIE4, eller direkt från Fortnox', 'keys' => ['sie', 'fortnox_import']],
+        ['label' => 'Företagsguiden med personlig startplan', 'keys' => ['business_guide']],
     ];
 
     /** @return array<string, mixed> */
@@ -210,6 +211,7 @@ final class LandingPage
             ['t' => 'ROT, RUT och byggmoms', 'img' => 'fakturering/rot-och-rut', 'man' => 'fakturering/rot-och-rut', 'key' => 'rot_rut', 'b' => 'Avdrag direkt på fakturan och omvänd betalningsskyldighet för byggtjänster.', 'd' => 'M3 11l9-7 9 7M5 10v10h14V10M10 20v-5h4v5'],
             ['t' => 'AI', 'img' => 'leverantorer/registrera-en-leverantorsfaktura', 'man' => 'leverantorer/fota-och-las-fakturan', 'key' => 'ai', 'mod' => true, 'b' => 'Fota kvittot eller fakturan med mobilen: AI läser det direkt och föreslår kontering, med företagets egen AI-nyckel.', 'd' => 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8zM19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z'],
             ['t' => 'Flera bolag', 'img' => 'byra/mina-foretag', 'man' => 'byra/mina-foretag', 'key' => 'multi_company', 'b' => 'Alla bolag under en inloggning, för byråer, koncerner och dig som driver flera företag. En byrå kan visa sin logga och sina färger för sina kunder.', 'd' => 'M3 21V9l6-3v15M9 21V3h8v18M17 11h4v10M3 21h18'],
+            ['t' => 'Företagsguiden', 'img' => 'kom-igang/foretagsguiden', 'man' => 'kom-igang/foretagsguiden', 'key' => 'business_guide', 'new' => true, 'b' => 'Hur du startar och driver företaget, med moms, skatt och ansvar förklarat på vanlig svenska och källor från Skatteverket och Bolagsverket. Välj företagsform och bransch så visas stegen, och i NONOX bockar du av din egen startplan.', 'd' => 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2'],
             ['t' => 'Översikt och sök', 'img' => 'kom-igang/sok', 'man' => 'kom-igang/sok', 'key' => 'search', 'b' => 'Det som brådskar först, statistik med prognos och en sökning med ⌘K som hittar allt på ett ögonblick.', 'd' => 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4'],
             ['t' => 'Byrå och kund', 'img' => 'byra/uppgifter-mellan-byra-och-kund', 'man' => 'byra/uppgifter-mellan-byra-och-kund', 'key' => 'tasks', 'b' => 'Uppgifter som delegeras mellan byrån och kunden, månadsstängning per klient och alla klienter på en sida.', 'd' => 'M9 11l3 3 8-8M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9'],
             ['t' => 'Arkiv och export', 'img' => 'bokslut/arkivpaket', 'man' => 'bokslut/arkivpaket', 'key' => 'archive', 'b' => 'Arkivpaket per räkenskapsår med allt som Bokföringslagen kräver. Inget är inlåst.', 'd' => 'M4 7h16v13H4zM2 4h20v3H2zM10 11h4'],
