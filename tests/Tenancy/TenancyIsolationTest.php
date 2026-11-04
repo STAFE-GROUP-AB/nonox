@@ -80,6 +80,7 @@ use App\Modules\Connect\Models\IdempotencyRecord;
 use App\Modules\Crm\Models\Account as CrmAccount;
 use App\Modules\Crm\Models\AccountPerson as CrmAccountPerson;
 use App\Modules\Crm\Models\Activity as CrmActivity;
+use App\Modules\Crm\Models\Agreement as CrmAgreement;
 use App\Modules\Crm\Models\CalendarConnection as CrmCalendarConnection;
 use App\Modules\Crm\Models\CalendarEvent as CrmCalendarEvent;
 use App\Modules\Crm\Models\CalendarFeed as CrmCalendarFeed;
@@ -92,7 +93,11 @@ use App\Modules\Crm\Models\LossReason as CrmLossReason;
 use App\Modules\Crm\Models\Person as CrmPerson;
 use App\Modules\Crm\Models\Pipeline as CrmPipeline;
 use App\Modules\Crm\Models\PipelineStage as CrmPipelineStage;
+use App\Modules\Crm\Models\QuoteTemplate as CrmQuoteTemplate;
+use App\Modules\Crm\Models\QuoteTemplateRow as CrmQuoteTemplateRow;
 use App\Modules\Crm\Models\RegistryNotice as CrmRegistryNotice;
+use App\Modules\Crm\Models\SigningEvent as CrmSigningEvent;
+use App\Modules\Crm\Models\SigningRequest as CrmSigningRequest;
 use App\Modules\Crm\Models\Suppression as CrmSuppression;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
@@ -320,6 +325,11 @@ const COMPANY_SCOPED_MODELS = [
     CrmCalendarFeed::class => 'crmCalendarFeedAttributes',
     CrmCalendarConnection::class => 'crmCalendarConnectionAttributes',
     CrmCalendarEvent::class => 'crmCalendarEventAttributes',
+    CrmAgreement::class => 'crmAgreementAttributes',
+    CrmQuoteTemplate::class => ['name' => 'Hemlig mall', 'validity_days' => 30],
+    CrmQuoteTemplateRow::class => 'crmQuoteTemplateRowAttributes',
+    CrmSigningRequest::class => 'crmSigningRequestAttributes',
+    CrmSigningEvent::class => 'crmSigningEventAttributes',
     PosConnection::class => 'posConnectionAttributes',
     PosProductLink::class => 'posProductLinkAttributes',
     PosSale::class => 'posSaleAttributes',
@@ -1254,6 +1264,26 @@ function crmRegistryNoticeAttributes(): array
     return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'registry_change_id' => 1];
 }
 
+function crmAgreementAttributes(): array
+{
+    return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'title' => 'Hemligt avtal', 'kind' => 'SERVICE', 'start_date' => '2026-01-01', 'value_period' => 'MONTH'];
+}
+
+function crmQuoteTemplateRowAttributes(): array
+{
+    return ['template_id' => CrmQuoteTemplate::create(['name' => 'Hemlig mall', 'validity_days' => 30])->id, 'description' => 'Hemlig rad', 'quantity' => '1'];
+}
+
+function crmSigningRequestAttributes(): array
+{
+    return ['document_type' => 'AGREEMENT', 'agreement_id' => CrmAgreement::create(crmAgreementAttributes())->id, 'token_hash' => hash('sha256', (string) random_int(0, PHP_INT_MAX)), 'email' => 'hemlig@exempel.se', 'expires_at' => now()->addDays(30), 'document_path' => 'crm-signing/hemlig.pdf', 'document_name' => 'Hemlig.pdf', 'document_sha256' => str_repeat('0', 64)];
+}
+
+function crmSigningEventAttributes(): array
+{
+    return ['signing_request_id' => CrmSigningRequest::create(crmSigningRequestAttributes())->id, 'event' => 'SENT'];
+}
+
 function crmGoalAttributes(): array
 {
     return ['user_id' => User::factory()->create()->id, 'month' => '2026-06-01', 'metric' => 'MEETINGS', 'target' => 8];
@@ -1351,7 +1381,7 @@ function attributesFor(string $model): array
 }
 
 /** Models whose rows may never be updated; the bulk test only deletes them. */
-const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class];
+const NEVER_UPDATED = [VoucherAttachment::class, PosLogEntry::class, CrmDealStageChange::class, CrmSigningEvent::class];
 
 /** Models that can only be added to: the database refuses bulk changes too. */
 const APPEND_ONLY = [VatNumberCheck::class, AccrualPosting::class, YearEndEntry::class, BankReconciliation::class, FixedAssetDepreciation::class, ImportedVoucher::class, VoucherRowHistory::class, VatReport::class, InvoicePayment::class, InvoiceReminder::class, SupplierPayment::class, SupplierPaymentBatch::class, SupplierPaymentBatchItem::class, BankFileImport::class, BankTransaction::class, PaymentResponseImport::class, PaymentResponse::class, BankFeedTransaction::class, PayrollRuleVerification::class, VacationLiabilitySnapshot::class, VacationYearClosing::class, PayrollYearClosing::class, StaffLedgerEntry::class, AgreementRuleVerification::class, StockMovement::class, StockValuation::class];

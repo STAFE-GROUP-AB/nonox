@@ -35,6 +35,9 @@ use App\Modules\ModuleManager;
  * - calendar_private_accounts (1/0, ADR-049): private Google or Microsoft
  *   accounts may be connected too. Off: only organisation accounts
  *   (Google Workspace, Microsoft Entra work or school accounts).
+ * - agreement_reminder_days: an agreement gets a CRM task this many days
+ *   before its notice deadline (or its end without a notice period), once
+ *   per period (ADR-046).
  */
 final class CrmSettings
 {
@@ -49,6 +52,7 @@ final class CrmSettings
         'calendar_details' => 1,
         'calendar_sync' => 0,
         'calendar_private_accounts' => 0,
+        'agreement_reminder_days' => 60,
     ];
 
     /** @var array<string, array{int, int}> key => [min, max] */
@@ -62,6 +66,7 @@ final class CrmSettings
         'calendar_details' => [0, 1],
         'calendar_sync' => [0, 1],
         'calendar_private_accounts' => [0, 1],
+        'agreement_reminder_days' => [7, 365],
     ];
 
     /** The settings that are a yes or a no. */

@@ -43,7 +43,7 @@
 
   <section aria-labelledby="ref-webhooks" style="margin-top:48px">
     <h2 class="dv-h2" id="ref-webhooks">Webhooks</h2>
-    <p style="color:var(--muted);max-width:760px">{{ $lang === 'en' ? 'voucher.posted, invoice.sent, invoice.paid, supplier_invoice.approved, planning.published, planning.attested, sie.uploaded and stock.changed are sent to your https address after the change is saved, signed with HMAC-SHA256. The webhook guide shows how to verify the signature in PHP, JavaScript and Python.' : 'voucher.posted, invoice.sent, invoice.paid, supplier_invoice.approved, planning.published, planning.attested, sie.uploaded och stock.changed skickas till din https-adress när ändringen är sparad, signerade med HMAC-SHA256. Guiden om webhooks visar hur signaturen kontrolleras i PHP, JavaScript och Python.' }}</p>
+    <p style="color:var(--muted);max-width:760px">{{ $lang === 'en' ? 'voucher.posted, invoice.sent, invoice.paid, supplier_invoice.approved, planning.published, planning.attested, sie.uploaded, stock.changed and quote.signed are sent to your https address after the change is saved, signed with HMAC-SHA256. The webhook guide shows how to verify the signature in PHP, JavaScript and Python.' : 'voucher.posted, invoice.sent, invoice.paid, supplier_invoice.approved, planning.published, planning.attested, sie.uploaded, stock.changed och quote.signed skickas till din https-adress när ändringen är sparad, signerade med HMAC-SHA256. Guiden om webhooks visar hur signaturen kontrolleras i PHP, JavaScript och Python.' }}</p>
     <p><a class="dv-btn dv-btn-ghost" href="{{ Dev::url('developers.guide', ['guide' => 'webhooks'], $lang) }}">{{ App\Support\Developer\Guides::title('webhooks', $lang) }}</a></p>
   </section>
 </div>

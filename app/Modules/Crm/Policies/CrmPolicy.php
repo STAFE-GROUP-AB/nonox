@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\CallList;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Goal;
@@ -26,6 +27,9 @@ use App\Modules\Crm\Models\PipelineStage;
  * with crm:manage. Every seller sees every deal of the company: the simple
  * model, so a colleague can pick up a deal. Pipelines, stages, loss reasons
  * and goals are crm:settings.
+ *
+ * Stage 3 (ADR-046): agreements are seen with crm:view and written with
+ * crm:manage, like deals.
  */
 class CrmPolicy
 {
@@ -34,7 +38,7 @@ class CrmPolicy
         return $user->hasTeamPermission($company, 'crm:view');
     }
 
-    public function view(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal|CallList $record): bool
+    public function view(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal|CallList|Agreement $record): bool
     {
         $company = Company::query()->find($record->company_id);
 
@@ -46,7 +50,7 @@ class CrmPolicy
         return $user->hasTeamPermission($company, 'crm:manage');
     }
 
-    public function update(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal|CallList $record): bool
+    public function update(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal|CallList|Agreement $record): bool
     {
         $company = Company::query()->find($record->company_id);
 

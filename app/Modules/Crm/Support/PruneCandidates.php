@@ -56,6 +56,10 @@ final class PruneCandidates
                 ->from('crm_deals')
                 ->whereColumn('crm_deals.account_id', 'crm_accounts.id')
                 ->where('crm_deals.status', DealStatus::Open->value)
-                ->where('crm_deals.updated_at', '>=', $cutoff));
+                ->where('crm_deals.updated_at', '>=', $cutoff))
+            // An account with an agreement is kept: the agreement may still run or be needed as evidence (ADR-046).
+            ->whereNotExists(fn ($query) => $query->select(DB::raw(1))
+                ->from('crm_agreements')
+                ->whereColumn('crm_agreements.account_id', 'crm_accounts.id'));
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Connect\Http\Controllers\Api\V1\ArticleController;
 use App\Modules\Connect\Http\Controllers\Api\V1\CrmController;
 use App\Modules\Connect\Http\Controllers\Api\V1\CrmDealController;
+use App\Modules\Connect\Http\Controllers\Api\V1\CrmSigningController;
 use App\Modules\Connect\Http\Controllers\Api\V1\CustomerController;
 use App\Modules\Connect\Http\Controllers\Api\V1\DimensionController;
 use App\Modules\Connect\Http\Controllers\Api\V1\FiscalYearController;
@@ -176,4 +177,18 @@ Route::middleware('connect.scope:crm:manage')->group(function () use ($idempoten
     Route::patch('/crm/activities/{activity}', [CrmController::class, 'updateActivity'])->whereNumber('activity')->name('crm.activities.update');
     Route::post('/crm/deals', [CrmDealController::class, 'storeDeal'])->middleware($idempotent)->name('crm.deals.store');
     Route::patch('/crm/deals/{deal}', [CrmDealController::class, 'updateDeal'])->whereNumber('deal')->name('crm.deals.update');
+});
+
+// CRM stage 3 (ADR-046): signing and the agreement register. Sending a quote for signing needs what the quote screen needs.
+Route::get('/quotes/{quote}/signing', [CrmSigningController::class, 'quoteSignings'])->whereUuid('quote')->middleware('connect.scope:invoices:view')->name('quotes.signing.index');
+Route::post('/quotes/{quote}/signing', [CrmSigningController::class, 'sendQuote'])->whereUuid('quote')->middleware(['connect.scope:invoices:create+invoices:send', $idempotent])->name('quotes.signing.store');
+Route::middleware('connect.scope:crm:view')->group(function (): void {
+    Route::get('/crm/agreements', [CrmSigningController::class, 'agreements'])->name('crm.agreements.index');
+    Route::get('/crm/agreements/{agreement}', [CrmSigningController::class, 'agreement'])->whereNumber('agreement')->name('crm.agreements.show');
+    Route::get('/crm/agreements/{agreement}/signing', [CrmSigningController::class, 'agreementSignings'])->whereNumber('agreement')->name('crm.agreements.signing.index');
+});
+Route::middleware('connect.scope:crm:manage')->group(function () use ($idempotent): void {
+    Route::post('/crm/agreements', [CrmSigningController::class, 'storeAgreement'])->middleware($idempotent)->name('crm.agreements.store');
+    Route::patch('/crm/agreements/{agreement}', [CrmSigningController::class, 'updateAgreement'])->whereNumber('agreement')->name('crm.agreements.update');
+    Route::post('/crm/agreements/{agreement}/signing', [CrmSigningController::class, 'sendAgreement'])->whereNumber('agreement')->middleware($idempotent)->name('crm.agreements.signing.store');
 });

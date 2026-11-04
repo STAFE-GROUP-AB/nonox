@@ -47,3 +47,5 @@ if (config('services.company_register.import')) {
 Schedule::command('crm:registry-watch')->dailyAt('06:10')->withoutOverlapping();
 // CRM stage 6 (ADR-049): connected Google and Microsoft calendars; does nothing until a provider is configured.
 Schedule::command('crm:calendar-sync')->everyFifteenMinutes()->withoutOverlapping();
+// CRM stage 3 (ADR-046): renew agreements, remind before notice deadlines, prune unsigned signing links.
+Schedule::command('crm:agreements')->dailyAt('05:50')->withoutOverlapping();

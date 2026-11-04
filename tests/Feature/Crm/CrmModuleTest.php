@@ -158,7 +158,7 @@ it('saves the settings within their limits, for those with crm:settings', functi
         ->assertHasNoErrors()
         ->assertDispatched('toast');
 
-    expect(CrmSettings::for($this->company))->toBe(['months_to_inactive' => 6, 'prune_after_months' => 36, 'suppression_review_years' => 3, 'win_back_months' => 6, 'registry_monitoring' => 1, 'registry_monitoring_prospects' => 0, 'calendar_details' => 1, 'calendar_sync' => 0, 'calendar_private_accounts' => 0]);
+    expect(CrmSettings::for($this->company))->toBe(['months_to_inactive' => 6, 'prune_after_months' => 36, 'suppression_review_years' => 3, 'win_back_months' => 6, 'registry_monitoring' => 1, 'registry_monitoring_prospects' => 0, 'calendar_details' => 1, 'calendar_sync' => 0, 'calendar_private_accounts' => 0, 'agreement_reminder_days' => 60]);
 
     Livewire::test(CrmSettingsForm::class, ['company' => $this->company])
         ->set('settings.months_to_inactive', 0)

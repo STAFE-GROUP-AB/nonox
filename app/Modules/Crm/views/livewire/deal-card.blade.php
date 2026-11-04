@@ -92,6 +92,10 @@
         @endif
     </x-ui.card>
 
+    @if($templateCustomerId)
+        <livewire:crm.quote-from-template :customer-id="$templateCustomerId" :boxed="true" :key="'qft-deal-'.$deal->id" />
+    @endif
+
     {{-- The stages: one tap moves the deal. --}}
     @if($isOpen)
         <nav aria-label="{{ __('Steg i säljtratten') }}">

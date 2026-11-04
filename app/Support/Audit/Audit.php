@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -19,6 +20,38 @@ final class Audit
 {
     /** @var array<string, mixed> added to every entry written inside withContext() */
     private static array $context = [];
+
+    /** True inside withoutRequest(): entries keep no IP address or user agent. */
+    private static bool $withoutRequest = false;
+
+    /**
+     * Writes the entries of the callback without the request's IP address
+     * and user agent: for pages used by outsiders, such as the public
+     * signing page (ADR-046), where the visitor's address is not the
+     * company's to keep in its seven-year log.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    public static function withoutRequest(callable $callback): mixed
+    {
+        $before = self::$withoutRequest;
+        self::$withoutRequest = true;
+
+        try {
+            return $callback();
+        } finally {
+            self::$withoutRequest = $before;
+        }
+    }
+
+    /** The request whose IP address and user agent an entry keeps, or null. */
+    private static function request(): ?Request
+    {
+        return self::$withoutRequest || app()->runningInConsole() ? null : request();
+    }
 
     /**
      * Adds fields to every entry the callback writes, for example
@@ -53,7 +86,7 @@ final class Audit
         Company|int|null $company = null,
         ?User $user = null,
     ): AuditLog {
-        $request = app()->runningInConsole() ? null : request();
+        $request = self::request();
         $companyId = $company instanceof Company ? $company->id : ($company ?? CurrentCompany::id());
 
         return AuditLog::create([
@@ -77,7 +110,7 @@ final class Audit
      */
     public static function instance(string $action, ?Model $subject = null, array $payload = [], ?User $user = null): AuditLog
     {
-        $request = app()->runningInConsole() ? null : request();
+        $request = self::request();
 
         return AuditLog::create([
             'company_id' => null,

@@ -207,3 +207,9 @@ crm/ringlista-mobil: { foretag: konsult, rutt: crm.call-lists.show, modell: { ta
 crm/kalender: { foretag: konsult, rutt: crm.calendar, klick: ['text=Skapa kalenderlänk'] }
 crm/lagg-till-i-kalendern: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } }, fraga: { flik: moten }, del: '[data-testid="crm-entry"]' }
 crm/planera-mote-med-inbjudan: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } }, klick: ['text=Planera möte'], visa: '#activity_type' }
+crm/signering: { foretag: konsult, rutt: invoicing.quotes.show, modell: signed_quote, del: '[data-testid=crm-signing-panel]' }
+crm/signera-offert: { foretag: konsult, rutt: crm.signing.show, modell: signing_link, anvandare: gast, visa: '#signera' }
+crm/signera-offert-mobil: { foretag: konsult, rutt: crm.signing.show, modell: signing_link, anvandare: gast, enhet: mobil }
+crm/offertmallar: { foretag: konsult, rutt: crm.quoteTemplates, klick: ['text=Ändra'] }
+crm/avtal: { foretag: konsult, rutt: crm.agreements, fraga: { visa: alla } }
+crm/avtalets-kort: { foretag: konsult, rutt: crm.agreements.show, modell: { tabell: crm_agreements, dar: { title: 'Supportavtal 2026' } } }

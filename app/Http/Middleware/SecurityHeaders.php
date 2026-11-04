@@ -25,7 +25,10 @@ class SecurityHeaders
 
         $headers->set('X-Content-Type-Options', 'nosniff');
         // Framing is limited by frame-ancestors in the CSP; X-Frame-Options (SAMEORIGIN) is left to the web server.
-        $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        // A page that must not leak its address (the public signing page, ADR-046) sets its own, stricter policy.
+        if (! $headers->has('Referrer-Policy')) {
+            $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        }
         // A page that needs a device feature (the staff ledger kiosk's camera, mobile check-in's location) sets its own, narrower policy.
         if (! $headers->has('Permissions-Policy')) {
             $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()');

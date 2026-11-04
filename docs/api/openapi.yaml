@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.6.0
+  version: 1.7.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -8327,6 +8327,793 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         429:
           $ref: '#/components/responses/TooManyRequests'
+  '/quotes/{quote}/signing':
+    parameters:
+      - name: quote
+        in: path
+        required: true
+        description: 'Quote id (uuid).'
+        schema:
+          type: string
+          format: uuid
+    get:
+      operationId: listQuoteSignings
+      tags:
+        - CRM
+      summary: 'List the signing links of a quote'
+      description: 'Every link sent for signing the quote, newest first, with its status (PENDING, SIGNED, DECLINED, REVOKED or EXPIRED), the SHA-256 of the exact PDF that was shown, who signed, when and how, the order (and invoice draft) it became, and the trail of events. The link itself, the signers IP address, browser and drawn signature are never returned; the signing certificate holds them. Needs invoices:view and the CRM module.'
+      x-sv-summary: 'Lista signeringslänkar för en offert'
+      x-sv-description: 'Varje länk som har skickats för att signera offerten, med status, dokumentets SHA-256, vem som signerade och när, och ordern den blev.'
+      security:
+        - oauth2:
+            - 'invoices:view'
+        - apiKey:
+            - 'invoices:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'invoices:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmSigningRequest'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 31
+                        document_type: 'QUOTE'
+                        quote_id: '9b2f7c1e-3a4d-4e5f-8a6b-7c8d9e0f1a2b'
+                        agreement_id: null
+                        deal_id: 57
+                        status: 'SIGNED'
+                        email: 'anna@kund.example'
+                        expires_at: '2026-12-15T23:59:59+01:00'
+                        document_name: 'Offert-1042.pdf'
+                        document_sha256: '3f0a6c1e9b2d4f5a7c8e0b1d2f3a4c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c'
+                        create_invoice: false
+                        opened_at: '2026-11-20T08:12:00+01:00'
+                        signed_at: '2026-11-20T08:15:42+01:00'
+                        signer_name: 'Anna Andersson'
+                        signer_title: 'Inköpschef'
+                        signature_method: 'DRAWN'
+                        signed_document_sha256: '8c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d'
+                        declined_at: null
+                        decline_reason: null
+                        revoked_at: null
+                        order_id: '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
+                        invoice_id: null
+                        sent_by: 3
+                        events:
+                          - event: 'SENT'
+                            at: '2026-11-19T16:00:00+01:00'
+                          - event: 'OPENED'
+                            at: '2026-11-20T08:12:00+01:00'
+                          - event: 'SIGNED'
+                            at: '2026-11-20T08:15:42+01:00'
+                        created_at: '2026-11-19T16:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: sendQuoteForSigning
+      tags:
+        - CRM
+      summary: 'Send a quote for signing'
+      description: 'E-mails a personal, single-use link to sign the open quote with a signature pad (a simple electronic signature). The PDF is rendered once and its SHA-256 kept, so the signature binds to those bytes; an earlier open link for the quote is revoked. The link expires at the end of expires_on, else the quotes last valid day, else after 30 days, and never later than 90 days. When signed, the quote becomes an order (and a draft invoice with create_invoice), and the open deal deal_id of the customers account is won. A quote changed after it was sent cannot be signed. The link is not returned: it goes only to email. Needs invoices:create and invoices:send and the CRM module.'
+      x-sv-summary: 'Skicka offert för signering'
+      x-sv-description: 'Mejlar en personlig länk för att signera offerten med namnteckning. När den är signerad blir offerten en order och affären vinns.'
+      security:
+        - oauth2:
+            - 'invoices:create'
+            - 'invoices:send'
+        - apiKey:
+            - 'invoices:create'
+            - 'invoices:send'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'invoices:create'
+            - 'invoices:send'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmSigningInput'
+            examples:
+              example:
+                value:
+                  email: 'anna@kund.example'
+                  expires_on: '2026-12-15'
+                  deal_id: 57
+                  create_invoice: false
+      responses:
+        201:
+          description: 'The signing link (without the link itself).'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmSigningRequest'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 31
+                      document_type: 'QUOTE'
+                      quote_id: '9b2f7c1e-3a4d-4e5f-8a6b-7c8d9e0f1a2b'
+                      agreement_id: null
+                      deal_id: 57
+                      status: 'PENDING'
+                      email: 'anna@kund.example'
+                      expires_at: '2026-12-15T23:59:59+01:00'
+                      document_name: 'Offert-1042.pdf'
+                      document_sha256: '3f0a6c1e9b2d4f5a7c8e0b1d2f3a4c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c'
+                      create_invoice: false
+                      opened_at: '2026-11-20T08:12:00+01:00'
+                      signed_at: '2026-11-20T08:15:42+01:00'
+                      signer_name: 'Anna Andersson'
+                      signer_title: 'Inköpschef'
+                      signature_method: 'DRAWN'
+                      signed_document_sha256: '8c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d'
+                      declined_at: null
+                      decline_reason: null
+                      revoked_at: null
+                      order_id: '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
+                      invoice_id: null
+                      sent_by: 3
+                      events:
+                        - event: 'SENT'
+                          at: '2026-11-19T16:00:00+01:00'
+                        - event: 'OPENED'
+                          at: '2026-11-20T08:12:00+01:00'
+                        - event: 'SIGNED'
+                          at: '2026-11-20T08:15:42+01:00'
+                      created_at: '2026-11-19T16:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  /crm/agreements:
+    get:
+      operationId: listCrmAgreements
+      tags:
+        - CRM
+      summary: 'List agreements'
+      description: 'The agreement register: agreements with an account, their period, notice period, notice deadline (the end date less the notice period), renewal and value in öre excluding VAT. status is ACTIVE, UPCOMING, TERMINATED or ENDED. Filter on account_id, or ending_within_days for agreements whose current period ends within that many days. recurring_invoice_id is null without invoices:view. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Lista avtal'
+      x-sv-description: 'Avtalsregistret: avtal med period, uppsägningstid, sista dag att säga upp, förlängning och värde.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+        - name: account_id
+          in: query
+          required: false
+          description: 'The agreements of one account.'
+          schema:
+            type: integer
+        - name: ending_within_days
+          in: query
+          required: false
+          description: 'Agreements whose current period ends within this many days from today.'
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmAgreement'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 12
+                        account_id: 41
+                        title: 'Serviceavtal 2027'
+                        kind: 'SUPPORT'
+                        start_date: '2026-09-01'
+                        end_date: '2027-08-31'
+                        notice_months: 3
+                        notice_deadline: '2027-05-31'
+                        auto_renew: true
+                        renewal_months: 12
+                        terminated_on: null
+                        status: 'ACTIVE'
+                        value_ore: 250000
+                        value_period: 'MONTH'
+                        recurring_invoice_id: null
+                        owner_id: 3
+                        body_text: null
+                        notes: null
+                        document_sha256: null
+                        signed_at: null
+                        created_at: '2026-11-02T09:00:00+01:00'
+                        updated_at: '2026-11-02T09:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: createCrmAgreement
+      tags:
+        - CRM
+      summary: 'Create an agreement'
+      description: 'Adds an agreement to the register. auto_renew needs end_date and renewal_months. owner_id must be a member; recurring_invoice_id must be one of the accounts customers recurring invoices (ignored without invoices:view). A daily run renews it when its period ends and makes a CRM task for its owner before the notice deadline. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Skapa avtal'
+      x-sv-description: 'Lägger till ett avtal i avtalsregistret. NONOX påminner ansvarig innan det är dags att säga upp.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmAgreementInput'
+            examples:
+              example:
+                value:
+                  account_id: 41
+                  title: 'Serviceavtal 2027'
+                  kind: 'SUPPORT'
+                  start_date: '2026-09-01'
+                  end_date: '2027-08-31'
+                  notice_months: 3
+                  auto_renew: true
+                  renewal_months: 12
+                  value_ore: 250000
+                  value_period: 'MONTH'
+      responses:
+        201:
+          description: 'The agreement.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 12
+                      account_id: 41
+                      title: 'Serviceavtal 2027'
+                      kind: 'SUPPORT'
+                      start_date: '2026-09-01'
+                      end_date: '2027-08-31'
+                      notice_months: 3
+                      notice_deadline: '2027-05-31'
+                      auto_renew: true
+                      renewal_months: 12
+                      terminated_on: null
+                      status: 'ACTIVE'
+                      value_ore: 250000
+                      value_period: 'MONTH'
+                      recurring_invoice_id: null
+                      owner_id: 3
+                      body_text: null
+                      notes: null
+                      document_sha256: null
+                      signed_at: null
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/crm/agreements/{agreement}':
+    parameters:
+      - name: agreement
+        in: path
+        required: true
+        description: 'Agreement id.'
+        schema:
+          type: integer
+        example: 12
+    get:
+      operationId: getCrmAgreement
+      tags:
+        - CRM
+      summary: 'Get an agreement'
+      description: 'One agreement by id. Needs crm:view, which no one has while the CRM module is off.'
+      x-sv-summary: 'Hämta avtal'
+      x-sv-description: 'Ett avtal, utifrån id.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      responses:
+        200:
+          description: 'The agreement.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 12
+                      account_id: 41
+                      title: 'Serviceavtal 2027'
+                      kind: 'SUPPORT'
+                      start_date: '2026-09-01'
+                      end_date: '2027-08-31'
+                      notice_months: 3
+                      notice_deadline: '2027-05-31'
+                      auto_renew: true
+                      renewal_months: 12
+                      terminated_on: null
+                      status: 'ACTIVE'
+                      value_ore: 250000
+                      value_period: 'MONTH'
+                      recurring_invoice_id: null
+                      owner_id: 3
+                      body_text: null
+                      notes: null
+                      document_sha256: null
+                      signed_at: null
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    patch:
+      operationId: updateCrmAgreement
+      tags:
+        - CRM
+      summary: 'Change or terminate an agreement'
+      description: 'Changes the given fields; the rest are kept. terminated_on (a date) terminates the agreement: it ends with its current period and does not renew; null withdraws the termination. A signed agreements terms (dates, notice, renewal, value, text) cannot change (422); owner, notes, the recurring invoice and termination can. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Ändra eller säg upp avtal'
+      x-sv-description: 'Ändrar de fält som skickas. terminated_on säger upp avtalet; null tar tillbaka uppsägningen.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmAgreementPatch'
+            examples:
+              example:
+                value:
+                  terminated_on: '2027-02-15'
+      responses:
+        200:
+          description: 'The agreement.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmAgreement'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 12
+                      account_id: 41
+                      title: 'Serviceavtal 2027'
+                      kind: 'SUPPORT'
+                      start_date: '2026-09-01'
+                      end_date: '2027-08-31'
+                      notice_months: 3
+                      notice_deadline: '2027-05-31'
+                      auto_renew: true
+                      renewal_months: 12
+                      terminated_on: '2027-02-15'
+                      status: 'TERMINATED'
+                      value_ore: 250000
+                      value_period: 'MONTH'
+                      recurring_invoice_id: null
+                      owner_id: 3
+                      body_text: null
+                      notes: null
+                      document_sha256: null
+                      signed_at: null
+                      created_at: '2026-11-02T09:00:00+01:00'
+                      updated_at: '2026-11-02T09:00:00+01:00'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+  '/crm/agreements/{agreement}/signing':
+    parameters:
+      - name: agreement
+        in: path
+        required: true
+        description: 'Agreement id.'
+        schema:
+          type: integer
+        example: 12
+    get:
+      operationId: listCrmAgreementSignings
+      tags:
+        - CRM
+      summary: 'List the signing links of an agreement'
+      description: 'As for quotes: every link sent for signing the agreement, with status, document hash, signer and events. Needs crm:view.'
+      x-sv-summary: 'Lista signeringslänkar för ett avtal'
+      x-sv-description: 'Varje länk som har skickats för att signera avtalet, med status och händelser.'
+      security:
+        - oauth2:
+            - 'crm:view'
+        - apiKey:
+            - 'crm:view'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:view'
+      parameters:
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/UpdatedSince'
+      responses:
+        200:
+          description: 'A page of results.'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CrmSigningRequest'
+                  meta:
+                    $ref: '#/components/schemas/ListMeta'
+              examples:
+                example:
+                  value:
+                    data:
+                      - id: 31
+                        document_type: 'AGREEMENT'
+                        quote_id: null
+                        agreement_id: 12
+                        deal_id: 57
+                        status: 'SIGNED'
+                        email: 'anna@kund.example'
+                        expires_at: '2026-12-15T23:59:59+01:00'
+                        document_name: 'Avtal-12.pdf'
+                        document_sha256: '3f0a6c1e9b2d4f5a7c8e0b1d2f3a4c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c'
+                        create_invoice: false
+                        opened_at: '2026-11-20T08:12:00+01:00'
+                        signed_at: '2026-11-20T08:15:42+01:00'
+                        signer_name: 'Anna Andersson'
+                        signer_title: 'Inköpschef'
+                        signature_method: 'DRAWN'
+                        signed_document_sha256: '8c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d'
+                        declined_at: null
+                        decline_reason: null
+                        revoked_at: null
+                        order_id: null
+                        invoice_id: null
+                        sent_by: 3
+                        events:
+                          - event: 'SENT'
+                            at: '2026-11-19T16:00:00+01:00'
+                          - event: 'OPENED'
+                            at: '2026-11-20T08:12:00+01:00'
+                          - event: 'SIGNED'
+                            at: '2026-11-20T08:15:42+01:00'
+                        created_at: '2026-11-19T16:00:00+01:00'
+                    meta:
+                      limit: 50
+                      next_cursor: null
+                      has_more: false
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: sendCrmAgreementForSigning
+      tags:
+        - CRM
+      summary: 'Send an agreement for signing'
+      description: 'E-mails a single-use link to sign the agreement: its uploaded PDF, or a PDF made from its fields and text. The signature binds to that PDFs SHA-256; an agreement changed after it was sent cannot be signed. create_invoice is ignored. Needs crm:manage, which no one has while the CRM module is off.'
+      x-sv-summary: 'Skicka avtal för signering'
+      x-sv-description: 'Mejlar en personlig länk för att signera avtalet med namnteckning.'
+      security:
+        - oauth2:
+            - 'crm:manage'
+        - apiKey:
+            - 'crm:manage'
+      x-required-scopes:
+        anyOf:
+          -
+            - 'crm:manage'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrmSigningInput'
+            examples:
+              example:
+                value:
+                  email: 'anna@kund.example'
+                  expires_on: '2026-12-15'
+                  deal_id: 57
+                  create_invoice: false
+      responses:
+        201:
+          description: 'The signing link (without the link itself).'
+          headers:
+            X-Request-Id:
+              $ref: '#/components/headers/XRequestId'
+            RateLimit-Limit:
+              $ref: '#/components/headers/RateLimitLimit'
+            RateLimit-Remaining:
+              $ref: '#/components/headers/RateLimitRemaining'
+            RateLimit-Reset:
+              $ref: '#/components/headers/RateLimitReset'
+            Idempotent-Replayed:
+              $ref: '#/components/headers/IdempotentReplayed'
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    $ref: '#/components/schemas/CrmSigningRequest'
+              examples:
+                example:
+                  value:
+                    data:
+                      id: 31
+                      document_type: 'QUOTE'
+                      quote_id: '9b2f7c1e-3a4d-4e5f-8a6b-7c8d9e0f1a2b'
+                      agreement_id: null
+                      deal_id: 57
+                      status: 'PENDING'
+                      email: 'anna@kund.example'
+                      expires_at: '2026-12-15T23:59:59+01:00'
+                      document_name: 'Offert-1042.pdf'
+                      document_sha256: '3f0a6c1e9b2d4f5a7c8e0b1d2f3a4c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c'
+                      create_invoice: false
+                      opened_at: '2026-11-20T08:12:00+01:00'
+                      signed_at: '2026-11-20T08:15:42+01:00'
+                      signer_name: 'Anna Andersson'
+                      signer_title: 'Inköpschef'
+                      signature_method: 'DRAWN'
+                      signed_document_sha256: '8c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d'
+                      declined_at: null
+                      decline_reason: null
+                      revoked_at: null
+                      order_id: '1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f'
+                      invoice_id: null
+                      sent_by: 3
+                      events:
+                        - event: 'SENT'
+                          at: '2026-11-19T16:00:00+01:00'
+                        - event: 'OPENED'
+                          at: '2026-11-20T08:12:00+01:00'
+                        - event: 'SIGNED'
+                          at: '2026-11-20T08:15:42+01:00'
+                      created_at: '2026-11-19T16:00:00+01:00'
+        400:
+          $ref: '#/components/responses/BadRequest'
+        401:
+          $ref: '#/components/responses/Unauthorized'
+        403:
+          $ref: '#/components/responses/Forbidden'
+        404:
+          $ref: '#/components/responses/NotFound'
+        409:
+          $ref: '#/components/responses/Conflict'
+        415:
+          $ref: '#/components/responses/UnsupportedMediaType'
+        422:
+          $ref: '#/components/responses/Unprocessable'
+        429:
+          $ref: '#/components/responses/TooManyRequests'
   /crm/pipelines:
     get:
       operationId: listCrmPipelines
@@ -9116,6 +9903,68 @@ webhooks:
                         quantity: '-2'
                         balance: '8'
                         occurred_on: '2026-11-02'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  quote.signed:
+    post:
+      operationId: quoteSigned
+      summary: 'A quote was signed'
+      x-sv-summary: 'En offert har signerats'
+      description: "Sent after a quote was signed at its signing link (CRM): ids, the time, the signature method and the SHA-256 of the signed PDF; never the signer's name, e-mail or IP address. The order (and invoice draft) is made right after; fetch `GET /quotes/{quote}/signing` for order_id. The webhook needs invoices:view. Sent as an HTTPS POST to every active webhook of the company that subscribes to `quote.signed`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas med HTTPS POST till varje webhook som prenumererar på `quote.signed`, när en offert har signerats. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: quote.signed
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: quote.signed
+                  created_at: '2026-11-20T08:15:43+01:00'
+                  company_id: 42
+                  data:
+                    signing_request_id: 31
+                    quote_id: 9b2f7c1e-3a4d-4e5f-8a6b-7c8d9e0f1a2b
+                    quote_number: 1042
+                    customer_id: 18
+                    total_ore: 1250000
+                    currency: SEK
+                    deal_id: 57
+                    signed_at: '2026-11-20T08:15:42+01:00'
+                    signature_method: DRAWN
+                    document_sha256: 3f0a6c1e9b2d4f5a7c8e0b1d2f3a4c5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c
       responses:
         2XX:
           description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
@@ -12314,6 +13163,7 @@ components:
             - planning.attested
             - sie.uploaded
             - stock.changed
+            - quote.signed
           description: 'Open enum: new event types may be added within v1.'
         created_at:
           type: string
@@ -12773,6 +13623,230 @@ components:
           type: boolean
         next_step:
           $ref: '#/components/schemas/CrmNextStep'
+    CrmAgreement:
+      type: object
+      properties:
+        id:
+          type: integer
+        account_id:
+          type: integer
+        title:
+          type: string
+        kind:
+          type: string
+          enum: [SERVICE, SUPPORT, SUBSCRIPTION, FRAMEWORK, RENTAL, OTHER]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: [string, 'null']
+          format: date
+          description: 'The end of the current period; null until further notice.'
+        notice_months:
+          type: integer
+        notice_deadline:
+          type: [string, 'null']
+          format: date
+          description: 'The last day to give notice for the current period.'
+        auto_renew:
+          type: boolean
+        renewal_months:
+          type: [integer, 'null']
+        terminated_on:
+          type: [string, 'null']
+          format: date
+        status:
+          type: string
+          enum: [ACTIVE, UPCOMING, TERMINATED, ENDED]
+        value_ore:
+          type: integer
+          description: 'Öre excluding VAT, per value_period.'
+        value_period:
+          type: string
+          enum: [MONTH, QUARTER, YEAR, TOTAL]
+        recurring_invoice_id:
+          type: [string, 'null']
+          format: uuid
+        owner_id:
+          type: [integer, 'null']
+        body_text:
+          type: [string, 'null']
+        notes:
+          type: [string, 'null']
+        document_sha256:
+          type: [string, 'null']
+          description: 'SHA-256 of the agreement''s PDF: the uploaded one, or the one that was signed.'
+        signed_at:
+          type: [string, 'null']
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    CrmAgreementInput:
+      type: object
+      required:
+        - account_id
+        - title
+        - kind
+        - start_date
+        - notice_months
+        - value_period
+      properties:
+        account_id:
+          type: integer
+        title:
+          type: string
+          maxLength: 255
+        kind:
+          type: string
+          enum: [SERVICE, SUPPORT, SUBSCRIPTION, FRAMEWORK, RENTAL, OTHER]
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: [string, 'null']
+          format: date
+        notice_months:
+          type: integer
+          minimum: 0
+          maximum: 36
+        auto_renew:
+          type: boolean
+        renewal_months:
+          type: [integer, 'null']
+          minimum: 1
+          maximum: 60
+        value_ore:
+          type: integer
+          minimum: 0
+        value_period:
+          type: string
+          enum: [MONTH, QUARTER, YEAR, TOTAL]
+        recurring_invoice_id:
+          type: [string, 'null']
+          format: uuid
+        owner_id:
+          type: [integer, 'null']
+        body_text:
+          type: [string, 'null']
+          maxLength: 20000
+        notes:
+          type: [string, 'null']
+          maxLength: 5000
+    CrmAgreementPatch:
+      type: object
+      description: 'Any fields of CrmAgreementInput, and terminated_on.'
+      properties:
+        title:
+          type: string
+        end_date:
+          type: [string, 'null']
+          format: date
+        owner_id:
+          type: [integer, 'null']
+        notes:
+          type: [string, 'null']
+        terminated_on:
+          type: [string, 'null']
+          format: date
+    CrmSigningInput:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: 'Where the link is sent; part of the evidence.'
+        expires_on:
+          type: [string, 'null']
+          format: date
+          description: 'The last day to sign; today to 90 days ahead.'
+        deal_id:
+          type: [integer, 'null']
+          description: 'An open deal of the account, won when the document is signed.'
+        create_invoice:
+          type: boolean
+          description: 'Quotes: also make a draft invoice once signed.'
+    CrmSigningRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        document_type:
+          type: string
+          enum: [QUOTE, AGREEMENT]
+        quote_id:
+          type: [string, 'null']
+          format: uuid
+        agreement_id:
+          type: [integer, 'null']
+        deal_id:
+          type: [integer, 'null']
+        status:
+          type: string
+          enum: [PENDING, SIGNED, DECLINED, REVOKED, EXPIRED]
+        email:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        document_name:
+          type: string
+        document_sha256:
+          type: string
+          description: 'SHA-256 of the exact PDF that was shown and signed.'
+        create_invoice:
+          type: boolean
+        opened_at:
+          type: [string, 'null']
+          format: date-time
+        signed_at:
+          type: [string, 'null']
+          format: date-time
+        signer_name:
+          type: [string, 'null']
+        signer_title:
+          type: [string, 'null']
+        signature_method:
+          type: [string, 'null']
+          enum: [DRAWN, TYPED, null]
+        signed_document_sha256:
+          type: [string, 'null']
+          description: 'SHA-256 of the signing certificate PDF.'
+        declined_at:
+          type: [string, 'null']
+          format: date-time
+        decline_reason:
+          type: [string, 'null']
+        revoked_at:
+          type: [string, 'null']
+          format: date-time
+        order_id:
+          type: [string, 'null']
+          format: uuid
+        invoice_id:
+          type: [string, 'null']
+          format: uuid
+        sent_by:
+          type: [integer, 'null']
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              event:
+                type: string
+                enum: [SENT, OPENED, SIGNED, DECLINED, EXPIRED, REVOKED]
+              at:
+                type: string
+                format: date-time
+        created_at:
+          type: string
+          format: date-time
     CrmDeal:
       type: object
       description: 'A deal. quote_id, order_id and invoice_id are null for a private person (account kind PERSON) when the token''s user may not read invoices (invoices:view). Creating a deal is refused for a customer whose processing is restricted or who is inactive, and a win_back_at is refused for anyone who must not be contacted.'

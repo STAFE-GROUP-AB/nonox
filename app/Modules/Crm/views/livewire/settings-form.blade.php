@@ -55,6 +55,9 @@
             </span>
         </label>
     </div>
+    <x-ui.field for="crm-agreement-reminder" :label="__('Påminn om avtal, dagar innan')" error="settings.agreement_reminder_days" :hint="__('Så här många dagar före sista dag att säga upp ett avtal (eller före slutdatumet, om avtalet saknar uppsägningstid) får den ansvarige en uppgift. Standard är 60.')">
+        <input id="crm-agreement-reminder" type="number" min="7" max="365" inputmode="numeric" wire:model="settings.agreement_reminder_days" class="{{ $input }}">
+    </x-ui.field>
     <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>

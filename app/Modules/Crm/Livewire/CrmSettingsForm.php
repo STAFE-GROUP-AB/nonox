@@ -72,6 +72,7 @@ class CrmSettingsForm extends Component
             'settings.calendar_details' => __('detaljer i kalendrar'),
             'settings.calendar_sync' => __('koppling till Google och Microsoft'),
             'settings.calendar_private_accounts' => __('privata konton'),
+            'settings.agreement_reminder_days' => __('dagar före uppsägningsdagen'),
         ])->validate();
 
         $before = CrmSettings::for($company);

@@ -66,6 +66,9 @@ final class CompanyOverview
         'bank-reconciliation' => 'accounting.bankReconciliation',
         'annual-report' => 'accounting.annualReport',
         'tasks' => 'tasks.index',
+        // CRM signing notices (ADR-046).
+        'quotes' => 'invoicing.quotes',
+        'crm-agreements' => 'crm.agreements',
     ];
 
     /** A deadline this close counts as urgent. */

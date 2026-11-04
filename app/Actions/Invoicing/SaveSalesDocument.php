@@ -12,6 +12,7 @@ use App\Models\NumberSeries;
 use App\Models\SalesDocument;
 use App\Models\SalesDocumentRow;
 use App\Models\User;
+use App\Modules\Crm\Support\SignedDocuments;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -57,6 +58,15 @@ class SaveSalesDocument
         ])->validate();
 
         return DB::transaction(fn (): SalesDocument => CurrentCompany::run($company, function () use ($validated, $input, $kind, $user, $company, $document): SalesDocument {
+            // A quote signed at a CRM signing link says what was signed (ADR-046); the row lock orders this against the signing.
+            if ($document !== null) {
+                SalesDocument::query()->whereKey($document->id)->lockForUpdate()->first();
+
+                if (SignedDocuments::isQuoteSigned($document->id)) {
+                    throw ValidationException::withMessages(['document' => __('Offerten är signerad och kan inte ändras.')]);
+                }
+            }
+
             $customer = Customer::query()->find((int) $validated['customer_id'])
                 ?? throw ValidationException::withMessages(['customer_id' => __('Välj en kund.')]);
 

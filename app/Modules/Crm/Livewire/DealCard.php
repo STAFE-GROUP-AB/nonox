@@ -276,6 +276,8 @@ class DealCard extends Component
             // As on the account card: a private person's quotes, orders and invoices are for those who may see the invoices.
             'limitedLedger' => ! $canSeeInvoices && $deal->account?->kind === AccountKind::Person,
             'canMakeCustomer' => $customerId === null && $user->can('create', [Customer::class, $company]),
+            // "Ny offert från mall" (ADR-046) for an open deal's customer, for those who make quotes.
+            'templateCustomerId' => $deal->isOpen() && $customerId !== null && $user->hasTeamPermission($company, 'invoices:create') ? $customerId : null,
             'members' => in_array($this->panel, ['edit', 'step', 'complete'], true) ? CompanyMembers::all($company) : collect(),
             'people' => $this->panel === 'edit' ? Person::query()->whereHas('accounts', fn (Builder $query) => $query->whereKey($deal->account_id))->orderBy('name')->get(['id', 'name']) : collect(),
             'reasons' => $this->panel === 'lose' ? LossReason::query()->active()->orderBy('sort')->orderBy('id')->get(['id', 'name']) : collect(),

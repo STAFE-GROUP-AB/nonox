@@ -265,6 +265,7 @@ De hamnar i `storage/oauth-private.key` och `storage/oauth-public.key` (aldrig i
 | Planering | `/planning/shifts?from=…&to=…` (publicerat schema, högst 93 dagar; `include_drafts=true` för planen som den är nu), `/planning/areas`, `/planning/publications`. Kräver modulen Planering. Kostnadsuppskattningar ingår inte. |
 | Lager | `/inventory/articles` (med saldo per plats; `gtin`, `number`), `/inventory/locations`, `/inventory/stock-levels`, `POST /inventory/receipts` (inleverans, `"receive": true` tar emot direkt). Kräver modulen Lager. |
 | CRM | `/crm/accounts` (kunder och prospekt; `status`, `customer_id`), `/crm/people` (`account_id`), `/crm/activities` (`account_id`, `assigned_to`, `open`, `deal_id`), med `POST` och `PATCH` för var och en. `PATCH /crm/accounts/{id}` med `status` sätter status för hand. `/crm/deals` (`status`, `pipeline_id`, `stage_id`, `owner_id`, `account_id`) med `POST` (kräver `next_step`) och `PATCH` (flytta, vinn, förlora), och `/crm/pipelines`, `/crm/stages` och `/crm/loss-reasons` för läsning. Kräver modulen CRM. |
+| Signering och avtal | `POST /quotes/{quote}/signing` mejlar en länk för att signera offerten med namnteckning (kräver `invoices:create` och `invoices:send`), `GET /quotes/{quote}/signing` visar länkarnas status (`invoices:view`). `/crm/agreements` (`account_id`, `ending_within_days`) med `POST` och `PATCH` (`terminated_on` säger upp), och `GET`/`POST /crm/agreements/{id}/signing`. Själva länken returneras aldrig. Kräver modulen CRM. |
 
 Belopp in och ut är hela öre. Momssatser och rabatter anges i hundradels procent: `2500` är 25 %, `1000` är 10 %. Antal skickas som heltal eller som text med högst tre decimaler (`"1.5"`); decimaltal i JSON avvisas, eftersom de inte är exakta. Momsdeklarationens rutor är hela kronor (`amount_sek`), precis som på blanketten.
 
@@ -283,6 +284,7 @@ En webhook berättar för ert program när något händer, så att ni slipper fr
 | `planning.published` | En period av schemat har publicerats (Planering) |
 | `planning.attested` | Tid i schemat har attesterats (Planering; webhooken kräver `planning:attest`) |
 | `stock.changed` | Lagersaldot har ändrats: inleverans, plock, flytt, inventering, kassa, retur eller kassation (Lager) |
+| `quote.signed` | En offert har signerats via en signeringslänk (CRM; webhooken kräver `invoices:view`) |
 | `sie.uploaded` | En SIE-fil har kommit in via SFTP och granskats (webhooken kräver `import:sie`; se SFTP nedan) |
 
 Händelser skickas först när ändringen är sparad (efter commit), aldrig för något som sedan ångrades. De är tunna: id, nummer, datum och belopp, inga personuppgifter. Behöver ni mer hämtar ni posten med API:t.
