@@ -112,6 +112,10 @@
         {{-- At least 24 px high, so each link is easy to hit (WCAG 2.5.8). --}}
         <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm [&_a]:inline-block [&_a]:py-1 [&_button]:py-1">
             @include('navigation.help', ['helpClass' => 'rounded text-stone-300 hover:text-white', 'helpLabel' => true])
+            {{-- Företagsguiden's start plan (ADR-051), while the company shows the guide. --}}
+            @if($currentCompany?->guide_enabled)
+                <a href="{{ route('guide.plan') }}" class="text-stone-300 hover:text-white" data-guide-link>{{ __('Företagsguiden') }}</a>
+            @endif
             <a href="{{ route('profile.show') }}" class="text-stone-300 hover:text-white">{{ __('Profile') }}</a>
             @if (Laravel\Jetstream\Jetstream::hasApiFeatures())
                 <a href="{{ route('api-tokens.index') }}" class="text-stone-300 hover:text-white">{{ __('API Tokens') }}</a>

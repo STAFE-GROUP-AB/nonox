@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-foretagsguiden",
+      "datum": "2026-11-04T18:00:00+01:00",
+      "rubrik": "Företagsguiden och Min startplan",
+      "beskrivning": "Företagsguiden på /foretagsguiden förklarar hur du startar och driver ett företag, med källor från Skatteverket, Bolagsverket och lagtexten; den är i beta tills en redovisningskonsult har granskat texterna. I NONOX visar Min startplan vad just ditt företag behöver göra, efter företagsform, bransch och om det är momsregistrerat eller arbetsgivare, och tipsen från guiden syns längst ner på sidorna där de hör hemma. Bransch och startdatum anges när företaget skapas eller under företagets uppgifter.",
+      "typ": "Nytt",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-04-sakerhetsgranskning-inloggning",
       "datum": "2026-11-04T15:00:00+01:00",
       "rubrik": "Svårare att störa någon annans inloggning",

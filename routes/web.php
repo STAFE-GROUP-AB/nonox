@@ -21,6 +21,8 @@ use App\Http\Controllers\DataSubjectExportController;
 use App\Http\Controllers\DeveloperPortalController;
 use App\Http\Controllers\FirmLogoController;
 use App\Http\Controllers\GettingStartedController;
+use App\Http\Controllers\GuideController;
+use App\Http\Controllers\GuideTipsController;
 use App\Http\Controllers\IndustryController;
 use App\Http\Controllers\Invoicing\AgreementController;
 use App\Http\Controllers\Invoicing\InvoiceController;
@@ -46,6 +48,7 @@ use App\Http\Middleware\EnsureHqAdmin;
 use App\Http\Middleware\EnsureUserHasCompany;
 use App\Models\SalesDocument;
 use App\Support\Developer\Guides;
+use App\Support\Guide\Guide;
 use App\Support\Landing\Industries;
 use App\Support\Landing\LandingPage;
 use Illuminate\Support\Facades\Route;
@@ -92,6 +95,20 @@ Route::prefix('manual')->name('manual.')->controller(ManualController::class)->g
     Route::get('/sokindex.json', 'searchIndex')->name('search');
     Route::get('/{section}', 'section')->where('section', '[a-z0-9-]+')->name('section');
     Route::get('/{section}/{article}', 'article')->where(['section' => '[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
+});
+// Företagsguiden (ADR-051): docs/foretagsguiden as pages. The personal start plan comes first, so no section can take its address.
+Route::prefix('foretagsguiden')->name('guide.')->group(function () {
+    Route::view('/'.Guide::START_PLAN_SLUG, 'guide.start-plan')
+        ->middleware(['auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class])
+        ->name('plan');
+    Route::put('/'.Guide::START_PLAN_SLUG.'/tips', [GuideTipsController::class, 'update'])
+        ->middleware(['auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class])
+        ->name('tips');
+    Route::controller(GuideController::class)->group(function () {
+        Route::get('/', 'home')->name('home');
+        Route::get('/{section}', 'section')->where('section', '(?!'.Guide::START_PLAN_SLUG.'$)[a-z0-9-]+')->name('section');
+        Route::get('/{section}/{article}', 'article')->where(['section' => '(?!'.Guide::START_PLAN_SLUG.'$)[a-z0-9-]+', 'article' => '[a-z0-9-]+'])->name('article');
+    });
 });
 Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');

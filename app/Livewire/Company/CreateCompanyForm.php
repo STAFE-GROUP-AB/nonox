@@ -7,6 +7,7 @@ namespace App\Livewire\Company;
 use App\Actions\Company\CreateCompany;
 use App\Domain\Accounting\FiscalYearRules;
 use App\Domain\Company\AccountingMethod;
+use App\Domain\Company\Industry;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\ReportingFrameworkRules;
@@ -37,6 +38,10 @@ class CreateCompanyForm extends Component implements SpansCompanies
     public string $city = '';
 
     public string $email = '';
+
+    public string $industry = '';
+
+    public string $started_on = '';
 
     public int $fiscal_year_start_month = 1;
 
@@ -112,6 +117,8 @@ class CreateCompanyForm extends Component implements SpansCompanies
             'framework_confirmed' => $this->framework_confirmed,
             'calendar_year_exempt' => $this->calendar_year_exempt,
             'employer_registered' => $this->employer_registered,
+            'industry' => $this->industry ?: null,
+            'started_on' => $this->started_on ?: null,
         ]);
 
         Toast::flash(__(':company är skapat. Du arbetar nu i det företaget.', ['company' => $company->name]));
@@ -156,6 +163,7 @@ class CreateCompanyForm extends Component implements SpansCompanies
             'calendarYearOnly' => FiscalYearRules::requiresCalendarYear($legalForm),
             'askPartners' => FiscalYearRules::requiresCalendarYearWithNaturalPartner($legalForm) && $this->fiscal_year_start_month !== 1,
             'legalForms' => LegalForm::cases(),
+            'industries' => Industry::cases(),
             'accountingMethods' => AccountingMethod::cases(),
             'vatPeriods' => array_filter(VatPeriod::cases(), fn (VatPeriod $period) => $period !== VatPeriod::None),
             'frameworks' => ReportingFramework::cases(),

@@ -16,6 +16,7 @@ use App\Models\BankTransaction;
 use App\Models\ClientProfile;
 use App\Models\ClosingCheck;
 use App\Models\Company;
+use App\Models\CompanyGuideStep;
 use App\Models\CompanyModule;
 use App\Models\CostCenter;
 use App\Models\Customer;
@@ -254,6 +255,7 @@ const COMPANY_SCOPED_MODELS = [
     PaymentResponse::class => 'paymentResponseAttributes',
     RecurringInvoice::class => 'agreementAttributes',
     CompanyModule::class => ['module_key' => 'hemlig', 'enabled' => true],
+    CompanyGuideStep::class => 'companyGuideStepAttributes',
     WorkSchedule::class => 'payrollWorkScheduleAttributes',
     PeppolParticipant::class => 'peppolParticipantAttributes',
     PeppolTransmission::class => 'peppolTransmissionAttributes',
@@ -382,6 +384,11 @@ const COMPANY_SCOPED_MODELS = [
     ConnectSftpKey::class => 'connectSftpKeyAttributes',
     ConnectSftpUpload::class => 'connectSftpUploadAttributes',
 ];
+
+function companyGuideStepAttributes(): array
+{
+    return ['step_key' => 'hemligt-steg-'.bin2hex(random_bytes(4)), 'completed_at' => now(), 'completed_by' => User::factory()->create()->id];
+}
 
 function taskAttributes(): array
 {

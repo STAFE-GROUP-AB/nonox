@@ -58,6 +58,10 @@ Uppgifterna ska stämma med Skatteverkets beslut. Är du osäker, fråga din red
 > [!IMPORTANT]
 > Att ändra **Räkenskapsåret börjar** flyttar inga räkenskapsår som redan finns. Har företaget fått ett nytt räkenskapsår av Skatteverket och Bolagsverket ändrar du också datumen för det pågående eller nästa räkenskapsår under **Bokföring → Räkenskapsår**. Se [Räkenskapsår](/manual/bokforing/rakenskapsar).
 
+## Företagsguiden
+
+Under **Företagsguiden** väljer du **Bransch** och anger när **Företaget startade**. Uppgifterna avgör vilka steg i startplanen och vilka tips som visas för företaget. Avmarkera **Visa Företagsguiden** om företaget inte vill ha startplanen under Att göra och tipsen längst ner på sidorna; guiden på webbplatsen finns kvar. Klicka på **Spara**. Se [Företagsguiden och Min startplan](/manual/kom-igang/foretagsguiden).
+
 ## Personer och inloggning
 
 Längre ner på samma flik finns **Personer i företaget**, där du bjuder in och tar bort personer och ändrar roller. Se [Bjud in en användare](/manual/kom-igang/bjud-in-en-anvandare). Är du ägare finns också **Kräv passkey för alla i företaget**; se [Passkeys och inloggningar](/manual/installningar/passkeys-och-inloggningar).

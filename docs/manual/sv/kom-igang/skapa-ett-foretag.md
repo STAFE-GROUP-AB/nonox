@@ -22,7 +22,7 @@ Ha organisationsnumret till hands, och gärna besluten från Skatteverket om mom
 1. Logga in. Har du inget företag ännu kommer du direkt till **Kom igång**. Har du redan ett företag klickar du på företagets namn högst upp i menyn och väljer **Lägg till ett företag**.
 2. Skriv **Organisationsnummer**, med tio siffror, och välj **Företagsform**.
 3. Klicka på **Hämta uppgifter** om knappen finns, så fylls namn och adress i från Bolagsverket. Annars skriver du **Företagsnamn**, **Adress (frivilligt)**, **Postnummer** och **Ort** själv.
-4. Fyll gärna i **E-post till företaget (frivilligt)**.
+4. Fyll gärna i **E-post till företaget (frivilligt)**, **Bransch (frivilligt)** och **Företaget startade (frivilligt)**. Bransch och startdatum används av Företagsguiden för att visa de steg och tips som gäller just ditt företag; se [Företagsguiden och Min startplan](/manual/kom-igang/foretagsguiden). Passar ingen bransch väljer du **Annan bransch**.
 5. Under **Bokföring och moms** väljer du när **Räkenskapsåret börjar i** och vilken **Bokföringsmetod** företaget använder.
 6. Kryssa i **Företaget är momsregistrerat** om det är det, och välj **Hur ofta redovisar ni moms?**
 7. Välj **Regelverk för årsbokslut**. Väljer du K1 eller K2 visas villkoren för regelverket. Kryssa i **Företaget uppfyller villkoren** om de stämmer.

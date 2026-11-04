@@ -61,6 +61,9 @@
             @endif
 
                 {{ $slot }}
+
+                {{-- Företagsguiden's tips about this page (ADR-051). --}}
+                <x-guide.tips :company="$layoutCompany" />
             </main>
 
             {{-- For support: which version and build the user is on. --}}
