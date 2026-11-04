@@ -56,6 +56,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                     'payroll.agi',
                     self::ARTICLE,
                     self::SOURCE,
+                    periodStart: $month,
                 );
 
                 continue;
@@ -71,6 +72,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                 'payroll.agi',
                 self::ARTICLE,
                 self::SOURCE,
+                periodStart: $month,
             );
             $deadlines[] = new Deadline(
                 "agi:{$period}",
@@ -82,6 +84,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                 'payroll.agi',
                 self::ARTICLE,
                 self::SOURCE,
+                periodStart: $month,
             );
         }
 

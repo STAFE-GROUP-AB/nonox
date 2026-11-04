@@ -45,7 +45,7 @@ final class DeadlineCalendar
             }
 
             if ($deadline->legalVerify) {
-                $description .= ' '.__('Kontrollera datumet hos Skatteverket.');
+                $description .= ' '.__('Kontrollera datumet hos :authority.', ['authority' => $deadline->checkWith()]);
             }
 
             array_push($lines,

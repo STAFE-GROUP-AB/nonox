@@ -39,7 +39,7 @@
                         <dd class="text-2xl font-bold tabular-nums">{{ $soonCount }}</dd>
                     </div>
                     <div class="rounded-2xl bg-white/10 px-3 py-3">
-                        <dt class="text-xs text-stone-300">{{ __('Alla datum') }}</dt>
+                        <dt class="text-xs text-stone-300">{{ $showAll ? __('Kommande 15 månader') : __('Kommande 6 månader') }}</dt>
                         <dd class="text-2xl font-bold tabular-nums">{{ count($all) }}</dd>
                     </div>
                 </dl>
@@ -56,6 +56,9 @@
 
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div class="min-w-0 space-y-8">
+            @if($missingEarlierYear)
+                <p class="rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-950 ring-1 ring-amber-200" data-dates-missing-year>{{ __('Datum för räkenskapsår före :date visas inte. Har företaget funnits längre, lägg in föregående räkenskapsår för att se dem.', ['date' => $missingEarlierYear->toDateString()]) }}</p>
+            @endif
             @foreach($months as $month => $items)
                 <section aria-labelledby="month-{{ $month }}" data-dates-month="{{ $month }}">
                     <h2 id="month-{{ $month }}" class="mb-3 flex items-center gap-3 text-sm font-bold uppercase tracking-wide text-gray-700">
@@ -120,8 +123,11 @@
                                             </h3>
                                             <p class="mt-1 text-sm text-gray-700">{{ $deadline->appliesBecause }}</p>
                                             <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+                                                @if(in_array($deadline->key, $reported, true))
+                                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-900 ring-1 ring-emerald-200" data-deadline-reported><svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>{{ __('Redovisad') }}</span>
+                                                @endif
                                                 @if($deadline->legalVerify)
-                                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-200"><span class="size-2 rounded-full bg-amber-500" aria-hidden="true"></span>{{ __('Kontrollera datumet hos Skatteverket') }}</span>
+                                                    <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-900 ring-1 ring-amber-200"><span class="size-2 rounded-full bg-amber-500" aria-hidden="true"></span>{{ __('Kontrollera datumet hos :authority', ['authority' => $deadline->checkWith()]) }}</span>
                                                 @endif
                                                 @if($actUrl)
                                                     <a href="{{ $actUrl }}" class="font-semibold text-accent-700 underline hover:text-accent-800">{{ __('Gör det i NONOX') }}<span class="sr-only">: {{ $deadline->title }}</span></a>
@@ -144,6 +150,14 @@
                     </ol>
                 </section>
             @endforeach
+
+            <p class="text-center">
+                @if($showAll)
+                    <a href="{{ route('guide.dates') }}" class="inline-flex min-h-10 items-center rounded-full px-4 text-sm font-semibold text-gray-700 ring-1 ring-stone-300 hover:bg-stone-100">{{ __('Visa de närmaste sex månaderna') }}</a>
+                @else
+                    <a href="{{ route('guide.dates', ['alla' => 1]) }}" class="inline-flex min-h-10 items-center rounded-full bg-white px-4 text-sm font-semibold text-ink ring-1 ring-stone-300 hover:bg-stone-100" data-dates-all>{{ __('Visa alla datum (15 månader)') }}</a>
+                @endif
+            </p>
         </div>
 
         <aside class="space-y-6 xl:sticky xl:top-20 xl:self-start" aria-label="{{ __('Om datumen') }}">
@@ -152,7 +166,8 @@
                 <ul class="mt-3 space-y-3 text-sm text-gray-700">
                     <li class="flex gap-3"><span class="mt-1 size-3 flex-none rounded-full bg-ink" aria-hidden="true"></span><span><strong class="text-ink">{{ __('Datum i lagen') }}</strong><br>{{ __('Står i lag eller i Skatteverkets regler.') }}</span></li>
                     <li class="flex gap-3"><span class="mt-1 size-3 flex-none rounded-full border-2 border-sky-600" aria-hidden="true"></span><span><strong class="text-ink">{{ __('Rekommendation') }}</strong><br>{{ __('Ett råd från Företagsguiden, inget krav i lagen.') }}</span></li>
-                    <li class="flex gap-3"><span class="mt-1 size-3 flex-none rounded-full bg-amber-500" aria-hidden="true"></span><span><strong class="text-ink">{{ __('Kontrollera datumet hos Skatteverket') }}</strong><br>{{ __('Regeln är inte bekräftad ännu, eller beror på ett beslut om just ditt företag.') }}</span></li>
+                    <li class="flex gap-3"><span class="mt-1 size-3 flex-none rounded-full bg-amber-500" aria-hidden="true"></span><span><strong class="text-ink">{{ __('Kontrollera datumet') }}</strong><br>{{ __('Hos Skatteverket eller Bolagsverket: regeln är inte bekräftad ännu, eller beror på ett beslut om just ditt företag.') }}</span></li>
+                    <li class="flex gap-3"><span class="mt-0.5 flex size-4 flex-none items-center justify-center rounded-full bg-emerald-100 text-emerald-800" aria-hidden="true"><svg class="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10" /></svg></span><span><strong class="text-ink">{{ __('Redovisad') }}</strong><br>{{ __('Momsen eller arbetsgivardeklarationen för perioden är redovisad i NONOX. Den påminner vi inte om.') }}</span></li>
                 </ul>
                 <p class="mt-4 rounded-xl bg-stone-100 px-3 py-2 text-xs text-gray-700">{{ __('Företagsguiden är i beta. Texterna är kontrollerade mot källorna men ännu inte granskade av en redovisningskonsult.') }}</p>
             </section>

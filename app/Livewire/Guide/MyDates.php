@@ -8,9 +8,11 @@ use App\Actions\Guide\IssueDeadlineFeed;
 use App\Actions\Guide\RevokeDeadlineFeed;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\Deadline;
+use App\Domain\Deadlines\DeadlineCompletion;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\DeadlineCalendarFeed;
+use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Guide\Guide;
 use Carbon\CarbonImmutable;
@@ -20,8 +22,9 @@ use Livewire\Component;
 
 /**
  * Mina datum (/foretagsguiden/mina-datum, ADR-051 stage 2): the company's
- * deadlines for the coming 15 months by month, why each applies, how many
- * days are left, and the user's calendar link. Computed from the company's
+ * deadlines for the coming six months (all 15 with ?alla=1) by month, why
+ * each applies, how many days are left, whether a VAT or AGI period is
+ * already reported, and the user's calendar link. Computed from the company's
  * settings and fiscal years on every view; nothing is stored but the link.
  */
 class MyDates extends Component
@@ -30,6 +33,17 @@ class MyDates extends Component
 
     /** The new link, shown once right after it is made; never stored in clear. */
     public ?string $newLink = null;
+
+    /** All 15 months (?alla=1) instead of the next six. */
+    public bool $showAll = false;
+
+    /** Months shown by default; the page links to all of them. */
+    public const int DEFAULT_MONTHS = 6;
+
+    public function mount(): void
+    {
+        $this->showAll = request()->boolean('alla');
+    }
 
     public function issueLink(IssueDeadlineFeed $issue): void
     {
@@ -52,14 +66,22 @@ class MyDates extends Component
         $months = [];
 
         // Two weeks back as well, so a date that has just passed is still in sight, marked as passed.
-        foreach ($deadlines->upcoming($company, $today->subDays(14)) as $deadline) {
+        $upcoming = $deadlines->upcoming($company, $today->subDays(14), ($this->showAll ? CompanyDeadlines::MONTHS : self::DEFAULT_MONTHS));
+
+        foreach ($upcoming as $deadline) {
             $months[$deadline->date->format('Y-m')][] = $deadline;
         }
+
+        $firstYear = FiscalYear::query()->orderBy('start_date')->value('start_date');
+        $firstYear = $firstYear === null ? null : CarbonImmutable::parse((string) $firstYear);
 
         return view('livewire.guide.my-dates', [
             'company' => $company,
             'today' => $today,
             'months' => $months,
+            'reported' => DeadlineCompletion::done($company, $upcoming),
+            // Dates of a year before the first one in NONOX can still be ahead (REGLER.md review 2026-11-04).
+            'missingEarlierYear' => $firstYear !== null && $firstYear->greaterThan($today->subMonthsNoOverflow(16)) ? $firstYear : null,
             'feed' => DeadlineCalendarFeed::query()->where('user_id', $this->user()->id)->whereNull('revoked_at')->latest('id')->first(),
             'articleUrl' => fn (Deadline $deadline): ?string => self::articleUrl($deadline),
             'missedUrl' => Guide::article('viktiga-datum', 'om-du-missar-ett-datum', false) === null ? null : Guide::url('viktiga-datum', 'om-du-missar-ett-datum'),

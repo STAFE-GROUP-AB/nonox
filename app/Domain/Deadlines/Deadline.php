@@ -13,7 +13,7 @@ use Carbon\CarbonImmutable;
  * can refer to it. A recommendation is NONOX's advice, not a legal
  * deadline; legalVerify marks a date whose rule is not yet verified.
  *
- * @phpstan-type DeadlineData array{key: string, type: string, title: string, date: string, period: string, applies_because: string, route: ?string, article: ?string, source_url: ?string, recommendation: bool, legal_verify: bool}
+ * @phpstan-type DeadlineData array{key: string, type: string, title: string, date: string, period: string, applies_because: string, route: ?string, article: ?string, source_url: ?string, recommendation: bool, legal_verify: bool, period_start?: ?string}
  */
 final readonly class Deadline
 {
@@ -29,7 +29,14 @@ final readonly class Deadline
         public ?string $sourceUrl = null,
         public bool $isRecommendation = false,
         public bool $legalVerify = false,
+        public ?CarbonImmutable $periodStart = null,
     ) {}
+
+    /** The authority whose rule decides the date, to check it with. */
+    public function checkWith(): string
+    {
+        return in_array($this->type, [DeadlineType::AnnualReport, DeadlineType::AnnualMeeting], true) ? 'Bolagsverket' : 'Skatteverket';
+    }
 
     /** Whole days from today to the date: negative when it has passed. */
     public function daysLeft(CarbonImmutable $today): int
@@ -52,6 +59,7 @@ final readonly class Deadline
             'source_url' => $this->sourceUrl,
             'recommendation' => $this->isRecommendation,
             'legal_verify' => $this->legalVerify,
+            'period_start' => $this->periodStart?->toDateString(),
         ];
     }
 
@@ -70,6 +78,7 @@ final readonly class Deadline
             $data['source_url'],
             $data['recommendation'],
             $data['legal_verify'],
+            isset($data['period_start']) ? CarbonImmutable::parse($data['period_start']) : null,
         );
     }
 }

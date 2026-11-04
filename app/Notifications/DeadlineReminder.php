@@ -40,7 +40,8 @@ class DeadlineReminder extends Notification
                 $daysLeft <= 0 => __(':title: sista dagen är i dag, :date.', $replace),
                 $daysLeft === 1 => __(':title: sista dagen är i morgon, :date.', $replace),
                 default => __(':title: sista dagen är om :days dagar, :date.', $replace),
-            }.(in_array($deadline->type, self::PAYMENTS, true) ? ' '.__('Betala i god tid: en betalning räknas när den har kommit in på skattekontot.') : ''),
+            }.(in_array($deadline->type, self::PAYMENTS, true) ? ' '.__('Betala i god tid: en betalning räknas när den har kommit in på skattekontot.') : '')
+            .' '.($deadline->legalVerify ? __('Kontrollera datumet hos :authority.', ['authority' => $deadline->checkWith()]) : __('Beräknat från företagets inställningar.')),
         );
     }
 

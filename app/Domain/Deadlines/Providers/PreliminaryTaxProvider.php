@@ -65,7 +65,7 @@ final class PreliminaryTaxProvider implements DeadlineProvider
                 'preliminary_tax_top_up:'.$end->toDateString(),
                 DeadlineType::PreliminaryTax,
                 __('Fyllnadsinbetalning för :year?', ['year' => self::yearLabel($start, $end)]),
-                Workdays::onDay($topUp, 12),
+                self::topUpDay($topUp->setDay(12)),
                 self::yearLabel($start, $end),
                 __('Blir skatten för året högre än preliminärskatten kan du betala in skillnaden senast den här dagen, innan kostnadsränta börjar räknas.'),
                 null,
@@ -79,8 +79,11 @@ final class PreliminaryTaxProvider implements DeadlineProvider
     }
 
     /**
-     * The beskattningsår that overlap the span: the fiscal years, for a
-     * sole trader the calendar years.
+     * The beskattningsår that overlap the span: for a sole trader the
+     * calendar years; for a legal person the fiscal years, where one that
+     * ends on another day than 31 December, 30 April, 30 June or 31 August
+     * counts as the twelve months ending on the next of them (SFL 3 kap. 5 §,
+     * REGLER.md §3.2). Two fiscal years mapped to the same year count once.
      *
      * @return list<array{0: CarbonImmutable, 1: CarbonImmutable}>
      */
@@ -90,7 +93,47 @@ final class PreliminaryTaxProvider implements DeadlineProvider
             return array_map(fn (int $year): array => [$from->setDate($year, 1, 1)->startOfDay(), $from->setDate($year, 12, 31)->startOfDay()], range($from->year, $to->year));
         }
 
-        return array_map(fn ($year): array => [$year->start_date, $year->end_date], FiscalCalendar::years($company, $from, $to));
+        $years = [];
+
+        foreach (FiscalCalendar::years($company, $from, $to) as $year) {
+            $end = self::namedYearEnd($year->end_date);
+            $years[$end->toDateString()] = [$end->subYear()->addDay(), $end];
+        }
+
+        return array_values($years);
+    }
+
+    /** The first of 30 April, 30 June, 31 August and 31 December on or after the day (SFL 3 kap. 5 §). */
+    public static function namedYearEnd(CarbonImmutable $end): CarbonImmutable
+    {
+        foreach (['04-30', '06-30', '08-31', '12-31'] as $monthDay) {
+            $candidate = CarbonImmutable::parse("{$end->year}-{$monthDay}");
+
+            if ($candidate->greaterThanOrEqualTo($end->startOfDay())) {
+                return $candidate;
+            }
+        }
+
+        return CarbonImmutable::parse(($end->year + 1).'-04-30');
+    }
+
+    /**
+     * The day to recommend for a top-up before kostnadsränta starts on the
+     * 13th (SFL 65 kap. 4–6 §§): the 12th; when the 12th is a Saturday or
+     * Sunday, interest starts the following Tuesday (65 kap. 18 §), so the
+     * Monday, unless the Monday is a holiday; when the 12th is a weekday
+     * holiday, or the Monday after a weekend 12th is one, the working day
+     * before the 12th (REGLER.md §3.4).
+     */
+    public static function topUpDay(CarbonImmutable $twelfth): CarbonImmutable
+    {
+        if ($twelfth->isWeekend()) {
+            $monday = $twelfth->next(CarbonImmutable::MONDAY);
+
+            return Workdays::isWorkday($monday) ? $monday : Workdays::before($twelfth);
+        }
+
+        return Workdays::isWorkday($twelfth) ? $twelfth : Workdays::before($twelfth);
     }
 
     public static function yearLabel(CarbonImmutable $start, CarbonImmutable $end): string

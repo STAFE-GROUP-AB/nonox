@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\Deadline;
 use App\Domain\Deadlines\DeadlineAudience;
+use App\Domain\Deadlines\DeadlineCompletion;
 use App\Domain\Deadlines\DeadlineType;
 use App\Domain\Deadlines\Workdays;
 use App\Models\Company;
@@ -23,8 +24,9 @@ use Illuminate\Console\Command;
  * before, and also 30 days before the income tax return and the annual
  * report to Bolagsverket. A reminder that was missed (the command did not
  * run that day) is sent the next run while the date is still ahead; only
- * the nearest due reminder is sent. Recommendations get none, and a date
- * that has passed is not reminded of. Each reminder is recorded in
+ * the nearest due reminder is sent. Recommendations get none, nor a VAT or
+ * AGI period that is already reported, and a date that has passed is not
+ * reminded of. Each reminder is recorded in
  * deadline_reminders, unique per person, deadline and kind, so running the
  * command again sends nothing twice. Companies that have turned
  * Företagsguiden off, and archived companies, get nothing.
@@ -55,10 +57,14 @@ class SendDeadlineRemindersCommand extends Command
                 continue;
             }
 
-            foreach ($deadlines->upcoming($company, $today, 2) as $deadline) {
+            $upcoming = $deadlines->upcoming($company, $today, 2);
+            // A period already reported needs no reminder (as the VAT and AGI items in Att göra know it).
+            $done = DeadlineCompletion::done($company, $upcoming);
+
+            foreach ($upcoming as $deadline) {
                 $before = self::due($deadline, $today);
 
-                if ($before === null) {
+                if ($before === null || in_array($deadline->key, $done, true)) {
                     continue;
                 }
 

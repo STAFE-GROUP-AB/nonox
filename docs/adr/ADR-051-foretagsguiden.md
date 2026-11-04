@@ -230,7 +230,22 @@ about what has been checked and by whom.
 7. **Översikt** shows "Nästa datum", the next three dates, cached with the
    overview (its key carries `Guide::version()`), in a fixed number of
    queries.
-8. **The start date stays hidden.** REGLER.md needs `started_on` only for a
+8. **After the legal recheck (2026-11-04)**: a VAT or AGI period that is
+   reported in NONOX (a VAT report; a submitted, accepted or corrected AGI
+   file) gets no reminder and is shown as "Redovisad" (`DeadlineCompletion`);
+   the page shows the next six months, all 15 with `?alla=1` (a plain link);
+   a legal person's beskattningsår for preliminary tax follows SFL 3 kap.
+   5 §; an ideell förening or stiftelse gets the earlier 33 § VAT date,
+   flagged, with the 33 b § date named; EU trade also counts box 22
+   (flagged in code); a handelsbolag gets the question whether a legal
+   person is a partner, as a flagged recommendation; recommendations never
+   fall on a non-working day; the authority to check with is named per date.
+   **Not handled, by decision**: e-mail reminders; a setting for a
+   legal-person partner or for an auditor ("skicka årsredovisningen till
+   revisorn"); kontrolluppgifter (KU31, KU20); the first F-skatt month and
+   other decisions that apply to one company. The manual article lists them
+   under "Mina datum visar inte".
+9. **The start date stays hidden.** REGLER.md needs `started_on` only for a
    hint about the first F-skatt payment, which the engine does not compute
    (it shows the series from the fiscal year's second month, flagged). The
    column remains for a later stage.

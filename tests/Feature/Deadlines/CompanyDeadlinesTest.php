@@ -194,7 +194,7 @@ it('dates the income tax return, the meeting, the annual report and the closing 
     expect($dates['income_tax_return']->date->toDateString())->toBe('2027-05-03')
         ->and($dates)->not->toHaveKey('annual_meeting')
         ->and($dates)->not->toHaveKey('annual_report')
-        ->and($dates['closing']->date->toDateString())->toBe('2027-04-03');
+        ->and($dates['closing']->date->toDateString())->toBe('2027-04-02');
 
     ($this->set)(['legal_form' => LegalForm::Hb]);
     $dates = $byType();

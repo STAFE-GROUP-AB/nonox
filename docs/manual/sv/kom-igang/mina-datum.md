@@ -7,10 +7,10 @@ sokord: [mina datum, frister, deadline, sista dag, kalender, prenumerera, ics, g
 
 # Mina datum
 
-Mina datum samlar de datum som gäller företaget de kommande 15 månaderna: när momsdeklarationen ska vara inne, när arbetsgivardeklarationen ska lämnas och andra datum med en sista dag. Datumen räknas fram ur företagets inställningar och räkenskapsår i NONOX.
+Mina datum samlar de datum som gäller företaget: när momsdeklarationen ska vara inne, när arbetsgivardeklarationen ska lämnas, preliminärskatten, inkomstdeklarationen, årsstämman, årsredovisningen och andra datum med en sista dag. Datumen räknas fram ur företagets inställningar och räkenskapsår i NONOX.
 
 > [!IMPORTANT]
-> Kontrollera alltid datumen hos Skatteverket. Skatteverket kan ha beslutat något annat för just ditt företag, till exempel en annan momsperiod. Mina datum är en del av Företagsguiden, som är i beta.
+> Kontrollera alltid datumen hos Skatteverket och Bolagsverket. Skatteverket kan ha beslutat något annat för just ditt företag, till exempel en annan momsperiod. Mina datum är en del av Företagsguiden, som är i beta.
 
 ## Öppna Mina datum
 
@@ -18,22 +18,35 @@ Klicka på **Mina datum** längst ner i menyn, under **Företagsguiden**. Du nå
 
 ## Vad sidan visar
 
-Överst står det datum som ligger närmast, till exempel **Om 8 dagar: Momsdeklaration för kvartal 3 2026**. Under det kommer datumen månad för månad. För varje datum ser du:
+Överst står det datum som ligger närmast. Under det kommer datumen månad för månad, de kommande sex månaderna. Klicka på **Visa alla datum (15 månader)** längst ner för att se fler, och på **Visa de närmaste sex månaderna** för att gå tillbaka. Datum som infaller samma dag står tillsammans. För varje datum ser du:
 
 - vad som ska göras, och för vilken period;
 - varför det gäller företaget, till exempel **Ni redovisar moms varje kvartal.**;
 - hur många dagar som är kvar. Datum inom en vecka är markerade, och ett datum som har passerat står som **Passerat för 2 dagar sedan**;
-- **Gör det i NONOX**, som öppnar sidan där du gör det, **Läs mer**, som öppnar artikeln i Företagsguiden, och **Källa**, som öppnar Skatteverkets sida.
+- **Gör det i NONOX**, som öppnar sidan där du gör det, **Läs mer**, som öppnar artikeln i Företagsguiden, och **Källa**, som öppnar källan (Skatteverket, Bolagsverket eller lagtexten).
 
-Förklaringen överst skiljer på tre sorters markeringar:
+Förklaringen bredvid datumen skiljer på fyra sorters markeringar:
 
 | Markering | Betyder |
 |---|---|
 | **Datum i lagen** | Ett datum som står i lag eller i Skatteverkets regler. |
 | **Rekommendation** | Ett datum som Företagsguiden föreslår, till exempel när det är klokt att göra bokslutet. Det är inget krav i lagen. |
-| **Kontrollera datumet hos Skatteverket** | Ett datum vars regel vi ännu inte har fått bekräftad. Kontrollera det innan du går efter det. |
+| **Kontrollera datumet** | Ett datum vars regel inte är bekräftad ännu, eller som beror på ett beslut om just ditt företag. Vid datumet står **Kontrollera datumet hos Skatteverket** eller **Kontrollera datumet hos Bolagsverket**, efter vem som bestämmer. |
+| **Redovisad** | Momsen eller arbetsgivardeklarationen för perioden är redovisad i NONOX. Den påminner vi inte om. |
 
-Vilka datum som visas beror på företagets uppgifter. Är företaget momsregistrerat visas momsdeklarationerna, och med modulen Lön påslagen och företaget registrerat som arbetsgivare visas arbetsgivardeklarationerna. Stämmer något inte, kontrollera uppgifterna under [Företagets uppgifter](/manual/installningar/foretagets-uppgifter).
+Saknar NONOX företagets tidigare räkenskapsår står det **Datum för räkenskapsår före** med det första årets startdag. Lägg då in föregående räkenskapsår under **Räkenskapsår**, så visas också de datum som hör till det.
+
+Vilka datum som visas beror på företagets uppgifter. Är företaget momsregistrerat visas momsdeklarationerna, är det registrerat som arbetsgivare visas arbetsgivardeklarationerna, och har det F-skatt visas preliminärskatten. Stämmer något inte, kontrollera uppgifterna under [Företagets uppgifter](/manual/installningar/foretagets-uppgifter).
+
+## Mina datum visar inte
+
+Det här kan NONOX inte räkna ut, så det står inte i Mina datum:
+
+- **Beslut från Skatteverket som bara gäller ditt företag**, till exempel att få deklarera moms den 26:e, en tidigare dag för helårsmoms eller ett senare första datum för preliminärskatten. Följ beslutet.
+- **Om ett handelsbolag har en juridisk person som delägare.** I stället visas frågan **Har handelsbolaget en juridisk person som delägare?** med datumet som då gäller för årsredovisningen.
+- **När årsredovisningen ska till revisorn.** Den ska vara hos revisorn senast sex veckor före stämman, men NONOX vet inte om företaget har revisor eller när stämman hålls.
+- **Kontrolluppgifter**, till exempel KU31 för utdelning till fysiska personer, som ska vara hos Skatteverket den 31 januari.
+- **Inkomstdeklarationen för en ideell förening eller en stiftelse**, eftersom den beror på föreningens eller stiftelsens inkomster.
 
 ## Lägg till i din kalender
 
@@ -60,7 +73,7 @@ Vill du inte ha datumen i kalendern längre klickar du på **Stäng av länken**
 
 ## Påminnelser i NONOX
 
-En vecka och en dag före ett datum får ägaren och de som sköter företaget och bokslutet (administratörer och redovisningskonsulter) en notis i NONOX, under klockan. Notisen kommer en gång per datum. Datum inom två veckor står också under **Att göra** på översikten. Moms och arbetsgivardeklaration har egna rader där, som också vet om perioden redan är redovisad.
+En vecka före ett datum och sista vardagen före det får ägaren och de som sköter företaget och bokslutet (administratörer och redovisningskonsulter) en notis i NONOX, under klockan. Inkomstdeklarationen och årsredovisningen får också en notis 30 dagar före. Notisen kommer en gång per datum, och inte alls för rekommendationer eller för en moms- eller arbetsgivardeklaration som redan är redovisad i NONOX. Datum inom två veckor står också under **Att göra** på översikten. Moms och arbetsgivardeklaration har egna rader där, som också vet om perioden redan är redovisad.
 
 Stänger företaget av **Visa Företagsguiden** under företagets uppgifter försvinner Mina datum, påminnelserna och kalenderlänkarna för alla i företaget.
 

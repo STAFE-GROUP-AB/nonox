@@ -100,7 +100,25 @@ final class YearEndDeadlineProvider implements DeadlineProvider
                 );
             }
 
-            $closing = $hasMeeting ? $end->addMonthsNoOverflow(3) : $tax->date->subMonthNoOverflow();
+            if (in_array($form, [LegalForm::Hb, LegalForm::Kb], true)) {
+                // NONOX does not know the partners: a question, not a date (ÅRL 8 kap. 3 § 3, REGLER.md §6).
+                $deadlines[] = new Deadline(
+                    'annual_report:'.$end->toDateString(),
+                    DeadlineType::AnnualReport,
+                    __('Har handelsbolaget en juridisk person som delägare?'),
+                    self::workdayOrBefore($end->addMonthsNoOverflow(6)),
+                    $label,
+                    __('Då ska årsredovisningen vara hos Bolagsverket senast sex månader efter räkenskapsårets slut (årsredovisningslagen 8 kap. 3 §). Har bolaget bara fysiska personer som delägare gäller det inte.'),
+                    'accounting.annualReport',
+                    self::ARTICLE_MEETING,
+                    self::ANNUAL_REPORT,
+                    isRecommendation: true,
+                    legalVerify: true,
+                );
+            }
+
+            // A recommendation is never on a weekend or holiday: the working day before.
+            $closing = self::workdayOrBefore($hasMeeting ? $end->addMonthsNoOverflow(3) : $tax->date->subMonthNoOverflow());
             $deadlines[] = new Deadline(
                 'closing:'.$end->toDateString(),
                 DeadlineType::Closing,
@@ -150,6 +168,11 @@ final class YearEndDeadlineProvider implements DeadlineProvider
             self::ARTICLE_TAX,
             $partnership ? self::INCOME_TAX_HB : self::INCOME_TAX_AB,
         );
+    }
+
+    private static function workdayOrBefore(CarbonImmutable $date): CarbonImmutable
+    {
+        return Workdays::isWorkday($date) ? $date : Workdays::before($date);
     }
 
     /** SFL 32 kap. 2 §, electronic (the second stycke's month later), by the month the year ends. */

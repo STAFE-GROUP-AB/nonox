@@ -69,7 +69,16 @@ final class CompanyDeadlines
             return $all;
         }));
 
-        $deadlines = array_values(array_filter($deadlines, fn (Deadline $deadline): bool => $deadline->date->betweenIncluded($from, $to)));
+        // One date per key: a VAT quarter spanning two fiscal years comes from both (REGLER.md §1).
+        $unique = [];
+
+        foreach ($deadlines as $deadline) {
+            if ($deadline->date->betweenIncluded($from, $to)) {
+                $unique[$deadline->key] ??= $deadline;
+            }
+        }
+
+        $deadlines = array_values($unique);
         usort($deadlines, fn (Deadline $a, Deadline $b): int => [$a->date->toDateString(), $a->isRecommendation, $a->title] <=> [$b->date->toDateString(), $b->isRecommendation, $b->title]);
 
         return $this->memo[$memo] = $deadlines;

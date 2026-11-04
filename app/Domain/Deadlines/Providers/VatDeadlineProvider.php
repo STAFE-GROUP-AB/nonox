@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Deadlines\Providers;
 
+use App\Domain\Company\LegalForm;
 use App\Domain\Company\VatPeriod;
 use App\Domain\Deadlines\Contracts\DeadlineProvider;
 use App\Domain\Deadlines\Deadline;
@@ -48,6 +49,18 @@ final class VatDeadlineProvider implements DeadlineProvider
                 }
 
                 $label = self::periodLabel($period['start'], $period['end'], $company->vat_period);
+                $because = self::because($company);
+                $foundation = $company->vat_period === VatPeriod::Yearly && in_array($company->legal_form, [LegalForm::IdeellForening, LegalForm::Stiftelse], true) && ! $trade;
+
+                if ($company->vat_period === VatPeriod::Yearly && ! $trade) {
+                    $because .= ' '.__('Handlar företaget med andra EU-länder under året blir datumet tidigare.');
+                }
+
+                if ($foundation) {
+                    // NONOX cannot know whether it files an income tax return (SFL 30 kap. 4 §): the earlier 33 § date, flagged.
+                    $filing = VatDeadlines::for($company->vat_period, $period['end'], $company->turnover_over_40_msek, $company->legal_form, false, true, true);
+                    $because .= ' '.__('Lämnar föreningen eller stiftelsen inkomstdeklaration är sista dagen i stället :date.', ['date' => $filing?->translatedFormat('j F Y')]);
+                }
 
                 $deadlines[] = new Deadline(
                     'vat:'.$period['end']->toDateString(),
@@ -55,10 +68,12 @@ final class VatDeadlineProvider implements DeadlineProvider
                     __('Momsdeklaration för :period', ['period' => $label]),
                     $date,
                     $label,
-                    self::because($company),
+                    $because,
                     'vat.index',
                     self::ARTICLE,
                     self::SOURCE,
+                    legalVerify: $foundation,
+                    periodStart: $period['start'],
                 );
             }
         }
