@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Peppol\Console;
 
 use App\Models\Company;
+use App\Modules\Inbox\Support\InboxQuotaExceeded;
 use App\Modules\ModuleManager;
 use App\Modules\Peppol\Actions\AcceptPeppolDocument;
 use App\Modules\Peppol\Actions\RecordTransmissionStatus;
@@ -82,6 +83,9 @@ class SyncPeppolCommand extends Command
                         });
 
                     $participant->forceFill(['last_polled_at' => now(), 'last_error' => null])->save();
+                } catch (InboxQuotaExceeded) {
+                    // Polled again next time: last_polled_at is not moved, and what was taken is not taken twice.
+                    $this->warn("Company `{$company->id}`: the inbox quota is used up for this hour.");
                 } catch (AccessPointFailed|ConnectionException $exception) {
                     $participant->forceFill(['last_error' => mb_substr($exception->getMessage(), 0, 500)])->save();
                     $this->warn("Company `{$company->id}`: {$exception->getMessage()}");

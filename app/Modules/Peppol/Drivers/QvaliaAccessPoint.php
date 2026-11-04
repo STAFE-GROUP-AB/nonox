@@ -115,12 +115,19 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
         return self::status((string) ($entry['metadata']['status'] ?? $entry['status'] ?? ''));
     }
 
+    /**
+     * Nothing is marked as read at Qvalia: a document is listed again until
+     * the window has passed it, and NONOX takes the same bytes only once. So
+     * a document fetched while the inbox could not take it (quota, a
+     * failure) is fetched again on the next run instead of being lost.
+     */
     public function incoming(PeppolParticipant $receiver): array
     {
         $documents = [];
+        $since = ($receiver->last_polled_at ?? now()->subDays(7))->subHour()->toIso8601String();
 
         foreach (['invoices' => 'Invoice', 'creditnotes' => 'CreditNote'] as $path => $type) {
-            $list = $this->json($this->http()->get($this->transactionPath($receiver, $path, 'incoming'), ['includeRead' => 'false', 'limit' => 50]), 'incoming');
+            $list = $this->json($this->http()->get($this->transactionPath($receiver, $path, 'incoming').'/status', ['updatedAtFrom' => $since, 'includeRead' => 'true', 'limit' => 100]), 'incoming');
 
             foreach ((array) ($list['data'] ?? []) as $entry) {
                 $reference = (string) ($entry['integrationId'] ?? '');
@@ -137,9 +144,8 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
     public function fetch(PeppolParticipant $receiver, string $reference, string $documentType): InboundDocument
     {
         $path = $documentType === 'CreditNote' ? 'creditnotes' : 'invoices';
-        // The read endpoint marks the document as read, so polling does not take it twice.
         $response = $this->http()->accept('application/xml')
-            ->get($this->transactionPath($receiver, $path, 'incoming').'/read'.$path, ['integrationId' => $reference, 'includeRead' => 'true']);
+            ->get($this->transactionPath($receiver, $path, 'incoming'), ['integrationId' => $reference, 'includeRead' => 'true']);
 
         if (! $response->successful() || trim($response->body()) === '') {
             throw new AccessPointFailed("Qvalia fetch failed with HTTP {$response->status()}.", retryable: $response->serverError() || $response->status() === 429);

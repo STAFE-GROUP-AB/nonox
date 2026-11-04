@@ -139,7 +139,7 @@ describe('the webhook', function () {
     });
 
     it('fetches a new incoming document into the inbox when the signature is right', function () {
-        Http::fake(['api-test.qvalia.example/partner/PARTNER1/transaction/SE5566778808/invoices/incoming/readinvoices*' => Http::response((string) file_get_contents(base_path('tests/Fixtures/peppol/inrikes-25-12-6.xml')), 200, ['Content-Type' => 'application/xml'])]);
+        Http::fake(['api-test.qvalia.example/partner/PARTNER1/transaction/SE5566778808/invoices/incoming*' => Http::response((string) file_get_contents(base_path('tests/Fixtures/peppol/inrikes-25-12-6.xml')), 200, ['Content-Type' => 'application/xml'])]);
 
         qvaliaWebhook($this, $this->event)->assertOk();
 
