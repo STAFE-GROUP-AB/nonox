@@ -16,7 +16,7 @@ Två inställningar styr momsen i NONOX: hur ofta företaget redovisar moms, och
 1. Öppna **Företagsinställningar** och fliken **Uppgifter och personer**.
 2. Under **Moms och bokföring**, välj **Momsredovisning**: **Varje månad**, **Varje kvartal**, **En gång per år** eller **Inte momsregistrerad**.
 3. Välj **Bokföringsmetod**: **Fakturametoden** eller **Kontantmetoden**.
-4. Kryssa i **Omsättningen är över 40 miljoner kronor om året (andra deklarationsdagar för moms)** om det gäller företaget.
+4. Kryssa i **Beskattningsunderlaget för moms är över 40 miljoner kronor om året** om det gäller företaget. Det är försäljningen som moms ska tas ut på, utan unionsinterna förvärv och import, inte den totala omsättningen.
 5. Klicka på **Spara**.
 
 Bara ägare och administratörer kan ändra uppgifterna. Är du osäker på vad som gäller, titta i besluten från Skatteverket eller fråga din redovisningskonsult.

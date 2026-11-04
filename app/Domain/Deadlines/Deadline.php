@@ -38,6 +38,12 @@ final readonly class Deadline
         return in_array($this->type, [DeadlineType::AnnualReport, DeadlineType::AnnualMeeting], true) ? 'Bolagsverket' : 'Skatteverket';
     }
 
+    /** The kind and the title, for a calendar event or a reminder: "Moms: Deklarera och betala moms för kvartal 4 2026". */
+    public function summary(): string
+    {
+        return DeadlineCategory::of($this)->label().': '.$this->title;
+    }
+
     /** Whole days from today to the date: negative when it has passed. */
     public function daysLeft(CarbonImmutable $today): int
     {

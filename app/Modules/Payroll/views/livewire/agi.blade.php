@@ -11,7 +11,7 @@
     @if($groupNotice)
         <div class="rounded-2xl bg-amber-50 p-4 text-sm text-amber-950 ring-1 ring-amber-200" role="status" data-agi-group-notice>
             <p class="font-semibold">{{ __('Deklarationsdagen styrs nu av företagets uppgifter') }}</p>
-            <p class="mt-1">{{ __('Löneinställningarna sa att företaget omsätter mer än 40 miljoner kronor, men under företagets uppgifter är det inte angivet (eller så är företaget inte momsregistrerat). Därför gäller den 12:e. Stämmer det inte, ändra under företagets uppgifter.') }}</p>
+            <p class="mt-1">{{ __('Löneinställningarna sa att företagets beskattningsunderlag för moms är över 40 miljoner kronor, men under företagets uppgifter är det inte angivet (eller så är företaget inte momsregistrerat). Därför gäller den 12:e. Stämmer det inte, ändra under företagets uppgifter.') }}</p>
             <div class="mt-3 flex flex-wrap gap-3">
                 <a href="{{ route('teams.show', $companyId) }}" class="font-semibold text-accent-700 underline">{{ __('Öppna företagets uppgifter') }}</a>
                 <button type="button" wire:click="acknowledgeGroup" class="font-semibold text-gray-800 underline">{{ __('Uppfattat') }}</button>

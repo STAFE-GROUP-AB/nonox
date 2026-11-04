@@ -177,7 +177,8 @@
                                 </span>
                                 <span class="min-w-0 flex-1">
                                     <span class="block font-semibold text-ink">{{ $deadline->title }}</span>
-                                    <span class="block text-sm text-gray-600">
+                                    <span class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600">
+                                        <x-guide.deadline-chip :category="App\Domain\Deadlines\DeadlineCategory::of($deadline)" />
                                         @if($days === 0)
                                             {{ __('I dag') }}
                                         @elseif($days === 1)

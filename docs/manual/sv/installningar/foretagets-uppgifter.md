@@ -43,7 +43,7 @@ Alla i företaget kan se uppgifterna, men bara ägare och administratörer kan �
 | **Regelverk för årsbokslut** | K1, K2 eller K3. Styr bland annat [årsredovisningen](/manual/bokslut/arsredovisning). Vilka företag som får välja vad står i [Skapa ett företag](/manual/kom-igang/skapa-ett-foretag#vad-uppgifterna-betyder). |
 | **Företaget har F-skatt** | Står på fakturorna. |
 | **Företaget är registrerat som arbetsgivare** | Att företaget har anställda och lämnar arbetsgivardeklaration. |
-| **Omsättningen är över 40 miljoner kronor om året** | Ger andra deklarationsdagar för momsen. |
+| **Beskattningsunderlaget för moms är över 40 miljoner kronor om året** | Ger andra deklarationsdagar för moms och arbetsgivardeklaration. Det som räknas är försäljningen som moms ska tas ut på, utan unionsinterna förvärv och import, beräknad för året. Inte den totala omsättningen: ett företag med mycket momsfri försäljning kan ha hög omsättning men ett lågt beskattningsunderlag. |
 | **Har ansökt om beskattning i köparens land (OSS) eller är registrerat för OSS** | Bocka i om företaget har valt att ta ut köparlandets moms vid försäljning till privatpersoner i andra EU-länder, och fyll i **Från och med**. Annars tas svensk moms ut tills försäljningen går över 99 680 kronor om året. Läs [OSS](/manual/moms/oss). |
 | **Skatteverket har beslutat att periodisk sammanställning för varor får lämnas per kvartal** | Bocka i bara om Skatteverket har beslutat det, och fyll i **Gäller från och med**. Datumet flyttas till kvartalets första dag. Utan beslut redovisas varor till företag i andra EU-länder per månad. Läs [Periodisk sammanställning](/manual/moms/periodisk-sammanstallning). |
 

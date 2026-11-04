@@ -89,7 +89,7 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   arbetsgivare med ett beskattningsunderlag för moms över 40 miljoner kronor
   (SFL 26 kap. 26, 30 och 32 §§). Vilken grupp företaget hör till avgörs på
   ett enda ställe, av företagets egna uppgifter: momsregistrerat och
-  Omsättningen är över 40 miljoner kronor (SFL 26 kap. 32 §; bara ett
+  Beskattningsunderlaget för moms är över 40 miljoner kronor om året (SFL 26 kap. 30 och 32 §§; bara ett
   momsregistrerat företag kan ha den större gruppen). Det gäller sidan
   Arbetsgivardeklaration, Mina företag, Mina datum, kalenderlänken,
   påminnelserna och preliminärskatten. Löneinställningen för deklarationsdag

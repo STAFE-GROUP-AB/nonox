@@ -18,20 +18,40 @@ Klicka på **Mina datum** längst ner i menyn, under **Företagsguiden**. Du nå
 
 ## Vad sidan visar
 
-Överst står det datum som ligger närmast. Under det kommer datumen månad för månad, de kommande sex månaderna. Klicka på **Visa alla datum (15 månader)** längst ner för att se fler, och på **Visa de närmaste sex månaderna** för att gå tillbaka. Datum som infaller samma dag står tillsammans. För varje datum ser du:
+![Ditt år i korthet på Mina datum för ett aktiebolag med kvartalsmoms, F-skatt och anställda: en rad för varje sorts datum, med nästa datum och inställningen som styr det.](/bilder/manual/kom-igang/mina-datum.webp)
 
-- vad som ska göras, och för vilken period;
-- varför det gäller företaget, till exempel **Ni redovisar moms varje kvartal.**;
+Sidan börjar med **Så läser du sidan**, en kort förklaring av hur datumen räknas fram och flyttas när de infaller på en helg, att F-skatt inte är moms och vad märkena betyder. Klicka på rubriken för att fälla ihop den. NONOX kommer ihåg att du har fällt ihop den, för dig och för det här företaget.
+
+### Ditt år i korthet
+
+Under det står **Ditt år i korthet**: en rad för varje sorts datum som gäller företaget, till exempel **Moms – fyra gånger om året, en gång per kvartal (ni redovisar per kvartal)** eller **Preliminärskatt (F-skatt) – varje månad, oftast den 12:e (17:e i januari och augusti)**. Varje rad säger när det ska göras, vilket datum som är nästa och vilken inställning som styr det, till exempel **Styrs av Momsredovisning under Företagets uppgifter.** Stämmer något inte klickar du på **Ändra under Företagets uppgifter**.
+
+**Visa datumen** visar bara datum av den sorten, och **Läs mer** öppnar artikeln i Företagsguiden. Raden för preliminärskatten säger också **Om ni ska betala, hur mycket och från vilken månad står i Skatteverkets beslut om debiterad preliminärskatt. Står det 0 kronor finns inget att betala.**, eftersom det bara står i beslutet.
+
+### Nästa datum och datumen månad för månad
+
+Sedan kommer det datum som ligger närmast. Under det kommer datumen månad för månad, de kommande sex månaderna. Klicka på **Visa alla datum (15 månader)** längst ner för att se fler, och på **Visa de närmaste sex månaderna** för att gå tillbaka. Datum som infaller samma dag står tillsammans. För varje datum ser du:
+
+- ett märke för vad datumet gäller: **Moms**, **F-skatt**, **Arbetsgivare**, **Inkomstdeklaration**, **Bolagsverket**, **Bokslut** eller **EU-försäljning**. Varje märke har en egen färg och symbol;
+- om det är en **Betalning**, en **Deklaration** eller **Deklaration och betalning**. Momsen deklareras och betalas samma dag. Preliminärskatten med F-skatt betalas bara, den deklareras inte;
+- vad du ska göra, och för vilken period, till exempel **Deklarera och betala moms för kvartal 4 2026** eller **Betala F-skatt (preliminärskatt), december 2026**;
+- varför det gäller företaget. Återkommer samma förklaring varje månad står den bara vid den första;
 - hur många dagar som är kvar. Datum inom en vecka är markerade, och ett datum som har passerat står som **Passerat för 2 dagar sedan**;
 - **Gör det i NONOX**, som öppnar sidan där du gör det, **Läs mer**, som öppnar artikeln i Företagsguiden, och **Källa**, som öppnar källan (Skatteverket, Bolagsverket eller lagtexten).
 
-Förklaringen bredvid datumen skiljer på fyra sorters markeringar:
+Vid det första datumet av varje sort står **Vad är det här?**. Klicka på det för en kort förklaring av vad datumet gäller, varför det finns och vad du gör i NONOX.
 
-| Markering | Betyder |
+### Visa bara en sorts datum
+
+Ovanför datumen står **Alla**, **Moms**, **Skatt**, **Arbetsgivare**, **Bolagsverket** och **Bokslut**, med antalet datum för varje. Klicka på en för att bara se de datumen. **Skatt** samlar preliminärskatten och inkomstdeklarationen, och **Moms** också den periodiska sammanställningen. Nästa datum överst följer valet. En sort som inte har några datum visas inte.
+
+### Märkena
+
+| Märke | Betyder |
 |---|---|
-| **Datum i lagen** | Ett datum som står i lag eller i Skatteverkets regler. |
+| **Datum i lagen** | Ett datum som följer av lagen. |
 | **Rekommendation** | Ett datum som Företagsguiden föreslår, till exempel när det är klokt att göra bokslutet. Det är inget krav i lagen. |
-| **Kontrollera datumet** | Ett datum vars regel inte är bekräftad ännu, eller som beror på ett beslut om just ditt företag. Vid datumet står **Kontrollera datumet hos Skatteverket** eller **Kontrollera datumet hos Bolagsverket**, efter vem som bestämmer. |
+| **Kontrollera** | Ett datum vars regel inte är bekräftad ännu, eller som beror på ett beslut om just ditt företag. Vid datumet står **Kontrollera datumet hos Skatteverket** eller **Kontrollera datumet hos Bolagsverket**, efter vem som bestämmer. Gäller det en hel serie, som preliminärskatten varje månad, står det bara vid den första. |
 | **Redovisad** | Momsen eller arbetsgivardeklarationen för perioden är redovisad i NONOX. Den påminner vi inte om. |
 
 Saknar NONOX företagets tidigare räkenskapsår står det **Datum för räkenskapsår före** med det första årets startdag. Lägg då in föregående räkenskapsår under **Räkenskapsår**, så visas också de datum som hör till det.
@@ -42,15 +62,15 @@ Vilka datum som visas beror på företagets uppgifter. Är företaget momsregist
 
 Det här kan NONOX inte räkna ut, så det står inte i Mina datum:
 
-- **Beslut från Skatteverket som bara gäller ditt företag**, till exempel att få deklarera moms den 26:e, en tidigare dag för helårsmoms eller ett senare första datum för preliminärskatten. Följ beslutet.
-- **Om ett handelsbolag har en juridisk person som delägare.** I stället visas frågan **Har handelsbolaget en juridisk person som delägare?** med datumet som då gäller för årsredovisningen.
+- **Beslut från Skatteverket som bara gäller ditt företag**, till exempel att få deklarera moms den 26:e, en tidigare dag för helårsmoms, ett senare första datum för preliminärskatten eller ett beslut om att en större arbetsgivare ska deklarera den 12:e. Följ beslutet.
+- **Om ett handelsbolag har en juridisk person som delägare.** I stället visas **Kontrollera om handelsbolaget ska skicka in årsredovisningen** med datumet som då gäller för årsredovisningen.
 - **När årsredovisningen ska till revisorn.** Den ska vara hos revisorn senast sex veckor före stämman, men NONOX vet inte om företaget har revisor eller när stämman hålls.
 - **Kontrolluppgifter**, till exempel KU31 för utdelning till fysiska personer, som ska vara hos Skatteverket den 31 januari.
 - **Inkomstdeklarationen för en ideell förening eller en stiftelse**, eftersom den beror på föreningens eller stiftelsens inkomster.
 
 ## Lägg till i din kalender
 
-Du kan prenumerera på datumen i din egen kalender. Kalendern hämtar dem själv och påminner en vecka och en dag före varje datum.
+Du kan prenumerera på datumen i din egen kalender. Kalendern hämtar dem själv och påminner en vecka och en dag före varje datum. I kalendern börjar varje händelse med vad den gäller, till exempel **Moms: Deklarera och betala moms för kvartal 4 2026**.
 
 ## Så här gör du
 

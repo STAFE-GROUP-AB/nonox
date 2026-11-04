@@ -46,7 +46,7 @@
         <x-ui.field :for="'payroll_'.$key" :label="$labels[$key]" :error="'settings.'.$key">
             @if($key === 'agi_deadline_group')
                 <p id="payroll_agi_deadline_group" class="mt-2 text-sm font-medium text-gray-900" data-agi-group>{{ $values[$agiGroup] }}</p>
-                <p class="mt-1 text-xs text-gray-500">{{ __('Styrs av företagets inställning för moms och omsättning.') }} <a href="{{ route('teams.show', $companyId) }}" class="font-medium text-accent-700 underline">{{ __('Ändra under företagets uppgifter') }}</a></p>
+                <p class="mt-1 text-xs text-gray-500">{{ __('Styrs av företagets inställning för moms och beskattningsunderlaget för moms.') }} <a href="{{ route('teams.show', $companyId) }}" class="font-medium text-accent-700 underline">{{ __('Ändra under företagets uppgifter') }}</a></p>
             @elseif($allowed !== null)
                 <select id="payroll_{{ $key }}" class="{{ $input }} mt-1" wire:model="settings.{{ $key }}">
                     @foreach($allowed as $value)

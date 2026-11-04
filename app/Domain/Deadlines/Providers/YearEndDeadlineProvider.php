@@ -78,10 +78,10 @@ final class YearEndDeadlineProvider implements DeadlineProvider
                 $deadlines[] = new Deadline(
                     'annual_meeting:'.$end->toDateString(),
                     DeadlineType::AnnualMeeting,
-                    $form === LegalForm::Ab ? __('Årsstämma för :year', ['year' => $label]) : __('Föreningsstämma för :year', ['year' => $label]),
+                    $form === LegalForm::Ab ? __('Håll årsstämman för :year', ['year' => $label]) : __('Håll föreningsstämman för :year', ['year' => $label]),
                     $meeting,
                     $label,
-                    __('Stämman ska hållas inom sex månader efter räkenskapsårets slut. Den fastställer årsredovisningen och beslutar om vinsten.'),
+                    __('Stämman ska hållas inom sex månader efter räkenskapsårets slut. Den fastställer årsredovisningen och beslutar hur vinsten eller förlusten ska disponeras.'),
                     'accounting.annualReport',
                     self::ARTICLE_MEETING,
                     self::LAW_ABL,
@@ -89,7 +89,7 @@ final class YearEndDeadlineProvider implements DeadlineProvider
                 $deadlines[] = new Deadline(
                     'annual_report:'.$end->toDateString(),
                     DeadlineType::AnnualReport,
-                    __('Årsredovisningen för :year ska vara hos Bolagsverket', ['year' => $label]),
+                    __('Skicka årsredovisningen för :year till Bolagsverket', ['year' => $label]),
                     $end->addMonthsNoOverflow(7),
                     $label,
                     __('Sista dagen innan Bolagsverket tar ut förseningsavgift. Skicka den inom en månad efter stämman.'),
@@ -102,13 +102,14 @@ final class YearEndDeadlineProvider implements DeadlineProvider
 
             if (in_array($form, [LegalForm::Hb, LegalForm::Kb], true)) {
                 // NONOX does not know the partners: a question, not a date (ÅRL 8 kap. 3 § 3, REGLER.md §6).
+                // TODO(legal-verify): a larger HB/KB (BFL 6 kap. 1 § 6, ÅRL 8 kap. 3 § 5) also files, within six months; not computed.
                 $deadlines[] = new Deadline(
                     'annual_report:'.$end->toDateString(),
                     DeadlineType::AnnualReport,
-                    __('Har handelsbolaget en juridisk person som delägare?'),
+                    __('Kontrollera om handelsbolaget ska skicka in årsredovisningen'),
                     self::workdayOrBefore($end->addMonthsNoOverflow(6)),
                     $label,
-                    __('Då ska årsredovisningen vara hos Bolagsverket senast sex månader efter räkenskapsårets slut (årsredovisningslagen 8 kap. 3 §). Har bolaget bara fysiska personer som delägare gäller det inte.'),
+                    __('Har handelsbolaget en juridisk person som delägare ska årsredovisningen vara hos Bolagsverket senast sex månader efter räkenskapsårets slut (årsredovisningslagen 8 kap. 3 §). Har bolaget bara fysiska personer som delägare gäller det normalt inte (utom för större handelsbolag).'),
                     'accounting.annualReport',
                     self::ARTICLE_MEETING,
                     self::ANNUAL_REPORT,
@@ -143,7 +144,7 @@ final class YearEndDeadlineProvider implements DeadlineProvider
             return new Deadline(
                 'income_tax_return:'.$end->toDateString(),
                 DeadlineType::IncomeTaxReturn,
-                __('Inkomstdeklaration med NE-bilaga för :year', ['year' => $label]),
+                __('Lämna inkomstdeklarationen med NE-bilaga för :year', ['year' => $label]),
                 Workdays::next($end->setDate($end->year + 1, 5, 2)->startOfDay()),
                 $label,
                 __('Du som driver enskild firma deklarerar näringsverksamheten på NE-bilagan i din egen deklaration.'),
@@ -158,7 +159,7 @@ final class YearEndDeadlineProvider implements DeadlineProvider
         return new Deadline(
             'income_tax_return:'.$end->toDateString(),
             DeadlineType::IncomeTaxReturn,
-            $partnership ? __('Inkomstdeklaration 4 för :year', ['year' => $label]) : __('Inkomstdeklaration 2 för :year', ['year' => $label]),
+            $partnership ? __('Lämna inkomstdeklaration 4 för :year', ['year' => $label]) : __('Lämna inkomstdeklaration 2 för :year', ['year' => $label]),
             Workdays::next(self::legalPersonDate($end)),
             $label,
             $partnership

@@ -30,16 +30,16 @@ class DeadlineReminder extends Notification
 
     public static function for(Company $company, Deadline $deadline, int $daysLeft): self
     {
-        $replace = ['title' => $deadline->title, 'days' => $daysLeft, 'date' => $deadline->date->translatedFormat('j F')];
+        $replace = ['title' => $deadline->summary(), 'days' => $daysLeft, 'date' => $deadline->date->translatedFormat('j F')];
 
         return new self(
             $company->id,
             (string) $company->name,
             $deadline->key,
             match (true) {
-                $daysLeft <= 0 => __(':title: sista dagen är i dag, :date.', $replace),
-                $daysLeft === 1 => __(':title: sista dagen är i morgon, :date.', $replace),
-                default => __(':title: sista dagen är om :days dagar, :date.', $replace),
+                $daysLeft <= 0 => __(':title. Sista dagen är i dag, :date.', $replace),
+                $daysLeft === 1 => __(':title. Sista dagen är i morgon, :date.', $replace),
+                default => __(':title. Sista dagen är om :days dagar, :date.', $replace),
             }.(in_array($deadline->type, self::PAYMENTS, true) ? ' '.__('Betala i god tid: en betalning räknas när den har kommit in på skattekontot.') : '')
             .' '.($deadline->legalVerify ? __('Kontrollera datumet hos :authority.', ['authority' => $deadline->checkWith()]) : __('Beräknat från företagets inställningar.')),
         );

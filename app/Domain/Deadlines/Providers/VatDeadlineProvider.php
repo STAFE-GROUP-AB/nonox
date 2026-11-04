@@ -65,7 +65,7 @@ final class VatDeadlineProvider implements DeadlineProvider
                 $deadlines[] = new Deadline(
                     'vat:'.$period['end']->toDateString(),
                     DeadlineType::Vat,
-                    __('Momsdeklaration för :period', ['period' => $label]),
+                    __('Deklarera och betala moms för :period', ['period' => $label]),
                     $date,
                     $label,
                     $because,
@@ -98,6 +98,6 @@ final class VatDeadlineProvider implements DeadlineProvider
             default => __('Ni redovisar moms en gång om året'),
         };
 
-        return $company->turnover_over_40_msek ? __(':period och omsätter mer än 40 miljoner kronor om året.', ['period' => $period]) : "{$period}.";
+        return $company->turnover_over_40_msek ? __(':period och har ett beskattningsunderlag för moms som beräknas bli mer än 40 miljoner kronor om året.', ['period' => $period]) : "{$period}.";
     }
 }

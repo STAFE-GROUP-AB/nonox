@@ -189,9 +189,11 @@
                 <x-checkbox wire:model="state.employer_registered" :disabled="! $canUpdate" />
                 <span class="text-sm text-gray-700">{{ __('Företaget är registrerat som arbetsgivare') }}</span>
             </label>
-            <label class="flex items-center gap-3">
-                <x-checkbox wire:model="state.turnover_over_40_msek" :disabled="! $canUpdate" />
-                <span class="text-sm text-gray-700">{{ __('Omsättningen är över 40 miljoner kronor om året (andra deklarationsdagar för moms)') }}</span>
+            <label class="flex items-start gap-3">
+                <x-checkbox wire:model="state.turnover_over_40_msek" :disabled="! $canUpdate" class="mt-0.5" />
+                <span class="text-sm text-gray-700">{{ __('Beskattningsunderlaget för moms är över 40 miljoner kronor om året') }}
+                    <span class="block text-xs text-gray-500">{{ __('Försäljningen som moms ska tas ut på, utan unionsinterna förvärv och import, beräknad för året. Inte den totala omsättningen. Ger andra deklarationsdagar för moms och arbetsgivardeklaration.') }}</span>
+                </span>
             </label>
             <label class="flex items-start gap-3">
                 <x-checkbox wire:model.live="state.oss_elected" :disabled="! $canUpdate" class="mt-0.5" />

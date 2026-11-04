@@ -312,7 +312,7 @@ it('shows the AGI group on the payroll settings read-only, decided by the compan
     $this->company->forceFill(['vat_registered' => true, 'vat_period' => VatPeriod::Monthly, 'turnover_over_40_msek' => true])->save();
 
     Livewire::test(PayrollSettingsForm::class, ['company' => $this->company->fresh()])
-        ->assertSee('Styrs av företagets inställning för moms och omsättning')
+        ->assertSee('Styrs av företagets inställning för moms och beskattningsunderlaget för moms')
         ->assertSee('Omsättning över 40 miljoner kronor')
         ->assertSee(route('teams.show', $this->company->id), false)
         ->assertDontSee('<select id="payroll_agi_deadline_group"', false)

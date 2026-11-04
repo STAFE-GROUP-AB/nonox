@@ -51,7 +51,7 @@ it('dates quarterly VAT on the 12th of the second month, the 17th in August, mov
     ]);
 
     $deadline = collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2026-11-04'), 1))->firstWhere('type', DeadlineType::Vat);
-    expect($deadline->title)->toBe('Momsdeklaration för kvartal 3 2026')
+    expect($deadline->title)->toBe('Deklarera och betala moms för kvartal 3 2026')
         ->and($deadline->appliesBecause)->toBe('Ni redovisar moms varje kvartal.')
         ->and($deadline->route)->toBe('vat.index')
         ->and($deadline->legalVerify)->toBeFalse()
@@ -78,7 +78,7 @@ it('dates monthly VAT above 40 million kronor on the 26th of the next month, the
     ]);
 
     expect(collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2026-11-04'), 1))->firstWhere('type', DeadlineType::Vat)->appliesBecause)
-        ->toBe('Ni redovisar moms varje månad och omsätter mer än 40 miljoner kronor om året.');
+        ->toBe('Ni redovisar moms varje månad och har ett beskattningsunderlag för moms som beräknas bli mer än 40 miljoner kronor om året.');
 });
 
 it('dates yearly VAT by legal form, a broken year by the next named year end (SFL 3 kap. 5 §)', function () {
@@ -89,7 +89,7 @@ it('dates yearly VAT by legal form, a broken year by the next named year end (SF
     $deadline = collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2026-11-04')))->firstWhere('type', DeadlineType::Vat);
     expect("{$deadline->key} {$deadline->date->toDateString()}")->toBe('vat:2026-12-31 2027-08-17')
         ->and($deadline->legalVerify)->toBeFalse()
-        ->and($deadline->title)->toBe('Momsdeklaration för 2026');
+        ->and($deadline->title)->toBe('Deklarera och betala moms för 2026');
 
     FiscalYear::query()->delete();
     FiscalYear::create(['start_date' => '2026-04-01', 'end_date' => '2027-03-31']);
