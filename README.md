@@ -142,6 +142,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Vunnen affär kopplas till offerten, ordern eller fakturan i bokföringen. Förlorad affär får en orsak och ett datum då säljaren påminns om att vinna tillbaka kunden.
 - Kundkort och en egen sida för varje kontaktperson: snabbval för att ringa, mejla, logga och planera, fakta i en rad, kundens status eller affärens steg som en stegrad, historiken i flikar med antal och nyckeltalen ur bokföringen. En person som inte vill bli kontaktad kan inte ringas eller mejlas därifrån. I mobilen ligger de vanligaste snabbvalen fast längst ned.
 - Prognos per månad (värde gånger sannolikhet, bredvid det som har vunnits), mål per säljare för möten, offerter och ordervärde som mäts ur CRM och faktureringen, och en översikt med säljtrattens värde, andel vunna, säljcykel och aktiviteter per vecka.
+- Kalenderlänk för CRM: dina planerade samtal, möten och uppgifter i Google Kalender, Outlook eller Apples Kalender genom en hemlig länk, som standard bara med typ och företag. Ett enstaka möte läggs in med en kalenderfil, och ett möte kan skickas som inbjudan till kontaktpersonen, aldrig till någon som är markerad Kontakta inte.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
@@ -177,6 +178,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
 
 ### På väg
+- Tvåvägssynk med Google Kalender och Outlook för CRM: byggd, och slås på när tjänsten är registrerad hos Google och Microsoft och företaget tillåter det.
 - Utländsk valuta: betalfiler i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).

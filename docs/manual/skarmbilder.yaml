@@ -200,3 +200,6 @@ crm/saljtratten-mobil: { foretag: konsult, rutt: crm.deals, enhet: mobil }
 crm/affarens-kort: { foretag: konsult, rutt: crm.deals.show, modell: { tabell: crm_deals, dar: { title: 'Ramavtal 2027' } } }
 crm/prognos-och-mal: { foretag: konsult, rutt: crm.forecast }
 crm/oversikt-forsaljning: { foretag: konsult, rutt: crm.dashboard }
+crm/kalender: { foretag: konsult, rutt: crm.calendar, klick: ['text=Skapa kalenderlänk'] }
+crm/lagg-till-i-kalendern: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } }, fraga: { flik: moten }, del: '[data-testid="crm-entry"]' }
+crm/planera-mote-med-inbjudan: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } }, klick: ['text=Planera möte'], visa: '#activity_type' }

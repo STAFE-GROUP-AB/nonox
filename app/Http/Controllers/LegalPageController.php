@@ -17,9 +17,9 @@ use Illuminate\View\View;
  */
 class LegalPageController
 {
-    public const string VERSION = '1.4';
+    public const string VERSION = '1.5';
 
-    public const string EFFECTIVE = '2026-11-03';
+    public const string EFFECTIVE = '2026-11-04';
 
     /** Route name => file in docs/juridik and page title. */
     public const array DOCUMENTS = [

@@ -26,11 +26,11 @@
     },
     {
       "id": "crm-kalender",
-      "rubrik": "CRM steg 6: kalender",
-      "beskrivning": "Möten och uppgifter i din kalender, först som en kalenderlänk och sedan synkade åt båda hållen med Google och Microsoft.",
-      "status": "Planerat",
+      "rubrik": "CRM steg 6: synk åt båda hållen med Google Kalender och Outlook",
+      "beskrivning": "Kalenderlänken, kalenderfilerna och mötesinbjudningarna finns. Synken åt båda hållen med Google Kalender och Outlook är byggd och slås på när tjänsten är registrerad och granskad hos Google och Microsoft. Synk av e-post kommer efter det.",
+      "status": "Pågår",
       "omrade": "CRM",
-      "uppdaterad": "2026-11-03"
+      "uppdaterad": "2026-11-04"
     },
     {
       "id": "lager",

@@ -53,7 +53,9 @@ invoicing core. Turning it off hides it and keeps every row.
    address, templates, newsletters to segments with click statistics and
    unsubscribe, web forms that create leads.
 6. Calendar export (ICS) first, then two-way calendar and mail sync with
-   Google and Microsoft once app registrations exist.
+   Google and Microsoft once app registrations exist. Built (2026-11-04):
+   see ADR-049; the Google and Microsoft sync is dormant until the apps are
+   registered, and mail sync is only an interface.
 
 ### Stage 1: data model
 

@@ -89,6 +89,10 @@ Följande gallras aldrig:
 - ett prospekt som har blivit kund, eftersom det finns i kundregistret,
 - en person som är **Fakturamottagare** hos en kund, eftersom namnet kan stå på fakturorna.
 
+## Kalendrar
+
+En kalenderlänk och en kopplad kalender kopierar aktiviteter till en annan tjänst, till exempel Google, Microsoft eller Apple, som kan lagra dem utanför EU. Utan detaljer står bara typ och företag i kalendern, och en privatperson visas som "privatkund". Med detaljer kommer rubrik, plats, anteckning och kontaktpersonens namn med. Aktiviteter om någon med begränsad behandling kommer aldrig med, och en person som är markerad **Kontakta inte** nämns aldrig. Under **CRM → Inställningar** bestämmer företaget om användarna får visa detaljer och om de får koppla Google- eller Microsoft-kalendrar (av som standard). Tillåter företaget kopplingen bör det stå i företagets egen registerförteckning och i informationen till kontaktpersonerna; kontrollera med er dataskyddsansvarige. Se [Kalender](/manual/crm/kalender).
+
 ## Läs också
 
 - [Företag och personer](/manual/crm/foretag-och-personer)

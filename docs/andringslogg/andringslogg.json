@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-crm-kalender",
+      "datum": "2026-11-04T02:25:00+01:00",
+      "rubrik": "CRM: dina möten och samtal i din egen kalender",
+      "beskrivning": "Under CRM → Kalender skapar du en hemlig länk som Google Kalender, Outlook eller Apples Kalender prenumererar på, som standard bara med typ och företag. Ett planerat möte kan läggas till i kalendern med ett tryck och skickas som inbjudan till kontaktpersonen. Synk åt båda hållen med Google och Microsoft kommer när tjänsten är registrerad hos dem.",
+      "typ": "Nytt",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-03-chatt-egen-kod",
       "datum": "2026-11-03T17:04:00+01:00",
       "rubrik": "Tydligare besked när du anger koden till din egen chatt",

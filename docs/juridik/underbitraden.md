@@ -20,6 +20,10 @@ De här underbiträdena behandlar personuppgifter för {foretag} när vi driftar
 | Fortnox | Källa vid flytt från Fortnox; vi läser bara | Sverige |
 | Enable Banking Oy (modulen Bank) | Läser saldon och transaktioner på de bankkonton företaget kopplar med BankID; NONOX kan inte betala | Finland (EU) |
 
+**Inte underbiträden, men mottagare om företaget tillåter det (CRM):** när en användare kopplar sin egen Google- eller Microsoft-kalender skriver NONOX användarens planerade CRM-aktiviteter dit (som standard bara typ och företag). Google och Microsoft är då företagets eller användarens egen leverantör, inte vårt underbiträde. Det kan bara ske om företaget har slagit på det under CRM:s inställningar. Google LLC och Microsoft Corporation är certifierade under EU–US Data Privacy Framework, och uppgifterna kan lagras utanför EU/EES. En kalenderlänk som användaren prenumererar på hämtas av den kalendertjänst användaren själv väljer.
+
+<!-- TODO(legal-verify): Google och Microsoft som mottagare på företagets instruktion och inte underbiträden, överföringsgrunden, och om ett privat Google- eller Microsoft-konto ska tillåtas (ADR-049). -->
+
 <!-- TODO(legal-verify): Enable Banking som underbiträde eller företagets egen leverantör, DPA, och om Stafe behöver registreras hos Finansinspektionen (ADR-034, frågor till jurist 30–31). Modulen Bank erbjuds inte i den driftade tjänsten förrän det är klart. -->
 <!-- TODO(legal-verify): Bolagsverket som mottagare av personnummer vid hämtning av företagsuppgifter, och villkoren för vidareanvändning (ADR-035, frågor till jurist 32–34). -->
 <!-- TODO(legal-verify): bekräfta Laravel Forges certifiering under EU–US Data Privacy Framework och avtal (DPA) med varje underbiträde. -->

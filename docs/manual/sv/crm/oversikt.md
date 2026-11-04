@@ -56,6 +56,7 @@ En **Revisor** ser hela CRM, nyckeltalen och aktiviteterna, men kan inte ändra 
 - [Företag och personer](/manual/crm/foretag-och-personer)
 - [Kontaktpersonens sida](/manual/crm/kontaktpersonens-sida)
 - [Aktiviteter och nästa steg](/manual/crm/aktiviteter-och-nasta-steg)
+- [Kalender](/manual/crm/kalender)
 - [Säljtratt och affärer](/manual/crm/saljtratt-och-affarer)
 - [Prognos och mål](/manual/crm/prognos-och-mal)
 - [Översikt för försäljningen](/manual/crm/instrumentpanel)
