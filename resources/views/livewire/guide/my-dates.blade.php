@@ -25,17 +25,18 @@
             <div>
                 <h3 class="font-semibold text-ink">{{ __('Datumen kommer från dina inställningar') }}</h3>
                 <p class="mt-1">{{ __('NONOX räknar fram datumen ur företagets uppgifter och räkenskapsår. Stämmer något inte, till exempel momsperioden, ändrar du det under Företagets uppgifter så ändras datumen.') }}</p>
+                <p class="mt-2">{{ __('Infaller dagen på en lördag, söndag eller helgdag flyttas den till nästa vardag, och datumen här är redan flyttade. Gränsen för årsstämman och Bolagsverkets sjumånadersgräns visas utan flytt.') }}</p>
             </div>
             <div>
                 <h3 class="font-semibold text-ink">{{ __('F-skatt är inte moms') }}</h3>
-                <p class="mt-1">{{ __('F-skatt är företagets skatt i förskott och betalas varje månad. Momsen deklareras och betalas en gång per momsperiod. Märket på varje rad visar vilket det är.') }}</p>
+                <p class="mt-1">{{ __('Med F-skatt betalar företaget preliminärskatt varje månad enligt Skatteverkets beslut. Momsen deklareras och betalas en gång per momsperiod. Märket på varje rad visar vilket det är.') }}</p>
                 <p class="mt-2 flex flex-wrap gap-2"><x-guide.deadline-chip :category="App\Domain\Deadlines\DeadlineCategory::PreliminaryTax" /><x-guide.deadline-chip :category="App\Domain\Deadlines\DeadlineCategory::Vat" /></p>
             </div>
             <div>
                 <h3 class="font-semibold text-ink">{{ __('Märkena') }}</h3>
                 <ul class="mt-1 space-y-1.5">
                     <li><strong class="text-ink">{{ __('Betalning') }}</strong> {{ __('eller') }} <strong class="text-ink">{{ __('Deklaration') }}</strong>: {{ __('vad du gör den dagen. Moms är båda samma dag.') }}</li>
-                    <li><strong class="text-ink">{{ __('Datum i lagen') }}</strong>: {{ __('står i lag eller i Skatteverkets regler.') }} <strong class="text-ink">{{ __('Rekommendation') }}</strong>: {{ __('ett råd från Företagsguiden, inget krav i lagen.') }}</li>
+                    <li><strong class="text-ink">{{ __('Datum i lagen') }}</strong>: {{ __('följer av lagen.') }} <strong class="text-ink">{{ __('Rekommendation') }}</strong>: {{ __('ett råd från Företagsguiden, inget krav i lagen.') }}</li>
                     <li><strong class="text-ink">{{ __('Kontrollera') }}</strong>: {{ __('datumet beror på ett beslut om just ditt företag eller en regel som inte är bekräftad. Det visas en gång per serie.') }}</li>
                     <li><strong class="text-ink">{{ __('Redovisad') }}</strong>: {{ __('momsen eller arbetsgivardeklarationen för perioden är redovisad i NONOX. Den påminner vi inte om.') }}</li>
                 </ul>

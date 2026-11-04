@@ -80,7 +80,7 @@ it('shows the chips, verb-first titles, the action and the explanation on the pa
         ->assertSee('Ditt år i korthet')
         ->assertSee('Så läser du sidan')
         ->assertSee('F-skatt är inte moms')
-        ->assertSee('Betala F-skatt för december 2026')
+        ->assertSee('Betala F-skatt (preliminärskatt), december 2026')
         ->assertSee('Deklarera och betala moms för kvartal 3 2026')
         ->assertSee('Håll årsstämman för 2026')
         ->assertSee('Skicka årsredovisningen för 2026 till Bolagsverket')
@@ -88,8 +88,8 @@ it('shows the chips, verb-first titles, the action and the explanation on the pa
         ->assertSee('Deklaration och betalning')
         ->assertSee('Betalning')
         ->assertSee('Vad är det här?')
-        ->assertSee('F-skatt är företagets skatt i förskott (preliminärskatt): lika stora belopp varje månad')
-        ->assertDontSee('Betala preliminärskatt för')
+        ->assertSee('Med F-skatt betalar företaget själv sin preliminära inkomstskatt (debiterad preliminärskatt)')
+        ->assertDontSee('samma belopp varje månad')
         ->getContent();
 
     foreach (['moms', 'f-skatt', 'inkomstdeklaration', 'bolagsverket', 'bokslut', 'rekommendation'] as $chip) {
@@ -119,7 +119,7 @@ it('shows the F-skatt flag once, on Ditt år and the first month, and keeps a on
 
     expect(substr_count($html, 'data-deadline-flag'))->toBe(2)
         ->and($html)->toContain('data-year-flag')
-        ->and($html)->toContain('Första månaden och beloppet står i ert beslut om F-skatt från Skatteverket.');
+        ->and($html)->toContain('Om ni ska betala, hur mycket och från vilken månad står i Skatteverkets beslut om debiterad preliminärskatt. Står det 0 kronor finns inget att betala.');
 });
 
 it('filters by kind with GET links and counts, the summary following the filter, with the same queries', function () {
@@ -138,7 +138,7 @@ it('filters by kind with GET links and counts, the summary following the filter,
 
     $this->get(route('guide.dates', ['visa' => 'skatt']))->assertOk()
         ->assertSee('Nästa datum: Skatt')
-        ->assertSee('Betala F-skatt för november 2026')
+        ->assertSee('Betala F-skatt (preliminärskatt), november 2026')
         ->assertDontSee('Deklarera och betala moms för kvartal 3 2026')
         ->assertSee(route('guide.dates', ['visa' => 'moms']), false)
         ->assertSee(route('guide.dates', ['visa' => 'skatt', 'alla' => 1]));
@@ -197,8 +197,8 @@ it('lists the year of an AB and of a sole trader, with the employer line only fo
     $ab = collect(yearLines($this));
 
     expect($ab->pluck('category')->all())->toBe([DeadlineCategory::Vat, DeadlineCategory::PreliminaryTax, DeadlineCategory::IncomeTax, DeadlineCategory::Bolagsverket, DeadlineCategory::Closing])
-        ->and($ab->firstWhere('category', DeadlineCategory::PreliminaryTax)['title'])->toBe('F-skatt – varje månad, oftast den 12:e (17:e i januari och augusti)')
-        ->and($ab->firstWhere('category', DeadlineCategory::PreliminaryTax)['flag'])->toBe('Första månaden och beloppet står i ert beslut om F-skatt från Skatteverket.')
+        ->and($ab->firstWhere('category', DeadlineCategory::PreliminaryTax)['title'])->toBe('Preliminärskatt (F-skatt) – varje månad, oftast den 12:e (17:e i januari och augusti)')
+        ->and($ab->firstWhere('category', DeadlineCategory::PreliminaryTax)['flag'])->toBe('Om ni ska betala, hur mycket och från vilken månad står i Skatteverkets beslut om debiterad preliminärskatt. Står det 0 kronor finns inget att betala.')
         ->and($ab->firstWhere('category', DeadlineCategory::IncomeTax)['title'])->toBe('Inkomstdeklaration – en gång om året')
         ->and($ab->firstWhere('category', DeadlineCategory::Bolagsverket)['title'])->toBe('Årsstämma och årsredovisning – en gång om året');
 
@@ -212,7 +212,7 @@ it('lists the year of an AB and of a sole trader, with the employer line only fo
 
     expect($ef->pluck('category')->all())->toBe([DeadlineCategory::Vat, DeadlineCategory::PreliminaryTax, DeadlineCategory::IncomeTax, DeadlineCategory::Closing])
         ->and($ef->firstWhere('category', DeadlineCategory::IncomeTax)['title'])->toBe('Inkomstdeklaration – en gång om året, med NE-bilagan i din egen deklaration')
-        ->and($ef->firstWhere('category', DeadlineCategory::PreliminaryTax)['when'])->toContain('I enskild firma ingår egenavgifterna.')
+        ->and($ef->firstWhere('category', DeadlineCategory::PreliminaryTax)['when'])->toContain('I enskild firma är det din egen skatt, och egenavgifterna ingår.')
         ->and($ef->firstWhere('category', DeadlineCategory::Vat)['next']?->date->toDateString())->toBe('2027-05-12');
 });
 
@@ -220,7 +220,7 @@ it('tells a trading partnership that the partners pay F-skatt, not the company',
     $this->company->forceFill(['legal_form' => LegalForm::Hb])->save();
     $line = collect(yearLines($this))->firstWhere('category', DeadlineCategory::PreliminaryTax);
 
-    expect($line['title'])->toBe('F-skatt – betalas av delägarna, inte av bolaget')->and($line['next'])->toBeNull();
+    expect($line['title'])->toBe('Inkomstskatt – betalas av delägarna, inte av bolaget')->and($line['next'])->toBeNull();
 });
 
 it('remembers the reading help closed per user and company', function () {
@@ -239,6 +239,6 @@ it('remembers the reading help closed per user and company', function () {
 it('prefixes the calendar events and the reminders with the kind', function () {
     $deadline = collect(app(CompanyDeadlines::class)->upcoming($this->company, CarbonImmutable::today()))->first(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::PreliminaryTax);
 
-    expect($deadline->summary())->toBe('F-skatt: Betala F-skatt för november 2026')
-        ->and(DeadlineReminder::for($this->company, $deadline, 7)->title)->toStartWith('F-skatt: Betala F-skatt för november 2026. Sista dagen är om 7 dagar');
+    expect($deadline->summary())->toBe('F-skatt: Betala F-skatt (preliminärskatt), november 2026')
+        ->and(DeadlineReminder::for($this->company, $deadline, 7)->title)->toStartWith('F-skatt: Betala F-skatt (preliminärskatt), november 2026. Sista dagen är om 7 dagar');
 });

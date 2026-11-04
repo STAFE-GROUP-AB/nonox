@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-05-beskattningsunderlag-40-miljoner",
+      "datum": "2026-11-05T00:15:00+01:00",
+      "rubrik": "Gränsen på 40 miljoner gäller beskattningsunderlaget för moms",
+      "beskrivning": "Inställningen under företagets uppgifter heter nu Beskattningsunderlaget för moms är över 40 miljoner kronor om året, med en förklaring. Det är den summan lagen räknar med för deklarationsdagarna, inte den totala omsättningen. Mina datum beskriver också preliminärskatten med F-skatt som det belopp som står i Skatteverkets beslut.",
+      "typ": "Rättat",
+      "omrade": "Moms"
+    },
+    {
       "id": "2026-11-04-mina-datum-ditt-ar",
       "datum": "2026-11-04T23:50:00+01:00",
       "rubrik": "Mina datum förklarar ditt år",

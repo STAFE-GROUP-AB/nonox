@@ -24,7 +24,7 @@ final class AgiDates
      * AGI date in NONOX (Mina datum, reminders, preliminary tax, the AGI
      * page and Mina företag). Only a VAT-registered company can have a VAT
      * base above 40 million kronor (SFL 26 kap. 32 §); the base is the
-     * company's own setting "Omsättningen är över 40 miljoner kronor".
+     * company's own setting "Beskattningsunderlaget för moms är över 40 miljoner kronor om året".
      */
     public static function isLarge(Company $company): bool
     {

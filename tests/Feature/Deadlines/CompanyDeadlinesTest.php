@@ -78,7 +78,7 @@ it('dates monthly VAT above 40 million kronor on the 26th of the next month, the
     ]);
 
     expect(collect($this->deadlines->upcoming($this->company, CarbonImmutable::parse('2026-11-04'), 1))->firstWhere('type', DeadlineType::Vat)->appliesBecause)
-        ->toBe('Ni redovisar moms varje månad och omsätter mer än 40 miljoner kronor om året.');
+        ->toBe('Ni redovisar moms varje månad och har ett beskattningsunderlag för moms som beräknas bli mer än 40 miljoner kronor om året.');
 });
 
 it('dates yearly VAT by legal form, a broken year by the next named year end (SFL 3 kap. 5 §)', function () {

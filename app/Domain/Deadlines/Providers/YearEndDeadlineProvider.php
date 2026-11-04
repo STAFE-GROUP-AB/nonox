@@ -81,7 +81,7 @@ final class YearEndDeadlineProvider implements DeadlineProvider
                     $form === LegalForm::Ab ? __('Håll årsstämman för :year', ['year' => $label]) : __('Håll föreningsstämman för :year', ['year' => $label]),
                     $meeting,
                     $label,
-                    __('Stämman ska hållas inom sex månader efter räkenskapsårets slut. Den fastställer årsredovisningen och beslutar om vinsten.'),
+                    __('Stämman ska hållas inom sex månader efter räkenskapsårets slut. Den fastställer årsredovisningen och beslutar hur vinsten eller förlusten ska disponeras.'),
                     'accounting.annualReport',
                     self::ARTICLE_MEETING,
                     self::LAW_ABL,
@@ -102,13 +102,14 @@ final class YearEndDeadlineProvider implements DeadlineProvider
 
             if (in_array($form, [LegalForm::Hb, LegalForm::Kb], true)) {
                 // NONOX does not know the partners: a question, not a date (ÅRL 8 kap. 3 § 3, REGLER.md §6).
+                // TODO(legal-verify): a larger HB/KB (BFL 6 kap. 1 § 6, ÅRL 8 kap. 3 § 5) also files, within six months; not computed.
                 $deadlines[] = new Deadline(
                     'annual_report:'.$end->toDateString(),
                     DeadlineType::AnnualReport,
                     __('Kontrollera om handelsbolaget ska skicka in årsredovisningen'),
                     self::workdayOrBefore($end->addMonthsNoOverflow(6)),
                     $label,
-                    __('Har handelsbolaget en juridisk person som delägare ska årsredovisningen vara hos Bolagsverket senast sex månader efter räkenskapsårets slut (årsredovisningslagen 8 kap. 3 §). Har bolaget bara fysiska personer som delägare gäller det inte.'),
+                    __('Har handelsbolaget en juridisk person som delägare ska årsredovisningen vara hos Bolagsverket senast sex månader efter räkenskapsårets slut (årsredovisningslagen 8 kap. 3 §). Har bolaget bara fysiska personer som delägare gäller det normalt inte (utom för större handelsbolag).'),
                     'accounting.annualReport',
                     self::ARTICLE_MEETING,
                     self::ANNUAL_REPORT,

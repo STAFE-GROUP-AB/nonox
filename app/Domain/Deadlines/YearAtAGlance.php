@@ -65,7 +65,7 @@ final class YearAtAGlance
                     $company->vat_period === VatPeriod::Quarterly => __('Deklarera och betala senast den 12:e i andra månaden efter kvartalet (17 augusti för april–juni).'),
                     default => __('Deklarera och betala en gång efter räkenskapsåret. Dagen beror på bolagsformen, räkenskapsåret och om företaget handlar med andra EU-länder.'),
                 },
-                $company->turnover_over_40_msek ? $settings(__('Momsredovisning och omsättningen')) : $settings(__('Momsredovisning')),
+                $company->turnover_over_40_msek ? $settings(__('Momsredovisning och beskattningsunderlaget för moms')) : $settings(__('Momsredovisning')),
                 self::next($vat, $today),
                 $flagged ? (string) __('Datumet beror på om föreningen eller stiftelsen lämnar inkomstdeklaration.') : null,
             );
@@ -74,7 +74,7 @@ final class YearAtAGlance
         if (isset($byCategory[DeadlineCategory::EuSales->value])) {
             $lines[] = self::line(
                 DeadlineCategory::EuSales,
-                __('EU-försäljning – en periodisk sammanställning efter varje period med försäljning till företag i andra EU-länder'),
+                __('EU-försäljning – en periodisk sammanställning efter varje period med försäljning utan svensk moms till företag i andra EU-länder'),
                 __('Lämna den senast den 25:e i månaden efter perioden, när du lämnar den digitalt.'),
                 __('Styrs av fakturorna till kunder i andra EU-länder.'),
                 self::next($byCategory[DeadlineCategory::EuSales->value], $today),
@@ -85,21 +85,21 @@ final class YearAtAGlance
         if ($company->f_skatt && $partnership) {
             $lines[] = self::line(
                 DeadlineCategory::PreliminaryTax,
-                __('F-skatt – betalas av delägarna, inte av bolaget'),
-                __('Ett handelsbolag betalar ingen inkomstskatt själv. Delägarna betalar preliminärskatt för sin del av vinsten.'),
+                __('Inkomstskatt – betalas av delägarna, inte av bolaget'),
+                __('Ett handels- eller kommanditbolag betalar ingen inkomstskatt själv. Delägarna betalar preliminärskatt på sin del av bolagets resultat, var och en enligt sitt eget beslut.'),
                 $settings(__('bolagsformen')),
             );
         } elseif (isset($byCategory[DeadlineCategory::PreliminaryTax->value])) {
             $lines[] = self::line(
                 DeadlineCategory::PreliminaryTax,
                 AgiDates::isLarge($company)
-                    ? __('F-skatt – varje månad, oftast den 12:e (17:e i januari)')
-                    : __('F-skatt – varje månad, oftast den 12:e (17:e i januari och augusti)'),
-                __('F-skatt är företagets skatt i förskott (preliminärskatt), samma belopp varje månad. Det är en betalning, inte moms.')
-                    .($form === LegalForm::Ef ? ' '.__('I enskild firma ingår egenavgifterna.') : ''),
+                    ? __('Preliminärskatt (F-skatt) – varje månad, oftast den 12:e (17:e i januari)')
+                    : __('Preliminärskatt (F-skatt) – varje månad, oftast den 12:e (17:e i januari och augusti)'),
+                __('Har ni ett beslut om debiterad preliminärskatt betalas den varje månad, med lika stora belopp tills Skatteverket ändrar beslutet. Det är inkomstskatt i förskott, inte moms.')
+                    .($form === LegalForm::Ef ? ' '.__('I enskild firma är det din egen skatt, och egenavgifterna ingår.') : ''),
                 $settings(__('Företaget har F-skatt')),
                 self::next($byCategory[DeadlineCategory::PreliminaryTax->value], $today),
-                __('Första månaden och beloppet står i ert beslut om F-skatt från Skatteverket.'),
+                __('Om ni ska betala, hur mycket och från vilken månad står i Skatteverkets beslut om debiterad preliminärskatt. Står det 0 kronor finns inget att betala.'),
             );
         }
 
@@ -140,15 +140,17 @@ final class YearAtAGlance
             $lines[] = self::line(
                 DeadlineCategory::Bolagsverket,
                 match (true) {
-                    $partnership => __('Årsredovisning – bara om en delägare är en juridisk person'),
+                    $partnership => __('Årsredovisning – om en delägare är en juridisk person'),
                     $form === LegalForm::EkonomiskForening => __('Föreningsstämma och årsredovisning – en gång om året'),
                     default => __('Årsstämma och årsredovisning – en gång om året'),
                 },
                 $partnership
                     ? __('Då ska årsredovisningen vara hos Bolagsverket senast sex månader efter räkenskapsårets slut.')
-                    : __('Stämman hålls inom sex månader efter räkenskapsårets slut. Årsredovisningen ska vara hos Bolagsverket inom en månad efter stämman, och senast sju månader efter årets slut för att slippa förseningsavgift.'),
+                    : __('Stämman hålls inom sex månader efter räkenskapsårets slut. Årsredovisningen ska vara hos Bolagsverket inom en månad efter stämman, och normalt senast sju månader efter årets slut för att slippa förseningsavgift.'),
                 $settings(__('bolagsformen och räkenskapsåret')),
                 self::next($byCategory[DeadlineCategory::Bolagsverket->value], $today, recommendations: $partnership),
+                $partnership ? null : (string) __('Om sjumånadersgränsen flyttas när den infaller på en helg är inte bekräftat, och en fortsatt stämma kan ge nio månader.'),
+                authority: 'Bolagsverket',
             );
         }
 
@@ -157,8 +159,8 @@ final class YearAtAGlance
                 DeadlineCategory::Closing,
                 __('Bokslut – en gång om året (rekommendation)'),
                 in_array($form, [LegalForm::Ab, LegalForm::EkonomiskForening], true)
-                    ? __('Lagen har inget datum för bokslutet. Företagsguiden föreslår ett datum i god tid före stämman och deklarationen.')
-                    : __('Lagen har inget datum för bokslutet. Företagsguiden föreslår ett datum i god tid före deklarationen.'),
+                    ? __('Lagen har inget eget datum för bokslutet, men årsredovisningen ska vara klar i tid till revisorn och stämman. Företagsguiden föreslår ett datum i god tid före dem och deklarationen.')
+                    : __('Lagen har inget eget datum för bokslutet. Företagsguiden föreslår ett datum i god tid före deklarationen.'),
                 $settings(__('räkenskapsåret')),
                 self::next($byCategory[DeadlineCategory::Closing->value], $today, recommendations: true),
             );
@@ -168,7 +170,7 @@ final class YearAtAGlance
     }
 
     /** @return Line */
-    private static function line(DeadlineCategory $category, string $title, string $when, string $setting, ?Deadline $next = null, ?string $flag = null, bool $settingLink = true): array
+    private static function line(DeadlineCategory $category, string $title, string $when, string $setting, ?Deadline $next = null, ?string $flag = null, bool $settingLink = true, string $authority = 'Skatteverket'): array
     {
         return [
             'category' => $category,
@@ -178,7 +180,7 @@ final class YearAtAGlance
             'settingLink' => $settingLink,
             'next' => $next,
             'flag' => $flag,
-            'authority' => $flag === null ? null : 'Skatteverket',
+            'authority' => $flag === null ? null : $authority,
         ];
     }
 

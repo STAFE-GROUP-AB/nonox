@@ -61,7 +61,7 @@ final class EuSalesListProvider implements DeadlineProvider
                 __('Lämna periodisk sammanställning för :period', ['period' => $label]),
                 Workdays::onDay($end->addMonthNoOverflow(), 25),
                 $label,
-                __('Företaget har fakturerat varor eller tjänster till företag i andra EU-länder under perioden.'),
+                __('Företaget har fakturerat varor eller tjänster utan svensk moms till företag i andra EU-länder under perioden.'),
                 'vat.euReports',
                 'viktiga-datum/periodisk-sammanstallning',
                 self::SOURCE,
