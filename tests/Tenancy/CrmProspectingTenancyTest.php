@@ -9,6 +9,8 @@ use App\Modules\Crm\Actions\AddProspects;
 use App\Modules\Crm\Actions\CreateCallList;
 use App\Modules\Crm\Actions\CreateRegistryNotices;
 use App\Modules\Crm\Actions\WorkCallList;
+use App\Modules\Crm\CrmModule;
+use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Livewire\CallListPage;
 use App\Modules\Crm\Livewire\CallListsPage;
 use App\Modules\Crm\Livewire\ProspectingPage;
@@ -17,6 +19,7 @@ use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\CallList;
 use App\Modules\Crm\Models\CallListItem;
 use App\Modules\Crm\Models\RegistryNotice;
+use App\Modules\ModuleManager;
 use App\Support\Luhn;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -113,6 +116,8 @@ it('refuses B\'s accounts on A\'s list and B\'s items in A\'s work', function ()
 });
 
 it('writes monitoring tasks only in the company that has the account', function () {
+    // B watches its prospects too (by default only customers are watched).
+    app(ModuleManager::class)->updateSettings(CrmModule::KEY, $this->b['company'], $this->b['owner'], [...CrmSettings::for($this->b['company']), 'registry_monitoring_prospects' => 1]);
     RegistryChange::create(['org_number' => tenancyOrg(2), 'field' => 'name', 'old_value' => 'Bara B Exempel AB', 'new_value' => 'Nytt namn Exempel AB', 'source' => 'scb-bulk', 'detected_at' => now()->addMinute()]);
     $this->travel(2)->minutes();
 
