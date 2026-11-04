@@ -110,7 +110,7 @@
             @include('navigation.bell', ['bellClass' => 'text-stone-300 hover:bg-white/10 hover:text-white'])
         </div>
         {{-- At least 24 px high, so each link is easy to hit (WCAG 2.5.8). --}}
-        <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm [&_a]:inline-block [&_a]:py-1 [&_button]:py-1">
+        <div class="flex flex-wrap gap-x-4 gap-y-1 px-2 text-sm [&_a:not(.inline-flex)]:inline-block [&_a]:py-1 [&_button]:py-1">
             @include('navigation.help', ['helpClass' => 'rounded text-stone-300 hover:text-white', 'helpLabel' => true])
             <a href="{{ route('profile.show') }}" class="text-stone-300 hover:text-white">{{ __('Profile') }}</a>
             @if (Laravel\Jetstream\Jetstream::hasApiFeatures())

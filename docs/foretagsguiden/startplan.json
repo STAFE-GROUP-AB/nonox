@@ -381,7 +381,7 @@
     {
       "nyckel": "planera-arsstamma-och-arsredovisning",
       "rubrik": "Skriv in årsstämma och årsredovisning i kalendern",
-      "text": "Årsstämman (i en förening föreningsstämman) ska hållas inom sex månader efter räkenskapsårets slut. Årsredovisningen ska sedan ha kommit in till Bolagsverket inom en månad efter stämman, och senast sju månader efter årets slut tas en förseningsavgift ut.",
+      "text": "Årsstämman (i en förening föreningsstämman) ska hållas inom sex månader efter räkenskapsårets slut. Årsredovisningen ska sedan ha kommit in till Bolagsverket inom en månad efter stämman. Har den inte kommit in inom sju månader efter årets slut tas en förseningsavgift ut.",
       "bolagsformer": [
         "AB",
         "EK_FORENING"

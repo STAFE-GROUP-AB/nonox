@@ -77,7 +77,7 @@
           @if($chosenForm === null)
             Välj företagsform och bransch, så visar vi stegen som gäller dig. Tills du har valt visar vi vägen för ett aktiebolag.
           @else
-            Vägen nedan gäller {{ mb_strtolower($formLabel) }}@if($industry) inom {{ mb_strtolower($industry->label()) }}@endif. Dela adressen, så ser mottagaren samma sak.
+            Vägen nedan gäller {{ mb_strtolower($formLabel) }}@if($industry && $industry !== App\Domain\Company\Industry::Other), bransch {{ mb_strtolower($industry->label()) }}@endif. Dela adressen, så ser mottagaren samma sak.
           @endif
         </p>
       </div>
@@ -129,7 +129,7 @@
 
   <section class="gd-band" id="din-vag" aria-labelledby="gd-path-title">
     <p class="gd-kicker">Din väg</p>
-    <h2 class="gd-h2" id="gd-path-title">{{ $stepCount }} steg för {{ mb_strtolower($formLabel) }}@if($industry && $industry !== App\Domain\Company\Industry::Other) inom {{ mb_strtolower($industry->label()) }}@endif</h2>
+    <h2 class="gd-h2" id="gd-path-title">{{ $stepCount }} steg för {{ mb_strtolower($formLabel) }}@if($industry && $industry !== App\Domain\Company\Industry::Other)<span class="gd-path-industry"> · {{ $industry->label() }}</span>@endif</h2>
     <p class="gd-sub">I den ordning de flesta gör dem. Steg som bara gäller ibland är märkta, till exempel om du är momsregistrerad eller har anställda.</p>
 
     <div class="gd-path">
