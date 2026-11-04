@@ -70,17 +70,22 @@
     {
       "nyckel": "anmal-verklig-huvudman",
       "rubrik": "Anmäl verklig huvudman",
-      "text": "Anmäl till Bolagsverket vem som ytterst äger eller kontrollerar företaget. För de flesta nya aktiebolag görs det i samband med registreringen; ett handels- eller kommanditbolag anmäler när det har registrerats.",
+      "text": "Anmäl till Bolagsverket vem som ytterst äger eller kontrollerar företaget. Enligt lagen om registrering av verkliga huvudmän görs det samtidigt som du ansöker om registrering av företaget.",
       "bolagsformer": [
         "AB",
         "HB",
-        "KB"
+        "KB",
+        "EK_FORENING"
       ],
       "branscher": [],
       "villkor": null,
       "artikel": "starta/registrera-foretaget",
       "nonox_rutt": null,
       "kallor": [
+        {
+          "titel": "Lag (2017:631) om registrering av verkliga huvudmän",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2017631-om-registrering-av-verkliga_sfs-2017-631/"
+        },
         {
           "titel": "Verksamt.se – Starta och registrera aktiebolag",
           "url": "https://verksamt.se/starta/valj-foretagsform/aktiebolag"
@@ -92,6 +97,24 @@
         {
           "titel": "Verksamt.se – Starting and registering a trading partnership",
           "url": "https://verksamt.se/en/setting-up/choose-business-type/trading-partnership"
+        }
+      ]
+    },
+    {
+      "nyckel": "for-aktiebok",
+      "rubrik": "Lägg upp bolagets aktiebok",
+      "text": "Styrelsen ska föra en aktiebok över bolagets aktier och ägare från start, och uppdatera den när aktier byter ägare.",
+      "bolagsformer": [
+        "AB"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "ansvar-och-regler/styrelse-och-vd",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Riksdagen – Aktiebolagslag (2005:551), 5 kap. 1 och 7 §§",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/"
         }
       ]
     },
@@ -136,7 +159,7 @@
     {
       "nyckel": "ansok-om-f-skatt",
       "rubrik": "Ansök om F-skatt och uppskatta vinsten",
-      "text": "Med F-skatt betalar företaget själv sin preliminära skatt varje månad, och kunderna behöver inte dra skatt. Beloppet bygger på den vinst du uppger.",
+      "text": "F-skatt är frivillig men behövs i praktiken om du säljer tjänster till företag. Du ansöker i företagsregistreringen; med F-skatt betalar företaget själv sin preliminära skatt varje månad, och beloppet bygger på den vinst du uppger.",
       "bolagsformer": [],
       "branscher": [],
       "villkor": null,
@@ -358,9 +381,10 @@
     {
       "nyckel": "planera-arsstamma-och-arsredovisning",
       "rubrik": "Skriv in årsstämma och årsredovisning i kalendern",
-      "text": "Årsstämman ska hållas inom sex månader och årsredovisningen ska vara hos Bolagsverket senast sju månader efter räkenskapsårets slut.",
+      "text": "Årsstämman (i en förening föreningsstämman) ska hållas inom sex månader efter räkenskapsårets slut. Årsredovisningen ska sedan ha kommit in till Bolagsverket inom en månad efter stämman, och senast sju månader efter årets slut tas en förseningsavgift ut.",
       "bolagsformer": [
-        "AB"
+        "AB",
+        "EK_FORENING"
       ],
       "branscher": [],
       "villkor": null,
@@ -370,6 +394,14 @@
         {
           "titel": "Riksdagen – Aktiebolagslag (2005:551)",
           "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/"
+        },
+        {
+          "titel": "Riksdagen – Lag (2018:672) om ekonomiska föreningar",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018672-om-ekonomiska-foreningar_sfs-2018-672/"
+        },
+        {
+          "titel": "Riksdagen – Årsredovisningslag (1995:1554)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/"
         },
         {
           "titel": "Bolagsverket – Årsredovisningsguiden för aktiebolag",

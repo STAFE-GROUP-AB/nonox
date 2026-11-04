@@ -9,6 +9,8 @@ kallor:
     url: https://www.imy.se/verksamhet/dataskydd/det-har-galler-enligt-gdpr/grundlaggande-principer/
   - titel: IMY – Dataskyddsförordningen i fulltext
     url: https://www.imy.se/verksamhet/dataskydd/det-har-galler-enligt-gdpr/introduktion-till-gdpr/dataskyddsforordningen-i-fulltext/
+  - titel: Bolagsverket – Organisationsnummer
+    url: https://bolagsverket.se/foretag/organisationsnummer.1207.html
   - titel: Riksdagen – Bokföringslag (1999:1078), 7 kap.
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
 granskad: 2026-11-04
@@ -24,7 +26,7 @@ Nästan alla företag hanterar personuppgifter: kundernas namn och mejladresser,
 
 ## Det här säger reglerna
 
-**Vad som är en personuppgift.** Allt som kan kopplas till en levande person: namn, personnummer, mejladress, telefonnummer, en bild. Uppgifter om ett aktiebolag är inte personuppgifter, men en kontaktperson på bolaget är det. En enskild firma bär ofta ägarens personnummer som organisationsnummer.
+**Vad som är en personuppgift.** Allt som kan kopplas till en levande person: namn, personnummer, mejladress, telefonnummer, en bild. Uppgifter om ett aktiebolag är inte personuppgifter, men en kontaktperson på bolaget är det. En enskild firma har inget eget organisationsnummer; ägarens personnummer är firmans identitetsbeteckning.
 
 **Rättslig grund.** Enligt GDPR artikel 6 måste varje behandling ha en rättslig grund. För ett litet företag är de vanligaste:
 

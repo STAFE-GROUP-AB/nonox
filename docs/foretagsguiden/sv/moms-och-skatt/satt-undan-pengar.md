@@ -35,7 +35,7 @@ Det som inte är dina pengar består av olika delar, beroende på bolagsform.
 **Aktiebolag**
 
 - **Bolagsskatt** på bolagets vinst. För 2026 är den 20,6 procent enligt Skatteverket. Bolaget betalar den preliminärt via sin F-skatt varje månad.
-- **Arbetsgivaravgifter** på lön, också till dig själv. För 2026 är den fulla avgiften 31,42 procent för den som är född 1959–2002, enligt Skatteverket. Lägre avgifter gäller för vissa åldrar.
+- **Arbetsgivaravgifter** på lön, också till dig själv. För 2026 är den fulla avgiften 31,42 procent för den som är född 1959–2002, enligt Skatteverket. Enligt Skatteverket är avgifterna tillfälligt sänkta för unga mellan 19 och 23 år under perioden 1 april 2026 till 30 september 2027. För 2026 gäller det den som är född 2003–2007, som får en avgift på 20,81 procent på ersättning upp till 25 000 kronor och 31,42 procent på det som överstiger. Kontrollera hos Skatteverket vad som gäller för den du anställer.
 - **Skatteavdrag**, alltså den preliminärskatt som bolaget drar på lönen och betalar in åt den anställde.
 
 Moms, preliminärskatt, arbetsgivaravgifter och skatteavdrag betalas till samma skattekonto. Läs [Skattekontot](/foretagsguiden/moms-och-skatt/skattekontot).

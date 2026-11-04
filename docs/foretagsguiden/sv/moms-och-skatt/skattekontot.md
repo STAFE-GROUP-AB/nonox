@@ -11,8 +11,6 @@ kallor:
     url: https://www.skatteverket.se/download/18.70685bee19c85dd5dd0325b/1774273676580/Skattekontobroschyren-skv408-utgava13.pdf
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Räntesatserna på skattekontot ändras med basräntan. Artikeln anger bara hur de räknas (skatteförfarandelagen 65 kap.), inte dagens procent. Kontrollera att beskrivningen stämmer.
 ---
 
 # Skattekontot
@@ -43,7 +41,7 @@ Enligt 62 kap. 2 § betalar du in till Skatteverkets särskilda konto för skatt
 
 Skatteverket räknar ränta på saldot varje dag och registrerar den en gång i månaden. Enligt 65 kap. utgår räntan från en basränta:
 
-- **Intäktsränta** när du har ett överskott på kontot: 45 procent av basräntan.
+- **Intäktsränta** när du har ett överskott på kontot: 45 procent av basräntan, men 0 procent när basräntan ligger på sin lägsta nivå, 1,25 procent (65 kap. 3–4 §§).
 - **Kostnadsränta** när du har ett underskott: normalt lika med basräntan.
 - **Kostnadsränta vid för sen betalning:** basräntan plus 15 procentenheter, från dagen efter förfallodagen.
 

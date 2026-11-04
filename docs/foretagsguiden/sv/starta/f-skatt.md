@@ -8,12 +8,12 @@ kallor:
     url: https://www.skatteverket.se/foretag/drivaforetag/startaochregistrera/fordigsomvillstartaforetag.4.6e8a1495181dad540842251.html
   - titel: Skatteverket – Skatteavdrag med 30 procent
     url: https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/skatteavdrag/skatteavdragmed30procent.4.5c1163881590be297b511bc9.html
+  - titel: Riksdagen – Skatteförfarandelag (2011:1244), 62 kap. 7 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
   - titel: Skatteverket – Registrera dig som arbetsgivare
     url: https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivarregistrering/registreradig.4.18e1b10334ebe8bc80003496.html
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Under vilka villkor medges anstånd med de första månadernas preliminärskatt för nystartade företag, och gäller det alla företagsformer?
 ---
 
 # F-skatt
@@ -28,7 +28,7 @@ Enligt Skatteverket innebär godkännande för F-skatt att du själv betalar fö
 
 **Varför kunden bryr sig.** Köper ett företag ett arbete av någon som inte är godkänd för F-skatt måste det enligt Skatteverket göra skatteavdrag från ersättningen. Till ett aktiebolag eller handelsbolag utan F-skatt drar köparen 30 procent. Betalar köparen en fysisk person utan F-skatt ska köparen också betala arbetsgivaravgifter på ersättningen. Det räcker att du har F-skatt antingen när priset bestäms eller när betalningen görs. Kunden kan kontrollera din status i Skatteverkets e-tjänst *Hämta företagsinformation*.
 
-**Preliminär skatt.** Med F-skatt betalar du preliminär skatt varje månad, så kallad debiterad preliminärskatt. Skatteverket räknar ut beloppet från den vinst du uppger att du väntar dig. Ändras vinsten ska du lämna en ny preliminär inkomstdeklaration, så att skatten blir rätt. Skatteverket skriver också att ett nystartat företag kan ansöka om att få vänta med betalningarna de första tre månaderna, och att du i så fall ansöker när du registrerar företaget. Det totala beloppet blir detsamma; det fördelas bara på färre månader. Kontrollera villkoren hos Skatteverket innan du räknar med det.
+**Preliminär skatt.** Med F-skatt betalar du preliminär skatt varje månad, så kallad debiterad preliminärskatt. Skatteverket räknar ut beloppet från den vinst du uppger att du väntar dig. Ändras vinsten ska du lämna en ny preliminär inkomstdeklaration, så att skatten blir rätt. Startar du en ny verksamhet kan du begära att den första betalningen av F-skatt skjuts upp tre månader (skatteförfarandelagen 62 kap. 7 §). Det gäller alla företagsformer, men inte om du tar över en verksamhet från någon annan, redan driver en annan verksamhet, om beslutet kommer först efter beskattningsårets slut eller om det finns särskilda skäl mot det. Enligt Skatteverket begär du det när du registrerar företaget. Uppskovet sänker inte skatten: årets skatt ska fortfarande betalas, bara under färre månader.
 
 ## Så här gör du
 

@@ -12,7 +12,6 @@ granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
   - Vilka villkor ställer BFNAR 2013:2 för att ett skannat papperskvitto ska räknas som en säker överföring enligt 7 kap. 6 § (bildkvalitet, kontroll, rutinbeskrivning)? Guiden beskriver dem bara i stora drag.
-  - Exakta villkor i 7 kap. 3 a § för att förvara elektronisk räkenskapsinformation i ett annat EU-land (anmälan till Skatteverket, tillgång på begäran).
 ---
 
 # Arkivering
@@ -27,7 +26,7 @@ Allt som hör till bokföringen ska sparas i många år, även när företaget h
 
 **Skanna och kasta.** Enligt 7 kap. 6 § får du förstöra ett papperskvitto när informationen har förts över till en annan handling, till exempel en bild, men bara om överföringen inte riskerar att något ändras eller försvinner. Bilden ska alltså vara tydlig och fullständig, och du ska ha ett fast sätt att göra det på. BFN beskriver i BFNAR 2013:2 vad som krävs. Är du osäker, spara papperet också.
 
-**Var.** Huvudregeln är att räkenskapsinformationen ska förvaras i Sverige (7 kap. 2 §). Elektronisk information får under vissa villkor förvaras i ett annat land inom EU (7 kap. 3 a §), och Skatteverket kan i särskilda fall tillåta mer (7 kap. 4 §). Kontrollera villkoren hos Skatteverket om du använder en tjänst med servrar utomlands.
+**Var.** Huvudregeln är att räkenskapsinformationen ska förvaras i Sverige (7 kap. 2 §). Elektroniska handlingar får förvaras i ett annat EU-land om tre villkor är uppfyllda (7 kap. 3 a §): du anmäler platsen, och varje ändring av den, till Skatteverket; du ger Skatteverket och Tullverket omedelbar elektronisk åtkomst till informationen när de begär det; och du kan genast skriva ut informationen på papper i Sverige. Samma sak gäller vissa länder utanför EU som Sverige har avtal om ömsesidigt bistånd med. Skatteverket kan dessutom i särskilda fall ge tillstånd till mer (7 kap. 4 §). Använder du en molntjänst med servrar utomlands, ta reda på var de står och anmäl det till Skatteverket.
 
 **Tidigare än sju år.** Det är bara Skatteverket som i särskilda fall kan ge tillstånd att förstöra räkenskapsinformation tidigare (7 kap. 7 §). Att företaget avvecklas ändrar inte tiden.
 

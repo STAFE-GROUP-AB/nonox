@@ -17,7 +17,7 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Momssatserna gäller 2026 enligt Skatteverkets sida. Kontrollera att exemplen per sats fortfarande stämmer inför 2027, och att den tillfälliga matmomsen upphör 31 december 2027 som riksdagen beslutat.
+  - Momssatserna gäller 2026 enligt Skatteverkets sida. Kontrollera att exemplen per sats fortfarande stämmer inför 2027.
 ---
 
 # Så fungerar moms
@@ -45,14 +45,14 @@ Enligt Skatteverket gäller de här satserna 2026. Listan är exempel, inte full
 | 6 % | Böcker, tidningar, persontransporter inom Sverige, inträde till konserter och idrottsevenemang. Från och med 1 april 2026 även livsmedel, också mat som köps för avhämtning. |
 | Ingen moms | Viss försäljning är undantagen från moms, till exempel sjukvård, tandvård, de flesta bank- och försäkringstjänster och viss utbildning. Försäljning till utlandet kan också vara utan svensk moms. |
 
-Sänkningen av momsen på livsmedel från 12 till 6 procent är tillfällig. Riksdagen har beslutat att den gäller från och med 1 april 2026 till och med 31 december 2027. Restaurangtjänster har kvar 12 procent, så en restaurang som både serverar och säljer mat för avhämtning har två satser.
+Sänkningen av momsen på livsmedel från 12 till 6 procent är tillfällig. Riksdagen har beslutat att den gäller från och med 1 april 2026 till och med 31 december 2027; från den 1 januari 2028 är satsen på livsmedel åter 12 procent (mervärdesskattelagen 9 kap. 3 § i lydelsen enligt SFS 2026:119). Restaurangtjänster har kvar 12 procent, så en restaurang som både serverar och säljer mat för avhämtning har två satser.
 
 > [!IMPORTANT]
 > Vilken sats som gäller för just din vara eller tjänst kan vara svårt att avgöra. Är du osäker, kontrollera på Skatteverkets sida om momssatser eller fråga Skatteverket.
 
 ### Priser till konsumenter och till företag
 
-Till konsumenter ska du ange priset inklusive moms. Prisinformationslagen (2004:347) säger i 2 § att priset är det slutliga priset, inklusive mervärdesskatt och andra skatter. Till företag är det vanligt att ange priset exklusive moms, eftersom köparen själv drar av momsen.
+Till konsumenter ska du ange priset inklusive moms. Enligt prisinformationslagen (2004:347) ska du lämna uppgift om priset (7 §), och med pris menas det slutliga priset, inklusive mervärdesskatt och andra skatter (2 §). Till företag är det vanligt att ange priset exklusive moms, eftersom köparen själv drar av momsen.
 
 Räkna från pris inklusive moms så här:
 
@@ -62,18 +62,18 @@ Räkna från pris inklusive moms så här:
 
 ## Ett räkneexempel
 
-Kafé Linden säljer en catering till ett företag och köper in varor under samma momsperiod. Alla belopp är påhittade och momsen är 25 procent.
+Kafé Linden säljer en catering till ett företag och köper under samma momsperiod en ny kaffekvarn. Alla belopp är påhittade. Cateringen har 12 procent moms, eftersom cateringtjänster har den satsen (mervärdesskattelagen 9 kap. 5 §). Kaffekvarnen har 25 procent.
 
 | | Utan moms | Moms | Totalt |
 |---|---:|---:|---:|
-| Faktura till kund | 10 000 kr | 2 500 kr | 12 500 kr |
-| Inköp till verksamheten | 4 000 kr | 1 000 kr | 5 000 kr |
+| Faktura till kund, catering (12 %) | 10 000 kr | 1 200 kr | 11 200 kr |
+| Inköp av kaffekvarn (25 %) | 4 000 kr | 1 000 kr | 5 000 kr |
 
-- Utgående moms: 2 500 kr.
+- Utgående moms: 1 200 kr.
 - Ingående moms: 1 000 kr.
-- Att betala till Skatteverket: 2 500 − 1 000 = **1 500 kr**.
+- Att betala till Skatteverket: 1 200 − 1 000 = **200 kr**.
 
-Av de 12 500 kronor som kunden betalar är alltså 2 500 kronor moms. Efter avdraget för inköpen ska 1 500 kronor till skattekontot. Det som är kvar för företaget är 10 000 kronor, och av det har 4 000 kronor gått till inköpen.
+Av de 11 200 kronor som kunden betalar är alltså 1 200 kronor moms. Efter avdraget för kvarnen ska 200 kronor till skattekontot. Det som är kvar för företaget är 10 000 kronor, och av det har 4 000 kronor gått till kvarnen. Hade cateringen fakturerats med 25 procent hade kunden betalat för mycket moms och fakturan hade behövt rättas.
 
 ## Så här gör du
 

@@ -15,12 +15,13 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19801102-om-handelsbolag-och-enkla-bolag_sfs-1980-1102/
   - titel: Bokföringslag (1999:1078)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
+  - titel: Årsredovisningslag (1995:1554), 8 kap. 3 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/
   - titel: Skatteverket – Skatteregler för aktie- och handelsbolag (SKV 294)
     url: https://www.skatteverket.se/download/18.6491ed82199c4722daef0c/1761209691103/skatteregler-for-aktie-och-handelsbolag-skv294-utgava24.pdf
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Exakt vilka handelsbolag ska upprätta årsredovisning enligt BFL 6 kap. 1 § (räcker en juridisk person som delägare, eller finns undantag)?
   - Hur ombildning från enskild firma till aktiebolag går till skattemässigt (överlåtelse av tillgångar, underprisöverlåtelse) – inte beskrivet här, behöver en egen granskad artikel.
 ---
 
@@ -40,7 +41,7 @@ Enligt bokföringslagen har en fysisk person kalenderåret som räkenskapsår, o
 
 Ett aktiebolag är en egen juridisk person som ägs av aktieägarna. Enligt aktiebolagslagen ska aktiekapitalet i ett privat aktiebolag vara minst 25 000 kronor (1 kap. 5 §). Enligt verksamt.se svarar ägarna normalt inte personligen för bolagets skulder; det man riskerar är det man har satt in. Styrelsen och vd kan ändå bli personligt ansvariga i vissa fall, till exempel om bolaget inte betalar sina skatter, eller om mer än halva aktiekapitalet är förbrukat och de särskilda reglerna för det inte följs.
 
-Bolaget behöver minst en styrelseledamot och en suppleant. Enligt verksamt.se kan de flesta nystartade aktiebolag välja att inte ha revisor. Bolaget betalar själv skatt på sin vinst. Du som äger bolaget och arbetar i det räknas som anställd när du tar ut lön, och pengar till dig går ut som lön eller utdelning (se [Företagskonto och pengar](/foretagsguiden/starta/foretagskonto-och-pengar)). Ett aktiebolag ska alltid upprätta årsredovisning och skicka in den till Bolagsverket, även om det inte har haft någon verksamhet.
+Bolaget behöver en styrelse med minst en ledamot, och har styrelsen färre än tre ledamöter ska det också finnas minst en suppleant (aktiebolagslagen 8 kap. 3 §). Enligt verksamt.se kan de flesta nystartade aktiebolag välja att inte ha revisor. Bolaget betalar själv skatt på sin vinst. Du som äger bolaget och arbetar i det räknas som anställd när du tar ut lön, och pengar till dig går ut som lön eller utdelning (se [Företagskonto och pengar](/foretagsguiden/starta/foretagskonto-och-pengar)). Ett aktiebolag ska alltid upprätta årsredovisning och skicka in den till Bolagsverket, även om det inte har haft någon verksamhet.
 
 ### Handelsbolag och kommanditbolag
 
@@ -48,7 +49,7 @@ Ett handelsbolag har minst två delägare (bolagsmän) som driver verksamhet til
 
 Ett kommanditbolag är ett handelsbolag där minst en delägare, kommanditdelägaren, har begränsat sitt ansvar till det den har satt in eller lovat att sätta in (1 kap. 2 §). Minst en delägare, komplementären, har fullt ansvar.
 
-Enligt Skatteverket betalar handelsbolaget inte själv inkomstskatt. Delägarna beskattas var och en för sin andel av resultatet. Ett handelsbolag där en fysisk person beskattas för inkomsten ska ha kalenderår som räkenskapsår. Handelsbolag avslutar normalt året med ett årsbokslut, men ett handelsbolag med en juridisk person som delägare, till exempel ett aktiebolag, kan behöva göra årsredovisning; fråga din redovisningskonsult om ditt bolag.
+Enligt Skatteverket betalar handelsbolaget inte själv inkomstskatt. Delägarna beskattas var och en för sin andel av resultatet. Ett handelsbolag där en fysisk person beskattas för inkomsten ska ha kalenderår som räkenskapsår. Handelsbolag avslutar normalt året med ett årsbokslut. Ett handelsbolag där minst en delägare är en juridisk person, till exempel ett aktiebolag, ska däremot upprätta årsredovisning (bokföringslagen 6 kap. 1 §) och skicka in den till Bolagsverket inom sex månader efter räkenskapsårets slut (årsredovisningslagen 8 kap. 3 §).
 
 ### Ekonomisk förening
 
@@ -67,7 +68,7 @@ En ideell förening och en stiftelse har egna regler och är sällan rätt form 
 | Kapital vid start | Inget krav | Minst 25 000 kr aktiekapital | Inget krav | Inget krav | Insats enligt stadgarna |
 | Registrering hos Bolagsverket | Frivillig, för namnskydd | Krävs | Krävs | Krävs | Krävs |
 | Vem beskattas för vinsten | Du | Bolaget | Delägarna | Delägarna | Föreningen |
-| Avslutar året med | Årsbokslut | Årsredovisning | Årsbokslut, ibland årsredovisning | Årsbokslut, ibland årsredovisning | Årsredovisning |
+| Avslutar året med | Årsbokslut | Årsredovisning | Årsbokslut, men årsredovisning om en delägare är en juridisk person | Årsbokslut, men årsredovisning om en delägare är en juridisk person | Årsredovisning |
 
 ## Så här gör du
 

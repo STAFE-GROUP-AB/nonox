@@ -6,6 +6,10 @@ sokord: [styrelse, VD, verkställande direktör, firmatecknare, firmateckning, �
 kallor:
   - titel: Riksdagen – Aktiebolagslag (2005:551)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/
+  - titel: Riksdagen – Lag (2017:631) om registrering av verkliga huvudmän
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2017631-om-registrering-av-verkliga_sfs-2017-631/
+  - titel: Riksdagen – Lag (2018:672) om ekonomiska föreningar
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018672-om-ekonomiska-foreningar_sfs-2018-672/
   - titel: Bolagsverket – Om verklig huvudman i aktiebolag
     url: https://bolagsverket.se/foretag/aktiebolag/omverklighuvudmaniaktiebolag.811.html
   - titel: Bolagsverket – Om verklig huvudman i ekonomisk förening
@@ -14,7 +18,6 @@ granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
   - Reglerna i artikeln är hämtade ur aktiebolagslagen. Lagen om ekonomiska föreningar (2018:672) har motsvarande regler men andra paragrafer och vissa skillnader – bör de anges var för sig?
-  - Vilken tidsgräns gäller för ett nytt företags första anmälan av verklig huvudman (uppgiften fyra veckor kunde inte läsas direkt i en källa)?
   - Bolagsverket aviserar ändringar i registret över verkliga huvudmän från den 1 juli 2026 och i e-tjänsten hösten 2026. Påverkar de anmälningsskyldigheten för små bolag?
 ---
 
@@ -32,19 +35,21 @@ I ett aktiebolag eller en ekonomisk förening är det styrelsen som bär ansvare
 
 **Firmateckning.** Att teckna firman betyder att skriva under avtal och handlingar för bolagets räkning. Styrelsen företräder bolaget och tecknar dess firma (8 kap. 35 §). VD får alltid teckna firman för den löpande förvaltningen (8 kap. 36 §). Styrelsen kan också utse en särskild firmatecknare, och minst en sådan ska som huvudregel bo inom EES (8 kap. 37 §). Hur firman tecknas registreras hos Bolagsverket.
 
-**Protokoll från styrelsemöten.** Vid styrelsens sammanträden ska det föras protokoll som visar besluten. Den som för protokollet skriver under, och ordföranden justerar det (8 kap. 24 §).
+**Protokoll från styrelsemöten.** Vid styrelsens sammanträden ska det föras protokoll som visar besluten. Den som för protokollet skriver under, och ordföranden justerar det om hen inte själv har fört protokollet. Har styrelsen flera ledamöter justerar också en ledamot som styrelsen utser (8 kap. 24 §).
 
 **Årsstämma.** Inom sex månader från utgången av varje räkenskapsår ska aktieägarna hålla en ordinarie bolagsstämma, årsstämman (7 kap. 10 §). Där läggs årsredovisningen fram, och stämman beslutar bland annat om resultaträkningen och balansräkningen ska fastställas, hur vinst eller förlust ska disponeras och om ansvarsfrihet för styrelse och VD. Från stämman ska det föras protokoll som justeras. Protokollet ska hållas tillgängligt för aktieägarna inom två veckor och förvaras på ett betryggande sätt (7 kap. 48–49 §§). Är du ensam aktieägare behöver ingen annan justera.
 
-**Verklig huvudman.** Alla aktiebolag och ekonomiska föreningar ska anmäla sin verkliga huvudman till Bolagsverket. Det är den som ytterst äger eller kontrollerar företaget, i regel genom mer än 25 procent av rösterna. Anmäl i samband med att företaget registreras, och kontrollera hos Bolagsverket vilken tidsgräns som gäller. Anmälan ska göras även om det inte finns någon verklig huvudman, och den ska uppdateras när ägandet ändras. Anmälan görs i Bolagsverkets e-tjänst av en behörig företrädare.
+**Aktiebok.** I ett aktiebolag ska det finnas en aktiebok som visar bolagets aktier och vem som äger dem (5 kap. 1 §). I ett bolag som inte är avstämningsbolag, vilket de flesta små bolag inte är, ansvarar styrelsen för att aktieboken förs, sparas och hålls tillgänglig (5 kap. 7 §). Uppdatera den när aktier byter ägare.
+
+**Verklig huvudman.** Aktiebolag och ekonomiska föreningar ska, liksom handels- och kommanditbolag, anmäla sin verkliga huvudman till Bolagsverket (lagen om registrering av verkliga huvudmän 1 kap. 2 §; börsnoterade bolag och företag som staten eller kommuner kontrollerar är undantagna). Det är den som ytterst äger eller kontrollerar företaget, i regel genom mer än 25 procent av rösterna. Anmälan görs samtidigt som företaget anmäls för registrering, och ändringar anmäls utan dröjsmål (2 kap. 3 §). Anmälan ska göras även om det inte finns någon verklig huvudman. Anmälan görs i Bolagsverkets e-tjänst av en behörig företrädare.
 
 ## Så här gör du
 
-1. Anmäl verklig huvudman till Bolagsverket i samband med registreringen.
+1. Anmäl verklig huvudman till Bolagsverket samtidigt som du ansöker om registrering.
 2. Bestäm hur ofta styrelsen ska gå igenom ekonomin, till exempel en gång i månaden. Använd resultat- och balansrapporten, se [Resultatrapport](/manual/rapporter/resultatrapport) och [Balansrapport](/manual/rapporter/balansrapport).
 3. För protokoll vid varje styrelsemöte, även om ni bara är en eller två personer.
 4. Planera årsstämman så att den hålls inom sex månader efter räkenskapsårets slut, och så att årsredovisningen hinner skickas till Bolagsverket i tid. Se [Årsredovisning och bokslut](/foretagsguiden/ansvar-och-regler/arsredovisning-och-bokslut).
-5. Spara protokoll, bolagsordning och aktiebok tillsammans med företagets övriga viktiga handlingar.
+5. Lägg upp aktieboken när bolaget bildas, och spara den tillsammans med protokoll, bolagsordning och företagets övriga viktiga handlingar.
 
 ## Vanliga misstag
 

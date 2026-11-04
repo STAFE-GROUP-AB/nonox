@@ -6,6 +6,12 @@ sokord: [bokslut, årsbokslut, förenklat årsbokslut, årsredovisning, K1, K2, 
 kallor:
   - titel: Riksdagen – Bokföringslag (1999:1078), 6 kap.
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
+  - titel: Riksdagen – Årsredovisningslag (1995:1554), 8 kap.
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/
+  - titel: Riksdagen – Aktiebolagslag (2005:551), 7 kap. 10 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/
+  - titel: Riksdagen – Lag (2018:672) om ekonomiska föreningar
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018672-om-ekonomiska-foreningar_sfs-2018-672/
   - titel: Bolagsverket – Årsredovisningsguiden för aktiebolag (räkenskapsår som inleds 2025-01-01 eller senare)
     url: https://bolagsverket.se/foretag/aktiebolag/arsredovisningforaktiebolag/arsredovisningsguidenforaktiebolag.5550.html
   - titel: Bokföringsnämnden – Beslutade redovisningsregler
@@ -15,15 +21,14 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Förseningsavgifterna (7 500, 7 500 och 15 000 kronor för privata aktiebolag) bekräftades via Bolagsverkets sökresultat men inte genom att sidan kunde läsas direkt. Gäller de räkenskapsår som inleds 2025-01-01 eller senare, och vad gäller för tidigare år?
+  - Förseningsavgifterna i årsredovisningslagen 8 kap. 6–6 a §§ har lydelsen enligt SFS 2024:1115. Vilka belopp gäller för räkenskapsår som började före 2025?
   - Vilka företag räknas som större företag enligt årsredovisningslagen och måste tillämpa K3? Storleksgränserna kan ha ändrats genom EU:s justering av gränsvärdena – guiden anger dem inte.
-  - Blir digital inlämning av årsredovisningen obligatorisk för aktiebolag, och från vilket räkenskapsår? Guiden säger bara att den går att lämna digitalt.
   - Kan ett handelsbolag med bara fysiska personer som delägare välja K1 (förenklat årsbokslut) under samma villkor som en enskild firma?
 ---
 
 # Årsredovisning och bokslut
 
-Varje räkenskapsår avslutas med en sammanställning av hur det har gått: ett årsbokslut eller en årsredovisning. Vilket du ska göra beror på bolagsformen och företagets storlek. Aktiebolag och ekonomiska föreningar ska dessutom skicka in årsredovisningen till Bolagsverket, där den blir offentlig.
+Varje räkenskapsår avslutas med en sammanställning av hur det har gått: ett årsbokslut eller en årsredovisning. Vilket du ska göra beror på bolagsformen och företagets storlek. Aktiebolag, ekonomiska föreningar och handelsbolag med en juridisk person som delägare ska dessutom skicka in årsredovisningen till Bolagsverket, där den blir offentlig.
 
 ## Det här säger reglerna
 
@@ -39,9 +44,9 @@ Varje räkenskapsår avslutas med en sammanställning av hur det har gått: ett 
 
 Vilket som passar beror på företaget. Bestäm det tillsammans med din redovisningskonsult eller revisor, och läs regelverken på bfn.se.
 
-**Inlämning till Bolagsverket.** För ett aktiebolag ska årsredovisningen, och revisionsberättelsen om bolaget har revisor, ha kommit in till Bolagsverket senast sju månader efter räkenskapsårets slut. För ett bolag med kalenderår är det den 31 juli. Årsstämman ska ha hållits dessförinnan, inom sex månader, se [Styrelse och VD](/foretagsguiden/ansvar-och-regler/styrelse-och-vd). Årsredovisningen kan lämnas digitalt till Bolagsverket direkt från ett program som stöder det, eller på papper.
+**Inlämning till Bolagsverket.** Ett aktiebolag ska hålla årsstämman inom sex månader efter räkenskapsårets slut (aktiebolagslagen 7 kap. 10 §), och en ekonomisk förening sin föreningsstämma inom samma tid (lagen om ekonomiska föreningar 6 kap. 9 §). Se [Styrelse och VD](/foretagsguiden/ansvar-och-regler/styrelse-och-vd). Därefter ska en bestyrkt kopia av årsredovisningen, och revisionsberättelsen om företaget har revisor, ha kommit in till Bolagsverket **inom en månad efter stämman**. På kopian intygar en styrelseledamot eller VD att resultaträkningen och balansräkningen har fastställts, och anger stämmans beslut om vinsten eller förlusten (årsredovisningslagen 8 kap. 3 §). Har handlingarna inte kommit in inom sju månader efter räkenskapsårets slut, för ett kalenderår den 31 juli, tas en förseningsavgift ut (8 kap. 6 §). Ett handelsbolag med en juridisk person som delägare skickar in sin årsredovisning inom sex månader efter räkenskapsårets slut. Årsredovisningen får lämnas digitalt till Bolagsverket (8 kap. 3 a §), direkt från ett program som stöder det, eller på papper.
 
-**Förseningsavgift.** Kommer årsredovisningen in för sent tar Bolagsverket ut en förseningsavgift. För privata aktiebolag och räkenskapsår som inleds 2025-01-01 eller senare är den enligt Bolagsverket 7 500 kronor redan vid en dags försening, ytterligare 7 500 kronor om den saknas två månader senare och ytterligare 15 000 kronor efter ännu två månader. För publika aktiebolag är beloppen högre. Kontrollera alltid aktuella belopp hos Bolagsverket.
+**Förseningsavgift.** Kommer årsredovisningen in efter sjumånadersgränsen tar Bolagsverket ut en förseningsavgift. För privata aktiebolag och ekonomiska föreningar är den 7 500 kronor redan vid en dags försening (årsredovisningslagen 8 kap. 6 §). Saknas handlingarna två månader efter att Bolagsverket skickat beslutet tas ytterligare 7 500 kronor ut, och efter ännu två månader ytterligare 15 000 kronor (8 kap. 6 a §). För publika aktiebolag är beloppen dubbla. Enligt Bolagsverket gäller beloppen räkenskapsår som inleds 2025-01-01 eller senare. Kontrollera alltid aktuella belopp hos Bolagsverket.
 
 **Enskild firma.** Du lämnar inte in något till Bolagsverket. Årsbokslutets siffror förs i stället in i NE-bilagan, som lämnas med din egen inkomstdeklaration till Skatteverket.
 
@@ -49,9 +54,9 @@ Vilket som passar beror på företaget. Bestäm det tillsammans med din redovisn
 
 1. Gå igenom bokslutets checklista när året är slut. Se [Bokslutets checklista](/manual/bokslut/checklistan).
 2. Bokför bokslutsposterna, till exempel periodiseringar och avskrivningar. Se [Bokslut](/manual/bokslut).
-3. Aktiebolag och ekonomisk förening: upprätta årsredovisningen enligt K2, se [Årsredovisning](/manual/bokslut/arsredovisning). Låt revisorn granska den om ni har revisor.
+3. Aktiebolag och ekonomisk förening: upprätta årsredovisningen, för de flesta mindre företag enligt K2, se [Årsredovisning](/manual/bokslut/arsredovisning). Låt revisorn granska den om ni har revisor.
 4. Håll årsstämman och fastställ resultat- och balansräkningen.
-5. Skicka in årsredovisningen till Bolagsverket i god tid före sjumånadersgränsen.
+5. Skicka in årsredovisningen med fastställelseintyget till Bolagsverket inom en månad efter stämman, och i god tid före sjumånadersgränsen.
 6. Stäng året och spara arkivpaketet, se [Stäng året](/manual/bokslut/stang-aret).
 
 ## Vanliga misstag

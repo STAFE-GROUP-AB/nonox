@@ -12,9 +12,6 @@ kallor:
     url: https://www.skatteverket.se/privat/skatter/skattekontobetalaochfatillbaka/rantapaskattekontot.4.18e1b10334ebe8bc80002582.html
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Gränserna 1 miljon och 40 miljoner kronor för val av redovisningsperiod kommer från Skatteverkets sida, som inte anger år. Kontrollera att de gäller 2026 och 2027.
-  - Förseningsavgiften 625 kronor (1 250 kronor efter föreläggande) står i skatteförfarandelagen 48 kap. 6 § i lydelsen 2026. Kontrollera att den inte har ändrats.
 ---
 
 # Momsdeklarationen
@@ -25,7 +22,7 @@ I momsdeklarationen talar du om för Skatteverket hur mycket moms företaget har
 
 ### Hur ofta du deklarerar
 
-Skatteverket beslutar om företagets redovisningsperiod när du registrerar dig för moms. Enligt Skatteverket beror valet på hur stort beskattningsunderlaget, alltså försäljningen exklusive moms, är under året:
+Skatteverket beslutar om företagets redovisningsperiod när du registrerar dig för moms. Valet beror på hur stort beskattningsunderlaget, alltså försäljningen exklusive moms, beräknas bli under året. Gränserna står i skatteförfarandelagen 26 kap. 11 och 13 §§ och räknas inte om varje år:
 
 | Beskattningsunderlag per år | Möjliga perioder |
 |---|---|
@@ -40,6 +37,8 @@ Sista dagen beror på period, bolagsform, storlek och om företaget handlar med 
 - **Kvartal:** senast den 12 i andra månaden efter kvartalet. Januari–mars ska vara inne den 12 maj. I augusti är dagen den 17.
 - **Månad, högst 40 miljoner kronor:** senast den 12 i andra månaden efter månaden. I januari och augusti är dagen den 17.
 - **Månad, mer än 40 miljoner kronor:** senast den 26 i månaden efter. I december är det den 27.
+
+Datumen för kvartal och månad står i skatteförfarandelagen 26 kap. 26–27 och 30 §§.
 - **Helår:** dagen beror på bolagsform, när räkenskapsåret slutar, om du deklarerar digitalt och om företaget handlar med andra EU-länder.
 
 Exakta datum för ditt företag hittar du på Skatteverkets sida om när du ska deklarera moms. De kommer också att finnas i Företagsguidens avsnitt om viktiga datum.

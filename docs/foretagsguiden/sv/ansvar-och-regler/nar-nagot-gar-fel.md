@@ -3,8 +3,12 @@ beskrivning: Så gör du om du har missat en deklaration, inte kan betala skatte
 ordning: 80
 sokord: [sen deklaration, förseningsavgift, skattetillägg, Kronofogden, betalningsföreläggande, betalningsanmärkning, skulder, rekonstruktion, konkurs, kontrollbalansräkning, betalningsproblem]
 kallor:
-  - titel: Skatteverket – Belopp och procent inkomstår 2025
-    url: https://www.skatteverket.se/privat/skatter/beloppochprocent/2025.4.262c54c219391f2e96342eb.html
+  - titel: Skatteverket – Belopp och procent inkomstår 2026
+    url: https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html
+  - titel: Riksdagen – Skatteförfarandelag (2011:1244), 48, 49 och 51 kap.
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
+  - titel: Riksdagen – Årsredovisningslag (1995:1554), 8 kap.
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/
   - titel: Bolagsverket – Årsredovisningsguiden för aktiebolag (räkenskapsår som inleds 2025-01-01 eller senare)
     url: https://bolagsverket.se/foretag/aktiebolag/arsredovisningforaktiebolag/arsredovisningsguidenforaktiebolag.5550.html
   - titel: Bolagsverket – Kontrollbalansräkning vid misstanke om att hälften av det registrerade aktiekapitalet är förbrukat
@@ -16,9 +20,6 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Förseningsavgifterna hos Skatteverket är hämtade från sidan för inkomstår 2025. Gäller samma belopp 2026?
-  - Betyder Skatteverkets 6 250, 12 500 och 18 750 kronor för aktiebolag sammanlagda belopp eller tre separata avgifter? Guiden anger bara den första.
-  - Regeln om frivillig rättelse (inget skattetillägg) och befrielse från förseningsavgift beskrivs utan paragraf – bör 51 kap. skatteförfarandelagen anges och villkoren förklaras?
   - Kronofogden anger att ett företag kan få en betalningsanmärkning redan när en ansökan om betalningsföreläggande kommer in. Bör det formuleras mer exakt med kreditupplysningslagen som källa?
 ---
 
@@ -28,17 +29,17 @@ De flesta företagare missar någon gång ett datum eller får en månad då pen
 
 ## Det här säger reglerna
 
-**Sen deklaration till Skatteverket.** Lämnas en deklaration för sent tar Skatteverket ut en förseningsavgift enligt skatteförfarandelagen 48 kap. Enligt Skatteverkets belopp för inkomstår 2025 är avgiften för en skattedeklaration, till exempel momsdeklaration eller arbetsgivardeklaration, 625 kronor och i vissa fall 1 250 kronor. För en sen inkomstdeklaration är den första avgiften 6 250 kronor för aktiebolag och ekonomiska föreningar och 1 250 kronor för övriga, och den höjs om förseningen fortsätter. Kontrollera aktuella belopp hos Skatteverket.
+**Sen deklaration till Skatteverket.** Lämnas en deklaration för sent tar Skatteverket ut en förseningsavgift enligt skatteförfarandelagen 48 kap. För 2026 är avgiften för en skattedeklaration, till exempel momsdeklaration eller arbetsgivardeklaration, 625 kronor, och 1 250 kronor om deklarationen skulle ha lämnats efter ett föreläggande (48 kap. 6 §). För en sen inkomstdeklaration är avgiften 6 250 kronor för aktiebolag och ekonomiska föreningar och 1 250 kronor för övriga. Saknas inkomstdeklarationen fortfarande efter tre månader tas en andra avgift ut, och efter ytterligare två månader en tredje (48 kap. 7 §). För ett aktiebolag blir det alltså sammanlagt 18 750 kronor om deklarationen aldrig kommer in. Beloppen står i lagen; kontrollera hos Skatteverket om de har ändrats.
 
-**Fel i en deklaration.** Har du lämnat en felaktig uppgift kan Skatteverket ta ut skattetillägg, en procentsats av den skatt som skulle ha undanhållits. Rättar du felet själv innan Skatteverket har upptäckt det tas skattetillägg som regel inte ut. Lämna därför en rättelse så snart du hittar ett fel.
+**Fel i en deklaration.** Har du lämnat en felaktig uppgift kan Skatteverket ta ut skattetillägg, en procentsats av den skatt som skulle ha undanhållits. Rättar du felet på eget initiativ tas skattetillägg inte ut (skatteförfarandelagen 49 kap. 10 §). En rättelse räknas dock inte som eget initiativ om den hänger ihop med en kontroll som Skatteverket redan har aviserat och görs sent. Lämna därför en rättelse så snart du hittar ett fel.
 
-**Sen årsredovisning.** Ett aktiebolag som lämnar årsredovisningen till Bolagsverket för sent får en förseningsavgift, se [Årsredovisning och bokslut](/foretagsguiden/ansvar-och-regler/arsredovisning-och-bokslut). Avgiften tas ut även om du överklagar, och den betalas tillbaka bara om Bolagsverket har gjort fel. Ett bolag som inte lämnar in årsredovisningen alls kan till slut tvångslikvideras.
+**Sen årsredovisning.** Ett aktiebolag eller en ekonomisk förening som lämnar årsredovisningen till Bolagsverket för sent får en förseningsavgift, se [Årsredovisning och bokslut](/foretagsguiden/ansvar-och-regler/arsredovisning-och-bokslut). Avgiften ska betalas även om du överklagar beslutet (årsredovisningslagen 8 kap. 11 §). Bolagsverket ska efterge den om förseningen berodde på något som bolaget inte kunde råda över, eller om det är uppenbart oskäligt att ta ut den (8 kap. 9 §). Räkna inte med det: vanlig tidsbrist räcker inte. Ett bolag som inte lämnar in årsredovisningen alls kan till slut tvångslikvideras.
 
 **Krav via Kronofogden.** En borgenär som inte får betalt kan ansöka om betalningsföreläggande hos Kronofogden. Kronofogden prövar inte om kravet är riktigt, bara om du bestrider det. Bestrider du inte i tid kan kravet bli ett utslag som går att verkställa. Enligt Kronofogden kan ett företag få en betalningsanmärkning redan när ansökan kommer in. Betalningsanmärkningar sätts av kreditupplysningsföretag, inte av Kronofogden.
 
 **När aktiekapitalet håller på att förbrukas.** Har ett aktiebolag gått så dåligt att det egna kapitalet kan vara mindre än hälften av aktiekapitalet ska styrelsen genast upprätta en kontrollbalansräkning. Annars riskerar styrelsen personligt ansvar. Se [Ansvar per bolagsform](/foretagsguiden/ansvar-och-regler/ansvar-per-bolagsform).
 
-**Rekonstruktion och konkurs.** Kan företaget inte betala sina skulder finns två vägar via tingsrätten: företagsrekonstruktion, där företaget får hjälp att komma på fötter igen, och konkurs, där verksamheten avvecklas. Kronofogden har tillsyn över förvaltare och rekonstruktörer. Det är ett stort beslut. Ta hjälp av en jurist eller revisor innan du ansöker.
+**Rekonstruktion och konkurs.** Kan företaget inte betala sina skulder finns två vägar via tingsrätten: företagsrekonstruktion, där företaget får hjälp att komma på fötter igen, och konkurs, där verksamheten avvecklas. Det är ett stort beslut. Ta hjälp av en jurist eller revisor innan du ansöker.
 
 ## Så här gör du
 
@@ -47,12 +48,12 @@ De flesta företagare missar någon gång ett datum eller får en månad då pen
 1. Lämna deklarationen så snart du kan, även om den inte blir perfekt. Avgiften blir inte lägre av att du väntar.
 2. Betala det du kan till skattekontot. Se [Skattekontot](/foretagsguiden/moms-och-skatt/skattekontot).
 3. Hittar du ett fel senare: lämna en rättelse till Skatteverket.
-4. Var det något utanför din kontroll, till exempel sjukdom? Ansök om att avgiften ska sättas ned. Skatteverket kan befria från avgiften om det finns skäl.
+4. Var det något utanför din kontroll, till exempel sjukdom? Begär att avgiften tas bort eller sätts ned. Skatteverket ska befria helt eller delvis från en avgift som det är oskäligt att ta ut med fullt belopp, och tar då särskilt hänsyn till bland annat ålder, hälsa och felbedömningar av en regel (skatteförfarandelagen 51 kap. 1 §).
 
 ### Om du inte kan betala skatten
 
 1. Kontakta Skatteverket innan förfallodagen och fråga om anstånd med betalningen är möjligt i ditt fall.
-2. Har du aktiebolag: kom ihåg att styrelse och VD kan bli personligt ansvariga för obetalda skatter och avgifter, se [Ansvar per bolagsform](/foretagsguiden/ansvar-och-regler/ansvar-per-bolagsform).
+2. Har du aktiebolag eller ekonomisk förening: kom ihåg att styrelse och VD kan bli personligt ansvariga för obetalda skatter och avgifter. Sedan den 30 juni 2026 kan du som företrädare ansöka hos Skatteverket om ett rådrum på två månader (skatteförfarandelagen 59 kap. 15 a §), se [Ansvar per bolagsform](/foretagsguiden/ansvar-och-regler/ansvar-per-bolagsform).
 3. Gör en plan för de närmaste månaderna tillsammans med din redovisningskonsult.
 
 ### Om du har fått ett krav

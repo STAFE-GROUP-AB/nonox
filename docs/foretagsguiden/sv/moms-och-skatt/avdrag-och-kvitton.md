@@ -32,7 +32,7 @@ Enligt 9 kap. 2 § får du inte dra av dina **levnadskostnader**, alltså det du
 
 ### Momsen på inköpen
 
-Enligt mervärdesskattelagen 13 kap. 6 § får du dra av ingående moms i den utsträckning du använder det du köpt i den momspliktiga verksamheten. Avdraget ska kunna styrkas, normalt med en faktura eller ett kvitto (13 kap. 31 och 32 §§).
+Enligt mervärdesskattelagen 13 kap. 6 § får du dra av ingående moms i den utsträckning du använder det du köpt i den momspliktiga verksamheten. Avdraget ska kunna styrkas med en faktura (13 kap. 31 och 32 §§). Ett vanligt kassakvitto räknas som en förenklad faktura när totalbeloppet är högst 4 000 kronor inklusive moms (17 kap. 26 §). För dyrare köp behövs i regel en faktura med ditt företags namn och adress (17 kap. 24 §).
 
 ### Blandade inköp
 
@@ -60,6 +60,7 @@ Enligt bokföringslagen 5 kap. 6 § ska det finnas en verifikation för varje af
 ## Vanliga misstag
 
 - **Kvitton som försvinner.** Ett papperskvitto bleknar och tappas bort. Fota det samma dag.
+- **Bara ett kassakvitto för ett dyrt köp.** Över 4 000 kronor inklusive moms behöver du i regel en faktura med företagets namn och adress för att få dra av momsen.
 - **Ett kortutdrag i stället för kvitto.** Banken visar att du betalat, men inte vad du köpt eller hur mycket moms det var.
 - **Att dra av hela momsen på en affärsmiddag.** Momsavdraget har ett tak per person, och måltiden ger inget avdrag i inkomstdeklarationen.
 - **Privata inköp i företaget.** Det som du använder privat är inte en kostnad för företaget, även om det betalades med företagets kort.

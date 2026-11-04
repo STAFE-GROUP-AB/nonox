@@ -10,14 +10,20 @@ kallor:
     url: https://www.skatteverket.se/foretag/moms/kopavarorochtjanster/kopavarorellertjanstertillforetaget.4.7459477810df5bccdd480005156.html
   - titel: Bokföringslag (1999:1078)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/
+  - titel: Mervärdesskattelag (2023:200), 13 kap. 31–32 §§ och 17 kap. 24, 26 och 28 §§
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/
+  - titel: Inkomstskattelag (1999:1229), 18 kap. 4 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/
+  - titel: Skatteverket – Belopp och procent inkomstår 2026
+    url: https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
   - Aktiebolag – får bolaget dra av kostnader och ingående moms för inköp som grundaren gjorde innan stiftelseurkunden skrevs under, när bolaget tar över dem efter registreringen? Vilka villkor gäller?
-  - Aktiebolag – räcker ett kvitto i grundarens namn som underlag för bolagets avdrag för ingående moms, eller krävs en faktura ställd till bolaget?
+  - Aktiebolag – får bolaget dra av ingående moms på en faktura som är ställd till grundaren och inte till bolaget? Guiden visar därför aktiebolagsexemplet utan momsavdrag.
   - Vilket verifikationsdatum ska inköp före räkenskapsårets första dag få – inköpsdagen, dagen då bolaget tog över inköpet eller räkenskapsårets första dag?
   - Finns en tidsgräns för hur långt före starten ett inköp får vara gjort för att momsen ska få dras av?
-  - Gränsen för när en inventarie får kostnadsföras direkt i stället för att skrivas av (inventarier av mindre värde) anges inte här; behöver ett belopp med årtal och källa.
+  - Inkomstskattelagens gräns för inventarier av mindre värde är skattereglerna. Kan K2/K3 ge en annan gräns i bokföringen?
 ---
 
 # Bokför inköp du gjort innan företaget startade
@@ -48,7 +54,7 @@ En enskild firma är du själv, så det finns ingen skuld mellan dig och firman.
 Enligt Skatteverket kan du i vissa fall dra av momsen på inköp som du gjorde innan du startade verksamheten. Villkoren:
 
 1. Du köpte saken eller tjänsten **med avsikten att bara använda den i den momspliktiga verksamheten**. Köpte du den för privat bruk får du inte dra av momsen, även om du senare använder den i företaget. Kameran i exemplet ovan ger alltså inget momsavdrag.
-2. Du har ett **underlag där momsen är specificerad**, normalt en faktura eller ett kvitto.
+2. Du har en **faktura där momsen är specificerad**. Enligt mervärdesskattelagen ska avdraget styrkas med en faktura (13 kap. 31–32 §§). Ett vanligt kassakvitto räknas som en förenklad faktura när totalbeloppet är högst 4 000 kronor inklusive moms (17 kap. 26 och 28 §§). Är köpet dyrare behövs i regel en faktura med köparens fullständiga namn och adress (17 kap. 24 §). Be därför butiken om en sådan faktura när du köper något dyrare.
 3. I företagsregistreringen hos Skatteverket anger du **datumet för ditt första inköp** som startdatum för momsen.
 
 Avdraget redovisas som ingående moms i ruta 48 i momsdeklarationen. Är företaget inte momsregistrerat, eller undantaget från moms, finns inget avdrag; då är hela beloppet kostnad.
@@ -59,24 +65,11 @@ Enligt bokföringslagen ska varje verifikation ha ett underlag. Spara kvittot el
 
 ## Exempel: en dator för 12 500 kronor
 
-Sara startar Kafé Linden. Innan företaget är registrerat köper hon en dator för 12 500 kronor, varav 2 500 kronor moms, som bara ska användas i kaféet. Hon betalar med sitt privata kort och sparar kvittot.
+Sara startar Kafé Linden. Innan företaget är registrerat köper hon en dator för 12 500 kronor, varav 2 500 kronor moms, som bara ska användas i kaféet. Hon betalar med sitt privata kort. Eftersom beloppet är högre än 4 000 kronor ber hon butiken om en faktura med sitt namn och sin adress, där momsen står utskriven.
 
-**Om Kafé Linden är ett aktiebolag**, och bolaget får dra av momsen, bokförs övertagandet till exempel så här:
+Datorn kostar 10 000 kronor utan moms. Det är mindre än ett halvt prisbasbelopp, som för 2026 är 29 600 kronor (halva 59 200 kronor), så skattemässigt får hela utgiften dras av direkt (inkomstskattelagen 18 kap. 4 §). Därför bokförs den i exemplet som en kostnad.
 
-| Konto | Debet | Kredit |
-|---|---:|---:|
-| 5410 Förbrukningsinventarier | 10 000,00 | |
-| 2640 Ingående moms | 2 500,00 | |
-| 2893 Skulder till närstående personer, kortfristig del | | 12 500,00 |
-
-När bolaget betalar tillbaka till Sara:
-
-| Konto | Debet | Kredit |
-|---|---:|---:|
-| 2893 Skulder till närstående personer, kortfristig del | 12 500,00 | |
-| 1930 Företagskonto/checkkonto/affärskonto | | 12 500,00 |
-
-**Om Kafé Linden är en enskild firma**, och momsen får dras av:
+**Om Kafé Linden är en enskild firma** är Sara och firman samma person, så fakturan är ställd till rätt köpare. Är firman momsregistrerad och villkoren ovan uppfyllda bokförs inköpet till exempel så här:
 
 | Konto | Debet | Kredit |
 |---|---:|---:|
@@ -86,10 +79,26 @@ När bolaget betalar tillbaka till Sara:
 
 Här finns ingen återbetalning. Tar Sara senare ut pengar ur firman bokförs det som ett eget uttag.
 
+**Om Kafé Linden är ett aktiebolag** är fakturan ställd till Sara, inte till bolaget. Om bolaget ändå får dra av momsen på den är inte klarlagt, så exemplet visar övertagandet utan momsavdrag. Hela beloppet blir då kostnad och bolagets skuld till Sara:
+
+| Konto | Debet | Kredit |
+|---|---:|---:|
+| 5410 Förbrukningsinventarier | 12 500,00 | |
+| 2893 Skulder till närstående personer, kortfristig del | | 12 500,00 |
+
+Säger din redovisningskonsult att bolaget får dra av momsen, delas raden på 5410 upp i 10 000 kronor kostnad och 2 500 kronor på 2640 Ingående moms, som i exemplet för enskild firma.
+
+När bolaget betalar tillbaka till Sara:
+
+| Konto | Debet | Kredit |
+|---|---:|---:|
+| 2893 Skulder till närstående personer, kortfristig del | 12 500,00 | |
+| 1930 Företagskonto/checkkonto/affärskonto | | 12 500,00 |
+
 **Om momsen inte får dras av**, till exempel för att företaget inte är momsregistrerat, bokförs hela beloppet, 12 500 kronor, som kostnad, och raden för ingående moms utgår.
 
 > [!NOTE]
-> Kontona är exempel ur BAS-kontoplanen. En dyrare dator som ska användas i flera år kan i stället vara en anläggningstillgång som skrivs av, till exempel på konto 1250 Datorer. Var gränsen går, fråga din redovisningskonsult. Hur du lägger in en anläggningstillgång i NONOX står i [Skapa en anläggningstillgång från ett inköp](/manual/bokforing/anlaggningstillgang-fran-inkop).
+> Kontona är exempel ur BAS-kontoplanen. En dyrare dator som ska användas i flera år kan i stället vara en anläggningstillgång som skrivs av, till exempel på konto 1250 Datorer. Skattereglernas gräns är ett halvt prisbasbelopp (inkomstskattelagen 18 kap. 4 §); hur gränsen sätts i bokföringen, fråga din redovisningskonsult. Hur du lägger in en anläggningstillgång i NONOX står i [Skapa en anläggningstillgång från ett inköp](/manual/bokforing/anlaggningstillgang-fran-inkop).
 
 ## Så här gör du i NONOX
 
@@ -108,3 +117,4 @@ Här finns ingen återbetalning. Tar Sara senare ut pengar ur firman bokförs de
 - Att bokföra privata saker till inköpspriset i stället för marknadsvärdet.
 - Att aktiebolaget betalar tillbaka mer än skulden. Det överskjutande är då ett lån till dig, som är förbjudet; se [Företagskonto och pengar](/foretagsguiden/starta/foretagskonto-och-pengar).
 - Att glömma att ange det första inköpets datum som startdatum för momsen i registreringen hos Skatteverket.
+- Att bara spara ett kassakvitto för ett köp över 4 000 kronor. Då saknas ofta köparens namn och adress, och momsavdraget kan inte styrkas.

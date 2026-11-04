@@ -17,8 +17,8 @@ kallor:
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Kontrollavgiften för kassaregister (12 500 kronor, 25 000 kronor vid ny överträdelse inom ett år) bekräftades via Skatteverkets sökresultat, inte genom att sidan lästes direkt.
-  - Undantagen från personalliggare (ägaren och familjen i enskild firma eller fåmansföretag, verksamhet där minst 75 procent är annat) beskrivs bara i stora drag – bör villkoren anges exakt?
+  - Skatteverket beskriver fler undantag från personalliggare än de i skatteförfarandelagen 39 kap. 11 §, till exempel när verksamheten till största delen är annat. Vilka villkor gäller, och var står de?
+  - Var står att personalliggaren ska sparas i två år (skatteförfarandeförordningen)? Uppgiften kommer från Skatteverket.
   - Byggbranschen har egna regler (byggherrens anmälan, elektronisk liggare, andra kontrollavgifter). De beskrivs inte här.
 ---
 
@@ -41,7 +41,7 @@ Skatteverket beskriver flera undantag:
 
 Har du både butik och torgförsäljning gäller gränsen för hela verksamheten, inte per plats.
 
-**Kontrollbesök.** Skatteverket får göra tillsyns- och kontrollbesök. Upptäcks brister, till exempel att kassaregister saknas eller att kvitto inte erbjuds, kan Skatteverket ta ut en kontrollavgift. Enligt Skatteverket är den 12 500 kronor, och 25 000 kronor om en ny överträdelse sker inom ett år.
+**Kontrollbesök.** Skatteverket får göra tillsyns- och kontrollbesök. Upptäcks brister, till exempel att kassaregister saknas eller att kvitto inte erbjuds, kan Skatteverket ta ut en kontrollavgift. Den är 12 500 kronor, och 25 000 kronor om en ny överträdelse sker inom ett år från förra beslutet (skatteförfarandelagen 50 kap. 2 §).
 
 ### Personalliggare
 
@@ -54,11 +54,11 @@ En personalliggare är en löpande lista över vem som arbetar och när varje pe
 - fordonsservice,
 - livsmedels- och tobaksgrossister.
 
-Liggaren ska föras varje dag och finnas lätt tillgänglig när Skatteverket kommer. Det finns undantag, till exempel när bara du som ägare och din familj arbetar i en enskild firma eller ett fåmansföretag. Undantagen gäller inte i byggbranschen. Kontrollera hos Skatteverket om ett undantag passar dig. Så fort någon annan arbetar, även en enda dag, ska liggaren föras.
+Liggaren ska föras varje dag och finnas lätt tillgänglig när Skatteverket kommer. Liggare behöver inte föras i en enskild firma där bara du, din make eller maka och dina barn under 16 år arbetar, och inte heller i ett fåmansföretag där bara företagsledaren, dennes make eller maka och barn under 16 år arbetar (skatteförfarandelagen 39 kap. 11 §). Hjälper ett vuxet barn eller en förälder till gäller alltså kravet. Undantaget gäller inte i byggbranschen. Kontrollera hos Skatteverket om ett undantag passar dig. Så fort någon annan arbetar, även en enda dag, ska liggaren föras.
 
 Liggaren ska sparas i två år efter utgången av det kalenderår då beskattningsåret gick ut.
 
-**Kontrollavgift.** Saknas liggaren eller är den inte korrekt kan Skatteverket ta ut en kontrollavgift. Enligt Skatteverket är den 12 500 kronor plus 2 500 kronor för varje person som arbetar men inte står i liggaren.
+**Kontrollavgift.** Saknas liggaren eller är den inte korrekt kan Skatteverket ta ut en kontrollavgift. Den är 12 500 kronor plus 2 500 kronor för varje person som arbetar men inte står i liggaren, och 25 000 kronor i stället för 12 500 kronor om en ny överträdelse sker inom ett år (skatteförfarandelagen 50 kap. 4 §).
 
 ## Så här gör du
 

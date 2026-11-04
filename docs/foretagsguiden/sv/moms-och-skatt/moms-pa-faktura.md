@@ -14,8 +14,6 @@ kallor:
     url: https://www.skatteverket.se/foretag/moms/deklareramoms/narskajagdeklareramoms.4.6d02084411db6e252fe80008988.html
 granskad: 2026-11-04
 mansklig_granskning:
-legal_verify:
-  - Gränsen på 3 miljoner kronor för kontantmetoden (BFL 5 kap. 2 § och ML 7 kap. 16 §) och 4 000 kronor för förenklad faktura (ML 17 kap. 26 §) stämmer med lagtexten 2026. Kontrollera att de inte har ändrats.
 ---
 
 # Moms på fakturan
@@ -61,10 +59,10 @@ Skatteverket ger fler godtagbara formuleringar. Är du osäker på vilken som g�
 
 Bokföringsmetoden avgör **när** momsen ska redovisas.
 
-- **Fakturametoden.** Momsen redovisas i den period då fakturan bokförs. Det är huvudregeln i mervärdesskattelagen 7 kap. 14 §.
-- **Kontantmetoden.** Momsen redovisas i den period då kunden betalar. Enligt bokföringslagen 5 kap. 2 § och mervärdesskattelagen 7 kap. 16 § får ett företag vars årliga omsättning normalt uppgår till högst 3 miljoner kronor använda den. Det är gränsen 2026. Vid räkenskapsårets slut ska alla obetalda kundfakturor och leverantörsfakturor ändå bokföras, och momsen på obetalda kundfakturor redovisas i årets sista period.
+- **Fakturametoden.** Momsen redovisas i den period då försäljningen enligt god redovisningssed bokförs eller borde ha bokförts. Det är huvudregeln i mervärdesskattelagen 7 kap. 14 §.
+- **Kontantmetoden.** Momsen redovisas i den period då kunden betalar. Enligt bokföringslagen 5 kap. 2 § och mervärdesskattelagen 7 kap. 16 § får ett företag vars årliga omsättning normalt uppgår till högst 3 miljoner kronor använda den. Beloppet står i lagtexten och räknas inte om varje år. Vid räkenskapsårets slut ska alla obetalda kundfakturor och leverantörsfakturor ändå bokföras, och momsen på obetalda kundfakturor redovisas i årets sista period.
 
-Har företaget använt fakturametoden och vill gå över till kontantmetoden måste det enligt mervärdesskattelagen 7 kap. 17 § först ansöka om det hos Skatteverket.
+Har företaget använt fakturametoden och vill gå över till kontantmetoden måste det enligt mervärdesskattelagen 7 kap. 17 § först ansöka om det hos Skatteverket, och Skatteverket beviljar det bara om det finns särskilda skäl.
 
 ## Så här gör du
 

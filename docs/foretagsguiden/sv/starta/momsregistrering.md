@@ -9,12 +9,13 @@ kallor:
     url: https://www.skatteverket.se/foretag/moms/momsregistrering/ivissafallbehoverduinteregistreradittforetagformoms.4.3152d9ac158968eb8fd1efe.html
   - titel: Skatteverket – Höjd omsättningsgräns för moms
     url: https://www.skatteverket.se/omoss/pressochmedia/nyheter/2024/nyheter/hojdomsattningsgransformoms.5.262c54c219391f2e9633e61.html
+  - titel: Riksdagen – Mervärdesskattelag (2023:200), 3 kap. 7 § och 18 kap. 4 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/
   - titel: Skatteverket – När ska jag deklarera moms
     url: https://www.skatteverket.se/foretag/moms/deklareramoms/narskajagdeklareramoms.4.6d02084411db6e252fe80008988.html
 granskad: 2026-11-04
 mansklig_granskning:
 legal_verify:
-  - Gäller omsättningsgränsen 120 000 kronor oförändrad för 2026 och 2027? Skatteverkets sida anger beloppet utan årtal; höjningen till 120 000 kronor gällde från den 1 januari 2025.
   - Vilka exakta deklarationsdagar gäller för årsredovisning av moms för aktiebolag respektive enskild firma, med och utan EU-handel?
 ---
 
@@ -24,9 +25,9 @@ Säljer företaget varor eller tjänster som det ska vara moms på, ska det som 
 
 ## Det här säger reglerna
 
-**När du måste registrera.** Enligt Skatteverket ska du registrera företaget för moms om du fortlöpande säljer momspliktiga varor eller tjänster och omsättningen blir högre än gränsen för små företag. Du kan också behöva registrera dig av andra skäl, även med liten omsättning, till exempel om du köper tjänster från utlandet som du själv ska betala moms på, eller köper varor från andra EU-länder för mer än 90 000 kronor på ett år.
+**När du måste registrera.** Enligt Skatteverket ska du registrera företaget för moms om du fortlöpande säljer momspliktiga varor eller tjänster och omsättningen blir högre än gränsen för små företag. Du kan också behöva registrera dig av andra skäl, även med liten omsättning, till exempel om du köper tjänster från utlandet som du själv ska betala moms på, eller köper varor från andra EU-länder för mer än 90 000 kronor under innevarande eller föregående kalenderår (mervärdesskattelagen 3 kap. 7 §).
 
-**Undantaget för små företag.** Skatteverket anger gränsen till 120 000 kronor i årsomsättning, räknat per kalenderår. Gränsen höjdes till det beloppet från den 1 januari 2025. För att omfattas får omsättningen inte heller ha varit högre i något av de två föregående kalenderåren. Gränsen gäller beskattningsunderlaget, alltså priset utan moms. Uppfyller företaget villkoren är det undantaget automatiskt; du behöver inte ansöka. Kontrollera beloppet hos Skatteverket för det år det gäller.
+**Undantaget för små företag.** Skatteverket anger gränsen till 120 000 kronor i årsomsättning, räknat per kalenderår. Gränsen höjdes till det beloppet från den 1 januari 2025. För att omfattas får omsättningen inte heller ha varit högre i något av de två föregående kalenderåren. Gränsen gäller beskattningsunderlaget, alltså priset utan moms. Uppfyller företaget villkoren är det undantaget automatiskt; du behöver inte ansöka. Gränsen står i mervärdesskattelagen 18 kap. 4 § och räknas inte om varje år, men kontrollera hos Skatteverket att lagen inte har ändrats.
 
 Går försäljningen över gränsen under året upphör undantaget. Enligt Skatteverket ska du då ta ut moms från och med den försäljning som gjorde att gränsen passerades, och registrera företaget.
 

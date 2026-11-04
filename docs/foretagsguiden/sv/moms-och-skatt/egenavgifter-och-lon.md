@@ -42,9 +42,9 @@ Du betalar skatten och avgifterna i förväg via F-skatten varje månad. Läs [S
 
 ### Aktiebolag
 
-- **Lön.** Du kan vara anställd i ditt eget bolag. Lönen är en kostnad för bolaget. Bolaget betalar arbetsgivaravgifter ovanpå lönen och drar preliminärskatt från den. För 2026 är den fulla arbetsgivaravgiften 31,42 procent för den som är född 1959–2002.
+- **Lön.** Du kan vara anställd i ditt eget bolag. Lönen är en kostnad för bolaget. Bolaget betalar arbetsgivaravgifter ovanpå lönen och drar preliminärskatt från den. För 2026 är den fulla arbetsgivaravgiften 31,42 procent för den som är född 1959–2002. Enligt Skatteverket är avgifterna tillfälligt sänkta för unga mellan 19 och 23 år under perioden 1 april 2026 till 30 september 2027. För 2026 gäller det den som är född 2003–2007, som får en avgift på 20,81 procent på ersättning upp till 25 000 kronor och 31,42 procent på det som överstiger. Kontrollera hos Skatteverket vad som gäller för den du anställer.
 - **Utdelning.** Bolaget betalar bolagsskatt på vinsten, för 2026 är den 20,6 procent. Av det som är kvar kan bolaget dela ut pengar till ägarna. Utdelning är ingen kostnad för bolaget, och det betalas inga arbetsgivaravgifter på den.
-- **3:12-reglerna.** Äger du och några få andra bolaget, och arbetar du i det, är det oftast ett fåmansföretag. Då styr de så kallade 3:12-reglerna hur utdelningen beskattas. Utdelning upp till ett visst belopp, gränsbeloppet, beskattas lägre. Enligt Skatteverket tas två tredjedelar av den upp i inkomstslaget kapital, där skatten är 30 procent. Utdelning över gränsbeloppet beskattas i stället som inkomst av tjänst, upp till ett tak som Skatteverket anger för varje år.
+- **3:12-reglerna.** Äger du och några få andra bolaget, och arbetar du i det, är det oftast ett fåmansföretag. Då styr de så kallade 3:12-reglerna hur utdelningen beskattas. Utdelning upp till ett visst belopp, gränsbeloppet, beskattas lägre. Enligt Skatteverket tas två tredjedelar av den upp i inkomstslaget kapital, där skatten är 30 procent. Utdelning över gränsbeloppet beskattas i stället som inkomst av tjänst, upp till ett tak som Skatteverket anger för varje år. Vad som gäller för utdelning över taket läser du på Skatteverkets sida om regler för fåmansföretag.
 
 ### Ändringarna i 3:12-reglerna 2026
 
