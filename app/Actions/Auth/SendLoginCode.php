@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\RateLimiter;
  * new one, and a lock serialises concurrent requests (double clicks, Enter).
  *
  * Caps keep the form from flooding an inbox. They count mails handed over
- * for sending (scheduled with defer), never requests: a few per address in
+ * for sending, never requests: a few per address in
  * ten minutes, a number per address and day from one client address
  * (IPv6 per /64) with a higher ceiling per address from all of them, and, for addresses without an
  * account (open self-registration), a ceiling for the whole service per
@@ -32,9 +32,10 @@ use Illuminate\Support\Facades\RateLimiter;
  * impossible: after the latest code has expired the owner may have to wait
  * (security review 2026-11-04).
  *
- * The mail is sent after the response (defer): the form answers in almost
- * the same time whether or not a mail goes out, without waiting for the mail
- * server. It is not queued, so a code never waits behind long jobs.
+ * The mail is sent during the request, not queued, so a code never waits
+ * behind long jobs. It was sent after the response (defer) for a while, but
+ * on production PHP-FPM the worker died after the response and no mail went
+ * out (2026-11-04), so it is synchronous again until that is understood.
  */
 class SendLoginCode
 {
@@ -89,7 +90,7 @@ class SendLoginCode
 
             LoginCodeAutofill::remember($email, $code);
 
-            defer(fn () => Mail::to($email)->send(new LoginCodeMail($code, $brand)));
+            Mail::to($email)->send(new LoginCodeMail($code, $brand));
         });
     }
 
