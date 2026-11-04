@@ -31,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property CarbonImmutable $consented_at
  * @property bool $marketing_consent the newsletter box was ticked
  * @property ?CarbonImmutable $quarantined_at
- * @property ?array{data: array<string, ?string>, org_number: ?string, newsletter: bool} $held_payload
+ * @property ?array{data: array<string, ?string>, org_number: ?string, newsletter: bool, form_name?: string} $held_payload
  * @property-read ?Form $form
  */
 class FormSubmission extends Model

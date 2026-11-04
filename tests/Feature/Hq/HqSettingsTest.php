@@ -158,7 +158,7 @@ it('lets an unknown address create an account while self-registration is open', 
         ->assertSee('Vi har skickat en kod med åtta siffror till');
 
     $code = null;
-    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return $mail->hasTo('ny@example.test');
@@ -181,7 +181,7 @@ it('checks again at the name step: closing self-registration meanwhile creates n
     $component = Livewire::test(LoginForm::class)->set('email', 'sen@example.test')->call('sendCode');
 
     $code = null;
-    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;

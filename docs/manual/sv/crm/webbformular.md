@@ -40,15 +40,17 @@ Ett webbformulär lägger ni på er egen webbplats. När någon fyller i det ska
 
 Formuläret stoppar robotar utan skript från andra: ett dolt fält, en kontroll av hur snabbt formuläret skickas och en gräns för hur många anmälningar som tas emot från samma uppkoppling. Det som stoppas får samma tack-sida men sparas inte.
 
-## Anmälningar att granska
+## Anmälningar som väntar på granskning
 
-Formuläret har också en gräns för hur många anmälningar det tar emot per timme, och ert företag har en gemensam gräns för alla formulär. Kommer det fler än så, till exempel när någon fyller formuläret med skräp, stoppas inte de riktiga anmälningarna. De sparas i stället för granskning:
+Formuläret har också en gräns för hur många anmälningar det tar emot per timme, och ert företag har en gemensam gräns för alla formulär tillsammans. Kommer det fler än så, till exempel när någon fyller ett formulär med skräp, stoppas inte de riktiga anmälningarna. De väntar i stället på granskning:
 
-- Inget prospekt, ingen kontaktperson och ingen uppgift skapas, och ingen får mejl.
+- Inget prospekt, ingen kontaktperson och ingen uppgift skapas, och den ansvarige får inget mejl.
+- Den som får ändra CRM-inställningarna får en notis och en rad under **Att göra** på översikten, högst en notis per dag.
 - Överst på **CRM → Webbformulär** visas **Anmälningar att granska** med namn, e-post, formulär, tid och meddelande.
-- Välj **Ta emot** för en riktig anmälan. Då skapas prospekt, kontaktperson och uppgift som vanligt, med samtycket från när formuläret skickades.
+- Välj **Ta emot** för en riktig anmälan. Då skapas prospekt, kontaktperson och uppgift som vanligt, med samtycket, texten och formulärets namn från när formuläret skickades.
 - Välj **Ta bort** för skräp. Det som skrevs raderas.
 - Det som ingen har granskat tas bort automatiskt efter 14 dagar.
+- Väntar 500 anmälningar redan sparas inga fler, och ni får en notis om det.
 
 Den som får ändra CRM-inställningarna kan granska.
 

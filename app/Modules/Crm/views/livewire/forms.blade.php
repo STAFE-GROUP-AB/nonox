@@ -4,7 +4,7 @@
     @if($heldCount > 0)
         <x-ui.card :title="__('Anmälningar att granska')" data-testid="crm-forms-held">
             <p class="mt-2 rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-900 ring-1 ring-accent-200" role="status">
-                {{ trans_choice(':count anmälan kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.|:count anmälningar kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.', $heldCount, ['count' => $heldCount]) }}
+                {{ trans_choice(':count anmälan väntar på granskning. Den kom in när formuläret, eller företagets formulär tillsammans, tog emot ovanligt många på kort tid.|:count anmälningar väntar på granskning. De kom in när formuläret, eller företagets formulär tillsammans, tog emot ovanligt många på kort tid.', $heldCount, ['count' => $heldCount]) }}
                 {{ __('Inget prospekt och ingen uppgift skapas förrän du tar emot anmälan. Det kan vara skräp. Det som inte granskas tas bort efter :days dagar.', ['days' => $heldDays]) }}
             </p>
             <ul class="mt-4 divide-y divide-gray-100">

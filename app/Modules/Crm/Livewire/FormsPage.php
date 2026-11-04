@@ -99,7 +99,16 @@ class FormsPage extends Component
     public function acceptHeld(int $id, SubmitForm $submit): void
     {
         $this->authorizeSettings();
-        $submit->accept($this->user(), $this->company(), FormSubmission::query()->held()->findOrFail($id));
+        // Another company's id is not found (404); one of ours that is already handled (a double click) gets a toast.
+        $submission = FormSubmission::query()->findOrFail($id);
+
+        try {
+            $submit->accept($this->user(), $this->company(), $submission->id);
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
 
         $this->toast(__('Anmälan är mottagen: prospekt, kontaktperson och uppgift är skapade.'));
     }
@@ -108,7 +117,15 @@ class FormsPage extends Component
     public function discardHeld(int $id, SubmitForm $submit): void
     {
         $this->authorizeSettings();
-        $submit->discard($this->user(), $this->company(), FormSubmission::query()->held()->findOrFail($id));
+        $submission = FormSubmission::query()->findOrFail($id);
+
+        try {
+            $submit->discard($this->user(), $this->company(), $submission->id);
+        } catch (ValidationException $exception) {
+            $this->toast($this->firstError($exception), 'error');
+
+            return;
+        }
 
         $this->toast(__('Anmälan är borttagen.'));
     }

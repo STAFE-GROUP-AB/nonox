@@ -22,7 +22,7 @@ function sentCode(): string
 {
     $code = null;
 
-    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
+    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code) {
         $code = $mail->code;
 
         return true;

@@ -167,7 +167,7 @@ it('welcomes the user after signing in', function () {
     $component = Livewire::test(LoginForm::class)->set('email', 'anna@example.com')->call('sendCode');
 
     $code = null;
-    Mail::assertQueued(LoginCodeMail::class, function ($mail) use (&$code) {
+    Mail::assertSent(LoginCodeMail::class, function ($mail) use (&$code) {
         $code = $mail->code;
 
         return true;

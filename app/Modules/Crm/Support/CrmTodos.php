@@ -8,12 +8,14 @@ use App\Domain\Overview\Contracts\PersonalTodoProvider;
 use App\Domain\Overview\TodoItem;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Actions\SubmitForm;
 use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Domain\DealNextStep;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
+use App\Modules\Crm\Models\FormSubmission;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Suppression;
 use Carbon\CarbonImmutable;
@@ -94,6 +96,21 @@ final class CrmTodos implements PersonalTodoProvider
             );
         }
 
+        // Web form submissions held over a cap (SubmitForm), for those who may review them.
+        $held = $user->hasTeamPermission($company, 'crm:settings') ? FormSubmission::query()->held()->count() : 0;
+
+        if ($held > 0) {
+            $todos[] = new TodoItem(
+                'crm-forms-held',
+                'task',
+                $held === 1 ? __('1 anmälan via webbformulär väntar på granskning') : __(':count anmälningar via webbformulär väntar på granskning', ['count' => $held]),
+                __('De kom in när formuläret eller företaget tog emot ovanligt många på kort tid. Ta emot de riktiga och ta bort skräpet; de tas bort efter :days dagar.', ['days' => SubmitForm::QUARANTINE_DAYS]),
+                route('crm.forms'),
+                TodoItem::PRIORITY_OTHER,
+                $today,
+            );
+        }
+
         if (! $user->hasTeamPermission($company, 'crm:manage')) {
             return $todos;
         }
@@ -132,6 +149,6 @@ final class CrmTodos implements PersonalTodoProvider
 
     public function invalidatedBy(): array
     {
-        return [Activity::class, Person::class, Account::class, Suppression::class, Deal::class, Agreement::class];
+        return [Activity::class, Person::class, Account::class, Suppression::class, Deal::class, Agreement::class, FormSubmission::class];
     }
 }

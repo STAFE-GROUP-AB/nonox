@@ -59,7 +59,7 @@ function codeStep(string $email): mixed
     $form = Livewire::test(LoginForm::class)->set('email', $email)->call('sendCode');
 
     $code = null;
-    Mail::assertQueued(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code, $email) {
+    Mail::assertSent(LoginCodeMail::class, function (LoginCodeMail $mail) use (&$code, $email) {
         if ($mail->hasTo($email)) {
             $code = $mail->code;
         }

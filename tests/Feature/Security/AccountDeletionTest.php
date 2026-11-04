@@ -126,7 +126,7 @@ it('pseudonymises an account that posted vouchers, which still resolve, and the 
     // Signing in with the old address never reaches the old account: the address is unknown now, so no code goes out (ADR-038).
     Mail::fake();
     Livewire::test(LoginForm::class)->set('email', $email)->call('sendCode')->assertSet('step', 'code');
-    Mail::assertNotQueued(LoginCodeMail::class);
+    Mail::assertNotSent(LoginCodeMail::class);
 
     expect(User::query()->where('email', $email)->exists())->toBeFalse();
 });

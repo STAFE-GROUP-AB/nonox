@@ -6,19 +6,15 @@ namespace App\Mail;
 
 use App\Support\Branding\PresentedBrand;
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldBeEncrypted;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 
 /**
- * Queued, so the sign-in form answers equally fast whether or not a mail goes
- * out: the response time does not tell whether an address has an account
- * (security review 2026-11-04). Encrypted on the queue, since it carries the
- * code in plain text.
+ * Not queued: a code must never wait behind long jobs on the queue. It is
+ * sent after the response instead (SendLoginCode uses defer).
  */
-class LoginCodeMail extends Mailable implements ShouldBeEncrypted, ShouldQueue
+class LoginCodeMail extends Mailable
 {
     use Queueable;
 

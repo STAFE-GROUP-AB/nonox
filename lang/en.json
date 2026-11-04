@@ -8698,8 +8698,15 @@
     "Anmälan är mottagen: prospekt, kontaktperson och uppgift är skapade.": "The submission is accepted: the prospect, contact person and task are created.",
     "Anmälan är borttagen.": "The submission is deleted.",
     "Anmälningar att granska": "Submissions to review",
-    ":count anmälan kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.|:count anmälningar kom in när formuläret tog emot ovanligt många på kort tid och väntar på dig.": ":count submission came in while the form was receiving unusually many in a short time and is waiting for you.|:count submissions came in while the form was receiving unusually many in a short time and are waiting for you.",
+    ":count anmälan väntar på granskning. Den kom in när formuläret, eller företagets formulär tillsammans, tog emot ovanligt många på kort tid.|:count anmälningar väntar på granskning. De kom in när formuläret, eller företagets formulär tillsammans, tog emot ovanligt många på kort tid.": ":count submission is waiting for review. It came in while the form, or the company's forms together, received unusually many in a short time.|:count submissions are waiting for review. They came in while the form, or the company's forms together, received unusually many in a short time.",
     "Inget prospekt och ingen uppgift skapas förrän du tar emot anmälan. Det kan vara skräp. Det som inte granskas tas bort efter :days dagar.": "No prospect and no task is created until you accept the submission. It may be spam. Anything not reviewed is deleted after :days days.",
     "Ta bort anmälan? Det som skrevs i formuläret raderas och kan inte återställas.": "Delete the submission? What was typed in the form is erased and cannot be restored.",
-    "Visar de :shown äldsta av :count.": "Showing the :shown oldest of :count."
+    "Visar de :shown äldsta av :count.": "Showing the :shown oldest of :count.",
+    "Anmälan är redan granskad. Listan är uppdaterad.": "The submission has already been reviewed. The list is up to date.",
+    "Anmälningar via webbformulär väntar på granskning: formuläret eller företaget tog emot ovanligt många på kort tid.": "Web form submissions are waiting for review: the form or the company received unusually many in a short time.",
+    "Webbformulären har så många anmälningar som väntar på granskning att nya inte längre sparas. Granska dem under CRM → Webbformulär.": "So many web form submissions are waiting for review that new ones are no longer kept. Review them under CRM → Web forms.",
+    "Öppna Webbformulär": "Open Web forms",
+    "1 anmälan via webbformulär väntar på granskning": "1 web form submission is waiting for review",
+    ":count anmälningar via webbformulär väntar på granskning": ":count web form submissions are waiting for review",
+    "De kom in när formuläret eller företaget tog emot ovanligt många på kort tid. Ta emot de riktiga och ta bort skräpet; de tas bort efter :days dagar.": "They came in while the form or the company received unusually many in a short time. Accept the real ones and delete the spam; they are deleted after :days days."
 }

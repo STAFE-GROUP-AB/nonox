@@ -484,7 +484,13 @@ lists held submissions under "Anmälningar att granska"; someone with
 with the consent dated when the form was sent, and the row becomes the
 ordinary proof) or deletes it. Unreviewed held submissions are removed after
 14 days by `crm:prune-mail`; at most 500 are held per company, beyond that a
-submission is dropped and logged. The audit log records
+submission is dropped and logged. Those with `crm:settings` get an "Att göra"
+row while anything is held, and a database notice (`FormHeldNotice`) on the
+first held submission of a day and on the first dropped one of a day. An
+accepted submission keeps the consent version and the form name the sender
+saw (stored with it), in the legal basis note and the `crm.form_submitted`
+audit, even if the form changed since. Accepting or deleting one already
+handled answers with a toast. The audit log records
 `crm.form_submission_held`, `_accepted` and `_discarded` with ids only.
 TODO(legal-verify): the 14-day period.
 
