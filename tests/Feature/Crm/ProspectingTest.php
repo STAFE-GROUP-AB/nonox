@@ -481,11 +481,17 @@ it('searches the whole register on part of a name, case-insensitively, without a
     Livewire::test(ProspectingPage::class)->set('search', 'Okänt namn')->assertSee('Inget företag matchar sökningen');
 });
 
-it('needs two characters before it searches on a name', function () {
+it('needs three characters of a name, or two digits of an organisation number, before it searches', function () {
     registryRow(1, 'Kodverket Exempel AB');
 
+    Livewire::test(ProspectingPage::class)->set('search', 'ko')
+        ->assertSee('Skriv minst tre tecken av namnet, eller minst två siffror i organisationsnumret.')
+        ->assertDontSee('Kodverket Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', 'kod')->assertSee('Kodverket Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', '55')->assertSee('Kodverket Exempel AB');
+
     Livewire::test(ProspectingPage::class)->set('search', 'k')
-        ->assertSee('Skriv minst två tecken för att söka.')
+        ->assertSee('Skriv minst tre tecken av namnet, eller minst två siffror i organisationsnumret.')
         ->assertDontSee('Kodverket Exempel AB')
         ->assertSee('Sök eller välj ett filter');
 });
@@ -504,6 +510,8 @@ it('searches on the start of an organisation number with or without a hyphen', f
     Livewire::test(ProspectingPage::class)->set('search', '5599996')
         ->assertSee('Tolfte Exempel AB')->assertSee('Första Exempel AB');
     Livewire::test(ProspectingPage::class)->set('search', '4499')->assertSee('Inget företag matchar sökningen');
+    Livewire::test(ProspectingPage::class)->set('search', '16'.substr($first, 0, 6).'-'.substr($first, 6))
+        ->assertSee('Första Exempel AB')->assertDontSee('Tolfte Exempel AB');
 });
 
 it('matches LIKE wildcards in the search literally', function () {
@@ -513,9 +521,9 @@ it('matches LIKE wildcards in the search literally', function () {
     registryRow(4, 'Underxstrecket Exempel AB');
     registryRow(5, 'Snedstreck\\Exempel AB');
 
-    Livewire::test(ProspectingPage::class)->set('search', 'a%')->assertSee('Hundra% Exempel AB')->assertDontSee('Hundra procent Exempel AB');
+    Livewire::test(ProspectingPage::class)->set('search', 'ra%')->assertSee('Hundra% Exempel AB')->assertDontSee('Hundra procent Exempel AB');
     Livewire::test(ProspectingPage::class)->set('search', 'r_s')->assertSee('Under_strecket Exempel AB')->assertDontSee('Underxstrecket Exempel AB');
-    Livewire::test(ProspectingPage::class)->set('search', '%%')->assertSee('Inget företag matchar sökningen');
+    Livewire::test(ProspectingPage::class)->set('search', '%%%')->assertSee('Inget företag matchar sökningen');
     Livewire::test(ProspectingPage::class)->set('search', 'k\\E')->assertSee('Snedstreck\\Exempel AB')->assertDontSee('Hundra% Exempel AB');
 });
 

@@ -17,7 +17,7 @@ Under **CRM → Prospektera** söker du bland Sveriges företag och lägger till
 
 1. Öppna **CRM → Prospektera**. Fliken **Sök i registret** är vald.
 2. Skriv en del av namnet eller början på organisationsnumret i **Sök på namn eller organisationsnummer**, till exempel *kodkraft* eller *559999-6*. Stora och små bokstäver spelar ingen roll, och du kan skriva organisationsnumret med eller utan bindestreck.
-3. Träffarna visas när du slutar skriva. Du behöver skriva minst två tecken.
+3. Träffarna visas när du slutar skriva. Du behöver skriva minst tre tecken av namnet, eller minst två siffror i organisationsnumret.
 
 ![Fältet Sök på namn eller organisationsnummer överst bland filtren, med en del av ett företagsnamn ifyllt.](/bilder/manual/crm/prospektera-sok.webp)
 

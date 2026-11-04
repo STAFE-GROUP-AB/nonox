@@ -12,7 +12,7 @@
         <div class="space-y-3">
             <h3 class="font-semibold text-ink">{{ __('Ett sparat filter, inte en lista') }}</h3>
             <p>{{ __('Ett segment beskriver vilka ett utskick ska gå till: du väljer egenskaper som status, taggar, ort eller ansvarig säljare, och NONOX tar med kontaktpersonerna på de kunder och prospekt som stämmer.') }}</p>
-            <p>{{ __('Vilka som är med räknas fram när du skickar utskicket, inte när du sparar segmentet. En kund som får taggen i morgon kommer med i nästa utskick, och den som inte längre stämmer följer inte med.') }}</p>
+            <p>{{ __('Vilka som är med räknas fram när du trycker Ja, skicka (för ett schemalagt utskick också då), inte när du sparar segmentet. En kund som får taggen i morgon kommer med i nästa utskick, och den som inte längre stämmer följer inte med.') }}</p>
             <p>{{ __('Alla filter du fyller i måste stämma. Inom ett filter räcker ett av valen: kryssar du både Prospekt och Aktiv kund kommer båda med.') }}</p>
         </div>
 

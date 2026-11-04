@@ -4,7 +4,7 @@
     <x-crm::segment-guide :open="$segments->isEmpty() || $open" />
 
     @if($open)
-        <x-ui.card :title="$editingId ? __('Ändra segment') : __('Nytt segment')" :description="__('Fyll bara i de filter du behöver. Ett tomt filter tar med alla. Rutan Personer i segmentet visar hur många som är med just nu; när utskicket skickas räknas det om.')">
+        <x-ui.card :title="$editingId ? __('Ändra segment') : __('Nytt segment')" :description="__('Fyll bara i de filter du behöver. Ett tomt filter tar med alla. Rutan Personer i segmentet visar hur många som är med just nu; när du trycker Ja, skicka räknas det om.')">
             <form wire:submit="save" class="mt-4 grid gap-5 lg:grid-cols-3">
                 <div class="grid gap-4 sm:grid-cols-2 lg:col-span-2">
                     <x-ui.field for="segment_name" :label="__('Namn')" error="name" class="sm:col-span-2">

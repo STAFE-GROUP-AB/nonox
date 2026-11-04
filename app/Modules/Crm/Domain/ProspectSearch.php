@@ -39,7 +39,10 @@ final class ProspectSearch
     public const array NARROWING = ['sni', 'town', 'postal', 'county', 'municipality', 'form', 'from', 'to', 'employees_min', 'employees_max', 'turnover_min', 'turnover_max'];
 
     /** The shortest name search: one character would match most of the register. */
-    public const int MIN_SEARCH = 2;
+    /** Names need three characters, the shortest fragment the trigram index can answer; organisation numbers two digits. */
+    public const int MIN_SEARCH = 3;
+
+    public const int MIN_NUMBER_SEARCH = 2;
 
     /** @param  array<string, mixed>  $filters */
     public static function hasFilter(array $filters): bool
@@ -111,13 +114,13 @@ final class ProspectSearch
             return;
         }
 
-        $digits = preg_match('/^[\d\s-]+$/', $term) === 1 ? (string) preg_replace('/\D/', '', $term) : '';
+        $digits = self::digits($term);
         $pattern = '%'.addcslashes($term, '\\%_').'%';
 
         $query->where(function (Builder $any) use ($pattern, $digits): void {
             $any->where('name', 'ilike', $pattern);
 
-            if ($digits !== '' && strlen($digits) <= 10) {
+            if ($digits !== '') {
                 $any->orWhereBetween('org_number', [str_pad($digits, 10, '0'), str_pad($digits, 10, '9')]);
             }
         });
@@ -127,8 +130,29 @@ final class ProspectSearch
     public static function searchTerm(string $search): ?string
     {
         $term = trim((string) preg_replace('/\s+/u', ' ', $search));
+        $minimum = self::digits($term) !== '' ? self::MIN_NUMBER_SEARCH : self::MIN_SEARCH;
 
-        return mb_strlen($term) >= self::MIN_SEARCH ? mb_substr($term, 0, 100) : null;
+        return mb_strlen($term) >= $minimum ? mb_substr($term, 0, 100) : null;
+    }
+
+    /**
+     * The organisation-number digits of a term made only of digits, spaces and
+     * hyphens; SCB's 12-digit form with the prefix 16 is shortened to 10.
+     * Empty when the term is not a number or has more than 10 digits.
+     */
+    private static function digits(string $term): string
+    {
+        if (preg_match('/^[\d\s-]+$/', $term) !== 1) {
+            return '';
+        }
+
+        $digits = (string) preg_replace('/\D/', '', $term);
+
+        if (strlen($digits) === 12 && str_starts_with($digits, '16')) {
+            $digits = substr($digits, 2);
+        }
+
+        return strlen($digits) <= 10 ? $digits : '';
     }
 
     /**

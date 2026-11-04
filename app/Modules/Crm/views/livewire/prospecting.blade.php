@@ -26,7 +26,7 @@ php artisan registry:import bolagsverket-bulk</pre>
                     <input id="prospect-search" type="search" class="{{ $input }} mt-1" wire:model.live.debounce.400ms="search" autocomplete="off" maxlength="100">
                 </x-ui.field>
                 @if($shortSearch)
-                    <p class="mt-1 text-sm text-gray-600" role="status">{{ __('Skriv minst två tecken för att söka.') }}</p>
+                    <p class="mt-1 text-sm text-gray-600" role="status">{{ __('Skriv minst tre tecken av namnet, eller minst två siffror i organisationsnumret.') }}</p>
                 @endif
             </div>
             <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -181,7 +181,7 @@ php artisan registry:import bolagsverket-bulk</pre>
                         <input id="like-search" type="search" class="{{ $input }} mt-1" wire:model.live.debounce.400ms="search" autocomplete="off" maxlength="100">
                     </x-ui.field>
                     @if($shortSearch)
-                        <p class="mt-1 text-sm text-gray-600" role="status">{{ __('Skriv minst två tecken för att söka.') }}</p>
+                        <p class="mt-1 text-sm text-gray-600" role="status">{{ __('Skriv minst tre tecken av namnet, eller minst två siffror i organisationsnumret.') }}</p>
                     @endif
                 </div>
             @endif

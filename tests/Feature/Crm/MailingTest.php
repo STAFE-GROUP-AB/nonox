@@ -493,7 +493,7 @@ it('explains segments on the segment, mailing list and mailing pages', function 
     $this->get(route('crm.segments'))->assertOk()
         ->assertSee('Så fungerar segment')
         ->assertSee('Ett sparat filter, inte en lista')
-        ->assertSee('Vilka som är med räknas fram när du skickar utskicket, inte när du sparar segmentet.')
+        ->assertSee('Vilka som är med räknas fram när du trycker Ja, skicka (för ett schemalagt utskick också då), inte när du sparar segmentet.')
         ->assertSee('Alla kunder i Stockholm med taggen Kaffe')
         ->assertSee('Prospekt där du är ansvarig')
         ->assertSee('Vilka som aldrig får utskicket')

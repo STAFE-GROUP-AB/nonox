@@ -41,6 +41,13 @@ return new class extends Migration
             return;
         }
 
+        // A CONCURRENTLY build that was interrupted leaves an INVALID index that IF NOT EXISTS would keep for good.
+        $invalid = DB::selectOne("SELECT 1 AS invalid FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid WHERE c.relname = 'company_registry_name_trgm_index' AND NOT i.indisvalid");
+
+        if ($invalid !== null) {
+            DB::statement('DROP INDEX CONCURRENTLY IF EXISTS company_registry_name_trgm_index');
+        }
+
         DB::statement('CREATE INDEX CONCURRENTLY IF NOT EXISTS company_registry_name_trgm_index ON company_registry USING gin (name gin_trgm_ops)');
     }
 };
