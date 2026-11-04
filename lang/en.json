@@ -8868,5 +8868,6 @@
     "om du inte är momsregistrerad": "if you are not registered for VAT",
     "om du är momsregistrerad": "if you are registered for VAT",
     "Branschen avgör, tillsammans med företagsform och moms, vilka steg i startplanen och vilka tips som visas för företaget.": "The industry, together with the legal form and VAT, decides which steps of the start plan and which tips are shown for the company.",
-    "Företagsguiden väljer steg och tips efter branschen, företagsformen och om företaget är momsregistrerat.": "Företagsguiden chooses steps and tips by the industry, the legal form and whether the company is registered for VAT."
+    "Företagsguiden väljer steg och tips efter branschen, företagsformen och om företaget är momsregistrerat.": "Företagsguiden chooses steps and tips by the industry, the legal form and whether the company is registered for VAT.",
+    "Det här mejlet skickades från :app, :from. Svarar du på mejlet går svaret till :reply.": "This mail was sent from :app, :from. If you reply, your reply goes to :reply."
 }
