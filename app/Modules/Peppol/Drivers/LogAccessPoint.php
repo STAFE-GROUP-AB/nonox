@@ -13,6 +13,7 @@ use App\Modules\Peppol\Domain\RegistrationStatus;
 use App\Modules\Peppol\Domain\TransmissionStatus;
 use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Support\Peppol\PeppolIdentifier;
+use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -114,7 +115,12 @@ final class LogAccessPoint implements PeppolAccessPoint
         return RegistrationStatus::Registered;
     }
 
-    public function webhookEvents(Request $request): array
+    public function subscribeWebhook(PeppolParticipant $participant, string $url): ?array
+    {
+        return null;
+    }
+
+    public function webhookEvents(Request $request, Closure $secrets): array
     {
         throw new AccessPointFailed('The log driver has no webhook.');
     }

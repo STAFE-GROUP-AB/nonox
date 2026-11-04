@@ -16,6 +16,7 @@ use App\Modules\Peppol\Domain\WebhookEvent;
 use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Support\Peppol\PeppolIdentifier;
 use App\Support\Peppol\UblInvoiceWriter;
+use Closure;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
@@ -170,17 +171,37 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
     }
 
     /**
-     * Qvalia signs a delivery with X-Qvalia-Signature "t=<unix>,v1=<hex>":
-     * HMAC-SHA256 of "<t>.<raw body>" with the subscription's secret,
-     * several v1 values while a secret is rotated. The time must be within
-     * five minutes and the event id (X-Qvalia-Event-Id) not seen before.
+     * A partner subscribes to each child account separately; Qvalia returns
+     * the signing secret only in the response that creates the subscription
+     * (Webhook API, read 2026-11-04).
      */
-    public function webhookEvents(Request $request): array
+    public function subscribeWebhook(PeppolParticipant $participant, string $url): ?array
     {
-        if ($this->webhookSecret === '') {
-            throw new AccessPointFailed('No webhook secret is set.');
+        if ($participant->provider_account === null) {
+            throw new AccessPointFailed('The company has no account with the access point yet.');
         }
 
+        $response = $this->http()->put($this->partnerPath('account/'.rawurlencode($participant->provider_account).'/webhook/configure'), [
+            'url' => $url,
+            'types' => ['new_document', 'document_delivery', 'document_error'],
+        ]);
+        $json = $this->json($response, 'webhook');
+        $data = is_array($json['data'] ?? null) ? $json['data'] : $json;
+
+        return ['id' => (string) ($data['id'] ?? ''), 'secret' => isset($data['signingSecret']) ? (string) $data['signingSecret'] : null];
+    }
+
+    /**
+     * Qvalia signs a delivery with X-Qvalia-Signature "t=<unix>,v1=<hex>":
+     * HMAC-SHA256 of "<t>.<raw body>" with the subscription's secret,
+     * several v1 values while a secret is rotated. The secret belongs to the
+     * account's subscription (stored on the participant) or, for an
+     * installation with one subscription, services.peppol.qvalia.webhook_secret.
+     * The time must be within five minutes and the event id
+     * (X-Qvalia-Event-Id) not seen before.
+     */
+    public function webhookEvents(Request $request, Closure $secrets): array
+    {
         $body = $request->getContent();
         [$timestamp, $signatures] = self::parseSignature((string) $request->header('X-Qvalia-Signature'));
 
@@ -188,13 +209,30 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
             throw new AccessPointFailed('The webhook is too old or has no timestamp.');
         }
 
-        $expected = hash_hmac('sha256', "{$timestamp}.{$body}", $this->webhookSecret);
+        // The account is read from the body only to choose the secret; nothing is trusted before the signature matches.
+        $unverified = json_decode($body, true);
+        $account = is_array($unverified) ? (string) ($unverified['accountRegNo'] ?? '') : '';
+        $candidates = array_values(array_filter([...($account === '' ? [] : $secrets($account)), $this->webhookSecret], fn (string $secret): bool => $secret !== ''));
 
-        if (array_filter($signatures, fn (string $signature): bool => hash_equals($expected, $signature)) === []) {
+        if ($candidates === []) {
+            throw new AccessPointFailed('No webhook secret for the account.');
+        }
+
+        $matches = false;
+
+        foreach ($candidates as $secret) {
+            $expected = hash_hmac('sha256', "{$timestamp}.{$body}", $secret);
+
+            foreach ($signatures as $signature) {
+                $matches = $matches || hash_equals($expected, $signature);
+            }
+        }
+
+        if (! $matches) {
             throw new AccessPointFailed('The webhook signature does not match.');
         }
 
-        $payload = json_decode($body, true);
+        $payload = $unverified;
         $eventId = (string) ($request->header('X-Qvalia-Event-Id') ?: (is_array($payload) ? ($payload['eventId'] ?? '') : ''));
 
         if (! is_array($payload) || $eventId === '') {
@@ -206,7 +244,6 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
             return [];
         }
 
-        $account = (string) ($payload['accountRegNo'] ?? '');
         $reference = (string) ($payload['integrationId'] ?? '');
         $documentType = (string) ($payload['documentType'] ?? 'Invoice');
         $direction = (string) ($payload['direction'] ?? '');

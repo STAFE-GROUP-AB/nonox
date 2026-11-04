@@ -13,6 +13,7 @@ use App\Modules\Peppol\Domain\TransmissionStatus;
 use App\Modules\Peppol\Domain\WebhookEvent;
 use App\Modules\Peppol\Models\PeppolParticipant;
 use App\Support\Peppol\PeppolIdentifier;
+use Closure;
 use Illuminate\Http\Request;
 
 /**
@@ -59,11 +60,21 @@ interface PeppolAccessPoint
     public function register(PeppolParticipant $participant, Company $company): RegistrationStatus;
 
     /**
-     * Verifies a webhook request (signature, age, replay) and reads it.
+     * Subscribes the installation's webhook URL to the account's events.
      *
+     * @return ?array{id: string, secret: ?string} null when the provider has no webhooks
+     */
+    public function subscribeWebhook(PeppolParticipant $participant, string $url): ?array;
+
+    /**
+     * Verifies a webhook request (signature, age, replay) and reads it.
+     * $secrets gives the signing secrets for a provider account; the body is
+     * trusted only after the signature matched one of them.
+     *
+     * @param  Closure(string): list<string>  $secrets
      * @return list<WebhookEvent>
      *
      * @throws AccessPointFailed when it cannot be verified
      */
-    public function webhookEvents(Request $request): array;
+    public function webhookEvents(Request $request, Closure $secrets): array;
 }

@@ -24,6 +24,9 @@ return new class extends Migration
             // The access-point provider's own id for the company's account, set by the operator (peppol:link).
             $table->string('provider', 30)->nullable();
             $table->string('provider_account', 120)->nullable();
+            // The provider's webhook subscription for the account and its signing secret (encrypted cast).
+            $table->string('webhook_id', 120)->nullable();
+            $table->text('webhook_secret')->nullable();
             $table->string('registration_status', 20)->default('NOT_REGISTERED');
             $table->timestampTz('registered_at')->nullable();
             $table->foreignId('consent_by')->nullable()->constrained('users')->nullOnDelete();

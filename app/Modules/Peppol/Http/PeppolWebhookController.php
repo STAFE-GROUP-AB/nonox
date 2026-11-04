@@ -30,7 +30,12 @@ class PeppolWebhookController
         }
 
         try {
-            $events = AccessPoints::make($driver)->webhookEvents($request);
+            // The signing secret of the account's subscription, looked up across companies.
+            $secrets = fn (string $account): array => array_values(array_filter([CompanyScope::bypass(fn (): ?string => PeppolParticipant::query()
+                ->where('provider', $driver)
+                ->where('provider_account', $account)
+                ->first()?->webhook_secret)]));
+            $events = AccessPoints::make($driver)->webhookEvents($request, $secrets);
         } catch (AccessPointFailed $exception) {
             Log::warning('Peppol webhook refused.', ['driver' => $driver, 'reason' => $exception->getMessage()]);
 

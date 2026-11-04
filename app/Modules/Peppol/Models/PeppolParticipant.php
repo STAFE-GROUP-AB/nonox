@@ -9,6 +9,7 @@ use App\Support\Peppol\PeppolIdentifier;
 use App\Support\Tenancy\BelongsToCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
+use LogicException;
 
 /**
  * The company on the Peppol network: its own participant identifier, its
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $receive_enabled
  * @property ?string $provider
  * @property ?string $provider_account
+ * @property ?string $webhook_id
+ * @property ?string $webhook_secret the signing secret of the provider's webhook subscription, encrypted at rest
  * @property RegistrationStatus $registration_status
  * @property ?CarbonImmutable $registered_at
  * @property ?int $consent_by
@@ -35,6 +38,9 @@ class PeppolParticipant extends Model
     /** @var list<string> */
     protected $fillable = ['company_id', 'identifier', 'receive_enabled'];
 
+    /** @var list<string> */
+    protected $hidden = ['webhook_secret'];
+
     /** @var array<string, mixed> */
     protected $attributes = [
         'receive_enabled' => false,
@@ -46,6 +52,7 @@ class PeppolParticipant extends Model
     {
         return [
             'receive_enabled' => 'boolean',
+            'webhook_secret' => 'encrypted',
             'registration_status' => RegistrationStatus::class,
             'registered_at' => 'immutable_datetime',
             'consent_at' => 'immutable_datetime',
@@ -55,7 +62,7 @@ class PeppolParticipant extends Model
 
     public function participant(): PeppolIdentifier
     {
-        return PeppolIdentifier::tryFrom($this->identifier) ?? throw new \LogicException("Stored Peppol identifier {$this->id} is not valid.");
+        return PeppolIdentifier::tryFrom($this->identifier) ?? throw new LogicException("Stored Peppol identifier {$this->id} is not valid.");
     }
 
     /** Linked to an account with the access-point provider, so documents can go out. */

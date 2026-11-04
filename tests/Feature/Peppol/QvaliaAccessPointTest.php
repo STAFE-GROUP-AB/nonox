@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\Models\InboxMessage;
+use App\Modules\ModuleManager;
 use App\Modules\Peppol\Actions\SendInvoiceViaPeppol;
 use App\Modules\Peppol\Domain\AccessPointFailed;
 use App\Modules\Peppol\Domain\RegistrationStatus;
@@ -14,6 +15,7 @@ use App\Support\Peppol\PeppolIdentifier;
 use App\Support\Peppol\UblInvoiceWriter;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Testing\TestResponse;
@@ -178,6 +180,27 @@ describe('the webhook', function () {
         qvaliaWebhook($this, ['eventId' => 'evt-2', 'eventType' => 'document_delivery', 'accountRegNo' => 'SE5566778808', 'documentType' => 'Invoice', 'direction' => 'outgoing', 'integrationId' => 'out-1', 'status' => ['status' => 'processed']])->assertOk();
         expect($transmission->fresh()->status)->toBe(TransmissionStatus::Delivered);
     });
+});
+
+it('links an account, subscribes the webhook and verifies its events with the account\'s own secret', function () {
+    config(['services.peppol.qvalia.webhook_secret' => null]);
+    Http::fake([
+        'api-test.qvalia.example/partner/PARTNER1/account/SE5599000006/webhook/configure' => Http::response(['id' => 'wh-1', 'url' => 'x', 'types' => [], 'accountRegNo' => 'SE5599000006', 'signingSecret' => 'account-secret', 'signatureAlgorithm' => 'hmac-sha256']),
+        '*' => Http::response(['status' => 'success', 'data' => []]),
+    ]);
+    app(ModuleManager::class)->enable('peppol', $this->company, $this->owner);
+
+    $this->artisan('peppol:link', ['company' => $this->company->id, 'account' => 'SE5599000006'])->assertSuccessful();
+
+    $participant = CurrentCompany::run($this->company, fn () => PeppolParticipant::query()->sole());
+    expect($participant->webhook_id)->toBe('wh-1')
+        ->and($participant->webhook_secret)->toBe('account-secret')
+        ->and(DB::table('peppol_participants')->where('id', $participant->id)->value('webhook_secret'))->not->toBe('account-secret')
+        ->and(json_encode($participant->toArray()))->not->toContain('account-secret');
+
+    $event = ['eventId' => 'evt-7', 'eventType' => 'document_delayed', 'accountRegNo' => 'SE5599000006', 'documentType' => 'Invoice', 'direction' => 'outgoing', 'integrationId' => 'x'];
+    qvaliaWebhook($this, $event, secret: 'account-secret')->assertOk();
+    qvaliaWebhook($this, [...$event, 'eventId' => 'evt-8'], secret: QVALIA_SECRET)->assertStatus(401);
 });
 
 it('reads the signature header with several secrets during rotation', function () {
