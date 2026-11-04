@@ -174,8 +174,7 @@ php artisan registry:import bolagsverket-bulk</pre>
 
     <x-ui.card data-testid="prospect-hits">
         <p class="text-sm text-gray-600" data-testid="register-source">
-            {{ __('Källa: SCB:s företagsregister och Bolagsverket, öppna data.') }}
-            @if($sourceDate) {{ __('Uppdaterat :date.', ['date' => $sourceDate->setTimezone('Europe/Stockholm')->translatedFormat('j M Y')]) }}@endif
+            {{ __('Källa: Bolagsverket och SCB, värdefulla datamängder, bearbetat av NONOX, hämtat :date.', ['date' => $sourceDate ? $sourceDate->setTimezone('Europe/Stockholm')->translatedFormat('j M Y') : '–']) }}
             {{ __('Bara juridiska personer: enskilda firmor finns inte med. Företag som redan finns bland dina kunder och prospekt visas inte.') }}
         </p>
 
@@ -189,7 +188,7 @@ php artisan registry:import bolagsverket-bulk</pre>
             </x-ui.empty-state>
         @else
             <div class="mt-4 flex flex-wrap items-baseline justify-between gap-2">
-                <p class="text-sm font-semibold text-ink" aria-live="polite">{{ trans_choice('{1} 1 företag|[2,*] :count företag', $results->total(), ['count' => number_format($results->total(), 0, ',', ' ')]) }}</p>
+                <p class="text-sm font-semibold text-ink" aria-live="polite">{{ $capped ? __('Fler än :count företag', ['count' => number_format(App\Modules\Crm\Livewire\ProspectingPage::COUNT_CAP, 0, ',', ' ')]) : trans_choice('{1} 1 företag|[2,*] :count företag', $total, ['count' => number_format($total, 0, ',', ' ')]) }}</p>
             </div>
 
             @if($canManage)
@@ -219,8 +218,8 @@ php artisan registry:import bolagsverket-bulk</pre>
                         @endif
                     </div>
                     <div class="mt-4 flex flex-wrap items-center gap-3">
-                        <x-button type="button" wire:click="addSelected" wire:loading.attr="disabled" :disabled="$selected === []">{{ trans_choice('{0} Lägg till markerade|[1,*] Lägg till markerade (:count)', count($selected), ['count' => count($selected)]) }}</x-button>
-                        <x-secondary-button type="button" wire:click="addAll" wire:loading.attr="disabled" wire:confirm="{{ __('Lägga till :count företag som prospekt?', ['count' => min($results->total(), App\Modules\Crm\Domain\ProspectSearch::MAX_ADD)]) }}">{{ $results->total() > App\Modules\Crm\Domain\ProspectSearch::MAX_ADD ? __('Lägg till de första :max', ['max' => App\Modules\Crm\Domain\ProspectSearch::MAX_ADD]) : __('Lägg till alla träffar') }}</x-secondary-button>
+                        <x-button type="button" wire:click="addSelected" wire:loading.attr="disabled">{{ __('Lägg till markerade') }}</x-button>
+                        <x-secondary-button type="button" wire:click="addAll" wire:loading.attr="disabled" wire:confirm="{{ __('Lägga till :count företag som prospekt?', ['count' => min($total, App\Modules\Crm\Domain\ProspectSearch::MAX_ADD)]) }}">{{ $total > App\Modules\Crm\Domain\ProspectSearch::MAX_ADD ? __('Lägg till de första :max', ['max' => App\Modules\Crm\Domain\ProspectSearch::MAX_ADD]) : __('Lägg till alla träffar') }}</x-secondary-button>
                     </div>
                     <x-input-error for="selection" class="mt-2" />
                 </div>
@@ -231,7 +230,7 @@ php artisan registry:import bolagsverket-bulk</pre>
                     @php($why = $explain($hit))
                     <li wire:key="hit-{{ $hit->org_number }}" class="flex flex-wrap items-start gap-x-4 gap-y-2 py-4">
                         @if($canManage)
-                            <input type="checkbox" class="mt-1 size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $hit->org_number }}" wire:model.live="selected" aria-label="{{ __('Markera :name', ['name' => $hit->name]) }}">
+                            <input type="checkbox" class="mt-1 size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" value="{{ $hit->org_number }}" wire:model="selected" aria-label="{{ __('Markera :name', ['name' => $hit->name]) }}">
                         @endif
                         <span class="min-w-0 flex-1 basis-60">
                             <span class="block font-medium text-ink">{{ $hit->name }}</span>

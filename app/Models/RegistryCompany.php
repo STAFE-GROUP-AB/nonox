@@ -46,7 +46,6 @@ use Illuminate\Database\Eloquent\Model;
  * @property ?CarbonImmutable $fetched_at
  * @property ?CarbonImmutable $bolagsverket_fetched_at
  * @property ?int $last_import_id
- * @property ?CarbonImmutable $gone_at
  */
 class RegistryCompany extends Model
 {
@@ -62,7 +61,7 @@ class RegistryCompany extends Model
         'employee_class', 'turnover_class', 'turnover_year', 'phone', 'email', 'bolagsverket_status',
         'registered_on', 'deregistered_on', 'deregistration_reason', 'proceedings', 'proceedings_since',
         'advertising_block', 'phone_block', 'email_block', 'sources', 'fetched_at', 'bolagsverket_fetched_at',
-        'last_import_id', 'gone_at',
+        'last_import_id',
     ];
 
     /** @return array<string, string> */
@@ -84,7 +83,6 @@ class RegistryCompany extends Model
             'proceedings_since' => 'immutable_date',
             'fetched_at' => 'immutable_datetime',
             'bolagsverket_fetched_at' => 'immutable_datetime',
-            'gone_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];
@@ -92,7 +90,7 @@ class RegistryCompany extends Model
 
     /**
      * Active and in business: active at SCB, not deregistered, no ongoing
-     * bankruptcy, liquidation or reorganisation, and still in the source.
+     * bankruptcy, liquidation or reorganisation.
      *
      * @param  Builder<self>  $query
      */
@@ -101,14 +99,12 @@ class RegistryCompany extends Model
         $query->where('scb_status', self::ACTIVE)
             ->whereNull('deregistered_on')
             ->whereNull('proceedings')
-            ->whereNull('gone_at')
             ->where(fn (Builder $inner) => $inner->whereNull('bolagsverket_status')->orWhere('bolagsverket_status', 0));
     }
 
     public function isInBusiness(): bool
     {
-        return $this->scb_status === self::ACTIVE && $this->deregistered_on === null && $this->proceedings === null
-            && $this->gone_at === null && in_array($this->bolagsverket_status, [null, 0], true);
+        return $this->scb_status === self::ACTIVE && $this->deregistered_on === null && $this->proceedings === null && in_array($this->bolagsverket_status, [null, 0], true);
     }
 
     /** NNNNNN-NNNN */

@@ -8,7 +8,7 @@ sokord: [bevakning, bevaka kund, konkurs, likvidation, flytt, ny adress, avregis
 
 # Bevakning av kunder
 
-NONOX bevakar dina kunder och prospekt i företagsregistret. När SCB eller Bolagsverket har nya uppgifter om ett företag som har ett organisationsnummer i CRM får den som är ansvarig för kunden en uppgift, **Ändring hos kunden**, med vad som har ändrats.
+NONOX bevakar dina kunder i företagsregistret. När SCB eller Bolagsverket har nya uppgifter om en kund som har ett organisationsnummer får den som är ansvarig för kunden en uppgift, **Ändring hos kunden**, med vad som har ändrats. Vill du bevaka prospekten också slår du på det under inställningarna.
 
 ## Det här bevakas
 
@@ -32,10 +32,10 @@ Har den som driftar NONOX läst in SCB:s API bevakas också ändrat antal anstä
 
 På kundkortet visar rutan **I företagsregistret** vad registret säger om företaget just nu: status, bolagsform, bransch, registreringsdatum och eventuella spärrar.
 
-## Så här stänger du av bevakningen
+## Så här ändrar du bevakningen
 
 1. Öppna **CRM → Inställningar**.
-2. Kryssa ur **Bevaka kunder och prospekt i företagsregistret**.
+2. Kryssa ur **Bevaka kunderna i företagsregistret** för att stänga av bevakningen, eller kryssa i **Bevaka även prospekt** för att också få uppgifter om prospekten.
 3. Tryck på **Spara**.
 
 ## Bra att veta

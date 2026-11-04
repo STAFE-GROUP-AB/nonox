@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $changes
  * @property ?string $position
  * @property ?string $error
+ * @property ?string $warning
  * @property CarbonImmutable $started_at
  * @property ?CarbonImmutable $finished_at
  */
@@ -35,7 +36,7 @@ class RegistryImport extends Model
     protected $table = 'company_registry_imports';
 
     /** @var list<string> */
-    protected $fillable = ['source', 'version', 'status', 'rows_read', 'rows_written', 'rows_skipped', 'changes', 'position', 'error', 'started_at', 'finished_at'];
+    protected $fillable = ['source', 'version', 'status', 'rows_read', 'rows_written', 'rows_skipped', 'changes', 'position', 'error', 'warning', 'started_at', 'finished_at'];
 
     /** @return array<string, string> */
     protected function casts(): array

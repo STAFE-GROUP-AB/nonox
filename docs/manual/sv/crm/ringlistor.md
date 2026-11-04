@@ -28,7 +28,7 @@ Av dina egna kunder och prospekt:
 3. Välj vilka som ska med: **Status**, **Ort** och **Tagg**. NONOX visar hur många företag som kommer med.
 4. Tryck på **Skapa ringlista**.
 
-En ringlista rymmer högst 500 företag. Förlorade kunder, kunder som inte längre är aktiva i kundregistret och företag som har spärrat telefonförsäljning i SCB:s register tas inte med.
+En ringlista rymmer högst 500 företag. Förlorade kunder, kunder som inte längre är aktiva i kundregistret och företag som har spärrat telefonförsäljning i SCB:s register tas inte med. Privatpersoner och enskilda firmor tas bara med om du kryssar i **Ta med privatpersoner och enskilda firmor**; då visar listan en påminnelse om att kontrollera numret mot NIX-Telefon innan du ringer i säljsyfte.
 
 ## Så här ringer du igenom listan
 
@@ -44,6 +44,7 @@ Vill du gå vidare utan att ringa trycker du på **Hoppa över utan att ringa**.
 
 ## Bra att veta
 
+- **Två flikar eller två telefoner.** Har listan ändrats sedan sidan laddades, till exempel för att du loggade ett samtal i en annan flik, sparas inget och sidan visar företaget som står på tur.
 - **Inget svar och Lämnade meddelande** lägger företaget sist i listan, så att du provar igen senare. Efter tre samtal räknas det som klart.
 - **Hur långt listan har kommit** syns överst på listan och i översikten under **CRM → Ringlistor**, till exempel "12 av 40 klara".
 - **Samtalen loggas som vanliga samtal** på kundens kort, med utfall och anteckning. Nästa steg hamnar under **Mina aktiviteter** för den som ska göra det. Se [Aktiviteter och nästa steg](/manual/crm/aktiviteter-och-nasta-steg).

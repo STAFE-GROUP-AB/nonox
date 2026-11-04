@@ -71,7 +71,7 @@ final class ScbApi implements RegistrySource
 
     public function updateColumns(): array
     {
-        return ['name', 'legal_form', 'scb_status', 'sni_code', 'sni_division', 'sni_codes', 'address_line1', 'co_address', 'postal_code', 'city', 'municipality_code', 'county_code', 'employee_class', 'turnover_class', 'turnover_year', 'phone', 'email', 'bolagsverket_status', 'advertising_block', 'phone_block', 'email_block', 'fetched_at', 'gone_at', 'sources'];
+        return ['name', 'legal_form', 'scb_status', 'sni_code', 'sni_division', 'sni_codes', 'address_line1', 'co_address', 'postal_code', 'city', 'municipality_code', 'county_code', 'employee_class', 'turnover_class', 'turnover_year', 'phone', 'email', 'bolagsverket_status', 'advertising_block', 'phone_block', 'email_block', 'fetched_at', 'last_import_id', 'sources'];
     }
 
     public function position(): string
@@ -186,6 +186,13 @@ final class ScbApi implements RegistrySource
 
             if ($response->status() === 429 && $attempt < 6) {
                 Sleep::for(min(120, max(1, (int) $response->header('Retry-After'))))->seconds();
+
+                continue;
+            }
+
+            // The nightly update window (04:00–04:30): wait it out, a minute at a time, for up to 40 minutes.
+            if ($response->status() === 503 && $attempt < 40) {
+                Sleep::for(60)->seconds();
 
                 continue;
             }

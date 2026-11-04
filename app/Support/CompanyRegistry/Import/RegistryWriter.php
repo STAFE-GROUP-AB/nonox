@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support\CompanyRegistry\Import;
 
+use App\Models\RegistryExclusion;
 use App\Models\RegistryImport;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -58,12 +59,23 @@ final class RegistryWriter
             ->get(['org_number', 'sources', ...self::WATCHED_FIELDS])
             ->keyBy('org_number');
 
+        $exclusions = RegistryExclusion::for(array_map('strval', array_keys($byOrg)));
         $now = CarbonImmutable::now();
         $values = [];
         $changes = [];
+        $remove = [];
 
         foreach ($byOrg as $org => $row) {
+            $org = (string) $org;
             $old = $existing->get($org);
+            $excluded = $exclusions[$org] ?? [];
+
+            // An objection or erasure (ADR-047): never written again, and removed if it is there.
+            if (in_array(RegistryExclusion::ALL, $excluded, true)) {
+                $remove[] = $org;
+
+                continue;
+            }
 
             if ($old === null && ! $this->source->createsRows()) {
                 continue;
@@ -76,11 +88,14 @@ final class RegistryWriter
             $attributes = array_map(fn (mixed $value): mixed => self::column($value), $row->attributes);
             $attributes['sources'] = json_encode($sources);
 
-            if ($this->source->createsRows()) {
-                $attributes['gone_at'] = null;
+            foreach ([RegistryExclusion::NAME => 'name', RegistryExclusion::PHONE => 'phone', RegistryExclusion::EMAIL => 'email'] as $field => $column) {
+                if (in_array($field, $excluded, true) && array_key_exists($column, $attributes)) {
+                    $attributes[$column] = $column === 'name' ? RegistryExclusion::replacementName($org) : null;
+                }
             }
 
-            if ($this->source->key() === ScbBulkFile::KEY) {
+            // Every complete SCB run (file or API) marks the rows it has seen; the rest have left the register.
+            if ($this->source->createsRows()) {
                 $attributes['last_import_id'] = $this->import->id;
             }
 
@@ -88,7 +103,7 @@ final class RegistryWriter
 
             if ($old !== null && isset($this->watched[$org])) {
                 foreach (self::WATCHED_FIELDS as $field) {
-                    if (! array_key_exists($field, $attributes)) {
+                    if (! array_key_exists($field, $attributes) || ($field === 'name' && in_array(RegistryExclusion::NAME, $excluded, true))) {
                         continue;
                     }
 
@@ -110,6 +125,10 @@ final class RegistryWriter
             }
         }
 
+        if ($remove !== []) {
+            self::forget($remove);
+        }
+
         if ($values === []) {
             return ['written' => 0, 'changes' => 0];
         }
@@ -129,6 +148,20 @@ final class RegistryWriter
         });
 
         return ['written' => count($values), 'changes' => count($changes)];
+    }
+
+    /**
+     * Deletes companies that must not be in the register (an exclusion of
+     * ALL), with their recorded changes.
+     *
+     * @param  list<string>  $orgNumbers
+     */
+    public static function forget(array $orgNumbers): void
+    {
+        DB::transaction(function () use ($orgNumbers): void {
+            DB::table('company_registry')->whereIn('org_number', $orgNumbers)->delete();
+            DB::table('company_registry_changes')->whereIn('org_number', $orgNumbers)->delete();
+        });
     }
 
     /** PostgreSQL types of the columns a completing source writes, for UPDATE … FROM (VALUES …). */

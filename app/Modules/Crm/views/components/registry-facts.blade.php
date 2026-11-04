@@ -14,7 +14,6 @@
         $company->proceedings !== null => trim($codes::proceedings($company->proceedings).' '.($company->proceedings_since ? __('sedan :date', ['date' => $company->proceedings_since->translatedFormat('j M Y')]) : '')),
         $company->deregistered_on !== null => __('Avregistrerat :date', ['date' => $company->deregistered_on->translatedFormat('j M Y')]),
         $company->bolagsverket_status !== null && $company->bolagsverket_status !== 0 => $codes::bolagsverketStatus($company->bolagsverket_status),
-        $company->gone_at !== null => __('Finns inte längre i registret'),
         $company->scb_status === 1 => __('I drift'),
         default => __('Inte i drift (inte registrerat för moms, F-skatt eller som arbetsgivare)'),
     };
@@ -53,6 +52,6 @@
                 @if($company->email_block)<x-ui.badge>{{ __('Spärr mot reklam via e-post') }}</x-ui.badge>@endif
             </p>
         @endif
-        <p class="mt-3 text-xs text-gray-500">{{ __('Källa: SCB:s företagsregister och Bolagsverket, öppna data, hämtat :date. Betalningsanmärkningar, kreditbetyg och styrelse kräver en kreditupplysningstjänst och visas inte här.', ['date' => ($company->bolagsverket_fetched_at ?? $company->fetched_at)?->setTimezone('Europe/Stockholm')->translatedFormat('j M Y') ?? '–']) }}</p>
+        <p class="mt-3 text-xs text-gray-500">{{ __('Källa: Bolagsverket och SCB, värdefulla datamängder, bearbetat av NONOX, hämtat :date.', ['date' => ($company->bolagsverket_fetched_at ?? $company->fetched_at)?->setTimezone('Europe/Stockholm')->translatedFormat('j M Y') ?? '–']) }} {{ __('Betalningsanmärkningar, kreditbetyg och styrelse kräver en kreditupplysningstjänst och visas inte här.') }}</p>
     </x-ui.card>
 @endif

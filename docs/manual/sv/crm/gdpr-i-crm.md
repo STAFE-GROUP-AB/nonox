@@ -95,7 +95,7 @@ Företagsregistret under **CRM → Prospektera** innehåller bara juridiska pers
 
 Kontaktpersoner hos prospektet lägger du till själv, med rättslig grund som för alla andra. Hittar du personen på företagets webbplats eller någon annanstans är det artikel 14 som gäller: informera personen inom en månad och skriv datumet i **Informerad den**.
 
-Har ett företag frånsagt sig reklam eller telefonförsäljning i SCB:s register visar NONOX det, och sådana företag tas inte med i sökningen eller ringlistorna om du inte väljer det. Vad spärrarna innebär för just er marknadsföring är inte granskat av en jurist än; stäm av med den som ansvarar för dataskyddet hos er.
+Har ett företag reklamspärr i SCB:s register visas det inte i sökningen om du inte väljer det. Spärr mot telefonförsäljning finns bara om den som driftar NONOX har SCB:s API-nyckel; sådana företag tas aldrig med i en ringlista. Privatpersoner och enskilda firmor tas bara med i en ringlista om du väljer det, och då ska numret kontrolleras mot NIX-Telefon innan du ringer i säljsyfte. Vad spärrarna innebär för just er marknadsföring är inte granskat av en jurist än; stäm av med den som ansvarar för dataskyddet hos er.
 
 ## Läs också
 

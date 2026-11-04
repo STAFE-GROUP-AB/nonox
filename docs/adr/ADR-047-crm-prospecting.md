@@ -241,9 +241,11 @@ notices are tenant data and company-scoped.
   (rows read, or the API cursor) after every chunk, and its result. With
   `--resume`, an unfinished run of the same source and file continues from
   its position.
-- **Gone rows**: after a complete SCB run, rows not seen in it get
-  `gone_at`; search hides them. A file with fewer than 80 % of the
-  register's companies (a cut download) marks nothing.
+- **Gone rows are deleted**: after a complete SCB run (file or API),
+  inside the import lock, rows not seen in it are deleted with their
+  recorded changes (review round 2: no `gone_at`, nothing kept that has left
+  the source). A run with fewer than 80 % of the register's companies (a cut
+  download) deletes nothing.
 - **One import at a time**: a cache lock across sources, since they share
   rows, the sources list and the change log. A completing source never
   blanks a registration date it lacks.
@@ -251,9 +253,9 @@ notices are tenant data and company-scoped.
   some company watches (the CRM accounts with an organisation number), as
   `company_registry_changes`: field, old and new value, time and source. The
   first load writes none. Kept 400 days (`registry:import` prunes them).
-- **Schedule**: weekly (Monday 03:30 SCB file, 04:40 Bolagsverket file;
-  the API at 05:00, after its nightly 04:00–04:30 window, when a key is
-  set), only when
+- **Schedule**: weekly, Monday 03:30, the three imports chained one after
+  the other (SCB file, then Bolagsverket's file, then the API when a key is
+  set; the API waits out its nightly 04:00–04:30 window on 503), only when
   `COMPANY_REGISTER_IMPORT=true`. Off by default: a self-hosted instance
   chooses to load 1.8 million rows. The hosted instance turns it on.
 - **Rate limits**: the API driver keeps under 5 calls per second and waits
@@ -330,8 +332,9 @@ by any CRM user of any company: it is public data.
   contain a partner's name, company phone numbers and e-mail addresses that
   may be a person's own). Purpose: offering a register of companies for
   B2B prospecting; legal basis art. 6.1 f; source public registers (art. 14
-  (2)(f) information in the privacy policy); kept while the company is in the
-  source, removed when gone. `TODO(legal-verify)`: whether this residual
+  (2)(f) information in the privacy policy §2, §4 and §5); kept while the
+  company is in SCB's register, deleted at the next weekly import when it
+  has left it. `TODO(legal-verify)`: whether this residual
   data makes the operator a controller with an art. 14 duty that is met by
   the privacy policy (art. 14(5)(b), disproportionate effort, public source).
 - **A company's prospects, call lists and notices**: the company is
@@ -370,12 +373,94 @@ by any CRM user of any company: it is public data.
 - A suppression-list match is checked on the register's phone and e-mail,
   which only the API provides; without the key the check has nothing to
   match.
-- The privacy policy (`docs/juridik/`) is not changed in this branch: the
-  register's residual personal data and art. 14(5)(b) are for the lawyer
-  first (see GDPR above), and a policy change bumps the legal version.
+- The privacy policy (`docs/juridik/integritetspolicy.md`, version 1.5 from
+  2026-11-04) has the register in §2 (data, purpose, basis, retention), its
+  recipients in §4 (every CRM user of the instance) and the art. 14(5)(b)
+  information with the right to object in §5.
 - Tests: `tests/Feature/Crm/RegistryImportTest.php` (synthetic fixtures in
   `tests/Fixtures/registry/`), `ProspectingTest.php`,
   `tests/Tenancy/CrmProspectingTenancyTest.php`.
+
+## Review round 2 (2026-11-04)
+
+### Legitimate interest assessment (art. 6.1 f) — `TODO(legal-verify)`
+
+1. **Interest.** Users of the CRM want to find companies to sell to and keep
+   their customers' register facts current; the instance operator offers
+   that. B2B prospecting from public registers is a recognised commercial
+   interest, and the data is published by the state for reuse (HVD).
+2. **Necessity.** Only legal persons are loaded and only the fields needed
+   to select and contact a company. Sole traders, estates, simple
+   partnerships and all person names (board, CEO, signatories) are left out;
+   the business description is not read. Personal data occurs only
+   incidentally: a partner's name inside an HB/KB name, a company phone or
+   e-mail that is a person's own (API only).
+3. **Balancing.** The data is already public and about the company's role
+   in business, not private life; the people concerned can expect
+   companies to be contacted in business. Safeguards: opt-outs from SCB's
+   register honoured (postal advertising hidden by default, telemarketing
+   and NIX never on a call list), private persons and sole traders left
+   out of call lists by default with a NIX reminder, data deleted when it
+   leaves the source, changes kept only for watched companies and 400 days,
+   an objection or erasure is honoured at once and on every later import
+   (`company_registry_exclusions`), and the information in the privacy
+   policy §5 (art. 14(5)(b)).
+4. **Outcome.** Legitimate interest applies, provided the lawyer confirms
+   that art. 14(5)(b) (disproportionate effort) covers the incidental
+   personal data.
+
+### Objection and erasure in the register
+
+`company_registry_exclusions` (org_number, field `ALL`/`NAME`/`PHONE`/`EMAIL`,
+reason code `OBJECTION`/`ERASURE`, created_by). `RegistryWriter` applies it
+before every write: `ALL` deletes the row and its changes and never writes
+it again, `NAME` replaces the name with "Företag NNNNNN-NNNN" and records no
+name changes, `PHONE` and `EMAIL` leave the field empty. Managed in
+**HQ → Företagsregistret** (HQ admins only, passkey step, audit
+`hq.registry_exclusion_added/removed` with the exclusion id, field and
+reason code only) and with `php artisan registry:exclude <org> --field=…
+--reason=… [--remove]`. Applied to the existing row at once.
+
+### Opt-out mapping check
+
+The bulk file's `Reklamsparrtyp` takes 1 and 2 and is read as 2 = opted
+out; SCB's API documents 3/4. `TODO(legal-verify)`: confirm the bulk file's
+code list with SCB (scbforetag@scb.se). Until then, after every SCB file
+the import counts the opt-outs among the rows of that run:
+
+```sql
+SELECT COUNT(*) FILTER (WHERE advertising_block) AS blocked, COUNT(*) AS total
+FROM company_registry WHERE last_import_id = :import_id
+```
+
+When `blocked * 2 > total` (opt-outs are the majority, so the mapping is
+probably inverted) it warns and stores the warning on the import row
+(`company_registry_imports.warning`), shown in HQ → Företagsregistret.
+
+### Other changes
+
+- **Call lists, two tabs.** The outcome and skip buttons send the item's id
+  and its attempts; `WorkCallList` locks the list's pending items and
+  refuses unless the item is the first pending one with the same attempts
+  ("Listan har ändrats i en annan flik. Sidan är uppdaterad – kontrollera
+  vilket företag som står på tur."). The buttons are disabled while a
+  request runs.
+- **Private persons and sole traders** (accounts of kind PERSON, customers
+  with a personal number) are left out of call lists unless the user ticks
+  "Ta med privatpersoner och enskilda firmor"; the list then shows a NIX
+  reminder for them. The items are inserted with one statement.
+- **Monitoring** covers customers by default; "Bevaka även prospekt"
+  (`registry_monitoring_prospects`, default off) adds the prospects, since a
+  prospect is not yet someone the company deals with.
+- **Search** counts at most 10 001 hits ("Fler än 10 000 företag"), pages
+  with `simplePaginate`, orders by name and organisation number (index), and
+  ticking a row no longer re-runs the query.
+- **SCB file** decoded as Windows-1252 (the superset of ISO-8859-1).
+- **Attribution**: "Källa: Bolagsverket och SCB, värdefulla datamängder,
+  bearbetat av NONOX, hämtat <date>". `TODO(legal-verify)`: add "CC BY 4.0"
+  once the licence is confirmed.
+- **Demo register** (`ProspectingExtras`) is written only in a local or test
+  environment, or into an empty register.
 
 ## Consequences
 

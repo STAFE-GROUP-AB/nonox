@@ -59,7 +59,7 @@ final class ProspectSearch
         $int = fn (string $key): ?int => is_numeric($filters[$key] ?? null) ? (int) $filters[$key] : null;
 
         $query = RegistryCompany::query()
-            ->when(! (bool) ($filters['all'] ?? false), fn (Builder $query) => $query->inBusiness(), fn (Builder $query) => $query->whereNull('gone_at'))
+            ->when(! (bool) ($filters['all'] ?? false), fn (Builder $query) => $query->inBusiness())
             ->when(! (bool) ($filters['blocked'] ?? false), fn (Builder $query) => $query->where('advertising_block', false))
             ->when(strlen($sni) === 5, fn (Builder $query) => $query->where('sni_code', $sni))
             ->when(strlen($sni) === 2, fn (Builder $query) => $query->where('sni_division', $sni))

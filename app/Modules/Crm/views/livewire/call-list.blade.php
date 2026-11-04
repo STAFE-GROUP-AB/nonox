@@ -36,6 +36,10 @@
                 <h2 class="mt-1 text-xl font-bold tracking-tight text-ink"><a href="{{ route('crm.accounts.show', $account) }}" class="hover:text-accent-700">{{ $account->name }}</a></h2>
                 <p class="mt-1 text-sm text-gray-600">{{ collect([$account->org_number, $account->city, $account->status->label()])->filter()->implode(' · ') }}</p>
 
+                @if(App\Modules\Crm\Actions\CreateCallList::isPrivate($account))
+                    <p class="mt-3 rounded-xl bg-accent-50 p-3 text-sm text-accent-800">{{ __('Privatperson eller enskild firma: kontrollera numret mot NIX-Telefon innan du ringer i säljsyfte, om personen inte redan är kund.') }}</p>
+                @endif
+
                 @if($register?->hasPhoneBlock())
                     <p class="mt-3 rounded-xl bg-accent-50 p-3 text-sm text-accent-800">{{ __('Företaget har spärrat telefonförsäljning i SCB:s företagsregister. Ring inte i säljsyfte.') }}</p>
                 @endif
@@ -101,14 +105,14 @@
                         <legend class="text-sm font-medium text-gray-700">{{ __('Hur gick samtalet? Ett tryck loggar samtalet och tar fram nästa företag.') }}</legend>
                         <div class="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
                             @foreach($outcomes as $outcome)
-                                <button type="button" wire:click="call('{{ $outcome->value }}')" wire:loading.attr="disabled" class="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold text-ink ring-1 ring-stone-300 hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-accent-500">{{ $outcome->label() }}</button>
+                                <button type="button" wire:click="call({{ $current->id }}, {{ $current->attempts }}, '{{ $outcome->value }}')" wire:loading.attr="disabled" class="inline-flex min-h-12 items-center justify-center rounded-xl bg-white px-3 text-sm font-semibold text-ink ring-1 ring-stone-300 hover:bg-stone-50 focus-visible:ring-2 focus-visible:ring-accent-500">{{ $outcome->label() }}</button>
                             @endforeach
                         </div>
                         <x-input-error for="outcome" class="mt-2" />
                         <x-input-error for="item" class="mt-2" />
                         <x-input-error for="person_id" class="mt-2" />
                     </fieldset>
-                    <button type="button" class="mt-4 min-h-11 text-sm font-medium text-gray-600 underline" wire:click="skip">{{ __('Hoppa över utan att ringa') }}</button>
+                    <button type="button" class="mt-4 min-h-11 text-sm font-medium text-gray-600 underline disabled:opacity-50" wire:click="skip({{ $current->id }}, {{ $current->attempts }})" wire:loading.attr="disabled">{{ __('Hoppa över utan att ringa') }}</button>
                 @endif
             </x-ui.card>
 

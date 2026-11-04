@@ -67,6 +67,12 @@ final class ProspectingExtras extends DemoExtra
 
     public function afterAll(DemoContext $c): void
     {
+        // The made-up register goes only into a local or test database, or one whose register is empty:
+        // never mixed into a real register loaded from SCB and Bolagsverket.
+        if (! app()->environment('local', 'testing') && RegistryCompany::query()->exists()) {
+            return;
+        }
+
         $this->register($c);
         $this->callList($c);
         $this->change($c);

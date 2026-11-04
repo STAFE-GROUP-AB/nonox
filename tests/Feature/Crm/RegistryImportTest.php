@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\AuditLog;
 use App\Models\RegistryChange;
 use App\Models\RegistryCompany;
 use App\Models\RegistryImport;
@@ -114,7 +115,7 @@ it('is idempotent, skips an unchanged file and resumes an unfinished run', funct
         ->and(RegistryCompany::query()->count())->toBe(9);
 });
 
-it('records changes only for companies some CRM watches, and marks companies that left the file', function () {
+it('records changes only for companies some CRM watches, and deletes companies that left the file', function () {
     $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => registryFixture('scb_bulkfil.txt')])->assertSuccessful();
     expect(RegistryChange::query()->count())->toBe(0);
 
@@ -131,15 +132,18 @@ it('records changes only for companies some CRM watches, and marks companies tha
     expect(RegistryChange::query()->get(['org_number', 'field', 'old_value', 'new_value'])->toArray())
         ->toBe([['org_number' => '5599996013', 'field' => 'address_line1', 'old_value' => 'Exempelgatan 1', 'new_value' => 'Nya gatan 10']]);
 
-    // A file without most companies marks none as gone (a broken download); a complete one marks the missing.
+    // A file without most companies deletes none (a broken download); a complete one deletes the missing, and their changes.
     $lines = explode("\r\n", $changed);
     file_put_contents($path, implode("\r\n", array_slice($lines, 0, 3))."\r\n");
-    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->expectsOutputToContain('Inga markeras som borta')->assertSuccessful();
-    expect(RegistryCompany::query()->whereNotNull('gone_at')->count())->toBe(0);
+    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->expectsOutputToContain('Inga tas bort')->assertSuccessful();
+    expect(RegistryCompany::query()->count())->toBe(9);
 
+    RegistryChange::create(['org_number' => '5599996096', 'field' => 'name', 'old_value' => 'A', 'new_value' => 'B', 'source' => 'scb-bulk', 'detected_at' => now()]);
     file_put_contents($path, implode("\r\n", array_merge(array_slice($lines, 0, 9), array_slice($lines, 10))));
     $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->assertSuccessful();
-    expect(RegistryCompany::query()->whereNotNull('gone_at')->pluck('org_number')->all())->toBe(['5599996096']);
+    expect(RegistryCompany::query()->where('org_number', '5599996096')->exists())->toBeFalse()
+        ->and(RegistryCompany::query()->count())->toBe(8)
+        ->and(RegistryChange::query()->where('org_number', '5599996096')->exists())->toBeFalse();
 });
 
 it('reads SCB\'s API with the key, page by page, and refuses to run without one', function () {
@@ -181,6 +185,54 @@ it('reads SCB\'s API with the key, page by page, and refuses to run without one'
 
     Http::assertSent(fn ($request) => $request->hasHeader('X-API-Key', 'test-nyckel'));
     Sleep::assertSlept(fn ($duration) => (int) $duration->totalSeconds === 2);
+});
+
+it('never brings back what an objection or erasure has excluded, whatever the source', function () {
+    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => registryFixture('scb_bulkfil.txt')])->assertSuccessful();
+
+    $this->artisan('registry:exclude', ['org_number' => '559999-6013', '--field' => 'ALL'])->assertSuccessful();
+    $this->artisan('registry:exclude', ['org_number' => '559999-6039', '--field' => 'NAME', '--reason' => 'ERASURE'])->assertSuccessful();
+    $this->artisan('registry:exclude', ['org_number' => '199001019996', '--field' => 'ALL'])->assertFailed();
+
+    expect(RegistryCompany::query()->where('org_number', '5599996013')->exists())->toBeFalse()
+        ->and(RegistryCompany::query()->where('org_number', '5599996039')->value('name'))->toBe('Företag 559999-6039');
+
+    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => registryFixture('scb_bulkfil.txt'), '--force' => true])->assertSuccessful();
+    $this->artisan('registry:import', ['source' => 'bolagsverket-bulk', '--file' => registryFixture('bolagsverket_bulkfil.txt')])->assertSuccessful();
+
+    expect(RegistryCompany::query()->where('org_number', '5599996013')->exists())->toBeFalse()
+        ->and(RegistryCompany::query()->where('org_number', '5599996039')->value('name'))->toBe('Företag 559999-6039')
+        ->and(AuditLog::query()->where('action', 'hq.registry_exclusion_added')->count())->toBe(2)
+        ->and(json_encode(AuditLog::query()->where('action', 'hq.registry_exclusion_added')->pluck('payload')))->not->toContain('559999');
+
+    // Phone and e-mail from the API are left empty for a PHONE or EMAIL exclusion.
+    $this->artisan('registry:exclude', ['org_number' => '5599996021', '--field' => 'PHONE'])->assertSuccessful();
+    config(['services.company_register.scb_api_key' => 'test-nyckel', 'services.company_register.scb_api_url' => 'https://afr.example.test/v1/']);
+    Sleep::fake();
+    Http::fake([
+        'afr.example.test/v1/kodtabeller/*' => Http::response([]),
+        'afr.example.test/v1/juridiskaenheter/full*' => Http::response(['jes' => [['peOrgNr' => '165599996021', 'namn' => 'Molntjänst Exempel AB', 'jurform' => '49', 'ftgStat' => '1', 'tel' => '08-46500400', 'epost' => 'info@molnet.test']], 'pagination' => ['hasMore' => false]]),
+    ]);
+    $this->artisan('registry:import', ['source' => 'scb-api'])->assertSuccessful();
+
+    $cloud = RegistryCompany::query()->where('org_number', '5599996021')->firstOrFail();
+    expect($cloud->phone)->toBeNull()->and($cloud->email)->toBe('info@molnet.test');
+
+    // Removing the exclusion lets the next import bring the data back.
+    $this->artisan('registry:exclude', ['org_number' => '559999-6013', '--field' => 'ALL', '--remove' => true])->assertSuccessful();
+    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => registryFixture('scb_bulkfil.txt'), '--force' => true])->assertSuccessful();
+    expect(RegistryCompany::query()->where('org_number', '5599996013')->exists())->toBeTrue();
+});
+
+it('warns and records it when most companies of a file come out as opted out', function () {
+    $blocked = str_replace("\t1\t1\t", "\t1\t2\t", (string) file_get_contents(registryFixture('scb_bulkfil.txt')));
+    $lines = array_map(fn (string $line): string => preg_replace('/\t(\d{8})\t1\t/', "\t$1\t2\t", $line) ?? $line, explode("\r\n", $blocked));
+    $path = sys_get_temp_dir().'/nonox-scb-'.uniqid().'.txt';
+    file_put_contents($path, implode("\r\n", $lines));
+
+    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->expectsOutputToContain('reklamspärr enligt filen')->assertSuccessful();
+
+    expect(RegistryImport::query()->sole()->warning)->toContain('scbforetag@scb.se');
 });
 
 it('names SNI 2025 codes and divisions from SCB\'s classification', function () {

@@ -8,7 +8,7 @@ use Carbon\CarbonImmutable;
 
 /**
  * SCB's part of the high-value datasets as a weekly bulk file (ADR-047):
- * tab-separated, ISO-8859-1, a header row with ForAndrTyp, COAdress,
+ * tab-separated, ISO-8859-1 (read as Windows-1252), a header row with ForAndrTyp, COAdress,
  * Foretagsnamn, FtgStat, Gatuadress, JEStat, JurForm, Namn, Ng1–Ng5,
  * PeOrgNr, PostNr, PostOrt, RegDatKtid and Reklamsparrtyp (and an m-twin
  * per column). Free, no key and no agreement.
@@ -52,7 +52,7 @@ final class ScbBulkFile implements RegistrySource
     public function updateColumns(): array
     {
         // registered_on is SCB's own registration date; Bolagsverket's (the real one) wins once it has been read.
-        return ['name', 'legal_form', 'scb_status', 'sni_code', 'sni_division', 'sni_codes', 'address_line1', 'co_address', 'postal_code', 'city', 'advertising_block', 'fetched_at', 'last_import_id', 'gone_at', 'sources'];
+        return ['name', 'legal_form', 'scb_status', 'sni_code', 'sni_division', 'sni_codes', 'address_line1', 'co_address', 'postal_code', 'city', 'advertising_block', 'fetched_at', 'last_import_id', 'sources'];
     }
 
     public function position(): string
@@ -135,7 +135,8 @@ final class ScbBulkFile implements RegistrySource
 
     private static function utf8(string $line): string
     {
-        return mb_convert_encoding($line, 'UTF-8', 'ISO-8859-1');
+        // Declared ISO-8859-1; read as Windows-1252, its superset, so a dash or quote in the 0x80–0x9F range comes through.
+        return mb_convert_encoding($line, 'UTF-8', 'Windows-1252');
     }
 
     private static function nullable(?string $value): ?string

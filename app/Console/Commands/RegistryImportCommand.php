@@ -28,8 +28,8 @@ use Throwable;
  * Streams the source and writes 1 000 rows at a time, so memory stays flat
  * for the whole register. Idempotent; an unchanged file is skipped unless
  * --force; --resume continues an unfinished run of the same file. Only
- * legal persons are loaded. After a complete SCB file, companies no longer
- * in it are marked gone. Changes of companies that some CRM watches are
+ * legal persons are loaded. After a complete SCB run, companies no longer
+ * in it are deleted. Changes of companies that some CRM watches are
  * recorded for crm:registry-watch, and kept 400 days.
  */
 class RegistryImportCommand extends Command
@@ -38,7 +38,7 @@ class RegistryImportCommand extends Command
 
     public const int KEEP_CHANGES_DAYS = 400;
 
-    /** A complete file has at least this share of the companies in the register; a smaller one (a cut download) marks nothing gone. */
+    /** A complete run has at least this share of the companies in the register; a smaller one (a cut download) deletes nothing. */
     public const float GONE_MIN_SHARE = 0.8;
 
     protected $signature = 'registry:import
@@ -93,6 +93,15 @@ class RegistryImportCommand extends Command
 
         try {
             $this->load($source, $import, $writer);
+            // Still under the lock: a complete SCB run (file or API) removes the companies it no longer has.
+            $gone = $source->createsRows() ? $this->removeGone($import) : 0;
+
+            if ($source->key() === ScbBulkFile::KEY) {
+                $this->checkOptOuts($import);
+            }
+
+            $import->forceFill(['status' => RegistryImport::DONE, 'finished_at' => now()])->save();
+            $pruned = RegistryChange::query()->where('detected_at', '<', CarbonImmutable::now()->subDays(self::KEEP_CHANGES_DAYS))->delete();
         } catch (Throwable $exception) {
             $import->forceFill(['status' => RegistryImport::FAILED, 'error' => mb_substr($exception->getMessage(), 0, 1000)])->save();
             $this->error("Körningen avbröts: {$exception->getMessage()} Fortsätt med --resume.");
@@ -102,13 +111,28 @@ class RegistryImportCommand extends Command
             $lock->release();
         }
 
-        $gone = $source->key() === ScbBulkFile::KEY ? $this->markGone($import) : 0;
-        $import->forceFill(['status' => RegistryImport::DONE, 'finished_at' => now()])->save();
-        $pruned = RegistryChange::query()->where('detected_at', '<', CarbonImmutable::now()->subDays(self::KEEP_CHANGES_DAYS))->delete();
-
-        $this->comment("Klart: {$import->rows_read} rader lästa, {$import->rows_written} företag skrivna, {$import->rows_skipped} hoppade över (fysiska personer och ofullständiga rader), {$import->changes} ändringar hos bevakade företag, {$gone} borta ur källan, {$pruned} gamla ändringar rensade.");
+        $this->comment("Klart: {$import->rows_read} rader lästa, {$import->rows_written} företag skrivna, {$import->rows_skipped} hoppade över (fysiska personer och ofullständiga rader), {$import->changes} ändringar hos bevakade företag, {$gone} borttagna ur registret, {$pruned} gamla ändringar rensade.");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * The opt-out mapping of the bulk file is not documented by SCB
+     * (TODO(legal-verify), ADR-047): if most companies of this run come
+     * out as opted out, the mapping is probably inverted. Warn and keep the
+     * warning on the import row, for the operator to check.
+     */
+    private function checkOptOuts(RegistryImport $import): void
+    {
+        $counts = DB::selectOne('SELECT COUNT(*) FILTER (WHERE advertising_block) AS blocked, COUNT(*) AS total FROM company_registry WHERE last_import_id = ?', [$import->id]);
+        $blocked = (int) ($counts->blocked ?? 0);
+        $total = (int) ($counts->total ?? 0);
+
+        if ($total > 0 && $blocked * 2 > $total) {
+            $warning = "{$blocked} av {$total} företag har reklamspärr enligt filen. Det är troligen fel tolkning av kolumnen Reklamsparrtyp; kontrollera med SCB (scbforetag@scb.se) innan registret används.";
+            $import->forceFill(['warning' => $warning])->save();
+            $this->warn($warning);
+        }
     }
 
     private function load(RegistrySource $source, RegistryImport $import, RegistryWriter $writer): void
@@ -153,23 +177,32 @@ class RegistryImportCommand extends Command
     }
 
     /**
-     * Rows a complete SCB file no longer has. A file with far fewer
-     * companies than the register (a truncated download) marks nothing.
+     * Deletes the companies a complete SCB run no longer has: they have left
+     * SCB's register, and the register keeps only what is in the source
+     * (ADR-047). A run with far fewer companies than the register (a cut
+     * download) deletes nothing. Their recorded changes go with them.
      */
-    private function markGone(RegistryImport $import): int
+    private function removeGone(RegistryImport $import): int
     {
-        $present = DB::table('company_registry')->whereNull('gone_at')->count();
+        $present = DB::table('company_registry')->count();
 
         if ($present > 0 && $import->rows_written < $present * self::GONE_MIN_SHARE) {
-            $this->warn("Filen hade bara {$import->rows_written} av {$present} företag. Inga markeras som borta.");
+            $this->warn("Källan hade bara {$import->rows_written} av {$present} företag. Inga tas bort.");
 
             return 0;
         }
 
-        return DB::table('company_registry')
-            ->whereNull('gone_at')
+        $gone = DB::table('company_registry')
             ->where(fn ($query) => $query->whereNull('last_import_id')->orWhere('last_import_id', '<>', $import->id))
-            ->update(['gone_at' => now(), 'updated_at' => now()]);
+            ->pluck('org_number')
+            ->map(fn (mixed $number): string => (string) $number)
+            ->all();
+
+        foreach (array_chunk($gone, 1000) as $chunk) {
+            RegistryWriter::forget($chunk);
+        }
+
+        return count($gone);
     }
 
     /**

@@ -20,6 +20,7 @@ use App\Support\Toast;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -36,6 +37,9 @@ class ProspectingPage extends Component
 {
     use ShowsToasts;
     use WithPagination;
+
+    /** Hits are counted up to this many; more shows as "fler än 10 000". */
+    public const int COUNT_CAP = 10_000;
 
     public const array FILTERS = ['division', 'sni', 'town', 'postal', 'county', 'municipality', 'form', 'from', 'to', 'employeesMin', 'employeesMax', 'turnoverMin', 'turnoverMax', 'all', 'blocked'];
 
@@ -171,7 +175,7 @@ class ProspectingPage extends Component
 
     public function addAll(AddProspects $add, CreateCallList $create): void
     {
-        $org = array_values($this->results()->limit(ProspectSearch::MAX_ADD)->pluck('org_number')->map(fn (mixed $number): string => (string) $number)->all());
+        $org = array_values($this->results()->orderBy('name')->orderBy('org_number')->limit(ProspectSearch::MAX_ADD)->pluck('org_number')->map(fn (mixed $number): string => (string) $number)->all());
 
         $this->addMany($org, $add, $create);
     }
@@ -198,11 +202,16 @@ class ProspectingPage extends Component
         }
 
         $searching = $this->mode === 'liknande' ? $profiles->isNotEmpty() : ProspectSearch::hasFilter($this->filters());
-        $results = $searching ? $this->results($profiles)->orderBy('name')->orderBy('org_number')->paginate(25) : null;
+        $query = $searching ? $this->results($profiles) : null;
+        // A capped count and a simple page: counting a million rows on every change of a filter is not needed.
+        $total = $query === null ? 0 : DB::query()->fromSub((clone $query)->select('company_registry.id')->limit(self::COUNT_CAP + 1), 'hits')->count();
+        $results = $query === null ? null : $query->orderBy('name')->orderBy('org_number')->simplePaginate(25);
 
         return view('crm::livewire.prospecting', [
             'state' => $state,
             'results' => $results,
+            'total' => $total,
+            'capped' => $total > self::COUNT_CAP,
             'searching' => $searching,
             'best' => $best,
             'chosenIds' => $this->mode === 'liknande' ? $this->chosenAccounts($best)->pluck('account_id')->all() : [],

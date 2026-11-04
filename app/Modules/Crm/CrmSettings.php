@@ -23,7 +23,9 @@ use App\Modules\ModuleManager;
  *   date this many months after the loss (ADR-043 stage 2); the date can be
  *   changed or cleared per deal and account.
  * - registry_monitoring: 1 turns changes in the company register for the
- *   company's accounts into "Ändring hos kunden" tasks (ADR-047), 0 not.
+ *   company's customers into "Ändring hos kunden" tasks (ADR-047), 0 not.
+ * - registry_monitoring_prospects: 1 watches the prospects as well; off by
+ *   default, since a prospect is not yet someone the company deals with.
  */
 final class CrmSettings
 {
@@ -34,6 +36,7 @@ final class CrmSettings
         'suppression_review_years' => 3,
         'win_back_months' => 6,
         'registry_monitoring' => 1,
+        'registry_monitoring_prospects' => 0,
     ];
 
     /** @var array<string, array{int, int}> key => [min, max] */
@@ -43,6 +46,7 @@ final class CrmSettings
         'suppression_review_years' => [1, 10],
         'win_back_months' => [1, 36],
         'registry_monitoring' => [0, 1],
+        'registry_monitoring_prospects' => [0, 1],
     ];
 
     /** Days ahead "Att göra" warns before people and prospects are erased. */

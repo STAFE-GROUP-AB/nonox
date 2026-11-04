@@ -38,6 +38,9 @@ class CallListsPage extends Component
     /** @var array<string, string> */
     public array $form = ['name' => '', 'assigned_to' => '', 'status' => 'PROSPECT', 'city' => '', 'tag' => ''];
 
+    /** Take private persons and sole traders along too (they need a NIX check before a sales call). */
+    public bool $includePrivate = false;
+
     public function mount(): void
     {
         abort_unless($this->user()->can('viewAny', [Account::class, $this->company()]), 403);
@@ -64,10 +67,11 @@ class CallListsPage extends Component
         $made = $create($this->user(), $this->company(), [
             'name' => $this->form['name'],
             'assigned_to' => $this->form['assigned_to'] === '' ? null : (int) $this->form['assigned_to'],
+            'include_private' => $this->includePrivate,
         ], $ids, ['source' => 'accounts', 'filters' => array_filter(['status' => $this->form['status'], 'city' => $this->form['city'], 'tag' => $this->form['tag']])]);
 
         Toast::flash($made['left_out'] > 0
-            ? __('Ringlistan är skapad. :count företag togs inte med: de är förlorade, inaktiva eller har spärrat telefonförsäljning.', ['count' => $made['left_out']])
+            ? __('Ringlistan är skapad. :count togs inte med: de är förlorade, inaktiva, privatpersoner eller enskilda firmor, eller har spärrat telefonförsäljning.', ['count' => $made['left_out']])
             : __('Ringlistan är skapad.'));
         $this->redirectRoute('crm.call-lists.show', ['callList' => $made['list']->id]);
     }

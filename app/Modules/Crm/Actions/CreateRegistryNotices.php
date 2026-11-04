@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Actions;
 
 use App\Models\Company;
 use App\Models\RegistryChange;
+use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\RegistryChangeText;
 use App\Modules\Crm\Models\Account;
@@ -34,8 +35,11 @@ final class CreateRegistryNotices
         $members = CompanyMembers::ids($company);
 
         return CurrentCompany::run($company, function () use ($company, $today, $members): int {
-            $accounts = Account::query()
+            // Customers only, unless the company also watches its prospects (CrmSettings).
+            $watched = fn () => Account::query()
                 ->whereNotNull('org_number')
+                ->when(CrmSettings::for($company)['registry_monitoring_prospects'] !== 1, fn ($query) => $query->whereNotNull('customer_id'));
+            $accounts = $watched()
                 ->get(['id', 'org_number', 'owner_id', 'created_at'])
                 ->keyBy(fn (Account $account): string => (string) preg_replace('/\D/', '', (string) $account->org_number));
 
@@ -45,7 +49,7 @@ final class CreateRegistryNotices
 
             // Changes for the company's organisation numbers (a subquery, however many accounts), not yet noticed here.
             $changes = RegistryChange::query()
-                ->whereIn('org_number', Account::query()->toBase()->whereNotNull('org_number')->selectRaw("regexp_replace(org_number, '\\D', '', 'g')"))
+                ->whereIn('org_number', $watched()->toBase()->selectRaw("regexp_replace(org_number, '\\D', '', 'g')"))
                 ->where('detected_at', '>=', $accounts->min('created_at'))
                 ->whereNotIn('id', RegistryNotice::query()->toBase()->select('registry_change_id'))
                 ->orderBy('id')
@@ -74,7 +78,7 @@ final class CreateRegistryNotices
                         'account_id' => $account->id,
                         'type' => ActivityType::Task,
                         'subject' => __('Ändring hos kunden: :what', ['what' => RegistryChangeText::summary(array_values($group->map(fn (RegistryChange $change): string => $change->field)->unique()->all()))]),
-                        'body' => $lines->implode("\n")."\n\n".__('Källa: SCB:s företagsregister och Bolagsverket (öppna data).'),
+                        'body' => $lines->implode("\n")."\n\n".__('Källa: Bolagsverket och SCB, värdefulla datamängder, bearbetat av NONOX.'),
                         'assigned_to' => $owner,
                         'due_at' => CarbonImmutable::parse($today->toDateString().' 09:00', LogActivity::ZONE),
                         'created_by' => null,

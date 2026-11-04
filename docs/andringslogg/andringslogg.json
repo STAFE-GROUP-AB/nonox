@@ -35,7 +35,7 @@
       "id": "2026-11-04-crm-prospektering",
       "datum": "2026-11-04T02:30:00+01:00",
       "rubrik": "Prospektera i företagsregistret, ringlistor och bevakning i CRM",
-      "beskrivning": "Under CRM → Prospektera söker du bland Sveriges företag ur SCB:s och Bolagsverkets öppna data på bransch, ort, bolagsform och registreringsdatum, eller hittar företag som liknar dina bästa kunder, och lägger till dem som prospekt utan dubbletter. Ringlistor rings ett företag i taget med utfallet loggat på ett tryck. Ny adress, nytt namn, konkurs och likvidation hos kunder och prospekt blir en uppgift för den ansvarige.",
+      "beskrivning": "Under CRM → Prospektera söker du bland Sveriges aktiebolag, föreningar och andra juridiska personer ur SCB:s och Bolagsverkets öppna data på bransch, ort, bolagsform och registreringsdatum, eller hittar företag som liknar dina bästa kunder, och lägger till dem som prospekt utan dubbletter. Ringlistor rings ett företag i taget med utfallet loggat på ett tryck. Ny adress, nytt namn, konkurs och likvidation hos kunder och prospekt blir en uppgift för den ansvarige.",
       "typ": "Nytt",
       "omrade": "CRM"
     },

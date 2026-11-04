@@ -41,6 +41,7 @@
                         @endforeach
                     </select>
                 </x-ui.field>
+                <label class="inline-flex min-h-11 items-center gap-2 self-end text-sm text-gray-700 sm:col-span-2"><input type="checkbox" class="size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500" wire:model="includePrivate"> {{ __('Ta med privatpersoner och enskilda firmor (kontrollera numret mot NIX-Telefon innan du ringer i säljsyfte)') }}</label>
                 <p class="self-end text-sm text-gray-700" aria-live="polite">{{ trans_choice('{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.', min($matching, App\Modules\Crm\Models\CallList::MAX_ITEMS), ['count' => min($matching, App\Modules\Crm\Models\CallList::MAX_ITEMS)]) }}</p>
                 <div class="flex flex-wrap items-center gap-4 sm:col-span-2 lg:col-span-3">
                     <x-button wire:loading.attr="disabled" :disabled="$matching === 0">{{ __('Skapa ringlista') }}</x-button>

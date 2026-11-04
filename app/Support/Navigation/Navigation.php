@@ -65,6 +65,7 @@ final class Navigation
             ['label' => __('Kö'), 'route' => 'hq.waitlist'],
             ['label' => __('Kunder'), 'route' => 'hq.customers'],
             ['label' => __('Inställningar'), 'route' => 'hq.settings'],
+            ['label' => __('Företagsregistret'), 'route' => 'hq.registry'],
         ], $currentRoute) : [];
 
         return new NavSection(__('HQ'), 'hq.waitlist', $patterns, $active, $children);

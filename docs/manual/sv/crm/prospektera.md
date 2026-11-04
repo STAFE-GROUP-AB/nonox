@@ -51,10 +51,10 @@ NONOX använder ingen AI här. Jämförelsen görs bara på uppgifterna i regist
 | Om företaget är i drift (registrerat för moms, F-skatt eller som arbetsgivare) | SCB | Ja |
 | Reklamspärr | SCB | Ja |
 | Registreringsdatum, avregistrering, konkurs, likvidation och rekonstruktion | Bolagsverket | Ja |
-| Antal anställda och omsättning (i storleksklasser), län, kommun, telefon och e-post, spärr mot telefonförsäljning | SCB:s API | Bara om den som driftar NONOX har en API-nyckel |
+| Antal anställda och omsättning (i storleksklasser), län, kommun, telefon och e-post, spärr mot telefonförsäljning (sådana företag tas aldrig med i en ringlista) | SCB:s API | Bara om den som driftar NONOX har en API-nyckel |
 | Styrelse, VD, betalningsanmärkningar och kreditbetyg | Kreditupplysningsföretag | Nej, inte än |
 
-Uppgifterna uppdateras en gång i veckan. Under listan står när de senast hämtades.
+Uppgifterna uppdateras en gång i veckan. Under listan står när de senast hämtades. Ett företag som har försvunnit ur SCB:s register tas bort vid nästa uppdatering.
 
 > [!NOTE]
 > Registret innehåller bara juridiska personer: aktiebolag, handelsbolag, föreningar, stiftelser och liknande. Enskilda firmor är privatpersoner och finns inte med, och NONOX hämtar inga namn på styrelseledamöter eller andra personer. Antal anställda och omsättning anges som en klass, till exempel 5–9 anställda, eftersom SCB inte lämnar ut de exakta siffrorna.
@@ -63,6 +63,7 @@ Uppgifterna uppdateras en gång i veckan. Under listan står när de senast häm
 
 - **Bara företag i drift** visas om du inte kryssar i **Visa även företag som inte är i drift**. Då syns även vilande, avregistrerade och företag i konkurs eller likvidation, med en markering.
 - **Reklamspärr.** Företag som har frånsagt sig reklam i SCB:s register visas inte om du inte kryssar i **Visa företag med reklamspärr**. Respektera spärren i dina utskick.
+- **Många träffar.** Fler än 10 000 träffar visas som "Fler än 10 000 företag". Smalna av med fler filter.
 - **Kontakta inte.** Har registret ett telefonnummer eller en e-postadress som finns på er lista över personer som har bett att inte bli kontaktade läggs företaget inte till. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 - **Kontaktpersoner** lägger du till själv på kortet, med rättslig grund. Den som du lägger till ska få information om behandlingen inom en månad. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 - **Alla som har CRM** kan söka i registret, även en revisor. Att lägga till prospekt och göra ringlistor kräver att du får ändra i CRM.

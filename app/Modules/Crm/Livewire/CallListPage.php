@@ -54,10 +54,9 @@ class CallListPage extends Component
         $this->list();
     }
 
-    public function call(string $outcome, WorkCallList $work): void
+    public function call(int $itemId, int $attempts, string $outcome, WorkCallList $work): void
     {
-        $item = $this->current();
-        abort_if($item === null, 404);
+        $item = $this->item($itemId);
 
         $work->call($this->user(), $this->company(), $item, [
             'outcome' => $outcome,
@@ -66,18 +65,15 @@ class CallListPage extends Component
             'next_type' => $this->nextType === '' ? null : $this->nextType,
             'next_subject' => $this->nextSubject,
             'next_at' => $this->nextAt === '' ? null : $this->nextAt,
-        ]);
+        ], $attempts);
 
         $this->reset('personId', 'note', 'nextType', 'nextAt', 'nextSubject');
         $this->toast(__('Samtalet är loggat: :outcome.', ['outcome' => mb_strtolower(CallOutcome::from($outcome)->label())]));
     }
 
-    public function skip(WorkCallList $work): void
+    public function skip(int $itemId, int $attempts, WorkCallList $work): void
     {
-        $item = $this->current();
-        abort_if($item === null, 404);
-
-        $work->skip($this->user(), $this->company(), $item);
+        $work->skip($this->user(), $this->company(), $this->item($itemId), $attempts);
         $this->reset('personId', 'note', 'nextType', 'nextAt', 'nextSubject');
         $this->toast(__('Företaget är överhoppat.'));
     }
@@ -101,7 +97,7 @@ class CallListPage extends Component
             ->get();
         $current = $items->first(fn (CallListItem $item): bool => $item->status === CallListItem::PENDING);
         $account = $current === null ? null : Account::query()
-            ->with(['people' => fn ($query) => $query->where('is_active', true)->orderBy('name')])
+            ->with(['customer:id,org_number', 'people' => fn ($query) => $query->where('is_active', true)->orderBy('name')])
             ->find($current->account_id);
         $done = $items->where('status', '<>', CallListItem::PENDING)->count();
 
@@ -122,13 +118,10 @@ class CallListPage extends Component
         ]);
     }
 
-    private function current(): ?CallListItem
+    /** An item of this list, in the current company: another company's or list's id is not found. */
+    private function item(int $itemId): CallListItem
     {
-        return CallListItem::query()
-            ->where('call_list_id', $this->list()->id)
-            ->where('status', CallListItem::PENDING)
-            ->orderBy('position')
-            ->first();
+        return CallListItem::query()->where('call_list_id', $this->list()->id)->findOrFail($itemId);
     }
 
     private function list(): CallList

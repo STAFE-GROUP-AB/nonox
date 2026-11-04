@@ -113,7 +113,7 @@ it('filters on industry, town, form and registration date, in business and witho
     $page->assertSee('Kodverket Exempel AB')->assertSee('Nystartade Exempel AB')
         ->assertDontSee('Molnet Exempel AB')->assertDontSee('Vilande Exempel AB')->assertDontSee('Konkursbolaget Exempel AB')->assertDontSee('Måleri Exempel HB')
         ->assertSee('62100 Dataprogrammering')
-        ->assertSee('Källa: SCB:s företagsregister och Bolagsverket');
+        ->assertSee('Källa: Bolagsverket och SCB, värdefulla datamängder, bearbetat av NONOX');
 
     $page->set('blocked', true)->assertSee('Molnet Exempel AB')->assertSee('Reklamspärr');
     $page->set('all', true)->assertSee('Vilande Exempel AB')->assertSee('Konkurs');
@@ -268,8 +268,12 @@ it('works a call list: one tap logs the call, no answer goes last, and a next st
 
     $this->get(route('crm.call-lists.show', $list))->assertOk()->assertSee('Första Exempel AB')->assertSee('href="tel:0846500402"', escape: false)->assertSee('0 av 2 klara');
 
-    $page = Livewire::test(CallListPage::class, ['callListId' => $list->id]);
-    $page->call('call', 'NO_ANSWER')->assertDispatched('toast');
+    $turn = fn (): CallListItem => CallListItem::query()->where('call_list_id', $list->id)->where('status', CallListItem::PENDING)->orderBy('position')->firstOrFail();
+    $tap = fn ($page, string $outcome) => $page->call('call', $turn()->id, $turn()->attempts, $outcome);
+
+    $page = Livewire::test(CallListPage::class, ['callListId' => $list->id])
+        ->assertSeeHtml('wire:click="call('.$turn()->id.', 0, \'NO_ANSWER\')"');
+    $tap($page, 'NO_ANSWER')->assertDispatched('toast');
 
     $item = CallListItem::query()->where('account_id', $first->id)->sole();
     expect($item->status)->toBe(CallListItem::PENDING)
@@ -277,8 +281,8 @@ it('works a call list: one tap logs the call, no answer goes last, and a next st
         ->and($item->position)->toBe(3);
 
     $page->assertSee('Andra Exempel AB')
-        ->set('note', 'Vill ha offert')->set('nextType', 'TASK')->set('nextAt', '2026-11-05T09:00')->set('nextSubject', 'Skicka offert')
-        ->call('call', 'REACHED');
+        ->set('note', 'Vill ha offert')->set('nextType', 'TASK')->set('nextAt', '2026-11-05T09:00')->set('nextSubject', 'Skicka offert');
+    $tap($page, 'REACHED');
 
     $call = Activity::query()->where('account_id', $second->id)->where('type', 'CALL')->sole();
     expect($call->call_outcome?->value)->toBe('REACHED')
@@ -288,12 +292,60 @@ it('works a call list: one tap logs the call, no answer goes last, and a next st
         ->and(CallListItem::query()->where('account_id', $second->id)->value('status'))->toBe(CallListItem::DONE);
 
     // The third unanswered call ends the company on the list.
-    $page->call('call', 'LEFT_MESSAGE')->call('call', 'NO_ANSWER');
+    $tap($page, 'LEFT_MESSAGE');
+    $tap($page, 'NO_ANSWER');
     expect($item->fresh()?->status)->toBe(CallListItem::DONE)
         ->and($item->fresh()?->attempts)->toBe(3);
 
     $page->assertSee('Listan är klar')->assertSee('2 av 2 klara');
     Livewire::test(CallListsPage::class)->assertSee('Veckans samtal')->assertSee('2 av 2 klara');
+});
+
+it('refuses a call from a second tab that shows another company, or the same one with old attempts', function () {
+    $first = Crm::prospect($this->company, $this->owner, 'Första Exempel AB');
+    $second = Crm::prospect($this->company, $this->owner, 'Andra Exempel AB');
+    $list = app(CreateCallList::class)($this->owner, $this->company, ['name' => 'Två flikar'], [$first->id, $second->id])['list'];
+    $item = fn (Crm\Models\Account|Account $account): CallListItem => CallListItem::query()->where('account_id', $account->id)->sole();
+
+    $tabOne = Livewire::test(CallListPage::class, ['callListId' => $list->id]);
+    $tabTwo = Livewire::test(CallListPage::class, ['callListId' => $list->id]);
+    $stale = $item($first);
+
+    // Tab one logs "Inget svar": the first company goes last, attempts 1.
+    $tabOne->call('call', $stale->id, 0, 'NO_ANSWER');
+
+    // Tab two still shows the first company with 0 attempts: refused, with the message, and nothing logged.
+    $tabTwo->call('call', $stale->id, 0, 'REACHED')
+        ->assertHasErrors(['item' => 'Listan har ändrats i en annan flik. Sidan är uppdaterad – kontrollera vilket företag som står på tur.'])
+        ->assertSee('Andra Exempel AB');
+    $tabTwo->call('skip', $stale->id, 0)->assertHasErrors('item');
+
+    // The same company again but with an old attempt count is also refused, until the page shows the current one.
+    $tabOne->call('call', $item($second)->id, 0, 'NO_ANSWER');
+    $tabTwo->call('call', $stale->id, 0, 'REACHED')->assertHasErrors('item');
+    $tabTwo->call('call', $stale->id, 1, 'REACHED')->assertHasNoErrors();
+
+    expect(Activity::query()->where('type', 'CALL')->count())->toBe(3)
+        ->and($item($first)->status)->toBe(CallListItem::DONE)
+        ->and($item($first)->outcome?->value)->toBe('REACHED');
+
+    // Another list's item answers 404.
+    $other = app(CreateCallList::class)($this->owner, $this->company, ['name' => 'Annan'], [Crm::prospect($this->company, $this->owner, 'Tredje Exempel AB')->id])['list'];
+    $tabOne->call('call', CallListItem::query()->where('call_list_id', $other->id)->value('id'), 0, 'REACHED')->assertNotFound();
+});
+
+it('leaves private persons and sole traders out of call lists unless asked for, and warns about NIX', function () {
+    $company = Crm::prospect($this->company, $this->owner, 'Företaget Exempel AB');
+    $person = Crm::prospect($this->company, $this->owner, 'Anna Andersson', ['kind' => 'PERSON']);
+    $soleTrader = Crm::accountFor(Crm::customer($this->company, $this->owner, 'Annas Firma', ['org_number' => '19800101-999'.Luhn::checkDigit('800101999')]));
+
+    $made = app(CreateCallList::class)($this->owner, $this->company, ['name' => 'Utan privata'], [$company->id, $person->id, $soleTrader->id]);
+    expect($made['left_out'])->toBe(2)
+        ->and(CallListItem::query()->where('call_list_id', $made['list']->id)->pluck('account_id')->all())->toBe([$company->id]);
+
+    $with = app(CreateCallList::class)($this->owner, $this->company, ['name' => 'Med privata', 'include_private' => true], [$person->id, $soleTrader->id])['list'];
+    Livewire::test(CallListPage::class, ['callListId' => $with->id])
+        ->assertSee('Privatperson eller enskild firma: kontrollera numret mot NIX-Telefon innan du ringer i säljsyfte, om personen inte redan är kund.');
 });
 
 it('skips a company, refuses a person marked Kontakta inte, and leaves out phone opt-outs and lost accounts', function () {
@@ -341,12 +393,17 @@ it('builds a call list from the CRM\'s own prospects', function () {
     expect(CallListItem::query()->count())->toBe(1);
 });
 
-it('turns register changes of an account into one task for its owner, once, and only while monitoring is on', function () {
-    $account = Crm::prospect($this->company, $this->owner, 'Kodverket Exempel AB', ['org_number' => prospectOrg(1)]);
+it('turns register changes of a customer into one task for its owner, once, and only while monitoring is on', function () {
+    $account = Crm::accountFor(Crm::customer($this->company, $this->owner, 'Kodverket Exempel AB', ['org_number' => prospectOrg(1)]));
+    $prospect = Crm::prospect($this->company, $this->owner, 'Prospektet Exempel AB', ['org_number' => prospectOrg(3)]);
+    $account->forceFill(['owner_id' => $this->owner->id])->save();
+    $lastActivity = $account->fresh()?->last_activity_at?->toIso8601String();
     $this->travel(1)->hours();
     foreach ([['address_line1', 'Exempelgatan 1', 'Nya gatan 10'], ['proceedings', null, 'KK']] as [$field, $old, $new]) {
         RegistryChange::create(['org_number' => prospectOrg(1), 'field' => $field, 'old_value' => $old, 'new_value' => $new, 'source' => 'scb-bulk', 'detected_at' => now()]);
     }
+    // A prospect's change waits until the company also watches prospects.
+    RegistryChange::create(['org_number' => prospectOrg(3), 'field' => 'city', 'old_value' => 'STOCKHOLM', 'new_value' => 'LUND', 'source' => 'scb-bulk', 'detected_at' => now()]);
     // A change of another company, and one from before the account existed, are not reported.
     RegistryChange::create(['org_number' => prospectOrg(2), 'field' => 'name', 'old_value' => 'A', 'new_value' => 'B', 'source' => 'scb-bulk', 'detected_at' => now()]);
     RegistryChange::create(['org_number' => prospectOrg(1), 'field' => 'name', 'old_value' => 'A', 'new_value' => 'B', 'source' => 'scb-bulk', 'detected_at' => now()->subDays(3)]);
@@ -355,6 +412,7 @@ it('turns register changes of an account into one task for its owner, once, and 
     $this->artisan('crm:registry-watch', ['company' => $this->company->id])->assertSuccessful();
 
     $task = Activity::query()->where('account_id', $account->id)->sole();
+    expect(Activity::query()->where('account_id', $prospect->id)->exists())->toBeFalse();
     expect($task->type->value)->toBe('TASK')
         ->and($task->subject)->toBe('Ändring hos kunden: ny adress, konkurs, likvidation eller rekonstruktion')
         ->and($task->body)->toContain('Ny adress: Exempelgatan 1 → Nya gatan 10')
@@ -362,7 +420,7 @@ it('turns register changes of an account into one task for its owner, once, and 
         ->and($task->assigned_to)->toBe($this->owner->id)
         ->and($task->due_at?->setTimezone('Europe/Stockholm')->format('H:i'))->toBe('09:00')
         ->and(RegistryNotice::query()->count())->toBe(2)
-        ->and($account->fresh()?->last_activity_at?->lessThan(now()->subMinutes(30)))->toBeTrue();
+        ->and($account->fresh()?->last_activity_at?->toIso8601String())->toBe($lastActivity);
 
     RegistryChange::create(['org_number' => prospectOrg(1), 'field' => 'city', 'old_value' => 'STOCKHOLM', 'new_value' => 'UPPSALA', 'source' => 'scb-bulk', 'detected_at' => now()]);
     app(ModuleManager::class)->updateSettings(CrmModule::KEY, $this->company, $this->owner, [...CrmSettings::for($this->company), 'registry_monitoring' => 0]);
@@ -371,6 +429,10 @@ it('turns register changes of an account into one task for its owner, once, and 
 
     expect(app(CreateRegistryNotices::class)($this->company))->toBe(1)
         ->and(Activity::query()->latest('id')->value('subject'))->toBe('Ändring hos kunden: ny ort');
+
+    app(ModuleManager::class)->updateSettings(CrmModule::KEY, $this->company, $this->owner, [...CrmSettings::for($this->company), 'registry_monitoring_prospects' => 1]);
+    expect(app(CreateRegistryNotices::class)($this->company))->toBe(1)
+        ->and(Activity::query()->where('account_id', $prospect->id)->count())->toBe(1);
 });
 
 it('shows the register facts on the account card', function () {
@@ -388,9 +450,12 @@ it('shows the register facts on the account card', function () {
 it('saves the monitoring setting from the CRM settings', function () {
     Livewire::test(CrmSettingsForm::class, ['company' => $this->company])
         ->assertSet('settings.registry_monitoring', true)
+        ->assertSet('settings.registry_monitoring_prospects', false)
         ->set('settings.registry_monitoring', false)
+        ->set('settings.registry_monitoring_prospects', true)
         ->call('save')
         ->assertHasNoErrors();
 
-    expect(CrmSettings::for($this->company)['registry_monitoring'])->toBe(0);
+    expect(CrmSettings::for($this->company)['registry_monitoring'])->toBe(0)
+        ->and(CrmSettings::for($this->company)['registry_monitoring_prospects'])->toBe(1);
 });

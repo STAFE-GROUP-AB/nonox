@@ -34,7 +34,7 @@ final class WorkCallList
     /**
      * @param  array{outcome?: mixed, person_id?: mixed, note?: mixed, next_type?: mixed, next_subject?: mixed, next_at?: mixed}  $input
      */
-    public function call(User $user, Company $company, CallListItem $item, array $input): CallListItem
+    public function call(User $user, Company $company, CallListItem $item, array $input, ?int $expectedAttempts = null): CallListItem
     {
         Gate::forUser($user)->authorize('manage', [Account::class, $company]);
         $this->guardOpen($company, $item);
@@ -53,13 +53,8 @@ final class WorkCallList
 
         $outcome = CallOutcome::from((string) $validated['outcome']);
 
-        return DB::transaction(fn (): CallListItem => CurrentCompany::run($company, function () use ($user, $company, $item, $validated, $outcome): CallListItem {
-            $item = CallListItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
-
-            // A double tap or a second tab: the first call wins, the second is refused under the lock.
-            if ($item->status !== CallListItem::PENDING) {
-                throw ValidationException::withMessages(['item' => __('Företaget är redan avklarat på ringlistan, eller listan är arkiverad.')]);
-            }
+        return DB::transaction(fn (): CallListItem => CurrentCompany::run($company, function () use ($user, $company, $item, $validated, $outcome, $expectedAttempts): CallListItem {
+            $item = $this->lockTurn($item, $expectedAttempts);
 
             $personId = filled($validated['person_id'] ?? null) ? (int) $validated['person_id'] : null;
 
@@ -103,17 +98,13 @@ final class WorkCallList
         }));
     }
 
-    public function skip(User $user, Company $company, CallListItem $item): CallListItem
+    public function skip(User $user, Company $company, CallListItem $item, ?int $expectedAttempts = null): CallListItem
     {
         Gate::forUser($user)->authorize('manage', [Account::class, $company]);
         $this->guardOpen($company, $item);
 
-        return DB::transaction(fn (): CallListItem => CurrentCompany::run($company, function () use ($user, $company, $item): CallListItem {
-            $item = CallListItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
-
-            if ($item->status !== CallListItem::PENDING) {
-                throw ValidationException::withMessages(['item' => __('Företaget är redan avklarat på ringlistan, eller listan är arkiverad.')]);
-            }
+        return DB::transaction(fn (): CallListItem => CurrentCompany::run($company, function () use ($user, $company, $item, $expectedAttempts): CallListItem {
+            $item = $this->lockTurn($item, $expectedAttempts);
 
             $item->forceFill(['status' => CallListItem::SKIPPED, 'done_at' => now(), 'done_by' => $user->id])->save();
             Audit::record('crm.call_list_skip', $item, ['call_list_id' => $item->call_list_id, 'account_id' => $item->account_id], $company, $user);
@@ -130,6 +121,30 @@ final class WorkCallList
             $list->forceFill(['archived_at' => $archived ? now() : null])->save();
             Audit::record($archived ? 'crm.call_list_archived' : 'crm.call_list_restored', $list, ['call_list_id' => $list->id], $company, $user);
         });
+    }
+
+    /**
+     * Locks the list's items and the item, and refuses unless it is still
+     * the company whose turn it is, with the attempts the caller saw: a
+     * second tab, or a double tap, must not log a call on the wrong company
+     * or twice on the same one.
+     */
+    private function lockTurn(CallListItem $item, ?int $expectedAttempts): CallListItem
+    {
+        $pending = CallListItem::query()
+            ->where('call_list_id', $item->call_list_id)
+            ->where('status', CallListItem::PENDING)
+            ->orderBy('position')
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get(['id', 'attempts', 'position']);
+        $first = $pending->first();
+
+        if ($first === null || $first->id !== $item->id || ($expectedAttempts !== null && $first->attempts !== $expectedAttempts)) {
+            throw ValidationException::withMessages(['item' => __('Listan har ändrats i en annan flik. Sidan är uppdaterad – kontrollera vilket företag som står på tur.')]);
+        }
+
+        return CallListItem::query()->whereKey($item->id)->firstOrFail();
     }
 
     private function guardOpen(Company $company, CallListItem $item): void
