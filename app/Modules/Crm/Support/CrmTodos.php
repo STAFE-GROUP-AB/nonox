@@ -12,6 +12,7 @@ use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Domain\DealNextStep;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Suppression;
@@ -70,6 +71,29 @@ final class CrmTodos implements PersonalTodoProvider
             );
         }
 
+        // Stage 3 (ADR-046): agreements whose notice deadline is near; the user's own, all of them for crm:settings.
+        $days = CrmSettings::for($company)['agreement_reminder_days'];
+        $renewing = Agreement::query()
+            ->whereNotNull('end_date')
+            ->whereNull('terminated_on')
+            ->where('end_date', '>=', $today->toDateString())
+            // The notice deadline: the end date less the notice period in months (PostgreSQL date arithmetic).
+            ->whereRaw('(end_date - make_interval(months => notice_months))::date <= ?', [$today->addDays($days)->toDateString()])
+            ->when(! $user->hasTeamPermission($company, 'crm:settings'), fn ($query) => $query->where('owner_id', $user->id))
+            ->count();
+
+        if ($renewing > 0) {
+            $todos[] = new TodoItem(
+                'crm-agreements-renewing',
+                'clock',
+                $renewing === 1 ? __('1 avtal närmar sig uppsägningsdagen') : __(':count avtal närmar sig uppsägningsdagen', ['count' => $renewing]),
+                __('Bestäm om avtalen ska fortsätta, sägas upp eller omförhandlas innan sista dagen.'),
+                route('crm.agreements', ['visa' => 'loper-ut', 'inom' => in_array($days, [30, 60, 90, 180, 365], true) ? $days : 365]),
+                TodoItem::PRIORITY_OTHER,
+                $today->addDays($days),
+            );
+        }
+
         if (! $user->hasTeamPermission($company, 'crm:manage')) {
             return $todos;
         }
@@ -108,6 +132,6 @@ final class CrmTodos implements PersonalTodoProvider
 
     public function invalidatedBy(): array
     {
-        return [Activity::class, Person::class, Account::class, Suppression::class, Deal::class];
+        return [Activity::class, Person::class, Account::class, Suppression::class, Deal::class, Agreement::class];
     }
 }

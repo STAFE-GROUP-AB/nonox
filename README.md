@@ -142,6 +142,9 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Vunnen affär kopplas till offerten, ordern eller fakturan i bokföringen. Förlorad affär får en orsak och ett datum då säljaren påminns om att vinna tillbaka kunden.
 - Kundkort och en egen sida för varje kontaktperson: snabbval för att ringa, mejla, logga och planera, fakta i en rad, kundens status eller affärens steg som en stegrad, historiken i flikar med antal och nyckeltalen ur bokföringen. En person som inte vill bli kontaktad kan inte ringas eller mejlas därifrån. I mobilen ligger de vanligaste snabbvalen fast längst ned.
 - Prognos per månad (värde gånger sannolikhet, bredvid det som har vunnits), mål per säljare för möten, offerter och ordervärde som mäts ur CRM och faktureringen, och en översikt med säljtrattens värde, andel vunna, säljcykel och aktiviteter per vecka.
+- Offerter och avtal signeras med namnteckning: kunden får en personlig länk, läser dokumentet och skriver under med musen, fingret eller en penna (eller skriver sitt namn), utan konto. Signaturen binds till PDF:ens kontrollsumma, kunden och företaget får ett signeringsbevis, och en signerad offert blir en order (och om du vill ett fakturautkast) medan affären vinns. En enkel elektronisk underskrift, inte BankID.
+- Offertmallar med artiklar ur artikelregistret, inledning, villkor och giltighet; offerten får dagens priser när den skapas.
+- Avtalsregister med påminnelse: kundernas avtal med period, uppsägningstid, automatisk förlängning, värde och koppling till avtalsfaktureringen. Den ansvarige får en uppgift innan sista dag att säga upp.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.

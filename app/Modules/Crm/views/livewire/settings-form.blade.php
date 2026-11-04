@@ -12,6 +12,9 @@
     <x-ui.field for="crm-win-back" :label="__('Vinn tillbaka efter, månader')" error="settings.win_back_months" :hint="__('En förlorad affär eller kund får ett datum så här många månader fram. Då får den ansvarige en uppgift att höra av sig igen. Datumet kan ändras eller tas bort på varje affär. Standard är 6.')">
         <input id="crm-win-back" type="number" min="1" max="36" inputmode="numeric" wire:model="settings.win_back_months" class="{{ $input }}">
     </x-ui.field>
+    <x-ui.field for="crm-agreement-reminder" :label="__('Påminn om avtal, dagar innan')" error="settings.agreement_reminder_days" :hint="__('Så här många dagar före sista dag att säga upp ett avtal (eller före slutdatumet, om avtalet saknar uppsägningstid) får den ansvarige en uppgift. Standard är 60.')">
+        <input id="crm-agreement-reminder" type="number" min="7" max="365" inputmode="numeric" wire:model="settings.agreement_reminder_days" class="{{ $input }}">
+    </x-ui.field>
     <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>

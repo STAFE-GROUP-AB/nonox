@@ -234,6 +234,8 @@
             <x-crm::tabs :tabs="$tabs" :active="$tab" model="tab" id="crm-account" :label="__('Historik')">
                 @if($tab === 'affarer')
                     <x-crm::deal-list :deals="$deals" :now="$now" :empty="__('Inga affärer ännu. En affär följer en försäljning genom säljtratten, med värde och väntat avslut.')" />
+                @elseif($tab === 'avtal')
+                    @include('crm::livewire.partials.account-agreements')
                 @elseif($tab === 'personer')
                     @include('crm::livewire.partials.account-people')
                 @elseif($timeline === null || $timeline->isEmpty())
@@ -252,6 +254,9 @@
         </section>
 
         <aside class="space-y-6" aria-label="{{ __('Om kunden') }}">
+            @if($canSell)
+                <livewire:crm.quote-from-template :customer-id="$account->customer_id" :boxed="true" :key="'qft-account-'.$account->id" />
+            @endif
             <x-ui.card :title="__('Kommande')">
                 @if($next->isEmpty())
                     <p class="text-sm text-gray-600">{{ $account->status->isOpen() ? __('Inget planerat. Lägg till ett samtal, ett möte eller en uppgift, så glöms kunden inte bort.') : __('Inget planerat.') }}</p>

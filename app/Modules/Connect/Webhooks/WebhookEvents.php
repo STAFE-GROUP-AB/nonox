@@ -10,6 +10,7 @@ use App\Models\SupplierInvoice;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
 use App\Modules\Connect\Models\ConnectSftpUpload;
+use App\Modules\Crm\Models\SigningRequest;
 use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\Inventory\Models\StockLevel;
@@ -38,6 +39,7 @@ final class WebhookEvents
         'planning.attested' => ['planning:attest'],
         'sie.uploaded' => ['import:sie'],
         'stock.changed' => ['inventory:view'],
+        'quote.signed' => ['invoices:view'],
     ];
 
     /** @return array<string, string> event => Swedish description */
@@ -52,6 +54,7 @@ final class WebhookEvents
             'planning.attested' => __('Tid i schemat har attesterats (Planering)'),
             'sie.uploaded' => __('En SIE-fil har kommit in via SFTP och granskats'),
             'stock.changed' => __('Lagersaldot har ändrats: inleverans, plock, flytt, inventering, kassa, retur eller kassation (Lager)'),
+            'quote.signed' => __('En offert har signerats via en signeringslänk (CRM)'),
         ];
     }
 
@@ -270,6 +273,36 @@ final class WebhookEvents
                 'balance' => Quantity::decimal((int) ($levels["{$movement->article_id}:{$movement->location_id}"] ?? 0)),
                 'occurred_on' => $movement->occurred_on->toDateString(),
             ])->all(),
+        ];
+    }
+
+    /**
+     * Must run inside the company. Ids, the time, the method and the hash
+     * of the signed PDF; never the signer's name, address or IP address.
+     * The order (and invoice draft) may still be on its way: the follow-up
+     * runs after the signature (ADR-046).
+     *
+     * @return ?array<string, mixed>
+     */
+    public static function quoteSigned(int $signingRequestId): ?array
+    {
+        $request = SigningRequest::query()->with('quote')->find($signingRequestId);
+
+        if (! $request instanceof SigningRequest || $request->signed_at === null || $request->quote === null) {
+            return null;
+        }
+
+        return [
+            'signing_request_id' => $request->id,
+            'quote_id' => $request->sales_document_id,
+            'quote_number' => $request->quote->number,
+            'customer_id' => $request->quote->customer_id,
+            'total_ore' => $request->quote->total_ore->ore,
+            'currency' => 'SEK',
+            'deal_id' => $request->deal_id,
+            'signed_at' => $request->signed_at->toAtomString(),
+            'signature_method' => $request->signature_method,
+            'document_sha256' => $request->document_sha256,
         ];
     }
 }

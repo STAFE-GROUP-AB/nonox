@@ -13,6 +13,28 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-04: v1.7.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-04: v1.7.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Signering**: `POST /quotes/{quote}/signing` mejlar en personlig länk för att signera offerten med namnteckning; när den är signerad blir offerten en order (och ett fakturautkast med `create_invoice`) och affären `deal_id` vinns. `GET /quotes/{quote}/signing` visar länkarnas status, dokumentets SHA-256 och händelserna. Själva länken returneras aldrig.
+- **CRM, avtal**: `GET` och `POST /crm/agreements`, `GET` och `PATCH /crm/agreements/{agreement}` (`terminated_on` säger upp avtalet), och `GET`/`POST /crm/agreements/{agreement}/signing`.
+- **Webhook**: `quote.signed` (en offert har signerats; webhooken kräver `invoices:view`).
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Signing**: `POST /quotes/{quote}/signing` e-mails a personal link to sign the quote with a signature pad; once signed, the quote becomes an order (and a draft invoice with `create_invoice`) and the deal `deal_id` is won. `GET /quotes/{quote}/signing` shows the links' status, the document's SHA-256 and the events. The link itself is never returned.
+- **CRM, agreements**: `GET` and `POST /crm/agreements`, `GET` and `PATCH /crm/agreements/{agreement}` (`terminated_on` terminates the agreement), and `GET`/`POST /crm/agreements/{agreement}/signing`.
+- **Webhook**: `quote.signed` (a quote was signed; the webhook needs `invoices:view`).
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-03: v1.6.0
 <!-- /lang -->
 <!-- lang:en -->

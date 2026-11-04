@@ -200,3 +200,9 @@ crm/saljtratten-mobil: { foretag: konsult, rutt: crm.deals, enhet: mobil }
 crm/affarens-kort: { foretag: konsult, rutt: crm.deals.show, modell: { tabell: crm_deals, dar: { title: 'Ramavtal 2027' } } }
 crm/prognos-och-mal: { foretag: konsult, rutt: crm.forecast }
 crm/oversikt-forsaljning: { foretag: konsult, rutt: crm.dashboard }
+crm/signering: { foretag: konsult, rutt: invoicing.quotes.show, modell: signed_quote, del: '[data-testid=crm-signing-panel]' }
+crm/signera-offert: { foretag: konsult, rutt: crm.signing.show, modell: signing_link, anvandare: gast, visa: '#signera' }
+crm/signera-offert-mobil: { foretag: konsult, rutt: crm.signing.show, modell: signing_link, anvandare: gast, enhet: mobil }
+crm/offertmallar: { foretag: konsult, rutt: crm.quoteTemplates, klick: ['text=Ändra'] }
+crm/avtal: { foretag: konsult, rutt: crm.agreements, fraga: { visa: alla } }
+crm/avtalets-kort: { foretag: konsult, rutt: crm.agreements.show, modell: { tabell: crm_agreements, dar: { title: 'Supportavtal 2026' } } }

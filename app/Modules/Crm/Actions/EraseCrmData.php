@@ -12,6 +12,7 @@ use App\Modules\Crm\Domain\DealStatus;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\SuppressionList;
@@ -88,6 +89,11 @@ final class EraseCrmData
 
         if ($account->customer_id !== null) {
             throw ValidationException::withMessages(['erase' => __('Kunden finns i kundregistret och bokföringen. Radera uppgifterna där i stället.')]);
+        }
+
+        // A signed agreement is kept as evidence of the contract (GDPR art. 17(3)(e), ADR-046).
+        if (CurrentCompany::run($company, fn (): bool => Agreement::query()->where('account_id', $account->id)->whereNotNull('signed_at')->exists())) {
+            throw ValidationException::withMessages(['erase' => __('Prospektet har ett signerat avtal, som sparas som bevis om avtalet.')]);
         }
 
         DB::transaction(fn () => CurrentCompany::run($company, function () use ($user, $company, $account): void {

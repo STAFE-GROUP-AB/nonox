@@ -28,6 +28,7 @@ use App\Modules\Crm\Livewire\Concerns\EditsPeople;
 use App\Modules\Crm\Livewire\Concerns\WorksActivities;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\CompanyMembers;
@@ -60,8 +61,8 @@ class AccountCard extends Component
     use WithPagination;
     use WorksActivities;
 
-    /** The tabs: the timeline, one per activity type, deals, people and the ledger documents. */
-    public const array TABS = ['tidslinje' => null, 'anteckningar' => 'NOTE', 'samtal' => 'CALL', 'moten' => 'MEETING', 'uppgifter' => 'TASK', 'affarer' => 'deals', 'personer' => 'people', 'dokument' => 'ledger'];
+    /** The tabs: the timeline, one per activity type, deals, agreements (ADR-046), people and the ledger documents. */
+    public const array TABS = ['tidslinje' => null, 'anteckningar' => 'NOTE', 'samtal' => 'CALL', 'moten' => 'MEETING', 'uppgifter' => 'TASK', 'affarer' => 'deals', 'avtal' => 'agreements', 'personer' => 'people', 'dokument' => 'ledger'];
 
     #[Locked]
     public int $accountId;
@@ -271,6 +272,7 @@ class AccountCard extends Component
         $openDeals = $deals->filter(fn (Deal $deal): bool => $deal->isOpen())->values();
         $stepperDeal = $openDeals->first(fn (Deal $deal): bool => (string) $deal->id === $this->path);
         $only = self::TABS[$this->tab] ?? null;
+        $agreements = Agreement::query()->where('account_id', $account->id)->orderByRaw('end_date ASC NULLS LAST')->orderBy('id')->limit(50)->get();
         $counts = $timeline->counts($account, ! $limitedLedger);
         // Who first got an issued invoice, for "Kund sedan" and the status path; one query.
         $firstInvoice = $limitedLedger || $account->customer_id === null ? null : Invoice::query()->where('customer_id', $account->customer_id)->whereNotNull('issued_at')->where('kind', Invoice::INVOICE)->min('invoice_date');
@@ -278,8 +280,9 @@ class AccountCard extends Component
         return view('crm::livewire.account-card', [
             'account' => $account,
             'figures' => $figures->forCustomer($account->customer_id),
-            'timeline' => in_array($only, ['deals', 'people'], true) || ($only === 'ledger' && ! $canSeeInvoices) ? null : $timeline->for($account, 10, 'tidslinje', ! $limitedLedger, $only),
-            'tabs' => $this->tabs($counts, $deals->count(), $account->people->count(), $canSeeInvoices && ! $limitedLedger && $account->customer_id !== null),
+            'timeline' => in_array($only, ['deals', 'people', 'agreements'], true) || ($only === 'ledger' && ! $canSeeInvoices) ? null : $timeline->for($account, 10, 'tidslinje', ! $limitedLedger, $only),
+            'tabs' => $this->tabs($counts, $deals->count(), $account->people->count(), $canSeeInvoices && ! $limitedLedger && $account->customer_id !== null, $agreements->count()),
+            'agreements' => $agreements,
             'steps' => $stepperDeal instanceof Deal ? StepPath::forDeal($stepperDeal) : StepPath::forAccount($account, $firstInvoice),
             'stepperDeal' => $stepperDeal,
             'openDeals' => $openDeals,
@@ -319,9 +322,9 @@ class AccountCard extends Component
      * @param  array{all: int, ledger: int, types: array<string, int>}  $counts
      * @return list<array{key: string, label: string, count: int}>
      */
-    private function tabs(array $counts, int $deals, int $people, bool $documents): array
+    private function tabs(array $counts, int $deals, int $people, bool $documents, int $agreements = 0): array
     {
-        $labels = ['tidslinje' => __('Tidslinje'), 'anteckningar' => __('Anteckningar'), 'samtal' => __('Samtal'), 'moten' => __('Möten'), 'uppgifter' => __('Uppgifter'), 'affarer' => __('Affärer'), 'personer' => __('Personer'), 'dokument' => __('Dokument')];
+        $labels = ['tidslinje' => __('Tidslinje'), 'anteckningar' => __('Anteckningar'), 'samtal' => __('Samtal'), 'moten' => __('Möten'), 'uppgifter' => __('Uppgifter'), 'affarer' => __('Affärer'), 'avtal' => __('Avtal'), 'personer' => __('Personer'), 'dokument' => __('Dokument')];
         $tabs = [];
 
         foreach (self::TABS as $key => $only) {
@@ -332,6 +335,7 @@ class AccountCard extends Component
             $tabs[] = ['key' => $key, 'label' => $labels[$key], 'count' => match ($only) {
                 null => $counts['all'],
                 'deals' => $deals,
+                'agreements' => $agreements,
                 'people' => $people,
                 'ledger' => $counts['ledger'],
                 default => $counts['types'][$only] ?? 0,

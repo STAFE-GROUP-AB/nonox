@@ -192,6 +192,10 @@ it('knows every column in the schema that holds a stored file path', function ()
         ->reject(fn (string $column): bool => in_array($column, [
             // Profile photos live on the public disk, never linked as underlag.
             'users.profile_photo_path',
+            // CRM signing (ADR-046): each PDF is written for one row only and never linked as underlag.
+            'crm_agreements.document_path',
+            'crm_signing_requests.document_path',
+            'crm_signing_requests.signed_document_path',
         ], true))
         ->sort()->values()->all();
 

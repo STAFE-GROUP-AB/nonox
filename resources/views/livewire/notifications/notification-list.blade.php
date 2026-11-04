@@ -29,7 +29,7 @@
                                 'companyId' => $data['company_id'],
                                 'destination' => $data['destination'],
                                 'notice' => $notification->id,
-                                'label' => __('Öppna Lön → Regler'),
+                                'label' => $data['destination_label'] ?? __('Öppna Lön → Regler'),
                             ])
                         </div>
                     @elseif(($data['kind'] ?? null) === App\Notifications\NewWaitlistEntry::KIND && isset($data['waitlist_entry_id']) && App\Support\Hq\HqAccess::allows(auth()->user()))

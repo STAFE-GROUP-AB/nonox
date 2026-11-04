@@ -8,9 +8,13 @@ use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Invoicing\InvoiceStatus;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\SalesDocument;
 use App\Models\SupplierInvoice;
 use App\Models\User;
 use App\Models\Voucher;
+use App\Modules\Crm\Actions\SendForSigning;
+use App\Modules\Crm\Domain\SigningStatus;
+use App\Modules\Crm\Models\SigningRequest;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoIndustries;
 use Illuminate\Console\Command;
@@ -50,6 +54,9 @@ class ManualScreenshotsCommand extends Command
         {--only= : Bara bilderna vars namn börjar så här, till exempel "bokforing/"}';
 
     protected $description = 'Tar skärmbilderna till manualen från demoföretagen.';
+
+    /** @var array<int, ?string> the public signing link made for each company in this run */
+    private array $signingLinks = [];
 
     /** The demo companies by the short names the list uses. */
     private const array COMPANIES = [
@@ -210,7 +217,35 @@ class ManualScreenshotsCommand extends Command
             'rot_invoice' => Invoice::query()->where('tax_reduction_ore', '>', 0)->latest('invoice_date')->value('id'),
             'reverse_charge_invoice' => Invoice::query()->where('reverse_charge', true)->latest('invoice_date')->value('id'),
             'supplier_invoice_to_approve' => SupplierInvoice::query()->whereNull('approved_at')->where('status', '!=', 'DRAFT')->latest('invoice_date')->value('id'),
+            // CRM signing (ADR-046): a quote that was signed, and a fresh link to the public page of the newest open quote out for signing.
+            'signed_quote' => SigningRequest::query()->whereNotNull('sales_document_id')->where('status', SigningStatus::Signed->value)->latest('id')->value('sales_document_id'),
+            'signing_link' => $this->signingLink($company),
             default => null,
         } ?? throw new RuntimeException("Hittade ingen {$kind} i {$company->name}."));
+    }
+
+    /**
+     * Only the hash of a signing link's token is stored, so the public page
+     * is reached through a new link for the newest open quote that is out
+     * for signing; the old link for it is revoked, as by "Skicka igen".
+     */
+    private function signingLink(Company $company): ?string
+    {
+        // One link per company and run: a second one would revoke the first before its picture is taken.
+        if (array_key_exists($company->id, $this->signingLinks)) {
+            return $this->signingLinks[$company->id];
+        }
+
+        $request = SigningRequest::query()->whereNotNull('sales_document_id')->where('status', SigningStatus::Pending->value)->latest('id')->first();
+        $quote = $request?->quote;
+        $owner = User::query()->find($company->user_id);
+
+        if ($request === null || ! $quote instanceof SalesDocument || ! $owner instanceof User) {
+            return null;
+        }
+
+        $sent = app(SendForSigning::class)($owner, $company, $quote, ['email' => $request->email, 'deal_id' => $request->deal_id]);
+
+        return $this->signingLinks[$company->id] = basename((string) parse_url($sent['url'], PHP_URL_PATH));
     }
 }

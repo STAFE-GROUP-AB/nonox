@@ -30,3 +30,5 @@ Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
 Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();
 // CRM stage 2: "Vinn tillbaka" tasks for lost deals and accounts whose date has come, after the status rules.
 Schedule::command('crm:win-back')->dailyAt('05:40')->withoutOverlapping();
+// CRM stage 3 (ADR-046): renew agreements, remind before notice deadlines, prune unsigned signing links.
+Schedule::command('crm:agreements')->dailyAt('05:50')->withoutOverlapping();

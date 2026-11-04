@@ -22,6 +22,9 @@ use App\Modules\ModuleManager;
  * - win_back_months: a lost deal or a lost account gets a "Vinn tillbaka"
  *   date this many months after the loss (ADR-043 stage 2); the date can be
  *   changed or cleared per deal and account.
+ * - agreement_reminder_days: an agreement gets a CRM task this many days
+ *   before its notice deadline (or its end without a notice period), once
+ *   per period (ADR-046).
  */
 final class CrmSettings
 {
@@ -31,6 +34,7 @@ final class CrmSettings
         'prune_after_months' => 24,
         'suppression_review_years' => 3,
         'win_back_months' => 6,
+        'agreement_reminder_days' => 60,
     ];
 
     /** @var array<string, array{int, int}> key => [min, max] */
@@ -39,6 +43,7 @@ final class CrmSettings
         'prune_after_months' => [6, 120],
         'suppression_review_years' => [1, 10],
         'win_back_months' => [1, 36],
+        'agreement_reminder_days' => [7, 365],
     ];
 
     /** Days ahead "Att göra" warns before people and prospects are erased. */
