@@ -7,6 +7,7 @@ namespace App\Modules\Crm\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Calendar\CalendarProviders;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\CrmSettings;
 use App\Modules\ModuleManager;
@@ -46,6 +47,10 @@ class CrmSettingsForm extends Component
         $company = Company::query()->findOrFail($this->companyId);
         abort_unless($this->user()->hasTeamPermission($company, 'crm:settings'), 403);
 
+        foreach (CrmSettings::SWITCHES as $key) {
+            $this->settings[$key] = (int) (bool) ($this->settings[$key] ?? 0);
+        }
+
         $rules = [];
 
         foreach (CrmSettings::LIMITS as $key => [$min, $max]) {
@@ -57,6 +62,8 @@ class CrmSettingsForm extends Component
             'settings.prune_after_months' => __('månader utan aktivitet'),
             'settings.suppression_review_years' => __('år mellan granskningarna'),
             'settings.win_back_months' => __('månader till vinn tillbaka'),
+            'settings.calendar_details' => __('detaljer i kalendrar'),
+            'settings.calendar_sync' => __('koppling till Google och Microsoft'),
         ])->validate();
 
         $modules->updateSettings(CrmModule::KEY, $company, $this->user(), array_map('intval', (array) $validated['settings']));
@@ -64,9 +71,9 @@ class CrmSettingsForm extends Component
         $this->toast(__('Inställningarna för CRM är sparade.'));
     }
 
-    public function render(): View
+    public function render(CalendarProviders $providers): View
     {
-        return view('crm::livewire.settings-form');
+        return view('crm::livewire.settings-form', ['calendarProviders' => $providers->anyConfigured()]);
     }
 
     private function user(): User

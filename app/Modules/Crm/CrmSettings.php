@@ -22,6 +22,12 @@ use App\Modules\ModuleManager;
  * - win_back_months: a lost deal or a lost account gets a "Vinn tillbaka"
  *   date this many months after the loss (ADR-043 stage 2); the date can be
  *   changed or cleared per deal and account.
+ * - calendar_details (1/0, ADR-049): users may put the details (subject,
+ *   place, note, people) in their calendar link and connected calendar.
+ *   Off: every calendar gets "Möte: <företag>" and a link only.
+ * - calendar_sync (1/0, ADR-049): users may connect their own Google or
+ *   Microsoft calendar. Off by default: the company, as controller, decides
+ *   that CRM data may be copied to those services.
  */
 final class CrmSettings
 {
@@ -31,6 +37,8 @@ final class CrmSettings
         'prune_after_months' => 24,
         'suppression_review_years' => 3,
         'win_back_months' => 6,
+        'calendar_details' => 1,
+        'calendar_sync' => 0,
     ];
 
     /** @var array<string, array{int, int}> key => [min, max] */
@@ -39,7 +47,12 @@ final class CrmSettings
         'prune_after_months' => [6, 120],
         'suppression_review_years' => [1, 10],
         'win_back_months' => [1, 36],
+        'calendar_details' => [0, 1],
+        'calendar_sync' => [0, 1],
     ];
+
+    /** The settings that are a yes or a no. */
+    public const array SWITCHES = ['calendar_details', 'calendar_sync'];
 
     /** Days ahead "Att göra" warns before people and prospects are erased. */
     public const int PRUNE_NOTICE_DAYS = 30;

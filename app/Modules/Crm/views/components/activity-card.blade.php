@@ -90,13 +90,23 @@
             <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-800">{{ $entry->body }}</p>
         @endif
 
-        @if($open && $canManage)
+        @php($inCalendar = $due !== null && in_array($type, ['MEETING', 'CALL', 'TASK'], true))
+        @if(($open && $canManage) || $inCalendar)
             <div class="mt-3 flex flex-wrap gap-3">
-                <button type="button" class="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600 sm:min-h-9" wire:click="startCompletion({{ $entry->ref }})">
-                    <x-crm::icon name="check" class="size-4" />{{ __('Klar') }}
-                </button>
-                @if($canEdit ?? $canManage)
-                    <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-9" wire:click="editActivity({{ $entry->ref }})">{{ __('Ändra') }}</button>
+                @if($open && $canManage)
+                    <button type="button" class="inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-black focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-600 sm:min-h-9" wire:click="startCompletion({{ $entry->ref }})">
+                        <x-crm::icon name="check" class="size-4" />{{ __('Klar') }}
+                    </button>
+                    @if($canEdit ?? $canManage)
+                        <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-9" wire:click="editActivity({{ $entry->ref }})">{{ __('Ändra') }}</button>
+                    @endif
+                @endif
+                {{-- Stage 6 (ADR-049): one planned activity as an .ics file, and a meeting's invitation to its person. --}}
+                @if($inCalendar)
+                    <a href="{{ route('crm.activities.ics', $entry->ref) }}" class="inline-flex min-h-11 items-center text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-9" download>{{ __('Lägg till i kalendern') }}</a>
+                @endif
+                @if($inCalendar && $type === 'MEETING' && $entry->person_id && ($canEdit ?? $canManage))
+                    <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700 sm:min-h-9" wire:click="sendInvitation({{ $entry->ref }})" wire:confirm="{{ __('Skicka mötet som kalenderinbjudan till :name? Rubrik, tid och plats följer med, inte anteckningen.', ['name' => $entry->person_name ?? __('personen')]) }}">{{ __('Skicka inbjudan') }}</button>
                 @endif
             </div>
         @endif

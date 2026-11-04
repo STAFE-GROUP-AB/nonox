@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Privacy;
 
+use App\Events\UserAccountDeleting;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\LoginCode;
@@ -77,6 +78,8 @@ class DeleteAccount
             DB::table('passkeys')->where('user_id', $user->id)->delete();
             DB::table('recent_items')->where('user_id', $user->id)->delete();
             $user->notifications()->delete();
+            // Modules remove what is the user's alone (CRM calendar links and connections, ADR-049).
+            event(new UserAccountDeleting($user->id));
 
             if ($user->profile_photo_path !== null) {
                 Storage::disk((string) config('jetstream.profile_photo_disk', 'public'))->delete($user->profile_photo_path);

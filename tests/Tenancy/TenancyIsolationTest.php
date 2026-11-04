@@ -80,6 +80,9 @@ use App\Modules\Connect\Models\IdempotencyRecord;
 use App\Modules\Crm\Models\Account as CrmAccount;
 use App\Modules\Crm\Models\AccountPerson as CrmAccountPerson;
 use App\Modules\Crm\Models\Activity as CrmActivity;
+use App\Modules\Crm\Models\CalendarConnection as CrmCalendarConnection;
+use App\Modules\Crm\Models\CalendarEvent as CrmCalendarEvent;
+use App\Modules\Crm\Models\CalendarFeed as CrmCalendarFeed;
 use App\Modules\Crm\Models\Deal as CrmDeal;
 use App\Modules\Crm\Models\DealStageChange as CrmDealStageChange;
 use App\Modules\Crm\Models\Goal as CrmGoal;
@@ -308,6 +311,9 @@ const COMPANY_SCOPED_MODELS = [
     CrmDeal::class => 'crmDealAttributes',
     CrmDealStageChange::class => 'crmDealStageChangeAttributes',
     CrmGoal::class => 'crmGoalAttributes',
+    CrmCalendarFeed::class => 'crmCalendarFeedAttributes',
+    CrmCalendarConnection::class => 'crmCalendarConnectionAttributes',
+    CrmCalendarEvent::class => 'crmCalendarEventAttributes',
     PosConnection::class => 'posConnectionAttributes',
     PosProductLink::class => 'posProductLinkAttributes',
     PosSale::class => 'posSaleAttributes',
@@ -1235,6 +1241,25 @@ function crmDealStageChangeAttributes(): array
 function crmGoalAttributes(): array
 {
     return ['user_id' => User::factory()->create()->id, 'month' => '2026-06-01', 'metric' => 'MEETINGS', 'target' => 8];
+}
+
+function crmCalendarFeedAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'token_hash' => hash('sha256', 'hemlig-'.random_int(1, 1_000_000))];
+}
+
+function crmCalendarConnectionAttributes(): array
+{
+    return ['user_id' => User::factory()->create()->id, 'provider' => 'GOOGLE', 'access_token' => 'hemlig-token', 'calendar_id' => 'primary'];
+}
+
+function crmCalendarEventAttributes(): array
+{
+    return [
+        'connection_id' => CrmCalendarConnection::create(crmCalendarConnectionAttributes())->id,
+        'activity_id' => CrmActivity::create(crmActivityAttributes())->id,
+        'external_id' => 'hemlig-handelse',
+    ];
 }
 
 function inventoryLocationAttributes(): array

@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Actions\CompleteActivity;
 use App\Modules\Crm\Actions\LogActivity;
+use App\Modules\Crm\Actions\SendMeetingInvitation;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\CallOutcome;
 use App\Modules\Crm\Domain\DealNextStep;
@@ -74,6 +75,10 @@ trait WorksActivities
             'assigned_to' => (string) $this->user()->id,
             // A call or an e-mail is usually logged afterwards; a meeting or a task is planned.
             'done' => $type === ActivityType::Call || $type === ActivityType::Email,
+            // Stage 6 (ADR-049): length and place in a calendar, and an invitation to the meeting's person.
+            'duration_minutes' => '',
+            'location' => '',
+            'invite' => false,
         ];
         $this->panel = 'activity';
         $this->resetErrorBag();
@@ -96,6 +101,9 @@ trait WorksActivities
             'due_at' => (string) $activity->due_at?->setTimezone(LogActivity::ZONE)->format('Y-m-d\TH:i'),
             'assigned_to' => (string) $activity->assigned_to,
             'done' => ! $activity->isOpen(),
+            'duration_minutes' => (string) $activity->duration_minutes,
+            'location' => (string) $activity->location,
+            'invite' => false,
         ];
         $this->panel = 'activity';
         $this->resetErrorBag();
@@ -104,8 +112,10 @@ trait WorksActivities
     public function saveActivity(LogActivity $log): void
     {
         $existing = $this->editingActivityId === null ? null : $this->activities()->findOrFail($this->editingActivityId);
+        $invite = (bool) ($this->activity['invite'] ?? false);
         $saved = $log($this->user(), $this->company(), [
-            ...$this->activity,
+            ...array_diff_key($this->activity, ['invite' => true]),
+            'duration_minutes' => ($this->activity['duration_minutes'] ?? '') === '' ? null : $this->activity['duration_minutes'],
             ...($this->panel === 'next' && $this->nextDealId !== null ? ['deal_id' => $this->nextDealId] : []),
             'account_id' => $this->activityAccountId(),
             'person_id' => ($this->activity['person_id'] ?? '') === '' ? null : (int) $this->activity['person_id'],
@@ -119,6 +129,27 @@ trait WorksActivities
             $saved->isOpen() => __(':type är planerad.', ['type' => $saved->type->label()]),
             default => __(':type är loggad.', ['type' => $saved->type->label()]),
         });
+
+        if ($invite && $saved->type === ActivityType::Meeting && $saved->isOpen()) {
+            $this->sendInvitation($saved->id, app(SendMeetingInvitation::class));
+        }
+    }
+
+    /** "Skicka inbjudan": the meeting to its person as a calendar invitation (ADR-049). */
+    public function sendInvitation(int $activityId, SendMeetingInvitation $send): void
+    {
+        $this->authorizeManage();
+        $meeting = $this->activities()->findOrFail($activityId);
+
+        try {
+            $send($this->user(), $this->company(), $meeting);
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
+
+        $this->toast(__('Inbjudan är skickad och loggad som e-post.'));
     }
 
     /** Klar: asks for the outcome and a short note, then the next step. */

@@ -30,3 +30,5 @@ Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
 Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();
 // CRM stage 2: "Vinn tillbaka" tasks for lost deals and accounts whose date has come, after the status rules.
 Schedule::command('crm:win-back')->dailyAt('05:40')->withoutOverlapping();
+// CRM stage 6 (ADR-049): connected Google and Microsoft calendars; does nothing until a provider is configured.
+Schedule::command('crm:calendar-sync')->everyFifteenMinutes()->withoutOverlapping();

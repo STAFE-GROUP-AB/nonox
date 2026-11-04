@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace App\Modules\Crm;
 
 use App\Events\CustomerAnonymised;
+use App\Events\UserAccountDeleting;
 use App\Http\Middleware\EnsureUserHasCompany;
+use App\Http\Middleware\SecurityHeaders;
 use App\Models\Customer;
 use App\Modules\Crm\Actions\EraseCrmData;
+use App\Modules\Crm\Calendar\ActivityCalendarObserver;
+use App\Modules\Crm\Calendar\ForgetUserCalendars;
+use App\Modules\Crm\Console\CalendarSyncCommand;
 use App\Modules\Crm\Console\RefreshStatusesCommand;
 use App\Modules\Crm\Console\WinBackCommand;
 use App\Modules\Crm\Http\CrmPersonExportController;
 use App\Modules\Crm\Livewire\AccountCard;
 use App\Modules\Crm\Livewire\AccountsPage;
 use App\Modules\Crm\Livewire\ActivitiesPage;
+use App\Modules\Crm\Livewire\CalendarPage;
 use App\Modules\Crm\Livewire\CrmSettingsForm;
 use App\Modules\Crm\Livewire\CustomerFieldsForm;
 use App\Modules\Crm\Livewire\Dashboard;
@@ -35,11 +41,15 @@ use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Policies\CrmPolicy;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Modules\ModuleRegistry;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Jetstream\Events\TeamMemberRemoved;
 use Livewire\Livewire;
 
 /**
@@ -67,6 +77,10 @@ class CrmServiceProvider extends ServiceProvider
 
         Customer::observe(CustomerAccounts::class);
         Event::listen(CustomerAnonymised::class, [EraseCrmData::class, 'customerAnonymised']);
+        // Stage 6 (ADR-049): calendars follow the activities, and end with the user's place in the company.
+        Activity::observe(ActivityCalendarObserver::class);
+        Event::listen(TeamMemberRemoved::class, [ForgetUserCalendars::class, 'memberRemoved']);
+        Event::listen(UserAccountDeleting::class, [ForgetUserCalendars::class, 'accountDeleting']);
 
         Livewire::component(CrmSettingsForm::NAME, CrmSettingsForm::class);
         Livewire::component('crm.accounts', AccountsPage::class);
@@ -80,13 +94,21 @@ class CrmServiceProvider extends ServiceProvider
         Livewire::component('crm.deal-card', DealCard::class);
         Livewire::component('crm.forecast', ForecastPage::class);
         Livewire::component('crm.pipeline-settings', PipelineSettings::class);
+        Livewire::component('crm.calendar', CalendarPage::class);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([RefreshStatusesCommand::class, WinBackCommand::class]);
+            $this->commands([RefreshStatusesCommand::class, WinBackCommand::class, CalendarSyncCommand::class]);
         }
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.CrmModule::KEY])
             ->group(__DIR__.'/routes/web.php');
+
+        Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.CrmModule::KEY])
+            ->group(__DIR__.'/routes/calendar.php');
+
+        // The subscription link: no session, no login, throttled per address (ADR-049).
+        RateLimiter::for('crm-calendar', fn (Request $request): Limit => Limit::perMinute(30)->by('crm-calendar:'.$request->ip()));
+        Route::middleware([SecurityHeaders::class, 'throttle:crm-calendar'])->group(__DIR__.'/routes/calendar-feed.php');
 
         // A contact person's register extract also works while the module is off: GDPR rights do not stop with the module.
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class])

@@ -31,6 +31,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?CarbonImmutable $due_at
  * @property ?CarbonImmutable $done_at
  * @property ?int $created_by
+ * @property ?int $duration_minutes a planned activity's length in a calendar (ADR-049); null takes the type's default
+ * @property ?string $location where a meeting is held
+ * @property int $calendar_sequence goes up on every change a calendar must see (ADR-049)
+ * @property ?CarbonImmutable $invited_at when the meeting's person was last sent an invitation
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -54,6 +58,8 @@ class Activity extends Model
         'due_at',
         'done_at',
         'created_by',
+        'duration_minutes',
+        'location',
     ];
 
     /** @return array<string, string> */
@@ -64,6 +70,9 @@ class Activity extends Model
             'call_outcome' => CallOutcome::class,
             'due_at' => 'immutable_datetime',
             'done_at' => 'immutable_datetime',
+            'duration_minutes' => 'integer',
+            'calendar_sequence' => 'integer',
+            'invited_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

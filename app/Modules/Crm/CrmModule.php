@@ -115,6 +115,7 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
                     ['label' => __('Affärer'), 'route' => 'crm.deals', 'active' => ['crm.deals', 'crm.deals.show']],
                     ['label' => __('Kunder och prospekt'), 'route' => 'invoicing.customers', 'active' => ['invoicing.customers', 'crm.accounts.show']],
                     ['label' => __('Mina aktiviteter'), 'route' => 'crm.activities', 'active' => ['crm.activities']],
+                    ['label' => __('Kalender'), 'route' => 'crm.calendar', 'active' => ['crm.calendar']],
                     ['label' => __('Prognos och mål'), 'route' => 'crm.forecast', 'active' => ['crm.forecast']],
                     ['label' => __('Personer'), 'route' => 'crm.people', 'active' => ['crm.people', 'crm.people.show']],
                     ...($user->hasTeamPermission($company, 'crm:settings') ? [['label' => __('Inställningar'), 'route' => 'crm.settings', 'active' => ['crm.settings']]] : []),
