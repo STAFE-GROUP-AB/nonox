@@ -47,6 +47,9 @@ class MyDates extends Component
 
     public function issueLink(IssueDeadlineFeed $issue): void
     {
+        // A link for a company that has turned the guide off would answer 404 (DeadlineFeedController).
+        abort_unless($this->company()->guide_enabled, 404);
+
         $this->newLink = $issue($this->user(), $this->company());
         $this->toast(__('Kalenderlänken är skapad. Kopiera den nu, den visas bara en gång.'));
     }
@@ -62,6 +65,11 @@ class MyDates extends Component
     public function render(CompanyDeadlines $deadlines): View
     {
         $company = $this->company();
+
+        if (! $company->guide_enabled) {
+            return view('livewire.guide.my-dates-off', ['company' => $company]);
+        }
+
         $today = CarbonImmutable::today();
         $months = [];
 

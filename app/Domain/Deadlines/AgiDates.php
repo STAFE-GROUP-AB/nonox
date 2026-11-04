@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Deadlines;
 
+use App\Models\Company;
 use Carbon\CarbonImmutable;
 
 /**
@@ -18,6 +19,18 @@ use Carbon\CarbonImmutable;
  */
 final class AgiDates
 {
+    /**
+     * Whether the company is a large employer: the one source for every
+     * AGI date in NONOX (Mina datum, reminders, preliminary tax, the AGI
+     * page and Mina företag). Only a VAT-registered company can have a VAT
+     * base above 40 million kronor (SFL 26 kap. 32 §); the base is the
+     * company's own setting "Omsättningen är över 40 miljoner kronor".
+     */
+    public static function isLarge(Company $company): bool
+    {
+        return $company->isVatRegistered() && $company->turnover_over_40_msek;
+    }
+
     public static function declaration(string $period, bool $large): CarbonImmutable
     {
         $next = CarbonImmutable::parse("{$period}-01")->addMonthNoOverflow();

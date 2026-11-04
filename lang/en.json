@@ -8956,5 +8956,15 @@
     "Momsen eller arbetsgivardeklarationen för perioden är redovisad i NONOX. Den påminner vi inte om.": "The VAT or the employer declaration for the period is reported in NONOX. We do not remind you of it.",
     "Redovisad": "Reported",
     "Visa alla datum (15 månader)": "Show all dates (15 months)",
-    "Visa de närmaste sex månaderna": "Show the next six months"
+    "Visa de närmaste sex månaderna": "Show the next six months",
+    "Deklarationsdagen styrs nu av företagets uppgifter": "The declaration day now follows the company's details",
+    "Företagsguiden är avstängd för företaget": "Företagsguiden is turned off for the company",
+    "Inga datum de kommande sex månaderna": "No dates in the next six months",
+    "Löneinställningarna sa att företaget omsätter mer än 40 miljoner kronor, men under företagets uppgifter är det inte angivet (eller så är företaget inte momsregistrerat). Därför gäller den 12:e. Stämmer det inte, ändra under företagets uppgifter.": "The payroll settings said the company has a turnover above 40 million kronor, but the company's details do not say so (or the company is not registered for VAT). So the 12th applies. If that is wrong, change it under the company's details.",
+    "Mina datum, påminnelserna och kalenderlänkarna hör till Företagsguiden. En ägare eller administratör kan slå på den igen under företagets uppgifter.": "My dates, the reminders and the calendar links are part of Företagsguiden. An owner or administrator can turn it on again under the company's details.",
+    "Styrs av företagets inställning för moms och omsättning.": "Decided by the company's settings for VAT and turnover.",
+    "Uppfattat": "Understood",
+    "Uppfattat. Deklarationsdagen följer företagets uppgifter.": "Understood. The declaration day follows the company's details.",
+    "Ändra under företagets uppgifter": "Change under the company's details",
+    "Öppna företagets uppgifter": "Open the company's details"
 }

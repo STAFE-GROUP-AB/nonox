@@ -26,7 +26,8 @@ final class DeadlineCompletion
     public static function done(Company $company, array $deadlines): array
     {
         $vat = array_filter($deadlines, fn (Deadline $deadline): bool => $deadline->type === DeadlineType::Vat && $deadline->periodStart !== null);
-        $agi = array_filter($deadlines, fn (Deadline $deadline): bool => $deadline->type === DeadlineType::Agi && $deadline->periodStart !== null);
+        // Only the declaration: a filed declaration does not show that a large employer has paid (agi-payment:…).
+        $agi = array_filter($deadlines, fn (Deadline $deadline): bool => $deadline->type === DeadlineType::Agi && str_starts_with($deadline->key, 'agi:') && $deadline->periodStart !== null);
         $done = [];
 
         CurrentCompany::run($company, function () use ($vat, $agi, &$done): void {

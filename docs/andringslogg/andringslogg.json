@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-agi-grupp-fran-foretaget",
+      "datum": "2026-11-04T22:00:00+01:00",
+      "rubrik": "Arbetsgivardeklarationens dag följer företagets uppgifter",
+      "beskrivning": "Om arbetsgivardeklarationen ska lämnas den 12:e eller den 26:e avgörs nu av företagets uppgifter: momsregistrerat och omsättning över 40 miljoner kronor. Sidan Arbetsgivardeklaration, Mina företag och Mina datum visar därför alltid samma dag, och löneinställningen visar gruppen utan att avgöra den. Hade löneinställningen en annan grupp än företagets uppgifter säger sidan Arbetsgivardeklaration till.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
       "id": "2026-11-04-helarsmoms-foreningar-eu-tjanster",
       "datum": "2026-11-04T21:40:00+01:00",
       "rubrik": "Helårsmoms för ideella föreningar och stiftelser, och tjänster köpta utanför EU",

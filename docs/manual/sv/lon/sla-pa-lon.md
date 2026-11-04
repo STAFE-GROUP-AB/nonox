@@ -54,7 +54,7 @@ Inställningarna finns under **Företagsinställningar → Moduler → Lön → 
 - **Den som beräknar får inte attestera** – på från början. Den som räknar lönen kan då inte också godkänna den. Är du ensam i företaget behöver du stänga av den här kontrollen.
 - **Kostnadsställe och projekt från anställningen** – lönekostnaden bokförs på anställningens kostnadsställe.
 - **Självservice för anställda** – om de anställda kan använda Min sida. Se [Min sida för de anställda](/manual/lon/min-sida-for-anstallda).
-- **Deklarationsdag för arbetsgivardeklarationen** – Skatteverkets deklarationsdag beror på företagets omsättning. Välj den som gäller er, så visar NONOX rätt sista dag.
+- **Deklarationsdag för arbetsgivardeklarationen** – visar vilken grupp företaget hör till. Den styrs av företagets inställning för moms och omsättning, som du ändrar under företagets uppgifter.
 
 Längst ner finns **Löneunderlag från schemasystem**, där du kopplar koder från ett schema- eller tidsystem till lönearter. Se [Löneunderlag från schemasystem](/manual/lon/loneunderlag-fran-schemasystem).
 

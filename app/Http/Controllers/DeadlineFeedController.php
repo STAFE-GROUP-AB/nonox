@@ -58,11 +58,16 @@ final class DeadlineFeedController
             (string) parse_url(url('/'), PHP_URL_HOST),
         );
 
-        return response($body, 200, [
+        $response = response($body, 200, [
             'Content-Type' => 'text/calendar; charset=utf-8',
             'Content-Disposition' => 'inline; filename="mina-datum.ics"',
             'Cache-Control' => 'private, no-store, max-age=0',
             'X-Robots-Tag' => 'noindex, nofollow, noarchive',
         ]);
+        // A calendar that already has these dates gets 304. The stamp (DTSTAMP) changes every request, so it is left out of the tag.
+        $response->setEtag(sha1((string) preg_replace('/^DTSTAMP:.*$/m', '', $body)));
+        $response->isNotModified($request);
+
+        return $response;
     }
 }

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Payroll\PayrollSettings;
+use App\Modules\Payroll\Support\Agi\AgiDeadlines;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -49,6 +50,10 @@ class PayrollSettingsForm extends Component
         $rules = [];
 
         foreach (PayrollSettings::OPTIONS as $key => $values) {
+            if (in_array($key, PayrollSettings::DERIVED, true)) {
+                continue;
+            }
+
             $rules["settings.{$key}"] = match (true) {
                 $values !== null => ['required', Rule::in($values)],
                 $key === 'default_payment_day' => ['required', 'integer', 'between:1,28'],
@@ -58,7 +63,7 @@ class PayrollSettingsForm extends Component
             };
         }
 
-        $validated = Validator::make(['settings' => $this->settings], $rules)->validate();
+        $validated = Validator::make(['settings' => array_diff_key($this->settings, array_flip(PayrollSettings::DERIVED))], $rules)->validate();
 
         $modules->updateSettings(PayrollModule::KEY, $company, $this->user(), $validated['settings']);
         $this->toast(__('Löneinställningarna är sparade.'));
@@ -66,7 +71,12 @@ class PayrollSettingsForm extends Component
 
     public function render(): View
     {
-        return view('payroll::settings-form', ['options' => PayrollSettings::OPTIONS]);
+        $company = Company::query()->findOrFail($this->companyId);
+
+        return view('payroll::settings-form', [
+            'options' => PayrollSettings::OPTIONS,
+            'agiGroup' => AgiDeadlines::groupFor($company),
+        ]);
     }
 
     private function user(): User

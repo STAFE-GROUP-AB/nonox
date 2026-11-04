@@ -11,6 +11,7 @@ use App\Models\DeadlineCalendarFeed;
 use App\Models\DeadlineReminder;
 use App\Models\User;
 use App\Support\Tenancy\CompanyScope;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Jetstream\Events\TeamMemberRemoved;
 
 /**
@@ -27,7 +28,8 @@ final class ForgetUserDeadlines
             return;
         }
 
-        app(RevokeDeadlineFeed::class)($event->user, $event->team);
+        $by = Auth::user();
+        app(RevokeDeadlineFeed::class)($event->user, $event->team, $by instanceof User ? $by : null);
     }
 
     public function accountDeleting(UserAccountDeleting $event): void

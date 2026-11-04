@@ -79,16 +79,23 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   den 26:e i andra månaden efter året (den 27:e i december), liksom en ideell
   förening eller stiftelse som inte lämnar inkomstdeklaration (SFL 30 kap.
   4 §; NONOX vet inte vilket och visar den tidigare dagen). EU-handel läses
-  ur bokföringen: en bokförd rad på ett konto till ruta 20, 21, 22, 35, 38
-  eller 39 (enligt granskning 2026-11-02, juristgranskning återstår, AUD-MOMS-9,
+  ur bokföringen: en bokförd rad på ett konto till ruta 20, 21, 22, 35, 37,
+  38 eller 39 (enligt granskning 2026-11-02, juristgranskning återstår, AUD-MOMS-9,
   #60). En dag som infaller på en lördag, söndag eller helgdag, eller på
   midsommarafton, julafton eller nyårsafton, flyttas till närmast följande
   vardag (lag (1930:173) om beräkning av lagstadgad tid 2 §). AGI:s dag
   räknas enligt lagen: den 12:e i månaden efter utbetalningsmånaden (den
   17:e i januari och augusti), eller den 26:e (den 27:e i december) för en
   arbetsgivare med ett beskattningsunderlag för moms över 40 miljoner kronor
-  (SFL 26 kap. 26, 30 och 32 §§); bara ett momsregistrerat företag kan ha
-  den större gruppen. Den större gruppen betalar skatten den 12:e (den 17:e
+  (SFL 26 kap. 26, 30 och 32 §§). Vilken grupp företaget hör till avgörs på
+  ett enda ställe, av företagets egna uppgifter: momsregistrerat och
+  Omsättningen är över 40 miljoner kronor (SFL 26 kap. 32 §; bara ett
+  momsregistrerat företag kan ha den större gruppen). Det gäller sidan
+  Arbetsgivardeklaration, Mina företag, Mina datum, kalenderlänken,
+  påminnelserna och preliminärskatten. Löneinställningen för deklarationsdag
+  visar gruppen men avgör ingenting längre; har den sparat den större
+  gruppen utan att företagets uppgifter säger det, visar sidan
+  Arbetsgivardeklaration ett meddelande tills någon har sett det. Den större gruppen betalar skatten den 12:e (den 17:e
   i januari), två veckor före deklarationen (SFL 62 kap. 3 § andra stycket),
   och sidan Arbetsgivardeklaration visar båda dagarna. Skatteverkets
   publicerade lista i regeln `agi.deadlines` används för den mindre gruppen
@@ -3840,4 +3847,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.99 | 2026-11-04 | Nästa räkenskapsår skapas automatiskt (avsnitt 3.1, ADR-010): varje morgon när det senaste året slutar inom 30 dagar, och vid bokföring av ett datum i det följande året högst 30 dagar fram. Bara ett vanligt år på tolv månader i företagets första månad (BFL 3 kap. 1 och 3 §§); en omläggning (3 kap. 6 §) görs aldrig automatiskt. Det gamla året stängs inte och inga ingående balanser förs över. Behandlingshistoriken visar `via: automatic` och vad som utlöste det. Det första året kan fortfarande ändras när nästa år skapats automatiskt och är tomt; det tomma året tas då bort (`fiscal_year.removed`). |
 | 0.100 | 2026-11-04 | Ingående balanser som inte längre stämmer (avsnitt 4.14a, ADR-010; ÅRL 2 kap. 4 § första stycket 7): NONOX jämför varje års ingående balanser med föregående års utgående balanser, räknade som vid överföringen, och varnar under Räkenskapsår, Rapporter, Att göra och i bokslutets checklista. Bara öppna år jämförs; ett stängt år behåller sina balanser i kedjan. Uppdatera ingående balanser räknar om alla år som skiljer i ordning, bara på en persons beslut, under lås på år och företag, och vägras när periodlåset omfattar årets första dag; `fiscal_year.opening_balances_updated` visar varje konto före och efter (efter = det som skrevs). En avsiktlig skillnad bekräftas med skäl och fingeravtryck, som upphör att gälla när skillnaden ändras (ÅRL 2 kap. 4 § andra stycket, 5 kap. 5 §). Överföringen för hand vägras också när nästa års första dag är låst; i bokslutet görs den som förut, och stängningen tar låset för att skapa år först. Ett använt konto kan inte byta mellan balans- och resultatkonto. |
 | 0.101 | 2026-11-04 | E-faktura via Peppol (ADR-050, avsnitt 5.4 och 5e.1): skapade kundfakturor och kreditfakturor kan skickas som Peppol BIS Billing 3.0 genom installationens accesspunkt, kontrollerade mot reglerna och sparade exakt som de skickades, utan någon ändring i bokföringen; e-fakturor som tas emot hamnar i inkorgen med XML-filen som original och blir förslag till leverantörsfakturor som attesteras. Ett dokument adresserat till företaget sparas alltid (i karantän när mottagningen är avstängd), och mottagningen avregistreras innan den stängs av. Fakturatexten för trepartshandel hänvisar till artikel 141 och omvänd betalningsskyldighet. |
-| 0.102 | 2026-11-04 | Sista dagar för moms och arbetsgivardeklaration (också: helårsmoms för ideell förening och stiftelse den 26:e i andra månaden efter året när det inte är känt att de lämnar inkomstdeklaration, och inköp av tjänster utanför EU, ruta 22, räknas som EU-handel) (avsnitt om översikten, ADR-051 etapp 2): en dag flyttas förbi lördag, söndag, helgdag, midsommarafton, julafton och nyårsafton (lag (1930:173) 2 §); arbetsgivardeklarationens dag räknas enligt SFL 26 kap. 26, 30 och 32 §§ för varje år, med Skatteverkets lista som kontroll, och den större gruppen betalar den 12:e (den 17:e i januari) före deklarationen den 26:e (SFL 62 kap. 3 §). Mina datum räknar fram företagets datum utan att ändra bokföringen. |
+| 0.102 | 2026-11-04 | Sista dagar för moms och arbetsgivardeklaration (också: helårsmoms för ideell förening och stiftelse den 26:e i andra månaden efter året när det inte är känt att de lämnar inkomstdeklaration, och inköp av tjänster utanför EU, ruta 22, räknas som EU-handel) (avsnitt om översikten, ADR-051 etapp 2): en dag flyttas förbi lördag, söndag, helgdag, midsommarafton, julafton och nyårsafton (lag (1930:173) 2 §); arbetsgivardeklarationens dag räknas enligt SFL 26 kap. 26, 30 och 32 §§ för varje år, med Skatteverkets lista som kontroll, och den större gruppen betalar den 12:e (den 17:e i januari) före deklarationen den 26:e (SFL 62 kap. 3 §). Arbetsgivardeklarationens grupp följer företagets egna uppgifter för moms och omsättning, inte löneinställningen. Mina datum räknar fram företagets datum utan att ändra bokföringen. |

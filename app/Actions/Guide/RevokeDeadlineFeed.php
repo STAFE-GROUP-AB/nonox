@@ -14,19 +14,21 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Stops the user's calendar link for the company's dates at once (ADR-051,
- * stage 2). Needs no permission beyond being the user. Audited with ids only.
+ * stage 2). Needs no permission beyond being the user. Also run for a member
+ * who is removed, with the one who removed them as the actor. Audited with
+ * ids only.
  */
 final class RevokeDeadlineFeed
 {
     /** @return bool whether there was a link to stop */
-    public function __invoke(User $user, Company $company): bool
+    public function __invoke(User $user, Company $company, ?User $by = null): bool
     {
-        return CurrentCompany::run($company, fn (): bool => DB::transaction(function () use ($user, $company): bool {
+        return CurrentCompany::run($company, fn (): bool => DB::transaction(function () use ($user, $company, $by): bool {
             $feeds = DeadlineCalendarFeed::query()->where('user_id', $user->id)->whereNull('revoked_at')->lockForUpdate()->get();
 
             foreach ($feeds as $feed) {
                 $feed->forceFill(['revoked_at' => CarbonImmutable::now()])->save();
-                Audit::record('guide.calendar_feed_revoked', $feed, ['user_id' => $user->id], $company, $user);
+                Audit::record('guide.calendar_feed_revoked', $feed, ['user_id' => $user->id], $company, $by ?? $user);
             }
 
             return $feeds->isNotEmpty();

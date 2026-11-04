@@ -44,6 +44,17 @@ final class CompanyDeadlines
     ) {}
 
     /**
+     * Forgets the answers kept for this request or job. The memo is keyed by
+     * the company's own attributes, not by its fiscal years or modules: a
+     * caller that changes those and then asks again in the same request, or
+     * a long job that walks many companies, calls this first.
+     */
+    public function forget(): void
+    {
+        $this->memo = [];
+    }
+
+    /**
      * The deadlines from $from (inclusive) for $months months, earliest first.
      *
      * @return list<Deadline>

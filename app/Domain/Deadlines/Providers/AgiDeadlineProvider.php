@@ -9,6 +9,8 @@ use App\Domain\Deadlines\Contracts\DeadlineProvider;
 use App\Domain\Deadlines\Deadline;
 use App\Domain\Deadlines\DeadlineType;
 use App\Models\Company;
+use App\Modules\ModuleManager;
+use App\Modules\Payroll\PayrollModule;
 use Carbon\CarbonImmutable;
 
 /**
@@ -24,10 +26,12 @@ use Carbon\CarbonImmutable;
  *   stycket): two dates.
  *
  * Moved to the next working day (§0.1). Not handled: a decision under 26
- * kap. 31 §. No query.
+ * kap. 31 §. The link to the AGI page only while the payroll module is on.
  */
 final class AgiDeadlineProvider implements DeadlineProvider
 {
+    public function __construct(private readonly ModuleManager $modules) {}
+
     public const string SOURCE = 'https://www.skatteverket.se/foretag/arbetsgivare/lamnaarbetsgivardeklaration/narskajaglamnaarbetsgivardeklaration.4.361dc8c15312eff6fd13c11.html';
 
     private const string ARTICLE = 'viktiga-datum/arbetsgivardeklarationens-datum';
@@ -38,7 +42,9 @@ final class AgiDeadlineProvider implements DeadlineProvider
             return [];
         }
 
-        $large = $company->isVatRegistered() && $company->turnover_over_40_msek;
+        $large = AgiDates::isLarge($company);
+        // The AGI page is the payroll module's: without it there is nowhere in NONOX to do it.
+        $route = $this->modules->isEnabled(PayrollModule::KEY, $company) ? 'payroll.agi' : null;
         $deadlines = [];
 
         for ($month = $from->subMonthNoOverflow()->startOfMonth(); $month->lessThanOrEqualTo($to); $month = $month->addMonthNoOverflow()) {
@@ -53,7 +59,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                     AgiDates::declaration($period, false),
                     $label,
                     __('Företaget är registrerat som arbetsgivare. Deklarationen lämnas och skatten betalas samma dag, också en nolldeklaration för en månad utan löner.'),
-                    'payroll.agi',
+                    $route,
                     self::ARTICLE,
                     self::SOURCE,
                     periodStart: $month,
@@ -69,7 +75,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                 AgiDates::payment($period, true),
                 $label,
                 __('Företaget är arbetsgivare och omsätter mer än 40 miljoner kronor om året: skatten betalas två veckor före deklarationen.'),
-                'payroll.agi',
+                $route,
                 self::ARTICLE,
                 self::SOURCE,
                 periodStart: $month,
@@ -81,7 +87,7 @@ final class AgiDeadlineProvider implements DeadlineProvider
                 AgiDates::declaration($period, true),
                 $label,
                 __('Företaget är arbetsgivare och omsätter mer än 40 miljoner kronor om året.'),
-                'payroll.agi',
+                $route,
                 self::ARTICLE,
                 self::SOURCE,
                 periodStart: $month,

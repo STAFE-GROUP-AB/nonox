@@ -11,8 +11,10 @@ use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Throwable;
 
 /**
  * Makes the user's secret calendar link for the company's dates on Mina
@@ -31,12 +33,13 @@ final class IssueDeadlineFeed
 
         $token = Str::random(DeadlineCalendarFeed::TOKEN_LENGTH);
 
-        CurrentCompany::run($company, fn () => DB::transaction(function () use ($user, $company, $token): void {
+        // One active link per user and company (a partial unique index): a link made at the same moment wins once, this one replaces it.
+        retry(2, fn () => CurrentCompany::run($company, fn () => DB::transaction(function () use ($user, $company, $token): void {
             $replaced = DeadlineCalendarFeed::query()->where('user_id', $user->id)->whereNull('revoked_at')->lockForUpdate()->update(['revoked_at' => CarbonImmutable::now()]);
             $feed = DeadlineCalendarFeed::create(['user_id' => $user->id, 'token_hash' => DeadlineCalendarFeed::hash($token)]);
 
             Audit::record('guide.calendar_feed_issued', $feed, ['replaced' => $replaced], $company, $user);
-        }));
+        })), 0, fn (Throwable $exception): bool => $exception instanceof UniqueConstraintViolationException);
 
         return route('guide.dates.feed', ['token' => $token]);
     }

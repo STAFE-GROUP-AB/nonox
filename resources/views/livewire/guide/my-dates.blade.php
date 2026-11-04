@@ -46,7 +46,7 @@
             @else
                 <div>
                     <p class="text-sm font-semibold uppercase tracking-wide text-accent-200">{{ $company->name }}</p>
-                    <h2 id="dates-summary" class="mt-1 text-2xl font-bold tracking-tight">{{ __('Inga datum de kommande 15 månaderna') }}</h2>
+                    <h2 id="dates-summary" class="mt-1 text-2xl font-bold tracking-tight">{{ $showAll ? __('Inga datum de kommande 15 månaderna') : __('Inga datum de kommande sex månaderna') }}</h2>
                     <p class="mt-1 text-stone-300">{{ __('Är företaget momsregistrerat eller arbetsgivare? Kontrollera det under företagets uppgifter.') }}</p>
                 </div>
             @endif
@@ -136,7 +136,7 @@
                                                     <a href="{{ $guideUrl }}" class="font-medium text-accent-700 underline hover:text-accent-800">{{ __('Läs mer') }}<span class="sr-only">: {{ $deadline->title }}</span></a>
                                                 @endif
                                                 @if($late && $missedUrl)
-                                                    <a href="{{ $missedUrl }}" class="font-medium text-red-800 underline hover:text-red-900">{{ __('Om du har missat datumet') }}</a>
+                                                    <a href="{{ $missedUrl }}" class="font-medium text-red-800 underline hover:text-red-900">{{ __('Om du har missat datumet') }}<span class="sr-only">: {{ $deadline->title }}</span></a>
                                                 @endif
                                                 @if($deadline->sourceUrl)
                                                     <a href="{{ $deadline->sourceUrl }}" target="_blank" rel="noopener" class="text-gray-600 underline hover:text-gray-800">{{ __('Källa') }}<span class="sr-only">: {{ $deadline->title }} {{ __('(öppnas i en ny flik)') }}</span></a>

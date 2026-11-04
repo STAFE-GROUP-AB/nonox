@@ -5,11 +5,14 @@ declare(strict_types=1);
 use App\Actions\Accounting\CreateArchivePackage;
 use App\Domain\Company\CompanyOverview;
 use App\Domain\Company\VatPeriod;
+use App\Domain\Deadlines\AgiDates;
+use App\Domain\Deadlines\CompanyDeadlines;
 use App\Models\FiscalYear;
 use App\Modules\ModuleManager;
 use App\Modules\Payroll\Actions\AgiSubmissions;
 use App\Modules\Payroll\Actions\PayrollRuns;
 use App\Modules\Payroll\Livewire\AgiPage;
+use App\Modules\Payroll\Livewire\PayrollSettingsForm;
 use App\Modules\Payroll\Models\AgiSubmission;
 use App\Modules\Payroll\Models\PayrollRuleVersion;
 use App\Modules\Payroll\Models\PayrollRun;
@@ -261,8 +264,7 @@ it('shows schema errors without the values, so no personal number reaches the sc
 
 it('shows a large employer when to pay, and treats a company without VAT as small', function () {
     $this->actingAs($this->owner);
-    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['agi_deadline_group' => AgiDeadlines::LARGE]);
-    $this->company->forceFill(['vat_registered' => true, 'vat_period' => VatPeriod::Monthly])->save();
+    $this->company->forceFill(['vat_registered' => true, 'vat_period' => VatPeriod::Monthly, 'turnover_over_40_msek' => true])->save();
 
     Livewire::test(AgiPage::class)
         ->assertSee('lämnas senast 2026-05-26')
@@ -274,4 +276,62 @@ it('shows a large employer when to pay, and treats a company without VAT as smal
     Livewire::test(AgiPage::class)
         ->assertSee('lämnas senast 2026-05-12')
         ->assertDontSee('två veckor före deklarationen');
+});
+
+it('takes the AGI group from the company in Mina datum, the AGI page, Mina företag and preliminary tax alike (SFL 26 kap. 32 §)', function (bool $vatRegistered, bool $over40, string $payrollSetting, string $declare) {
+    $this->runs->approve($this->admin, $this->run->fresh());
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['agi_deadline_group' => $payrollSetting]);
+    $this->company->forceFill([
+        'vat_registered' => $vatRegistered,
+        'vat_period' => $vatRegistered ? VatPeriod::Monthly : VatPeriod::None,
+        'turnover_over_40_msek' => $over40,
+        'employer_registered' => true,
+    ])->save();
+    app()->forgetScopedInstances();
+
+    expect(AgiDates::isLarge($this->company->fresh()))->toBe($vatRegistered && $over40);
+
+    $mina = collect(app(CompanyDeadlines::class)->upcoming($this->company->fresh(), CarbonImmutable::parse('2026-04-10'), 2))->firstWhere('key', 'agi:2026-04');
+    $this->actingAs($this->owner->fresh());
+    $page = collect(Livewire::test(AgiPage::class)->viewData('periods'))->firstWhere('period', '2026-04');
+    $firm = collect(app(CompanyOverview::class)->for($this->owner->fresh())[0]['tasks'])->firstWhere('destination', 'agi');
+
+    expect($mina->date->toDateString())->toBe($declare)
+        ->and($page['deadline']->toDateString())->toBe($declare)
+        ->and($firm['due'])->toBe($declare);
+})->with([
+    'small, saved small' => [true, false, AgiDeadlines::SMALL, '2026-05-12'],
+    'small, saved large' => [true, false, AgiDeadlines::LARGE, '2026-05-12'],
+    'large, saved small' => [true, true, AgiDeadlines::SMALL, '2026-05-26'],
+    'large, saved large' => [true, true, AgiDeadlines::LARGE, '2026-05-26'],
+    'no VAT, over 40 and saved large' => [false, true, AgiDeadlines::LARGE, '2026-05-12'],
+]);
+
+it('shows the AGI group on the payroll settings read-only, decided by the company', function () {
+    $this->actingAs($this->owner);
+    $this->company->forceFill(['vat_registered' => true, 'vat_period' => VatPeriod::Monthly, 'turnover_over_40_msek' => true])->save();
+
+    Livewire::test(PayrollSettingsForm::class, ['company' => $this->company->fresh()])
+        ->assertSee('Styrs av företagets inställning för moms och omsättning')
+        ->assertSee('Omsättning över 40 miljoner kronor')
+        ->assertSee(route('teams.show', $this->company->id), false)
+        ->assertDontSee('<select id="payroll_agi_deadline_group"', false)
+        ->set('settings.agi_deadline_group', AgiDeadlines::SMALL)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company)['agi_deadline_group'] ?? AgiDeadlines::SMALL)->toBe(AgiDeadlines::SMALL);
+});
+
+it('tells once on the AGI page that a saved large group no longer decides, without changing anything by itself', function () {
+    $this->actingAs($this->owner);
+    app(ModuleManager::class)->updateSettings(PayrollModule::KEY, $this->company, $this->owner, ['agi_deadline_group' => AgiDeadlines::LARGE]);
+
+    Livewire::test(AgiPage::class)
+        ->assertSee('Deklarationsdagen styrs nu av företagets uppgifter')
+        ->call('acknowledgeGroup')
+        ->assertDontSee('Deklarationsdagen styrs nu av företagets uppgifter');
+
+    expect(app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company)['agi_deadline_group'])->toBe(AgiDeadlines::SMALL);
+    Livewire::test(AgiPage::class)->assertDontSee('Deklarationsdagen styrs nu av företagets uppgifter');
 });

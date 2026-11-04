@@ -33,7 +33,7 @@ final class DeadlineAudience
     public static function of(Company $company): array
     {
         $users = [];
-        $owner = User::query()->find($company->user_id);
+        $owner = $company->relationLoaded('owner') ? $company->getRelation('owner') : User::query()->find($company->user_id);
 
         if ($owner instanceof User) {
             $users[$owner->id] = $owner;

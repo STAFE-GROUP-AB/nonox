@@ -245,7 +245,21 @@ about what has been checked and by whom.
    revisorn"); kontrolluppgifter (KU31, KU20); the first F-skatt month and
    other decisions that apply to one company. The manual article lists them
    under "Mina datum visar inte".
-9. **The start date stays hidden.** REGLER.md needs `started_on` only for a
+9. **After the code review**: the AGI group has one source, the company
+   (`AgiDates::isLarge`: VAT registered and turnover above 40 million
+   kronor, SFL 26 kap. 32 §), read by Mina datum, the feed, reminders,
+   preliminary tax, the AGI page and Mina företag, tested as a matrix. The
+   payroll setting `agi_deadline_group` is kept but only shown; a stored
+   large group the company does not support gets a notice on the AGI page
+   until someone acknowledges it, which aligns the setting (no silent
+   change). Mina datum shows a friendly page and makes no link while the
+   guide is off; the reminder command walks companies in chunks and writes
+   record and notice in one transaction; Översikt leaves reported periods
+   out; a large employer's payment date is never "done" by the declaration;
+   the AGI link needs the payroll module; one active link per user and
+   company (partial unique index); the feed has an ETag; stopped links are
+   pruned after 30 days.
+10. **The start date stays hidden.** REGLER.md needs `started_on` only for a
    hint about the first F-skatt payment, which the engine does not compute
    (it shows the series from the fiscal year's second month, flagged). The
    column remains for a later stage.

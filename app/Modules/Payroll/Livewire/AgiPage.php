@@ -65,9 +65,9 @@ class AgiPage extends Component
     {
         $today = CarbonImmutable::today();
         $from = $today->startOfMonth()->subMonths(self::MONTHS_SHOWN - 1);
-        $group = (string) (app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company())['agi_deadline_group'] ?? AgiDeadlines::SMALL);
-        // Only a VAT-registered company can have a VAT base above 40 million kronor (SFL 26 kap. 32 §).
-        $group = $this->company()->isVatRegistered() ? $group : AgiDeadlines::SMALL;
+        // The company's own VAT and turnover settings decide (AgiDates::isLarge); the old payroll setting no longer does.
+        $group = AgiDeadlines::groupFor($this->company());
+        $saved = (string) (app(ModuleManager::class)->settings(PayrollModule::KEY, $this->company())['agi_deadline_group'] ?? AgiDeadlines::SMALL);
         $runs = PayrollRun::query()->whereDate('payment_date', '>=', $from->toDateString())->get()->groupBy(fn (PayrollRun $run): string => $run->payment_date->format('Y-m'));
         $submissions = AgiSubmission::query()->where('period', '>=', $from->format('Y-m'))->orderByDesc('sequence')->get()->groupBy('period');
         $periods = [];
@@ -98,10 +98,22 @@ class AgiPage extends Component
         $next = collect($periods)->first(fn (array $row): bool => ! $row['reported'] && $row['runs'] > 0);
 
         return view('payroll::livewire.agi', [
+            // Said once, until someone acknowledges it: a large group saved in payroll that the company's settings do not support.
+            'groupNotice' => $saved === AgiDeadlines::LARGE && $group === AgiDeadlines::SMALL,
             'periods' => $periods,
             'next' => $next,
             'canSubmit' => $this->can('payroll:agi-submit'),
+            'companyId' => $this->company()->id,
         ]);
+    }
+
+    /** Aligns the saved payroll group with the company's, which ends the notice. Nothing changes without this click. */
+    public function acknowledgeGroup(ModuleManager $modules): void
+    {
+        abort_unless($this->can('payroll:settings') || $this->can('payroll:agi-submit'), 403);
+
+        $modules->updateSettings(PayrollModule::KEY, $this->company(), $this->user(), ['agi_deadline_group' => AgiDeadlines::groupFor($this->company())]);
+        $this->toast(__('Uppfattat. Deklarationsdagen följer företagets uppgifter.'));
     }
 
     private function can(string $permission): bool

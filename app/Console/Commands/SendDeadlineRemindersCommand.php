@@ -16,6 +16,7 @@ use App\Notifications\DeadlineReminder as DeadlineReminderNotice;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Every morning, a notice in the app to the owner and those who look after
@@ -47,10 +48,13 @@ class SendDeadlineRemindersCommand extends Command
     {
         $today = CarbonImmutable::today();
         $sent = 0;
-        $companies = Company::query()->where('guide_enabled', true)->whereNull('archived_at')->where('personal_team', false)->get();
+        // In chunks, so a hosted installation never holds every company at once; each costs a fixed number of queries.
+        $companies = Company::query()->with('owner')->where('guide_enabled', true)->whereNull('archived_at')->where('personal_team', false)->lazyById(200);
 
         foreach ($companies as $company) {
             $this->info("Går igenom företag {$company->id}...");
+            // One company at a time: the engine's memo would otherwise grow by one company per step.
+            $deadlines->forget();
             $audience = DeadlineAudience::of($company);
 
             if ($audience === []) {
@@ -71,21 +75,27 @@ class SendDeadlineRemindersCommand extends Command
                 $days = $deadline->daysLeft($today);
 
                 foreach ($audience as $user) {
-                    $inserted = CurrentCompany::run($company, fn (): int => DeadlineReminder::query()->insertOrIgnore([
-                        'company_id' => $company->id,
-                        'user_id' => $user->id,
-                        'deadline_key' => $deadline->key,
-                        'deadline_date' => $deadline->date->toDateString(),
-                        'days_before' => $before,
-                        'sent_at' => now(),
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]));
+                    // The record and the notice together: a notice that fails leaves no record, so the next run sends it.
+                    $sent += CurrentCompany::run($company, fn (): int => DB::transaction(function () use ($company, $user, $deadline, $before, $days): int {
+                        $inserted = DeadlineReminder::query()->insertOrIgnore([
+                            'company_id' => $company->id,
+                            'user_id' => $user->id,
+                            'deadline_key' => $deadline->key,
+                            'deadline_date' => $deadline->date->toDateString(),
+                            'days_before' => $before,
+                            'sent_at' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
 
-                    if ($inserted === 1) {
+                        if ($inserted !== 1) {
+                            return 0;
+                        }
+
                         $user->notify(DeadlineReminderNotice::for($company, $deadline, $days));
-                        $sent++;
-                    }
+
+                        return 1;
+                    }));
                 }
             }
         }

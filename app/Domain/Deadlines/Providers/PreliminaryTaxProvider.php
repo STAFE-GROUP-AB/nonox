@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Deadlines\Providers;
 
 use App\Domain\Company\LegalForm;
+use App\Domain\Deadlines\AgiDates;
 use App\Domain\Deadlines\Contracts\DeadlineProvider;
 use App\Domain\Deadlines\Deadline;
 use App\Domain\Deadlines\DeadlineType;
@@ -39,7 +40,7 @@ final class PreliminaryTaxProvider implements DeadlineProvider
             return [];
         }
 
-        $large = $company->isVatRegistered() && $company->turnover_over_40_msek;
+        $large = AgiDates::isLarge($company);
         $deadlines = [];
 
         foreach (self::taxYears($company, $from->subYear(), $to) as [$start, $end]) {

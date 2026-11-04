@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Payroll\Support\Agi;
 
 use App\Domain\Deadlines\AgiDates;
+use App\Models\Company;
 use App\Modules\Payroll\Domain\Rules\MissingPayrollRuleException;
 use App\Modules\Payroll\Domain\Rules\RuleSet;
 use Carbon\CarbonImmutable;
@@ -32,6 +33,12 @@ final class AgiDeadlines
     public const string SMALL = 'TURNOVER_UP_TO_40_MSEK';
 
     public const string LARGE = 'TURNOVER_OVER_40_MSEK';
+
+    /** The company's group, from the company's own VAT and turnover settings (AgiDates::isLarge). */
+    public static function groupFor(Company $company): string
+    {
+        return AgiDates::isLarge($company) ? self::LARGE : self::SMALL;
+    }
 
     public static function for(string $period, string $group): CarbonImmutable
     {
