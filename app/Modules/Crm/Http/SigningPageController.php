@@ -116,7 +116,8 @@ final class SigningPageController
         }
 
         try {
-            $this->links->decline($request, $http->filled('reason') ? (string) $http->input('reason') : null, $http->ip(), $http->userAgent());
+            // Declining keeps no IP address or browser: only the time and the reason (ADR-046, data minimisation).
+            $this->links->decline($request, $http->filled('reason') ? (string) $http->input('reason') : null);
         } catch (SigningUnavailable $unavailable) {
             return $this->unavailable($unavailable->reason, 410, $request);
         }
@@ -154,6 +155,7 @@ final class SigningPageController
                 'brand' => Brand::for($company),
                 'color' => Brand::readable(Brand::for($company)->color),
                 'title' => SigningPdfs::title($request),
+                'acceptance' => SigningPdfs::acceptance($request),
                 'quote' => $quote,
                 'agreement' => $request->agreement,
                 'vat' => $quote instanceof SalesDocument ? InvoiceCalculator::totals($quote->rows->map(fn ($row): array => ['net' => $row->net_ore->ore, 'vat_rate' => $row->vat_rate])->all()) : null,

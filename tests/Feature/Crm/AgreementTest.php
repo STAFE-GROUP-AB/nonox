@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Privacy\EraseRegisterEntry;
 use App\Models\AuditLog;
 use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Actions\RunAgreementReminders;
@@ -160,7 +161,7 @@ it('signs an agreement through the same flow and then locks its terms', function
     $sent = app(SendForSigning::class)($this->owner, $this->company, $agreement, ['email' => 'anna@kontorshuset.test']);
     $token = basename((string) parse_url($sent['url'], PHP_URL_PATH));
 
-    $this->get("/signera/{$token}")->assertOk()->assertSee('Serviceavtal kaffemaskiner')->assertSee('Leverantören servar')->assertSee('Jag har läst och godkänner avtalet.');
+    $this->get("/signera/{$token}")->assertOk()->assertSee('Serviceavtal kaffemaskiner')->assertSee('Leverantören servar')->assertSee('Jag har läst och godkänner avtalet och har rätt att ingå det för Kontorshuset AB.');
     $this->post("/signera/{$token}", ['name' => 'Anna Andersson', 'accept' => '1', 'method' => 'TYPED', 'typed_signature' => 'Anna Andersson', 'document_sha256' => $sent['request']->document_sha256])->assertOk();
     CurrentCompany::set($this->company);
 
@@ -195,4 +196,26 @@ it('runs the daily command for every company with CRM on', function () {
     agreement($this);
 
     $this->artisan('crm:agreements')->expectsOutputToContain('reminders created')->assertSuccessful();
+});
+
+it('anonymises a customer with a signed agreement instead of deleting it, so the agreement and its evidence stay', function () {
+    $agreement = agreement($this);
+    $agreement->forceFill(['signed_at' => now()])->save();
+
+    expect(app(EraseRegisterEntry::class)->customer($this->owner, $this->company, $this->customer))->toBe('anonymised')
+        ->and(Agreement::query()->whereKey($agreement->id)->exists())->toBeTrue();
+});
+
+it('deletes the PDFs of an erased prospect\'s agreements and signing links with it', function () {
+    $prospect = Crm::prospect($this->company, $this->owner, 'Prospektet AB');
+    $draft = agreement($this, ['account_id' => $prospect->id]);
+    app(SaveAgreement::class)->attach($this->owner, $this->company, $draft, UploadedFile::fake()->createWithContent('avtal.pdf', "%PDF-1.4\n%x\n"));
+    $sent = app(SendForSigning::class)($this->owner, $this->company, $draft->refresh(), ['email' => 'anna@prospektet.test']);
+    $paths = [(string) $draft->refresh()->document_path, $sent['request']->document_path];
+
+    app(EraseCrmData::class)->prospect($this->owner, $this->company, $prospect);
+
+    expect(Storage::disk('local')->exists($paths[0]))->toBeFalse()
+        ->and(Storage::disk('local')->exists($paths[1]))->toBeFalse()
+        ->and(Agreement::query()->whereKey($draft->id)->exists())->toBeFalse();
 });

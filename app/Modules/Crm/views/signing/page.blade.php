@@ -185,10 +185,10 @@
 
                 <label class="flex items-start gap-3 text-sm">
                     <input type="checkbox" name="accept" value="1" required class="mt-0.5 size-5 rounded border-gray-400" @checked(old('accept'))>
-                    <span>{{ $quote ? __('Jag har läst och godkänner offerten.') : __('Jag har läst och godkänner avtalet.') }}</span>
+                    <span>{{ $acceptance }}</span>
                 </label>
 
-                <p class="text-xs text-gray-600">{{ __('När du signerar sparas ditt namn, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på underskriften, tillsammans med dokumentets kontrollsumma. :company är ansvarig för uppgifterna. Du får en kopia med e-post.', ['company' => $companyName]) }}</p>
+                <p class="text-xs text-gray-600">{{ __('När du signerar sparas ditt namn, din titel, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på att avtalet ingicks, tillsammans med dokumentets kontrollsumma. Personuppgiftsansvarig är :company (org.nr :org, :email). Uppgifterna behandlas för att ingå avtalet och kunna visa att det ingicks (artikel 6.1 b och f i dataskyddsförordningen) och sparas så länge avtalet och bokföringslagen kräver, normalt sju år. NONOX behandlar dem för :company:s räkning. Du har rätt att begära tillgång, rättelse och i vissa fall radering eller begränsning, och att klaga hos Integritetsskyddsmyndigheten (IMY). Du får en kopia med e-post.', ['company' => $companyName, 'org' => (string) $company->org_number, 'email' => (string) ($company->email ?: '–')]) }}</p>
 
                 <button type="submit" data-signing-submit class="inline-flex min-h-12 w-full items-center justify-center rounded-lg px-5 text-base font-semibold text-white sm:w-auto" style="background: {{ $color }}">{{ __('Signera') }}</button>
             </form>
@@ -200,6 +200,7 @@
                 @csrf
                 <label for="decline-reason" class="text-sm font-medium">{{ __('Berätta gärna varför (frivilligt)') }}</label>
                 <textarea id="decline-reason" name="reason" rows="3" maxlength="1000" class="{{ $input }}"></textarea>
+                <p class="text-xs text-gray-600">{{ __('Avböjer du sparas tidpunkten och ditt skäl hos :company i högst ett år.', ['company' => $companyName]) }}</p>
                 <button type="submit" class="min-h-11 rounded-lg px-4 text-sm font-semibold ring-1 ring-gray-400 hover:bg-gray-50">{{ __('Avböj') }}</button>
             </form>
         </details>

@@ -13,12 +13,14 @@ use App\Modules\Crm\Domain\DealStatus;
 use App\Modules\Crm\Domain\SigningStatus;
 use App\Modules\Crm\Domain\SigningToken;
 use App\Modules\Crm\Events\QuoteSigned;
+use App\Modules\Crm\Jobs\FollowUpSigning;
 use App\Modules\Crm\Mail\SignedDocumentMail;
 use App\Modules\Crm\Mail\SigningRequestMail;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\SigningEvent;
 use App\Modules\Crm\Models\SigningRequest;
 use App\Modules\Crm\Notifications\SigningNotice;
+use App\Modules\Crm\Support\SigningFollowUp;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -27,6 +29,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\Bookkeeping;
@@ -115,7 +118,9 @@ it('shows the public page without login, never indexed, never framed and without
         ->assertSee('Konsulttimme')
         ->assertSee('Betalning 30 dagar.')
         ->assertSee($request->document_sha256)
-        ->assertSee('Jag har läst och godkänner offerten.')
+        ->assertSee('Jag har läst och godkänner offerten och har rätt att godkänna den för Kontorshuset AB.')
+        ->assertSee('Personuppgiftsansvarig är')
+        ->assertSee('Integritetsskyddsmyndigheten (IMY)')
         ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
         ->assertHeader('Referrer-Policy', 'no-referrer');
     expect($response->headers->get('Content-Security-Policy'))->toContain("frame-ancestors 'none'")->toContain("script-src 'self'")->not->toContain('unsafe-inline\' \'unsafe-eval')
@@ -238,7 +243,9 @@ it('declines with a reason: a note and a notice, and the quote stays open', func
     expect($request->refresh()->status)->toBe(SigningStatus::Declined)
         ->and($request->decline_reason)->toBe('För dyrt just nu.')
         ->and($this->quote->refresh()->isOpen())->toBeTrue()
-        ->and(Activity::query()->where('account_id', $this->account->id)->where('body', 'Skäl: För dyrt just nu.')->exists())->toBeTrue()
+        ->and(Activity::query()->where('account_id', $this->account->id)->where('body', 'Mottagaren avböjde (skälet finns vid signeringen)')->exists())->toBeTrue()
+        ->and(Activity::query()->where('body', 'like', '%För dyrt%')->exists())->toBeFalse()
+        ->and(SigningEvent::query()->where('signing_request_id', $request->id)->where('event', 'DECLINED')->sole()->only(['ip', 'user_agent']))->toBe(['ip' => null, 'user_agent' => null])
         ->and($this->owner->notifications()->where('type', SigningNotice::class)->count())->toBe(1);
     $this->post("/signera/{$token}", signInput($request))->assertStatus(410);
 });
@@ -317,4 +324,65 @@ it('closes every link while CRM is off', function () {
     $this->get("/signera/{$token}")->assertNotFound()->assertSee('Länken gäller inte');
     $this->post("/signera/{$token}", signInput($request))->assertStatus(410);
     expect($request->refresh()->status)->toBe(SigningStatus::Pending);
+});
+
+it('keeps the exact confirmation the signer ticked, and quotes it in the certificate', function () {
+    [$request, $token] = sendQuote($this);
+    $this->post("/signera/{$token}", signInput($request))->assertOk();
+    CurrentCompany::set($this->company);
+
+    expect($request->refresh()->acceptance_text)->toBe('Jag har läst och godkänner offerten och har rätt att godkänna den för Kontorshuset AB.');
+});
+
+it('refuses to change a signed quote, to send it again, and makes no order from a quote changed after signing', function () {
+    Queue::fake();
+    [$request, $token] = sendQuote($this);
+    $this->post("/signera/{$token}", signInput($request))->assertOk();
+    CurrentCompany::set($this->company);
+
+    Queue::assertPushed(FollowUpSigning::class);
+    Mail::assertQueued(SignedDocumentMail::class, fn (SignedDocumentMail $mail): bool => $mail->toSigner);
+
+    expect(fn () => app(SaveSalesDocument::class)($this->owner, $this->company, SalesDocument::QUOTE, [
+        'customer_id' => $this->customer->id, 'document_date' => '2026-06-15',
+        'rows' => [['description' => 'Konsulttimme', 'quantity' => '20', 'price' => '1000', 'vat_rate' => 2500]],
+    ], $this->quote->refresh()))->toThrow(ValidationException::class, 'Offerten är signerad och kan inte ändras.')
+        ->and(fn () => sendQuote($this))->toThrow(ValidationException::class, 'Offerten är redan signerad.');
+
+    // A change that went around the screens (here straight in the database) is still caught before the order.
+    DB::table('sales_document_rows')->where('sales_document_id', $this->quote->id)->update(['quantity' => '99']);
+    app(SigningFollowUp::class)->signed($this->company->id, $request->id);
+
+    expect($request->refresh()->order_id)->toBeNull()
+        ->and(SalesDocument::query()->where('kind', SalesDocument::ORDER)->exists())->toBeFalse()
+        ->and($this->owner->notifications()->where('type', SigningNotice::class)->first()?->data['title'])->toContain('ändrades efter att den signerades');
+});
+
+it('shows the signer success and mails the copy even when the order cannot be made, and tells the sender', function () {
+    $this->mock(SigningFollowUp::class, function ($mock): void {
+        $mock->shouldReceive('signed')->andThrow(new RuntimeException('boom'));
+        $mock->shouldReceive('failed')->once();
+    });
+    [$request, $token] = sendQuote($this);
+
+    $this->post("/signera/{$token}", signInput($request))->assertOk()->assertSee('Tack! Dokumentet är signerat.');
+    CurrentCompany::set($this->company);
+
+    expect($request->refresh()->status)->toBe(SigningStatus::Signed);
+    Mail::assertQueued(SignedDocumentMail::class, fn (SignedDocumentMail $mail): bool => $mail->toSigner);
+});
+
+it('protects every part of the evidence except the deal and the sender', function () {
+    [$request, $token] = sendQuote($this);
+    $this->post("/signera/{$token}", signInput($request))->assertOk();
+
+    foreach (['document_name' => 'x.pdf', 'opened_at' => now(), 'revoked_at' => now(), 'created_at' => now()->subYear(), 'create_invoice' => true, 'acceptance_text' => 'Annat'] as $column => $value) {
+        expect(fn () => DB::transaction(fn () => DB::table('crm_signing_requests')->where('id', $request->id)->update([$column => $value])))->toThrow(QueryException::class, 'cannot be changed');
+    }
+
+    expect(DB::table('crm_signing_requests')->where('id', $request->id)->update(['deal_id' => null]))->toBe(1);
+});
+
+it('refuses a last day to sign after the quote\'s validity', function () {
+    expect(fn () => sendQuote($this, ['expires_on' => '2026-07-20']))->toThrow(ValidationException::class, 'giltighetsdag');
 });

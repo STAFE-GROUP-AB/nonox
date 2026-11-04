@@ -53,7 +53,7 @@
             <tr><td class="muted">{{ __('Titel') }}</td><td>{{ $request->signer_title }}</td></tr>
         @endif
         <tr><td class="muted">{{ __('Signerad') }}</td><td>{{ $time($request->signed_at) }}</td></tr>
-        <tr><td class="muted">{{ __('Sätt') }}</td><td>{{ $request->signature_method === App\Modules\Crm\Models\SigningRequest::TYPED ? __('Skrivet namn som underskrift') : __('Ritad namnteckning') }}, {{ __('med bekräftelsen ”Jag har läst och godkänner dokumentet”') }}</td></tr>
+        <tr><td class="muted">{{ __('Sätt') }}</td><td>{{ $request->signature_method === App\Modules\Crm\Models\SigningRequest::TYPED ? __('Skrivet namn som underskrift') : __('Ritad namnteckning') }}, {{ __('med bekräftelsen ”:text”', ['text' => $request->acceptance_text ?? App\Modules\Crm\Support\SigningPdfs::acceptance($request)]) }}</td></tr>
         <tr><td class="muted">{{ __('IP-adress') }}</td><td>{{ $request->signer_ip }}</td></tr>
         <tr><td class="muted">{{ __('Webbläsare') }}</td><td class="mono">{{ $request->signer_user_agent }}</td></tr>
     </table>

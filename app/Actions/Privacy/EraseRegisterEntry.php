@@ -16,6 +16,7 @@ use App\Models\SalesDocument;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
 use App\Models\User;
+use App\Modules\Crm\Support\SignedDocuments;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,9 @@ class EraseRegisterEntry
 
             $used = Invoice::query()->where('customer_id', $customer->id)->exists()
                 || SalesDocument::query()->where('customer_id', $customer->id)->exists()
-                || RecurringInvoice::query()->where('customer_id', $customer->id)->exists();
+                || RecurringInvoice::query()->where('customer_id', $customer->id)->exists()
+                // A signed agreement and its evidence are kept as proof of the contract (CRM, ADR-046; art. 17.3 e).
+                || SignedDocuments::customerHasSignedAgreement($customer->id);
 
             if (! $used) {
                 $customer->delete();

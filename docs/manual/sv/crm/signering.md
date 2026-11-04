@@ -35,7 +35,11 @@ Kunden ser offertens rader, momsen, summan att betala, giltighetstiden och villk
 - **Rita namnteckningen** i rutan. **Ångra senaste draget** och **Rensa** finns om det blir fel.
 - **Skriv mitt namn**: kunden skriver sitt namn igen som underskrift. Det fungerar också helt utan mus och pekskärm.
 
-Kunden bockar i **Jag har läst och godkänner offerten.** och trycker på **Signera**. Den som inte vill godkänna kan i stället trycka på **Vill du inte godkänna? Avböj** och skriva varför.
+Kunden bockar i bekräftelsen och trycker på **Signera**. För ett företag lyder den "Jag har läst och godkänner offerten och har rätt att godkänna den för …" med företagets namn; för en privatperson "Jag har läst och godkänner offerten." Exakt den text som visades sparas med underskriften och står i signeringsbeviset.
+
+Under knappen står vad som sparas, att ditt företag är personuppgiftsansvarigt, varför och hur länge uppgifterna sparas, och vilka rättigheter den som signerar har.
+
+Den som inte vill godkänna kan i stället trycka på **Vill du inte godkänna? Avböj** och skriva varför. Då sparas bara tidpunkten och skälet, inte IP-adressen eller webbläsaren, och länken med skälet tas bort efter ett år. På kundens kort står bara att mottagaren avböjde; skälet ser du under **Signering**.
 
 ![Signeringssidan i mobilen.](/bilder/manual/crm/signera-offert-mobil.webp)
 
@@ -47,7 +51,9 @@ Kunden bockar i **Jag har läst och godkänner offerten.** och trycker på **Sig
 - Du som skickade, och affärens ansvarige, får en notis.
 - Kunden och företaget får ett mejl med PDF:en och **signeringsbeviset**.
 
-Allt det görs som du som skickade länken, med dina behörigheter. Har du inte längre rätt att skapa order görs det som företagets ägare. Går något inte att göra automatiskt säger notisen det, och du gör ordern för hand.
+Allt det görs som du som skickade länken, med dina behörigheter. Har du inte längre rätt att skapa order görs det som företagets ägare. Går något inte att göra automatiskt säger notisen det, under **Signering** står **Signerad – ordern är inte skapad**, och du gör ordern för hand. Kunden får sin kopia ändå.
+
+En signerad offert går inte att ändra eller skicka för signering igen.
 
 Avböjer kunden loggas det på kundens kort med skälet, och du får en notis. Offerten är fortfarande öppen.
 
@@ -59,7 +65,7 @@ Under **Signering** på offerten eller avtalet hittar du **PDF:en som skickades*
 
 ## Om offerten ändras
 
-En offert som har ändrats efter att länken skickades går inte att signera: kunden ser att dokumentet har ändrats, och länken återkallas. Skicka en ny länk när offerten är klar. Så blir ordern alltid det som kunden faktiskt godkände.
+Sista dag att signera kan inte vara efter offertens giltighetsdag. En offert som har ändrats efter att länken skickades går inte att signera: kunden ser att dokumentet har ändrats, och länken återkallas. Skicka en ny länk när offerten är klar. Så blir ordern alltid det som kunden faktiskt godkände.
 
 ## Återkalla en länk
 
@@ -79,6 +85,7 @@ Ett avtal i avtalsregistret skickas för signering på samma sätt, från avtale
 - **Personuppgifter.** Ditt företag är ansvarigt för uppgifterna om den som signerar: namn, titel, namnteckning, tidpunkt, IP-adress, webbläsare och e-postadressen. Sidan säger det till den som signerar. Namnteckningen lagras krypterad.
 - **Hur länge.** Signerade offerter och avtal med bevis sparas som det de hör till: blir offerten en order eller faktura är den räkenskapsinformation och sparas i sju år. Länkar som aldrig signerades tas bort ett år efter att de stängdes. Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 - **Bevisvärdet** av en enkel elektronisk underskrift är inte prövat för varje slags avtal. Är du osäker, fråga din jurist.
+- **Avtal med formkrav.** Vissa avtal måste skrivas under på papper, till exempel köp av fast egendom (jordabalken 4 kap. 1 §). Sådana avtal signeras inte här.
 - **API.** Offerter kan skickas för signering och statusen läsas genom API:t, och webhooken `quote.signed` talar om när en offert har signerats. Se [utvecklarsidorna](/utvecklare).
 
 ## Läs också

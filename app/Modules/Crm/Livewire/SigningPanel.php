@@ -17,6 +17,7 @@ use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\SigningRequest;
+use App\Modules\Crm\Support\SignedDocuments;
 use App\Modules\ModuleManager;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -99,7 +100,7 @@ class SigningPanel extends Component
             'requests' => $this->requests()->with(['events', 'sender:id,name'])->latest('id')->limit(10)->get(),
             'canSend' => $this->canSend($document),
             'deals' => $this->openDeals($document),
-            'open' => $isQuote ? $document->isOpen() : $document->signed_at === null,
+            'open' => $isQuote ? $document->isOpen() && ! SignedDocuments::isQuoteSigned($document->id) : $document->signed_at === null,
             'canInvoice' => $isQuote && $user->hasTeamPermission($this->company(), 'invoices:create'),
             'now' => now(),
         ]);

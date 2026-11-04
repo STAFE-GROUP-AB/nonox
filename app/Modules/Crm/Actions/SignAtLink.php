@@ -26,9 +26,11 @@ use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 /**
  * What the signer does at the public link (ADR-046): open it, sign it or
@@ -164,6 +166,7 @@ final class SignAtLink
 
             $locked->forceFill([
                 'status' => SigningStatus::Signed,
+                'acceptance_text' => SigningPdfs::acceptance($locked),
                 'signer_name' => $name,
                 'signer_title' => blank($validated['title'] ?? null) ? null : trim((string) $validated['title']),
                 'signature_method' => $validated['method'],
@@ -198,7 +201,20 @@ final class SignAtLink
             return $locked;
         }));
 
-        FollowUpSigning::dispatch($signed->company_id, $signed->id)->afterCommit();
+        // The signature is saved. The signer's copy goes whatever happens to the order, and with a sync queue a failing
+        // follow-up must never turn the signer's success into an error page: it is reported and retried by hand.
+        CurrentCompany::run($signed->company_id, fn () => SigningFollowUp::mailSignerCopy($signed));
+
+        try {
+            FollowUpSigning::dispatch($signed->company_id, $signed->id)->afterCommit();
+        } catch (Throwable $exception) {
+            Log::error('Signing follow-up failed', ['signing_request_id' => $signed->id, 'exception' => $exception::class]);
+
+            // The sync queue has already called the job's failed(); any other driver failed to take the job at all.
+            if (config('queue.connections.'.config('queue.default').'.driver') !== 'sync') {
+                CurrentCompany::run($signed->company_id, fn () => app(SigningFollowUp::class)->failed($signed->company_id, $signed->id));
+            }
+        }
 
         return $signed;
     }
@@ -207,11 +223,11 @@ final class SignAtLink
      * @throws SigningUnavailable
      * @throws ValidationException
      */
-    public function decline(SigningRequest $request, ?string $reason, ?string $ip, ?string $userAgent): SigningRequest
+    public function decline(SigningRequest $request, ?string $reason): SigningRequest
     {
         Validator::make(['reason' => $reason], ['reason' => ['nullable', 'string', 'max:1000']], [], ['reason' => __('anledning')])->validate();
 
-        return CurrentCompany::run($request->company_id, fn (): SigningRequest => DB::transaction(function () use ($request, $reason, $ip, $userAgent): SigningRequest {
+        return CurrentCompany::run($request->company_id, fn (): SigningRequest => DB::transaction(function () use ($request, $reason): SigningRequest {
             $locked = $this->lockUsable($request);
 
             $locked->forceFill([
@@ -223,8 +239,6 @@ final class SignAtLink
             SigningEvent::create([
                 'signing_request_id' => $locked->id,
                 'event' => SigningEventType::Declined,
-                'ip' => $ip === null ? null : mb_substr($ip, 0, 45),
-                'user_agent' => $userAgent === null ? null : mb_substr($userAgent, 0, 500),
             ]);
 
             Audit::record('crm.signing_declined', $locked, ['signing_request_id' => $locked->id, 'document_type' => $locked->document_type, 'reason_given' => ! blank($reason)], $locked->company_id);

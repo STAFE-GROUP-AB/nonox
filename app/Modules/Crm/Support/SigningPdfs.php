@@ -7,6 +7,8 @@ namespace App\Modules\Crm\Support;
 use App\Domain\Invoicing\SalesDocumentPdf;
 use App\Models\Company;
 use App\Models\SalesDocument;
+use App\Modules\Crm\Domain\AccountKind;
+use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\SigningRequest;
 use App\Support\Branding\Brand;
@@ -86,6 +88,30 @@ final class SigningPdfs
         }
 
         return $request->agreement instanceof Agreement ? $request->agreement->title : __('Avtal');
+    }
+
+    /**
+     * The confirmation the signer ticks, exactly as shown: for a company,
+     * also that they may accept on its behalf; a private person keeps the
+     * short form. Stored with the signature and quoted in the certificate.
+     */
+    public static function acceptance(SigningRequest $request): string
+    {
+        $request->loadMissing(['quote', 'agreement']);
+        $account = $request->isQuote()
+            ? ($request->quote === null ? null : Account::query()->where('customer_id', $request->quote->customer_id)->first())
+            : Account::query()->find($request->agreement?->account_id);
+        $company = $account instanceof Account && $account->kind === AccountKind::Company;
+
+        if ($request->isQuote()) {
+            return $company
+                ? __('Jag har läst och godkänner offerten och har rätt att godkänna den för :customer.', ['customer' => $account->name])
+                : __('Jag har läst och godkänner offerten.');
+        }
+
+        return $company
+            ? __('Jag har läst och godkänner avtalet och har rätt att ingå det för :account.', ['account' => $account->name])
+            : __('Jag har läst och godkänner avtalet.');
     }
 
     public static function certificateFilename(SigningRequest $request): string

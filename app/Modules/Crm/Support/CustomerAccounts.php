@@ -70,6 +70,7 @@ final class CustomerAccounts
      */
     public function deleting(Customer $customer): void
     {
-        CurrentCompany::run($customer->company_id, fn () => Account::query()->where('customer_id', $customer->id)->delete());
+        // One by one, so the account's own deleting event removes its agreements' files (SigningFiles).
+        CurrentCompany::run($customer->company_id, fn () => Account::query()->where('customer_id', $customer->id)->get()->each->delete());
     }
 }

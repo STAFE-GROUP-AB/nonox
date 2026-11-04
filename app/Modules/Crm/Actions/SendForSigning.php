@@ -19,6 +19,7 @@ use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\SigningEvent;
 use App\Modules\Crm\Models\SigningRequest;
+use App\Modules\Crm\Support\SignedDocuments;
 use App\Modules\Crm\Support\SigningPdfs;
 use App\Modules\ModuleManager;
 use App\Support\Audit\Audit;
@@ -81,6 +82,10 @@ final class SendForSigning
         $request = DB::transaction(fn (): SigningRequest => CurrentCompany::run($company, function () use ($user, $company, $document, $validated, $expires, $token): SigningRequest {
             if ($document instanceof SalesDocument) {
                 $document = SalesDocument::query()->whereKey($document->id)->lockForUpdate()->firstOrFail();
+
+                if (SignedDocuments::isQuoteSigned($document->id)) {
+                    throw ValidationException::withMessages(['document' => __('Offerten är redan signerad.')]);
+                }
 
                 if (! $document->isOpen()) {
                     throw ValidationException::withMessages(['document' => __(':title är inte längre öppen.', ['title' => $document->title()])]);
@@ -178,6 +183,11 @@ final class SendForSigning
 
             if ($day->lessThan($today) || $day->greaterThan($latest)) {
                 throw ValidationException::withMessages(['expires_on' => __('Sista dag att signera ska vara idag eller inom :days dagar.', ['days' => self::MAX_DAYS])]);
+            }
+
+            // A quote cannot be signed after its last valid day.
+            if ($document instanceof SalesDocument && $document->until_date !== null && $day->toDateString() > $document->until_date->toDateString()) {
+                throw ValidationException::withMessages(['expires_on' => __('Sista dag att signera kan inte vara efter offertens giltighetsdag (:date).', ['date' => $document->until_date->toDateString()])]);
             }
 
             return $day->endOfDay();

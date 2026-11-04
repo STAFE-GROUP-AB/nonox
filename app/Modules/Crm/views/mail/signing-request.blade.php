@@ -22,7 +22,7 @@
         <p style="font-size: 13px; color: #616e7c;">{{ __('Länken gäller till och med :date och kan användas en gång. Om du inte vill signera kan du avböja på samma sida.', ['date' => $expires->format('Y-m-d')]) }}</p>
         <p style="font-size: 13px; color: #616e7c; word-break: break-all;">{{ __('Fungerar inte knappen? Kopiera adressen: :url', ['url' => $url]) }}</p>
         <p>{{ __('Med vänliga hälsningar') }}<br>{{ $companyName }}</p>
-        <p style="font-size: 12px; color: #616e7c; border-top: 1px solid #e4e7eb; padding-top: 12px;">{{ __('Mejlet skickades av :company genom NONOX. Svarar du på det går svaret till :company.', ['company' => $companyName]) }}</p>
+        <p style="font-size: 12px; color: #616e7c; border-top: 1px solid #e4e7eb; padding-top: 12px;">{{ $company->email ? __('Mejlet skickades av :company genom NONOX. Svarar du på det går svaret till :company.', ['company' => $companyName]) : __('Mejlet skickades av :company genom NONOX.', ['company' => $companyName]) }}</p>
     </div>
 </body>
 </html>

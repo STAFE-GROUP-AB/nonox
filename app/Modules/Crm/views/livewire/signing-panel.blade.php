@@ -50,6 +50,9 @@
                             <button type="button" class="ms-auto min-h-11 text-sm text-gray-700 underline sm:min-h-0" wire:click="revoke({{ $signing->id }})" wire:confirm="{{ __('Återkalla länken? Den går inte längre att använda, och kunden ser att den är återkallad.') }}">{{ __('Återkalla') }}</button>
                         @endif
                     </div>
+                    @if($signing->signed_at && $isQuote && $signing->order_id === null)
+                        <p class="mt-2 text-sm font-semibold text-accent-700">{{ __('Signerad – ordern är inte skapad') }}</p>
+                    @endif
                     @if($signing->signed_at)
                         <p class="mt-2 text-sm text-gray-900">{{ __('Signerad :time av :name', ['time' => $signing->signed_at->setTimezone($zone)->format('Y-m-d H:i'), 'name' => $signing->signer_name]) }}@if($signing->signer_title), {{ $signing->signer_title }}@endif</p>
                     @endif

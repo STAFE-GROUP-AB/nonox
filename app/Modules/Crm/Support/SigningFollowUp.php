@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Modules\Crm\Actions\WinDeal;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\DealStatus;
+use App\Modules\Crm\Domain\QuoteFingerprint;
 use App\Modules\Crm\Mail\SignedDocumentMail;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
@@ -43,8 +44,11 @@ use Illuminate\Validation\ValidationException;
  * Declined: a done note with the reason on the account and a notice; the
  * quote stays open for the seller to decide.
  */
-final class SigningFollowUp
+class SigningFollowUp
 {
+    /** Skipped: the quote was changed between the signature and the follow-up. */
+    public const string CHANGED_AFTER_SIGNING = 'CHANGED_AFTER_SIGNING';
+
     public function __construct(
         private readonly ProgressSalesDocument $progress,
         private readonly WinDeal $win,
@@ -86,12 +90,47 @@ final class SigningFollowUp
 
             Audit::record('crm.signing_followed_up', $request, array_filter(['signing_request_id' => $request->id, 'order_id' => $orderId, 'invoice_id' => $invoiceId, 'skipped' => $skipped === [] ? null : $skipped]), $company, $actor);
 
-            $this->notify($company, $request, $skipped === []
-                ? ($request->isQuote() ? __(':title är signerad av kunden.', ['title' => $title]) : __('Avtalet ”:title” är signerat.', ['title' => $title]))
-                : __(':title är signerad, men allt kunde inte göras automatiskt. Öppna offerten och gör order eller faktura för hand.', ['title' => $title]));
+            $this->notify($company, $request, match (true) {
+                in_array(self::CHANGED_AFTER_SIGNING, $skipped, true) => __(':title ändrades efter att den signerades. Ordern skapades inte; kontrollera offerten mot den signerade PDF:en.', ['title' => $title]),
+                $skipped === [] => $request->isQuote() ? __(':title är signerad av kunden.', ['title' => $title]) : __('Avtalet ”:title” är signerat.', ['title' => $title]),
+                default => __(':title är signerad, men allt kunde inte göras automatiskt. Öppna offerten och gör order eller faktura för hand.', ['title' => $title]),
+            });
 
-            $this->mailCopies($company, $request);
+            // The signer's copy went from SignAtLink when the signature was saved; the company's goes here.
+            $this->mailCompanyCopy($company, $request);
         });
+    }
+
+    /**
+     * The follow-up failed for good (FollowUpSigning::failed): the signature
+     * stands, so the sender is told to make the order by hand.
+     */
+    public function failed(int $companyId, int $requestId): void
+    {
+        $company = Company::query()->find($companyId);
+        $request = SigningRequest::query()->find($requestId);
+
+        if (! $company instanceof Company || ! $request instanceof SigningRequest) {
+            return;
+        }
+
+        Audit::record('crm.signing_follow_up_failed', $request, ['signing_request_id' => $request->id], $company);
+        $this->notify($company, $request, __(':title är signerad, men ordern kunde inte skapas automatiskt. Gör den för hand.', ['title' => SigningPdfs::title($request)]));
+    }
+
+    /**
+     * The signer's copy: the signed PDF and the certificate, queued after
+     * the signature commits, whatever happens to the order.
+     */
+    public static function mailSignerCopy(SigningRequest $request): void
+    {
+        $company = Company::query()->find($request->company_id);
+
+        if (! $company instanceof Company || $company->isTestCompany()) {
+            return;
+        }
+
+        Mail::to($request->email)->queue((new SignedDocumentMail($request->id, $company->id, true))->afterCommit());
     }
 
     /** Must run inside the company, in the decline's transaction. */
@@ -106,7 +145,8 @@ final class SigningFollowUp
                 $accountId,
                 $request,
                 $request->isQuote() ? __(':title avböjdes', ['title' => $title]) : __('Avtalet ”:title” avböjdes', ['title' => $title]),
-                $request->decline_reason === null ? __('Mottagaren avböjde utan att ange skäl.') : __('Skäl: :reason', ['reason' => $request->decline_reason]),
+                // The reason stays only on the signing request, which is pruned after a year.
+                $request->decline_reason === null ? __('Mottagaren avböjde utan att ange skäl.') : __('Mottagaren avböjde (skälet finns vid signeringen)'),
             );
         }
 
@@ -120,7 +160,12 @@ final class SigningFollowUp
      */
     private function quote(SigningRequest $request, ?User $actor): array
     {
-        $quote = SalesDocument::query()->find($request->sales_document_id);
+        // Locked, and compared with what was signed: SaveSalesDocument refuses a signed quote, but the order must be what the signer saw.
+        $quote = SalesDocument::query()->whereKey($request->sales_document_id)->lockForUpdate()->first();
+
+        if ($quote instanceof SalesDocument && ! hash_equals((string) $request->content_hash, QuoteFingerprint::for($quote))) {
+            return [null, null, [self::CHANGED_AFTER_SIGNING]];
+        }
 
         if (! $quote instanceof SalesDocument || ! $quote->isOpen() || ! $actor instanceof User) {
             return [null, null, ['ORDER']];
@@ -249,17 +294,19 @@ final class SigningFollowUp
         }
     }
 
-    /** The signed PDF and the certificate to the signer and to the company (its address, else the sender's). */
-    private function mailCopies(Company $company, SigningRequest $request): void
+    /** The signed PDF and the certificate to the company (its address, else the sender's), unless that is the signer's own. */
+    private function mailCompanyCopy(Company $company, SigningRequest $request): void
     {
         if ($company->isTestCompany()) {
             return;
         }
 
-        $companyAddress = $company->email ?: User::query()->whereKey($request->sent_by)->value('email');
+        $address = $company->email ?: User::query()->whereKey($request->sent_by)->value('email');
 
-        foreach (array_unique(array_filter([$request->email, is_string($companyAddress) ? mb_strtolower($companyAddress) : null])) as $address) {
-            Mail::to($address)->queue((new SignedDocumentMail($request->id, $company->id, $address === $request->email))->afterCommit());
+        if (! is_string($address) || $address === '' || mb_strtolower($address) === $request->email) {
+            return;
         }
+
+        Mail::to(mb_strtolower($address))->queue((new SignedDocumentMail($request->id, $company->id, false))->afterCommit());
     }
 }

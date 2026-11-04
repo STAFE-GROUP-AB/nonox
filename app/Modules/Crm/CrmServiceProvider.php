@@ -43,6 +43,7 @@ use App\Modules\Crm\Models\Pipeline;
 use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Policies\CrmPolicy;
 use App\Modules\Crm\Support\CustomerAccounts;
+use App\Modules\Crm\Support\SigningFiles;
 use App\Modules\ModuleRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -78,6 +79,8 @@ class CrmServiceProvider extends ServiceProvider
         }
 
         Customer::observe(CustomerAccounts::class);
+        // An account erased under GDPR takes its agreements and their signing links with it (foreign keys); their PDFs go too (ADR-046).
+        Account::deleting(fn (Account $account) => SigningFiles::forAccount($account));
         Event::listen(CustomerAnonymised::class, [EraseCrmData::class, 'customerAnonymised']);
 
         Livewire::component(CrmSettingsForm::NAME, CrmSettingsForm::class);

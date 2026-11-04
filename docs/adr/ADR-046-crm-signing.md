@@ -246,7 +246,7 @@ personal data.
 - Retention: a signed quote or agreement and its evidence follow the
   record they support; where it is the basis of an order or invoice, or an
   agreement of particular importance to a business event, it is
-  räkenskapsinformation (BFL 5 kap. 7 §, 7 kap. 2 §) and kept seven years.
+  räkenskapsinformation (BFL 1 kap. 2 § första stycket 6 p., 7 kap. 2 §) and kept seven years.
   Unsigned links (declined, revoked, expired) are deleted with their PDF a
   year after they closed.
 - `TODO(legal-verify)`: the evidential value of a simple electronic
@@ -258,8 +258,11 @@ personal data.
   evidence for agreements that are not räkenskapsinformation.
 - `TODO(legal-verify)`: the year for unsigned links, and whether a
   declined link's reason should be kept shorter.
-- `TODO(legal-verify)`: whether BFL 5 kap. 7 § makes signed agreements
-  räkenskapsinformation in general, or only some.
+- `TODO(legal-verify)`: whether BFL 1 kap. 2 § första stycket 6 p. makes
+  signed agreements räkenskapsinformation in general, or only some.
+- `TODO(legal-verify)`: the audit log keeps the request's IP address on
+  every entry, also `crm.signing_declined`; whether that should be dropped
+  for a decline as it is on the signing event.
 
 ## Consequences
 
@@ -273,3 +276,49 @@ personal data.
   do not yet list agreements or a signer's evidence: until then the company
   answers a signer's access request from the signing panel and the
   certificate.
+
+## Review round (2026-11-04)
+
+- **A signed quote is fixed.** `SaveSalesDocument` refuses to change a quote
+  with a signed request ("Offerten är signerad och kan inte ändras."), after
+  locking the quote row, so it orders against the signing (which locks the
+  request, then the quote). `SendForSigning` refuses a signed quote, and the
+  panel offers no new link. The follow-up locks the quote and compares its
+  fingerprint with the one signed before `toOrder`; a mismatch makes no
+  order (`CHANGED_AFTER_SIGNING`) and the notice says to check the quote
+  against the signed PDF. Rejected: refusing in `SalesDocumentPolicy::update`,
+  since the follow-up's own `toOrder` goes through that policy.
+- **Erasure keeps the evidence.** A customer with a signed agreement counts
+  as used in `EraseRegisterEntry` and is anonymised, never deleted (a signed
+  quote already counts, through the quote). When an account is deleted (a
+  prospect, or a never-booked customer), its agreements' and their links'
+  PDFs are deleted after commit (`SigningFiles`); the customer observer now
+  deletes accounts one by one so the event runs.
+- **Information to the signer** (art. 13/14) on the page: what is kept, the
+  controller with organisation number and e-mail, purpose and legal basis,
+  retention, NONOX as processor, the rights and IMY. A decline keeps no IP
+  address or browser on its event; the page says the time and the reason
+  are kept at most a year. The CRM note says only that the recipient
+  declined; the reason stays on the request.
+- **The exact confirmation** is stored (`acceptance_text`) and quoted in the
+  certificate: for a company "… och har rätt att godkänna den för :customer"
+  (agreements "… ingå det för :account"), for a private person the short
+  form.
+- **The signer's copy** is queued from `SignAtLink::sign` after commit,
+  independent of the order. A failing follow-up never turns the signer's
+  page into an error (logged with the exception class only);
+  `FollowUpSigning::failed()` tells the sender to make the order by hand,
+  and the panel shows "Signerad – ordern är inte skapad".
+- **The trigger** now also protects the company, document type, quote and
+  agreement ids, document name, opened and revoked times, the invoice choice,
+  the creation time, the confirmation text and a set `followed_up_at`; only
+  the deal and the sender may change (both are set to null when deleted).
+- Smaller: the OPENED event reads "Länken hämtades första gången"; the
+  link mail's Reply-To sentence only when the company has an address; the
+  last day to sign cannot be after the quote's validity date; the manual
+  names agreements with form requirements (jordabalken 4 kap. 1 §).
+- Not done: stopping the link mail when the link is revoked before the
+  queue sends it (the job would need to re-check; the link then answers
+  410 anyway). The DPA text is updated; `LegalPageController` is bumped once
+  at the final merge.
+

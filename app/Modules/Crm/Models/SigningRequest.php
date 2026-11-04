@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?string $content_hash
  * @property bool $create_invoice
  * @property ?CarbonImmutable $opened_at
+ * @property ?string $acceptance_text the confirmation the signer ticked, exactly as shown
  * @property ?string $signer_name
  * @property ?string $signer_title
  * @property ?string $signature_method

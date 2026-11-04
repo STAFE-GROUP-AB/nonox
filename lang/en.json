@@ -8023,5 +8023,18 @@
     "Gick ut": "Expired",
     "Öppna Offerter": "Open Quotes",
     "En offert har signerats via en signeringslänk (CRM)": "A quote was signed through a signing link (CRM)",
-    "moms :rate %": "VAT :rate %"
+    "moms :rate %": "VAT :rate %",
+    "Offerten är signerad och kan inte ändras.": "The quote is signed and cannot be changed.",
+    "Jag har läst och godkänner offerten och har rätt att godkänna den för :customer.": "I have read and accept the quote and am authorised to accept it on behalf of :customer.",
+    "Jag har läst och godkänner avtalet och har rätt att ingå det för :account.": "I have read and accept the agreement and am authorised to enter into it on behalf of :account.",
+    ":title ändrades efter att den signerades. Ordern skapades inte; kontrollera offerten mot den signerade PDF:en.": ":title was changed after it was signed. The order was not created; check the quote against the signed PDF.",
+    ":title är signerad, men ordern kunde inte skapas automatiskt. Gör den för hand.": ":title is signed, but the order could not be created automatically. Make it by hand.",
+    "Mottagaren avböjde (skälet finns vid signeringen)": "The recipient declined (the reason is with the signing)",
+    "Offerten är redan signerad.": "The quote is already signed.",
+    "Sista dag att signera kan inte vara efter offertens giltighetsdag (:date).": "The last day to sign cannot be after the quote's last valid day (:date).",
+    "När du signerar sparas ditt namn, din titel, din namnteckning, tidpunkten, din IP-adress och din webbläsare som bevis på att avtalet ingicks, tillsammans med dokumentets kontrollsumma. Personuppgiftsansvarig är :company (org.nr :org, :email). Uppgifterna behandlas för att ingå avtalet och kunna visa att det ingicks (artikel 6.1 b och f i dataskyddsförordningen) och sparas så länge avtalet och bokföringslagen kräver, normalt sju år. NONOX behandlar dem för :company:s räkning. Du har rätt att begära tillgång, rättelse och i vissa fall radering eller begränsning, och att klaga hos Integritetsskyddsmyndigheten (IMY). Du får en kopia med e-post.": "When you sign, your name, your title, your signature, the time, your IP address and your browser are kept as evidence that the agreement was made, together with the document's checksum. The controller is :company (org. no. :org, :email). The data is processed to enter into the agreement and to be able to show that it was made (articles 6.1 b and f of the GDPR) and kept as long as the agreement and the Swedish Bookkeeping Act require, normally seven years. NONOX processes it on behalf of :company. You have the right to request access, rectification and in some cases erasure or restriction, and to complain to the Swedish Authority for Privacy Protection (IMY). You get a copy by e-mail.",
+    "Avböjer du sparas tidpunkten och ditt skäl hos :company i högst ett år.": "If you decline, the time and your reason are kept by :company for at most one year.",
+    "med bekräftelsen ”:text”": "with the confirmation “:text”",
+    "Signerad – ordern är inte skapad": "Signed – the order is not created",
+    "Länken hämtades första gången": "The link was first fetched"
 }

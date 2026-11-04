@@ -18,7 +18,7 @@ enum SigningEventType: string
     {
         return match ($this) {
             self::Sent => __('Skickad'),
-            self::Opened => __('Öppnad'),
+            self::Opened => __('Länken hämtades första gången'),
             self::Signed => __('Signerad'),
             self::Declined => __('Avböjd'),
             self::Expired => __('Gick ut'),

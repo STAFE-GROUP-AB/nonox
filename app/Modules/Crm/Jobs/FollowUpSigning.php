@@ -33,4 +33,10 @@ class FollowUpSigning implements ShouldQueue
     {
         CurrentCompany::run($this->companyId, fn () => $followUp->signed($this->companyId, $this->requestId));
     }
+
+    /** After the last attempt: the signature stands; the sender makes the order by hand. */
+    public function failed(): void
+    {
+        CurrentCompany::run($this->companyId, fn () => app(SigningFollowUp::class)->failed($this->companyId, $this->requestId));
+    }
 }
