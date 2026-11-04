@@ -157,6 +157,8 @@ use App\Modules\Payroll\Models\VacationLiabilitySnapshot;
 use App\Modules\Payroll\Models\VacationOpeningBalance;
 use App\Modules\Payroll\Models\VacationYearClosing;
 use App\Modules\Payroll\Models\WorkSchedule;
+use App\Modules\Peppol\Models\PeppolParticipant;
+use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Planning\Models\Area as PlanningArea;
 use App\Modules\Planning\Models\Attestation as PlanningAttestation;
 use App\Modules\Planning\Models\Availability as PlanningAvailability;
@@ -253,6 +255,8 @@ const COMPANY_SCOPED_MODELS = [
     RecurringInvoice::class => 'agreementAttributes',
     CompanyModule::class => ['module_key' => 'hemlig', 'enabled' => true],
     WorkSchedule::class => 'payrollWorkScheduleAttributes',
+    PeppolParticipant::class => 'peppolParticipantAttributes',
+    PeppolTransmission::class => 'peppolTransmissionAttributes',
     CollectiveAgreement::class => 'payrollCollectiveAgreementAttributes',
     PensionPlan::class => 'payrollPensionPlanAttributes',
     Employee::class => 'payrollEmployeeAttributes',
@@ -989,6 +993,33 @@ function agreementRowAttributes(): array
         'account_id' => articleAttributes()['account_id'],
         'net_ore' => 100,
         'position' => 0,
+    ];
+}
+
+/** A made-up GLN per company: the Peppol ID is unique on the installation. */
+function peppolParticipantAttributes(): array
+{
+    $base = '73'.str_pad((string) random_int(0, 9_999_999_999), 10, '0', STR_PAD_LEFT);
+    $sum = 0;
+
+    for ($i = 0; $i < 12; $i++) {
+        $sum += (int) $base[11 - $i] * ($i % 2 === 0 ? 3 : 1);
+    }
+
+    return ['identifier' => '0088:'.$base.((10 - $sum % 10) % 10)];
+}
+
+function peppolTransmissionAttributes(): array
+{
+    return [
+        'invoice_id' => Invoice::create(invoiceAttributes())->id,
+        'document_type' => 'INVOICE',
+        'receiver' => '0007:5566778808',
+        'status' => 'SENT',
+        'driver' => 'log',
+        'xml_path' => 'peppol/hemlig.xml',
+        'xml_sha256' => str_repeat('a', 64),
+        'queued_at' => now(),
     ];
 }
 

@@ -1,7 +1,7 @@
 @php($input = 'mt-1 block w-full max-w-xs border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs tabular-nums')
 <div class="space-y-5">
     <form wire:submit="save" class="space-y-5">
-        <x-ui.field for="peppol-identifier" :label="__('Företagets Peppol-ID')" :hint="__('Organisationsnumret med 0007 framför, till exempel 0007:5599000006. En enskild firma kan använda ett GLN (0088) i stället för personnumret.')" error="identifier">
+        <x-ui.field for="peppol-identifier" :label="__('Företagets Peppol-ID')" :hint="__('Företagets organisationsnummer med 0007 framför, till exempel 0007:5599000006. En enskild firma kan använda ett GLN (0088) i stället för personnumret.')" error="identifier">
             <input id="peppol-identifier" type="text" wire:model="identifier" class="{{ $input }}" autocomplete="off" spellcheck="false">
         </x-ui.field>
         <label class="flex items-start gap-2 text-sm text-gray-700">

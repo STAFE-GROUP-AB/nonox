@@ -8761,7 +8761,7 @@
     "Bekräfta att du får företräda företaget och godkänner registreringen.": "Confirm that you may represent the company and approve the registration.",
     "Peppol-ID:t kan inte användas för det här företaget.": "The Peppol ID cannot be used for this company.",
     "Företagets Peppol-ID": "The company's Peppol ID",
-    "Organisationsnumret med 0007 framför, till exempel 0007:5599000006. En enskild firma kan använda ett GLN (0088) i stället för personnumret.": "The organisation number with 0007 in front, for example 0007:5599000006. A sole trader can use a GLN (0088) instead of the personal identity number.",
+    "Företagets organisationsnummer med 0007 framför, till exempel 0007:5599000006. En enskild firma kan använda ett GLN (0088) i stället för personnumret.": "The organisation number with 0007 in front, for example 0007:5599000006. A sole trader can use a GLN (0088) instead of the personal identity number.",
     "Ta emot leverantörsfakturor via Peppol": "Receive supplier invoices through Peppol",
     "E-fakturorna hamnar i inkorgen och blir förslag till leverantörsfakturor som någon attesterar.": "The e-invoices land in the inbox and become supplier invoice proposals that someone approves.",
     "Slå på Inkorg först. Där attesteras e-fakturorna.": "Turn on Inbox first. That is where the e-invoices are approved.",
