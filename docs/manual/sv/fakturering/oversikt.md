@@ -24,6 +24,7 @@ Avsnittet är för dig som säljer och fakturerar, och för dig som sköter bokf
 
 - [Skapa en faktura](/manual/fakturering/skapa-en-faktura) – kund, datum, rader och vad som händer när du trycker på **Skapa fakturan**.
 - [Skicka fakturan och öppna PDF:en](/manual/fakturering/skicka-en-faktura) – e-post, OCR-nummer och vad kunden får.
+- [Skicka e-faktura via Peppol](/manual/fakturering/e-faktura-via-peppol) – till kommuner, myndigheter och företag som vill ha e-faktura.
 - [Fakturametoden och kontantmetoden](/manual/fakturering/fakturametoden-och-kontantmetoden) – när och hur en faktura bokförs.
 - [Kreditera en faktura](/manual/fakturering/kreditfaktura) – när något blev fel.
 - [Påminnelser](/manual/fakturering/paminnelser) – när kunden inte har betalat i tid.

@@ -24,7 +24,7 @@ När företaget skapas får det de vanligaste kontona ur BAS 2026, cirka hundra 
 - Välj en kontoklass, till exempel **3 – Rörelsens intäkter**, för att bara se den klassen.
 - Kryssa i **Visa inaktiva konton** för att se de konton som är avstängda.
 
-Kolumnen **Typ** visar om kontot är en **Tillgång**, **Eget kapital och skulder**, en **Intäkt** eller en **Kostnad**. Typen styr var kontot hamnar i [resultat- och balansrapporten](/manual/rapporter) och på vilken sida dess saldo visas.
+Kolumnen **Typ** visar om kontot är en **Tillgång**, **Eget kapital och skulder**, en **Intäkt** eller en **Kostnad**. Typen styr var kontot hamnar i [resultat- och balansrapporten](/manual/rapporter) och på vilken sida dess saldo visas. Ett konto som har bokföring eller ingående balanser kan inte byta mellan balanskonto (tillgång, eget kapital och skulder) och resultatkonto (intäkt, kostnad), eftersom det skulle ändra saldon och resultat för år som redan är bokförda. Lägg upp ett nytt konto i stället.
 
 ## Så här lägger du till ett konto
 

@@ -17,6 +17,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 class FiscalYears extends Component
@@ -28,6 +29,10 @@ class FiscalYears extends Component
     public string $startDate = '';
 
     public string $endDate = '';
+
+    /** New opening balances change what the page shows (StaleOpeningBalancesNotice). */
+    #[On('opening-balances-updated')]
+    public function openingBalancesUpdated(): void {}
 
     public function createNext(CreateNextFiscalYear $createNextFiscalYear): void
     {

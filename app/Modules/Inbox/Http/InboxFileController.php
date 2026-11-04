@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inbox\Http;
 
 use App\Modules\Inbox\Actions\AcceptInboundMail;
+use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\Models\InboxAttachment;
 use App\Modules\Inbox\Models\InboxMessage;
 use App\Support\Files\InlineFile;
@@ -26,7 +27,10 @@ class InboxFileController
         $found = InboxMessage::query()->findOrFail($message);
         Gate::authorize('view', $found);
 
-        return Storage::disk(AcceptInboundMail::DISK)->download($found->eml_path, 'meddelande.eml', [
+        // A Peppol e-invoice's original is the UBL file itself (ADR-050).
+        $name = $found->channel === Channel::Peppol ? 'e-faktura.xml' : 'meddelande.eml';
+
+        return Storage::disk(AcceptInboundMail::DISK)->download($found->eml_path, $name, [
             'Content-Type' => 'application/octet-stream',
             'X-Content-Type-Options' => 'nosniff',
             'Cache-Control' => 'private, max-age=0',

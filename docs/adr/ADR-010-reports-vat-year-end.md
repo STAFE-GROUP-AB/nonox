@@ -521,7 +521,7 @@ räkenskapsår som omfattar …") until someone created it.
   is shown under the same rule. This keeps the SIE review's advice ("Ändra
   datumen under Räkenskapsår") workable.
 
-**Concurrency.** SIE import into an existing year locks that year after the advisory lock, while closing and changing the first year lock the year before it; a simultaneous SIE import and closing of the same year can therefore deadlock, which PostgreSQL breaks by rolling one transaction back (it can be run again; nothing is changed silently). Every creation or removal of a fiscal year (manual,
+**Concurrency.** SIE import into an existing year locks that year after the advisory lock. Closing and changing the first year used to lock the year before it, so a simultaneous SIE import and closing of the same year could deadlock (PostgreSQL rolled one back); since "Stale opening balances" below, they take the advisory lock first too. Every creation or removal of a fiscal year (manual,
 scheduled, booking, `CarryForwardBalances`, `ChangeFirstFiscalYear`, and SIE
 import before its company lock and analyser re-check) takes
 `pg_advisory_xact_lock(4202, company_id)` and
@@ -534,9 +534,10 @@ A wait cycle would need a transaction that holds the company row FOR UPDATE
 (period lock, year closing, SIE import, new accrual) and then books into the
 missing next year; none does. Should one appear, PostgreSQL detects the
 deadlock and rolls one transaction back; it is never silent. Where an existing
-year row is locked too, it is locked before the advisory lock (closing a year
-locks the year, then `CarryForwardBalances` takes the advisory lock;
-`ChangeFirstFiscalYear` does the same), and a new year's row only after it.
+year row is locked too, it is locked after the advisory lock (closing a year,
+`CarryForwardBalances`, `UpdateOpeningBalances` and `ChangeFirstFiscalYear`
+take the advisory lock first; changed 2026-11-04, see "Stale opening
+balances"), and a new year's row only after it.
 SIE import takes the advisory lock before the company row FOR UPDATE, the same
 order as a booking that creates a year and then inserts under the company's
 foreign key. Tested with sequential calls (two bookings in the new year create
@@ -550,3 +551,90 @@ TODO(legal-verify): that creating the next year in advance, before the
 previous one is closed, is consistent with BFL 3 kap. (we believe so: the
 year is only a period, nothing is booked in it in advance), and that a
 booking up to 30 days ahead may create the following year.
+
+## Stale opening balances (2026-11-04)
+
+**Problem.** `CarryForwardBalances` copies the closing balances of year N into
+the opening balances of N+1 once. A voucher posted in N afterwards (a late
+supplier invoice, a correction, a closing entry, an SIE import) leaves N+1's
+opening balances wrong, silently. ÅRL 2 kap. 4 § första stycket 7 (SFS
+1995:1554, read on riksdagen.se 2026-11-04): "Den ingående balansen för ett
+räkenskapsår ska stämma överens med den utgående balansen för närmast
+föregående räkenskapsår"; the second paragraph allows a deviation "om det
+finns särskilda skäl".
+
+**Decision.**
+
+- `App\Domain\Accounting\CarriedBalances` holds the arithmetic of the
+  rollover (balance-sheet closing balances, an unbooked result on 2099/2019
+  via `ClosingAccounts::resultNumber`, which `CarryForwardBalances` now uses
+  instead of its own copy of the rule). `CarryForwardBalances` writes it,
+  `StaleOpeningBalances` compares it with what is stored. One rule, two
+  readers.
+- `StaleOpeningBalances::compute(Company)` reads the whole company in four
+  queries (years, accounts, all opening balances, posted movements grouped by
+  year and account) and walks the years oldest first. A year is compared only
+  when it has opening balances and the year right before it is in NONOX with
+  something booked; the expected balances build on the previous year's
+  *corrected* balances, so a chain N → N+1 → N+2 reports every year an update
+  would change. `for()` caches the answer under Översikt's per-company
+  version (`OverviewCache`), which changes after every audited action and
+  every save of a voucher or an opening balance.
+- Not compared: the first year in NONOX (opening balances from SIE), a year
+  after an empty year, a year with no opening balances (not yet carried
+  forward: the closing does that), and a closed year (it cannot change; its
+  stored balances stay in the chain for the year after). SIE-imported opening
+  balances of a year after one in NONOX are compared like carried-forward
+  ones: the law does not depend on the source, and a file that leaves the
+  unbooked result out of `#IB` shows as a single difference on 2099/2019,
+  which an update adds. Opening balances have no
+  dimensions, so the comparison is per account.
+- Shown by `StaleOpeningBalancesNotice` (Livewire) on Räkenskapsår (every
+  stale year) and Rapporter (the chosen year), with the per-account
+  difference behind a `<details>`; by `OpeningBalanceTodos` under Att göra
+  (`fiscal-years:manage`); and as checklist point `opening` for the later
+  year (TODO, confirmable as "Skillnaden är avsiktlig" for the second
+  paragraph's special reasons). The confirmation requires a reason (stored on
+  `closing_checks.reason` and in the `closing.checked` payload) and stores a
+  fingerprint (SHA-256 of the year and every differing account with both
+  amounts); when the difference changes the fingerprint no longer matches
+  and the point is open again. ÅRL 5 kap. 5 § requires a note with the
+  reasons and the effect; the checklist says so. `TODO(legal-verify)`:
+  whether K2 allows the deviation at all. The reason is free text in the
+  audit log by design: it is the accounting justification the audit trail
+  must show, not personal data.
+- `UpdateOpeningBalances` (`fiscal-years:manage`) recomputes every stale year
+  in order in one transaction by calling `CarryForwardBalances`, and records
+  `fiscal_year.opening_balances_updated` per year with the ids, the labels,
+  the number of accounts and every account's before and after in öre, the
+  after read back from the rows written. It is refused as a whole when the
+  period lock covers the first day of a year to change.
+- **Locks.** `UpdateOpeningBalances` takes the year-creation advisory lock
+  (4202), then every fiscal year of the company FOR UPDATE ordered by start
+  date, then the company row FOR UPDATE, and only then compares.
+  `CarryForwardBalances` takes the advisory lock and locks the source year
+  before reading its balances; `YearEndClosing::close` now takes the
+  advisory lock before its year lock. Every path is then advisory → years →
+  company (also `ChangeFirstFiscalYear`, which used to lock its year first;
+  SIE import: advisory → year → company; posting: year → company,
+  advisory only when it creates a year, before the year), so none waits on
+  another in reverse order. The closing/SIE deadlock noted above no longer
+  arises from `close`.
+- **Account types.** `UpdateAccount` refuses to move an account with posted
+  rows or opening balances between the balance sheet and the income
+  statement (AGENTS.md §6.1 spirit): it would silently change carried
+  balances and results of booked years.
+- **Never automatic.** New opening balances change the later year's reported
+  figures and work already done on them (reconciliations, closing work), so a
+  person decides. The warning itself is always shown.
+- **Period lock.** `CarryForwardBalances` now also refuses, outside the
+  closing, when the lock covers the next year's first day (the manual button
+  could otherwise bypass the update's refusal). `YearEndClosing::close`
+  passes `partOfClosing: true` and carries forward as before: the year-end is
+  usually done after the next year's first VAT periods are locked, and
+  establishing the opening balances is part of closing the old year. When the
+  old year is open, the refusal message says the balances are carried forward
+  again at closing. `TODO(legal-verify)`: no rule found on period locks and
+  opening balances; this split is our design.
+- No posted voucher, number or hash is touched: opening balances are not
+  vouchers (ADR-008).

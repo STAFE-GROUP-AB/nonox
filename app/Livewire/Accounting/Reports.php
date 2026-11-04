@@ -16,6 +16,7 @@ use App\Models\Voucher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -48,6 +49,10 @@ class Reports extends Component
 
     #[Url(except: false)]
     public bool $jamfor = false;
+
+    /** New opening balances change what the page shows (StaleOpeningBalancesNotice). */
+    #[On('opening-balances-updated')]
+    public function openingBalancesUpdated(): void {}
 
     public function mount(): void
     {

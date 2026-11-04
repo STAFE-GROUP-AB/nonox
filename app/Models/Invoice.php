@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Domain\Invoicing\ForeignSale;
 use App\Domain\Invoicing\InvoiceStatus;
+use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Support\Currency\ExchangeRate;
 use App\Support\Money\Money;
 use App\Support\Money\MoneyCast;
@@ -345,6 +346,17 @@ class Invoice extends Model
     public function credits(): BelongsTo
     {
         return $this->belongsTo(Invoice::class, 'credits_invoice_id');
+    }
+
+    /**
+     * The sendings through Peppol (ADR-050). The table belongs to the Peppol
+     * module; it is empty while the module has never been used.
+     *
+     * @return HasMany<PeppolTransmission, $this>
+     */
+    public function peppolTransmissions(): HasMany
+    {
+        return $this->hasMany(PeppolTransmission::class);
     }
 
     /** @return HasMany<Invoice, $this> */

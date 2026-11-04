@@ -93,7 +93,8 @@ enum ForeignSale: string
             self::EuServices => 'Omvänd betalningsskyldighet. / Reverse charge.',
             self::ExportGoods => 'Export av varor, undantagen från moms. / Export of goods, exempt from VAT.',
             self::ExportServices => 'Tjänsten är omsatt utanför Sverige. / Supply of services outside Sweden, not subject to Swedish VAT.',
-            self::EuTriangular => 'Trepartshandel. Förenklingsregeln för trepartshandel tillämpas; köparen redovisar momsen. / Triangulation. Simplified triangulation, VAT to be accounted for by the recipient.',
+            // Legal review 2026-11-04 (ADR-050). TODO(legal-verify): a skattejurist confirms the final wording.
+            self::EuTriangular => 'Unionsintern trepartshandel, förenklingsregeln i artikel 141 i mervärdesskattedirektivet. Omvänd betalningsskyldighet. / Triangulation, Article 141 Directive 2006/112/EC. Reverse charge.',
             self::EuConsumerOss => 'Moms enligt köparlandets regler, redovisas via OSS. / VAT of the customer\'s country, declared through the One Stop Shop.',
         };
     }

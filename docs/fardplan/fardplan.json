@@ -43,11 +43,11 @@
     },
     {
       "id": "peppol-accesspunkt",
-      "rubrik": "Skicka e-faktura via Peppol",
-      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-accesspunkt, så att kunden får fakturan direkt i sitt eget system.",
-      "status": "Planerat",
+      "rubrik": "Skicka och ta emot e-faktura via Peppol",
+      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-operatör, så att kunden får fakturan direkt i sitt eget system, och e-fakturor från leverantörer hamnar i inkorgen. Funktionen är byggd och slås på när avtalet med operatören är klart.",
+      "status": "Pågår",
       "omrade": "Fakturering",
-      "uppdaterad": "2026-11-02"
+      "uppdaterad": "2026-11-04"
     },
     {
       "id": "kassa-och-ehandel",
@@ -145,14 +145,6 @@
       "beskrivning": "NONOX säger till när en momssats på livsmedel gäller bara under en viss tid, så att fakturor och kassarapporter får rätt moms före och efter.",
       "status": "Planerat",
       "omrade": "Moms",
-      "uppdaterad": "2026-11-02"
-    },
-    {
-      "id": "varning-ingaende-balanser",
-      "rubrik": "Varning när ingående balanser blivit inaktuella",
-      "beskrivning": "Bokför du något i förra året efter att det nya året öppnats, påminner NONOX om att föra över de nya saldona.",
-      "status": "Planerat",
-      "omrade": "Bokföring",
       "uppdaterad": "2026-11-02"
     },
     {

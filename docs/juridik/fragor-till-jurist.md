@@ -196,6 +196,12 @@ Dessa frågor kräver i första hand en redovisningskonsult eller skattejurist. 
 | ROT och RUT: andelar, tak, avrundning, arbetskostnad, kontantmetoden och nekade belopp | `app/Domain/Invoicing/TaxReduction.php`, `app/Actions/Invoicing/IssueInvoice.php`, `RegisterTaxReductionPayment.php` |
 | Påminnelseavgift och dröjsmålsränta, som i dag inte tas ut | `app/Actions/Invoicing/SendReminder.php`, ADR-011 |
 | Bankgiro och plusgiro i Peppol-fakturor enligt SFTI | `app/Support/Peppol/UblInvoiceParser.php` |
+| Peppol: när en avvisad (bestridd) mottagen e-faktura får gallras, och om dubbletter och testdokument får gallras tidigare | `app/Modules/Inbox/Console/PruneInboxCommand.php`, `docs/gdpr/lagringstider.md`, ADR-050 |
+| Peppol: vilka punkter i BFNAR 2013:2 som gäller översättningen av den mottagna XML-filen till en leverantörsfaktura, och vad systemdokumentationen behöver beskriva | `app/Modules/Peppol/Actions/AcceptPeppolDocument.php`, systemdokumentationen 5e.1, ADR-050 |
+| Peppol: operatörens roll (biträde eller personuppgiftsansvarig för sin kundkännedom) och avtalet (DPA) med den | `docs/juridik/underbitraden.md`, `docs/gdpr/registerforteckning.md`, ADR-050 |
+| Trepartshandel: slutlig fakturatext (artikel 141, omvänd betalningsskyldighet), bekräftas av skattejurist | `app/Domain/Invoicing/ForeignSale.php`, ADR-050 |
+| Trepartshandel: fakturans PDF skapas när den öppnas, så redan utfärdade fakturor för trepartshandel visas nu med den nya texten. Måste en redan utfärdad faktura behålla sin gamla text (ML 17 kap. 30–31 §§, BFL 7 kap.), så att texten ska sparas på fakturan när den utfärdas? | `app/Domain/Invoicing/ForeignSale.php`, `app/Domain/Invoicing/InvoicePdf.php` |
+| Peppol: bekräfta hänvisningarna till BFL 7 kap. 1 § tredje stycket (elektroniska handlingar i det format de kom) och ML 17 kap. 30–31 §§ (äkthet, integritet, läsbarhet och bevarande av fakturan) för den mottagna och den skickade XML-filen | systemdokumentationen 5.4 och 5e.1, `docs/gdpr/lagringstider.md`, ADR-050 |
 
 ### Lön
 

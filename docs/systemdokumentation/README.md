@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.99
+- Version: 0.101
 - Datum: 2026-11-04
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -451,7 +451,8 @@ year").
   eller när året stängs i bokslutet). Fram till dess visar rapporterna för det
   nya året bara årets egna verifikationer: balansrapporten saknar ingående
   balans och huvudboken börjar på noll. Överföringen kan göras om så länge det
-  nya året är öppet.
+  nya året är öppet. Bokförs något i det gamla året efter överföringen varnar
+  NONOX (avsnitt 4.14a).
 - **Numrering.** Verifikationsnumren börjar på 1 i varje serie i det nya
   året; räknaren för en serie skapas vid årets första bokföring i serien, som
   för ett år som skapas för hand (avsnitt 4.1).
@@ -753,7 +754,118 @@ year").
   nästa räkenskapsår, som skapas om det inte finns. Ett resultat som inte är
   bokfört förs till konto 2099 (2019 för enskild firma och handelsbolag).
 - Överföringen kan göras om så länge nästa år är öppet; de ingående
-  balanserna ersätts då och det skrivs i behandlingshistoriken.
+  balanserna ersätts då och det skrivs i behandlingshistoriken. Utanför
+  bokslutet vägras den också när periodlåset omfattar nästa års första dag
+  (avsnitt 4.14a). När ett år stängs i bokslutet förs balanserna alltid över,
+  även om nästa års första månader redan är låsta efter momsdeklarationerna.
+
+
+### 4.14a Ingående balanser som inte längre stämmer
+
+Regel (SFS 1995:1554, läst på riksdagen.se 2026-11-04): årsredovisningslagen
+2 kap. 4 § första stycket 7: "Den ingående balansen för ett räkenskapsår ska
+stämma överens med den utgående balansen för närmast föregående
+räkenskapsår." Andra stycket: "Om det finns särskilda skäl för det och det är
+förenligt med 2 och 3 §§, får avvikelse göras från första stycket."
+5 kap. 5 §: avviker ett företag med stöd av 2 kap. 4 § andra stycket "ska
+det lämna en upplysning om skälen för avvikelsen och en bedömning av effekten
+på företagets ställning och resultat". Beskrivningen är en del av
+systemdokumentationen och behandlingshistoriken enligt BFL 5 kap. 11 § och
+BFNAR 2013:2 kapitel 9 (punkterna 9.9–9.10 och 9.16, lästa i BFN:s vägledning
+vl13-2-bokforing.pdf på bfn.se 2026-11-04; 9.16: "Behandlingshistoriken ska
+visa de bokföringsposter som har tillförts bokföringssystemet samt, i
+datorbaserade system, registreringsdatum.")
+([ADR-010](../adr/ADR-010-reports-vat-year-end.md), "Stale opening
+balances").
+
+- **Hur det uppstår.** Ett år kan få verifikationer efter att dess balanser
+  har förts över till nästa år: en sen leverantörsfaktura, en rättelse, en
+  bokslutsverifikation eller en inläst SIE-fil. Nästa års ingående balanser
+  ändras då inte av sig själva.
+- **Jämförelse.** För varje öppet räkenskapsår som har ingående balanser och vars
+  närmast föregående år finns i NONOX med något bokfört (ingående balanser
+  eller bokförda verifikationer) räknar NONOX ut vad de ingående balanserna
+  borde vara, på exakt samma sätt som överföringen gör (avsnitt 4.14):
+  utgående balans per balanskonto (klass 1 och 2 enligt kontotyp), och ett
+  resultat som inte är bokat mot eget kapital fört till 2099 (2019 för
+  enskild firma och handelsbolag). Varje konto där det uträknade och det
+  sparade beloppet skiljer redovisas. Jämförelsen går i ordning från det
+  äldsta året och bygger varje år på det föregående årets rättade balanser,
+  så att en kedja N → N+1 → N+2 visar alla år som en uppdatering ändrar.
+- **Vad som inte jämförs.** Det första året i NONOX (ingående balanser från
+  en SIE-fil) har inget år före att jämföra med. Ett år efter ett tomt år jämförs inte heller. Ett år
+  utan ingående balanser räknas inte som inaktuellt: balanserna har då inte
+  förts över, och det görs i bokslutet. Ingående balanser sparas inte per
+  kostnadsställe eller projekt, så jämförelsen görs bara per konto. Ett
+  stängt år jämförs inte och uppdateras aldrig; dess sparade ingående
+  balanser är det som året efter jämförs mot.
+- **Inlästa år från ett annat program.** Ingående balanser från en SIE-fil
+  för ett år efter ett som redan finns i NONOX jämförs som andra, eftersom
+  lagen inte skiljer på källan. Lämnar filens `#IB` ett obokat resultat
+  utanför Årets resultat syns det som en skillnad på bara det kontot; en
+  uppdatering lägger till det, så att de ingående balanserna går ihop.
+- **Var det visas.** Överst under Räkenskapsår (alla år som skiljer), under
+  Rapporter för det valda året, under Att göra på Översikt för den som får
+  hantera räkenskapsår, och som punkten "Ingående balanser stämmer med förra
+  året" i bokslutets checklista för det senare året. Skillnaden per konto
+  (sparad ingående balans, utgående balans året före, skillnad) visas när
+  man väljer "Visa skillnaden per konto".
+- **Uppdatera ingående balanser.** Den som får hantera räkenskapsår
+  (`fiscal-years:manage`) väljer knappen och bekräftar en text som säger vad
+  som händer. Alla år som skiljer räknas om i ordning, äldst först, i en
+  enda transaktion, med samma överföring som i avsnitt 4.14. Uppdateringen
+  vägras helt om periodlåset omfattar första dagen i något av åren; inget
+  ändras då, och texten säger att balanserna förs över på nytt när det
+  tidigare året stängs i bokslutet (om det är öppet).
+- **Lås.** Uppdateringen tar i tur och ordning företagets lås för att skapa
+  år (PostgreSQL advisory lock), alla företagets räkenskapsår (FOR UPDATE, i
+  datumordning) och företagsraden (FOR UPDATE), och jämför först därefter.
+  Under tiden kan inget bokföras, låsas, föras över eller läsas in, så det
+  som jämförs är det som ändras. Beloppen efter i behandlingshistoriken läses
+  från de rader som faktiskt skrevs. Överföringen tar själv samma lås för att
+  skapa år och låser det tidigare året innan saldona läses. Även bokslutets
+  stängning tar låset för att skapa år först. Alla vägar som skapar år, för
+  över, stänger eller läser in SIE tar låset för att skapa år först och väntar
+  därför inte på varandra. Bokföringen låser år och sedan företaget med FOR KEY
+  SHARE; uppdateringen låser företagsraden med FOR NO KEY UPDATE, som inte
+  krockar med det.
+- **Aldrig automatiskt.** NONOX uppdaterar inte ingående balanser av sig
+  självt. Nya ingående balanser ändrar balansrapporten, huvudboken och
+  underlag för avstämningar och bokslutsarbete som redan gjorts i det senare
+  året, så en person beslutar om det och när. Jämförelsen och varningen sker
+  däremot alltid.
+- **Avsiktlig skillnad.** I bokslutets checklista kan en person i stället
+  bekräfta "Skillnaden är avsiktlig" (2 kap. 4 § andra stycket). Ett skäl
+  (högst 1 000 tecken) krävs. Skälet, vem och när sparas med bekräftelsen och
+  i behandlingshistoriken (`closing.checked` med `key: opening`, `reason`,
+  antal konton och `fingerprint`, en SHA-256 av året och varje skiljande
+  konto med båda beloppen). Ändras skillnaden efteråt stämmer inte
+  fingeravtrycket längre, och punkten blir ogjord igen. Checklistan påminner
+  om att skälet och en bedömning av effekten ska lämnas i en not i
+  årsredovisningen (5 kap. 5 §).
+- **Kontotyp.** Ett konto med bokförda verifikationer eller ingående
+  balanser kan inte byta mellan balanskonto (tillgång, eget kapital och
+  skuld) och resultatkonto, eftersom det skulle ändra överförda balanser och
+  resultat för år som redan är bokförda.
+- **Inga verifikationer ändras.** Ingående balanser är inte verifikationer
+  (avsnitt 4.8). Inga bokförda verifikationer, nummer eller kontrollsummor
+  ändras.
+- **Behandlingshistorik.** Varje år som uppdateras skrivs som
+  `fiscal_year.opening_balances_updated` med det tidigare och det senare
+  årets id och benämning, antal konton och för varje konto kontonumret och
+  beloppet före och efter i ören. Själva överföringen skrivs dessutom som
+  tidigare (`fiscal_year.balances_carried_forward`).
+- **Prestanda.** Jämförelsen läser hela företaget med fyra frågor (år,
+  konton, ingående balanser, rörelser per år och konto), oavsett antal år
+  och verifikationer, och svaret sparas i Översiktens cache, som blir
+  inaktuell efter varje bokföring, rättelse, SIE-inläsning och ändring av
+  ingående balanser.
+- TODO(legal-verify): att uppdateringen vägras när periodlåset omfattar det
+  senare årets första dag, men görs i bokslutet, är ett eget beslut; vi har
+  inte hittat någon regel om periodlås och ingående balanser.
+- TODO(legal-verify): om K2 (BFNAR 2016:10) över huvud taget tillåter en
+  avvikelse från principen att ingående balans ska stämma med föregående års
+  utgående balans, eller om bekräftelsen bara ska gå att göra för K3.
 
 ## 5. Fakturering
 
@@ -915,6 +1027,11 @@ year").
   nummer. Ett befintligt 3107 utan ruta kopplas till ruta 38 när en faktura
   för trepartshandel skapas, och en migrering kopplade alla befintliga 3107
   utan ruta (enligt granskning 2026-11-02, juristgranskning återstår, #97).
+  Fakturatexten (PDF och e-faktura) är sedan 2026-11-04 "Unionsintern
+  trepartshandel, förenklingsregeln i artikel 141 i mervärdesskattedirektivet.
+  Omvänd betalningsskyldighet." med engelsk översättning, och i e-fakturan
+  momskategori AE (juristgranskning 2026-11-04; slutlig text bekräftas av
+  skattejurist). Bokföringen ändras inte.
 - **Privatperson i annat EU-land (OSS):** fakturan får köparlandets
   normalskattesats (`OssRates`, per land och från-datum), försäljningen
   bokförs på 3106 och momsen på 2619. Konto 2619 räknas inte in i någon ruta
@@ -1108,6 +1225,51 @@ year").
   (`invoice.issued`) och valutabelopp, avräknade kronor och kursdifferens vid
   betalning (`invoice.payment_registered`).
 - API och webhooks: se 5f; beloppen i `*_ore` är alltid kronor.
+
+### 5.4 E-faktura via Peppol (modul)
+
+Beskrivs i [ADR-050](../adr/ADR-050-peppol.md). Modulen Peppol e-faktura är
+avslagen tills installationen har ett avtal med en certifierad
+Peppol-operatör (accesspunkt); NONOX är inte själv en accesspunkt.
+
+- **En ny leveranskanal, ingen ny bokföring.** En skapad faktura eller
+  kreditfaktura kan skickas som e-faktura enligt Peppol BIS Billing 3.0
+  (EN 16931, UBL 2.1) i stället för eller utöver e-post. Fakturan är redan
+  bokförd när den skapas (avsnitt 5) och ändras inte när den skickas;
+  sändningen är en egen post (`peppol_transmissions`).
+- **Innehåll.** Dokumentet skrivs från fakturans egna uppgifter och belopp
+  (heltal i öre, ingen omräkning): säljare och köpare med
+  organisationsnummer, momsregistreringsnummer och Peppol-ID, "Godkänd för
+  F-skatt", en anteckning, Er referens, betalningssätt per bankgiro, plusgiro
+  och IBAN med OCR-numret som betalningsreferens, momsen per kategori och
+  sats (S 25/12/6, AE omvänd betalningsskyldighet, K unionsintern leverans
+  med land, G export, E undantagen med undantagstexten, O ej momsregistrerad
+  säljare), öresavrundningen, valuta med momsen även i kronor, och fakturans
+  PDF som bilaga. En kreditfaktura blir en kreditnota med positiva belopp och
+  hänvisning till den krediterade fakturan. ROT/RUT- och OSS-fakturor till
+  privatpersoner skickas inte via Peppol.
+- **Kontroll före sändning.** Varje dokument kontrolleras mot de regler i
+  Peppol BIS Billing 3.0 som berör det NONOX skriver
+  (`PeppolDocumentRules`, med reglernas officiella id). Ett dokument som
+  bryter mot en regel skickas inte. Testfilerna är kontrollerade mot de
+  officiella valideringsfilerna (UBL 2.1 XSD, CEN EN 16931 och Peppol
+  Schematron) med `scripts/peppol-validate.sh`.
+- **Det som skickades sparas.** Dokumentet sparas exakt som det lämnades
+  till accesspunkten, med SHA-256, på den krypterade privata disken
+  (`peppol/{företag}/utgaende/`), och bevaras minst bevarandetiden (BFL 7 kap. 2 §) och tas inte bort automatiskt.
+- **Status.** I kö → Skickad till Peppol → Levererad, eller Misslyckades.
+  Statusen går aldrig bakåt, och en levererad faktura blir aldrig
+  misslyckad. En misslyckad sändning kan skickas igen; varje försök har samma
+  idempotensnyckel så att en faktura inte går iväg två gånger.
+  Behandlingshistoriken får `invoice.peppol_queued`, `invoice.peppol_sent`,
+  `invoice.peppol_delivered` och `invoice.peppol_failed` med id, aldrig
+  mottagarens Peppol-ID.
+- **Mottagarens godkännande.** En e-faktura får bara utfärdas om mottagaren
+  godkänner det (ML 17 kap. 20 §); en offentlig köpare måste ta emot
+  e-fakturor enligt EN 16931 (lag 2018:1277, 5 §). NONOX skickar via Peppol
+  bara när någon har valt det för kunden eller fakturan.
+- **Behörighet.** Att skicka kräver `invoices:send`, företagets
+  Peppol-inställningar `settings:manage`.
 
 ## 5a. Leverantörsfakturor
 
@@ -2451,6 +2613,31 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   avsändares meddelanden sparas alltid, i karantän om de flaggats.
   Meddelanden som lett till bokföring tas aldrig bort här.
 
+### 5e.1 E-fakturor via Peppol till inkorgen
+
+- När modulerna Peppol e-faktura och Inkorg är på och företaget tar emot
+  e-fakturor (ADR-050) hämtas dokument som Peppol-operatören har tagit emot
+  för företaget, via operatörens webhook (signerad, högst fem minuter gammal,
+  aldrig samma händelse två gånger) och var femtonde minut (`peppol:sync`).
+- Ett dokument tas bara emot om mottagaren i dokumentet är företagets eget
+  Peppol-ID. Det hamnar aldrig hos ett annat företag.
+- **Originalet.** XML-filen sparas byte för byte som meddelandets original,
+  med SHA-256, i det format och med det innehåll den hade när den kom till
+  företaget (BFL 7 kap. 1 § tredje stycket; BFNAR 2013:2). Samma fil två
+  gånger tas emot en gång. Fakturans PDF, som ligger i filen, sparas också
+  som bilaga efter samma kontroll som e-postbilagor.
+- **XML-filen är fakturan.** PDF:en i filen är en bild av den; skiljer de sig åt gäller XML-filen (BFL 5 kap. 6 §).
+- **Mottagning avstängd.** Ett dokument adresserat till företagets eget Peppol-ID tas aldrig bort: kommer det när modulen, inkorgen eller mottagningen är avstängd sparas originalet i karantän (`PEPPOL_NOT_RECEIVING`). Ett för stort dokument ligger kvar hos operatören och den som driftar NONOX larmas. När mottagningen stängs av tas företaget först bort ur Peppols adressbok, och modulen kan inte stängas av förrän det är gjort. Avvisade e-fakturor gallras inte efter sju dagar (`inbox:prune`).
+- **Tolkning och attest.** Peppol-läsaren gör ett förslag till
+  leverantörsfaktura som en person attesterar som i avsnitt 5e: leverantör
+  efter organisations- eller momsnummer, rader per momssats, belopp,
+  förfallodag, bankgiro, plusgiro eller IBAN och OCR. Okänd leverantör,
+  ändrade betaluppgifter och dubbletter ger varningar. Godkännandet går genom
+  `SaveSupplierInvoice` och `RegisterSupplierInvoice` som vanligt;
+  originalet kopplas som underlag.
+- E-postkontrollerna (lista över godkända avsändare, SPF/DKIM/DMARC) gäller
+  inte Peppol, där avsändaren identifieras av sin accesspunkt.
+
 ## 5f. NONOX Connect – öppet API (modul)
 
 Ett API för andra program ([ADR-032](../adr/ADR-032-public-api-and-nonox-connect.md),
@@ -3247,6 +3434,12 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   innan det föregående är avslutat (BFL 3 kap.), och att en bokföring högst
   30 dagar fram får skapa det följande året.
 
+- Ingående balanser (avsnitt 4.14a): att uppdateringen av inaktuella
+  ingående balanser vägras när periodlåset omfattar det senare årets första
+  dag men görs när det tidigare året stängs, och att en avsiktlig skillnad
+  (ÅRL 2 kap. 4 § andra stycket) får bekräftas för ett K2-företag (BFNAR
+  2016:10).
+
 - CRM (ADR-043): texten om intresseavvägningen för kontaktpersoner i
   manualen (docs/manual/sv/crm/gdpr-i-crm.md), standardtiden för gallring av
   prospekt och kontaktpersoner (24 månader) och vilka kopplingar till
@@ -3632,3 +3825,5 @@ kontrollerat dem mot källan. Särskilt:
 | 0.97 | 2026-11-02 | Lager: etiketter och etikettstudio (ADR-041), skanning med mobilen med kö utan nät som körs exakt en gång per operation (ADR-040), och modulen Kassakopplingar för Zettle och Onslip (ADR-042, avsnitt 5k): varje köp sparas en gång och dras från lagret, och dagens försäljning blir ett utkast till verifikation i serie K "Kassa" som en person granskar och bokför. Serie K skapas först när modulen slås på. |
 | 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos driftbolaget som HQ pekar ut, genom dess egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Inget kopplas till en befintlig post utan HQ:s beslut, och radering på begäran tar alltid bort personen. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.4. Ändrar ingen bokföring. |
 | 0.99 | 2026-11-04 | Nästa räkenskapsår skapas automatiskt (avsnitt 3.1, ADR-010): varje morgon när det senaste året slutar inom 30 dagar, och vid bokföring av ett datum i det följande året högst 30 dagar fram. Bara ett vanligt år på tolv månader i företagets första månad (BFL 3 kap. 1 och 3 §§); en omläggning (3 kap. 6 §) görs aldrig automatiskt. Det gamla året stängs inte och inga ingående balanser förs över. Behandlingshistoriken visar `via: automatic` och vad som utlöste det. Det första året kan fortfarande ändras när nästa år skapats automatiskt och är tomt; det tomma året tas då bort (`fiscal_year.removed`). |
+| 0.100 | 2026-11-04 | Ingående balanser som inte längre stämmer (avsnitt 4.14a, ADR-010; ÅRL 2 kap. 4 § första stycket 7): NONOX jämför varje års ingående balanser med föregående års utgående balanser, räknade som vid överföringen, och varnar under Räkenskapsår, Rapporter, Att göra och i bokslutets checklista. Bara öppna år jämförs; ett stängt år behåller sina balanser i kedjan. Uppdatera ingående balanser räknar om alla år som skiljer i ordning, bara på en persons beslut, under lås på år och företag, och vägras när periodlåset omfattar årets första dag; `fiscal_year.opening_balances_updated` visar varje konto före och efter (efter = det som skrevs). En avsiktlig skillnad bekräftas med skäl och fingeravtryck, som upphör att gälla när skillnaden ändras (ÅRL 2 kap. 4 § andra stycket, 5 kap. 5 §). Överföringen för hand vägras också när nästa års första dag är låst; i bokslutet görs den som förut, och stängningen tar låset för att skapa år först. Ett använt konto kan inte byta mellan balans- och resultatkonto. |
+| 0.101 | 2026-11-04 | E-faktura via Peppol (ADR-050, avsnitt 5.4 och 5e.1): skapade kundfakturor och kreditfakturor kan skickas som Peppol BIS Billing 3.0 genom installationens accesspunkt, kontrollerade mot reglerna och sparade exakt som de skickades, utan någon ändring i bokföringen; e-fakturor som tas emot hamnar i inkorgen med XML-filen som original och blir förslag till leverantörsfakturor som attesteras. Ett dokument adresserat till företaget sparas alltid (i karantän när mottagningen är avstängd), och mottagningen avregistreras innan den stängs av. Fakturatexten för trepartshandel hänvisar till artikel 141 och omvänd betalningsskyldighet. |

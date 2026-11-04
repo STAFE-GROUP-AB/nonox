@@ -39,6 +39,7 @@ En leverantörsfaktura går alltid samma väg i NONOX:
 
 - [Inkorgen](/manual/leverantorer/inkorgen) – granska och bokför det som mejlats till företaget.
 - [Inkorgens adress och godkända avsändare](/manual/leverantorer/inkorgens-installningar)
+- [Ta emot e-fakturor via Peppol](/manual/leverantorer/ta-emot-e-faktura) – e-fakturor från leverantörer direkt till inkorgen.
 - [Dagsrapporter från kassasystemet](/manual/leverantorer/dagsrapporter)
 
 > [!TIP]

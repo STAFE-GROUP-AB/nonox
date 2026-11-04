@@ -34,6 +34,7 @@ bokforing/kontoplan: { foretag: cafe, rutt: accounting.accounts }
 bokforing/verifikationsserier: { foretag: cafe, rutt: accounting.voucherSeries }
 bokforing/rakenskapsar: { foretag: cafe, rutt: accounting.fiscalYears }
 bokforing/sie: { foretag: cafe, rutt: accounting.sieImports.index }
+bokforing/inaktuella-ingaende-balanser: { foretag: frisor, rutt: accounting.fiscalYears, del: '[data-stale-opening-balances]', klick: ['text=Visa skillnaden per konto'] }
 
 fakturering/skapa-en-faktura: { foretag: konsult, rutt: invoicing.invoices.create }
 fakturering/skicka-en-faktura: { foretag: konsult, rutt: invoicing.invoices.show, modell: invoice }

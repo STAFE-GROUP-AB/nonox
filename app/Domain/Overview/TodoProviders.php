@@ -8,6 +8,7 @@ use App\Domain\Overview\Contracts\PersonalTodoProvider;
 use App\Domain\Overview\Contracts\TodoProvider;
 use App\Domain\Overview\Todos\BankTodos;
 use App\Domain\Overview\Todos\CompanyTasks;
+use App\Domain\Overview\Todos\OpeningBalanceTodos;
 use App\Models\Company;
 use App\Modules\Contracts\ProvidesTodos;
 use App\Modules\ModuleManager;
@@ -25,7 +26,7 @@ final class TodoProviders
     public const string TAG = 'overview.todo-providers';
 
     /** @var list<class-string<TodoProvider>> */
-    private const array CORE = [CompanyTasks::class, BankTodos::class];
+    private const array CORE = [CompanyTasks::class, BankTodos::class, OpeningBalanceTodos::class];
 
     public function __construct(
         private readonly Container $container,

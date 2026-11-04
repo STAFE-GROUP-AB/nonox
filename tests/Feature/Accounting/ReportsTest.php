@@ -6,6 +6,7 @@ use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
 use App\Domain\Accounting\Reports\LedgerQuery;
 use App\Domain\Accounting\Reports\LedgerReports;
+use App\Domain\Overview\OverviewCache;
 use App\Livewire\Accounting\Reports;
 use App\Models\Account;
 use App\Models\Company;
@@ -208,6 +209,15 @@ it('runs the same number of queries however much is booked', function () {
         return count(DB::getQueryLog());
     };
 
+    $cold = function () use ($count): int {
+        OverviewCache::forget($this->company->id);
+
+        return $count();
+    };
+
+    // The first request warms what is cached for the process (not per company); after that, cold means the company's caches.
+    $count();
+    $coldBefore = $cold();
     $count();
     $before = $count();
 
@@ -217,6 +227,11 @@ it('runs the same number of queries however much is booked', function () {
             ['account' => 3002, 'credit_ore' => 1_000, 'cost_center' => $day % 2 ? '10' : '20'],
         ]);
     }
+
+    // Cold (every cache of the company stale) and warm, the same number of queries before and after.
+    expect($cold())->toBe($coldBefore);
+
+    $count();
 
     expect($count())->toBe($before);
 });

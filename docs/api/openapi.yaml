@@ -4,7 +4,7 @@
 openapi: 3.1.0
 info:
   title: 'NONOX Connect API'
-  version: 1.7.0
+  version: 1.8.0
   description: |-
     The public API of NONOX Ekonomisystem, an open-source Swedish bookkeeping system.
 
@@ -9968,6 +9968,132 @@ webhooks:
       responses:
         2XX:
           description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  invoice.peppol_sent:
+    post:
+      operationId: invoicePeppolSent
+      summary: 'A customer invoice was handed to the Peppol network'
+      x-sv-summary: 'En kundfaktura har lämnats till Peppol'
+      description: "Sent when an invoice or credit invoice sent as a Peppol e-invoice (module Peppol e-faktura) has been accepted by the installation's access point: ids, status, the access point's reference and the SHA-256 of the document; never the receiver's Peppol ID. invoice.sent is sent too. The webhook needs invoices:view. Sent as an HTTPS POST to every active webhook of the company that subscribes to `invoice.peppol_sent`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas med HTTPS POST till varje webhook som prenumererar på `invoice.peppol_sent`, när Peppol-operatören har tagit emot en e-faktura. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: invoice.peppol_sent
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: invoice.peppol_sent
+                  created_at: '2026-11-20T08:15:43+01:00'
+                  company_id: 42
+                  data:
+                    transmission_id: 0c9e8d7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f
+                    invoice_id: 5c2e8a41-7b3d-4f19-a6c2-0e9d8b7a6f54
+                    invoice_number: 1042
+                    kind: INVOICE
+                    customer_id: 18
+                    document_type: INVOICE
+                    status: SENT
+                    reference: 6b928ef1-fb0d-4b9a-a56f-b5dbca7a0fd4
+                    sha256: 9e1f0a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f
+                    sent_at: '2026-11-20T08:15:42+01:00'
+                    failed_at: null
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
+  invoice.peppol_failed:
+    post:
+      operationId: invoicePeppolFailed
+      summary: 'A Peppol e-invoice could not be delivered'
+      x-sv-summary: 'En e-faktura via Peppol kunde inte levereras'
+      description: "Sent when an invoice or credit invoice sent through Peppol has failed: the access point refused it, or it could not be delivered after the retries. The invoice can be sent again. The webhook needs invoices:view. Sent as an HTTPS POST to every active webhook of the company that subscribes to `invoice.peppol_failed`. Verify `Nonox-Signature` over the raw body before trusting it, reject a timestamp more than five minutes from your clock, and store `Nonox-Event-Id` to ignore duplicates (a delivery whose answer was lost is sent again). Answer 2xx within 10 seconds. Anything else is retried after 1, 5 and 15 minutes and 1, 3, 6 and 13 hours (eight attempts over about 23 hours); then the webhook is turned off and the company's owner is e-mailed. Redirects are never followed."
+      x-sv-description: 'Skickas med HTTPS POST till varje webhook som prenumererar på `invoice.peppol_failed`, när en e-faktura via Peppol inte kunde levereras. Kontrollera Nonox-Signature, avvisa tidsstämplar äldre än fem minuter och använd Nonox-Event-Id mot dubbletter. Svara 2xx inom 10 sekunder; annars försöker NONOX igen i ungefär ett dygn och stänger sedan av webhooken.'
+      parameters:
+        - name: Nonox-Signature
+          in: header
+          required: true
+          description: '`t=<unix seconds>,v1=<hex HMAC-SHA256 of "<t>.<raw body>" with the subscription secret>`. Compare in constant time.'
+          schema:
+            type: string
+          example: 't=1772444713,v1=5f8e2a1c9b7d3e6f0a4c8b2d1e9f7a3c5b0d8e6f2a4c1b9d7e3f5a0c8b6d2e4f'
+        - name: Nonox-Event-Id
+          in: header
+          required: true
+          description: 'Unique per event; the same on every retry.'
+          schema:
+            type: string
+            format: uuid
+        - name: Nonox-Event-Type
+          in: header
+          required: true
+          description: 'The event type, as `type` in the body.'
+          schema:
+            type: string
+          example: invoice.peppol_failed
+        - name: User-Agent
+          in: header
+          required: true
+          schema:
+            type: string
+          example: 'NONOX-Webhooks/1.0 (+https://github.com/STAFE-GROUP-AB/nonox)'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookEvent'
+            examples:
+              example:
+                value:
+                  id: 7d2e3f4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a
+                  type: invoice.peppol_failed
+                  created_at: '2026-11-20T08:15:43+01:00'
+                  company_id: 42
+                  data:
+                    transmission_id: 0c9e8d7f-6a5b-4c3d-8e2f-1a0b9c8d7e6f
+                    invoice_id: 5c2e8a41-7b3d-4f19-a6c2-0e9d8b7a6f54
+                    invoice_number: 1042
+                    kind: INVOICE
+                    customer_id: 18
+                    document_type: INVOICE
+                    status: FAILED
+                    reference: 6b928ef1-fb0d-4b9a-a56f-b5dbca7a0fd4
+                    sha256: 9e1f0a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f
+                    sent_at: null
+                    failed_at: '2026-11-20T11:15:42+01:00'
+      responses:
+        2XX:
+          description: 'Received. Anything else, or no answer within 10 seconds (5 to connect), is retried.'
 components:
   securitySchemes:
     oauth2:
@@ -11788,6 +11914,49 @@ components:
           type:
             - string
             - 'null'
+        peppol:
+          type:
+            - object
+            - 'null'
+          description: 'The latest sending through Peppol (module Peppol e-faktura), or null. The receiver''s Peppol ID is left out.'
+          properties:
+            transmission_id:
+              type: string
+              format: uuid
+            status:
+              type: string
+              enum:
+                - QUEUED
+                - SENT
+                - DELIVERED
+                - FAILED
+            document_type:
+              type: string
+              enum:
+                - INVOICE
+                - CREDIT_NOTE
+            queued_at:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            sent_at:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            delivered_at:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            failed_at:
+              type:
+                - string
+                - 'null'
+              format: date-time
+            attempts:
+              type: integer
         rows:
           type: array
           items:
@@ -13164,6 +13333,8 @@ components:
             - sie.uploaded
             - stock.changed
             - quote.signed
+            - invoice.peppol_sent
+            - invoice.peppol_failed
           description: 'Open enum: new event types may be added within v1.'
         created_at:
           type: string

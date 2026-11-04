@@ -83,7 +83,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 ### Bokföring
 - **Löpande:** verifikationer med obruten numrering, utkast, rättelser, konteringsmallar och underlag som kan fotograferas med mobilen. Kontosaldot syns direkt när du väljer konto och efter varje rad. Bankavstämning, periodiseringar, anläggningsregister med avskrivningar (tillgången kan skapas direkt när inköpet bokförs), och inläsning av SIE4 i två steg med avstämning.
 - **Rapporter och moms:** saldobalans, resultat- och balansrapport, huvudbok, kontoanalys och verifikationslista per period och kostnadsställe, som PDF och CSV. Klicka på ett konto för att se dess huvudbok och vidare till verifikationen. Momsdeklaration med fil till Skatteverket, och EU-rapporter: periodisk sammanställning, underlag för OSS i kronor och euro (ECB:s kurs för kvartalets sista dag) och VIES-kontroll. Försäljning till privatpersoner i andra EU-länder får svensk moms under tröskelvärdet 99 680 kr och köparlandets moms via OSS över det eller när företaget valt det.
-- **Bokslut:** räkenskapsår och årsskifte, bokslut med checklista och låsning, obetalda fakturor bokförda vid årets slut med kontantmetoden, omvärdering av obetalda kund- och leverantörsfakturor i utländsk valuta till balansdagens kurs, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
+- **Bokslut:** räkenskapsår och årsskifte med varning när ingående balanser inte längre stämmer med förra årets utgående, bokslut med checklista och låsning, obetalda fakturor bokförda vid årets slut med kontantmetoden, omvärdering av obetalda kund- och leverantörsfakturor i utländsk valuta till balansdagens kurs, årsredovisning enligt K2 som PDF, och inkomstdeklaration 2 som SRU-filer.
 - **Inställningar:** kontoplan enligt BAS 2026, verifikationsserier, kostnadsställen och projekt.
 - En bokförd verifikation kan aldrig ändras, och databasen själv vägrar. En kedja av kontrollsummor avslöjar ändringar i efterhand och kontrolleras varje natt.
 
@@ -191,6 +191,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Utländsk valuta: betalfiler i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
+- E-faktura via Peppol: skicka kundfakturor och ta emot leverantörsfakturor i inkorgen enligt Peppol BIS Billing 3.0. Byggt, och slås på när vi har ett avtal med en Peppol-operatör (ADR-050).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
 
 Det som pågår, är planerat eller önskat står på färdplanen på webbplatsen (`/fardplan`), och allt som har levererats, och de utredningar och granskningar som ligger bakom, står med datum och klockslag i ändringsloggen (`/andringslogg`, med RSS-flöde), grupperat efter projektets faser. Båda skrivs på vanlig svenska för den som inte läser koden; posterna finns i `docs/andringslogg` och `docs/fardplan` och hålls aktuella enligt [CONTRIBUTING.md](CONTRIBUTING.md).
