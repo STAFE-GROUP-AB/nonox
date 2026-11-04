@@ -60,6 +60,20 @@
             <x-input id="email" type="email" class="mt-1 block w-full" wire:model="email" />
             <x-input-error for="email" class="mt-2" />
         </div>
+
+        <div class="grid gap-6 sm:grid-cols-2">
+            <div>
+                <x-label for="industry" value="{{ __('Bransch (frivilligt)') }}" />
+                <select id="industry" class="{{ $select }}" wire:model="industry" aria-describedby="industry_help">
+                    <option value="">{{ __('Välj bransch') }}</option>
+                    @foreach($industries as $option)
+                        <option value="{{ $option->value }}">{{ $option->label() }}</option>
+                    @endforeach
+                </select>
+                <x-input-error for="industry" class="mt-2" />
+            </div>
+        </div>
+        <p id="industry_help" class="-mt-3 text-sm text-gray-600">{{ __('Företagsguiden väljer steg och tips efter branschen, företagsformen och om företaget är momsregistrerat.') }}</p>
     </section>
 
     <section class="bg-white shadow-sm sm:rounded-lg p-6 space-y-6">

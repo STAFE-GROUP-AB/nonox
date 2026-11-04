@@ -1,0 +1,59 @@
+{
+  "steg": [
+    {
+      "nyckel": "registrera-foretaget",
+      "rubrik": "Registrera företaget",
+      "text": "Anmäl företaget till Bolagsverket.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/registrera-foretaget",
+      "nonox_rutt": "teams.create",
+      "kallor": [{"titel": "Verksamt", "url": "https://www.verksamt.se/starta"}]
+    },
+    {
+      "nyckel": "betala-in-aktiekapitalet",
+      "rubrik": "Betala in aktiekapitalet",
+      "text": "Sätt in aktiekapitalet på bolagets konto.",
+      "bolagsformer": ["AB"],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/aktiebolagets-kapital",
+      "nonox_rutt": null,
+      "kallor": []
+    },
+    {
+      "nyckel": "registrera-livsmedelsanlaggning",
+      "rubrik": "Registrera livsmedelsanläggningen",
+      "text": "Anmäl kaféet till kommunen.",
+      "bolagsformer": [],
+      "branscher": ["cafe"],
+      "villkor": null,
+      "artikel": "starta/kafeets-tillstand",
+      "nonox_rutt": null,
+      "kallor": []
+    },
+    {
+      "nyckel": "forsta-momsdeklarationen",
+      "rubrik": "Lämna den första momsdeklarationen",
+      "text": "Deklarera momsen för den första perioden.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": "vat_registered",
+      "artikel": "moms/momsdeklaration",
+      "nonox_rutt": "vat.index",
+      "kallor": []
+    },
+    {
+      "nyckel": "anmal-arbetsgivare",
+      "rubrik": "Ha koll på arbetsgivaravgifterna",
+      "text": "Betala arbetsgivaravgifter för de anställda.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": "employer_registered",
+      "artikel": "moms/oversikt",
+      "nonox_rutt": null,
+      "kallor": []
+    }
+  ]
+}

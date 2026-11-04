@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Domain\Company\AccountingMethod;
+use App\Domain\Company\Industry;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatExemption;
@@ -54,6 +55,9 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property ?string $bank_agreement_id
  * @property ?array<int, array{0: int, 1: int}> $asset_acquisition_accounts
  * @property ?int $asset_small_value_threshold_ore
+ * @property ?Industry $industry what the company does, for Företagsguiden (ADR-051)
+ * @property ?CarbonImmutable $started_on the day the company started; not asked for until stage 2 of Företagsguiden (ADR-051)
+ * @property bool $guide_enabled whether Företagsguiden is shown in the app
  */
 class Company extends JetstreamTeam
 {
@@ -96,6 +100,13 @@ class Company extends JetstreamTeam
         'logo_path',
         'brand_color',
         'brand_accent_color',
+        'industry',
+        'guide_enabled',
+    ];
+
+    /** @var array<string, mixed> */
+    protected $attributes = [
+        'guide_enabled' => true,
     ];
 
     /** @var array<string, class-string> */
@@ -145,6 +156,9 @@ class Company extends JetstreamTeam
             'is_test_company' => 'boolean',
             'asset_acquisition_accounts' => 'array',
             'asset_small_value_threshold_ore' => 'integer',
+            'industry' => Industry::class,
+            'started_on' => 'immutable_date',
+            'guide_enabled' => 'boolean',
         ];
     }
 

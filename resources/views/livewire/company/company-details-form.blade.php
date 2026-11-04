@@ -222,6 +222,33 @@
         </div>
     </section>
 
+    <section class="bg-white border border-gray-200 sm:rounded-xl p-6 space-y-5" data-guide-settings>
+        <div>
+            <h3 class="text-lg font-semibold text-gray-900">{{ __('Företagsguiden') }}</h3>
+            <p class="mt-1 text-sm text-gray-600">{{ __('Branschen avgör, tillsammans med företagsform och moms, vilka steg i startplanen och vilka tips som visas för företaget.') }}</p>
+        </div>
+
+        <div class="grid gap-5 sm:grid-cols-2">
+            <div>
+                <x-label for="details_industry" value="{{ __('Bransch') }}" />
+                <select id="details_industry" class="{{ $field }}" wire:model="state.industry" @disabled(! $canUpdate)>
+                    <option value="">{{ __('Inte angivet') }}</option>
+                    @foreach($industries as $option)
+                        <option value="{{ $option->value }}">{{ $option->label() }}</option>
+                    @endforeach
+                </select>
+                <x-input-error for="industry" class="mt-2" />
+            </div>
+        </div>
+
+        <label class="flex items-start gap-3">
+            <x-checkbox wire:model="state.guide_enabled" :disabled="! $canUpdate" class="mt-0.5" />
+            <span class="text-sm text-gray-700">{{ __('Visa Företagsguiden') }}
+                <span class="block text-xs text-gray-500">{{ __('Startplanen under Att göra och tipsen längst ner på sidorna. Guiden på webbplatsen finns kvar.') }}</span>
+            </span>
+        </label>
+    </section>
+
     @if($canUpdate)
         <div class="flex items-center justify-end gap-4">
             <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>

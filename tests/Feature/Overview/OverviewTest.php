@@ -248,6 +248,8 @@ it('shows each role only the figures and tasks it may act on', function () {
 });
 
 it('never shows another company\'s figures, tasks or vouchers', function () {
+    // Without Företagsguiden's start plan (ADR-051), which every new company has, the list is empty.
+    $this->company->forceFill(['guide_enabled' => false])->save();
     [$otherOwner, $other] = Bookkeeping::company();
     CurrentCompany::run($other, function () use ($otherOwner, $other) {
         Bookkeeping::post($otherOwner, $other, 999_900, 1930, 3001, '2026-03-02');

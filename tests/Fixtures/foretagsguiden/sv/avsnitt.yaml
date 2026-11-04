@@ -1,0 +1,13 @@
+# A small Företagsguiden for the tests (tests/Feature/GuideTest.php).
+starta:
+  titel: Starta företaget
+  beskrivning: Från idé till registrerat företag.
+  ikon: rocket
+moms:
+  titel: Moms
+  beskrivning: Hur moms fungerar.
+  ikon: receipt
+ej-skrivet:
+  titel: Ej skrivet
+  beskrivning: Ett avsnitt utan översikt syns inte.
+  ikon: scale

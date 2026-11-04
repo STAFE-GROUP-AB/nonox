@@ -21,6 +21,7 @@
       <nav aria-label="Resurser" style="display:flex;flex-direction:column;gap:12px;font-size:14.5px">
         <span style="font-size:12.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8E929B">Resurser</span>
         <a class="lp33" href="{{ route('manual.home') }}" style="text-decoration:none;color:#D9D7D1">Manual</a>
+        <a class="lp33" href="{{ route('guide.home') }}" style="text-decoration:none;color:#D9D7D1">Företagsguiden</a>
         <a class="lp34" href="{{ $ph['api'] }}" style="text-decoration:none;color:#D9D7D1">API för utvecklare</a>
         <a class="lp28" href="{{ route('security') }}" style="text-decoration:none;color:#D9D7D1">Säkerhet och regelverk</a>
         <a class="lp29" href="{{ route('changelog') }}" style="text-decoration:none;color:#D9D7D1">Ändringslogg</a>

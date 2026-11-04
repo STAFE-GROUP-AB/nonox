@@ -8,6 +8,7 @@ use App\Actions\Company\UpdateCompanyDetails;
 use App\Domain\Accounting\FiscalYearRules;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\CompanySetupRules;
+use App\Domain\Company\Industry;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\ReportingFrameworkRules;
 use App\Domain\Company\VatExemption;
@@ -60,6 +61,8 @@ class CompanyDetailsForm extends Component
             'oss_elected_from' => (string) $company->oss_elected_from?->toDateString(),
             'eu_sales_quarterly_goods' => $company->eu_sales_quarterly_goods,
             'eu_sales_quarterly_goods_from' => (string) $company->eu_sales_quarterly_goods_from?->toDateString(),
+            'industry' => (string) $company->industry?->value,
+            'guide_enabled' => $company->guide_enabled,
         ];
     }
 
@@ -127,6 +130,7 @@ class CompanyDetailsForm extends Component
             'vatPeriods' => VatPeriod::cases(),
             'vatExemptions' => VatExemption::cases(),
             'frameworks' => ReportingFramework::cases(),
+            'industries' => Industry::cases(),
             'months' => array_combine(range(1, 12), [
                 __('januari'), __('februari'), __('mars'), __('april'), __('maj'), __('juni'),
                 __('juli'), __('augusti'), __('september'), __('oktober'), __('november'), __('december'),

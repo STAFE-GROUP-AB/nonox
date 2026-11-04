@@ -1,0 +1,13 @@
+# Företagsguiden sections, in menu order (docs/foretagsguiden/SKRIVREGLER.md).
+starta:
+  titel: Starta företaget
+  beskrivning: Välj bolagsform, registrera företaget och kom i gång rätt från första dagen.
+  ikon: rocket
+moms-och-skatt:
+  titel: Moms och skatt
+  beskrivning: Hur moms, F-skatt och egenavgifter fungerar, och hur mycket av det du säljer som inte är dina pengar.
+  ikon: receipt
+ansvar-och-regler:
+  titel: Ansvar och regler
+  beskrivning: Vad lagen kräver av dig som driver företag, från bokföring och arkivering till ditt personliga ansvar.
+  ikon: scale

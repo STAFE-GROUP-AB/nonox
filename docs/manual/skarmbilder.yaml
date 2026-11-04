@@ -83,6 +83,7 @@ installningar/foretagets-uppgifter: { foretag: konsult, rutt: teams.show, modell
 kom-igang/logga-in: { foretag: restaurang, rutt: login, anvandare: gast, text: 'Logga in' }
 kom-igang/byt-foretag: { foretag: restaurang, rutt: dashboard, klick: ['button:has(> span.bg-accent-500)'] }
 kom-igang/sok: { foretag: cafe, rutt: dashboard, klick: ['button[aria-keyshortcuts]'] }
+kom-igang/foretagsguiden: { foretag: cafe, rutt: guide.home, anvandare: gast, fraga: { bolagsform: AB, bransch: cafe }, text: 'Vad driver du för företag?' }
 kom-igang/roller-och-behorigheter: { foretag: restaurang, rutt: teams.show, modell: company, visa: 'text=Personer i företaget' }
 
 bokforing/kortkommandon: { foretag: cafe, rutt: accounting.vouchers.create, klick: ['text=Kortkommandon (?)'], visa: 'text=Kortkommandon' }

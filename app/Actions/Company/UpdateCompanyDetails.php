@@ -7,6 +7,7 @@ namespace App\Actions\Company;
 use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\CompanySetupRules;
 use App\Domain\Company\GiroNumber;
+use App\Domain\Company\Industry;
 use App\Domain\Company\OrganisationNumber;
 use App\Domain\Company\ReportingFramework;
 use App\Domain\Company\VatExemption;
@@ -37,9 +38,9 @@ class UpdateCompanyDetails
         Gate::forUser($user)->authorize('update', $company);
 
         $dependent = $this->dependentRules($company, $input);
-        foreach (['oss_elected_from', 'eu_sales_quarterly_goods_from'] as $date) {
-            if (($input[$date] ?? null) === '') {
-                $input[$date] = null;
+        foreach (['oss_elected_from', 'eu_sales_quarterly_goods_from', 'industry'] as $optional) {
+            if (($input[$optional] ?? null) === '') {
+                $input[$optional] = null;
             }
         }
 
@@ -67,11 +68,14 @@ class UpdateCompanyDetails
             'oss_elected_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'eu_sales_quarterly_goods' => ['sometimes', 'boolean'],
             'eu_sales_quarterly_goods_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'industry' => ['sometimes', 'nullable', Rule::enum(Industry::class)],
+            'guide_enabled' => ['sometimes', 'boolean'],
         ], CompanySetupRules::messages(), [
             'oss_elected_from' => __('datum för beskattning i köparens land'),
             'eu_sales_quarterly_goods_from' => __('första kvartalet beslutet gäller'),
             'name' => __('företagsnamn'),
             'website' => __('webbplats'),
+            'industry' => __('bransch'),
         ])->validateWithBag('updateCompanyDetails');
 
         $confirmed = [
@@ -160,6 +164,7 @@ class UpdateCompanyDetails
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
             'f_skatt', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
             'eu_sales_quarterly_goods', 'eu_sales_quarterly_goods_from',
+            'industry', 'guide_enabled',
         ]))->map(fn (mixed $value) => match (true) {
             $value instanceof \BackedEnum => $value->value,
             $value instanceof \DateTimeInterface => $value->format('Y-m-d'),

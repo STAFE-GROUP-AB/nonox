@@ -1,0 +1,465 @@
+{
+  "steg": [
+    {
+      "nyckel": "valj-bolagsform",
+      "rubrik": "Välj bolagsform",
+      "text": "Bestäm om företaget ska vara enskild firma, aktiebolag, handelsbolag eller något annat. Formen avgör ditt ansvar, skatten och vad du lämnar in varje år.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/valj-bolagsform",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Verksamt.se – Starta och registrera aktiebolag",
+          "url": "https://verksamt.se/starta/valj-foretagsform/aktiebolag"
+        },
+        {
+          "titel": "Verksamt.se – Starta enskild näringsverksamhet",
+          "url": "https://verksamt.se/starta/valj-foretagsform/enskild-naringsverksamhet"
+        }
+      ]
+    },
+    {
+      "nyckel": "registrera-hos-bolagsverket",
+      "rubrik": "Registrera företaget hos Bolagsverket",
+      "text": "Ansök om registrering i e-tjänsten på verksamt.se. Ett aktiebolag ska ansöka inom sex månader från att stiftelseurkunden skrevs under. Företaget får då sitt organisationsnummer.",
+      "bolagsformer": [
+        "AB",
+        "HB",
+        "KB",
+        "EK_FORENING"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/registrera-foretaget",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Verksamt.se – Starta och registrera aktiebolag",
+          "url": "https://verksamt.se/starta/valj-foretagsform/aktiebolag"
+        },
+        {
+          "titel": "Lag (1980:1102) om handelsbolag och enkla bolag",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-19801102-om-handelsbolag-och-enkla-bolag_sfs-1980-1102/"
+        }
+      ]
+    },
+    {
+      "nyckel": "satt-in-aktiekapitalet",
+      "rubrik": "Öppna bolagets konto och sätt in aktiekapitalet",
+      "text": "Skriv stiftelseurkund och bolagsordning, sätt in minst 25 000 kronor på ett konto för bolaget och be banken om ett intyg till Bolagsverket.",
+      "bolagsformer": [
+        "AB"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/foretagskonto-och-pengar",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Verksamt.se – Starta och registrera aktiebolag",
+          "url": "https://verksamt.se/starta/valj-foretagsform/aktiebolag"
+        },
+        {
+          "titel": "Aktiebolagslag (2005:551)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/"
+        }
+      ]
+    },
+    {
+      "nyckel": "anmal-verklig-huvudman",
+      "rubrik": "Anmäl verklig huvudman",
+      "text": "Anmäl till Bolagsverket vem som ytterst äger eller kontrollerar företaget. Enligt lagen om registrering av verkliga huvudmän görs det samtidigt som du ansöker om registrering av företaget.",
+      "bolagsformer": [
+        "AB",
+        "HB",
+        "KB",
+        "EK_FORENING"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/registrera-foretaget",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Lag (2017:631) om registrering av verkliga huvudmän",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2017631-om-registrering-av-verkliga_sfs-2017-631/"
+        },
+        {
+          "titel": "Verksamt.se – Starta och registrera aktiebolag",
+          "url": "https://verksamt.se/starta/valj-foretagsform/aktiebolag"
+        },
+        {
+          "titel": "Verksamt.se – Starting and registering a limited partnership",
+          "url": "https://verksamt.se/en/setting-up/choose-business-type/limited-partnership"
+        },
+        {
+          "titel": "Verksamt.se – Starting and registering a trading partnership",
+          "url": "https://verksamt.se/en/setting-up/choose-business-type/trading-partnership"
+        }
+      ]
+    },
+    {
+      "nyckel": "for-aktiebok",
+      "rubrik": "Lägg upp bolagets aktiebok",
+      "text": "Styrelsen ska föra en aktiebok över bolagets aktier och ägare från start, och uppdatera den när aktier byter ägare.",
+      "bolagsformer": [
+        "AB"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "ansvar-och-regler/styrelse-och-vd",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Riksdagen – Aktiebolagslag (2005:551), 5 kap. 1 och 7 §§",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/"
+        }
+      ]
+    },
+    {
+      "nyckel": "skydda-foretagsnamnet",
+      "rubrik": "Fundera på att skydda företagsnamnet",
+      "text": "En enskild firma behöver inte registreras hos Bolagsverket. Vill du skydda namnet i länet kan du göra det frivilligt.",
+      "bolagsformer": [
+        "EF"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/registrera-foretaget",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Verksamt.se – Starta enskild näringsverksamhet",
+          "url": "https://verksamt.se/starta/valj-foretagsform/enskild-naringsverksamhet"
+        }
+      ]
+    },
+    {
+      "nyckel": "registrera-hos-skatteverket",
+      "rubrik": "Registrera företaget hos Skatteverket",
+      "text": "Lämna Skatteverkets företagsregistrering på verksamt.se. Där ansöker du om F-skatt, moms och arbetsgivarregistrering i samma ansökan. Handläggningen kan ta några veckor.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/registrera-foretaget",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – För dig som vill starta företag",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/startaochregistrera/fordigsomvillstartaforetag.4.6e8a1495181dad540842251.html"
+        },
+        {
+          "titel": "Skatteverket – Företagsregistrering (SKV 4620)",
+          "url": "https://www.skatteverket.se/foretag/etjansterochblanketter/blanketterbroschyrer/blanketter/info/4620.4.6efe6285127ab4f1d2580003836.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "ansok-om-f-skatt",
+      "rubrik": "Ansök om F-skatt och uppskatta vinsten",
+      "text": "F-skatt är frivillig men behövs i praktiken om du säljer tjänster till företag. Du ansöker i företagsregistreringen; med F-skatt betalar företaget själv sin preliminära skatt varje månad, och beloppet bygger på den vinst du uppger.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/f-skatt",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – För dig som vill starta företag",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/startaochregistrera/fordigsomvillstartaforetag.4.6e8a1495181dad540842251.html"
+        },
+        {
+          "titel": "Skatteverket – Skatteavdrag med 30 procent",
+          "url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivaravgifterochskatteavdrag/skatteavdrag/skatteavdragmed30procent.4.5c1163881590be297b511bc9.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "ta-stallning-till-moms",
+      "rubrik": "Ta ställning till momsregistrering och momsperiod",
+      "text": "Registrera företaget för moms om det säljer momspliktigt över gränsen för små företag, eller frivilligt. Välj om du redovisar moms varje månad, kvartal eller år.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/momsregistrering",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Registrera ditt företag för moms",
+          "url": "https://www.skatteverket.se/foretag/moms/momsregistrering/registreradittforetagformoms.4.deeebd105a602bfe38000256.html"
+        },
+        {
+          "titel": "Skatteverket – När ska jag deklarera moms",
+          "url": "https://www.skatteverket.se/foretag/moms/deklareramoms/narskajagdeklareramoms.4.6d02084411db6e252fe80008988.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "valj-bokforingsmetod",
+      "rubrik": "Välj fakturametoden eller kontantmetoden",
+      "text": "Kontantmetoden får användas om omsättningen normalt är högst 3 miljoner kronor om året. Ställ in samma metod i NONOX.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "moms-och-skatt/moms-pa-faktura",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Riksdagen – Bokföringslag (1999:1078)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/"
+        },
+        {
+          "titel": "Riksdagen – Mervärdesskattelag (2023:200)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/"
+        }
+      ]
+    },
+    {
+      "nyckel": "registrera-som-arbetsgivare",
+      "rubrik": "Registrera företaget som arbetsgivare före första lönen",
+      "text": "Ska företaget betala ut lön, även till dig som äger aktiebolaget, ska det vara registrerat som arbetsgivare innan lönen betalas ut.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/arbetsgivare",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Registrera dig som arbetsgivare",
+          "url": "https://www.skatteverket.se/foretag/arbetsgivare/arbetsgivarregistrering/registreradig.4.18e1b10334ebe8bc80003496.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "oppna-foretagskonto",
+      "rubrik": "Öppna ett konto för företaget",
+      "text": "Håll företagets pengar skilda från dina egna. Låt kunderna betala till företagets konto och betala företagets kostnader därifrån.",
+      "bolagsformer": [
+        "EF",
+        "HB",
+        "KB",
+        "EK_FORENING"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/foretagskonto-och-pengar",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Bokföringslag (1999:1078)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/"
+        }
+      ]
+    },
+    {
+      "nyckel": "lagg-upp-foretaget-i-nonox",
+      "rubrik": "Lägg upp företaget i NONOX",
+      "text": "Skapa företaget med organisationsnumret och uppgifterna från besluten: F-skatt, moms, momsperiod och arbetsgivarregistrering.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/registrera-foretaget",
+      "nonox_rutt": "teams.create",
+      "kallor": []
+    },
+    {
+      "nyckel": "valj-momssats-pa-artiklar",
+      "rubrik": "Sätt rätt momssats på det du säljer",
+      "text": "Ta reda på om det du säljer har 25, 12 eller 6 procent moms eller är momsfritt, och lägg in satsen på dina artiklar.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": "vat_registered",
+      "artikel": "moms-och-skatt/sa-fungerar-moms",
+      "nonox_rutt": "invoicing.articles",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Momssats på varor och tjänster",
+          "url": "https://www.skatteverket.se/foretag/moms/saljavarorochtjanster/momssatspavarorochtjanster.4.58d555751259e4d66168000409.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "bokfor-inkop-fore-start",
+      "rubrik": "Bokför inköp du gjort innan företaget startade",
+      "text": "Har du betalat sådant som hör till företaget med egna pengar, bokför det med kvittona som underlag. Momsen kan ibland dras av.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/inkop-fore-start",
+      "nonox_rutt": "accounting.vouchers.create",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Köpa varor eller tjänster till företaget",
+          "url": "https://www.skatteverket.se/foretag/moms/kopavarorochtjanster/kopavarorellertjanstertillforetaget.4.7459477810df5bccdd480005156.html"
+        },
+        {
+          "titel": "Aktiebolagslag (2005:551)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/"
+        }
+      ]
+    },
+    {
+      "nyckel": "bestam-arkivering",
+      "rubrik": "Bestäm var underlagen arkiveras",
+      "text": "Bestäm var kvitton och fakturor sparas och hur papperskvitton skannas. Räkenskapsinformationen ska sparas till och med det sjunde året efter utgången av det kalenderår då räkenskapsåret avslutades.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "ansvar-och-regler/arkivering",
+      "nonox_rutt": "accounting.fiscalYears",
+      "kallor": [
+        {
+          "titel": "Riksdagen – Bokföringslag (1999:1078)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/"
+        }
+      ]
+    },
+    {
+      "nyckel": "satt-undan-moms-och-skatt",
+      "rubrik": "Sätt undan pengar till moms och skatt",
+      "text": "Momsen du tar ut är inte företagets pengar, och den preliminära skatten betalas varje månad. Lägg undan pengar i takt med att kunderna betalar.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "moms-och-skatt/satt-undan-pengar",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – För dig som vill starta företag",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/startaochregistrera/fordigsomvillstartaforetag.4.6e8a1495181dad540842251.html"
+        },
+        {
+          "titel": "Skatteverket – Belopp och procent inkomstår 2026",
+          "url": "https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "kassaregister-och-personalliggare",
+      "rubrik": "Kontrollera kassaregister och personalliggare",
+      "text": "Säljer du mot kontanter eller kort, eller arbetar du i en bransch med personalliggare (restaurang, kropps- och skönhetsvård, bygg, tvätteri, fordonsservice, livsmedels- och tobaksgrossister)? Ta reda på vad som krävs innan du öppnar.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant",
+        "hair_beauty",
+        "crafts",
+        "retail"
+      ],
+      "villkor": null,
+      "artikel": "ansvar-och-regler/kassaregister-och-personalliggare",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Personalliggare",
+          "url": "https://www.skatteverket.se/foretag/arbetsgivare/personalliggare.4.4f3d00a710cc9ae1c9c80007271.html"
+        },
+        {
+          "titel": "Skatteverket – Vissa verksamheter är undantagna från kravet på kassaregister",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/kassaregister/undantagfrankravpakassaregister.4.6efe6285127ab4f1d2580005105.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "forsta-momsdeklarationen",
+      "rubrik": "Lämna din första momsdeklaration",
+      "text": "Ta fram rutorna i NONOX, lämna deklarationen hos Skatteverket och betala till skattekontot senast på deklarationsdagen.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": "vat_registered",
+      "artikel": "moms-och-skatt/momsdeklaration",
+      "nonox_rutt": "vat.index",
+      "kallor": [
+        {
+          "titel": "Skatteverket – När ska jag deklarera moms",
+          "url": "https://www.skatteverket.se/foretag/moms/deklareramoms/narskajagdeklareramoms.4.6d02084411db6e252fe80008988.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "planera-arsstamma-och-arsredovisning",
+      "rubrik": "Skriv in årsstämma och årsredovisning i kalendern",
+      "text": "Årsstämman (i en förening föreningsstämman) ska hållas inom sex månader efter räkenskapsårets slut. Årsredovisningen ska sedan ha kommit in till Bolagsverket inom en månad efter stämman. Har den inte kommit in inom sju månader efter årets slut tas en förseningsavgift ut.",
+      "bolagsformer": [
+        "AB",
+        "EK_FORENING"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "ansvar-och-regler/arsredovisning-och-bokslut",
+      "nonox_rutt": "accounting.annualReport",
+      "kallor": [
+        {
+          "titel": "Riksdagen – Aktiebolagslag (2005:551)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/aktiebolagslag-2005551_sfs-2005-551/"
+        },
+        {
+          "titel": "Riksdagen – Lag (2018:672) om ekonomiska föreningar",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2018672-om-ekonomiska-foreningar_sfs-2018-672/"
+        },
+        {
+          "titel": "Riksdagen – Årsredovisningslag (1995:1554)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/arsredovisningslag-19951554_sfs-1995-1554/"
+        },
+        {
+          "titel": "Bolagsverket – Årsredovisningsguiden för aktiebolag",
+          "url": "https://bolagsverket.se/foretag/aktiebolag/arsredovisningforaktiebolag/arsredovisningsguidenforaktiebolag.5550.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "skriv-avtal-mellan-agarna",
+      "rubrik": "Skriv ett avtal mellan ägarna",
+      "text": "Är ni flera som äger företaget: kom överens skriftligt om vad som händer om någon vill sälja, sluta eller blir sjuk, och hur ni löser oenighet.",
+      "bolagsformer": [
+        "AB",
+        "HB",
+        "KB"
+      ],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/forsakring-och-avtal",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Bolagsverket – Anlita hjälp för företag och föreningar",
+          "url": "https://bolagsverket.se/foretag/anlitahjalpforforetagochforeningar.3079.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "se-over-forsakringar",
+      "rubrik": "Se över företagets försäkringar",
+      "text": "Hemförsäkringen täcker som regel inte företagets utrustning och lager. Jämför företagsförsäkringar och fråga om kunderna kräver ansvarsförsäkring.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/forsakring-och-avtal",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Verksamt.se – Insurance for your business",
+          "url": "https://verksamt.se/en/protection-preparedness/insurance-business"
+        }
+      ]
+    },
+    {
+      "nyckel": "ordna-personuppgifterna",
+      "rubrik": "Ordna hanteringen av personuppgifter",
+      "text": "Har företaget kunder, anställda eller ett register med personer gäller dataskyddsförordningen. Skriv ner vilka uppgifter ni har, varför och hur länge de sparas.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "starta/forsakring-och-avtal",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "IMY – Företags hantering av personuppgifter",
+          "url": "https://www.imy.se/verksamhet/dataskydd/dataskydd-pa-olika-omraden/foretag/"
+        }
+      ]
+    }
+  ]
+}

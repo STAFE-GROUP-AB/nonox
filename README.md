@@ -185,6 +185,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Eget varumärke: logga och färger på fakturor, lönebesked och Min sida.
 - Redovisningsbyråns varumärke: en byrå kan visa sin logga och sina färger för sina kunder i appen, på Min sida och i mejlen om inloggning och uppgifter. Kunden väljer själv sin byrå, kopplingen ger byrån ingen behörighet, och kundens egna fakturor och lönebesked behåller kundens varumärke.
 - Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
+- Företagsguiden: hur du startar och driver företaget, med moms, skatt och ansvar förklarat på vanlig svenska och källor från Skatteverket, Bolagsverket och lagtexten (i beta tills en redovisningskonsult har granskat texterna). I appen visar Min startplan vad just ditt företag behöver göra, efter företagsform, bransch och momsregistrering, och tips från guiden syns på sidorna där de hör hemma.
 
 ### På väg
 - Tvåvägssynk med Google Kalender och Outlook för CRM: byggd, och slås på när tjänsten är registrerad hos Google och Microsoft och företaget tillåter det.
@@ -378,6 +379,7 @@ Kör du NONOX på din egen dator (`APP_ENV=local`) och öppnar sidan på samma d
 - [Systemdokumentation](docs/systemdokumentation/README.md) – hur bokföringen fungerar, som bokföringslagen kräver. Uppdateras med varje ändring.
 - [Beslut (ADR)](docs/adr/) – varför systemet är byggt som det är: verifikationer, SIE, kostnadsställen, rapporter och moms.
 - [Manual](https://nonox.app/manual) – manualen för användare: kom igång, bokföring, fakturor, moms, bokslut, lön och en egen del för anställda (Min sida och personalliggaren), med sök. Artiklarna skrivs i Markdown i [docs/manual/sv](docs/manual/sv) enligt [skrivreglerna](docs/manual/SKRIVREGLER.md). Knappen **Hjälp** i appen öppnar artikeln om sidan du står på.
+- [Företagsguiden](https://nonox.app/foretagsguiden) – guiden till att starta och driva företag, med källor. Artiklarna och startplanen skrivs i [docs/foretagsguiden](docs/foretagsguiden) enligt [skrivreglerna](docs/foretagsguiden/SKRIVREGLER.md), och varje artikel måste ha källor från en myndighet eller lagtexten.
 - [Utvecklare och API](https://nonox.app/utvecklare) – den publika utvecklarwebben för NONOX Connect: guider, en referens som genereras från [docs/api/openapi.yaml](docs/api/openapi.yaml), kodexempel och [ändringar](docs/api/CHANGELOG.md). Guiderna ligger i [docs/api/guider](docs/api/guider), på svenska och engelska.
 - [Branschsidor](docs/branscher/README.md) – sidorna per bransch på [nonox.app/branscher](https://nonox.app/branscher), deras adresser och reglerna för innehållet. Funktionerna de nämner kontrolleras mot listan ovan.
 - [AGENTS.md](AGENTS.md) – specifikationen och reglerna för alla som bidrar, människor som AI.

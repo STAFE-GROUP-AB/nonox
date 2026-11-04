@@ -48,7 +48,7 @@ Every company-scoped model uses `BelongsToCompany`; queued jobs get `company_id`
 | `app/Support/**` | Money, Luhn, SIE, Tenancy, Audit, Manual, Landing (public pages data), Chat, Instance settings. |
 | `app/Http/Controllers/Api/V1`, `app/Modules/Connect` | REST API and NONOX Connect (OAuth apps, API keys, webhooks). OpenAPI in `docs/api/openapi.yaml`. |
 | `resources/views/start/**` | Public website (landing, comparison, industries, moving guide, legal pages). |
-| `docs/adr/` | Architecture decisions, ADR-000 … ADR-049 (see §8). Next number = highest + 1; check other branches first, parallel work has collided. |
+| `docs/adr/` | Architecture decisions, ADR-000 … ADR-051 (see §8). Next number = highest + 1; check other branches first, parallel work has collided. |
 | `docs/systemdokumentation/README.md` | BFNAR 2013:2 system documentation, versioned; update it when accounting behaviour changes. |
 | `docs/manual/sv/<section>/*.md` | The public user manual at `/manual` (rules: `docs/manual/SKRIVREGLER.md`). Front matter `rutter` links each article to app routes for the in-app help button. |
 | `docs/andringslogg/andringslogg.json` | Public changelog at `/andringslogg`. |
@@ -144,7 +144,7 @@ agreements · 034 Open banking · 035 Company lookup · 036 User manual · 037 S
 038 Waiting list and /hq · 039 Inventory · 040 Scanner app · 041 Labels · 042 Till
 integrations · 043 CRM · 044 Operator company and access switches · 045 Encrypted chat ·
 046 CRM signing, quote templates and agreements · 047 CRM prospecting from open data ·
-048 CRM e-mail, mailings and web forms · 049 CRM calendar.
+048 CRM e-mail, mailings and web forms · 049 CRM calendar · 050 Peppol · 051 Företagsguiden.
 
 ## 9. Lessons that cost time before
 
