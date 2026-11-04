@@ -134,6 +134,17 @@ class Account extends Model
             ->withPivot(['id', 'role']);
     }
 
+    /**
+     * The people at the account marked Kontakta inte (ADR-049: a private
+     * person's account is kept out of, or anonymous in, calendars).
+     *
+     * @return BelongsToMany<Person, $this, AccountPerson, 'link'>
+     */
+    public function flaggedPeople(): BelongsToMany
+    {
+        return $this->people()->whereNotNull('crm_people.do_not_contact_at');
+    }
+
     /** @return HasMany<Activity, $this> */
     public function activities(): HasMany
     {

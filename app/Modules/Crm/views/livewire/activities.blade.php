@@ -11,6 +11,7 @@
 @endphp
 
 <div class="space-y-6">
+    <p class="text-sm"><a href="{{ route('crm.calendar') }}" class="font-medium text-accent-600 hover:text-accent-700">{{ __('Se dina aktiviteter i din egen kalender') }}</a></p>
     @if($canManage)
         <div class="flex flex-wrap gap-2 text-sm" role="group" aria-label="{{ __('Vems aktiviteter') }}">
             <button type="button" wire:click="$set('who', '')" @class(['inline-flex min-h-11 items-center rounded-xl px-4 font-medium', 'bg-ink text-white' => $who === '', 'bg-white text-ink ring-1 ring-stone-200' => $who !== '']) aria-pressed="{{ $who === '' ? 'true' : 'false' }}">{{ __('Mina') }}</button>

@@ -7,9 +7,13 @@ namespace App\Modules\Crm\Livewire;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Calendar\CalendarProviders;
+use App\Modules\Crm\Calendar\Jobs\SyncCalendarConnection;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\CrmSettings;
+use App\Modules\Crm\Models\CalendarConnection;
 use App\Modules\ModuleManager;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
@@ -41,7 +45,6 @@ class CrmSettingsForm extends Component
         $this->settings = CrmSettings::for($company);
         $this->settings['registry_monitoring'] = (bool) $this->settings['registry_monitoring'];
         $this->settings['registry_monitoring_prospects'] = (bool) $this->settings['registry_monitoring_prospects'];
-        $this->settings['registry_monitoring_prospects'] = (bool) $this->settings['registry_monitoring_prospects'];
     }
 
     public function save(ModuleManager $modules): void
@@ -49,30 +52,48 @@ class CrmSettingsForm extends Component
         $company = Company::query()->findOrFail($this->companyId);
         abort_unless($this->user()->hasTeamPermission($company, 'crm:settings'), 403);
 
+        foreach (CrmSettings::SWITCHES as $key) {
+            $this->settings[$key] = (int) (bool) ($this->settings[$key] ?? 0);
+        }
+
         $rules = [];
 
         foreach (CrmSettings::LIMITS as $key => [$min, $max]) {
             $rules["settings.{$key}"] = ['required', 'integer', "between:{$min},{$max}"];
         }
 
-        $validated = Validator::make(['settings' => [...$this->settings, 'registry_monitoring' => (int) (bool) ($this->settings['registry_monitoring'] ?? false), 'registry_monitoring_prospects' => (int) (bool) ($this->settings['registry_monitoring_prospects'] ?? false)]], $rules, [], [
+        $validated = Validator::make(['settings' => $this->settings], $rules, [], [
             'settings.months_to_inactive' => __('månader utan faktura'),
             'settings.prune_after_months' => __('månader utan aktivitet'),
             'settings.suppression_review_years' => __('år mellan granskningarna'),
             'settings.win_back_months' => __('månader till vinn tillbaka'),
             'settings.registry_monitoring' => __('bevakning'),
             'settings.registry_monitoring_prospects' => __('bevakning av prospekt'),
+            'settings.calendar_details' => __('detaljer i kalendrar'),
+            'settings.calendar_sync' => __('koppling till Google och Microsoft'),
+            'settings.calendar_private_accounts' => __('privata konton'),
         ])->validate();
 
+        $before = CrmSettings::for($company);
         $modules->updateSettings(CrmModule::KEY, $company, $this->user(), array_map('intval', (array) $validated['settings']));
-        $this->settings['registry_monitoring'] = (bool) $this->settings['registry_monitoring'];
+        $after = CrmSettings::for($company);
+        $this->settings['registry_monitoring'] = (bool) $after['registry_monitoring'];
+        $this->settings['registry_monitoring_prospects'] = (bool) $after['registry_monitoring_prospects'];
+
+        // ADR-049: connected calendars are written again with or without the details at once.
+        if ($before['calendar_details'] !== $after['calendar_details']) {
+            CurrentCompany::run($company, fn () => CalendarConnection::query()
+                ->where('status', CalendarConnection::ACTIVE)
+                ->pluck('id')
+                ->each(fn (int $id) => SyncCalendarConnection::dispatch($company->id, $id, true)));
+        }
 
         $this->toast(__('Inställningarna för CRM är sparade.'));
     }
 
-    public function render(): View
+    public function render(CalendarProviders $providers): View
     {
-        return view('crm::livewire.settings-form');
+        return view('crm::livewire.settings-form', ['calendarProviders' => $providers->anyConfigured()]);
     }
 
     private function user(): User

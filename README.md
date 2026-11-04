@@ -145,6 +145,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Prospektera i företagsregistret: ett register över Sveriges juridiska personer ur SCB:s och Bolagsverkets öppna data (gratis, uppdateras varje vecka), med filter på bransch (SNI 2025), ort, postnummer, bolagsform och registreringsdatum, och med SCB:s API-nyckel även storleksklass för anställda och omsättning, län och kommun. Enskilda firmor och namn på styrelseledamöter eller andra personer tas aldrig in. Företag med reklamspärr döljs i sökningen, och med SCB:s API-nyckel tas företag med spärr mot telefonförsäljning inte med i ringlistorna. Lägg till ett, flera eller alla träffar som prospekt utan dubbletter (ADR-047).
 - Liknande företag utan AI: samma bransch, storleksklass och region som de kunder som har fakturerats mest, med en förklaring vid varje träff.
 - Ringlistor som rings ett företag i taget: utfallet loggas med ett tryck, nästa steg planeras direkt, och Inget svar läggs sist i listan. Bevakning av kunder och prospekt i registret: ny adress, nytt namn, konkurs, likvidation och avregistrering blir en uppgift för den ansvarige. Betalningsanmärkningar, kreditbetyg och ny VD kräver en kreditupplysningstjänst och kommer när ett avtal finns.
+- Kalenderlänk för CRM: dina planerade samtal, möten och uppgifter i Google Kalender, Outlook eller Apples Kalender genom en hemlig länk, som standard bara med typ och företag. Ett enstaka möte läggs in med en kalenderfil, och ett möte kan skickas som inbjudan till kontaktpersonen, aldrig till någon som är markerad Kontakta inte.
 
 ### Inkorg (modul)
 - En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem. Avsändaren kontrolleras (SPF, DKIM, DMARC), farliga bilagor spärras och alla bilagor virussöks innan något läses. Skräppost från okända avsändare sparas aldrig.
@@ -180,6 +181,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Flytta hit: flyttguide steg för steg och direkt flytt från Fortnox via deras API.
 
 ### På väg
+- Tvåvägssynk med Google Kalender och Outlook för CRM: byggd, och slås på när tjänsten är registrerad hos Google och Microsoft och företaget tillåter det.
 - Utländsk valuta: betalfiler i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).

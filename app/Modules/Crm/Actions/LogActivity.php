@@ -74,12 +74,17 @@ final class LogActivity
             'body' => ['nullable', 'string', 'max:10000'],
             'assigned_to' => ['nullable', 'integer', Rule::in($memberIds)],
             'due_at' => ['nullable', 'date'],
+            // Stage 6 (ADR-049): a planned activity's length in a calendar, and a meeting's place.
+            'duration_minutes' => ['nullable', 'integer', 'min:5', 'max:1440'],
+            'location' => ['nullable', 'string', 'max:255'],
             'done' => ['sometimes', 'boolean'],
         ], [
             'assigned_to.in' => __('Aktiviteten kan bara tilldelas någon som är med i företaget.'),
         ], [
             'subject' => __('rubrik'),
             'due_at' => __('tid'),
+            'duration_minutes' => __('längd'),
+            'location' => __('plats'),
         ])->validate();
 
         $type = ActivityType::from((string) ($validated['type'] ?? $activity?->type->value));
@@ -102,7 +107,7 @@ final class LogActivity
             'done_at' => $done ? ($activity->done_at ?? now()) : null,
         ];
 
-        foreach (['account_id', 'person_id', 'deal_id', 'body', 'assigned_to'] as $field) {
+        foreach (['account_id', 'person_id', 'deal_id', 'body', 'assigned_to', 'duration_minutes', 'location'] as $field) {
             if (array_key_exists($field, $validated)) {
                 $attributes[$field] = is_string($validated[$field]) ? (trim($validated[$field]) === '' ? null : trim($validated[$field])) : $validated[$field];
             }

@@ -57,6 +57,27 @@
                         <x-ui.field for="activity_due" :label="__('När')" error="due_at">
                             <input id="activity_due" type="datetime-local" class="{{ $input }} mt-1" wire:model="activity.due_at">
                         </x-ui.field>
+                        {{-- Stage 6 (ADR-049): the length in a calendar, a meeting's place and its invitation. --}}
+                        <x-ui.field for="activity_duration" :label="__('Längd i kalendern')" error="duration_minutes">
+                            <select id="activity_duration" class="{{ $input }} mt-1" wire:model="activity.duration_minutes">
+                                <option value="">{{ $activity['type'] === 'MEETING' ? __('Standard (1 timme)') : __('Standard (15 min)') }}</option>
+                                @foreach([15 => __('15 min'), 30 => __('30 min'), 45 => __('45 min'), 60 => __('1 timme'), 90 => __('1,5 timmar'), 120 => __('2 timmar'), 180 => __('3 timmar'), 240 => __('4 timmar')] as $minutes => $label)
+                                    <option value="{{ $minutes }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </x-ui.field>
+                        @if($activity['type'] === 'MEETING')
+                            <x-ui.field for="activity_location" :label="__('Plats')" error="location">
+                                <input id="activity_location" type="text" class="{{ $input }} mt-1" wire:model="activity.location" placeholder="{{ __('Adress eller länk till videomöte') }}">
+                            </x-ui.field>
+                            <label class="flex items-start gap-3 text-sm text-gray-800 sm:col-span-2">
+                                <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="activity.invite" aria-describedby="activity_invite_hint">
+                                <span>
+                                    {{ __('Skicka inbjudan till personen') }}
+                                    <span id="activity_invite_hint" class="block text-gray-600">{{ __('Ett mejl med mötet som kalenderfil går till mötets person, med dig som avsändare och mottagare av svaret. Rubrik, tid och plats följer med, inte anteckningen. Går inte till någon som är markerad Kontakta inte.') }}</span>
+                                </span>
+                            </label>
+                        @endif
                     @endif
                     <x-ui.field for="activity_assigned" :label="__('Vem gör det')" error="assigned_to">
                         <select id="activity_assigned" class="{{ $input }} mt-1" wire:model="activity.assigned_to">

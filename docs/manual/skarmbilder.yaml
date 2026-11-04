@@ -204,3 +204,6 @@ crm/prospektera: { foretag: konsult, rutt: crm.prospecting, fraga: { huvudgrupp:
 crm/prospektera-liknande: { foretag: konsult, rutt: crm.prospecting, fraga: { lage: liknande }, del: '[data-testid=prospect-hits]' }
 crm/ringlista: { foretag: konsult, rutt: crm.call-lists.show, modell: { tabell: crm_call_lists, dar: { name: 'IT-bolag i Stockholm och Uppsala' } } }
 crm/ringlista-mobil: { foretag: konsult, rutt: crm.call-lists.show, modell: { tabell: crm_call_lists, dar: { name: 'IT-bolag i Stockholm och Uppsala' } }, enhet: mobil }
+crm/kalender: { foretag: konsult, rutt: crm.calendar, klick: ['text=Skapa kalenderlänk'] }
+crm/lagg-till-i-kalendern: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } }, fraga: { flik: moten }, del: '[data-testid="crm-entry"]' }
+crm/planera-mote-med-inbjudan: { foretag: konsult, rutt: crm.accounts.show, modell: { tabell: crm_accounts, dar: { name: 'Kunden Exempel AB' } }, klick: ['text=Planera möte'], visa: '#activity_type' }

@@ -12,6 +12,33 @@
     <x-ui.field for="crm-win-back" :label="__('Vinn tillbaka efter, månader')" error="settings.win_back_months" :hint="__('En förlorad affär eller kund får ett datum så här många månader fram. Då får den ansvarige en uppgift att höra av sig igen. Datumet kan ändras eller tas bort på varje affär. Standard är 6.')">
         <input id="crm-win-back" type="number" min="1" max="36" inputmode="numeric" wire:model="settings.win_back_months" class="{{ $input }}">
     </x-ui.field>
+    {{-- ADR-049: what the users' calendars may get. --}}
+    <fieldset class="space-y-3 sm:col-span-2">
+        <legend class="text-sm font-semibold text-ink">{{ __('Kalender') }}</legend>
+        <label class="flex items-start gap-3 text-sm text-gray-800">
+            <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="settings.calendar_details" aria-describedby="crm-calendar-details-hint">
+            <span>
+                {{ __('Användarna får visa detaljer i sina kalendrar') }}
+                <span id="crm-calendar-details-hint" class="block text-gray-600">{{ __('Rubrik, plats, anteckning och personer i kalenderlänkar och kopplade kalendrar, om användaren själv väljer det. Utan: bara typ och företag, till exempel "Möte: Företaget AB".') }}</span>
+            </span>
+        </label>
+        @if($calendarProviders)
+            <label class="flex items-start gap-3 text-sm text-gray-800">
+                <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="settings.calendar_sync" aria-describedby="crm-calendar-sync-hint">
+                <span>
+                    {{ __('Användarna får koppla sin Google- eller Microsoft-kalender') }}
+                    <span id="crm-calendar-sync-hint" class="block text-gray-600">{{ __('Aktiviteterna kopieras då till Google eller Microsoft, som kan lagra dem utanför EU/EES. Slå bara på det om företaget godkänner det, och ta upp det i företagets registerförteckning och i informationen till kontaktpersonerna.') }}</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3 text-sm text-gray-800">
+                <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="settings.calendar_private_accounts" aria-describedby="crm-calendar-private-hint">
+                <span>
+                    {{ __('Även privata Google- och Microsoft-konton') }}
+                    <span id="crm-calendar-private-hint" class="block text-gray-600">{{ __('Utan det går bara jobbkonton att koppla (Google Workspace och Microsoft 365), där företaget har eget avtal med leverantören. Ett privat konto styrs av användarens egna villkor hos Google eller Microsoft.') }}</span>
+                </span>
+            </label>
+        @endif
+    </fieldset>
     <div class="sm:col-span-2">
         <label class="flex items-start gap-3 text-sm text-gray-700">
             <input id="crm-registry-monitoring" type="checkbox" wire:model="settings.registry_monitoring" class="mt-1 size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500">

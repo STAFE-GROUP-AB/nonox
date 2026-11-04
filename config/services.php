@@ -213,6 +213,22 @@ return [
         'suppression_key' => env('NONOX_CRM_SUPPRESSION_KEY'),
     ],
 
+    // CRM calendar sync (ADR-049). Dormant until a client id and secret are set: no screen offers
+    // the provider and nothing calls it. The redirect defaults to /kunder/kalender/koppla/{provider}/svar.
+    'google_calendar' => [
+        'client_id' => env('GOOGLE_CALENDAR_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CALENDAR_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_CALENDAR_REDIRECT_URI'),
+    ],
+
+    'microsoft_graph' => [
+        'client_id' => env('MICROSOFT_GRAPH_CLIENT_ID'),
+        'client_secret' => env('MICROSOFT_GRAPH_CLIENT_SECRET'),
+        'redirect' => env('MICROSOFT_GRAPH_REDIRECT_URI'),
+        // "organizations": work and school accounts only; "common" adds personal ones (refused unless the company allows them).
+        'tenant' => env('MICROSOFT_GRAPH_TENANT', 'organizations'),
+    ],
+
     // Google Chrome for the manual's screenshots (manual:screenshots), on a developer's computer.
     'chrome' => [
         'path' => env('CHROME_PATH', '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),

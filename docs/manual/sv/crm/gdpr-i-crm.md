@@ -46,6 +46,8 @@ Mall att utgå från (fyll i det som står inom hakparentes):
 
 Har ni ett avtal med personen eller dess arbetsgivare, byt meningen om berättigat intresse mot: "Vi behöver uppgifterna för att fullgöra vårt avtal med [företaget] (artikel 6.1 b)." Bygger det på samtycke: "Du har samtyckt den [datum] (artikel 6.1 a). Du kan ta tillbaka ditt samtycke när du vill." Rätten att invända gäller berättigat intresse; vid samtycke är det att ta tillbaka samtycket som gäller.
 
+Använder ni kalenderlänk eller kalenderkoppling, lägg till: "[Möten och samtal med dig kan också finnas i våra medarbetares kalendrar hos [Google/Microsoft/Apple], som kan lagra uppgifterna utanför EU/EES.]"
+
 Mallen är ett förslag. Stäm av den med den som ansvarar för dataskyddet hos er.
 
 ## Kontakta inte
@@ -96,6 +98,10 @@ Företagsregistret under **CRM → Prospektera** innehåller bara juridiska pers
 Kontaktpersoner hos prospektet lägger du till själv, med rättslig grund som för alla andra. Hittar du personen på företagets webbplats eller någon annanstans är det artikel 14 som gäller: informera personen inom en månad och skriv datumet i **Informerad den**.
 
 Har ett företag reklamspärr i SCB:s register visas det inte i sökningen om du inte väljer det. Spärr mot telefonförsäljning finns bara om den som driftar NONOX har SCB:s API-nyckel; sådana företag tas aldrig med i en ringlista. Privatpersoner och enskilda firmor tas bara med i en ringlista om du väljer det, och då ska numret kontrolleras mot NIX-Telefon innan du ringer i säljsyfte. Vad spärrarna innebär för just er marknadsföring är inte granskat av en jurist än; stäm av med den som ansvarar för dataskyddet hos er.
+
+## Kalendrar
+
+En kalenderlänk och en kopplad kalender kopierar aktiviteter till en annan tjänst, till exempel Google, Microsoft eller Apple, som kan lagra dem utanför EU. Utan detaljer står bara typ och företag i kalendern, och en privatperson visas som "privatkund". En enskild firmas namn är ofta ägarens namn och syns därför även utan detaljer. Med detaljer kommer rubrik, plats, anteckning och kontaktpersonens namn med. Aktiviteter om någon med begränsad behandling kommer aldrig med, och en person som är markerad **Kontakta inte** nämns aldrig. Under **CRM → Inställningar** bestämmer företaget om användarna får visa detaljer och om de får koppla Google- eller Microsoft-kalendrar (av som standard). Tillåter företaget kopplingen bör det stå i företagets egen registerförteckning och i informationen till kontaktpersonerna; kontrollera med er dataskyddsansvarige. Se [Kalender](/manual/crm/kalender).
 
 ## Läs också
 

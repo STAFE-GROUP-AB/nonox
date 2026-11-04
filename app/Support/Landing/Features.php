@@ -73,6 +73,8 @@ final class Features
         'crm_pipeline' => ['name' => 'Säljtratt med affärer och obligatoriskt nästa steg', 'status' => self::LIVE, 'readme' => 'Affärer i en säljtratt', 'module' => 'CRM'],
         'crm_forecast' => ['name' => 'Prognos och mål per säljare', 'status' => self::LIVE, 'readme' => 'Prognos per månad', 'module' => 'CRM'],
         'crm_prospecting' => ['name' => 'Prospektering i företagsregistret med ringlistor', 'status' => self::LIVE, 'readme' => 'Prospektera i företagsregistret', 'module' => 'CRM'],
+        'crm_calendar' => ['name' => 'CRM-aktiviteter i din egen kalender', 'status' => self::LIVE, 'readme' => 'Kalenderlänk för CRM', 'module' => 'CRM'],
+        'crm_calendar_sync' => ['name' => 'Tvåvägssynk med Google Kalender och Outlook', 'status' => self::SOON, 'readme' => 'Tvåvägssynk med Google Kalender och Outlook', 'module' => 'CRM'],
         'control_visit' => ['name' => 'Kontrollbesök i personalliggaren', 'status' => self::LIVE, 'readme' => 'Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren', 'module' => 'Personalliggare'],
         'inbox' => ['name' => 'Inkorg för fakturor och kvitton', 'status' => self::LIVE, 'readme' => 'En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem', 'module' => 'Inkorg'],
         'daily_reports' => ['name' => 'Dagsrapporter från kassasystemet', 'status' => self::LIVE, 'readme' => 'dagsrapporter läses utan AI, med mallar som en person godkänt', 'module' => 'Inkorg'],

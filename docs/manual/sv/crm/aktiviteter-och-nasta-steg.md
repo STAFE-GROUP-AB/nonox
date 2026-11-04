@@ -48,6 +48,7 @@ Försenade aktiviteter visas dessutom under **Att göra** på översikten.
 ## Bra att veta
 
 - Tider visas och sparas i svensk tid.
+- Dina planerade aktiviteter kan synas i din egen kalender, och ett möte kan skickas som inbjudan. Se [Kalender](/manual/crm/kalender).
 - E-post loggar du för hand än så länge. Att skicka kopior av mejl till NONOX kommer i ett senare steg.
 - En aktivitet kan gälla en särskild kontaktperson. Raderas personen enligt GDPR blir aktiviteten kvar utan namn och text.
 
