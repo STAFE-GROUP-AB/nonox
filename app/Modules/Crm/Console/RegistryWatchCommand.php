@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Crm\Console;
 
 use App\Models\Company;
+use App\Models\RegistryChange;
 use App\Modules\Crm\Actions\CreateRegistryNotices;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\CrmSettings;
@@ -42,6 +43,14 @@ class RegistryWatchCommand extends Command
 
             $this->info("Checking company `{$company->id}`...");
             $made += $notices($company);
+        }
+
+        // A company that has left the register: its "removed" change has done its work once every company was told.
+        if ($this->argument('company') === null) {
+            RegistryChange::query()
+                ->whereNotIn('org_number', fn ($registry) => $registry->select('org_number')->from('company_registry'))
+                ->whereIn('id', fn ($noticed) => $noticed->select('registry_change_id')->from('crm_registry_notices'))
+                ->delete();
         }
 
         $this->comment('Checked '.count($ids)." companies. {$made} change tasks created.");

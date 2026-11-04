@@ -7966,5 +7966,7 @@
     "Ta bort undantaget": "Remove the exclusion",
     "Senaste inläsningarna": "Latest loads",
     "Registret är inte inläst. Kör php artisan registry:import scb-bulk och sedan bolagsverket-bulk.": "The register is not loaded. Run php artisan registry:import scb-bulk and then bolagsverket-bulk.",
-    ":read rader, :written företag": ":read rows, :written companies"
+    ":read rader, :written företag": ":read rows, :written companies",
+    "Företaget finns inte längre i SCB:s register": "The company is no longer in Statistics Sweden's business register",
+    "finns inte längre i SCB:s register": "no longer in Statistics Sweden's business register"
 }

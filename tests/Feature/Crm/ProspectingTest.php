@@ -339,8 +339,12 @@ it('leaves private persons and sole traders out of call lists unless asked for, 
     $person = Crm::prospect($this->company, $this->owner, 'Anna Andersson', ['kind' => 'PERSON']);
     $soleTrader = Crm::accountFor(Crm::customer($this->company, $this->owner, 'Annas Firma', ['org_number' => '19800101-999'.Luhn::checkDigit('800101999')]));
 
-    $made = app(CreateCallList::class)($this->owner, $this->company, ['name' => 'Utan privata'], [$company->id, $person->id, $soleTrader->id]);
-    expect($made['left_out'])->toBe(2)
+    // A sole trader added by hand as a company, with the personal number on the account (an import, an older record).
+    $byHand = Crm::prospect($this->company, $this->owner, 'Bertils Firma');
+    $byHand->forceFill(['org_number' => '19800101-999'.Luhn::checkDigit('800101999')])->save();
+
+    $made = app(CreateCallList::class)($this->owner, $this->company, ['name' => 'Utan privata'], [$company->id, $person->id, $soleTrader->id, $byHand->id]);
+    expect($made['left_out'])->toBe(3)
         ->and(CallListItem::query()->where('call_list_id', $made['list']->id)->pluck('account_id')->all())->toBe([$company->id]);
 
     $with = app(CreateCallList::class)($this->owner, $this->company, ['name' => 'Med privata', 'include_private' => true], [$person->id, $soleTrader->id])['list'];

@@ -33,11 +33,16 @@ final class RegistryChangeText
             'proceedings' => __('Konkurs, likvidation eller rekonstruktion'),
             'employee_class' => __('Ändrat antal anställda'),
             'turnover_class' => __('Ändrad omsättning'),
+            'removed' => __('Företaget finns inte längre i SCB:s register'),
         ];
     }
 
     public static function line(RegistryChange $change): string
     {
+        if ($change->field === 'removed') {
+            return self::labels()['removed'];
+        }
+
         $label = self::labels()[$change->field] ?? $change->field;
         $old = self::value($change->field, $change->old_value);
         $new = self::value($change->field, $change->new_value);
@@ -52,7 +57,7 @@ final class RegistryChangeText
      */
     public static function summary(array $fields): string
     {
-        $words = array_map(fn (string $field): string => mb_strtolower(self::labels()[$field] ?? $field), $fields);
+        $words = array_map(fn (string $field): string => $field === 'removed' ? __('finns inte längre i SCB:s register') : mb_strtolower(self::labels()[$field] ?? $field), $fields);
 
         return implode(', ', array_slice(array_unique($words), 0, 3)).(count($words) > 3 ? ' …' : '');
     }

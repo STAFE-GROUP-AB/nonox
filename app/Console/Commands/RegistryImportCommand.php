@@ -49,6 +49,12 @@ class RegistryImportCommand extends Command
 
     protected $description = 'Läser in företagsregistret (juridiska personer) från SCB:s och Bolagsverkets öppna data.';
 
+    /** A company is removed after this many complete SCB runs in a row without it. */
+    public const int MISSED_RUNS_TO_REMOVE = 2;
+
+    /** @var array<string, true> the organisation numbers some company watches */
+    private array $watched = [];
+
     public function handle(): int
     {
         try {
@@ -80,7 +86,8 @@ class RegistryImportCommand extends Command
             $this->info("Körning {$import->id}: läser {$source->key()}...");
         }
 
-        $writer = new RegistryWriter($source, $import, $this->watched());
+        $this->watched = $this->watched();
+        $writer = new RegistryWriter($source, $import, $this->watched);
         // One import at a time, whichever source: they share rows, the sources list and the change log.
         $lock = Cache::lock('registry-import', 6 * 3600);
 
@@ -177,10 +184,14 @@ class RegistryImportCommand extends Command
     }
 
     /**
-     * Deletes the companies a complete SCB run no longer has: they have left
-     * SCB's register, and the register keeps only what is in the source
-     * (ADR-047). A run with far fewer companies than the register (a cut
-     * download) deletes nothing. Their recorded changes go with them.
+     * Companies a complete SCB run (file or API) did not have get one more
+     * missed run; those missing from MISSED_RUNS_TO_REMOVE runs in a row have
+     * left SCB's register and are deleted (ADR-047), so a difference between
+     * the file and the API, or one bad week, deletes nothing. A run with far
+     * fewer companies than the register (a cut download) counts nothing.
+     *
+     * A watched company that is deleted gets the change "removed", kept
+     * until crm:registry-watch has told the companies that have it.
      */
     private function removeGone(RegistryImport $import): int
     {
@@ -192,23 +203,43 @@ class RegistryImportCommand extends Command
             return 0;
         }
 
-        $gone = DB::table('company_registry')
+        DB::table('company_registry')
             ->where(fn ($query) => $query->whereNull('last_import_id')->orWhere('last_import_id', '<>', $import->id))
-            ->pluck('org_number')
-            ->map(fn (mixed $number): string => (string) $number)
-            ->all();
+            ->increment('missed_runs');
 
-        foreach (array_chunk($gone, 1000) as $chunk) {
-            RegistryWriter::forget($chunk);
+        $gone = DB::table('company_registry')
+            ->where('missed_runs', '>=', self::MISSED_RUNS_TO_REMOVE)
+            ->get(['org_number', 'name']);
+        $now = CarbonImmutable::now();
+
+        foreach ($gone->chunk(1000) as $chunk) {
+            $removed = $chunk->filter(fn (object $row): bool => isset($this->watched[(string) $row->org_number]))
+                ->map(fn (object $row): array => ['org_number' => (string) $row->org_number, 'field' => 'removed', 'old_value' => mb_substr((string) $row->name, 0, 500), 'new_value' => null, 'source' => (string) $import->source, 'import_id' => $import->id, 'detected_at' => $now])
+                ->values()
+                ->all();
+
+            $orgs = array_values($chunk->map(fn (object $row): string => (string) $row->org_number)->all());
+            $watched = array_values(array_filter($orgs, fn (string $org): bool => isset($this->watched[$org])));
+
+            DB::transaction(function () use ($orgs, $watched, $removed): void {
+                // A watched company's changes stay until every company has been told; the rest go now.
+                RegistryWriter::forget(array_values(array_diff($orgs, $watched)));
+                RegistryWriter::forget($watched, keepUnnoticed: true);
+
+                if ($removed !== []) {
+                    DB::table('company_registry_changes')->insert($removed);
+                }
+            });
         }
 
-        return count($gone);
+        return $gone->count();
     }
 
     /**
-     * The organisation numbers some company's CRM has as an account: only
-     * their changes are recorded. Read across companies on purpose, ten
-     * digits only; nothing about the accounts leaves this method.
+     * The organisation numbers some company watches: its customers, and its
+     * prospects when it has "Bevaka även prospekt" on. Only their changes are
+     * recorded. Read across companies on purpose, ten digits only; nothing
+     * about the accounts leaves this method.
      *
      * @return array<string, true>
      */
@@ -216,7 +247,14 @@ class RegistryImportCommand extends Command
     {
         $watched = [];
 
-        DB::table('crm_accounts')->whereNotNull('org_number')->select('org_number')->distinct()->orderBy('org_number')
+        DB::table('crm_accounts')
+            ->whereNotNull('crm_accounts.org_number')
+            ->where(fn ($query) => $query->whereNotNull('crm_accounts.customer_id')->orWhereExists(fn ($modules) => $modules->select(DB::raw(1))
+                ->from('company_modules')
+                ->whereColumn('company_modules.company_id', 'crm_accounts.company_id')
+                ->where('company_modules.module_key', 'crm')
+                ->whereRaw("(company_modules.settings->>'registry_monitoring_prospects') = '1'")))
+            ->select('crm_accounts.org_number')->distinct()->orderBy('crm_accounts.org_number')
             ->each(function (object $row) use (&$watched): void {
                 $digits = (string) preg_replace('/\D/', '', (string) $row->org_number);
 

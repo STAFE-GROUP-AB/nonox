@@ -6,8 +6,10 @@ use App\Models\AuditLog;
 use App\Models\RegistryChange;
 use App\Models\RegistryCompany;
 use App\Models\RegistryImport;
+use App\Modules\Crm\Models\Activity;
 use App\Support\CompanyRegistry\Import\ScbBulkFile;
 use App\Support\CompanyRegistry\Sni;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Sleep;
@@ -115,15 +117,17 @@ it('is idempotent, skips an unchanged file and resumes an unfinished run', funct
         ->and(RegistryCompany::query()->count())->toBe(9);
 });
 
-it('records changes only for companies some CRM watches, and deletes companies that left the file', function () {
+it('records changes only for companies some CRM watches, and deletes companies missing from two runs in a row', function () {
     $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => registryFixture('scb_bulkfil.txt')])->assertSuccessful();
     expect(RegistryChange::query()->count())->toBe(0);
 
     [$owner, $company] = Bookkeeping::company();
     Crm::enable($company, $owner);
-    Crm::prospect($company, $owner, 'Kodverket Exempel AB', ['org_number' => '559999-6013']);
+    Crm::customer($company, $owner, 'Kodverket Exempel AB', ['org_number' => '559999-6013']);
+    // A prospect is watched only where the company has "Bevaka även prospekt" on.
+    Crm::prospect($company, $owner, 'Molntjänst Exempel AB', ['org_number' => '559999-6021']);
 
-    // The same companies, one moved and one renamed (watched and not watched).
+    // The same companies, one moved and one renamed (a watched customer and an unwatched prospect).
     $changed = str_replace(['Exempelgatan 1', 'Molntjänst Exempel AB'], ['Nya gatan 10', 'Molnet Exempel AB'], (string) file_get_contents(registryFixture('scb_bulkfil.txt')));
     $path = sys_get_temp_dir().'/nonox-scb-'.uniqid().'.txt';
     file_put_contents($path, $changed);
@@ -138,12 +142,54 @@ it('records changes only for companies some CRM watches, and deletes companies t
     $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->expectsOutputToContain('Inga tas bort')->assertSuccessful();
     expect(RegistryCompany::query()->count())->toBe(9);
 
+    // Missing from one complete run: kept (one bad week, or the file and the API disagree).
     RegistryChange::create(['org_number' => '5599996096', 'field' => 'name', 'old_value' => 'A', 'new_value' => 'B', 'source' => 'scb-bulk', 'detected_at' => now()]);
-    file_put_contents($path, implode("\r\n", array_merge(array_slice($lines, 0, 9), array_slice($lines, 10))));
+    $without = implode("\r\n", array_merge(array_slice($lines, 0, 9), array_slice($lines, 10)));
+    file_put_contents($path, $without);
     $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->assertSuccessful();
+    expect(RegistryCompany::query()->where('org_number', '5599996096')->value('missed_runs'))->toBe(1);
+
+    // Seen again: the count starts over. Then missing from two runs in a row: deleted, with its changes (unwatched).
+    file_put_contents($path, $changed);
+    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path, '--force' => true])->assertSuccessful();
+    expect(RegistryCompany::query()->where('org_number', '5599996096')->value('missed_runs'))->toBe(0);
+
+    foreach ([1, 2] as $run) {
+        file_put_contents($path, $without.str_repeat("\r\n", $run));
+        $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->assertSuccessful();
+    }
+
     expect(RegistryCompany::query()->where('org_number', '5599996096')->exists())->toBeFalse()
         ->and(RegistryCompany::query()->count())->toBe(8)
         ->and(RegistryChange::query()->where('org_number', '5599996096')->exists())->toBeFalse();
+});
+
+it('tells a company when a customer leaves the register, then forgets the change', function () {
+    $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => registryFixture('scb_bulkfil.txt')])->assertSuccessful();
+
+    [$owner, $company] = Bookkeeping::company();
+    Crm::enable($company, $owner);
+    $account = Crm::accountFor(Crm::customer($company, $owner, 'Kodverket Exempel AB', ['org_number' => '559999-6013']));
+    $this->travel(1)->minutes();
+
+    $lines = explode("\r\n", (string) file_get_contents(registryFixture('scb_bulkfil.txt')));
+    $path = sys_get_temp_dir().'/nonox-scb-'.uniqid().'.txt';
+
+    foreach ([1, 2] as $run) {
+        file_put_contents($path, implode("\r\n", array_merge([$lines[0]], array_slice($lines, 2))).str_repeat("\r\n", $run));
+        $this->artisan('registry:import', ['source' => 'scb-bulk', '--file' => $path])->assertSuccessful();
+    }
+
+    expect(RegistryCompany::query()->where('org_number', '5599996013')->exists())->toBeFalse()
+        ->and(RegistryChange::query()->where('org_number', '5599996013')->pluck('field')->all())->toBe(['removed']);
+
+    $this->artisan('crm:registry-watch')->assertSuccessful();
+
+    CurrentCompany::set($company);
+    $task = Activity::query()->where('account_id', $account->id)->sole();
+    expect($task->subject)->toBe('Ändring hos kunden: finns inte längre i SCB:s register')
+        ->and($task->body)->toContain('Företaget finns inte längre i SCB:s register')
+        ->and(RegistryChange::query()->where('org_number', '5599996013')->exists())->toBeFalse();
 });
 
 it('reads SCB\'s API with the key, page by page, and refuses to run without one', function () {

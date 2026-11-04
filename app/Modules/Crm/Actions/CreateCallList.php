@@ -117,6 +117,8 @@ final class CreateCallList
     /** A private person, or a sole trader (a customer with a personal number): a natural person. */
     public static function isPrivate(Account $account): bool
     {
-        return $account->kind === AccountKind::Person || IdentityNumber::isPersonal($account->customer?->org_number);
+        return $account->kind === AccountKind::Person
+            || IdentityNumber::isPersonal($account->org_number)
+            || IdentityNumber::isPersonal($account->customer?->org_number);
     }
 }

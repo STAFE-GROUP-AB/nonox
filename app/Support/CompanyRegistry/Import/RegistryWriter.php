@@ -97,6 +97,7 @@ final class RegistryWriter
             // Every complete SCB run (file or API) marks the rows it has seen; the rest have left the register.
             if ($this->source->createsRows()) {
                 $attributes['last_import_id'] = $this->import->id;
+                $attributes['missed_runs'] = 0;
             }
 
             $values[] = ['org_number' => $org, ...$attributes, 'created_at' => $now, 'updated_at' => $now];
@@ -135,7 +136,7 @@ final class RegistryWriter
 
         // Every row of one source has the same columns, as an upsert needs.
         $columns = array_keys($values[0]);
-        $update = array_values(array_unique(array_intersect([...$this->source->updateColumns(), 'last_import_id', 'updated_at'], $columns)));
+        $update = array_values(array_unique(array_intersect([...$this->source->updateColumns(), 'last_import_id', 'missed_runs', 'updated_at'], $columns)));
 
         DB::transaction(function () use ($values, $update, $changes): void {
             $this->source->createsRows()
@@ -151,16 +152,25 @@ final class RegistryWriter
     }
 
     /**
-     * Deletes companies that must not be in the register (an exclusion of
-     * ALL), with their recorded changes.
+     * Deletes companies from the register with their recorded changes: after
+     * an exclusion of ALL (every change goes), or when they have left SCB's
+     * register ($keepUnnoticed: a change no company has turned into a task
+     * yet stays until crm:registry-watch has, or the 400-day prune).
      *
      * @param  list<string>  $orgNumbers
      */
-    public static function forget(array $orgNumbers): void
+    public static function forget(array $orgNumbers, bool $keepUnnoticed = false): void
     {
-        DB::transaction(function () use ($orgNumbers): void {
+        if ($orgNumbers === []) {
+            return;
+        }
+
+        DB::transaction(function () use ($orgNumbers, $keepUnnoticed): void {
             DB::table('company_registry')->whereIn('org_number', $orgNumbers)->delete();
-            DB::table('company_registry_changes')->whereIn('org_number', $orgNumbers)->delete();
+            DB::table('company_registry_changes')
+                ->whereIn('org_number', $orgNumbers)
+                ->when($keepUnnoticed, fn ($query) => $query->whereIn('id', fn ($noticed) => $noticed->select('registry_change_id')->from('crm_registry_notices')))
+                ->delete();
         });
     }
 

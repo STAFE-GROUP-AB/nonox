@@ -462,6 +462,25 @@ probably inverted) it warns and stores the warning on the import row
 - **Demo register** (`ProspectingExtras`) is written only in a local or test
   environment, or into an empty register.
 
+## Re-check fixes (2026-11-04)
+
+- **Two runs before removal.** `company_registry.missed_runs` counts the
+  complete SCB runs (file or API) in a row without the company; every run
+  that has it resets it to 0. A company is deleted only at 2, so a
+  difference between the file and the API, or one bad week, deletes
+  nothing. Deletion is therefore at the second weekly import without it.
+- **A watched company that leaves.** Before it is deleted, a company that
+  some company watches (its customer, or its prospect with "Bevaka även
+  prospekt" on) gets the change `removed`; its changes that no company has
+  turned into a task yet are kept. `crm:registry-watch` then makes "Ändring
+  hos kunden: finns inte längre i SCB:s register", and after a run over all
+  companies deletes the changes of companies no longer in the register that
+  have been noticed (else the 400-day prune). The import's watched set
+  follows the same rule as the monitoring (customers; prospects per the
+  company's setting).
+- **Sole traders by hand.** `CreateCallList::isPrivate` also treats an
+  account whose own `org_number` is a personal number as private.
+
 ## Consequences
 
 - An instance with `COMPANY_REGISTER_IMPORT=true` has a register of about
