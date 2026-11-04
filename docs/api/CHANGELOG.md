@@ -13,6 +13,26 @@ Every change to the NONOX Connect API, newest first. Within v1 changes are addit
 <!-- /lang -->
 
 <!-- lang:sv -->
+## 2026-11-04: v1.8.0
+<!-- /lang -->
+<!-- lang:en -->
+## 2026-11-04: v1.8.0
+<!-- /lang -->
+
+<!-- lang:sv -->
+### Tillagt
+
+- **Peppol**: fakturor har fältet `peppol` med den senaste sändningen som e-faktura via Peppol (status `QUEUED`, `SENT`, `DELIVERED` eller `FAILED`, och tidpunkterna), eller `null`. Mottagarens Peppol-ID visas inte.
+- **Webhooks**: `invoice.peppol_sent` (Peppol-operatören har tagit emot e-fakturan) och `invoice.peppol_failed` (den kunde inte levereras); båda kräver `invoices:view`.
+<!-- /lang -->
+<!-- lang:en -->
+### Added
+
+- **Peppol**: invoices have the field `peppol` with the latest sending as a Peppol e-invoice (status `QUEUED`, `SENT`, `DELIVERED` or `FAILED`, and the times), or `null`. The receiver's Peppol ID is not shown.
+- **Webhooks**: `invoice.peppol_sent` (the access point has accepted the e-invoice) and `invoice.peppol_failed` (it could not be delivered); both need `invoices:view`.
+<!-- /lang -->
+
+<!-- lang:sv -->
 ## 2026-11-04: v1.7.0
 <!-- /lang -->
 <!-- lang:en -->

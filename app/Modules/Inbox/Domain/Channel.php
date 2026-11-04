@@ -6,10 +6,14 @@ namespace App\Modules\Inbox\Domain;
 
 /**
  * How a message reached NONOX: through the cloud's receiving address
- * (Mailgun) or fetched from the company's own mailbox (IMAP).
+ * (Mailgun), fetched from the company's own mailbox (IMAP), or as an
+ * e-invoice over the Peppol network through the installation's access
+ * point (ADR-050). A Peppol message has no e-mail: its sender is the
+ * supplier's Peppol participant id and its original is the UBL file.
  */
 enum Channel: string
 {
     case Mailgun = 'MAILGUN';
     case Imap = 'IMAP';
+    case Peppol = 'PEPPOL';
 }

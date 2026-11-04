@@ -11,6 +11,9 @@ use App\Models\Invoice;
 use App\Models\RecurringInvoice;
 use App\Models\RecurringInvoiceRow;
 use App\Models\User;
+use App\Modules\ModuleManager;
+use App\Modules\Peppol\Actions\SendInvoiceViaPeppol;
+use App\Modules\Peppol\PeppolModule;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
@@ -82,7 +85,16 @@ class RunRecurringInvoice
 
         if ($agreement->send_automatically) {
             CurrentCompany::run($agreement->company_id, function () use ($user, $agreement, $invoice): void {
-                ($this->send)($user, $invoice, (string) Customer::query()->whereKey($agreement->customer_id)->value('email'));
+                $customer = Customer::query()->findOrFail($agreement->customer_id);
+
+                // A customer invoiced via Peppol gets the e-invoice instead of the e-mail (ADR-050).
+                if ($customer->invoice_delivery === 'PEPPOL' && app(ModuleManager::class)->isEnabled(PeppolModule::KEY, $agreement->company_id)) {
+                    app(SendInvoiceViaPeppol::class)($user, $invoice);
+
+                    return;
+                }
+
+                ($this->send)($user, $invoice, (string) $customer->email);
             });
         }
 

@@ -66,6 +66,10 @@
         </x-ui.card>
     @endif
 
+    @if($peppolOn)
+        <livewire:peppol.invoice-panel :invoice="$invoice" :key="'peppol-'.$invoice->id" />
+    @endif
+
     @if($canRemind || $invoice->reminders->isNotEmpty())
         <x-ui.card :title="__('Påminnelser')">
             @if($invoice->reminders->isNotEmpty())

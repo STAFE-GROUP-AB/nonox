@@ -33,6 +33,17 @@ final readonly class OrganisationNumber
         return new self($digits);
     }
 
+    /**
+     * Whether the number is a personal identity number (a sole trader's)
+     * rather than a legal person's organisation number: the third digit of
+     * an organisation number is always at least 2 (Skatteverket SKV 709,
+     * version 8), and of a personnummer, the month, 0 or 1.
+     */
+    public function isPersonalIdentityNumber(): bool
+    {
+        return (int) $this->digits[2] < 2;
+    }
+
     public function formatted(): string
     {
         return substr($this->digits, 0, 6).'-'.substr($this->digits, 6);

@@ -18,6 +18,8 @@ use App\Modules\Connect\Support\ConnectAccess;
 use App\Modules\Crm\Events\QuoteSigned;
 use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\ModuleManager;
+use App\Modules\Peppol\Domain\TransmissionStatus;
+use App\Modules\Peppol\Events\PeppolTransmissionChanged;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Events\PeriodPublished;
 use App\Support\Tenancy\CurrentCompany;
@@ -81,6 +83,20 @@ final class WebhookDispatcher
     public function quoteSigned(QuoteSigned $event): void
     {
         $this->dispatch($event->companyId, 'quote.signed', fn (): ?array => WebhookEvents::quoteSigned($event->signingRequestId));
+    }
+
+    /** Peppol (ADR-050): handed to the network, or given up; a delivery confirmation is not an event of its own. */
+    public function peppolTransmissionChanged(PeppolTransmissionChanged $event): void
+    {
+        $type = match ($event->status) {
+            TransmissionStatus::Sent => 'invoice.peppol_sent',
+            TransmissionStatus::Failed => 'invoice.peppol_failed',
+            default => null,
+        };
+
+        if ($type !== null) {
+            $this->dispatch($event->companyId, $type, fn (): ?array => WebhookEvents::peppolTransmission($event->transmissionId));
+        }
     }
 
     /**

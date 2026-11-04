@@ -43,11 +43,11 @@
     },
     {
       "id": "peppol-accesspunkt",
-      "rubrik": "Skicka e-faktura via Peppol",
-      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-accesspunkt, så att kunden får fakturan direkt i sitt eget system.",
-      "status": "Planerat",
+      "rubrik": "Skicka och ta emot e-faktura via Peppol",
+      "beskrivning": "Kundfakturor skickas som e-faktura genom en Peppol-operatör, så att kunden får fakturan direkt i sitt eget system, och e-fakturor från leverantörer hamnar i inkorgen. Funktionen är byggd och slås på när avtalet med operatören är klart.",
+      "status": "Pågår",
       "omrade": "Fakturering",
-      "uppdaterad": "2026-11-02"
+      "uppdaterad": "2026-11-04"
     },
     {
       "id": "kassa-och-ehandel",

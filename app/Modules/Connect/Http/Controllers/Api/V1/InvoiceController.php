@@ -49,7 +49,7 @@ final class InvoiceController
 {
     use ActsAsCredential;
 
-    private const array RELATIONS = ['rows.account', 'rows.article', 'payments.account', 'customer'];
+    private const array RELATIONS = ['rows.account', 'rows.article', 'payments.account', 'customer', 'peppolTransmissions'];
 
     private const array FIELDS = ['customer_id', 'invoice_date', 'due_date', 'delivery_date', 'your_reference', 'our_reference', 'notes', 'reverse_charge', 'foreign_sale', 'tax_reduction', 'property_designation', 'invoice_currency'];
 

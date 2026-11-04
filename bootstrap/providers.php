@@ -12,6 +12,7 @@ use App\Modules\Inbox\InboxServiceProvider;
 use App\Modules\Inventory\InventoryServiceProvider;
 use App\Modules\ModuleServiceProvider;
 use App\Modules\Payroll\PayrollServiceProvider;
+use App\Modules\Peppol\PeppolServiceProvider;
 use App\Modules\Planning\PlanningServiceProvider;
 use App\Modules\Pos\PosServiceProvider;
 use App\Modules\StaffLedger\StaffLedgerServiceProvider;
@@ -33,6 +34,7 @@ return [
     CrmServiceProvider::class,
     PosServiceProvider::class,
     InboxServiceProvider::class,
+    PeppolServiceProvider::class,
     ConnectServiceProvider::class,
     BankingServiceProvider::class,
     FortnoxServiceProvider::class,

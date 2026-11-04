@@ -51,7 +51,7 @@ final class UblInvoiceParser implements InvoiceDocumentParser
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        if (! $loaded || ! $document->documentElement instanceof DOMElement) {
+        if (! $loaded || ! $document->documentElement instanceof DOMElement || $document->doctype !== null) {
             throw new PeppolParseException('The XML cannot be read.');
         }
 
@@ -132,6 +132,36 @@ final class UblInvoiceParser implements InvoiceDocumentParser
             embeddedDocument: $this->embedded($xpath, $root),
             buyerReference: $this->text($xpath, 'cbc:BuyerReference', $root),
         );
+    }
+
+    /**
+     * A party's electronic address (BT-34 seller, BT-49 buyer) as a Peppol
+     * participant id, or null when it is missing or not a valid one.
+     *
+     * @param  'AccountingSupplierParty'|'AccountingCustomerParty'  $party
+     */
+    public function endpoint(string $xml, string $party): ?PeppolIdentifier
+    {
+        if (preg_match('/<!DOCTYPE/i', $xml) === 1) {
+            return null;
+        }
+
+        $document = new DOMDocument;
+        $previous = libxml_use_internal_errors(true);
+        $loaded = $document->loadXML($xml, LIBXML_NONET | LIBXML_COMPACT);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        if (! $loaded || ! $document->documentElement instanceof DOMElement || $document->doctype !== null) {
+            return null;
+        }
+
+        $xpath = new DOMXPath($document);
+        $xpath->registerNamespace('cac', self::CAC);
+        $xpath->registerNamespace('cbc', self::CBC);
+        $node = $this->node($xpath, "cac:{$party}/cac:Party/cbc:EndpointID", $document->documentElement);
+
+        return $node === null ? null : PeppolIdentifier::make($node->getAttribute('schemeID'), trim($node->textContent));
     }
 
     /**

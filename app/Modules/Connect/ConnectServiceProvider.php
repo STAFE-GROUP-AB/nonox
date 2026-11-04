@@ -44,6 +44,7 @@ use App\Modules\Connect\Webhooks\WebhookDispatcher;
 use App\Modules\Crm\Events\QuoteSigned;
 use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\ModuleRegistry;
+use App\Modules\Peppol\Events\PeppolTransmissionChanged;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Events\PeriodPublished;
 use DateInterval;
@@ -100,6 +101,7 @@ class ConnectServiceProvider extends ServiceProvider
         Event::listen(SieFileUploaded::class, [WebhookDispatcher::class, 'sieUploaded']);
         Event::listen(StockChanged::class, [WebhookDispatcher::class, 'stockChanged']);
         Event::listen(QuoteSigned::class, [WebhookDispatcher::class, 'quoteSigned']);
+        Event::listen(PeppolTransmissionChanged::class, [WebhookDispatcher::class, 'peppolTransmissionChanged']);
 
         $this->configurePassport();
 

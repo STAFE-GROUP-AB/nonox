@@ -23,6 +23,8 @@ Schedule::command('connect:webhooks')->everyMinute()->withoutOverlapping();
 Schedule::command('inbox:fetch')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('inbox:daily-summary')->dailyAt('07:00')->withoutOverlapping();
 Schedule::command('inbox:prune')->dailyAt('04:25')->withoutOverlapping();
+// Peppol e-faktura (ADR-050): received e-invoices and delivery status, beside the access point's webhook.
+Schedule::command('peppol:sync')->everyFifteenMinutes()->withoutOverlapping();
 // Tasks (ADR-028): this period's recurring tasks, and the morning digest for those who asked for it.
 Schedule::command('tasks:generate-recurring')->dailyAt('05:10')->withoutOverlapping();
 Schedule::command('tasks:send-digest')->weekdays()->at('06:45')->withoutOverlapping();

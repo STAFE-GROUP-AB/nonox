@@ -110,6 +110,8 @@ final class Features
         'ixbrl' => ['name' => 'Digital inlämning av årsredovisningen', 'status' => self::SOON, 'readme' => 'Digital inlämning av årsredovisningen till Bolagsverket (iXBRL)'],
         'public_api' => ['name' => 'Öppet API med webhooks', 'status' => self::LIVE, 'readme' => 'webhooks som signeras', 'module' => 'NONOX Connect'],
         'pos_integrations' => ['name' => 'Färdiga kopplingar från kassasystem', 'status' => self::SOON, 'readme' => 'Färdiga kopplingar från kassasystem'],
+        // Built (ADR-050) and dormant until the operator has an agreement with a Peppol access-point provider.
+        'peppol' => ['name' => 'E-faktura via Peppol', 'status' => self::SOON, 'readme' => 'E-faktura via Peppol', 'module' => 'Peppol e-faktura'],
     ];
 
     /**
