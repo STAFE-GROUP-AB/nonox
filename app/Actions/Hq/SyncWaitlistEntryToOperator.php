@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions\Hq;
 
 use App\Domain\Waitlist\WaitlistStatus;
-use App\Http\Controllers\LegalPageController;
 use App\Models\Company;
 use App\Models\OperatorLink;
 use App\Models\User;
@@ -69,7 +68,7 @@ final class SyncWaitlistEntryToOperator
      * applicants are also kept in the service's CRM. A consent given before
      * it is recorded as informed on this day, not on the day of the consent.
      */
-    public const string INFORMED_FROM = LegalPageController::EFFECTIVE;
+    public const string INFORMED_FROM = '2026-11-03';
 
     public const string SOURCE = 'Kö';
 

@@ -79,7 +79,7 @@ in a calendar and with how much, and one iCalendar writer (`App\Support\Calendar
 ### 2. One event, and an invitation
 
 - **Lägg till i kalendern** on a planned activity downloads it as an `.ics`
-  file (`/kunder/aktiviteter/{id}/kalender.ics`, signed in, `crm:view`).
+  file (`/kunder/aktiviteter/{id}/kalenderfil`, signed in, `crm:view`).
   The user downloads it on purpose, so it carries the details, still without
   a person marked Kontakta inte.
 - **Skicka inbjudan** (a checkbox when planning a meeting, and a button on a
