@@ -339,7 +339,7 @@ class YearEndClosing
             // A year with nothing in its books has nothing to carry forward.
             $hasBooks = LedgerBalances::opening($fiscalYear)->isNotEmpty()
                 || Voucher::query()->where('fiscal_year_id', $fiscalYear->id)->where('status', VoucherStatus::Posted->value)->exists();
-            $next = $hasBooks ? ($this->carryForward)($user, $fiscalYear) : null;
+            $next = $hasBooks ? ($this->carryForward)($user, $fiscalYear, partOfClosing: true) : null;
 
             $fiscalYear->forceFill(['status' => FiscalYearStatus::Closed, 'closed_at' => now(), 'closed_by' => $user->id])->save();
 

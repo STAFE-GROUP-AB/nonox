@@ -2,7 +2,7 @@
 beskrivning: Räkenskapsåren i NONOX – ett kortare eller längre första år, nästa år, balanser som förs över vid årsskiftet och SIE-fil per år.
 ordning: 120
 rutter: [accounting.fiscalYears]
-sokord: [räkenskapsår, automatiskt nytt år, bokföringsår, brutet räkenskapsår, första räkenskapsåret, förlängt räkenskapsår, förkortat räkenskapsår, kalenderår, enskild firma, årsskifte, nytt år, ingående balans]
+sokord: [räkenskapsår, automatiskt nytt år, bokföringsår, brutet räkenskapsår, första räkenskapsåret, förlängt räkenskapsår, förkortat räkenskapsår, kalenderår, enskild firma, årsskifte, nytt år, ingående balans, inaktuella ingående balanser, uppdatera ingående balanser]
 ---
 
 # Räkenskapsår
@@ -73,7 +73,36 @@ När ett år är slut ska tillgångarnas, skuldernas och det egna kapitalets sal
 1. Välj **För över balanser till …** på det gamla året.
 2. Läs texten och välj **Ja, för över**.
 
-Saldona på balanskontona (klass 1 och 2) förs över. Ett resultat som inte har bokförts mot eget kapital förs till Årets resultat, så att de ingående balanserna alltid går ihop. Finns nästa år inte skapas det. Har du bokfört något i det gamla året efteråt för du över igen: nästa års ingående balanser ersätts då, så länge nästa år är öppet.
+Saldona på balanskontona (klass 1 och 2) förs över. Ett resultat som inte har bokförts mot eget kapital förs till Årets resultat, så att de ingående balanserna alltid går ihop. Finns nästa år inte skapas det. Nästa års ingående balanser ersätts varje gång du för över, så länge nästa år är öppet och bokföringen inte är låst från dess första dag.
+
+## När de ingående balanserna inte längre stämmer
+
+Bokför du något i det gamla året efter att balanserna förts över – en sen leverantörsfaktura, en rättelse eller en inläst SIE-fil – stämmer nästa års ingående balanser inte längre med det gamla årets utgående balanser. Enligt årsredovisningslagen (2 kap. 4 §) ska de stämma.
+
+NONOX säger till på tre ställen:
+
+- Överst under **Bokföring → Räkenskapsår** och i **Bokföring → Rapporter** för det nya året: "De ingående balanserna för 2027 stämmer inte längre med de utgående balanserna för 2026 (2 konton skiljer)."
+- Under **Att göra** på Översikt: **Uppdatera ingående balanser för …**
+- I bokslutets checklista för det nya året: **Ingående balanser stämmer med förra året**.
+
+![Varningen om ingående balanser som inte längre stämmer, med skillnaden per konto.](/bilder/manual/bokforing/inaktuella-ingaende-balanser.webp)
+
+### Så här uppdaterar du dem
+
+1. Välj **Visa skillnaden per konto** för att se vilka konton som skiljer och med hur mycket.
+2. Välj **Uppdatera ingående balanser**.
+3. Läs texten och välj **Ja, uppdatera**.
+
+De ingående balanserna räknas om på samma sätt som när du för över balanserna. Finns det fler år efter, till exempel 2028 som fått sina balanser från 2027, uppdateras de också, i tur och ordning. Inga verifikationer ändras: ingående balanser är inga verifikationer. Ändringen sparas i behandlingshistoriken med varje kontos belopp före och efter.
+
+NONOX uppdaterar aldrig de ingående balanserna av sig själv, eftersom det ändrar siffrorna i rapporterna för det nya året. Det är du som bestämmer när.
+
+Det går inte att uppdatera när det nya året är stängt, eller när bokföringen är låst från det nya årets första dag. Är det gamla året fortfarande öppet förs balanserna ändå över på nytt när du stänger det under **Bokföring → Bokslut**.
+
+Det första året i NONOX jämförs inte med något: dess ingående balanser kommer från en SIE-fil eller från ett annat program, och det finns inget år före att jämföra med.
+
+> [!NOTE]
+> Ingående balanser har inga kostnadsställen eller projekt, så skillnaden visas bara per konto. En jurist har ännu inte granskat att uppdateringen vägras när det nya årets första dag är låst.
 
 Hur hela bokslutet går till, och hur ett år stängs, står i [Bokslut och årsredovisning](/manual/bokslut).
 

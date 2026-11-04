@@ -3,7 +3,7 @@ beskrivning: Bokslutets checklista – vad NONOX kontrollerar själv i bokförin
 ordning: 10
 roller: [owner, admin, accountant]
 rutter: [accounting.closing]
-sokord: [bokslut, checklista, bokslutschecklista, årsbokslut, stänga året, avstämning, kassainventering, kundfordringar, leverantörsskulder, skattekonto]
+sokord: [bokslut, checklista, ingående balanser, bokslutschecklista, årsbokslut, stänga året, avstämning, kassainventering, kundfordringar, leverantörsskulder, skattekonto]
 ---
 
 # Checklistan för bokslutet
@@ -22,6 +22,7 @@ De här punkterna bockas av av sig själva när bokföringen visar att de är kl
 |---|---|
 | **Inga utkast i året** | Alla verifikationer i året är bokförda. Bokför eller ta bort utkasten. |
 | **Momsen är redovisad** | Alla momsperioder som slutar i året är bokförda. Ett kalenderkvartal som fortsätter efter årets slut räknas till nästa år. Punkten räknar upp de som saknas. |
+| **Ingående balanser stämmer med förra året** | Årets ingående balanser är lika med de utgående balanserna för året före. Gäller inte det första året i NONOX. Skiljer de sig, uppdatera dem under **Bokföring → Räkenskapsår** – läs [När de ingående balanserna inte längre stämmer](/manual/bokforing/rakenskapsar#nar-de-ingaende-balanserna-inte-langre-stammer). |
 | **Bank och kassa är avstämda** | Varje bank- och kassakonto med saldo eller rörelse är avstämt utan skillnad den sista dagen i året. |
 | **Avskrivningarna är bokförda** | Alla tillgångar i anläggningsregistret är avskrivna till och med årets sista månad. |
 | **Periodiseringarna är bokförda** | Alla periodiseringar är bokförda till och med årets sista månad. |
@@ -46,6 +47,8 @@ Bockarna kan tas bort igen så länge året är öppet. NONOX sparar vem som kry
 ## Bokfört för hand
 
 Två av punkterna som NONOX kontrollerar själv kan du också bekräfta: **Obetalda fakturor vid årets slut är bokförda** och **Valutafordringar och valutaskulder är omvärderade**. Har du bokfört verifikationen själv – till exempel för att Riksbanken saknar kurs för en valuta den sista dagen – kryssar du i **Bokfört för hand** eller **Omvärderingen är bokförd för hand** vid punkten. Då räknas punkten som klar. Kryssa bara i när verifikationen verkligen är bokförd.
+
+Vid **Ingående balanser stämmer med förra året** finns på samma sätt **Skillnaden är avsiktlig**. Årsredovisningslagen kräver att ingående balans stämmer med förra årets utgående balans, men tillåter en avvikelse om det finns särskilda skäl (2 kap. 4 §). Kryssa bara i om skillnaden är ett medvetet beslut, och dokumentera skälet.
 
 ## Så här tar du dig igenom checklistan
 

@@ -24,6 +24,8 @@
 @endphp
 
 <div class="space-y-6">
+    <livewire:accounting.stale-opening-balances-notice :fiscal-year-id="$filters->fiscalYear->id" />
+
     <nav class="flex flex-wrap gap-2 print:hidden" aria-label="{{ __('Rapporter') }}">
         @foreach($tabs as $key => $label)
             <button type="button" wire:click="show('{{ $key }}')" @class([

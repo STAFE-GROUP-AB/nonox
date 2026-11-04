@@ -6,6 +6,7 @@ namespace App\Domain\Closing;
 
 use App\Actions\Banking\BankReconciliations;
 use App\Domain\Accounting\LedgerBalances;
+use App\Domain\Accounting\StaleOpeningBalances;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Accruals\AccrualPlan;
 use App\Domain\Company\AccountingMethod;
@@ -63,6 +64,7 @@ final class ClosingChecklist
     public const array CONFIRMABLE = [
         'unpaid' => 'Bokfört för hand',
         'currency' => 'Omvärderingen är bokförd för hand',
+        'opening' => 'Skillnaden är avsiktlig',
     ];
 
     /**
@@ -91,6 +93,7 @@ final class ClosingChecklist
                 default => __('Kvar: :periods.', ['periods' => implode(', ', array_map(fn (array $period): string => VatPeriods::label($period['start'], $period['end']), $missing))]),
             }, $periods === [] ? self::NOT_APPLICABLE : ($missing === [] ? self::OK : self::TODO), 'vat.index');
 
+            $items[] = self::opening($company, $fiscalYear, $checks);
             $items[] = self::bank($fiscalYear);
             $items[] = self::assets($endMonth);
             $items[] = self::accruals($fiscalYear, $endMonth);
@@ -138,6 +141,40 @@ final class ClosingChecklist
     public static function isComplete(array $items): bool
     {
         return collect($items)->every(fn (array $item): bool => $item['status'] !== self::TODO);
+    }
+
+    /**
+     * The year's opening balances agree with the closing balances of the
+     * year before (ÅRL 2 kap. 4 § första stycket 7; StaleOpeningBalances).
+     * Blocks until they are updated, or a person confirms that the
+     * difference is intended: the second paragraph allows a deviation for
+     * special reasons, which the person then documents.
+     *
+     * @param  array<mixed>  $checks  confirmed checklist keys
+     * @return array{key: string, label: string, detail: string, status: string, manual: bool, route: ?string, confirm: ?string}
+     */
+    private static function opening(Company $company, FiscalYear $fiscalYear, array $checks): array
+    {
+        $label = __('Ingående balanser stämmer med förra året');
+        $previous = FiscalYear::query()->whereDate('end_date', $fiscalYear->start_date->subDay()->toDateString())->first(['id', 'start_date', 'end_date']);
+
+        if (! $previous instanceof FiscalYear) {
+            return self::item('opening', $label, __('Inget tidigare räkenskapsår i NONOX att jämföra med.'), self::NOT_APPLICABLE, null);
+        }
+
+        $stale = StaleOpeningBalances::forYear($company, $fiscalYear);
+
+        if ($stale === null) {
+            return self::item('opening', $label, __('De ingående balanserna är lika med de utgående balanserna för :from.', ['from' => $previous->label()]), self::OK, null);
+        }
+
+        $confirm = __(self::CONFIRMABLE['opening']);
+
+        if (in_array('opening', $checks, true)) {
+            return self::item('opening', $label, __('Bekräftat att skillnaden mot de utgående balanserna för :from är avsiktlig. Dokumentera skälet.', ['from' => $previous->label()]), self::OK, 'accounting.fiscalYears', confirm: $confirm);
+        }
+
+        return self::item('opening', $label, trans_choice(':count konto skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.|:count konton skiljer från de utgående balanserna för :from. Uppdatera de ingående balanserna under Räkenskapsår.', count($stale['accounts']), ['count' => count($stale['accounts']), 'from' => $previous->label()]), self::TODO, 'accounting.fiscalYears', confirm: $confirm);
     }
 
     /**

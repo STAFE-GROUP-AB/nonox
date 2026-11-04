@@ -550,3 +550,62 @@ TODO(legal-verify): that creating the next year in advance, before the
 previous one is closed, is consistent with BFL 3 kap. (we believe so: the
 year is only a period, nothing is booked in it in advance), and that a
 booking up to 30 days ahead may create the following year.
+
+## Stale opening balances (2026-11-04)
+
+**Problem.** `CarryForwardBalances` copies the closing balances of year N into
+the opening balances of N+1 once. A voucher posted in N afterwards (a late
+supplier invoice, a correction, a closing entry, an SIE import) leaves N+1's
+opening balances wrong, silently. ÅRL 2 kap. 4 § första stycket 7 (SFS
+1995:1554, read on riksdagen.se 2026-11-04): "Den ingående balansen för ett
+räkenskapsår ska stämma överens med den utgående balansen för närmast
+föregående räkenskapsår"; the second paragraph allows a deviation "om det
+finns särskilda skäl".
+
+**Decision.**
+
+- `App\Domain\Accounting\CarriedBalances` holds the arithmetic of the
+  rollover (balance-sheet closing balances, an unbooked result on 2099/2019
+  via `ClosingAccounts::resultNumber`, which `CarryForwardBalances` now uses
+  instead of its own copy of the rule). `CarryForwardBalances` writes it,
+  `StaleOpeningBalances` compares it with what is stored. One rule, two
+  readers.
+- `StaleOpeningBalances::compute(Company)` reads the whole company in four
+  queries (years, accounts, all opening balances, posted movements grouped by
+  year and account) and walks the years oldest first. A year is compared only
+  when it has opening balances and the year right before it is in NONOX with
+  something booked; the expected balances build on the previous year's
+  *corrected* balances, so a chain N → N+1 → N+2 reports every year an update
+  would change. `for()` caches the answer under Översikt's per-company
+  version (`OverviewCache`), which changes after every audited action and
+  every save of a voucher or an opening balance.
+- Not compared: the first year in NONOX (opening balances from SIE or typed
+  in), a year after an empty year, a year with no opening balances (not yet
+  carried forward: the closing does that). Opening balances have no
+  dimensions, so the comparison is per account.
+- Shown by `StaleOpeningBalancesNotice` (Livewire) on Räkenskapsår (every
+  stale year) and Rapporter (the chosen year), with the per-account
+  difference behind a `<details>`; by `OpeningBalanceTodos` under Att göra
+  (`fiscal-years:manage`); and as checklist point `opening` for the later
+  year (TODO, confirmable as "Skillnaden är avsiktlig" for the second
+  paragraph's special reasons).
+- `UpdateOpeningBalances` (`fiscal-years:manage`) recomputes every stale year
+  in order in one transaction by calling `CarryForwardBalances`, and records
+  `fiscal_year.opening_balances_updated` per year with the ids, the labels,
+  the number of accounts and every account's before and after in öre. It is
+  refused as a whole when a year to change is closed or the period lock
+  covers its first day.
+- **Never automatic.** New opening balances change the later year's reported
+  figures and work already done on them (reconciliations, closing work), so a
+  person decides. The warning itself is always shown.
+- **Period lock.** `CarryForwardBalances` now also refuses, outside the
+  closing, when the lock covers the next year's first day (the manual button
+  could otherwise bypass the update's refusal). `YearEndClosing::close`
+  passes `partOfClosing: true` and carries forward as before: the year-end is
+  usually done after the next year's first VAT periods are locked, and
+  establishing the opening balances is part of closing the old year. When the
+  old year is open, the refusal message says the balances are carried forward
+  again at closing. `TODO(legal-verify)`: no rule found on period locks and
+  opening balances; this split is our design.
+- No posted voucher, number or hash is touched: opening balances are not
+  vouchers (ADR-008).

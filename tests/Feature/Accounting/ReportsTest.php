@@ -218,5 +218,8 @@ it('runs the same number of queries however much is booked', function () {
         ]);
     }
 
+    // Warm the caches again (the postings made them stale), as before the first count.
+    $count();
+
     expect($count())->toBe($before);
 });
