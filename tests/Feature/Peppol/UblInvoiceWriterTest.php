@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Invoicing\ForeignSale;
+use App\Domain\Invoicing\InvoicePdf;
 use App\Models\Company;
 use App\Models\Invoice;
 use App\Support\Peppol\PeppolDocumentRules;
@@ -158,7 +159,7 @@ it('embeds the real invoice PDF', function () {
     $invoice = PeppolFixtures::invoice($this->owner, $this->company, $customer, [
         ['description' => 'Arbete', 'quantity' => '1', 'unit' => 'st', 'price' => '1 000', 'vat_rate' => 2500],
     ]);
-    $xml = peppolXml($invoice, $this->company, App\Domain\Invoicing\InvoicePdf::render($invoice));
+    $xml = peppolXml($invoice, $this->company, InvoicePdf::render($invoice));
     $read = app(UblInvoiceParser::class)->parse($xml);
 
     expect(PeppolDocumentRules::check($xml))->toBe([])

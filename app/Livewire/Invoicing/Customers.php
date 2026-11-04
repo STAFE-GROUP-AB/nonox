@@ -18,6 +18,8 @@ use App\Models\Invoice;
 use App\Models\NumberSeries;
 use App\Models\User;
 use App\Models\VatNumberCheck;
+use App\Modules\ModuleManager;
+use App\Modules\Peppol\PeppolModule;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -38,7 +40,7 @@ class Customers extends Component
     use ShowsToasts;
     use WithPagination;
 
-    public const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'currency', 'payment_terms_days'];
+    public const array FIELDS = ['name', 'org_number', 'personal_number', 'vat_number', 'email', 'phone', 'address_line1', 'address_line2', 'postal_code', 'city', 'country', 'currency', 'payment_terms_days', 'peppol_id', 'invoice_delivery'];
 
     #[Url(as: 'sok', except: '')]
     public string $search = '';
@@ -80,6 +82,7 @@ class Customers extends Component
         $this->form['payment_terms_days'] = '30';
         $this->form['country'] = 'SE';
         $this->form['currency'] = 'SEK';
+        $this->form['invoice_delivery'] = 'EMAIL';
         $this->reverseCharge = false;
         $this->foreignSale = '';
         $this->showForm = true;
@@ -217,6 +220,7 @@ class Customers extends Component
             'year' => $year->year,
             'canManage' => $this->user()->can('create', [Customer::class, $this->company()]),
             'nextNumber' => NumberSeries::peek(NumberSeries::CUSTOMERS),
+            'peppolOn' => app(ModuleManager::class)->isEnabled(PeppolModule::KEY, $this->company()),
             'vatCheck' => $this->editingId === null ? null : VatNumberCheck::query()
                 ->where('customer_id', $this->editingId)->latest('checked_at')->latest('id')->first(),
         ]);

@@ -15,6 +15,7 @@ use App\Modules\Inventory\Domain\Quantity;
 use App\Modules\Inventory\Events\StockChanged;
 use App\Modules\Inventory\Models\StockLevel;
 use App\Modules\Inventory\Models\StockMovement;
+use App\Modules\Peppol\Models\PeppolTransmission;
 use App\Modules\Planning\Events\PeriodAttested;
 use App\Modules\Planning\Models\Publication;
 
@@ -40,6 +41,8 @@ final class WebhookEvents
         'sie.uploaded' => ['import:sie'],
         'stock.changed' => ['inventory:view'],
         'quote.signed' => ['invoices:view'],
+        'invoice.peppol_sent' => ['invoices:view'],
+        'invoice.peppol_failed' => ['invoices:view'],
     ];
 
     /** @return array<string, string> event => Swedish description */
@@ -55,6 +58,8 @@ final class WebhookEvents
             'sie.uploaded' => __('En SIE-fil har kommit in via SFTP och granskats'),
             'stock.changed' => __('Lagersaldot har ändrats: inleverans, plock, flytt, inventering, kassa, retur eller kassation (Lager)'),
             'quote.signed' => __('En offert har signerats via en signeringslänk (CRM)'),
+            'invoice.peppol_sent' => __('En kundfaktura har lämnats till Peppol-nätverket som e-faktura (Peppol)'),
+            'invoice.peppol_failed' => __('En e-faktura via Peppol kunde inte levereras (Peppol)'),
         ];
     }
 
@@ -123,6 +128,36 @@ final class WebhookEvents
             'invoice_date' => $invoice->invoice_date->toDateString(),
             'due_date' => $invoice->due_date->toDateString(),
             'ocr' => $invoice->ocr,
+        ];
+    }
+
+    /**
+     * Must run inside the company. The transmission's ids and status;
+     * the receiver's Peppol ID is left out (it can be a sole trader's
+     * personal identity number).
+     *
+     * @return ?array<string, mixed>
+     */
+    public static function peppolTransmission(string $transmissionId): ?array
+    {
+        $transmission = PeppolTransmission::query()->with('invoice:id,number,kind,customer_id')->find($transmissionId);
+
+        if (! $transmission instanceof PeppolTransmission || $transmission->invoice === null) {
+            return null;
+        }
+
+        return [
+            'transmission_id' => $transmission->id,
+            'invoice_id' => $transmission->invoice_id,
+            'invoice_number' => $transmission->invoice->number,
+            'kind' => $transmission->invoice->kind,
+            'customer_id' => $transmission->invoice->customer_id,
+            'document_type' => $transmission->document_type,
+            'status' => $transmission->status->value,
+            'reference' => $transmission->provider_reference,
+            'sha256' => $transmission->xml_sha256,
+            'sent_at' => $transmission->sent_at?->toAtomString(),
+            'failed_at' => $transmission->failed_at?->toAtomString(),
         ];
     }
 

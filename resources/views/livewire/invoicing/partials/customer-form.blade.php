@@ -56,6 +56,17 @@
             <input type="checkbox" class="mt-0.5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="reverseCharge">
             <span>{{ __('Omvänd betalningsskyldighet för byggtjänster') }}<span class="block text-xs text-gray-500">{{ __('Kunden är ett byggföretag som själv redovisar momsen på byggtjänster ni säljer. Nya fakturor till kunden blir utan moms.') }}</span></span>
         </label>
+        @if($peppolOn ?? false)
+            <x-ui.field for="customer_invoice_delivery" :label="__('Skicka fakturor')" error="invoice_delivery">
+                <select id="customer_invoice_delivery" class="{{ $input }} mt-1" wire:model="form.invoice_delivery">
+                    <option value="EMAIL">{{ __('Med e-post (PDF)') }}</option>
+                    <option value="PEPPOL">{{ __('Fakturera via Peppol (e-faktura)') }}</option>
+                </select>
+            </x-ui.field>
+            <x-ui.field for="customer_peppol_id" :label="__('Kundens Peppol-ID')" error="peppol_id" :hint="__('Till exempel 0007:5599000006 för ett svenskt organisationsnummer. Lämnas tomt för en svensk kund används organisationsnumret.')">
+                <input id="customer_peppol_id" type="text" class="{{ $input }} mt-1" wire:model="form.peppol_id" autocomplete="off" spellcheck="false">
+            </x-ui.field>
+        @endif
         <div class="flex items-center gap-4 sm:col-span-2">
             <x-button wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
             <button type="button" class="text-sm text-gray-600 underline" wire:click="cancel">{{ __('Avbryt') }}</button>

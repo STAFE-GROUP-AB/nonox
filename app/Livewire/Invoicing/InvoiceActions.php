@@ -18,6 +18,8 @@ use App\Domain\Invoicing\TaxReduction;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Invoice;
 use App\Models\User;
+use App\Modules\ModuleManager;
+use App\Modules\Peppol\PeppolModule;
 use App\Support\Currency\ExchangeRate;
 use App\Support\Currency\RiksbankRates;
 use App\Support\Money\Money;
@@ -225,6 +227,7 @@ class InvoiceActions extends Component
         return view('livewire.invoicing.invoice-actions', [
             'invoice' => $invoice,
             'canSend' => $this->user()->can('send', $invoice),
+            'peppolOn' => app(ModuleManager::class)->isEnabled(PeppolModule::KEY, $invoice->company_id),
             'canPay' => $this->user()->can('registerPayment', $invoice),
             'canTaxPay' => $this->user()->can('registerTaxReductionPayment', $invoice),
             'canTaxRepay' => $this->user()->can('registerTaxReductionRepayment', $invoice),

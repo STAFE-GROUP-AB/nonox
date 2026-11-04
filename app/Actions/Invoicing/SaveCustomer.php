@@ -12,11 +12,13 @@ use App\Models\NumberSeries;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Luhn;
+use App\Support\Peppol\PeppolIdentifier;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Creates a customer with the next customer number, or updates one.
@@ -59,6 +61,13 @@ class SaveCustomer
             'country' => ['nullable', 'string', 'regex:/^[A-Za-z]{2}$/'],
             'foreign_sale' => ['nullable', Rule::enum(ForeignSale::class)],
             'currency' => ['nullable', 'string', 'regex:/^[A-Za-z]{3}$/'],
+            // Peppol (ADR-050): the customer's participant id, and whether invoices go there by default.
+            'peppol_id' => ['nullable', 'string', 'max:80', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (PeppolIdentifier::tryFrom((string) $value) === null) {
+                    $fail(__('Peppol-ID:t stämmer inte. Skriv schema och nummer, till exempel 0007:5599000006.'));
+                }
+            }],
+            'invoice_delivery' => ['nullable', 'in:EMAIL,PEPPOL'],
         ], [
             'currency.regex' => __('Valutan skrivs med tre bokstäver, till exempel SEK, EUR eller USD.'),
             'country.regex' => __('Ange landet som en landskod med två bokstäver, till exempel SE, DE eller US.'),
@@ -83,6 +92,23 @@ class SaveCustomer
             $attributes['country'] = strtoupper((string) ($attributes['country'] ?? 'SE'));
         }
 
+        if (isset($attributes['peppol_id'])) {
+            $attributes['peppol_id'] = PeppolIdentifier::tryFrom((string) $attributes['peppol_id'])?->toString();
+        }
+
+        // A Swedish customer invoiced via Peppol is addressed by its organisation number unless another id is given.
+        if (($attributes['invoice_delivery'] ?? null) === 'PEPPOL' && array_key_exists('peppol_id', $attributes) && $attributes['peppol_id'] === null && strtoupper((string) ($attributes['country'] ?? $customer?->country ?? 'SE')) === 'SE') {
+            $attributes['peppol_id'] = PeppolIdentifier::forOrganisationNumber((string) ($attributes['org_number'] ?? $customer?->org_number))?->toString();
+        }
+
+        if (($attributes['invoice_delivery'] ?? null) === 'PEPPOL' && ($attributes['peppol_id'] ?? (array_key_exists('peppol_id', $attributes) ? null : $customer?->peppol_id)) === null) {
+            throw ValidationException::withMessages(['peppol_id' => __('Fyll i kundens Peppol-ID för att fakturera via Peppol.')]);
+        }
+
+        if (array_key_exists('invoice_delivery', $attributes)) {
+            $attributes['invoice_delivery'] ??= 'EMAIL';
+        }
+
         if (isset($attributes['org_number'])) {
             $attributes['org_number'] = OrganisationNumber::tryFrom((string) $attributes['org_number'])?->formatted();
         }
@@ -100,8 +126,8 @@ class SaveCustomer
             $customer->update($attributes);
 
             Audit::record('customer.updated', $customer, Audit::changes(
-                array_diff_key($before, ['personal_number' => true]),
-                array_diff_key($customer->only(array_keys($attributes)), ['personal_number' => true]),
+                array_diff_key($before, ['personal_number' => true, 'peppol_id' => true]),
+                array_diff_key($customer->only(array_keys($attributes)), ['personal_number' => true, 'peppol_id' => true]),
             ), $company, $user);
 
             return $customer;

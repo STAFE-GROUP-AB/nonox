@@ -150,6 +150,26 @@ return [
     ],
 
     /*
+     * Peppol e-faktura (ADR-050): sending and receiving through a certified
+     * access point. driver: 'qvalia' or 'log' (local and tests only; empty
+     * means log locally and no access point elsewhere, so the module cannot
+     * be turned on). Qvalia: the operator's Partner API account
+     * (partnerRegNo), its API key and the webhook signing secret Qvalia
+     * returns once, when the webhook subscription is created. The URL
+     * defaults to Qvalia's sandbox; set https://api.qvalia.com to go live.
+     * Webhook URL to subscribe: APP_URL/webhooks/peppol/qvalia.
+     */
+    'peppol' => [
+        'driver' => env('NONOX_PEPPOL_DRIVER'),
+        'qvalia' => [
+            'url' => env('QVALIA_API_URL', 'https://api-test.qvalia.com'),
+            'partner_reg_no' => env('QVALIA_PARTNER_REG_NO'),
+            'api_key' => env('QVALIA_API_KEY'),
+            'webhook_secret' => env('QVALIA_WEBHOOK_SECRET'),
+        ],
+    ],
+
+    /*
      * Company lookup (ADR-035): filling in name, address and legal form
      * from an organisation number. driver: 'bolagsverket' or 'fake' (local
      * and tests only); empty means fake locally and no lookup elsewhere.

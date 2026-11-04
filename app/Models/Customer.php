@@ -33,6 +33,8 @@ use Illuminate\Validation\ValidationException;
  * @property int $payment_terms_days
  * @property bool $is_active
  * @property ?CarbonImmutable $processing_restricted_at
+ * @property ?string $peppol_id the customer's Peppol participant id, "0007:5599000006" (ADR-050)
+ * @property string $invoice_delivery EMAIL or PEPPOL: how invoices go to the customer by default
  */
 class Customer extends Model
 {
@@ -58,11 +60,14 @@ class Customer extends Model
         'reverse_charge_construction',
         'foreign_sale',
         'currency',
+        'peppol_id',
+        'invoice_delivery',
     ];
 
     /** @var array<string, mixed> */
     protected $attributes = [
         'currency' => 'SEK',
+        'invoice_delivery' => 'EMAIL',
     ];
 
     /** @var list<string> */

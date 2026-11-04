@@ -22,6 +22,7 @@ use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherRow;
 use App\Models\VoucherSeries;
+use App\Modules\Peppol\Models\PeppolTransmission;
 use DateTimeInterface;
 
 /**
@@ -243,6 +244,34 @@ final class ApiPresenter
     }
 
     /**
+     * The latest sending through Peppol (ADR-050), or null when the invoice
+     * has not been sent that way. Needs peppolTransmissions loaded; the
+     * receiver's Peppol ID is left out.
+     *
+     * @return ?array{transmission_id: string, status: string, document_type: string, queued_at: ?string, sent_at: ?string, delivered_at: ?string, failed_at: ?string, attempts: int}
+     */
+    private static function peppol(Invoice $invoice): ?array
+    {
+        if (! $invoice->relationLoaded('peppolTransmissions')) {
+            return null;
+        }
+
+        /** @var ?PeppolTransmission $latest */
+        $latest = $invoice->getRelation('peppolTransmissions')->sortByDesc('queued_at')->first();
+
+        return $latest === null ? null : [
+            'transmission_id' => $latest->id,
+            'status' => $latest->status->value,
+            'document_type' => $latest->document_type,
+            'queued_at' => self::time($latest->queued_at),
+            'sent_at' => self::time($latest->sent_at),
+            'delivered_at' => self::time($latest->delivered_at),
+            'failed_at' => self::time($latest->failed_at),
+            'attempts' => $latest->attempts,
+        ];
+    }
+
+    /**
      * Needs rows.account, rows.article, payments.account and customer loaded.
      * The customer is shown as it was when the invoice was issued; a
      * personal number is never part of it.
@@ -308,6 +337,7 @@ final class ApiPresenter
             'issued_at' => self::time($invoice->issued_at),
             'sent_at' => self::time($invoice->sent_at),
             'sent_to' => $invoice->sent_to,
+            'peppol' => self::peppol($invoice),
             'rows' => $invoice->rows->map(fn (InvoiceRow $row): array => [
                 'article' => $row->article?->number,
                 'description' => $row->description,
