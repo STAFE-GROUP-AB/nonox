@@ -196,6 +196,9 @@ Dessa frågor kräver i första hand en redovisningskonsult eller skattejurist. 
 | ROT och RUT: andelar, tak, avrundning, arbetskostnad, kontantmetoden och nekade belopp | `app/Domain/Invoicing/TaxReduction.php`, `app/Actions/Invoicing/IssueInvoice.php`, `RegisterTaxReductionPayment.php` |
 | Påminnelseavgift och dröjsmålsränta, som i dag inte tas ut | `app/Actions/Invoicing/SendReminder.php`, ADR-011 |
 | Bankgiro och plusgiro i Peppol-fakturor enligt SFTI | `app/Support/Peppol/UblInvoiceParser.php` |
+| Peppol: momskategori G för tjänster utanför EU och K för mellanmannens försäljning i trepartshandel; E eller O för utlägg utanför momsens tillämpningsområde | `app/Support/Peppol/UblInvoiceWriter.php`, ADR-050 |
+| Peppol: om en avvisad e-faktura i inkorgen är räkenskapsinformation, och om översättningen av den mottagna XML-filen till en leverantörsfaktura behöver beskrivas utöver systemdokumentationen (BFNAR 2013:2) | `app/Modules/Peppol/Actions/AcceptPeppolDocument.php`, ADR-050 |
+| Peppol: texten i samtycket när ett företag registreras som mottagare, Peppol-operatören som underbiträde och avtalet med den | `app/Modules/Peppol/views/settings-form.blade.php`, `docs/juridik/underbitraden.md`, ADR-050 |
 
 ### Lön
 

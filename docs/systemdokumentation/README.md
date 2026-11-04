@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.100
+- Version: 0.101
 - Datum: 2026-11-04
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -1220,6 +1220,51 @@ balances").
   (`invoice.issued`) och valutabelopp, avräknade kronor och kursdifferens vid
   betalning (`invoice.payment_registered`).
 - API och webhooks: se 5f; beloppen i `*_ore` är alltid kronor.
+
+### 5.4 E-faktura via Peppol (modul)
+
+Beskrivs i [ADR-050](../adr/ADR-050-peppol.md). Modulen Peppol e-faktura är
+avslagen tills installationen har ett avtal med en certifierad
+Peppol-operatör (accesspunkt); NONOX är inte själv en accesspunkt.
+
+- **En ny leveranskanal, ingen ny bokföring.** En skapad faktura eller
+  kreditfaktura kan skickas som e-faktura enligt Peppol BIS Billing 3.0
+  (EN 16931, UBL 2.1) i stället för eller utöver e-post. Fakturan är redan
+  bokförd när den skapas (avsnitt 5) och ändras inte när den skickas;
+  sändningen är en egen post (`peppol_transmissions`).
+- **Innehåll.** Dokumentet skrivs från fakturans egna uppgifter och belopp
+  (heltal i öre, ingen omräkning): säljare och köpare med
+  organisationsnummer, momsregistreringsnummer och Peppol-ID, "Godkänd för
+  F-skatt", en anteckning, Er referens, betalningssätt per bankgiro, plusgiro
+  och IBAN med OCR-numret som betalningsreferens, momsen per kategori och
+  sats (S 25/12/6, AE omvänd betalningsskyldighet, K unionsintern leverans
+  med land, G export, E undantagen med undantagstexten, O ej momsregistrerad
+  säljare), öresavrundningen, valuta med momsen även i kronor, och fakturans
+  PDF som bilaga. En kreditfaktura blir en kreditnota med positiva belopp och
+  hänvisning till den krediterade fakturan. ROT/RUT- och OSS-fakturor till
+  privatpersoner skickas inte via Peppol.
+- **Kontroll före sändning.** Varje dokument kontrolleras mot de regler i
+  Peppol BIS Billing 3.0 som berör det NONOX skriver
+  (`PeppolDocumentRules`, med reglernas officiella id). Ett dokument som
+  bryter mot en regel skickas inte. Testfilerna är kontrollerade mot de
+  officiella valideringsfilerna (UBL 2.1 XSD, CEN EN 16931 och Peppol
+  Schematron) med `scripts/peppol-validate.sh`.
+- **Det som skickades sparas.** Dokumentet sparas exakt som det lämnades
+  till accesspunkten, med SHA-256, på den krypterade privata disken
+  (`peppol/{företag}/utgaende/`), och tas aldrig bort (BFL 7 kap.).
+- **Status.** I kö → Skickad till Peppol → Levererad, eller Misslyckades.
+  Statusen går aldrig bakåt, och en levererad faktura blir aldrig
+  misslyckad. En misslyckad sändning kan skickas igen; varje försök har samma
+  idempotensnyckel så att en faktura inte går iväg två gånger.
+  Behandlingshistoriken får `invoice.peppol_queued`, `invoice.peppol_sent`,
+  `invoice.peppol_delivered` och `invoice.peppol_failed` med id, aldrig
+  mottagarens Peppol-ID.
+- **Mottagarens godkännande.** En e-faktura får bara utfärdas om mottagaren
+  godkänner det (ML 17 kap. 20 §); en offentlig köpare måste ta emot
+  e-fakturor enligt EN 16931 (lag 2018:1277, 5 §). NONOX skickar via Peppol
+  bara när någon har valt det för kunden eller fakturan.
+- **Behörighet.** Att skicka kräver `invoices:send`, företagets
+  Peppol-inställningar `settings:manage`.
 
 ## 5a. Leverantörsfakturor
 
@@ -2563,6 +2608,29 @@ godkänner ([ADR-023](../adr/ADR-023-inbox.md)).
   avsändares meddelanden sparas alltid, i karantän om de flaggats.
   Meddelanden som lett till bokföring tas aldrig bort här.
 
+### 5e.1 E-fakturor via Peppol till inkorgen
+
+- När modulerna Peppol e-faktura och Inkorg är på och företaget tar emot
+  e-fakturor (ADR-050) hämtas dokument som Peppol-operatören har tagit emot
+  för företaget, via operatörens webhook (signerad, högst fem minuter gammal,
+  aldrig samma händelse två gånger) och var femtonde minut (`peppol:sync`).
+- Ett dokument tas bara emot om mottagaren i dokumentet är företagets eget
+  Peppol-ID. Det hamnar aldrig hos ett annat företag.
+- **Originalet.** XML-filen sparas byte för byte som meddelandets original,
+  med SHA-256, i det format och med det innehåll den hade när den kom till
+  företaget (BFL 7 kap. 1 § tredje stycket; BFNAR 2013:2). Samma fil två
+  gånger tas emot en gång. Fakturans PDF, som ligger i filen, sparas också
+  som bilaga efter samma kontroll som e-postbilagor.
+- **Tolkning och attest.** Peppol-läsaren gör ett förslag till
+  leverantörsfaktura som en person attesterar som i avsnitt 5e: leverantör
+  efter organisations- eller momsnummer, rader per momssats, belopp,
+  förfallodag, bankgiro, plusgiro eller IBAN och OCR. Okänd leverantör,
+  ändrade betaluppgifter och dubbletter ger varningar. Godkännandet går genom
+  `SaveSupplierInvoice` och `RegisterSupplierInvoice` som vanligt;
+  originalet kopplas som underlag.
+- E-postkontrollerna (lista över godkända avsändare, SPF/DKIM/DMARC) gäller
+  inte Peppol, där avsändaren identifieras av sin accesspunkt.
+
 ## 5f. NONOX Connect – öppet API (modul)
 
 Ett API för andra program ([ADR-032](../adr/ADR-032-public-api-and-nonox-connect.md),
@@ -3751,3 +3819,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos driftbolaget som HQ pekar ut, genom dess egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Inget kopplas till en befintlig post utan HQ:s beslut, och radering på begäran tar alltid bort personen. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.4. Ändrar ingen bokföring. |
 | 0.99 | 2026-11-04 | Nästa räkenskapsår skapas automatiskt (avsnitt 3.1, ADR-010): varje morgon när det senaste året slutar inom 30 dagar, och vid bokföring av ett datum i det följande året högst 30 dagar fram. Bara ett vanligt år på tolv månader i företagets första månad (BFL 3 kap. 1 och 3 §§); en omläggning (3 kap. 6 §) görs aldrig automatiskt. Det gamla året stängs inte och inga ingående balanser förs över. Behandlingshistoriken visar `via: automatic` och vad som utlöste det. Det första året kan fortfarande ändras när nästa år skapats automatiskt och är tomt; det tomma året tas då bort (`fiscal_year.removed`). |
 | 0.100 | 2026-11-04 | Ingående balanser som inte längre stämmer (avsnitt 4.14a, ADR-010; ÅRL 2 kap. 4 § första stycket 7): NONOX jämför varje års ingående balanser med föregående års utgående balanser, räknade som vid överföringen, och varnar under Räkenskapsår, Rapporter, Att göra och i bokslutets checklista. Bara öppna år jämförs; ett stängt år behåller sina balanser i kedjan. Uppdatera ingående balanser räknar om alla år som skiljer i ordning, bara på en persons beslut, under lås på år och företag, och vägras när periodlåset omfattar årets första dag; `fiscal_year.opening_balances_updated` visar varje konto före och efter (efter = det som skrevs). En avsiktlig skillnad bekräftas med skäl och fingeravtryck, som upphör att gälla när skillnaden ändras (ÅRL 2 kap. 4 § andra stycket, 5 kap. 5 §). Överföringen för hand vägras också när nästa års första dag är låst; i bokslutet görs den som förut, och stängningen tar låset för att skapa år först. Ett använt konto kan inte byta mellan balans- och resultatkonto. |
+| 0.101 | 2026-11-04 | E-faktura via Peppol (ADR-050, avsnitt 5.4 och 5e.1): skapade kundfakturor och kreditfakturor kan skickas som Peppol BIS Billing 3.0 genom installationens accesspunkt, kontrollerade mot reglerna och sparade exakt som de skickades, utan någon ändring i bokföringen; e-fakturor som tas emot hamnar i inkorgen med XML-filen som original och blir förslag till leverantörsfakturor som attesteras. |

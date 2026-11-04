@@ -91,7 +91,11 @@
             {{-- Left: the original and its attachments. Nothing is rendered as HTML on this origin. --}}
             <x-ui.card :title="$message->subject ?: __('(inget ämne)')">
                 <p class="text-sm text-gray-600">{{ __('Från :sender till :recipient, :time', ['sender' => $message->senderLabel(), 'recipient' => $message->recipient, 'time' => $message->received_at->timezone('Europe/Stockholm')->format('Y-m-d H:i')]) }}</p>
-                <p class="mt-1 text-xs text-gray-500">SPF {{ $message->auth['spf'] ?? '–' }} · DKIM {{ $message->auth['dkim'] ?? '–' }} · DMARC {{ $message->auth['dmarc'] ?? '–' }} · <a class="underline" href="{{ route('inbox.original', ['message' => $message->id]) }}">{{ __('Ladda ner originalet (.eml)') }}</a></p>
+                @if($message->channel === App\Modules\Inbox\Domain\Channel::Peppol)
+                    <p class="mt-1 text-xs text-gray-500">{{ __('E-faktura via Peppol') }} · <a class="underline" href="{{ route('inbox.original', ['message' => $message->id]) }}">{{ __('Ladda ner originalet (.xml)') }}</a></p>
+                @else
+                    <p class="mt-1 text-xs text-gray-500">SPF {{ $message->auth['spf'] ?? '–' }} · DKIM {{ $message->auth['dkim'] ?? '–' }} · DMARC {{ $message->auth['dmarc'] ?? '–' }} · <a class="underline" href="{{ route('inbox.original', ['message' => $message->id]) }}">{{ __('Ladda ner originalet (.eml)') }}</a></p>
+                @endif
 
                 @php($first = $message->attachments->first(fn ($attachment) => $attachment->isPreviewable()))
                 @if($first)

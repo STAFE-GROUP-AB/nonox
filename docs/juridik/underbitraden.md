@@ -24,6 +24,9 @@ De här underbiträdena behandlar personuppgifter för {foretag} när vi driftar
 
 **Kalenderlänk i CRM:** en kalenderlänk som en användare prenumererar på hämtas av den kalendertjänst användaren själv väljer. Den tjänsten är användarens eget val och inte vårt underbiträde.
 
+<!-- Förberett för Peppol e-faktura (ADR-050). Läggs in i tabellen "Bara om företaget själv slår på det" när avtalet med operatören är tecknat, samtidigt som versionen höjs (LegalPageController::VERSION) och kunderna får 30 dagars besked:
+| Qvalia Group AB (modulen Peppol e-faktura) | Peppol-operatör (accesspunkt): skickar företagets kundfakturor som e-faktura via Peppol, tar emot leverantörsfakturor till företaget och registrerar företaget som mottagare i Peppols adressbok efter sin egen kontroll av vem företaget är | Sverige (EU) |
+TODO(legal-verify): underbiträdesavtal (DPA) med operatören och var operatören lagrar uppgifterna; om operatören är personuppgiftsansvarig för sin kundkännedom. -->
 <!-- TODO(legal-verify): Google och Microsoft som mottagare på företagets instruktion och inte underbiträden, överföringsgrunden, och om ett privat Google- eller Microsoft-konto ska tillåtas (ADR-049). -->
 
 <!-- TODO(legal-verify): Enable Banking som underbiträde eller företagets egen leverantör, DPA, och om Stafe behöver registreras hos Finansinspektionen (ADR-034, frågor till jurist 30–31). Modulen Bank erbjuds inte i den driftade tjänsten förrän det är klart. -->

@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-peppol-e-faktura",
+      "datum": "2026-11-04T15:00:00+01:00",
+      "rubrik": "E-faktura via Peppol, byggt och redo",
+      "beskrivning": "Kundfakturor och kreditfakturor kan skickas som e-faktura enligt Peppol BIS Billing 3.0, kontrollerade mot reglerna, och e-fakturor från leverantörer hamnar i inkorgen som förslag att attestera. Modulen Peppol e-faktura slås på när vi har ett avtal med en Peppol-operatör. Bokföringen påverkas inte: fakturan bokförs som förut när den skapas.",
+      "typ": "Nytt",
+      "omrade": "Fakturering"
+    },
+    {
       "id": "2026-11-04-inaktuella-ingaende-balanser",
       "datum": "2026-11-04T14:30:00+01:00",
       "rubrik": "Varning när ingående balanser inte längre stämmer",

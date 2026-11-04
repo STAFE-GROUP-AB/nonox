@@ -15,7 +15,7 @@ Rollerna: **Stafe Development AB** utvecklar NONOX och driftar tjänsten på non
 | Tillgänglighetslagen (EAA) | Troligen inte | B2B-tjänst, ej utrett för konsumenter |
 | Cyberresiliensförordningen (CRA) | Oklart | Beror på rollen för öppen källkod |
 | Lagen om elektronisk kommunikation (cookies) | Ja | Bara nödvändiga kakor |
-| ViDA och e-fakturering | Kommer | Peppol läses, skickas inte |
+| ViDA och e-fakturering | Kommer | Peppol skickas och tas emot (modul, slås på när avtalet med en Peppol-operatör finns) |
 
 ## 1. Dataskyddsförordningen (EU) 2016/679, GDPR
 
@@ -142,10 +142,10 @@ Lönen berör också skatteförfarandelagen: arbetsgivardeklaration på individn
 
 **Det här gör NONOX:**
 - Läser Peppol BIS Billing 3.0 och UBL-fakturor som kommer till inkorgen.
-- Fakturor skickas som PDF.
+- Fakturor skickas som PDF, och som e-faktura enligt Peppol BIS Billing 3.0 (EN 16931) när modulen Peppol e-faktura är på (ADR-050). Det uppfyller kravet på elektroniska fakturor till offentliga köpare (lag 2018:1277).
 
 **Det här saknas:**
-- Att skicka och ta emot via Peppol-nätverket (en anslutningspunkt).
+- Att skicka och ta emot via Peppol-nätverket är byggt (ADR-050) men inte påslaget: det kräver ett avtal med en certifierad Peppol-operatör.
 - Rapporteringsformatet enligt ViDA.
 
 ## Övrigt

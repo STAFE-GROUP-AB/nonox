@@ -55,7 +55,7 @@ Under **Bokförd** finns en länk till fakturans verifikation i serie B. Bokför
 ## Bra att veta
 
 - I ett testföretag skickas inga mejl. Fakturan märks som skickad men lämnar aldrig NONOX.
-- NONOX skickar fakturor som PDF med e-post. Peppol och e-faktura till banken går inte att skicka från NONOX.
+- NONOX skickar fakturor som PDF med e-post, och som e-faktura via Peppol när modulen **Peppol e-faktura** är på. Läs [Skicka e-faktura via Peppol](/manual/fakturering/e-faktura-via-peppol). E-faktura till kundens internetbank går inte att skicka från NONOX.
 - Varje utskick sparas i behandlingshistoriken med mottagarens adress.
 
 ## Vanliga frågor
@@ -69,6 +69,7 @@ En adress per utskick. Tryck på **Skicka igen** med en annan adress om fler ska
 ## Läs också
 
 - [Skapa en faktura](/manual/fakturering/skapa-en-faktura)
+- [Skicka e-faktura via Peppol](/manual/fakturering/e-faktura-via-peppol)
 - [Inbetalningar](/manual/fakturering/inbetalningar)
 - [Påminnelser](/manual/fakturering/paminnelser)
 - [Kreditera en faktura](/manual/fakturering/kreditfaktura)
