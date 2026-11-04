@@ -49,3 +49,6 @@ Schedule::command('crm:registry-watch')->dailyAt('06:10')->withoutOverlapping();
 Schedule::command('crm:calendar-sync')->everyFifteenMinutes()->withoutOverlapping();
 // CRM stage 3 (ADR-046): renew agreements, remind before notice deadlines, prune unsigned signing links.
 Schedule::command('crm:agreements')->dailyAt('05:50')->withoutOverlapping();
+// CRM stage 5 (ADR-048): queued mailings within the hourly and daily caps; unlinked and orphaned mail pruned nightly.
+Schedule::command('crm:send-mailings')->everyMinute()->withoutOverlapping();
+Schedule::command('crm:prune-mail')->dailyAt('04:50')->withoutOverlapping();

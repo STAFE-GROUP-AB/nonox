@@ -15,11 +15,16 @@ use App\Modules\Crm\Calendar\CalendarSequence;
 use App\Modules\Crm\Calendar\ForgetUserCalendars;
 use App\Modules\Crm\Console\AgreementsCommand;
 use App\Modules\Crm\Console\CalendarSyncCommand;
+use App\Modules\Crm\Console\PruneMailCommand;
 use App\Modules\Crm\Console\RefreshStatusesCommand;
 use App\Modules\Crm\Console\RegistryWatchCommand;
+use App\Modules\Crm\Console\SendMailingsCommand;
 use App\Modules\Crm\Console\WinBackCommand;
 use App\Modules\Crm\Domain\SigningToken;
 use App\Modules\Crm\Http\CrmPersonExportController;
+use App\Modules\Crm\Http\MailgunEventsController;
+use App\Modules\Crm\Http\MailingLinkController;
+use App\Modules\Crm\Http\PublicFormController;
 use App\Modules\Crm\Http\SigningPageController;
 use App\Modules\Crm\Http\WithoutAuditRequest;
 use App\Modules\Crm\Livewire\AccountCard;
@@ -35,26 +40,39 @@ use App\Modules\Crm\Livewire\CustomerFieldsForm;
 use App\Modules\Crm\Livewire\Dashboard;
 use App\Modules\Crm\Livewire\DealCard;
 use App\Modules\Crm\Livewire\DealsBoard;
+use App\Modules\Crm\Livewire\EmailsPage;
 use App\Modules\Crm\Livewire\ForecastPage;
+use App\Modules\Crm\Livewire\FormsPage;
+use App\Modules\Crm\Livewire\MailingEditor;
+use App\Modules\Crm\Livewire\MailingsPage;
 use App\Modules\Crm\Livewire\PeoplePage;
 use App\Modules\Crm\Livewire\PersonCard;
 use App\Modules\Crm\Livewire\PipelineSettings;
 use App\Modules\Crm\Livewire\ProspectingPage;
 use App\Modules\Crm\Livewire\QuoteFromTemplate;
 use App\Modules\Crm\Livewire\QuoteTemplatesPage;
+use App\Modules\Crm\Livewire\SegmentsPage;
 use App\Modules\Crm\Livewire\SigningPanel;
+use App\Modules\Crm\Livewire\TemplatesPage;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\CallList;
 use App\Modules\Crm\Models\Deal;
+use App\Modules\Crm\Models\Email;
+use App\Modules\Crm\Models\EmailTemplate;
+use App\Modules\Crm\Models\Form;
 use App\Modules\Crm\Models\Goal;
 use App\Modules\Crm\Models\LossReason;
+use App\Modules\Crm\Models\Mailing;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Pipeline;
 use App\Modules\Crm\Models\PipelineStage;
+use App\Modules\Crm\Models\Segment;
+use App\Modules\Crm\Policies\CrmMailPolicy;
 use App\Modules\Crm\Policies\CrmPolicy;
+use App\Modules\Crm\Support\CrmMailer;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Modules\Crm\Support\SigningFiles;
 use App\Modules\ModuleRegistry;
@@ -85,8 +103,19 @@ class CrmServiceProvider extends ServiceProvider
         $this->app->bind(CreditData::class, fn (): CreditData => NullCreditData::resolve());
     }
 
+    /** The mailer `crm` for CRM mail's own sending domain (ADR-048), when it is configured. */
+    private function registerMailer(): void
+    {
+        $smtp = CrmMailer::smtpConfig();
+
+        if ($smtp !== null) {
+            config(['mail.mailers.crm' => $smtp]);
+        }
+    }
+
     public function boot(): void
     {
+        $this->registerMailer();
         $this->loadViewsFrom(__DIR__.'/views', 'crm');
         // <x-crm::…>: the parts the account card and the person page share.
         Blade::anonymousComponentPath(__DIR__.'/views/components', 'crm');
@@ -94,6 +123,11 @@ class CrmServiceProvider extends ServiceProvider
 
         foreach ([Account::class, Person::class, Activity::class, AccountPerson::class, Deal::class, Pipeline::class, PipelineStage::class, LossReason::class, Goal::class, CallList::class, Agreement::class] as $model) {
             Gate::policy($model, CrmPolicy::class);
+        }
+
+        // Stage 5 (ADR-048): templates, segments, mailings and forms are crm:settings or crm:mailings (CrmMailPolicy).
+        foreach ([Email::class, EmailTemplate::class, Segment::class, Mailing::class, Form::class] as $model) {
+            Gate::policy($model, CrmMailPolicy::class);
         }
 
         Customer::observe(CustomerAccounts::class);
@@ -130,9 +164,15 @@ class CrmServiceProvider extends ServiceProvider
         Livewire::component('crm.quote-templates', QuoteTemplatesPage::class);
         Livewire::component(QuoteFromTemplate::NAME, QuoteFromTemplate::class);
         Livewire::component(SigningPanel::NAME, SigningPanel::class);
+        Livewire::component('crm.emails', EmailsPage::class);
+        Livewire::component('crm.templates', TemplatesPage::class);
+        Livewire::component('crm.segments', SegmentsPage::class);
+        Livewire::component('crm.mailings', MailingsPage::class);
+        Livewire::component('crm.mailing-editor', MailingEditor::class);
+        Livewire::component('crm.forms', FormsPage::class);
 
         if ($this->app->runningInConsole()) {
-            $this->commands([RefreshStatusesCommand::class, WinBackCommand::class, RegistryWatchCommand::class, CalendarSyncCommand::class, AgreementsCommand::class]);
+            $this->commands([RefreshStatusesCommand::class, WinBackCommand::class, RegistryWatchCommand::class, CalendarSyncCommand::class, AgreementsCommand::class, SendMailingsCommand::class, PruneMailCommand::class]);
         }
 
         Route::middleware(['web', 'auth:web', config('jetstream.auth_session'), 'verified', EnsureUserHasCompany::class, 'module:'.CrmModule::KEY])
@@ -153,6 +193,7 @@ class CrmServiceProvider extends ServiceProvider
             ->name('privacy.export.crmPerson');
 
         $this->signingRoutes();
+        $this->publicRoutes();
     }
 
     /**
@@ -172,5 +213,29 @@ class CrmServiceProvider extends ServiceProvider
             Route::post('/signera/{token}', [SigningPageController::class, 'sign'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('crm.signing.sign');
             Route::post('/signera/{token}/avboj', [SigningPageController::class, 'decline'])->where('token', SigningToken::PATTERN)->middleware('throttle:crm-signing-submit')->name('crm.signing.decline');
         });
+    }
+
+    /**
+     * Stage 5 (ADR-048): pages that people outside the company reach, outside
+     * the web middleware so that no session or cookie is set and no CSRF
+     * token is asked for (a mail client's one-click unsubscribe and a form
+     * on the company's own site cannot carry one). They answer 404 when the
+     * module is off, through their own lookups.
+     */
+    private function publicRoutes(): void
+    {
+        Route::middleware('throttle:60,1')->group(function (): void {
+            Route::get('/formular/{token}', [PublicFormController::class, 'show'])->name('crm.forms.show');
+            Route::post('/formular/{token}', [PublicFormController::class, 'submit'])->name('crm.forms.submit');
+            Route::get('/utskick/avregistrera/{token}', [MailingLinkController::class, 'unsubscribePage'])->name('crm.mailing.unsubscribe');
+        });
+
+        // Mailbox providers send one-click unsubscribes (RFC 8058) from a few shared addresses: a high limit, so none is refused.
+        Route::post('/utskick/avregistrera/{token}', [MailingLinkController::class, 'unsubscribe'])->middleware('throttle:1200,1')->name('crm.mailing.unsubscribe.confirm');
+        // A click link names only the link (second review round): the same address for every recipient.
+
+        Route::get('/utskick/lank/{link}/{sig}', [MailingLinkController::class, 'click'])->whereNumber('link')->where('sig', '[0-9a-f]{32}')->middleware('throttle:600,1')->name('crm.mailing.click');
+        // Mailgun posts delivery events in bursts after a large mailing.
+        Route::post('/webhooks/utskick/mailgun', MailgunEventsController::class)->middleware('throttle:6000,1')->name('crm.webhooks.mailgun');
     }
 }

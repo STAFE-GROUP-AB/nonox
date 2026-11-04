@@ -147,6 +147,7 @@ final class Timeline
                 DB::raw('crm_accounts.name::text AS account_name'),
                 DB::raw('crm_activities.deal_id AS deal_id'),
                 DB::raw('crm_deals.title::text AS deal_title'),
+                DB::raw('crm_activities.email_id AS email_id'),
             ])
             // created_at is a local timestamp without zone (app.timezone); make it timestamptz like done_at, whatever the session's zone.
             ->selectRaw('COALESCE(crm_activities.done_at, crm_activities.created_at AT TIME ZONE ?) AS at', [self::zone()]);
@@ -235,6 +236,7 @@ final class Timeline
             DB::raw('NULL::text AS account_name'),
             DB::raw('NULL::bigint AS deal_id'),
             DB::raw('NULL::text AS deal_title'),
+            DB::raw('NULL::bigint AS email_id'),
         ];
     }
 }

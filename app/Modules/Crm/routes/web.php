@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Crm\Http\MailingPreviewController;
 use App\Modules\Crm\Http\SigningFileController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,4 +26,12 @@ Route::get('/kunder/avtal/nytt', fn () => view('crm::agreement', ['agreementId' 
 Route::get('/kunder/avtal/{agreement}', fn (int $agreement) => view('crm::agreement', ['agreementId' => $agreement]))->whereNumber('agreement')->name('crm.agreements.show');
 Route::view('/kunder/offertmallar', 'crm::quote-templates')->name('crm.quoteTemplates');
 Route::get('/kunder/signeringar/{signing}/{file}', SigningFileController::class)->whereNumber('signing')->whereIn('file', ['dokument', 'signeringsbevis'])->name('crm.signing.file');
+// Stage 5 (ADR-048): e-mail logging, templates, segments, mailings and web forms.
+Route::view('/kunder/mejl', 'crm::emails')->name('crm.emails');
+Route::view('/kunder/mallar', 'crm::templates')->name('crm.templates');
+Route::view('/kunder/segment', 'crm::segments')->name('crm.segments');
+Route::view('/kunder/utskick', 'crm::mailings')->name('crm.mailings');
+Route::get('/kunder/utskick/{mailing}', fn (int $mailing) => view('crm::mailing', ['mailingId' => $mailing]))->whereNumber('mailing')->name('crm.mailings.show');
+Route::get('/kunder/utskick/{mailing}/forhandsvisning', MailingPreviewController::class)->whereNumber('mailing')->name('crm.mailings.preview');
+Route::view('/kunder/formular', 'crm::forms')->name('crm.forms');
 Route::get('/kunder/{account}', fn (int $account) => view('crm::account', ['accountId' => $account]))->whereNumber('account')->name('crm.accounts.show');

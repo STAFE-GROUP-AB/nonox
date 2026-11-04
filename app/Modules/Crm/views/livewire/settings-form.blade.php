@@ -58,6 +58,9 @@
     <x-ui.field for="crm-agreement-reminder" :label="__('Påminn om avtal, dagar innan')" error="settings.agreement_reminder_days" :hint="__('Så här många dagar före sista dag att säga upp ett avtal (eller före slutdatumet, om avtalet saknar uppsägningstid) får den ansvarige en uppgift. Standard är 60.')">
         <input id="crm-agreement-reminder" type="number" min="7" max="365" inputmode="numeric" wire:model="settings.agreement_reminder_days" class="{{ $input }}">
     </x-ui.field>
+    <x-ui.field for="crm-privacy" :label="__('Länk till er integritetspolicy')" error="privacy_url" class="sm:col-span-2" :hint="__('Visas i varje webbformulär och utskick. Krävs innan ett formulär kan publiceras eller ett utskick skickas.')">
+        <input id="crm-privacy" type="url" placeholder="https://" wire:model="privacyUrl" class="block w-full min-h-11 sm:min-h-0 border-gray-300 focus:border-accent-500 focus:ring-accent-500 rounded-lg shadow-xs">
+    </x-ui.field>
     <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>

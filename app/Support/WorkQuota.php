@@ -17,7 +17,7 @@ use Illuminate\Validation\ValidationException;
 final class WorkQuota
 {
     /** Per company and hour. */
-    public const array LIMITS = ['sie_upload' => 30, 'vies' => 60, 'archive' => 10, 'bank_file' => 30, 'inbox_mail' => 500, 'pdf' => 300, 'company_lookup' => 300];
+    public const array LIMITS = ['sie_upload' => 30, 'vies' => 60, 'archive' => 10, 'bank_file' => 30, 'inbox_mail' => 500, 'pdf' => 300, 'company_lookup' => 300, 'crm_mail' => 500];
 
     /** @throws ValidationException */
     public static function take(Company $company, string $kind, string $field): void

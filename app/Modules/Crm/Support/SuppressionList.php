@@ -21,6 +21,13 @@ use App\Modules\Crm\Models\Suppression;
  * from APP_KEY when that is not set. Matching also tries keys derived from
  * APP_KEY and APP_PREVIOUS_KEYS, so rotating a key does not drop a flag.
  *
+ * Stage 5 (ADR-048): an unsubscribe from a mailing, or a spam complaint,
+ * adds the address with the reason MARKETING. Such an entry stops mailings
+ * only (art. 21(3), direct marketing); it does not mark anyone Kontakta inte
+ * for other contact, so match() leaves it out and marketingBlocked() reads
+ * every entry. A stronger reason replaces MARKETING on the same hash, and
+ * withdrawing a Kontakta inte objection never removes a MARKETING entry.
+ *
  * TODO(legal-verify): how long the list is kept; see CrmSettings
  * suppression_review_years for the periodic review.
  */
@@ -28,6 +35,9 @@ final class SuppressionList
 {
     /** The reason stored for contact details kept after an erasure on request (ADR-044). */
     public const string ERASURE = 'ERASURE';
+
+    /** An unsubscribe from mailings or a spam complaint: no more direct marketing to the address (ADR-048). */
+    public const string MARKETING = 'MARKETING';
 
     /**
      * Keeps these contact details on the list after the person was erased
@@ -38,8 +48,64 @@ final class SuppressionList
     public static function suppress(string $reason, ?string $email, ?string ...$phones): void
     {
         foreach (self::hashes(self::currentKey(), $email, ...$phones) as $hash => $kind) {
-            Suppression::query()->firstOrCreate(['hash' => $hash], ['kind' => $kind, 'reason' => $reason]);
+            self::store($hash, $kind, $reason);
         }
+    }
+
+    /** The keyed hash of an address under the current key: what a mailing recipient's stub keeps (ADR-048). */
+    public static function emailHash(string $email): ?string
+    {
+        return array_key_first(self::hashes(self::currentKey(), $email));
+    }
+
+    /** An unsubscribe through a recipient stub that kept only the hash of the address. */
+    public static function suppressMarketingHash(string $hash): void
+    {
+        if (preg_match('/^[0-9a-f]{64}$/', $hash) === 1) {
+            self::store($hash, 'EMAIL', self::MARKETING);
+        }
+    }
+
+    /** No more mailings to this address (an unsubscribe or a complaint); other contact is unaffected. */
+    public static function suppressMarketing(string $email): void
+    {
+        foreach (self::hashes(self::currentKey(), $email) as $hash => $kind) {
+            self::store($hash, $kind, self::MARKETING);
+        }
+    }
+
+    /**
+     * Which of these addresses must get no mailing: any entry counts, under
+     * any key. One query for the whole list.
+     *
+     * @param  array<int, string>  $emails
+     * @return array<string, true> lower-case address => true
+     */
+    public static function marketingBlocked(array $emails): array
+    {
+        $byHash = [];
+
+        foreach (array_unique(array_map(fn (string $email): string => mb_strtolower(trim($email)), $emails)) as $email) {
+            foreach (self::keys() as $key) {
+                foreach (array_keys(self::hashes($key, $email)) as $hash) {
+                    $byHash[$hash] = $email;
+                }
+            }
+        }
+
+        if ($byHash === []) {
+            return [];
+        }
+
+        $blocked = [];
+
+        foreach (array_chunk(array_keys($byHash), 1000) as $chunk) {
+            foreach (Suppression::query()->whereIn('hash', $chunk)->pluck('hash') as $hash) {
+                $blocked[$byHash[$hash]] = true;
+            }
+        }
+
+        return $blocked;
     }
 
     /** Adds the person's e-mail and numbers to the list when they objected; a restriction keeps nothing. */
@@ -50,7 +116,7 @@ final class SuppressionList
         }
 
         foreach (self::hashes(self::currentKey(), $person->email, $person->phone, $person->mobile) as $hash => $kind) {
-            Suppression::query()->firstOrCreate(['hash' => $hash], ['kind' => $kind, 'reason' => DoNotContact::Objection->value]);
+            self::store($hash, $kind, DoNotContact::Objection->value);
         }
     }
 
@@ -63,7 +129,8 @@ final class SuppressionList
             $hashes = [...$hashes, ...array_keys(self::hashes($key, $email, ...$phones))];
         }
 
-        return $hashes !== [] && Suppression::query()->whereIn('hash', $hashes)->exists();
+        // A MARKETING entry stops mailings only, not other contact.
+        return $hashes !== [] && Suppression::query()->whereIn('hash', $hashes)->where('reason', '<>', self::MARKETING)->exists();
     }
 
     /**
@@ -100,8 +167,37 @@ final class SuppressionList
 
         $hashes = array_values(array_diff(array_unique($remove), $keep));
 
+        // Someone who also unsubscribed from mailings keeps that: the e-mail entry goes back to MARKETING instead.
+        if ($person->marketing_opt_out_at !== null && $hashes !== []) {
+            $marketing = [];
+
+            foreach (self::keys() as $key) {
+                foreach ($emails as $email) {
+                    $marketing = [...$marketing, ...array_keys(self::hashes($key, $email))];
+                }
+            }
+
+            $marketing = array_values(array_intersect($hashes, $marketing));
+
+            if ($marketing !== []) {
+                Suppression::query()->whereIn('hash', $marketing)->update(['reason' => self::MARKETING, 'updated_at' => now()]);
+                $hashes = array_values(array_diff($hashes, $marketing));
+            }
+        }
+
         if ($hashes !== []) {
-            Suppression::query()->whereIn('hash', $hashes)->delete();
+            // Withdrawing an objection does not subscribe anyone to mailings again.
+            Suppression::query()->whereIn('hash', $hashes)->where('reason', '<>', self::MARKETING)->delete();
+        }
+    }
+
+    /** One entry per hash; a stronger reason replaces MARKETING, never the other way. */
+    private static function store(string $hash, string $kind, string $reason): void
+    {
+        $entry = Suppression::query()->firstOrCreate(['hash' => $hash], ['kind' => $kind, 'reason' => $reason]);
+
+        if (! $entry->wasRecentlyCreated && $entry->reason === self::MARKETING && $reason !== self::MARKETING) {
+            $entry->forceFill(['reason' => $reason])->save();
         }
     }
 

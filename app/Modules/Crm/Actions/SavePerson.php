@@ -51,6 +51,9 @@ final class SavePerson
             'consent_at' => ['nullable', 'required_if:legal_basis,'.LegalBasis::Consent->value, 'date', 'before_or_equal:today'],
             'is_active' => ['sometimes', 'boolean'],
             'informed_at' => ['nullable', 'date', 'before_or_equal:today'],
+            // ADR-048: a dated consent to e-mail marketing, and the customer exception (marknadsföringslagen 19 § second paragraph).
+            'marketing_consent_at' => ['nullable', 'date', 'before_or_equal:today'],
+            'customer_exception_at' => ['nullable', 'date', 'before_or_equal:today'],
             'do_not_contact' => ['sometimes', 'boolean'],
             'lift_restriction' => ['sometimes', 'boolean'],
             'do_not_contact_reason' => ['nullable', 'required_if_accepted:do_not_contact', Rule::enum(DoNotContact::class)],
@@ -123,7 +126,14 @@ final class SavePerson
             $objected = $person->do_not_contact_reason === DoNotContact::Objection;
             $restricted = $person->do_not_contact_reason === DoNotContact::Restriction;
             $old = $person->only(['email', 'phone', 'mobile']);
-            $person->fill($attributes)->forceFill(['last_activity_at' => now()])->save();
+            $person->fill($attributes)->forceFill(['last_activity_at' => now()]);
+
+            // A new address has not bounced (ADR-048).
+            if ($person->isDirty('email')) {
+                $person->forceFill(['email_bounced_at' => null]);
+            }
+
+            $person->save();
 
             if ($objected && $person->do_not_contact_reason !== DoNotContact::Objection) {
                 // The objection is withdrawn: the old and new details leave the list, unless another objector uses them.

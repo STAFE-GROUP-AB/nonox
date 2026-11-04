@@ -48,6 +48,8 @@ Varje kontaktperson har också en egen sida med historik, affärer och personupp
 | **Revisor** | Ja | Nej | Nej |
 | **Säljare** | Ja | Ja | Nej |
 
+Utskick till segment kan bara göras av **Ägare** och **Administratör**. Mejlmallar, segment och webbformulär skapas av dem som får ändra inställningarna; alla som arbetar i CRM kan logga mejl och mejla med mall.
+
 Rollen **Säljare** finns när CRM är påslaget. En säljare ser fakturerat, obetalt och betaltid per kund, men inga verifikationer eller rapporter och kan inte öppna fakturorna. För en privatperson ser säljaren inga nyckeltal alls och i tidslinjen bara aktiviteterna, inga offerter, fakturor, betalningar eller påminnelser. Att göra ett prospekt till kund och att ändra kundens fakturauppgifter kräver att man får skapa fakturor.
 
 En **Revisor** ser hela CRM, nyckeltalen och aktiviteterna, men kan inte ändra något. Revisorn ser redan fakturorna i bokföringen, och CRM visar hur kunderna har följts upp.
@@ -69,4 +71,8 @@ En **Revisor** ser hela CRM, nyckeltalen och aktiviteterna, men kan inte ändra 
 - [Översikt för försäljningen](/manual/crm/instrumentpanel)
 - [Kundstatus](/manual/crm/kundstatus)
 - [Nyckeltal från bokföringen](/manual/crm/nyckeltal)
+- [Logga mejl](/manual/crm/logga-mejl)
+- [Mejlmallar](/manual/crm/mejlmallar)
+- [Utskick](/manual/crm/utskick)
+- [Webbformulär](/manual/crm/webbformular)
 - [GDPR i CRM](/manual/crm/gdpr-i-crm)

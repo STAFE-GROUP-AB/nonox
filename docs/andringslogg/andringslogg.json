@@ -48,6 +48,14 @@
       "omrade": "CRM"
     },
     {
+      "id": "2026-11-04-crm-mejl-och-utskick",
+      "datum": "2026-11-04T02:30:00+01:00",
+      "rubrik": "CRM: mejl på rätt kund, mallar, utskick och webbformulär",
+      "beskrivning": "Skicka en kopia eller vidarebefordra ett mejl till företagets CRM-adress, så hamnar det på rätt kund. Mejla med mall från kundkortet, skicka utskick till segment med avregistrering i varje mejl och klick per länk utan att vem som klickar eller öppnar mäts, och lägg ett formulär på er webbplats som skapar prospekt.",
+      "typ": "Nytt",
+      "omrade": "CRM"
+    },
+    {
       "id": "2026-11-04-crm-kalender",
       "datum": "2026-11-04T02:25:00+01:00",
       "rubrik": "CRM: dina möten och samtal i din egen kalender",

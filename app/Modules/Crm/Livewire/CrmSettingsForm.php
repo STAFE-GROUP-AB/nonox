@@ -37,6 +37,9 @@ class CrmSettingsForm extends Component
     /** @var array<string, mixed> */
     public array $settings = [];
 
+    /** The company's privacy policy, linked from web forms and mailings (ADR-048). */
+    public string $privacyUrl = '';
+
     public function mount(Company $company): void
     {
         abort_unless($this->user()->hasTeamPermission($company, 'crm:settings'), 403);
@@ -45,6 +48,7 @@ class CrmSettingsForm extends Component
         $this->settings = CrmSettings::for($company);
         $this->settings['registry_monitoring'] = (bool) $this->settings['registry_monitoring'];
         $this->settings['registry_monitoring_prospects'] = (bool) $this->settings['registry_monitoring_prospects'];
+        $this->privacyUrl = (string) CrmSettings::privacyUrl($company);
     }
 
     public function save(ModuleManager $modules): void
@@ -62,7 +66,12 @@ class CrmSettingsForm extends Component
             $rules["settings.{$key}"] = ['required', 'integer', "between:{$min},{$max}"];
         }
 
-        $validated = Validator::make(['settings' => $this->settings], $rules, [], [
+        $rules['privacy_url'] = ['nullable', 'url:https', 'max:500'];
+
+        $validated = Validator::make(['settings' => $this->settings, 'privacy_url' => trim($this->privacyUrl)], $rules, [
+            'privacy_url.url' => __('Ange en fullständig adress till er integritetspolicy som börjar med https://.'),
+        ], [
+            'privacy_url' => __('länk till integritetspolicyn'),
             'settings.months_to_inactive' => __('månader utan faktura'),
             'settings.prune_after_months' => __('månader utan aktivitet'),
             'settings.suppression_review_years' => __('år mellan granskningarna'),
@@ -76,7 +85,10 @@ class CrmSettingsForm extends Component
         ])->validate();
 
         $before = CrmSettings::for($company);
-        $modules->updateSettings(CrmModule::KEY, $company, $this->user(), array_map('intval', (array) $validated['settings']));
+        $modules->updateSettings(CrmModule::KEY, $company, $this->user(), [
+            ...array_map('intval', (array) $validated['settings']),
+            'privacy_url' => blank($validated['privacy_url'] ?? null) ? null : (string) $validated['privacy_url'],
+        ]);
         $after = CrmSettings::for($company);
         $this->settings['registry_monitoring'] = (bool) $after['registry_monitoring'];
         $this->settings['registry_monitoring_prospects'] = (bool) $after['registry_monitoring_prospects'];

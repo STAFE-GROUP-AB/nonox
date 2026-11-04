@@ -90,6 +90,10 @@
             <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-800">{{ $entry->body }}</p>
         @endif
 
+        @if($isActivity && ($entry->email_id ?? null))
+            <p class="mt-1 text-sm"><a href="{{ route('crm.emails', ['visa' => $entry->email_id]) }}" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700 sm:min-h-0">{{ __('Visa hela mejlet') }}</a></p>
+        @endif
+
         @php($inCalendar = $open && $due !== null && in_array($type, ['MEETING', 'CALL', 'TASK'], true))
         @if(($open && $canManage) || $inCalendar)
             <div class="mt-3 flex flex-wrap gap-3">

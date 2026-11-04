@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $location where a meeting is held
  * @property int $calendar_sequence goes up on every change a calendar must see (ADR-049)
  * @property ?CarbonImmutable $invited_at when the meeting's person was last sent an invitation
+ * @property ?int $email_id the logged e-mail this activity shows (ADR-048)
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -60,6 +61,7 @@ class Activity extends Model
         'created_by',
         'duration_minutes',
         'location',
+        'email_id',
     ];
 
     /** @return array<string, string> */
@@ -94,6 +96,12 @@ class Activity extends Model
     public function deal(): BelongsTo
     {
         return $this->belongsTo(Deal::class);
+    }
+
+    /** @return BelongsTo<Email, $this> */
+    public function email(): BelongsTo
+    {
+        return $this->belongsTo(Email::class);
     }
 
     /** @return BelongsTo<User, $this> */

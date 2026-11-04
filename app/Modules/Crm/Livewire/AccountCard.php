@@ -25,11 +25,13 @@ use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Domain\StepPath;
 use App\Modules\Crm\Domain\Timeline;
 use App\Modules\Crm\Livewire\Concerns\EditsPeople;
+use App\Modules\Crm\Livewire\Concerns\SendsTemplateEmails;
 use App\Modules\Crm\Livewire\Concerns\WorksActivities;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Agreement;
 use App\Modules\Crm\Models\Deal;
+use App\Modules\Crm\Models\EmailTemplate;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\CompanyMembers;
 use App\Support\Toast;
@@ -57,6 +59,7 @@ use Livewire\WithPagination;
 class AccountCard extends Component
 {
     use EditsPeople;
+    use SendsTemplateEmails;
     use ShowsToasts;
     use WithPagination;
     use WorksActivities;
@@ -309,7 +312,29 @@ class AccountCard extends Component
             'parents' => $this->panel === 'edit' ? Account::query()->whereKeyNot($account->id)->orderBy('name')->limit(500)->get(['id', 'name']) : collect(),
             'sharedLocked' => ! $this->canEditShared($account),
             'now' => $now,
+            // Mejla med mall (ADR-048): only while its panel is open.
+            'templates' => $this->panel === 'mall' ? EmailTemplate::query()->orderBy('name')->get(['id', 'name']) : collect(),
+            'mailRecipients' => $this->panel === 'mall' ? $this->mailRecipients($account) : [],
         ]);
+    }
+
+    protected function mailAccountId(): ?int
+    {
+        return $this->accountId;
+    }
+
+    /** @return array<int|string, string> person id ('' for the account's own address; PHP keeps a numeric id as an int key) => label */
+    private function mailRecipients(Account $account): array
+    {
+        $options = $account->email ? ['' => (string) __(':name (kundens adress)', ['name' => $account->email])] : [];
+
+        foreach ($account->people as $person) {
+            if ($person->email && ! $person->doNotContact()) {
+                $options[(string) $person->id] = "{$person->name} ({$person->email})";
+            }
+        }
+
+        return $options;
     }
 
     public function updatedTab(): void

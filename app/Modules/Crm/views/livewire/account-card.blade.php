@@ -39,6 +39,7 @@
                 <x-crm::quick-action icon="NOTE" :label="__('Anteckning')" wire:click="startActivity('NOTE')" />
                 <x-crm::quick-action icon="MEETING" :label="__('Planera möte')" wire:click="startActivity('MEETING')" />
                 <x-crm::quick-action icon="TASK" :label="__('Uppgift')" wire:click="startActivity('TASK')" />
+                <x-crm::quick-action icon="EMAIL" :label="__('Mejla med mall')" wire:click="startTemplateMail" />
             @endif
             @if($canDeal)
                 <x-crm::quick-action icon="deal" :label="__('Ny affär')" :href="route('crm.deals', ['ny' => $account->id])" />
@@ -79,6 +80,9 @@
 
     {{-- The open panel. --}}
     @include('crm::livewire.partials.activity-panels', ['personOptions' => $account->people, 'accountOptions' => null])
+    @if($panel === 'mall')
+        @include('crm::livewire.partials.template-mail', ['privatePerson' => $account->kind === App\Modules\Crm\Domain\AccountKind::Person])
+    @endif
     @if($panel === 'winback')
         <x-ui.card :title="__('Vinn tillbaka')" :description="__('Den dagen får den ansvarige en uppgift att höra av sig till kunden igen.')">
             <form wire:submit="saveWinBack" class="grid gap-4 sm:grid-cols-2">
