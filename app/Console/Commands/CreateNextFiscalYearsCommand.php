@@ -8,6 +8,7 @@ use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Models\Company;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
@@ -30,10 +31,24 @@ class CreateNextFiscalYearsCommand extends Command
         $created = 0;
         $failed = 0;
 
-        // The companies table is not company-scoped; each company is then handled inside its own scope.
-        $companies = Company::query()->whereNull('archived_at')->orderBy('id')->get();
+        $checked = 0;
 
-        foreach ($companies as $company) {
+        // One query across every company for the latest end date (fiscal_years is read without the company
+        // scope on purpose): only companies whose latest year ends within thirty days or ended within the last
+        // year can be due. Each is then handled inside its own scope by dueFor(), which checks exactly.
+        $latestEnds = DB::table('fiscal_years')
+            ->select('company_id')
+            ->groupBy('company_id')
+            ->havingRaw('max(end_date) between ? and ?', [
+                $today->subYear()->subDay()->toDateString(),
+                $today->addDays(CreateNextFiscalYear::DAYS_AHEAD)->toDateString(),
+            ]);
+
+        $companies = Company::query()->whereNull('archived_at')->whereIn('id', $latestEnds);
+
+        foreach ($companies->lazyById() as $company) {
+            $checked++;
+
             try {
                 $fiscalYear = $createNextFiscalYear->dueFor($company, $today);
             } catch (Throwable $exception) {
@@ -49,7 +64,7 @@ class CreateNextFiscalYearsCommand extends Command
             }
         }
 
-        $this->comment("{$created} räkenskapsår skapade, {$companies->count()} företag kontrollerade, {$failed} fel.");
+        $this->comment("{$created} räkenskapsår skapade, {$checked} företag kontrollerade, {$failed} fel.");
 
         return $failed === 0 ? self::SUCCESS : self::FAILURE;
     }

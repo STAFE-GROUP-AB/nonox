@@ -507,9 +507,24 @@ räkenskapsår som omfattar …") until someone created it.
   cannot repeat.
 - The manual button stays. If the latest year has not begun yet, it says the
   year already exists instead of creating the year after it.
+- **The first year stays changeable** (review 2026-11-04). Creating the next
+  year early must not take away the right to shorten or extend the first year
+  (3 kap. 3 §) or to match it to an SIE file. `ChangeFirstFiscalYear` treats a
+  following year as no obstacle when its `fiscal_year.created` entry has
+  `via: automatic`, it is open, and it has no vouchers (drafts included) and
+  no opening balances. That year is deleted in the same transaction, logged
+  as `fiscal_year.removed` (ids, dates, `reason: first_year_changed`, the
+  user who changed the first year), and `dueFor` then creates the next
+  ordinary year again if it is due. Any other reference (an archive package,
+  a bank reconciliation) makes the foreign key refuse the deletion, and the
+  change is refused. A year a person created is never removed. "Ändra datum"
+  is shown under the same rule. This keeps the SIE review's advice ("Ändra
+  datumen under Räkenskapsår") workable.
 
-**Concurrency.** Every creation of a fiscal year (manual, scheduled, booking,
-`CarryForwardBalances`) takes `pg_advisory_xact_lock(4202, company_id)` and
+**Concurrency.** Every creation or removal of a fiscal year (manual,
+scheduled, booking, `CarryForwardBalances`, `ChangeFirstFiscalYear`, and SIE
+import before its company lock and analyser re-check) takes
+`pg_advisory_xact_lock(4202, company_id)` and
 reads the latest year under it; the unique index `(company_id, start_date)`
 backs it up. Lock order for a booking: the caller's own locks (an invoice, a
 number series), then the advisory lock, then PostVoucher's fiscal year →
@@ -518,9 +533,18 @@ SHARE on the company row that every insert with a company foreign key takes.
 A wait cycle would need a transaction that holds the company row FOR UPDATE
 (period lock, year closing, SIE import, new accrual) and then books into the
 missing next year; none does. Should one appear, PostgreSQL detects the
-deadlock and rolls one transaction back; it is never silent. Tested with
-sequential calls (two bookings in the new year create one year and number
-B1, B2).
+deadlock and rolls one transaction back; it is never silent. Where an existing
+year row is locked too, it is locked before the advisory lock (closing a year
+locks the year, then `CarryForwardBalances` takes the advisory lock;
+`ChangeFirstFiscalYear` does the same), and a new year's row only after it.
+SIE import takes the advisory lock before the company row FOR UPDATE, the same
+order as a booking that creates a year and then inserts under the company's
+foreign key. Tested with sequential calls (two bookings in the new year create
+one year and number B1, B2).
+
+The daily command reads the latest end date of every company in one grouped
+query and only visits companies whose latest year ended within a year or ends
+within 30 days (`lazyById`); `dueFor` then decides exactly.
 
 TODO(legal-verify): that creating the next year in advance, before the
 previous one is closed, is consistent with BFL 3 kap. (we believe so: the

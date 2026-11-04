@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Actions\Accounting\CarryForwardBalances;
+use App\Actions\Accounting\ChangeFirstFiscalYear;
 use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\Invoicing\IssueInvoice;
 use App\Actions\Invoicing\RegisterPayment;
@@ -251,4 +252,122 @@ it('creates the year for the second of two bookings without a second year', func
 
     expect($second->id)->toBe($first->id)
         ->and(fiscalYearSpans($this->company))->toHaveCount(2);
+});
+
+it('still lets the first year change when the next year was created by the morning run and is empty', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-05'));
+    runFiscalYearSchedule();
+    $first = FiscalYear::query()->whereDate('start_date', '2026-01-01')->sole();
+    $automatic = FiscalYear::query()->whereDate('start_date', '2027-01-01')->sole();
+
+    app(ChangeFirstFiscalYear::class)($this->owner, $first, '2025-07-01', '2026-12-31');
+
+    $removed = AuditLog::query()->where('action', 'fiscal_year.removed')->sole();
+    expect(fiscalYearSpans($this->company))->toBe(['2025-07-01..2026-12-31', '2027-01-01..2027-12-31'])
+        ->and(FiscalYear::query()->find($automatic->id))->toBeNull()
+        ->and($removed->subject_id)->toBe((string) $automatic->id)
+        ->and($removed->payload)->toEqual(['fiscal_year_id' => $automatic->id, 'first_year_id' => $first->id, 'start_date' => '2027-01-01', 'end_date' => '2027-12-31', 'reason' => 'first_year_changed'])
+        ->and($removed->user_id)->toBe($this->owner->id);
+
+    // Extended to eighteen months: no ordinary year follows within thirty days, so none is created again.
+    app(ChangeFirstFiscalYear::class)($this->owner, $first->fresh(), '2026-01-01', '2027-06-30');
+
+    expect(fiscalYearSpans($this->company))->toBe(['2026-01-01..2027-06-30']);
+});
+
+it('still lets the first year change when a booking created the next year, until something is in it', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-28'));
+    $first = FiscalYear::query()->sole();
+    $draft = Bookkeeping::draft($this->owner, $this->company, date: '2027-01-02');
+
+    expect(fn () => app(ChangeFirstFiscalYear::class)($this->owner, $first, '2025-07-01', '2026-12-31'))
+        ->toThrow(ValidationException::class, 'Bara företagets första räkenskapsår');
+
+    $draft->rows()->delete();
+    $draft->delete();
+    app(ChangeFirstFiscalYear::class)($this->owner, $first->fresh(), '2025-07-01', '2026-12-31');
+
+    expect(fiscalYearSpans($this->company))->toBe(['2025-07-01..2026-12-31', '2027-01-01..2027-12-31']);
+});
+
+it('does not remove a next year that a person created', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-05'));
+    $first = FiscalYear::query()->sole();
+    app(CreateNextFiscalYear::class)($this->owner, $this->company);
+
+    expect(fn () => app(ChangeFirstFiscalYear::class)($this->owner, $first, '2025-07-01', '2026-12-31'))
+        ->toThrow(ValidationException::class, 'Bara företagets första räkenskapsår');
+    expect(fiscalYearSpans($this->company))->toHaveCount(2);
+});
+
+it('does not remove an automatic next year that has opening balances', function () {
+    Bookkeeping::post($this->owner, $this->company, date: '2026-03-01');
+    $this->travelTo(CarbonImmutable::parse('2026-12-05'));
+    runFiscalYearSchedule();
+    $first = FiscalYear::query()->whereDate('start_date', '2026-01-01')->sole();
+    app(CarryForwardBalances::class)($this->owner, $first);
+
+    expect(fn () => app(ChangeFirstFiscalYear::class)($this->owner, $first, '2025-07-01', '2026-12-31'))
+        ->toThrow(ValidationException::class, 'Bara företagets första räkenskapsår');
+});
+
+it('rolls the new year back when the booking that created it fails', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-28'));
+
+    expect(fn () => DB::transaction(function () {
+        Bookkeeping::draft($this->owner, $this->company, date: '2027-01-02');
+
+        throw new RuntimeException('The posting failed.');
+    }))->toThrow(RuntimeException::class);
+
+    expect(fiscalYearSpans($this->company))->toBe(['2026-01-01..2026-12-31'])
+        ->and(AuditLog::query()->where('company_id', $this->company->id)->where('action', 'fiscal_year.created')->count())->toBe(0)
+        ->and($this->owner->notifications()->count())->toBe(0);
+});
+
+it('lets a Bokförare booking create the next year, logged as theirs, without a notice to them', function () {
+    $bookkeeper = Bookkeeping::member($this->company, 'bookkeeper');
+    $this->travelTo(CarbonImmutable::parse('2026-12-28'));
+
+    $voucher = Bookkeeping::post($bookkeeper, $this->company, date: '2027-01-02');
+    $entry = AuditLog::query()->where('action', 'fiscal_year.created')->where('company_id', $this->company->id)->sole();
+
+    expect($voucher->reference())->toBe('A1')
+        ->and($entry->user_id)->toBe($bookkeeper->id)
+        ->and($entry->payload['trigger'])->toBe('booking')
+        ->and($bookkeeper->notifications()->count())->toBe(0)
+        ->and($this->owner->notifications()->count())->toBe(1);
+});
+
+it('creates the year after an old latest year when a booking is dated in it', function () {
+    [$owner, $company] = companyWithYear('2024-01-01', '2024-12-31');
+    $creator = app(CreateNextFiscalYear::class);
+
+    expect($creator->covering($company, CarbonImmutable::parse('2026-03-01'), CarbonImmutable::today(), $owner))->toBeNull()
+        ->and($creator->covering($company, CarbonImmutable::parse('2025-03-01'), CarbonImmutable::today(), $owner)?->label())->toBe('2025')
+        ->and(fiscalYearSpans($company))->toBe(['2024-01-01..2024-12-31', '2025-01-01..2025-12-31']);
+});
+
+it('only looks at companies whose latest year ends within thirty days or ended within a year', function () {
+    [, $dormant] = companyWithYear('2020-01-01', '2020-12-31');
+    $this->travelTo(CarbonImmutable::parse('2026-12-05'));
+    DB::enableQueryLog();
+
+    runFiscalYearSchedule();
+
+    $advisoryLocks = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains($query['query'], 'pg_advisory_xact_lock'))->count();
+    expect($advisoryLocks)->toBe(1)
+        ->and(fiscalYearSpans($dormant))->toHaveCount(1);
+});
+
+it('offers Ändra datum on the first year while the automatic next year is empty', function () {
+    $this->travelTo(CarbonImmutable::parse('2026-12-05'));
+    runFiscalYearSchedule();
+    $this->actingAs($this->owner);
+
+    Livewire::test(FiscalYears::class)->assertSee('Ändra datum');
+
+    Bookkeeping::draft($this->owner, $this->company, date: '2027-01-02');
+
+    Livewire::test(FiscalYears::class)->assertDontSee('Ändra datum');
 });

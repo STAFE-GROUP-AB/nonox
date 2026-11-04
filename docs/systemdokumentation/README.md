@@ -395,6 +395,10 @@ All tid i NONOX är svensk tid (Europe/Stockholm). Tidszonen är fast i koden, b
   (ADR-010).
 - Ett nytt räkenskapsår skapas alltid direkt efter det senaste, så att åren aldrig
   överlappar eller lämnar en lucka.
+- Det första räkenskapsåret kan få nya datum så länge det är företagets enda år och
+  är öppet. Ett följande år som NONOX har skapat automatiskt och som inget
+  har förts in i hindrar inte det (avsnitt 3.1, "Första året").
+- Ett räkenskapsår är öppet eller stängt. Det stängs i bokslutet (avsnitt 5a5): året blir stängt, bokföringen låses till och med årets sista dag och balanserna förs över till nästa år (avsnitt 4.14).
 
 ### 3.1 Nästa räkenskapsår skapas automatiskt
 
@@ -404,24 +408,30 @@ kalenderåret som räkenskapsår"; 3 kap. 3 § "När bokföringsskyldigheten
 inträder eller räkenskapsåret läggs om, får räkenskapsåret omfatta kortare tid
 än tolv månader eller utsträckas att omfatta högst arton månader."; 3 kap. 6 §
 "Räkenskapsår får läggas om endast om Skatteverket ger tillstånd till det."
-(utan tillstånd: från brutet år till kalenderår, och till gemensamt
-räkenskapsår i koncern). Beskrivningen här är en del av systemdokumentationen
-och behandlingshistoriken enligt BFL 5 kap. 11 § och BFNAR 2013:2
-([ADR-010](../adr/ADR-010-reports-vat-year-end.md), "Automatic next fiscal
+(tillstånd behövs inte för omläggning från brutet räkenskapsår till
+kalenderår, eller till gemensamt räkenskapsår i de fall som avses i 4 § och
+5 § första stycket). Beskrivningen här är en del av systemdokumentationen och
+behandlingshistoriken enligt BFL 5 kap. 11 § och BFNAR 2013:2 kapitel 9
+(punkterna 9.9–9.10 och 9.16) ([ADR-010](../adr/ADR-010-reports-vat-year-end.md), "Automatic next fiscal
 year").
 
 - **När.** Varje morgon kl. 05.35 körs `fiscal-years:create-next` för alla
   företag som inte är arkiverade. Slutar företagets senaste räkenskapsår inom
   30 dagar, eller har det slutat och dagens datum ligger i året som följer,
-  skapas nästa år. Har det senaste året slutat för mer än ett år sedan skapas
-  inget; det görs för hand.
-- **Vid bokföring.** Bokförs en verifikation, faktura, betalning eller annan
-  händelse med ett datum i året direkt efter det senaste, och året finns inte
+  skapas nästa år. Har det senaste året slutat för mer än ett år sedan skapar
+  morgonkörningen inget; året efter det senaste skapas då för hand, eller när
+  någon bokför ett datum i just det året.
+- **Vid bokföring.** Sparas ett utkast eller bokförs en verifikation, faktura,
+  betalning eller annan händelse (även via API:t) med ett datum i året direkt
+  efter det senaste, och året finns inte
   ännu (till exempel om schemat inte har körts), skapas året i samma
   transaktion och bokföringen fortsätter. Det gäller bara när datumet ligger i
   just det följande året och högst 30 dagar efter dagens datum; annars vägras
   bokföringen som förut ("Det finns inget räkenskapsår som omfattar …"). Går
-  bokföringen inte igenom återställs även det nya året.
+  bokföringen inte igenom återställs även det nya året. Det gäller oavsett
+  roll: även den som inte själv får hantera räkenskapsår, till exempel en
+  Bokförare, kan på så sätt få det följande året skapat. Tas utkastet sedan
+  bort finns året kvar.
 - **Vilken längd.** Bara ett vanligt år: tolv månader, från dagen efter det
   senaste årets sista dag, med start i företagets första månad i
   räkenskapsåret (januari för enskild firma). Det gäller också efter ett
@@ -462,15 +472,24 @@ year").
   körningar kan därför inte skapa samma år två gånger, och en bokföring som
   väntade på låset använder det år som den andra skapade. Låset tas efter
   anroparens egna lås och före bokföringens lås på år, företag och räknare.
+  Ändring av det första året och SIE-inläsning tar samma lås, så att inget år
+  skapas automatiskt medan de pågår.
+- **Första året.** Det första räkenskapsåret får fortfarande nya datum (BFL
+  3 kap. 3 §) när ett följande år finns, om det året skapades automatiskt
+  (`via: automatic` i behandlingshistoriken), är öppet och saknar både
+  verifikationer (även utkast) och ingående balanser. Det tas då bort i samma
+  transaktion och skrivs som `fiscal_year.removed` (årets id, det första årets
+  id, datumen och `reason: first_year_changed`, med användaren som ändrade).
+  Därefter skapas nästa vanliga år igen enligt reglerna ovan, om det är dags.
+  Ett år som en person har skapat, eller som något finns i, tas aldrig bort,
+  och då kan det första året inte ändras. Samma regel gör att rådet vid
+  SIE-inläsning, att ändra datumen under Räkenskapsår så att de stämmer med
+  filen, fungerar även när nästa år redan har skapats automatiskt.
 - **Knappen.** Skapa nästa räkenskapsår finns kvar. Finns redan ett år som
   inte har börjat säger NONOX det i stället för att skapa året därefter.
 - TODO(legal-verify): att det är förenligt med BFL 3 kap. att skapa nästa år
   i förväg, innan det föregående är avslutat (vi bedömer att det är det, då
   året bara är en period och inget bokförs i det i förväg).
-- Det första räkenskapsåret kan få nya datum så länge det är företagets enda år och
-  är öppet.
-- Ett räkenskapsår är öppet eller stängt. Stängning sker vid bokslut, som ännu inte
-  finns.
 
 ## 4. Verifikationer
 
@@ -3609,4 +3628,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.96 | 2026-11-02 | Lager: bilder på artiklar (skalas om, metadata tas bort, privat krypterad disk) och förslag från NONOX AI som användaren godkänner fält för fält; AI föreslår aldrig priser eller konton. Ändrar ingen bokföring. |
 | 0.97 | 2026-11-02 | Lager: etiketter och etikettstudio (ADR-041), skanning med mobilen med kö utan nät som körs exakt en gång per operation (ADR-040), och modulen Kassakopplingar för Zettle och Onslip (ADR-042, avsnitt 5k): varje köp sparas en gång och dras från lagret, och dagens försäljning blir ett utkast till verifikation i serie K "Kassa" som en person granskar och bokför. Serie K skapas först när modulen slås på. |
 | 0.98 | 2026-11-03 | Driftbolaget och två brytare i HQ (ADR-044, avsnitt 1g): installationens företag blir kunder och köanmälningarna prospekt i CRM hos driftbolaget som HQ pekar ut, genom dess egna åtgärder och utan dubbletter; prospektet raderas med anmälan om ingen arbetat med det. Inget kopplas till en befintlig post utan HQ:s beslut, och radering på begäran tar alltid bort personen. Kön kan stängas och självregistreringen öppnas. Integritetspolicyn version 1.4. Ändrar ingen bokföring. |
-| 0.99 | 2026-11-04 | Nästa räkenskapsår skapas automatiskt (avsnitt 3.1, ADR-010): varje morgon när det senaste året slutar inom 30 dagar, och vid bokföring av ett datum i det följande året högst 30 dagar fram. Bara ett vanligt år på tolv månader i företagets första månad (BFL 3 kap. 1 och 3 §§); en omläggning (3 kap. 6 §) görs aldrig automatiskt. Det gamla året stängs inte och inga ingående balanser förs över. Behandlingshistoriken visar `via: automatic` och vad som utlöste det. |
+| 0.99 | 2026-11-04 | Nästa räkenskapsår skapas automatiskt (avsnitt 3.1, ADR-010): varje morgon när det senaste året slutar inom 30 dagar, och vid bokföring av ett datum i det följande året högst 30 dagar fram. Bara ett vanligt år på tolv månader i företagets första månad (BFL 3 kap. 1 och 3 §§); en omläggning (3 kap. 6 §) görs aldrig automatiskt. Det gamla året stängs inte och inga ingående balanser förs över. Behandlingshistoriken visar `via: automatic` och vad som utlöste det. Det första året kan fortfarande ändras när nästa år skapats automatiskt och är tomt; det tomma året tas då bort (`fiscal_year.removed`). |
