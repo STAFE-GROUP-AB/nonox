@@ -73,7 +73,7 @@ final class Features
         'crm_pipeline' => ['name' => 'Säljtratt med affärer och obligatoriskt nästa steg', 'status' => self::LIVE, 'readme' => 'Affärer i en säljtratt', 'module' => 'CRM'],
         'crm_forecast' => ['name' => 'Prognos och mål per säljare', 'status' => self::LIVE, 'readme' => 'Prognos per månad', 'module' => 'CRM'],
         'crm_email' => ['name' => 'Mejl loggas på rätt kund', 'status' => self::LIVE, 'readme' => 'Mejl loggas på rätt kund', 'module' => 'CRM'],
-        'crm_mailings' => ['name' => 'Utskick till segment med klickstatistik', 'status' => self::LIVE, 'readme' => 'Utskick till segment', 'module' => 'CRM'],
+        'crm_mailings' => ['name' => 'Utskick till segment med klick per länk', 'status' => self::LIVE, 'readme' => 'Utskick till segment', 'module' => 'CRM'],
         'crm_forms' => ['name' => 'Webbformulär som skapar leads', 'status' => self::LIVE, 'readme' => 'Webbformulär som skapar leads', 'module' => 'CRM'],
         'control_visit' => ['name' => 'Kontrollbesök i personalliggaren', 'status' => self::LIVE, 'readme' => 'Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren', 'module' => 'Personalliggare'],
         'inbox' => ['name' => 'Inkorg för fakturor och kvitton', 'status' => self::LIVE, 'readme' => 'En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem', 'module' => 'Inkorg'],

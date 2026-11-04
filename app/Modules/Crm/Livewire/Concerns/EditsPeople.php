@@ -51,6 +51,8 @@ trait EditsPeople
             'consent_at' => (string) $person?->consent_at?->toDateString(),
             'is_active' => $person->is_active ?? true,
             'informed_at' => (string) $person?->informed_at?->toDateString(),
+            'marketing_consent_at' => (string) $person?->marketing_consent_at?->setTimezone('Europe/Stockholm')->toDateString(),
+            'customer_exception_at' => (string) $person?->customer_exception_at?->toDateString(),
             'do_not_contact' => $person?->doNotContact() ?? false,
             'do_not_contact_reason' => (string) $person?->do_not_contact_reason?->value,
             'restriction_locked' => $person?->do_not_contact_reason === DoNotContact::Restriction,

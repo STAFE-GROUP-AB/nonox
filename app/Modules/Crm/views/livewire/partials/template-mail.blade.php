@@ -23,11 +23,11 @@
             <textarea id="mail_body" rows="9" class="{{ $input }} mt-1" wire:model="mail.body"></textarea>
         </x-ui.field>
         @if($privatePerson)
-            <p class="text-sm text-gray-700 sm:col-span-2">{{ __('Mottagaren är en privatperson. Är mejlet marknadsföring krävs samtycke, eller att personen redan är kund (marknadsföringslagen 19 §).') }}</p>
+            <p class="text-sm text-gray-700 sm:col-span-2">{{ __('Mottagaren är en privatperson. E-postreklam kräver samtycke (marknadsföringslagen 19 §), utom till en befintlig kund när allt detta gäller: reklamen gäller era egna liknande varor eller tjänster, adressen fick ni vid försäljningen, och personen fick tacka nej då och kan göra det i varje utskick.') }}</p>
         @endif
         <label class="flex items-start gap-2 text-sm sm:col-span-2">
             <input type="checkbox" class="mt-0.5 rounded border-gray-300" wire:model="mail.not_marketing">
-            <span>{{ __('Mejlet är inte marknadsföring (till exempel ett svar om en order). Behövs bara om mottagaren har avregistrerat sig från utskick.') }}</span>
+            <span>{{ __('Mejlet är inte reklam (till exempel ett svar på en fråga, en offert kunden bett om eller information om en order).') }}</span>
         </label>
         @error('mail.not_marketing')<p class="text-sm font-medium text-accent-700 sm:col-span-2" role="alert">{{ $message }}</p>@enderror
         @error('mail.account_id')<p class="text-sm font-medium text-accent-700 sm:col-span-2" role="alert">{{ $message }}</p>@enderror

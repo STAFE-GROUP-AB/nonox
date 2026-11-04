@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Domain;
 
-use App\Models\Customer;
-use App\Modules\Crm\Models\Account;
-use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\SuppressionList;
-use Illuminate\Support\Collection;
 
 /**
  * Who in a segment may get a mailing (ADR-048), and why each of the others
@@ -17,149 +13,175 @@ use Illuminate\Support\Collection;
  * 1. an e-mail address, and an active person;
  * 2. no Kontakta inte: neither a restriction (art. 18) nor an objection
  *    (art. 21);
- * 3. not unsubscribed from mailings (art. 21(3)), not on the suppression
- *    list for any reason, and the address has not bounced;
+ * 3. not unsubscribed, not on the suppression list for any reason, and the
+ *    address has not bounced;
  * 4. not only at customers that are restricted, inactive or anonymised in
  *    the customer register;
- * 5. a legal ground for e-mail marketing (marknadsföringslagen 19–20 §§):
- *    - consent with a recorded date; or
+ * 5. a ground for e-mail marketing (marknadsföringslagen 19–20 §§):
+ *    - a dated **consent to e-mail marketing** (`marketing_consent_at`: the
+ *      web form's newsletter box, or entered on the person with its date),
+ *      not the general CRM legal basis "consent", which may cover only
+ *      being contacted; or
  *    - a contact at a legal person: an account of kind Företag with an
- *      organisation number whose third digit is 2 or more. 19 § protects
- *      natural persons, so legitimate interest (GDPR art. 6.1 f) is enough
- *      for a B2B contact in their professional role, with the opt-out in
- *      every message (20 §). A sole trader is a natural person, and an
- *      account without an organisation number cannot be shown to be a
- *      legal person: both need consent; or
+ *      organisation number whose third digit is 2 or more and whose first
+ *      digit is not 6 (an enkelt bolag is not a legal person). 19 §
+ *      protects natural persons, so legitimate interest (GDPR art. 6.1 f)
+ *      is enough for a B2B contact in their professional role, with the
+ *      opt-out in every message (20 §). A sole trader is a natural person,
+ *      and an account without an organisation number cannot be shown to be
+ *      a legal person: both need consent; or
  *    - the customer exception (19 § second paragraph), only when the
- *      mailing confirms it: a natural person who is already a customer
- *      (the account has a customer), whose address the company got at the
- *      sale, about its own similar products, who could object when the
- *      address was collected and can in every message;
+ *      mailing confirms it: a person at an account that is a customer
+ *      whose address is the customer's own e-mail in the customer register
+ *      (the address the company got at the sale), or who carries the dated
+ *      mark "Kund, 19 § andra stycket";
  * 6. one message per address.
+ *
+ * Works on MarketingCandidates' plain rows, with the suppression list read
+ * once for the whole list.
  *
  * TODO(legal-verify): the B2B reading of 19 § for contact people at legal
  * persons (named employees' work addresses), and the customer exception's
- * condition that the address was collected "in connection with a sale",
- * which NONOX cannot check and leaves to the person who confirms it.
+ * remaining conditions (own similar products, a chance to say no when the
+ * address was collected), which NONOX cannot check and leaves to the
+ * person who confirms it.
+ *
+ * @phpstan-import-type Candidate from MarketingCandidates
+ * @phpstan-import-type CandidateAccount from MarketingCandidates
  */
 final class MarketingEligibility
 {
     /**
-     * @param  Collection<int, Person>  $people  with their segment accounts (and customers) loaded
-     * @return array{recipients: list<array{person: Person, email: string}>, excluded: array<string, int>}
+     * @param  array<int, Candidate>  $candidates
+     * @return array{recipients: list<array{person_id: int, account_id: int, email: string}>, excluded: array<string, int>}
      */
-    public static function evaluate(Collection $people, bool $customerException): array
+    public static function evaluate(array $candidates, bool $customerException): array
     {
-        $blocked = SuppressionList::marketingBlocked($people->pluck('email')->filter()->map(fn (mixed $email): string => (string) $email)->values()->all());
+        $blocked = SuppressionList::marketingBlocked(array_values(array_filter(array_map(fn (array $candidate): string => $candidate['email'], $candidates))));
         $recipients = [];
         $excluded = [];
         $seen = [];
 
-        foreach ($people as $person) {
-            $email = mb_strtolower(trim((string) $person->email));
-            $reason = self::reason($person, $email, $blocked, $customerException);
+        foreach ($candidates as $candidate) {
+            [$reason, $accountId] = self::decide($candidate, $blocked, $customerException);
 
-            if ($reason === null && isset($seen[$email])) {
+            if ($reason === null && isset($seen[$candidate['email']])) {
                 $reason = MarketingExclusion::Duplicate;
             }
 
-            if ($reason !== null) {
+            if ($reason !== null || $accountId === null) {
+                $reason ??= MarketingExclusion::NeedsConsent;
                 $excluded[$reason->value] = ($excluded[$reason->value] ?? 0) + 1;
 
                 continue;
             }
 
-            $seen[$email] = true;
-            $recipients[] = ['person' => $person, 'email' => $email];
+            $seen[$candidate['email']] = true;
+            $recipients[] = ['person_id' => $candidate['id'], 'account_id' => $accountId, 'email' => $candidate['email']];
         }
 
         return ['recipients' => $recipients, 'excluded' => $excluded];
     }
 
     /**
-     * Why this one person may not get a mailing now, or null. For the send
-     * itself, which checks again at the moment each message goes.
+     * Why each of these people may not get a mailing now (null when they
+     * may), with all their accounts. For each batch, right before sending.
+     *
+     * @param  list<int>  $personIds
+     * @return array<int, ?MarketingExclusion> person id => reason
      */
-    public static function check(Person $person, bool $customerException): ?MarketingExclusion
+    public static function check(array $personIds, bool $customerException): array
     {
-        $email = mb_strtolower(trim((string) $person->email));
+        $candidates = MarketingCandidates::forPeople($personIds);
+        $blocked = SuppressionList::marketingBlocked(array_values(array_filter(array_map(fn (array $candidate): string => $candidate['email'], $candidates))));
+        $reasons = [];
 
-        return self::reason($person, $email, SuppressionList::marketingBlocked($email === '' ? [] : [$email]), $customerException);
+        foreach ($personIds as $id) {
+            $reasons[$id] = isset($candidates[$id]) ? self::decide($candidates[$id], $blocked, $customerException)[0] : MarketingExclusion::NoEmail;
+        }
+
+        return $reasons;
     }
 
-    /** @param  array<string, true>  $blocked */
-    private static function reason(Person $person, string $email, array $blocked, bool $customerException): ?MarketingExclusion
+    /**
+     * The reason, and the account that carries the ground (the first that does).
+     *
+     * @param  Candidate  $candidate
+     * @param  array<string, true>  $blocked
+     * @return array{0: ?MarketingExclusion, 1: ?int}
+     */
+    private static function decide(array $candidate, array $blocked, bool $customerException): array
     {
+        $email = $candidate['email'];
+
         if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-            return MarketingExclusion::NoEmail;
+            return [MarketingExclusion::NoEmail, null];
         }
 
-        if (! $person->is_active) {
-            return MarketingExclusion::Inactive;
+        if (! $candidate['active']) {
+            return [MarketingExclusion::Inactive, null];
         }
 
-        if ($person->do_not_contact_reason === DoNotContact::Restriction) {
-            return MarketingExclusion::Restricted;
+        if ($candidate['dnc'] === DoNotContact::Restriction->value) {
+            return [MarketingExclusion::Restricted, null];
         }
 
-        if ($person->doNotContact()) {
-            return MarketingExclusion::Objection;
+        if ($candidate['dnc'] !== null) {
+            return [MarketingExclusion::Objection, null];
         }
 
-        if ($person->marketing_opt_out_at !== null) {
-            return MarketingExclusion::Unsubscribed;
+        if ($candidate['opt_out']) {
+            return [MarketingExclusion::Unsubscribed, null];
         }
 
         if (isset($blocked[$email])) {
-            return MarketingExclusion::Suppressed;
+            return [MarketingExclusion::Suppressed, null];
         }
 
-        if ($person->email_bounced_at !== null) {
-            return MarketingExclusion::Bounced;
+        if ($candidate['bounced']) {
+            return [MarketingExclusion::Bounced, null];
         }
 
-        /** @var Collection<int, Account> $accounts */
-        $accounts = $person->accounts->filter(fn (Account $account): bool => ! self::customerBlocked($account));
+        $accounts = array_values(array_filter($candidate['accounts'], fn (array $account): bool => ! $account['customer_blocked']));
 
-        if ($accounts->isEmpty()) {
-            return MarketingExclusion::Customer;
+        if ($accounts === []) {
+            return [MarketingExclusion::Customer, null];
         }
 
-        if ($person->legal_basis === LegalBasis::Consent && $person->consent_at !== null) {
-            return null;
+        if ($candidate['marketing_consent']) {
+            return [null, $accounts[0]['id']];
         }
 
-        if ($accounts->contains(fn (Account $account): bool => self::isLegalPerson($account))) {
-            return null;
+        foreach ($accounts as $account) {
+            if (self::isLegalPerson($account['kind'], $account['org_number'])) {
+                return [null, $account['id']];
+            }
         }
 
-        if ($customerException && $accounts->contains(fn (Account $account): bool => $account->customer_id !== null)) {
-            return null;
+        if ($customerException) {
+            foreach ($accounts as $account) {
+                if ($account['customer_id'] !== null && ($candidate['customer_exception'] || $account['customer_email'] === $email)) {
+                    return [null, $account['id']];
+                }
+            }
         }
 
-        return MarketingExclusion::NeedsConsent;
+        return [MarketingExclusion::NeedsConsent, null];
     }
 
-    /** A company account with the organisation number of a legal person (third digit 2 or more). */
-    public static function isLegalPerson(Account $account): bool
+    /**
+     * A company account with the organisation number of a legal person:
+     * the third digit 2 or more, and not group 6 (enkla bolag, which are
+     * not legal persons).
+     */
+    public static function isLegalPerson(string $kind, ?string $orgNumber): bool
     {
-        if ($account->kind !== AccountKind::Company) {
+        if ($kind !== AccountKind::Company->value) {
             return false;
         }
 
-        $digits = (string) preg_replace('/\D/', '', (string) $account->org_number);
+        $digits = (string) preg_replace('/\D/', '', (string) $orgNumber);
 
-        return strlen($digits) === 10 && ! IdentityNumber::isPersonal($digits);
-    }
-
-    private static function customerBlocked(Account $account): bool
-    {
-        if ($account->customer_id === null) {
-            return false;
-        }
-
-        $customer = $account->relationLoaded('customer') ? $account->customer : Customer::query()->find($account->customer_id);
-
-        return ! $customer instanceof Customer || $customer->isRestricted() || ! $customer->is_active;
+        return strlen($digits) === 10 && $digits[0] !== '6' && ! IdentityNumber::isPersonal($digits);
     }
 }

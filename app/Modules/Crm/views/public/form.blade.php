@@ -2,6 +2,7 @@
 @php
     $brand = App\Support\Branding\Brand::for($company);
     $companyName = $company->legal_name ?: $company->name;
+    $privacyUrl = App\Modules\Crm\CrmSettings::privacyUrl($company) ?? $form->privacy_url;
     $value = fn (string $field): string => (string) ($values[$field] ?? '');
     $error = fn (string $field): ?string => $errors[$field][0] ?? null;
     $labels = ['phone' => __('Telefon'), 'company' => __('Företag'), 'org_number' => __('Organisationsnummer'), 'message' => __('Meddelande')];
@@ -32,6 +33,8 @@
         button { min-height: 48px; padding: 0 24px; border: 0; border-radius: 10px; background: {{ $brand->color }}; color: #fff; font: inherit; font-weight: 700; cursor: pointer; }
         .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
         .optional { font-weight: 400; color: #52606d; }
+        .info { margin: 0 0 16px; font-size: .9375rem; color: #3e4c59; }
+        .info a { color: #15171c; }
         .foot { margin: 24px 0 0; font-size: .8125rem; color: #52606d; }
     </style>
 </head>
@@ -88,12 +91,13 @@
             @endforeach
 
             <div class="field">
-                <label class="consent" for="f-consent">
-                    <input type="checkbox" id="f-consent" name="consent" value="1" @checked($value('consent') !== '') required @if($error('consent')) aria-invalid="true" aria-describedby="e-consent" @endif>
-                    <span>{{ $form->consent_text }} <a href="{{ $form->privacy_url }}" target="_blank" rel="noopener noreferrer">{{ __('Läs integritetspolicyn') }}</a></span>
+                <label class="consent" for="f-newsletter">
+                    <input type="checkbox" id="f-newsletter" name="newsletter" value="1" @checked($value('newsletter') !== '')>
+                    <span>{{ $form->consent_text }}</span>
                 </label>
-                @if($error('consent'))<p class="error" id="e-consent">{{ $error('consent') }}</p>@endif
             </div>
+
+            <p class="info">{{ __(':company använder uppgifterna för att svara på din förfrågan.', ['company' => $companyName]) }} <a href="{{ $privacyUrl }}" target="_blank" rel="noopener noreferrer">{{ __('Läs integritetspolicyn') }}</a></p>
 
             <button type="submit">{{ __('Skicka') }}</button>
         </form>

@@ -50,6 +50,7 @@ use App\Modules\Crm\Models\PipelineStage;
 use App\Modules\Crm\Models\Segment;
 use App\Modules\Crm\Policies\CrmMailPolicy;
 use App\Modules\Crm\Policies\CrmPolicy;
+use App\Modules\Crm\Support\CrmMailer;
 use App\Modules\Crm\Support\CustomerAccounts;
 use App\Modules\ModuleRegistry;
 use Illuminate\Support\Facades\Blade;
@@ -71,8 +72,19 @@ class CrmServiceProvider extends ServiceProvider
         $this->app->make(ModuleRegistry::class)->register(new CrmModule);
     }
 
+    /** The mailer `crm` for CRM mail's own sending domain (ADR-048), when it is configured. */
+    private function registerMailer(): void
+    {
+        $smtp = CrmMailer::smtpConfig();
+
+        if ($smtp !== null) {
+            config(['mail.mailers.crm' => $smtp]);
+        }
+    }
+
     public function boot(): void
     {
+        $this->registerMailer();
         $this->loadViewsFrom(__DIR__.'/views', 'crm');
         // <x-crm::…>: the parts the account card and the person page share.
         Blade::anonymousComponentPath(__DIR__.'/views/components', 'crm');
@@ -142,8 +154,10 @@ class CrmServiceProvider extends ServiceProvider
 
         // Mailbox providers send one-click unsubscribes (RFC 8058) from a few shared addresses: a high limit, so none is refused.
         Route::post('/utskick/avregistrera/{token}', [MailingLinkController::class, 'unsubscribe'])->middleware('throttle:1200,1')->name('crm.mailing.unsubscribe.confirm');
+        // A click link names only the link (second review round): the same address for every recipient.
 
-        Route::get('/utskick/lank/{token}/{link}', [MailingLinkController::class, 'click'])->whereNumber('link')->middleware('throttle:240,1')->name('crm.mailing.click');
-        Route::post('/webhooks/utskick/mailgun', MailgunEventsController::class)->middleware('throttle:600,1')->name('crm.webhooks.mailgun');
+        Route::get('/utskick/lank/{link}/{sig}', [MailingLinkController::class, 'click'])->whereNumber('link')->where('sig', '[0-9a-f]{32}')->middleware('throttle:600,1')->name('crm.mailing.click');
+        // Mailgun posts delivery events in bursts after a large mailing.
+        Route::post('/webhooks/utskick/mailgun', MailgunEventsController::class)->middleware('throttle:6000,1')->name('crm.webhooks.mailgun');
     }
 }

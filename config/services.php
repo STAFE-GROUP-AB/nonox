@@ -188,6 +188,17 @@ return [
         // Mailings (ADR-048): the most a company sends per hour and per day, so a large segment goes out over time.
         'mailing_hourly_cap' => (int) env('NONOX_CRM_MAILING_HOURLY_CAP', 500),
         'mailing_daily_cap' => (int) env('NONOX_CRM_MAILING_DAILY_CAP', 2000),
+        // CRM mail's own sending domain (ADR-048): SMTP for the mailer `crm`, or the name of an existing mailer,
+        // and the From address on that domain. Hosted without them: mailings and template mail are off.
+        'mailer' => env('NONOX_CRM_MAILER'),
+        'mail_from' => env('NONOX_CRM_MAIL_FROM'),
+        'smtp' => [
+            'host' => env('NONOX_CRM_SMTP_HOST'),
+            'port' => (int) env('NONOX_CRM_SMTP_PORT', 587),
+            'username' => env('NONOX_CRM_SMTP_USERNAME'),
+            'password' => env('NONOX_CRM_SMTP_PASSWORD'),
+            'scheme' => env('NONOX_CRM_SMTP_SCHEME'),
+        ],
     ],
 
     // Google Chrome for the manual's screenshots (manual:screenshots), on a developer's computer.

@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Livewire;
 
 use App\Livewire\Concerns\ShowsToasts;
 use App\Modules\Crm\Actions\SaveForm;
+use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Livewire\Concerns\ActsInCompany;
 use App\Modules\Crm\Models\Form;
 use App\Modules\Crm\Support\CompanyMembers;
@@ -43,8 +44,7 @@ class FormsPage extends Component
         $this->form = [
             'name' => $model->name ?? __('Kontakta oss'),
             'fields' => $model->fields ?? ['phone' => 'optional', 'company' => 'optional', 'org_number' => 'off', 'message' => 'optional'],
-            'consent_text' => $model->consent_text ?? __('Jag samtycker till att :company sparar mina uppgifter för att kontakta mig och skicka information om sina tjänster. Jag kan återkalla samtycket när som helst.', ['company' => $this->company()->legal_name ?: $this->company()->name]),
-            'privacy_url' => $model->privacy_url ?? '',
+            'consent_text' => $model->consent_text ?? Form::defaultNewsletterText($this->company()),
             'thank_you' => $model->thank_you ?? '',
             'embed_origins' => implode("\n", $model->embed_origins ?? []),
             'owner_id' => (string) ($model->owner_id ?? $this->user()->id),
@@ -64,7 +64,14 @@ class FormsPage extends Component
     public function save(SaveForm $save): void
     {
         $this->authorizeSettings();
-        $model = $save($this->user(), $this->company(), $this->form, $this->editingId === null ? null : Form::query()->findOrFail($this->editingId));
+        try {
+            $model = $save($this->user(), $this->company(), $this->form, $this->editingId === null ? null : Form::query()->findOrFail($this->editingId));
+        } catch (ValidationException $exception) {
+            $this->setErrorBag(collect($exception->errors())->mapWithKeys(fn (array $messages, string $key): array => ["form.{$key}" => $messages])->all());
+
+            return;
+        }
+
         $this->cancel();
         $this->toast(__('Formuläret :name är sparat.', ['name' => $model->name]));
     }
@@ -92,6 +99,7 @@ class FormsPage extends Component
             'members' => CompanyMembers::all($this->company()),
             'labels' => ['phone' => __('Telefon'), 'company' => __('Företag'), 'org_number' => __('Organisationsnummer'), 'message' => __('Meddelande')],
             'states' => ['off' => __('Visas inte'), 'optional' => __('Frivilligt'), 'required' => __('Obligatoriskt')],
+            'privacyUrl' => CrmSettings::privacyUrl($this->company()),
         ]);
     }
 

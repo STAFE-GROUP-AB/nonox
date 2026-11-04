@@ -50,6 +50,9 @@ final class SavePerson
             'consent_at' => ['nullable', 'required_if:legal_basis,'.LegalBasis::Consent->value, 'date', 'before_or_equal:today'],
             'is_active' => ['sometimes', 'boolean'],
             'informed_at' => ['nullable', 'date', 'before_or_equal:today'],
+            // ADR-048: a dated consent to e-mail marketing, and the customer exception (marknadsföringslagen 19 § second paragraph).
+            'marketing_consent_at' => ['nullable', 'date', 'before_or_equal:today'],
+            'customer_exception_at' => ['nullable', 'date', 'before_or_equal:today'],
             'do_not_contact' => ['sometimes', 'boolean'],
             'lift_restriction' => ['sometimes', 'boolean'],
             'do_not_contact_reason' => ['nullable', 'required_if_accepted:do_not_contact', Rule::enum(DoNotContact::class)],

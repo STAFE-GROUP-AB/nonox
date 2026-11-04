@@ -61,6 +61,18 @@ final class CrmSettings
         return $settings;
     }
 
+    /**
+     * The company's own privacy policy (ADR-048): linked from every web form
+     * and every mailing, and required before either can be published or
+     * sent. Null when not set.
+     */
+    public static function privacyUrl(Company $company): ?string
+    {
+        $url = app(ModuleManager::class)->settings(CrmModule::KEY, $company)['privacy_url'] ?? null;
+
+        return is_string($url) && str_starts_with($url, 'https://') ? $url : null;
+    }
+
     /** @return array<string, int> */
     public static function for(Company $company): array
     {

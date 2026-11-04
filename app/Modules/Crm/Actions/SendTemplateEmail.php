@@ -7,12 +7,15 @@ namespace App\Modules\Crm\Actions;
 use App\Models\Company;
 use App\Models\Customer;
 use App\Models\User;
+use App\Modules\Crm\Domain\MarketingEligibility;
+use App\Modules\Crm\Domain\MarketingExclusion;
 use App\Modules\Crm\Domain\MergeFields;
 use App\Modules\Crm\Mail\CrmMessageMail;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\EmailTemplate;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Support\CrmMailer;
 use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
 use App\Support\MailQuota;
@@ -31,11 +34,14 @@ use Illuminate\Validation\ValidationException;
  *
  * Refused for a person marked Kontakta inte, an address on the suppression
  * list, and a customer with restricted processing or that is inactive or
- * anonymised in the register. A person who unsubscribed from mailings
- * (art. 21(3), direct marketing) can still get an e-mail that is not
- * marketing, such as an answer about an order: the sender confirms that
- * (not_marketing). Within the company's hourly e-mail quota; a test
- * company's mail never leaves NONOX (ADR-032).
+ * anonymised in the register. When the recipient unsubscribed from mailings (art. 21(3))
+ * or has no ground for e-mail marketing (MarketingEligibility says
+ * NeedsConsent: a private person or sole trader without consent), the
+ * sender must confirm the mail is not marketing (not_marketing: an answer
+ * to a question, a quote the customer asked for, information about an
+ * order). Sent through the CRM mailer (CrmMailer), which on the hosted
+ * service must be configured first. Within the company's hourly e-mail
+ * quota; a test company's mail never leaves NONOX (ADR-032).
  */
 final class SendTemplateEmail
 {
@@ -45,6 +51,7 @@ final class SendTemplateEmail
     public function __invoke(User $user, Company $company, array $input): Activity
     {
         Gate::forUser($user)->authorize('manage', [Activity::class, $company]);
+        CrmMailer::ensureAvailable('body');
 
         $validated = Validator::make($input, [
             'account_id' => ['required', 'integer'],
@@ -93,7 +100,7 @@ final class SendTemplateEmail
 
                 // A test company's mail never leaves NONOX (ADR-032): logged, but not sent.
                 if (! $company->isTestCompany()) {
-                    Mail::to($to)->send(new CrmMessageMail($company->legal_name ?: $company->name, $subject, $body, (string) $user->email, (string) $user->name));
+                    Mail::mailer(CrmMailer::name())->to($to)->send(new CrmMessageMail(CrmMailer::fromName($company), CrmMailer::fromAddress(), $company->legal_name ?: $company->name, $subject, $body, (string) $user->email, (string) $user->name));
                 }
 
                 Audit::record('crm.email_sent', $activity, ['account_id' => $account->id, 'template_id' => $template?->id, 'activity_id' => $activity->id], $company, $user);
@@ -126,7 +133,16 @@ final class SendTemplateEmail
         $unsubscribed = $person?->marketing_opt_out_at !== null || SuppressionList::marketingBlocked([$to]) !== [];
 
         if ($unsubscribed && ! $notMarketing) {
-            throw ValidationException::withMessages(['not_marketing' => __('Mottagaren har avregistrerat sig från utskick. Bekräfta att mejlet inte är marknadsföring, till exempel ett svar om en order.')]);
+            throw ValidationException::withMessages(['not_marketing' => __('Mottagaren har avregistrerat sig från utskick. Bekräfta att mejlet inte är reklam.')]);
+        }
+
+        // E-mail marketing to someone without a ground for it (a private person or sole trader without consent): only a mail that is not marketing.
+        $needsConsent = $person !== null
+            ? (MarketingEligibility::check([$person->id], false)[$person->id] ?? null) === MarketingExclusion::NeedsConsent
+            : ! MarketingEligibility::isLegalPerson($account->kind->value, $account->org_number);
+
+        if ($needsConsent && ! $notMarketing) {
+            throw ValidationException::withMessages(['not_marketing' => __('Mottagaren har inte samtyckt till e-postreklam. Bekräfta att mejlet inte är reklam.')]);
         }
     }
 }

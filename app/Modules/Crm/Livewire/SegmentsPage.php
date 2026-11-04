@@ -9,7 +9,7 @@ use App\Modules\Crm\Actions\SaveSegment;
 use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\AccountStatus;
 use App\Modules\Crm\Domain\LegalBasis;
-use App\Modules\Crm\Domain\MarketingEligibility;
+use App\Modules\Crm\Domain\MailingAudience;
 use App\Modules\Crm\Domain\MarketingExclusion;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Domain\SegmentFilter;
@@ -86,8 +86,7 @@ class SegmentsPage extends Component
         $preview = null;
 
         if ($this->open) {
-            $people = SegmentFilter::from($this->normalised())->people()->orderBy('id')->limit(20_001)->get();
-            $preview = [...MarketingEligibility::evaluate($people, false), 'total' => $people->count()];
+            $preview = MailingAudience::forFilter(SegmentFilter::from($this->normalised()), false);
         }
 
         return view('crm::livewire.segments', [

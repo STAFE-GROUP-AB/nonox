@@ -78,6 +78,8 @@ final class CrmExport
                 'skapat' => $person->created_at?->toIso8601String(),
                 'avregistrerad_fran_utskick' => $person->marketing_opt_out_at?->toIso8601String(),
                 'adressen_studsade' => $person->email_bounced_at?->toIso8601String(),
+                'samtycke_till_e_postreklam' => $person->marketing_consent_at?->toIso8601String(),
+                'kund_19_paragrafen_andra_stycket' => $person->customer_exception_at?->toDateString(),
             ],
             'foretag' => $person->accounts()->orderBy('name')->get()
                 ->map(fn (Account $account): array => ['namn' => $account->name, 'roll' => $account->link->role->label()])
@@ -92,10 +94,10 @@ final class CrmExport
                 ->map(fn (Email $email): array => ['skickat' => $email->sent_at->toIso8601String(), 'riktning' => $email->direction->label(), 'amne' => $email->subject, 'text' => $email->body, 'parter' => $email->participants])
                 ->all(),
             'utskick' => MailingRecipient::query()->where('person_id', $person->id)->with('mailing:id,name,subject')->orderBy('id')->get()
-                ->map(fn (MailingRecipient $recipient): array => ['utskick' => $recipient->mailing?->name, 'amne' => $recipient->mailing?->subject, 'status' => $recipient->status, 'skickat' => $recipient->sent_at?->toIso8601String(), 'klickade' => $recipient->clicked_at !== null, 'avregistrerad' => $recipient->unsubscribed_at?->toIso8601String()])
+                ->map(fn (MailingRecipient $recipient): array => ['utskick' => $recipient->mailing?->name, 'amne' => $recipient->mailing?->subject, 'status' => $recipient->status, 'skickat' => $recipient->sent_at?->toIso8601String(), 'avregistrerad' => $recipient->unsubscribed_at?->toIso8601String()])
                 ->all(),
             'samtycken_via_formular' => FormSubmission::query()->where('person_id', $person->id)->orderBy('consented_at')->get()
-                ->map(fn (FormSubmission $submission): array => ['datum' => $submission->consented_at->toIso8601String(), 'text' => $submission->consent_text, 'version' => $submission->consent_version, 'integritetspolicy' => $submission->privacy_url])
+                ->map(fn (FormSubmission $submission): array => ['datum' => $submission->consented_at->toIso8601String(), 'nyhetsbrev' => $submission->marketing_consent, 'text' => $submission->consent_text, 'version' => $submission->consent_version, 'integritetspolicy' => $submission->privacy_url])
                 ->all(),
         ];
     }

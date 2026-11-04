@@ -48,6 +48,9 @@
         @if($canUpdate)
             <x-slot:aside>
                 <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="startPerson({{ $person->id }})">{{ __('Ändra uppgifter') }}</button>
+                @if(! $person->marketing_opt_out_at && ! $restricted)
+                    <button type="button" class="min-h-11 font-medium text-accent-600 hover:text-accent-700 sm:min-h-0" wire:click="unsubscribeFromMailings" wire:confirm="{{ __('Avregistrera personen från utskick? Personen får inga fler nyhetsbrev, men kan fortfarande kontaktas på annat sätt.') }}">{{ __('Avregistrera från utskick') }}</button>
+                @endif
             </x-slot:aside>
         @endif
         <x-slot:actions>

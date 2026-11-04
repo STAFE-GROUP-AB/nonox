@@ -153,12 +153,26 @@ gratis och utan NONOX CLOUD.
   inkorgen. Inget mer behövs i Mailgun. Själv-driftat med IMAP: e-postservern
   måste leverera plusadresser (`brevlada+crm@doman`) till brevlådan och sätta
   `Delivered-To` eller `X-Original-To`.
-- **Händelser för utskick:** Mailgun → Sending → Webhooks för domänen som
-  skickar: lägg till `https://nonox.app/webhooks/utskick/mailgun` för
-  *Delivered*, *Permanent failure* och *Spam complaints*. Samma
+- **Egen avsändardomän för CRM:** lägg till en domän i Mailgun EU, till
+  exempel `utskick.nonox.app`, med de SPF- och DKIM-poster Mailgun anger och
+  en DMARC-post (`_dmarc.utskick.nonox.app`). Skapa SMTP-uppgifter för
+  domänen och sätt `NONOX_CRM_SMTP_HOST=smtp.eu.mailgun.org`,
+  `NONOX_CRM_SMTP_PORT=587`, `NONOX_CRM_SMTP_USERNAME`,
+  `NONOX_CRM_SMTP_PASSWORD`, `NONOX_CRM_SMTP_SCHEME=smtp` och
+  `NONOX_CRM_MAIL_FROM=utskick@utskick.nonox.app`. Utan dem är utskick och
+  mejl med mall av i molntjänsten (`NONOX_HOSTED=true`); själv-driftat
+  används standardmejlaren.
+- **Händelser för utskick:** Mailgun → Sending → Webhooks för den domänen:
+  lägg till `https://nonox.app/webhooks/utskick/mailgun` för *Delivered*,
+  *Permanent failure* och *Spam complaints*. Samma
   `MAILGUN_WEBHOOK_SIGNING_KEY` används.
-- **Spårning av:** stäng av open och click tracking för den skickande domänen
-  (varje utskick skickar också `X-Mailgun-Track: no`).
+- **Spårning av:** stäng av open och click tracking för domänen (varje
+  utskick skickar också `X-Mailgun-Track: no`). NONOX skickar över SMTP, där
+  Mailgun läser `X-Mailgun-*`-rubrikerna; med Mailguns API skulle de vara
+  API-parametrar i stället.
+- **IMAP (själv-driftat):** e-postservern måste lägga till en rubrik
+  Authentication-Results (eller sätt `NONOX_INBOX_IMAP_AUTHSERV_ID`), annars
+  tas mejl till `+crm` inte emot.
 - **Schemaläggare och kö:** `crm:send-mailings` varje minut och
   `crm:prune-mail` varje natt; utskicken skickas i omgångar av köarbetaren.
 - Valfritt: `NONOX_CRM_MAILING_HOURLY_CAP` (förval 500) och

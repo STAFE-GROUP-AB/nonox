@@ -8,6 +8,8 @@ namespace App\Modules\Crm\Domain;
 enum MailingStatus: string
 {
     case Draft = 'DRAFT';
+    // Started: the recipients are being written on the queue (PrepareMailing).
+    case Preparing = 'PREPARING';
     case Scheduled = 'SCHEDULED';
     case Sending = 'SENDING';
     case Sent = 'SENT';
@@ -17,6 +19,7 @@ enum MailingStatus: string
     {
         return match ($this) {
             self::Draft => __('Utkast'),
+            self::Preparing => __('Förbereds'),
             self::Scheduled => __('Schemalagt'),
             self::Sending => __('Skickas'),
             self::Sent => __('Skickat'),

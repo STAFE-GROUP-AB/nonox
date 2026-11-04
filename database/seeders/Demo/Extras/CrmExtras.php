@@ -134,6 +134,7 @@ final class CrmExtras extends DemoExtra
      */
     private function mail(DemoContext $c): void
     {
+        app(ModuleManager::class)->updateSettings(CrmModule::KEY, $c->company, $c->user, ['privacy_url' => 'https://www.exempel.test/integritet']);
         app(SaveEmailTemplate::class)($c->user, $c->company, ['name' => 'Tack för mötet', 'subject' => 'Tack för mötet, {förnamn}', 'body' => "Hej {förnamn}!\n\nTack för ett bra möte i dag. Jag skickar förslaget på upplägg i slutet av veckan.\n\nMed vänliga hälsningar\n{säljare}\n{mitt_företag}"]);
         app(SaveEmailTemplate::class)($c->user, $c->company, ['name' => 'Offert skickad', 'subject' => 'Offerten till {företag}', 'body' => "Hej {förnamn}!\n\nHär kommer offerten vi pratade om. Hör av dig om något är oklart.\n\nMed vänliga hälsningar\n{säljare}"]);
 
@@ -155,13 +156,13 @@ final class CrmExtras extends DemoExtra
             'sent_count' => 48,
             'delivered_count' => 47,
             'bounced_count' => 1,
-            'unique_clicks' => 14,
+            'clicks' => 25,
             'unsubscribed_count' => 1,
             'excluded' => ['NEEDS_CONSENT' => 3, 'OBJECTION' => 1, 'NO_EMAIL' => 2],
         ])->save();
 
-        foreach ([['https://www.exempel.test/kundcase', 19, 11], ['https://www.exempel.test/boka', 6, 5]] as $position => [$url, $clicks, $unique]) {
-            MailingLink::query()->create(['mailing_id' => $sent->id, 'url' => $url, 'position' => $position + 1])->forceFill(['clicks' => $clicks, 'unique_clicks' => $unique])->save();
+        foreach ([['https://www.exempel.test/kundcase', 19], ['https://www.exempel.test/boka', 6]] as $position => [$url, $clicks]) {
+            MailingLink::query()->create(['mailing_id' => $sent->id, 'url' => $url, 'position' => $position + 1])->forceFill(['clicks' => $clicks])->save();
         }
 
         app(SaveMailing::class)($c->user, $c->company, [
@@ -174,8 +175,6 @@ final class CrmExtras extends DemoExtra
         $form = app(SaveForm::class)($c->user, $c->company, [
             'name' => 'Kontakta oss',
             'fields' => ['phone' => 'optional', 'company' => 'required', 'org_number' => 'off', 'message' => 'optional'],
-            'consent_text' => 'Jag samtycker till att Konsultbolaget sparar mina uppgifter för att kontakta mig och skicka nyheter om sina tjänster. Jag kan återkalla samtycket när som helst.',
-            'privacy_url' => 'https://www.exempel.test/integritet',
             'embed_origins' => 'https://www.exempel.test',
             'owner_id' => $c->user->id,
             'tags' => 'webb',

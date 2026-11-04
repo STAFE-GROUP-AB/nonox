@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  *
  * The rules (stage 1, ADR-043 review round):
  * - restriction (art. 18) of a matched person, or a matched customer with
- *   restricted processing: the e-mail is stored only, on no timeline;
+ *   restricted processing: the e-mail is not stored at all;
  * - an objection (art. 21): a mail *from* the person is their contact with
  *   us and is logged; a mail *to* them is contact by us, so it is not logged
  *   as an e-mail but held in "Ej kopplade", where it can be logged as a note

@@ -11,9 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * One person a mailing goes to (ADR-048). The token in the recipient's
- * links (unsubscribe and clicks) is random and only its SHA-256 is kept.
- * The address is removed 90 days after the send and the row after 13
- * months (crm:prune-mail); the mailing keeps its counts.
+ * unsubscribe link is an HMAC and only its SHA-256 is kept; it is never
+ * used for statistics. After 90 days the address and the person give way
+ * to the suppression list's hash of the address (a stub that keeps the
+ * unsubscribe link working), and after three years the row goes
+ * (crm:prune-mail); the mailing keeps its counts.
  *
  * @property int $id
  * @property int $company_id
@@ -26,7 +28,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?string $skip_reason
  * @property ?CarbonImmutable $sent_at
  * @property ?CarbonImmutable $delivered_at
- * @property ?CarbonImmutable $clicked_at
+ * @property ?string $email_hash the suppression list's hash of the address, kept instead of it after 90 days
+ * @property ?CarbonImmutable $complained_at
  * @property ?CarbonImmutable $unsubscribed_at
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
@@ -50,7 +53,7 @@ class MailingRecipient extends Model
     protected $table = 'crm_mailing_recipients';
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'mailing_id', 'person_id', 'account_id', 'email', 'token_hash', 'status', 'skip_reason', 'sent_at', 'delivered_at', 'clicked_at', 'unsubscribed_at'];
+    protected $fillable = ['company_id', 'mailing_id', 'person_id', 'account_id', 'email', 'token_hash', 'status', 'skip_reason', 'sent_at', 'delivered_at', 'unsubscribed_at', 'email_hash', 'complained_at'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -58,7 +61,7 @@ class MailingRecipient extends Model
         return [
             'sent_at' => 'immutable_datetime',
             'delivered_at' => 'immutable_datetime',
-            'clicked_at' => 'immutable_datetime',
+            'complained_at' => 'immutable_datetime',
             'unsubscribed_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',

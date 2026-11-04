@@ -49,6 +49,12 @@
         <x-ui.field for="person_informed" :label="__('Informerad den (valfritt)')" error="informed_at" :hint="__('Dagen personen fick information om hur ni behandlar uppgifterna (GDPR artikel 14): vilka uppgifter, varifrån, varför och med vilken rättslig grund, vilka leverantörer som behandlar dem, hur länge de sparas och personens rättigheter. Inom en månad, och senast vid första kontakten.')">
             <input id="person_informed" type="date" class="{{ $input }} mt-1" wire:model="personForm.informed_at">
         </x-ui.field>
+        <x-ui.field for="person_marketing_consent" :label="__('Samtycke till e-postreklam (valfritt)')" error="marketing_consent_at" :hint="__('Dagen personen själv sa ja till nyhetsbrev och erbjudanden via e-post. Behövs för utskick till privatpersoner och enskilda firmor.')">
+            <input id="person_marketing_consent" type="date" class="{{ $input }} mt-1" wire:model="personForm.marketing_consent_at">
+        </x-ui.field>
+        <x-ui.field for="person_customer_exception" :label="__('Kund, 19 § andra stycket (valfritt)')" error="customer_exception_at" :hint="__('Dagen ni fick personens e-postadress vid en försäljning, när personen fick tacka nej till reklam. Då får personen utskick om era egna liknande varor eller tjänster om ni kryssar i kundundantaget.')">
+            <input id="person_customer_exception" type="date" class="{{ $input }} mt-1" wire:model="personForm.customer_exception_at">
+        </x-ui.field>
         @if($personForm['restriction_locked'] ?? false)
             <p class="text-sm text-gray-600 sm:col-span-2">{{ __('Personen har begärt begränsad behandling. Begränsningen hävs bara med Häv begränsningen på personens sida, och först när personen har informerats.') }}</p>
         @else

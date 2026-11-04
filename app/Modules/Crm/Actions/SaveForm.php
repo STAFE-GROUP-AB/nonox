@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Models\Form;
 use App\Modules\Crm\Models\FormSubmission;
 use App\Modules\Crm\Support\CompanyMembers;
@@ -20,9 +21,10 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Adds, changes or removes a web form (ADR-048), with crm:settings. The
- * consent text and the link to the company's own privacy policy are
- * required; a changed consent text gets the next version, so every
- * submission can be traced to the exact text it accepted.
+ * form links to the company's own privacy policy (the CRM setting, which
+ * must be set first). The text beside the optional newsletter box is
+ * versioned: a changed text gets the next version, so every submission
+ * can be traced to the exact text it was given.
  */
 final class SaveForm
 {
@@ -31,24 +33,28 @@ final class SaveForm
     {
         Gate::forUser($user)->authorize('settings', [Form::class, $company]);
 
+        // The form links to the company's own privacy policy (a CRM setting), never to NONOX's.
+        $privacyUrl = CrmSettings::privacyUrl($company);
+
+        if ($privacyUrl === null) {
+            throw ValidationException::withMessages(['privacy_url' => __('Ange Länk till er integritetspolicy under CRM → Inställningar först. Formuläret länkar dit.')]);
+        }
+
         $validated = Validator::make($input, [
             'name' => ['required', 'string', 'max:100'],
             'fields' => ['array'],
             'fields.*' => [Rule::in(Form::FIELD_STATES)],
-            'consent_text' => ['required', 'string', 'max:2000'],
-            'privacy_url' => ['required', 'url:https', 'max:500'],
+            'consent_text' => ['nullable', 'string', 'max:2000'],
             'thank_you' => ['nullable', 'string', 'max:1000'],
             'embed_origins' => ['nullable', 'string', 'max:2000'],
             'owner_id' => ['nullable', 'integer', Rule::in(CompanyMembers::ids($company))],
             'tags' => ['nullable', 'string', 'max:255'],
             'is_active' => ['sometimes', 'boolean'],
         ], [
-            'privacy_url.url' => __('Ange en fullständig adress till er integritetspolicy som börjar med https://.'),
             'owner_id.in' => __('Ansvarig måste vara med i företaget.'),
         ], [
             'name' => __('namn'),
-            'consent_text' => __('samtyckestext'),
-            'privacy_url' => __('länk till integritetspolicyn'),
+            'consent_text' => __('text vid rutan för nyhetsbrev'),
         ])->validate();
 
         $origins = [];
@@ -76,8 +82,8 @@ final class SaveForm
         $attributes = [
             'name' => trim((string) $validated['name']),
             'fields' => $fields,
-            'consent_text' => trim((string) $validated['consent_text']),
-            'privacy_url' => trim((string) $validated['privacy_url']),
+            'consent_text' => blank($validated['consent_text'] ?? null) ? Form::defaultNewsletterText($company) : trim((string) $validated['consent_text']),
+            'privacy_url' => $privacyUrl,
             'thank_you' => blank($validated['thank_you'] ?? null) ? null : trim((string) $validated['thank_you']),
             'embed_origins' => array_values(array_unique(array_slice($origins, 0, 10))),
             'owner_id' => blank($validated['owner_id'] ?? null) ? null : (int) $validated['owner_id'],

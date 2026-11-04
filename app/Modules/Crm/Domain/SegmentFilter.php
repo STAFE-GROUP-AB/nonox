@@ -4,11 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Domain;
 
-use App\Modules\Crm\Models\Account;
-use App\Modules\Crm\Models\AccountPerson;
-use App\Modules\Crm\Models\Person;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
  * A segment's filters (ADR-048), over the accounts and the people's place
@@ -79,12 +75,11 @@ final readonly class SegmentFilter
     }
 
     /**
-     * Narrows a query of accounts (or of a person's accounts) to those that
-     * pass the account filters, and the role filter on the link.
-     *
-     * @param  Builder<Account>|BelongsToMany<Account, Person, AccountPerson, 'link'>  $query
+     * Narrows a query over crm_accounts (joined with crm_account_person) to
+     * the accounts that pass the account filters, and the role filter on
+     * the link.
      */
-    public function constrainAccounts(Builder|BelongsToMany $query): void
+    public function constrainAccounts(QueryBuilder $query): void
     {
         $query
             ->when($this->statuses !== [], fn ($q) => $q->whereIn('crm_accounts.status', $this->statuses))
@@ -101,19 +96,16 @@ final readonly class SegmentFilter
     }
 
     /**
-     * The people in the segment, with the accounts through which they are
-     * in it (and those accounts' customers) loaded.
-     *
-     * @return Builder<Person>
+     * One row per person and segment account, with what MarketingEligibility
+     * reads (MarketingCandidates). Plain rows, not models: a segment can
+     * hold thousands of people, and the composer counts them on every
+     * render with this one query.
      */
-    public function people(): Builder
+    public function rows(): QueryBuilder
     {
-        return Person::query()
-            ->whereHas('accounts', fn (Builder $query) => $this->constrainAccounts($query))
-            ->when($this->legalBases !== [], fn (Builder $q) => $q->whereIn('legal_basis', $this->legalBases))
-            ->with(['accounts' => function (BelongsToMany $query): void {
-                $this->constrainAccounts($query);
-                $query->with('customer');
-            }]);
+        $query = MarketingCandidates::base();
+        $this->constrainAccounts($query);
+
+        return $query->when($this->legalBases !== [], fn ($q) => $q->whereIn('crm_people.legal_basis', $this->legalBases));
     }
 }

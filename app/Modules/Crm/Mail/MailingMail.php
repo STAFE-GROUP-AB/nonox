@@ -14,8 +14,9 @@ use Illuminate\Mail\Mailables\Headers;
 /**
  * One recipient's copy of a mailing (ADR-048), already rendered.
  *
- * From is the service's own address with the company's name (the domain
- * the service signs with SPF and DKIM; never the company's domain), and
+ * From is the CRM mailer's address (CrmMailer: a sending domain of its
+ * own on the hosted service, never the company's domain) with
+ * ":company via NONOX" as the name, and
  * Reply-To the company's e-mail. List-Unsubscribe with
  * List-Unsubscribe-Post gives one-click unsubscribe in the mail client
  * (RFC 8058, required by the large mailbox providers for bulk mail).
@@ -29,6 +30,7 @@ class MailingMail extends Mailable
 
     public function __construct(
         public readonly string $fromName,
+        public readonly string $fromAddress,
         public readonly ?string $replyToEmail,
         public readonly string $mailSubject,
         public readonly string $htmlBody,
@@ -37,10 +39,16 @@ class MailingMail extends Mailable
         public readonly ?int $recipientId,
     ) {}
 
+    /*
+     * The X-Mailgun-* headers are read by Mailgun when the message comes in
+     * over SMTP, which is how NONOX sends (no API transport is installed).
+     * With an API transport they would be options of the API call instead.
+     */
+
     public function envelope(): Envelope
     {
         return new Envelope(
-            from: new Address((string) config('mail.from.address'), $this->fromName),
+            from: new Address($this->fromAddress, $this->fromName),
             replyTo: $this->replyToEmail ? [new Address($this->replyToEmail, $this->fromName)] : [],
             subject: $this->mailSubject,
         );

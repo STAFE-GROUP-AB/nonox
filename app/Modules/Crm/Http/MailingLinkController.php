@@ -19,8 +19,9 @@ use Illuminate\Http\Response;
  *   never unsubscribes: mail scanners open links before the person does.
  * - POST to the same address unsubscribes: the button, and the mail
  *   client's one-click unsubscribe (RFC 8058, List-Unsubscribe-Post).
- * - GET /utskick/lank/{token}/{link} counts the click and redirects to the
- *   URL stored for that link in that recipient's mailing.
+ * - GET /utskick/lank/{link}/{sig} counts the click on the link (never who
+ *   clicked: the address is the same for every recipient) and redirects to
+ *   the URL stored for that link.
  *
  * An unknown or pruned token answers 404 with a plain page.
  */
@@ -46,13 +47,12 @@ class MailingLinkController
         return $this->page(Company::query()->find($recipient->company_id), 'done', $token);
     }
 
-    public function click(Request $request, string $token, int $link, MailingResponses $responses): RedirectResponse|Response
+    public function click(int $link, string $sig, MailingResponses $responses): RedirectResponse|Response
     {
-        $recipient = MailingResponses::recipient($token);
-        $url = $recipient === null ? null : $responses->click($recipient, $link, (string) $request->query('s', ''), $token);
+        $url = $responses->click($link, $sig);
 
         if ($url === null) {
-            return $this->page(null, 'gone', $token, 404);
+            return $this->page(null, 'gone', '', 404);
         }
 
         return redirect()->away($url, 302)->header('Referrer-Policy', 'no-referrer')->header('Cache-Control', 'no-store');

@@ -14,6 +14,8 @@ NONOX är ett bokförings-, fakturerings- och lönesystem med öppen källkod (A
 
 Kunden ansvarar för sin bokföring, sina deklarationer och sina beslut i tjänsten, precis som med alla bokföringsprogram. Kunden ansvarar för vilka användare som får tillgång och med vilken roll, och för att uppgifter om kunder, leverantörer och anställda behandlas lagligt.
 
+Skickar kunden utskick eller mejl med mall från CRM ansvarar kunden för att de följer marknadsföringslagen och dataskyddsförordningen: att mottagarna har samtyckt eller att ett undantag gäller, att texten är korrekt och att den som vill slippa utskick tas bort. Utskick får inte användas för skräppost eller för att skicka till köpta eller insamlade adresslistor utan samtycke. Leverantören får pausa ett företags utskick när mottagarna klagar eller adresser studsar över de gränser som e-posttjänsterna tillämpar, eller vid missbruk, och meddelar kunden när det sker.
+
 ## 3. Personuppgifter
 
 När Kunden lägger in personuppgifter är Kunden personuppgiftsansvarig och vi personuppgiftsbiträde. [Personuppgiftsbiträdesavtalet]({pub}) är en del av dessa villkor och godkänns när företaget skapas. Hur vi själva behandlar personuppgifter beskrivs i [integritetspolicyn]({integritet}).

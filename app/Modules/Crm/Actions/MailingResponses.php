@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Crm\Actions;
 
+use App\Models\Company;
 use App\Modules\Crm\Models\Mailing;
-use App\Modules\Crm\Models\MailingClick;
 use App\Modules\Crm\Models\MailingLink;
 use App\Modules\Crm\Models\MailingRecipient;
 use App\Modules\Crm\Models\Person;
+use App\Modules\Crm\Support\MailingPause;
 use App\Modules\Crm\Support\MailingTokens;
 use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
@@ -17,20 +18,21 @@ use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\DB;
 
 /**
- * What a recipient does with a mailing (ADR-048), reached through the
- * token in their links, without signing in.
+ * What happens after a mailing is sent (ADR-048), without anyone signing in.
  *
- * - unsubscribe: the person is marked unsubscribed from mailings and the
- *   address goes on the suppression list (reason MARKETING), so no later
- *   mailing reaches it even if the person is erased and added again. This
- *   is the objection to direct marketing (GDPR art. 21(3)); other contact,
- *   such as an answer about an order, is still allowed.
- * - click: the link's click count and, the first time per recipient, its
- *   unique count; the redirect goes to the URL stored for that link.
- * - delivery events from Mailgun's webhook: delivered, a permanent
- *   failure (a bounce: the person's address is marked and gets no more
- *   mailings until it changes), and a spam complaint (handled as an
- *   unsubscribe).
+ * - unsubscribe (the recipient's personal token): the person is marked
+ *   unsubscribed from mailings and the address goes on the suppression
+ *   list (reason MARKETING), so no later mailing reaches it even if the
+ *   person is erased and added again. This is the objection to direct
+ *   marketing (GDPR art. 21(3)); other contact is still allowed. A stub
+ *   (address and person already pruned) still works through the kept
+ *   HMAC of the address.
+ * - click (a link that names no one): the link's and the mailing's click
+ *   counts; the redirect goes to the URL stored for that link.
+ * - delivery events from Mailgun's webhook: delivered, a permanent failure
+ *   (a bounce: the person's address gets no more mailings until it
+ *   changes) and a spam complaint (an unsubscribe, and counted). Bounces
+ *   and complaints may pause the company's mailings (MailingPause).
  *
  * The audit log gets ids only.
  */
@@ -57,6 +59,8 @@ final class MailingResponses
 
                 if ($email !== null && $email !== '') {
                     SuppressionList::suppressMarketing($email);
+                } elseif ($recipient->email_hash !== null) {
+                    SuppressionList::suppressMarketingHash($recipient->email_hash);
                 }
 
                 if ($person instanceof Person && $person->marketing_opt_out_at === null) {
@@ -72,34 +76,26 @@ final class MailingResponses
         });
     }
 
-    /** Counts the click and returns where to go, or null when the link is not this recipient's. */
-    public function click(MailingRecipient $recipient, int $linkId, string $signature, string $token): ?string
+    /** Counts a click on a link and returns where to go, or null for a link NONOX did not make. */
+    public function click(int $linkId, string $signature): ?string
     {
-        if (! MailingTokens::validSignature($token, $linkId, $signature)) {
+        if (! MailingTokens::validSignature($linkId, $signature)) {
             return null;
         }
 
-        return CurrentCompany::run($recipient->company_id, function () use ($recipient, $linkId): ?string {
-            $link = MailingLink::query()->whereKey($linkId)->where('mailing_id', $recipient->mailing_id)->first();
+        // The link names no company: its id, proven by the signature, finds the row.
+        $link = CompanyScope::bypass(fn (): ?MailingLink => MailingLink::query()->find($linkId));
 
-            if (! $link instanceof MailingLink || preg_match('/^https?:\/\//i', $link->url) !== 1) {
-                return null;
-            }
+        if (! $link instanceof MailingLink || preg_match('/^https?:\/\//i', $link->url) !== 1) {
+            return null;
+        }
 
-            DB::transaction(function () use ($recipient, $link): void {
-                MailingLink::query()->whereKey($link->id)->increment('clicks');
-
-                if (MailingClick::query()->firstOrCreate(['recipient_id' => $recipient->id, 'link_id' => $link->id])->wasRecentlyCreated) {
-                    MailingLink::query()->whereKey($link->id)->increment('unique_clicks');
-                }
-
-                if (MailingRecipient::query()->whereKey($recipient->id)->whereNull('clicked_at')->update(['clicked_at' => now()]) === 1) {
-                    Mailing::query()->whereKey($recipient->mailing_id)->increment('unique_clicks');
-                }
-            });
-
-            return $link->url;
+        CurrentCompany::run($link->company_id, function () use ($link): void {
+            MailingLink::query()->whereKey($link->id)->increment('clicks');
+            Mailing::query()->whereKey($link->mailing_id)->increment('clicks');
         });
+
+        return $link->url;
     }
 
     /** A delivery event from Mailgun for one recipient: delivered, failed (permanent) or complained. */
@@ -112,22 +108,30 @@ final class MailingResponses
 
         if ($event === 'complained') {
             $this->unsubscribe($recipient, 'complaint');
+            $first = CurrentCompany::run($recipient->company_id, fn (): bool => MailingRecipient::query()->whereKey($recipient->id)->whereNull('complained_at')->update(['complained_at' => now()]) === 1);
+
+            if ($first) {
+                CurrentCompany::run($recipient->company_id, fn () => Mailing::query()->whereKey($recipient->mailing_id)->increment('complaint_count'));
+                $this->checkPause($recipient->company_id);
+            }
 
             return;
         }
 
-        CurrentCompany::run($recipient->company_id, function () use ($recipient, $event, $severity): void {
+        $bounced = CurrentCompany::run($recipient->company_id, function () use ($recipient, $event, $severity): bool {
             if ($event === 'delivered' && MailingRecipient::query()->whereKey($recipient->id)->whereNull('delivered_at')->update(['delivered_at' => now()]) === 1) {
                 Mailing::query()->whereKey($recipient->mailing_id)->increment('delivered_count');
 
-                return;
+                return false;
             }
 
             if ($event !== 'failed' || $severity !== 'permanent') {
-                return;
+                return false;
             }
 
-            if (MailingRecipient::query()->whereKey($recipient->id)->where('status', '<>', MailingRecipient::BOUNCED)->update(['status' => MailingRecipient::BOUNCED, 'updated_at' => now()]) === 1) {
+            $first = MailingRecipient::query()->whereKey($recipient->id)->where('status', '<>', MailingRecipient::BOUNCED)->update(['status' => MailingRecipient::BOUNCED, 'updated_at' => now()]) === 1;
+
+            if ($first) {
                 Mailing::query()->whereKey($recipient->mailing_id)->increment('bounced_count');
             }
 
@@ -138,6 +142,21 @@ final class MailingResponses
             }
 
             Audit::record('crm.mailing_bounced', $recipient, ['mailing_id' => $recipient->mailing_id, 'person_id' => $recipient->person_id], $recipient->company_id);
+
+            return $first;
         });
+
+        if ($bounced) {
+            $this->checkPause($recipient->company_id);
+        }
+    }
+
+    private function checkPause(int $companyId): void
+    {
+        $company = Company::query()->find($companyId);
+
+        if ($company instanceof Company) {
+            app(MailingPause::class)->check($company);
+        }
     }
 }

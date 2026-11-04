@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $consent_version
  * @property string $privacy_url
  * @property CarbonImmutable $consented_at
+ * @property bool $marketing_consent the newsletter box was ticked
  */
 class FormSubmission extends Model
 {
@@ -30,13 +31,14 @@ class FormSubmission extends Model
     protected $table = 'crm_form_submissions';
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'form_id', 'account_id', 'person_id', 'consent_text', 'consent_version', 'privacy_url', 'consented_at'];
+    protected $fillable = ['company_id', 'form_id', 'account_id', 'person_id', 'consent_text', 'consent_version', 'privacy_url', 'consented_at', 'marketing_consent'];
 
     /** @return array<string, string> */
     protected function casts(): array
     {
         return [
             'consented_at' => 'immutable_datetime',
+            'marketing_consent' => 'boolean',
         ];
     }
 }

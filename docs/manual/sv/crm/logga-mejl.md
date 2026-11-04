@@ -46,7 +46,7 @@ Det som ingen hanterar tas bort efter 30 dagar.
 
 - Ett mejl **från** en person som har bett att inte bli kontaktad loggas som vanligt. Det är personens kontakt med er.
 - Ett mejl **till** en sådan person loggas inte som ett mejl. Det väntar under **Ej kopplade** med märket Kontakta inte och kan bara loggas som en anteckning, eller tas bort.
-- Gäller mejlet en person med **begränsad behandling**, eller en kund med begränsad behandling, sparas det bara. Det syns inte i någon tidslinje.
+- Gäller mejlet en person med **begränsad behandling**, eller en kund med begränsad behandling, sparas det inte alls.
 
 Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 
@@ -54,7 +54,7 @@ Se [GDPR i CRM](/manual/crm/gdpr-i-crm).
 
 - **Bara texten sparas**, och den sparas krypterad. Bilagor sparas inte, bara deras namn. Originalet finns kvar i ditt eget mejlprogram.
 - Adressen är inkorgens adress med `+crm`. Byter ägaren inkorgens adress byter också CRM-adressen. Inkorgsmodulen behöver inte vara på för att logga mejl i NONOX molntjänst.
-- Kör ni NONOX själva och hämtar inkorgen med IMAP: skicka till brevlådans egen adress med `+crm` (till exempel `bokforing+crm@er-doman.se`). Er e-postserver måste leverera plusadresser till samma brevlåda.
+- Kör ni NONOX själva och hämtar inkorgen med IMAP: skicka till brevlådans egen adress med `+crm` (till exempel `bokforing+crm@er-doman.se`). Er e-postserver måste leverera plusadresser till samma brevlåda och lägga till en rubrik Authentication-Results med resultatet av SPF, DKIM och DMARC. Annars tas mejlen inte emot.
 - Raderas en person raderas de loggade mejlen om personen också.
 
 ## Läs också

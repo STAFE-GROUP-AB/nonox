@@ -140,6 +140,11 @@ class EmailsPage extends Component
     {
         $canManage = $this->user()->hasTeamPermission($this->company(), 'crm:manage');
         $shown = $this->show !== '' && ctype_digit($this->show) ? Email::query()->with('forwarder:id,name')->find((int) $this->show) : null;
+
+        // Mail waiting in "Ej kopplade" is shown only to those who may handle it.
+        if ($shown instanceof Email && $shown->status->waits() && ! $canManage) {
+            $shown = null;
+        }
         $search = trim($this->accountSearch);
 
         return view('crm::livewire.emails', [

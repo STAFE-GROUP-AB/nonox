@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Modules\Crm\Domain\MailingStatus;
 use App\Modules\Crm\Models\Mailing;
 use App\Modules\Crm\Models\Segment;
+use App\Modules\Crm\Support\MailingRenderer;
 use App\Support\Audit\Audit;
 use App\Support\Tenancy\CurrentCompany;
 use Closure;
@@ -39,6 +40,10 @@ final class SaveMailing
             }],
             'customer_exception' => ['sometimes', 'boolean'],
         ], [], ['name' => __('namn'), 'subject' => __('ämne'), 'body' => __('text')])->validate();
+
+        if (MailingRenderer::fieldInAddress((string) $validated['body'])) {
+            throw ValidationException::withMessages(['body' => __('Fält som {namn} kan inte stå i en länkadress.')]);
+        }
 
         $attributes = [
             'name' => trim((string) $validated['name']),

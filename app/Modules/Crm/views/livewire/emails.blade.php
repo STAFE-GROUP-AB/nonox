@@ -9,9 +9,6 @@
             <x-slot:action>
                 <button type="button" class="min-h-11 text-sm font-medium text-accent-600 hover:text-accent-700" wire:click="$set('show', '')">{{ __('Stäng') }}</button>
             </x-slot:action>
-            @if($shown->status === App\Modules\Crm\Domain\EmailStatus::Restricted)
-                <p class="mt-4 text-sm text-gray-700">{{ __('Behandlingen av uppgifterna är begränsad. Mejlet är bara sparat och visas inte.') }}</p>
-            @else
                 <dl class="mt-4 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-[auto_1fr]">
                     <dt class="font-medium text-gray-600">{{ __('Från') }}</dt><dd class="break-all">{{ $shown->participants['from_name'] ?? '' }} {{ $shown->participants['from'] }}</dd>
                     <dt class="font-medium text-gray-600">{{ __('Till') }}</dt><dd class="break-all">{{ implode(', ', $shown->participants['to']) ?: '–' }}</dd>
@@ -26,7 +23,6 @@
                     @endif
                 </dl>
                 <div class="mt-4 whitespace-pre-line rounded-2xl bg-stone-50 p-4 text-sm leading-relaxed text-gray-900 ring-1 ring-stone-200" data-testid="crm-email-body">{{ $shown->body ?? __('Mejlet har ingen text.') }}</div>
-            @endif
         </x-ui.card>
     @endif
 

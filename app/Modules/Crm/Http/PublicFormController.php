@@ -48,7 +48,7 @@ class PublicFormController
             return $this->page($form, ['done' => true]);
         }
 
-        $input = $request->only(['name', 'email', 'phone', 'company', 'org_number', 'message', 'consent']);
+        $input = $request->only(['name', 'email', 'phone', 'company', 'org_number', 'message', 'newsletter']);
         $errors = $submit($form, $input);
 
         if ($errors !== []) {

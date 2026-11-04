@@ -7,8 +7,10 @@ use App\Modules\Crm\Actions\SaveEmailTemplate;
 use App\Modules\Crm\Actions\SaveForm;
 use App\Modules\Crm\Actions\SaveMailing;
 use App\Modules\Crm\Actions\SaveSegment;
+use App\Modules\Crm\Actions\SendMailing;
 use App\Modules\Crm\Actions\SendTemplateEmail;
 use App\Modules\Crm\Domain\PersonRole;
+use App\Modules\Crm\Http\PublicFormController;
 use App\Modules\Crm\Livewire\EmailsPage;
 use App\Modules\Crm\Livewire\FormsPage;
 use App\Modules\Crm\Livewire\MailingEditor;
@@ -18,8 +20,13 @@ use App\Modules\Crm\Models\Email;
 use App\Modules\Crm\Models\EmailTemplate;
 use App\Modules\Crm\Models\Form;
 use App\Modules\Crm\Models\Mailing;
+use App\Modules\Crm\Models\MailingLink;
+use App\Modules\Crm\Models\MailingRecipient;
+use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Segment;
 use App\Modules\Crm\Support\CrmMailAddress;
+use App\Modules\Crm\Support\MailingTokens;
+use App\Modules\ModuleManager;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Mail;
@@ -45,6 +52,7 @@ beforeEach(function () {
         [$owner, $company] = Bookkeeping::company();
         $this->actingAs($owner);
         Crm::enable($company, $owner);
+        app(ModuleManager::class)->updateSettings('crm', $company, $owner, ['privacy_url' => 'https://x.example/p']);
         $account = Crm::prospect($company, $owner, "{$name}kunden AB");
         // The same address at both companies: matching must stay inside the company.
         $person = Crm::person($company, $owner, "{$name} Kontakt", ['email' => 'delad@kund.example']);
@@ -52,7 +60,7 @@ beforeEach(function () {
         $template = app(SaveEmailTemplate::class)($owner, $company, ['name' => "{$name}mallen", 'subject' => 'Hej', 'body' => 'Text']);
         $segment = app(SaveSegment::class)($owner, $company, ['name' => "{$name}segmentet", 'filters' => []]);
         $mailing = app(SaveMailing::class)($owner, $company, ['name' => "{$name}utskicket", 'subject' => 'X', 'body' => 'Y', 'segment_id' => $segment->id]);
-        $form = app(SaveForm::class)($owner, $company, ['name' => "{$name}formuläret", 'consent_text' => 'Ja.', 'privacy_url' => 'https://x.example/p']);
+        $form = app(SaveForm::class)($owner, $company, ['name' => "{$name}formuläret", 'consent_text' => 'Ja.']);
         $this->post('/webhooks/inkorg/mailgun/mime', CrmMail::request(CrmMail::raw($owner->email, ['okand@x.example'], "{$name}mejlet", 'Text'), CrmMailAddress::for($company)))->assertOk();
         $email = CurrentCompany::run($company, fn () => Email::query()->sole());
         $this->{$side} = compact('owner', 'company', 'account', 'person', 'template', 'segment', 'mailing', 'form', 'email');
@@ -101,4 +109,48 @@ it('matches mail to A\'s +crm address only against A\'s people', function () {
     $logged = Email::query()->where('subject', 'Till den delade adressen')->sole();
     expect($logged->person_id)->toBe($this->a['person']->id)
         ->and(CurrentCompany::run($this->b['company'], fn () => Email::query()->where('subject', 'Till den delade adressen')->exists()))->toBeFalse();
+});
+
+it('keeps every public endpoint inside the company its token or id belongs to', function () {
+    // Both companies send a mailing to the shared address, with one link each.
+    $sent = [];
+
+    foreach (['a', 'b'] as $side) {
+        $company = $this->{$side}['company'];
+        $owner = $this->{$side}['owner'];
+        $company->forceFill(['address_line1' => 'Gatan 1', 'postal_code' => '111 22', 'city' => 'Stad'])->save();
+        CurrentCompany::set($company);
+        $this->{$side}['person']->forceFill(['marketing_consent_at' => now()])->save();
+        $mailing = app(SaveMailing::class)($owner, $company->fresh(), ['name' => 'Brev', 'subject' => 'X', 'body' => '[Läs](https://'.$side.'.example/las)', 'segment_id' => $this->{$side}['segment']->id]);
+        app(SendMailing::class)->start($owner, $company->fresh(), $mailing);
+        $sent[$side] = [
+            'mailing' => $mailing,
+            'link' => MailingLink::query()->where('mailing_id', $mailing->id)->sole(),
+            'recipient' => MailingRecipient::query()->where('mailing_id', $mailing->id)->sole(),
+        ];
+    }
+
+    CurrentCompany::forget();
+
+    // A's click link counts in A only and goes to A's URL.
+    $this->get(MailingTokens::clickUrl($sent['a']['link']))->assertRedirect('https://a.example/las');
+    expect(CurrentCompany::run($this->a['company'], fn () => $sent['a']['mailing']->fresh()->clicks))->toBe(1)
+        ->and(CurrentCompany::run($this->b['company'], fn () => $sent['b']['mailing']->fresh()->clicks))->toBe(0);
+
+    // B's unsubscribe token touches B's person only, although both have the same address.
+    $token = MailingTokens::token($sent['b']['mailing']->id, $this->b['person']->id);
+    $this->post("/utskick/avregistrera/{$token}")->assertOk();
+    expect(CurrentCompany::run($this->b['company'], fn () => $this->b['person']->fresh()->marketing_opt_out_at))->not->toBeNull()
+        ->and(CurrentCompany::run($this->a['company'], fn () => $this->a['person']->fresh()->marketing_opt_out_at))->toBeNull();
+
+    // A webhook event for A's recipient id changes A only.
+    $this->postJson('/webhooks/utskick/mailgun', CrmMail::event(['event' => 'failed', 'severity' => 'permanent', 'recipient' => 'delad@kund.example', 'user-variables' => ['nonox_recipient' => $sent['a']['recipient']->id]]))->assertOk();
+    expect(CurrentCompany::run($this->a['company'], fn () => $this->a['person']->fresh()->email_bounced_at))->not->toBeNull()
+        ->and(CurrentCompany::run($this->b['company'], fn () => $this->b['person']->fresh()->email_bounced_at))->toBeNull();
+
+    // B's form token creates a lead in B only.
+    $form = $this->b['form'];
+    $this->post("/formular/{$form->token}", ['t' => PublicFormController::stamp($form, now()->getTimestamp() - 10), 'name' => 'Ny', 'email' => 'ny@lead.example'])->assertOk();
+    expect(CurrentCompany::run($this->b['company'], fn () => Person::query()->where('email', 'ny@lead.example')->exists()))->toBeTrue()
+        ->and(CurrentCompany::run($this->a['company'], fn () => Person::query()->where('email', 'ny@lead.example')->exists()))->toBeFalse();
 });

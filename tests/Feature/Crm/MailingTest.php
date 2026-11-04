@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Models\AuditLog;
+use App\Models\Customer;
+use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Actions\LinkPerson;
 use App\Modules\Crm\Actions\SaveMailing;
 use App\Modules\Crm\Actions\SavePerson;
@@ -10,23 +12,28 @@ use App\Modules\Crm\Actions\SaveSegment;
 use App\Modules\Crm\Actions\SendMailing;
 use App\Modules\Crm\Console\PruneMailCommand;
 use App\Modules\Crm\Domain\MailingAudience;
+use App\Modules\Crm\Domain\MarketingEligibility;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Livewire\MailingEditor;
 use App\Modules\Crm\Livewire\MailingsPage;
 use App\Modules\Crm\Livewire\SegmentsPage;
 use App\Modules\Crm\Mail\MailingMail;
+use App\Modules\Crm\Mail\MailingsPausedMail;
 use App\Modules\Crm\Models\Mailing;
-use App\Modules\Crm\Models\MailingClick;
 use App\Modules\Crm\Models\MailingLink;
 use App\Modules\Crm\Models\MailingRecipient;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Suppression;
+use App\Modules\Crm\Support\MailingPause;
+use App\Modules\Crm\Support\MailingRenderer;
 use App\Modules\Crm\Support\MailingTokens;
 use App\Modules\Crm\Support\SuppressionList;
+use App\Modules\ModuleManager;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
@@ -47,6 +54,7 @@ beforeEach(function () {
     $this->company->forceFill(['name' => 'Säljbolaget AB', 'legal_name' => 'Säljbolaget AB', 'email' => 'info@saljbolaget.example', 'address_line1' => 'Storgatan 1', 'postal_code' => '111 22', 'city' => 'Stockholm'])->save();
     $this->actingAs($this->owner);
     Crm::enable($this->company, $this->owner);
+    app(ModuleManager::class)->updateSettings('crm', $this->company, $this->owner, ['privacy_url' => 'https://saljbolaget.example/integritet']);
     Mail::fake();
 
     $people = [];
@@ -60,11 +68,11 @@ beforeEach(function () {
 
     $add('Aktiebolaget AB', ['org_number' => '556036-0793'], 'Berit B2B', ['email' => 'berit@ab.example']);
     $add('Okänd form', [], 'Olle Okänd', ['email' => 'olle@okand.example']);
-    $add('Samtycket', [], 'Sara Samtycke', ['email' => 'sara@privat.example', 'legal_basis' => 'CONSENT', 'consent_at' => '2026-05-01']);
+    $add('Samtycket', [], 'Sara Samtycke', ['email' => 'sara@privat.example', 'legal_basis' => 'CONSENT', 'consent_at' => '2026-05-01', 'marketing_consent_at' => '2026-05-01']);
     $add('Invänt AB', ['org_number' => '556036-0793'], 'Ivar Invänt', ['email' => 'ivar@ab.example', 'do_not_contact' => true, 'do_not_contact_reason' => 'OBJECTION']);
     $add('Utan adress AB', ['org_number' => '556036-0793'], 'Ada Adresslös', []);
     $add('Dubbel AB', ['org_number' => '556036-0793'], 'Dubbel Berit', ['email' => 'BERIT@ab.example']);
-    $privat = Crm::customer($this->company, $this->owner, 'Kalle Kund', ['kind' => 'PERSON']);
+    $privat = Crm::customer($this->company, $this->owner, 'Kalle Kund', ['kind' => 'PERSON', 'email' => 'kalle@privat.example']);
     $account = Crm::accountFor($privat);
     $account->forceFill(['tags' => ['nyhetsbrev'], 'kind' => 'PERSON'])->save();
     $kalle = Crm::person($this->company, $this->owner, 'Kalle Kund', ['email' => 'kalle@privat.example', 'legal_basis' => 'AGREEMENT']);
@@ -91,6 +99,40 @@ it('counts who may get the mailing and why the others may not', function () {
     // The customer exception lets an existing private customer in; never someone who is not a customer.
     $this->mailing->customer_exception = true;
     expect(collect(MailingAudience::for($this->mailing)['recipients'])->pluck('email')->sort()->values()->all())->toBe(['berit@ab.example', 'kalle@privat.example', 'sara@privat.example']);
+});
+
+it('needs a dated consent to e-mail marketing, not only the CRM legal basis consent', function () {
+    $this->people['Sara Samtycke']->forceFill(['marketing_consent_at' => null])->save();
+
+    expect(collect(MailingAudience::for($this->mailing)['recipients'])->pluck('email')->all())->toBe(['berit@ab.example']);
+});
+
+it('applies the customer exception only to the customer\'s own address or a person marked for it', function () {
+    $this->mailing->customer_exception = true;
+    $privat = Customer::query()->where('name', 'Kalle Kund')->sole();
+    $privat->forceFill(['email' => 'annan@privat.example'])->save();
+
+    expect(collect(MailingAudience::for($this->mailing)['recipients'])->pluck('email')->all())->not->toContain('kalle@privat.example');
+
+    $this->people['Kalle Kund']->forceFill(['customer_exception_at' => '2026-03-01'])->save();
+    expect(collect(MailingAudience::for($this->mailing)['recipients'])->pluck('email')->all())->toContain('kalle@privat.example');
+});
+
+it('counts an enkelt bolag (group 6) as needing consent', function () {
+    expect(MarketingEligibility::isLegalPerson('COMPANY', '556036-0793'))->toBeTrue()
+        ->and(MarketingEligibility::isLegalPerson('COMPANY', '612345-6789'))->toBeFalse()
+        ->and(MarketingEligibility::isLegalPerson('PERSON', '556036-0793'))->toBeFalse();
+});
+
+it('shows images as their alt text and refuses merge fields in link addresses', function () {
+    $mailing = app(SaveMailing::class)($this->owner, $this->company, ['name' => 'Bild', 'subject' => 'X', 'body' => "Hej\n\n![Vår nya lokal](https://bilder.example/lokal.jpg)", 'segment_id' => $this->segment->id]);
+    $html = MailingRenderer::html($mailing, $this->company, [], null);
+
+    expect($html)->not->toContain('<img')->and($html)->not->toContain('bilder.example')->and($html)->toContain('Vår nya lokal');
+
+    foreach (['[x](https://a.example/?n={namn})', '![x](https://a.example/{förnamn}.png)', "[x][1]\n\n[1]: https://a.example/{namn}", '<https://a.example/{namn}>'] as $body) {
+        expect(fn () => app(SaveMailing::class)($this->owner, $this->company, ['name' => 'Fel', 'subject' => 'X', 'body' => $body]))->toThrow(ValidationException::class, 'Fält som {namn} kan inte stå i en länkadress.');
+    }
 });
 
 it('leaves out the unsubscribed, the bounced, the suppressed and restricted customers', function () {
@@ -121,7 +163,6 @@ it('sends to each recipient with the sender\'s identity, one-click unsubscribe a
 
         return $mail->hasTo('berit@ab.example')
             && $mail->envelope()->from->address === 'noreply@nonox.example'
-            && $mail->envelope()->from->name === 'Säljbolaget AB'
             && $mail->envelope()->replyTo[0]->address === 'info@saljbolaget.example'
             && $mail->mailSubject === 'Nyheter för Berit'
             && str_starts_with($headers['List-Unsubscribe'], '<'.url('/utskick/avregistrera/'))
@@ -130,6 +171,9 @@ it('sends to each recipient with the sender\'s identity, one-click unsubscribe a
             && ! str_contains($mail->htmlBody, '<img')
             && ! str_contains($mail->htmlBody, 'href="https://saljbolaget.example/nyheter"')
             && str_contains($mail->htmlBody, '/utskick/lank/')
+            && ! str_contains($mail->htmlBody, MailingTokens::token($this->mailing->id, $this->people['Berit B2B']->id).'/')
+            && str_contains($mail->htmlBody, 'Så behandlar vi personuppgifter: https://saljbolaget.example/integritet')
+            && $mail->envelope()->from->name === 'Säljbolaget AB via NONOX'
             && str_contains($mail->htmlBody, 'Storgatan 1')
             && str_contains($mail->htmlBody, 'Avregistrera dig från utskicken')
             && str_contains($mail->plain, 'Avregistrera dig från utskicken: '.url('/utskick/avregistrera/'));
@@ -192,7 +236,7 @@ it('skips someone who unsubscribed after the mailing started, and cancels what i
 it('unsubscribes on POST only, marks the person for mailings only and puts the address on the suppression list, without a cookie', function () {
     app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
     $recipient = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
-    $token = MailingTokens::token($recipient->id);
+    $token = MailingTokens::token($recipient->mailing_id, (int) $recipient->person_id);
 
     $page = $this->get("/utskick/avregistrera/{$token}")->assertOk()->assertSee('Ja, avregistrera mig');
     expect($page->headers->getCookies())->toBe([]);
@@ -227,26 +271,26 @@ it('keeps an unsubscribe when a later objection is withdrawn', function () {
         ->and(SuppressionList::marketingBlocked(['berit@ab.example']))->toBe(['berit@ab.example' => true]);
 });
 
-it('counts a click through the recipient\'s own link and redirects only to the stored URL', function () {
+it('counts clicks per link through a link that names no recipient, and redirects only to the stored URL', function () {
     app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
-    $recipient = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
-    $token = MailingTokens::token($recipient->id);
     [$first, $second] = MailingLink::query()->orderBy('position')->get()->all();
+    $url = MailingTokens::clickUrl($first);
 
-    $response = $this->get(MailingTokens::clickUrl($token, $first))->assertRedirect('https://saljbolaget.example/nyheter');
+    // The same address for everyone who got the mailing.
+    Mail::assertSent(MailingMail::class, fn (MailingMail $mail): bool => str_contains($mail->htmlBody, e($url)));
+    expect(Mail::sent(MailingMail::class)->count())->toBe(2);
+
+    $response = $this->get($url)->assertRedirect('https://saljbolaget.example/nyheter');
     expect($response->headers->getCookies())->toBe([]);
-    $this->get(MailingTokens::clickUrl($token, $first))->assertRedirect();
-    $this->get(MailingTokens::clickUrl($token, $second))->assertRedirect('https://saljbolaget.example/pris');
+    $this->get($url)->assertRedirect();
+    $this->get(MailingTokens::clickUrl($second))->assertRedirect('https://saljbolaget.example/pris');
 
-    expect($first->fresh()->only(['clicks', 'unique_clicks']))->toBe(['clicks' => 2, 'unique_clicks' => 1])
-        ->and($this->mailing->fresh()->unique_clicks)->toBe(1);
+    expect($first->fresh()->clicks)->toBe(2)
+        ->and($this->mailing->fresh()->clicks)->toBe(3)
+        ->and(Schema::hasColumn('crm_mailing_recipients', 'clicked_at'))->toBeFalse()
+        ->and(Schema::hasTable('crm_mailing_clicks'))->toBeFalse();
 
-    $this->get("/utskick/lank/{$token}/{$first->id}?s=fel")->assertNotFound();
-
-    $other = app(SaveMailing::class)($this->owner, $this->company, ['name' => 'Annat', 'subject' => 'X', 'body' => '[x](https://annan.example)', 'segment_id' => $this->segment->id]);
-    app(SendMailing::class)->start($this->owner, $this->company, $other);
-    $foreignLink = MailingLink::query()->where('mailing_id', $other->id)->sole();
-    $this->get(MailingTokens::clickUrl($token, $foreignLink))->assertNotFound();
+    $this->get("/utskick/lank/{$first->id}/".str_repeat('0', 32))->assertNotFound();
 });
 
 it('records delivery, a permanent bounce and a complaint from Mailgun\'s signed events', function () {
@@ -272,24 +316,65 @@ it('records delivery, a permanent bounce and a complaint from Mailgun\'s signed 
     expect($this->people['Sara Samtycke']->fresh()->email_bounced_at)->toBeNull();
 });
 
-it('removes recipients\' addresses after 90 days and click marks after 13 months, and the unsubscribe link keeps working', function () {
+it('turns recipients into stubs after 90 days, whose unsubscribe link still works, and removes them after three years', function () {
     app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
     $recipient = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
-    $token = MailingTokens::token($recipient->id);
-    $this->get(MailingTokens::clickUrl($token, MailingLink::query()->orderBy('position')->first()))->assertRedirect();
+    $token = MailingTokens::token($recipient->mailing_id, (int) $recipient->person_id);
 
     $this->travel(91)->days();
     $this->artisan(PruneMailCommand::class)->assertSuccessful();
-    expect(MailingRecipient::query()->whereNotNull('email')->count())->toBe(0)->and(MailingRecipient::query()->count())->toBe(2);
-
-    $this->travel(13)->months();
-    $this->artisan(PruneMailCommand::class)->assertSuccessful();
-    expect(MailingClick::query()->count())->toBe(0)
-        ->and(MailingRecipient::query()->whereNotNull('clicked_at')->count())->toBe(0)
-        ->and($this->mailing->fresh()->only(['sent_count', 'unique_clicks']))->toBe(['sent_count' => 2, 'unique_clicks' => 1]);
+    $stub = $recipient->fresh();
+    expect($stub->only(['email', 'person_id', 'account_id']))->toBe(['email' => null, 'person_id' => null, 'account_id' => null])
+        ->and($stub->email_hash)->toBe(SuppressionList::emailHash('berit@ab.example'))
+        ->and($this->mailing->fresh()->sent_count)->toBe(2);
 
     $this->post("/utskick/avregistrera/{$token}")->assertOk()->assertSee('Du är avregistrerad');
-    expect($this->people['Berit B2B']->fresh()->marketing_opt_out_at)->not->toBeNull();
+    expect(SuppressionList::marketingBlocked(['berit@ab.example']))->toBe(['berit@ab.example' => true]);
+
+    $this->travel(3)->years();
+    $this->artisan(PruneMailCommand::class)->assertSuccessful();
+    expect(MailingRecipient::query()->count())->toBe(0)->and($this->mailing->fresh()->sent_count)->toBe(2);
+});
+
+it('forgets the address on the mailing rows when the person is erased', function () {
+    app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
+    app(EraseCrmData::class)->person($this->owner, $this->company, $this->people['Berit B2B']->fresh());
+
+    expect(MailingRecipient::query()->where('email', 'berit@ab.example')->exists())->toBeFalse();
+});
+
+it('pauses the mailings when complaints pass 0.3 percent, tells the owner, and resumes on request', function () {
+    app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
+    $berit = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
+
+    $this->postJson('/webhooks/utskick/mailgun', CrmMail::event(['event' => 'complained', 'recipient' => 'berit@ab.example', 'user-variables' => ['nonox_recipient' => $berit->id]]))->assertOk();
+
+    expect(MailingPause::pausedAt($this->company))->not->toBeNull()
+        ->and($this->mailing->fresh()->complaint_count)->toBe(1);
+    Mail::assertSent(MailingsPausedMail::class, fn ($mail): bool => $mail->hasTo($this->owner->email));
+
+    $next = app(SaveMailing::class)($this->owner, $this->company, ['name' => 'Juli', 'subject' => 'X', 'body' => 'Y', 'segment_id' => $this->segment->id]);
+    expect(fn () => app(SendMailing::class)->start($this->owner, $this->company, $next))->toThrow(ValidationException::class, 'pausade');
+
+    Livewire::test(MailingsPage::class)->assertSee('Utskicken är pausade')->call('resume')->assertDispatched('toast');
+    expect(MailingPause::pausedAt($this->company))->toBeNull();
+});
+
+it('refuses mailings and template mail on the hosted service until the CRM mailer is configured', function () {
+    config(['app.landing.hosted' => true, 'services.crm.smtp.host' => null, 'services.crm.mailer' => null]);
+
+    expect(fn () => app(SendMailing::class)->start($this->owner, $this->company, $this->mailing))->toThrow(ValidationException::class, 'egen avsändardomän');
+    Livewire::test(MailingsPage::class)->assertSee('egen avsändardomän');
+
+    config(['services.crm.mailer' => 'array', 'services.crm.mail_from' => 'utskick@utskick.nonox.example']);
+    app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
+    Mail::assertSent(MailingMail::class, fn (MailingMail $mail): bool => $mail->envelope()->from->address === 'utskick@utskick.nonox.example');
+});
+
+it('requires the company\'s privacy policy link before a mailing starts', function () {
+    app(ModuleManager::class)->updateSettings('crm', $this->company, $this->owner, ['privacy_url' => null]);
+
+    expect(fn () => app(SendMailing::class)->start($this->owner, $this->company, $this->mailing))->toThrow(ValidationException::class, 'integritetspolicy');
 });
 
 it('keeps a mailing cancelled during sending cancelled, and names the segment\'s company in {företag}', function () {
@@ -312,9 +397,7 @@ it('keeps a mailing cancelled during sending cancelled, and names the segment\'s
 
 it('accepts a click link signed under a previous APP_KEY', function () {
     app(SendMailing::class)->start($this->owner, $this->company, $this->mailing);
-    $recipient = MailingRecipient::query()->where('email', 'berit@ab.example')->sole();
-    $token = MailingTokens::token($recipient->id);
-    $url = MailingTokens::clickUrl($token, MailingLink::query()->orderBy('position')->first());
+    $url = MailingTokens::clickUrl(MailingLink::query()->orderBy('position')->first());
 
     config(['app.previous_keys' => [config('app.key')], 'app.key' => 'base64:'.base64_encode(random_bytes(32))]);
     $this->get($url)->assertRedirect('https://saljbolaget.example/nyheter');

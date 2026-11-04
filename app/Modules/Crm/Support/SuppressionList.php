@@ -52,6 +52,20 @@ final class SuppressionList
         }
     }
 
+    /** The keyed hash of an address under the current key: what a mailing recipient's stub keeps (ADR-048). */
+    public static function emailHash(string $email): ?string
+    {
+        return array_key_first(self::hashes(self::currentKey(), $email));
+    }
+
+    /** An unsubscribe through a recipient stub that kept only the hash of the address. */
+    public static function suppressMarketingHash(string $hash): void
+    {
+        if (preg_match('/^[0-9a-f]{64}$/', $hash) === 1) {
+            self::store($hash, 'EMAIL', self::MARKETING);
+        }
+    }
+
     /** No more mailings to this address (an unsubscribe or a complaint); other contact is unaffected. */
     public static function suppressMarketing(string $email): void
     {

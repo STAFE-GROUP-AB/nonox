@@ -13,8 +13,9 @@ namespace App\Modules\Crm\Domain;
  * - HELD: sent by us to someone marked Kontakta inte (an objection). A
  *   contact activity is not logged for them (stage 1), so it waits in
  *   "Ej kopplade" with that reason, to be logged as a note or removed.
- * - RESTRICTED: the person's processing is restricted (art. 18): the
- *   e-mail is stored only, on no timeline.
+ * - RESTRICTED: the person's or customer's processing is restricted
+ *   (art. 18). Only a decision: such mail is dropped and audited, never
+ *   stored (second review round).
  */
 enum EmailStatus: string
 {

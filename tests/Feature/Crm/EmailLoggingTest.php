@@ -155,13 +155,14 @@ it('logs a mail from someone who objected, but holds a mail we sent them, which 
         ->and(Activity::query()->where('type', 'EMAIL')->sole()->subject)->toBe('← Sluta ringa');
 });
 
-it('only stores a mail about a person whose processing is restricted', function () {
+it('never stores a mail about a person whose processing is restricted', function () {
     app(SavePerson::class)($this->owner, $this->company, ['name' => 'Anna Andersson', 'email' => 'anna@kontorshuset.example', 'legal_basis' => 'LEGITIMATE_INTEREST', 'do_not_contact' => true, 'do_not_contact_reason' => 'RESTRICTION'], $this->person);
 
     crmLog(CrmMail::raw($this->owner->email, ['anna@kontorshuset.example'], 'Begränsad', 'Text'), $this->address);
 
-    expect(Email::query()->sole()->status->value)->toBe('RESTRICTED')
-        ->and(Activity::query()->count())->toBe(0);
+    expect(Email::query()->count())->toBe(0)
+        ->and(Activity::query()->count())->toBe(0)
+        ->and(AuditLog::query()->where('action', 'crm.email_dropped')->sole()->payload['reason'])->toBe('restricted');
     Livewire::test(EmailsPage::class)->assertDontSee('Begränsad');
 });
 
@@ -173,6 +174,14 @@ it('erases a person\'s logged e-mail with the person', function () {
 
     expect(Email::query()->count())->toBe(0)
         ->and(Activity::query()->sole()->only(['subject', 'body', 'email_id']))->toBe(['subject' => 'Anonymiserad aktivitet', 'body' => null, 'email_id' => null]);
+});
+
+it('shows waiting mail in full only to those who may handle it', function () {
+    crmLog(CrmMail::raw($this->owner->email, ['ny@okand.example'], 'Väntande hemlighet', 'Hemlig text'), $this->address);
+    $waiting = Email::query()->sole();
+
+    $this->actingAs(Bookkeeping::member($this->company, 'auditor'));
+    $this->get(route('crm.emails', ['visa' => $waiting->id]))->assertOk()->assertDontSee('Hemlig text');
 });
 
 it('shows the address, the waiting mail and a logged mail in full on the page', function () {

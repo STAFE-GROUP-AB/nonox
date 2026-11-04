@@ -1,4 +1,12 @@
 <div class="space-y-6">
+    @if($notice)
+        <div class="rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-900 ring-1 ring-accent-200" role="status" data-testid="crm-mailing-notice">
+            <p>{{ $notice }}</p>
+            @if($paused)
+                <button type="button" class="mt-2 min-h-11 font-medium underline" wire:click="resume" wire:confirm="{{ __('Återuppta utskicken? Gör det bara när orsaken är åtgärdad. Upprepas det pausas utskicken igen.') }}">{{ __('Återuppta utskicken') }}</button>
+            @endif
+        </div>
+    @endif
     <x-ui.card>
         <div class="flex flex-wrap items-center gap-3">
             <x-button type="button" wire:click="create" wire:loading.attr="disabled">{{ __('Nytt utskick') }}</x-button>
@@ -14,7 +22,7 @@
                             <th scope="col" class="py-2 pe-4 font-medium">{{ __('Utskick') }}</th>
                             <th scope="col" class="py-2 pe-4 font-medium">{{ __('Status') }}</th>
                             <th scope="col" class="py-2 pe-4 text-right font-medium">{{ __('Skickade') }}</th>
-                            <th scope="col" class="py-2 pe-4 text-right font-medium">{{ __('Klickade') }}</th>
+                            <th scope="col" class="py-2 pe-4 text-right font-medium">{{ __('Klick') }}</th>
                             <th scope="col" class="py-2 text-right font-medium">{{ __('Avregistrerade') }}</th>
                         </tr>
                     </thead>
@@ -27,7 +35,7 @@
                                 </td>
                                 <td class="py-3 pe-4">{{ $mailing->status->label() }}@if($mailing->scheduled_at && $mailing->status === App\Modules\Crm\Domain\MailingStatus::Scheduled)<span class="block text-gray-600">{{ $mailing->scheduled_at->setTimezone('Europe/Stockholm')->translatedFormat('j M Y H:i') }}</span>@endif</td>
                                 <td class="py-3 pe-4 text-right tabular-nums">{{ $mailing->sent_count }} / {{ $mailing->recipient_count }}</td>
-                                <td class="py-3 pe-4 text-right tabular-nums">{{ $mailing->unique_clicks }}</td>
+                                <td class="py-3 pe-4 text-right tabular-nums">{{ $mailing->clicks }}</td>
                                 <td class="py-3 text-right tabular-nums">{{ $mailing->unsubscribed_count }}</td>
                             </tr>
                         @endforeach

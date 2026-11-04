@@ -109,7 +109,7 @@ final class LogInboundEmail
         });
     }
 
-    private function store(Company $company, User $sender, LoggedMail $mail, Channel $channel, string $sha256): Email
+    private function store(Company $company, User $sender, LoggedMail $mail, Channel $channel, string $sha256): ?Email
     {
         $own = $this->ownAddresses($company);
         $original = $mail->forwarded ?? $mail;
@@ -119,6 +119,13 @@ final class LogInboundEmail
 
         $matches = EmailMatches::find($other);
         $status = $matches->status($direction);
+
+        // Restricted processing (art. 18) of a matched person or customer: nothing new is stored about them.
+        if ($status === EmailStatus::Restricted) {
+            Audit::record('crm.email_dropped', null, ['reason' => 'restricted', 'channel' => $channel->value, 'sha256' => $sha256], $company, $sender);
+
+            return null;
+        }
 
         return DB::transaction(function () use ($company, $sender, $mail, $original, $channel, $sha256, $direction, $other, $matches, $status): Email {
             $email = Email::create([

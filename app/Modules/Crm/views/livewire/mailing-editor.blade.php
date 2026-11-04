@@ -9,6 +9,10 @@
         <x-ui.badge :tone="$draft ? 'neutral' : 'accent'">{{ $mailing->status->label() }}</x-ui.badge>
     </div>
 
+    @if($notice)
+        <div class="rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-900 ring-1 ring-accent-200" role="status">{{ $notice }}</div>
+    @endif
+
     @if($draft)
         @if(! $hasAddress)
             <div class="rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-900 ring-1 ring-accent-200" role="status">{{ __('Varje utskick ska visa företagets postadress. Fyll i adress, postnummer och ort under Företagsinställningar innan du skickar.') }}</div>
@@ -99,7 +103,7 @@
                     __('Skickade') => $mailing->sent_count,
                     __('Levererade') => $mailing->delivered_count,
                     __('Studsade') => $mailing->bounced_count,
-                    __('Klickade') => $mailing->unique_clicks,
+                    __('Klick') => $mailing->clicks,
                     __('Avregistrerade') => $mailing->unsubscribed_count,
                 ] as $label => $count)
                     <div class="rounded-2xl bg-stone-50 p-4 ring-1 ring-stone-200">
@@ -114,17 +118,17 @@
                 @elseif($mailing->started_at)
                     {{ __('Började skickas :time.', ['time' => $mailing->started_at->setTimezone($zone)->translatedFormat('j M Y H:i')]) }}
                 @endif
-                {{ __('Levererade och studsade räknas när e-posttjänsten rapporterar dem. Öppningar mäts inte.') }}
+                {{ __('Levererade och studsade räknas när e-posttjänsten rapporterar dem.') }} {{ __('Klick räknas per länk. NONOX vet inte vem som klickade, och öppningar mäts inte.') }}
             </p>
             @if($mailing->failed_count > 0)
                 <p class="mt-2 text-sm font-medium text-accent-700">{{ __(':count meddelanden kunde inte skickas.', ['count' => $mailing->failed_count]) }}</p>
             @endif
-            @if(in_array($mailing->status, [App\Modules\Crm\Domain\MailingStatus::Scheduled, App\Modules\Crm\Domain\MailingStatus::Sending], true))
+            @if(in_array($mailing->status, [App\Modules\Crm\Domain\MailingStatus::Preparing, App\Modules\Crm\Domain\MailingStatus::Scheduled, App\Modules\Crm\Domain\MailingStatus::Sending], true))
                 <button type="button" class="mt-4 min-h-11 text-sm font-medium text-accent-700 underline" wire:click="cancel" wire:confirm="{{ __('Avbryta utskicket? Det som inte har skickats än skickas inte.') }}">{{ __('Avbryt utskicket') }}</button>
             @endif
         </x-ui.card>
 
-        <x-ui.card :title="__('Klick per länk')" :description="__('Hur många gånger varje länk har klickats, och av hur många mottagare. Aldrig vem.')">
+        <x-ui.card :title="__('Klick per länk')" :description="__('Klick räknas per länk. NONOX vet inte vem som klickade, och öppningar mäts inte.')">
             @if($links->isEmpty())
                 <p class="mt-3 text-sm text-gray-600">{{ __('Utskicket har inga länkar.') }}</p>
             @else
@@ -133,16 +137,14 @@
                         <thead>
                             <tr class="border-b border-gray-200 text-left text-gray-600">
                                 <th scope="col" class="py-2 pe-4 font-medium">{{ __('Länk') }}</th>
-                                <th scope="col" class="py-2 pe-4 text-right font-medium">{{ __('Klick') }}</th>
-                                <th scope="col" class="py-2 text-right font-medium">{{ __('Mottagare som klickade') }}</th>
+                                <th scope="col" class="py-2 text-right font-medium">{{ __('Klick') }}</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @foreach($links as $link)
                                 <tr wire:key="link-{{ $link->id }}">
                                     <td class="max-w-md break-all py-2 pe-4">{{ $link->url }}</td>
-                                    <td class="py-2 pe-4 text-right tabular-nums">{{ $link->clicks }}</td>
-                                    <td class="py-2 text-right tabular-nums">{{ $link->unique_clicks }}</td>
+                                    <td class="py-2 text-right tabular-nums">{{ $link->clicks }}</td>
                                 </tr>
                             @endforeach
                         </tbody>

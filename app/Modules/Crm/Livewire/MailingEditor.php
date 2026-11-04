@@ -130,6 +130,7 @@ class MailingEditor extends Component
             'exclusions' => MarketingExclusion::cases(),
             'fields' => MergeFields::help(),
             'hasAddress' => MailingRenderer::hasPostalAddress($this->company()),
+            'notice' => MailingsPage::notice($this->company()),
         ]);
     }
 

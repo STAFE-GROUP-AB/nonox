@@ -46,13 +46,13 @@ Mejlet loggas som en aktivitet av typen **E-post** på kunden.
 
 ## Avsändare och svar
 
-Mejlet skickas från NONOX med ert företags namn som avsändare. Svaret går till din egen e-postadress (svarsadress), och mejlet säger själv vem som skickade det. NONOX skickar aldrig i ert företags domän, eftersom tjänsten bara kan intyga att mejl från sin egen domän är äkta. Kör ni NONOX själva används er egen e-postinställning.
+Mejlet skickas från NONOX avsändardomän för CRM, med "ert företag via NONOX" som avsändare. Svaret går till din egen e-postadress (svarsadress), och mejlet säger själv vem som skickade det och att mottagaren kan svara om den inte vill få fler erbjudanden. NONOX skickar aldrig i ert företags domän, eftersom tjänsten bara kan intyga att mejl från sin egen domän är äkta. Kör ni NONOX själva används er egen e-postinställning. I NONOX molntjänst är mejl med mall av tills avsändardomänen för CRM är på plats; sidan säger det.
 
 ## Bra att veta
 
 - Ingen kan mejla en person som är märkt **Kontakta inte**, en adress på spärrlistan eller en kund med begränsad behandling.
-- Har mottagaren **avregistrerat sig från utskick** måste du kryssa i att mejlet inte är marknadsföring, till exempel ett svar om en order.
-- Är mottagaren en privatperson och mejlet marknadsföring krävs samtycke, eller att personen redan är kund (marknadsföringslagen 19 §).
+- Har mottagaren **avregistrerat sig från utskick**, eller saknar NONOX grund för e-postreklam till personen (en privatperson eller enskild firma utan samtycke), måste du kryssa i **Mejlet är inte reklam** (till exempel ett svar på en fråga, en offert kunden bett om eller information om en order).
+- E-postreklam till en privatperson kräver samtycke (marknadsföringslagen 19 §), utom till en befintlig kund när reklamen gäller era egna liknande varor eller tjänster, ni fick adressen vid försäljningen och personen fick tacka nej då och kan göra det i varje utskick.
 - Ett testföretag loggar mejlet men skickar det aldrig.
 
 ## Läs också

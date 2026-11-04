@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Modules\Crm\Actions\SavePerson;
+use App\Modules\Crm\Actions\UnsubscribePerson;
 use App\Modules\Crm\Domain\AccountFigures;
 use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\ActivityType;
@@ -123,6 +124,13 @@ class PersonCard extends Component
 
         $this->closePanel();
         $this->toast($flag ? __(':name är märkt Kontakta inte.', ['name' => $person->name]) : __(':name kan kontaktas igen.', ['name' => $person->name]));
+    }
+
+    /** Avregistrera från utskick: no more mailings, other contact still allowed (ADR-048). */
+    public function unsubscribeFromMailings(UnsubscribePerson $unsubscribe): void
+    {
+        $unsubscribe($this->user(), $this->company(), $this->person());
+        $this->toast(__('Personen får inga fler utskick.'));
     }
 
     /** Mejla med mall: always to this person, logged at their (first) company. */

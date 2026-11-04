@@ -1,5 +1,5 @@
 ---
-beskrivning: Nyhetsbrev till ett segment av kontaktpersoner, med avregistrering i varje mejl och statistik över klick. Öppningar mäts inte.
+beskrivning: Nyhetsbrev till ett segment av kontaktpersoner, med avregistrering i varje mejl och klick per länk. Vem som klickar eller öppnar mäts inte.
 ordning: 46
 roller: [owner, admin]
 modul: crm
@@ -9,7 +9,7 @@ sokord: [utskick, nyhetsbrev, segment, målgrupp, e-postmarknadsföring, avregis
 
 # Utskick
 
-Ett utskick är ett nyhetsbrev till ett segment av era kontaktpersoner. NONOX visar innan du skickar vilka som får det och varför de andra inte får det, lägger ert företags uppgifter och en avregistreringslänk i varje mejl, och räknar klick på länkarna. Vem som öppnar mejlet mäts aldrig.
+Ett utskick är ett nyhetsbrev till ett segment av era kontaktpersoner. NONOX visar innan du skickar vilka som får det och varför de andra inte får det, lägger ert företags uppgifter och en avregistreringslänk i varje mejl, och räknar klick per länk. Vem som klickar eller öppnar mejlet vet NONOX inte.
 
 ![Ett skickat utskick med mottagare, levererade, studsade, klick och avregistreringar, och klick per länk.](/bilder/manual/crm/utskick.webp)
 
@@ -51,10 +51,10 @@ Den som avregistrerar sig efter att utskicket har börjat hoppas över.
 
 E-postreklam till en **fysisk person** kräver samtycke enligt marknadsföringslagen 19 §. NONOX räknar så här:
 
-- En kontaktperson med **samtycke** och ett datum får utskick.
-- En kontaktperson på ett **aktiebolag eller en annan juridisk person** får utskick med stöd av berättigat intresse. NONOX känner igen en juridisk person på organisationsnumret, så kunden behöver ha ett organisationsnummer.
+- En kontaktperson med **Samtycke till e-postreklam** och ett datum får utskick. Datumet sätts när personen kryssar i rutan för nyhetsbrev i ett [webbformulär](/manual/crm/webbformular), eller när du fyller i det på personen. Den vanliga rättsliga grunden "samtycke" räcker inte: den kan gälla bara att ni får kontakta personen.
+- En kontaktperson på ett **aktiebolag eller en annan juridisk person** får utskick med stöd av berättigat intresse. NONOX känner igen en juridisk person på organisationsnumret, så kunden behöver ha ett organisationsnummer. Ett enkelt bolag är inte en juridisk person.
 - En **privatperson** eller en **enskild firma** behöver samtycke. Det gäller också en kund utan organisationsnummer.
-- **Kundundantaget**: kryssa i rutan om utskicket går till befintliga kunder som är privatpersoner, ni fick adressen när de köpte, utskicket gäller era egna liknande produkter och de kunde säga nej när ni fick adressen. NONOX kan inte kontrollera det själv; det är ert ansvar att det stämmer.
+- **Kundundantaget**: kryssa i rutan om utskicket går till befintliga kunder som är privatpersoner, ni fick adressen när de köpte, utskicket gäller era egna liknande varor eller tjänster och de kunde säga nej när ni fick adressen. Undantaget gäller bara en person vars e-postadress är kundens adress i kundregistret, eller som är märkt **Kund, 19 § andra stycket** med ett datum på sin sida. Resten kan NONOX inte kontrollera; det är ert ansvar att det stämmer.
 
 > [!NOTE]
 > Reglerna är NONOX tolkning och är inte juridiskt granskade än. Är du osäker, fråga en jurist.
@@ -71,16 +71,22 @@ Den som markerar ett utskick som skräppost hanteras som en avregistrering.
 
 ## Statistik
 
-För varje utskick ser du **Mottagare**, **Skickade**, **Levererade**, **Studsade**, **Klickade** (antal mottagare som klickade) och **Avregistrerade**, och under **Klick per länk** hur många gånger varje länk har klickats. Statistiken visar aldrig vem som klickade, och öppningar mäts inte. Levererade och studsade räknas när e-posttjänsten rapporterar dem.
+För varje utskick ser du **Mottagare**, **Skickade**, **Levererade**, **Studsade**, **Klick** och **Avregistrerade**, och under **Klick per länk** hur många gånger varje länk har klickats. Klick räknas per länk. NONOX vet inte vem som klickade, och öppningar mäts inte: länkarna i utskicket är desamma för alla mottagare. Levererade och studsade räknas när e-posttjänsten rapporterar dem.
+
+## Automatisk paus
+
+Anmäler fler än 0,3 procent av mottagarna era utskick som skräppost, eller studsar fler än 5 procent av adresserna, räknat på de senaste 30 dagarna, pausas utskicken. Ägaren och administratörerna får ett mejl. Gå igenom segmenten och samtyckena, och välj sedan **Återuppta utskicken** under **CRM → Utskick**.
 
 En adress som studsar får inga fler utskick förrän den har ändrats.
 
 ## Bra att veta
 
-- Varje utskick visar ert företags namn, organisationsnummer, **postadress** och e-post. Fyll i adressen under **Företagsinställningar** innan du skickar.
-- Utskicket går från NONOX med ert företags namn som avsändare. Svaren går till ert företags e-postadress.
+- Varje utskick visar ert företags namn, organisationsnummer, **postadress** och e-post, och en länk till er integritetspolicy. Fyll i adressen under **Företagsinställningar** och **Länk till er integritetspolicy** under **CRM → Inställningar** innan du skickar.
+- Utskicket går från NONOX egen avsändardomän för utskick, med "ert företag via NONOX" som avsändare. Svaren går till ert företags e-postadress. I NONOX molntjänst är utskick av tills den domänen är på plats; sidan säger det.
+- En bild i texten visas som sin bildtext: ett utskick hämtar inga bilder utifrån. Fält som `{namn}` kan inte stå i en länkadress.
+- Ber någon att slippa utskick på annat sätt, välj **Avregistrera från utskick** på personens sida.
 - Stora utskick går ut i omgångar under några timmar.
-- Mottagarnas adresser i statistiken tas bort 90 dagar efter utskicket, och vilka som klickade efter 13 månader. Antalen finns kvar, och avregistreringslänken i ett gammalt utskick fungerar fortfarande.
+- Mottagarnas adresser tas bort 90 dagar efter utskicket; kvar finns bara en kontrollsumma som gör att avregistreringslänken fortfarande fungerar. Efter tre år tas också den bort. Antalen finns kvar.
 - Ett testföretag skickar aldrig något.
 
 ## Läs också

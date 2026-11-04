@@ -8,7 +8,7 @@ De här underbiträdena behandlar personuppgifter för {foretag} när vi driftar
 |---|---|---|
 | Vultr Holdings | Server och databas som tjänsten körs på, och krypterade säkerhetskopior | Stockholm, Sverige |
 | Laravel Holdings (Laravel Forge) | Administration av servern och driftsättning; har teknisk åtkomst till servern men lagrar inga uppgifter ur tjänsten | USA (EU–US Data Privacy Framework) |
-| Mailgun Technologies (EU-region) | Utskick av e-post: inloggningskoder, fakturor, påminnelser, lönebesked; mottagning av e-post till inkorgen (in.nonox.app) när modulen Inkorg är påslagen | EU |
+| Mailgun Technologies (EU-region) | Utskick av e-post: inloggningskoder, fakturor, påminnelser, lönebesked; mottagning av e-post till inkorgen (in.nonox.app) när modulen Inkorg är påslagen; CRM-utskick och mejlmallar (från en egen avsändardomän), mottagning till +crm-adressen och leveranshändelser (levererat, studs, klagomål) när modulen CRM är påslagen | EU |
 | Europeiska kommissionen (VIES) | Kontroll av momsregistreringsnummer, bara när du begär det | EU |
 | Bolagsverket | Hämtning av namn, adress och företagsform med ett organisationsnummer, bara när du begär det eller när du fyller i numret i ett tomt formulär. För en enskild firma är numret ägarens personnummer. Bolagsverket är en myndighet och källa, inte vårt underbiträde | Sverige |
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Crm\Support;
 
 use App\Models\Company;
+use App\Modules\Crm\CrmSettings;
 use App\Modules\Crm\Domain\MergeFields;
 use App\Modules\Crm\Models\Mailing;
 use App\Modules\Crm\Models\MailingLink;
@@ -86,10 +87,13 @@ final class MailingRenderer
      */
     public static function footer(Company $company): array
     {
+        $privacy = CrmSettings::privacyUrl($company);
+
         return array_values(array_filter([
             collect([$company->legal_name ?: $company->name, $company->org_number ? __('org.nr :number', ['number' => $company->org_number]) : null])->filter()->implode(', '),
             collect([$company->address_line1, trim(($company->postal_code ?? '').' '.($company->city ?? ''))])->filter()->implode(', '),
             $company->email,
+            $privacy === null ? null : (string) __('Du kan när som helst invända och avregistrera dig. Så behandlar vi personuppgifter: :url', ['url' => $privacy]),
         ]));
     }
 
@@ -114,9 +118,34 @@ final class MailingRenderer
         return $map;
     }
 
+    /**
+     * Markdown to HTML, raw HTML stripped and unsafe links dropped. An image
+     * becomes its alt text: a mailing loads nothing from anywhere, since a
+     * remote image is as good as a tracking pixel (second review round).
+     */
     private static function markdown(string $markdown): string
     {
-        return Str::markdown($markdown, ['html_input' => 'strip', 'allow_unsafe_links' => false]);
+        $html = Str::markdown($markdown, ['html_input' => 'strip', 'allow_unsafe_links' => false]);
+
+        return (string) preg_replace_callback('/<img\b[^>]*>/i', function (array $match): string {
+            preg_match('/\balt="([^"]*)"/i', $match[0], $alt);
+
+            return $alt[1] ?? '';
+        }, $html);
+    }
+
+    /**
+     * A merge field inside a link's or an image's address: refused when the
+     * mailing is saved, since the address would differ per recipient (and
+     * could identify them) or break.
+     */
+    public static function fieldInAddress(string $markdown): bool
+    {
+        $inline = preg_match('/\]\(\s*<?[^)\s>]*\{[^}]*\}/u', $markdown) === 1;
+        $reference = preg_match('/^\s{0,3}\[[^\]]+\]:\s*<?\S*\{[^}]*\}/mu', $markdown) === 1;
+        $auto = preg_match('/<https?:[^>]*\{[^}]*\}[^>]*>/iu', $markdown) === 1;
+
+        return $inline || $reference || $auto;
     }
 
     /** A merge value is text, never Markdown: a name cannot become a link. */

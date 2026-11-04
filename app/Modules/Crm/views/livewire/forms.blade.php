@@ -2,7 +2,11 @@
 
 <div class="space-y-6">
     @if($open)
-        <x-ui.card :title="$editingId ? __('Ändra formulär') : __('Nytt formulär')" :description="__('Namn, e-post och en ruta för samtycke finns alltid med. Välj vilka fält som också ska visas.')">
+        <x-ui.card :title="$editingId ? __('Ändra formulär') : __('Nytt formulär')" :description="__('Namn och e-post finns alltid med, och en rad om att uppgifterna används för att svara på förfrågan, med länk till er integritetspolicy. Välj vilka fält som också ska visas.')">
+            @if(! $privacyUrl)
+                <p class="mt-4 rounded-2xl bg-accent-50 px-4 py-3 text-sm text-accent-900 ring-1 ring-accent-200" role="status">{{ __('Fyll i Länk till er integritetspolicy under CRM → Inställningar innan formuläret kan sparas.') }}</p>
+            @endif
+            @error('form.privacy_url')<p class="mt-2 text-sm font-medium text-accent-700" role="alert">{{ $message }}</p>@enderror
             <form wire:submit="save" class="mt-4 grid gap-4 sm:grid-cols-2">
                 <x-ui.field for="form_name" :label="__('Rubrik')" error="form.name" class="sm:col-span-2">
                     <input id="form_name" type="text" class="{{ $input }} mt-1" wire:model="form.name" maxlength="100">
@@ -18,11 +22,8 @@
                     </x-ui.field>
                 @endforeach
 
-                <x-ui.field for="form_consent" :label="__('Samtyckestext')" error="form.consent_text" class="sm:col-span-2" :hint="__('Visas bredvid rutan som den som fyller i måste kryssa i. Skriv vad ni gör med uppgifterna, till exempel om ni skickar nyhetsbrev. Ändrar ni texten får den en ny version, och varje anmälan sparar texten den godkände.')">
+                <x-ui.field for="form_consent" :label="__('Text vid rutan för nyhetsbrev')" error="form.consent_text" class="sm:col-span-2" :hint="__('Rutan är frivillig och inte ikryssad. Bara den som kryssar i den får utskick med stöd av samtycke. Ändrar ni texten får den en ny version, och varje anmälan sparar texten och om rutan var ikryssad.')">
                     <textarea id="form_consent" rows="3" class="{{ $input }} mt-1" wire:model="form.consent_text"></textarea>
-                </x-ui.field>
-                <x-ui.field for="form_privacy" :label="__('Länk till er integritetspolicy')" error="form.privacy_url" class="sm:col-span-2">
-                    <input id="form_privacy" type="url" class="{{ $input }} mt-1" wire:model="form.privacy_url" placeholder="https://">
                 </x-ui.field>
                 <x-ui.field for="form_thanks" :label="__('Tack-text (frivilligt)')" error="form.thank_you" class="sm:col-span-2">
                     <textarea id="form_thanks" rows="2" class="{{ $input }} mt-1" wire:model="form.thank_you"></textarea>
@@ -63,7 +64,7 @@
                         <div class="flex flex-wrap items-center gap-3">
                             <span class="min-w-0 flex-1 basis-60">
                                 <span class="block font-medium text-gray-900">{{ $item->name }} @unless($item->is_active)<x-ui.badge class="ms-1">{{ __('Stängt') }}</x-ui.badge>@endunless</span>
-                                <span class="block text-sm text-gray-600">{{ trans_choice(':count anmälan|:count anmälningar', $item->submission_count, ['count' => $item->submission_count]) }} · {{ __('samtyckestext version :version', ['version' => $item->consent_version]) }}</span>
+                                <span class="block text-sm text-gray-600">{{ trans_choice(':count anmälan|:count anmälningar', $item->submission_count, ['count' => $item->submission_count]) }} · {{ __('texten för nyhetsbrev version :version', ['version' => $item->consent_version]) }}</span>
                             </span>
                             <span class="flex gap-4 text-sm">
                                 <a href="{{ $url }}" target="_blank" rel="noopener" class="inline-flex min-h-11 items-center font-medium text-accent-600 hover:text-accent-700">{{ __('Öppna') }}</a>

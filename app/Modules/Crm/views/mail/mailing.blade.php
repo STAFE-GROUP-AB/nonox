@@ -8,7 +8,6 @@
     <title>{{ $subject }}</title>
     <style>
         .crm-mailing-body a { color: {{ $brand->color }}; }
-        .crm-mailing-body img { max-width: 100%; height: auto; }
         @media (max-width: 620px) { .crm-mailing-card { padding: 20px 16px !important; } }
     </style>
 </head>

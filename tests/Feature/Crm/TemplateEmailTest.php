@@ -36,7 +36,7 @@ beforeEach(function () {
     $this->company->forceFill(['name' => 'Säljbolaget AB', 'legal_name' => 'Säljbolaget AB'])->save();
     $this->actingAs($this->owner);
     Crm::enable($this->company, $this->owner);
-    $this->account = Crm::prospect($this->company, $this->owner, 'Kontorshuset AB');
+    $this->account = Crm::prospect($this->company, $this->owner, 'Kontorshuset AB', ['org_number' => '556036-0793']);
     $this->person = Crm::person($this->company, $this->owner, 'Anna Maria Andersson', ['email' => 'anna@kontorshuset.example']);
     app(LinkPerson::class)($this->owner, $this->company, $this->account, $this->person, PersonRole::DecisionMaker);
     $this->template = app(SaveEmailTemplate::class)($this->owner, $this->company, ['name' => 'Uppföljning', 'subject' => 'Tack för mötet, {förnamn}', 'body' => "Hej {förnamn} på {företag}!\n\n{okänt} fält blir kvar.\n\n{säljare}\n{mitt_företag}"]);
@@ -52,12 +52,13 @@ it('sends a template with the merge fields filled in, from the service with the 
 
         return $mail->hasTo('anna@kontorshuset.example')
             && $envelope->from->address === 'noreply@nonox.example'
-            && $envelope->from->name === 'Säljbolaget AB'
+            && $envelope->from->name === 'Säljbolaget AB via NONOX'
             && $envelope->replyTo[0]->address === $this->owner->email
             && $envelope->subject === 'Tack för mötet, Anna'
             && str_contains($mail->text, 'Hej Anna på Kontorshuset AB!')
             && str_contains($mail->text, '{okänt} fält blir kvar.')
             && str_contains($mail->text, $this->owner->name)
+            && str_contains(view('crm::mail.message-text', ['text' => '', 'companyName' => 'Säljbolaget AB', 'replyToName' => 'X', 'replyToEmail' => 'x@y'])->render(), 'svara på mejlet så slutar vi')
             && $headers['X-Mailgun-Track'] === 'no';
     });
 
@@ -86,9 +87,27 @@ it('needs a confirmation that the mail is not marketing when the person unsubscr
     $this->person->forceFill(['marketing_opt_out_at' => now()])->save();
     $send = fn (array $extra = []) => app(SendTemplateEmail::class)($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $this->person->id, 'subject' => 'Om er order', 'body' => 'Text', ...$extra]);
 
-    expect(fn () => $send())->toThrow(ValidationException::class, 'inte är marknadsföring');
+    expect(fn () => $send())->toThrow(ValidationException::class, 'inte är reklam');
     $send(['not_marketing' => true]);
     Mail::assertSentCount(1);
+});
+
+it('needs the not-advertising confirmation for someone without a ground for e-mail marketing', function () {
+    $privat = Crm::prospect($this->company, $this->owner, 'Privatkund', ['kind' => 'PERSON']);
+    $person = Crm::person($this->company, $this->owner, 'Pelle Privat', ['email' => 'pelle@privat.example']);
+    app(LinkPerson::class)($this->owner, $this->company, $privat, $person, PersonRole::Other);
+    $send = fn (array $extra = []) => app(SendTemplateEmail::class)($this->owner, $this->company, ['account_id' => $privat->id, 'person_id' => $person->id, 'subject' => 'Offert', 'body' => 'Text', ...$extra]);
+
+    expect(fn () => $send())->toThrow(ValidationException::class, 'inte samtyckt till e-postreklam');
+    $send(['not_marketing' => true]);
+    Mail::assertSentCount(1);
+});
+
+it('is off on the hosted service until the CRM mailer is configured', function () {
+    config(['app.landing.hosted' => true, 'services.crm.smtp.host' => null, 'services.crm.mailer' => null]);
+
+    expect(fn () => app(SendTemplateEmail::class)($this->owner, $this->company, ['account_id' => $this->account->id, 'person_id' => $this->person->id, 'subject' => 'Hej', 'body' => 'Text']))->toThrow(ValidationException::class, 'egen avsändardomän');
+    Mail::assertNothingSent();
 });
 
 it('logs but never sends for a test company, and is crm:manage only', function () {

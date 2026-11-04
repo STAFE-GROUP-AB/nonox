@@ -89,7 +89,6 @@ use App\Modules\Crm\Models\FormSubmission as CrmFormSubmission;
 use App\Modules\Crm\Models\Goal as CrmGoal;
 use App\Modules\Crm\Models\LossReason as CrmLossReason;
 use App\Modules\Crm\Models\Mailing as CrmMailing;
-use App\Modules\Crm\Models\MailingClick as CrmMailingClick;
 use App\Modules\Crm\Models\MailingLink as CrmMailingLink;
 use App\Modules\Crm\Models\MailingRecipient as CrmMailingRecipient;
 use App\Modules\Crm\Models\Person as CrmPerson;
@@ -323,7 +322,6 @@ const COMPANY_SCOPED_MODELS = [
     CrmMailing::class => ['name' => 'Hemligt utskick', 'subject' => 'Hemligt ämne', 'body' => 'Hemlig text'],
     CrmMailingLink::class => 'crmMailingLinkAttributes',
     CrmMailingRecipient::class => 'crmMailingRecipientAttributes',
-    CrmMailingClick::class => 'crmMailingClickAttributes',
     CrmForm::class => 'crmFormAttributes',
     CrmFormSubmission::class => 'crmFormSubmissionAttributes',
     PosConnection::class => 'posConnectionAttributes',
@@ -1268,13 +1266,6 @@ function crmMailingLinkAttributes(): array
 function crmMailingRecipientAttributes(): array
 {
     return ['mailing_id' => CrmMailing::create(['name' => 'Hemligt utskick', 'subject' => 'X', 'body' => 'Y'])->id, 'email' => 'hemlig@mottagare.example', 'token_hash' => hash('sha256', Str::random(40))];
-}
-
-function crmMailingClickAttributes(): array
-{
-    $link = CrmMailingLink::create(crmMailingLinkAttributes());
-
-    return ['link_id' => $link->id, 'recipient_id' => CrmMailingRecipient::create([...crmMailingRecipientAttributes(), 'mailing_id' => $link->mailing_id])->id];
 }
 
 function crmFormAttributes(): array

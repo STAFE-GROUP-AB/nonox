@@ -14,6 +14,7 @@ use App\Modules\Crm\Models\AccountPerson;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Email;
+use App\Modules\Crm\Models\MailingRecipient;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\SuppressionList;
 use App\Support\Audit\Audit;
@@ -52,6 +53,8 @@ final class EraseCrmData
 
             // A logged e-mail about the person goes with them: its body and addresses are personal data (ADR-048).
             Email::query()->whereIn('id', Activity::query()->where('person_id', $person->id)->whereNotNull('email_id')->select('email_id'))->delete();
+            // Mailings sent to them keep no address (the row's person link goes with the person).
+            MailingRecipient::query()->where('person_id', $person->id)->update(['email' => null, 'updated_at' => now()]);
 
             $activities = Activity::query()->where('person_id', $person->id)->update([
                 'person_id' => null,
@@ -97,6 +100,7 @@ final class EraseCrmData
         DB::transaction(fn () => CurrentCompany::run($company, function () use ($user, $company, $account): void {
             Account::query()->where('parent_id', $account->id)->update(['parent_id' => null]);
             Email::query()->whereIn('id', Activity::query()->where('account_id', $account->id)->whereNotNull('email_id')->select('email_id'))->delete();
+            MailingRecipient::query()->where('account_id', $account->id)->update(['email' => null, 'updated_at' => now()]);
             // The deals, their history and the activities go with the account (foreign keys, cascade).
             $account->delete();
 
@@ -135,6 +139,7 @@ final class EraseCrmData
             }
 
             AccountPerson::query()->where('account_id', $account->id)->delete();
+            MailingRecipient::query()->where('account_id', $account->id)->update(['email' => null, 'updated_at' => now()]);
             Email::query()->whereIn('id', Activity::query()->where('account_id', $account->id)->whereNotNull('email_id')->select('email_id'))->delete();
             $activities = Activity::query()->where('account_id', $account->id)->update([
                 'person_id' => null,

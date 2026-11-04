@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * A mailing (utskick) to a segment (ADR-048): Markdown rendered with the
  * company's look, sent in batches through the queue, with clicks counted
- * through redirect links and never opens.
+ * per link through redirect links that name no recipient, and never opens.
  *
  * @property int $id
  * @property int $company_id
@@ -34,7 +34,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $failed_count
  * @property int $bounced_count
  * @property int $delivered_count
- * @property int $unique_clicks
+ * @property int $clicks clicks on the mailing's links; never per recipient
+ * @property int $complaint_count spam complaints reported by the mailbox providers
  * @property int $unsubscribed_count
  * @property ?array<string, int> $excluded
  * @property ?CarbonImmutable $created_at

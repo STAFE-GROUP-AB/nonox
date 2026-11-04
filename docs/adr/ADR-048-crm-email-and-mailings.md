@@ -73,8 +73,10 @@ off.
   underlag).
 - **Kontakta inte (stage 1 rules applied):**
   - a matched person with a **restriction** (art. 18), or a matched
-    customer with restricted processing: status RESTRICTED, stored only,
-    on no timeline, not shown;
+    customer with restricted processing: the mail is **not stored at all**,
+    dropped and audited with the reason `restricted` (second review round;
+    storing new data about a restricted person is not "storage" of what
+    was already kept);
   - an **objection** (art. 21): mail *from* the person is their contact
     with us and is logged; mail *to* them is contact by us, so it is not
     logged as an e-mail but HELD in "Ej kopplade", where it can only be
@@ -129,17 +131,21 @@ off.
   4. at least one segment account whose customer is not restricted,
      inactive or anonymised;
   5. a ground for e-mail marketing under marknadsföringslagen 19–20 §§:
-     consent with a date; or a contact at a **legal person** (account kind
-     Företag with an organisation number whose third digit is 2 or more:
-     19 § protects natural persons, so a B2B contact in their professional
-     role can be reached on legitimate interest, with the opt-out in every
-     message under 20 §); a sole trader is a natural person, and an
-     account without an organisation number cannot be shown to be a legal
-     person: both need consent; or the **customer exception** (19 § second
-     paragraph) when the composer's box is ticked: the person is at an
-     account that is a customer, and the sender confirms the address was
-     got at a sale, the mailing is about the company's own similar
-     products and the person could say no at collection;
+     a dated **consent to e-mail marketing** (`marketing_consent_at`,
+     second review round; the general CRM basis "consent" may cover only
+     being contacted); or a contact at a **legal person** (account kind
+     Företag with an organisation number whose third digit is 2 or more,
+     and not group 6, enkla bolag: 19 § protects natural persons, so a B2B
+     contact in their professional role can be reached on legitimate
+     interest, with the opt-out in every message under 20 §); a sole
+     trader is a natural person, and an account without an organisation
+     number cannot be shown to be a legal person: both need consent; or
+     the **customer exception** (19 § second paragraph) when the
+     composer's box is ticked, only for a person at a customer whose
+     address is the customer register's e-mail for that customer, or who
+     carries the dated mark "Kund, 19 § andra stycket"; the sender
+     confirms the mailing is about the company's own similar products and
+     the person could say no at collection;
   6. one message per address.
 - **Compose** in Markdown (league/commonmark through `Str::markdown`, raw
   HTML stripped, unsafe links dropped; merge values are escaped so a name
@@ -168,11 +174,16 @@ off.
   `X-Mailgun-Track`, `-Opens`, `-Clicks: no`, so Mailgun never adds a pixel
   or rewrites links even if tracking is on for the domain;
   `X-Mailgun-Variables` with the recipient id for the event webhook.
-- **Tokens.** A recipient's token is an HMAC of the recipient id with a key
-  derived from `APP_KEY`; only its SHA-256 is stored, so a database leak
-  gives no working link. A click link also carries an HMAC over the token
-  and the link id, and the redirect only ever goes to the URL stored for
-  that link of that recipient's mailing (no open redirect).
+- **Tokens and links** (second review round). A recipient's personal
+  token is an HMAC of the mailing id and the person id with a key derived
+  from `APP_KEY`; only its SHA-256 is stored, and it is used **only** for
+  unsubscribing (the link and `List-Unsubscribe`), never for statistics.
+  A **click link names no one**: `/utskick/lank/{link}/{sig}` with an HMAC
+  of the link id, the same address for every recipient, so a click
+  cannot be tied to a person (LEK 9 kap. 28 §, ePrivacy art. 5(3), EDPB
+  Guidelines 2/2023 on tracked URLs). The redirect only ever goes to the
+  URL stored for that link (no open redirect). Signatures are also checked
+  under keys from `APP_PREVIOUS_KEYS`.
 - **Public endpoints outside the web middleware** (no session, no cookie,
   no CSRF; a mail client's one-click POST cannot carry a token): a GET of
   the unsubscribe link only shows a page with one button (mail scanners
@@ -188,30 +199,42 @@ off.
   a Kontakta inte objection never removes a MARKETING entry. A new consent
   through a web form does not lift it either (see 4).
 - **Statistics** per mailing: recipients, sent, delivered and bounced
-  (from Mailgun's events), unique clickers, unsubscribed, and per link the
-  clicks and unique clickers. **Never per person**: who clicked is not
-  shown anywhere (it is kept per recipient only to count unique clicks,
-  and goes with the recipient row).
+  (from Mailgun's events), clicks, unsubscribed, and the clicks per link.
+  "Klick räknas per länk. NONOX vet inte vem som klickade, och öppningar
+  mäts inte." There is no per-recipient click data anywhere, the register
+  extract included.
 - **Events** (`POST /webhooks/utskick/mailgun`, JSON, Mailgun's signature
   with the same key, age and replay checks as the inbox): `delivered`;
   `failed` with severity `permanent` (a bounce: the recipient is BOUNCED
   and the person's address gets `email_bounced_at`, cleared when the
-  address changes); `complained` (handled as an unsubscribe). The event's
-  address must be the recipient's.
-- **Retention** (`crm:prune-mail`, daily): a recipient's address 90 days
-  after the mailing finished, the click marks after 13 months; the
-  mailing keeps its counts. The row stays as a stub (token hash, person
-  id, account id) so the unsubscribe link in any message keeps working
-  (marknadsföringslagen 20 §).
+  address changes); `complained` (handled as an unsubscribe and counted).
+  The event's address must be the recipient's.
+- **Automatic pause** (`MailingPause`): more than 0.3 % complaints or more
+  than 5 % hard bounces of the messages sent in the last 30 days pause the
+  company's mailings (no batch, no start). The owner and administrators
+  get an e-mail, the operator company (ADR-044) a note on the company's
+  account in its CRM. Someone with `crm:mailings` resumes on the
+  Utskick page; audited and noted for the operator.
+- **Retention** (`crm:prune-mail`, daily): 90 days after the mailing
+  finished, a recipient's address, person and account give way to the
+  suppression list's keyed hash of the address (`email_hash`): a stub that
+  keeps the unsubscribe link working (marknadsföringslagen 20 §) without
+  naming anyone. After three years the stub goes; the mailing keeps its
+  counts. Erasing a person (or a prospect, or anonymising a customer)
+  removes the address from their recipient rows at once.
 
 ### 4. Web forms
 
-- `crm_forms` (`crm:settings`): heading; name, e-mail and the consent box
-  always; phone, company, organisation number and message each off,
-  optional or required; the company's **own consent text** (versioned: a
-  changed text gets the next version) and an https link to its **own
-  privacy policy**; a thank-you text; the owner of new leads; tags; the
-  sites that may frame it; open or closed.
+- `crm_forms` (`crm:settings`): heading; name and e-mail always; phone,
+  company, organisation number and message each off, optional or
+  required; the text beside an **optional, unticked newsletter box**
+  (versioned: a changed text gets the next version); a thank-you text; the
+  owner of new leads; tags; the sites that may frame it; open or closed.
+  There is **no required consent box** (second review round): the form
+  says ":company använder uppgifterna för att svara på din förfrågan" and
+  links to the company's own privacy policy, a company-level CRM setting
+  ("Länk till er integritetspolicy") that must be set before a form can be
+  saved or a mailing sent.
 - **Public page** `/formular/{token}` (32 random characters), outside the
   web middleware: no session, no cookie, nothing loaded from elsewhere, a
   CSP with `default-src 'none'`, a nonce for the one inline script, and
@@ -227,23 +250,24 @@ off.
   and nothing is stored.
 - **A new address** gives a prospect (kind Företag with the company name
   and a valid legal person's organisation number, never a personal
-  number; else Privatperson), a contact person with legal basis **consent
-  dated today** and a note naming the form and the text version, and
-  `crm_form_submissions` with the consent text exactly as shown, its
-  version, the privacy link and the time (art. 7.1). Someone on the
-  suppression list for an objection is flagged Kontakta inte at once, as
-  in `SavePerson`.
-- **An address the CRM already has** gives no duplicate, and the person's
-  legal basis is **never changed** by a form (review round): anyone can
-  type anyone's address into one and there is no double opt-in in this
-  stage, so a form neither replaces a documented basis nor lifts an
-  unsubscribe, an objection or a restriction. The submission is kept as
-  evidence; a person may change the basis by hand.
-- Either way a TASK "Webbformulär: …" for the form's owner (else the
-  company's owner), due the next morning at 09:00, with the message and the
-  phone, and an e-mail to that person naming only the form. A form with
-  submissions can only be closed, never deleted: the submissions are the
-  proof of consent.
+  number; else Privatperson) and a contact person. Without the box:
+  legitimate interest, "Kontaktförfrågan via webbformuläret …", and no
+  e-mail marketing unless another ground applies. With the box ticked:
+  consent dated today and `marketing_consent_at`. `crm_form_submissions`
+  keeps the box's text and version, whether it was ticked, the privacy
+  link and the time (art. 7.1). Someone on the suppression list for an
+  objection is flagged Kontakta inte at once, as in `SavePerson`.
+- **An address the CRM already has** gives no duplicate; the person's
+  legal basis and pruning clock are **never changed** (anyone can type
+  anyone's address, no double opt-in). A ticked box sets
+  `marketing_consent_at` unless the person unsubscribed, objected or is
+  restricted. For a person marked Kontakta inte only the submission is
+  kept: no task, nothing on their timeline.
+- Otherwise a TASK "Webbformulär: …" for the form's owner (else the
+  company's owner), due the next morning at 09:00, with the message and
+  the phone, and an e-mail to that person naming only the form. A form
+  with submissions can only be closed, never deleted: the submissions are
+  the proof of consent.
 
 ### Permissions
 
@@ -286,35 +310,108 @@ An independent review of the first version found, and this round fixed:
 - Click links failed after an `APP_KEY` rotation; signatures are also
   checked under keys derived from `APP_PREVIOUS_KEYS`.
 
+## Second review round (2026-11-04)
+
+The coordinator's review of the first version; every finding was checked
+in the code and fixed:
+
+1. **Clicks identify no one**: links carry no recipient token; counts per
+   link and per mailing only; the per-recipient click table and columns
+   are dropped (see 3).
+2. **No remote images**: a Markdown image is shown as its alt text, and a
+   merge field inside a link or image address is refused when the mailing
+   is saved ("Fält som {namn} kan inte stå i en länkadress.").
+3. **Web form consent** reworked (see 4), with `marketing_consent_at` on
+   the person, settable in the person form, which MarketingEligibility now
+   requires for consent-based recipients instead of the general CRM legal
+   basis "consent".
+4. **Erasure** removes the address from the person's (or prospect's or
+   anonymised customer's) recipient rows in the same transaction.
+5. **Restricted** persons and customers: logged mail is dropped, not
+   stored.
+6. **"Mejla med mall"** footer: "… Vill du inte få fler erbjudanden från
+   oss, svara på mejlet så slutar vi."; when MarketingEligibility says
+   NeedsConsent the sender must tick "Mejlet är inte reklam (till exempel
+   ett svar på en fråga, en offert kunden bett om eller information om en
+   order)"; the panel states every condition of the customer exception.
+7. **Customer exception** applies only to a person whose address is the
+   customer register's e-mail for that customer, or who carries the dated
+   mark "Kund, 19 § andra stycket" (person form); the composer box stays
+   as the confirmation.
+8. **A mailer of its own** (`CrmMailer`): `NONOX_CRM_SMTP_*` defines the
+   mailer `crm` (or `NONOX_CRM_MAILER` names one), `NONOX_CRM_MAIL_FROM`
+   the From address on a domain of its own such as `utskick.nonox.app`;
+   the display name is ":company via NONOX". On the hosted service
+   (`NONOX_HOSTED`) mailings and template mail are off until it is
+   configured, with a message in the UI; self-hosted falls back to the
+   default mailer. Automatic pause on complaints and bounces (see 3).
+9. **Legal texts** updated: the DPA (purposes, categories of data subjects
+   and data), the sub-processor list (Mailgun's CRM purposes), the terms
+   (the customer's responsibility for marketing law, NONOX may pause
+   mailings), the art. 14 template in the manual, and the mailing footer
+   ("Du kan när som helst invända och avregistrera dig. Så behandlar vi
+   personuppgifter: …"). The legal page version is bumped once at the
+   final merge.
+
+Also: an existing address's form submission leaves `last_activity_at`
+alone; stubs instead of rows (see 3); "Avregistrera från utskick" on the
+person page (`UnsubscribePerson`: the unsubscribe without Kontakta inte);
+`isLegalPerson` excludes group 6 (enkla bolag); starting a mailing only
+counts, and `PrepareMailing` writes the recipients in bulk on the queue
+(new status Förbereds); the composer counts with one query of plain rows
+(`MarketingCandidates`), and each batch re-checks its recipients with one
+query; tenancy tests for every public endpoint; `?visa=` of waiting mail
+needs `crm:manage`; the event webhook allows 6 000 requests a minute.
+
 ## What a company can and cannot do (deliverability)
 
-- In the cloud mail goes through NONOX's Mailgun domain: SPF and DKIM pass
-  for that domain, and From is that domain with the company's name. A
-  company **cannot** send mailings from its own domain in the cloud in
-  this stage; replies go to the company (mailings) or the sender (template
-  mail) through Reply-To.
-- Self-hosted NONOX uses its own `MAIL_*` configuration; the operator is
-  responsible for SPF, DKIM and DMARC for the From it configures.
-- Hourly and daily caps per company, and the per-hour `MailQuota` for
-  template mail, protect the sending domain's reputation.
+- On the hosted service CRM mail goes through its own Mailgun domain
+  (for example `utskick.nonox.app`), separate from the domain that sends
+  invoices, login codes and reminders, so a complaint about one company's
+  newsletter cannot hurt the service's transactional mail. From is that
+  domain with ":company via NONOX" as the name; replies go to the company
+  (mailings) or the sender (template mail) through Reply-To. A company
+  cannot send from its own domain in the cloud in this stage.
+- NONOX sends over SMTP (no Mailgun API transport is installed), so the
+  `X-Mailgun-Track*` and `X-Mailgun-Variables` headers are read by Mailgun
+  as sending options. With an API transport they would have to be set as
+  the API's options (`o:tracking`, `v:` variables) instead.
+- Self-hosted NONOX uses its own `MAIL_*` configuration (or the
+  `NONOX_CRM_*` mailer); the operator is responsible for SPF, DKIM and
+  DMARC for the From it configures.
+- Self-hosted logging over IMAP trusts the topmost Authentication-Results
+  header, or the one with `NONOX_INBOX_IMAP_AUTHSERV_ID`: the company's
+  mail server must add one, or every message to `+crm` is dropped as
+  unauthenticated (ADR-023).
+- Hourly and daily caps per company, the automatic pause, and the per-hour
+  `MailQuota` for template mail protect the sending domain's reputation.
 
 ## Owner actions needed (hosted)
 
-1. **Inbound for +crm**: nothing new if the inbox route is in place
-   (`docs/inkorg-installation.md`): the existing Mailgun route that
-   forwards `.*@in.nonox.app` to `/webhooks/inkorg/mailgun/mime` already
-   carries `{slug}+crm@in.nonox.app`. Check that the route's filter is a
-   catch-all for the domain, not a list of addresses.
-2. **Events**: Mailgun → Sending → Webhooks for the sending domain: add
+1. **A sending domain for CRM mail**: in Mailgun (EU) add a domain such as
+   `utskick.nonox.app`; add the DNS records Mailgun gives (SPF `TXT`, the
+   DKIM `TXT`, the `CNAME` for tracking can be skipped since tracking is
+   off) and a DMARC record (`_dmarc.utskick.nonox.app TXT "v=DMARC1;
+   p=quarantine; rua=…"`); verify the domain.
+2. **SMTP credentials** for that domain (Mailgun → Domain settings → SMTP
+   credentials), then set `NONOX_CRM_SMTP_HOST=smtp.eu.mailgun.org`,
+   `NONOX_CRM_SMTP_PORT=587`, `NONOX_CRM_SMTP_USERNAME`,
+   `NONOX_CRM_SMTP_PASSWORD`, `NONOX_CRM_SMTP_SCHEME=smtp` and
+   `NONOX_CRM_MAIL_FROM=utskick@utskick.nonox.app`. Until then mailings and
+   template mail stay off on nonox.app.
+3. **Tracking off** for that domain (open and click tracking; the messages
+   also say so per message).
+4. **Events**: Mailgun → Sending → Webhooks for that domain: add
    `https://nonox.app/webhooks/utskick/mailgun` for **Delivered**,
    **Permanent failure** and **Spam complaints**. The signing key is the
-   existing `MAILGUN_WEBHOOK_SIGNING_KEY`.
-3. **Tracking off**: confirm open and click tracking are off for the
-   sending domain (the per-message headers switch them off either way).
-4. **Scheduler and queue**: `crm:send-mailings` runs every minute and
-   `crm:prune-mail` daily at 04:50 through the existing scheduler; mailing
-   batches run on the queue worker.
-5. Optionally tune `NONOX_CRM_MAILING_HOURLY_CAP` and
+   account's HTTP webhook signing key, the existing
+   `MAILGUN_WEBHOOK_SIGNING_KEY`.
+5. **Inbound for +crm**: nothing new, as long as the inbox route is a
+   catch-all `.*@in.nonox.app` forwarding to `/webhooks/inkorg/mailgun/mime`.
+6. **Scheduler and queue**: `crm:send-mailings` every minute and
+   `crm:prune-mail` at 04:50 through the scheduler; `PrepareMailing` and
+   the batches run on the queue worker.
+7. Optionally tune `NONOX_CRM_MAILING_HOURLY_CAP` and
    `NONOX_CRM_MAILING_DAILY_CAP`.
 
 ## Deviations from the brief, with reasons
@@ -336,12 +433,11 @@ An independent review of the first version found, and this round fixed:
 - The customer exception's conditions that NONOX cannot check (address got
   "in connection with a sale", "own similar products"); left to the person
   who ticks the box.
-- Whether per-recipient click counting through redirect links falls under
-  LEK 9 kap. 28 § / ePrivacy art. 5(3) (EDPB Guidelines 2/2023 mention
-  tracked URLs); NONOX stores nothing on the recipient's device (no cookie
-  on the redirect) and never shows clicks per person.
+- Whether counting clicks per link (no recipient in the link) is outside
+  LEK 9 kap. 28 § / ePrivacy 5(3); NONOX stores nothing on the device and
+  can tie no click to anyone.
 - Retention: 30 days for unhandled logged mail, 90 days for recipients'
-  addresses, 13 months for recipient rows, and whether a logged e-mail
+  addresses, three years for recipient stubs, and whether a logged e-mail
   should follow the activity's or the person's retention.
 - Whether consent through a web form without double opt-in is provable
   enough (art. 7.1), and the template consent text.
@@ -352,9 +448,14 @@ An independent review of the first version found, and this round fixed:
 
 - New tables: `crm_emails`, `crm_email_templates`, `crm_segments`,
   `crm_mailings`, `crm_mailing_links`, `crm_mailing_recipients`,
-  `crm_mailing_clicks`, `crm_forms`, `crm_form_submissions`; new columns
+  `crm_forms`, `crm_form_submissions` (`crm_mailing_clicks` was dropped in
+  the second review round); new columns
   `crm_mailing_recipients.account_id` (review round),
   `crm_people.marketing_opt_out_at`, `email_bounced_at`,
   `crm_activities.email_id`. All company-scoped with tenancy tests.
 - The inbox routes one more alias; its own behaviour is unchanged.
+- New columns in the second round: `crm_people.marketing_consent_at`,
+  `customer_exception_at`, `crm_form_submissions.marketing_consent`,
+  `crm_mailing_recipients.email_hash`, `complained_at`,
+  `crm_mailings.clicks`, `complaint_count`.
 - No new package.
