@@ -16,6 +16,8 @@
             </x-slot:cta>
         @endif
 
+        <p class="text-sm text-gray-600">{{ __('Nästa räkenskapsår skapas automatiskt 30 dagar innan det senaste året slutar, om det är ett vanligt år på tolv månader. Bokslutet och de ingående balanserna gör du själv, som tidigare.') }}</p>
+
         <ul class="divide-y divide-gray-100">
             @foreach($fiscalYears as $fiscalYear)
                 <li wire:key="fiscal-year-{{ $fiscalYear->id }}" class="py-4">

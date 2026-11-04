@@ -2,7 +2,7 @@
 beskrivning: Räkenskapsåren i NONOX – ett kortare eller längre första år, nästa år, balanser som förs över vid årsskiftet och SIE-fil per år.
 ordning: 120
 rutter: [accounting.fiscalYears]
-sokord: [räkenskapsår, bokföringsår, brutet räkenskapsår, första räkenskapsåret, förlängt räkenskapsår, förkortat räkenskapsår, kalenderår, enskild firma, årsskifte, nytt år, ingående balans]
+sokord: [räkenskapsår, automatiskt nytt år, bokföringsår, brutet räkenskapsår, första räkenskapsåret, förlängt räkenskapsår, förkortat räkenskapsår, kalenderår, enskild firma, årsskifte, nytt år, ingående balans]
 ---
 
 # Räkenskapsår
@@ -38,12 +38,29 @@ Reglerna i NONOX:
 > [!IMPORTANT]
 > Ändra datumen innan du börjar bokföra, så att inga verifikationer hamnar utanför året. Reglerna följer bokföringslagen 3 kap.: när bokföringsskyldigheten börjar eller räkenskapsåret läggs om får året vara kortare än tolv månader eller förlängas till högst arton. En jurist har ännu inte granskat hur NONOX tillämpar reglerna.
 
-## Så här skapar du nästa räkenskapsår
+## Nästa räkenskapsår skapas automatiskt
+
+NONOX skapar nästa räkenskapsår av sig själv 30 dagar innan det senaste året slutar. Det nya året börjar dagen efter att det senaste slutar, är tolv månader och börjar i den månad som ditt räkenskapsår börjar. Det gäller även när ditt första år var kortare eller längre än tolv månader. Åren kan därför aldrig överlappa eller lämna ett glapp, och du kan fakturera och bokföra på årets första dag utan att göra något.
+
+Ägaren, administratörer och redovisningskonsulter får en notis: "Räkenskapsåret … är skapat. Det förra året stängs fortfarande i bokslutet." Samma sak står under **Att göra** på Översikt tills det nya året börjar.
+
+Skulle du bokföra, fakturera eller registrera en betalning med ett datum i nästa år innan det har skapats, skapas året direkt, så länge datumet ligger högst 30 dagar fram i tiden. Ett datum längre fram, eller i ett år längre bort, går inte att bokföra förrän året finns.
+
+Det här görs **inte** automatiskt:
+
+- Det gamla året stängs inte. Bokslutet gör du som tidigare under **Bokföring → Bokslut**.
+- Balanserna förs inte över. Tills du gör det har det nya året inga ingående balanser, och rapporterna för det nya året visar bara årets egna verifikationer.
+- Räkenskapsåret läggs aldrig om. Ska ett år bli kortare eller längre än tolv månader, eller börja i en annan månad, är det ditt beslut, och för de flesta företag krävs Skatteverkets tillstånd (bokföringslagen 3 kap. 6 §). Har du ändrat den månad räkenskapsåret börjar i företagsinställningarna, eller har en enskild firma ännu brutet år, skapar NONOX inget år automatiskt.
+
+> [!NOTE]
+> I behandlingshistoriken står det att året skapades automatiskt och om det var morgonkörningen eller en bokföring som gjorde det. En jurist har ännu inte granskat att året får skapas i förväg.
+
+## Så här skapar du nästa räkenskapsår själv
 
 1. Gå till **Bokföring → Räkenskapsår**.
 2. Välj **Skapa nästa räkenskapsår**.
 
-Det nya året börjar dagen efter att det senaste slutar och är tolv månader. Åren kan därför aldrig överlappa eller lämna ett glapp. Du behöver ett nytt år innan du kan bokföra något med ett datum efter det gamla årets slut.
+Det nya året börjar dagen efter att det senaste slutar och är tolv månader. Finns redan ett år som inte har börjat säger NONOX det, i stället för att skapa året efter det.
 
 En enskild firma som har brutet räkenskapsår sedan tidigare får en varning på sidan. De år som redan finns ändras inte. Nästa år som skapas slutar den 31 december, så att firman går över till kalenderår. Året efter det är ett helt kalenderår.
 

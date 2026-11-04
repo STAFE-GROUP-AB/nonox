@@ -31,7 +31,13 @@ class FiscalYears extends Component
 
     public function createNext(CreateNextFiscalYear $createNextFiscalYear): void
     {
-        $fiscalYear = $createNextFiscalYear($this->user(), $this->company());
+        try {
+            $fiscalYear = $createNextFiscalYear($this->user(), $this->company());
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
 
         $this->toast(__('Räkenskapsåret :label är skapat.', ['label' => $fiscalYear->label()]));
     }

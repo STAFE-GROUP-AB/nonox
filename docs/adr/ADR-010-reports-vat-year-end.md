@@ -444,3 +444,85 @@ Enligt granskning 2026-11-02, juristgranskning återstår (BS-AUD-BOK-12, #93).
   factual sentence per pair and the comment.
 - TODO(legal-verify): whether every pair in the overview needs a comment or
   only the latest year against the one before.
+
+## Automatic next fiscal year (2026-11-04)
+
+**Problem.** The next fiscal year was only created by hand (Räkenskapsår →
+Skapa nästa räkenskapsår, or by carrying balances forward). On the first day
+of a new year, issuing an invoice under fakturametoden, registering a payment
+or posting any voucher dated in the new year was refused ("Det finns inget
+räkenskapsår som omfattar …") until someone created it.
+
+**Rules relied on** (SFS 1999:1078, read on riksdagen.se 2026-11-04):
+
+- 3 kap. 1 §: "Ett räkenskapsår ska omfatta tolv kalendermånader." Natural
+  persons (and some partnerships) "ska ha kalenderåret som räkenskapsår".
+- 3 kap. 3 §: "När bokföringsskyldigheten inträder eller räkenskapsåret läggs
+  om, får räkenskapsåret omfatta kortare tid än tolv månader eller utsträckas
+  att omfatta högst arton månader."
+- 3 kap. 6 §: "Räkenskapsår får läggas om endast om Skatteverket ger tillstånd
+  till det." No permission is needed to move from a broken year to the
+  calendar year, or to a common year within a group (4 §, 5 § första stycket).
+  4 § and 5 § are about several businesses and groups using the same year,
+  not about permission.
+- 5 kap. 11 § and BFNAR 2013:2: systemdokumentation and behandlingshistorik
+  must show how the system works and how each entry was processed.
+
+**Decision.**
+
+- `CreateNextFiscalYear` gets two automatic entry points beside the manual
+  `__invoke`:
+  - `dueFor(Company, today)`, run by `fiscal-years:create-next` daily at
+    05:35 for every non-archived company: creates the next year when the
+    latest one ends within `DAYS_AHEAD` (30) days, or has ended and today
+    still falls in the year that follows. A company whose latest year ended
+    more than a year ago is left alone.
+  - `covering(Company, date, today, user)`, called by `SaveDraftVoucher` (the
+    single path every system and manual booking takes, via `BookVoucher`)
+    when no year covers the date: creates the year right after the latest one
+    only if the date falls in it and is at most 30 days after today.
+    Otherwise the existing refusal stands. It runs inside the caller's
+    transaction, so a booking that fails also rolls the year back.
+- Both create only an **ordinary** year: twelve months, the day after the
+  latest year's last day, starting in `fiscal_year_start_month` (January for
+  `EF`). If `FiscalYearRules::nextYear` would give anything else (a sole
+  trader still on a broken year, or a start month changed in the settings),
+  nothing is created automatically: a change of fiscal year (omläggning) is a
+  decision for the user and usually needs Skatteverket's permission (3 kap.
+  6 §).
+- Nothing else happens automatically: the old year is not closed, no opening
+  balances are carried forward, no period is locked and no voucher, counter
+  or hash is changed. Voucher number counters for the new year are created at
+  the first posting per series, exactly as for a manually created year, so
+  numbering starts at 1. Until balances are carried forward the new year has
+  no opening balances; reports for it show only its own vouchers.
+  `CarryForwardBalances` reuses the automatically created year.
+- Audit: `fiscal_year.created` with `via: automatic` and `trigger: schedule`
+  (no user: nobody did it) or `trigger: booking` (the user whose booking
+  caused it). Manual creation has no `via`. Ids and dates only.
+- Notice: `App\Notifications\FiscalYearCreated` (database only) to the owner
+  and every role with `fiscal-years:manage`, at most once per person and
+  year; and an "Att göra" item on Översikt (`CompanyTasks`) while the new year
+  has not begun and the previous one is open. Derived from the data, so it
+  cannot repeat.
+- The manual button stays. If the latest year has not begun yet, it says the
+  year already exists instead of creating the year after it.
+
+**Concurrency.** Every creation of a fiscal year (manual, scheduled, booking,
+`CarryForwardBalances`) takes `pg_advisory_xact_lock(4202, company_id)` and
+reads the latest year under it; the unique index `(company_id, start_date)`
+backs it up. Lock order for a booking: the caller's own locks (an invoice, a
+number series), then the advisory lock, then PostVoucher's fiscal year →
+company (FOR KEY SHARE) → counter. Inserting the year takes the same FOR KEY
+SHARE on the company row that every insert with a company foreign key takes.
+A wait cycle would need a transaction that holds the company row FOR UPDATE
+(period lock, year closing, SIE import, new accrual) and then books into the
+missing next year; none does. Should one appear, PostgreSQL detects the
+deadlock and rolls one transaction back; it is never silent. Tested with
+sequential calls (two bookings in the new year create one year and number
+B1, B2).
+
+TODO(legal-verify): that creating the next year in advance, before the
+previous one is closed, is consistent with BFL 3 kap. (we believe so: the
+year is only a period, nothing is booked in it in advance), and that a
+booking up to 30 days ahead may create the following year.

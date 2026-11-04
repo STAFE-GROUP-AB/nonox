@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-nasta-rakenskapsar-automatiskt",
+      "datum": "2026-11-04T12:00:00+01:00",
+      "rubrik": "Nästa räkenskapsår skapas automatiskt",
+      "beskrivning": "NONOX skapar nästa räkenskapsår 30 dagar innan det senaste slutar, så att du kan fakturera och bokföra på årets första dag. Det blir alltid ett vanligt år på tolv månader, och ägaren och redovisningskonsulterna får en notis. Bokslutet och överföringen av balanser gör du själv som tidigare.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-04-crm-prospektera-sok-och-segment",
       "datum": "2026-11-04T11:00:00+01:00",
       "rubrik": "Sök på namn i företagsregistret och tydligare segment",
