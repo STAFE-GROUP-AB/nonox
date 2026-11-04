@@ -185,6 +185,9 @@ return [
     // Unset: derived from APP_KEY. Old hashes still match under APP_KEY and APP_PREVIOUS_KEYS.
     'crm' => [
         'suppression_key' => env('NONOX_CRM_SUPPRESSION_KEY'),
+        // Mailings (ADR-048): the most a company sends per hour and per day, so a large segment goes out over time.
+        'mailing_hourly_cap' => (int) env('NONOX_CRM_MAILING_HOURLY_CAP', 500),
+        'mailing_daily_cap' => (int) env('NONOX_CRM_MAILING_DAILY_CAP', 2000),
     ],
 
     // Google Chrome for the manual's screenshots (manual:screenshots), on a developer's computer.

@@ -89,6 +89,14 @@ Följande gallras aldrig:
 - ett prospekt som har blivit kund, eftersom det finns i kundregistret,
 - en person som är **Fakturamottagare** hos en kund, eftersom namnet kan stå på fakturorna.
 
+## Mejl, utskick och webbformulär
+
+- **Loggade mejl**: bara texten sparas, krypterad, och bilagor sparas inte. Ett mejl till en person som är märkt Kontakta inte loggas bara som anteckning; för en person med begränsad behandling sparas mejlet utan att visas. Mejlen finns med i registerutdraget och raderas med personen. Det som väntar under Ej kopplade tas bort efter 30 dagar.
+- **Utskick**: privatpersoner och enskilda firmor behöver samtycke (marknadsföringslagen 19 §), eller kundundantaget. Den som avregistrerar sig får inga fler utskick och hamnar på spärrlistan med skälet utskick. Det hindrar bara utskick, inte annan kontakt. Klick räknas per utskick och länk, aldrig per person, och öppningar mäts inte. Mottagarnas adresser tas bort 90 dagar efter utskicket.
+- **Webbformulär**: samtyckestexten sparas precis som den visades, med version och länken till er integritetspolicy. Ett formulär tar aldrig bort en avregistrering eller en invändning.
+
+Se [Logga mejl](/manual/crm/logga-mejl), [Utskick](/manual/crm/utskick) och [Webbformulär](/manual/crm/webbformular).
+
 ## Läs också
 
 - [Företag och personer](/manual/crm/foretag-och-personer)

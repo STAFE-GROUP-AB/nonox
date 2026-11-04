@@ -31,6 +31,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $informed_at when the person was given the information in GDPR art. 14
  * @property ?CarbonImmutable $do_not_contact_at
  * @property ?DoNotContact $do_not_contact_reason
+ * @property ?CarbonImmutable $marketing_opt_out_at unsubscribed from mailings (ADR-048)
+ * @property ?CarbonImmutable $email_bounced_at a mailing to the address bounced permanently (ADR-048)
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  * @property-read AccountPerson $link the person's place at the account, when read through Account::people()
@@ -57,6 +59,8 @@ class Person extends Model
         'informed_at',
         'do_not_contact_at',
         'do_not_contact_reason',
+        'marketing_opt_out_at',
+        'email_bounced_at',
     ];
 
     /** @return array<string, string> */
@@ -70,6 +74,8 @@ class Person extends Model
             'informed_at' => 'immutable_date',
             'do_not_contact_at' => 'immutable_datetime',
             'do_not_contact_reason' => DoNotContact::class,
+            'marketing_opt_out_at' => 'immutable_datetime',
+            'email_bounced_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

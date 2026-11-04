@@ -200,3 +200,9 @@ crm/saljtratten-mobil: { foretag: konsult, rutt: crm.deals, enhet: mobil }
 crm/affarens-kort: { foretag: konsult, rutt: crm.deals.show, modell: { tabell: crm_deals, dar: { title: 'Ramavtal 2027' } } }
 crm/prognos-och-mal: { foretag: konsult, rutt: crm.forecast }
 crm/oversikt-forsaljning: { foretag: konsult, rutt: crm.dashboard }
+crm/logga-mejl: { foretag: konsult, rutt: crm.emails }
+crm/mejlmallar: { foretag: konsult, rutt: crm.templates }
+crm/utskick: { foretag: konsult, rutt: crm.mailings.show, modell: { tabell: crm_mailings, dar: { name: 'Nyhetsbrev juni' } } }
+crm/skriv-ett-utskick: { foretag: konsult, rutt: crm.mailings.show, modell: { tabell: crm_mailings, dar: { name: 'Inbjudan till frukostseminarium' } } }
+crm/segment: { foretag: konsult, rutt: crm.segments }
+crm/webbformular: { foretag: konsult, rutt: crm.forms }

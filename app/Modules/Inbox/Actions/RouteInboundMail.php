@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inbox\Actions;
 
 use App\Models\Company;
+use App\Modules\Crm\Actions\LogInboundEmail;
 use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\InboxModule;
 use App\Modules\Inbox\Models\AllowedSender;
@@ -71,6 +72,13 @@ class RouteInboundMail
             }
 
             [$local, $alias] = $parsed;
+
+            // The CRM's e-mail log (ADR-048): the company's slug with +crm, for the CRM module, not the inbox.
+            if ($alias === InboxAddress::CRM_ALIAS) {
+                $accepted += $this->toCrm($local, $raw, $transport, $done);
+
+                continue;
+            }
             $companies = $local === InboxAddress::sharedLocalPart()
                 ? $this->bySender($mail->fromEmail)
                 : $this->bySlug($local);
@@ -98,6 +106,25 @@ class RouteInboundMail
         }
 
         return $accepted;
+    }
+
+    /**
+     * @param  array<string, string>  $transport
+     * @param  array<int|string, bool>  $done
+     */
+    private function toCrm(string $slug, string $raw, array $transport, array &$done): int
+    {
+        // The receiving address is looked up across companies; the message then goes into that company only.
+        $companyId = CompanyScope::bypass(fn (): mixed => InboxMailbox::query()->where('slug', $slug)->value('company_id'));
+        $company = $companyId === null ? null : Company::query()->find((int) $companyId);
+
+        if (! $company instanceof Company || isset($done["crm:{$company->id}"])) {
+            return 0;
+        }
+
+        $done["crm:{$company->id}"] = true;
+
+        return app(LogInboundEmail::class)($company, $raw, Channel::Mailgun, $transport) === null ? 0 : 1;
     }
 
     /** @return list<Company> */

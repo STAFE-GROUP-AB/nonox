@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?CarbonImmutable $due_at
  * @property ?CarbonImmutable $done_at
  * @property ?int $created_by
+ * @property ?int $email_id the logged e-mail this activity shows (ADR-048)
  * @property ?CarbonImmutable $created_at
  * @property ?CarbonImmutable $updated_at
  */
@@ -54,6 +55,7 @@ class Activity extends Model
         'due_at',
         'done_at',
         'created_by',
+        'email_id',
     ];
 
     /** @return array<string, string> */
@@ -85,6 +87,12 @@ class Activity extends Model
     public function deal(): BelongsTo
     {
         return $this->belongsTo(Deal::class);
+    }
+
+    /** @return BelongsTo<Email, $this> */
+    public function email(): BelongsTo
+    {
+        return $this->belongsTo(Email::class);
     }
 
     /** @return BelongsTo<User, $this> */

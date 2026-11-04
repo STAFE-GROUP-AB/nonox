@@ -30,3 +30,6 @@ Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
 Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();
 // CRM stage 2: "Vinn tillbaka" tasks for lost deals and accounts whose date has come, after the status rules.
 Schedule::command('crm:win-back')->dailyAt('05:40')->withoutOverlapping();
+
+Schedule::command('crm:send-mailings')->everyMinute()->withoutOverlapping();
+Schedule::command('crm:prune-mail')->dailyAt('04:50')->withoutOverlapping();

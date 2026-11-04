@@ -31,12 +31,16 @@ use Carbon\CarbonImmutable;
  * payment time per company customer, but no invoices, vouchers or reports.
  * For a private person (kind PERSON) it sees no key figures and no ledger
  * entries on the timeline at all, only the CRM's own activities.
+ *
+ * Stage 5 (ADR-048): crm:mailings sends mailings to segments, for owner and
+ * admin only; mass marketing in the company's name is a decision for those
+ * who answer for the company.
  */
 final class CrmModule implements IsNew, Module, ProvidesTodos
 {
     public const string KEY = 'crm';
 
-    public const array PERMISSIONS = ['crm:view', 'crm:manage', 'crm:settings'];
+    public const array PERMISSIONS = ['crm:view', 'crm:manage', 'crm:settings', 'crm:mailings'];
 
     public const string ROLE = 'sales';
 
@@ -57,7 +61,7 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
 
     public function description(): string
     {
-        return __('Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg och nyckeltal direkt ur bokföringen: fakturerat, obetalt, betaltid och täckningsbidrag. Affärer i en säljtratt med prognos, mål per säljare och vinn tillbaka-påminnelser. Ersätter kundregistret medan modulen är på.');
+        return __('Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg och nyckeltal direkt ur bokföringen: fakturerat, obetalt, betaltid och täckningsbidrag. Affärer i en säljtratt med prognos, mål per säljare och vinn tillbaka-påminnelser. Mejl loggas på rätt kund, mallar, utskick till segment med klickstatistik och webbformulär som skapar leads. Ersätter kundregistret medan modulen är på.');
     }
 
     public function icon(): string
@@ -85,8 +89,8 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
         return [
             'owner' => self::PERMISSIONS,
             'admin' => self::PERMISSIONS,
-            'accountant' => self::PERMISSIONS,
-            'bookkeeper' => self::PERMISSIONS,
+            'accountant' => ['crm:view', 'crm:manage', 'crm:settings'],
+            'bookkeeper' => ['crm:view', 'crm:manage', 'crm:settings'],
             'auditor' => ['crm:view'],
             self::ROLE => ['crm:view', 'crm:manage'],
         ];
@@ -117,6 +121,9 @@ final class CrmModule implements IsNew, Module, ProvidesTodos
                     ['label' => __('Mina aktiviteter'), 'route' => 'crm.activities', 'active' => ['crm.activities']],
                     ['label' => __('Prognos och mål'), 'route' => 'crm.forecast', 'active' => ['crm.forecast']],
                     ['label' => __('Personer'), 'route' => 'crm.people', 'active' => ['crm.people', 'crm.people.show']],
+                    ['label' => __('E-post'), 'route' => 'crm.emails', 'active' => ['crm.emails', 'crm.templates']],
+                    ...($user->hasTeamPermission($company, 'crm:mailings') ? [['label' => __('Utskick'), 'route' => 'crm.mailings', 'active' => ['crm.mailings', 'crm.mailings.show', 'crm.segments']]] : []),
+                    ...($user->hasTeamPermission($company, 'crm:settings') ? [['label' => __('Webbformulär'), 'route' => 'crm.forms', 'active' => ['crm.forms']]] : []),
                     ...($user->hasTeamPermission($company, 'crm:settings') ? [['label' => __('Inställningar'), 'route' => 'crm.settings', 'active' => ['crm.settings']]] : []),
                 ],
             ],

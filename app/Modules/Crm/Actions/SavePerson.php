@@ -122,7 +122,14 @@ final class SavePerson
             $objected = $person->do_not_contact_reason === DoNotContact::Objection;
             $restricted = $person->do_not_contact_reason === DoNotContact::Restriction;
             $old = $person->only(['email', 'phone', 'mobile']);
-            $person->fill($attributes)->forceFill(['last_activity_at' => now()])->save();
+            $person->fill($attributes)->forceFill(['last_activity_at' => now()]);
+
+            // A new address has not bounced (ADR-048).
+            if ($person->isDirty('email')) {
+                $person->forceFill(['email_bounced_at' => null]);
+            }
+
+            $person->save();
 
             if ($objected && $person->do_not_contact_reason !== DoNotContact::Objection) {
                 // The objection is withdrawn: the old and new details leave the list, unless another objector uses them.

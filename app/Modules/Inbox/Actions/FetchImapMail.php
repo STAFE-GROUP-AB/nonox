@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Inbox\Actions;
 
 use App\Models\Company;
+use App\Modules\Crm\Actions\LogInboundEmail;
+use App\Modules\Crm\Support\CrmCopy;
 use App\Modules\Inbox\Domain\Channel;
 use App\Modules\Inbox\InboxModule;
 use App\Modules\Inbox\Support\Imap\MailboxClient;
@@ -65,6 +67,10 @@ class FetchImapMail
                 foreach ($this->client->fetch($settings, $mailbox->imap_last_uid, self::BATCH) as $mail) {
                     if ($mail->isTooLarge()) {
                         Audit::record('inbox.dropped', null, ['reason' => 'too_large', 'size' => $mail->skippedSize, 'channel' => Channel::Imap->value, 'uid' => $mail->uid], $company);
+                    } elseif (CrmCopy::isFor($mail->raw, $settings->username)) {
+                        // Sent to the mailbox's +crm address: the CRM's e-mail log (ADR-048), not the inbox.
+                        app(LogInboundEmail::class)($company, $mail->raw, Channel::Imap);
+                        $fetched++;
                     } else {
                         ($this->accept)($company, $mail->raw, Channel::Imap, $settings->username, null);
                         $fetched++;

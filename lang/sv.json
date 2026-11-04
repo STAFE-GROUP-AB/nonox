@@ -145,5 +145,6 @@
     ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.": ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.",
     ":count affär|:count affärer": ":count affär|:count affärer",
     ":count affär i steget|:count affärer i steget": ":count affär i steget|:count affärer i steget",
-    "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen.": "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen."
+    "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen.": "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen.",
+    ":count anmälan|:count anmälningar": ":count anmälan|:count anmälningar"
 }

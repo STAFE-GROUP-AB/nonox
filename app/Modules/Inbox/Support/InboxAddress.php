@@ -24,6 +24,9 @@ final class InboxAddress
 {
     public const array ALIASES = ['kvitto', 'faktura', 'kassa'];
 
+    /** {slug}+crm@…: mail for the CRM's e-mail log (ADR-048), never for the inbox. */
+    public const string CRM_ALIAS = 'crm';
+
     public static function domain(): string
     {
         return mb_strtolower((string) config('services.inbox.domain', 'in.nonox.app'));
@@ -89,6 +92,6 @@ final class InboxAddress
 
         $alias = $match[2] === '' ? null : $match[2];
 
-        return [$match[1], in_array($alias, self::ALIASES, true) ? $alias : null];
+        return [$match[1], in_array($alias, [...self::ALIASES, self::CRM_ALIAS], true) ? $alias : null];
     }
 }

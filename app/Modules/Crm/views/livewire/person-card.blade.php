@@ -40,6 +40,8 @@
                 <x-ui.badge tone="neutral">{{ $account->people->first()?->link->role->label() }}@if($accounts->count() > 1) · {{ $account->name }}@endif</x-ui.badge>
             @endforeach
             @if($person->doNotContact())<x-ui.badge tone="accent">{{ __('Kontakta inte') }}</x-ui.badge>@endif
+            @if($person->marketing_opt_out_at)<x-ui.badge>{{ __('Inga utskick') }}</x-ui.badge>@endif
+            @if($person->email_bounced_at)<x-ui.badge>{{ __('E-postadressen studsar') }}</x-ui.badge>@endif
             @if(! $person->is_active)<x-ui.badge>{{ __('Inaktiv') }}</x-ui.badge>@endif
         </x-slot:badges>
         {{-- Also under a restriction: the data may be corrected (GDPR art. 16 and 18). --}}
@@ -55,6 +57,7 @@
             <x-crm::quick-action icon="NOTE" :label="__('Anteckning')" :disabled="$noteOff" wire:click="startActivity('NOTE')" />
             <x-crm::quick-action icon="MEETING" :label="__('Planera möte')" :disabled="$contactOff" wire:click="startActivity('MEETING')" />
             <x-crm::quick-action icon="TASK" :label="__('Uppgift')" :disabled="$contactOff" wire:click="startActivity('TASK')" />
+            <x-crm::quick-action icon="EMAIL" :label="__('Mejla med mall')" :disabled="$contactOff ?? $mailOff" wire:click="startPersonMail" />
         </x-slot:actions>
         <x-slot:actionsNote>{{ collect([$contactOff, $callOff, $mailOff, $noteOff])->filter()->unique()->implode(' ') }}</x-slot:actionsNote>
         <x-slot:facts>
@@ -85,6 +88,9 @@
 
     {{-- The open panel. --}}
     @include('crm::livewire.partials.activity-panels', ['personOptions' => collect(), 'accountOptions' => $activityAccounts])
+    @if($panel === 'mall')
+        @include('crm::livewire.partials.template-mail', ['privatePerson' => $primary?->kind === App\Modules\Crm\Domain\AccountKind::Person])
+    @endif
     @if($panel === 'person')
         @include('crm::livewire.partials.person-form', ['withRole' => false])
     @elseif($panel === 'kontakta')

@@ -9,22 +9,31 @@ use App\Models\Customer;
 use App\Models\User;
 use App\Modules\Crm\Actions\LinkPerson;
 use App\Modules\Crm\Actions\LogActivity;
+use App\Modules\Crm\Actions\LogInboundEmail;
 use App\Modules\Crm\Actions\LoseDeal;
 use App\Modules\Crm\Actions\MoveDeal;
 use App\Modules\Crm\Actions\SaveAccount;
 use App\Modules\Crm\Actions\SaveDeal;
+use App\Modules\Crm\Actions\SaveEmailTemplate;
+use App\Modules\Crm\Actions\SaveForm;
 use App\Modules\Crm\Actions\SaveGoal;
+use App\Modules\Crm\Actions\SaveMailing;
 use App\Modules\Crm\Actions\SavePerson;
+use App\Modules\Crm\Actions\SaveSegment;
 use App\Modules\Crm\Actions\SetAccountStatus;
 use App\Modules\Crm\Actions\WinDeal;
 use App\Modules\Crm\CrmModule;
+use App\Modules\Crm\Domain\EmailStatus;
 use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Deal;
+use App\Modules\Crm\Models\Email;
 use App\Modules\Crm\Models\LossReason;
+use App\Modules\Crm\Models\MailingLink;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Models\Pipeline;
 use App\Modules\Crm\Models\PipelineStage;
+use App\Modules\Crm\Support\CrmMailReader;
 use App\Modules\ModuleManager;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
@@ -113,6 +122,94 @@ final class CrmExtras extends DemoExtra
         $this->prospects($c);
         $this->deals($c);
         $this->contactHistory($c);
+        $this->mail($c);
+    }
+
+    /**
+     * CRM stage 5 (ADR-048): two templates, a segment, a mailing that has
+     * gone out (with its counts, never who clicked) and a draft, a web
+     * form, and e-mail logged through the +crm address: one on Karin's
+     * timeline and two waiting in "Ej kopplade". Written straight to the
+     * tables: a demo never sends or receives real e-mail.
+     */
+    private function mail(DemoContext $c): void
+    {
+        app(SaveEmailTemplate::class)($c->user, $c->company, ['name' => 'Tack för mötet', 'subject' => 'Tack för mötet, {förnamn}', 'body' => "Hej {förnamn}!\n\nTack för ett bra möte i dag. Jag skickar förslaget på upplägg i slutet av veckan.\n\nMed vänliga hälsningar\n{säljare}\n{mitt_företag}"]);
+        app(SaveEmailTemplate::class)($c->user, $c->company, ['name' => 'Offert skickad', 'subject' => 'Offerten till {företag}', 'body' => "Hej {förnamn}!\n\nHär kommer offerten vi pratade om. Hör av dig om något är oklart.\n\nMed vänliga hälsningar\n{säljare}"]);
+
+        $segment = app(SaveSegment::class)($c->user, $c->company, ['name' => 'Beslutsfattare', 'filters' => ['roles' => ['DECISION_MAKER']]]);
+        app(SaveSegment::class)($c->user, $c->company, ['name' => 'Fastighet och bygg', 'filters' => ['tags' => ['fastighet', 'bygg']]]);
+
+        $sent = app(SaveMailing::class)($c->user, $c->company, [
+            'name' => 'Nyhetsbrev juni',
+            'subject' => 'Nyheter från {mitt_företag}',
+            'body' => "Hej {förnamn}!\n\nI juni har vi hjälpt tre kunder att flytta sina system till molnet.\n\n- [Läs kundcaset](https://www.exempel.test/kundcase)\n- [Boka ett möte](https://www.exempel.test/boka)\n\nMed vänliga hälsningar\n{mitt_företag}",
+            'segment_id' => $segment->id,
+        ]);
+        $sent->forceFill([
+            'status' => 'SENT',
+            'started_at' => $c->today->subDays(12)->setTime(9, 0),
+            'finished_at' => $c->today->subDays(12)->setTime(9, 6),
+            'sent_by' => $c->user->id,
+            'recipient_count' => 48,
+            'sent_count' => 48,
+            'delivered_count' => 47,
+            'bounced_count' => 1,
+            'unique_clicks' => 14,
+            'unsubscribed_count' => 1,
+            'excluded' => ['NEEDS_CONSENT' => 3, 'OBJECTION' => 1, 'NO_EMAIL' => 2],
+        ])->save();
+
+        foreach ([['https://www.exempel.test/kundcase', 19, 11], ['https://www.exempel.test/boka', 6, 5]] as $position => [$url, $clicks, $unique]) {
+            MailingLink::query()->create(['mailing_id' => $sent->id, 'url' => $url, 'position' => $position + 1])->forceFill(['clicks' => $clicks, 'unique_clicks' => $unique])->save();
+        }
+
+        app(SaveMailing::class)($c->user, $c->company, [
+            'name' => 'Inbjudan till frukostseminarium',
+            'subject' => 'Välkommen på frukost, {förnamn}',
+            'body' => "Hej {förnamn}!\n\nVi bjuder på frukost och en genomgång av **årets nyheter** torsdagen den 9 oktober.\n\n[Anmäl dig här](https://www.exempel.test/frukost)\n\nMed vänliga hälsningar\n{mitt_företag}",
+            'segment_id' => $segment->id,
+        ]);
+
+        $form = app(SaveForm::class)($c->user, $c->company, [
+            'name' => 'Kontakta oss',
+            'fields' => ['phone' => 'optional', 'company' => 'required', 'org_number' => 'off', 'message' => 'optional'],
+            'consent_text' => 'Jag samtycker till att Konsultbolaget sparar mina uppgifter för att kontakta mig och skicka nyheter om sina tjänster. Jag kan återkalla samtycket när som helst.',
+            'privacy_url' => 'https://www.exempel.test/integritet',
+            'embed_origins' => 'https://www.exempel.test',
+            'owner_id' => $c->user->id,
+            'tags' => 'webb',
+        ]);
+        $form->forceFill(['submission_count' => 7])->save();
+
+        $karin = Person::query()->where('name', 'Karin Exempelsson')->first();
+        $account = Account::query()->where('name', 'Kunden Exempel AB')->first();
+        $own = (string) $c->user->email;
+        $logged = $this->demoEmail($c, 'OUT', EmailStatus::Logged, 'Förslag på upplägg för hösten', "Hej Karin!\n\nHär kommer förslaget på upplägg för hösten, med en projektledare på halvtid från september.\n\nVänliga hälsningar", $own, [$karin instanceof Person && $karin->email !== null ? $karin->email : 'karin@exempel.test'], 5, $karin?->id);
+        $this->demoEmail($c, 'OUT', EmailStatus::Unmatched, 'Presentation av oss', "Hej!\n\nTack för samtalet på mässan. Här är presentationen jag nämnde.", $own, ['nina.nystrom@fastighetsnytt.test'], 1, null);
+        $this->demoEmail($c, 'IN', EmailStatus::Unmatched, 'Fråga om utbildning', "Hej!\n\nVi är intresserade av er utbildning för projektledare. Kan ni ringa mig?\n\nMvh Jonas", 'jonas@byggkollen.test', [$own], 0, null);
+
+        if ($account instanceof Account) {
+            LogInboundEmail::logOn($logged, [$account->id => $karin?->id], $c->user->id);
+        }
+    }
+
+    /** @param  list<string>  $to */
+    private function demoEmail(DemoContext $c, string $direction, EmailStatus $status, string $subject, string $body, string $from, array $to, int $daysAgo, ?int $personId): Email
+    {
+        return Email::query()->create([
+            'direction' => $direction,
+            'status' => $status,
+            'channel' => 'MAILGUN',
+            'subject' => $subject,
+            'excerpt' => CrmMailReader::excerpt($body),
+            'body' => $body,
+            'participants' => ['from' => $from, 'from_name' => null, 'to' => $to, 'cc' => [], 'other' => $direction === 'OUT' ? $to : [$from]],
+            'sha256' => hash('sha256', $subject.$c->company->id),
+            'forwarded_by' => $c->user->id,
+            'person_id' => $personId,
+            'sent_at' => $c->today->subDays($daysAgo)->setTime(14, 20),
+        ]);
     }
 
     /**

@@ -18,10 +18,12 @@ use App\Modules\Crm\Domain\PersonRole;
 use App\Modules\Crm\Domain\StepPath;
 use App\Modules\Crm\Domain\Timeline;
 use App\Modules\Crm\Livewire\Concerns\EditsPeople;
+use App\Modules\Crm\Livewire\Concerns\SendsTemplateEmails;
 use App\Modules\Crm\Livewire\Concerns\WorksActivities;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
 use App\Modules\Crm\Models\Deal;
+use App\Modules\Crm\Models\EmailTemplate;
 use App\Modules\Crm\Models\Person;
 use App\Modules\Crm\Support\CompanyMembers;
 use App\Support\Toast;
@@ -49,6 +51,7 @@ use Livewire\WithPagination;
 class PersonCard extends Component
 {
     use EditsPeople;
+    use SendsTemplateEmails;
     use ShowsToasts;
     use WithPagination;
     use WorksActivities {
@@ -122,6 +125,17 @@ class PersonCard extends Component
         $this->toast($flag ? __(':name är märkt Kontakta inte.', ['name' => $person->name]) : __(':name kan kontaktas igen.', ['name' => $person->name]));
     }
 
+    /** Mejla med mall: always to this person, logged at their (first) company. */
+    public function startPersonMail(): void
+    {
+        $this->startTemplateMail($this->personId);
+    }
+
+    protected function mailAccountId(): ?int
+    {
+        return $this->accounts()->first()?->id;
+    }
+
     public function closePanel(): void
     {
         $this->reset('panel', 'activity', 'editingActivityId', 'completion', 'personForm', 'editingPersonId', 'mentionCount', 'nextDealId', 'dealStepRequired', 'lockedAccountId');
@@ -178,6 +192,9 @@ class PersonCard extends Component
         $firstInvoice = $primary?->customer_id === null || $limitedLedger ? null : Invoice::query()->where('customer_id', $primary->customer_id)->whereNotNull('issued_at')->where('kind', Invoice::INVOICE)->min('invoice_date');
 
         return view('crm::livewire.person-card', [
+            // Mejla med mall (ADR-048): only while its panel is open; the person is the recipient.
+            'templates' => $this->panel === 'mall' ? EmailTemplate::query()->orderBy('name')->get(['id', 'name']) : collect(),
+            'mailRecipients' => [(string) $person->id => "{$person->name} ({$person->email})"],
             'person' => $person,
             'accounts' => $accounts,
             // The edited activity's own account belongs in the form's choice, also when the person has left it.

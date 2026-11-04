@@ -82,11 +82,20 @@ use App\Modules\Crm\Models\AccountPerson as CrmAccountPerson;
 use App\Modules\Crm\Models\Activity as CrmActivity;
 use App\Modules\Crm\Models\Deal as CrmDeal;
 use App\Modules\Crm\Models\DealStageChange as CrmDealStageChange;
+use App\Modules\Crm\Models\Email as CrmEmail;
+use App\Modules\Crm\Models\EmailTemplate as CrmEmailTemplate;
+use App\Modules\Crm\Models\Form as CrmForm;
+use App\Modules\Crm\Models\FormSubmission as CrmFormSubmission;
 use App\Modules\Crm\Models\Goal as CrmGoal;
 use App\Modules\Crm\Models\LossReason as CrmLossReason;
+use App\Modules\Crm\Models\Mailing as CrmMailing;
+use App\Modules\Crm\Models\MailingClick as CrmMailingClick;
+use App\Modules\Crm\Models\MailingLink as CrmMailingLink;
+use App\Modules\Crm\Models\MailingRecipient as CrmMailingRecipient;
 use App\Modules\Crm\Models\Person as CrmPerson;
 use App\Modules\Crm\Models\Pipeline as CrmPipeline;
 use App\Modules\Crm\Models\PipelineStage as CrmPipelineStage;
+use App\Modules\Crm\Models\Segment as CrmSegment;
 use App\Modules\Crm\Models\Suppression as CrmSuppression;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
@@ -308,6 +317,15 @@ const COMPANY_SCOPED_MODELS = [
     CrmDeal::class => 'crmDealAttributes',
     CrmDealStageChange::class => 'crmDealStageChangeAttributes',
     CrmGoal::class => 'crmGoalAttributes',
+    CrmEmail::class => 'crmEmailAttributes',
+    CrmEmailTemplate::class => ['name' => 'Hemlig mall', 'subject' => 'Hemligt ämne', 'body' => 'Hemlig text'],
+    CrmSegment::class => ['name' => 'Hemligt segment', 'filters' => []],
+    CrmMailing::class => ['name' => 'Hemligt utskick', 'subject' => 'Hemligt ämne', 'body' => 'Hemlig text'],
+    CrmMailingLink::class => 'crmMailingLinkAttributes',
+    CrmMailingRecipient::class => 'crmMailingRecipientAttributes',
+    CrmMailingClick::class => 'crmMailingClickAttributes',
+    CrmForm::class => 'crmFormAttributes',
+    CrmFormSubmission::class => 'crmFormSubmissionAttributes',
     PosConnection::class => 'posConnectionAttributes',
     PosProductLink::class => 'posProductLinkAttributes',
     PosSale::class => 'posSaleAttributes',
@@ -1235,6 +1253,38 @@ function crmDealStageChangeAttributes(): array
 function crmGoalAttributes(): array
 {
     return ['user_id' => User::factory()->create()->id, 'month' => '2026-06-01', 'metric' => 'MEETINGS', 'target' => 8];
+}
+
+function crmEmailAttributes(): array
+{
+    return ['direction' => 'IN', 'status' => 'UNMATCHED', 'channel' => 'MAILGUN', 'subject' => 'Hemligt mejl', 'participants' => ['from' => 'x@y.example', 'from_name' => null, 'to' => [], 'cc' => [], 'other' => []], 'sha256' => hash('sha256', Str::random(20)), 'sent_at' => now()];
+}
+
+function crmMailingLinkAttributes(): array
+{
+    return ['mailing_id' => CrmMailing::create(['name' => 'Hemligt utskick', 'subject' => 'X', 'body' => 'Y'])->id, 'url' => 'https://hemlig.example', 'position' => 1];
+}
+
+function crmMailingRecipientAttributes(): array
+{
+    return ['mailing_id' => CrmMailing::create(['name' => 'Hemligt utskick', 'subject' => 'X', 'body' => 'Y'])->id, 'email' => 'hemlig@mottagare.example', 'token_hash' => hash('sha256', Str::random(40))];
+}
+
+function crmMailingClickAttributes(): array
+{
+    $link = CrmMailingLink::create(crmMailingLinkAttributes());
+
+    return ['link_id' => $link->id, 'recipient_id' => CrmMailingRecipient::create([...crmMailingRecipientAttributes(), 'mailing_id' => $link->mailing_id])->id];
+}
+
+function crmFormAttributes(): array
+{
+    return ['name' => 'Hemligt formulär', 'token' => Str::lower(Str::random(32)), 'fields' => [], 'consent_text' => 'Ja', 'privacy_url' => 'https://x.example/p'];
+}
+
+function crmFormSubmissionAttributes(): array
+{
+    return ['form_id' => CrmForm::create(crmFormAttributes())->id, 'consent_text' => 'Ja', 'consent_version' => 1, 'privacy_url' => 'https://x.example/p', 'consented_at' => now()];
 }
 
 function inventoryLocationAttributes(): array

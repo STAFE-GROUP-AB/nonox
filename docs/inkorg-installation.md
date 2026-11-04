@@ -145,3 +145,21 @@ gratis och utan NONOX CLOUD.
    - valfritt `NONOX_INBOX_MAX_MESSAGE_KB` (förval 25600).
 4. Kör `php artisan migrate` och se till att kön och schemaläggaren körs
    (`inbox:fetch`, `inbox:daily-summary`, `inbox:prune`).
+
+## 8. CRM: loggade mejl och utskick (ADR-048)
+
+- **Loggning med +crm:** routen ovan (`.*@in.nonox.app`) tar redan emot
+  `{slug}+crm@in.nonox.app`; NONOX skickar dem till CRM i stället för
+  inkorgen. Inget mer behövs i Mailgun. Själv-driftat med IMAP: e-postservern
+  måste leverera plusadresser (`brevlada+crm@doman`) till brevlådan och sätta
+  `Delivered-To` eller `X-Original-To`.
+- **Händelser för utskick:** Mailgun → Sending → Webhooks för domänen som
+  skickar: lägg till `https://nonox.app/webhooks/utskick/mailgun` för
+  *Delivered*, *Permanent failure* och *Spam complaints*. Samma
+  `MAILGUN_WEBHOOK_SIGNING_KEY` används.
+- **Spårning av:** stäng av open och click tracking för den skickande domänen
+  (varje utskick skickar också `X-Mailgun-Track: no`).
+- **Schemaläggare och kö:** `crm:send-mailings` varje minut och
+  `crm:prune-mail` varje natt; utskicken skickas i omgångar av köarbetaren.
+- Valfritt: `NONOX_CRM_MAILING_HOURLY_CAP` (förval 500) och
+  `NONOX_CRM_MAILING_DAILY_CAP` (förval 2000) per företag.
