@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-04-mejl-med-nonox-logotyp",
+      "datum": "2026-11-04T22:20:00+01:00",
+      "rubrik": "Mejlen från NONOX har logotyp och svensk sidfot",
+      "beskrivning": "Alla mejl från NONOX, som inloggningskoder, fakturor och påminnelser, har nu NONOX logotyp överst och knappar i NONOX färg. Sidfoten visar tjänstens namn och adress på svenska i stället för en engelsk standardtext.",
+      "typ": "Förbättrat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-04-agi-grupp-fran-foretaget",
       "datum": "2026-11-04T22:00:00+01:00",
       "rubrik": "Arbetsgivardeklarationens dag följer företagets uppgifter",
