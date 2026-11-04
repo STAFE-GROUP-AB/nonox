@@ -95,6 +95,8 @@ class CarryForwardBalances
     private function nextYear(FiscalYear $fiscalYear, Company $company, User $user): FiscalYear
     {
         $start = $fiscalYear->end_date->addDay();
+        // The same lock as every other creation of a year, so this never races the morning run or a booking.
+        CreateNextFiscalYear::lock($company->id);
         $next = FiscalYear::query()->whereDate('start_date', $start)->lockForUpdate()->first();
 
         if ($next instanceof FiscalYear) {

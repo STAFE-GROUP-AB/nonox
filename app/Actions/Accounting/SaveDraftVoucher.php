@@ -21,12 +21,19 @@ use Illuminate\Validation\ValidationException;
 /**
  * Creates or updates a draft voucher. A draft may be unbalanced; balance and
  * every other posting rule are checked by PostVoucher.
+ *
+ * A date in the year right after the latest one, at most thirty days ahead,
+ * creates that year first when it does not exist yet (CreateNextFiscalYear::
+ * covering): invoices, payments and vouchers all pass through here, so
+ * none of them stops at the turn of the year. Lock order: the caller's own
+ * locks, then the company's fiscal-year advisory lock, then PostVoucher's.
  */
 class SaveDraftVoucher
 {
     public function __construct(
         private NormaliseVoucherRows $normaliseRows,
         private AssetProposals $assetProposals,
+        private CreateNextFiscalYear $createNextFiscalYear,
     ) {}
 
     /**
@@ -62,10 +69,12 @@ class SaveDraftVoucher
             $date = CarbonImmutable::createFromFormat('Y-m-d', (string) $validated['voucher_date'])?->startOfDay()
                 ?? throw ValidationException::withMessages(['voucher_date' => __('Datumet ska skrivas som ÅÅÅÅ-MM-DD.')]);
 
+            // The safety net when the morning run has not created the next year yet (CreateNextFiscalYear::covering).
             $fiscalYear = FiscalYear::query()
                 ->where('start_date', '<=', $date)
                 ->where('end_date', '>=', $date)
                 ->first()
+                ?? $this->createNextFiscalYear->covering($company, $date, CarbonImmutable::today(), $user)
                 ?? throw ValidationException::withMessages([
                     'voucher_date' => __('Det finns inget räkenskapsår som omfattar :date.', ['date' => $date->toDateString()]),
                 ]);

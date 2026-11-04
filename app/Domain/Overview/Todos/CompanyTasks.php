@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Models\VatReport;
 use App\Models\Voucher;
 use App\Support\Money\Money;
+use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -48,7 +49,42 @@ final class CompanyTasks implements TodoProvider
             array_push($items, ...$this->items($task, $today));
         }
 
+        array_push($items, ...$this->upcomingYear($user, $company, $today));
+
         return $items;
+    }
+
+    /**
+     * The next fiscal year exists but has not begun while the year before it
+     * is still open: says that it is created and that the old year is still
+     * closed in the year-end. One item per company, from the data itself, so
+     * it never repeats; once the new year begins, "Räkenskapsår att stänga"
+     * takes over. One query.
+     *
+     * @return list<TodoItem>
+     */
+    private function upcomingYear(User $user, Company $company, CarbonImmutable $today): array
+    {
+        if ($company->isArchived() || ! $user->hasTeamPermission($company, 'fiscal-years:manage')) {
+            return [];
+        }
+
+        $years = CurrentCompany::run($company, fn () => FiscalYear::query()->orderByDesc('start_date')->limit(2)->get());
+        $next = $years->first();
+        $previous = $years->get(1);
+
+        if (! $next instanceof FiscalYear || ! $previous instanceof FiscalYear || ! $next->start_date->isAfter($today) || ! $previous->isOpen()) {
+            return [];
+        }
+
+        return [new TodoItem(
+            "fiscal-year-created:{$next->id}",
+            'calendar',
+            __('Räkenskapsåret :period är skapat', ['period' => $next->label()]),
+            __('Det förra året stängs fortfarande i bokslutet.'),
+            route('accounting.fiscalYears'),
+            TodoItem::PRIORITY_CLOSING,
+        )];
     }
 
     public function invalidatedBy(): array

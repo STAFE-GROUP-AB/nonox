@@ -90,6 +90,10 @@ class ImportSie
     private function import(SieImport $import, Company $company, User $user, string $path): void
     {
         CurrentCompany::run($company, fn () => DB::transaction(function () use ($import, $company, $user, $path): void {
+            // Every creation of a fiscal year takes this lock first (CreateNextFiscalYear::lock), so the analyser's
+            // re-check below sees the years as they are and no automatic year appears before the import commits.
+            // Taken before the company row, the same order as a booking that creates a year (ADR-010).
+            CreateNextFiscalYear::lock($company->id);
             Company::query()->whereKey($company->id)->lockForUpdate()->firstOrFail();
 
             $plan = $this->analyser->analyse($company, $path, $import->sha256, $import->id);

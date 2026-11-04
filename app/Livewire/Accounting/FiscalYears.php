@@ -31,7 +31,13 @@ class FiscalYears extends Component
 
     public function createNext(CreateNextFiscalYear $createNextFiscalYear): void
     {
-        $fiscalYear = $createNextFiscalYear($this->user(), $this->company());
+        try {
+            $fiscalYear = $createNextFiscalYear($this->user(), $this->company());
+        } catch (ValidationException $exception) {
+            $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+
+            return;
+        }
 
         $this->toast(__('Räkenskapsåret :label är skapat.', ['label' => $fiscalYear->label()]));
     }
@@ -81,6 +87,7 @@ class FiscalYears extends Component
         $fiscalYear = FiscalYear::findOrFail($this->editingId);
 
         $changeFirstFiscalYear($this->user(), $fiscalYear, $this->startDate, $this->endDate);
+        $fiscalYear->refresh();
 
         $this->reset('editingId', 'startDate', 'endDate');
         $this->toast(__('Räkenskapsåret är ändrat till :start – :end.', [
@@ -112,7 +119,10 @@ class FiscalYears extends Component
             'canArchive' => $canArchive,
             'packages' => $packages,
             'building' => $packages->contains(fn (ArchivePackage $package): bool => $package->isBusy()),
-            'onlyYearId' => $fiscalYears->count() === 1 ? $fiscalYears->first()?->id : null,
+            // The first year, while its dates may change: alone, or followed only by an empty year NONOX created by itself.
+            'onlyYearId' => $fiscalYears->count() <= 2 && $fiscalYears->last() !== null && app(ChangeFirstFiscalYear::class)->changeable($fiscalYears->last())
+                ? $fiscalYears->last()->id
+                : null,
             'nextLabels' => $fiscalYears->mapWithKeys(function (FiscalYear $year) use ($calendarYear): array {
                 [$start, $end] = FiscalYearRules::nextYear($year->end_date->addDay(), $calendarYear);
 
