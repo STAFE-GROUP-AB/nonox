@@ -7,6 +7,7 @@ namespace App\Modules\Crm\Actions;
 use App\Events\CustomerAnonymised;
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Calendar\CalendarSequence;
 use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\DealStatus;
 use App\Modules\Crm\Models\Account;
@@ -54,6 +55,8 @@ final class EraseCrmData
                 'subject' => __('Anonymiserad aktivitet'),
                 'body' => null,
                 'updated_at' => now(),
+                // ADR-049: calendars replace their copy.
+                ...CalendarSequence::column(),
             ]);
 
             // An erasure is not business with the deal: its updated_at (the pruning clock of its account) stays.
@@ -135,6 +138,8 @@ final class EraseCrmData
                 'subject' => __('Anonymiserad aktivitet'),
                 'body' => null,
                 'updated_at' => now(),
+                // ADR-049: calendars replace their copy.
+                ...CalendarSequence::column(),
             ]);
 
             // The open deals end as lost without a reason, and no deal reminds anyone to win the customer back.
@@ -152,7 +157,7 @@ final class EraseCrmData
                 'updated_at' => now(),
             ]);
             // The anonymised activities stay on the timeline; none of them is still to be done.
-            Activity::query()->where('account_id', $account->id)->whereNull('done_at')->update(['done_at' => now()]);
+            Activity::query()->where('account_id', $account->id)->whereNull('done_at')->update(['done_at' => now(), ...CalendarSequence::column()]);
 
             Audit::record('privacy.erased', $account, ['subject' => 'crm_account', 'activities_anonymised' => $activities, 'deals_anonymised' => $deals, 'by' => 'customer_anonymised'], $event->companyId);
         });

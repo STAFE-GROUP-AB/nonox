@@ -90,7 +90,7 @@
             <p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-gray-800">{{ $entry->body }}</p>
         @endif
 
-        @php($inCalendar = $due !== null && in_array($type, ['MEETING', 'CALL', 'TASK'], true))
+        @php($inCalendar = $open && $due !== null && in_array($type, ['MEETING', 'CALL', 'TASK'], true))
         @if(($open && $canManage) || $inCalendar)
             <div class="mt-3 flex flex-wrap gap-3">
                 @if($open && $canManage)

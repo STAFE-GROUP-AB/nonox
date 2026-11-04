@@ -8,9 +8,12 @@ use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Calendar\CalendarProviders;
+use App\Modules\Crm\Calendar\Jobs\SyncCalendarConnection;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\CrmSettings;
+use App\Modules\Crm\Models\CalendarConnection;
 use App\Modules\ModuleManager;
+use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
@@ -64,9 +67,20 @@ class CrmSettingsForm extends Component
             'settings.win_back_months' => __('månader till vinn tillbaka'),
             'settings.calendar_details' => __('detaljer i kalendrar'),
             'settings.calendar_sync' => __('koppling till Google och Microsoft'),
+            'settings.calendar_private_accounts' => __('privata konton'),
         ])->validate();
 
+        $before = CrmSettings::for($company);
         $modules->updateSettings(CrmModule::KEY, $company, $this->user(), array_map('intval', (array) $validated['settings']));
+        $after = CrmSettings::for($company);
+
+        // ADR-049: connected calendars are written again with or without the details at once.
+        if ($before['calendar_details'] !== $after['calendar_details']) {
+            CurrentCompany::run($company, fn () => CalendarConnection::query()
+                ->where('status', CalendarConnection::ACTIVE)
+                ->pluck('id')
+                ->each(fn (int $id) => SyncCalendarConnection::dispatch($company->id, $id, true)));
+        }
 
         $this->toast(__('Inställningarna för CRM är sparade.'));
     }

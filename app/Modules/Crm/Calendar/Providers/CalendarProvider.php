@@ -38,7 +38,8 @@ interface CalendarProvider
     /** Revokes the grant at the provider. False when the provider has no such call for one token. */
     public function revoke(string $token): bool;
 
-    public function accountEmail(string $accessToken): ?string;
+    /** Which account signed in, and whether it is an organisation's (not a private one). */
+    public function account(OAuthTokens $tokens): RemoteAccount;
 
     /** @return list<RemoteCalendar> the calendars the user may write to */
     public function calendars(string $accessToken): array;

@@ -98,7 +98,7 @@
     </x-ui.card>
 
     @if($providers !== [] || $connection)
-        <x-ui.card :title="__('Koppla din kalender')" :description="__('Tvåvägssynk: NONOX skriver dina samtal, möten och uppgifter i din egen kalender, och flyttar du eller ställer in en av dem där följer aktiviteten i NONOX med. Andra händelser i din kalender läses aldrig in.')">
+        <x-ui.card :title="__('Koppla din kalender')" :description="__('Tvåvägssynk: NONOX skriver dina samtal, möten och uppgifter i din egen kalender, och flyttar du eller ställer in en av dem där följer aktiviteten i NONOX med. NONOX läser händelserna i den valda kalendern men sparar och använder bara de händelser som NONOX själv har skrivit; andra händelser sparas aldrig.')">
             <div class="space-y-4" data-testid="crm-calendar-connection">
                 @if($connection)
                     <p class="text-sm text-gray-800">
@@ -144,7 +144,7 @@
                         @endif
                     @endif
                 @else
-                    <p class="text-sm text-gray-700">{{ __('Du loggar in hos Google eller Microsoft och godkänner att NONOX får läsa listan över dina kalendrar och skriva händelser. NONOX sparar åtkomsten krypterad och tar bort den när du kopplar bort.') }}</p>
+                    <p class="text-sm text-gray-700">{{ __('Du loggar in hos Google eller Microsoft och godkänner att NONOX får läsa listan över dina kalendrar och läsa och skriva händelser i dem. NONOX sparar åtkomsten krypterad och tar bort den när du kopplar bort.') }}</p>
                     <div class="flex flex-wrap gap-3">
                         @foreach($providers as $provider)
                             <a href="{{ route('crm.calendar.connect', $provider->slug()) }}" class="inline-flex min-h-11 items-center rounded-xl bg-ink px-4 text-sm font-semibold text-white hover:bg-black">{{ __('Koppla :provider', ['provider' => $provider->label()]) }}</a>

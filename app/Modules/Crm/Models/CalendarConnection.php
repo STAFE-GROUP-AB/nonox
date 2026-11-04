@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $status
  * @property ?string $last_error
  * @property ?CarbonImmutable $last_synced_at
+ * @property ?CarbonImmutable $cursor_started_at when the calendar was last read from the start
  * @property CarbonImmutable $created_at
  */
 class CalendarConnection extends Model
@@ -62,6 +63,7 @@ class CalendarConnection extends Model
         'status',
         'last_error',
         'last_synced_at',
+        'cursor_started_at',
     ];
 
     /** @var list<string> */
@@ -82,6 +84,7 @@ class CalendarConnection extends Model
             'include_details' => 'boolean',
             'token_expires_at' => 'immutable_datetime',
             'last_synced_at' => 'immutable_datetime',
+            'cursor_started_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',
             'updated_at' => 'immutable_datetime',
         ];

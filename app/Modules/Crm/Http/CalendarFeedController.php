@@ -14,7 +14,9 @@ use App\Modules\Crm\Models\CalendarFeed;
 use App\Modules\ModuleManager;
 use App\Support\Tenancy\CompanyScope;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * The CRM calendar behind a user's secret link (ADR-049): no login, the
@@ -26,15 +28,27 @@ use Illuminate\Http\Response;
  */
 final class CalendarFeedController
 {
-    public function __invoke(string $token, ModuleManager $modules): Response
+    /** Wrong or dead links per address and minute before every link from it answers 429. */
+    public const int MISSES_PER_MINUTE = 10;
+
+    public function __invoke(Request $request, string $token, ModuleManager $modules): Response
     {
+        $misses = 'crm-calendar-miss:'.$request->ip();
+        abort_if(RateLimiter::tooManyAttempts($misses, self::MISSES_PER_MINUTE), 429);
+
         // The token decides the company, so it is looked up before any company is known.
         $feed = CompanyScope::bypass(fn (): ?CalendarFeed => CalendarFeed::query()->where('token_hash', CalendarFeed::hash($token))->whereNull('revoked_at')->first());
         $company = $feed === null ? null : Company::query()->find($feed->company_id);
         $user = $feed === null ? null : User::query()->find($feed->user_id);
 
-        abort_unless($feed instanceof CalendarFeed && $company instanceof Company && $user instanceof User && ! $company->isArchived(), 404);
-        abort_unless($modules->isEnabled(CrmModule::KEY, $company) && $user->hasTeamPermission($company, 'crm:view'), 404);
+        $valid = $feed instanceof CalendarFeed && $company instanceof Company && $user instanceof User && ! $company->isArchived()
+            && $modules->isEnabled(CrmModule::KEY, $company) && $user->hasTeamPermission($company, 'crm:view');
+
+        if (! $valid) {
+            // Guessing links costs: a stricter limit per address for those that lead nowhere.
+            RateLimiter::hit($misses, 60);
+            abort(404);
+        }
 
         // Written at most once an hour: a calendar that polls every few minutes is not a stream of writes.
         if ($feed->last_used_at === null || $feed->last_used_at->lessThan(CarbonImmutable::now()->subHour())) {

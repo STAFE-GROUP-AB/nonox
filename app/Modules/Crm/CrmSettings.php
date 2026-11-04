@@ -28,6 +28,9 @@ use App\Modules\ModuleManager;
  * - calendar_sync (1/0, ADR-049): users may connect their own Google or
  *   Microsoft calendar. Off by default: the company, as controller, decides
  *   that CRM data may be copied to those services.
+ * - calendar_private_accounts (1/0, ADR-049): private Google or Microsoft
+ *   accounts may be connected too. Off: only organisation accounts
+ *   (Google Workspace, Microsoft Entra work or school accounts).
  */
 final class CrmSettings
 {
@@ -39,6 +42,7 @@ final class CrmSettings
         'win_back_months' => 6,
         'calendar_details' => 1,
         'calendar_sync' => 0,
+        'calendar_private_accounts' => 0,
     ];
 
     /** @var array<string, array{int, int}> key => [min, max] */
@@ -49,10 +53,11 @@ final class CrmSettings
         'win_back_months' => [1, 36],
         'calendar_details' => [0, 1],
         'calendar_sync' => [0, 1],
+        'calendar_private_accounts' => [0, 1],
     ];
 
     /** The settings that are a yes or a no. */
-    public const array SWITCHES = ['calendar_details', 'calendar_sync'];
+    public const array SWITCHES = ['calendar_details', 'calendar_sync', 'calendar_private_accounts'];
 
     /** Days ahead "Att göra" warns before people and prospects are erased. */
     public const int PRUNE_NOTICE_DAYS = 30;

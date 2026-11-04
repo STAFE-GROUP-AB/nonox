@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Actions;
 
 use App\Models\Company;
 use App\Models\User;
+use App\Modules\Crm\Calendar\CalendarSequence;
 use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Domain\LegalBasis;
 use App\Modules\Crm\Domain\PersonRole;
@@ -133,7 +134,7 @@ final class SavePerson
 
             if (! $restricted && $person->do_not_contact_reason === DoNotContact::Restriction) {
                 // Art. 18: the data may only be stored. Open tasks and planned activities about the person are closed, so they leave Mina aktiviteter.
-                $closed = Activity::query()->where('person_id', $person->id)->whereNull('done_at')->update(['done_at' => now(), 'updated_at' => now()]);
+                $closed = Activity::query()->where('person_id', $person->id)->whereNull('done_at')->update(['done_at' => now(), 'updated_at' => now(), ...CalendarSequence::column()]);
                 Audit::record('crm.activities_closed_for_restriction', $person, ['person_id' => $person->id, 'activities' => $closed], $company, $user);
             }
 

@@ -71,7 +71,7 @@ firma (ägaren är kunden), annars berättigat intresse.
 **Avsnitt 5, dina rättigheter, stycket om radering ur CRM.** "tjänstens
 CRM" ändras till "[DRIFTBOLAGETS NAMN]s CRM".
 
-**Versionsrad.** Ny version (1.5) och nytt datum. `LegalPageController::VERSION`
+**Versionsrad.** Ny version (1.6) och nytt datum. `LegalPageController::VERSION`
 och `EFFECTIVE` ändras samtidigt.
 
 ## 3. Allmänna villkor (`docs/juridik/villkor.md`)

@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Http;
  * Microsoft Graph v1.0 calendars (ADR-049): Outlook, Microsoft 365 and
  * Outlook.com. Dormant until services.microsoft_graph has a client id and
  * secret. OAuth 2.0 authorization code with PKCE on the Microsoft identity
- * platform (tenant "common": work, school and personal accounts); events
+ * platform (tenant "organizations" by default: work and school accounts; "common" adds personal accounts, refused unless the company allows them); events
  * are written to the chosen calendar, and changes are read with the
  * calendar view's delta query, whose deltaLink is the cursor.
  *
@@ -89,12 +89,17 @@ final class MicrosoftGraphProvider implements CalendarProvider
         return false;
     }
 
-    public function accountEmail(string $accessToken): ?string
-    {
-        $json = $this->json($this->api($accessToken)->get(self::API.'/me', ['$select' => 'mail,userPrincipalName']), 'me');
-        $email = $json['mail'] ?? $json['userPrincipalName'] ?? null;
+    /** The tenant of personal Microsoft accounts (Outlook.com, Hotmail). */
+    public const string CONSUMER_TENANT = '9188040d-6c67-4c5b-b112-36a304b66dad';
 
-        return is_string($email) ? $email : null;
+    public function account(OAuthTokens $tokens): RemoteAccount
+    {
+        $json = $this->json($this->api($tokens->accessToken)->get(self::API.'/me', ['$select' => 'mail,userPrincipalName']), 'me');
+        $email = $json['mail'] ?? $json['userPrincipalName'] ?? null;
+        $tenant = $tokens->claims()['tid'] ?? null;
+
+        // Without a tenant claim the account cannot be shown to be an organisation's.
+        return new RemoteAccount(is_string($email) ? $email : null, is_string($tenant) && $tenant !== '' && $tenant !== self::CONSUMER_TENANT);
     }
 
     public function calendars(string $accessToken): array
@@ -202,7 +207,7 @@ final class MicrosoftGraphProvider implements CalendarProvider
 
     private function endpoint(string $kind): string
     {
-        $tenant = (string) (config('services.microsoft_graph.tenant') ?: 'common');
+        $tenant = (string) (config('services.microsoft_graph.tenant') ?: 'organizations');
 
         return self::LOGIN.'/'.rawurlencode($tenant).'/oauth2/v2.0/'.$kind;
     }

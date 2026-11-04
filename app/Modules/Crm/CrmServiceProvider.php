@@ -11,6 +11,7 @@ use App\Http\Middleware\SecurityHeaders;
 use App\Models\Customer;
 use App\Modules\Crm\Actions\EraseCrmData;
 use App\Modules\Crm\Calendar\ActivityCalendarObserver;
+use App\Modules\Crm\Calendar\CalendarSequence;
 use App\Modules\Crm\Calendar\ForgetUserCalendars;
 use App\Modules\Crm\Console\CalendarSyncCommand;
 use App\Modules\Crm\Console\RefreshStatusesCommand;
@@ -79,6 +80,8 @@ class CrmServiceProvider extends ServiceProvider
         Event::listen(CustomerAnonymised::class, [EraseCrmData::class, 'customerAnonymised']);
         // Stage 6 (ADR-049): calendars follow the activities, and end with the user's place in the company.
         Activity::observe(ActivityCalendarObserver::class);
+        Account::updated(fn (Account $account) => app(CalendarSequence::class)->accountUpdated($account));
+        Person::updated(fn (Person $person) => app(CalendarSequence::class)->personUpdated($person));
         Event::listen(TeamMemberRemoved::class, [ForgetUserCalendars::class, 'memberRemoved']);
         Event::listen(UserAccountDeleting::class, [ForgetUserCalendars::class, 'accountDeleting']);
 
@@ -107,7 +110,8 @@ class CrmServiceProvider extends ServiceProvider
             ->group(__DIR__.'/routes/calendar.php');
 
         // The subscription link: no session, no login, throttled per address (ADR-049).
-        RateLimiter::for('crm-calendar', fn (Request $request): Limit => Limit::perMinute(30)->by('crm-calendar:'.$request->ip()));
+        // Per address and link, so one office's calendars do not share a limit; unknown links have a stricter one of their own (CalendarFeedController).
+        RateLimiter::for('crm-calendar', fn (Request $request): Limit => Limit::perMinute(30)->by('crm-calendar:'.$request->ip().'|'.hash('sha256', (string) $request->route('token'))));
         Route::middleware([SecurityHeaders::class, 'throttle:crm-calendar'])->group(__DIR__.'/routes/calendar-feed.php');
 
         // A contact person's register extract also works while the module is off: GDPR rights do not stop with the module.

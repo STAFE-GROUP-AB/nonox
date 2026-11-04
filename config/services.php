@@ -199,8 +199,8 @@ return [
         'client_id' => env('MICROSOFT_GRAPH_CLIENT_ID'),
         'client_secret' => env('MICROSOFT_GRAPH_CLIENT_SECRET'),
         'redirect' => env('MICROSOFT_GRAPH_REDIRECT_URI'),
-        // "common": work, school and personal Microsoft accounts.
-        'tenant' => env('MICROSOFT_GRAPH_TENANT', 'common'),
+        // "organizations": work and school accounts only; "common" adds personal ones (refused unless the company allows them).
+        'tenant' => env('MICROSOFT_GRAPH_TENANT', 'organizations'),
     ],
 
     // Google Chrome for the manual's screenshots (manual:screenshots), on a developer's computer.

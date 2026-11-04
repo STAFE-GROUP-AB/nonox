@@ -90,7 +90,7 @@ it('stays dormant without configuration: no screen, no routes, nothing queued', 
     Bus::assertNotDispatched(SyncCalendarActivity::class);
     $this->get(route('crm.calendar.connect', 'google'))->assertNotFound();
     $this->get(route('crm.calendar'))->assertOk()->assertDontSee('Koppla din kalender');
-    $this->artisan('crm:calendar-sync')->expectsOutputToContain('No calendar provider is configured')->assertSuccessful();
+    $this->artisan('crm:calendar-sync')->expectsOutputToContain('Queued 0 calendar connections, ended 0.')->assertSuccessful();
     Http::assertNothingSent();
 });
 
@@ -121,7 +121,7 @@ it('connects Google with state and PKCE, keeps the tokens encrypted and queues t
 
     Http::fake([
         'oauth2.googleapis.com/token' => Http::response(['access_token' => 'access-1', 'refresh_token' => 'refresh-1', 'expires_in' => 3600]),
-        'openidconnect.googleapis.com/*' => Http::response(['email' => 'saljare@exempel.test']),
+        'openidconnect.googleapis.com/*' => Http::response(['email' => 'saljare@exempel.test', 'hd' => 'exempel.test']),
         'www.googleapis.com/calendar/v3/users/me/calendarList*' => Http::response(['items' => [['id' => 'work', 'summary' => 'Jobb'], ['id' => 'saljare@exempel.test', 'summary' => 'Säljaren', 'primary' => true]]]),
     ]);
 
@@ -306,7 +306,7 @@ it('talks to Microsoft Graph: UTC times, delta with removed events and a delta l
     config(['services.microsoft_graph.client_id' => 'ms-client', 'services.microsoft_graph.client_secret' => 'ms-secret']);
     $graph = app(MicrosoftGraphProvider::class);
 
-    expect($graph->authorizationUrl('s', 'c'))->toStartWith('https://login.microsoftonline.com/common/oauth2/v2.0/authorize?')
+    expect($graph->authorizationUrl('s', 'c'))->toStartWith('https://login.microsoftonline.com/organizations/oauth2/v2.0/authorize?')
         ->and($graph->authorizationUrl('s', 'c'))->toContain('Calendars.ReadWrite')
         ->and($graph->revoke('token'))->toBeFalse();
 

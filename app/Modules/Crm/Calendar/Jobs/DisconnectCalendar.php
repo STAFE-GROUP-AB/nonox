@@ -63,12 +63,11 @@ class DisconnectCalendar implements ShouldQueue
             $sync->removeAll($connection);
         }
 
-        if ($provider->isConfigured()) {
-            try {
-                $provider->revoke($connection->refresh_token ?? $connection->access_token);
-            } catch (\Throwable) {
-                // Revocation is best effort; the tokens are deleted below whatever the answer.
-            }
+        // Revoking needs only the token itself, so it is tried even when the provider is no longer configured.
+        try {
+            $provider->revoke($connection->refresh_token ?? $connection->access_token);
+        } catch (\Throwable) {
+            // Revocation is best effort; the tokens are deleted below whatever the answer.
         }
 
         $connection->delete();

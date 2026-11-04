@@ -6,6 +6,7 @@ namespace App\Modules\Crm\Support;
 
 use App\Models\Customer;
 use App\Modules\Crm\Actions\EnsureCustomerAccounts;
+use App\Modules\Crm\Calendar\CalendarSequence;
 use App\Modules\Crm\CrmModule;
 use App\Modules\Crm\Models\Account;
 use App\Modules\ModuleManager;
@@ -59,9 +60,16 @@ final class CustomerAccounts
         }
 
         // Kept in step even while the module is off, so the account is right when it is turned on again.
-        CurrentCompany::run($customer->company_id, fn () => Account::query()
-            ->where('customer_id', $customer->id)
-            ->update([...EnsureCustomerAccounts::sharedFields($customer), 'updated_at' => now()]));
+        CurrentCompany::run($customer->company_id, function () use ($customer): void {
+            Account::query()
+                ->where('customer_id', $customer->id)
+                ->update([...EnsureCustomerAccounts::sharedFields($customer), 'updated_at' => now()]);
+
+            // ADR-049: a renamed customer is renamed in calendars too.
+            if ($customer->wasChanged('name')) {
+                Account::query()->where('customer_id', $customer->id)->pluck('id')->each(fn (int $id) => CalendarSequence::forAccount($id));
+            }
+        });
     }
 
     /**

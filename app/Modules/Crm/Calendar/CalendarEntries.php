@@ -10,6 +10,7 @@ use App\Modules\Crm\Domain\AccountKind;
 use App\Modules\Crm\Domain\ActivityType;
 use App\Modules\Crm\Domain\DoNotContact;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\Person;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -91,7 +92,11 @@ final class CalendarEntries
             ->whereNotNull('due_at')
             ->whereIn('type', self::typeValues())
             ->whereDoesntHave('person', fn (Builder $person) => $person->where('do_not_contact_reason', DoNotContact::Restriction->value))
-            ->whereDoesntHave('account.customer', fn (Builder $customer) => $customer->whereNotNull('processing_restricted_at'));
+            ->whereDoesntHave('account.customer', fn (Builder $customer) => $customer->whereNotNull('processing_restricted_at'))
+            // A private person's account: the people at it are the customer, so a restriction of any of them keeps it out.
+            ->whereDoesntHave('account', fn (Builder $account) => $account
+                ->where('kind', AccountKind::Person->value)
+                ->whereHas('people', fn (Builder $person) => $person->where('do_not_contact_reason', DoNotContact::Restriction->value)));
     }
 
     /** Whether this one activity may be in a calendar (with its relations loaded). */
@@ -101,7 +106,9 @@ final class CalendarEntries
             && $activity->due_at !== null
             && in_array($activity->type, self::TYPES, true)
             && $activity->person?->do_not_contact_reason !== DoNotContact::Restriction
-            && $activity->account?->customer?->processing_restricted_at === null;
+            && $activity->account?->customer?->processing_restricted_at === null
+            && ! ($activity->account?->kind === AccountKind::Person
+                && $activity->account->flaggedPeople->contains(fn (Person $person): bool => $person->do_not_contact_reason === DoNotContact::Restriction));
     }
 
     /** @return array<int|string, mixed> */
@@ -110,6 +117,8 @@ final class CalendarEntries
         return [
             'account:id,company_id,name,kind,customer_id',
             'account.customer:id,company_id,processing_restricted_at',
+            // The people marked Kontakta inte at the account: for a private person's account they decide what may be shown.
+            'account.flaggedPeople:crm_people.id,crm_people.company_id,crm_people.do_not_contact_at,crm_people.do_not_contact_reason',
             'person:id,company_id,name,do_not_contact_at,do_not_contact_reason',
             'deal:id,company_id,title',
         ];
@@ -123,9 +132,11 @@ final class CalendarEntries
         $account = $activity->account;
         $isPrivate = $account?->kind === AccountKind::Person;
         $flagged = $activity->person?->doNotContact() ?? false;
+        // A private person's account where someone is marked Kontakta inte: never named, no text, whatever the choice.
+        $accountFlagged = $isPrivate && $account->flaggedPeople->isNotEmpty();
         $url = route('crm.accounts.show', $activity->account_id);
 
-        if (! $details) {
+        if (! $details || $accountFlagged) {
             $who = $isPrivate || $account === null ? __('privatkund') : $account->name;
 
             return new CalendarEntry(

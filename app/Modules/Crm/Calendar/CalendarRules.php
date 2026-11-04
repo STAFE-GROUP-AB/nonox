@@ -25,4 +25,10 @@ final class CalendarRules
     {
         return app(CalendarProviders::class)->anyConfigured() && CrmSettings::for($company)['calendar_sync'] === 1;
     }
+
+    /** Private Google or Microsoft accounts may be connected, not only organisation accounts. */
+    public static function privateAccountsAllowed(Company $company): bool
+    {
+        return CrmSettings::for($company)['calendar_private_accounts'] === 1;
+    }
 }

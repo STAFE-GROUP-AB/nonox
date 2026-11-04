@@ -34,8 +34,9 @@ use Illuminate\Support\Facades\DB;
  *   it again; ADR-049, conflict policy);
  * - cancelled or deleted: the activity is closed with the note "Inställd i
  *   kalendern", except the last open step of an open deal, which stays
- *   open in NONOX (a deal never loses its next step from outside) and is
- *   written again on its next change.
+ *   open in NONOX (a deal never loses its next step from outside); the
+ *   event map remembers the cancellation, so the event is written again
+ *   only when the activity changes in NONOX.
  *
  * A grant that is gone puts the connection in ERROR: the user is asked to
  * connect again, and nothing more is tried.
@@ -44,6 +45,9 @@ final class CalendarSync
 {
     /** @var array<int, bool> company id => whether details are allowed, for one run */
     private array $details = [];
+
+    /** Days after which a Microsoft delta read starts again from the start (its date window is fixed at the first read). */
+    public const int WINDOW_RESTART_DAYS = 30;
 
     public function __construct(private readonly CalendarProviders $providers) {}
 
@@ -108,7 +112,11 @@ final class CalendarSync
         foreach ($activities as $activity) {
             $mapping = $mappings->get($activity->id);
 
-            if ($force || ! $mapping instanceof CalendarEvent || $mapping->synced_sequence < $activity->calendar_sequence) {
+            $behind = ! $mapping instanceof CalendarEvent || $mapping->synced_sequence < $activity->calendar_sequence;
+            // A deal's last step cancelled in the calendar is written back only after it changes in NONOX.
+            $cancelled = $mapping instanceof CalendarEvent && $mapping->cancelled_remotely_at !== null;
+
+            if ($behind || ($force && ! $cancelled)) {
                 $this->push($connection, $activity, $mapping);
                 $written++;
             }
@@ -131,16 +139,29 @@ final class CalendarSync
         }
 
         $provider = $this->provider($connection);
+        $cursor = $connection->sync_cursor;
+
+        // Microsoft's delta keeps the date window of its first read (30 days back, a year ahead): start it again monthly.
+        // TODO(verify-at-registration): calendarView/delta on a named calendar in Graph v1.0, and its window.
+        if ($connection->provider === CalendarProviderKey::Microsoft
+            && ($connection->cursor_started_at === null || $connection->cursor_started_at->lessThan(CarbonImmutable::now()->subDays(self::WINDOW_RESTART_DAYS)))) {
+            $cursor = null;
+        }
 
         try {
-            $changes = $this->call($connection, fn (string $token) => $provider->changes($token, (string) $connection->calendar_id, $connection->sync_cursor));
+            $changes = $this->call($connection, fn (string $token) => $provider->changes($token, (string) $connection->calendar_id, $cursor));
         } catch (CalendarProviderException $exception) {
             if (! $exception->resync) {
                 throw $exception;
             }
 
-            // The cursor expired: read from the start, then write everything again so nothing is missed.
+            // The cursor expired: read from the start. NONOX's own events are found again through the event map.
+            $cursor = null;
             $changes = $this->call($connection, fn (string $token) => $provider->changes($token, (string) $connection->calendar_id, null));
+        }
+
+        if ($cursor === null) {
+            $connection->cursor_started_at = CarbonImmutable::now();
         }
 
         $applied = 0;
@@ -248,7 +269,7 @@ final class CalendarSync
         $externalId = $this->call($connection, fn (string $token): string => $provider->upsert($token, (string) $connection->calendar_id, $entry, $mapping?->external_id));
 
         if ($mapping instanceof CalendarEvent) {
-            $mapping->forceFill(['external_id' => $externalId, 'synced_sequence' => $activity->calendar_sequence, 'synced_at' => CarbonImmutable::now()])->save();
+            $mapping->forceFill(['external_id' => $externalId, 'synced_sequence' => $activity->calendar_sequence, 'synced_at' => CarbonImmutable::now(), 'cancelled_remotely_at' => null])->save();
 
             return;
         }
@@ -301,14 +322,21 @@ final class CalendarSync
                 return false;
             }
 
-            if ($change->cancelled) {
-                $mapping->delete();
+            // Already cancelled in the calendar and kept open in NONOX: nothing more to read until it changes in NONOX.
+            if ($mapping->cancelled_remotely_at !== null) {
+                return false;
+            }
 
+            if ($change->cancelled) {
                 if (DealNextStep::isLastStep($activity)) {
+                    // The deal keeps its next step; the map remembers the cancellation, so the event is not written back.
+                    $mapping->forceFill(['cancelled_remotely_at' => CarbonImmutable::now(), 'synced_sequence' => $activity->calendar_sequence])->save();
                     Audit::record('crm.calendar_cancel_kept', $activity, ['provider' => $connection->provider->value, 'deal_id' => $activity->deal_id], $company, $user);
 
                     return false;
                 }
+
+                $mapping->delete();
 
                 $activity->forceFill([
                     'done_at' => CarbonImmutable::now(),

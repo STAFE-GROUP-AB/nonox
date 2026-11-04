@@ -21,6 +21,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $external_id
  * @property int $synced_sequence
  * @property ?CarbonImmutable $synced_at
+ * @property ?CarbonImmutable $cancelled_remotely_at a deal's last step cancelled in the calendar: not written back until it changes in NONOX
  */
 class CalendarEvent extends Model
 {
@@ -29,7 +30,7 @@ class CalendarEvent extends Model
     protected $table = 'crm_calendar_events';
 
     /** @var list<string> */
-    protected $fillable = ['company_id', 'connection_id', 'activity_id', 'external_id', 'synced_sequence', 'synced_at'];
+    protected $fillable = ['company_id', 'connection_id', 'activity_id', 'external_id', 'synced_sequence', 'synced_at', 'cancelled_remotely_at'];
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -39,6 +40,7 @@ class CalendarEvent extends Model
             'activity_id' => 'integer',
             'synced_sequence' => 'integer',
             'synced_at' => 'immutable_datetime',
+            'cancelled_remotely_at' => 'immutable_datetime',
         ];
     }
 

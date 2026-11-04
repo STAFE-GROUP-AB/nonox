@@ -27,7 +27,14 @@
                 <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="settings.calendar_sync" aria-describedby="crm-calendar-sync-hint">
                 <span>
                     {{ __('Användarna får koppla sin Google- eller Microsoft-kalender') }}
-                    <span id="crm-calendar-sync-hint" class="block text-gray-600">{{ __('Aktiviteterna kopieras då till Google eller Microsoft, som kan lagra dem utanför EU. Slå bara på det om företaget godkänner det, och ta upp det i företagets egen registerförteckning.') }}</span>
+                    <span id="crm-calendar-sync-hint" class="block text-gray-600">{{ __('Aktiviteterna kopieras då till Google eller Microsoft, som kan lagra dem utanför EU/EES. Slå bara på det om företaget godkänner det, och ta upp det i företagets registerförteckning och i informationen till kontaktpersonerna.') }}</span>
+                </span>
+            </label>
+            <label class="flex items-start gap-3 text-sm text-gray-800">
+                <input type="checkbox" class="mt-0.5 size-5 rounded-sm border-gray-300 text-ink focus:ring-accent-500" wire:model="settings.calendar_private_accounts" aria-describedby="crm-calendar-private-hint">
+                <span>
+                    {{ __('Även privata Google- och Microsoft-konton') }}
+                    <span id="crm-calendar-private-hint" class="block text-gray-600">{{ __('Utan det går bara jobbkonton att koppla (Google Workspace och Microsoft 365), där företaget har eget avtal med leverantören. Ett privat konto styrs av användarens egna villkor hos Google eller Microsoft.') }}</span>
                 </span>
             </label>
         @endif

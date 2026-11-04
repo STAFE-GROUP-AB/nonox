@@ -32,7 +32,7 @@ Hur ofta kalendern hämtar ändringarna bestämmer kalenderprogrammet. Google Ka
 
 ## Detaljer eller inte
 
-Utan detaljer står det bara typen och företaget, till exempel "Möte: Exempelbolaget AB", och en länk till kundkortet i NONOX. En privatperson visas som "privatkund". Det är standard.
+Utan detaljer står det bara typen och företaget, till exempel "Möte: Exempelbolaget AB", och en länk till kundkortet i NONOX. En privatperson visas som "privatkund". Det är standard. Tänk på att en enskild firmas namn ofta är ägarens namn, så det kan synas även utan detaljer.
 
 Med **Visa detaljer i kalendern** kommer också rubriken, platsen, affären, anteckningen och kontaktpersonens namn med.
 
@@ -68,13 +68,16 @@ Ett planerat möte kan du också skicka efteråt med **Skicka inbjudan**. Har m�
 
 Inbjudan är ett mejl med mötet som kalenderfil. Du står som avsändare av mötet, och ett svar går till din e-postadress. Rubrik, tid och plats följer med, aldrig anteckningen. Inbjudan loggas som ett mejl på kunden.
 
+> [!IMPORTANT]
+> Skicka bara en inbjudan till ett möte som personen redan har kommit överens med dig om. En inbjudan till ett säljmöte som en privatperson inte har bett om är marknadsföring med e-post och kräver samtycke (19 § marknadsföringslagen). Är inbjudan första kontakten med någon vars uppgifter ni fått från annat håll ska personen också få informationen enligt artikel 14.
+
 En inbjudan går inte att skicka till någon som är markerad **Kontakta inte**, vars adress finns på spärrlistan, eller till en kund med begränsad behandling eller som är inaktiv i kundregistret.
 
 ## Koppla Google Kalender eller Outlook
 
 En koppling åt båda hållen till Google Kalender och Outlook (Microsoft 365) är byggd men inte påslagen ännu. Den kräver att den som driftar NONOX har registrerat tjänsten hos Google och Microsoft, och att företaget tillåter det under **CRM → Inställningar** med **Användarna får koppla sin Google- eller Microsoft-kalender**. Då visas **Koppla din kalender** på kalendersidan.
 
-Med kopplingen skriver NONOX dina aktiviteter i din egen kalender. Flyttar du eller ställer in ett av dem där följer aktiviteten i NONOX med. Andra händelser i din kalender läses aldrig in. Ändras samma aktivitet både i NONOX och i kalendern gäller det som står i NONOX. Det sista planerade steget i en öppen affär stängs aldrig från kalendern.
+Med kopplingen skriver NONOX dina aktiviteter i din egen kalender. Flyttar du eller ställer in ett av dem där följer aktiviteten i NONOX med. NONOX läser händelserna i den valda kalendern men sparar och använder bara de händelser som NONOX själv har skrivit; andra händelser sparas aldrig. Ändras samma aktivitet både i NONOX och i kalendern gäller det som står i NONOX. Det sista planerade steget i en öppen affär stängs aldrig från kalendern; ställer du in det där läggs det inte tillbaka i kalendern förrän du ändrar det i NONOX. Som standard går bara jobbkonton att koppla (Google Workspace och Microsoft 365); privata konton bara om företaget har tillåtit det med **Även privata Google- och Microsoft-konton**.
 
 ## Bra att veta
 

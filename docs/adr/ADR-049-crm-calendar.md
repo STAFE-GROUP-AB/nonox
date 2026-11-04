@@ -102,7 +102,7 @@ in a calendar and with how much, and one iCalendar writer (`App\Support\Calendar
   (Calendar API v3) and `MicrosoftGraphProvider` (Graph v1.0), plain HTTP
   through Laravel's client; **no SDK** was added. Configured by
   `services.google_calendar` and `services.microsoft_graph` (client id,
-  secret, optional redirect, Microsoft tenant, default `common`). Without
+  secret, optional redirect, Microsoft tenant, default `organizations`). Without
   a client id and secret a provider is invisible: no screen, the connect
   routes answer 404, the observer queues nothing, `crm:calendar-sync` does
   nothing. All tests use `Http::fake` with `preventStrayRequests`.
@@ -125,18 +125,62 @@ in a calendar and with how much, and one iCalendar writer (`App\Support\Calendar
   activity with the sequence last written.
 - **Calendar → NONOX, only for events NONOX wrote**: Google's incremental
   `syncToken` (410 → read everything again) and Graph's
-  `calendarView/delta` (`deltaLink` as the cursor; 410 → again). Every
-  other event in the user's calendar is read past and **never stored**.
+  `calendarView/delta` (`deltaLink` as the cursor; 410 → again). NONOX reads
+  the events of the chosen calendar but stores and uses only those NONOX
+  wrote; every other event is read past and **never stored**.
   A moved event moves the activity (time and length). A cancelled or deleted
   event closes the activity with the note "Inställd i kalendern", except the
   last open step of an open deal, which stays open (a deal never loses its
-  next step from outside; audited `crm.calendar_cancel_kept`).
+  next step from outside; audited `crm.calendar_cancel_kept`). Its event map
+  row is kept with `cancelled_remotely_at`, so the event is not written back,
+  not even by a forced round; it is written again (Google: restored with
+  `status: confirmed`) only when the activity changes in NONOX.
 - **Conflict policy**: NONOX owns the content (subject, text, person, deal);
   the calendar may change only time, length and cancellation. When both
   changed since the last write (`calendar_sequence` > the mapping's
   `synced_sequence`), **NONOX wins** and the next push overwrites the
   calendar. A change read from the calendar sets the mapping's sequence to
   the new one, so it is not written back.
+- **Changes NONOX makes without saving the activity** raise
+  `calendar_sequence` too (`CalendarSequence`): erasing a person or
+  anonymising a customer (mass updates in `EraseCrmData`), closing a
+  restricted person's activities (`SavePerson`), marking a person Kontakta
+  inte or renaming a person, account or customer (model events and the
+  customer observer). Subscribed calendars pick it up on their next fetch;
+  a connected calendar on the next round. Turning the company's
+  `calendar_details` off or on queues a forced round for every connection.
+- **Idempotent writes**: a new Google event gets an id NONOX derives from
+  the UID (lower-case hex, valid base32hex), so a retried insert answers 409
+  and is turned into an update of the same event; no `sequence` is sent to
+  Google (it keeps its own and refuses a lower one). Graph creates use
+  `transactionId`.
+- **Microsoft's delta window** is fixed at its first read (30 days back, a
+  year ahead), so the read starts from the beginning again when
+  `cursor_started_at` is older than 30 days.
+  TODO(verify-at-registration): `calendarView/delta` on a named calendar in
+  Graph v1.0 and its window rules.
+- **Organisation accounts only by default.** Google: the userinfo `hd`
+  claim must be present and not a consumer domain (gmail.com,
+  googlemail.com). Microsoft: tenant `organizations`, and the id token's
+  `tid` must not be the personal-accounts tenant. A company may allow private
+  accounts explicitly (`calendar_private_accounts`, default off); for
+  Microsoft that also needs the registration to accept personal accounts and
+  `MICROSOFT_GRAPH_TENANT=common`. A refused account's fresh grant is revoked
+  at once.
+- **Another account on reconnect**: the event map, cursor and chosen
+  calendar are reset, the primary calendar of the new account is chosen,
+  the old grant is revoked where possible and everything is written again.
+- **Clean-up**: `crm:calendar-sync` also ends connections whose provider is
+  no longer configured or whose company is archived or has CRM off (tokens
+  deleted, the grant revoked where the token alone allows it).
+- **Scope choice (Google)**: `calendar.events` lets the user pick an
+  existing calendar and means NONOX can read all events of that calendar
+  (it stores only its own). `calendar.app.created` would limit NONOX to a
+  calendar it creates itself ("NONOX CRM") and never let it read anything
+  else; it was not chosen because users asked for the activities in their
+  own calendar. To be decided before Google's verification
+  (TODO(owner-decision)); switching is a scope and a "create calendar" step,
+  no change to the sync.
 - **Tokens**: refreshed two minutes before expiry and once on a 401. A
   refused refresh (`invalid_grant`) puts the connection in ERROR, audited,
   and the page asks the user to connect again.
@@ -195,8 +239,9 @@ Nothing here is needed for the link, the file or the invitation.
 ### Microsoft (Microsoft Entra admin center)
 
 1. **App registrations → New registration**: name NONOX; supported account
-   types *Accounts in any organizational directory and personal Microsoft
-   accounts*; redirect URI (platform *Web*)
+   types *Accounts in any organizational directory* (add *and personal
+   Microsoft accounts* only if companies are to be allowed private
+   accounts); redirect URI (platform *Web*)
    `https://nonox.app/kunder/kalender/koppla/microsoft/svar`.
 2. **Certificates & secrets**: a client secret (at most 24 months; put the
    renewal in the calendar).
@@ -210,7 +255,26 @@ Nothing here is needed for the link, the file or the invitation.
    TODO(verify-at-registration): Microsoft's current consent rules for
    unverified multitenant apps.
 5. Put `MICROSOFT_GRAPH_CLIENT_ID`, `MICROSOFT_GRAPH_CLIENT_SECRET` (and
-   `MICROSOFT_GRAPH_TENANT=common`) in the environment.
+   `MICROSOFT_GRAPH_TENANT=organizations`, or `common` with personal
+   accounts) in the environment.
+
+### Gate: all of this before the sync is switched on in the hosted service
+
+1. Both app registrations done and verified as above (Google verification
+   approved; Microsoft publisher verified).
+2. The scope choice for Google decided (`calendar.events` or
+   `calendar.app.created`, above).
+3. The `TODO(legal-verify)` items under GDPR answered, and the privacy
+   policy and sub-processor page updated from "inte tillgängligt ännu".
+4. The `TODO(verify-at-registration)` items checked against the providers'
+   current documentation (Google scopes and review, Microsoft consent rules,
+   Graph `calendarView/delta`).
+5. One end-to-end test per provider against a test account: connect,
+   write, move and cancel in the calendar, disconnect, revoke.
+6. Built in the review round and required before switching on (done):
+   calendar sequences after mass changes, the delta window restart, the kept
+   deal step, reset on another account, idempotent Google inserts,
+   organisation accounts by default, clean-up of unusable connections.
 
 Then a company switches on **Användarna får koppla sin Google- eller
 Microsoft-kalender** under CRM → Inställningar, and each user connects on the

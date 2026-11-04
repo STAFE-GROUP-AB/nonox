@@ -104,11 +104,26 @@ final class GoogleCalendarProvider implements CalendarProvider
         return $response->successful() || $response->status() === 400;
     }
 
-    public function accountEmail(string $accessToken): ?string
-    {
-        $email = $this->json($this->api($accessToken)->get(self::USERINFO), 'userinfo')['email'] ?? null;
+    /** Private Google accounts: consumer domains, and any account without a Workspace domain (hd). */
+    public const array CONSUMER_DOMAINS = ['gmail.com', 'googlemail.com'];
 
-        return is_string($email) ? $email : null;
+    public function account(OAuthTokens $tokens): RemoteAccount
+    {
+        $json = $this->json($this->api($tokens->accessToken)->get(self::USERINFO), 'userinfo');
+        $email = is_string($json['email'] ?? null) ? $json['email'] : null;
+        $domain = is_string($json['hd'] ?? null) ? mb_strtolower($json['hd']) : '';
+
+        return new RemoteAccount($email, $domain !== '' && ! in_array($domain, self::CONSUMER_DOMAINS, true));
+    }
+
+    /**
+     * The event id NONOX gives a new event: base32hex (here lower-case hex)
+     * from the activity's UID, so a retried insert finds the same event
+     * instead of making a second one.
+     */
+    public static function eventId(CalendarEntry $entry): string
+    {
+        return substr(hash('sha256', $entry->uid), 0, 40);
     }
 
     public function calendars(string $accessToken): array
@@ -135,7 +150,8 @@ final class GoogleCalendarProvider implements CalendarProvider
             'location' => $entry->location,
             'start' => ['dateTime' => $entry->start->setTimezone('Europe/Stockholm')->toRfc3339String(), 'timeZone' => 'Europe/Stockholm'],
             'end' => ['dateTime' => $entry->end->setTimezone('Europe/Stockholm')->toRfc3339String(), 'timeZone' => 'Europe/Stockholm'],
-            'sequence' => $entry->sequence,
+            // Restores an event that was cancelled in the calendar when NONOX writes it again.
+            'status' => 'confirmed',
             'visibility' => 'private',
             'source' => $entry->url === null ? null : ['title' => 'NONOX', 'url' => $entry->url],
             'extendedProperties' => ['private' => [self::MARKER => $entry->uid]],
@@ -151,15 +167,22 @@ final class GoogleCalendarProvider implements CalendarProvider
             }
         }
 
-        // The sequence is Google's own on a new event.
-        unset($body['sequence']);
-        $id = $this->json($this->api($accessToken)->post($events, $body), 'events.insert')['id'] ?? null;
+        // No sequence is sent: Google keeps its own and refuses a lower one after an edit in the calendar.
+        $id = self::eventId($entry);
+        $response = $this->api($accessToken)->post($events, [...$body, 'id' => $id]);
 
-        if (! is_string($id) || $id === '') {
+        // The event already exists (a retried insert, or one cancelled earlier): it is updated instead.
+        if ($response->status() === 409) {
+            return (string) ($this->json($this->api($accessToken)->patch($events.'/'.rawurlencode($id), $body), 'events.patch')['id'] ?? $id);
+        }
+
+        $created = $this->json($response, 'events.insert')['id'] ?? null;
+
+        if (! is_string($created) || $created === '') {
             throw new CalendarProviderException('Google answered an insert without an event id.');
         }
 
-        return $id;
+        return $created;
     }
 
     public function delete(string $accessToken, string $calendarId, string $externalId): void

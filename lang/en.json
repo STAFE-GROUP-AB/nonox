@@ -7843,7 +7843,6 @@
     "Klistra in länken. Eller tryck Öppna i kalendern direkt efter att du skapat länken.": "Paste the link. Or tap Open in calendar right after you created the link.",
     "Enstaka möten lägger du in med Lägg till i kalendern på aktiviteten, utan prenumeration.": "Add single meetings with Add to calendar on the activity, without a subscription.",
     "Koppla din kalender": "Connect your calendar",
-    "Tvåvägssynk: NONOX skriver dina samtal, möten och uppgifter i din egen kalender, och flyttar du eller ställer in en av dem där följer aktiviteten i NONOX med. Andra händelser i din kalender läses aldrig in.": "Two-way sync: NONOX writes your calls, meetings and tasks to your own calendar, and if you move or cancel one of them there, the activity in NONOX follows. Other events in your calendar are never read in.",
     ":provider är kopplad": ":provider is connected",
     "NONOX skriver i kalendern :name.": "NONOX writes to the calendar :name.",
     "Senast synkad :time.": "Last synced :time.",
@@ -7857,7 +7856,6 @@
     "Skriv detaljer till kalendern": "Write details to the calendar",
     "Koppla bort kalendern? NONOX tar bort sina händelser från den, och åtkomsten återkallas.": "Disconnect the calendar? NONOX removes its events from it, and the access is revoked.",
     "Microsoft låter inte NONOX återkalla åtkomsten själv. Ta bort NONOX under Appar och tjänster i ditt Microsoft-konto efter bortkopplingen.": "Microsoft does not let NONOX revoke the access itself. Remove NONOX under Apps and services in your Microsoft account after disconnecting.",
-    "Du loggar in hos Google eller Microsoft och godkänner att NONOX får läsa listan över dina kalendrar och skriva händelser. NONOX sparar åtkomsten krypterad och tar bort den när du kopplar bort.": "You sign in with Google or Microsoft and allow NONOX to read the list of your calendars and write events. NONOX keeps the access encrypted and deletes it when you disconnect.",
     "Koppla :provider": "Connect :provider",
     "Se dina aktiviteter i din egen kalender": "See your activities in your own calendar",
     "Längd i kalendern": "Length in the calendar",
@@ -7881,5 +7879,11 @@
     "Användarna får visa detaljer i sina kalendrar": "Users may show details in their calendars",
     "Rubrik, plats, anteckning och personer i kalenderlänkar och kopplade kalendrar, om användaren själv väljer det. Utan: bara typ och företag, till exempel \"Möte: Företaget AB\".": "Subject, place, note and people in calendar links and connected calendars, if the user chooses so. Without: only the type and the company, for example \"Meeting: Company AB\".",
     "Användarna får koppla sin Google- eller Microsoft-kalender": "Users may connect their Google or Microsoft calendar",
-    "Aktiviteterna kopieras då till Google eller Microsoft, som kan lagra dem utanför EU. Slå bara på det om företaget godkänner det, och ta upp det i företagets egen registerförteckning.": "The activities are then copied to Google or Microsoft, which may store them outside the EU. Only turn it on if the company approves it, and list it in the company's own record of processing."
+    "privata konton": "private accounts",
+    "Företaget tillåter bara jobbkonton (Google Workspace eller Microsoft 365). Logga in med ditt jobbkonto.": "The company only allows work accounts (Google Workspace or Microsoft 365). Sign in with your work account.",
+    "Tvåvägssynk: NONOX skriver dina samtal, möten och uppgifter i din egen kalender, och flyttar du eller ställer in en av dem där följer aktiviteten i NONOX med. NONOX läser händelserna i den valda kalendern men sparar och använder bara de händelser som NONOX själv har skrivit; andra händelser sparas aldrig.": "Two-way sync: NONOX writes your calls, meetings and tasks to your own calendar, and if you move or cancel one of them there, the activity in NONOX follows. NONOX reads the events in the chosen calendar but stores and uses only the events NONOX itself wrote; other events are never stored.",
+    "Du loggar in hos Google eller Microsoft och godkänner att NONOX får läsa listan över dina kalendrar och läsa och skriva händelser i dem. NONOX sparar åtkomsten krypterad och tar bort den när du kopplar bort.": "You sign in with Google or Microsoft and allow NONOX to read the list of your calendars and to read and write events in them. NONOX keeps the access encrypted and deletes it when you disconnect.",
+    "Aktiviteterna kopieras då till Google eller Microsoft, som kan lagra dem utanför EU/EES. Slå bara på det om företaget godkänner det, och ta upp det i företagets registerförteckning och i informationen till kontaktpersonerna.": "The activities are then copied to Google or Microsoft, which may store them outside the EU/EEA. Only turn it on if the company approves it, and list it in the company's record of processing and in the information to contact persons.",
+    "Även privata Google- och Microsoft-konton": "Private Google and Microsoft accounts too",
+    "Utan det går bara jobbkonton att koppla (Google Workspace och Microsoft 365), där företaget har eget avtal med leverantören. Ett privat konto styrs av användarens egna villkor hos Google eller Microsoft.": "Without it only work accounts can be connected (Google Workspace and Microsoft 365), where the company has its own agreement with the provider. A private account is governed by the user's own terms with Google or Microsoft."
 }
