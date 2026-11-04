@@ -13,6 +13,15 @@
         <input id="crm-win-back" type="number" min="1" max="36" inputmode="numeric" wire:model="settings.win_back_months" class="{{ $input }}">
     </x-ui.field>
     <div class="sm:col-span-2">
+        <label class="flex items-start gap-3 text-sm text-gray-700">
+            <input id="crm-registry-monitoring" type="checkbox" wire:model="settings.registry_monitoring" class="mt-1 size-5 rounded border-gray-300 text-accent-600 focus:ring-accent-500">
+            <span>
+                <span class="block font-medium text-gray-900">{{ __('Bevaka kunder och prospekt i företagsregistret') }}</span>
+                <span class="block text-gray-600">{{ __('När SCB eller Bolagsverket har nya uppgifter om ett företag med organisationsnummer här, till exempel ny adress, nytt namn, konkurs eller likvidation, får den ansvarige en uppgift. Nya styrelser och VD, betalningsanmärkningar och kreditbetyg kräver en kreditupplysningstjänst och bevakas inte än.') }}</span>
+            </span>
+        </label>
+    </div>
+    <div class="sm:col-span-2">
         <x-button type="submit" wire:loading.attr="disabled">{{ __('Spara') }}</x-button>
     </div>
 </form>

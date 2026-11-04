@@ -39,6 +39,7 @@ class CrmSettingsForm extends Component
 
         $this->companyId = $company->id;
         $this->settings = CrmSettings::for($company);
+        $this->settings['registry_monitoring'] = (bool) $this->settings['registry_monitoring'];
     }
 
     public function save(ModuleManager $modules): void
@@ -52,14 +53,16 @@ class CrmSettingsForm extends Component
             $rules["settings.{$key}"] = ['required', 'integer', "between:{$min},{$max}"];
         }
 
-        $validated = Validator::make(['settings' => $this->settings], $rules, [], [
+        $validated = Validator::make(['settings' => [...$this->settings, 'registry_monitoring' => (int) (bool) ($this->settings['registry_monitoring'] ?? false)]], $rules, [], [
             'settings.months_to_inactive' => __('månader utan faktura'),
             'settings.prune_after_months' => __('månader utan aktivitet'),
             'settings.suppression_review_years' => __('år mellan granskningarna'),
             'settings.win_back_months' => __('månader till vinn tillbaka'),
+            'settings.registry_monitoring' => __('bevakning'),
         ])->validate();
 
         $modules->updateSettings(CrmModule::KEY, $company, $this->user(), array_map('intval', (array) $validated['settings']));
+        $this->settings['registry_monitoring'] = (bool) $this->settings['registry_monitoring'];
 
         $this->toast(__('Inställningarna för CRM är sparade.'));
     }

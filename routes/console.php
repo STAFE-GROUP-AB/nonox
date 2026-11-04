@@ -30,3 +30,14 @@ Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
 Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();
 // CRM stage 2: "Vinn tillbaka" tasks for lost deals and accounts whose date has come, after the status rules.
 Schedule::command('crm:win-back')->dailyAt('05:40')->withoutOverlapping();
+// CRM stage 4 (ADR-047): the company register from SCB's and Bolagsverket's weekly open-data files (and SCB's
+// API when a key is set), only where the operator has turned it on; then the "Ändring hos kunden" tasks every day.
+if (config('services.company_register.import')) {
+    Schedule::command('registry:import scb-bulk')->weeklyOn(1, '03:30')->withoutOverlapping(240);
+    Schedule::command('registry:import bolagsverket-bulk')->weeklyOn(1, '04:40')->withoutOverlapping(240);
+
+    if (config('services.company_register.scb_api_key')) {
+        Schedule::command('registry:import scb-api')->weeklyOn(1, '05:00')->withoutOverlapping(240);
+    }
+}
+Schedule::command('crm:registry-watch')->dailyAt('06:10')->withoutOverlapping();

@@ -1,0 +1,12 @@
+ForAndrTyp	COAdress	Foretagsnamn	FtgStat	Gatuadress	JEStat	JurForm	Namn	Ng1	Ng2	Ng3	Ng4	Ng5	PeOrgNr	PostNr	PostOrt	RegDatKtid	Reklamsparrtyp	mCOAdress	mForetagsnamn	mFtgStat	mGatuadress	mJurForm	mNamn	mNg1	mNg2	mNg3	mNg4	mNg5	mPostNr	mPostOrt	mRegDatKtid	mReklamsparrtyp	mJEStat	
+1			1	Exempelgatan 1	1	49	Kodverket Exempel AB	62100	62201				165599996013	11122	STOCKHOLM	20190312	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Exempelgatan 2	1	49	Molntjänst Exempel AB	62100					165599996021	11123	STOCKHOLM	20210601	2	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Provvägen 3	1	31	Måleri Exempel HB	43341					165599996039	41101	GÖTEBORG	20150101	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Testleden 4	1	49	Åkeri Ödmjuk Exempel AB	49410					165599996047	21115	MALMÖ	20120515	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			9	Exempelgatan 5	1	49	Vilande Exempel AB	62100					165599996054	11124	STOCKHOLM	20080101	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Exempelgatan 6	1	49	Konkursbolaget Exempel AB	62201					165599996062	11125	STOCKHOLM	20170101	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Provgatan 7	1	49	Krogen Exempel AB	56110					165599996070	21116	MALMÖ	20200202	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Föreningsvägen 8	1	61	Idrottsföreningen Exempel	93120					165599996088	75220	UPPSALA	19990101	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Exempelgatan 9	1	49	Bokföringsbyrån Exempel AB	69201					165599996096	11126	STOCKHOLM	20220909	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1		Exempelfirman	1	Personvägen 1	1	10	Exempelsson, Erik	62100					198001019996	11127	STOCKHOLM	20200101	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	
+1			1	Arvsgatan 1	1	91	Dödsbo efter Exempelsson	68201					165599996104	11128	STOCKHOLM	20200101	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	1	

@@ -1,0 +1,8 @@
+organisationsidentitet;namnskyddslopnummer;registreringsland;organisationsnamn;organisationsform;avregistreringsdatum;avregistreringsorsak;pagandeAvvecklingsEllerOmstruktureringsforfarande;registreringsdatum;verksamhetsbeskrivning;postadress
+"5599996013$ORGNR-IDORG";"";"SE-LAND";"Namn$FORETAGSNAMN-ORGNAMN$2019-03-01";"AB-ORGFO";"";"";"";"2019-03-01";"Bolaget ska bedriva programmering.
+Och konsultverksamhet.";"Gata 1$$Ort$11122$SE-LAND"
+"5599996039$ORGNR-IDORG";"";"SE-LAND";"Namn$FORETAGSNAMN-ORGNAMN$2014-12-20";"HB-ORGFO";"";"";"";"2014-12-20";"Måleri.";"Gata 1$$Ort$11122$SE-LAND"
+"5599996054$ORGNR-IDORG";"";"SE-LAND";"Namn$FORETAGSNAMN-ORGNAMN$2008-01-01";"AB-ORGFO";"2025-06-30";"AVREG-AVORG";"";"2008-01-01";"Vilande.";"Gata 1$$Ort$11122$SE-LAND"
+"5599996062$ORGNR-IDORG";"";"SE-LAND";"Namn$FORETAGSNAMN-ORGNAMN$2017-01-01";"AB-ORGFO";"";"";"|KK-AVOMFO$2026-10-01";"2017-01-01";"Konsult.";"Gata 1$$Ort$11122$SE-LAND"
+"5599996112$ORGNR-IDORG";"";"SE-LAND";"Namn$FORETAGSNAMN-ORGNAMN$2026-01-01";"AB-ORGFO";"";"";"";"2026-01-01";"Finns inte hos SCB.";"Gata 1$$Ort$11122$SE-LAND"
+"198001019996$PERSONNR-IDORG";"1";"SE-LAND";"Exempelfirman";"E-ORGFO";"";"";"";"2020-01-01";"Enskild firma.";"Personvägen 1$$Ort$11127$SE-LAND"

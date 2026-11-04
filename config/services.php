@@ -168,6 +168,32 @@ return [
         ],
     ],
 
+    /*
+     * The company register for prospecting in the CRM (ADR-047): legal
+     * persons from SCB's and Bolagsverket's free weekly bulk files, and
+     * optionally SCB's company register API (free, but a personal API key
+     * from registreraafr.scb.se; adds size classes, municipality, county,
+     * phone and opt-outs). import: run the weekly import from the
+     * scheduler (off by default; a self-hosted instance chooses to load
+     * about 1.2 million rows).
+     */
+    'company_register' => [
+        'import' => (bool) env('COMPANY_REGISTER_IMPORT', false),
+        'scb_bulk_url' => env('COMPANY_REGISTER_SCB_BULK_URL', 'https://vardefulla-datamangder.bolagsverket.se/scb/scb_bulkfil.zip'),
+        'bolagsverket_bulk_url' => env('COMPANY_REGISTER_BOLAGSVERKET_BULK_URL', 'https://vardefulla-datamangder.bolagsverket.se/bolagsverket/bolagsverket_bulkfil.zip'),
+        'scb_api_url' => env('SCB_AFR_API_URL', 'https://apiafr.scb.se/v1/'),
+        'scb_api_key' => env('SCB_AFR_API_KEY'),
+    ],
+
+    /*
+     * Credit information (ADR-047): rating, payment remarks, turnover and
+     * board changes from a credit reporting company. No driver until a
+     * contract exists; null means none.
+     */
+    'credit_data' => [
+        'driver' => env('CREDIT_DATA_DRIVER'),
+    ],
+
     'riksbank' => [
         'url' => env('RIKSBANK_URL', 'https://api.riksbank.se/swea/v1/'),
     ],
