@@ -180,8 +180,10 @@ final class QvaliaAccessPoint implements PeppolAccessPoint
      * A partner subscribes to each child account separately; Qvalia returns
      * the signing secret only in the response that creates the subscription
      * (Webhook API, read 2026-11-04).
+     *
+     * @return array{id: string, secret: ?string}
      */
-    public function subscribeWebhook(PeppolParticipant $participant, string $url): ?array
+    public function subscribeWebhook(PeppolParticipant $participant, string $url): array
     {
         if ($participant->provider_account === null) {
             throw new AccessPointFailed('The company has no account with the access point yet.');
