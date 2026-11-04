@@ -157,7 +157,7 @@ it('keeps every public endpoint inside the company its token or id belongs to', 
         ->and(CurrentCompany::run($this->a['company'], fn () => Person::query()->where('email', 'ny@lead.example')->exists()))->toBeFalse();
 });
 
-it('keeps B\'s held form submissions out of A\'s review: not listed, and 404 on accept or delete', function () {
+it('keeps B\'s held form submissions out of A\'s review: not listed, 404 on accept, and delete answers as for a missing one', function () {
     $form = $this->b['form'];
     RateLimiter::increment('crm-form:'.$form->id, 3600, 60);
     $this->post("/formular/{$form->token}", ['t' => PublicFormController::stamp($form, now()->getTimestamp() - 10), 'name' => 'Hållen Beta', 'email' => 'hallen@lead.example'])->assertOk();
@@ -166,7 +166,10 @@ it('keeps B\'s held form submissions out of A\'s review: not listed, and 404 on 
     expect(FormSubmission::query()->held()->count())->toBe(0);
 
     Livewire::test(FormsPage::class)->assertDontSee('Hållen Beta')->call('acceptHeld', $heldId)->assertNotFound();
-    Livewire::test(FormsPage::class)->call('discardHeld', $heldId)->assertNotFound();
+    Livewire::test(FormsPage::class)->call('discardHeld', $heldId)
+        ->assertDispatched('toast', message: 'Anmälan är redan granskad. Listan är uppdaterad.', type: 'error');
+    Livewire::test(FormsPage::class)->call('discardHeld', $heldId + 1000)
+        ->assertDispatched('toast', message: 'Anmälan är redan granskad. Listan är uppdaterad.', type: 'error');
 
     expect(CurrentCompany::run($this->b['company'], fn () => FormSubmission::query()->held()->count()))->toBe(1);
 });

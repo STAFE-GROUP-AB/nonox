@@ -212,7 +212,11 @@ it('deletes a held submission on request, and removes unreviewed ones after 14 d
     CurrentCompany::set($this->company);
     $first = FormSubmission::query()->held()->orderBy('id')->first();
 
-    Livewire::test(FormsPage::class)->call('discardHeld', $first->id)->assertDispatched('toast');
+    Livewire::test(FormsPage::class)
+        ->call('discardHeld', $first->id)
+        ->assertDispatched('toast', message: 'Anmälan är borttagen.')
+        ->call('discardHeld', $first->id)
+        ->assertDispatched('toast', message: 'Anmälan är redan granskad. Listan är uppdaterad.', type: 'error');
 
     expect(FormSubmission::query()->held()->count())->toBe(1)
         ->and(Person::query()->count())->toBe(0)

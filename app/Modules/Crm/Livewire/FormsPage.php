@@ -117,10 +117,11 @@ class FormsPage extends Component
     public function discardHeld(int $id, SubmitForm $submit): void
     {
         $this->authorizeSettings();
-        $submission = FormSubmission::query()->findOrFail($id);
 
+        // A double click finds the row already gone and gets a toast. Another company's id is not found by the
+        // scoped query either and gets the same toast: the answer is identical, so it reveals nothing.
         try {
-            $submit->discard($this->user(), $this->company(), $submission->id);
+            $submit->discard($this->user(), $this->company(), $id);
         } catch (ValidationException $exception) {
             $this->toast($this->firstError($exception), 'error');
 
