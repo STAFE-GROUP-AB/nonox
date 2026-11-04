@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
 // The systemdokumentation in use, when it has changed (#44), for installations without a deploy script.
@@ -30,3 +31,17 @@ Schedule::command('waitlist:digest')->dailyAt('07:15')->withoutOverlapping();
 Schedule::command('crm:refresh-statuses')->dailyAt('05:25')->withoutOverlapping();
 // CRM stage 2: "Vinn tillbaka" tasks for lost deals and accounts whose date has come, after the status rules.
 Schedule::command('crm:win-back')->dailyAt('05:40')->withoutOverlapping();
+// CRM stage 4 (ADR-047): the company register from SCB's and Bolagsverket's weekly open-data files (and SCB's
+// API when a key is set), only where the operator has turned it on; then the "Ändring hos kunden" tasks every day.
+if (config('services.company_register.import')) {
+    // One after the other: the three share a lock, so a second one started while the first runs would fail.
+    Schedule::command('registry:import scb-bulk')->weeklyOn(1, '03:30')->withoutOverlapping(360)
+        ->then(function (): void {
+            Artisan::call('registry:import', ['source' => 'bolagsverket-bulk']);
+
+            if (config('services.company_register.scb_api_key')) {
+                Artisan::call('registry:import', ['source' => 'scb-api']);
+            }
+        });
+}
+Schedule::command('crm:registry-watch')->dailyAt('06:10')->withoutOverlapping();

@@ -80,6 +80,8 @@ use App\Modules\Connect\Models\IdempotencyRecord;
 use App\Modules\Crm\Models\Account as CrmAccount;
 use App\Modules\Crm\Models\AccountPerson as CrmAccountPerson;
 use App\Modules\Crm\Models\Activity as CrmActivity;
+use App\Modules\Crm\Models\CallList as CrmCallList;
+use App\Modules\Crm\Models\CallListItem as CrmCallListItem;
 use App\Modules\Crm\Models\Deal as CrmDeal;
 use App\Modules\Crm\Models\DealStageChange as CrmDealStageChange;
 use App\Modules\Crm\Models\Goal as CrmGoal;
@@ -87,6 +89,7 @@ use App\Modules\Crm\Models\LossReason as CrmLossReason;
 use App\Modules\Crm\Models\Person as CrmPerson;
 use App\Modules\Crm\Models\Pipeline as CrmPipeline;
 use App\Modules\Crm\Models\PipelineStage as CrmPipelineStage;
+use App\Modules\Crm\Models\RegistryNotice as CrmRegistryNotice;
 use App\Modules\Crm\Models\Suppression as CrmSuppression;
 use App\Modules\Inbox\Models\AllowedSender;
 use App\Modules\Inbox\Models\InboxAttachment;
@@ -308,6 +311,9 @@ const COMPANY_SCOPED_MODELS = [
     CrmDeal::class => 'crmDealAttributes',
     CrmDealStageChange::class => 'crmDealStageChangeAttributes',
     CrmGoal::class => 'crmGoalAttributes',
+    CrmCallList::class => ['name' => 'Hemlig ringlista'],
+    CrmCallListItem::class => 'crmCallListItemAttributes',
+    CrmRegistryNotice::class => 'crmRegistryNoticeAttributes',
     PosConnection::class => 'posConnectionAttributes',
     PosProductLink::class => 'posProductLinkAttributes',
     PosSale::class => 'posSaleAttributes',
@@ -1230,6 +1236,16 @@ function crmDealStageChangeAttributes(): array
     $deal = CrmDeal::create(crmDealAttributes());
 
     return ['deal_id' => $deal->id, 'to_stage_id' => $deal->stage_id, 'changed_at' => now()];
+}
+
+function crmCallListItemAttributes(): array
+{
+    return ['call_list_id' => CrmCallList::create(['name' => 'Hemlig ringlista'])->id, 'account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'position' => 1];
+}
+
+function crmRegistryNoticeAttributes(): array
+{
+    return ['account_id' => CrmAccount::create(['name' => 'Hemligt prospekt AB'])->id, 'registry_change_id' => 1];
 }
 
 function crmGoalAttributes(): array

@@ -145,5 +145,12 @@
     ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.": ":count aktivitet som inte är kopplad till personen nämner namnet. Den ändras inte vid radering; gå igenom den för hand.|:count aktiviteter som inte är kopplade till personen nämner namnet. De ändras inte vid radering; gå igenom dem för hand.",
     ":count affär|:count affärer": ":count affär|:count affärer",
     ":count affär i steget|:count affärer i steget": ":count affär i steget|:count affärer i steget",
-    "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen.": "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen."
+    "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen.": "{0} Inget att försöka igen.|{1} En synk körs igen.|[2,*] :count synkar körs igen.",
+    "{0} Inga nya prospekt.|{1} 1 nytt prospekt.|[2,*] :count nya prospekt.": "{0} Inga nya prospekt.|{1} 1 nytt prospekt.|[2,*] :count nya prospekt.",
+    "{1} 1 fanns redan.|[2,*] :count fanns redan.": "{1} 1 fanns redan.|[2,*] :count fanns redan.",
+    "{1} 1 lades inte till eftersom det finns på listan Kontakta inte.|[2,*] :count lades inte till eftersom de finns på listan Kontakta inte.": "{1} 1 lades inte till eftersom det finns på listan Kontakta inte.|[2,*] :count lades inte till eftersom de finns på listan Kontakta inte.",
+    "{1} 1 företag|[2,*] :count företag": "{1} 1 företag|[2,*] :count företag",
+    "{0} Lägg till markerade|[1,*] Lägg till markerade (:count)": "{0} Lägg till markerade|[1,*] Lägg till markerade (:count)",
+    "{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.": "{0} Inget företag matchar.|{1} 1 företag kommer med.|[2,*] :count företag kommer med.",
+    "{1} ringd en gång förut|[2,*] ringd :count gånger förut": "{1} ringd en gång förut|[2,*] ringd :count gånger förut"
 }

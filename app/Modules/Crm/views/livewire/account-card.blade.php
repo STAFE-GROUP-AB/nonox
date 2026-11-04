@@ -58,7 +58,7 @@
             <x-crm::fact :label="__('Org.nr')"><span class="tabular-nums">{{ $account->org_number ?: '–' }}</span></x-crm::fact>
             <x-crm::fact :label="__('Ansvarig')">{{ $account->owner?->name ?? __('ingen') }}</x-crm::fact>
             <x-crm::fact :label="__('Källa')">{{ $account->source ?: '–' }}</x-crm::fact>
-            <x-crm::fact :label="__('Bransch (SNI)')"><span class="tabular-nums">{{ $account->sni_code ?: '–' }}</span></x-crm::fact>
+            <x-crm::fact :label="__('Bransch (SNI)')"><span class="tabular-nums">{{ App\Support\CompanyRegistry\Sni::label($account->sni_code) ?? '–' }}</span></x-crm::fact>
             <x-crm::fact :label="__('Koncern')">
                 @if($account->parent)<a href="{{ route('crm.accounts.show', $account->parent) }}" class="text-accent-600 hover:text-accent-700">{{ __('Del av') }} {{ $account->parent->name }}</a>@else–@endif
             </x-crm::fact>
@@ -320,6 +320,9 @@
                     </div>
                 @endif
             </x-ui.card>
+
+            {{-- Stage 4 (ADR-047): what the company register says, for an account with an organisation number. --}}
+            <x-crm::registry-facts :org-number="$account->org_number" />
 
             @if($canExport || $account->customer?->isRestricted())
                 <x-ui.card :title="__('Personuppgifter')">

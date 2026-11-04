@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Modules\Crm\Models\Account;
 use App\Modules\Crm\Models\Activity;
+use App\Modules\Crm\Models\CallList;
 use App\Modules\Crm\Models\Deal;
 use App\Modules\Crm\Models\Goal;
 use App\Modules\Crm\Models\LossReason;
@@ -33,7 +34,7 @@ class CrmPolicy
         return $user->hasTeamPermission($company, 'crm:view');
     }
 
-    public function view(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal $record): bool
+    public function view(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal|CallList $record): bool
     {
         $company = Company::query()->find($record->company_id);
 
@@ -45,7 +46,7 @@ class CrmPolicy
         return $user->hasTeamPermission($company, 'crm:manage');
     }
 
-    public function update(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal $record): bool
+    public function update(User $user, Account|Person|Activity|Deal|Pipeline|PipelineStage|LossReason|Goal|CallList $record): bool
     {
         $company = Company::query()->find($record->company_id);
 
