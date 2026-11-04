@@ -2,6 +2,7 @@
 
 > Master instructions for every AI agent working in this repository.
 > Read this file **in full** before starting any task. If a task conflicts with this file, this file wins — stop and ask the human.
+> Then read [`docs/agents/QUICKSTART.md`](docs/agents/QUICKSTART.md): the repository map, the commands, the definition of done and the lessons learned.
 
 Project name: **NONOX Ekonomisystem**
 License: **AGPL-3.0** (dual licensing may be added later — do not add other license headers)

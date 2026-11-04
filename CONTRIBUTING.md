@@ -1,5 +1,7 @@
 # Bidra till NONOX
 
+Ny här, eller en AI-agent som ska skriva kod? Börja med [AGENTS.md](AGENTS.md) och [docs/agents/QUICKSTART.md](docs/agents/QUICKSTART.md): reglerna, en karta över repot, kommandona och vad som ska vara gjort innan något är klart.
+
 Tack för att du vill göra NONOX bättre. Alla får skicka in pull requests. Projektets team granskar dem och slår ihop dem.
 
 *In English: everyone is welcome to open issues and pull requests. Code, comments and commits are written in English; the user interface is Swedish. The rules below apply to every contribution.*

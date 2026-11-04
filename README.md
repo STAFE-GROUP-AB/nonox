@@ -41,7 +41,7 @@ Du äger din data, kan granska varje rad kod och alltid ta med dig allt ut.
 <details>
 <summary><strong>In English</strong></summary>
 
-NONOX is an open-source (AGPL-3.0) bookkeeping, invoicing, VAT, year-end and payroll system for Swedish companies, built with Laravel and PostgreSQL. Posted vouchers are immutable at the database level, every action is written to an append-only audit log, and everything can be exported as SIE4, CSV and PDF. The user interface is in Swedish; code, comments and commits are in English. See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute and [SECURITY.md](SECURITY.md) to report a vulnerability.
+NONOX is an open-source (AGPL-3.0) bookkeeping, invoicing, VAT, year-end and payroll system for Swedish companies, built with Laravel and PostgreSQL. Posted vouchers are immutable at the database level, every action is written to an append-only audit log, and everything can be exported as SIE4, CSV and PDF. The user interface is in Swedish; code, comments and commits are in English. See [CONTRIBUTING.md](CONTRIBUTING.md) to contribute, [docs/agents/QUICKSTART.md](docs/agents/QUICKSTART.md) for a fast start (also for AI coding agents), and [SECURITY.md](SECURITY.md) to report a vulnerability.
 
 </details>
 
