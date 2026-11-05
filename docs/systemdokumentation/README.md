@@ -1872,6 +1872,11 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   per inkomstår i `database/data/income-tax/{år}.json`, varje värde med
   källa. Saknas filen för inkomståret, eller är den inte kontrollerad, räknas
   ingenting av det som behöver parametrarna och ingen NE-fil laddas ner.
+  Filen för 2027 finns men är inte kontrollerad, så 2027 är spärrat tills
+  statslåneräntan den 30 november 2026 är känd och värdena är kontrollerade.
+  Schablonavdragets 10 %-gräns är en åldersregel (fyllt 67 vid årets
+  ingång, SAL 3 kap. 15 §), så för 2027 gäller den den som är född
+  1938–1959.
 - Personnumret i NE-filen är tolv siffror: det århundrade användaren anger
   och företagets nummer. Århundradet ger också födelseåret för
   schablonavdraget; det sparas krypterat (`income_tax_returns.personal`).

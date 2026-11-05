@@ -1,0 +1,17 @@
+{
+    "year": 2027,
+    "note": "Inkomstår 2027 (beskattningsperiod 2027P4). NOT verified: kept blocked until the statslåneränta of 30 November 2026 is published and every value is checked against its source. The schablon band follows SAL 3 kap. 15 § as an age rule (67 at the start of the year), so for 2027 the 10 % band is born 1938–1959, not 1938–1958; NONOX derives it from self_employment_reduced_from_age instead of a birth-year band.",
+    "verified": false,
+    "parameters": {
+        "statslaneranta_bp": {
+            "value": null,
+            "source_url": "",
+            "source_quote": "Not published yet: the statslåneränta at 30 November 2026."
+        },
+        "self_employment_reduced_from_age": {
+            "value": 67,
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/socialavgiftslag-2000980_sfs-2000-980/",
+            "source_quote": "SAL 3 kap. 15 §: Den som vid ingången av beskattningsåret har fyllt 67 år ska bara betala ålderspensionsavgiften. Lag (2022:889)."
+        }
+    }
+}

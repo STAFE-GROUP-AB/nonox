@@ -6,6 +6,7 @@ use App\Actions\IncomeTax\BusinessIncomeTaxReturns;
 use App\Domain\Accounting\AccountType;
 use App\Domain\Company\LegalForm;
 use App\Domain\Company\VatPeriod;
+use App\Domain\IncomeTax\IncomeTaxParameters;
 use App\Domain\IncomeTax\Ne;
 use App\Livewire\Accounting\IncomeTaxPage;
 use App\Models\Account;
@@ -169,6 +170,15 @@ it('blocks the calculations for an inkomstår without verified parameters', func
     expect($ne->hasParameters())->toBeFalse()
         ->and($ne->warnings()[0])->toContain('Statslåneräntan och procentsatserna för inkomståret 2027 finns inte i NONOX än')
         ->and(fn () => $this->returns->sruZip($this->owner, $year))->toThrow(ValidationException::class);
+});
+
+it('keeps 2027 blocked: its parameter file is there, unverified, with the schablon as an age rule', function () {
+    $data = json_decode((string) file_get_contents(database_path('data/income-tax/2027.json')), true);
+
+    expect($data['verified'])->toBeFalse()
+        ->and($data['parameters']['self_employment_reduced_from_age']['value'])->toBe(67)
+        ->and($data['note'])->toContain('born 1938–1959')
+        ->and(IncomeTaxParameters::for(2027))->toBeNull();
 });
 
 it('writes the NE as an SRU file, golden', function () {
