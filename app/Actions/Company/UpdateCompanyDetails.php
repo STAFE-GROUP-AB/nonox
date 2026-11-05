@@ -15,12 +15,15 @@ use App\Domain\Company\VatPeriod;
 use App\Models\Company;
 use App\Models\User;
 use App\Support\Audit\Audit;
+use App\Support\Money\Money;
+use Brick\Math\Exception\MathException;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 
 /**
  * Updates a company's details. The organisation number and legal form are
@@ -38,7 +41,7 @@ class UpdateCompanyDetails
         Gate::forUser($user)->authorize('update', $company);
 
         $dependent = $this->dependentRules($company, $input);
-        foreach (['oss_elected_from', 'eu_sales_quarterly_goods_from', 'industry'] as $optional) {
+        foreach (['oss_elected_from', 'eu_sales_quarterly_goods_from', 'industry', 'preliminary_tax_monthly'] as $optional) {
             if (($input[$optional] ?? null) === '') {
                 $input[$optional] = null;
             }
@@ -62,6 +65,7 @@ class UpdateCompanyDetails
             'framework_confirmed' => $dependent['framework_confirmed'],
             'calendar_year_exempt' => $dependent['calendar_year_exempt'],
             'f_skatt' => ['required', 'boolean'],
+            'preliminary_tax_monthly' => ['sometimes', 'nullable', 'string', 'max:20', $this->amount()],
             'employer_registered' => ['required', 'boolean'],
             'turnover_over_40_msek' => ['sometimes', 'boolean'],
             'oss_elected' => ['sometimes', 'boolean'],
@@ -76,6 +80,7 @@ class UpdateCompanyDetails
             'name' => __('företagsnamn'),
             'website' => __('webbplats'),
             'industry' => __('bransch'),
+            'preliminary_tax_monthly' => __('debiterad preliminärskatt per månad'),
         ])->validateWithBag('updateCompanyDetails');
 
         $confirmed = [
@@ -83,6 +88,12 @@ class UpdateCompanyDetails
             'calendar_year_exempt_confirmed' => (bool) ($validated['calendar_year_exempt'] ?? false),
         ];
         unset($validated['framework_confirmed'], $validated['calendar_year_exempt']);
+
+        if (array_key_exists('preliminary_tax_monthly', $validated)) {
+            // Momsbufferten (ADR-051, stage 3): the amount from the decision, as the company enters it; NONOX never computes it.
+            $validated['preliminary_tax_monthly_ore'] = filled($validated['preliminary_tax_monthly']) ? Money::parse((string) $validated['preliminary_tax_monthly'])->ore : null;
+            unset($validated['preliminary_tax_monthly']);
+        }
 
         $before = $this->snapshot($company);
         $vatRegistered = $validated['vat_period'] !== VatPeriod::None->value;
@@ -100,7 +111,7 @@ class UpdateCompanyDetails
             'eu_sales_quarterly_goods_from' => $this->quarterlyGoodsFrom($company, $validated),
         ])->save();
 
-        $changes = Audit::changes($before, $this->snapshot($company));
+        $changes = self::withoutAmounts(Audit::changes($before, $this->snapshot($company)));
 
         if ($changes['after'] !== []) {
             Audit::record('company.updated', $company, [...$changes, ...array_filter($confirmed)], $company);
@@ -162,7 +173,7 @@ class UpdateCompanyDetails
             'name', 'address_line1', 'postal_code', 'city', 'email', 'phone', 'website',
             'bankgiro', 'plusgiro', 'vat_registered', 'vat_number', 'vat_period', 'vat_exemption',
             'fiscal_year_start_month', 'accounting_method', 'reporting_framework',
-            'f_skatt', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
+            'f_skatt', 'preliminary_tax_monthly_ore', 'employer_registered', 'turnover_over_40_msek', 'oss_elected', 'oss_elected_from',
             'eu_sales_quarterly_goods', 'eu_sales_quarterly_goods_from',
             'industry', 'guide_enabled',
         ]))->map(fn (mixed $value) => match (true) {
@@ -170,6 +181,72 @@ class UpdateCompanyDetails
             $value instanceof \DateTimeInterface => $value->format('Y-m-d'),
             default => $value,
         })->all();
+    }
+
+    /** The most a monthly amount may be (100 000 000 kronor), far above any real decision and far from an integer overflow. */
+    public const int MAX_PRELIMINARY_TAX_ORE = 10_000_000_000;
+
+    /**
+     * The audit log records that the monthly preliminary tax was set, changed
+     * or cleared, never the amount: for a sole trader it is tax data about the
+     * owner, and the log is append-only (AGENTS.md §6.6, QUICKSTART §6).
+     *
+     * @param  array{before: array<string, mixed>, after: array<string, mixed>}  $changes
+     * @return array{before: array<string, mixed>, after: array<string, mixed>}
+     */
+    private static function withoutAmounts(array $changes): array
+    {
+        $key = 'preliminary_tax_monthly_ore';
+
+        if (! array_key_exists($key, $changes['after'])) {
+            return $changes;
+        }
+
+        $before = $changes['before'][$key] ?? null;
+        $after = $changes['after'][$key];
+        $changes['before'][$key] = $before === null ? null : 'set';
+        $changes['after'][$key] = match (true) {
+            $after === null => 'cleared',
+            $before === null => 'set',
+            default => 'changed',
+        };
+
+        return $changes;
+    }
+
+    /** An amount in kronor, not negative and at most MAX_PRELIMINARY_TAX_ORE, as Money::parse reads it. */
+    private function amount(): Closure
+    {
+        return function (string $attribute, mixed $value, Closure $fail): void {
+            if (! is_string($value) || $value === '') {
+                return;
+            }
+
+            // A number too long for öre in a bigint is refused here, never a server error (Brick throws a MathException).
+            if (strlen((string) preg_replace('/\D/', '', $value)) > 15) {
+                $fail(__('Beloppet kan vara högst 100 000 000 kronor i månaden.'));
+
+                return;
+            }
+
+            try {
+                $amount = Money::parse($value);
+            } catch (InvalidArgumentException|MathException) {
+                $fail(__('Skriv beloppet i kronor, till exempel 4 500.'));
+
+                return;
+            }
+
+            if ($amount->isNegative()) {
+                $fail(__('Beloppet kan inte vara negativt.'));
+
+                return;
+            }
+
+            if ($amount->ore > self::MAX_PRELIMINARY_TAX_ORE) {
+                $fail(__('Beloppet kan vara högst 100 000 000 kronor i månaden.'));
+            }
+        };
     }
 
     /**

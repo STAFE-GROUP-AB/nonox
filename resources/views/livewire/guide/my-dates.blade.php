@@ -132,6 +132,17 @@
         <p class="border-t border-white/10 bg-white/5 px-6 py-3 text-sm text-stone-200 sm:px-8">{{ __('Datumen räknas fram ur företagets inställningar och räkenskapsår i NONOX. Kontrollera dem hos Skatteverket eller Bolagsverket, som kan ha beslutat något annat för just ditt företag.') }}</p>
     </section>
 
+    @if($moneyFigures)
+        <section id="momsbufferten" class="scroll-mt-20 rounded-3xl bg-white p-5 shadow-xs ring-1 ring-stone-200 sm:p-6" aria-labelledby="dates-money" data-dates-money>
+            <div class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <h2 id="dates-money" class="text-lg font-bold text-ink">{{ __('Pengar som inte är dina') }}</h2>
+                <span class="text-sm text-gray-600">{{ __('Momsbufferten') }}</span>
+            </div>
+            <p class="mt-1 text-sm text-gray-600">{{ $company->isVatRegistered() ? __('En del av pengarna på kontot är moms och skatt som ska till Skatteverket. Så här mycket, enligt bokföringen.') : __('En del av pengarna på kontot kan vara skatt som ska till Skatteverket. Så här mycket, enligt bokföringen.') }}</p>
+            <x-guide.money-not-yours :figures="$moneyFigures" :company="$company" full :vat-deadlines="$moneyVat" :article-url="$setAsideUrl" class="mt-4" />
+        </section>
+    @endif
+
     <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]">
         <div class="min-w-0 space-y-8">
             <nav aria-label="{{ __('Visa datum för') }}" data-dates-filters>

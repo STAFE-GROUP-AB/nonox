@@ -13,6 +13,7 @@ use App\Domain\Deadlines\DeadlineCategory;
 use App\Domain\Deadlines\DeadlineCompletion;
 use App\Domain\Deadlines\DeadlineFilter;
 use App\Domain\Deadlines\YearAtAGlance;
+use App\Domain\Guide\MoneyNotYours;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\DeadlineCalendarFeed;
@@ -91,7 +92,7 @@ class MyDates extends Component
             : $this->toast(__('Det fanns ingen kalenderlänk att stänga av.'));
     }
 
-    public function render(CompanyDeadlines $deadlines): View
+    public function render(CompanyDeadlines $deadlines, MoneyNotYours $moneyNotYours): View
     {
         $company = $this->company();
 
@@ -140,6 +141,9 @@ class MyDates extends Component
             }
         }
 
+        // Momsbufferten (stage 3): only for those who may see the reports, as the figures are the ledger's.
+        $money = $this->user()->hasTeamPermission($company, 'reports:view') ? $moneyNotYours->summary($company, $today) : ['figures' => null, 'vat' => []];
+
         $firstYear = FiscalYear::query()->orderBy('start_date')->value('start_date');
         $firstYear = $firstYear === null ? null : CarbonImmutable::parse((string) $firstYear);
 
@@ -157,6 +161,9 @@ class MyDates extends Component
             'described' => $described,
             'until' => $until,
             'largeEmployer' => AgiDates::isLarge($company),
+            'moneyFigures' => $money['figures'],
+            'moneyVat' => $money['vat'],
+            'setAsideUrl' => Guide::article('moms-och-skatt', 'satt-undan-pengar', false) === null ? null : Guide::url('moms-och-skatt', 'satt-undan-pengar'),
             'helpHidden' => $this->user()->hidesPanel(self::HELP_PANEL, $company),
             // Counted on the whole window, whatever the filter, so every filter runs the same queries.
             'reported' => DeadlineCompletion::done($company, $window),

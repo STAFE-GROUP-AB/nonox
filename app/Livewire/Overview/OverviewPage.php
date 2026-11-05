@@ -7,6 +7,7 @@ namespace App\Livewire\Overview;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\Deadline;
 use App\Domain\Deadlines\DeadlineCompletion;
+use App\Domain\Guide\MoneyNotYours;
 use App\Domain\Overview\Overview;
 use App\Domain\Overview\OverviewCache;
 use App\Models\Company;
@@ -30,7 +31,7 @@ class OverviewPage extends Component
         $this->dispatch('overview-refreshed');
     }
 
-    public function render(Overview $overview, CompanyDeadlines $deadlines): View
+    public function render(Overview $overview, CompanyDeadlines $deadlines, MoneyNotYours $moneyNotYours): View
     {
         $user = $this->user();
         $company = $this->company();
@@ -49,6 +50,11 @@ class OverviewPage extends Component
             })
             : [];
 
+        // Momsbufferten (ADR-051, stage 3): the ledger's figures, for those who may see the reports, cached with the overview.
+        $money = $company->guide_enabled && $user->hasTeamPermission($company, 'reports:view')
+            ? $moneyNotYours->summary($company, $today)
+            : ['figures' => null, 'vat' => []];
+
         return view('livewire.overview.page', [
             'user' => $user,
             'company' => $company,
@@ -58,6 +64,9 @@ class OverviewPage extends Component
             'todos' => $data['todos'],
             'vouchers' => $data['vouchers'],
             'canSeeStatistics' => $user->hasTeamPermission($company, 'reports:view'),
+            'moneyFigures' => $money['figures'],
+            'moneyVat' => $money['vat'],
+            'setAsideUrl' => Guide::article('moms-och-skatt', 'satt-undan-pengar', false) === null ? null : Guide::url('moms-och-skatt', 'satt-undan-pengar'),
             'nextDates' => array_map(fn (array $item): Deadline => Deadline::fromArray($item), $nextDates),
         ]);
     }

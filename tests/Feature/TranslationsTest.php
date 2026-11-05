@@ -61,8 +61,13 @@ it('has a Swedish and an English version of every text', function () {
 
 it('has a Swedish entry for every plural text, or trans_choice shows the English one', function () {
     $swedish = json_decode((string) file_get_contents(lang_path('sv.json')), true);
-    $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator(app_path(), FilesystemIterator::SKIP_DOTS));
     $missing = [];
+    $files = new AppendIterator;
+
+    // app/ includes the modules' own views (app/Modules/*/views); resources/views has the rest.
+    foreach ([app_path(), resource_path('views')] as $directory) {
+        $files->append(new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)));
+    }
 
     foreach ($files as $file) {
         if (! str_ends_with($file->getFilename(), '.php')) {

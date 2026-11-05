@@ -40,6 +40,14 @@
       "omrade": "Övrigt"
     },
     {
+      "id": "2026-11-05-momsbufferten",
+      "datum": "2026-11-05T00:40:00+01:00",
+      "rubrik": "Momsbufferten: pengar som inte är dina",
+      "beskrivning": "Översikten och Mina datum visar hur mycket av pengarna på banken som är moms, personalskatt och arbetsgivaravgifter, och vad som blir kvar. Siffrorna räknas ur det som är bokfört, med momsen till varje deklaration och varje konto under Så räknar vi. Fyll i beloppet från beslutet om debiterad preliminärskatt under företagets uppgifter om du vill se kommande betalningar.",
+      "typ": "Nytt",
+      "omrade": "Moms"
+    },
+    {
       "id": "2026-11-05-mina-datum-granskning",
       "datum": "2026-11-05T00:33:00+01:00",
       "rubrik": "Mina datum laddar lugnare",

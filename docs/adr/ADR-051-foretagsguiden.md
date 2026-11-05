@@ -288,3 +288,54 @@ was told about which deadline and when. Both are deleted with the account
 and with the company, and recorded in docs/gdpr/registerforteckning.md and
 lagringstider.md. The feed itself holds only the company's name and its
 dates.
+
+## Addendum: stage 3, Momsbufferten (2026-11-05)
+
+### Decision
+
+1. **"Pengar som inte är dina"** answers how much of the money in the bank
+   is not the company's, from the books only. `App\Domain\Guide\MoneyNotYours`
+   reads balances from posted vouchers dated up to today plus opening
+   balances: the company's own money in BAS group 19 (BAS kontoplan 2026:
+   1910 Kassa, 1920 PlusGiro, 1930 Företagskonto, 1940 Övriga bankkonton,
+   1950 Bankcertifikat, 1960 Koncernkonto moderföretag, 1980 Valutakonton),
+   the VAT accounts the settlement moves to 2650 (`VatBoxes::isSettled`,
+   "ännu inte redovisad"), 2650 itself ("redovisad men inte betald"), OSS VAT
+   on 2619, 2710/2730/2731 whenever they carry a balance, and 1630. 1970
+   Särskilda bankkonton (upphovsmannakonto, skogskonto, spärrade bankmedel)
+   and 1990 Redovisningsmedel (money held for others) are listed under "Så
+   räknar vi" with the reason and not counted. Översikt's key figure "Pengar
+   på bank och kassa" keeps 1900–1999, the whole balance of the group. A
+   company that is not registered for VAT and has nothing on the VAT accounts
+   gets no VAT line, only "Företaget är inte momsregistrerat". A fiscal year without opening balances yet is read
+   from the latest year that has them, so the money is there before the
+   year-end rollover. An account the chart lacks is left out, never shown as 0.
+   Read only: it books, changes and logs nothing.
+2. **Kvar efter moms och skatter** = bank + skattekontot − VAT to pay − OSS
+   VAT − employer liabilities − coming preliminary tax. A refund is netted
+   against the VAT to pay (Skatteverket offsets on the skattekonto); what is
+   left to get back is shown but not counted, because it is not in the bank
+   yet. Money already on the tax account pays the taxes, and a debt there
+   adds to them. Taxes not booked as liabilities (final tax, 2512, 2514) are
+   named as not counted.
+3. **Debiterad preliminärskatt is never computed.** It is not in the books
+   until it is booked, and only Skatteverket's decision states it. The
+   company may enter the monthly amount (`teams.preliminary_tax_monthly_ore`,
+   nullable, at most 100 000 000 kr a month); then the payments after today
+   up to the next VAT date are counted, dated by the deadline engine, and a
+   month whose debit is already booked on 1630 (a credit of the same amount
+   in the month) is not counted again. The audit log records only that the
+   amount was set, changed or cleared, never the amount (for a sole trader it
+   is tax data about the owner).
+4. **Per declaration**, Mina datum and the card show the VAT of each period
+   whose date is ahead and is not yet reported in NONOX, computed as the VAT
+   report does (`VatReturn`, box 49) with vouchers up to today, "hittills" for
+   a running period, rounded to hundreds ("ca"). Under kontantmetoden the
+   page says that unpaid invoices carry no VAT in the books yet.
+5. **Where and who**: a card on Översikt (cached with the overview, a fixed
+   number of queries) and a section on Mina datum (`#momsbufferten`) with
+   "Så räknar vi" listing every account and balance, the date of the figures,
+   the last posted voucher and the note that unbooked invoices and receipts
+   are not included. Only with Företagsguiden on, and only for users with
+   `reports:view`. When the VAT to pay is more than the bank balance, a calm
+   note links `moms-och-skatt/satt-undan-pengar`.

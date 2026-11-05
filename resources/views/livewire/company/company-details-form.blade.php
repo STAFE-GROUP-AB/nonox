@@ -185,6 +185,12 @@
                 <x-checkbox wire:model="state.f_skatt" :disabled="! $canUpdate" />
                 <span class="text-sm text-gray-700">{{ __('Företaget har F-skatt') }}</span>
             </label>
+            <div class="ml-8 max-w-md">
+                <x-label for="details_preliminary_tax_monthly" value="{{ __('Debiterad preliminärskatt per månad (frivilligt)') }}" />
+                <input id="details_preliminary_tax_monthly" type="text" inputmode="decimal" class="{{ $field }} tabular-nums" wire:model="state.preliminary_tax_monthly" placeholder="0" @disabled(! $canUpdate) aria-describedby="details_preliminary_tax_monthly_help">
+                <p id="details_preliminary_tax_monthly_help" class="mt-1 text-xs text-gray-500">{{ __('Beloppet i kronor från Skatteverkets beslut om debiterad preliminärskatt. Fyll i det om du vill se kommande betalningar i Momsbufferten; NONOX räknar aldrig ut det själv. Lämna tomt om du inte vet.') }}</p>
+                <x-input-error for="preliminary_tax_monthly" class="mt-2" />
+            </div>
             <label class="flex items-center gap-3">
                 <x-checkbox wire:model="state.employer_registered" :disabled="! $canUpdate" />
                 <span class="text-sm text-gray-700">{{ __('Företaget är registrerat som arbetsgivare') }}</span>

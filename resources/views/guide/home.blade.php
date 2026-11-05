@@ -251,9 +251,9 @@
 
 <section class="gd-band gd-dark" aria-labelledby="gd-soon-title">
   <div class="gd-wrap">
-    <p class="gd-kicker">På väg in i guiden</p>
-    <h2 class="gd-h2" id="gd-soon-title">Det här bygger vi härnäst</h2>
-    <p class="gd-sub">Guiden växer i steg. Mina datum finns nu i NONOX; resten kommer, men vi lovar inga datum förrän det är klart.</p>
+    <p class="gd-kicker">I guiden och i NONOX</p>
+    <h2 class="gd-h2" id="gd-soon-title">Mer än artiklar</h2>
+    <p class="gd-sub">Mina datum och Momsbufferten räknas fram ur ditt företag i NONOX. Branschspåren och Att växa finns här i guiden för alla.</p>
     <ul class="gd-soon">
       <li class="gd-live" data-guide-dates-teaser>
         <span class="gd-soon-badge gd-live-badge">Nu i NONOX</span>
@@ -267,7 +267,18 @@
           @endif
         @endauth
       </li>
-      <li><span class="gd-soon-badge">Kommer</span><h3>Momsbufferten</h3><p>Hur mycket av pengarna på kontot som inte är dina, räknat ur bokföringen.</p></li>
+      <li class="gd-live" data-guide-buffer-teaser>
+        <span class="gd-soon-badge gd-live-badge">Nu i NONOX</span>
+        <h3>Momsbufferten</h3>
+        <p>Hur mycket av pengarna på kontot som inte är dina: moms, personalskatt och arbetsgivaravgifter, räknat ur det som är bokfört.</p>
+        @auth
+          <a class="gd-link gd-live-link" href="{{ route('guide.dates') }}#momsbufferten">Till Momsbufferten {!! $arrow !!}</a>
+        @else
+          @if($signupUrl)
+            <a class="gd-link gd-live-link" href="{{ $signupUrl }}">{{ $signupLabel }} {!! $arrow !!}</a>
+          @endif
+        @endauth
+      </li>
       <li class="gd-live" data-guide-industry-teaser>
         <span class="gd-soon-badge gd-live-badge">Nu i guiden</span>
         <h3>Branschspåren</h3>
