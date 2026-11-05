@@ -66,4 +66,20 @@ enum Industry: string
     {
         return array_map(fn (self $industry): string => $industry->value, self::cases());
     }
+
+    /** The industry's overview article in Företagsguiden (section branscher), or null for Other. */
+    public function guideArticle(): ?string
+    {
+        return match ($this) {
+            self::Cafe => 'kafe',
+            self::Restaurant => 'restaurang',
+            self::Retail => 'butik-och-handel',
+            self::HairBeauty => 'frisor-och-skonhet',
+            self::Crafts => 'hantverkare',
+            self::Consultant => 'konsult',
+            self::AccountingFirm => 'redovisningsbyra',
+            self::FinanceConsultant => 'ekonomikonsult',
+            self::Other => null,
+        };
+    }
 }

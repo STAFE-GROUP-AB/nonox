@@ -45,7 +45,7 @@ Ett vanligt sätt att skriva en offert som håller:
 1. **Beskriv vad som ingår och vad som inte ingår.** Material, antal timmar, resor, antal ändringsrundor.
 2. **Skriv en giltighetstid**, till exempel 30 dagar, så att du inte är bunden längre än du tänkt.
 3. **Skriv betalningsvillkoren**: förfallodag, dröjsmålsränta och eventuell påminnelseavgift. Påminnelseavgiften måste vara avtalad senast när skulden uppstår, så den hör hemma här och inte bara på fakturan. Läs [Ta betalt i tid](/foretagsguiden/vaxa/ta-betalt-i-tid).
-4. **Skriv hur tillägg och ändringar hanteras.** Arbetar du i projekt, till exempel i bygg, är det vanligt att avtala hur ändrings- och tilläggsarbeten (ÄTA) prissätts och godkänns. Läs mer om det i avsnittet Branscher.
+4. **Skriv hur tillägg och ändringar hanteras.** Arbetar du i projekt, till exempel i bygg, är det vanligt att avtala hur ändrings- och tilläggsarbeten (ÄTA) prissätts och godkänns. Läs mer i [ÄTA och projekt](/foretagsguiden/branscher/ata-och-projekt).
 5. **Skicka offerten från NONOX** och gör den till en order eller faktura när kunden tackar ja; läs [Offerter och order](/manual/fakturering/offerter-och-order).
 6. **Spara det du skickar ofta som en mall**; läs [Offertmallar](/manual/crm/offertmallar).
 7. **Låt kunden signera** när det är viktigt att kunna visa vad ni kom överens om; läs [Signering](/manual/crm/signering).

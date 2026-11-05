@@ -255,7 +255,7 @@ it('shows the path for the chosen legal form and industry on the start page, as 
         ->toContain('Registrera livsmedelsanläggningen')
         ->toMatch('#aria-current="true"\s*>Enskild firma</a>#')
         ->toMatch('#aria-current="true"\s*>Kafé</a>#')
-        ->toContain('Branschspår för kafé kommer i Företagsguiden.')
+        ->not->toContain('kommer i Företagsguiden')
         ->toContain('href="'.route('industry', 'bokforing-for-cafeer').'"')
         ->toContain(e(route('guide.article', ['starta', 'registrera-foretaget']).'?bolagsform=EF&bransch=cafe'))
         ->toContain('Rensa valet');
@@ -270,11 +270,13 @@ it('numbers the path from 1 in the order its groups show it', function () {
     $numbers = array_merge(...array_map(fn (array $group): array => array_column($group['steps'], 'number'), $groups));
 
     expect($numbers)->toBe(range(1, count($numbers)))
-        ->and(array_column($groups, 'key'))->toBe(['pengar-och-skatt', 'fler-steg'])
+        ->and(array_column($groups, 'key'))->toBe(['pengar-och-skatt', 'din-bransch', 'fler-steg'])
         ->and($groups[0]['steps'][0]['step']->key)->toBe('forsta-momsdeklarationen')
         ->and($groups[0]['steps'][0]['number'])->toBe(1)
         ->and(StepGroups::of('ansok-om-f-skatt'))->toBe('registrering')
-        ->and(StepGroups::of('okant-steg'))->toBe('fler-steg');
+        ->and(StepGroups::of('okant-steg'))->toBe('fler-steg')
+        ->and(StepGroups::of('okant-steg', ['cafe']))->toBe('din-bransch')
+        ->and(StepGroups::of('lagg-upp-saljtratten'))->toBe('att-vaxa');
 });
 
 it('searches titles, descriptions and search words, ignoring case and diacritics', function () {

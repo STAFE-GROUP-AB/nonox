@@ -20,6 +20,11 @@ final class StepGroups
 
     public const string AGREEMENTS = 'avtal-och-skydd';
 
+    /** Steps written for one or more industries (stage 4), unless listed below. */
+    public const string INDUSTRY = 'din-bransch';
+
+    public const string GROWTH = 'att-vaxa';
+
     public const string OTHER = 'fler-steg';
 
     /** @var array<string, string> step key => group */
@@ -47,6 +52,11 @@ final class StepGroups
         'skriv-avtal-mellan-agarna' => self::AGREEMENTS,
         'se-over-forsakringar' => self::AGREEMENTS,
         'ordna-personuppgifterna' => self::AGREEMENTS,
+        'rakna-fram-ditt-pris' => self::GROWTH,
+        'satt-betalningsvillkor' => self::GROWTH,
+        'gor-en-likviditetsbudget' => self::GROWTH,
+        'lagg-upp-saljtratten' => self::GROWTH,
+        'forbered-forsta-anstallningen' => self::GROWTH,
     ];
 
     /** @return array<string, string> group => Swedish heading, in display order */
@@ -57,13 +67,16 @@ final class StepGroups
             self::MONEY => __('Pengar och skatt'),
             self::BOOKKEEPING => __('Bokföring i NONOX'),
             self::AGREEMENTS => __('Avtal och skydd'),
+            self::INDUSTRY => __('Din bransch'),
+            self::GROWTH => __('Att växa'),
             self::OTHER => __('Fler steg'),
         ];
     }
 
-    public static function of(string $stepKey): string
+    /** @param  list<string>  $industries  the step's industries: an unlisted industry step goes to Din bransch */
+    public static function of(string $stepKey, array $industries = []): string
     {
-        return self::STEPS[$stepKey] ?? self::OTHER;
+        return self::STEPS[$stepKey] ?? ($industries === [] ? self::OTHER : self::INDUSTRY);
     }
 
     /**
@@ -78,7 +91,7 @@ final class StepGroups
         $grouped = [];
 
         foreach ($steps as $step) {
-            $grouped[self::of($step->key)][] = $step;
+            $grouped[self::of($step->key, $step->industries)][] = $step;
         }
 
         $groups = [];

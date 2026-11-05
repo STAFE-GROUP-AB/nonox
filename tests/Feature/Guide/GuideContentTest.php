@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Domain\Company\Industry;
 use App\Support\Guide\Guide;
 use App\Support\Guide\GuideQuestions;
 use App\Support\Guide\GuideValidator;
@@ -58,4 +59,19 @@ it('answers every question on the start page with a written article', function (
     }
 
     expect(GuideQuestions::answered())->toHaveCount(count(GuideQuestions::QUESTIONS));
+});
+
+it('has a written industry track for every industry but Annan bransch', function () {
+    foreach (Industry::cases() as $industry) {
+        $industry === Industry::Other
+            ? expect($industry->guideArticle())->toBeNull()
+            : expect(Guide::article('branscher', (string) $industry->guideArticle(), false))->not->toBeNull("{$industry->value} has no track in branscher.");
+    }
+});
+
+it('links the chosen industry to its track on the start page', function () {
+    $this->get('/foretagsguiden?bolagsform=AB&bransch=cafe')->assertOk()
+        ->assertSee('href="'.route('guide.article', ['branscher', 'kafe']).'"', false)
+        ->assertSee('Branschspåren')
+        ->assertSee('href="'.route('guide.section', 'vaxa').'"', false);
 });

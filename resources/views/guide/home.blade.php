@@ -193,7 +193,10 @@
               <p>{{ $industryPage['text'] }}</p>
               <a class="gd-link" href="{{ $industryPage['url'] }}">Så fungerar NONOX för {{ mb_strtolower($industryPage['name']) }} {!! $arrow !!}</a>
             @endif
-            <p>Branschspår för {{ mb_strtolower($industry->label()) }} kommer i Företagsguiden. Tills dess gäller stegen här för alla branscher, och de steg som bara gäller vissa branscher är med.</p>
+            @if($industry->guideArticle() && App\Support\Guide\Guide::article('branscher', $industry->guideArticle(), false))
+              <p>Stegen ovan har med det som är särskilt för {{ mb_strtolower($industry->label()) }}. Läs mer i branschspåret.</p>
+              <a class="gd-link" href="{{ route('guide.article', ['section' => 'branscher', 'article' => $industry->guideArticle()]) }}" data-guide-industry-track>Branschspåret för {{ mb_strtolower($industry->label()) }} {!! $arrow !!}</a>
+            @endif
           </div>
         @endif
       </aside>
@@ -265,8 +268,18 @@
         @endauth
       </li>
       <li><span class="gd-soon-badge">Kommer</span><h3>Momsbufferten</h3><p>Hur mycket av pengarna på kontot som inte är dina, räknat ur bokföringen.</p></li>
-      <li><span class="gd-soon-badge">Kommer</span><h3>Branschspåren</h3><p>Fördjupade steg för kaféer, restauranger, hantverkare och de andra branscherna.</p></li>
-      <li><span class="gd-soon-badge">Kommer</span><h3>Att växa</h3><p>Första anställningen, att byta företagsform och att finansiera nästa steg.</p></li>
+      <li class="gd-live" data-guide-industry-teaser>
+        <span class="gd-soon-badge gd-live-badge">Nu i guiden</span>
+        <h3>Branschspåren</h3>
+        <p>Det som är särskilt för kaféer, restauranger, butiker, frisörer, hantverkare, konsulter och byråer, med egna steg i startplanen.</p>
+        <a class="gd-link gd-live-link" href="{{ route('guide.section', 'branscher') }}">Till branschspåren {!! $arrow !!}</a>
+      </li>
+      <li class="gd-live" data-guide-growth-teaser>
+        <span class="gd-soon-badge gd-live-badge">Nu i guiden</span>
+        <h3>Att växa</h3>
+        <p>Sätta pris, ta betalt i tid, hitta kunder, första anställningen och att byta företagsform.</p>
+        <a class="gd-link gd-live-link" href="{{ route('guide.section', 'vaxa') }}">Till Att växa {!! $arrow !!}</a>
+      </li>
     </ul>
   </div>
 </section>
