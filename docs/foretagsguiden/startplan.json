@@ -460,6 +460,90 @@
           "url": "https://www.imy.se/verksamhet/dataskydd/dataskydd-pa-olika-omraden/foretag/"
         }
       ]
+    },
+    {
+      "nyckel": "rakna-fram-ditt-pris",
+      "rubrik": "Räkna fram ditt pris",
+      "text": "Räkna ut vad en timme eller en vara kostar dig med avgifter, semester och tid du inte kan fakturera. Lägg in priset på en artikel så följer det med till offerter och fakturor.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "vaxa/satt-ratt-pris",
+      "nonox_rutt": "invoicing.articles",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Belopp och procent inkomstår 2026",
+          "url": "https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "satt-betalningsvillkor",
+      "rubrik": "Bestäm betalningsvillkor och påminnelser",
+      "text": "Bestäm förfallodag, dröjsmålsränta och eventuell påminnelseavgift och skriv in dem i offerten eller avtalet innan du levererar – en påminnelseavgift som först står på fakturan räcker normalt inte. Ställ in förfallodagen på kunderna och följ upp förfallna fakturor varje vecka.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "vaxa/ta-betalt-i-tid",
+      "nonox_rutt": "invoicing.customers",
+      "kallor": [
+        {
+          "titel": "Riksdagen – Räntelag (1975:635)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/rantelag-1975635_sfs-1975-635/"
+        },
+        {
+          "titel": "Riksdagen – Lag (1981:739) om ersättning för inkassokostnader m.m., 2 §",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-1981739-om-ersattning-for-inkassokostnader_sfs-1981-739/"
+        }
+      ]
+    },
+    {
+      "nyckel": "gor-en-likviditetsbudget",
+      "rubrik": "Gör en likviditetsbudget",
+      "text": "Skriv upp månad för månad vad som kommer in och vad som går ut, med moms och skatt de månader de ska betalas, så ser du i tid om pengarna räcker.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "vaxa/likviditet-och-budget",
+      "nonox_rutt": "accounting.reports",
+      "kallor": [
+        {
+          "titel": "Verksamt.se – Financing your start",
+          "url": "https://verksamt.se/en/financing-business-advice/financing-your-start"
+        }
+      ]
+    },
+    {
+      "nyckel": "lagg-upp-saljtratten",
+      "rubrik": "Lägg upp en enkel säljrutin",
+      "text": "Gör en lista över tänkbara kunder, lägg in affärerna i säljtratten med ett nästa steg, och kontrollera reglerna för reklam via e-post och telefon innan du kontaktar privatpersoner.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "vaxa/hitta-kunder",
+      "nonox_rutt": "crm.deals",
+      "kallor": [
+        {
+          "titel": "Riksdagen – Marknadsföringslag (2008:486)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/marknadsforingslag-2008486_sfs-2008-486/"
+        }
+      ]
+    },
+    {
+      "nyckel": "forbered-forsta-anstallningen",
+      "rubrik": "Förbered den första anställningen",
+      "text": "Skriv anställningsavtalet, ge skriftlig information om de viktigaste villkoren senast sju kalenderdagar efter att personen börjat, gå igenom arbetsmiljön och lägg upp den anställda i lönemodulen.",
+      "bolagsformer": [],
+      "branscher": [],
+      "villkor": null,
+      "artikel": "vaxa/forsta-anstallningen",
+      "nonox_rutt": "payroll.employees",
+      "kallor": [
+        {
+          "titel": "Riksdagen – Lag (1982:80) om anställningsskydd",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-198280-om-anstallningsskydd_sfs-1982-80/"
+        }
+      ]
     }
   ]
 }
