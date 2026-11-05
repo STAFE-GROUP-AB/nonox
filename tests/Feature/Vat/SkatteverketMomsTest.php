@@ -200,7 +200,8 @@ it('sends the draft locked for signing and shows Skatteverket\'s signing link on
 
     // A link to any other site is never shown.
     app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january);
-    expect(VatSubmission::query()->sole()->signing_link)->toBeNull();
+    expect(VatSubmission::query()->sole()->signing_link)->toBeNull()
+        ->and(VatSubmission::query()->sole()->locked)->toBeTrue();
 });
 
 it('shows Skatteverket\'s own error text, and ends the sign-in on 401', function () {
@@ -350,7 +351,42 @@ it('keeps a correction waiting for its signature when the status is fetched', fu
 
     expect($submission->status)->toBe(VatSubmissionStatus::ReadyToSign)
         ->and($submission->signing_link)->toBe(SKV_SIGNING)
-        ->and($submission->receipt_number)->toBe('K-1');
+        ->and($submission->receipt_number)->toBe('K-1')
+        ->and($submission->decided_boxes)->toBeNull();
+});
+
+it('unlocks and tries once more when Skatteverket says a draft NONOX did not lock is locked', function () {
+    signedInWithSkatteverket();
+    Http::fake([
+        SKV_API.'/las/*' => Http::response(null, 204),
+        SKV_API.'/utkast/*' => Http::sequence()
+            ->push(['kod' => '409', 'meddelandeTillAnvandare' => 'Utkastet är låst.'], 409)
+            ->push(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => SKV_SIGNING]),
+    ]);
+
+    $submission = app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january);
+
+    expect($submission->status)->toBe(VatSubmissionStatus::ReadyToSign);
+    Http::assertSentCount(3);
+});
+
+it('stops when the draft is being signed, and no longer offers the old link once unlocked', function () {
+    signedInWithSkatteverket();
+    VatSubmission::query()->create(['period_start' => '2026-01-01', 'period_end' => '2026-01-31', 'status' => VatSubmissionStatus::ReadyToSign, 'boxes' => [49 => 50], 'locked' => true, 'signing_link' => SKV_SIGNING, 'sent_at' => now()]);
+    Http::fake([
+        SKV_API.'/las/*' => Http::sequence()->push(['kod' => '409'], 409)->push(null, 204),
+        SKV_API.'/utkast/*' => Http::response(['kod' => '503', 'meddelandeTillAnvandare' => 'Tjänsten är inte tillgänglig.'], 503),
+    ]);
+
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january))
+        ->toThrow(SkatteverketFailed::class, 'Skatteverket answered 409');
+    expect(VatSubmission::query()->sole()->signing_link)->toBe(SKV_SIGNING);
+
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january))->toThrow(SkatteverketFailed::class);
+    $submission = VatSubmission::query()->sole();
+    expect($submission->status)->toBe(VatSubmissionStatus::Draft)
+        ->and($submission->locked)->toBeFalse()
+        ->and($submission->signing_link)->toBeNull();
 });
 
 it('treats nothing filed as nothing filed', function () {
@@ -375,5 +411,6 @@ it('clears signing links of drafts Skatteverket has removed', function () {
 
     $this->artisan('privacy:prune')->assertSuccessful();
 
-    expect(VatSubmission::query()->sole()->signing_link)->toBeNull();
+    expect(VatSubmission::query()->sole()->signing_link)->toBeNull()
+        ->and(VatSubmission::query()->sole()->locked)->toBeTrue();
 });

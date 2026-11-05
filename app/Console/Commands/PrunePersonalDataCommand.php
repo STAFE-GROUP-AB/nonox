@@ -86,7 +86,7 @@ class PrunePersonalDataCommand extends Command
             $skatteverket = SkatteverketToken::query()->whereRaw('coalesce(refresh_expires_at, expires_at) < ?', [$now])->delete();
 
             // Skatteverket removes an unsigned draft 30 days after it was sent; its signing link (which can hold a sole trader's personnummer) goes with it.
-            $signingLinks = VatSubmission::query()->whereNotNull('signing_link')->where('sent_at', '<', $now->subDays(self::RETENTION['vat_signing_links']))->update(['signing_link' => null, 'locked' => false]);
+            $signingLinks = VatSubmission::query()->whereNotNull('signing_link')->where('sent_at', '<', $now->subDays(self::RETENTION['vat_signing_links']))->update(['signing_link' => null]);
 
             $calendarLinks = DeadlineCalendarFeed::query()->whereNotNull('revoked_at')->where('revoked_at', '<', $now->subDays(self::RETENTION['revoked_calendar_links']))->delete();
 

@@ -46,21 +46,21 @@ class SendVatReturnToSkatteverket
                 throw ValidationException::withMessages(['skatteverket' => __('Det finns ingen moms att redovisa för perioden. En deklaration utan belopp lämnar du direkt hos Skatteverket.')]);
             }
 
-            // A draft NONOX locked earlier is unlocked first: Skatteverket saves no draft over a locked one (Tjänstebeskrivning 4.1.1).
+            // A locked draft must be unlocked before a new one is saved (Tjänstebeskrivning 4.1.1): first when NONOX locked it,
+            // and once more when Skatteverket answers 409 for a draft locked elsewhere or kept past NONOX's 30 days.
             $earlier = VatSubmission::query()->whereDate('period_end', $moms->period['end'])->first();
+            $unlocked = $earlier?->locked === true && $this->unlock($moms, $earlier);
 
-            if ($earlier?->locked === true) {
-                try {
-                    $moms->api->unlock($moms->redovisare, $moms->code);
-                } catch (SkatteverketFailed $exception) {
-                    // Gone already (removed after 30 days, or signed): nothing to unlock.
-                    if ($exception->status !== 404) {
-                        throw $exception;
-                    }
+            try {
+                $result = $moms->api->save($moms->redovisare, $moms->code, $moms->payload(), lock: true);
+            } catch (SkatteverketFailed $exception) {
+                if ($exception->status !== 409 || $unlocked) {
+                    throw $exception;
                 }
-            }
 
-            $result = $moms->api->save($moms->redovisare, $moms->code, $moms->payload(), lock: true);
+                $this->unlock($moms, $earlier);
+                $result = $moms->api->save($moms->redovisare, $moms->code, $moms->payload(), lock: true);
+            }
 
             if (! $result['saved']) {
                 throw new DraftRefused($result['check']);
@@ -85,5 +85,33 @@ class SendVatReturnToSkatteverket
 
             return $submission;
         });
+    }
+
+    /**
+     * Unlocks the period's draft at Skatteverket; a draft that is gone (404)
+     * needs nothing. While it is being signed Skatteverket answers 409, and
+     * that stops the send. The row no longer offers the old signing link.
+     */
+    private function unlock(MomsPeriod $moms, ?VatSubmission $earlier): bool
+    {
+        try {
+            $moms->api->unlock($moms->redovisare, $moms->code);
+        } catch (SkatteverketFailed $exception) {
+            if ($exception->status === 409) {
+                throw new SkatteverketFailed(409, __('Utkastet håller på att skrivas under hos Skatteverket. Vänta tills underskriften är klar och hämta sedan status.'), $exception->errorCode);
+            }
+
+            if ($exception->status !== 404) {
+                throw $exception;
+            }
+        }
+
+        if ($earlier !== null && $earlier->status !== VatSubmissionStatus::Submitted) {
+            $earlier->forceFill(['status' => VatSubmissionStatus::Draft, 'locked' => false, 'signing_link' => null])->save();
+        } elseif ($earlier !== null) {
+            $earlier->forceFill(['locked' => false, 'signing_link' => null])->save();
+        }
+
+        return true;
     }
 }

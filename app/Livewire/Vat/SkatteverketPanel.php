@@ -26,7 +26,7 @@ use Livewire\Component;
 
 /**
  * The momsdeklaration with Skatteverket for one period (ADR-054): sign in
- * with BankID, let Skatteverket check the return, send it as a draft locked
+ * with e-legitimation, let Skatteverket check the return, send it as a draft locked
  * for signing, open Skatteverket's signing page, and see the receipt and
  * the decided amounts afterwards.
  */

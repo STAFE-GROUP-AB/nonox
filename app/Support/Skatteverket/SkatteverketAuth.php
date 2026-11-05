@@ -77,9 +77,9 @@ final class SkatteverketAuth
             return null;
         }
 
-        // One refresh at a time per person: a parallel request waits and reuses the new token.
+        // One refresh at a time per person: a parallel request waits and reuses the new token. The lock outlives the 30-second token request.
         try {
-            return Cache::lock("skatteverket:refresh:{$user->id}", 20)->block(15, fn (): ?string => self::refresh($user));
+            return Cache::lock("skatteverket:refresh:{$user->id}", 45)->block(35, fn (): ?string => self::refresh($user));
         } catch (LockTimeoutException) {
             throw new SkatteverketFailed(503, __('Skatteverket svarar inte just nu. Försök igen om en stund.'));
         }

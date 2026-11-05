@@ -65,9 +65,10 @@ class RefreshVatSubmission
                 'boxes' => $existing->boxes ?? $latest['boxes'],
                 'receipt_number' => mb_substr($latest['receipt'], 0, 64),
                 'submitted_at' => $submittedAt,
-                'decided_boxes' => $decided['boxes'] ?? null,
-                'decided_at' => ($decided['decidedAt'] ?? '') === '' ? null : CarbonImmutable::parse((string) $decided['decidedAt']),
+                // The earlier filing's decision is not compared with a correction still waiting for its signature.
                 ...($pending ? [] : [
+                    'decided_boxes' => $decided['boxes'] ?? null,
+                    'decided_at' => ($decided['decidedAt'] ?? '') === '' ? null : CarbonImmutable::parse((string) $decided['decidedAt']),
                     'status' => VatSubmissionStatus::Submitted,
                     'locked' => false,
                     'signing_link' => null,
