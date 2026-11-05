@@ -342,6 +342,7 @@
       "text": "Säljer du mot kontanter eller kort, eller arbetar du i en bransch med personalliggare (restaurang, kropps- och skönhetsvård, bygg, tvätteri, fordonsservice, livsmedels- och tobaksgrossister)? Ta reda på vad som krävs innan du öppnar.",
       "bolagsformer": [],
       "branscher": [
+        "crafts",
         "other"
       ],
       "villkor": null,

@@ -75,3 +75,13 @@ it('links the chosen industry to its track on the start page', function () {
         ->assertSee('Branschspåren')
         ->assertSee('href="'.route('guide.section', 'vaxa').'"', false);
 });
+
+it('gives the general register check to craftsmen and Annan bransch only, never twice to an industry with its own steps', function () {
+    $keys = fn (?string $industry): array => array_map(fn ($step): string => $step->key, Guide::pathFor('AB', $industry));
+
+    expect($keys('crafts'))->toContain('kassaregister-och-personalliggare')
+        ->and($keys('other'))->toContain('kassaregister-och-personalliggare')
+        ->and($keys('cafe'))->not->toContain('kassaregister-och-personalliggare')
+        ->and($keys('cafe'))->toContain('skaffa-och-anmal-kassaregister')
+        ->and($keys(null))->not->toContain('kassaregister-och-personalliggare');
+});
