@@ -16,6 +16,7 @@ use App\Models\Company;
 use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
+use Brick\Math\Exception\MathException;
 use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Support\Facades\Gate;
@@ -110,7 +111,7 @@ class UpdateCompanyDetails
             'eu_sales_quarterly_goods_from' => $this->quarterlyGoodsFrom($company, $validated),
         ])->save();
 
-        $changes = Audit::changes($before, $this->snapshot($company));
+        $changes = self::withoutAmounts(Audit::changes($before, $this->snapshot($company)));
 
         if ($changes['after'] !== []) {
             Audit::record('company.updated', $company, [...$changes, ...array_filter($confirmed)], $company);
@@ -182,7 +183,38 @@ class UpdateCompanyDetails
         })->all();
     }
 
-    /** An amount in kronor, not negative, as Money::parse reads it. */
+    /** The most a monthly amount may be (100 000 000 kronor), far above any real decision and far from an integer overflow. */
+    public const int MAX_PRELIMINARY_TAX_ORE = 10_000_000_000;
+
+    /**
+     * The audit log records that the monthly preliminary tax was set, changed
+     * or cleared, never the amount: for a sole trader it is tax data about the
+     * owner, and the log is append-only (AGENTS.md §6.6, QUICKSTART §6).
+     *
+     * @param  array{before: array<string, mixed>, after: array<string, mixed>}  $changes
+     * @return array{before: array<string, mixed>, after: array<string, mixed>}
+     */
+    private static function withoutAmounts(array $changes): array
+    {
+        $key = 'preliminary_tax_monthly_ore';
+
+        if (! array_key_exists($key, $changes['after'])) {
+            return $changes;
+        }
+
+        $before = $changes['before'][$key] ?? null;
+        $after = $changes['after'][$key];
+        $changes['before'][$key] = $before === null ? null : 'set';
+        $changes['after'][$key] = match (true) {
+            $after === null => 'cleared',
+            $before === null => 'set',
+            default => 'changed',
+        };
+
+        return $changes;
+    }
+
+    /** An amount in kronor, not negative and at most MAX_PRELIMINARY_TAX_ORE, as Money::parse reads it. */
     private function amount(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
@@ -190,9 +222,16 @@ class UpdateCompanyDetails
                 return;
             }
 
+            // A number too long for öre in a bigint is refused here, never a server error (Brick throws a MathException).
+            if (strlen((string) preg_replace('/\D/', '', $value)) > 15) {
+                $fail(__('Beloppet kan vara högst 100 000 000 kronor i månaden.'));
+
+                return;
+            }
+
             try {
                 $amount = Money::parse($value);
-            } catch (InvalidArgumentException) {
+            } catch (InvalidArgumentException|MathException) {
                 $fail(__('Skriv beloppet i kronor, till exempel 4 500.'));
 
                 return;
@@ -200,6 +239,12 @@ class UpdateCompanyDetails
 
             if ($amount->isNegative()) {
                 $fail(__('Beloppet kan inte vara negativt.'));
+
+                return;
+            }
+
+            if ($amount->ore > self::MAX_PRELIMINARY_TAX_ORE) {
+                $fail(__('Beloppet kan vara högst 100 000 000 kronor i månaden.'));
             }
         };
     }

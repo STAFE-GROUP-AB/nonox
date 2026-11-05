@@ -14,6 +14,7 @@ use Carbon\CarbonImmutable;
  * part is null when the chart has none of its accounts, so it is not shown.
  *
  * @phpstan-type Line array{number: int, name: string, amount: int}
+ * @phpstan-type Excluded array{number: int, name: string, amount: int, reason: string}
  * @phpstan-type PreliminaryTax array{monthly: int, count: int, total: int, until: ?string}
  */
 final readonly class MoneyNotYoursFigures
@@ -25,6 +26,8 @@ final readonly class MoneyNotYoursFigures
      * @param  list<Line>|null  $employer
      * @param  Line|null  $taxAccount  1630 Skattekonto
      * @param  PreliminaryTax|null  $preliminaryTax
+     * @param  Line|null  $vatOss  2619, VAT declared in the OSS return
+     * @param  list<Excluded>  $excluded  accounts in BAS group 19 that are not the company's money to use
      */
     public function __construct(
         public CarbonImmutable $asOf,
@@ -35,6 +38,8 @@ final readonly class MoneyNotYoursFigures
         public ?array $employer,
         public ?array $taxAccount,
         public ?array $preliminaryTax,
+        public ?array $vatOss = null,
+        public array $excluded = [],
     ) {}
 
     public function bankTotal(): ?int
@@ -63,11 +68,12 @@ final readonly class MoneyNotYoursFigures
     }
 
     /**
-     * What is left in the bank after the VAT to pay, the employer's taxes and
-     * the coming preliminary tax, with the tax account's balance counted in
-     * (money already there pays the taxes; a debt there adds to them). VAT to
-     * get back is not counted: it is not in the bank yet. Null without a bank
-     * account in the chart.
+     * What is left in the bank after the VAT to pay, OSS VAT, the employer's
+     * taxes and the coming preliminary tax, with the tax account's balance
+     * counted in (money already there pays the taxes; a debt there adds to
+     * them). VAT to get back is netted against VAT to pay (Skatteverket offsets
+     * on the skattekonto); what is left to get back is not counted, it is not
+     * in the bank yet. Null without a bank account in the chart.
      */
     public function remaining(): ?int
     {
@@ -80,14 +86,15 @@ final readonly class MoneyNotYoursFigures
         return $bank
             + ($this->taxAccount['amount'] ?? 0)
             - max($this->vatTotal() ?? 0, 0)
+            - max($this->vatOss['amount'] ?? 0, 0)
             - max($this->employerTotal() ?? 0, 0)
             - ($this->preliminaryTax['total'] ?? 0);
     }
 
-    /** What is not the company's: VAT to pay, employer taxes and the coming preliminary tax. */
+    /** What is not the company's: VAT to pay, OSS VAT, employer taxes and the coming preliminary tax. */
     public function notYours(): int
     {
-        return max($this->vatTotal() ?? 0, 0) + max($this->employerTotal() ?? 0, 0) + ($this->preliminaryTax['total'] ?? 0);
+        return max($this->vatTotal() ?? 0, 0) + max($this->vatOss['amount'] ?? 0, 0) + max($this->employerTotal() ?? 0, 0) + ($this->preliminaryTax['total'] ?? 0);
     }
 
     /** The VAT to pay is more than the money in the bank. */
@@ -130,13 +137,15 @@ final readonly class MoneyNotYoursFigures
             'employer' => $this->employer,
             'tax_account' => $this->taxAccount,
             'preliminary_tax' => $this->preliminaryTax,
+            'vat_oss' => $this->vatOss,
+            'excluded' => $this->excluded,
         ];
     }
 
     /** @param  array<string, mixed>  $data */
     public static function fromArray(array $data): self
     {
-        /** @var array{as_of: string, last_voucher: ?string, bank: list<Line>|null, vat_unreported: list<Line>|null, vat_reported: Line|null, employer: list<Line>|null, tax_account: Line|null, preliminary_tax: PreliminaryTax|null} $data */
+        /** @var array{as_of: string, last_voucher: ?string, bank: list<Line>|null, vat_unreported: list<Line>|null, vat_reported: Line|null, employer: list<Line>|null, tax_account: Line|null, preliminary_tax: PreliminaryTax|null, vat_oss?: Line|null, excluded?: list<Excluded>} $data */
         return new self(
             CarbonImmutable::parse($data['as_of']),
             $data['last_voucher'] === null ? null : CarbonImmutable::parse($data['last_voucher']),
@@ -146,6 +155,8 @@ final readonly class MoneyNotYoursFigures
             $data['employer'],
             $data['tax_account'],
             $data['preliminary_tax'],
+            $data['vat_oss'] ?? null,
+            $data['excluded'] ?? [],
         );
     }
 }

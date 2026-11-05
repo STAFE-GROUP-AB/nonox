@@ -6,7 +6,11 @@ use App\Actions\Accounting\CarryForwardBalances;
 use App\Actions\Accounting\CreateNextFiscalYear;
 use App\Actions\Accounting\PostVoucher;
 use App\Actions\Accounting\SaveDraftVoucher;
+use App\Actions\Vat\SettleVat;
+use App\Domain\Accounting\AccountType;
+use App\Domain\Company\AccountingMethod;
 use App\Domain\Company\VatPeriod;
+use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Guide\MoneyNotYours;
 use App\Domain\Guide\MoneyNotYoursFigures;
 use App\Domain\Overview\OverviewCache;
@@ -14,6 +18,7 @@ use App\Livewire\Company\CompanyDetailsForm;
 use App\Models\Account;
 use App\Models\AuditLog;
 use App\Models\Company;
+use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Tenancy\CompanyScope;
 use App\Support\Tenancy\CurrentCompany;
@@ -94,13 +99,14 @@ it('shows VAT to get back without counting it as money in the bank', function ()
         ->and($figures->vatExceedsBank())->toBeFalse();
 });
 
-it('counts the employer liabilities only for an employer, and the tax account both ways', function () {
+it('counts the employer liabilities that are booked, and the tax account both ways', function () {
     bufferPost($this->owner, $this->company, '2026-10-25', [7010 => 4000000, 2710 => -1200000, 2731 => -1256800, 1930 => -2800000, 7510 => 1256800]);
     bufferPost($this->owner, $this->company, '2026-07-01', [1930 => 10000000, 2099 => -10000000]);
     // 5 000 kr paid in to the tax account.
     bufferPost($this->owner, $this->company, '2026-10-30', [1630 => 500000, 1930 => -500000]);
 
-    expect(bufferFigures($this->company)->employer)->toBeNull();
+    // Booked liabilities count even before the company is marked as an employer.
+    expect(bufferFigures($this->company)->employerTotal())->toBe(2456800);
 
     $this->company->forceFill(['employer_registered' => true])->save();
     $figures = bufferFigures($this->company);
@@ -280,4 +286,158 @@ it('lets the company enter its monthly preliminary tax, audited, and shows the c
     Livewire\Livewire::test(CompanyDetailsForm::class, ['company' => $this->company->fresh()])
         ->set('state.preliminary_tax_monthly', '')->call('save')->assertHasNoErrors();
     expect($this->company->fresh()->preliminary_tax_monthly_ore)->toBeNull();
+});
+
+/** An account the BAS template does not seed, added to the company's chart. */
+function bufferAccount(int $number, string $name, AccountType $type = AccountType::Asset): void
+{
+    Account::query()->create(['number' => $number, 'name' => $name, 'type' => $type, 'is_active' => true]);
+}
+
+it('counts only the company’s own money in BAS group 19, and shows what it leaves out and why', function () {
+    bufferAccount(1950, 'Bankcertifikat');
+    bufferAccount(1980, 'Valutakonton');
+    bufferAccount(1974, 'Spärrade bankmedel');
+    bufferAccount(1990, 'Redovisningsmedel');
+    bufferPost($this->owner, $this->company, '2026-07-01', [1930 => 1000000, 1950 => 200000, 1980 => 300000, 1974 => 400000, 1990 => 500000, 2099 => -2400000]);
+
+    $figures = bufferFigures($this->company);
+
+    expect($figures->bankTotal())->toBe(1500000)
+        ->and(collect($figures->bank)->pluck('number')->all())->toBe([1930, 1950, 1980])
+        ->and(collect($figures->excluded)->pluck('number')->all())->toBe([1974, 1990])
+        ->and($figures->remaining())->toBe(1500000);
+
+    $this->actingAs($this->owner)->get(route('guide.dates'))->assertOk()
+        ->assertSee('Räknas inte som företagets pengar')
+        ->assertSee('Redovisningsmedel')
+        ->assertSee('pengar som företaget förvaltar åt någon annan');
+});
+
+it('counts the OSS VAT on 2619 as not yours, on its own line', function () {
+    bufferAccount(2619, 'Utgående moms OSS', AccountType::LiabilityEquity);
+    bufferPost($this->owner, $this->company, '2026-10-10', [1930 => 1250000, 3001 => -1000000, 2619 => -250000]);
+
+    $figures = bufferFigures($this->company);
+
+    expect($figures->vatOss['amount'])->toBe(250000)
+        ->and($figures->vatTotal())->toBe(0)
+        ->and($figures->notYours())->toBe(250000)
+        ->and($figures->remaining())->toBe(1000000);
+
+    $this->actingAs($this->owner)->get(route('guide.dates'))->assertOk()->assertSee('Moms i OSS-deklarationen');
+});
+
+it('shows no VAT line for a company that is not registered for VAT', function () {
+    $this->company->forceFill(['vat_registered' => false, 'vat_period' => VatPeriod::None])->save();
+    bufferPost($this->owner, $this->company, '2026-07-01', [1930 => 1000000, 2099 => -1000000]);
+
+    expect(bufferFigures($this->company)->vatTotal())->toBeNull();
+
+    $this->actingAs($this->owner)->get(route('dashboard'))->assertOk()
+        ->assertSee('Företaget är inte momsregistrerat.')
+        ->assertDontSee('Moms att betala');
+});
+
+it('refuses an amount that is not sane, with a message and never a server error', function (string $input) {
+    $this->actingAs($this->owner);
+
+    Livewire\Livewire::test(CompanyDetailsForm::class, ['company' => $this->company->fresh()])
+        ->set('state.preliminary_tax_monthly', $input)->call('save')->assertHasErrors('preliminary_tax_monthly');
+
+    expect($this->company->fresh()->preliminary_tax_monthly_ore)->toBeNull();
+})->with(['999999999999999999', '9223372036854775807', '100 000 001', '-5', '12,345']);
+
+it('accepts the largest sane amount', function () {
+    $this->actingAs($this->owner);
+
+    Livewire\Livewire::test(CompanyDetailsForm::class, ['company' => $this->company->fresh()])
+        ->set('state.preliminary_tax_monthly', '100 000 000')->call('save')->assertHasNoErrors();
+
+    expect($this->company->fresh()->preliminary_tax_monthly_ore)->toBe(10_000_000_000);
+});
+
+it('records only that the monthly amount was set, changed or cleared, never the amount', function () {
+    $this->actingAs($this->owner);
+    $save = fn (string $amount) => Livewire\Livewire::test(CompanyDetailsForm::class, ['company' => $this->company->fresh()])
+        ->set('state.preliminary_tax_monthly', $amount)->call('save')->assertHasNoErrors();
+    $last = fn (): array => AuditLog::query()->where('action', 'company.updated')->latest('id')->firstOrFail()->payload;
+
+    $save('4 500');
+    expect($last()['after']['preliminary_tax_monthly_ore'])->toBe('set')->and(json_encode($last()))->not->toContain('450000');
+
+    $save('5 000');
+    expect($last()['after']['preliminary_tax_monthly_ore'])->toBe('changed')->and(json_encode($last()))->not->toContain('500000');
+
+    $save('');
+    expect($last()['after']['preliminary_tax_monthly_ore'])->toBe('cleared');
+});
+
+it('explains kontantmetoden, where VAT is booked when the invoice is paid', function () {
+    $this->company->forceFill(['accounting_method' => AccountingMethod::Kontantmetoden])->save();
+    bufferPost($this->owner, $this->company, '2026-07-01', [1930 => 1000000, 2099 => -1000000]);
+
+    $this->actingAs($this->owner)->get(route('guide.dates'))->assertOk()
+        ->assertSee('Företaget bokför med kontantmetoden: momsen på en faktura bokförs först när den betalas, så obetalda fakturor finns inte med här.');
+});
+
+it('leaves a reported period out of the declarations and never counts future vouchers there', function () {
+    bufferPost($this->owner, $this->company, '2026-08-10', [1930 => 1250000, 3001 => -1000000, 2611 => -250000]);
+    app(SettleVat::class)($this->owner, FiscalYear::query()->firstOrFail(), CarbonImmutable::parse('2026-07-01'));
+    bufferPost($this->owner, $this->company, '2026-10-10', [1930 => 625000, 3001 => -500000, 2611 => -125000]);
+    bufferPost($this->owner, $this->company, '2026-12-01', [1930 => 12500000, 3001 => -10000000, 2611 => -2500000]);
+
+    app()->forgetScopedInstances();
+    $deadlines = app(CompanyDeadlines::class)->upcoming($this->company->fresh(), CarbonImmutable::today()->subDays(14));
+    $items = app(MoneyNotYours::class)->vatByDeadline($this->company->fresh(), $deadlines, CarbonImmutable::today());
+
+    expect(collect($items)->map(fn (array $item): string => $item['deadline']->key)->all())->toBe(['vat:2026-12-31'])
+        ->and($items[0]['amount'])->toBe(125000)
+        ->and($items[0]['running'])->toBeTrue();
+});
+
+it('says how VAT to get back is netted against VAT to pay', function () {
+    bufferPost($this->owner, $this->company, '2026-07-01', [1930 => 1000000, 2099 => -1000000]);
+
+    $this->actingAs($this->owner)->get(route('guide.dates'))->assertOk()
+        ->assertSee('En återbetalning dras av mot momsen att betala; blir det kvar att få tillbaka räknas det inte in.');
+});
+
+it('never counts a preliminary tax payment twice: not on its own date, not when the debit is booked on 1630', function () {
+    $this->company->forceFill(['preliminary_tax_monthly_ore' => 500000])->save();
+    bufferAccount(2518, 'Betald F-skatt', AccountType::LiabilityEquity);
+    bufferPost($this->owner, $this->company, '2026-07-01', [1930 => 10000000, 2099 => -10000000]);
+
+    // On the day: the debit and the payment are both booked; the payment is already out of the bank.
+    $this->travelTo(CarbonImmutable::parse('2026-11-12 10:00:00'));
+    bufferPost($this->owner, $this->company, '2026-11-12', [2518 => 500000, 1630 => -500000]);
+    bufferPost($this->owner, $this->company, '2026-11-12', [1630 => 500000, 1930 => -500000]);
+
+    expect(bufferFigures($this->company, '2026-11-12')->preliminaryTax['count'] ?? 0)->toBe(0)
+        ->and(bufferFigures($this->company, '2026-11-12')->remaining())->toBe(9500000);
+
+    // December's debit booked on 1630 ahead of its date: not counted again; January and February are.
+    $this->travelTo(CarbonImmutable::parse('2026-12-05 10:00:00'));
+    bufferPost($this->owner, $this->company, '2026-12-01', [2518 => 500000, 1630 => -500000]);
+    $tax = bufferFigures($this->company, '2026-12-05')->preliminaryTax;
+
+    expect($tax['count'])->toBe(2)->and($tax['total'])->toBe(1000000);
+});
+
+it('shows employer liabilities that are booked even without the employer flag, and hides an overpaid total', function () {
+    bufferPost($this->owner, $this->company, '2026-10-25', [7010 => 1000000, 2710 => -300000, 1930 => -700000]);
+    expect(bufferFigures($this->company)->employerTotal())->toBe(300000);
+
+    bufferPost($this->owner, $this->company, '2026-10-26', [2710 => 400000, 1930 => -400000]);
+    $this->actingAs($this->owner)->get(route('guide.dates'))->assertOk()->assertDontSee('−0 kr', false);
+    expect(bufferFigures($this->company)->employerTotal())->toBe(-100000)->and(bufferFigures($this->company)->notYours())->toBe(0);
+});
+
+it('shows the VAT already reported but not paid next to the coming declarations', function () {
+    bufferPost($this->owner, $this->company, '2026-08-10', [1930 => 1250000, 3001 => -1000000, 2611 => -250000]);
+    app(SettleVat::class)($this->owner, FiscalYear::query()->firstOrFail(), CarbonImmutable::parse('2026-07-01'));
+
+    $this->actingAs($this->owner)->get(route('guide.dates'))->assertOk()
+        ->assertSee('Redovisad i NONOX, ännu inte betald')
+        ->assertSee("ca 2\u{a0}500\u{a0}kr");
 });

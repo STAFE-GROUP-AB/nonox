@@ -64,19 +64,20 @@ Vilka datum som visas beror på företagets uppgifter. Är företaget momsregist
 
 En del av pengarna på företagets bankkonto är moms och skatt som ska till Skatteverket. Under **Pengar som inte är dina** (Momsbufferten) ser du hur mycket, räknat ur bokföringen. Delen visas för den som får se rapporterna, och samma siffror står på översikten.
 
-- **Kvar efter moms och skatter** är pengarna på banken och i kassan minus det som ska till Skatteverket.
-- **På banken och i kassan** är saldot på kontona 1900–1999.
-- **Moms att betala** är momsen som ännu inte är redovisad (saldot på momskontona, till exempel 2611 och 2641) och momsen som är redovisad men inte betald (saldot på 2650). Är det moms att få tillbaka står **Moms att få tillbaka**, och den räknas inte in, eftersom pengarna inte är på kontot än.
-- **Personalskatt och arbetsgivaravgifter** är saldot på 2710, 2730 och 2731, för ett företag som är registrerat som arbetsgivare.
+- **Kvar efter moms och skatter** är pengarna på banken och i kassan, och på skattekontot, minus det som ska till Skatteverket.
+- **På banken och i kassan** är saldot på företagets egna pengar i BAS kontogrupp 19: kontona 1910–1969 och 1980–1989 (kassa, plusgiro, företagskonto, övriga bankkonton, bankcertifikat, koncernkonto och valutakonton). Särskilda bankkonton (1970–1979, till exempel spärrade medel och skogskonto) och 1990 Redovisningsmedel, pengar som företaget förvaltar åt någon annan, räknas inte. De visas under **Räknas inte som företagets pengar** i **Så räknar vi**.
+- **Moms att betala** är momsen som ännu inte är redovisad (saldot på momskontona, till exempel 2611 och 2641) och momsen som är redovisad men inte betald (saldot på 2650). En återbetalning dras av mot momsen att betala; blir det kvar att få tillbaka står **Moms att få tillbaka**, och det räknas inte in, eftersom pengarna inte är på kontot än. Är företaget inte momsregistrerat står **Företaget är inte momsregistrerat.** i stället.
+- **Moms i OSS-deklarationen** är saldot på 2619, momsen som redovisas i OSS-deklarationen. Den ska också betalas och räknas av.
+- **Personalskatt och arbetsgivaravgifter** är saldot på 2710, 2730 och 2731, när det finns något bokfört där eller företaget är registrerat som arbetsgivare.
 - **Redan på skattekontot** eller **Skuld på skattekontot** är saldot på 1630. Pengar som redan ligger på skattekontot betalar skatterna, och en skuld där läggs till.
-- **Preliminärskatt** visas bara om du har fyllt i **Debiterad preliminärskatt per månad (frivilligt)** under [Företagets uppgifter](/manual/installningar/foretagets-uppgifter). Den räknas för varje betalningsdag fram till nästa momsdeklaration. NONOX räknar aldrig ut beloppet själv, eftersom det bara står i Skatteverkets beslut.
+- **Preliminärskatt** visas bara om du har fyllt i **Debiterad preliminärskatt per månad (frivilligt)** under [Företagets uppgifter](/manual/installningar/foretagets-uppgifter), högst 100 000 000 kronor. Den räknas för varje betalningsdag efter i dag fram till nästa momsdeklaration. En månad där debiteringen redan är bokförd på skattekontot (1630) med samma belopp räknas inte igen. NONOX räknar aldrig ut beloppet själv, eftersom det bara står i Skatteverkets beslut.
 
-Under **Momsen per deklaration** står momsen för varje period som har en deklaration framför sig, till exempel **Till momsdeklarationen 12 februari (kvartal 4 2026 hittills): ca 10 900 kr**. Siffran räknas som i momsrapporten, med det som är bokfört i perioden hittills.
+Under **Momsen per deklaration** står momsen för varje period som har en deklaration framför sig och inte är redovisad i NONOX än, till exempel **Till momsdeklarationen 12 februari (kvartal 4 2026 hittills): ca 10 900 kr**. Siffran räknas som i momsrapporten, med det som är bokfört i perioden hittills.
 
 Klicka på **Så räknar vi** för att se varje konto och dess saldo. Ett konto som inte finns i företagets kontoplan visas inte.
 
 > [!IMPORTANT]
-> Siffrorna bygger på det som är bokfört till och med i dag. Obokförda fakturor och kvitton syns inte, och inte heller utkast. Under siffrorna står datumet de gäller och den senast bokförda verifikationen.
+> Siffrorna bygger på det som är bokfört till och med i dag. Obokförda fakturor och kvitton syns inte, och inte heller utkast. Under siffrorna står datumet de gäller och den senast bokförda verifikationen. Bokför företaget med kontantmetoden bokförs momsen på en faktura först när den betalas, så obetalda fakturor finns inte med. Skatter som inte är bokförda som skulder, till exempel slutlig skatt och kvarskatt, räknas inte.
 
 Är momsen att betala mer än pengarna på banken visas **Momsen att betala är mer än pengarna på banken**, med en länk till artikeln om att sätta undan pengar för moms och skatt i Företagsguiden.
 

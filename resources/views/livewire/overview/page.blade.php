@@ -163,7 +163,7 @@
 
             @if($moneyFigures)
                 {{-- Momsbufferten (ADR-051, stage 3): what of the money in the bank is not the company's. --}}
-                <x-ui.card :title="__('Pengar som inte är dina')" :description="__('Moms och skatt som ska till Skatteverket, enligt bokföringen.')" class="min-w-0" data-overview-money>
+                <x-ui.card :title="__('Pengar som inte är dina')" :description="$company->isVatRegistered() ? __('Moms och skatt som ska till Skatteverket, enligt bokföringen.') : __('Skatt som ska till Skatteverket, enligt bokföringen.')" class="min-w-0" data-overview-money>
                     <x-slot:action>
                         <x-ui.link :href="route('guide.dates').'#momsbufferten'">{{ __('Så räknar vi') }}</x-ui.link>
                     </x-slot:action>

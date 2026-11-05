@@ -135,7 +135,7 @@ class MyDates extends Component
         }
 
         // Momsbufferten (stage 3): only for those who may see the reports, as the figures are the ledger's.
-        $money = $this->user()->hasTeamPermission($company, 'reports:view') ? $moneyNotYours->for($company, $today) : null;
+        $money = $this->user()->hasTeamPermission($company, 'reports:view') ? $moneyNotYours->summary($company, $today) : ['figures' => null, 'vat' => []];
 
         $firstYear = FiscalYear::query()->orderBy('start_date')->value('start_date');
         $firstYear = $firstYear === null ? null : CarbonImmutable::parse((string) $firstYear);
@@ -154,8 +154,8 @@ class MyDates extends Component
             'described' => $described,
             'until' => $until,
             'largeEmployer' => AgiDates::isLarge($company),
-            'moneyFigures' => $money,
-            'moneyVat' => $money === null ? [] : $moneyNotYours->vatByDeadline($company, $year, $today),
+            'moneyFigures' => $money['figures'],
+            'moneyVat' => $money['vat'],
             'setAsideUrl' => Guide::article('moms-och-skatt', 'satt-undan-pengar', false) === null ? null : Guide::url('moms-och-skatt', 'satt-undan-pengar'),
             'helpHidden' => $this->user()->hidesPanel(self::HELP_PANEL, $company),
             // Counted on the whole window, whatever the filter, so every filter runs the same queries.

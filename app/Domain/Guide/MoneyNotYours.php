@@ -7,7 +7,10 @@ namespace App\Domain\Guide;
 use App\Domain\Accounting\VoucherStatus;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\Deadline;
+use App\Domain\Deadlines\DeadlineCompletion;
 use App\Domain\Deadlines\DeadlineType;
+use App\Domain\Overview\OverviewCache;
+use App\Domain\Vat\OssRates;
 use App\Domain\Vat\VatBoxes;
 use App\Domain\Vat\VatReturn;
 use App\Models\Account;
@@ -16,31 +19,48 @@ use App\Models\FiscalYear;
 use App\Models\OpeningBalance;
 use App\Models\Voucher;
 use App\Models\VoucherRow;
+use App\Support\Guide\Guide;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 
 /**
  * Momsbufferten (ADR-051, stage 3): how much of the money in the bank is not
- * the company's, read from the books only. The balances of the bank
- * accounts (1900–1999, as on Översikt), the VAT accounts the settlement
- * moves to 2650 (VatBoxes::isSettled, "ännu inte redovisad") and 2650 itself
- * ("redovisad men inte betald"), the employer's liabilities on 2710, 2730
- * and 2731 when the company is an employer, and the tax account 1630, all
- * from posted vouchers dated up to today, plus the opening balances.
+ * the company's, read from the books only. The balances of the company's own
+ * money in BAS group 19 (BANK; special accounts and redovisningsmedel are
+ * listed apart, not counted), the VAT accounts the settlement moves to 2650
+ * (VatBoxes::isSettled, "ännu inte redovisad"), 2650 itself ("redovisad men
+ * inte betald"), OSS VAT on 2619, the employer's liabilities on 2710, 2730
+ * and 2731, and the tax account 1630, all from posted vouchers dated up to
+ * today, plus the opening balances.
  *
- * Debited preliminary tax is not in the books until it is booked, so it is
- * never computed: only when the company has entered the monthly amount of
- * its decision (preliminary_tax_monthly_ore) are the payments up to the next
- * VAT date shown, dated by the deadline engine.
+ * Debited preliminary tax is never computed: only when the company has
+ * entered the monthly amount of its decision (preliminary_tax_monthly_ore)
+ * are the coming payments up to the next VAT date shown, dated by the
+ * deadline engine, and never one already booked.
  *
  * An account the chart does not have is left out, never shown as 0. Read
  * only; it changes nothing. Six queries, however many years and vouchers,
- * plus the deadline engine when a monthly amount is entered.
+ * plus one, and the deadline engine unless the caller passes its dates, when
+ * a monthly amount is entered.
  */
+/** @phpstan-import-type DeadlineData from Deadline */
 final class MoneyNotYours
 {
-    /** The bank and cash accounts, as Översikt's "Pengar på bank och kassa". */
-    public const array BANK = [1900, 1999];
+    /**
+     * The company's own money in BAS kontogrupp 19 (BAS kontoplan 2026,
+     * bas.se, BAS_kontoplan_2026_v2): 1910 Kassa, 1920 PlusGiro, 1930
+     * Företagskonto, 1940 Övriga bankkonton, 1950 Bankcertifikat, 1960
+     * Koncernkonto moderföretag and 1980 Valutakonton.
+     *
+     * @var list<array{0: int, 1: int}>
+     */
+    public const array BANK = [[1910, 1969], [1980, 1989]];
+
+    /** 1970 Särskilda bankkonton (1972 Upphovsmannakonto, 1973 Skogskonto, 1974 Spärrade bankmedel, 1979 Övriga särskilda bankkonton): not free to use. */
+    public const array SPECIAL = [1970, 1979];
+
+    /** 1990 Redovisningsmedel: money held for someone else, never the company's. */
+    public const array HELD_FOR_OTHERS = [1990, 1999];
 
     public const int TAX_ACCOUNT = 1630;
 
@@ -49,12 +69,46 @@ final class MoneyNotYours
 
     public function __construct(private readonly CompanyDeadlines $deadlines) {}
 
-    /** The figures for the company today, or null when it has no fiscal year that has begun. */
-    public function for(Company $company, CarbonImmutable $today): ?MoneyNotYoursFigures
+    /**
+     * The figures and the VAT per coming declaration, as Översikt and Mina
+     * datum show them: one entry in Översikt's cache (ADR-027), so both pages
+     * show the same figures, the deadline engine runs once on a miss, and a
+     * posting, a change of the company's details or the reload arrow makes it
+     * stale.
+     *
+     * @return array{figures: ?MoneyNotYoursFigures, vat: list<array{deadline: Deadline, amount: int, running: bool}>}
+     */
+    public function summary(Company $company, CarbonImmutable $today): array
+    {
+        /** @var array{figures: array<string, mixed>|null, vat: list<array{deadline: DeadlineData, amount: int, running: bool}>} $cached */
+        $cached = OverviewCache::remember($company->id, 'money-not-yours:'.$today->toDateString().':'.Guide::version(), function () use ($company, $today): array {
+            $deadlines = $this->deadlines->upcoming($company, $today);
+            $figures = $this->for($company, $today, $deadlines);
+
+            return [
+                'figures' => $figures?->toArray(),
+                'vat' => $figures === null ? [] : array_map(fn (array $item): array => [...$item, 'deadline' => $item['deadline']->toArray()], $this->vatByDeadline($company, $deadlines, $today)),
+            ];
+        });
+
+        return [
+            'figures' => $cached['figures'] === null ? null : MoneyNotYoursFigures::fromArray($cached['figures']),
+            'vat' => array_map(fn (array $item): array => [...$item, 'deadline' => Deadline::fromArray($item['deadline'])], $cached['vat']),
+        ];
+    }
+
+    /**
+     * The figures for the company today, or null when it has no fiscal year
+     * that has begun. The deadlines, when the caller has them, save the
+     * engine a second run for the coming preliminary tax.
+     *
+     * @param  list<Deadline>|null  $deadlines  the company's dates from the deadline engine, today included
+     */
+    public function for(Company $company, CarbonImmutable $today, ?array $deadlines = null): ?MoneyNotYoursFigures
     {
         $today = $today->startOfDay();
 
-        return CurrentCompany::run($company, function () use ($company, $today): ?MoneyNotYoursFigures {
+        return CurrentCompany::run($company, function () use ($company, $today, $deadlines): ?MoneyNotYoursFigures {
             $years = FiscalYear::query()->whereDate('start_date', '<=', $today->toDateString())->orderBy('start_date')->get(['id', 'start_date']);
 
             if ($years->isEmpty()) {
@@ -62,7 +116,7 @@ final class MoneyNotYours
             }
 
             $accounts = Account::query()
-                ->where(fn ($query) => $query->whereBetween('number', self::BANK)
+                ->where(fn ($query) => $query->whereBetween('number', [1900, 1999])
                     ->orWhere('number', self::TAX_ACCOUNT)
                     ->orWhereBetween('number', VatBoxes::VAT_ACCOUNTS)
                     ->orWhere('number', VatBoxes::SETTLEMENT_ACCOUNT)
@@ -75,10 +129,12 @@ final class MoneyNotYours
             $accountIds = array_values(array_map(intval(...), $accounts->keys()->all()));
             $balances = $this->balances($yearIds, $accountIds, $today);
             $line = fn (Account $account, int $sign): array => ['number' => $account->number, 'name' => (string) $account->name, 'amount' => $sign * ($balances[$account->id] ?? 0)];
+            $hasBalance = fn (Account $account): bool => ($balances[$account->id] ?? 0) !== 0;
             $byNumber = $accounts->keyBy('number');
+            $within = fn (Account $account, array $range): bool => $account->number >= $range[0] && $account->number <= $range[1];
 
-            $bank = $accounts->filter(fn (Account $account): bool => $account->number >= self::BANK[0] && $account->number <= self::BANK[1]);
-            $bankLines = $bank->filter(fn (Account $account): bool => ($balances[$account->id] ?? 0) !== 0)->map(fn (Account $account): array => $line($account, 1))->values()->all();
+            $bank = $accounts->filter(fn (Account $account): bool => $within($account, self::BANK[0]) || $within($account, self::BANK[1]));
+            $bankLines = $bank->filter($hasBalance)->map(fn (Account $account): array => $line($account, 1))->values()->all();
 
             if ($bank->isNotEmpty() && $bankLines === []) {
                 // A bank account with nothing on it still says where the money would be.
@@ -86,27 +142,39 @@ final class MoneyNotYours
                 $bankLines = [$line($first, 1)];
             }
 
+            $excluded = $accounts->filter(fn (Account $account): bool => ($within($account, self::SPECIAL) || $within($account, self::HELD_FOR_OTHERS)) && $hasBalance($account))
+                ->map(fn (Account $account): array => [...$line($account, 1), 'reason' => $within($account, self::HELD_FOR_OTHERS) ? 'held_for_others' : 'special'])->values()->all();
+
             // VAT is a liability: credit balances are positive here, what the company owes.
-            $unreported = $accounts->filter(fn (Account $account): bool => VatBoxes::isSettled($account->number) && ($balances[$account->id] ?? 0) !== 0)
-                ->map(fn (Account $account): array => $line($account, -1))->values()->all();
+            $vatAccounts = $accounts->filter(fn (Account $account): bool => VatBoxes::isSettled($account->number));
+            $unreported = $vatAccounts->filter($hasBalance)->map(fn (Account $account): array => $line($account, -1))->values()->all();
             $settlement = $byNumber->get(VatBoxes::SETTLEMENT_ACCOUNT);
-            $employer = $company->employer_registered
-                ? collect(self::EMPLOYER)->map(fn (int $number): ?Account => $byNumber->get($number))->filter()->map(fn (Account $account): array => $line($account, -1))->values()->all()
+            // A company that is not registered for VAT and has nothing on the VAT accounts has no VAT line at all.
+            $noVat = ! $company->isVatRegistered() && $unreported === [] && ($settlement === null || ! $hasBalance($settlement));
+            // OSS VAT is declared in the OSS return, not on the skattekonto, but it is just as much not the company's (OssRates).
+            $oss = $byNumber->get(OssRates::VAT_ACCOUNT);
+            $employerAccounts = collect(self::EMPLOYER)->map(fn (int $number): ?Account => $byNumber->get($number))->filter();
+            // Liabilities booked on 2710/2730/2731 count even when the company is not marked as an employer.
+            $employer = $company->employer_registered || $employerAccounts->contains($hasBalance)
+                ? $employerAccounts->map(fn (Account $account): array => $line($account, -1))->values()->all()
                 : [];
             $tax = $byNumber->get(self::TAX_ACCOUNT);
 
             /** @var list<array{number: int, name: string, amount: int}> $bankLines */
+            /** @var list<array{number: int, name: string, amount: int, reason: string}> $excluded */
             /** @var list<array{number: int, name: string, amount: int}> $unreported */
             /** @var list<array{number: int, name: string, amount: int}> $employer */
             return new MoneyNotYoursFigures(
                 asOf: $today,
                 lastVoucher: $this->lastVoucher($today),
                 bank: $bank->isEmpty() ? null : $bankLines,
-                vatUnreported: $accounts->contains(fn (Account $account): bool => VatBoxes::isSettled($account->number)) ? $unreported : null,
-                vatReported: $settlement === null ? null : $line($settlement, -1),
-                employer: $company->employer_registered && $employer !== [] ? $employer : null,
+                vatUnreported: $noVat || $vatAccounts->isEmpty() ? null : $unreported,
+                vatReported: $noVat || $settlement === null ? null : $line($settlement, -1),
+                employer: $employer === [] ? null : $employer,
                 taxAccount: $tax === null ? null : $line($tax, 1),
-                preliminaryTax: $this->preliminaryTax($company, $today),
+                preliminaryTax: $this->preliminaryTax($company, $today, $deadlines, $tax?->id),
+                vatOss: $oss === null || ! $hasBalance($oss) ? null : $line($oss, -1),
+                excluded: $excluded,
             );
         });
     }
@@ -115,16 +183,21 @@ final class MoneyNotYours
      * The VAT of each period whose date is still ahead and that has begun, as
      * the VAT report computes it (VatReturn, box 49), for "Till
      * momsdeklarationen 12 februari: ca 18 400 kr" on Mina datum. A period
-     * still running counts what is booked so far. Three queries a period.
+     * still running counts what is booked so far, and a period already reported
+     * is left out. Three queries a period.
      *
      * @param  list<Deadline>  $deadlines  the company's dates from the deadline engine
+     * @param  list<string>|null  $done  the keys DeadlineCompletion::done already found, when the caller has them
      * @return list<array{deadline: Deadline, amount: int, running: bool}> amount in öre, positive to pay
      */
-    public function vatByDeadline(Company $company, array $deadlines, CarbonImmutable $today): array
+    public function vatByDeadline(Company $company, array $deadlines, CarbonImmutable $today, ?array $done = null): array
     {
         $today = $today->startOfDay();
         $periods = array_values(array_filter($deadlines, fn (Deadline $deadline): bool => $deadline->type === DeadlineType::Vat
             && $deadline->periodStart !== null && $deadline->periodStart->lessThanOrEqualTo($today) && $deadline->daysLeft($today) >= 0));
+        // A period already reported in NONOX is on 2650 now, in "redovisad men inte betald", not here.
+        $done ??= DeadlineCompletion::done($company, $periods);
+        $periods = array_values(array_filter($periods, fn (Deadline $deadline): bool => ! in_array($deadline->key, $done, true)));
 
         if ($periods === []) {
             return [];
@@ -140,11 +213,13 @@ final class MoneyNotYours
             return array_map(function (Deadline $deadline) use ($year, $today): array {
                 // The key is vat:<last day of the period> (VatDeadlineProvider).
                 $end = CarbonImmutable::parse(substr($deadline->key, 4))->startOfDay();
+                $running = $end->greaterThanOrEqualTo($today);
 
                 return [
                     'deadline' => $deadline,
-                    'amount' => VatReturn::calculate($year, $deadline->periodStart ?? $end, $end)->payable() * 100,
-                    'running' => $end->greaterThanOrEqualTo($today),
+                    // A running period counts what is booked up to today, as the balances do; never a voucher dated later.
+                    'amount' => VatReturn::calculate($year, $deadline->periodStart ?? $end, $running ? $today : $end)->payable() * 100,
+                    'running' => $running,
                 ];
             }, $periods);
         });
@@ -207,12 +282,19 @@ final class MoneyNotYours
 
     /**
      * The monthly amount the company has entered from its decision, times the
-     * payment dates from today up to and including the next VAT date (or the
+     * payment dates after today up to and including the next VAT date (or the
      * next payment only, without VAT). Null without an amount or F-skatt.
      *
+     * Never twice: a payment due today or earlier is already in the bank or
+     * on 1630, and a month whose debit is already booked on 1630 (a credit of
+     * the same amount, dated in the month and up to today) is in the tax
+     * account's balance. TODO(legal-verify): the day Skatteverket debits the
+     * preliminary tax on the skattekonto, which decides when a company books it.
+     *
+     * @param  list<Deadline>|null  $deadlines
      * @return array{monthly: int, count: int, total: int, until: ?string}|null
      */
-    private function preliminaryTax(Company $company, CarbonImmutable $today): ?array
+    private function preliminaryTax(Company $company, CarbonImmutable $today, ?array $deadlines, ?int $taxAccountId): ?array
     {
         $monthly = $company->preliminary_tax_monthly_ore;
 
@@ -220,12 +302,26 @@ final class MoneyNotYours
             return null;
         }
 
-        $upcoming = $this->deadlines->upcoming($company, $today);
-        $vat = collect($upcoming)->first(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::Vat);
-        $payments = collect($upcoming)->filter(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::PreliminaryTax && ! $deadline->isRecommendation);
+        $upcoming = collect($deadlines ?? $this->deadlines->upcoming($company, $today));
+        $vat = $upcoming->first(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::Vat && $deadline->daysLeft($today) >= 0);
+        $payments = $upcoming->filter(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::PreliminaryTax && ! $deadline->isRecommendation && $deadline->daysLeft($today) > 0)->values();
         $payments = $vat === null
             ? $payments->take(1)
             : $payments->filter(fn (Deadline $deadline): bool => $deadline->date->lessThanOrEqualTo($vat->date));
+
+        if ($payments->isNotEmpty() && $taxAccountId !== null) {
+            $booked = VoucherRow::query()
+                ->join('vouchers', 'vouchers.id', '=', 'voucher_rows.voucher_id')
+                ->where('voucher_rows.account_id', $taxAccountId)
+                ->where('voucher_rows.credit_ore', $monthly)
+                ->where('vouchers.status', VoucherStatus::Posted->value)
+                ->whereDate('vouchers.voucher_date', '>=', $payments->first()->date->startOfMonth()->toDateString())
+                ->whereDate('vouchers.voucher_date', '<=', $today->toDateString())
+                ->pluck('vouchers.voucher_date')
+                ->map(fn (mixed $date): string => substr((string) $date, 0, 7))
+                ->all();
+            $payments = $payments->reject(fn (Deadline $deadline): bool => in_array($deadline->date->format('Y-m'), $booked, true));
+        }
 
         return [
             'monthly' => $monthly,

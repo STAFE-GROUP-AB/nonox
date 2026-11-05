@@ -138,7 +138,7 @@
                 <h2 id="dates-money" class="text-lg font-bold text-ink">{{ __('Pengar som inte är dina') }}</h2>
                 <span class="text-sm text-gray-600">{{ __('Momsbufferten') }}</span>
             </div>
-            <p class="mt-1 text-sm text-gray-600">{{ __('En del av pengarna på kontot är moms och skatt som ska till Skatteverket. Så här mycket, enligt bokföringen.') }}</p>
+            <p class="mt-1 text-sm text-gray-600">{{ $company->isVatRegistered() ? __('En del av pengarna på kontot är moms och skatt som ska till Skatteverket. Så här mycket, enligt bokföringen.') : __('En del av pengarna på kontot kan vara skatt som ska till Skatteverket. Så här mycket, enligt bokföringen.') }}</p>
             <x-guide.money-not-yours :figures="$moneyFigures" :company="$company" full :vat-deadlines="$moneyVat" :article-url="$setAsideUrl" class="mt-4" />
         </section>
     @endif
