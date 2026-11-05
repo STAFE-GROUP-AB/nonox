@@ -32,5 +32,8 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="MAIL_MAILER" value="array"/>
+        <env name="NONOX_BANKING_DRIVER" value="" force="true"/>
+        <env name="ENABLE_BANKING_APPLICATION_ID" value="" force="true"/>
+        <env name="ENABLE_BANKING_PRIVATE_KEY_PATH" value="" force="true"/>
     </php>
 </phpunit>

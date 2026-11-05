@@ -23,6 +23,30 @@ final readonly class Institution
         public bool $beta = false,
     ) {}
 
+    /**
+     * Plain values for the cache, which unserializes no objects
+     * (cache.serializable_classes is false).
+     *
+     * @return array{name: string, country: string, psuTypes: list<string>, maxConsentDays: int, bic: ?string, beta: bool}
+     */
+    public function toArray(): array
+    {
+        return [
+            'name' => $this->name,
+            'country' => $this->country,
+            'psuTypes' => $this->psuTypes,
+            'maxConsentDays' => $this->maxConsentDays,
+            'bic' => $this->bic,
+            'beta' => $this->beta,
+        ];
+    }
+
+    /** @param  array{name: string, country: string, psuTypes: list<string>, maxConsentDays: int, bic: ?string, beta: bool}  $values */
+    public static function fromArray(array $values): self
+    {
+        return new self($values['name'], $values['country'], $values['psuTypes'], $values['maxConsentDays'], $values['bic'], $values['beta']);
+    }
+
     public function supports(string $psuType): bool
     {
         return in_array($psuType, $this->psuTypes, true);

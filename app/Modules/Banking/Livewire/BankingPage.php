@@ -229,15 +229,21 @@ class BankingPage extends Component
     }
 
     /**
-     * The banks to choose from, cached an hour per driver.
+     * The banks to choose from, cached an hour per driver as plain arrays.
      *
      * @return list<Institution>
      */
     private function institutions(): array
     {
         try {
-            /** @var list<Institution> */
-            return Cache::remember('banking:institutions:'.BankDataProviders::driver().':SE', 3600, fn (): array => BankDataProviders::make()->institutions('SE'));
+            /** @var list<array{name: string, country: string, psuTypes: list<string>, maxConsentDays: int, bic: ?string, beta: bool}> $cached */
+            $cached = Cache::remember(
+                'banking:institutions:v2:'.BankDataProviders::driver().':SE',
+                3600,
+                fn (): array => array_map(fn (Institution $institution): array => $institution->toArray(), BankDataProviders::make()->institutions('SE')),
+            );
+
+            return array_map(Institution::fromArray(...), $cached);
         } catch (ProviderFailed $exception) {
             report($exception);
 
