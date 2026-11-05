@@ -288,3 +288,37 @@ was told about which deadline and when. Both are deleted with the account
 and with the company, and recorded in docs/gdpr/registerforteckning.md and
 lagringstider.md. The feed itself holds only the company's name and its
 dates.
+
+## Addendum: stage 3, Momsbufferten (2026-11-05)
+
+### Decision
+
+1. **"Pengar som inte är dina"** answers how much of the money in the bank
+   is not the company's, from the books only. `App\Domain\Guide\MoneyNotYours`
+   reads balances from posted vouchers dated up to today plus opening
+   balances: bank and cash 1900–1999 (as Översikt's key figure), the VAT
+   accounts the settlement moves to 2650 (`VatBoxes::isSettled`, "ännu inte
+   redovisad"), 2650 itself ("redovisad men inte betald"), 2710/2730/2731 for
+   an employer, and 1630. A fiscal year without opening balances yet is read
+   from the latest year that has them, so the money is there before the
+   year-end rollover. An account the chart lacks is left out, never shown as 0.
+   Read only: it books, changes and logs nothing.
+2. **Kvar efter moms och skatter** = bank + skattekontot − VAT to pay −
+   employer liabilities − coming preliminary tax. VAT to get back is shown
+   but not counted, because it is not in the bank yet; money already on the
+   tax account pays the taxes, and a debt there adds to them.
+3. **Debiterad preliminärskatt is never computed.** It is not in the books
+   until it is booked, and only Skatteverket's decision states it. The
+   company may enter the monthly amount (`teams.preliminary_tax_monthly_ore`,
+   nullable, audited with the company details); then the payments from today
+   up to the next VAT date are counted, dated by the deadline engine.
+4. **Per declaration**, Mina datum and the card show the VAT of each period
+   whose date is ahead, computed as the VAT report does (`VatReturn`, box 49),
+   "hittills" for a running period, rounded to hundreds ("ca").
+5. **Where and who**: a card on Översikt (cached with the overview, a fixed
+   number of queries) and a section on Mina datum (`#momsbufferten`) with
+   "Så räknar vi" listing every account and balance, the date of the figures,
+   the last posted voucher and the note that unbooked invoices and receipts
+   are not included. Only with Företagsguiden on, and only for users with
+   `reports:view`. When the VAT to pay is more than the bank balance, a calm
+   note links `moms-och-skatt/satt-undan-pengar`.

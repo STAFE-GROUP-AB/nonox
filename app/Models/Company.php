@@ -41,6 +41,7 @@ use Laravel\Jetstream\Team as JetstreamTeam;
  * @property VatPeriod $vat_period
  * @property ?VatExemption $vat_exemption why the company is not registered for VAT (#51)
  * @property bool $turnover_over_40_msek
+ * @property ?int $preliminary_tax_monthly_ore the monthly debited preliminary tax from the company's decision, entered by the company (Momsbufferten)
  * @property bool $oss_elected
  * @property ?CarbonImmutable $oss_elected_from
  * @property bool $eu_sales_quarterly_goods Skatteverket's decision: periodisk sammanställning for goods per quarter (SFL 35 kap. 4 §, #65)
@@ -91,6 +92,7 @@ class Company extends JetstreamTeam
         'reporting_framework',
         'bas_version',
         'f_skatt',
+        'preliminary_tax_monthly_ore',
         'employer_registered',
         'base_currency',
         'bankgiro',
@@ -142,6 +144,7 @@ class Company extends JetstreamTeam
             'eu_sales_quarterly_goods' => 'boolean',
             'eu_sales_quarterly_goods_from' => 'immutable_date',
             'f_skatt' => 'boolean',
+            'preliminary_tax_monthly_ore' => 'integer',
             'employer_registered' => 'boolean',
             'separate_supplier_approval' => 'boolean',
             'require_passkeys' => 'boolean',

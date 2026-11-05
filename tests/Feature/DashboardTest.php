@@ -84,8 +84,9 @@ it('uses a fixed number of queries', function () {
     // The overview is computed once and then read from the cache (ADR-027). Warm, what is left is one query per installed
     // module that keeps an archive (payroll, staff ledger) to decide whether its archive link shows, one per Livewire
     // component for the role fingerprint (LivewireCompanyGuard), the getting started steps and one for the overview's own fingerprint.
-    // Cold also includes one lookup of reported VAT periods for Nästa datum (DeadlineCompletion), whatever the history.
-    expect($cold)->toBeLessThan(46)
+    // Cold also includes one lookup of reported VAT periods for Nästa datum (DeadlineCompletion), whatever the history,
+    // and Momsbufferten's fiscal-year lookup (it reads the balances only when a year has begun).
+    expect($cold)->toBeLessThan(47)
         ->and($warm)->toBeLessThan(17);
 });
 

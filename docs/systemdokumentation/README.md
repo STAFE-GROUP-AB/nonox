@@ -134,6 +134,13 @@ Beskrivs i [ADR-024](../adr/ADR-024-company-archiving-and-ownership-transfer.md)
   verifikationerna. Fliken Statistik och prognos visar diagram med samma
   siffror som tabeller ([ADR-027](../adr/ADR-027-overview.md)).
 - Översikten läser bara. Den bokför, ändrar och loggar ingenting.
+- Kortet Pengar som inte är dina (Momsbufferten, ADR-051) visar saldon ur
+  bokförda verifikationer till och med i dag och ingående balanser: bank och
+  kassa 1900–1999, de momskonton som momsredovisningen för över till 2650,
+  2650 själv, 2710/2730/2731 för en arbetsgivare och 1630. Ett räkenskapsår
+  utan ingående balanser räknas från närmast föregående år som har dem.
+  Debiterad preliminärskatt räknas bara när företaget självt har angett
+  månadsbeloppet. Inget bokförs eller ändras.
 - Nyckeltalet Resultat hittills (överst i verifikationslistan) är årets
   rörelse på 3000–8989, samma avgränsning som resultaträkningen. 8999 Årets
   resultat räknas inte med, så resultatet står kvar när det bokats mot 2099

@@ -58,6 +58,28 @@ Saknar NONOX företagets tidigare räkenskapsår står det **Datum för räkensk
 
 Vilka datum som visas beror på företagets uppgifter. Är företaget momsregistrerat visas momsdeklarationerna, är det registrerat som arbetsgivare visas arbetsgivardeklarationerna, och har det F-skatt visas preliminärskatten. Stämmer något inte, kontrollera uppgifterna under [Företagets uppgifter](/manual/installningar/foretagets-uppgifter).
 
+## Pengar som inte är dina
+
+![Pengar som inte är dina på Mina datum: vad som blir kvar efter moms och skatter, saldona och momsen per deklaration.](/bilder/manual/kom-igang/momsbufferten.webp)
+
+En del av pengarna på företagets bankkonto är moms och skatt som ska till Skatteverket. Under **Pengar som inte är dina** (Momsbufferten) ser du hur mycket, räknat ur bokföringen. Delen visas för den som får se rapporterna, och samma siffror står på översikten.
+
+- **Kvar efter moms och skatter** är pengarna på banken och i kassan minus det som ska till Skatteverket.
+- **På banken och i kassan** är saldot på kontona 1900–1999.
+- **Moms att betala** är momsen som ännu inte är redovisad (saldot på momskontona, till exempel 2611 och 2641) och momsen som är redovisad men inte betald (saldot på 2650). Är det moms att få tillbaka står **Moms att få tillbaka**, och den räknas inte in, eftersom pengarna inte är på kontot än.
+- **Personalskatt och arbetsgivaravgifter** är saldot på 2710, 2730 och 2731, för ett företag som är registrerat som arbetsgivare.
+- **Redan på skattekontot** eller **Skuld på skattekontot** är saldot på 1630. Pengar som redan ligger på skattekontot betalar skatterna, och en skuld där läggs till.
+- **Preliminärskatt** visas bara om du har fyllt i **Debiterad preliminärskatt per månad (frivilligt)** under [Företagets uppgifter](/manual/installningar/foretagets-uppgifter). Den räknas för varje betalningsdag fram till nästa momsdeklaration. NONOX räknar aldrig ut beloppet själv, eftersom det bara står i Skatteverkets beslut.
+
+Under **Momsen per deklaration** står momsen för varje period som har en deklaration framför sig, till exempel **Till momsdeklarationen 12 februari (kvartal 4 2026 hittills): ca 10 900 kr**. Siffran räknas som i momsrapporten, med det som är bokfört i perioden hittills.
+
+Klicka på **Så räknar vi** för att se varje konto och dess saldo. Ett konto som inte finns i företagets kontoplan visas inte.
+
+> [!IMPORTANT]
+> Siffrorna bygger på det som är bokfört till och med i dag. Obokförda fakturor och kvitton syns inte, och inte heller utkast. Under siffrorna står datumet de gäller och den senast bokförda verifikationen.
+
+Är momsen att betala mer än pengarna på banken visas **Momsen att betala är mer än pengarna på banken**, med en länk till artikeln om att sätta undan pengar för moms och skatt i Företagsguiden.
+
 ## Mina datum visar inte
 
 Det här kan NONOX inte räkna ut, så det står inte i Mina datum:

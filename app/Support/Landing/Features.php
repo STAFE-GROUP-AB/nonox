@@ -105,6 +105,7 @@ final class Features
         'archive' => ['name' => 'Arkivpaket per räkenskapsår', 'status' => self::LIVE, 'readme' => 'Arkivpaket per räkenskapsår'],
         'business_guide' => ['name' => 'Företagsguiden med Min startplan', 'status' => self::LIVE, 'readme' => 'Företagsguiden: hur du startar och driver företaget'],
         'deadlines' => ['name' => 'Mina datum med kalenderlänk och påminnelser', 'status' => self::LIVE, 'readme' => 'Mina datum: företagets sista dagar för moms'],
+        'vat_buffer' => ['name' => 'Momsbufferten: pengar som inte är dina', 'status' => self::LIVE, 'readme' => 'Momsbufferten: hur mycket av pengarna på banken'],
         'audit_log' => ['name' => 'Behandlingshistorik', 'status' => self::LIVE, 'readme' => 'Behandlingshistorik över allt som görs'],
         'branding' => ['name' => 'Egen logga och färger', 'status' => self::LIVE, 'readme' => 'Eget varumärke: logga och färger'],
         'payment_file_matching' => ['name' => 'Automatisk avstämning av betalfiler', 'status' => self::LIVE, 'readme' => 'Automatisk avstämning av betalfiler mot bankens svar'],

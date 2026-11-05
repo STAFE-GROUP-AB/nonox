@@ -7,6 +7,8 @@ namespace App\Livewire\Overview;
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\Deadline;
 use App\Domain\Deadlines\DeadlineCompletion;
+use App\Domain\Guide\MoneyNotYours;
+use App\Domain\Guide\MoneyNotYoursFigures;
 use App\Domain\Overview\Overview;
 use App\Domain\Overview\OverviewCache;
 use App\Models\Company;
@@ -30,7 +32,7 @@ class OverviewPage extends Component
         $this->dispatch('overview-refreshed');
     }
 
-    public function render(Overview $overview, CompanyDeadlines $deadlines): View
+    public function render(Overview $overview, CompanyDeadlines $deadlines, MoneyNotYours $moneyNotYours): View
     {
         $user = $this->user();
         $company = $this->company();
@@ -49,6 +51,20 @@ class OverviewPage extends Component
             })
             : [];
 
+        // Momsbufferten (ADR-051, stage 3): the ledger's figures, for those who may see the reports, cached with the overview.
+        /** @var array{figures: array<string, mixed>|null, vat: list<array{deadline: array{key: string, type: string, title: string, date: string, period: string, applies_because: string, route: ?string, article: ?string, source_url: ?string, recommendation: bool, legal_verify: bool, period_start?: ?string}, amount: int, running: bool}>} $money */
+        $money = $company->guide_enabled && $user->hasTeamPermission($company, 'reports:view')
+            ? OverviewCache::remember($company->id, "money-not-yours:{$today->toDateString()}:".Guide::version(), function () use ($company, $today, $moneyNotYours, $deadlines): array {
+                $figures = $moneyNotYours->for($company, $today);
+
+                return [
+                    'figures' => $figures?->toArray(),
+                    // The VAT of each coming declaration, so the total is explained by period.
+                    'vat' => $figures === null ? [] : array_map(fn (array $item): array => [...$item, 'deadline' => $item['deadline']->toArray()], $moneyNotYours->vatByDeadline($company, $deadlines->upcoming($company, $today), $today)),
+                ];
+            })
+            : ['figures' => null, 'vat' => []];
+
         return view('livewire.overview.page', [
             'user' => $user,
             'company' => $company,
@@ -58,6 +74,9 @@ class OverviewPage extends Component
             'todos' => $data['todos'],
             'vouchers' => $data['vouchers'],
             'canSeeStatistics' => $user->hasTeamPermission($company, 'reports:view'),
+            'moneyFigures' => $money['figures'] === null ? null : MoneyNotYoursFigures::fromArray($money['figures']),
+            'moneyVat' => array_map(fn (array $item): array => [...$item, 'deadline' => Deadline::fromArray($item['deadline'])], $money['vat']),
+            'setAsideUrl' => Guide::article('moms-och-skatt', 'satt-undan-pengar', false) === null ? null : Guide::url('moms-och-skatt', 'satt-undan-pengar'),
             'nextDates' => array_map(fn (array $item): Deadline => Deadline::fromArray($item), $nextDates),
         ]);
     }

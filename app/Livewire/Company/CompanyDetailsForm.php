@@ -17,6 +17,7 @@ use App\Livewire\Concerns\LooksUpCompanies;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\Company;
 use App\Models\User;
+use App\Support\Money\Money;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Livewire\Attributes\Locked;
@@ -53,6 +54,7 @@ class CompanyDetailsForm extends Component
             'accounting_method' => $company->accounting_method->value,
             'reporting_framework' => $company->reporting_framework->value,
             'f_skatt' => $company->f_skatt,
+            'preliminary_tax_monthly' => $company->preliminary_tax_monthly_ore === null ? '' : str_replace("\u{00A0}", ' ', Money::ofOre($company->preliminary_tax_monthly_ore)->format(false)),
             'employer_registered' => $company->employer_registered,
             'turnover_over_40_msek' => $company->turnover_over_40_msek,
             'framework_confirmed' => false,
@@ -80,6 +82,7 @@ class CompanyDetailsForm extends Component
         $company = $this->company()->refresh();
         $this->state['bankgiro'] = $company->bankgiro;
         $this->state['plusgiro'] = $company->plusgiro;
+        $this->state['preliminary_tax_monthly'] = $company->preliminary_tax_monthly_ore === null ? '' : str_replace("\u{00A0}", ' ', Money::ofOre($company->preliminary_tax_monthly_ore)->format(false));
         $this->state['framework_confirmed'] = false;
         $this->state['calendar_year_exempt'] = false;
 

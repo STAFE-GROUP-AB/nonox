@@ -161,6 +161,16 @@
                 </x-ui.card>
             @endif
 
+            @if($moneyFigures)
+                {{-- Momsbufferten (ADR-051, stage 3): what of the money in the bank is not the company's. --}}
+                <x-ui.card :title="__('Pengar som inte är dina')" :description="__('Moms och skatt som ska till Skatteverket, enligt bokföringen.')" class="min-w-0" data-overview-money>
+                    <x-slot:action>
+                        <x-ui.link :href="route('guide.dates').'#momsbufferten'">{{ __('Så räknar vi') }}</x-ui.link>
+                    </x-slot:action>
+                    <x-guide.money-not-yours :figures="$moneyFigures" :company="$company" :vat-deadlines="$moneyVat" :article-url="$setAsideUrl" />
+                </x-ui.card>
+            @endif
+
             @if($nextDates !== [])
                 {{-- Nästa datum (ADR-051, stage 2): the next dates on Mina datum. --}}
                 <x-ui.card :title="__('Nästa datum')" class="min-w-0" data-next-dates>
