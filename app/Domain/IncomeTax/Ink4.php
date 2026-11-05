@@ -214,7 +214,7 @@ final class Ink4
         if ($this->partners->isEmpty()) {
             $warnings[] = __('Lägg in delägarna och deras andelar. Varje delägare behöver en egen bilaga INK4DU.');
         } elseif ($this->partners->sum('share_bp') !== 10_000) {
-            $warnings[] = __('Delägarnas andelar blir :share %, inte 100 %. Rätta andelarna innan du laddar ner filerna.', ['share' => number_format($this->partners->sum('share_bp') / 100, 2, ',', ' ')]);
+            $warnings[] = __('Delägarnas andelar blir :share %, inte 100 %. Rätta andelarna innan du laddar ner filerna.', ['share' => IncomeTaxForms::percent((int) $this->partners->sum('share_bp'))]);
         }
 
         if ($this->accounts->movementOf(Ink4Codes::TAX_ACCOUNTS[0], Ink4Codes::TAX_ACCOUNTS[1]) !== 0) {
@@ -225,7 +225,7 @@ final class Ink4
         $fields = $this->ink4r();
 
         if (($fields[Ink4Codes::NET_CONTRIBUTIONS] ?? 0) !== $books) {
-            $warnings[] = __('Delägarnas nettouttag eller nettotillskott enligt eget kapital (:equity kr) skiljer sig från uttagen och tillskotten på delägarnas konton (:accounts kr). Kontrollera de andra bokningarna på eget kapital.', ['equity' => $fields[Ink4Codes::NET_CONTRIBUTIONS] ?? 0, 'accounts' => $books]);
+            $warnings[] = __('Delägarnas nettouttag eller nettotillskott enligt eget kapital (:equity) skiljer sig från uttagen och tillskotten på delägarnas konton (:accounts). Kontrollera de andra bokningarna på eget kapital.', ['equity' => IncomeTaxForms::kronor((int) ($fields[Ink4Codes::NET_CONTRIBUTIONS] ?? 0)), 'accounts' => IncomeTaxForms::kronor($books)]);
         }
 
         return $warnings;

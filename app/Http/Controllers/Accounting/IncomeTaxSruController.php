@@ -6,7 +6,7 @@ namespace App\Http\Controllers\Accounting;
 
 use App\Actions\IncomeTax\BusinessIncomeTaxReturns;
 use App\Actions\IncomeTax\IncomeTaxReturns;
-use App\Domain\Company\LegalForm;
+use App\Domain\IncomeTax\IncomeTaxForms;
 use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
@@ -28,11 +28,7 @@ class IncomeTaxSruController
     {
         /** @var User $user */
         $user = $request->user();
-        $form = match (Company::query()->findOrFail($fiscalYear->company_id)->legal_form) {
-            LegalForm::Ef => 'NE',
-            LegalForm::Hb, LegalForm::Kb => 'INK4',
-            default => 'INK2',
-        };
+        $form = IncomeTaxForms::for(Company::query()->findOrFail($fiscalYear->company_id)) ?? 'INK2';
 
         try {
             $zip = $form === 'INK2' ? $returns->sruZip($user, $fiscalYear) : $business->sruZip($user, $fiscalYear);

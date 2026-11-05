@@ -779,9 +779,9 @@ function incomeTaxPartnerAttributes(): array
 {
     return [
         'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
-        'position' => random_int(1, 9),
+        'position' => random_int(1, 4),
         'name' => 'Delägare',
-        'identity' => '197901011234',
+        'identity' => '191212121212',
         'legal_person' => false,
         'share_bp' => 5000,
         'updated_by' => User::factory()->create()->id,

@@ -30,8 +30,14 @@
 
 <div class="grid gap-6 xl:grid-cols-[minmax(0,32rem)_1fr]">
     <div class="space-y-6">
-        <x-ui.card :title="__('Delägare')" :description="__('Varje delägare får en egen bilaga INK4DU. Numret är delägarens konton i BAS: 1 är 2010–2019, 2 är 2020–2029 och så vidare; därifrån hämtas uttag och tillskott.')" data-ink4-partners>
+        <x-ui.card :title="__('Delägare')" :description="__('Varje delägare får en egen bilaga INK4DU. Numret är delägarens konton i BAS: 1 är 2010–2019, 2 är 2020–2029, 3 är 2030–2039 och 4 är 2040–2049; därifrån hämtas uttag och tillskott.')" data-ink4-partners>
+            @if(! $fiscalYear->isOpen())
+                <p class="mb-4 rounded-2xl bg-stone-100 px-4 py-3 text-sm text-gray-700" data-ink4-partners-locked>{{ __('Räkenskapsåret är stängt. Delägarna för året kan inte ändras, eftersom de hör till årets deklaration.') }}</p>
+            @elseif($partnersCopied)
+                <p class="mb-4 rounded-2xl bg-amber-50 px-4 py-3 text-sm text-amber-950 ring-1 ring-amber-200" data-ink4-partners-copied>{{ __('Delägarna är hämtade från förra året och är inte sparade för det här året än. Kontrollera dem och klicka på Spara delägarna.') }}</p>
+            @endif
             <form wire:submit="savePartners" class="space-y-4">
+                <fieldset class="space-y-4" @disabled(! $fiscalYear->isOpen())>
                 @foreach($partners as $index => $partner)
                     <div class="space-y-3 rounded-2xl p-4 ring-1 ring-stone-200" wire:key="partner-{{ $index }}">
                         <div class="grid gap-3 sm:grid-cols-[5rem_1fr]">
@@ -44,17 +50,23 @@
                         </div>
                         <label class="flex items-center gap-3 text-sm text-gray-700"><x-checkbox wire:model.live="partners.{{ $index }}.legal_person" />{{ __('Delägaren är ett företag (juridisk person)') }}</label>
                         <div class="grid gap-3 sm:grid-cols-[1fr_7rem]">
-                            <x-ui.field :for="'partner_'.$index.'_identity'" :label="($partner['legal_person'] ?? false) ? __('Organisationsnummer') : __('Personnummer med århundrade')" :error="'partners.'.$index.'.identity'">
-                                <input id="partner_{{ $index }}_identity" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="partners.{{ $index }}.identity" autocomplete="off" placeholder="{{ ($partner['legal_person'] ?? false) ? '556677-8899' : '19800101-1234' }}">
+                            <x-ui.field :for="'partner_'.$index.'_identity'" :label="($partner['legal_person'] ?? false) ? __('Organisationsnummer') : __('Personnummer med århundrade')" :error="'partners.'.$index.'.identity'" :hint="! ($partner['legal_person'] ?? false) && ($partner['masked'] ?? '') !== '' ? __('Sparat: :number. Lämna tomt för att behålla det, eller skriv ett nytt.', ['number' => $partner['masked']]) : null">
+                                <input id="partner_{{ $index }}_identity" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="partners.{{ $index }}.identity" autocomplete="off" placeholder="{{ ($partner['legal_person'] ?? false) ? '556677-8899' : (($partner['masked'] ?? '') !== '' ? $partner['masked'] : '19121212-1212') }}">
                             </x-ui.field>
                             <x-ui.field :for="'partner_'.$index.'_share'" :label="__('Andel, %')" :error="'partners.'.$index.'.share'">
                                 <input id="partner_{{ $index }}_share" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="partners.{{ $index }}.share">
                             </x-ui.field>
                         </div>
-                        <button type="button" wire:click="removePartner({{ $index }})" class="text-sm font-medium text-gray-700 underline">{{ __('Ta bort delägaren') }}</button>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <button type="button" wire:click="removePartner({{ $index }})" class="text-sm font-medium text-gray-700 underline" aria-label="{{ __('Ta bort delägare :position, :name', ['position' => $partner['position'], 'name' => $partner['name']]) }}">{{ __('Ta bort delägaren') }}</button>
+                            @if(($partner['ref'] ?? '') !== '')
+                                <a href="{{ route('privacy.export.incomeTaxPartner', (int) $partner['ref']) }}" class="text-sm font-medium text-accent-700 underline" aria-label="{{ __('Registerutdrag för :name', ['name' => $partner['name']]) }}">{{ __('Registerutdrag (JSON)') }}</a>
+                            @endif
+                        </div>
                     </div>
                 @endforeach
-                <div class="flex flex-wrap items-center gap-4">
+                </fieldset>
+                <div class="flex flex-wrap items-center gap-4" @if(! $fiscalYear->isOpen()) hidden @endif>
                     <button type="button" wire:click="addPartner" class="inline-flex min-h-10 items-center rounded-full px-4 text-sm font-semibold text-ink ring-1 ring-stone-300 hover:bg-stone-100">{{ __('Lägg till delägare') }}</button>
                     <x-button>{{ __('Spara delägarna') }}</x-button>
                 </div>
@@ -129,7 +141,7 @@
             @endforeach
             @foreach($ink4->ink4du() as $block)
                 <div data-ink4du>
-                    <p class="text-sm font-semibold text-ink">INK4DU-{{ $ink4->period() }}: {{ $block['partner']->name }} ({{ number_format($block['partner']->share_bp / 100, 2, ',', '') }} %)</p>
+                    <p class="text-sm font-semibold text-ink">INK4DU-{{ $ink4->period() }}: {{ $block['partner']->name }} ({{ App\Domain\IncomeTax\IncomeTaxForms::percent($block['partner']->share_bp) }} %)</p>
                     <table class="mt-2 min-w-full text-sm">
                         <tbody class="divide-y divide-stone-200">
                             @foreach($block['fields'] as $code => $value)

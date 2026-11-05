@@ -6,8 +6,7 @@ namespace App\Livewire\Accounting;
 
 use App\Actions\IncomeTax\BusinessIncomeTaxReturns;
 use App\Actions\IncomeTax\IncomeTaxReturns;
-use App\Domain\AnnualReport\AnnualReportDocument;
-use App\Domain\Company\LegalForm;
+use App\Domain\IncomeTax\IncomeTaxForms;
 use App\Domain\IncomeTax\Ink2;
 use App\Domain\IncomeTax\Ink2Codes;
 use App\Domain\IncomeTax\Ink4;
@@ -48,8 +47,18 @@ class IncomeTaxPage extends Component
     /** NE: the owner's century of birth, 19 or 20, for the personnummer and the egenavgifter. */
     public string $century = '';
 
-    /** @var array<int, array{position: string, name: string, identity: string, legal_person: bool, share: string}> INK4 partners, as typed */
+    /**
+     * INK4 partners, as typed. A person's personnummer never goes to the
+     * browser: `identity` stays empty and `masked` shows the last four
+     * digits; saving keeps the stored number (by `ref`) unless a new one is
+     * typed. An organisationsnummer is not personal data and is shown.
+     *
+     * @var array<int, array{ref: string, masked: string, position: string, name: string, identity: string, legal_person: bool, share: string}>
+     */
     public array $partners = [];
+
+    /** The partners shown are last year's, not yet saved for this year. */
+    public bool $partnersCopied = false;
 
     public string $consultant = '';
 
@@ -104,7 +113,7 @@ class IncomeTaxPage extends Component
             $next++;
         }
 
-        $this->partners[] = ['position' => (string) $next, 'name' => '', 'identity' => '', 'legal_person' => false, 'share' => ''];
+        $this->partners[] = ['ref' => '', 'masked' => '', 'position' => (string) $next, 'name' => '', 'identity' => '', 'legal_person' => false, 'share' => ''];
     }
 
     public function removePartner(int $index): void
@@ -154,14 +163,7 @@ class IncomeTaxPage extends Component
     /** The company's return: INK2, NE or INK4, or null for a form NONOX does not prepare (ideell förening, stiftelse). */
     private function form(): ?string
     {
-        $company = $this->company();
-
-        return match (true) {
-            AnnualReportDocument::supports($company) => IncomeTaxReturn::INK2,
-            $company->legal_form === LegalForm::Ef => IncomeTaxReturn::NE,
-            in_array($company->legal_form, [LegalForm::Hb, LegalForm::Kb], true) => IncomeTaxReturn::INK4,
-            default => null,
-        };
+        return IncomeTaxForms::for($this->company());
     }
 
     private function loadForm(): void
@@ -197,6 +199,7 @@ class IncomeTaxPage extends Component
         $this->consultant = $return?->consultant === null ? '' : ($return->consultant ? '1' : '0');
         $this->audited = $return?->audited === null ? '' : ($return->audited ? '1' : '0');
         $this->partners = [];
+        $this->partnersCopied = false;
 
         if ($form === IncomeTaxReturn::INK4) {
             $saved = IncomeTaxPartner::query()->where('fiscal_year_id', $this->year)->orderBy('position')->get();
@@ -205,14 +208,17 @@ class IncomeTaxPage extends Component
                 // A new year starts from the partners of the year before.
                 $previous = FiscalYear::query()->whereKeyNot($this->year)->whereDate('end_date', '<', (string) FiscalYear::query()->whereKey($this->year)->value('start_date'))->orderByDesc('end_date')->value('id');
                 $saved = $previous === null ? $saved : IncomeTaxPartner::query()->where('fiscal_year_id', $previous)->orderBy('position')->get();
+                $this->partnersCopied = $saved->isNotEmpty();
             }
 
             $this->partners = $saved->map(fn (IncomeTaxPartner $partner): array => [
+                'ref' => (string) $partner->id,
+                'masked' => $partner->legal_person ? '' : '••••••••-'.substr($partner->identity, -4),
                 'position' => (string) $partner->position,
                 'name' => $partner->name,
-                'identity' => $partner->legal_person ? substr($partner->identity, 2) : $partner->identity,
+                'identity' => $partner->legal_person ? substr($partner->identity, 2) : '',
                 'legal_person' => $partner->legal_person,
-                'share' => rtrim(rtrim(number_format($partner->share_bp / 100, 2, ',', ''), '0'), ','),
+                'share' => rtrim(rtrim(IncomeTaxForms::percent($partner->share_bp), '0'), ','),
             ])->values()->all();
         }
     }

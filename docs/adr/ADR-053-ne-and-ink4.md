@@ -51,7 +51,14 @@ INK4S_SKV2004-33-01-26-06 and INK4DU_SKV2004-33-01-26-01.
    `income_tax_returns.personal`. INK4 partners are stored per fiscal year in
    `income_tax_partners` (name, BAS block, share, identity encrypted,
    Luhn-checked). The audit log records field codes and counts, never amounts,
-   names or numbers.
+   names or numbers. A natural person's number never reaches the browser: the
+   page shows it masked and keeps the stored value unless a new one is typed
+   (rows refer to the stored partner by id, within the company). Partners of a
+   closed fiscal year are locked, so they stay as filed. Each partner has a
+   register extract (`/registerutdrag/delagare/{id}`).
+   Positions are 1–4, because BAS has equity blocks for four partners
+   (2010–2049); a company with more partners files INK4 in Skatteverket's
+   e-service.
 6. **INK4**: INK4R from the books with the partners' equity (opening, net
    withdrawals or contributions as the remainder, result, closing), with a
    warning when the remainder differs from the partners' x1–x3 and x7–x8

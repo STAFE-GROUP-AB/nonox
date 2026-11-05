@@ -100,7 +100,7 @@ Ett handelsbolag eller kommanditbolag betalar ingen inkomstskatt själv. Det lä
 
 1. Gör bokslutet först.
 2. Gå till **Bokföring → Inkomstdeklaration** och välj året.
-3. Under **Delägare**, klicka på **Lägg till delägare** för varje delägare. Fyll i **Nummer** (delägarens konton i BAS: 1 är 2010–2019, 2 är 2020–2029 och så vidare), **Namn**, **Personnummer med århundrade** eller, om delägaren är ett företag, kryssa i **Delägaren är ett företag (juridisk person)** och fyll i **Organisationsnummer**. Fyll i **Andel, %**. Klicka på **Spara delägarna**. Ett nytt år börjar med förra årets delägare.
+3. Under **Delägare**, klicka på **Lägg till delägare** för varje delägare. Fyll i **Nummer** (delägarens konton i BAS: 1 är 2010–2019, 2 är 2020–2029, 3 är 2030–2039 och 4 är 2040–2049), **Namn**, **Personnummer med århundrade** eller, om delägaren är ett företag, kryssa i **Delägaren är ett företag (juridisk person)** och fyll i **Organisationsnummer**. Fyll i **Andel, %**. Klicka på **Spara delägarna**. Ett nytt år börjar med förra årets delägare; de är inte sparade för året förrän du klickar på **Spara delägarna**. Ett sparat personnummer visas med bara de fyra sista siffrorna: lämna fältet tomt för att behålla det, eller skriv ett nytt. BAS har konton för fyra delägare, så har bolaget fler fyller du i INK4 i Skatteverkets e-tjänst. När räkenskapsåret är stängt kan delägarna inte ändras. **Registerutdrag (JSON)** vid en sparad delägare ger det NONOX har sparat om delägaren.
 4. Under **Skattemässiga justeringar (INK4S)**, fyll i det som gäller bolaget. **4.16 Pensionskostnader** föreslås från kontona 7400–7499.
 5. Svara på frågorna om konsult och revision och klicka på **Spara**.
 6. Granska **Deklarationen, fält för fält**, med en INK4DU per delägare.

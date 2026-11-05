@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\IncomeTax\BusinessIncomeTaxReturns;
 use App\Domain\Accounting\AccountType;
+use App\Domain\Accounting\FiscalYearStatus;
 use App\Domain\Company\LegalForm;
 use App\Domain\IncomeTax\Ink4;
 use App\Livewire\Accounting\IncomeTaxPage;
@@ -14,6 +15,7 @@ use App\Models\IncomeTaxPartner;
 use App\Models\IncomeTaxReturn;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -44,7 +46,7 @@ beforeEach(function () {
     Bookkeeping::postRows($this->owner, $this->company, '2026-07-01', [1930 => 1_000_000, 2028 => -1_000_000]);
 
     $this->partners = [
-        ['position' => '1', 'name' => 'Eva Ek', 'identity' => '19790101-1234', 'legal_person' => false, 'share' => '60'],
+        ['position' => '1', 'name' => 'Eva Ek', 'identity' => '19121212-1212', 'legal_person' => false, 'share' => '60'],
         ['position' => '2', 'name' => 'Björk AB', 'identity' => '556677-8899', 'legal_person' => true, 'share' => '40'],
     ];
 });
@@ -78,16 +80,16 @@ it('saves the partners with their identities encrypted and splits the surplus by
     $blocks = ink4($this)->ink4du();
 
     expect($blocks)->toHaveCount(2)
-        ->and($blocks[0]['fields'])->toMatchArray([7011 => '20260101', 7012 => '20261231', 8100 => '197901011234', 8101 => 90_000, 8104 => 30_000])
+        ->and($blocks[0]['fields'])->toMatchArray([7011 => '20260101', 7012 => '20261231', 8100 => '191212121212', 8101 => 90_000, 8104 => 30_000])
         ->and(array_keys($blocks[0]['fields']))->toBe([7011, 7012, 8100, 8101, 8104])
         ->and($blocks[1]['fields'])->toMatchArray([8100 => '165566778899', 8101 => 60_000, 8103 => 10_000])
-        ->and((string) DB::table('income_tax_partners')->where('position', 1)->value('identity'))->not->toContain('197901011234')
-        ->and(json_encode(AuditLog::query()->where('action', 'income_tax.partners_saved')->sole()->payload))->not->toContain('1979')->not->toContain('Eva');
+        ->and((string) DB::table('income_tax_partners')->where('position', 1)->value('identity'))->not->toContain('191212121212')
+        ->and(json_encode(AuditLog::query()->where('action', 'income_tax.partners_saved')->sole()->payload))->not->toContain('1912')->not->toContain('Eva');
 });
 
 it('gives the last partner the rounding remainder so the shares add up', function () {
     $this->returns->savePartners($this->owner, $this->year, [
-        ['position' => '1', 'name' => 'A', 'identity' => '19790101-1234', 'share' => '33,33'],
+        ['position' => '1', 'name' => 'A', 'identity' => '19121212-1212', 'share' => '33,33'],
         ['position' => '2', 'name' => 'B', 'identity' => '556677-8899', 'legal_person' => true, 'share' => '33,33'],
         ['position' => '3', 'name' => 'C', 'identity' => '556677-8899', 'legal_person' => true, 'share' => '33,34'],
     ]);
@@ -104,15 +106,15 @@ it('refuses a wrong personnummer, a wrong organisationsnummer and a bad share', 
         expect($exception->errors())->toHaveKey($field);
     }
 })->with([
-    'personnummer without century' => [['position' => '1', 'name' => 'A', 'identity' => '790101-1234', 'share' => '50'], 'partners.0.identity'],
-    'personnummer with a wrong check digit' => [['position' => '1', 'name' => 'A', 'identity' => '19790101-1235', 'share' => '50'], 'partners.0.identity'],
+    'personnummer without century' => [['position' => '1', 'name' => 'A', 'identity' => '121212-1212', 'share' => '50'], 'partners.0.identity'],
+    'personnummer with a wrong check digit' => [['position' => '1', 'name' => 'A', 'identity' => '19121212-1213', 'share' => '50'], 'partners.0.identity'],
     'organisationsnummer' => [['position' => '1', 'name' => 'A', 'identity' => '556677-8890', 'legal_person' => true, 'share' => '50'], 'partners.0.identity'],
-    'share above 100' => [['position' => '1', 'name' => 'A', 'identity' => '19790101-1234', 'share' => '101'], 'partners.0.share'],
-    'share with three decimals' => [['position' => '1', 'name' => 'A', 'identity' => '19790101-1234', 'share' => '33,333'], 'partners.0.share'],
+    'share above 100' => [['position' => '1', 'name' => 'A', 'identity' => '19121212-1212', 'share' => '101'], 'partners.0.share'],
+    'share with three decimals' => [['position' => '1', 'name' => 'A', 'identity' => '19121212-1212', 'share' => '33,333'], 'partners.0.share'],
 ]);
 
 it('writes INK4R, INK4S and one INK4DU block per partner, only when the shares add up to 100 %', function () {
-    $this->returns->savePartners($this->owner, $this->year, [['position' => '1', 'name' => 'Eva Ek', 'identity' => '19790101-1234', 'share' => '60']]);
+    $this->returns->savePartners($this->owner, $this->year, [['position' => '1', 'name' => 'Eva Ek', 'identity' => '19121212-1212', 'share' => '60']]);
     expect(fn () => $this->returns->sruZip($this->owner, $this->year))->toThrow(ValidationException::class);
 
     $this->returns->savePartners($this->owner, $this->year, $this->partners);
@@ -124,7 +126,7 @@ it('writes INK4R, INK4S and one INK4DU block per partner, only when the shares a
         ->and(substr_count($blanketter, "#BLANKETT INK4DU-2026P4\n"))->toBe(2)
         ->and($blanketter)->toContain('#IDENTITET 169690000006 ')
         ->and($blocks[2])->toContain("#UPPGIFT 7011 20260101\n")->not->toContain('#UPPGIFT 0 ')
-        ->and($blocks[2])->toContain("#UPPGIFT 8100 197901011234\n")->toContain("#UPPGIFT 8101 90000\n")->toContain("#UPPGIFT 8104 30000\n")
+        ->and($blocks[2])->toContain("#UPPGIFT 8100 191212121212\n")->toContain("#UPPGIFT 8101 90000\n")->toContain("#UPPGIFT 8104 30000\n")
         ->and($blocks[3])->toContain("#UPPGIFT 8100 165566778899\n")->toContain("#UPPGIFT 8103 10000\n")
         ->and($blanketter)->toContain("#UPPGIFT 7311 -20000\n")
         ->and($blanketter)->toEndWith("#BLANKETTSLUT\n#FIL_SLUT\n");
@@ -137,7 +139,8 @@ it('shows the INK4 flow with the partners and the note that partners file N3A or
         ->assertSee('Delägare')
         ->assertSee('NONOX tar inte fram N3A eller N3B.')
         ->assertSee('Första sidan av Inkomstdeklaration 4 kan inte lämnas med filöverföring.')
-        ->assertSet('partners.0.identity', '197901011234')
+        ->assertSet('partners.0.identity', '')
+        ->assertSet('partners.0.masked', '••••••••-1212')
         ->assertSet('partners.1.identity', '5566778899')
         ->call('addPartner')->assertSet('partners.2.position', '3')
         ->call('removePartner', 2)->call('savePartners')->assertDispatched('toast', message: 'Delägarna är sparade.');
@@ -148,4 +151,80 @@ it('starts a new year from last year’s partners', function () {
     $next = FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']);
 
     Livewire::withQueryParams(['ar' => $next->id])->test(IncomeTaxPage::class)->assertSet('partners.0.name', 'Eva Ek')->assertSet('partners.1.share', '40');
+});
+
+it('never puts a partner’s personnummer in the page or its Livewire state, and keeps the stored one when nothing new is typed', function () {
+    $this->returns->savePartners($this->owner, $this->year, $this->partners);
+    $page = Livewire::test(IncomeTaxPage::class);
+
+    expect($page->html())->not->toContain('191212121212')->not->toContain('19121212-1212')
+        ->and(json_encode($page->instance()->partners))->not->toContain('191212121212')
+        ->and($page->html())->toContain('••••••••-1212');
+
+    $page->set('partners.0.share', '70')->set('partners.1.share', '30')->call('savePartners')->assertHasNoErrors();
+    expect(IncomeTaxPartner::query()->where('position', 1)->sole()->identity)->toBe('191212121212');
+
+    $page->set('partners.0.identity', '19811218-9876')->call('savePartners')->assertHasNoErrors();
+    expect(IncomeTaxPartner::query()->where('position', 1)->sole()->identity)->toBe('198112189876');
+});
+
+it('keeps a copied partner’s number for the new year, and says the copy is not saved yet', function () {
+    $this->returns->savePartners($this->owner, $this->year, $this->partners);
+    $next = FiscalYear::create(['start_date' => '2027-01-01', 'end_date' => '2027-12-31']);
+
+    Livewire::withQueryParams(['ar' => $next->id])->test(IncomeTaxPage::class)
+        ->assertSee('Delägarna är hämtade från förra året och är inte sparade för det här året än.')
+        ->call('savePartners')->assertHasNoErrors();
+
+    expect(IncomeTaxPartner::query()->where('fiscal_year_id', $next->id)->where('position', 1)->sole()->identity)->toBe('191212121212');
+});
+
+it('refuses another company’s partner as the source of a stored number', function () {
+    [$otherOwner, $other] = Bookkeeping::company();
+    $foreign = CurrentCompany::run($other->id, fn () => IncomeTaxPartner::query()->create(['fiscal_year_id' => FiscalYear::query()->value('id'), 'position' => 1, 'name' => 'X', 'identity' => '198112189876', 'share_bp' => 10000, 'updated_by' => $otherOwner->id]));
+
+    expect(fn () => $this->returns->savePartners($this->owner, $this->year, [['ref' => (string) $foreign->id, 'position' => '1', 'name' => 'X', 'identity' => '', 'share' => '100']]))->toThrow(ValidationException::class);
+});
+
+it('locks the partners of a closed fiscal year', function () {
+    $this->returns->savePartners($this->owner, $this->year, $this->partners);
+    $this->year->forceFill(['status' => FiscalYearStatus::Closed])->save();
+
+    try {
+        $this->returns->savePartners($this->owner, $this->year->fresh(), $this->partners);
+        $this->fail('No validation error.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey('partners');
+    }
+
+    Livewire::test(IncomeTaxPage::class)->assertSee('Räkenskapsåret är stängt. Delägarna för året kan inte ändras');
+});
+
+it('gives a partner a register extract, for those who close the year and only in the company', function () {
+    $this->returns->savePartners($this->owner, $this->year, $this->partners);
+    $partner = IncomeTaxPartner::query()->where('position', 1)->sole();
+
+    $this->get(route('privacy.export.incomeTaxPartner', $partner))->assertOk()
+        ->assertJsonPath('delagare.0.personnummer_eller_organisationsnummer', '191212121212')
+        ->assertJsonPath('delagare.0.andel_procent', '60,00')
+        ->assertJsonPath('delagare.0.rakenskapsar', $this->year->label());
+
+    $this->actingAs(Bookkeeping::member($this->company, 'bookkeeper'))->get(route('privacy.export.incomeTaxPartner', $partner))->assertForbidden();
+
+    [$other] = Bookkeeping::company();
+    $this->actingAs($other)->get(route('privacy.export.incomeTaxPartner', $partner))->assertNotFound();
+});
+
+it('names each remove button and formats the warning amounts', function () {
+    $this->returns->savePartners($this->owner, $this->year, $this->partners);
+    Bookkeeping::postRows($this->owner, $this->company, '2026-08-01', [2013 => 1_234_500, 2010 => -1_234_500]);
+
+    Livewire::test(IncomeTaxPage::class)
+        ->assertSeeHtml('aria-label="Ta bort delägare 1, Eva Ek"')
+        ->assertSee("-20\u{a0}000\u{a0}kr");
+});
+
+it('accepts only INK2, NE and INK4 as the form of a return', function () {
+    expect(fn () => DB::table('income_tax_returns')->insert(['company_id' => $this->company->id, 'fiscal_year_id' => $this->year->id, 'form' => 'INK9', 'adjustments' => '{}', 'updated_by' => $this->owner->id, 'created_at' => now(), 'updated_at' => now()]))
+        ->toThrow(QueryException::class);
 });

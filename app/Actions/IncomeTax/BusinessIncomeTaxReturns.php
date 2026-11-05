@@ -106,17 +106,29 @@ class BusinessIncomeTaxReturns
     }
 
     /**
-     * Replaces the partners of the fiscal year. Each: position (the BAS block,
-     * 1 for 2010–2019 …), name, a personnummer with century (twelve digits)
-     * or an organisationsnummer (ten digits), and the share in per cent.
+     * Replaces the partners of an open fiscal year. Each: position (the BAS
+     * block, 1 for 2010–2019 up to 4 for 2040–2049), name, a personnummer with
+     * century (twelve digits) or an organisationsnummer (ten digits), and the
+     * share in per cent. An empty number with `ref` (a partner already stored
+     * in the company, this year or the one before) keeps the stored number,
+     * so the page never has to send it to the browser. A closed year's
+     * partners are part of its return and are not changed.
      *
-     * @param  array<int, array{position?: mixed, name?: mixed, identity?: mixed, legal_person?: mixed, share?: mixed}>  $partners
+     * @param  array<int, array{ref?: mixed, position?: mixed, name?: mixed, identity?: mixed, legal_person?: mixed, share?: mixed}>  $partners
      */
     public function savePartners(User $user, FiscalYear $fiscalYear, array $partners): void
     {
         $company = $this->authorize($user, $fiscalYear, [LegalForm::Hb, LegalForm::Kb]);
+
+        if (! $fiscalYear->isOpen()) {
+            throw ValidationException::withMessages(['partners' => __('Räkenskapsåret är stängt. Delägarna för året kan inte ändras, eftersom de hör till årets deklaration.')]);
+        }
+
         $rows = [];
         $positions = [];
+        $stored = CurrentCompany::run($company, fn () => IncomeTaxPartner::query()
+            ->whereIn('id', array_filter(array_map(fn (array $partner): int => (int) ($partner['ref'] ?? 0), $partners)))
+            ->get()->keyBy('id'));
 
         foreach ($partners as $index => $partner) {
             $name = trim((string) ($partner['name'] ?? ''));
@@ -128,15 +140,26 @@ class BusinessIncomeTaxReturns
                 throw ValidationException::withMessages(["{$key}.name" => __('Skriv delägarens namn.')]);
             }
 
-            if ($position < 1 || $position > 9 || in_array($position, $positions, true)) {
-                throw ValidationException::withMessages(["{$key}.position" => __('Varje delägare behöver ett eget nummer mellan 1 och 9.')]);
+            if ($position < 1 || $position > Ink4Codes::MAX_PARTNERS_IN_BAS || in_array($position, $positions, true)) {
+                throw ValidationException::withMessages(["{$key}.position" => __('Varje delägare behöver ett eget nummer mellan 1 och 4. BAS har kontoblock för fyra delägare (2010–2049), och därifrån hämtas uttag och tillskott. Har bolaget fler delägare, fyll i INK4 i Skatteverkets e-tjänst.')]);
             }
 
             $positions[] = $position;
+            $typed = trim((string) ($partner['identity'] ?? ''));
+            $source = $stored->get((int) ($partner['ref'] ?? 0));
+
+            if ($typed === '' && $source instanceof IncomeTaxPartner && $source->legal_person === $legal) {
+                $identity = $source->identity;
+            } elseif ($typed === '' && ($partner['ref'] ?? null) !== null && $source === null) {
+                throw ValidationException::withMessages(["{$key}.identity" => __('Skriv delägarens nummer.')]);
+            } else {
+                $identity = self::identity($typed, $legal, "{$key}.identity");
+            }
+
             $rows[] = [
                 'position' => $position,
                 'name' => $name,
-                'identity' => self::identity((string) ($partner['identity'] ?? ''), $legal, "{$key}.identity"),
+                'identity' => $identity,
                 'legal_person' => $legal,
                 'share_bp' => self::share((string) ($partner['share'] ?? ''), "{$key}.share"),
             ];
@@ -302,7 +325,7 @@ class BusinessIncomeTaxReturns
         }
 
         if (strlen($digits) !== 12 || ! in_array(substr($digits, 0, 2), ['19', '20'], true) || ! Luhn::isValid(substr($digits, 2))) {
-            throw ValidationException::withMessages([$field => __('Personnumret stämmer inte. Skriv tolv siffror med århundradet, till exempel 19800101-1234.')]);
+            throw ValidationException::withMessages([$field => __('Personnumret stämmer inte. Skriv tolv siffror med århundradet, till exempel 19121212-1212.')]);
         }
 
         return $digits;

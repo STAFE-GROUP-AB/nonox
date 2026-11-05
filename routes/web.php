@@ -191,6 +191,7 @@ Route::middleware([
         Route::get('/registerutdrag/leverantor/{supplier}', [DataSubjectExportController::class, 'supplier'])->whereNumber('supplier')->name('privacy.export.supplier');
         Route::get('/registerutdrag/anstalld/{employee}', [DataSubjectExportController::class, 'employee'])->whereNumber('employee')->name('privacy.export.employee');
         Route::get('/registerutdrag/personal/{person}', [DataSubjectExportController::class, 'staffLedgerPerson'])->whereNumber('person')->name('privacy.export.staffLedgerPerson');
+        Route::get('/registerutdrag/delagare/{incomeTaxPartner}', [DataSubjectExportController::class, 'incomeTaxPartner'])->whereNumber('incomeTaxPartner')->name('privacy.export.incomeTaxPartner');
         Route::get('/registerutdrag/inkorg', [DataSubjectExportController::class, 'inboxSender'])->name('privacy.export.inboxSender');
         Route::put('/oversikt/kom-igang', [GettingStartedController::class, 'update'])->name('dashboard.gettingStarted');
         Route::post('/sok', SearchController::class)->middleware('throttle:search')->name('search');

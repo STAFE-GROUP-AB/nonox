@@ -97,17 +97,18 @@ it('calculates the schablonavdrag for egenavgifter by year of birth, and 20 % fo
         ->and($calc['r43'])->toBe($rate === null ? null : intdiv(65_200 * $rate, 10_000))
         ->and($calc['result'])->toBe(65_200 - ($calc['r43'] ?? 0));
 })->with([
+    // Skatteverket's test number, and numbers that fail the Luhn check so they can never be anyone's personnummer.
     'born 1981' => ['811218-9876', '19', false, 2500],
     'born 1959' => ['590101-1236', '19', false, 2500],
     'born 1958' => ['581231-1238', '19', false, 1000],
-    'born 1938' => ['380101-1234', '19', false, 1000],
-    'born 1937' => ['371231-1233', '19', false, null],
+    'born 1938' => ['380101-1230', '19', false, 1000],
+    'born 1937' => ['371231-1230', '19', false, null],
     'passive' => ['811218-9876', '19', true, 2000],
     'no century' => ['811218-9876', null, false, null],
 ]);
 
 it('lets the owner replace the calculated R43, and says when it cannot be calculated', function () {
-    $this->company->forceFill(['org_number' => '371231-1233'])->save();
+    $this->company->forceFill(['org_number' => '371231-1230'])->save();
     $ne = neSaved($this);
 
     expect($ne->warnings())->toContain('NONOX räknar inte ut schablonavdraget för egenavgifter för den som är född 1937 eller tidigare. Fyll i R43 själv.');

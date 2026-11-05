@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace App\Support\Privacy;
 
+use App\Domain\IncomeTax\IncomeTaxForms;
 use App\Models\AuditLog;
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\FiscalYear;
+use App\Models\IncomeTaxPartner;
 use App\Models\Invoice;
 use App\Models\Supplier;
 use App\Models\SupplierInvoice;
@@ -89,6 +92,33 @@ final class DataSubjectExport
             'leverantor' => $supplier->only(['number', 'name', 'org_number', 'vat_number', 'email', 'phone', 'address_line1', 'postal_code', 'city', 'country', 'bankgiro', 'plusgiro', 'iban', 'bic']),
             'leverantorsfakturor' => SupplierInvoice::query()->where('supplier_id', $supplier->id)->orderBy('invoice_date')->get()
                 ->map(fn (SupplierInvoice $invoice): array => ['nummer' => $invoice->invoice_number, 'datum' => $invoice->invoice_date->toDateString(), 'belopp_ore' => $invoice->total_ore->ore, 'status' => $invoice->status->value])->all(),
+        ];
+    }
+
+    /**
+     * A partner in a handelsbolag or kommanditbolag (INK4DU): every fiscal
+     * year of the company where the same personnummer or organisationsnummer
+     * is a partner. The identity is encrypted, so the match is made in PHP
+     * over the company's own partner rows.
+     *
+     * @return array<string, mixed>
+     */
+    public static function incomeTaxPartner(IncomeTaxPartner $partner): array
+    {
+        $rows = IncomeTaxPartner::query()->where('company_id', $partner->company_id)->orderBy('fiscal_year_id')->orderBy('position')->get()
+            ->filter(fn (IncomeTaxPartner $row): bool => $row->identity === $partner->identity);
+        $years = FiscalYear::query()->whereIn('id', $rows->pluck('fiscal_year_id'))->get()->keyBy('id');
+
+        return [
+            'utdrag' => self::meta('Delägare i handelsbolag eller kommanditbolag'),
+            'delagare' => $rows->map(fn (IncomeTaxPartner $row): array => [
+                'rakenskapsar' => $years->get($row->fiscal_year_id)?->label(),
+                'nummer' => $row->position,
+                'namn' => $row->name,
+                'personnummer_eller_organisationsnummer' => $row->identity,
+                'juridisk_person' => $row->legal_person,
+                'andel_procent' => IncomeTaxForms::percent($row->share_bp),
+            ])->values()->all(),
         ];
     }
 

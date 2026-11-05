@@ -173,7 +173,7 @@ final class Ink4Codes
 
     public const array CONTRIBUTIONS = [7, 8];
 
-    /** The BAS partner blocks 2010–2049. */
+    /** The BAS partner blocks 2010–2049: partner 1 is 2010–2019 … partner 4 is 2040–2049. */
     public const int MAX_PARTNERS_IN_BAS = 4;
 
     public const array LABELS = [

@@ -12,6 +12,10 @@ Raderna nedan lades till 2026-11-03 och kontrollerades samma dag kl. 10:22–10:
 | Schema och personalplanering | Anges ej (via partner) | Anges ej | Anges ej | Anges ej | Anges ej |
 | Inkorg för leverantörsfakturor och kvitton | Tillval, e-post kopplad till Fakturatolkning 4,90 kr/st | Ingår, unik e-postadress för leverantörsfakturor (support.spiris.se) | Ingår, "Skicka in kvitton och fakturor med e-post" (bokio.se/priser) | Ingår i Total, "E-postportal (obegränsad)" (bjornlunden.com) | Ingår, digital fakturaadress (kleer.se/ekonomisystem/leverantorsfakturor) |
 | Tolkning av kvitton och fakturor | Tillval, "Fakturatolkning digital: 4,90 kr/st" (fortnox.se/produkt/prislista) | Ingår i Växa, "Tolkning & bokföringshjälp … Obegränsat" | Ingår, "Automatisk avläsning av kvitton och fakturor" | Ingår i Total, "Tolkning av leverantörsfakturor och kvitton (obegränsad)" | Ingår, "Belopp, moms och leverantör läses av automatiskt" |
+| NE-bilaga för enskild firma (SRU) | Anges ej | Anges ej | Ingår i Premium, Business och Plus, tillval 99 kr i Basic; NE-bilagan tas fram som underlag i sista steget av bokslutet (bokio.se/hjalp/bokslut/arsredovisning-och-deklaration/hur-fungerar-ne-bilagan/) | Anges ej | Anges ej |
+| Inkomstdeklaration 4 för handelsbolag (SRU) | Anges ej | Anges ej | Nej, "I Bokio kan du i dagsläget inte få ut någon deklaration eller årsredovisning för handelsbolag" (bokio.se/hjalp/bokslut/arsredovisning-och-deklaration/deklaration-i-handelsbolag-kommanditbolag-och-ekonomisk-forening/) | Anges ej | Anges ej |
+
+Raderna för NE-bilagan och Inkomstdeklaration 4 lades till 2026-11-05 och Bokios två hjälpartiklar lästes samma dag. För de andra leverantörerna hittades ingen egen sida som anger funktionen, så värdet är "Anges ej".
 
 NONOX: tolkningen kräver att företaget lägger in en egen nyckel hos en AI-leverantör, som kostar enligt den leverantörens pris; tabellen visar det som "egen AI-nyckel". Bankkopplingen kräver ett avtal med en leverantör av öppen bankdata och erbjuds inte på nonox.app än; tabellen visar det som "egen drift".
 

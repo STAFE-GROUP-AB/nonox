@@ -1862,10 +1862,12 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   justeringar användaren anger, och pensionskostnaderna i 4.16 (8022)
   föreslås från 74xx. Ett handelsbolag betalar ingen inkomstskatt och har
   ingen periodiseringsfond, räntefördelning eller schablonintäkt.
-- Delägarna anges per räkenskapsår med nummer (BAS-kontoblock 2010–2019 för
-  delägare 1 osv.), namn, personnummer med århundrade eller
-  organisationsnummer (kontrolleras med Luhn, sparas krypterat) och andel
-  i procent. Ett nytt år börjar med förra årets delägare. INK4DU, en
+- Delägarna anges per räkenskapsår med nummer 1–4 (BAS-kontoblocken
+  2010–2019, 2020–2029, 2030–2039 och 2040–2049; fler delägare än fyra
+  hänvisas till Skatteverkets e-tjänst), namn, personnummer med århundrade
+  eller organisationsnummer (kontrolleras med Luhn, sparas krypterat) och
+  andel i procent. Ett nytt år börjar med förra årets delägare. Delägarna i
+  ett stängt räkenskapsår kan inte ändras. INK4DU, en
   bilaga per delägare, får andelen av överskottet eller underskottet
   (avrundat nedåt, resten till den sista delägaren), uttag och tillskott från
   delägarens kontoblock. Filerna laddas bara ner när andelarna blir 100 %.
