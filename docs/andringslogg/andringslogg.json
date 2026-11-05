@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-05-bankkoppling-bankval-och-byte-av-bank",
+      "datum": "2026-11-05T10:50:00+01:00",
+      "rubrik": "Bankkopplingen: listan med banker och byte av bank",
+      "beskrivning": "Sidan Bank kraschade när listan med banker hämtades en andra gång, och nu laddar den varje gång. Ett bokföringskonto som en bortkopplad bank höll kan nu ges till den bank som ersätter den; den gamla bankens hämtade transaktioner finns kvar.",
+      "typ": "Rättat",
+      "omrade": "Bank"
+    },
+    {
       "id": "2026-11-05-ne-bilaga-och-ink4",
       "datum": "2026-11-05T02:20:00+01:00",
       "rubrik": "NE-bilagan och Inkomstdeklaration 4",

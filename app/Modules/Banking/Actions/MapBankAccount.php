@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\Company;
 use App\Models\User;
 use App\Modules\Banking\BankingModule;
+use App\Modules\Banking\Domain\ConnectionStatus;
 use App\Modules\Banking\Models\BankFeedAccount;
 use App\Modules\Banking\Support\BankingGate;
 use App\Modules\ModuleManager;
@@ -44,11 +45,15 @@ class MapBankAccount
                     throw ValidationException::withMessages(['account' => __('Kontot är i :currency. Bara konton i :base kan kopplas till bokföringen än så länge.', ['currency' => $account->currency, 'base' => $company->base_currency ?? 'SEK'])]);
                 }
 
-                $taken = BankFeedAccount::query()->where('account_id', $ledger->id)->where('is_active', true)->whereKeyNot($account->id)->exists();
+                $holders = fn () => BankFeedAccount::query()->where('account_id', $ledger->id)->where('is_active', true)->whereKeyNot($account->id);
 
-                if ($taken) {
+                if ($holders()->whereHas('connection', fn ($query) => $query->where('status', ConnectionStatus::Active))->exists()) {
                     throw ValidationException::withMessages(['account' => __('Konto :number är redan kopplat till ett annat bankkonto.', ['number' => $ledger->number])]);
                 }
+
+                // A disconnected or expired bank gives the ledger account up, as a
+                // renewed consent does (ConnectBank): its history stays.
+                $holders()->each(fn (BankFeedAccount $holder) => $holder->forceFill(['is_active' => false])->save());
             }
 
             $before = $account->account_id === null ? null : Account::query()->whereKey($account->account_id)->value('number');

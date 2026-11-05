@@ -33,6 +33,7 @@ use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
@@ -121,6 +122,19 @@ it('connects a bank through the bank page and the callback, once per state', fun
     $raw = DB::table('bank_connections')->where('id', $connection->id)->value('session_id');
     expect($raw)->not->toContain('fake-session')
         ->and($connection->toArray())->not->toHaveKey('session_id');
+});
+
+it('lists the banks again from a cache that stores no objects', function () {
+    // The real stores unserialize with cache.serializable_classes = false, so a
+    // cached Institution would come back as __PHP_Incomplete_Class.
+    config(['cache.default' => 'file']);
+    Cache::forget('banking:institutions:v2:fake:SE');
+    Banking::enable($this->company, $this->owner);
+
+    Livewire::test(BankingPage::class)->call('startConnecting')->assertSee('Demobanken');
+    Livewire::test(BankingPage::class)->call('startConnecting')->assertSee('Demobanken');
+
+    Cache::forget('banking:institutions:v2:fake:SE');
 });
 
 it('refuses a flow started for another company or user, or one that is too old', function () {
@@ -345,6 +359,28 @@ it('revokes a connection at the provider and keeps what was fetched', function (
         ->and(BankFeedTransaction::query()->count())->toBe(1)
         ->and(app(FetchBankData::class)($this->company, $connection->fresh())->error)->toBe('inactive')
         ->and(AuditLog::query()->where('action', 'banking.revoked')->count())->toBe(1);
+});
+
+it('gives a ledger account held by a disconnected bank to the bank that replaces it', function () {
+    Banking::enable($this->company, $this->owner);
+    $old = Banking::connect($this->owner, $this->company);
+    $held = Banking::mapped($this->owner, $this->company, $old);
+    app(RevokeBankConnection::class)($this->owner, $this->company, $old);
+
+    // The same account reached through another provider has another identification.
+    BankFeedAccount::query()->where('bank_connection_id', $old->id)->each(fn (BankFeedAccount $account) => $account->forceFill(['identification_hash' => "old-{$account->id}"])->save());
+    $new = Banking::connect($this->owner, $this->company);
+    $replacement = BankFeedAccount::query()->where('bank_connection_id', $new->id)->where('identification_hash', 'fake-ident-1')->firstOrFail();
+
+    app(MapBankAccount::class)($this->owner, $this->company, $replacement, 1930);
+
+    expect($replacement->fresh()->ledgerAccount->number)->toBe(1930)
+        ->and($held->fresh()->is_active)->toBeFalse()
+        ->and($held->fresh()->account_id)->toBe($replacement->fresh()->account_id);
+
+    // An account on a live connection still holds its ledger account.
+    $other = BankFeedAccount::query()->where('bank_connection_id', $new->id)->where('identification_hash', '!=', 'fake-ident-1')->firstOrFail();
+    expect(fn () => app(MapBankAccount::class)($this->owner, $this->company, $other, 1930))->toThrow(ValidationException::class);
 });
 
 it('carries the mapping to a renewed consent and ends the old one', function () {
