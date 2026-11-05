@@ -105,6 +105,8 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(TeamMemberRemoved::class, [ForgetUserDeadlines::class, 'memberRemoved']);
         Event::listen(UserAccountDeleting::class, [ForgetUserDeadlines::class, 'accountDeleting']);
         // Mina datum's calendar link (ADR-051, stage 2): per address and link, like the CRM's; unknown links have a stricter limit of their own.
+        // Signing in with Skatteverket (ADR-054): a person starts it by hand.
+        RateLimiter::for('skatteverket-sign-in', fn (Request $request): Limit => Limit::perMinute(10)->by('skatteverket:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
         RateLimiter::for('guide-calendar', fn (Request $request): Limit => Limit::perMinute(30)->by('guide-calendar:'.$request->ip().'|'.hash('sha256', (string) $request->route('token'))));
         Route::middleware([SecurityHeaders::class, 'throttle:guide-calendar'])->group(base_path('routes/guide-calendar.php'));
         // Record a new version of the systemdokumentation after every migrate, also when nothing was pending (#44).

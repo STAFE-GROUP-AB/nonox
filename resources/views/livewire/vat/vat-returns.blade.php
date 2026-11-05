@@ -148,6 +148,10 @@
                 </div>
             </x-ui.card>
 
+            @if($skatteverket)
+                <livewire:vat.skatteverket-panel :fiscal-year-id="$fiscalYear->id" :start="$selected['start']->toDateString()" :key="'skatteverket-'.$selected['start']->toDateString()" />
+            @endif
+
             @if(! $report && $canSettle && ! $return->isEmpty())
                 <x-ui.card :title="__('Bokför momsen')" class="print:hidden">
                     <p class="text-gray-700">{{ __('När deklarationen är lämnad bokförs momsen: momskontona som ingår i deklarationen nollställs och beloppet förs till 2650 Redovisningskonto för moms, med ören på 3740. Vilande moms och andra momskonton utan ruta lämnas orörda. Det blir en verifikation i serie M som inte kan ändras.') }}</p>

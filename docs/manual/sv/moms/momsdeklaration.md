@@ -2,8 +2,8 @@
 beskrivning: Granska momsdeklarationens rutor för en period, se vilka konton varje ruta kommer från, ladda ner filen till Skatteverket, bokför momsen i serie M och lås perioden.
 ordning: 10
 roller: [owner, admin, accountant]
-rutter: [vat.index, vat.file]
-sokord: [momsdeklaration, momsrapport, momsrutor, ruta 49, moms att betala, moms att få tillbaka, momsavräkning, 2650, serie M, eskd, skattedeklaration, rätta momsdeklaration, kompletterande momsredovisning, tillägg]
+rutter: [vat.index, vat.file, skatteverket.signIn]
+sokord: [momsdeklaration, skicka till skatteverket, skriv under, kvittens, bankid skatteverket, momsrapport, momsrutor, ruta 49, moms att betala, moms att få tillbaka, momsavräkning, 2650, serie M, eskd, skattedeklaration, rätta momsdeklaration, kompletterande momsredovisning, tillägg]
 ---
 
 # Momsdeklarationen
@@ -26,6 +26,21 @@ Sidan finns under **Bokföring → Moms**.
 
 > [!IMPORTANT]
 > Kontrollera alltid rutorna i Skatteverkets e-tjänst innan du skriver under. Det är du som lämnar deklarationen, inte NONOX.
+
+## Lämna deklarationen direkt till Skatteverket
+
+När installationen är kopplad till Skatteverket finns rutan **Lämna deklarationen till Skatteverket** under deklarationen. Då behöver du inte ladda ner någon fil.
+
+1. Klicka på **Logga in hos Skatteverket med BankID**. Du loggar in hos Skatteverket, inte i NONOX, och Skatteverket kontrollerar att du är firmatecknare eller ombud för företaget. Inloggningen gäller i en timme.
+2. Klicka på **Låt Skatteverket kontrollera**. Skatteverket kontrollerar rutorna utan att spara något och visar sina egna fel och varningar. Ett fel måste rättas; en varning stoppar inte, men kontrollera beloppen.
+3. Klicka på **Skicka till Skatteverket** och sedan **Ja, skicka utkastet**. Rutorna sparas som ett utkast i företagets eget utrymme hos Skatteverket och låses för underskrift.
+4. Klicka på **Skriv under hos Skatteverket**. Skatteverkets sida öppnas i en ny flik. Där loggar du in med BankID, granskar deklarationen och skriver under.
+5. Kom tillbaka och klicka på **Hämta status från Skatteverket**. Kvittensnumret visas när deklarationen är lämnad, och när Skatteverket har fattat beslut ser du om beslutet stämmer med det NONOX skickade.
+
+> [!IMPORTANT]
+> Att skicka utkastet är inte att lämna deklarationen. Den är lämnad först när någon med behörighet har skrivit under den hos Skatteverket. Ett utkast som ingen skriver under tas bort efter 30 dagar, och det går att ändra i Skatteverkets e-tjänst Lämna momsdeklaration på Mina sidor.
+
+Skatteverket loggar varje anrop från NONOX för att förebygga och utreda säkerhetsincidenter. NONOX sparar kvittensnumret och beloppen, aldrig vem som skrev under. **Logga ut från Skatteverket** avslutar inloggningen i NONOX direkt.
 
 ## Rutorna
 
@@ -81,6 +96,7 @@ När momsen är deklarerad bör perioden låsas. Knappen **Lås till och med** l
 - Se momsdeklarationen: **Ägare**, **Administratör** och **Redovisningskonsult**.
 - Bokföra momsen: samma roller, som också får bokföra verifikationer.
 - Låsa perioden: de som får låsa perioder – ägare, administratör och redovisningskonsult.
+- Skicka utkastet till Skatteverket: de som får lämna moms – ägare, administratör och redovisningskonsult. Skatteverket kräver dessutom att du själv är firmatecknare eller ombud med behörighet för momsdeklarationen.
 
 ## Vanliga frågor
 

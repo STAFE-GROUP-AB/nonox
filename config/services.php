@@ -11,6 +11,19 @@ return [
      */
     'skatteverket' => [
         'agi_schema_dir' => env('SKATTEVERKET_AGI_SCHEMA_DIR'),
+
+        /*
+         * Skatteverket's partner APIs (ADR-054). The operator registers its
+         * own application with Skatteverket and gets two key pairs: one for
+         * the authorization server, one for the API gateway. 'test' is the
+         * "Komplett testtjänst"; 'production' needs a signed agreement.
+         * Without the four keys the integration is not offered.
+         */
+        'environment' => env('SKATTEVERKET_ENVIRONMENT', 'test'),
+        'oauth_client_id' => env('SKATTEVERKET_OAUTH_CLIENT_ID'),
+        'oauth_client_secret' => env('SKATTEVERKET_OAUTH_CLIENT_SECRET'),
+        'api_client_id' => env('SKATTEVERKET_API_CLIENT_ID'),
+        'api_client_secret' => env('SKATTEVERKET_API_CLIENT_SECRET'),
     ],
 
     /*
