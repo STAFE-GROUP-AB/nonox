@@ -74,7 +74,7 @@ legal_verify:
 | `beskrivning` | yes | 1–2 sentences, ≤ 200 characters. |
 | `ordning` | yes | Order in the section, steps of 10; `oversikt` is 0. |
 | `bolagsformer` | no | `AB`, `EF`, `HB`, `KB`, `EK_FORENING`, `IDEELL_FORENING`, `STIFTELSE`. |
-| `branscher` | no | `cafe`, `restaurant`, `crafts`, `consultant`, `retail`, `hair_beauty`, `accounting_firm`, `finance_consultant`. |
+| `branscher` | no | `cafe`, `restaurant`, `crafts`, `consultant`, `retail`, `hair_beauty`, `accounting_firm`, `finance_consultant`, `other` (only a company that chose Annan bransch; a company without an industry sees only steps without `branscher`). |
 | `rutter` | no | Named routes; every name must exist. |
 | `sokord` | no | Synonyms people search for. |
 | `kallor` | yes | ≥ 1 entry, each `titel` + `url` on an allowed domain, https. |

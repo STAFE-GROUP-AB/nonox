@@ -26,6 +26,6 @@ it('has a page for every industry but Annan bransch', function () {
             : expect(Industries::find((string) $industry->landingSlug()))->not->toBeNull("{$industry->value} points at a missing industry page.");
     }
 
-    expect(Industry::guideKeys())->not->toContain('other')
+    expect(Industry::guideKeys())->toContain('other')
         ->and(Industry::Other->label())->toBe('Annan bransch');
 });

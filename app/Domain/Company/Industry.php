@@ -57,12 +57,13 @@ enum Industry: string
 
     /**
      * The industries an article or a start plan step can be written for:
-     * every one but Other.
+     * every case, Other included, so a step can be meant only for a company
+     * that fits none of the industries with their own track.
      *
      * @return list<string>
      */
     public static function guideKeys(): array
     {
-        return array_map(fn (self $industry): string => $industry->value, array_filter(self::cases(), fn (self $industry): bool => $industry !== self::Other));
+        return array_map(fn (self $industry): string => $industry->value, self::cases());
     }
 }

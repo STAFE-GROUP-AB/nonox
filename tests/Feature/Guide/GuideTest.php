@@ -218,7 +218,7 @@ it('refuses an article or a step that breaks the rules', function () {
         ->toContain('starta/fel: ordning is required')
         ->toContain('starta/fel: needs exactly one # title.')
         ->toContain("starta/fel: bolagsform 'XY' does not exist.")
-        ->toContain("starta/fel: bransch 'other' does not exist.")
+        ->not->toContain("starta/fel: bransch 'other' does not exist.")
         ->toContain("starta/fel: bransch 'bageri' does not exist.")
         ->toContain("starta/fel: route 'finns.inte' does not exist.")
         ->toContain('starta/fel: source https://www.example.com/moms is not https on an allowed domain')
