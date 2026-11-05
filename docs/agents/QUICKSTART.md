@@ -16,7 +16,7 @@ are not obvious from the code. Read both before the first change.
    a missing database (`createdb` may not be installed). `php artisan serve` needs
    `--no-reload` to keep env overrides.
 3. **Run the full suite with the database session in UTC** before you call anything done:
-   `PGTZ=UTC DB_DATABASE=nonox_test vendor/bin/pest` (sequential). CI's PostgreSQL runs in
+   `PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest` (sequential). CI's PostgreSQL runs in
    UTC; local machines usually do not. NONOX itself is fixed to `Europe/Stockholm` in
    `config/app.php` and `config/database.php` — never make the time zone configurable.
 4. **Pushing to `main` deploys the hosted service.** Work on a branch; merge only what is
@@ -71,7 +71,7 @@ DB_DATABASE=nonox_test vendor/bin/pest --dirty
 
 # before calling it done (once, after the last change)
 grep -rl RefreshDatabase tests/
-PGTZ=UTC DB_DATABASE=nonox_test vendor/bin/pest      # full suite, sequential
+PGTZ=UTC DB_DATABASE=nonox_test php -d memory_limit=1G vendor/bin/pest   # full suite, sequential
 vendor/bin/phpstan analyse --memory-limit=2G
 vendor/bin/pint --test
 npm test && npm run build
@@ -160,5 +160,8 @@ integrations · 043 CRM · 044 Operator company and access switches · 045 Encry
 - When two branches both add a changelog entry, both edit `lang/en.json`, or both bump the
   legal version or the system documentation version, the merge conflicts there: keep both
   sides, newest changelog entry first, one version bump.
+- The full suite outgrew PHP's memory limit (2026-11-05): with about 5 700 tests one process passes
+  512 MB and dies with "Allowed memory size … exhausted" and no summary line. Run it with
+  `php -d memory_limit=1G`; a run without a `Tests:` line is not a green run.
 - Parallel agents share the session scratchpad: name scratch files uniquely (include the branch
   or task), never reuse a generic name like en2.py.
