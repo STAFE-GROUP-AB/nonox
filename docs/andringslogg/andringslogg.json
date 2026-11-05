@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-05-mina-datum-granskning",
+      "datum": "2026-11-05T00:33:00+01:00",
+      "rubrik": "Mina datum laddar lugnare",
+      "beskrivning": "Rutan Så läser du sidan sparar nu bara när du öppnar eller stänger den, och sidan ritas inte om. Lönens inställningar säger beskattningsunderlaget för moms i stället för omsättning, som resten av NONOX.",
+      "typ": "Rättat",
+      "omrade": "Övrigt"
+    },
+    {
       "id": "2026-11-05-beskattningsunderlag-40-miljoner",
       "datum": "2026-11-05T00:15:00+01:00",
       "rubrik": "Gränsen på 40 miljoner gäller beskattningsunderlaget för moms",

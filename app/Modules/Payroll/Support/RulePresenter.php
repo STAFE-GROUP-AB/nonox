@@ -127,8 +127,8 @@ final class RulePresenter
             'tax.rounding' => [($value['mode'] ?? null) === 'DOWN_TO_KRONA' ? self::say('Till hela kronor, ören faller bort') : (string) ($value['mode'] ?? '')],
             'tax.one_off' => self::oneOff($value),
             'agi.deadlines' => [
-                self::say('Omsättning upp till 40 miljoner kr: :dates', ['dates' => implode(', ', array_map(fn (mixed $date): string => (string) $date, (array) ($value['turnover_up_to_40_msek'] ?? [])))]),
-                self::say('Omsättning över 40 miljoner kr: den :day:e i månaden', ['day' => $value['turnover_over_40_msek_declare_day'] ?? '']),
+                self::say('Beskattningsunderlag för moms upp till 40 miljoner kr: :dates', ['dates' => implode(', ', array_map(fn (mixed $date): string => (string) $date, (array) ($value['turnover_up_to_40_msek'] ?? [])))]),
+                self::say('Beskattningsunderlag för moms över 40 miljoner kr: den :day:e i månaden', ['day' => $value['turnover_over_40_msek_declare_day'] ?? '']),
             ],
             'agi.field_codes' => array_map(fn (mixed $code, int|string $name): string => "{$code} ".self::say(self::AGI_FIELDS[$name] ?? (string) $name), array_values($value), array_keys($value)),
             'vacation.qualifying_absence_days' => array_map(

@@ -22,6 +22,8 @@ use App\Support\Guide\Guide;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use Livewire\Attributes\Locked;
+use Livewire\Attributes\Renderless;
 use Livewire\Component;
 
 /**
@@ -45,9 +47,11 @@ class MyDates extends Component
     public ?string $newLink = null;
 
     /** All 15 months (?alla=1) instead of the next six. */
+    #[Locked]
     public bool $showAll = false;
 
     /** The kind of dates shown (?visa=moms …), or '' for all of them. */
+    #[Locked]
     public string $filter = '';
 
     /** Months shown by default; the page links to all of them. */
@@ -59,9 +63,12 @@ class MyDates extends Component
     public function mount(): void
     {
         $this->showAll = request()->boolean('alla');
-        $this->filter = DeadlineFilter::tryFrom((string) request()->query('visa', ''))->value ?? '';
+        $visa = request()->query('visa');
+        // A tampered ?visa[]= is treated as no filter, never as an error.
+        $this->filter = is_string($visa) ? (DeadlineFilter::tryFrom($visa)->value ?? '') : '';
     }
 
+    #[Renderless]
     public function rememberHelp(bool $open): void
     {
         $this->user()->setPanelHidden(self::HELP_PANEL, $this->company(), ! $open);

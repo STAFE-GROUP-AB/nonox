@@ -16,6 +16,7 @@ use App\Notifications\DeadlineReminder;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Livewire\Attributes\Renderless;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 
@@ -236,9 +237,29 @@ it('remembers the reading help closed per user and company', function () {
     expect($this->owner->fresh()->hidesPanel(MyDates::HELP_PANEL, $this->company))->toBeFalse();
 });
 
-it('prefixes the calendar events and the reminders with the kind', function () {
-    $deadline = collect(app(CompanyDeadlines::class)->upcoming($this->company, CarbonImmutable::today()))->first(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::PreliminaryTax);
+it('prefixes the calendar events and the reminders with the kind, unless the title already names it', function () {
+    $deadlines = collect(app(CompanyDeadlines::class)->upcoming($this->company, CarbonImmutable::today()));
+    $tax = $deadlines->first(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::PreliminaryTax);
+    $vat = $deadlines->first(fn (Deadline $deadline): bool => $deadline->type === DeadlineType::Vat);
 
-    expect($deadline->summary())->toBe('F-skatt: Betala F-skatt (preliminärskatt), november 2026')
-        ->and(DeadlineReminder::for($this->company, $deadline, 7)->title)->toStartWith('F-skatt: Betala F-skatt (preliminärskatt), november 2026. Sista dagen är om 7 dagar');
+    expect($tax->summary())->toBe('Betala F-skatt (preliminärskatt), november 2026')
+        ->and(DeadlineReminder::for($this->company, $tax, 7)->title)->toStartWith('Betala F-skatt (preliminärskatt), november 2026. Sista dagen är om 7 dagar')
+        ->and($vat->summary())->toStartWith('Moms: Deklarera och betala moms');
+});
+
+it('treats a tampered filter list as no filter instead of failing', function () {
+    $this->actingAs($this->owner)->get(route('guide.dates').'?visa[]=moms&alla[]=1')->assertOk()
+        ->assertSee('Deklarera och betala moms för kvartal 3 2026');
+});
+
+it('saves the help panel without drawing the page again, and only when it changes', function () {
+    $this->actingAs($this->owner);
+
+    Livewire::test(MyDates::class)->call('rememberHelp', false)->assertNoRedirect();
+
+    expect((new ReflectionMethod(MyDates::class, 'rememberHelp'))->getAttributes(Renderless::class))->not->toBeEmpty();
+
+    $html = $this->get(route('guide.dates'))->getContent();
+
+    expect($html)->toContain('if ($el.open !== open)');
 });

@@ -313,7 +313,7 @@ it('shows the AGI group on the payroll settings read-only, decided by the compan
 
     Livewire::test(PayrollSettingsForm::class, ['company' => $this->company->fresh()])
         ->assertSee('Styrs av företagets inställning för moms och beskattningsunderlaget för moms')
-        ->assertSee('Omsättning över 40 miljoner kronor')
+        ->assertSee('Beskattningsunderlag för moms över 40 miljoner kronor')
         ->assertSee(route('teams.show', $this->company->id), false)
         ->assertDontSee('<select id="payroll_agi_deadline_group"', false)
         ->set('settings.agi_deadline_group', AgiDeadlines::SMALL)
