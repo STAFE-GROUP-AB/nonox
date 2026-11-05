@@ -26,6 +26,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\Support\Bookkeeping;
 
@@ -142,6 +143,23 @@ it('is not offered when the installation has no keys', function () {
 
     $this->get(route('skatteverket.signIn'))->assertNotFound();
     Livewire::test(VatReturns::class, ['period' => '2026-01-01'])->assertDontSee('Lämna deklarationen till Skatteverket');
+});
+
+it('is offered only to the pilot users when the installation lists them', function () {
+    config(['services.skatteverket.pilot_users' => ' Pilot@Example.se , other@example.se']);
+
+    $this->get(route('skatteverket.signIn'))->assertNotFound();
+    $this->get(route('skatteverket.callback', ['code' => 'c', 'state' => 's']))->assertNotFound();
+    Livewire::test(VatReturns::class, ['period' => '2026-01-01'])->assertDontSee('Lämna deklarationen till Skatteverket');
+    Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])->assertForbidden();
+    expect(fn () => app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january))
+        ->toThrow(ValidationException::class);
+
+    $this->owner->forceFill(['email' => 'pilot@example.se'])->save();
+
+    Livewire::test(VatReturns::class, ['period' => '2026-01-01'])->assertSee('Lämna deklarationen till Skatteverket');
+    $this->get(route('skatteverket.signIn'))->assertRedirect();
+    Http::assertNothingSent();
 });
 
 it('shows the panel with what sending means, and asks for e-legitimation first', function () {

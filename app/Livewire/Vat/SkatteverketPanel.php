@@ -45,7 +45,7 @@ class SkatteverketPanel extends Component
 
     public function mount(): void
     {
-        abort_unless(Skatteverket::isConfigured() && $this->user()->hasTeamPermission($this->company(), 'vat:prepare'), 403);
+        abort_unless(Skatteverket::isAvailableTo($this->user()) && $this->user()->hasTeamPermission($this->company(), 'vat:prepare'), 403);
     }
 
     public function checkReturn(CheckVatReturnAtSkatteverket $check): void

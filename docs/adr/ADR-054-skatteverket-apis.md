@@ -128,9 +128,10 @@ Kundhändelser RAML 4.0.5.
   another purpose than "att hantera momsdeklarationen" (Allmänna villkor
   4.2 and 8.1). Ask Skatteverket (icc@skatteverket.se). Until answered,
   Connect gets nothing from these APIs.
-- No Skatteverket keys at all, not even test keys, may be set on the hosted
-  service (nonox.app) before this is done: with keys, real users see the
-  panel.
+- No production keys may be set on the hosted service (nonox.app) before
+  this is done. Test keys may be set there only together with
+  `SKATTEVERKET_PILOT_USERS` (addendum 2026-11-06): without that list, real
+  users see the panel.
 - `TODO(legal-verify)`: the privacy policy and the register of processing
   must describe the sign-in with Skatteverket, the personal data sent (a sole
   trader's personnummer is the company identifier) and received, before the
@@ -159,3 +160,14 @@ Kundhändelser RAML 4.0.5.
 - Every stage ships behind the same rule: shown only when the keys are set,
   legal and code review before deploy, Beta until a human accountant has
   checked a real return through the test service.
+
+## Addendum 2026-11-06: pilot users
+
+Skatteverket's test service refused the local redirect URI although it was
+registered, so the operator tries the test service on the hosted service.
+`services.skatteverket.pilot_users` (`SKATTEVERKET_PILOT_USERS`, comma-separated
+e-mail addresses) limits the integration to those users: the panel, the
+sign-in routes and every action check `Skatteverket::isAvailableTo($user)`.
+An empty list means everyone with the right permission, as before. On
+nonox.app the list holds only the operator's own address while test keys are
+set; the test service receives fixed test identities and files nothing.

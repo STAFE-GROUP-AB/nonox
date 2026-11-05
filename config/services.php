@@ -24,6 +24,13 @@ return [
         'oauth_client_secret' => env('SKATTEVERKET_OAUTH_CLIENT_SECRET'),
         'api_client_id' => env('SKATTEVERKET_API_CLIENT_ID'),
         'api_client_secret' => env('SKATTEVERKET_API_CLIENT_SECRET'),
+
+        /*
+         * Comma-separated e-mail addresses. When set, only these users see
+         * the integration: for trying the test service on a live
+         * installation. Empty means everyone with the right permission.
+         */
+        'pilot_users' => env('SKATTEVERKET_PILOT_USERS'),
     ],
 
     /*

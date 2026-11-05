@@ -122,7 +122,7 @@ class VatReturns extends Component
             'supplement' => $supplement,
             'canSettle' => $this->user()->hasTeamPermission($company, 'vouchers:post'),
             'canLock' => $this->user()->hasTeamPermission($company, 'periods:lock'),
-            'skatteverket' => Skatteverket::isConfigured(),
+            'skatteverket' => Skatteverket::isAvailableTo($this->user()),
         ]);
     }
 

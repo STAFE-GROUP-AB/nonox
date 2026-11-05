@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Support\Skatteverket;
 
+use App\Models\User;
+
 /**
  * The installation's registration with Skatteverket's partner APIs
  * (ADR-054): which environment, and the hosts that belong to it. The test
@@ -29,6 +31,32 @@ final class Skatteverket
         }
 
         return true;
+    }
+
+    /**
+     * Whether the person may use the integration: the keys are set and, when
+     * the installation lists pilot users, the person is one of them. The
+     * list lets the operator try the test service on a live installation
+     * without showing it to anyone else (ADR-054).
+     */
+    public static function isAvailableTo(?User $user): bool
+    {
+        if (! self::isConfigured() || $user === null) {
+            return false;
+        }
+
+        $pilots = self::pilotUsers();
+
+        return $pilots === [] || in_array(mb_strtolower((string) $user->email), $pilots, true);
+    }
+
+    /** @return list<string> */
+    public static function pilotUsers(): array
+    {
+        return array_values(array_filter(array_map(
+            fn (string $email): string => mb_strtolower(trim($email)),
+            explode(',', (string) config('services.skatteverket.pilot_users')),
+        )));
     }
 
     public static function isTest(): bool

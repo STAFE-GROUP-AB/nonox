@@ -29,7 +29,7 @@ class SkatteverketAuthController
 
     public function start(Request $request): RedirectResponse
     {
-        abort_unless(Skatteverket::isConfigured(), 404);
+        abort_unless(Skatteverket::isAvailableTo($request->user()), 404);
 
         /** @var User $user */
         $user = $request->user();
@@ -47,7 +47,7 @@ class SkatteverketAuthController
 
     public function callback(Request $request): RedirectResponse
     {
-        abort_unless(Skatteverket::isConfigured(), 404);
+        abort_unless(Skatteverket::isAvailableTo($request->user()), 404);
 
         /** @var User $user */
         $user = $request->user();

@@ -36,7 +36,7 @@ final readonly class MomsPeriod
 
     public static function resolve(User $user, Company $company, FiscalYear $fiscalYear, CarbonImmutable $start): self
     {
-        if (! Skatteverket::isConfigured()) {
+        if (! Skatteverket::isAvailableTo($user)) {
             throw ValidationException::withMessages(['skatteverket' => __('Kopplingen till Skatteverket är inte konfigurerad i den här installationen.')]);
         }
 
