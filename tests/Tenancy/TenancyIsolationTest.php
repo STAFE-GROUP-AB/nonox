@@ -58,6 +58,7 @@ use App\Models\TaskRecurrence;
 use App\Models\User;
 use App\Models\VatNumberCheck;
 use App\Models\VatReport;
+use App\Models\VatSubmission;
 use App\Models\Voucher;
 use App\Models\VoucherAttachment;
 use App\Models\VoucherNumberCounter;
@@ -222,6 +223,7 @@ const COMPANY_SCOPED_MODELS = [
     ImportedVoucher::class => 'importedVoucherAttributes',
     VoucherRowHistory::class => 'voucherRowHistoryAttributes',
     VatReport::class => 'vatReportAttributes',
+    VatSubmission::class => ['period_start' => '2026-01-01', 'period_end' => '2026-01-31', 'status' => 'ready_to_sign', 'boxes' => [49 => 1200]],
     ArchivePackage::class => 'archivePackageAttributes',
     ClientProfile::class => 'clientProfileAttributes',
     FixedAsset::class => 'fixedAssetAttributes',

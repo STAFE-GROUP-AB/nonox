@@ -117,6 +117,8 @@ final class Features
         'pos_integrations' => ['name' => 'Färdiga kopplingar från kassasystem', 'status' => self::SOON, 'readme' => 'Färdiga kopplingar från kassasystem'],
         // Built (ADR-050) and dormant until the operator has an agreement with a Peppol access-point provider.
         'peppol' => ['name' => 'E-faktura via Peppol', 'status' => self::SOON, 'readme' => 'E-faktura via Peppol', 'module' => 'Peppol e-faktura'],
+        // Stage 1 built (ADR-054) and dormant until the operator's agreement with Skatteverket is signed.
+        'skatteverket_api' => ['name' => 'Momsdeklarationen till Skatteverket utan fil – du skriver under hos Skatteverket', 'status' => self::SOON, 'readme' => 'Momsdeklarationen till Skatteverket utan fil'],
     ];
 
     /**

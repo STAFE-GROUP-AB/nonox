@@ -58,6 +58,8 @@
 | Personalliggare: platskontroll vid mobil incheckning | Positionen sparas aldrig, bara avståndet i meter på posten | Kontroll av att personen är på plats | – |
 | Bank: hämtade transaktioner och saldon | Som räkenskapsinformationen (antaget, se nedan) | Underlag för bankavstämningen; vad banken rapporterade får inte ändras | Kan inte ändras eller tas bort i systemet; finns kvar när kopplingen tas bort eller modulen stängs av |
 | Bank: medgivandet (sessionen hos Enable Banking) | Högst 180 dagar, eller tills någon kopplar bort banken | PSD2; behövs bara för att hämta | Krypterad; tas bort direkt när medgivandet går ut eller kopplas bort |
+| Skatteverket: inloggningen (tokens hos Skatteverket) | Tills den inte längre går att använda, högst cirka 65 minuter; gallras varje natt | Behövs bara för anropen till Skatteverket | Krypterad; tas bort direkt vid utloggning, när Skatteverket svarar att den har gått ut eller vid gallringen |
+| Skatteverket: utskickad momsdeklaration (rutor, kontroll, kvittens, beslut) | Som räkenskapsinformationen | Underlag för vad som lämnats och beslutats | Länken till underskriften tas bort när deklarationen är lämnad eller 30 dagar efter utskicket |
 | Kunder och leverantörer med begränsad behandling (art. 18) | Sparas men används inte för nya dokument | Den registrerades begäran | "Begränsa behandling" i registret |
 
 Personalliggarens bevarandetid följer 9 kap. 5 § tredje stycket skatteförfarandeförordningen: två år efter utgången av det kalenderår då beskattningsåret gick ut (Skatteverket påpekar att brutet eller förlängt räkenskapsår kan ge mer än tre år). Prop. 2025/26:282 ändrar inte bevarandetiden. Ändrad 2026-11-07 enligt AI-utredning 2026-11-02, juristgranskning återstår.

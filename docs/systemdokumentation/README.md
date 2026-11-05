@@ -4,7 +4,7 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.103
+- Version: 0.104
 - Datum: 2026-11-05
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
@@ -776,6 +776,19 @@ year").
   juristgranskning återstår, AUD-MOMS-1, #58).
 - Efter deklarationen kan bokföringen låsas till och med periodens sista dag.
   Låset kan bara flyttas framåt.
+
+- Momsdeklarationen kan skickas till Skatteverket genom Skatteverkets API
+  Momsdeklaration ([ADR-054](../adr/ADR-054-skatteverket-apis.md)). Användaren
+  loggar in hos Skatteverket med e-legitimation; Skatteverket avgör vid varje
+  anrop om personen får företräda företaget. NONOX skickar rutorna ur samma
+  beräkning som sidan visar, som ett utkast låst för underskrift, och visar
+  Skatteverkets kontrollresultat och länk till underskriften. Deklarationen
+  lämnas först när en behörig person skriver under hos Skatteverket.
+  Utskicket sparas i `vat_submissions` med rutorna, kontrollresultatet,
+  kvittensnummer och Skatteverkets beslutade belopp, aldrig vem som skrev
+  under. Ingenting bokförs av utskicket; momsen bokförs som förut.
+  Behandlingshistoriken får `vat.skatteverket_checked`, `vat.skatteverket_sent`
+  och `vat.skatteverket_refreshed`.
 
 ### 4.14 Årsskifte
 
@@ -3966,3 +3979,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.101 | 2026-11-04 | E-faktura via Peppol (ADR-050, avsnitt 5.4 och 5e.1): skapade kundfakturor och kreditfakturor kan skickas som Peppol BIS Billing 3.0 genom installationens accesspunkt, kontrollerade mot reglerna och sparade exakt som de skickades, utan någon ändring i bokföringen; e-fakturor som tas emot hamnar i inkorgen med XML-filen som original och blir förslag till leverantörsfakturor som attesteras. Ett dokument adresserat till företaget sparas alltid (i karantän när mottagningen är avstängd), och mottagningen avregistreras innan den stängs av. Fakturatexten för trepartshandel hänvisar till artikel 141 och omvänd betalningsskyldighet. |
 | 0.102 | 2026-11-04 | Sista dagar för moms och arbetsgivardeklaration (också: helårsmoms för ideell förening och stiftelse den 26:e i andra månaden efter året när det inte är känt att de lämnar inkomstdeklaration, och inköp av tjänster utanför EU, ruta 22, räknas som EU-handel) (avsnitt om översikten, ADR-051 etapp 2): en dag flyttas förbi lördag, söndag, helgdag, midsommarafton, julafton och nyårsafton (lag (1930:173) 2 §); arbetsgivardeklarationens dag räknas enligt SFL 26 kap. 26, 30 och 32 §§ för varje år, med Skatteverkets lista som kontroll, och den större gruppen betalar den 12:e (den 17:e i januari) före deklarationen den 26:e (SFL 62 kap. 3 §). Arbetsgivardeklarationens grupp följer företagets egna uppgifter för moms och omsättning, inte löneinställningen. Mina datum räknar fram företagets datum utan att ändra bokföringen. |
 | 0.103 | 2026-11-05 | NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag och kommanditbolag ur bokföringen som SRU-filer (avsnitt 5a8, ADR-053): fält ur BAS-kontona, räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag för egenavgifter beräknade ur det användaren bekräftar, årets parametrar som data med källa, delägare med krypterade person- och organisationsnummer; ingenting bokförs. |
+| 0.104 | 2026-11-05 | Momsdeklarationen till Skatteverket genom Skatteverkets API (avsnitt 4.13, ADR-054): inloggning hos Skatteverket med e-legitimation, kontroll, utkast låst för underskrift, kvittens och beslutade belopp; ingenting bokförs av utskicket. |

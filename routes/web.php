@@ -40,6 +40,7 @@ use App\Http\Controllers\Search\SearchController;
 use App\Http\Controllers\SecureChatController;
 use App\Http\Controllers\SecurityPageController;
 use App\Http\Controllers\SitemapController;
+use App\Http\Controllers\Skatteverket\SkatteverketAuthController;
 use App\Http\Controllers\StartController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\Vat\VatFileController;
@@ -252,6 +253,8 @@ Route::middleware([
         Route::view('/moms', 'vat.index')->name('vat.index');
         Route::get('/moms/{fiscalYear}/fil', VatFileController::class)->whereNumber('fiscalYear')->name('vat.file');
         Route::view('/eu-rapporter', 'vat.eu-reports')->name('vat.euReports');
+        Route::get('/anslutningar/skatteverket', [SkatteverketAuthController::class, 'start'])->middleware('throttle:skatteverket-sign-in')->name('skatteverket.signIn');
+        Route::get('/anslutningar/skatteverket/klar', [SkatteverketAuthController::class, 'callback'])->middleware('throttle:skatteverket-sign-in')->name('skatteverket.callback');
         Route::get('/rapporter/csv', ReportCsvController::class)->name('accounting.reports.csv');
         Route::view('/kostnadsstallen', 'accounting.dimensions', ['dimension' => 'kostnadsstallen'])->name('accounting.costCenters');
         Route::view('/projekt', 'accounting.dimensions', ['dimension' => 'projekt'])->name('accounting.projects');

@@ -18,6 +18,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\VatReport;
 use App\Models\VoucherRow;
+use App\Support\Skatteverket\Skatteverket;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -121,6 +122,7 @@ class VatReturns extends Component
             'supplement' => $supplement,
             'canSettle' => $this->user()->hasTeamPermission($company, 'vouchers:post'),
             'canLock' => $this->user()->hasTeamPermission($company, 'periods:lock'),
+            'skatteverket' => Skatteverket::isAvailableTo($this->user()),
         ]);
     }
 
