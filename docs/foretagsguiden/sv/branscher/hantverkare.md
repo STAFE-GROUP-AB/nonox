@@ -23,7 +23,7 @@ Som hantverkare säljer du ofta åt två helt olika sorters kunder: privatperson
 
 ## Det här säger reglerna
 
-- **ROT och RUT.** Gör du arbete åt en privatperson i hens bostad kan kunden få skattereduktion. Kunden betalar bara en del av arbetskostnaden och företaget begär resten från Skatteverket. Det regleras i inkomstskattelagen och i lagen om förfarandet vid skattereduktion för hushållsarbete.
+- **ROT och RUT.** Gör du arbete åt en privatperson i hens bostad, eller hos hens föräldrar om de bor i Sverige, kan kunden få skattereduktion. Kunden betalar bara en del av arbetskostnaden och företaget begär resten från Skatteverket. Det regleras i inkomstskattelagen och i lagen om förfarandet vid skattereduktion för hushållsarbete.
 - **Omvänd byggmoms.** Säljer du vissa byggtjänster till ett annat företag som självt säljer byggtjänster, är det enligt Skatteverket köparen som redovisar momsen. Du fakturerar då utan moms.
 - **Personalliggare.** Enligt skatteförfarandelagen ska det föras personalliggare på byggarbetsplatser, med ett undantag för små byggen. Byggherren anmäler bygget, och varje företag registrerar sina egna personer.
 - **Arbete åt konsumenter.** Konsumenttjänstlagen gäller när du arbetar på en privatpersons hus eller saker. Den har bland annat regler om tilläggsarbeten och om hur mycket ett ungefärligt pris får överskridas.

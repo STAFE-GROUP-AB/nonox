@@ -57,7 +57,7 @@ Lagret får tas upp till lägst 97 procent av det sammanlagda anskaffningsvärde
 
 ## Vanliga misstag
 
-- **Att glömma att lagret finns.** Utan en bokförd lagerförändring blir årets resultat för lågt, eftersom hela inköpet då räknas som kostnad.
+- **Att glömma att lagret finns.** Utan en bokförd lagerförändring blir årets resultat fel, eftersom hela inköpet då räknas som kostnad även för varor som finns kvar.
 - **Att jämföra lagret i klump.** Lägsta värdets princip gäller varje vara eller varugrupp för sig.
 - **Att byta metod mellan åren** utan att verksamheten har ändrats.
 - **Att använda 97-procentsregeln och samtidigt skriva ner enskilda varor.** Det får man inte.

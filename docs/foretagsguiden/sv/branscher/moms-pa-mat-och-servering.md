@@ -16,7 +16,7 @@ kallor:
 granskad: 2026-11-05
 mansklig_granskning:
 legal_verify:
-  - Gränsen mellan livsmedel och restaurangtjänst avgörs från fall till fall, till exempel för ett kafé där kunden själv väljer om den sätter sig eller går. Är du osäker, fråga Skatteverket.
+  - Gränsfall mellan livsmedel och restaurangtjänst, till exempel när kunden först efter betalningen bestämmer sig för att sätta sig, avgörs från fall till fall. Är du osäker, fråga Skatteverket.
 ---
 
 # Moms på mat och servering
@@ -41,6 +41,8 @@ Riksdagen har beslutat att momsen på livsmedel är 6 procent från och med den 
 ### Servering eller avhämtning
 
 Enligt Skatteverket är en restaurangtjänst att du säljer mat eller dryck tillsammans med tjänster som gör att kunden kan äta eller dricka direkt, till exempel bord, stolar, porslin och servering. Använder kunden inte de tjänsterna, utan tar med sig maten, är det försäljning av livsmedel. Tar du maten till kundens lokaler och gör stödtjänster där är det en cateringtjänst. Det räcker inte med tjänster som bara hör ihop med själva matlagningen.
+
+Skatteverket ger ett exempel från ett kafé: kaffe och en bulle som kunden äter vid kaféets bord har 12 procent, medan en limpa som samma kund tar med hem har 6 procent. Det avgörande är om kunden använder serveringen.
 
 Det betyder att kassan behöver veta om kunden äter på plats eller tar med, och att Z-rapporten ska dela upp försäljningen per sats.
 

@@ -26,9 +26,9 @@ När en kund betalar med kort kommer pengarna inte direkt till banken. Kortinlö
 
 ## Det här säger reglerna
 
-Enligt Skatteverket räknas kortbetalningar och elektroniska betalningstjänster som Swish som kontant betalning i reglerna om kassaregister. All sådan försäljning ska registreras i kassan, och kvittot ska visa hur kunden betalade. Läs [Kassaregister i praktiken](/foretagsguiden/branscher/kassaregister-i-praktiken).
+Enligt skatteförfarandelagen 39 kap. 4 § gäller kravet på kassaregister både kontant betalning och betalning med kort, och Skatteverket räknar Swish som kortbetalning. All sådan försäljning ska registreras i kassan, och kvittot ska visa hur kunden betalade. Läs [Kassaregister i praktiken](/foretagsguiden/branscher/kassaregister-i-praktiken).
 
-Momsen beräknas på det kunden betalade, inte på det inlösaren betalar ut (mervärdesskattelagen 8 kap. 2 §). I årsredovisningen får intäkter och kostnader inte kvittas mot varandra (årsredovisningslagen 2 kap. 4 §, som Bokföringsnämnden beskriver i K2-vägledningen). Därför bokför du försäljningen med hela beloppet och avgiften som en egen kostnad redan från början.
+Momsen beräknas på det kunden betalade, inte på det inlösaren betalar ut (mervärdesskattelagen 8 kap. 2 §). I årsredovisningen får intäkter och kostnader inte kvittas mot varandra (årsredovisningslagen 2 kap. 4 § första stycket 6, som Bokföringsnämnden beskriver i K2-vägledningen). Därför bokför du försäljningen med hela beloppet och avgiften som en egen kostnad redan från början.
 
 ## Ett exempel
 

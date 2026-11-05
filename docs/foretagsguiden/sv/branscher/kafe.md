@@ -40,7 +40,7 @@ En checklista för ett nytt kafé, i ungefär den ordning du gör det:
 1. Registrera företaget, ansök om F-skatt och momsregistrera dig. Läs [Registrera företaget](/foretagsguiden/starta/registrera-foretaget) och [Momsregistrering](/foretagsguiden/starta/momsregistrering).
 2. Anmäl lokalen som livsmedelsanläggning till kommunen, minst två veckor innan du öppnar.
 3. Skaffa ett kassaregister som uppfyller Skatteverkets krav och anmäl det innan första försäljningen.
-4. Ska du ha anställda: registrera dig som arbetsgivare och börja föra personalliggaren från första arbetsdagen. Läs [Registrera dig som arbetsgivare](/foretagsguiden/starta/arbetsgivare).
+4. Ska du ha anställda: registrera dig som arbetsgivare. Börja föra personalliggaren den första dagen någon annan än du, din make eller maka och dina barn under 16 år arbetar i kaféet, också om personen inte får lön (skatteförfarandelagen 39 kap. 11 §). Läs [Registrera dig som arbetsgivare](/foretagsguiden/starta/arbetsgivare).
 5. Lägg upp kassan så att servering och avhämtning får rätt sats, och låt Z-rapporten dela upp försäljningen per sats.
 6. Låt kassan mejla dagsrapporten till NONOX inkorg och bokför den varje dag. Läs [Dagsrapporter från kassasystemet](/manual/leverantorer/dagsrapporter).
 7. Bestäm hur dricks ska fördelas och hur presentkort ska hanteras. Läs [Dricks](/foretagsguiden/branscher/dricks) och [Presentkort](/foretagsguiden/branscher/presentkort).

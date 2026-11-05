@@ -39,7 +39,7 @@ När du bokför och betalar ut lön åt en kund hanterar du personuppgifter som 
 
 **Sekretess.** Sekretessen för dig och dina anställda skriver du in i uppdragsavtalet och i anställningsavtalen. Biträdesavtalet ska också säga att de som behandlar uppgifterna har åtagit sig sekretess.
 
-**När uppdraget slutar.** Räkenskapsinformationen är kundens. Enligt bokföringslagen 7 kap. ska den sparas i sju år efter utgången av det kalenderår då räkenskapsåret avslutades, och det är kundens ansvar. Ditt ansvar är att lämna tillbaka materialet så att kunden kan uppfylla det, och att radera dina egna kopior om inget annat är avtalat. Dokumentation om kundkännedom ska du däremot själv spara i fem år från att affärsförbindelsen upphörde (penningtvättslagen 5 kap. 3 §).
+**När uppdraget slutar.** Räkenskapsinformationen är kundens. Enligt bokföringslagen 7 kap. ska den sparas i sju år efter utgången av det kalenderår då räkenskapsåret avslutades, och det är kundens ansvar. Ditt ansvar är att lämna tillbaka materialet så att kunden kan uppfylla det, och att radera dina egna kopior om inget annat är avtalat. Dokumentation om kundkännedom ska du däremot själv spara i fem år från att affärsförbindelsen upphörde (penningtvättslagen 5 kap. 3 §). Längre än så får du spara den bara om det behövs för att förebygga, upptäcka eller utreda penningtvätt, och aldrig längre än tio år sammanlagt (5 kap. 4 §). Därefter bör uppgifterna raderas, eftersom dataskyddsförordningen inte tillåter att personuppgifter sparas längre än nödvändigt.
 
 ## Så här gör du
 

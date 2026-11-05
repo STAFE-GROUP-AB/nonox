@@ -31,7 +31,7 @@ En byrå arbetar i många företag samtidigt. Varje klient har sina egna datum f
 
 1. Anmäl byrån och gör riskbedömningen enligt [Penningtvätt för byråer](/foretagsguiden/branscher/penningtvatt-for-byraer).
 2. Skriv uppdragsavtal och biträdesavtal med varje klient, se [Ansvarsförsäkring och avtal](/foretagsguiden/branscher/ansvarsforsakring-och-avtal) och [Klientarbete och GDPR](/foretagsguiden/branscher/klientarbete-och-gdpr).
-3. Teckna en ansvarsförsäkring som täcker skador på klientens ekonomi.
+3. Överväg en ansvarsförsäkring som täcker skador på klientens ekonomi. Lagen kräver det normalt inte, men många klienter förväntar sig det.
 4. Samla klienterna i NONOX. **Mina företag** visar alla klienter med vad som väntar och sista dag för moms och arbetsgivardeklaration. Se [Mina företag](/manual/byra/mina-foretag).
 5. Be klienterna om underlag med uppgifter, och låt dem be dig om saker. Se [Uppgifter mellan byrå och kund](/manual/byra/uppgifter-mellan-byra-och-kund).
 6. Ge varje konsult och klient rätt roll. Se [Roller och behörigheter](/manual/kom-igang/roller-och-behorigheter).

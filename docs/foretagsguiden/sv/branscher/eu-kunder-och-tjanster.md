@@ -13,14 +13,14 @@ kallor:
     url: https://www.skatteverket.se/foretag/moms/saljavarorochtjanster/momslagensregleromfakturering
   - titel: Skatteverket – Periodisk sammanställning för varor och tjänster
     url: https://www.skatteverket.se/foretag/moms/deklareramoms/periodisksammanstallningforvarorochtjanster.4.58d555751259e4d661680001093.html
+  - titel: Riksdagen – Skatteförfarandelag (2011:1244), 35 kap.
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
   - titel: Europeiska kommissionen – VIES, kontroll av momsregistreringsnummer
     url: https://ec.europa.eu/taxation_customs/vies/
   - titel: Riksdagen – Mervärdesskattelag (2023:200)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/
 granskad: 2026-11-05
 mansklig_granskning:
-legal_verify:
-  - Skatteverket anger att fakturan för en tjänst enligt huvudregeln ska utfärdas senast den 15 i månaden efter den månad tjänsten tillhandahölls. Vilken paragraf i mervärdesskattelagen (2023:200) gäller, och finns undantag?
 ---
 
 # EU-kunder och tjänster
@@ -29,20 +29,22 @@ Säljer du konsulttjänster, redovisning eller andra tjänster till ett företag
 
 ## Det här säger reglerna
 
-**Huvudregeln.** Enligt Skatteverket beskattas en tjänst som säljs till ett företag i det land där köparen är etablerad. Du tar alltså inte ut moms, och köparen redovisar momsen i sitt land. Säljer du i stället till en privatperson i ett annat EU-land tar du som regel ut svensk moms.
+**Huvudregeln.** Enligt Skatteverket beskattas en tjänst som säljs till ett företag i det land där köparen är etablerad. Du tar alltså inte ut moms, och köparen redovisar momsen i sitt land. Säljer du i stället till en privatperson i ett annat EU-land tar du som regel ut svensk moms. Undantag finns, till exempel för digitala tjänster, som kan beskattas i det land där köparen bor.
 
 **Undantag.** Fem sorters tjänster följer inte huvudregeln, vem köparen än är: tjänster som har med en fastighet att göra, persontransporter, tillträde till evenemang, restaurang- och cateringtjänster och korttidsuthyrning av fordon. För dem gäller andra regler, och omvänd betalningsskyldighet gäller inte på samma sätt.
 
 **Är köparen ett företag?** Ett giltigt momsregistreringsnummer (VAT-nummer) från köparen räcker oftast. Du kontrollerar numret i EU:s tjänst VIES. Saknas numret kan du visa på annat sätt att köparen är ett företag, till exempel med ett intyg från skattemyndigheten i köparens land. Kan du inte visa det ska du behandla köparen som en privatperson.
 
-**Fakturan.** Fakturan ska ha köparens momsregistreringsnummer och texten **Omvänd betalningsskyldighet**. Svenska fakturaregler gäller, och enligt Skatteverket ska fakturan utfärdas senast den 15 i månaden efter den månad du utförde tjänsten. Läs mer i [Moms på fakturan](/foretagsguiden/moms-och-skatt/moms-pa-faktura).
+**Fakturan.** Fakturan ska ha köparens momsregistreringsnummer och texten **Omvänd betalningsskyldighet**. Svenska fakturaregler gäller. Enligt mervärdesskattelagen 17 kap. 18 § ska fakturan utfärdas senast den 15:e i månaden efter den månad då tjänsten utfördes. Det gäller också om du samlar flera uppdrag på en faktura (17 kap. 19 §). Läs mer i [Moms på fakturan](/foretagsguiden/moms-och-skatt/moms-pa-faktura).
 
 **Momsdeklarationen.**
 
 - Tjänster enligt huvudregeln till företag i andra EU-länder: beloppet i svenska kronor i **ruta 39**.
 - Tjänster som följer något av undantagen och beskattas utomlands: **ruta 40**.
 
-**Periodisk sammanställning.** Har du köparens VAT-nummer ska du också lämna en periodisk sammanställning med numret och beloppet. Säljer du bara tjänster lämnar du den normalt per kvartal, men du kan begära att lämna den per månad. Har du inte köparens VAT-nummer men kan visa att köparen är ett företag, tar du bara med försäljningen i ruta 39. Datumen finns i [Periodisk sammanställning](/foretagsguiden/viktiga-datum/periodisk-sammanstallning).
+**När du redovisar.** Tjänster enligt huvudregeln redovisar du i momsdeklarationen och i den periodiska sammanställningen för den period då den så kallade beskattningsgrundande händelsen inträffar, som regel när tjänsten utfördes. Det är alltså inte perioden då du fakturerar eller får betalt i efterhand (mervärdesskattelagen 7 kap. 30 §). Det gäller även om du annars använder bokslutsmetoden.
+
+**Periodisk sammanställning.** Har du köparens VAT-nummer ska du också lämna en periodisk sammanställning med numret och beloppet. Säljer du bara tjänster lämnar du den normalt per kvartal, men du kan begära att lämna den per månad. Lämnar du den elektroniskt ska den ha kommit in senast den 25:e i månaden efter perioden (skatteförfarandelagen 35 kap. 9 §). Har du inte köparens VAT-nummer men kan visa att köparen är ett företag, tar du bara med försäljningen i ruta 39. Datumen finns i [Periodisk sammanställning](/foretagsguiden/viktiga-datum/periodisk-sammanstallning).
 
 ## Så här gör du
 

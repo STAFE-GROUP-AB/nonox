@@ -33,7 +33,7 @@ Många salonger hyr ut en eller flera stolar, eller ett behandlingsrum, till and
 
 ### Moms på hyran
 
-Enligt mervärdesskattelagen 10 kap. 35 § är uthyrning av fastighet, till exempel en lokal, undantagen från moms. Undantaget gäller inte uthyrning av maskiner och utrustning som installerats varaktigt (10 kap. 36 §). Hyr du ut en lokal till en annan företagare som använder den i momspliktig verksamhet kan du under vissa villkor välja att ta ut moms på hyran, så kallad frivillig beskattning (12 kap.). Väljer du det ska hyran ha 25 procent moms, och du får dra av momsen på kostnaderna för uthyrningen.
+Enligt mervärdesskattelagen 10 kap. 35 § är uthyrning av fastighet, till exempel en lokal, undantagen från moms. Undantaget gäller inte uthyrning av maskiner och utrustning som installerats varaktigt (10 kap. 36 §). Hyr du ut en lokal till en annan företagare som använder den i momspliktig verksamhet kan du under vissa villkor välja att ta ut moms på hyran, så kallad frivillig beskattning (12 kap.). Väljer du det ska hyran ha 25 procent moms, och du får dra av momsen på kostnaderna för uthyrningen. Frivillig beskattning gäller bara när hyresgästen använder lokalen stadigvarande i en verksamhet med avdragsrätt (12 kap. 5 §), så en stol som hyrs ut dag för dag passar sämre in. Den gäller också när salongen själv hyr lokalen och hyr ut i andra hand (12 kap. 7 §). Du väljer frivillig beskattning genom att ange moms på hyresfakturan, och då är du skyldig att betala den momsen (12 kap. 8 §).
 
 Stolshyra är sällan bara en yta. Ofta ingår stol, tvättho, verktyg, produkter, bokningssystem eller reception. Det kan göra att det du säljer inte är en uthyrning av lokal utan en tjänst, och då kan hyran vara momspliktig. Vilket det blir avgörs av vad som faktiskt ingår. Det är oklart hur Skatteverket ser på stolshyra i salonger, så fråga Skatteverket innan du bestämmer momsen.
 
@@ -43,7 +43,7 @@ Den som hyr stolen ska driva sitt eget företag och normalt ha F-skatt. Med F-sk
 
 ### Risken att bli arbetsgivare
 
-Skatteverket skriver att den som anlitar någon med F-skatt normalt inte gör skatteavdrag eller betalar arbetsgivaravgifter. Men om arbetet uppenbart utförs under sådana förhållanden att personen är anställd hos betalaren, ska betalaren anmäla det skriftligen till Skatteverket. Annars riskerar betalaren att få betala personens skatter och avgifter.
+Skatteverket skriver att den som anlitar någon med F-skatt normalt inte gör skatteavdrag eller betalar arbetsgivaravgifter. Men om arbetet uppenbart utförs under sådana förhållanden att personen är anställd hos betalaren, ska betalaren anmäla det skriftligen till Skatteverket, senast den dag arbetsgivardeklarationen för den månaden ska lämnas (skatteförfarandelagen 10 kap. 14 §). Gör betalaren inte det kan Skatteverket besluta att betalaren ska betala skatten och avgifterna på ersättningen (59 kap. 7 §).
 
 För en salong blir frågan aktuell när pengarna går åt andra hållet, till exempel när salongen tar betalt av kunderna och betalar ut en andel till frisören. Ju mer salongen bestämmer över priser, arbetstider och kunder, desto mer liknar det en anställning. Låt avtalet spegla hur ni faktiskt arbetar, och fråga Skatteverket om du är osäker.
 

@@ -12,18 +12,20 @@ kallor:
     url: https://www.skatteverket.se/omoss/pressochmedia/nyheter/2024/nyheter/verksamhetsommatbuduppfyllernormaltintekravenforfskatt.5.262c54c219391f2e963405f.html
   - titel: Riksdagen – Inkomstskattelag (1999:1229), 13 kap. 1 §
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/
+  - titel: Riksdagen – Skatteförfarandelag (2011:1244), 10 kap. 11–14 §§ och 59 kap. 7 §
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/skatteforfarandelag-20111244_sfs-2011-1244/
   - titel: Bokföringsnämnden – Vägledning Årsredovisning i mindre företag (K2), kap. 6
     url: https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf
 granskad: 2026-11-05
 mansklig_granskning:
 legal_verify:
-  - Under vilka förutsättningar kan en uppdragsgivare bli skyldig att betala skatt eller arbetsgivaravgifter för en uppdragstagare som har F-skatt? Artikeln hänvisar till Skatteverkets bedömning och säger inte mer.
+  - Kan en uppdragsgivare bli skyldig att betala arbetsgivaravgifter enligt socialavgiftslagen för en uppdragstagare med F-skatt i andra fall än ansvaret i skatteförfarandelagen 59 kap. 7 §? Socialavgiftslagen är inte kontrollerad.
   - Kan en arbetsrättslig domstol bedöma uppdraget som en anställning oberoende av F-skatten? Artikeln tar inte upp arbetsrätten.
 ---
 
 # Uppdrag och F-skatt
 
-Som konsult säljer du din kunskap och din tid. Det gör en anställd också. Skillnaden är att du driver ett eget företag, tar en egen risk och bestämmer själv hur arbetet ska göras. För Skatteverket är det just den skillnaden som avgör om du kan ha F-skatt för uppdraget, eller om det i själva verket är en anställning.
+Som konsult säljer du din kunskap och din tid. Det gör en anställd också. Skillnaden är att du driver ett eget företag, tar en egen risk och bestämmer själv hur arbetet ska göras. För Skatteverket är det just den skillnaden som avgör om du driver näringsverksamhet, eller om ersättningen i själva verket är lön från en anställning.
 
 ## Det här säger reglerna
 
@@ -38,9 +40,9 @@ Som konsult säljer du din kunskap och din tid. Det gör en anställd också. Sk
 
 Skatteverket har till exempel bedömt att den som bara ställer sin arbetskraft till förfogande, utan en avgränsad uppgift och inordnad i uppdragsgivarens verksamhet, normalt inte kan få F-skatt för det arbetet. Att ha flera sådana uppdrag gör dem inte självständiga.
 
-**F-skatt och FA-skatt.** Har du både företaget och en anställning har du FA-skatt. Då får F-skatten bara användas i företaget, och när du fakturerar ett uppdrag ska du skriftligen hänvisa till att du har F-skatt. Läs mer i [F-skatt](/foretagsguiden/starta/f-skatt).
+**F-skatt och FA-skatt.** Har du både företaget och en anställning har du FA-skatt. Då får F-skatten bara användas i företaget, och när du fakturerar ett uppdrag ska du skriftligen hänvisa till att du har F-skatt (skatteförfarandelagen 10 kap. 11 §). Läs mer i [F-skatt](/foretagsguiden/starta/f-skatt).
 
-**Timmar på löpande räkning.** Enligt Bokföringsnämndens K2-regler (punkt 6.10 och 6.13) är ett uppdrag på löpande räkning ett uppdrag där du får ett avtalat pris per timme för den tid du faktiskt lägger ner, plus faktiska kostnader. Intäkten tas upp i takt med att du arbetar. Ett fast pris per månad är inte löpande räkning.
+**Timmar på löpande räkning.** Enligt Bokföringsnämndens K2-regler för aktiebolag och andra företag som upprättar årsredovisning (punkt 6.10 och 6.13) är ett uppdrag på löpande räkning ett uppdrag där du får ett avtalat pris per timme för den tid du faktiskt lägger ner, plus faktiska kostnader. Intäkten tas upp i takt med att du arbetar. Ett fast pris per månad är inte löpande räkning. Ett sådant uppdrag, där du gör det som behövs under en avtalad period, tas i regel upp som intäkt jämnt fördelat över perioden (punkt 6.11). Har du enskild firma gäller andra allmänna råd, fråga din redovisningskonsult.
 
 ## Så här gör du
 
@@ -58,4 +60,4 @@ Skatteverket har till exempel bedömt att den som bara ställer sin arbetskraft 
 
 ## Bra att veta
 
-Uppdragsgivaren har också ett intresse av att uppdraget håller. Skatteverket har påpekat att den som anlitar personer i uppdrag som liknar anställningar kan få ett ansvar för skatten. Därför ber större kunder ofta om avtal, försäkring och F-skattebevis innan uppdraget börjar.
+Uppdragsgivaren har också ett intresse av att uppdraget håller. Den som betalar ersättning till någon med F-skatt drar normalt inte av skatt (skatteförfarandelagen 10 kap. 11 och 12 §§). Är det uppenbart att mottagaren i själva verket är anställd ska uppdragsgivaren skriftligen anmäla det till Skatteverket (10 kap. 14 §). Görs ingen anmälan kan Skatteverket besluta att uppdragsgivaren ska betala skatten och avgifterna på ersättningen (59 kap. 7 §). Därför ber större kunder ofta om avtal, försäkring och F-skattebevis innan uppdraget börjar.

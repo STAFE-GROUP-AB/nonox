@@ -31,11 +31,11 @@ Gör du reparationer, ombyggnad eller hushållsnära tjänster åt en privatpers
 
 ## Det här säger reglerna
 
-**Vem.** Avdraget gäller arbete som en privatperson köper till sin bostad, till exempel reparation och ombyggnad (ROT) eller städning och trädgårdsarbete (RUT). Skatteverket har listor över vilka arbeten som ger rätt till avdrag. ROT-avdrag gäller inte när du gör arbete åt din egen familj eller släkt. Reglerna finns i inkomstskattelagen 67 kap.
+**Vem.** Avdraget gäller arbete som en privatperson köper till sitt eget hushåll, eller till sina föräldrars om de bor i Sverige, till exempel reparation och ombyggnad (ROT) eller städning och trädgårdsarbete (RUT). Skatteverket har listor över vilka arbeten som ger rätt till avdrag. Kunden får varken ROT- eller RUT-avdrag om den som utför arbetet är kunden själv eller en närstående till kunden, till exempel make, förälder, mor- eller farförälder, barn, barnbarn eller syskon (inkomstskattelagen 67 kap. 15 § och 2 kap. 22 §). En sambo räknas som närstående om ni har eller har haft gemensamma barn eller tidigare har varit gifta (2 kap. 20 §). Kusiner och andra släktingar räknas inte. Reglerna finns i inkomstskattelagen 67 kap.
 
 **Hur mycket, 2026.** Enligt Skatteverket är ROT-avdraget 30 procent och RUT-avdraget 50 procent av arbetskostnaden. Taket är 75 000 kronor per person och år för ROT och RUT tillsammans, och av det får högst 50 000 kronor vara ROT. Under en period 2025 var ROT-avdraget tillfälligt 50 procent, men det gällde bara arbete som kunden betalade mellan den 12 maj och den 31 december 2025.
 
-**Bara arbetet.** Avdraget räknas bara på arbetskostnaden. Material och resor ger inget avdrag. Tar du inte betalt för resor kan Skatteverket räkna dem som en del av arbetet och betala ut mindre.
+**Bara arbetet.** Avdraget räknas bara på arbetskostnaden. Material och resor ger inget avdrag. Tar du inte betalt för resor separat kan Skatteverket räkna med att en del av arbetskostnaden är resor, och då kan utbetalningen bli lägre.
 
 **Fakturan.** Enligt Skatteverket ska fakturan visa arbete, material och övriga kostnader var för sig, vilket arbete det gäller, kundens namn och personnummer, totalbeloppet, avdragets storlek och att företaget har F-skatt. Vid ROT behövs också fastighetsbeteckningen eller, för en bostadsrätt, föreningens organisationsnummer och lägenhetens nummer.
 
@@ -45,7 +45,7 @@ Gör du reparationer, ombyggnad eller hushållsnära tjänster åt en privatpers
 
 **Begäran om utbetalning.** Enligt lagen om förfarandet vid skattereduktion för hushållsarbete (6–9 §§) begär du pengarna i Skatteverkets e-tjänst när arbetet är utfört och betalt. Begäran ska ha kommit in senast den 31 januari året efter det år kunden betalade. Har kunden bara betalat en del, till exempel vid delfakturering, begär du en lika stor del av avdraget.
 
-**Om det blir fel.** Har du fått pengar du inte hade rätt till ska du säga till Skatteverket, som beslutar att du ska betala tillbaka (14 §). Avslår Skatteverket hela eller delar av begäran får du inte pengarna. Skatteverket påpekar att du kan avtala med kunden om vad som gäller då. Skriv in det i avtalet eller offerten innan arbetet börjar.
+**Om det blir fel.** Har du fått pengar du inte hade rätt till ska du snarast säga till Skatteverket (13 §), och Skatteverket beslutar att du ska betala tillbaka (14 §). Betalar du tillbaka pengar till kunden för ett arbete som Skatteverket redan har betalat ut för, till exempel efter en kreditering, ska du också säga till Skatteverket (13 §). Avslår Skatteverket hela eller delar av begäran får du inte pengarna. Skatteverket påpekar att du kan avtala med kunden om vad som gäller då. Skriv in det i avtalet eller offerten innan arbetet börjar.
 
 ## Så här gör du
 

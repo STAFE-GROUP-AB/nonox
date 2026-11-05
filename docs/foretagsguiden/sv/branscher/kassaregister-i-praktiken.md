@@ -42,7 +42,7 @@ Lagen säger att kassaregistret ska vara certifierat (39 kap. 8 §). I praktiken
 - ett **kassaregister** som tillverkaren har deklarerat till Skatteverket (tillverkardeklarerat), och
 - en **certifierad kontrollenhet** eller ett kontrollsystem som registret är kopplat till.
 
-Det är tillverkarens ansvar att registret uppfyller kraven, och Skatteverket testar det inte. Fråga leverantören om registret är tillverkardeklarerat. Från och med den 1 januari 2027 ska kassaregistret uppfylla Skatteverkets föreskrift SKVFS 2021:17. Skatteverket råder dig att i god tid kontrollera med leverantören om ditt register behöver uppdateras eller bytas.
+Det är tillverkarens ansvar att registret uppfyller kraven, och Skatteverket testar det inte. Fråga leverantören om registret är tillverkardeklarerat. Från och med den 1 januari 2027 ska kassaregistret uppfylla Skatteverkets föreskrifter om krav på kassaregister (SKVFS 2014:9) i den lydelse de fick genom ändringsföreskriften SKVFS 2021:17. Skatteverket råder dig att i god tid kontrollera med leverantören om ditt register behöver uppdateras eller bytas.
 
 ### Anmälan
 
@@ -61,7 +61,7 @@ Säljer du vidare utan att registrera kan det leda till kontrollavgift. Enligt S
 
 ### Kontrollbesök
 
-Skatteverket får göra kontrollbesök utan att meddela det i förväg. Vid besöket får Skatteverket räkna kunder, göra kontrollköp, kontrollera kvitton och räkna kassan (skatteförfarandelagen 42 kap. 6 §). Ibland görs kontrollköpen anonymt innan Skatteverket visar vem de är. Hittar Skatteverket brister är kontrollavgiften 12 500 kronor och 25 000 kronor om en ny överträdelse sker inom ett år (50 kap. 2 §, belopp som gäller 2026).
+Skatteverket får göra kontrollbesök utan att meddela det i förväg. Vid besöket får Skatteverket räkna kunder, göra kontrollköp, kontrollera kvitton och räkna kassan (skatteförfarandelagen 42 kap. 6 §). Ibland görs kontrollköpen anonymt innan Skatteverket visar vem de är. Hittar Skatteverket brister är kontrollavgiften 12 500 kronor och 25 000 kronor om en ny överträdelse sker inom ett år (50 kap. 2 §; beloppen står i lagen och gäller 2026). Samma avgift tas ut om du inte har anmält registret till Skatteverket (50 kap. 1 §).
 
 ## Så här gör du
 

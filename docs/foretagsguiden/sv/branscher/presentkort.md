@@ -40,7 +40,9 @@ Enligt Skatteverket räknas presentkort som kontant betalning i reglerna om kass
 
 ## Ett exempel
 
-Butiken Linden säljer ett presentkort på 500 kronor som kan användas till alla varor i butiken. Det är en flerfunktionsvoucher. Alla belopp är påhittade.
+Butiken Linden säljer både kläder (25 procent moms) och böcker (6 procent moms). Den säljer ett presentkort på 500 kronor som kan användas till alla varor i butiken. När kortet säljs går det inte att veta vilken moms det kommer att avse, så det är en flerfunktionsvoucher. Alla belopp är påhittade.
+
+Sålde butiken bara varor med 25 procent moms vore samma kort i stället en enfunktionsvoucher, och då skulle momsen redovisas redan när kortet säljs (mervärdesskattelagen 2 kap. 27 § och 7 kap. 18 §).
 
 1. **När kortet säljs:** kassan får 500 kronor. Ingen moms. Beloppet bokförs som en skuld, till exempel på 2890 Övriga kortfristiga skulder.
 2. **När kortet används** till en vara med 25 procent moms: skulden på 500 kronor minskar, och försäljningen bokförs med 400 kronor på 3001 och 100 kronor i utgående moms på 2611.

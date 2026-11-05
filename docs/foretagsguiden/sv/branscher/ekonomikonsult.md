@@ -17,7 +17,7 @@ mansklig_granskning:
 
 # Ekonomikonsult
 
-Du sköter bokföring, lön eller moms åt några småföretag, och ditt eget företag vid sidan av. Även om du arbetar ensam och har få kunder gäller i stort sett samma regler som för en byrå. Dessutom är det extra viktigt för dig att uppdragen är upplagda som uppdrag, särskilt om du arbetar mycket hos en och samma kund.
+Du sköter bokföring, lön eller moms åt några småföretag, och ditt eget företag vid sidan av. Även om du arbetar ensam och har få kunder gäller i stort sett samma regler som för en byrå. Dessutom är det extra viktigt för dig att uppdragen i praktiken är självständiga uppdrag och inte en anställning, särskilt om du arbetar mycket hos en och samma kund.
 
 ## Det här säger reglerna
 
@@ -29,7 +29,7 @@ Du sköter bokföring, lön eller moms åt några småföretag, och ditt eget f�
 
 1. Anmäl dig och gör riskbedömningen enligt [Penningtvätt för byråer](/foretagsguiden/branscher/penningtvatt-for-byraer).
 2. Skriv uppdragsavtal och biträdesavtal med varje kund, se [Ansvarsförsäkring och avtal](/foretagsguiden/branscher/ansvarsforsakring-och-avtal) och [Klientarbete och GDPR](/foretagsguiden/branscher/klientarbete-och-gdpr).
-3. Kontrollera att uppdragen håller som uppdrag, se [Uppdrag och F-skatt](/foretagsguiden/branscher/uppdrag-och-f-skatt).
+3. Läs vad Skatteverket väger in när det bedömer om du arbetar självständigt, se [Uppdrag och F-skatt](/foretagsguiden/branscher/uppdrag-och-f-skatt).
 4. Samla ditt eget företag och kundernas under samma inloggning i NONOX. Se [Mina företag](/manual/byra/mina-foretag) och [Arbeta i många företag](/manual/byra/arbeta-i-manga-foretag).
 5. Låt kunden attestera sina egna leverantörsfakturor, så att det är kunden som godkänner det som betalas. Se [Attest](/manual/leverantorer/attest).
 6. Glöm inte ditt eget företag: egen moms, eget bokslut och egna datum under [Viktiga datum](/foretagsguiden/viktiga-datum).

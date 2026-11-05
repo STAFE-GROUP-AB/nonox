@@ -9,6 +9,8 @@ kallor:
     url: https://www.skatteverket.se/omoss/pressochmedia/nyheter/2024/nyheter/tankpaattredovisadricksomintearbetsgivarengjortdet.5.13948c0e18e810bfa0c272a.html
   - titel: Skatteverket – I mitt arbete på en restaurang får jag ibland dricks av gästerna. Ska jag skatta för dricksen?
     url: https://www.skatteverket.se/privat/etjansterochblanketter/svarpavanligafragor/inkomstavtjanst/privattjansteinkomsterfaq/imittarbetepaenrestaurangfarjagiblanddricksavgasternaskajagskattafordricksen.5.71004e4c133e23bf6db80007509.html
+  - titel: Skatteverket – Så här använder du kassaregistret
+    url: https://www.skatteverket.se/foretag/drivaforetag/kassaregister/saharanvanderdukassaregistret.4.69ef368911e1304a625800013725.html
 granskad: 2026-11-05
 mansklig_granskning:
 legal_verify:
@@ -35,7 +37,7 @@ Skatteverket skriver att det oftast är personalen som fördelar dricksen. Då b
 
 1. Bestäm hur dricksen ska fördelas och skriv ner det, så att alla vet vad som gäller. Det avgör om dricksen är lön eller inte.
 2. Låt kassan visa dricksen på en egen rad i Z-rapporten, så att den inte blandas ihop med försäljningen.
-3. **Fördelar personalen själva:** bokför kortdricksen som en skuld till personalen tills den lämnas ut, till exempel på 2890 Övriga kortfristiga skulder. Det är det konto NONOX föreslår för dricks på dagsrapporten. Läs [Dagsrapporter från kassasystemet](/manual/leverantorer/dagsrapporter).
+3. **Fördelar personalen själva:** bokför kortdricksen som en skuld till personalen tills den lämnas ut, till exempel på 2890 Övriga kortfristiga skulder. Det är det konto NONOX föreslår för dricks på dagsrapporten. Läs [Dagsrapporter från kassasystemet](/manual/leverantorer/dagsrapporter). Tar personalen ut dricksen kontant ur kassalådan minskar växelkassan, och enligt Skatteverket ska en sådan ändring av växelkassan registreras i kassan. Spara också en lista över hur mycket var och en har fått, så att skulden går att stämma av.
 4. **Fördelar du som arbetsgivare:** betala ut dricksen med lönen, så att skatt och arbetsgivaravgifter räknas och beloppet kommer med i arbetsgivardeklarationen. Läs [Lönekörning](/manual/lon/lonekorning).
 5. Kontrollera med din redovisningskonsult första gången hur dricksen ska konteras.
 

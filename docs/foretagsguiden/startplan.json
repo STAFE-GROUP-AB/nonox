@@ -521,7 +521,7 @@
     {
       "nyckel": "skaffa-och-anmal-kassaregister",
       "rubrik": "Skaffa och anmäl kassaregistret",
-      "text": "Välj ett kassaregister som är tillverkardeklarerat och kopplat till en certifierad kontrollenhet, och anmäl det till Skatteverket innan första försäljningen. Från 2027 ska det uppfylla SKVFS 2021:17.",
+      "text": "Välj ett kassaregister som är tillverkardeklarerat och kopplat till en certifierad kontrollenhet, och anmäl det till Skatteverket innan första försäljningen. Från 2027 ska det uppfylla Skatteverkets föreskrifter om krav på kassaregister i den lydelse de fick genom SKVFS 2021:17.",
       "bolagsformer": [],
       "branscher": [
         "cafe",
@@ -747,7 +747,7 @@
     {
       "nyckel": "kontrollera-personalliggare-bygg",
       "rubrik": "Kontrollera om du ska ha personalliggare på bygget",
-      "text": "På byggarbetsplatser över fyra prisbasbelopp ska alla som arbetar registreras i en elektronisk personalliggare, även du. Fråga byggherren om bygget är anmält innan du börjar.",
+      "text": "På de flesta byggarbetsplatser där kostnaden väntas bli mer än fyra prisbasbelopp ska alla som arbetar registreras i en elektronisk personalliggare, även du. Fråga byggherren om bygget är anmält innan du börjar.",
       "bolagsformer": [],
       "branscher": [
         "crafts"
@@ -783,7 +783,7 @@
     {
       "nyckel": "kontrollera-uppdrag-och-f-skatt",
       "rubrik": "Kontrollera att uppdragen håller som uppdrag",
-      "text": "Skatteverket bedömer om du arbetar självständigt. Ett uppdrag som i praktiken är en anställning kan inte bära F-skatt, så lägg upp uppdragen som avgränsade leveranser.",
+      "text": "Skatteverket bedömer om du driver näringsverksamhet och arbetar självständigt. Liknar uppdraget i praktiken en anställning kan ersättningen beskattas som lön, oavsett vad avtalet kallas. Läs vad som vägs in, och fråga Skatteverket eller din redovisningskonsult om du är osäker.",
       "bolagsformer": [],
       "branscher": [
         "consultant",

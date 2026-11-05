@@ -15,8 +15,6 @@ kallor:
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/
 granskad: 2026-11-05
 mansklig_granskning:
-legal_verify:
-  - Vilken paragraf i mervärdesskattelagen (2023:200) reglerar omvänd betalningsskyldighet för byggtjänster? Artikeln nämner lagen men inte paragrafen.
 ---
 
 # Omvänd byggmoms
@@ -25,7 +23,7 @@ Arbetar du som underentreprenör åt ett annat byggföretag ska du ofta inte ta 
 
 ## Det här säger reglerna
 
-Enligt Skatteverket **måste** du använda omvänd betalningsskyldighet när två villkor är uppfyllda:
+Regeln finns i mervärdesskattelagen 16 kap. 13 §. Du **måste** använda omvänd betalningsskyldighet när två villkor är uppfyllda:
 
 1. **Du säljer en byggtjänst i Sverige** av det slag som räknas upp, till exempel mark- och grundarbeten, bygg- och anläggningsarbeten, bygginstallationer som el och VVS, slutbehandling som målning, byggstädning, uthyrning av byggmaskiner med förare, eller uthyrning av personal för sådant arbete. Tjänsten ska utföras på en fastighet.
 2. **Köparen är ett företag som självt säljer sådana tjänster**, och inte bara tillfälligt. Det gäller också en mellanhand som säljer tjänsten vidare till ett sådant företag.
@@ -34,7 +32,7 @@ Enligt Skatteverket **måste** du använda omvänd betalningsskyldighet när tv�
 
 **Till privatpersoner och företag som inte bygger** tar du ut moms som vanligt.
 
-**Fakturan.** Utöver det som alltid ska stå på en faktura ska den ha köparens momsregistreringsnummer och texten **Omvänd betalningsskyldighet**. Du får inte debitera moms. Har du råkat ta ut moms ska du skicka en ändringsfaktura för den felaktiga momsen. Läs mer om fakturans innehåll i [Moms på fakturan](/foretagsguiden/moms-och-skatt/moms-pa-faktura).
+**Fakturan.** Utöver det som alltid ska stå på en faktura ska den ha köparens momsregistreringsnummer och uppgiften **Omvänd betalningsskyldighet** (17 kap. 24 §). Du får inte debitera moms. Har du råkat ta ut moms ska du skicka en ändringsfaktura för den felaktiga momsen. Läs mer om fakturans innehåll i [Moms på fakturan](/foretagsguiden/moms-och-skatt/moms-pa-faktura).
 
 **Momsdeklarationen.**
 
@@ -43,7 +41,7 @@ Enligt Skatteverket **måste** du använda omvänd betalningsskyldighet när tv�
 | Säljare | Försäljningen i ruta 41. Ingen utgående moms. Du får dra av ingående moms på det du köper till jobbet, till exempel material. |
 | Köpare | Inköpet i ruta 24, den utgående momsen du räknar fram i ruta 30 och den ingående momsen i ruta 48, i den mån du har avdragsrätt. |
 
-Använder du fakturametoden redovisar du momsen i den period då fakturan utfärdas, även vid omvänd betalningsskyldighet.
+**När.** För byggtjänster ska fakturan utfärdas senast när den andra kalendermånaden efter den månad du utförde arbetet tar slut (17 kap. 16 §). Försäljningen redovisas i den period då fakturan utfärdas, men senast i den period som omfattar den andra kalendermånaden efter arbetet (7 kap. 24 §). Det gäller också vid omvänd betalningsskyldighet, och enligt Skatteverket redovisar köparen momsen i den period då säljaren utfärdade fakturan. Använder du bokslutsmetoden gäller i stället den metodens regler.
 
 ## Så här gör du
 

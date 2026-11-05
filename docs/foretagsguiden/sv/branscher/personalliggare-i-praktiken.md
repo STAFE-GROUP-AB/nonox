@@ -38,9 +38,9 @@ Alla som är verksamma i lokalen ska antecknas, inte bara anställda. Enligt Ska
 
 En servicetekniker från ett annat företag som tillfälligt gör ett jobb åt dig behöver inte antecknas.
 
-Liggare behövs inte i en enskild firma där bara du, din make eller maka och dina barn under 16 år arbetar, och inte heller i ett fåmansföretag där bara företagsledaren och samma familjemedlemmar arbetar (39 kap. 11 § andra stycket). Så fort någon annan arbetar ska liggaren föras från den personens första dag. Skatteverket skriver att du och de undantagna familjemedlemmarna då också ska antecknas under hela den kalendermånaden. Arbetar någon annan hos dig regelbundet varje månad ska ni alltid stå i liggaren, även dagar då du arbetar ensam.
+Liggare behövs inte i en enskild firma där bara du, din make eller maka och dina barn under 16 år arbetar, och inte heller i ett fåmansföretag eller fåmanshandelsbolag där bara företagsledaren och samma familjemedlemmar arbetar (39 kap. 11 § andra stycket). Så fort någon annan arbetar ska liggaren föras från den personens första dag. Skatteverket skriver att du och de undantagna familjemedlemmarna då också ska antecknas under hela den kalendermånaden. Arbetar någon annan hos dig regelbundet varje månad ska ni alltid stå i liggaren, även dagar då du arbetar ensam.
 
-Är mindre än en fjärdedel av omsättningen restaurang eller skönhetsvård räknas verksamheten inte som en sådan verksamhet, och då behövs ingen liggare (39 kap. 2 § sista stycket). Skatteverket bedömer det normalt utifrån hur omsättningen fördelar sig.
+Enligt skatteförfarandelagen 39 kap. 2 § sista stycket räknas en verksamhet som huvudsakligen avser något annat inte som restaurang- eller skönhetsvårdsverksamhet. Skatteverket tolkar det så att liggare inte behövs om mindre än 25 procent av verksamheten är restaurang eller kropps- och skönhetsvård.
 
 ### Vad som ska antecknas
 
@@ -59,7 +59,7 @@ Har du flera lokaler som inte ligger i anslutning till varandra ska det finnas e
 
 Skatteverket får göra kontrollbesök i lokalen för att se att liggaren förs (skatteförfarandelagen 42 kap. 8 §). Besöket behöver inte meddelas i förväg (42 kap. 10 §). Vid besöket får Skatteverket be dem som arbetar att visa vem de är och jämföra uppgifterna med liggaren (42 kap. 8 a §). Liggaren ska finnas tillgänglig i lokalen (39 kap. 12 §). Är du själv inte där måste någon annan kunna visa den.
 
-Brister liggaren tar Skatteverket ut en kontrollavgift. Enligt skatteförfarandelagen 50 kap. 4 § är den, med de belopp som gäller 2026:
+Brister liggaren tar Skatteverket ut en kontrollavgift. Enligt skatteförfarandelagen 50 kap. 4 § är den (beloppen står i lagen och gäller 2026):
 
 - 12 500 kronor för varje kontrolltillfälle,
 - plus 2 500 kronor för varje person som arbetar men inte står i liggaren,

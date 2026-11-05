@@ -22,12 +22,12 @@ Ett konsultföretag har ofta få kunder, få kostnader och samma rutin varje må
 ## Det här säger reglerna
 
 - **Självständighet.** För att ha F-skatt ska du driva näringsverksamhet. Skatteverket bedömer bland annat om du arbetar självständigt, med vinstsyfte och varaktigt. Ett uppdrag som i praktiken liknar en anställning kan bedömas som just det.
-- **Kunder i andra EU-länder.** Säljer du tjänster till ett företag i ett annat EU-land är huvudregeln att tjänsten beskattas där köparen finns. Du tar då inte ut svensk moms, men redovisar försäljningen i momsdeklarationen och den periodiska sammanställningen.
-- **Timmar vid bokslutet.** Enligt Bokföringsnämndens K2-regler är ett uppdrag på löpande räkning ett uppdrag där du får betalt per timme för den tid du lägger ner. Intäkten tas upp i takt med att du arbetar, även om du inte har fakturerat än.
+- **Kunder i andra EU-länder.** Säljer du tjänster till ett företag i ett annat EU-land är huvudregeln att tjänsten beskattas där köparen finns. Du tar då inte ut svensk moms, men redovisar försäljningen i momsdeklarationen och, när du har köparens VAT-nummer, i den periodiska sammanställningen.
+- **Timmar vid bokslutet.** Enligt Bokföringsnämndens K2-regler (BFNAR 2016:10), som gäller aktiebolag och andra företag som upprättar årsredovisning, är ett uppdrag på löpande räkning ett uppdrag där du får betalt per timme för den tid du lägger ner. Intäkten tas upp i takt med att du arbetar, även om du inte har fakturerat än. Har du enskild firma gäller andra allmänna råd, fråga din redovisningskonsult.
 
 ## Så här gör du
 
-1. Läs om [uppdrag och F-skatt](/foretagsguiden/branscher/uppdrag-och-f-skatt) och kontrollera att dina uppdrag är upplagda som uppdrag och inte som en anställning.
+1. Läs om [uppdrag och F-skatt](/foretagsguiden/branscher/uppdrag-och-f-skatt) och vad Skatteverket väger in när det bedömer om du arbetar självständigt.
 2. Skriv ett uppdragsavtal med varje kund, se [ansvarsförsäkring och avtal](/foretagsguiden/branscher/ansvarsforsakring-och-avtal).
 3. Har du kunder utomlands: läs [EU-kunder och tjänster](/foretagsguiden/branscher/eu-kunder-och-tjanster).
 4. Driver du ett aktiebolag: bestäm hur du tar ut lön, se [Egenavgifter och lön](/foretagsguiden/moms-och-skatt/egenavgifter-och-lon) och [Registrera dig som arbetsgivare](/foretagsguiden/starta/arbetsgivare).
@@ -36,7 +36,7 @@ Ett konsultföretag har ofta få kunder, få kostnader och samma rutin varje må
 
 ## Vanliga misstag
 
-- **Att arbeta som en anställd men fakturera som ett företag.** Det kan leda till att Skatteverket inte godtar F-skatten för uppdraget.
+- **Att arbeta som en anställd men fakturera som ett företag.** Skatteverket kan då bedöma ersättningen som lön, och kunden kan få skyldigheter som arbetsgivare.
 - **Att ta ut svensk moms av ett företag i ett annat EU-land** när huvudregeln gäller.
 - **Att glömma december.** Timmar du har arbetat men inte fakturerat ska med i bokslutet.
 

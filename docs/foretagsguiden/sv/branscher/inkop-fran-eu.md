@@ -11,6 +11,8 @@ kallor:
     url: https://www.skatteverket.se/foretag/moms/deklareramoms/fyllaimomsdeklarationen.4.3a2a542410ab40a421c80004214.html
   - titel: Riksdagen – Mervärdesskattelag (2023:200)
     url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/mervardesskattelag-2023200_sfs-2023-200/
+  - titel: Riksdagen – Tullag (2016:253)
+    url: https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/tullag-2016253_sfs-2016-253/
 granskad: 2026-11-05
 mansklig_granskning:
 legal_verify:
@@ -23,7 +25,7 @@ En butik som köper kläder från en grossist i Tyskland, ett kafé som beställ
 
 ## Det här säger reglerna
 
-När en vara skickas till dig i Sverige från en momsregistrerad säljare i ett annat EU-land är det ett unionsinternt förvärv. Det ska beskattas i Sverige (mervärdesskattelagen 3 kap. 1 § och 5 kap. 22 §). Enligt Skatteverket kan säljaren sälja utan moms om du har uppgett ett giltigt svenskt momsregistreringsnummer. Det är då du som köpare som redovisar momsen.
+När en vara skickas till dig i Sverige från en momsregistrerad säljare i ett annat EU-land är det ett unionsinternt förvärv. Det ska beskattas i Sverige (mervärdesskattelagen 3 kap. 1 §, 5 kap. 22 § och 6 kap. 29 §). Enligt Skatteverket kan säljaren sälja utan moms om du har uppgett ett giltigt svenskt momsregistreringsnummer. Det är då du som köpare som redovisar momsen.
 
 I momsdeklarationen redovisar du:
 
@@ -43,7 +45,7 @@ Butiken Linden köper tröjor från en grossist i ett annat EU-land för 10 000 
 
 | Konto | Debet | Kredit | Ruta |
 |---|---:|---:|---|
-| 4515 (inköp från annat EU-land, 25 %) | 10 000 | | 20 |
+| 4515 Inköp av råvaror och material från annat EU-land, 25 % | 10 000 | | 20 |
 | 2645 Beräknad ingående moms på förvärv från utlandet | 2 500 | | 48 |
 | 2614 Utgående moms omvänd skattskyldighet, 25 % | | 2 500 | 30 |
 | 2440 Leverantörsskulder | | 10 000 | |
@@ -66,4 +68,4 @@ Den utgående och den ingående momsen tar ut varandra, så du betalar inget ext
 
 ## Bra att veta
 
-Varor från länder utanför EU är import, och då beräknas momsen på ett annat sätt, via Tullverket. Det beskrivs inte här.
+Varor från länder utanför EU är import. Är du momsregistrerad tas importmomsen inte ut av Tullverket. Du redovisar den själv i momsdeklarationen till Skatteverket: underlaget i ruta 50, momsen i ruta 60, 61 eller 62, och avdraget i ruta 48 (tullagen 2 kap. 2 §). Momsen hör till den period då Tullverket ställde ut tullräkningen eller tullkvittot (mervärdesskattelagen 7 kap. 27 §). Import beskrivs inte närmare här.
