@@ -11,6 +11,7 @@ use App\Domain\Deadlines\DeadlineCategory;
 use App\Domain\Deadlines\DeadlineFilter;
 use App\Domain\Deadlines\DeadlineType;
 use App\Domain\Deadlines\YearAtAGlance;
+use App\Domain\Overview\Todos\DeadlineTodos;
 use App\Livewire\Guide\MyDates;
 use App\Notifications\DeadlineReminder;
 use App\Support\Tenancy\CurrentCompany;
@@ -241,4 +242,22 @@ it('prefixes the calendar events and the reminders with the kind', function () {
 
     expect($deadline->summary())->toBe('F-skatt: Betala F-skatt (preliminärskatt), november 2026')
         ->and(DeadlineReminder::for($this->company, $deadline, 7)->title)->toStartWith('F-skatt: Betala F-skatt (preliminärskatt), november 2026. Sista dagen är om 7 dagar');
+});
+
+it('gives Att göra one short line per kind, with the full reason left to Mina datum', function () {
+    $this->company->forceFill(['f_skatt' => true])->save();
+    $todos = app(DeadlineTodos::class)->todos($this->owner, $this->company->fresh(), CarbonImmutable::today());
+    $tax = collect($todos)->first(fn ($todo) => str_starts_with($todo->key, 'deadline:preliminary_tax:'));
+
+    expect($tax->title)->toBe('Betala F-skatt (preliminärskatt), november 2026')
+        ->and($tax->subtitle)->toBe('Enligt ert beslut om debiterad preliminärskatt. Står det 0 kronor finns inget att betala.');
+
+    foreach (DeadlineType::cases() as $type) {
+        $short = DeadlineCategory::short(new Deadline('x:1', $type, 'T', CarbonImmutable::today(), 'p', str_repeat('Lång förklaring. ', 20)));
+        expect(mb_strlen($short))->toBeLessThan(100);
+    }
+
+    $this->actingAs($this->owner)->get(route('dashboard'))->assertOk()
+        ->assertSee('Enligt ert beslut om debiterad preliminärskatt.')
+        ->assertDontSee('en del av årets inkomstskatt i förskott');
 });

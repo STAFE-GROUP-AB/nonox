@@ -6,6 +6,7 @@ namespace App\Domain\Overview\Todos;
 
 use App\Domain\Deadlines\CompanyDeadlines;
 use App\Domain\Deadlines\DeadlineAudience;
+use App\Domain\Deadlines\DeadlineCategory;
 use App\Domain\Deadlines\DeadlineType;
 use App\Domain\Overview\Contracts\TodoProvider;
 use App\Domain\Overview\TodoItem;
@@ -46,7 +47,8 @@ final class DeadlineTodos implements TodoProvider
                 "deadline:{$deadline->key}",
                 'calendar',
                 $deadline->title,
-                $deadline->isRecommendation ? __('Rekommendation från Företagsguiden.') : $deadline->appliesBecause,
+                // One line here; the full reason is on Mina datum, where the item leads.
+                DeadlineCategory::short($deadline),
                 route('guide.dates'),
                 TodoItem::PRIORITY_CLOSING,
                 $deadline->date,

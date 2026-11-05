@@ -9101,5 +9101,12 @@
     "Skatter som inte är bokförda som skulder räknas inte, till exempel slutlig skatt och kvarskatt efter deklarationen, beräknad inkomstskatt (2512) och särskild löneskatt (2514).": "Taxes not booked as liabilities are not counted, for example final tax and residual tax after the return, estimated income tax (2512) and special payroll tax (2514).",
     "En del av pengarna på kontot kan vara skatt som ska till Skatteverket. Så här mycket, enligt bokföringen.": "Part of the money in the account may be tax that goes to Skatteverket. This much, according to the books.",
     "Skatt som ska till Skatteverket, enligt bokföringen.": "Tax that goes to Skatteverket, according to the books.",
-    "Redovisad i NONOX, ännu inte betald": "Reported in NONOX, not yet paid"
+    "Redovisad i NONOX, ännu inte betald": "Reported in NONOX, not yet paid",
+    "Deklaration och betalning samma dag.": "Declaration and payment on the same day.",
+    "Försäljning utan svensk moms till företag i andra EU-länder under perioden.": "Sales without Swedish VAT to businesses in other EU countries in the period.",
+    "Deklaration och betalning för lönen som betalades ut månaden före.": "Declaration and payment for the salaries paid the month before.",
+    "Enligt ert beslut om debiterad preliminärskatt. Står det 0 kronor finns inget att betala.": "Under your decision on debited preliminary tax. If it says 0 kronor, there is nothing to pay.",
+    "Dagen beror på bolagsformen och när räkenskapsåret slutar.": "The day depends on the legal form and when the fiscal year ends.",
+    "Inom sex månader efter räkenskapsårets slut.": "Within six months of the end of the fiscal year.",
+    "Normalt senast sju månader efter räkenskapsårets slut, för att slippa förseningsavgift.": "Normally within seven months of the end of the fiscal year, to avoid a late filing fee."
 }

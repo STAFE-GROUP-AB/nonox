@@ -87,6 +87,28 @@ enum DeadlineCategory: string
         };
     }
 
+    /**
+     * One line for Att göra on Översikt, where the full reason (Mina datum)
+     * is too long: the same facts, shorter. A recommendation says so instead.
+     */
+    public static function short(Deadline $deadline): string
+    {
+        if ($deadline->isRecommendation) {
+            return __('Rekommendation från Företagsguiden.');
+        }
+
+        return match ($deadline->type) {
+            DeadlineType::Vat => __('Deklaration och betalning samma dag.'),
+            DeadlineType::EuSalesList => __('Försäljning utan svensk moms till företag i andra EU-länder under perioden.'),
+            DeadlineType::Agi => __('Deklaration och betalning för lönen som betalades ut månaden före.'),
+            DeadlineType::PreliminaryTax => __('Enligt ert beslut om debiterad preliminärskatt. Står det 0 kronor finns inget att betala.'),
+            DeadlineType::IncomeTaxReturn => __('Dagen beror på bolagsformen och när räkenskapsåret slutar.'),
+            DeadlineType::AnnualMeeting => __('Inom sex månader efter räkenskapsårets slut.'),
+            DeadlineType::AnnualReport => __('Normalt senast sju månader efter räkenskapsårets slut, för att slippa förseningsavgift.'),
+            DeadlineType::Closing => __('Rekommendation från Företagsguiden.'),
+        };
+    }
+
     /** Chip colours: one hue per kind, spelled out so Tailwind finds the classes. */
     public function chipClasses(): string
     {
