@@ -30,7 +30,7 @@ final class GuideValidator
         'tillvaxtverket.se', 'scb.se', 'regeringen.se', 'lagrummet.se',
         'riksbank.se', 'tullverket.se', 'polisen.se', 'naturvardsverket.se',
         'boverket.se', 'elsakerhetsverket.se', 'msb.se', 'fi.se', 'europa.eu',
-        'eur-lex.europa.eu',
+        'eur-lex.europa.eu', 'lansstyrelsen.se', 'prv.se', 'folkhalsomyndigheten.se', 'domstol.se',
     ];
 
     public const int DESCRIPTION_LENGTH = 200;

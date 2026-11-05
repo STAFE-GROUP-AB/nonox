@@ -2,12 +2,12 @@
 beskrivning: Min startplan visar vad ett nytt företag behöver göra, steg för steg, och tipsen från Företagsguiden visar sig på sidorna där de hör hemma.
 ordning: 120
 rutter: [guide.plan]
-sokord: [företagsguiden, startplan, min startplan, starta företag, bransch, tips, dölj tips, checklista]
+sokord: [företagsguiden, startplan, min startplan, starta företag, bransch, branschspår, att växa, tips, dölj tips, checklista]
 ---
 
 # Företagsguiden och Min startplan
 
-Företagsguiden förklarar hur det fungerar att driva företag i Sverige: hur du registrerar företaget, hur moms och skatt fungerar och vad lagen kräver av dig. Guiden finns på webbplatsen under **Företagsguiden**, och varje artikel hänvisar till Skatteverket, Bolagsverket eller lagtexten.
+Företagsguiden förklarar hur det fungerar att driva företag i Sverige: hur du registrerar företaget, hur moms och skatt fungerar, vad lagen kräver av dig, vad som är särskilt för din bransch och hur du får företaget att växa. Guiden finns på webbplatsen under **Företagsguiden**, och varje artikel hänvisar till Skatteverket, Bolagsverket eller lagtexten.
 
 ![Företagsguidens startsida med vägen för ett aktiebolag. Under rubriken väljer du företagsform och bransch.](/bilder/manual/kom-igang/foretagsguiden.webp)
 
@@ -22,7 +22,7 @@ I NONOX får du dessutom en egen startplan för företaget du arbetar i, och kor
 
 Min startplan är en lista över det ett nytt företag behöver göra, i den ordning det brukar göras. Stegen väljs efter företagets företagsform och bransch, och efter om företaget är momsregistrerat eller registrerat som arbetsgivare. Ett aktiebolag ser alltså andra steg än en enskild firma.
 
-Överst står hur många steg som är klara, till exempel **3 av 9 klara**, och vilket som är **Nästa steg**. **Läs om nästa steg** öppnar artikeln om det. Stegen är ordnade i grupperna Registrering, Pengar och skatt, Bokföring i NONOX och Avtal och skydd, och varje grupp visar hur många av dess steg som är klara.
+Överst står hur många steg som är klara, till exempel **3 av 9 klara**, och vilket som är **Nästa steg**. **Läs om nästa steg** öppnar artikeln om det. Stegen är ordnade i grupperna Registrering, Pengar och skatt, Bokföring i NONOX, Avtal och skydd, Din bransch och Att växa, och varje grupp visar hur många av dess steg som är klara. **Din bransch** visas när du har valt en bransch för företaget, med steg som bara gäller den branschen.
 
 ## Så här gör du
 
