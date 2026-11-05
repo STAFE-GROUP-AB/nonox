@@ -342,11 +342,7 @@
       "text": "Säljer du mot kontanter eller kort, eller arbetar du i en bransch med personalliggare (restaurang, kropps- och skönhetsvård, bygg, tvätteri, fordonsservice, livsmedels- och tobaksgrossister)? Ta reda på vad som krävs innan du öppnar.",
       "bolagsformer": [],
       "branscher": [
-        "cafe",
-        "restaurant",
-        "hair_beauty",
-        "crafts",
-        "retail"
+        "other"
       ],
       "villkor": null,
       "artikel": "ansvar-och-regler/kassaregister-och-personalliggare",
@@ -458,6 +454,469 @@
         {
           "titel": "IMY – Företags hantering av personuppgifter",
           "url": "https://www.imy.se/verksamhet/dataskydd/dataskydd-pa-olika-omraden/foretag/"
+        }
+      ]
+    },
+    {
+      "nyckel": "registrera-livsmedelsanlaggningen",
+      "rubrik": "Registrera livsmedelsanläggningen",
+      "text": "Anmäl lokalen till kommunen innan du börjar sälja mat eller dryck. Verksamheten får börja när kommunen har registrerat den, eller två veckor efter att anmälan kom in.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant",
+        "retail"
+      ],
+      "villkor": null,
+      "artikel": "branscher/livsmedel-och-tillstand",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Livsmedelsverket – Registrera eller godkänna verksamhet",
+          "url": "https://www.livsmedelsverket.se/foretagande-regler-kontroll/starta-foretag/registrera-foretag/"
+        },
+        {
+          "titel": "Livsmedelsverket – LIVSFS 2022:8 (konsoliderad)",
+          "url": "https://www.livsmedelsverket.se/globalassets/om-oss/lagstiftning/offentlig-kontroll/livsfs-2022-13-kons-2022-8.pdf"
+        }
+      ]
+    },
+    {
+      "nyckel": "ansok-om-serveringstillstand",
+      "rubrik": "Ansök om serveringstillstånd",
+      "text": "Ska du servera vin, starköl eller sprit behöver du tillstånd från kommunen. Polisen yttrar sig och du ska klara ett prov om alkohollagen, så ansök i god tid. Folköl anmäler du till kommunen.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/livsmedel-och-tillstand",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Riksdagen – Alkohollag (2010:1622)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/alkohollag-20101622_sfs-2010-1622/"
+        }
+      ]
+    },
+    {
+      "nyckel": "anmal-hygienisk-behandling",
+      "rubrik": "Anmäl behandlingar med stickande verktyg",
+      "text": "Erbjuder salongen till exempel piercing, tatuering eller akupunktur ska verksamheten anmälas till kommunen. Den får börja tidigast sex veckor efter anmälan.",
+      "bolagsformer": [],
+      "branscher": [
+        "hair_beauty"
+      ],
+      "villkor": null,
+      "artikel": "branscher/frisor-och-skonhet",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Riksdagen – Förordning (1998:899) om miljöfarlig verksamhet och hälsoskydd",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/forordning-1998899-om-miljofarlig-verksamhet-och_sfs-1998-899/"
+        }
+      ]
+    },
+    {
+      "nyckel": "skaffa-och-anmal-kassaregister",
+      "rubrik": "Skaffa och anmäl kassaregistret",
+      "text": "Välj ett kassaregister som är tillverkardeklarerat och kopplat till en certifierad kontrollenhet, och anmäl det till Skatteverket innan första försäljningen. Från 2027 ska det uppfylla SKVFS 2021:17.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant",
+        "retail",
+        "hair_beauty"
+      ],
+      "villkor": null,
+      "artikel": "branscher/kassaregister-i-praktiken",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Kassaregister",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/kassaregister.4.121b82f011a74172e5880005263.html"
+        },
+        {
+          "titel": "Skatteverket – Så här anmäler du kassaregister",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/kassaregister/saharanmalerdukassaregister.4.69ef368911e1304a62580008748.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "starta-personalliggaren",
+      "rubrik": "Starta personalliggaren",
+      "text": "Börja föra liggaren den första dagen någon annan än du och din närmaste familj arbetar. Alla som är verksamma, också praktikanter och inhyrd personal, checkar in och ut.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant",
+        "hair_beauty"
+      ],
+      "villkor": null,
+      "artikel": "branscher/personalliggare-i-praktiken",
+      "nonox_rutt": "staff-ledger.overview",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Så fungerar personalliggare",
+          "url": "https://www.skatteverket.se/foretag/arbetsgivare/personalliggare/safungerarpersonalliggare.4.3810a01c150939e893f224b.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "satt-ratt-matmoms-i-kassan",
+      "rubrik": "Sätt rätt moms på mat och dryck",
+      "text": "Lägg upp kassan så att servering får 12 procent, mat för avhämtning 6 procent och spritdrycker, vin och starköl 25 procent. Den sänkta matmomsen gäller till och med 31 december 2027.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant"
+      ],
+      "villkor": "vat_registered",
+      "artikel": "branscher/moms-pa-mat-och-servering",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Momssats på varor och tjänster",
+          "url": "https://www.skatteverket.se/foretag/moms/saljavarorochtjanster/momssatspavarorochtjanster.4.58d555751259e4d66168000409.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "bokfor-dagsrapporten-fran-kassan",
+      "rubrik": "Bokför dagsrapporten från kassan",
+      "text": "Låt kassan mejla Z-rapporten till inkorgen i NONOX och koppla raderna till konton en gång. Bokför den varje dag och stäm av kort och Swish mot banken.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant",
+        "retail",
+        "hair_beauty"
+      ],
+      "villkor": null,
+      "artikel": "branscher/kortavgifter-och-swish",
+      "nonox_rutt": "inbox.index",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Så här använder du kassaregister",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/kassaregister/saharanvanderdukassaregistret.4.69ef368911e1304a625800013725.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "bestam-hur-dricks-fordelas",
+      "rubrik": "Bestäm hur dricksen fördelas",
+      "text": "Fördelar du som arbetsgivare kortdricksen är den lön med skatteavdrag och arbetsgivaravgifter. Fördelar personalen den själva redovisar de den i sin deklaration. Skriv ner vad som gäller.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant",
+        "hair_beauty"
+      ],
+      "villkor": "employer_registered",
+      "artikel": "branscher/dricks",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Tänk på att redovisa dricks om inte arbetsgivaren gjort det (2024)",
+          "url": "https://www.skatteverket.se/omoss/pressochmedia/nyheter/2024/nyheter/tankpaattredovisadricksomintearbetsgivarengjortdet.5.13948c0e18e810bfa0c272a.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "skriv-avtal-om-stolshyra",
+      "rubrik": "Skriv avtal om stolshyran",
+      "text": "Hyr du ut stolar eller rum: skriv vad hyran omfattar, kontrollera hyresgästens F-skatt och fråga Skatteverket om hyran ska ha moms. Fakturera den som en avtalsfaktura.",
+      "bolagsformer": [],
+      "branscher": [
+        "hair_beauty"
+      ],
+      "villkor": null,
+      "artikel": "branscher/stolshyra",
+      "nonox_rutt": "invoicing.agreements",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Uthyrning av fastighet och frivillig beskattning",
+          "url": "https://www.skatteverket.se/foretag/moms/sarskildamomsregler/fastighetsverksamhet/uthyrningavfastighetochfrivilligbeskattning.4.18e1b10334ebe8bc80005741.html"
+        },
+        {
+          "titel": "Skatteverket – F-skatt och FA-skatt",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/startaochregistrera/fochfaskatt.4.58d555751259e4d661680006355.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "bestam-hur-presentkort-hanteras",
+      "rubrik": "Bestäm hur presentkort ska hanteras",
+      "text": "Avgör om dina presentkort har moms när de säljs eller först när de används, och bokför sålda kort som en skuld tills kunden handlar för dem.",
+      "bolagsformer": [],
+      "branscher": [
+        "cafe",
+        "restaurant",
+        "retail",
+        "hair_beauty"
+      ],
+      "villkor": "vat_registered",
+      "artikel": "branscher/presentkort",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Momssats på varor och tjänster (avsnittet Voucher)",
+          "url": "https://www.skatteverket.se/foretag/moms/saljavarorochtjanster/momssatspavarorochtjanster.4.58d555751259e4d66168000409.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "redovisa-moms-pa-eu-inkop",
+      "rubrik": "Redovisa momsen på EU-inköp",
+      "text": "Köper du varor från en leverantör i ett annat EU-land ska du själv redovisa momsen i rutorna 20, 30–32 och 48. Ge leverantören ditt momsregistreringsnummer.",
+      "bolagsformer": [],
+      "branscher": [
+        "retail"
+      ],
+      "villkor": "vat_registered",
+      "artikel": "branscher/inkop-fran-eu",
+      "nonox_rutt": "payables.invoices.index",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Köpa varor från andra EU-länder",
+          "url": "https://www.skatteverket.se/foretag/moms/kopavarorochtjanster/inkopfranandraeulander/kopavarorfranandraeulander.4.3a7aab801183dd6bfd380005738.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "inventera-lagret-vid-arets-slut",
+      "rubrik": "Inventera lagret vid årets slut",
+      "text": "Räkna varorna som finns kvar på balansdagen, värdera dem enligt lägsta värdets princip och bokför lagerförändringen i bokslutet.",
+      "bolagsformer": [],
+      "branscher": [
+        "retail",
+        "cafe",
+        "restaurant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/lager-och-inventering",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Bokföringsnämnden – Vägledning Årsredovisning i mindre företag (K2), konsoliderad 2025",
+          "url": "https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf"
+        }
+      ]
+    },
+    {
+      "nyckel": "lar-dig-rot-och-rut",
+      "rubrik": "Lär dig ROT och RUT innan första kundfakturan",
+      "text": "Gör du arbete åt privatpersoner i deras bostad betalar kunden bara en del av arbetskostnaden och du begär resten från Skatteverket. Ta reda på vad fakturan ska innehålla och när du senast ska begära pengarna.",
+      "bolagsformer": [],
+      "branscher": [
+        "crafts"
+      ],
+      "villkor": null,
+      "artikel": "branscher/rot-och-rut",
+      "nonox_rutt": "invoicing.invoices.create",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Så fungerar rotavdraget för företag",
+          "url": "https://www.skatteverket.se/foretag/skatterochavdrag/rotochrut/safungerarrotavdraget.4.2ef18e6a125660db8b080002709.html"
+        },
+        {
+          "titel": "Riksdagen – Lag (2009:194) om förfarandet vid skattereduktion för hushållsarbete",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2009194-om-forfarandet-vid-skattereduktion_sfs-2009-194/"
+        }
+      ]
+    },
+    {
+      "nyckel": "kontrollera-omvand-byggmoms",
+      "rubrik": "Ta reda på när omvänd byggmoms gäller",
+      "text": "Säljer du byggtjänster till ett företag som självt säljer byggtjänster ska fakturan ofta vara utan moms, med köparens momsnummer och texten Omvänd betalningsskyldighet.",
+      "bolagsformer": [],
+      "branscher": [
+        "crafts"
+      ],
+      "villkor": "vat_registered",
+      "artikel": "branscher/omvand-byggmoms",
+      "nonox_rutt": "invoicing.customers",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Omvänd betalningsskyldighet inom byggsektorn",
+          "url": "https://www.skatteverket.se/foretag/moms/sarskildamomsregler/byggverksamhet/omvandbetalningsskyldighetinombyggsektorn.4.47eb30f51122b1aaad28000545.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "kontrollera-personalliggare-bygg",
+      "rubrik": "Kontrollera om du ska ha personalliggare på bygget",
+      "text": "På byggarbetsplatser över fyra prisbasbelopp ska alla som arbetar registreras i en elektronisk personalliggare, även du. Fråga byggherren om bygget är anmält innan du börjar.",
+      "bolagsformer": [],
+      "branscher": [
+        "crafts"
+      ],
+      "villkor": null,
+      "artikel": "branscher/personalliggare-bygg",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Personalliggare i byggbranschen",
+          "url": "https://www.skatteverket.se/foretag/arbetsgivare/personalliggare/personalliggarebyggbranschen.4.7be5268414bea0646949797.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "planera-offert-ata-och-projekt",
+      "rubrik": "Bestäm hur offerter, tilläggsarbeten och projekt ska hanteras",
+      "text": "Skriv offerter som skiljer arbete från material, få tilläggsarbeten godkända innan de görs och bokför varje jobb på ett projekt så att du ser vad det gav.",
+      "bolagsformer": [],
+      "branscher": [
+        "crafts"
+      ],
+      "villkor": null,
+      "artikel": "branscher/ata-och-projekt",
+      "nonox_rutt": "invoicing.quotes",
+      "kallor": [
+        {
+          "titel": "Riksdagen – Konsumenttjänstlag (1985:716)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/konsumenttjanstlag-1985716_sfs-1985-716/"
+        }
+      ]
+    },
+    {
+      "nyckel": "kontrollera-uppdrag-och-f-skatt",
+      "rubrik": "Kontrollera att uppdragen håller som uppdrag",
+      "text": "Skatteverket bedömer om du arbetar självständigt. Ett uppdrag som i praktiken är en anställning kan inte bära F-skatt, så lägg upp uppdragen som avgränsade leveranser.",
+      "bolagsformer": [],
+      "branscher": [
+        "consultant",
+        "finance_consultant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/uppdrag-och-f-skatt",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Skatteverket – Vad är näringsverksamhet?",
+          "url": "https://www.skatteverket.se/foretag/drivaforetag/startaochregistrera/vadarnaringsverksamhet.4.6efe6285127ab4f1d25800025792.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "skriv-uppdragsavtal",
+      "rubrik": "Skriv uppdragsavtal och se över försäkringen",
+      "text": "Skriv ett avtal med varje kund om vad som ingår, pris, ansvar och sekretess, och kontrollera att ansvarsförsäkringen täcker det du gör.",
+      "bolagsformer": [],
+      "branscher": [
+        "crafts",
+        "consultant",
+        "accounting_firm",
+        "finance_consultant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/ansvarsforsakring-och-avtal",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Verksamt.se – Insurance for your business",
+          "url": "https://verksamt.se/en/protection-preparedness/insurance-business"
+        }
+      ]
+    },
+    {
+      "nyckel": "forbered-eu-kunder",
+      "rubrik": "Förbered fakturor till kunder i andra EU-länder",
+      "text": "Tjänster till företag i andra EU-länder säljs oftast utan svensk moms. Kontrollera köparens VAT-nummer, skriv rätt text på fakturan och lämna periodisk sammanställning.",
+      "bolagsformer": [],
+      "branscher": [
+        "consultant",
+        "finance_consultant",
+        "accounting_firm"
+      ],
+      "villkor": "vat_registered",
+      "artikel": "branscher/eu-kunder-och-tjanster",
+      "nonox_rutt": "vat.euReports",
+      "kallor": [
+        {
+          "titel": "Skatteverket – Sälja tjänster till andra EU-länder",
+          "url": "https://www.skatteverket.se/foretag/moms/saljavarorochtjanster/forsaljningtillandraeulander/saljatjanstertillandraeulander.4.76a43be412206334b89800010696.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "registrera-byran-penningtvattslagen",
+      "rubrik": "Registrera byrån enligt penningtvättslagen",
+      "text": "Den som yrkesmässigt säljer bokföringstjänster ska anmäla verksamheten till Bolagsverkets register mot penningtvätt innan den börjar, och göra en allmän riskbedömning.",
+      "bolagsformer": [],
+      "branscher": [
+        "accounting_firm",
+        "finance_consultant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/penningtvatt-for-byraer",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Riksdagen – Lag (2017:630) om åtgärder mot penningtvätt och finansiering av terrorism",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/lag-2017630-om-atgarder-mot-penningtvatt-och_sfs-2017-630/"
+        },
+        {
+          "titel": "Bolagsverket – Registret mot penningtvätt",
+          "url": "https://bolagsverket.se/omoss/flerverksamheter/registretmotpenningtvatt.2557.html"
+        }
+      ]
+    },
+    {
+      "nyckel": "gor-kundkannedom",
+      "rubrik": "Gör kundkännedom innan du tar en ny kund",
+      "text": "Identifiera kunden och dess verkliga huvudman, ta reda på vad uppdraget ska handla om och ge kunden en riskprofil. Spara dokumentationen i fem år efter att uppdraget slutat.",
+      "bolagsformer": [],
+      "branscher": [
+        "accounting_firm",
+        "finance_consultant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/penningtvatt-for-byraer",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "Polisen – Information till redovisningskonsulter och skatterådgivare om penningtvätt",
+          "url": "https://polisen.se/siteassets/dokument/om-polisen/penningtvatt/vagledning-till-redovisningskonsulter-och-skatteradgivare.pdf"
+        }
+      ]
+    },
+    {
+      "nyckel": "skriv-bitradesavtal-med-klienter",
+      "rubrik": "Skriv personuppgiftsbiträdesavtal med klienterna",
+      "text": "Behandlar du anställdas och kunders personuppgifter åt klienten i bokföring och lön ska det finnas ett biträdesavtal enligt dataskyddsförordningen.",
+      "bolagsformer": [],
+      "branscher": [
+        "accounting_firm",
+        "finance_consultant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/klientarbete-och-gdpr",
+      "nonox_rutt": null,
+      "kallor": [
+        {
+          "titel": "IMY – Personuppgiftsbiträdesavtal",
+          "url": "https://www.imy.se/verksamhet/dataskydd/det-har-galler-enligt-gdpr/personuppgiftsansvariga-och-personuppgiftsbitraden/personuppgiftsbitradesavtal/"
+        }
+      ]
+    },
+    {
+      "nyckel": "samla-klienterna-i-nonox",
+      "rubrik": "Samla klienterna under Mina företag",
+      "text": "Låt klienterna bjuda in dig till sina företag i NONOX, eller skapa företagen åt dem, så ser du allt som väntar och sista dag för moms och arbetsgivardeklaration på ett ställe.",
+      "bolagsformer": [],
+      "branscher": [
+        "accounting_firm",
+        "finance_consultant"
+      ],
+      "villkor": null,
+      "artikel": "branscher/redovisningsbyra",
+      "nonox_rutt": "companies.overview",
+      "kallor": [
+        {
+          "titel": "Riksdagen – Bokföringslag (1999:1078)",
+          "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/bokforingslag-19991078_sfs-1999-1078/"
         }
       ]
     }

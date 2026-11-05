@@ -15,3 +15,7 @@ viktiga-datum:
   titel: Viktiga datum
   beskrivning: När moms, arbetsgivardeklaration, preliminärskatt, inkomstdeklaration och årsredovisning ska vara inne och betalda, och vad du gör om du missar ett datum.
   ikon: calendar
+branscher:
+  titel: Branscher
+  beskrivning: Det som är särskilt för just din bransch, från kassaregister och personalliggare till ROT, byggmoms och uppdrag åt utländska kunder.
+  ikon: briefcase
