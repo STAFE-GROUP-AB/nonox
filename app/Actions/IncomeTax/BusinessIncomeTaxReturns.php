@@ -49,7 +49,7 @@ class BusinessIncomeTaxReturns
     public function saveNe(User $user, FiscalYear $fiscalYear, array $adjustments, array $inputs, ?string $century, ?bool $consultant): IncomeTaxReturn
     {
         $company = $this->authorize($user, $fiscalYear, [LegalForm::Ef]);
-        $codes = [...array_keys(NeCodes::ADJUSTMENTS), ...array_keys(NeCodes::INFORMATION), NeCodes::BENEFITS, NeCodes::RESERVE_ALLOCATION, NeCodes::EXPANSION_INCREASE, NeCodes::EXPANSION_DECREASE, NeCodes::SELF_EMPLOYMENT_DEDUCTION];
+        $codes = [...array_keys(NeCodes::ADJUSTMENTS), ...array_keys(NeCodes::INFORMATION), NeCodes::RESERVE_ALLOCATION, NeCodes::EXPANSION_INCREASE, NeCodes::EXPANSION_DECREASE, NeCodes::SELF_EMPLOYMENT_DEDUCTION];
         $amounts = $this->amounts($adjustments, $codes, keepZero: [NeCodes::SELF_EMPLOYMENT_DEDUCTION]);
 
         if ($century !== null && ! in_array($century, ['19', '20'], true)) {
@@ -61,6 +61,10 @@ class BusinessIncomeTaxReturns
             'passive' => (bool) ($inputs['passive'] ?? false),
             'outside_eea' => (bool) ($inputs['outside_eea'] ?? false),
             'leased_car' => (bool) ($inputs['leased_car'] ?? false),
+            'first_year' => (bool) ($inputs['first_year'] ?? false),
+            'full_pension' => (bool) ($inputs['full_pension'] ?? false),
+            'benefit_accounts' => self::benefitAccounts((string) ($inputs['benefit_accounts'] ?? '')),
+            'saved_allocation_opening' => $this->kronor($inputs['saved_allocation_opening'] ?? '', 'inputs.saved_allocation_opening'),
             'capital_base' => $this->kronor($inputs['capital_base'] ?? '', 'inputs.capital_base', negative: true),
             'positive_allocation' => $this->kronor($inputs['positive_allocation'] ?? '', 'inputs.positive_allocation'),
             'expansion_capital_base' => $this->kronor($inputs['expansion_capital_base'] ?? '', 'inputs.expansion_capital_base', negative: true),
@@ -114,7 +118,11 @@ class BusinessIncomeTaxReturns
      * so the page never has to send it to the browser. A closed year's
      * partners are part of its return and are not changed.
      *
-     * @param  array<int, array{ref?: mixed, position?: mixed, name?: mixed, identity?: mixed, legal_person?: mixed, share?: mixed}>  $partners
+     * Contributions (8103) and withdrawals (8104) may be entered to replace
+     * the amounts from the partner's BAS block, and 8105 when the bolag used
+     * a regional nedsättning of arbetsgivaravgifter; empty means not entered.
+     *
+     * @param  array<int, array{ref?: mixed, position?: mixed, name?: mixed, identity?: mixed, legal_person?: mixed, share?: mixed, contributions?: mixed, withdrawals?: mixed, employer_deduction?: mixed}>  $partners
      */
     public function savePartners(User $user, FiscalYear $fiscalYear, array $partners): void
     {
@@ -162,6 +170,9 @@ class BusinessIncomeTaxReturns
                 'identity' => $identity,
                 'legal_person' => $legal,
                 'share_bp' => self::share((string) ($partner['share'] ?? ''), "{$key}.share"),
+                'contributions_kronor' => $this->kronor($partner['contributions'] ?? '', "{$key}.contributions"),
+                'withdrawals_kronor' => $this->kronor($partner['withdrawals'] ?? '', "{$key}.withdrawals"),
+                'employer_deduction_kronor' => $this->kronor($partner['employer_deduction'] ?? '', "{$key}.employer_deduction"),
             ];
         }
 
@@ -176,6 +187,29 @@ class BusinessIncomeTaxReturns
                 Audit::record('income_tax.partners_saved', $fiscalYear, ['fiscal_year' => $fiscalYear->label(), 'partners' => count($rows)], $company, $user);
             });
         });
+    }
+
+    /**
+     * The accounts a bil- or bostadsförmån is booked on, as typed ("3990,
+     * 3991"): four-digit accounts in 3000–3999.
+     *
+     * @return list<int>
+     */
+    private static function benefitAccounts(string $typed): array
+    {
+        $accounts = [];
+
+        foreach (preg_split('/[\s,;]+/', trim($typed), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $part) {
+            $number = ctype_digit($part) ? (int) $part : 0;
+
+            if ($number < 3000 || $number > 3999) {
+                throw ValidationException::withMessages(['inputs.benefit_accounts' => __('Skriv kontonummer mellan 3000 och 3999, åtskilda med komma.')]);
+            }
+
+            $accounts[] = $number;
+        }
+
+        return array_values(array_unique($accounts));
     }
 
     /** The SRU delivery as a ZIP: NE for a sole trader, INK4R, INK4S and INK4DU for a handelsbolag. */

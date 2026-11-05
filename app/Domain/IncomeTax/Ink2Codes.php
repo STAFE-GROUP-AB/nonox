@@ -12,9 +12,12 @@ namespace App\Domain\IncomeTax;
  * filöverföring, skatteverket.se); a period whose tables have not been
  * checked is refused.
  *
- * TODO(legal-verify): the BAS ranges behind each code follow the BAS
- * account groups and must be checked against the official BAS–INK2 mapping,
- * especially 4900–4999 (stock changes), group items and appropriations.
+ * The income statement ranges follow BAS's SRU coupling table for INK2
+ * (INK2_P1_intervall-241119, bas.se), read 2026-11-05. TODO(legal-verify):
+ * the balance sheet ranges follow the BAS account groups and have not been
+ * checked against that table; a 2025 or 2026 edition of the table; the
+ * accounts the table does not list (48xx, 4921–4929, 85xx–87xx, 880x,
+ * 8812–8818) are kept in the nearest row.
  */
 final class Ink2Codes
 {
@@ -98,26 +101,31 @@ final class Ink2Codes
      */
     public const array INCOME = [
         ['ranges' => [[3000, 3799]], 'income' => 7410, 'cost' => null],
-        ['ranges' => [[4940, 4959], [4970, 4979]], 'income' => 7411, 'cost' => 7510],
+        ['ranges' => [[4900, 4909], [4930, 4959], [4970, 4979], [4990, 4999]], 'income' => 7411, 'cost' => 7510],
         ['ranges' => [[3800, 3899]], 'income' => 7412, 'cost' => null],
         ['ranges' => [[3900, 3999]], 'income' => 7413, 'cost' => null],
-        ['ranges' => [[4000, 4939], [4980, 4999]], 'income' => null, 'cost' => 7511, 'resale' => 'exclude'],
-        ['ranges' => [[4960, 4969]], 'income' => null, 'cost' => 7512, 'resale' => 'include'],
+        ['ranges' => [[4000, 4899], [4910, 4929]], 'income' => null, 'cost' => 7511, 'resale' => 'exclude'],
+        ['ranges' => [[4960, 4969], [4980, 4989]], 'income' => null, 'cost' => 7512, 'resale' => 'include'],
         ['ranges' => [[5000, 6999]], 'income' => null, 'cost' => 7513],
         ['ranges' => [[7000, 7699]], 'income' => null, 'cost' => 7514],
-        ['ranges' => [[7700, 7899]], 'income' => null, 'cost' => 7515],
+        ['ranges' => [[7700, 7739], [7750, 7789], [7800, 7899]], 'income' => null, 'cost' => 7515],
+        ['ranges' => [[7740, 7749], [7790, 7799]], 'income' => null, 'cost' => 7516],
         ['ranges' => [[7900, 7999]], 'income' => null, 'cost' => 7517],
-        ['ranges' => [[8000, 8099]], 'income' => 7414, 'cost' => 7518],
-        ['ranges' => [[8100, 8199]], 'income' => 7415, 'cost' => 7519],
-        ['ranges' => [[8200, 8299]], 'income' => 7416, 'cost' => 7520],
-        ['ranges' => [[8300, 8399]], 'income' => 7417, 'cost' => null],
+        ['ranges' => [[8000, 8069], [8090, 8099]], 'income' => 7414, 'cost' => 7518],
+        ['ranges' => [[8100, 8112], [8114, 8117], [8119, 8122], [8124, 8132], [8134, 8169], [8190, 8199]], 'income' => 7415, 'cost' => 7519],
+        ['ranges' => [[8113, 8113], [8118, 8118], [8123, 8123], [8133, 8133]], 'income' => 7423, 'cost' => 7530],
+        ['ranges' => [[8200, 8269], [8290, 8299]], 'income' => 7416, 'cost' => 7520],
+        ['ranges' => [[8300, 8369], [8390, 8399]], 'income' => 7417, 'cost' => null],
+        ['ranges' => [[8070, 8089], [8170, 8189], [8270, 8289], [8370, 8389]], 'income' => null, 'cost' => 7521],
         ['ranges' => [[8400, 8799]], 'income' => null, 'cost' => 7522],
-        ['ranges' => [[8810, 8819]], 'income' => 7420, 'cost' => 7525],
+        ['ranges' => [[8810, 8810]], 'income' => 7420, 'cost' => 7525],
+        ['ranges' => [[8811, 8818]], 'income' => null, 'cost' => 7525],
+        ['ranges' => [[8819, 8819]], 'income' => 7420, 'cost' => null],
         ['ranges' => [[8820, 8829]], 'income' => 7419, 'cost' => null],
         ['ranges' => [[8830, 8839]], 'income' => null, 'cost' => 7524],
         ['ranges' => [[8850, 8859]], 'income' => 7421, 'cost' => 7526],
         ['ranges' => [[8800, 8809]], 'income' => 7422, 'cost' => 7527],
-        ['ranges' => [[8840, 8849]], 'income' => 7422, 'cost' => 7527],
+        ['ranges' => [[8840, 8849]], 'income' => null, 'cost' => 7527],
         ['ranges' => [[8860, 8899]], 'income' => 7422, 'cost' => 7527],
         ['ranges' => [[8900, 8989]], 'income' => null, 'cost' => 7528],
     ];
@@ -265,6 +273,7 @@ final class Ink2Codes
         7413 => 'Övriga rörelseintäkter',
         7414 => 'Resultat från andelar i koncernföretag (+)',
         7415 => 'Resultat från andelar i intresseföretag (+)',
+        7423 => 'Resultat från övriga företag som det finns ett ägarintresse i (+)',
         7416 => 'Resultat från övriga finansiella anläggningstillgångar (+)',
         7417 => 'Övriga ränteintäkter och liknande resultatposter',
         7419 => 'Mottagna koncernbidrag',
@@ -279,10 +288,13 @@ final class Ink2Codes
         7513 => 'Övriga externa kostnader',
         7514 => 'Personalkostnader',
         7515 => 'Av- och nedskrivningar av materiella och immateriella anläggningstillgångar',
+        7516 => 'Nedskrivningar av omsättningstillgångar utöver normala nedskrivningar',
         7517 => 'Övriga rörelsekostnader',
         7518 => 'Resultat från andelar i koncernföretag (−)',
         7519 => 'Resultat från andelar i intresseföretag (−)',
         7520 => 'Resultat från övriga finansiella anläggningstillgångar (−)',
+        7521 => 'Nedskrivningar av finansiella anläggningstillgångar och kortfristiga placeringar',
+        7530 => 'Resultat från övriga företag som det finns ett ägarintresse i (−)',
         7522 => 'Räntekostnader och liknande resultatposter',
         7524 => 'Lämnade koncernbidrag',
         7525 => 'Avsättning till periodiseringsfond',

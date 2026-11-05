@@ -1781,7 +1781,12 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
 - Under Bokföring → Inkomstdeklaration tas INK2 med INK2R och INK2S fram ur
   bokföringen för aktiebolag och ekonomiska föreningar. INK2R fylls fält för
   fält från BAS-kontointervall (`Ink2Codes`) i hela kronor; årets resultat
-  är resultaträkningens, oavsett om det är bokat på 2099.
+  är resultaträkningens, oavsett om det är bokat på 2099. Resultaträkningens
+  rader följer BAS kopplingstabell för INK2 (INK2_P1_intervall-241119):
+  bland annat 774x och 779x i 3.10, 807x–808x, 817x–818x, 827x–828x och
+  837x–838x i 3.17, lagerförändring på 4900–4909, 4930–4959, 4970–4979 och
+  4990–4999 i 3.2, 496x och 498x i 3.6, 8113, 8118, 8123 och 8133 i 3.14,
+  8811 i 3.22 och 8819 i 3.21.
 - INK2S: bokfört resultat, bokförd skatt (läggs tillbaka), de justeringar
   användaren anger (ej avdragsgilla kostnader, ej skattepliktiga intäkter,
   ej bokförda intäkter och kostnader, outnyttjat underskott) samt om en
@@ -1827,23 +1832,40 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   BAS-kontointervall (`NeCodes`, efter BAS SRU-koppling för NE), i hela
   kronor. B10 är tillgångar minus skulder. R1 och R2 delas efter kontots
   momsruta: konton i ruta 42 och, för ett företag som inte är
-  momsregistrerat, all försäljning blir R2. Finansiella konton 8000–8989
-  räknas efter kontots eget tecken: intäkt till R4, kostnad till R8. R11 är
+  momsregistrerat, all försäljning blir R2; säljer ett sådant företag för mer
+  än 120 000 kr visas en varning (ML 18 kap. 4 och 11 §§). Konton som
+  användaren markerar som bil- eller bostadsförmån flyttas från R1/R2 till
+  R3. Finansiella konton följer BAS koppling för NE: de konton BAS alltid
+  lägger i R4 eller R8 gör det, de andra räknas efter kontots eget tecken.
+  Ett bankkonto med kreditsaldo förs till B13 och en momsfordran netto på
+  26xx till B8; en rad som ändå blir negativ ger en varning. R11 är
   summan av R1–R10. Med förenklat årsbokslut (K1) förs obeskattade reserver
   och avsättningar till B16, och kryssrutan 7023 lämnas tom.
 - Skattemässiga justeringar R12–R48: användaren fyller i R13–R28, R32,
-  R38–R41 och R44–R46. NONOX räknar räntefördelning (IL 33 kap.: positiv
-  med statslåneräntan + 6 procentenheter, högst överskottet i R29, det som
-  inte används sparas i 8011; negativ med statslåneräntan, lägst 0,5 %,
-  + 1 procentenhet när kapitalunderlaget är lägre än −500 000 kr), högsta
-  avsättning till periodiseringsfond (30 % av R33, IL 30 kap. 6 §), högsta
-  ökning av expansionsfond (överskottet och 125,94 % av kapitalunderlaget
-  minus fonden vid årets början, IL 34 kap. 5–6 §§) och schablonavdraget
-  för egenavgifter (IL 16 kap. 30 §; 25 % för den som är född 1959 eller
-  senare, 10 % för den som är född 1938–1958, 20 % vid passiv
-  näringsverksamhet, av R42). Kapitalunderlagen, den positiva
-  räntefördelning som används och fondens ingående belopp anger
-  användaren. Ett belopp som användaren anger för R43 ersätter beräkningen.
+  R38–R41 och R44–R46. NONOX räknar räntefördelning (IL 33 kap.): det
+  positiva fördelningsbeloppet med statslåneräntan + 6 procentenheter
+  (inget ur kapitalunderlaget det första året, Skatteverkets
+  ställningstagande 2026-01-26) plus förra årets sparade belopp; det
+  negativa med statslåneräntan, lägst 0,5 %, + 1 procentenhet när
+  kapitalunderlaget är lägre än −500 000 kr, och det sparade beloppet
+  kvittas först mot det (7 §). Positiv räntefördelning görs bara med det
+  belopp användaren väljer, högst överskottet i R29; inget val betyder
+  ingen räntefördelning, och resten sparas i 8011. Utan angivet
+  kapitalunderlag uppskattas det ur förra årets utgående balanser, och
+  blir uppskattningen lägre än −500 000 kr visas en varning om att negativ
+  räntefördelning är tvingande. Vidare högsta avsättning till
+  periodiseringsfond (30 % av R33, IL 30 kap. 6 §), med förslag till R13
+  eller R14 när en avsättning eller återföring är bokförd på 8810–8819;
+  högsta ökning av expansionsfond (överskottet, och fonden vid årets slut
+  högst 125,94 % av kapitalunderlaget, IL 34 kap. 5–7 §§), med den
+  återföring som krävs när fonden blir större eller underlaget saknas
+  (15 §), och R37 högst fonden vid årets början; och schablonavdraget för
+  egenavgifter (IL 16 kap. 30 §; 25 %, 10 % för den som har fyllt 67 vid
+  årets ingång eller har haft hel ålderspension eller hel sjuk- eller
+  aktivitetsersättning, 0 för den som är född 1937 eller tidigare, 20 % vid
+  passiv näringsverksamhet, av R42). Kapitalunderlagen, det sparade
+  beloppet, den positiva räntefördelning som väljs och fondens ingående
+  belopp anger användaren. Ett belopp som användaren anger för R43 ersätter beräkningen.
   Ett tak avrundas nedåt till hela kronor, negativ räntefördelning till
   närmaste krona.
 - Årets parametrar (statslåneränta, procentsatser, gränsbelopp) är data
@@ -1858,7 +1880,11 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   eget kapital vid årets början (2000–2099), utgående kapital eget kapital
   vid årets slut med årets resultat, och nettouttag eller nettotillskott det
   som återstår. Avviker det från uttag (x1–x3) och tillskott (x7–x8) på
-  delägarnas konton visas en varning. INK4S: bokfört resultat, de
+  delägarnas konton visas en varning. Resultaträkningens rader följer BAS
+  kopplingstabell för INK4 (INK4_P1_Intervall-241119), bland annat 774x,
+  779x och 79xx i 3.10 och nedskrivningar av finansiella tillgångar i 3.15.
+  Visar bokföringen pensionskostnader eller fastighetsskatt (5191) varnar
+  NONOX att första sidan av INK4 behövs. INK4S: bokfört resultat, de
   justeringar användaren anger, och pensionskostnaderna i 4.16 (8022)
   föreslås från 74xx. Ett handelsbolag betalar ingen inkomstskatt och har
   ingen periodiseringsfond, räntefördelning eller schablonintäkt.
@@ -1870,7 +1896,11 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   ett stängt räkenskapsår kan inte ändras. INK4DU, en
   bilaga per delägare, får andelen av överskottet eller underskottet
   (avrundat nedåt, resten till den sista delägaren), uttag och tillskott från
-  delägarens kontoblock. Filerna laddas bara ner när andelarna blir 100 %.
+  delägarens kontoblock, eller de belopp användaren anger för delägaren, och
+  8105 när bolaget har gjort regional nedsättning av arbetsgivaravgifterna.
+  Andra rörelser under året i delägarens block (x0 utöver de ingående
+  balanser som förs dit, x4–x6) visas per konto i en varning. Filerna
+  laddas bara ner när andelarna blir 100 %.
   Delägarna deklarerar sin del själva på N3A eller N3B; de blanketterna tar
   NONOX inte fram. Första sidan av INK4 kan inte lämnas med filöverföring.
 - SRU-filerna skrivs som för INK2 (5a7): NE-2026P4 lämnas genom import i
@@ -3699,10 +3729,13 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   avrundningen av räntefördelning, periodiseringsfond och schablonavdrag;
   att underlaget för schablonavdraget är R42; att all försäljning i ett
   företag som inte är momsregistrerat hör till R2; schablonavdraget för den
-  som är född 1937 eller tidigare; 8105 i INK4DU räknas inte ut.
-- Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
-  mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
-  och bokslutsdispositioner). Identiteten skrivs som 16 följt av
+  som har passiv näringsverksamhet och är född 1937 eller tidigare; att ett
+  sparat fördelningsbelopp som blir kvar efter kvittning mot negativ
+  räntefördelning får användas för positiv räntefördelning (bara rättelsen
+  i SKV 2196 säger det); fördelningen av överskottet per andel (IL 5 kap.).
+- Inkomstdeklaration: balansräkningens BAS-intervall i INK2 ska kontrolleras
+  mot den officiella BAS–INK2-kopplingen; resultaträkningen följer den
+  sedan 2026-11-05. Identiteten skrivs som 16 följt av
   organisationsnumret. Övriga INK2S-punkter (delägarrätter, handelsbolag,
   fastigheter m.m.) fylls i för hand i Skatteverkets tjänst. Schablonintäkten
   på periodiseringsfonder: statslåneräntorna per år, att ingående saldo på

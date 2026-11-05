@@ -6,37 +6,37 @@
         "statslaneranta_bp": {
             "value": 255,
             "source_url": "https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html",
-            "source_quote": "Statslåneräntan den 30 november 2025: 2,55 procent"
+            "source_quote": "Den 30 november 2025 var statslåneräntan 2,55 procent."
         },
         "interest_allocation_positive_add_bp": {
             "value": 600,
             "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
-            "source_quote": "IL 33 kap. 3 §: statslåneräntan vid utgången av november året före beskattningsåret ökad med sex procentenheter (räntesats 8,55 % för 2026)"
+            "source_quote": "IL 33 kap. 3 §: Ett positivt fördelningsbelopp beräknas genom att ett positivt kapitalunderlag för räntefördelning multipliceras med statslåneräntan vid utgången av november året närmast före det kalenderår under vilket beskattningsåret går ut ökad med sex procentenheter. Statslåneräntan ska dock som lägst anses vara 0 procent."
         },
         "interest_allocation_negative_add_bp": {
             "value": 100,
             "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
-            "source_quote": "IL 33 kap. 3 §: statslåneräntan ökad med en procentenhet, statslåneräntan lägst 0,5 procent (räntesats 3,55 % för 2026)"
+            "source_quote": "IL 33 kap. 3 §: Ett negativt fördelningsbelopp beräknas genom att ett negativt kapitalunderlag för räntefördelning multipliceras med statslåneräntan vid samma tidpunkt ökad med en procentenhet."
         },
         "interest_allocation_negative_floor_bp": {
             "value": 50,
             "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
-            "source_quote": "IL 33 kap. 3 §: vid negativ räntefördelning ska statslåneräntan anses vara lägst 0,5 procent"
+            "source_quote": "IL 33 kap. 3 §: Statslåneräntan ska dock som lägst anses vara 0,5 procent."
         },
         "interest_allocation_negative_threshold_ore": {
             "value": -50000000,
             "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
-            "source_quote": "IL 33 kap. 4 § (Lag 2024:1131): negativ räntefördelning ska inte göras om det negativa kapitalunderlaget är högst 500 000 kronor"
+            "source_quote": "IL 33 kap. 4 §: Negativ räntefördelning ska inte göras om det negativa kapitalunderlaget är högst 500 000 kronor. Om den skattskyldige ska beräkna mer än ett kapitalunderlag, gäller detta för summan av de negativa kapitalunderlagen. Lag (2024:1131)."
         },
         "tax_allocation_reserve_share_bp": {
             "value": 3000,
             "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
-            "source_quote": "IL 30 kap. 6 §: enskilda näringsidkare får dra av högst 30 procent av ett för periodiseringsfond justerat positivt resultat"
+            "source_quote": "IL 30 kap. 6 §: Enskilda näringsidkare och fysiska personer som är delägare i svenska handelsbolag får dra av högst ett belopp som motsvarar 30 procent av ett för periodiseringsfond justerat positivt resultat."
         },
         "expansion_fund_cap_bp": {
             "value": 12594,
             "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/inkomstskattelag-19991229_sfs-1999-1229/",
-            "source_quote": "IL 34 kap. 6 §: fonden får högst uppgå till kapitalunderlaget delat med 0,794 (125,94 procent)"
+            "source_quote": "IL 34 kap. 6 §: För enskilda näringsidkare får expansionsfonden uppgå till högst ett belopp som motsvarar 125,94 procent av kapitalunderlaget för expansionsfond. Lag (2018:1206)."
         },
         "expansion_fund_tax_bp": {
             "value": 2060,
@@ -44,9 +44,24 @@
             "source_quote": "IL 65 kap. 8 §: expansionsfondsskatt 20,6 procent"
         },
         "self_employment_deduction_bp": {
-            "value": {"born_from_1959": 2500, "born_1938_to_1958": 1000, "passive": 2000},
+            "value": {"full": 2500, "reduced": 1000, "passive": 2000},
             "source_url": "https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html",
             "source_quote": "Schablonavdrag för egenavgifter 2026: 25 % (född 1959 eller senare), 10 % (född 1938–1958), 20 % (passiv näringsverksamhet); IL 16 kap. 30 §: högst 25 procent av överskottet före avdraget minskat med sjukpenning"
+        },
+        "self_employment_reduced_from_age": {
+            "value": 67,
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/socialavgiftslag-2000980_sfs-2000-980/",
+            "source_quote": "SAL 3 kap. 15 §: Den som vid ingången av beskattningsåret har fyllt 67 år ska bara betala ålderspensionsavgiften. Lag (2022:889)."
+        },
+        "self_employment_none_born_until": {
+            "value": 1937,
+            "source_url": "https://www.skatteverket.se/privat/skatter/beloppochprocent/2026.4.1522bf3f19aea8075ba21.html",
+            "source_quote": "Du som är född 1937 eller tidigare betalar inga egenavgifter och får därför inte göra något schablonavdrag."
+        },
+        "self_employment_pension_reduced": {
+            "value": 1,
+            "source_url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/svensk-forfattningssamling/socialavgiftslag-2000980_sfs-2000-980/",
+            "source_quote": "SAL 3 kap. 16 §: Den som har haft hel allmän ålderspension enligt socialförsäkringsbalken hela beskattningsåret ska bara betala ålderspensionsavgiften. Detsamma gäller den som har haft hel sjukersättning eller hel aktivitetsersättning enligt samma balk någon del av beskattningsåret. Lag (2011:1257)."
         }
     }
 }

@@ -3,10 +3,12 @@
     $input = 'block w-full rounded-xl border-stone-300 shadow-xs focus:border-accent-500 focus:ring-accent-500';
     $kr = fn (int $kronor): string => number_format($kronor, 0, ',', "\u{a0}")."\u{a0}kr";
     $calc = $ne->calculation();
+    $proposals = $ne->proposals();
+    $estimate = $ne->estimatedCapitalBase();
     $fields = $ne->ne();
     $result = $calc['result'];
     $groups = [
-        __('Justeringar av det bokförda resultatet') => [7601, 7700, 7602, 7701, 7402],
+        __('Justeringar av det bokförda resultatet') => [7601, 7700, 7602, 7701],
         __('Gemensam verksamhet och medhjälpande make') => [7702, 7603, 7614, 7703],
         __('Övriga justeringar och tidigare underskott') => [7704, 7604, 7705, 7706, 7605, 7606, 7707],
         __('Pension, sjukpenning och allmänt avdrag') => [7711, 7712, 7611, 7612, 7613],
@@ -51,7 +53,11 @@
                     <label class="flex items-center gap-3"><x-checkbox wire:model="inputs.passive" />{{ __('Passiv näringsverksamhet (du har inte arbetat i verksamheten i betydande omfattning)') }}</label>
                     <label class="flex items-center gap-3"><x-checkbox wire:model="inputs.outside_eea" />{{ __('Verksamheten bedrivs utanför EES') }}</label>
                     <label class="flex items-center gap-3"><x-checkbox wire:model="inputs.leased_car" />{{ __('Du har dragit av kostnader för en leasad personbil eller lätt lastbil') }}</label>
+                    <label class="flex items-center gap-3"><x-checkbox wire:model="inputs.first_year" />{{ __('Det här är det första året med näringsverksamheten') }}</label>
                 </div>
+                <x-ui.field for="ne_benefit_accounts" :label="__('Konton där bil- eller bostadsförmån är bokförd (R3)')" error="inputs.benefit_accounts" :hint="__('Till exempel 3990. Kontona flyttas från R1 eller R2 till R3. Är förmånen inte bokförd, fyll i den i R15 (intäkter som inte bokförts).')">
+                    <input id="ne_benefit_accounts" type="text" class="{{ $input }} mt-1" wire:model="inputs.benefit_accounts" autocomplete="off">
+                </x-ui.field>
                 <x-ui.field for="ne_consultant" :label="__('Har en konsult hjälpt till med årsbokslutet?')">
                     <select id="ne_consultant" class="{{ $input }} mt-1" wire:model="consultant"><option value="">{{ __('Inte angivet') }}</option><option value="1">{{ __('Ja') }}</option><option value="0">{{ __('Nej') }}</option></select>
                 </x-ui.field>
@@ -59,19 +65,29 @@
 
             <fieldset class="space-y-4" data-ne-interest>
                 <legend class="text-sm font-bold text-ink">{{ __('Räntefördelning (R30, R31)') }}</legend>
-                <p class="text-sm text-gray-600">{{ __('Kapitalunderlaget är tillgångarnas skattemässiga värde minus skulderna vid förra årets slut, utan skattefordringar och skatteskulder, med periodiseringsfonder som skuld och minskat med 79,4 % av expansionsfonden. Ett sparat fördelningsbelopp från förra året läggs till.') }}</p>
-                <x-ui.field for="ne_capital_base" :label="__('Kapitalunderlag för räntefördelning')" error="inputs.capital_base" :hint="__('Kan vara negativt. Är det lägre än minus 500 000 kr blir det negativ räntefördelning, som måste göras.')">
+                <p class="text-sm text-gray-600">{{ __('Kapitalunderlaget är värdet på tillgångarna minus skulderna vid förra årets slut (inkomstskattelagen 33 kap. 8–13 §§): skattemässiga värden, utan skattefordringar och skatteskulder, med periodiseringsfonder som skuld. Lägg till ett outnyttjat underskott från förra året, och dra av 79,4 % av expansionsfonden och tillskott som inte är tänkta att stanna i verksamheten. Det sparade fördelningsbeloppet fyller du i för sig nedan.') }}</p>
+                <x-ui.field for="ne_capital_base" :label="__('Kapitalunderlag för räntefördelning')" error="inputs.capital_base" :hint="$estimate === null ? __('Kan vara negativt. Är det lägre än minus 500 000 kr blir det negativ räntefördelning, som måste göras.') : __('Kan vara negativt. Är det lägre än minus 500 000 kr blir det negativ räntefördelning, som måste göras. Uppskattat ur bokföringen vid förra årets slut: :amount.', ['amount' => $kr($estimate)])">
                     <input id="ne_capital_base" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="inputs.capital_base">
                 </x-ui.field>
+                <x-ui.field for="ne_saved_opening" :label="__('Sparat fördelningsbelopp från förra året')" error="inputs.saved_allocation_opening" :hint="__('Ruta 8011 på förra årets NE-bilaga. Används först mot en negativ räntefördelning, och det som blir kvar kan användas för positiv räntefördelning i år.')">
+                    <input id="ne_saved_opening" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="inputs.saved_allocation_opening">
+                </x-ui.field>
                 @if($calc['positive_max'] > 0)
-                    <x-ui.field for="ne_positive_allocation" :label="__('Positiv räntefördelning du vill använda')" error="inputs.positive_allocation" :hint="__('Högst :max (även högst överskottet i R29). Lämna tomt för det högsta beloppet. Det du inte använder sparas till nästa år.', ['max' => $kr(min($calc['positive_max'], max($calc['r29'], 0)))])">
+                    <div class="space-y-2 rounded-2xl bg-stone-50 px-4 py-3 text-sm text-gray-700" data-ne-allocation-choice>
+                        <p>{{ __('Positiv räntefördelning är frivillig (inkomstskattelagen 33 kap. 6 §). Det belopp du räntefördelar beskattas som inkomst av kapital i stället för som inkomst av näringsverksamhet. Det sänker underlaget för din allmänna pension och din sjukpenninggrundande inkomst (SGI) (Skatteverket). Det du inte använder sparas till nästa år.') }}</p>
+                        <p class="font-medium text-ink">{{ __('Du kan räntefördela högst :max i år.', ['max' => $kr($calc['usable'])]) }}</p>
+                    </div>
+                    <x-ui.field for="ne_positive_allocation" :label="__('Positiv räntefördelning du väljer att göra')" error="inputs.positive_allocation" :hint="__('Skriv 0 om du inte vill göra någon. Tomt betyder att du inte har valt än, och då görs ingen.')">
                         <input id="ne_positive_allocation" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="inputs.positive_allocation">
                     </x-ui.field>
+                    @if($calc['usable'] > 0)
+                        <button type="button" wire:click="$set('inputs.positive_allocation', '{{ $calc['usable'] }}')" class="text-sm font-medium text-accent-700 underline">{{ __('Fyll i det högsta beloppet, :max', ['max' => $kr($calc['usable'])]) }}</button>
+                    @endif
                 @endif
                 <dl class="grid grid-cols-2 gap-2 text-sm">
                     <dt class="text-gray-600">{{ __('Positiv räntefördelning (R30)') }}</dt><dd class="text-right tabular-nums">{{ $kr($calc['r30']) }}</dd>
                     <dt class="text-gray-600">{{ __('Negativ räntefördelning (R31)') }}</dt><dd class="text-right tabular-nums">{{ $kr($calc['r31']) }}</dd>
-                    <dt class="text-gray-600">{{ __('Sparat fördelningsbelopp') }}</dt><dd class="text-right tabular-nums">{{ $kr($calc['saved']) }}</dd>
+                    <dt class="text-gray-600">{{ __('Sparas till nästa år (8011)') }}</dt><dd class="text-right tabular-nums">{{ $kr($calc['saved']) }}</dd>
                 </dl>
             </fieldset>
 
@@ -92,7 +108,7 @@
                 <x-ui.field for="ne_expansion_opening" :label="__('Expansionsfond vid årets början')" error="inputs.expansion_fund_opening">
                     <input id="ne_expansion_opening" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="inputs.expansion_fund_opening">
                 </x-ui.field>
-                @foreach([7710 => __('Högst :max.', ['max' => $kr((int) $calc['r36_max'])]), 7609 => null] as $code => $hint)
+                @foreach([7710 => __('Högst :max.', ['max' => $kr($calc['r36_max'])]), 7609 => $calc['r37_forced'] > 0 ? __('Minst :amount ska återföras.', ['amount' => $kr($calc['r37_forced'] + $calc['r37'])]) : null] as $code => $hint)
                     <x-ui.field :for="'ne_'.$code" :label="__($neLabels[$code]).' ('.$code.')'" :error="'adjustments.'.$code" :hint="$hint">
                         <input id="ne_{{ $code }}" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="adjustments.{{ $code }}">
                     </x-ui.field>
@@ -101,7 +117,8 @@
 
             <fieldset class="space-y-4" data-ne-self-employment>
                 <legend class="text-sm font-bold text-ink">{{ __('Egenavgifter (R40, R41, R43)') }}</legend>
-                @foreach([7610 => __('R43 på förra årets NE-bilaga.'), 7713 => __('Står i slutskattebeskedet för förra året.'), 7714 => $calc['r43_rate'] === null ? __('Fyll i beloppet: NONOX kan inte räkna ut det här.') : __('NONOX räknar :rate % av R42: :amount. Lämna tomt för att använda det.', ['rate' => number_format($calc['r43_rate'] / 100, 0, ',', ''), 'amount' => $kr(intdiv(max($calc['r42'], 0) * $calc['r43_rate'], 10000))])] as $code => $hint)
+                <label class="flex items-center gap-3 text-sm text-gray-700"><x-checkbox wire:model="inputs.full_pension" />{{ __('Du har haft hel ålderspension hela året, eller hel sjuk- eller aktivitetsersättning någon del av året') }}</label>
+                @foreach([7610 => __('R43 på förra årets NE-bilaga.'), 7713 => __('Står i slutskattebeskedet för förra året.'), 7714 => $calc['r43_rate'] === null ? __('Fyll i beloppet: NONOX kan inte räkna ut det här.') : __('NONOX räknar :rate % av R42: :amount. Lämna tomt för att använda det.', ['rate' => intdiv($calc['r43_rate'], 100), 'amount' => $kr(intdiv(max($calc['r42'], 0) * $calc['r43_rate'], 10000))])] as $code => $hint)
                     <x-ui.field :for="'ne_'.$code" :label="__($neLabels[$code]).' ('.$code.')'" :error="'adjustments.'.$code" :hint="$hint">
                         <input id="ne_{{ $code }}" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="adjustments.{{ $code }}">
                     </x-ui.field>
@@ -116,7 +133,7 @@
                     </summary>
                     <div class="space-y-4 border-t border-stone-100 px-4 py-3">
                         @foreach($codes as $code)
-                            <x-ui.field :for="'ne_'.$code" :label="__($neLabels[$code] ?? $neInformation[$code] ?? '').' ('.$code.')'" :error="'adjustments.'.$code">
+                            <x-ui.field :for="'ne_'.$code" :label="__($neLabels[$code] ?? $neInformation[$code] ?? '').' ('.$code.')'" :error="'adjustments.'.$code" :hint="isset($proposals[$code]) ? __('Förslag ur bokföringen: :amount.', ['amount' => $kr($proposals[$code])]) : null">
                                 <input id="ne_{{ $code }}" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="adjustments.{{ $code }}">
                             </x-ui.field>
                         @endforeach
@@ -137,8 +154,17 @@
                         <li>{{ __('Spara och ladda ner ZIP-filen. Packa upp den: du får BLANKETTER.SRU och INFO.SRU. Byt inte namn på filerna.') }}</li>
                         <li>{{ __('Logga in i Skatteverkets e-tjänst Inkomstdeklaration 1 med e-legitimation.') }}</li>
                         <li>{{ __('Under Bilagor väljer du Importera vid Enskild näringsverksamhet (NE) och väljer filen BLANKETTER.SRU.') }}</li>
-                        <li>{{ __('Kontrollera uppgifterna, för över överskottet eller underskottet till punkt 10 och skriv under deklarationen.') }}</li>
+                        <li>{{ __('Kontrollera uppgifterna, för över beloppen till Inkomstdeklaration 1 enligt tabellen och skriv under deklarationen.') }}</li>
                     </ol>
+                    <table class="w-full text-xs" data-ne-transfers>
+                        <caption class="sr-only">{{ __('Belopp som förs över till Inkomstdeklaration 1') }}</caption>
+                        <thead><tr><th scope="col" class="py-1 text-left font-semibold">{{ __('NE-bilagan') }}</th><th scope="col" class="py-1 text-left font-semibold">{{ __('Inkomstdeklaration 1') }}</th></tr></thead>
+                        <tbody>
+                            @foreach(['R30' => '11.1', 'R31' => '11.2', 'R36' => '12.1', 'R37' => '12.2', 'R38' => '10.6', 'R45' => '14.1', 'R47' => '10.1 / 10.3', 'R48' => '10.2 / 10.4'] as $from => $to)
+                                <tr><td class="py-0.5">{{ $from }}</td><td class="py-0.5 tabular-nums">{{ $to }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                     <p class="text-xs text-gray-600">{{ __('Lämna inte en filöverförd deklaration med bara näringsuppgifterna: den kan inte kompletteras med en pappersdeklaration, och den senast lämnade deklarationen gäller.') }}</p>
                 </div>
             @elseif(! $ne->isVerifiedPeriod())

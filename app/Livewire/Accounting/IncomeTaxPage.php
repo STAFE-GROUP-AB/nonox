@@ -53,7 +53,7 @@ class IncomeTaxPage extends Component
      * digits; saving keeps the stored number (by `ref`) unless a new one is
      * typed. An organisationsnummer is not personal data and is shown.
      *
-     * @var array<int, array{ref: string, masked: string, position: string, name: string, identity: string, legal_person: bool, share: string}>
+     * @var array<int, array{ref: string, masked: string, position: string, name: string, identity: string, legal_person: bool, share: string, contributions: string, withdrawals: string, employer_deduction: string}>
      */
     public array $partners = [];
 
@@ -113,7 +113,7 @@ class IncomeTaxPage extends Component
             $next++;
         }
 
-        $this->partners[] = ['ref' => '', 'masked' => '', 'position' => (string) $next, 'name' => '', 'identity' => '', 'legal_person' => false, 'share' => ''];
+        $this->partners[] = ['ref' => '', 'masked' => '', 'position' => (string) $next, 'name' => '', 'identity' => '', 'legal_person' => false, 'share' => '', 'contributions' => '', 'withdrawals' => '', 'employer_deduction' => ''];
     }
 
     public function removePartner(int $index): void
@@ -172,7 +172,7 @@ class IncomeTaxPage extends Component
         $return = $form === null ? null : IncomeTaxReturn::query()->where('fiscal_year_id', $this->year)->where('form', $form)->first();
         $codes = match ($form) {
             IncomeTaxReturn::INK2 => array_keys(Ink2Codes::enteredLabels()),
-            IncomeTaxReturn::NE => [...array_keys(NeCodes::ADJUSTMENTS), ...array_keys(NeCodes::INFORMATION), NeCodes::BENEFITS, NeCodes::RESERVE_ALLOCATION, NeCodes::EXPANSION_INCREASE, NeCodes::EXPANSION_DECREASE, NeCodes::SELF_EMPLOYMENT_DEDUCTION],
+            IncomeTaxReturn::NE => [...array_keys(NeCodes::ADJUSTMENTS), ...array_keys(NeCodes::INFORMATION), NeCodes::RESERVE_ALLOCATION, NeCodes::EXPANSION_INCREASE, NeCodes::EXPANSION_DECREASE, NeCodes::SELF_EMPLOYMENT_DEDUCTION],
             IncomeTaxReturn::INK4 => [...array_keys(Ink4Codes::ADJUSTMENTS), ...array_keys(Ink4Codes::INFORMATION)],
             default => [],
         };
@@ -189,10 +189,19 @@ class IncomeTaxPage extends Component
             'passive' => (bool) ($inputs['passive'] ?? false),
             'outside_eea' => (bool) ($inputs['outside_eea'] ?? false),
             'leased_car' => (bool) ($inputs['leased_car'] ?? false),
+            'first_year' => (bool) ($inputs['first_year'] ?? false),
+            'full_pension' => (bool) ($inputs['full_pension'] ?? false),
+            'benefit_accounts' => is_array($inputs['benefit_accounts'] ?? null) ? implode(', ', $inputs['benefit_accounts']) : '',
         ];
 
-        foreach (['capital_base', 'positive_allocation', 'expansion_capital_base', 'expansion_fund_opening'] as $key) {
+        foreach (['saved_allocation_opening', 'capital_base', 'positive_allocation', 'expansion_capital_base', 'expansion_fund_opening'] as $key) {
             $this->inputs[$key] = isset($inputs[$key]) && is_int($inputs[$key]) ? (string) $inputs[$key] : '';
+        }
+
+        // A new NE starts from the fördelningsbelopp saved on last year's (8011).
+        if ($form === IncomeTaxReturn::NE && $return === null) {
+            $saved = Ne::savedFromPreviousYear($this->company(), FiscalYear::query()->findOrFail($this->year));
+            $this->inputs['saved_allocation_opening'] = $saved === null || $saved === 0 ? '' : (string) $saved;
         }
 
         $this->century = (string) ($return->personal['century'] ?? '');
@@ -219,6 +228,9 @@ class IncomeTaxPage extends Component
                 'identity' => $partner->legal_person ? substr($partner->identity, 2) : '',
                 'legal_person' => $partner->legal_person,
                 'share' => rtrim(rtrim(IncomeTaxForms::percent($partner->share_bp), '0'), ','),
+                'contributions' => $partner->contributions_kronor === null ? '' : (string) $partner->contributions_kronor,
+                'withdrawals' => $partner->withdrawals_kronor === null ? '' : (string) $partner->withdrawals_kronor,
+                'employer_deduction' => $partner->employer_deduction_kronor === null ? '' : (string) $partner->employer_deduction_kronor,
             ])->values()->all();
         }
     }

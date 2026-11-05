@@ -57,6 +57,20 @@
                                 <input id="partner_{{ $index }}_share" type="text" inputmode="decimal" class="{{ $input }} mt-1" wire:model="partners.{{ $index }}.share">
                             </x-ui.field>
                         </div>
+                        <details class="rounded-xl ring-1 ring-stone-200" @if(($partner['contributions'] ?? '') !== '' || ($partner['withdrawals'] ?? '') !== '' || ($partner['employer_deduction'] ?? '') !== '') open @endif>
+                            <summary class="min-h-10 cursor-pointer px-3 py-2 text-sm font-medium text-ink">{{ __('Tillskott, uttag och nedsättning för delägaren') }}</summary>
+                            <div class="grid gap-3 border-t border-stone-100 px-3 py-3 sm:grid-cols-3">
+                                <x-ui.field :for="'partner_'.$index.'_contributions'" :label="__('Tillskott (8103)')" :error="'partners.'.$index.'.contributions'" :hint="__('Tomt: från kontona x7–x8.')">
+                                    <input id="partner_{{ $index }}_contributions" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="partners.{{ $index }}.contributions">
+                                </x-ui.field>
+                                <x-ui.field :for="'partner_'.$index.'_withdrawals'" :label="__('Uttag (8104)')" :error="'partners.'.$index.'.withdrawals'" :hint="__('Tomt: från kontona x1–x3.')">
+                                    <input id="partner_{{ $index }}_withdrawals" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="partners.{{ $index }}.withdrawals">
+                                </x-ui.field>
+                                <x-ui.field :for="'partner_'.$index.'_employer_deduction'" :label="__('Andel avdrag arbetsgivaravgift (8105)')" :error="'partners.'.$index.'.employer_deduction'" :hint="__('Bara om bolaget har gjort regional nedsättning av arbetsgivaravgifterna.')">
+                                    <input id="partner_{{ $index }}_employer_deduction" type="text" inputmode="numeric" class="{{ $input }} mt-1" wire:model="partners.{{ $index }}.employer_deduction">
+                                </x-ui.field>
+                            </div>
+                        </details>
                         <div class="flex flex-wrap items-center gap-4">
                             <button type="button" wire:click="removePartner({{ $index }})" class="text-sm font-medium text-gray-700 underline" aria-label="{{ __('Ta bort delägare :position, :name', ['position' => $partner['position'], 'name' => $partner['name']]) }}">{{ __('Ta bort delägaren') }}</button>
                             @if(($partner['ref'] ?? '') !== '')

@@ -21,6 +21,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $identity twelve digits: 19/20 and a personnummer, or 16 and an organisationsnummer
  * @property bool $legal_person
  * @property int $share_bp
+ * @property ?int $contributions_kronor 8103 entered, else from the books
+ * @property ?int $withdrawals_kronor 8104 entered, else from the books
+ * @property ?int $employer_deduction_kronor 8105, the share of a regional nedsättning
  * @property int $updated_by
  */
 class IncomeTaxPartner extends Model
@@ -36,6 +39,9 @@ class IncomeTaxPartner extends Model
         'identity',
         'legal_person',
         'share_bp',
+        'contributions_kronor',
+        'withdrawals_kronor',
+        'employer_deduction_kronor',
         'updated_by',
     ];
 
@@ -50,6 +56,9 @@ class IncomeTaxPartner extends Model
             'legal_person' => 'boolean',
             'position' => 'integer',
             'share_bp' => 'integer',
+            'contributions_kronor' => 'integer',
+            'withdrawals_kronor' => 'integer',
+            'employer_deduction_kronor' => 'integer',
         ];
     }
 }

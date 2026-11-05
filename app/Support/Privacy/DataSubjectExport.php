@@ -118,6 +118,9 @@ final class DataSubjectExport
                 'personnummer_eller_organisationsnummer' => $row->identity,
                 'juridisk_person' => $row->legal_person,
                 'andel_procent' => IncomeTaxForms::percent($row->share_bp),
+                'tillskott_angivet_kronor' => $row->contributions_kronor,
+                'uttag_angivet_kronor' => $row->withdrawals_kronor,
+                'andel_avdrag_arbetsgivaravgift_kronor' => $row->employer_deduction_kronor,
             ])->values()->all(),
         ];
     }

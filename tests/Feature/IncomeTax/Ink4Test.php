@@ -13,6 +13,7 @@ use App\Models\AuditLog;
 use App\Models\FiscalYear;
 use App\Models\IncomeTaxPartner;
 use App\Models\IncomeTaxReturn;
+use App\Models\OpeningBalance;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
@@ -227,4 +228,59 @@ it('names each remove button and formats the warning amounts', function () {
 it('accepts only INK2, NE and INK4 as the form of a return', function () {
     expect(fn () => DB::table('income_tax_returns')->insert(['company_id' => $this->company->id, 'fiscal_year_id' => $this->year->id, 'form' => 'INK9', 'adjustments' => '{}', 'updated_by' => $this->owner->id, 'created_at' => now(), 'updated_at' => now()]))
         ->toThrow(QueryException::class);
+});
+
+/** @param  array<int, string>  $accounts */
+function ink4Accounts(array $accounts): void
+{
+    foreach ($accounts as $number => $name) {
+        Account::query()->firstOrCreate(['number' => $number], ['name' => $name, 'type' => $number >= 3000 ? AccountType::Expense : AccountType::LiabilityEquity, 'is_active' => true]);
+    }
+}
+
+it('puts the result rows where BAS’s INK4 table does', function () {
+    ink4Accounts([7740 => 'Nedskrivning omsättningstillgångar', 8070 => 'Nedskrivning andelar', 4990 => 'Lagerförändring', 4930 => 'Lagerförändring pågående arbete', 8370 => 'Nedskrivning kortfristiga placeringar', 4980 => 'Lagerförändring handelsvaror']);
+    Bookkeeping::postRows($this->owner, $this->company, '2026-09-01', [7740 => 100_000, 8070 => 200_000, 4990 => 300_000, 4930 => 50_000, 8370 => 40_000, 4980 => 60_000, 1930 => -750_000]);
+
+    $fields = ink4($this)->ink4r();
+
+    expect($fields)->toMatchArray([7535 => 1_000, 7521 => 2_400, 7510 => 3_500, 7512 => 600])
+        ->and($fields)->not->toHaveKey(7515)->not->toHaveKey(7518)->not->toHaveKey(7417);
+});
+
+it('says when the first page of INK4 is needed', function () {
+    expect(implode(' ', ink4($this)->warnings()))->not->toContain('första sidan av Inkomstdeklaration 4');
+
+    ink4Accounts([7410 => 'Pensionsförsäkringspremier']);
+    Bookkeeping::postRows($this->owner, $this->company, '2026-09-01', [7410 => 1_000_000, 1930 => -1_000_000]);
+
+    expect(implode(' ', ink4($this)->warnings()))->toContain('Bolaget behöver lämna första sidan av Inkomstdeklaration 4');
+});
+
+it('names the accounts of in-year equity movements outside withdrawals and contributions, and takes the entered amounts', function () {
+    // Worked example 2: the partners pay in on 2010 and 2020 in January.
+    Bookkeeping::postRows($this->owner, $this->company, '2026-01-10', [1930 => 10_000_000, 2010 => -6_000_000, 2020 => -4_000_000]);
+    $this->returns->savePartners($this->owner, $this->year, $this->partners);
+
+    $warnings = implode(' ', ink4($this)->warnings());
+    expect($warnings)->toContain('Delägare 1 (Eva Ek) har bokningar under året på 2010')
+        ->and($warnings)->toContain('Delägare 2 (Björk AB) har bokningar under året på 2020');
+
+    $partners = $this->partners;
+    $partners[0] += ['contributions' => '70 000', 'employer_deduction' => '1 500'];
+    $partners[1] += ['contributions' => '60 000'];
+    $this->returns->savePartners($this->owner, $this->year, $partners);
+
+    $blocks = ink4($this)->ink4du();
+    expect($blocks[0]['fields'])->toMatchArray([8103 => 70_000, 8104 => 30_000, 8105 => 1_500])
+        ->and($blocks[1]['fields'])->toMatchArray([8103 => 60_000])->not->toHaveKey(8105);
+});
+
+it('does not warn about the opening balances carried into x0', function () {
+    OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => Account::query()->where('number', 2019)->value('id'), 'amount_ore' => -5_000_000]);
+    OpeningBalance::create(['fiscal_year_id' => $this->year->id, 'account_id' => Account::query()->where('number', 1930)->value('id'), 'amount_ore' => 5_000_000]);
+    Bookkeeping::postRows($this->owner, $this->company, '2026-01-01', [2019 => 5_000_000, 2010 => -5_000_000]);
+    $this->returns->savePartners($this->owner, $this->year, $this->partners);
+
+    expect(implode(' ', ink4($this)->warnings()))->not->toContain('har bokningar under året på');
 });

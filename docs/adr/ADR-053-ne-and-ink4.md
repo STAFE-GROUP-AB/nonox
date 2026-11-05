@@ -77,7 +77,37 @@ INK4S_SKV2004-33-01-26-06 and INK4DU_SKV2004-33-01-26-01.
 - Three forms on one page, chosen by legal form; the INK2 flow is unchanged.
 - Each new inkomstår needs its parameter file checked before NE files can be
   made.
-- Open `TODO(legal-verify)`: the BAS ranges for 2025/2026, the rounding, the
-  underlag for the schablonavdrag, sales of a company not registered for VAT,
-  owners born 1937 or earlier, 8105 in INK4DU, and the INK4R short-term
-  liability ranges.
+- Open `TODO(legal-verify)`: the BAS ranges for 2025/2026, the rounding, a
+  passive owner born 1937 or earlier, using a saved fördelningsbelopp left
+  after a negative räntefördelning, and the split of the surplus by share.
+
+## Addendum 2026-11-05: tax review
+
+After an independent review against IL, SAL, ML, Skatteverket and BAS:
+
+- **Räntefördelning is the owner's choice.** Positive räntefördelning is
+  optional (IL 33 kap. 6 §) and lowers the base for pension and SGI, so NONOX
+  never takes it by default: no choice means none, and the page shows the
+  maximum and the consequence without advising. Last year's saved amount
+  (8011) is carried in and set off first against a negative fördelningsbelopp
+  (7 §); none is calculated from the underlag the first year (Skatteverket,
+  ställningstagande 2026-01-26). There is no 50 000 kr floor: it was removed
+  by 2024:1131, although SKV 306 utg. 17 still mentions it, so nobody should
+  add it back from the brochure.
+- **Negative räntefördelning is mandatory** below −500 000 kr. Without an
+  entered underlag NONOX estimates it from last year's closing balances and
+  warns; it does not block, because the law uses tax values and sums every
+  negative underlag the owner has (33 kap. 4 §).
+- **Expansionsfond** is capped on the closing fund (34 kap. 6–7 §§) and the
+  reversal 34 kap. 15 § requires is shown; R37 is capped at the opening fund.
+- **Schablon** 0 for an active owner born 1937 or earlier, 10 % from age 67
+  as data (SAL 3 kap. 15 §, so 2027 does not copy a birth-year band) and after
+  a full pension (3 kap. 16 §).
+- **R3** is the movement on accounts the owner marks as förmån, moved out of
+  R1/R2, so R11 still equals the books. A periodiseringsfond booked on
+  8810–8819 gets a proposal for R13/R14 so it is not deducted twice.
+- **INK4R and INK2R result rows** follow BAS's own coupling tables (2024).
+  INK4DU takes entered contributions, withdrawals and 8105 per partner
+  (columns on `income_tax_partners`); other in-year movements in a partner's
+  block are named in a warning. The first page of INK4 is flagged when the
+  books show pension costs or fastighetsskatt.

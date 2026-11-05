@@ -23,11 +23,16 @@ use Illuminate\Validation\ValidationException;
  * return. NONOX does not build N3A or N3B.
  *
  * The first page of INK4 cannot be sent by file transfer (Skatteverket); it
- * is only needed for särskild löneskatt, avkastningsskatt or fastighetsskatt.
+ * is only needed for särskild löneskatt, avkastningsskatt or fastighetsskatt,
+ * and the page warns when the books show such an underlag.
  *
- * TODO(legal-verify): 8105 (andel avdrag arbetsgivaravgift) is not
- * calculated; the split of the surplus by share with the remainder öre to
- * the last partner; uttag and tillskott from x1–x3 and x7–x8 of each block.
+ * Contributions and withdrawals come from x7–x8 and x1–x3 of each partner's
+ * BAS block unless a person enters them for the partner; other movements in
+ * the block during the year are warned about, by account. 8105 is entered
+ * per partner, only when the bolag used a regional nedsättning.
+ *
+ * TODO(legal-verify): the split of the surplus by share with the remainder
+ * kronor to the last partner (IL 5 kap.).
  */
 final class Ink4
 {
@@ -162,8 +167,9 @@ final class Ink4
             $fields = $this->dates() + [
                 Ink4Codes::DU_PARTNER => $partner->identity,
                 $taxable >= 0 ? Ink4Codes::DU_SURPLUS : Ink4Codes::DU_DEFICIT => $share,
-                Ink4Codes::DU_CONTRIBUTIONS => $this->contributions($partner->position),
-                Ink4Codes::DU_WITHDRAWALS => $this->withdrawals($partner->position),
+                Ink4Codes::DU_CONTRIBUTIONS => $partner->contributions_kronor ?? $this->contributions($partner->position),
+                Ink4Codes::DU_WITHDRAWALS => $partner->withdrawals_kronor ?? $this->withdrawals($partner->position),
+                Ink4Codes::DU_EMPLOYER_DEDUCTION => $partner->employer_deduction_kronor ?? 0,
             ];
             $blocks[] = ['partner' => $partner, 'fields' => self::withoutZeros($fields)];
         }
@@ -221,6 +227,20 @@ final class Ink4
             $warnings[] = __('Det finns bokningar på skattekontona 8900–8989. Ett handelsbolag betalar ingen inkomstskatt och de har ingen rad på INK4R; kontrollera dem.');
         }
 
+        $pension = $this->valueOf(Ink4Codes::S_PENSION_COSTS);
+
+        if ($pension > 0 || $this->accounts->movementOf(Ink4Codes::PROPERTY_TAX_ACCOUNTS[0], Ink4Codes::PROPERTY_TAX_ACCOUNTS[1]) !== 0) {
+            $warnings[] = __('Bolaget behöver lämna första sidan av Inkomstdeklaration 4, med underlaget för särskild löneskatt på pensionskostnader eller för fastighetsskatt. Den kan inte skickas med filöverföring: skicka den på papper, eller lämna hela deklarationen i Skatteverkets e-tjänst. Ett deklarationsombud får inte skriva under en deklaration på papper.');
+        }
+
+        foreach ($this->partners as $partner) {
+            $accounts = $this->otherBlockMovements($partner->position);
+
+            if ($accounts !== []) {
+                $warnings[] = __('Delägare :position (:name) har bokningar under året på :accounts, som inte räknas som uttag (x1–x3) eller tillskott (x7–x8). Är det uttag eller tillskott, fyll i delägarens uttag och tillskott själv.', ['position' => $partner->position, 'name' => $partner->name, 'accounts' => implode(', ', $accounts)]);
+            }
+        }
+
         $books = $this->withdrawalsAndContributions();
         $fields = $this->ink4r();
 
@@ -241,6 +261,39 @@ final class Ink4
         }
 
         return $net;
+    }
+
+    /**
+     * The accounts in a partner's block with movements in the year that are
+     * neither withdrawals (x1–x3) nor contributions (x7–x8). x9 holds the
+     * year's result. x0 may be moved by the balances carried into it at the start of
+     * the year (BAS practice: all of x1–x9, or x9 only); anything else is
+     * listed.
+     *
+     * @return list<int>
+     */
+    private function otherBlockMovements(int $position): array
+    {
+        if ($position < 1 || $position > Ink4Codes::MAX_PARTNERS_IN_BAS) {
+            return [];
+        }
+
+        $base = 2000 + 10 * $position;
+        $listed = [];
+        $moved = Ink2::kronor($this->accounts->movementOf($base, $base));
+        $carried = [0, Ink2::kronor($this->accounts->openingOf($base + 1, $base + 9)), Ink2::kronor($this->accounts->openingOf($base + 9, $base + 9))];
+
+        if (! in_array($moved, $carried, true)) {
+            $listed[] = $base;
+        }
+
+        foreach ([4, 5, 6] as $digit) {
+            if (Ink2::kronor($this->accounts->movementOf($base + $digit, $base + $digit)) !== 0) {
+                $listed[] = $base + $digit;
+            }
+        }
+
+        return $listed;
     }
 
     /** @param  array{0: int, 1: int}  $digits */

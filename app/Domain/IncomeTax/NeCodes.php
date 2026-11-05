@@ -51,8 +51,27 @@ final class NeCodes
         7380 => [[2300, 2399], [2410, 2419], [2480, 2489]],
         7381 => [[2500, 2599]],
         7382 => [[2440, 2449], [2460, 2479]],
-        7383 => [[2400, 2409], [2420, 2439], [2450, 2459], [2490, 2499], [2600, 2999]],
+        7383 => [[2400, 2409], [2420, 2439], [2450, 2459], [2490, 2499], [2700, 2999]],
     ];
+
+    /** Kassa och bank (B9); an account with a credit balance is an overdraft and goes to B13 Låneskulder. */
+    public const array CASH = [1900, 1999];
+
+    public const int CASH_FIELD = 7280;
+
+    public const int LOANS = 7380;
+
+    /** Moms 26xx: a net credit balance goes to B16 Övriga skulder, a net debit balance to B8 Övriga fordringar. */
+    public const array VAT = [2600, 2699];
+
+    public const int OTHER_RECEIVABLES = 7260;
+
+    public const int OTHER_LIABILITIES = 7383;
+
+    /** Periodiseringsfonder in the balance sheet, and the appropriations account for them. */
+    public const array RESERVES = [2110, 2149];
+
+    public const array RESERVE_ACCOUNTS = [8810, 8819];
 
     /** B10 Eget kapital: the assets less the reserves and liabilities, as the form defines it. */
     public const int EQUITY = 7300;
@@ -66,7 +85,11 @@ final class NeCodes
 
     public const int SALES_EXEMPT = 7401;
 
-    /** R3 Bil- och bostadsförmån m.m.: no BAS account, entered. */
+    /**
+     * R3 Bil- och bostadsförmån m.m.: BAS has no account for it. The owner
+     * marks the 3xxx accounts the förmån is booked on, and they move from
+     * R1/R2 to R3; a förmån that is not booked goes in R15.
+     */
     public const int BENEFITS = 7402;
 
     public const int INTEREST_INCOME = 7403;
@@ -94,7 +117,13 @@ final class NeCodes
         7505 => [[7700, 7719], [7730, 7739], [7750, 7769], [7780, 7789], [7800, 7819], [7830, 7839], [7850, 7899], [8850, 8859]],
     ];
 
-    /** The accounts counted by their own sign: income to R4, cost to R8. */
+    /** The financial accounts BAS always puts in R4 (BAS NE table, "+" only). */
+    public const array FINANCIAL_INCOME = [[8010, 8019], [8110, 8119], [8200, 8219], [8250, 8269], [8300, 8319], [8340, 8349], [8360, 8369], [8390, 8399], [8440, 8449]];
+
+    /** The financial accounts BAS always puts in R8 ("–" only). */
+    public const array FINANCIAL_COSTS = [[8070, 8089], [8170, 8189], [8270, 8289], [8370, 8389], [8400, 8429], [8460, 8469], [8480, 8489], [8900, 8989]];
+
+    /** The other financial accounts, counted by their own sign: income to R4, cost to R8. */
     public const array FINANCIAL = [[8000, 8849], [8860, 8989]];
 
     /** R11 Bokfört resultat and R12, the same amount carried to page 2. */
