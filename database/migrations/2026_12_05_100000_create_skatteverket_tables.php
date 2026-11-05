@@ -16,8 +16,10 @@ use Illuminate\Support\Facades\Schema;
  *
  * vat_submissions: a VAT return sent to Skatteverket as a draft, with
  * Skatteverket's check result, the signing link and, once fetched, the
- * receipt and the decided amounts. No personal data: who signed at
- * Skatteverket is not stored.
+ * receipt and the decided amounts. Who signed at Skatteverket is not
+ * stored. Personal data: the sending user's id, and for a sole trader the
+ * personnummer that may stand in the signing link, which is cleared once
+ * the return is filed or the draft has expired (privacy:prune).
  */
 return new class extends Migration
 {

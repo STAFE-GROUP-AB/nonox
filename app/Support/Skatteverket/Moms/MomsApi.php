@@ -57,6 +57,17 @@ final class MomsApi
     }
 
     /**
+     * Unlocks a locked draft so a new one can be saved over it (Lås upp).
+     * Skatteverket answers 409 while the draft is being signed.
+     *
+     * @throws SkatteverketFailed
+     */
+    public function unlock(string $redovisare, string $period): void
+    {
+        SkatteverketClient::send($this->accessToken, 'DELETE', self::url("las/{$redovisare}/{$period}"));
+    }
+
+    /**
      * What has been filed for the period: the receipt number and when.
      *
      * @return list<array{receipt: string, submittedAt: string, boxes: array<int, int>}>
@@ -65,7 +76,16 @@ final class MomsApi
      */
     public function submitted(string $redovisare, string $period): array
     {
-        $rows = SkatteverketClient::send($this->accessToken, 'GET', self::url("inlamnat/{$redovisare}/{$period}"))->json();
+        try {
+            $rows = SkatteverketClient::send($this->accessToken, 'GET', self::url("inlamnat/{$redovisare}/{$period}"))->json();
+        } catch (SkatteverketFailed $exception) {
+            // Nothing filed for the period yet.
+            if ($exception->status === 404) {
+                return [];
+            }
+
+            throw $exception;
+        }
 
         return array_values(array_map(fn (array $row): array => [
             'receipt' => (string) ($row['kvittensnummer'] ?? ''),
@@ -91,12 +111,20 @@ final class MomsApi
         ];
     }
 
-    /** Only a link to Skatteverket's own site is shown to the user. */
+    /**
+     * Only a link to Skatteverket's own site is shown to the user. Browsers
+     * read a backslash as a slash and drop what is before an "@", so a link
+     * with either, or with whitespace, is refused before the host is read.
+     */
     public static function isSkatteverketLink(string $link): bool
     {
+        if (! str_starts_with($link, 'https://') || preg_match('/[\\\\@\s\x00-\x1f\x7f]/', $link) === 1) {
+            return false;
+        }
+
         $host = parse_url($link, PHP_URL_HOST);
 
-        return str_starts_with($link, 'https://') && is_string($host) && ($host === 'skatteverket.se' || str_ends_with($host, '.skatteverket.se'));
+        return is_string($host) && preg_match('/^[a-z0-9.-]+$/', $host) === 1 && ($host === 'skatteverket.se' || str_ends_with($host, '.skatteverket.se'));
     }
 
     private static function url(string $path): string

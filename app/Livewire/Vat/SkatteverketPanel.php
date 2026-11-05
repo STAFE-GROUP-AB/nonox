@@ -13,6 +13,7 @@ use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\VatSubmission;
+use App\Support\Skatteverket\Moms\DraftRefused;
 use App\Support\Skatteverket\Skatteverket;
 use App\Support\Skatteverket\SkatteverketAuth;
 use App\Support\Skatteverket\SkatteverketFailed;
@@ -107,6 +108,9 @@ class SkatteverketPanel extends Component
             $call();
         } catch (ValidationException $exception) {
             $this->toast((string) collect($exception->errors())->flatten()->first(), 'error');
+        } catch (DraftRefused $exception) {
+            $this->check = $exception->check;
+            $this->toast(__('Skatteverket sparade inte utkastet, eftersom kontrollen hittade fel. Felen står nedan.'), 'error');
         } catch (SkatteverketFailed $exception) {
             if ($exception->needsSignIn()) {
                 SkatteverketAuth::forget($this->user());

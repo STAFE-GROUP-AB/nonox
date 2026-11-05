@@ -61,7 +61,7 @@ final class SkatteverketClient
             $status === 401 => __('Inloggningen hos Skatteverket har gått ut. Logga in hos Skatteverket igen.'),
             $status === 403 => __('Skatteverket säger att du inte har behörighet att företräda företaget i den här tjänsten. Du behöver vara firmatecknare eller ombud med rätt behörighet hos Skatteverket.'),
             $status === 404 => __('Skatteverket hittar inte uppgiften för företaget och perioden.'),
-            $status === 409 => __('Utkastet är låst eller håller på att skrivas under hos Skatteverket. Lås upp det hos Skatteverket först om du vill ändra.'),
+            $status === 409 => __('Utkastet är låst eller håller på att skrivas under hos Skatteverket, så det går inte att ändra just nu. Försök igen när underskriften är klar.'),
             $status === 429 => __('Skatteverket tar emot för många anrop just nu. Försök igen om en minut.'),
             $status >= 500 => __('Skatteverket svarar inte just nu. Försök igen om en stund.'),
             default => __('Skatteverket tog inte emot uppgifterna (felkod :status).', ['status' => $status]),

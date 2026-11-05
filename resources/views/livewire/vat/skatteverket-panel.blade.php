@@ -8,15 +8,15 @@
     @endif
 
     <div class="space-y-2 text-sm text-gray-700">
-        <p>{{ __('NONOX skickar rutorna ovan till Skatteverket som ett utkast i företagets eget utrymme hos Skatteverket och låser det för underskrift. Det är inte samma sak som att lämna deklarationen: den är lämnad först när någon med behörighet har skrivit under den hos Skatteverket.') }}</p>
-        <p>{{ __('Utkastet går att ändra i Skatteverkets e-tjänst Lämna momsdeklaration på Mina sidor, och det tas bort efter 30 dagar om ingen skriver under det.') }}</p>
-        <p class="text-xs text-gray-500">{{ __('Skatteverket loggar varje anrop från NONOX för att förebygga och utreda säkerhetsincidenter, och gallrar loggarna enligt sina egna regler.') }}</p>
+        <p>{{ __('NONOX skickar rutorna ovan till Skatteverket som ett utkast i företagets eget utrymme hos Skatteverket och låser det för underskrift. Att skicka utkastet är inte att lämna deklarationen. Skyldigheten att lämna den är inte fullgjord förrän en behörig person har skrivit under den hos Skatteverket, och det ska ske senast sista dag för deklarationen.') }}</p>
+        <p>{{ __('Utkastet går att ändra i Skatteverkets e-tjänst Lämna momsdeklaration på Mina sidor. Det tas bort 30 dagar efter att det skickades om ingen har arbetat med det eller skrivit under det.') }}</p>
+        <p class="text-xs text-gray-500">{{ __('Skatteverket loggar varje anrop från NONOX och använder loggarna för att förebygga och utreda säkerhetsincidenter och otillbörlig användning. Loggarna gallras enligt Skatteverkets gällande beslut.') }}</p>
     </div>
 
     @if(! $signedIn)
         <div class="mt-5">
-            <a href="{{ route('skatteverket.signIn', ['tillbaka' => $back]) }}" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg bg-accent-600 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Logga in hos Skatteverket med BankID') }}</a>
-            <p class="mt-2 text-xs text-gray-500">{{ __('Du loggar in hos Skatteverket, inte i NONOX. Skatteverket kontrollerar att du är firmatecknare eller ombud för företaget. Inloggningen gäller i en timme.') }}</p>
+            <a href="{{ route('skatteverket.signIn', ['tillbaka' => $back]) }}" class="inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg bg-accent-600 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Logga in hos Skatteverket med e-legitimation') }}</a>
+            <p class="mt-2 text-xs text-gray-500">{{ __('Du loggar in hos Skatteverket, inte i NONOX, med e-legitimation, till exempel BankID. Skatteverket kontrollerar vid varje steg att du är behörig firmatecknare, deklarationsombud, ombud för momsdeklaration eller representant för enkla bolag eller partrederi. Inloggningen gäller i ungefär en timme.') }}</p>
         </div>
     @else
         <div class="mt-5 flex flex-wrap items-center gap-3">
@@ -25,7 +25,7 @@
                 <div x-data="{ confirming: false }" class="flex flex-wrap items-center gap-3">
                     <x-button type="button" x-show="! confirming" x-on:click="confirming = true">{{ __('Skicka till Skatteverket') }}</x-button>
                     <div x-show="confirming" x-cloak class="flex flex-wrap items-center gap-3">
-                        <span class="text-sm text-gray-700">{{ __('Rutorna skickas som utkast och låses för underskrift. Ett tidigare utkast för perioden ersätts.') }}</span>
+                        <span class="text-sm text-gray-700">{{ __('Rutorna skickas som utkast och låses för underskrift. Har NONOX redan skickat ett låst utkast för perioden låses det upp och ersätts.') }}</span>
                         <x-button type="button" wire:click="send" wire:loading.attr="disabled">{{ __('Ja, skicka utkastet') }}</x-button>
                         <button type="button" class="text-sm text-gray-600 underline" x-on:click="confirming = false">{{ __('Avbryt') }}</button>
                     </div>
@@ -68,10 +68,10 @@
 
             @if($submission->status === VatSubmissionStatus::ReadyToSign && $submission->signing_link)
                 <a href="{{ $submission->signing_link }}" target="_blank" rel="noopener noreferrer" class="mt-3 inline-flex items-center px-4 py-2 max-sm:min-h-11 rounded-lg bg-accent-600 text-sm font-semibold text-white hover:bg-accent-700">{{ __('Skriv under hos Skatteverket') }}</a>
-                <p class="mt-2 text-xs text-gray-500">{{ __('Länken öppnar Skatteverkets sida Skriv under digitalt i en ny flik. Där loggar du in med BankID, granskar deklarationen och skriver under. Först då är den lämnad. Kom sedan tillbaka och hämta status.') }}</p>
+                <p class="mt-2 text-xs text-gray-500">{{ __('Länken öppnar Skatteverkets sida Skriv under digitalt i en ny flik. Där loggar du in med e-legitimation, granskar deklarationen och skriver under. Först då är den lämnad. Kom sedan tillbaka och hämta status.') }}</p>
             @endif
 
-            @if($submission->status === VatSubmissionStatus::Submitted)
+            @if($submission->receipt_number)
                 <p class="mt-1">{{ __('Kvittens :receipt, inlämnad :date.', ['receipt' => $submission->receipt_number, 'date' => $submission->submitted_at?->timezone(config('app.timezone'))->format('Y-m-d H:i')]) }}</p>
                 @if($submission->decided_boxes !== null)
                     @php($differs = collect($submission->decided_boxes)->filter(fn (int $amount, int $box): bool => ($submission->boxes[$box] ?? 0) !== $amount)->isNotEmpty())

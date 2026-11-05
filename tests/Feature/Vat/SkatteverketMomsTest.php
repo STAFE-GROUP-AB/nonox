@@ -15,9 +15,11 @@ use App\Models\AuditLog;
 use App\Models\FiscalYear;
 use App\Models\SkatteverketToken;
 use App\Models\VatSubmission;
+use App\Support\Skatteverket\Moms\MomsApi;
 use App\Support\Skatteverket\Moms\MomsPayload;
 use App\Support\Skatteverket\Redovisare;
 use App\Support\Skatteverket\SkatteverketAuth;
+use App\Support\Skatteverket\SkatteverketFailed;
 use App\Support\Tenancy\CurrentCompany;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -39,6 +41,8 @@ beforeEach(function () {
         'services.skatteverket.api_client_id' => 'gw-id',
         'services.skatteverket.api_client_secret' => 'gw-secret',
     ]);
+    // Nothing in these tests may reach the real Skatteverket.
+    Http::preventStrayRequests();
     $this->travelTo(CarbonImmutable::parse('2026-02-15 10:00:00'));
     [$this->owner, $this->company] = Bookkeeping::company();
     $this->company->forceFill(['vat_period' => VatPeriod::Monthly, 'org_number' => '556334-3689'])->save();
@@ -94,7 +98,7 @@ it('signs in with Skatteverket once per state and stores the tokens encrypted', 
         ->toContain('response_type=code')
         ->toContain('client_id=oauth-id')
         ->toContain('state='.$flow['state'])
-        ->toContain('scope=momsdeklaration%20agd%20agdredovisningperiod%20ska%20kundhandelser')
+        ->toEndWith('scope=momsdeklaration')
         ->toContain('redirect_uri='.rawurlencode(route('skatteverket.callback')));
 
     Http::fake([SKV_TOKEN_URL => Http::response(['access_token' => 'the-token', 'expires_in' => 3600, 'token_type' => 'Bearer', 'refresh_token' => 'the-refresh', 'scope' => 'momsdeklaration'])]);
@@ -140,18 +144,18 @@ it('is not offered when the installation has no keys', function () {
     Livewire::test(VatReturns::class, ['period' => '2026-01-01'])->assertDontSee('Lämna deklarationen till Skatteverket');
 });
 
-it('shows the panel with what sending means, and asks for BankID first', function () {
+it('shows the panel with what sending means, and asks for e-legitimation first', function () {
     Livewire::test(VatReturns::class, ['period' => '2026-01-01'])->assertSee('Lämna deklarationen till Skatteverket');
 
     Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
         ->assertSee('Testmiljö')
-        ->assertSee('den är lämnad först när någon med behörighet har skrivit under den hos Skatteverket')
+        ->assertSee('Skyldigheten att lämna den är inte fullgjord förrän en behörig person har skrivit under den hos Skatteverket')
         ->assertSee('Lämna momsdeklaration på Mina sidor')
-        ->assertSee('Skatteverket loggar varje anrop')
-        ->assertSee('Logga in hos Skatteverket med BankID')
+        ->assertSee('säkerhetsincidenter och otillbörlig användning')
+        ->assertSee('Logga in hos Skatteverket med e-legitimation')
         ->assertDontSee('Skicka till Skatteverket')
         ->call('send')
-        ->assertDispatched('toast', message: 'Logga in hos Skatteverket med BankID först.');
+        ->assertDispatched('toast', message: 'Logga in hos Skatteverket med e-legitimation först.');
 });
 
 it('lets Skatteverket check the return with the right headers and saves nothing', function () {
@@ -176,7 +180,7 @@ it('lets Skatteverket check the return with the right headers and saves nothing'
 
 it('sends the draft locked for signing and shows Skatteverket\'s signing link only', function () {
     signedInWithSkatteverket();
-    Http::fake([SKV_API.'/utkast/*' => Http::sequence()
+    Http::fake([SKV_API.'/las/*' => Http::response(null, 204), SKV_API.'/utkast/*' => Http::sequence()
         ->push(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => SKV_SIGNING])
         ->push(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => 'https://skatteverket.se.evil.example/x'])]);
 
@@ -249,7 +253,7 @@ it('treats a period without a decision as filed and not decided', function () {
     expect($submission->receipt_number)->toBe('K-9')->and($submission->decided_boxes)->toBeNull();
 });
 
-it('refreshes an expired token once and asks for BankID when the refresh token is gone too', function () {
+it('refreshes an expired token once and asks for a new sign-in when the refresh token is gone too', function () {
     SkatteverketToken::query()->create(['user_id' => $this->owner->id, 'access_token' => 'old', 'refresh_token' => 'refresh', 'scope' => 'momsdeklaration', 'expires_at' => now()->subMinute(), 'refresh_expires_at' => now()->addMinutes(30)]);
     Http::fake([SKV_TOKEN_URL => Http::response(['access_token' => 'new', 'expires_in' => 3600, 'refresh_token' => 'refresh-2'])]);
 
@@ -275,4 +279,101 @@ it('prunes sign-ins with Skatteverket that can no longer be used', function () {
     $this->artisan('privacy:prune')->assertSuccessful();
 
     expect(SkatteverketToken::query()->pluck('user_id')->all())->toBe([$this->owner->id]);
+});
+
+it('keeps a sign-in in progress when a stray answer arrives, and ends it on the right one', function () {
+    $flow = ['state' => 'right', 'user_id' => $this->owner->id, 'back' => '/moms', 'at' => now()->getTimestamp()];
+
+    $this->withSession([SkatteverketAuthController::SESSION => $flow])->get(route('skatteverket.callback', ['code' => 'c', 'state' => 'wrong']));
+    expect(session(SkatteverketAuthController::SESSION))->toBe($flow);
+
+    $this->get(route('skatteverket.callback', ['error' => 'access_denied', 'state' => 'right']));
+    expect(session(SkatteverketAuthController::SESSION))->toBeNull();
+});
+
+it('refuses signing links that a browser would open somewhere else', function (string $link, bool $allowed) {
+    expect(MomsApi::isSkatteverketLink($link))->toBe($allowed);
+})->with([
+    'skatteverket' => [SKV_SIGNING, true],
+    'apex' => ['https://skatteverket.se/x', true],
+    'lookalike' => ['https://skatteverket.se.evil.example/x', false],
+    'backslash' => ['https://evil.com\\.skatteverket.se/x', false],
+    'userinfo' => ['https://evil.com\\@a.skatteverket.se/', false],
+    'at sign' => ['https://evil.com@a.skatteverket.se/', false],
+    'http' => ['http://www.skatteverket.se/x', false],
+    'space' => ['https://www.skatteverket.se/x y', false],
+]);
+
+it('shows Skatteverket\'s errors when it refuses to save the draft', function () {
+    signedInWithSkatteverket();
+    Http::fake([SKV_API.'/utkast/*' => Http::response(['sparad' => false, 'last' => false, 'kontrollResultat' => ['status' => 'ERROR', 'resultat' => [['status' => 'ERROR', 'kod' => 'FK009', 'beskrivning' => 'Ruta 49 stämmer inte.']]], 'signeringsLank' => null])]);
+
+    Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
+        ->call('send')
+        ->assertDispatched('toast', message: 'Skatteverket sparade inte utkastet, eftersom kontrollen hittade fel. Felen står nedan.')
+        ->assertSee('FK009')
+        ->assertSee('Ruta 49 stämmer inte.');
+
+    expect(VatSubmission::query()->count())->toBe(0);
+});
+
+it('unlocks its own locked draft before sending a new one, and keeps the earlier receipt', function () {
+    signedInWithSkatteverket();
+    VatSubmission::query()->create(['period_start' => '2026-01-01', 'period_end' => '2026-01-31', 'status' => VatSubmissionStatus::Submitted, 'boxes' => [49 => 40], 'locked' => true, 'receipt_number' => 'K-1', 'submitted_at' => now()->subDay(), 'decided_boxes' => [49 => 40], 'decided_at' => now()->subDay()]);
+    Http::fake([
+        SKV_API.'/las/*' => Http::response(null, 204),
+        SKV_API.'/utkast/*' => Http::response(['sparad' => true, 'last' => true, 'kontrollResultat' => ['status' => 'OK', 'resultat' => []], 'signeringsLank' => SKV_SIGNING]),
+    ]);
+
+    app(SendVatReturnToSkatteverket::class)($this->owner, $this->year, $this->january);
+
+    Http::assertSentInOrder([
+        fn (Request $request): bool => $request->method() === 'DELETE' && $request->url() === SKV_API.'/las/165563343689/202601',
+        fn (Request $request): bool => $request->method() === 'POST' && str_starts_with($request->url(), SKV_API.'/utkast/'),
+    ]);
+
+    $submission = VatSubmission::query()->sole();
+    expect($submission->status)->toBe(VatSubmissionStatus::ReadyToSign)
+        ->and($submission->receipt_number)->toBe('K-1')
+        ->and($submission->decided_boxes)->toBeNull();
+});
+
+it('keeps a correction waiting for its signature when the status is fetched', function () {
+    signedInWithSkatteverket();
+    VatSubmission::query()->create(['period_start' => '2026-01-01', 'period_end' => '2026-01-31', 'status' => VatSubmissionStatus::ReadyToSign, 'boxes' => [49 => 50], 'locked' => true, 'signing_link' => SKV_SIGNING, 'sent_at' => now()]);
+    Http::fake([
+        SKV_API.'/inlamnat/*' => Http::response([['kvittensnummer' => 'K-1', 'inlamnadTidpunkt' => now()->subDays(3)->toIso8601String(), 'momsuppgift' => ['summaMoms' => 40]]]),
+        SKV_API.'/beslutat/*' => Http::response(['beslutadTidpunkt' => now()->subDays(2)->toIso8601String(), 'momsuppgift' => ['summaMoms' => 40]]),
+    ]);
+
+    $submission = app(RefreshVatSubmission::class)($this->owner, $this->year, $this->january);
+
+    expect($submission->status)->toBe(VatSubmissionStatus::ReadyToSign)
+        ->and($submission->signing_link)->toBe(SKV_SIGNING)
+        ->and($submission->receipt_number)->toBe('K-1');
+});
+
+it('treats nothing filed as nothing filed', function () {
+    signedInWithSkatteverket();
+    Http::fake([SKV_API.'/inlamnat/*' => Http::response(['kod' => '404', 'meddelandeTillAnvandare' => 'Finns inte.'], 404)]);
+
+    Livewire::test(SkatteverketPanel::class, ['fiscalYearId' => $this->year->id, 'start' => '2026-01-01'])
+        ->call('refresh')
+        ->assertDispatched('toast', message: 'Skatteverket har ingen inlämnad deklaration för perioden än.');
+});
+
+it('keeps the sign-in through an outage at Skatteverket during a refresh', function () {
+    SkatteverketToken::query()->create(['user_id' => $this->owner->id, 'access_token' => 'old', 'refresh_token' => 'refresh', 'scope' => 'momsdeklaration', 'expires_at' => now()->subMinute(), 'refresh_expires_at' => now()->addMinutes(30)]);
+    Http::fake([SKV_TOKEN_URL => Http::response('', 503)]);
+
+    expect(fn () => SkatteverketAuth::accessToken($this->owner))->toThrow(SkatteverketFailed::class)
+        ->and(SkatteverketToken::query()->count())->toBe(1);
+});
+
+it('clears signing links of drafts Skatteverket has removed', function () {
+    VatSubmission::query()->create(['period_start' => '2026-01-01', 'period_end' => '2026-01-31', 'status' => VatSubmissionStatus::ReadyToSign, 'boxes' => [49 => 50], 'locked' => true, 'signing_link' => SKV_SIGNING, 'sent_at' => now()->subDays(31)]);
+
+    $this->artisan('privacy:prune')->assertSuccessful();
+
+    expect(VatSubmission::query()->sole()->signing_link)->toBeNull();
 });

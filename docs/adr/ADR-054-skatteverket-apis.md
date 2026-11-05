@@ -49,8 +49,10 @@ Kundhändelser RAML 4.0.5.
   `GET inlamnat/…` gives the receipt; `GET beslutat/…` the decided amounts.
   The period is the last month as ÅÅÅÅMM. One field per box, whole kronor,
   `summaMoms` (box 49) required. Check results are OK, WARNING or ERROR with
-  Skatteverket's codes and texts. Drafts live 30 days (five minutes in the
-  sandbox). The return is filed only when an authorised person signs it at
+  Skatteverket's codes and texts. A draft is removed 30 days after it was
+  loaded unless someone has worked on it or signed it (Tjänstebeskrivning
+  2.2). A locked draft must be unlocked (`DELETE las/…`) before a new one is
+  saved; 409 while it is being signed. The return is filed only when an authorised person signs it at
   Skatteverket; the API cannot sign.
 - **Terms that bind the software** (Allmänna villkor, all five APIs): the
   software company must be registered, VAT-registered, approved for F-skatt
@@ -66,7 +68,9 @@ Kundhändelser RAML 4.0.5.
 
 - `config/services.php` `skatteverket`: environment (`test` or
   `production`) and the four keys. Without the keys nothing is offered.
-- `SkatteverketAuth`: the per sign-in. A person's tokens are stored in
+- `SkatteverketAuth`: the per sign-in. It asks only for the scopes of the
+  stages that are built (`Skatteverket::SCOPES`, today `momsdeklaration`);
+  each stage adds its own (GDPR art. 5.1 c, Allmänna villkor 4.2). A person's tokens are stored in
   `skatteverket_tokens`, one row per user, encrypted, never logged, refreshed
   once when the access token has run out and the refresh token still lives,
   deleted when neither lives, and pruned nightly by `privacy:prune`. The
@@ -111,17 +115,22 @@ Kundhändelser RAML 4.0.5.
    a separate decision.
 4. **Kundhändelser**: Skatteverket's messages and requests about the
    company, into Mina datum and the overview.
-5. **NONOX Connect**: read the submissions, check results and receipts, and
-   webhooks when a return is filed or decided. Sending on a third party's
-   behalf waits for the legal question below.
+5. **NONOX Connect**: only once Skatteverket has answered the question
+   below. Until then NONOX Connect passes on no content from Skatteverket's
+   APIs, neither reads nor webhooks.
 
 ## Open questions (must be answered before production)
 
-- `TODO(legal-verify)`: whether NONOX Connect may let a third-party app
-  trigger calls to Skatteverket on a customer's behalf, or whether that is
-  using the API for another purpose than the agreement covers (Allmänna
-  villkor 8.1). Ask Skatteverket (icc@skatteverket.se). Until then Connect
-  only reads.
+- `TODO(legal-verify)`: whether NONOX Connect may pass content from
+  Skatteverket's APIs (receipts, decided amounts, check results) to a
+  third-party app the customer has connected, and whether such an app may
+  trigger calls on the customer's behalf, or whether either is use for
+  another purpose than "att hantera momsdeklarationen" (Allmänna villkor
+  4.2 and 8.1). Ask Skatteverket (icc@skatteverket.se). Until answered,
+  Connect gets nothing from these APIs.
+- No Skatteverket keys at all, not even test keys, may be set on the hosted
+  service (nonox.app) before this is done: with keys, real users see the
+  panel.
 - `TODO(legal-verify)`: the privacy policy and the register of processing
   must describe the sign-in with Skatteverket, the personal data sent (a sole
   trader's personnummer is the company identifier) and received, before the
@@ -134,6 +143,15 @@ Kundhändelser RAML 4.0.5.
   firmatecknare on Mina sidor; the production keys come by e-mail and SMS.
 
 ## Consequences
+
+- Personal data from Skatteverket may only be received in a technical
+  environment physically inside the EU/EEA (Allmänna villkor 4.2): an
+  installation using these APIs must run there. The hosted service runs in
+  Stockholm; self-hosters are told so in `.env.example`.
+- Continued use counts as accepting changed terms (Allmänna villkor 11.2).
+  The operator follows Skatteverket's change policy: when the RAML version
+  or the terms on the developer portal change, the stage owner re-reads them
+  and records the version in this ADR before the next deploy.
 
 - The eSKD file stays as the way for installations without an agreement.
 - A self-hosted installation needs its own agreement with Skatteverket; the

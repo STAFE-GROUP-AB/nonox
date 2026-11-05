@@ -12,8 +12,13 @@ namespace App\Support\Skatteverket;
  */
 final class Skatteverket
 {
-    /** Every scope the registration holds; one sign-in covers them all. */
-    public const array SCOPES = ['momsdeklaration', 'agd', 'agdredovisningperiod', 'ska', 'kundhandelser'];
+    /**
+     * The scopes a sign-in asks for: only those of the stages that are built
+     * (ADR-054). The registration also holds agd, agdredovisningperiod, ska
+     * and kundhandelser; each is added here with its stage, never before
+     * (GDPR art. 5.1 c, Allmänna villkor 4.2).
+     */
+    public const array SCOPES = ['momsdeklaration'];
 
     public static function isConfigured(): bool
     {

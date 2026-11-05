@@ -10,6 +10,7 @@ use App\Models\FiscalYear;
 use App\Models\User;
 use App\Models\VatSubmission;
 use App\Support\Audit\Audit;
+use App\Support\Skatteverket\Moms\DraftRefused;
 use App\Support\Skatteverket\Moms\MomsPeriod;
 use App\Support\Skatteverket\SkatteverketFailed;
 use App\Support\Tenancy\CurrentCompany;
@@ -26,7 +27,10 @@ use Illuminate\Validation\ValidationException;
  */
 class SendVatReturnToSkatteverket
 {
-    /** @throws SkatteverketFailed */
+    /**
+     * @throws SkatteverketFailed
+     * @throws DraftRefused
+     */
     public function __invoke(User $user, FiscalYear $fiscalYear, CarbonImmutable $start): VatSubmission
     {
         $company = Company::query()->findOrFail($fiscalYear->company_id);
@@ -42,10 +46,24 @@ class SendVatReturnToSkatteverket
                 throw ValidationException::withMessages(['skatteverket' => __('Det finns ingen moms att redovisa för perioden. En deklaration utan belopp lämnar du direkt hos Skatteverket.')]);
             }
 
+            // A draft NONOX locked earlier is unlocked first: Skatteverket saves no draft over a locked one (Tjänstebeskrivning 4.1.1).
+            $earlier = VatSubmission::query()->whereDate('period_end', $moms->period['end'])->first();
+
+            if ($earlier?->locked === true) {
+                try {
+                    $moms->api->unlock($moms->redovisare, $moms->code);
+                } catch (SkatteverketFailed $exception) {
+                    // Gone already (removed after 30 days, or signed): nothing to unlock.
+                    if ($exception->status !== 404) {
+                        throw $exception;
+                    }
+                }
+            }
+
             $result = $moms->api->save($moms->redovisare, $moms->code, $moms->payload(), lock: true);
 
             if (! $result['saved']) {
-                throw ValidationException::withMessages(['skatteverket' => __('Skatteverket sparade inte utkastet. Se kontrollen nedan.')]);
+                throw new DraftRefused($result['check']);
             }
 
             $submission = VatSubmission::query()->updateOrCreate(['period_end' => $moms->period['end']->toDateString()], [
@@ -56,8 +74,9 @@ class SendVatReturnToSkatteverket
                 'check_results' => $result['check']['resultat'],
                 'locked' => $result['locked'],
                 'signing_link' => $result['signingLink'],
-                'receipt_number' => null,
-                'submitted_at' => null,
+                // A new draft is compared with a new decision; the receipt of an earlier filing stays until a newer one replaces it.
+                'decided_boxes' => null,
+                'decided_at' => null,
                 'sent_by' => $user->id,
                 'sent_at' => now(),
             ]);

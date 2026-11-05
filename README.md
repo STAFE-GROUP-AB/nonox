@@ -194,7 +194,7 @@ Grupperat som i menyn i appen. Moduler slår varje företag på och av under Fö
 - Utländsk valuta: betalfiler i utländsk valuta.
 - Import av varor från länder utanför EU.
 - Digital inlämning av årsredovisningen till Bolagsverket (iXBRL).
-- Momsdeklarationen direkt till Skatteverket med BankID, utan fil (byggd i Skatteverkets testtjänst; slås på när avtalet med Skatteverket är klart). Därefter arbetsgivardeklarationen, skattekontot och Skatteverkets meddelanden.
+- Momsdeklarationen till Skatteverket utan fil, efter inloggning hos Skatteverket med e-legitimation; du skriver under hos Skatteverket (byggd mot Skatteverkets testtjänst; slås på när avtalet med Skatteverket är klart). Därefter arbetsgivardeklarationen, skattekontot och Skatteverkets meddelanden.
 - E-faktura via Peppol: skicka kundfakturor och ta emot leverantörsfakturor i inkorgen enligt Peppol BIS Billing 3.0. Byggt, och slås på när vi har ett avtal med en Peppol-operatör (ADR-050).
 - Färdiga kopplingar från kassasystem och e-handel, direkt eller via de integrationsplattformar som programmen redan använder. API:t och webhooks finns; kopplingarna byggs mot dem.
 

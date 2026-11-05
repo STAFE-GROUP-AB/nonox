@@ -55,16 +55,23 @@ class RefreshVatSubmission
                 $decided = null;
             }
 
+            $submittedAt = $latest['submittedAt'] === '' ? CarbonImmutable::now() : CarbonImmutable::parse($latest['submittedAt']);
+
+            // A draft sent after the latest filing (a correction) still waits for its signature: keep its status and link.
+            $pending = $existing !== null && $existing->status !== VatSubmissionStatus::Submitted && $existing->sent_at !== null && $existing->sent_at->greaterThan($submittedAt);
+
             $submission = VatSubmission::query()->updateOrCreate(['period_end' => $moms->period['end']->toDateString()], [
                 'period_start' => $moms->period['start']->toDateString(),
-                'status' => VatSubmissionStatus::Submitted,
                 'boxes' => $existing->boxes ?? $latest['boxes'],
-                'locked' => false,
-                'signing_link' => null,
                 'receipt_number' => mb_substr($latest['receipt'], 0, 64),
-                'submitted_at' => $latest['submittedAt'] === '' ? now() : CarbonImmutable::parse($latest['submittedAt']),
+                'submitted_at' => $submittedAt,
                 'decided_boxes' => $decided['boxes'] ?? null,
                 'decided_at' => ($decided['decidedAt'] ?? '') === '' ? null : CarbonImmutable::parse((string) $decided['decidedAt']),
+                ...($pending ? [] : [
+                    'status' => VatSubmissionStatus::Submitted,
+                    'locked' => false,
+                    'signing_link' => null,
+                ]),
             ]);
 
             Audit::record('vat.skatteverket_refreshed', $submission, ['period_end' => $moms->period['end']->toDateString(), 'decided' => $decided !== null], $company, $user);

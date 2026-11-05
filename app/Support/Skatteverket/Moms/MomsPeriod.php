@@ -47,7 +47,7 @@ final readonly class MomsPeriod
             ?? throw ValidationException::withMessages(['skatteverket' => __('Företagets organisationsnummer är inte giltigt. Rätta det under företagets uppgifter.')]);
 
         $token = SkatteverketAuth::accessToken($user)
-            ?? throw ValidationException::withMessages(['skatteverket' => __('Logga in hos Skatteverket med BankID först.')]);
+            ?? throw ValidationException::withMessages(['skatteverket' => __('Logga in hos Skatteverket med e-legitimation först.')]);
 
         return new self($period, VatReturn::calculate($fiscalYear, $period['start'], $period['end']), $redovisare, $period['end']->format('Ym'), new MomsApi($token));
     }

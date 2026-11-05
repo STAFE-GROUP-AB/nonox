@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 
 /**
  * Signing in with Skatteverket (ADR-054). The person is sent to
- * Skatteverket, proves who they are with BankID or another e-legitimation,
+ * Skatteverket, proves who they are with e-legitimation (BankID or another),
  * and comes back here with a code. The flow lives in the session, works
  * once, belongs to the person who started it and lasts ten minutes (the
  * code itself lives five). The code is exchanged at once and never logged.
@@ -51,11 +51,16 @@ class SkatteverketAuthController
 
         /** @var User $user */
         $user = $request->user();
-        $flow = (array) $request->session()->pull(self::SESSION, []);
+        $flow = (array) $request->session()->get(self::SESSION, []);
         $back = self::safeBack((string) ($flow['back'] ?? ''));
 
         $fresh = is_int($flow['at'] ?? null) && now()->getTimestamp() - $flow['at'] <= self::FLOW_MINUTES * 60;
         $belongs = is_string($flow['state'] ?? null) && hash_equals($flow['state'], (string) $request->query('state', '')) && ($flow['user_id'] ?? null) === $user->id;
+
+        // Only the matching answer uses the flow up, so a stray request cannot end a sign-in in progress.
+        if ($belongs) {
+            $request->session()->forget(self::SESSION);
+        }
 
         if (! $fresh || ! $belongs) {
             Toast::flash(__('Inloggningen hos Skatteverket gick inte att slutföra. Börja om.'), 'error');
@@ -79,7 +84,7 @@ class SkatteverketAuthController
         }
 
         Audit::record('skatteverket.signed_in', null, [], $user->currentCompany(), $user);
-        Toast::flash(__('Du är inloggad hos Skatteverket i en timme.'));
+        Toast::flash(__('Du är inloggad hos Skatteverket i ungefär en timme.'));
 
         return redirect($back);
     }

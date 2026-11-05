@@ -35,7 +35,7 @@
       "id": "2026-11-05-momsdeklarationen-till-skatteverket",
       "datum": "2026-11-05T12:10:00+01:00",
       "rubrik": "Momsdeklarationen direkt till Skatteverket förbereds",
-      "beskrivning": "NONOX kan skicka momsdeklarationen till Skatteverket som ett utkast efter att du loggat in hos Skatteverket med BankID, låta Skatteverket kontrollera den och visa länken till underskriften, kvittensen och Skatteverkets beslut. Funktionen är byggd mot Skatteverkets testtjänst och slås på i NONOX när avtalet med Skatteverket är klart; till dess lämnar du deklarationen med filen som förut.",
+      "beskrivning": "NONOX kan skicka momsdeklarationen till Skatteverket som ett utkast efter att du loggat in hos Skatteverket med e-legitimation, låta Skatteverket kontrollera den och visa länken till underskriften, kvittensen och Skatteverkets beslut. Funktionen är byggd mot Skatteverkets testtjänst och slås på i NONOX när avtalet med Skatteverket är klart; till dess lämnar du deklarationen med filen som förut.",
       "typ": "Nytt",
       "omrade": "Moms"
     },
