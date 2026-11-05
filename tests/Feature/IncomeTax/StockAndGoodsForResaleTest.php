@@ -107,3 +107,19 @@ it('lets the chart of accounts mark a purchase account as goods for resale and b
 
     expect($account->fresh()->sru_code)->toBeNull();
 });
+
+it('puts the INK2R result rows where BAS’s INK2 table does', function () {
+    // BAS INK2_P1_intervall-241119: 774x/779x in 3.10, 807x/837x in 3.17, 4930 and 4990 in 3.2,
+    // 498x in 3.6, 8113 in 3.14, 8811 in 3.22 and 8819 in 3.21.
+    foreach ([7740, 7790, 8070, 8370, 4930, 4990, 4980, 8113, 8811, 8819] as $number) {
+        Account::query()->firstOrCreate(['number' => $number], ['name' => "Konto {$number}", 'type' => AccountType::forNumber($number)]);
+    }
+
+    Bookkeeping::postRows($this->owner, $this->company, '2026-09-01', [7740 => 100_000, 7790 => 50_000, 8070 => 200_000, 8370 => 40_000, 4930 => 50_000, 4990 => 300_000, 4980 => 60_000, 8113 => 70_000, 8811 => 500_000, 1930 => -1_370_000]);
+    Bookkeeping::postRows($this->owner, $this->company, '2026-09-02', [1930 => 20_000, 8819 => -20_000]);
+
+    $fields = Ink2::for($this->company, $this->year, null)->ink2r();
+
+    expect($fields)->toMatchArray([7516 => 1_500, 7521 => 2_400, 7510 => 3_500, 7512 => 600, 7530 => 700, 7525 => 5_000, 7420 => 200])
+        ->and($fields)->not->toHaveKey(7515)->not->toHaveKey(7518)->not->toHaveKey(7417);
+});

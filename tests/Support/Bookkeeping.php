@@ -63,4 +63,37 @@ final class Bookkeeping
     {
         return app(PostVoucher::class)($user, self::draft($user, $company, $ore, $debit, $credit, $date, $series));
     }
+
+    /**
+     * A posted voucher with the rows given as account => signed öre (debit positive).
+     *
+     * @param  array<int, int>  $rows
+     */
+    public static function postRows(User $user, Company $company, string $date, array $rows, string $series = 'A'): Voucher
+    {
+        return app(PostVoucher::class)($user, app(SaveDraftVoucher::class)($user, $company, [
+            'voucher_date' => $date,
+            'description' => 'Test',
+            'series' => $series,
+            'rows' => collect($rows)->map(fn (int $amount, int $account): array => ['account' => $account, 'debit_ore' => max($amount, 0), 'credit_ore' => max(-$amount, 0)])->values()->all(),
+        ]));
+    }
+
+    /**
+     * The files of an SRU ZIP.
+     *
+     * @return array{'INFO.SRU': string, 'BLANKETTER.SRU': string}
+     */
+    public static function unzipSru(string $content): array
+    {
+        $path = (string) tempnam(sys_get_temp_dir(), 'srutest');
+        file_put_contents($path, $content);
+        $zip = new \ZipArchive;
+        $zip->open($path);
+        $files = ['INFO.SRU' => (string) $zip->getFromName('INFO.SRU'), 'BLANKETTER.SRU' => (string) $zip->getFromName('BLANKETTER.SRU')];
+        $zip->close();
+        unlink($path);
+
+        return $files;
+    }
 }

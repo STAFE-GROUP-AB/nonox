@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Customer;
+use App\Models\IncomeTaxPartner;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Modules\Payroll\Models\Employee;
@@ -23,7 +24,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /**
  * Registerutdrag as JSON files (GDPR art. 15 and 20): the user's own
  * account, and, for those who manage them, one customer, supplier,
- * employee, person in the staff ledger or sender to the inbox. Every
+ * employee, person in the staff ledger, partner in a handelsbolag or
+ * sender to the inbox. Every
  * export is written to the audit log.
  */
 class DataSubjectExportController
@@ -76,6 +78,22 @@ class DataSubjectExportController
     }
 
     /**
+     * A partner of a handelsbolag or kommanditbolag, for those who prepare
+     * the income tax return. Another company's partner answers 404.
+     */
+    public function incomeTaxPartner(Request $request, IncomeTaxPartner $incomeTaxPartner): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+        $company = Company::query()->findOrFail($incomeTaxPartner->company_id);
+
+        abort_unless(ArchivedCompany::reading(fn (): bool => $user->hasTeamPermission($company, 'fiscal-years:manage')), 403);
+        $this->log($request, $incomeTaxPartner, 'income_tax_partner');
+
+        return $this->download(DataSubjectExport::incomeTaxPartner($incomeTaxPartner), 'registerutdrag-delagare-'.$incomeTaxPartner->id);
+    }
+
+    /**
      * Everything the current company's inbox received from one address, as
      * JSON or CSV (?format=csv). Only the current company's messages are
      * searched. The audit entry holds a keyed hash of the address, not the
@@ -111,7 +129,7 @@ class DataSubjectExportController
         return $this->download(DataSubjectExport::inboxSender($email), 'registerutdrag-inkorg');
     }
 
-    private function log(Request $request, Customer|Supplier|Employee|Person $subject, string $kind): void
+    private function log(Request $request, Customer|Supplier|Employee|Person|IncomeTaxPartner $subject, string $kind): void
     {
         /** @var User $user */
         $user = $request->user();

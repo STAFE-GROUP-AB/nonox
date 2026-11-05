@@ -91,14 +91,6 @@
       "uppdaterad": "2026-11-02"
     },
     {
-      "id": "ink4-ne",
-      "rubrik": "Deklaration för handelsbolag och enskild firma",
-      "beskrivning": "Inkomstdeklaration 4 för handelsbolag och NE-bilagan för enskild näringsidkare, med siffrorna hämtade ur bokföringen.",
-      "status": "Planerat",
-      "omrade": "Bokslut",
-      "uppdaterad": "2026-11-02"
-    },
-    {
       "id": "lonegrupp-ai",
       "rubrik": "Riskbedömning av AI-förslag om lönegrupp",
       "beskrivning": "NONOX AI kan föreslå vilken lönegrupp en anställd hör till. Innan förslaget används bedömer vi om det räknas som hög risk enligt EU:s AI-förordning.",

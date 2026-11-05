@@ -101,7 +101,7 @@
             },
             {
                 "title": "Bokslut, årsredovisning och INK2 i varje klient",
-                "text": "Bokslut med checklista och låsning, periodiseringar och anläggningsregister, årsredovisning enligt K2 som PDF och inkomstdeklaration 2 som SRU-filer. Inga tillval per klient.",
+                "text": "Bokslut med checklista och låsning, periodiseringar och anläggningsregister, årsredovisning enligt K2 som PDF, och inkomstdeklarationen som SRU-filer: INK2, NE-bilagan för enskild firma och INK4 för handelsbolag. Inga tillval per klient.",
                 "features": [
                     "year_end",
                     "accruals_assets"

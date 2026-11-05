@@ -65,7 +65,7 @@ En sen deklaration ger förseningsavgift. Beloppen och vad du gör står i [Om d
 
 1. Gör bokslutet och, i ett aktiebolag, årsredovisningen. Se [Årsredovisning och bokslut](/foretagsguiden/ansvar-och-regler/arsredovisning-och-bokslut).
 2. Öppna [Mina datum](/foretagsguiden/mina-datum) i Företagsguiden. Där står sista dagen för ditt företags deklaration.
-3. Ta fram underlaget i NONOX och lämna deklarationen i Skatteverkets e-tjänst. Se [Inkomstdeklaration i manualen](/manual/bokslut/inkomstdeklaration).
+3. Ta fram deklarationen i NONOX under Bokföring → Inkomstdeklaration: Inkomstdeklaration 2 för aktiebolag, NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag, som SRU-filer. Lämna den i Skatteverkets e-tjänst. Se [Inkomstdeklaration i manualen](/manual/bokslut/inkomstdeklaration).
 
 ## Vanliga misstag
 

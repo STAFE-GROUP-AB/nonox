@@ -14,11 +14,11 @@ use App\Models\User;
 use App\Support\Audit\Audit;
 use App\Support\Money\Money;
 use App\Support\Sru\SruFile;
+use App\Support\Sru\SruZip;
 use App\Support\Tenancy\CurrentCompany;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
-use ZipArchive;
 
 /**
  * The INK2 income tax return: saving what a person adds, and the SRU files
@@ -65,7 +65,7 @@ class IncomeTaxReturns
         }
 
         return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear, $amounts, $consultant, $audited): IncomeTaxReturn {
-            $return = IncomeTaxReturn::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id], [
+            $return = IncomeTaxReturn::query()->updateOrCreate(['fiscal_year_id' => $fiscalYear->id, 'form' => IncomeTaxReturn::INK2], [
                 'adjustments' => $amounts,
                 'consultant' => $consultant,
                 'audited' => $audited,
@@ -85,7 +85,7 @@ class IncomeTaxReturns
         $company = $this->authorize($user, $fiscalYear);
 
         return CurrentCompany::run($company, function () use ($user, $company, $fiscalYear): string {
-            $ink2 = Ink2::for($company, $fiscalYear, IncomeTaxReturn::query()->where('fiscal_year_id', $fiscalYear->id)->first());
+            $ink2 = Ink2::for($company, $fiscalYear, IncomeTaxReturn::query()->where('fiscal_year_id', $fiscalYear->id)->where('form', IncomeTaxReturn::INK2)->first());
 
             if (! $ink2->isVerifiedPeriod()) {
                 throw ValidationException::withMessages(['period' => __('Fältkoderna för beskattningsperiod :period är inte kontrollerade ännu. Fyll i deklarationen i Skatteverkets e-tjänst.', ['period' => $ink2->period()])]);
@@ -109,17 +109,7 @@ class IncomeTaxReturns
                 'NONOX Ekonomisystem',
             );
 
-            $path = tempnam(sys_get_temp_dir(), 'sru');
-            $zip = new ZipArchive;
-            $zip->open((string) $path, ZipArchive::OVERWRITE);
-
-            foreach ($files as $filename => $content) {
-                $zip->addFromString($filename, $content);
-            }
-
-            $zip->close();
-            $content = (string) file_get_contents((string) $path);
-            @unlink((string) $path);
+            $content = SruZip::of($files);
 
             Audit::record('income_tax.sru_exported', $fiscalYear, ['period' => $period], $company, $user);
 

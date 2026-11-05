@@ -17,6 +17,7 @@ use App\Modules\Crm\Domain\SigningStatus;
 use App\Modules\Crm\Models\SigningRequest;
 use App\Support\Tenancy\CurrentCompany;
 use Database\Seeders\Demo\DemoIndustries;
+use Database\Seeders\TaxFormsDemoSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Cookie\CookieValuePrefix;
 use Illuminate\Encryption\Encrypter;
@@ -103,7 +104,7 @@ class ManualScreenshotsCommand extends Command
 
             foreach ($groups as $key => $group) {
                 [$short, $login] = explode('|', (string) $key);
-                $company = $companies[$short] ?? throw new RuntimeException("Okänt demoföretag: {$short}.");
+                $company = $companies[$short] ?? throw new RuntimeException(in_array($short, ['enskildfirma', 'handelsbolag'], true) ? "Demoföretaget {$short} finns inte. Kör först: php artisan db:seed --class=TaxFormsDemoSeeder" : "Okänt demoföretag: {$short}.");
                 $user = match ($login) {
                     '', 'agare' => $owner,
                     'gast' => null,
@@ -159,6 +160,15 @@ class ManualScreenshotsCommand extends Command
         foreach (self::COMPANIES as $short => $slug) {
             $companies[$short] = Company::query()->where('org_number', DemoIndustries::orgNumber($demos[$slug]['org_serial'], '559', '9998'))->first()
                 ?? throw new RuntimeException("Demoföretaget för {$slug} finns inte. Kör först: php artisan db:seed --class=IndustryDemoSeeder");
+        }
+
+        // The sole trader and the handelsbolag for the income tax pages (ADR-053), when TaxFormsDemoSeeder has run.
+        foreach (['enskildfirma' => TaxFormsDemoSeeder::SOLE_TRADER, 'handelsbolag' => TaxFormsDemoSeeder::PARTNERSHIP] as $short => $orgNumber) {
+            $company = Company::query()->where('org_number', $orgNumber)->first();
+
+            if ($company instanceof Company) {
+                $companies[$short] = $company;
+            }
         }
 
         return $companies;

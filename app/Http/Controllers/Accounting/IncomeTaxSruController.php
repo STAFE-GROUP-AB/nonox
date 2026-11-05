@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Accounting;
 
+use App\Actions\IncomeTax\BusinessIncomeTaxReturns;
 use App\Actions\IncomeTax\IncomeTaxReturns;
+use App\Domain\IncomeTax\IncomeTaxForms;
+use App\Models\Company;
 use App\Models\FiscalYear;
 use App\Models\User;
 use App\Support\Toast;
@@ -14,18 +17,21 @@ use Illuminate\Http\Response;
 use Illuminate\Validation\ValidationException;
 
 /**
- * The SRU files of a fiscal year's INK2 as a ZIP, for Skatteverket's file
- * transfer service.
+ * The SRU files of a fiscal year's income tax return as a ZIP: INK2 for a
+ * limited company, the NE-bilaga for a sole trader, INK4 for a handelsbolag
+ * (ADR-053). The fiscal year is resolved within the current company, so
+ * another company's year answers 404.
  */
 class IncomeTaxSruController
 {
-    public function __invoke(Request $request, FiscalYear $fiscalYear, IncomeTaxReturns $returns): Response|RedirectResponse
+    public function __invoke(Request $request, FiscalYear $fiscalYear, IncomeTaxReturns $returns, BusinessIncomeTaxReturns $business): Response|RedirectResponse
     {
         /** @var User $user */
         $user = $request->user();
+        $form = IncomeTaxForms::for(Company::query()->findOrFail($fiscalYear->company_id)) ?? 'INK2';
 
         try {
-            $zip = $returns->sruZip($user, $fiscalYear);
+            $zip = $form === 'INK2' ? $returns->sruZip($user, $fiscalYear) : $business->sruZip($user, $fiscalYear);
         } catch (ValidationException $exception) {
             Toast::flash((string) collect($exception->errors())->flatten()->first(), 'error');
 
@@ -34,7 +40,7 @@ class IncomeTaxSruController
 
         return response($zip, 200, [
             'Content-Type' => 'application/zip',
-            'Content-Disposition' => 'attachment; filename="SRU-INK2-'.$fiscalYear->end_date->format('Y').'.zip"',
+            'Content-Disposition' => 'attachment; filename="SRU-'.$form.'-'.$fiscalYear->end_date->format('Y').'.zip"',
         ]);
     }
 }
