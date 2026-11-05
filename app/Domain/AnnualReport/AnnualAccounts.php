@@ -472,6 +472,16 @@ final class AnnualAccounts
         return $total;
     }
 
+    /**
+     * The account numbers with an opening balance or a posting in the year.
+     *
+     * @return list<int>
+     */
+    public function numbers(): array
+    {
+        return array_keys($this->current);
+    }
+
     /** Debit minus credit for the year on the accounts in the range. */
     public function movementOf(int $from, int $to): int
     {

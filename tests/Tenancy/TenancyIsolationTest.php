@@ -27,6 +27,7 @@ use App\Models\FixedAsset;
 use App\Models\FixedAssetDepreciation;
 use App\Models\FixedAssetProposal;
 use App\Models\ImportedVoucher;
+use App\Models\IncomeTaxPartner;
 use App\Models\IncomeTaxReturn;
 use App\Models\Invoice;
 use App\Models\InvoicePayment;
@@ -227,6 +228,7 @@ const COMPANY_SCOPED_MODELS = [
     Accrual::class => 'accrualAttributes',
     AnnualReport::class => 'annualReportAttributes',
     IncomeTaxReturn::class => 'incomeTaxReturnAttributes',
+    IncomeTaxPartner::class => 'incomeTaxPartnerAttributes',
     ClosingCheck::class => 'closingCheckAttributes',
     YearEndEntry::class => 'yearEndEntryAttributes',
     BankReconciliation::class => 'bankReconciliationAttributes',
@@ -770,6 +772,19 @@ function yearEndEntryAttributes(): array
         'type' => 'TAX',
         'amount_ore' => 1_648_000,
         'created_by' => User::factory()->create()->id,
+    ];
+}
+
+function incomeTaxPartnerAttributes(): array
+{
+    return [
+        'fiscal_year_id' => FiscalYear::query()->firstOrCreate(['start_date' => '2026-01-01'], ['end_date' => '2026-12-31'])->id,
+        'position' => random_int(1, 9),
+        'name' => 'Delägare',
+        'identity' => '197901011234',
+        'legal_person' => false,
+        'share_bp' => 5000,
+        'updated_by' => User::factory()->create()->id,
     ];
 }
 

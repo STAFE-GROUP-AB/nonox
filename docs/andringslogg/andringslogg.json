@@ -32,6 +32,14 @@
   ],
   "poster": [
     {
+      "id": "2026-11-05-ne-bilaga-och-ink4",
+      "datum": "2026-11-05T02:20:00+01:00",
+      "rubrik": "NE-bilagan och Inkomstdeklaration 4",
+      "beskrivning": "Enskild firma får NE-bilagan ur bokföringen, med räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag för egenavgifter räknade ur det du bekräftar, som SRU-fil att importera i din deklaration. Handelsbolag och kommanditbolag får Inkomstdeklaration 4 med en INK4DU för varje delägare. Ingenting bokförs.",
+      "typ": "Nytt",
+      "omrade": "Bokslut"
+    },
+    {
       "id": "2026-11-05-branschspar-och-att-vaxa",
       "datum": "2026-11-05T01:45:00+01:00",
       "rubrik": "Branschspår och Att växa i Företagsguiden",

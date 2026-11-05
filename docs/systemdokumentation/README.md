@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.102
-- Datum: 2026-11-04
+- Version: 0.103
+- Datum: 2026-11-05
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -1814,6 +1814,68 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   beskattningsperiod 2026P4; för en period vars tabeller inte har
   kontrollerats laddas inga filer ner, och sidan visar bara siffrorna.
 - Varje nedladdning skrivs i behandlingshistoriken.
+
+
+## 5a8. NE-bilagan och Inkomstdeklaration 4 (SRU)
+
+- Under Bokföring → Inkomstdeklaration visas deklarationen för företagets
+  bolagsform: INK2 för aktiebolag och ekonomiska föreningar (5a7),
+  NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag och
+  kommanditbolag (ADR-053). Ideell förening och stiftelse deklarerar i
+  Skatteverkets e-tjänst. Ingenting bokförs.
+- NE (SKV 2161): B1–B16 och R1–R11 tas fram ur bokföringen från
+  BAS-kontointervall (`NeCodes`, efter BAS SRU-koppling för NE), i hela
+  kronor. B10 är tillgångar minus skulder. R1 och R2 delas efter kontots
+  momsruta: konton i ruta 42 och, för ett företag som inte är
+  momsregistrerat, all försäljning blir R2. Finansiella konton 8000–8989
+  räknas efter kontots eget tecken: intäkt till R4, kostnad till R8. R11 är
+  summan av R1–R10. Med förenklat årsbokslut (K1) förs obeskattade reserver
+  och avsättningar till B16, och kryssrutan 7023 lämnas tom.
+- Skattemässiga justeringar R12–R48: användaren fyller i R13–R28, R32,
+  R38–R41 och R44–R46. NONOX räknar räntefördelning (IL 33 kap.: positiv
+  med statslåneräntan + 6 procentenheter, högst överskottet i R29, det som
+  inte används sparas i 8011; negativ med statslåneräntan, lägst 0,5 %,
+  + 1 procentenhet när kapitalunderlaget är lägre än −500 000 kr), högsta
+  avsättning till periodiseringsfond (30 % av R33, IL 30 kap. 6 §), högsta
+  ökning av expansionsfond (överskottet och 125,94 % av kapitalunderlaget
+  minus fonden vid årets början, IL 34 kap. 5–6 §§) och schablonavdraget
+  för egenavgifter (IL 16 kap. 30 §; 25 % för den som är född 1959 eller
+  senare, 10 % för den som är född 1938–1958, 20 % vid passiv
+  näringsverksamhet, av R42). Kapitalunderlagen, den positiva
+  räntefördelning som används och fondens ingående belopp anger
+  användaren. Ett belopp som användaren anger för R43 ersätter beräkningen.
+  Ett tak avrundas nedåt till hela kronor, negativ räntefördelning till
+  närmaste krona.
+- Årets parametrar (statslåneränta, procentsatser, gränsbelopp) är data
+  per inkomstår i `database/data/income-tax/{år}.json`, varje värde med
+  källa. Saknas filen för inkomståret, eller är den inte kontrollerad, räknas
+  ingenting av det som behöver parametrarna och ingen NE-fil laddas ner.
+- Personnumret i NE-filen är tolv siffror: det århundrade användaren anger
+  och företagets nummer. Århundradet ger också födelseåret för
+  schablonavdraget; det sparas krypterat (`income_tax_returns.personal`).
+- INK4 (SKV 2004): INK4R tas fram ur bokföringen (`Ink4Codes`, efter BAS
+  SRU-koppling för INK4). Delägarnas eget kapital: ingående kapital är
+  eget kapital vid årets början (2000–2099), utgående kapital eget kapital
+  vid årets slut med årets resultat, och nettouttag eller nettotillskott det
+  som återstår. Avviker det från uttag (x1–x3) och tillskott (x7–x8) på
+  delägarnas konton visas en varning. INK4S: bokfört resultat, de
+  justeringar användaren anger, och pensionskostnaderna i 4.16 (8022)
+  föreslås från 74xx. Ett handelsbolag betalar ingen inkomstskatt och har
+  ingen periodiseringsfond, räntefördelning eller schablonintäkt.
+- Delägarna anges per räkenskapsår med nummer (BAS-kontoblock 2010–2019 för
+  delägare 1 osv.), namn, personnummer med århundrade eller
+  organisationsnummer (kontrolleras med Luhn, sparas krypterat) och andel
+  i procent. Ett nytt år börjar med förra årets delägare. INK4DU, en
+  bilaga per delägare, får andelen av överskottet eller underskottet
+  (avrundat nedåt, resten till den sista delägaren), uttag och tillskott från
+  delägarens kontoblock. Filerna laddas bara ner när andelarna blir 100 %.
+  Delägarna deklarerar sin del själva på N3A eller N3B; de blanketterna tar
+  NONOX inte fram. Första sidan av INK4 kan inte lämnas med filöverföring.
+- SRU-filerna skrivs som för INK2 (5a7): NE-2026P4 lämnas genom import i
+  e-tjänsten Inkomstdeklaration 1, INK4R, INK4S och INK4DU i e-tjänsten
+  Filöverföring. Fältkoderna är hämtade ur Skatteverkets fältnamnstabeller
+  för 2026P4. Behandlingshistoriken skriver vilka fält som sparades, aldrig
+  beloppen eller person- och organisationsnummer.
 
 ## 5a8. Flytt från Fortnox via API
 
@@ -3630,6 +3692,12 @@ kundens bokföringsuppgifter (betalningsvillkor, moms, valuta) finns kvar i
   kvartal med både varor (efter beslut) och tjänster får lämnas som en
   kvartalsrapport; avrundning till hela kronor och filens teckenkodning
   (ISO-8859-1) (#65).
+- NE-bilagan och INK4 (5a8): BAS-intervallen ska kontrolleras mot BAS
+  aktuella SRU-kopplingar för NE och INK4 (de lästa är från 2023 och 2024);
+  avrundningen av räntefördelning, periodiseringsfond och schablonavdrag;
+  att underlaget för schablonavdraget är R42; att all försäljning i ett
+  företag som inte är momsregistrerat hör till R2; schablonavdraget för den
+  som är född 1937 eller tidigare; 8105 i INK4DU räknas inte ut.
 - Inkomstdeklaration: BAS-intervallen bakom varje fältkod ska kontrolleras
   mot den officiella BAS–INK2-kopplingen (särskilt 4000–4999, koncernposter
   och bokslutsdispositioner). Identiteten skrivs som 16 följt av
@@ -3857,3 +3925,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.100 | 2026-11-04 | Ingående balanser som inte längre stämmer (avsnitt 4.14a, ADR-010; ÅRL 2 kap. 4 § första stycket 7): NONOX jämför varje års ingående balanser med föregående års utgående balanser, räknade som vid överföringen, och varnar under Räkenskapsår, Rapporter, Att göra och i bokslutets checklista. Bara öppna år jämförs; ett stängt år behåller sina balanser i kedjan. Uppdatera ingående balanser räknar om alla år som skiljer i ordning, bara på en persons beslut, under lås på år och företag, och vägras när periodlåset omfattar årets första dag; `fiscal_year.opening_balances_updated` visar varje konto före och efter (efter = det som skrevs). En avsiktlig skillnad bekräftas med skäl och fingeravtryck, som upphör att gälla när skillnaden ändras (ÅRL 2 kap. 4 § andra stycket, 5 kap. 5 §). Överföringen för hand vägras också när nästa års första dag är låst; i bokslutet görs den som förut, och stängningen tar låset för att skapa år först. Ett använt konto kan inte byta mellan balans- och resultatkonto. |
 | 0.101 | 2026-11-04 | E-faktura via Peppol (ADR-050, avsnitt 5.4 och 5e.1): skapade kundfakturor och kreditfakturor kan skickas som Peppol BIS Billing 3.0 genom installationens accesspunkt, kontrollerade mot reglerna och sparade exakt som de skickades, utan någon ändring i bokföringen; e-fakturor som tas emot hamnar i inkorgen med XML-filen som original och blir förslag till leverantörsfakturor som attesteras. Ett dokument adresserat till företaget sparas alltid (i karantän när mottagningen är avstängd), och mottagningen avregistreras innan den stängs av. Fakturatexten för trepartshandel hänvisar till artikel 141 och omvänd betalningsskyldighet. |
 | 0.102 | 2026-11-04 | Sista dagar för moms och arbetsgivardeklaration (också: helårsmoms för ideell förening och stiftelse den 26:e i andra månaden efter året när det inte är känt att de lämnar inkomstdeklaration, och inköp av tjänster utanför EU, ruta 22, räknas som EU-handel) (avsnitt om översikten, ADR-051 etapp 2): en dag flyttas förbi lördag, söndag, helgdag, midsommarafton, julafton och nyårsafton (lag (1930:173) 2 §); arbetsgivardeklarationens dag räknas enligt SFL 26 kap. 26, 30 och 32 §§ för varje år, med Skatteverkets lista som kontroll, och den större gruppen betalar den 12:e (den 17:e i januari) före deklarationen den 26:e (SFL 62 kap. 3 §). Arbetsgivardeklarationens grupp följer företagets egna uppgifter för moms och omsättning, inte löneinställningen. Mina datum räknar fram företagets datum utan att ändra bokföringen. |
+| 0.103 | 2026-11-05 | NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag och kommanditbolag ur bokföringen som SRU-filer (avsnitt 5a8, ADR-053): fält ur BAS-kontona, räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag för egenavgifter beräknade ur det användaren bekräftar, årets parametrar som data med källa, delägare med krypterade person- och organisationsnummer; ingenting bokförs. |

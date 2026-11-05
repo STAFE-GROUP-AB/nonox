@@ -58,7 +58,7 @@ De första deklarationerna med de nya reglerna lämnas 2027. Reglerna är detalj
 
 ## Så här gör du
 
-1. **Enskild firma:** bokför dina egna uttag på ett eget konto, så att de inte blir kostnader. Uppskatta vinsten i den preliminära inkomstdeklarationen så att F-skatten räcker.
+1. **Enskild firma:** bokför dina egna uttag på ett eget konto, så att de inte blir kostnader. Uppskatta vinsten i den preliminära inkomstdeklarationen så att F-skatten räcker. När året är slut tar NONOX fram NE-bilagan med schablonavdraget för egenavgifter; se [Enskild firma: NE-bilagan](/manual/bokslut/inkomstdeklaration#enskild-firma-ne-bilagan).
 2. **Aktiebolag med lön:** lägg upp dig själv som anställd och kör lön i NONOX. Läs [Arbetsgivaravgifter och pension](/manual/lon/arbetsgivaravgifter-och-pension) och [Lönekörning](/manual/lon/lonekorning). Läs också [Arbetsgivare](/foretagsguiden/starta/arbetsgivare).
 3. **Aktiebolag med utdelning:** enligt aktiebolagslagen 18 kap. 1 § beslutar bolagsstämman om utdelning, och styrelsen lämnar ett förslag. Hur resultatet förs vidare i NONOX står i [Resultatdisposition](/manual/bokslut/resultatdisposition).
 4. **Fråga en redovisningskonsult** innan du bestämmer fördelningen mellan lön och utdelning.

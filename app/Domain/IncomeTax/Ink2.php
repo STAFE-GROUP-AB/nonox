@@ -47,15 +47,7 @@ final class Ink2
     /** The beskattningsperiod by the last day of the fiscal year, e.g. 2026P4. */
     public function period(): string
     {
-        $end = $this->fiscalYear->end_date;
-        $part = match (true) {
-            $end->month <= 4 => 1,
-            $end->month <= 6 => 2,
-            $end->month <= 8 => 3,
-            default => 4,
-        };
-
-        return "{$end->year}P{$part}";
+        return Periods::of($this->fiscalYear);
     }
 
     public function isVerifiedPeriod(): bool
@@ -65,9 +57,8 @@ final class Ink2
 
     /**
      * The identity of a company in SRU: 16 and the ten digits of the
-     * organisation number.
-     *
-     * TODO(legal-verify): confirm the century prefix 16 for legal persons.
+     * organisation number (Teknisk information om filöverföring: legal
+     * persons 16, natural persons 19 or 20, twelve digits).
      */
     public function identity(): string
     {
