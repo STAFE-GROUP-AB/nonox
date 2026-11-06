@@ -20,7 +20,7 @@ Med modulen **Bank** kopplar du företagets bankkonton till NONOX med BankID. D�
 
 - **Modulen måste vara påslagen.** En ägare eller administratör slår på **Bank** under **Inställningar för företaget → Moduler**. Läs [Moduler](/manual/installningar/moduler).
 - **Installationen måste ha en leverantör av öppen bankdata.** NONOX hämtar bankdata genom en licensierad leverantör (Enable Banking). Saknas avtalet säger modulsidan *Bankkopplingen är inte inställd på den här installationen* och modulen går inte att slå på.
-- **På nonox.app** erbjuds modulen inte än. Den slås på när de juridiska frågorna kring tjänsten är besvarade. Kör ni NONOX själva behöver ni ett eget avtal med leverantören.
+- **På nonox.app** erbjuds modulen inte än: där finns inget avtal med en leverantör av öppen bankdata. Den slås på när avtalet är klart och de juridiska frågorna kring tjänsten är besvarade. Till dess läser du in bankens filer, se [Bankfiler](/manual/bank/bankfiler). Kör ni NONOX själva behöver ni ett eget avtal med leverantören.
 - Kontoplanen behöver ett konto för banken mellan 1900 och 1999, till exempel 1930.
 - Du behöver rollen ägare, administratör eller redovisningskonsult för att koppla banker. Bokförare och revisorer kan se transaktionerna.
 

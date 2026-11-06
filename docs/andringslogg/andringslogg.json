@@ -32,6 +32,62 @@
   ],
   "poster": [
     {
+      "id": "2026-11-06-drivmedelsforman-arbetsgivaravgift",
+      "datum": "2026-11-06T07:05:00+01:00",
+      "rubrik": "Arbetsgivaravgift på drivmedelsförmån rättad",
+      "beskrivning": "Arbetsgivaravgiften på drivmedelsförmån räknades på hela förmånsvärdet, marknadsvärdet gånger 1,2, men ska enligt Skatteverket räknas på marknadsvärdet; avgiften blev därför ungefär 20 procent för hög på drivmedlet. Nu räknas den rätt, och den anställdas betalning för drivmedel läggs in med en egen löneart och redovisas i ruta 098. Har ni lagt in drivmedelsförmån tidigare, se över de perioderna med er redovisningskonsult; redan attesterade löner ändras inte.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-detaljhandeln-ob-eller-overtid",
+      "datum": "2026-11-06T05:55:00+01:00",
+      "rubrik": "Detaljhandeln: bara det högsta av OB och övertid",
+      "beskrivning": "När övertid eller mertid ligger på OB-tid betalar NONOX nu bara den procentuellt högsta ersättningen, som Detaljhandelsavtalet säger, och övertid betalas med satsen för dagen den arbetades även när veckan går över den 1 april. Tidigare betalades både OB och övertid för samma tid. Har ni Detaljhandelsavtalet och övertid efter 18.15 i perioder som skickats till lönen före i dag, se över dem och rätta i nästa lönekörning.",
+      "typ": "Rättat",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-overtidsarter-grona-riks-och-detaljhandeln",
+      "datum": "2026-11-06T05:35:00+01:00",
+      "rubrik": "Övertid och mertid per art enligt Gröna Riks och Detaljhandeln",
+      "beskrivning": "Med Planering och Avtal delas veckans övertid och mertid nu upp per art enligt avtalet: de två första timmarna i anslutning till passet, tid därutöver, tid som inte ansluter och en fridag, och i Detaljhandeln också kväll efter 20.00, helg och fridag på lördag. Varje art skickas på avtalets egen löneart och komptid räknas med avtalets faktor per art, i Detaljhandeln med den faktor som gäller före och efter den 1 april 2026. En heltidsanställd i Detaljhandeln som gör övertid en fridag får ersättning för minst tre timmar.",
+      "typ": "Nytt",
+      "omrade": "Lön"
+    },
+    {
+      "id": "2026-11-06-ingen-k2-arsredovisning-for-k3",
+      "datum": "2026-11-06T04:45:00+01:00",
+      "rubrik": "Ingen K2-årsredovisning för företag som valt K3",
+      "beskrivning": "Har företaget valt K3 visar Bokföring → Årsredovisning nu att NONOX ännu inte tar fram årsredovisningar enligt K3, i stället för en årsredovisning som sade att den följde K2. Bokföringen, bokslutet och inkomstdeklarationen fungerar som vanligt, och årets SIE-fil kan läsas in i ett program som stöder K3. Villkoren som visas när du väljer K2 räknar nu också upp de företag som inte får använda K2 från räkenskapsår som börjar efter den 31 december 2025.",
+      "typ": "Rättat",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-arsredovisningens-belopp-gar-jamnt-ut",
+      "datum": "2026-11-06T04:30:00+01:00",
+      "rubrik": "Årsredovisningens summor stämmer med raderna",
+      "beskrivning": "Varje rad i årsredovisningen avrundas nu till närmaste hela krona, och varje summa är summan av de avrundade raderna. Tidigare kapades öret på varje rad och summa för sig, så att en summa kunde skilja en krona från raderna. Blir tillgångar och eget kapital och skulder olika efter avrundningen läggs skillnaden på raden Övriga skulder under kortfristiga skulder.",
+      "typ": "Rättat",
+      "omrade": "Bokslut"
+    },
+    {
+      "id": "2026-11-06-ruta-20-och-23-handelsvaror",
+      "datum": "2026-11-06T02:45:00+01:00",
+      "rubrik": "Ruta 20 och 23 tar med BAS-kontona för handelsvaror",
+      "beskrivning": "Inköp av handelsvaror från ett annat EU-land på 4075–4077 kommer nu med i ruta 20, och inköp av handelsvaror i Sverige med omvänd betalningsskyldighet på 4065–4067 i ruta 23. Tidigare räknades bara råvaror och material på 4515–4517 och 4415–4417. Har du bokfört på de nya kontona, kontrollera momsdeklarationerna för perioderna det gäller.",
+      "typ": "Rättat",
+      "omrade": "Moms"
+    },
+    {
+      "id": "2026-11-06-bankkoppling-inte-i-drift",
+      "datum": "2026-11-06T01:15:00+01:00",
+      "rubrik": "Bankkopplingen står som på väg på nonox.app",
+      "beskrivning": "Webbplatsen visade bankkopplingen med BankID som i drift, men den driftade tjänsten på nonox.app har ännu inget avtal med en leverantör av öppen bankdata. Funktionen står nu som på väg, och manualen säger att du läser in bankens filer tills vidare. Den som kör NONOX själv kan fortfarande slå på modulen Bank med ett eget avtal.",
+      "typ": "Rättat",
+      "omrade": "Bank"
+    },
+    {
       "id": "2026-11-05-momsdeklarationen-till-skatteverket",
       "datum": "2026-11-05T12:10:00+01:00",
       "rubrik": "Momsdeklarationen direkt till Skatteverket förbereds",

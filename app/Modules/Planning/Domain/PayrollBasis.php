@@ -112,7 +112,7 @@ final class PayrollBasis
      * @param  list<DayComparison>  $days
      * @param  array<string, true>  $leaveDays  dates (Y-m-d) with approved absence or comp leave
      */
-    public static function period(array $days, array $leaveDays, OvertimeTerms $terms, int $contractedMinutes, int $fullTimeMinutes, ?string $overtimeCode, ?string $extraTimeCode, bool $overtimeIncluded, int $weeks = 1): WeekBasis
+    public static function period(array $days, array $leaveDays, OvertimeTerms $terms, int $contractedMinutes, int $fullTimeMinutes, ?string $overtimeCode, ?string $extraTimeCode, bool $overtimeIncluded, int $weeks = 1, ?OvertimeKinds $kinds = null): WeekBasis
     {
         $worked = 0;
         $credit = 0;
@@ -136,7 +136,7 @@ final class PayrollBasis
         $measured = $terms->method === OvertimeTerms::DAILY
             ? $contractedMinutes + $daily
             : $worked + $credit + $adjustment;
-        $week = self::week($measured, $contractedMinutes, $fullTimeMinutes, $overtimeCode, $extraTimeCode, $overtimeIncluded, $weeks);
+        $week = self::week($measured, $contractedMinutes, $fullTimeMinutes, $overtimeCode, $extraTimeCode, $overtimeIncluded, $weeks, $kinds, $kinds?->pool($days, $terms));
         $notes = [];
 
         if ($terms->method === OvertimeTerms::DAILY && $week->hasExtraTime()) {
@@ -157,7 +157,7 @@ final class PayrollBasis
                 : __('Övertiden är avrundad per dag enligt avtalet (:source).', ['source' => $terms->rounding['source']]));
         }
 
-        return $notes === [] ? $week : new WeekBasis($week->overtimeMinutes, $week->extraTimeMinutes, $week->minutes, [...$week->deviations, ...$notes]);
+        return $notes === [] ? $week : $week->withDeviations([...$week->deviations, ...$notes]);
     }
 
     /**
@@ -168,11 +168,16 @@ final class PayrollBasis
      * code given; without one it is shown for the manager to enter in the
      * payroll run. Shorter periods are never deducted.
      *
-     * TODO(legal-verify): public holidays without a planned shift, the
-     * agreements' overtime kinds (adjoining or not, first hours or later)
-     * and the split between mertid and overtime under a daily method.
+     * When the agreement splits overtime and mertid by kind (OvertimeKinds,
+     * H.1), the minutes are laid on the kinds of the period's stretches
+     * outside the plan, each on its agreement code, instead of one code.
+     *
+     * TODO(legal-verify): public holidays without a planned shift and the
+     * split between mertid and overtime under a daily method.
+     *
+     * @param  ?array{pieces: list<array{date: string, kind: string, start: ?int, minutes: int}>, days_off: array<string, array{minutes: int, kind: string}>}  $pool
      */
-    public static function week(int $workedMinutes, int $contractedMinutes, int $fullTimeMinutes, ?string $overtimeCode, ?string $extraTimeCode, bool $overtimeIncluded, int $weeks = 1): WeekBasis
+    public static function week(int $workedMinutes, int $contractedMinutes, int $fullTimeMinutes, ?string $overtimeCode, ?string $extraTimeCode, bool $overtimeIncluded, int $weeks = 1, ?OvertimeKinds $kinds = null, ?array $pool = null): WeekBasis
     {
         $excess = $workedMinutes - $contractedMinutes;
 
@@ -186,6 +191,12 @@ final class PayrollBasis
 
         if ($overtimeIncluded) {
             return new WeekBasis($overtime, $extra, [], [Deviation::info(Deviation::EXTRA_TIME, __(':period: :minutes min utöver veckoarbetstiden. Övertid ingår i lönen enligt anställningen.', ['period' => $period, 'minutes' => $excess]))]);
+        }
+
+        if ($kinds !== null && $pool !== null) {
+            $split = $kinds->allocate($pool, $overtime, $extra, $overtimeCode, $extraTimeCode, $period);
+
+            return new WeekBasis($overtime, $extra, $split['minutes'], $split['deviations'], parts: $split['parts']);
         }
 
         $minutes = [];

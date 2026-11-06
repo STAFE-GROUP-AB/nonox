@@ -15,6 +15,7 @@ use App\Modules\Payroll\Models\PayrollRun;
 use App\Modules\Payroll\Models\TimeReport;
 use App\Modules\Payroll\PayrollModule;
 use App\Modules\Planning\Actions\Concerns\GuardsPlanning;
+use App\Modules\Planning\Domain\OvertimeKinds;
 use App\Modules\Planning\Domain\WeekBasis;
 use App\Modules\Planning\Models\Attestation;
 use App\Modules\Planning\Support\AttestData;
@@ -193,19 +194,31 @@ final class SendToPayroll
             return $this->earnCompTime($user, $company, $attestation, $week);
         }
 
-        $missing = array_diff(array_keys($week->minutes), $codes->keys()->all());
+        [$parts, $dropped] = $this->takeBacks($attestation, $week->parts, $codes);
+        $missing = array_diff($parts !== [] ? array_column($parts, 'code') : array_keys($week->minutes), $codes->keys()->all());
 
         if ($missing !== []) {
-            return __('Lönearten :code finns inte i lönen.', ['code' => implode(', ', $missing)]);
+            return __('Lönearten :code finns inte i lönen.', ['code' => implode(', ', array_unique($missing))]);
         }
 
         $ids = [];
         $basis = $attestation->basis ?? [];
 
-        foreach ($week->minutes as $code => $minutes) {
+        // Split by agreement kind (ADR-033 H.1): one report per code and day worked, paid with the period's last day but priced
+        // on the day worked (priced_on), so an hour before a new rate step keeps the old rate. Otherwise one report per code.
+        $reports = $parts !== []
+            ? array_map(fn (array $part): array => [$part['code'], $part['minutes'], $part['date'] === $attestation->date->toDateString() ? null : $part['date']], $parts)
+            : array_map(fn (string $code, int $minutes): array => [$code, $minutes, null], array_keys($week->minutes), array_values($week->minutes));
+
+        foreach ($reports as [$code, $minutes, $pricedOn]) {
+            if ($minutes === 0) {
+                continue;
+            }
+
             $ids[] = TimeReport::create([
                 'employee_id' => $attestation->employee_id,
                 'date' => $attestation->date->toDateString(),
+                'priced_on' => $pricedOn,
                 'hours' => (string) BigDecimal::of($minutes)->dividedBy(60, 2, RoundingMode::HalfUp),
                 'pay_code_id' => $codes->get($code),
                 'status' => 'APPROVED',
@@ -223,11 +236,62 @@ final class SendToPayroll
                 'extra_time_minutes' => $week->extraTimeMinutes,
                 'minutes' => $week->minutes,
                 'time_report_ids' => $ids,
+                'take_backs_not_sent' => $dropped === [] ? null : $dropped,
             ]],
             'updated_by' => $user->id,
         ])->save();
 
         return count($ids);
+    }
+
+    /**
+     * The period's parts without the OB take-backs (OvertimeKinds::OB_OVERLAP)
+     * that cannot be sent safely: a take-back for a day whose own time
+     * reports (its OB) were not sent, because the day was skipped, or on a
+     * pay code the company does not have. Leaving one out can only pay
+     * more, never less than the higher of OB and overtime. The dropped
+     * ones are returned for the record.
+     *
+     * @param  list<array{type: string, code: string, date: string, minutes: int, minimum: bool}>  $parts
+     * @param  Collection<string, int>  $codes
+     * @return array{list<array{type: string, code: string, date: string, minutes: int, minimum: bool}>, list<array{code: string, date: string, minutes: int, reason: string}>}
+     */
+    private function takeBacks(Attestation $attestation, array $parts, Collection $codes): array
+    {
+        $dates = array_values(array_unique(array_column(array_filter($parts, fn (array $part): bool => $part['type'] === OvertimeKinds::OB_OVERLAP), 'date')));
+
+        if ($dates === []) {
+            return [$parts, []];
+        }
+
+        $sent = Attestation::query()
+            ->where('employee_id', $attestation->employee_id)
+            ->where('status', Attestation::SENT)
+            ->whereIn('date', $dates)
+            ->get(['date'])
+            ->map(fn (Attestation $day): string => $day->date->toDateString())
+            ->flip();
+        $kept = [];
+        $dropped = [];
+
+        foreach ($parts as $part) {
+            $reason = match (true) {
+                $part['type'] !== OvertimeKinds::OB_OVERLAP => null,
+                ! $sent->has($part['date']) => 'DAY_NOT_SENT',
+                ! $codes->has($part['code']) => 'NO_PAY_CODE',
+                default => null,
+            };
+
+            if ($reason === null) {
+                $kept[] = $part;
+
+                continue;
+            }
+
+            $dropped[] = ['code' => $part['code'], 'date' => $part['date'], 'minutes' => $part['minutes'], 'reason' => $reason];
+        }
+
+        return [$kept, $dropped];
     }
 
     /**

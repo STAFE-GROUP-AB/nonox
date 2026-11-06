@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Domain\Engine\Steps;
 
+use App\Modules\Payroll\Domain\Benefits\FuelBenefit;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
@@ -42,6 +43,8 @@ final class Additions implements Step
                 throw new PayrollBlockedException(__(':item saknar belopp eller timpris.', ['item' => $input->description]));
             }
             $priced = new PayInput($input->code, $input->description, $input->category, $input->taxable, $input->taxMethod, $input->contributionBasis, $input->vacationBasis, $input->quantity, $rate, $input->amountOre);
+            // Drivmedelsförmån: the typed value (1,2 × market value) is taxed, the market value bears the contributions.
+            $marketValue = $input->code === FuelBenefit::CODE && $input->contributionBasis ? FuelBenefit::marketValue($priced->total(), $context->rules) : null;
 
             $draft->add(new PayslipLineResult(
                 $input->code,
@@ -52,7 +55,8 @@ final class Additions implements Step
                 $input->vacationBasis,
                 $input->quantity,
                 $rate,
-                explanation: ['source' => 'input', 'category' => $input->category, 'benefit' => $input->category === 'BENEFIT', ...$input->explanation],
+                explanation: ['source' => 'input', 'category' => $input->category, 'benefit' => $input->category === 'BENEFIT', ...$input->explanation, ...($marketValue === null ? [] : ['contribution_basis_ore' => $marketValue])],
+                contributionOre: $marketValue,
             ));
         }
     }

@@ -645,6 +645,18 @@
             "source_quote": "61 kap. 5 §: summan av 0,29 prisbasbelopp, ett ränterelaterat belopp (nybilspris × (70 procent av statslåneräntan + 0,01), lägst 0,5 procent), ett prisrelaterat belopp (13 procent av nybilspriset) och bilens fordonsskatt; 8 a §; 9 §. Statslåneränta 30 november 2025: 2,55 procent (https://skatteverket.se/download/18.1522bf3f19aea8075ba3285/1767885159120/belopp-och-procentsatser-for-inkomstaret-2026.pdf)."
         },
         {
+            "key": "benefit.fuel.factor",
+            "valid_from": "2026-01-01",
+            "valid_to": null,
+            "value": {
+                "tax_factor_bp": 12000
+            },
+            "source_url": "https://data.riksdagen.se/dokument/sfs-1999-1229.text",
+            "source_quote": "IL 61 kap. 10 §: drivmedel … marknadsvärdet multiplicerat med 1,2. Socialavgiftslagen (2000:980) 2 kap. 10 a § punkt 2: drivmedelsförmån … ska beräknas till marknadsvärdet (https://data.riksdagen.se/dokument/sfs-2000-980.text).",
+            "source_read_on": "2026-11-06",
+            "status": "researched"
+        },
+        {
             "key": "agi.field_codes",
             "valid_from": "2026-01-01",
             "valid_to": null,

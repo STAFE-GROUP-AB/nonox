@@ -125,7 +125,7 @@ class IncomeTaxReturns
             throw new AuthorizationException;
         }
 
-        if (! AnnualReportDocument::supports($company)) {
+        if (! AnnualReportDocument::supportsLegalForm($company)) {
             throw ValidationException::withMessages(['form' => __('Inkomstdeklaration 2 gäller aktiebolag och ekonomiska föreningar.')]);
         }
 

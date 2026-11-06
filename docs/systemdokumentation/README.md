@@ -4,8 +4,8 @@ Systemdokumentation och behandlingshistorik enligt bokföringslagen och BFNAR
 2013:2 (`AGENTS.md` §10). Dokumentet beskriver hur systemet faktiskt fungerar i
 den här versionen och uppdateras i varje ändring som påverkar bokföringen.
 
-- Version: 0.104
-- Datum: 2026-11-05
+- Version: 0.105
+- Datum: 2026-11-06
 - Omfattning: företag, kontoplan, räkenskapsår, verifikationsserier,
   verifikationer och bokföring, underlag, konteringsmallar, rättelser,
   kontroll av huvudboken, ingående balanser, SIE-export och SIE-import,
@@ -1784,9 +1784,37 @@ Bankens svar på en betalfil läses in under Leverantörsfakturor → Betalfiler
   resultatdispositionen; finns ingen lämnas tomma rader. Bolagsverkets
   formkrav har inte kunnat läsas. Enligt granskning 2026-11-02,
   juristgranskning återstår (BS-AUD-BOK-10, #91).
+- Belopp i hela kronor (sedan 2026-11-06, `PrintedFigures`, ADR-010): varje
+  rad avrundas till närmaste krona, en halv krona bort från noll, och varje
+  delsumma, avsnittssumma och total är summan av de avrundade raderna; förut
+  kapades öret på varje belopp för sig. Årets resultat i balansräkningen är
+  resultaträkningens avrundade resultat. Skiljer tillgångar och eget kapital
+  och skulder efter avrundningen läggs skillnaden på Övriga skulder
+  (kortfristiga). I förändringar i eget kapital tas ingående och utgående
+  belopp ur den avrundade balansräkningen och det som avrundningen lämnar i
+  en kolumn läggs på Balanseras i ny räkning (annars Övriga förändringar,
+  annars Utdelning). Fritt eget kapital i resultatdispositionen är
+  balansräkningens avrundade belopp. En eventualförpliktelse utan belopp
+  skrivs utan belopp (förut 0). Gränsen för utdelning (`DividendLimit`)
+  räknas fortfarande exakt i öre. Var en avrundningsdifferens ska stå är
+  inte juridiskt kontrollerat.
 - Rapporten visas som sida och laddas ner som PDF. Revisionsberättelsen
   läggs till utanför systemet. Digital inlämning till
   Bolagsverket (iXBRL) finns ännu inte.
+- Årsredovisningen görs bara för ett företag vars regelverk är K2 (sedan
+  2026-11-06, ADR-010). Dokumentet skriver i not 1 att det följer BFNAR
+  2016:10, vilket inte stämmer för ett företag som har valt K3 (BFNAR
+  2012:1). För ett aktiebolag eller en ekonomisk förening med K3 (eller K1)
+  visar sidan en förklaring i stället för formuläret; förhandsvisningen och
+  PDF:en nekas (403) och texterna kan inte sparas. Inkomstdeklaration 2 tas
+  fram som förut, eftersom den följer företagsformen. Ingenting i
+  bokföringen ändras.
+- Villkoren för K2 som användaren bekräftar när företaget skapas eller
+  regelverket ändras omfattar för aktiebolag och ekonomiska föreningar även
+  BFNAR 2016:10 punkt 1.1A–1.1C i lydelsen enligt BFNAR 2025:2 (räkenskapsår
+  som börjar efter den 31 december 2025). Företag som redan har bekräftat K2
+  behöver inte bekräfta på nytt; det är ett mänskligt beslut. Enligt
+  AI-utredning 2026-11-06, juristgranskning återstår.
 - Kräver behörigheten att hantera räkenskapsår.
 
 ## 5a7. Inkomstdeklaration 2 (SRU)
@@ -2269,6 +2297,14 @@ lönebeskeden låsta i databasen.
   reglerna, och den anställdes egen betalning dras från nettolönen och sänker
   förmånsvärdet. Förmånsvärdet bokförs inte som en egen kostnad; den verkliga
   kostnaden bokfördes vid inköpet och avgifterna på förmånen ligger i 7510.
+- Drivmedelsförmån skrivs in som förmånsvärdet (marknadsvärdet × 1,2,
+  inkomstskattelagen 61 kap. 10 §). Skatteavdraget räknas på förmånsvärdet,
+  arbetsgivaravgiften på marknadsvärdet (förmånsvärdet / 1,2, avrundat till
+  öre; socialavgiftslagen 2 kap. 10 a § punkt 2, sedan 2026-11-06, tillägg
+  till ADR-012). Den anställdas betalning för drivmedlet (löneart Egen
+  betalning för drivmedel vid bilförmån) minskar båda och bokförs i kredit på
+  7388; arbetsgivardeklarationen har hela förmånsvärdet i ruta 018 och
+  betalningen i ruta 098. Attesterade och bokförda löner ändras inte.
 - Milersättning och inrikes traktamente är skattefria upp till reglernas belopp
   och betalas med nettolönen (7331, 7321); det som betalas över blir
   skattepliktig lön (7332, 7322).
@@ -3048,6 +3084,21 @@ förslag från NONOX AI (ADR-033 §6).
   komptid; standard är anställningens uppgift om övertidsersättning.
   Komptiden blir timmar ledighet enligt avtalets faktor för lönearten
   (`overtime.comp_time.hours_per_hour`), annars företagets egen faktor.
+- **Övertidsarter per tillfälle (H.1, sedan 2026-11-06, ADR-033).** För
+  Gröna Riks och Detaljhandeln (`overtime.kinds` i avtalsfilen,
+  `OvertimeKinds`) läggs periodens övertid och mertid på arten för varje
+  tillfälle utanför schemat: de två första timmarna i anslutning, tid i
+  anslutning därutöver, tid som inte ansluter, fridag och i Detaljhandeln
+  kväll efter 20.00, helg och fridag på lördag, var och en på avtalets
+  löneart. En heltidsanställd i Detaljhandeln som gör övertid en fridag får
+  minst tre timmar. Tidrapporterna skickas med periodens sista dag men
+  prissätts med satsen för dagen tiden arbetades (`time_reports.priced_on`),
+  och komptiden räknas med faktorn för den dagen. I Detaljhandeln betalas
+  bara den procentuellt högsta av OB och övertid för samma minuter: den lägre
+  dras tillbaka med en negativ rad på samma dag (H.1b). En sådan rad skickas
+  inte för en dag vars egen tid inte är skickad till lönen eller när
+  lönearten saknas; det sparas på attesten och visas, och kan bara ge mer,
+  aldrig mindre. Enligt AI-utredning 2026-11-06, juristgranskning återstår.
   Saldot förs i Lön (`comp_time_entries`: intjänad, uttagen, utbetald,
   justering) och visas på Lön → Komptid, på lönespecen och i Min sida. En
   utbetalning och timavlönades uttag betalas i månadens lönekörning på
@@ -3153,8 +3204,8 @@ förslag från NONOX AI (ADR-033 §6).
   sjukperiodens första dag, avtalens timvärden och karens i tid, taket 105
   dagar, gruppen på sjukperiodens första dag, direkt övergång, fasta tillägg
   och rörligt snitt i månadslönen och deltid från dag 15.
-- **Inte byggt ännu.** Av A7–A8: övertidsarter per tillfälle och minst tre
-  timmar, kost- och bostadsförmån i avtalets månadslön för sjukavdraget och ett
+- **Inte byggt ännu.** Av A7–A8: övertidsarter per tillfälle i andra avtal än
+  Gröna Riks och Detaljhandeln, kost- och bostadsförmån i avtalets månadslön för sjukavdraget och ett
   mindre dagsavdrag för den som är deltidssjuk från dag 15. Av A9–A11: rörlig lön
   och 4,6 %-regeln i
   tjänstemannaavtalens semester, garantibelopp för deltid i handeln, ITP 2,
@@ -3980,3 +4031,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.102 | 2026-11-04 | Sista dagar för moms och arbetsgivardeklaration (också: helårsmoms för ideell förening och stiftelse den 26:e i andra månaden efter året när det inte är känt att de lämnar inkomstdeklaration, och inköp av tjänster utanför EU, ruta 22, räknas som EU-handel) (avsnitt om översikten, ADR-051 etapp 2): en dag flyttas förbi lördag, söndag, helgdag, midsommarafton, julafton och nyårsafton (lag (1930:173) 2 §); arbetsgivardeklarationens dag räknas enligt SFL 26 kap. 26, 30 och 32 §§ för varje år, med Skatteverkets lista som kontroll, och den större gruppen betalar den 12:e (den 17:e i januari) före deklarationen den 26:e (SFL 62 kap. 3 §). Arbetsgivardeklarationens grupp följer företagets egna uppgifter för moms och omsättning, inte löneinställningen. Mina datum räknar fram företagets datum utan att ändra bokföringen. |
 | 0.103 | 2026-11-05 | NE-bilagan för enskild firma och Inkomstdeklaration 4 för handelsbolag och kommanditbolag ur bokföringen som SRU-filer (avsnitt 5a8, ADR-053): fält ur BAS-kontona, räntefördelning, periodiseringsfond, expansionsfond och schablonavdrag för egenavgifter beräknade ur det användaren bekräftar, årets parametrar som data med källa, delägare med krypterade person- och organisationsnummer; ingenting bokförs. |
 | 0.104 | 2026-11-05 | Momsdeklarationen till Skatteverket genom Skatteverkets API (avsnitt 4.13, ADR-054): inloggning hos Skatteverket med e-legitimation, kontroll, utkast låst för underskrift, kvittens och beslutade belopp; ingenting bokförs av utskicket. |
+| 0.105 | 2026-11-06 | Rättelser från drift: ruta 20 läser även 4075–4077 (Inköp av handelsvaror från annat EU-land) och ruta 23 även 4065–4067 (Inköp av handelsvaror i Sverige, omvänd betalningsskyldighet) enligt BAS 2026. Årsredovisningen bara enligt K2 (avsnitt 5a6, ADR-010): ett aktiebolag eller en ekonomisk förening som har valt K3 (eller K1) får en förklaring i stället för en årsredovisning enligt K2; förhandsvisning och PDF nekas och texterna sparas inte; inkomstdeklarationen påverkas inte; villkoren för K2 omfattar BFNAR 2016:10 punkt 1.1A–1.1C enligt BFNAR 2025:2. Årsredovisningens belopp avrundas rad för rad till närmaste krona och summorna är summan av de avrundade raderna; en avrundningsdifferens i balansräkningen läggs på Övriga skulder (avsnitt 5a6, ADR-010). Övertid och mertid per art enligt Gröna Riks och Detaljhandeln, prissatt med satsen för dagen den arbetades, och i Detaljhandeln bara det högsta av OB och övertid på samma tid (avsnitt 5h, ADR-033 H.1 och H.1b). Drivmedelsförmån (avsnitt 5b, tillägg till ADR-012): arbetsgivaravgiften på marknadsvärdet i stället för hela förmånsvärdet, och den anställdas betalning för drivmedlet i ruta 098. Attesterade och bokförda löner och bokförda verifikationer ändras inte. |

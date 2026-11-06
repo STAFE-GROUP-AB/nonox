@@ -44,7 +44,7 @@ För att betala leverantörsfakturor skapar NONOX en betalfil i formatet pain.00
 - **BgMax** för inbetalningar och **LB** för leverantörsbetalningar – Bankgirots äldre format – läses och skapas inte. Bankerna ersätter dem med camt.054 och pain.001.
 
 > [!TIP]
-> Vill du slippa hämta filer över huvud taget? Med modulen Bank hämtar NONOX transaktioner och saldon direkt från banken. Läs [Bankkoppling](/manual/bank/bankkoppling).
+> Vill du slippa hämta filer över huvud taget? Med modulen Bank hämtar NONOX transaktioner och saldon direkt från banken, om den som driftar NONOX har ett avtal med en leverantör av öppen bankdata. På nonox.app erbjuds modulen inte än. Läs [Bankkoppling](/manual/bank/bankkoppling).
 
 ## Vanliga frågor
 

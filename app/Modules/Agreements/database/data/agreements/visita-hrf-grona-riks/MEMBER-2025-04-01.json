@@ -328,10 +328,25 @@
             "hours_per_hour": {
                 "GR_OT_A": "1.5",
                 "GR_OT_B": "1.5",
-                "GR_OT_C": "2"
+                "GR_OT_C": "2",
+                "GR_MT_A": "1.5",
+                "GR_MT_B": "1.5",
+                "GR_MT_C": "2"
             },
             "requires_agreement": true,
-            "source": "GR#§§ 11–12 s. 18–20"
+            "source": "GR#§§ 11–12 s. 18–20; § 12 p. 2.2 s. 20"
+        },
+        "kinds": {
+            "ranks": ["FIRST", "REST", "NOT_ADJOINING"],
+            "first_hours": { "minutes": 120, "per": "DAY", "kind": "FIRST", "source": "GR#§ 12 p. 1.2 a s. 19; p. 2.2 a s. 20" },
+            "rest_kind": "REST",
+            "not_adjoining_kind": "NOT_ADJOINING",
+            "day_off_kind": "NOT_ADJOINING",
+            "codes": {
+                "OVERTIME": { "FIRST": "GR_OT_A", "REST": "GR_OT_B", "NOT_ADJOINING": "GR_OT_C" },
+                "EXTRA_TIME": { "FIRST": "GR_MT_A", "REST": "GR_MT_B", "NOT_ADJOINING": "GR_MT_C" }
+            },
+            "source": "GR#§ 12 p. 1.2 s. 19; p. 2.2 s. 20"
         },
         "hourly_paid": {
             "supplement_codes": {
@@ -361,7 +376,8 @@
     },
     "notes": [
         "Avrundning av OB och övertid till påbörjad halvtimme tillämpas när pass delas upp (A6), inte på redan uppdelade timmar. TODO(legal-verify): per pass eller per period.",
-        "Röda dagar är inte data i den här versionen ännu (A5–A8). Mertid med tillägg (GR_MT_*) gäller från 2026-04-01 (GR § 12 p. 2).",
+        "Röda dagar är inte data i den här versionen ännu (A5–A8). Mertid med tillägg (GR_MT_*) gäller från 2026-04-01 (GR § 12 p. 2); före det betalas mertid med timlön på företagets löneart, och regeln om mertid över 10 timmar per dag är inte data.",
+        "Övertid och mertid delas per tillfälle i a) de två första timmarna i anslutning till ordinarie tid, b) tid därutöver och c) tid som inte ansluter, även en fridag (GR § 12 p. 1.2 och 2.2). NONOX räknar de två första timmarna per dag, före och efter passet sammanlagt. TODO(legal-verify): per dag eller per tillfälle.",
         "Beräkningsperioden är högst 8 veckor för timavlönade och 16 för månadsavlönade; 26 veckor bara för månadslön med minst 70 % sysselsättning och schema för hela perioden m.m. (GR § 9 p. 1). Enligt AI-utredning 2026-11-02, juristgranskning återstår.",
         "Förlängning av arbetstiden med högst 10 minuter är inte övertid, och övertid avrundas uppåt till påbörjad halvtimme per tillfälle (GR § 12 p. 1.2 anm.). Enligt AI-utredning 2026-11-02, juristgranskning återstår.",
         "Viss nattpersonal har minimitimlön × 1,055 (GR § 9 p. 1 st. 2); ingen egen lönegrupp här ännu.",

@@ -141,7 +141,7 @@ final class AgreementFileValidator
         }
 
         $this->rounding((array) ($file['rounding'] ?? []));
-        $this->overtime((array) ($file['overtime'] ?? []), $codes);
+        $this->overtime((array) ($file['overtime'] ?? []), $codes, $dayTypes);
         $this->sickPay((array) ($file['sick_pay'] ?? []));
         $this->vacation((array) ($file['vacation'] ?? []), $from, $to);
         $this->ruleReference((array) ($file['pension'] ?? []), 'pension', self::PENSION_RULES);
@@ -172,9 +172,14 @@ final class AgreementFileValidator
     /**
      * @param  array<string, mixed>  $overtime
      * @param  list<string>  $codes
+     * @param  list<string>  $dayTypes
      */
-    private function overtime(array $overtime, array $codes): void
+    private function overtime(array $overtime, array $codes, array $dayTypes): void
     {
+        if (isset($overtime['kinds'])) {
+            $this->overtimeKinds((array) $overtime['kinds'], $codes, $dayTypes);
+        }
+
         if (isset($overtime['hourly_paid'])) {
             $hourly = (array) $overtime['hourly_paid'];
             $this->source($hourly, 'overtime.hourly_paid');
@@ -194,8 +199,95 @@ final class AgreementFileValidator
         $this->source($compTime, 'overtime.comp_time');
 
         foreach ((array) ($compTime['hours_per_hour'] ?? []) as $code => $factor) {
-            if (! in_array((string) $code, $codes, true) || ! self::isPositiveDecimal($factor)) {
+            // A factor that changes with the rate is a list of steps (Detaljhandeln § 9.6).
+            $valid = is_array($factor)
+                ? $factor !== [] && array_is_list($factor) && array_filter($factor, fn (mixed $step): bool => ! is_array($step) || ! is_string($step['valid_from'] ?? null) || ! self::isDate($step['valid_from']) || ! self::isPositiveDecimal($step['factor'] ?? null)) === []
+                : self::isPositiveDecimal($factor);
+
+            if (! in_array((string) $code, $codes, true) || ! $valid) {
                 $this->problems[] = __('Komptiden för :code pekar på en kod som inte finns eller har en faktor i fel form.', ['code' => (string) $code]);
+            }
+        }
+    }
+
+    /**
+     * The kinds of overtime and mertid per occasion (datamodell §8): ranks
+     * from lowest to highest, the kinds a stretch of time gets, windows that
+     * give a higher kind, and a code per kind for overtime and for mertid.
+     *
+     * @param  array<string, mixed>  $kinds
+     * @param  list<string>  $codes
+     * @param  list<string>  $dayTypes
+     */
+    private function overtimeKinds(array $kinds, array $codes, array $dayTypes): void
+    {
+        $this->source($kinds, 'overtime.kinds');
+        $ranks = (array) ($kinds['ranks'] ?? []);
+
+        if ($ranks === [] || ! array_is_list($ranks) || array_filter($ranks, fn (mixed $rank): bool => ! is_string($rank) || preg_match('/^[A-Z_]{1,30}$/', $rank) !== 1) !== []) {
+            $this->problems[] = __('overtime.kinds.ranks måste vara en lista med arter, lägst ersatt först.');
+
+            return;
+        }
+
+        foreach (['rest_kind', 'not_adjoining_kind', 'day_off_kind'] as $field) {
+            if (isset($kinds[$field]) && ! in_array($kinds[$field], $ranks, true)) {
+                $this->problems[] = __('overtime.kinds.:field pekar på en art som inte finns i ranks.', ['field' => $field]);
+            }
+        }
+
+        if (isset($kinds['first_hours'])) {
+            $first = (array) $kinds['first_hours'];
+            $this->source($first, 'overtime.kinds.first_hours');
+
+            if (! is_int($first['minutes'] ?? null) || $first['minutes'] < 1 || ($first['per'] ?? null) !== 'DAY' || ! in_array($first['kind'] ?? null, $ranks, true)) {
+                $this->problems[] = __('overtime.kinds.first_hours har fel form (minutes, per DAY och kind ur ranks).');
+            }
+        }
+
+        foreach ((array) ($kinds['windows'] ?? []) as $index => $window) {
+            $window = (array) $window;
+            $this->source($window, "overtime.kinds.windows.{$index}");
+            $spans = (array) ($window['spans'] ?? []);
+            $times = array_merge([$window], $spans);
+            $badTime = array_filter($times, fn (mixed $entry): bool => array_filter(['from', 'to', 'to_next_day'], fn (string $field): bool => isset($entry[$field]) && preg_match('/^([01]\d|2[0-4]):[0-5]\d$/', (string) $entry[$field]) !== 1) !== []);
+            $where = (isset($window['days']) ? 1 : 0) + (isset($window['day_type']) ? 1 : 0) + ($spans !== [] ? 1 : 0);
+
+            if (! in_array($window['kind'] ?? null, $ranks, true) || $where !== 1 || $badTime !== []
+                || (isset($window['day_type']) && ! in_array($window['day_type'], $dayTypes, true))
+                || (isset($window['days']) && array_diff((array) $window['days'], DayCalendar::WEEKDAYS) !== [])
+                || (isset($window['day_off_only']) && ! is_bool($window['day_off_only']))) {
+                $this->problems[] = __('overtime.kinds.windows.:index har fel form (kind ur ranks och precis ett av days, day_type eller spans).', ['index' => (string) $index]);
+            }
+        }
+
+        foreach (['OVERTIME', 'EXTRA_TIME'] as $type) {
+            foreach ((array) ($kinds['codes'][$type] ?? []) as $kind => $code) {
+                if (! in_array((string) $kind, $ranks, true) || ! in_array($code, $codes, true)) {
+                    $this->problems[] = __('overtime.kinds.codes.:type: :kind pekar på en art eller kod som inte finns.', ['type' => $type, 'kind' => (string) $kind]);
+                }
+            }
+        }
+
+        if (($kinds['codes']['OVERTIME'] ?? []) === []) {
+            $this->problems[] = __('overtime.kinds.codes.OVERTIME saknar koder.');
+        }
+
+        if (isset($kinds['ob_overlap'])) {
+            $overlap = (array) $kinds['ob_overlap'];
+            $this->source($overlap, 'overtime.kinds.ob_overlap');
+
+            if (($overlap['method'] ?? null) !== 'HIGHEST_ONLY') {
+                $this->problems[] = __('overtime.kinds.ob_overlap.method måste vara HIGHEST_ONLY.');
+            }
+        }
+
+        if (isset($kinds['day_off_minimum'])) {
+            $minimum = (array) $kinds['day_off_minimum'];
+            $this->source($minimum, 'overtime.kinds.day_off_minimum');
+
+            if (! is_int($minimum['minutes'] ?? null) || $minimum['minutes'] < 1 || $minimum['minutes'] > 1440) {
+                $this->problems[] = __('overtime.kinds.day_off_minimum.minutes måste vara 1–1440 minuter.');
             }
         }
     }

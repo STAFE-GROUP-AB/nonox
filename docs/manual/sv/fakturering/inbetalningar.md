@@ -8,7 +8,7 @@ sokord: [inbetalning, betalning, kundbetalning, delbetalning, camt.054, bankfil,
 
 # Inbetalningar
 
-När kunden har betalat prickar du av fakturan. Det kan du göra på två sätt: registrera betalningen direkt på fakturan, eller läsa in bankens fil med inbetalningar så att NONOX kopplar dem till rätt fakturor på OCR-numret. Med [bankkopplingen](/manual/bank/bankkoppling) påslagen kommer inbetalningarna in av sig själva.
+När kunden har betalat prickar du av fakturan. Det kan du göra på två sätt: registrera betalningen direkt på fakturan, eller läsa in bankens fil med inbetalningar så att NONOX kopplar dem till rätt fakturor på OCR-numret. Med [bankkopplingen](/manual/bank/bankkoppling) påslagen kommer inbetalningarna in av sig själva; den erbjuds inte på nonox.app än.
 
 Hur betalningen bokförs beror på bokföringsmetoden. Läs [Fakturametoden och kontantmetoden](/manual/fakturering/fakturametoden-och-kontantmetoden).
 

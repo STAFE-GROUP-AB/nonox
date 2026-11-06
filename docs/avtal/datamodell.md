@@ -568,3 +568,97 @@ Utanför avtalsfilen:
   sjukdag `AbsenceInput::lostSupplementsOre`. Det är generiska fält; det är
   `AgreementSickPayExtension` i Avtal som fyller dem från publicerade pass och
   avtalet.
+
+## 8. Övertidsarter per tillfälle och komptid per datum (H.1, 2026-11-06)
+
+Gröna Riks och Detaljhandeln ersätter övertid och mertid olika beroende på
+*när* tiden ligger: de två första timmarna i anslutning till ordinarie tid,
+tid därutöver, tid som inte ansluter, och (Detaljhandeln) kväll efter 20.00,
+lördag och aftnar efter 12.00, sön- och helgdag och fridag. Det uttrycks med
+`overtime.kinds`:
+
+```jsonc
+"overtime": {
+  "kinds": {
+    "ranks": ["FIRST", "REST", "HIGH"],      // arter, lägst ersatt först; högsta art vinner
+    "first_hours": { "minutes": 120, "per": "DAY", "kind": "FIRST", "source": "D1#§ 9.2 s. 35–36" },
+    "rest_kind": "REST",                     // tid i anslutning efter de första timmarna
+    "not_adjoining_kind": "REST",            // tid som inte ansluter till ett pass
+    "day_off_kind": "REST",                  // en dag utan planerat pass (fridag)
+    "windows": [                             // fönster som ger en högre art; days, day_type eller spans
+      { "kind": "REST", "days": ["MON", "TUE", "WED", "THU", "FRI"], "from": "20:00", "to": "24:00", "source": "D1#§ 9.2 s. 35–36" },
+      { "kind": "HIGH", "day_type": "HELGDAG", "source": "D1#§ 9.2 s. 35–36" },
+      { "kind": "HIGH", "day_off_only": true, "days": ["SAT"], "from": "00:00", "to": "24:00", "source": "D1#§ 9.2 s. 35–36" },
+      { "kind": "HIGH", "day_off_only": true, "spans": [{ "day": "JULAFTON", "from": "00:00", "to": "24:00" }], "source": "D1#§ 9.2 s. 35–36" }
+    ],
+    "codes": {
+      "OVERTIME":   { "FIRST": "DH_OT_A", "REST": "DH_OT_70", "HIGH": "DH_OT_100" },
+      "EXTRA_TIME": { "FIRST": "DH_MT_A", "REST": "DH_MT_70", "HIGH": "DH_MT_100" }
+    },
+    "day_off_minimum": { "minutes": 180, "source": "D1#§ 9.1 s. 35" },  // minst 3 h ersättning på fridag, heltid
+    "source": "D1#§ 9.1–9.2 s. 34–36; § 9.5 s. 37"
+  },
+  "comp_time": {
+    "hours_per_hour": {
+      "DH_OT_A": [{ "valid_from": "2025-04-01", "factor": "1.5" }, { "valid_from": "2026-04-01", "factor": "1.35" }],
+      "DH_OT_70": "1.75"                     // en sträng gäller hela versionen
+    },
+    "requires_agreement": true,
+    "source": "D1#§ 9.6 s. 37–38"
+  }
+}
+```
+
+Så räknas det (`Planning\Domain\OvertimeKinds`, ren klass):
+
+- Varje sträcka arbetad tid utanför de planerade passen är *i anslutning*
+  (börjar där ett pass slutar eller slutar där ett börjar) eller inte; en dag
+  utan planerat pass är en fridag. Dagens nettotid över planen tas från
+  sträckorna i tidsordning, med avtalets tröskel och avrundning per tillfälle
+  eller per dag, så arterna summerar till samma minuter som
+  `OvertimeTerms::day`.
+- De första minuterna i anslutning per dag (före och efter passet
+  sammanlagt) får `first_hours.kind`, resten `rest_kind`. Ett fönster höjer
+  arten för den tid det täcker; `day_off_only` gäller bara på fridag.
+- Periodens övertid och mertid (mätt mot den avtalade tiden som förut)
+  läggs på arterna, högsta art först, övertid före mertid. Blir periodens
+  övertid mindre än sträckorna (en kort dag nettas mot en lång) räknas de
+  högst ersatta först och attesten säger det. Tid som inte ligger i någon
+  sträcka (ledighet som räknas som arbetad tid) och arter utan kod med sats
+  den dagen (mertidskoderna före 2026-04-01) går på företagets löneart.
+- Timavlönade får artens kod med bara tillägget (`hourly_paid`).
+  `day_off_minimum` lägger till tid på fridagens högsta art, med timlön och
+  tillägg, för heltidsanställda när periodens övertid täcker alla sträckor.
+- Arterna används när företagets löneart för övertid (eller mertid) under
+  Planering → Inställningar är tom eller en av avtalets koder. En egen
+  löneart (till exempel `OVERTID`) gäller som förut för hela perioden.
+- Komptid räknas per kod med faktorn som gäller dagen tiden arbetades
+  (`AgreementRules::compTimeFactor`). Lägsta ersättningen på fridag är inte
+  arbetad tid och ger ingen komptid.
+
+Rättat efter granskning 2026-11-06:
+
+- Varje sträcka behåller dagen den arbetades. Tiden skickas fortfarande med
+  periodens sista dag, men tidrapporten får `priced_on` (ny kolumn i
+  `time_reports`) och prissätts med satsen den dagen (GR § 12 p. 1.2 s. 19,
+  D1 § 9.2 s. 35). Komptidsfaktorn tas också från den dagen.
+- `ob_overlap: { "method": "HIGHEST_ONLY", "source": … }` (Detaljhandeln,
+  D1 § 8.1 Anm. s. 33, § 9.1 Anm. s. 35, § 9.3 Anm. s. 36, § 9.5 Anm. 2
+  s. 37): för de övertidsminuter som också ger OB dras den lägre tillbaka,
+  OB:n eller övertidstillägget (på koden med bara tillägget), som negativa
+  tidrapporter med perioden. Inte när OB ingår i lönen, när övertiden
+  tas som komptid, för ett tillfälle som bara delvis är övertid efter
+  nettningen, för en dag som själv inte skickats till lönen eller när
+  lönearten saknas; då betalas båda och attesten säger det.
+- Fördelningen när perioden nettar: inget av avtalen säger vilka timmar som
+  då är övertid. Högsta art först kan ge mer än avtalet kräver; attesten
+  säger det.
+
+Data: Gröna Riks (båda varianterna: a, b, c för övertid och, från
+2026-04-01, mertid; komptid 1,5/1,5/2 även för mertid, § 12 p. 2.2) och
+Detaljhandeln (35/50 %, 70 %, 100 %, fridagsminimum, komptidsfaktorer per
+datum). `TODO(legal-verify)`: fördelningen när perioden nettar, om Gröna
+Riks två första timmar räknas per dag eller per tillfälle, och om
+Detaljhandelns 70 % gäller övertid 00.00–06.00 en vardagsmorgon. Inte
+byggt: undantagen för mertidsersättning vid byte av pass eller kortare
+frånvaro hos andra (§ 9.5).

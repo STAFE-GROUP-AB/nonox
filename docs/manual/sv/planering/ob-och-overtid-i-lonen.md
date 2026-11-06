@@ -3,7 +3,7 @@ beskrivning: Hur attesterad tid blir tidrapporter i lönen – timlön, OB uppde
 ordning: 90
 roller: [owner, admin, payroll_admin]
 modul: planning
-sokord: [OB, OB-tillägg, obekväm arbetstid, övertid, mertid, löneunderlag, tidrapport, timlön, månadslön, storhelg, övertidstillägg, avrundning, beräkningsperiod, semesterlönegrundande]
+sokord: [OB, OB-tillägg, obekväm arbetstid, övertid, mertid, övertidsart, övertid i anslutning, fridag, löneunderlag, tidrapport, timlön, månadslön, storhelg, övertidstillägg, avrundning, beräkningsperiod, semesterlönegrundande]
 ---
 
 # OB och övertid i lönen
@@ -20,7 +20,7 @@ All faktisk tid blir lönearten Timlön, planerad eller inte. På lönebeskedet 
 
 Arbetade personen längre än schemat betalas tiden som timlön.
 
-Ger avtalet timanställda ett övertids- eller mertidstillägg, som Gröna Riks och Detaljhandelns avtal, räknar Planering det per beräkningsperiod på samma sätt som för månadsavlönade, se nedan. Tillägget skickas på avtalets löneart för bara tillägget, till exempel **Övertidstillägg timavlönad, två första timmarna**, eftersom timlönen redan betalar timmen. Vilken art det blir följer lönearten du har valt för övertid och mertid under **Planering → Inställningar**. Utan kollektivavtal ger lagen inget tillägg, och tiden betalas bara som timlön.
+Ger avtalet timanställda ett övertids- eller mertidstillägg, som Gröna Riks och Detaljhandelns avtal, räknar Planering det per beräkningsperiod på samma sätt som för månadsavlönade, se nedan. Tillägget skickas på avtalets löneart för bara tillägget, till exempel **Övertidstillägg timavlönad, två första timmarna**, eftersom timlönen redan betalar timmen. I Gröna Riks och Detaljhandeln delas tillägget upp per övertidsart, se avsnittet Övertidsarter enligt avtalet nedan. Utan kollektivavtal ger lagen inget tillägg, och tiden betalas bara som timlön.
 
 ## Månadsavlönade
 
@@ -41,7 +41,32 @@ NONOX lägger ihop den attesterade tiden för veckan, eller perioden, och jämf�
 
 En vecka räknas först när den är slut och alla dess dagar är attesterade. Till dess står det på veckans sista dag att veckan väntar, till exempel **Veckan: hittills 90 min utöver schemat. Övertid och mertid räknas mot veckoarbetstiden när hela veckan är attesterad – väntar på hela veckan.**
 
-När veckan är klar skickas övertiden och mertiden med veckans sista dag, på lönearterna du har valt: **Löneart för övertid (månadslön, heltid)** och **Löneart för mertid (månadslön, deltid)**. Har du inte valt någon löneart skickas tiden inte, utan visas som en avvikelse som du lägger in i lönekörningen själv.
+När veckan är klar skickas övertiden och mertiden med veckans sista dag, på lönearterna du har valt: **Löneart för övertid (månadslön, heltid)** och **Löneart för mertid (månadslön, deltid)**. Har du inte valt någon löneart skickas tiden inte, utan visas som en avvikelse som du lägger in i lönekörningen själv. För Gröna Riks och Detaljhandeln delas tiden i stället upp per övertidsart, se nästa avsnitt.
+
+### Övertidsarter enligt avtalet
+
+Gröna Riks och Detaljhandelns avtal betalar övertid och mertid olika beroende på när tiden ligger. För anställda med de avtalen delar NONOX upp veckans eller periodens övertid och mertid per art och skickar varje art på avtalets egen löneart. Det gäller när **Löneart för övertid (månadslön, heltid)** (eller för mertid) är tom eller en av avtalets lönearter. Har du valt en egen löneart, till exempel **Övertid**, skickas all tid på den som förut.
+
+Varje tillfälle utanför schemat är antingen **i anslutning** till ett pass (det börjar där passet slutar eller slutar där det börjar) eller inte. En dag utan planerat pass är en fridag.
+
+| | Gröna Riks (§ 12) | Detaljhandeln (§ 9) |
+|---|---|---|
+| De två första timmarna i anslutning per dag, före och efter passet sammanlagt | a) 35 % (45 % före 1 april 2026) | 35 % (50 % före 1 april 2026) |
+| Tid i anslutning därutöver | b) 70 % | 70 % |
+| Tid som inte ansluter, och en fridag måndag–fredag | c) 90 % | 70 % |
+| Måndag–fredag efter 20.00 | som ovan | 70 % |
+| Lördag och jul-, nyårs- och midsommarafton efter 12.00, sön- och helgdag, fridag som är en lördag eller afton | som ovan | 100 % |
+
+Procenten är tillägget på timlönen; för månadsavlönade betalas timlönen också för timmen. Mertid för deltid får samma arter från den 1 april 2026. Före det har avtalen inget mertidstillägg, och mertiden går på den löneart du har valt för mertid.
+
+- **Fridag i Detaljhandeln.** Den som arbetar heltid och gör övertid en fridag får ersättning för minst tre timmar (§ 9.1). Arbetar personen en timme läggs två timmar till på samma art, med timlön och tillägg, och dagen får en anteckning om det. En fridag har bara en art: 70 % en vardag och 100 % en lördag, afton, söndag eller helgdag. Avtalet anger ingen annan sats för minimitiden. Minimitiden ger ingen komptid; välj **Betala ut** för att få den.
+- **Satsen för dagen tiden arbetades.** Övertiden skickas med veckans sista dag, men varje timme betalas med satsen och komptidsfaktorn som gällde den dag den arbetades. En vecka från 30 mars till 5 april 2026 betalar alltså en övertidstimme den 31 mars med 45 % (Gröna Riks) eller 50 % (Detaljhandeln) och en timme den 1 april med 35 %.
+- **När veckan nettas.** Är en dag kortare och en annan längre blir veckans övertid mindre än tiden utanför schemat. Avtalen säger inte vilka timmar som då är övertid. NONOX räknar de högst ersatta arterna först, och det kan ge mer än avtalet kräver. Dagen får anteckningen **Avtalet säger inte vilka timmar som då är övertid. NONOX har räknat de högst ersatta arterna först, vilket kan ge mer än avtalet kräver.** Vill ni betala de lägre arterna, ändra raderna i lönekörningen.
+- **OB och övertid på samma tid i Detaljhandeln.** Avtalet ger bara den procentuellt högsta ersättningen. OB:n räknas på dagen som vanligt; när veckan räknas drar NONOX tillbaka den lägre för de minuterna. Klockan 19–20 en vardag, när de två första övertidstimmarna är använda, ger övertid 70 % mot OB 50 %, så OB:n dras tillbaka. Klockan 18.15–20 under de två första övertidstimmarna ger OB 50 % mot övertid 35 %, så övertidstillägget dras tillbaka och OB:n gäller. Avdraget syns som en minusrad på samma löneart, och dagen får en anteckning som börjar med datumet och **min övertid eller mertid låg på OB-tid**. Ingår OB i lönen dras ingenting. Tas övertiden ut som komptid betalas OB:n ändå. Är bara en del av ett tillfälle övertid efter att veckan nettats, är en dag inte skickad till lönen eller saknas lönearten, dras inget tillbaka och båda betalas; dagen säger det.
+- **Tid som inte ligger utanför schemat**, till exempel ledighet som räknas som arbetad tid, har ingen art. Den går på den löneart du har valt.
+- **Komptid** räknas per art med avtalets faktor: i Gröna Riks 1,5 timmar för a och b och 2 timmar för c; i Detaljhandeln 1 timme 21 minuter för 35 % (1,5 timmar för 50 % före 1 april 2026), 1 timme 45 minuter för 70 % och 2 timmar för 100 %.
+
+På veckans sista dag står en rad per art, till exempel **Veckan: 120 min övertid, två första timmarna i anslutning enligt Gröna Riks (GR#§ 12 p. 1.2 s. 19; p. 2.2 s. 20) skickas med den här dagen (GR_OT_A).**
 
 ### Övertid per dag
 
@@ -68,7 +93,7 @@ Har ni ett rullande schema kan övertiden räknas över hela schemats längd i s
 På veckans eller periodens sista dag väljer du **Betala ut** eller **Komptid**. Med komptid blir tiden ett saldo i lönen i stället för en tidrapport, med avtalets faktor, till exempel 1,5 timmar per övertidstimme. Se [Komptid](/manual/lon/komptid).
 
 > [!IMPORTANT]
-> Reglerna för ledighet, beräkningsperiod och avrundning bygger på en AI-utredning av lagen och avtalen den 2 november 2026. Juristgranskning återstår. Avtalen har också flera slags övertid, till exempel i anslutning till ordinarie tid eller inte, och minst tre timmar för övertid som inte ansluter. Det skiljs inte åt här: periodens övertid går på den löneart du har valt. Helgdagar utan planerat pass räknas inte som arbetad tid. Kontrollera mot ert avtal, eller fråga er redovisningskonsult.
+> Reglerna för ledighet, beräkningsperiod och avrundning bygger på en AI-utredning av lagen och avtalen den 2 november 2026, och övertidsarterna på avtalstexterna. Juristgranskning återstår, bland annat för hur arterna fördelas när veckan nettas. Övertidsarterna finns bara för Gröna Riks och Detaljhandeln; för andra avtal går periodens övertid på den löneart du har valt. Helgdagar utan planerat pass räknas inte som arbetad tid. Kontrollera mot ert avtal, eller fråga er redovisningskonsult.
 
 ### Semesterlön på övertid
 

@@ -12,7 +12,13 @@
         @endforeach
     </nav>
 
-    @if(! $supported)
+    @if(! $supported && $legalFormSupported)
+        <x-ui.empty-state :title="$k3 ? __('Årsredovisning enligt K3 finns inte ännu') : __('Inte för det här regelverket')">
+            <span class="block">{{ $refusal }}</span>
+            <span class="mt-2 block">{{ __('Bokföringen, bokslutet och inkomstdeklarationen fungerar som vanligt. Årsredovisningen upprättar du i ett program som stöder regelverket, eller med hjälp av en redovisningskonsult: ladda ner årets SIE-fil under Räkenskapsår och läs in den där.') }}</span>
+            <span class="mt-2 block">{{ __('Har företaget valt regelverk av misstag, och uppfyller det villkoren för K2, kan en ägare eller administratör ändra regelverket under Inställningar för företaget.') }}</span>
+        </x-ui.empty-state>
+    @elseif(! $supported)
         <x-ui.empty-state :title="__('Inte för den här företagsformen')">{{ __('Årsredovisningen görs här för aktiebolag och ekonomiska föreningar. Enskilda firmor upprättar ingen årsredovisning utan ett förenklat årsbokslut.') }}</x-ui.empty-state>
     @else
         <div class="grid gap-6 xl:grid-cols-[minmax(0,26rem)_1fr]">

@@ -22,10 +22,16 @@ En förmån är något den anställda får i stället för pengar, till exempel 
 | **Kostförmån, lunch eller middag** | Antal måltider i **Antal timmar, mil eller dagar**. |
 | **Kostförmån, frukost** | Antal frukostar i **Antal timmar, mil eller dagar**. |
 | **Bilförmån** | Förmånsvärdet för månaden i **eller belopp**. |
-| **Drivmedelsförmån** | Förmånsvärdet för månaden i **eller belopp**. |
+| **Drivmedelsförmån** | Förmånsvärdet för månaden i **eller belopp**: marknadsvärdet för drivmedlet vid privat körning, inklusive moms, gånger 1,2. |
 | **Övrig förmån** | Förmånsvärdet i **eller belopp**. |
 
 Betalar den anställda något för förmånen, till exempel för personalmaten, lägg in lönearten **Egen betalning för förmån** med beloppet. Det dras från nettolönen och minskar förmånsvärdet med lika mycket, men aldrig under noll.
+
+Betalar den anställda för drivmedlet till förmånsbilen, lägg i stället in lönearten **Egen betalning för drivmedel vid bilförmån**. Den dras från nettolönen och minskar den skattepliktiga drivmedelsförmånen, och i arbetsgivardeklarationen redovisas hela förmånsvärdet i ruta 018 och betalningen i ruta 098.
+
+### Drivmedelsförmån och arbetsgivaravgift
+
+Skatteavdraget räknas på hela förmånsvärdet, men arbetsgivaravgiften bara på marknadsvärdet, utan uppräkningen med 1,2. Exempel: drivmedel för privat körning för 1 000 kronor ger förmånsvärdet 1 200 kronor. Skatteavdraget räknas på 1 200 kronor och arbetsgivaravgiften på 1 000 kronor. Betalar den anställda 300 kronor blir den skattepliktiga förmånen 900 kronor och underlaget för arbetsgivaravgift 700 kronor.
 
 > [!IMPORTANT]
 > NONOX räknar inte ut bilförmånens värde åt dig. Räkna fram det med Skatteverkets beräkningstjänst och skriv in månadens värde. Är du osäker på vad som är en förmån, fråga er redovisningskonsult eller Skatteverket.

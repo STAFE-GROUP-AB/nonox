@@ -34,5 +34,7 @@ final readonly class PayslipLineResult
         public ?int $rateOre = null,
         public ?int $ruleVersionId = null,
         public array $explanation = [],
+        /** The line's part of the contribution basis when it is not its amount (drivmedelsförmån: the market value, SAL 2 kap. 10 a §). */
+        public ?int $contributionOre = null,
     ) {}
 }

@@ -495,3 +495,39 @@ finding and the GitHub issue.
 - `TODO(legal-verify)`: the BAS 2026 name of 7388 (read in FAR's guidance,
   not in the BAS chart itself); output VAT on staff meals the employee pays
   for (Mervärdesskattelagen) is not handled.
+
+## Addendum 2026-11-06: contribution basis of drivmedelsförmån (a production bug)
+
+- **Problem.** `DRIVMEDELSFORMAN` put its whole amount in the contribution
+  basis. The manual tells users to type the benefit value, 1,2 × the market
+  value of the fuel (IL 61 kap. 10 §), so the employer contributions were
+  taken on 1,2 × the market value: about 20 % too much on the fuel.
+- **Sources (read 2026-11-06).** Socialavgiftslagen (2000:980) 2 kap. 10 a §
+  punkt 2, ändrad t.o.m. SFS 2026:493: the fuel benefit "ska beräknas till
+  marknadsvärdet" (<https://data.riksdagen.se/dokument/sfs-2000-980.text>).
+  Skatteverket, Drivmedelsförmån: "Som underlag för arbetsgivaravgifter
+  använder du däremot marknadsvärdet utan att multiplicera det med 1,2".
+  Skatteverket, agbeskrivning: ruta 018 `DrivmVidBilformanUlagAG` takes "hela
+  det uppräknade förmånsvärdet", also when the employee paid; ruta 098
+  `BetForDrivmVidBilformanUlagAG` is what the employee paid for the fuel
+  through a net deduction.
+- **Decision.** The input stays the benefit value, so nothing already typed
+  changes meaning. The market value is taken back as value / 1,2, half up to
+  öre (rule `benefit.fuel.factor`, `tax_factor_bp` 12000, class
+  `App\Modules\Payroll\Domain\Benefits\FuelBenefit`), and the payslip line
+  carries it as its contribution part (`PayslipLineResult::contributionOre`,
+  `contribution_basis_ore` in the explanation). The employee's payment for
+  the fuel is the new system pay code `DRIVMEDEL_BETALNING` ("Egen betalning
+  för drivmedel vid bilförmån", net deduction, credit 7388): it lowers the
+  taxable fuel value (never below nothing) and the contribution basis up to
+  the market value, and is declared in ruta 098 while 018 keeps the whole
+  value. A payment without a fuel benefit in the month stops the run.
+- **Posted payroll is not touched**: no migration and no recalculation of
+  attested runs. The changelog asks customers who entered fuel benefits to
+  check earlier periods with their accountant. The rule must be checked
+  under Lön → Regler before a run with fuel benefit can be calculated.
+- `TODO(legal-verify)`: value / 1,2 can differ from Skatteverket's market
+  value by under one krona (319 kr → 265,83 kr, Skatteverket 266 kr); the
+  payment lowering the contribution basis (61 kap. 11 § through 2 kap. 10 a
+  §); avgiftsfri fuel (ruta 134) has no 098 of its own, so the payment
+  lowers 134.

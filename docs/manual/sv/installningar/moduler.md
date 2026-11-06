@@ -22,7 +22,7 @@ Att stänga av en modul tar aldrig bort några uppgifter. De finns kvar så län
 | **Personalliggare** | Elektronisk personalliggare med incheckning på en surfplatta, även utan internet, och en vy för Skatteverkets kontrollbesök. | [Personalliggare](/manual/personalliggare) |
 | **Inkorg** | En egen e-postadress dit leverantörer, kassasystem och personal skickar fakturor, kvitton och dagsrapporter. Varje underlag blir ett förslag som någon godkänner. | [Inkorgen](/manual/leverantorer/inkorgen) |
 | **CRM** | Kunder och prospekt med kontaktpersoner, aktiviteter med nästa steg och nyckeltal ur bokföringen. Ersätter kundregistret under **Kunder** medan den är på. | [CRM](/manual/crm) |
-| **Bank** | Kopplar företagets bankkonton med BankID och hämtar transaktioner och saldon automatiskt. NONOX kan bara läsa, aldrig betala. | [Bankmodulen](/manual/installningar/bankmodulen) |
+| **Bank** | Kopplar företagets bankkonton med BankID och hämtar transaktioner och saldon automatiskt. NONOX kan bara läsa, aldrig betala. Erbjuds inte på nonox.app än. | [Bankmodulen](/manual/installningar/bankmodulen) |
 | **NONOX AI** | Läser leverantörsfakturor, kvitton och andra underlag och fyller i ett förslag. Du kontrollerar och sparar. | [NONOX AI](/manual/installningar/nonox-ai) |
 | **NONOX Connect** | Ett öppet API för andra program: anslutna appar, API-nycklar och webhooks. | [NONOX Connect](/manual/installningar/nonox-connect) |
 

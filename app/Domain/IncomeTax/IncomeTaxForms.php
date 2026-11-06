@@ -20,7 +20,7 @@ final class IncomeTaxForms
     public static function for(Company $company): ?string
     {
         return match (true) {
-            AnnualReportDocument::supports($company) => IncomeTaxReturn::INK2,
+            AnnualReportDocument::supportsLegalForm($company) => IncomeTaxReturn::INK2,
             $company->legal_form === LegalForm::Ef => IncomeTaxReturn::NE,
             in_array($company->legal_form, [LegalForm::Hb, LegalForm::Kb], true) => IncomeTaxReturn::INK4,
             default => null,

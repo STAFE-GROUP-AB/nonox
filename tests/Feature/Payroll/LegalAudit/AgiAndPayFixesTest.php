@@ -526,6 +526,8 @@ describe('the employee\'s own payment for a benefit (#80)', function () {
         $code = PayCode::query()->where('code', 'FORMAN_EGENBETALNING')->sole();
         $liability = Account::query()->where('number', 2890)->value('id');
         $code->forceFill(['credit_account_id' => $liability])->save();
+        // The fuel payment pay code (ADR-012 addendum) also credits 7388; unlink it so the account can go.
+        PayCode::query()->where('code', 'DRIVMEDEL_BETALNING')->update(['credit_account_id' => null]);
         Account::query()->where('number', 7388)->delete();
 
         (require base_path('app/Modules/Payroll/database/migrations/2026_11_16_140000_book_own_benefit_payment_on_7388.php'))->up();

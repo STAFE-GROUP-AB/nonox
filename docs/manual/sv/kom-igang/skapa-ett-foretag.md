@@ -25,7 +25,7 @@ Ha organisationsnumret till hands, och gärna besluten från Skatteverket om mom
 4. Fyll gärna i **E-post till företaget (frivilligt)** och **Bransch (frivilligt)**. Företagsguiden väljer steg och tips efter branschen, företagsformen och om företaget är momsregistrerat; se [Företagsguiden och Min startplan](/manual/kom-igang/foretagsguiden). Passar ingen bransch väljer du **Annan bransch**.
 5. Under **Bokföring och moms** väljer du när **Räkenskapsåret börjar i** och vilken **Bokföringsmetod** företaget använder.
 6. Kryssa i **Företaget är momsregistrerat** om det är det, och välj **Hur ofta redovisar ni moms?**
-7. Välj **Regelverk för årsbokslut**. Väljer du K1 eller K2 visas villkoren för regelverket. Kryssa i **Företaget uppfyller villkoren** om de stämmer.
+7. Välj **Regelverk för årsbokslut**. Väljer du K1 eller K2 visas villkoren för regelverket. Kryssa i **Företaget uppfyller villkoren ovan** om de stämmer.
 8. Kryssa i **Företaget har F-skatt** och **Företaget är registrerat som arbetsgivare** om de stämmer.
 9. Klicka på **Skapa företaget**.
 
@@ -53,10 +53,10 @@ Du hamnar på **Översikt** i det nya företaget. Där finns listan **Kom igång
 **Regelverk för årsbokslut** är **K1 – förenklat årsbokslut**, **K2 – mindre företag** eller **K3 – huvudregelverket**. Valet styr vilken kontoplan företaget får från början.
 
 - **K1** kan bara väljas av en enskild firma eller en ideell förening, och bara om nettoomsättningen normalt är högst 3 miljoner kronor per år. För handels- och kommanditbolag går K1 inte att välja ännu, eftersom det inte är kontrollerat.
-- **K2** gäller bara mindre företag. Ett företag är större om det under vart och ett av de två senaste räkenskapsåren har haft mer än ett av: fler än 50 anställda i medeltal, en balansomslutning över 40 miljoner kronor och en nettoomsättning över 80 miljoner kronor, eller om det är noterat. Publika aktiebolag och moderföretag i en större koncern kan inte heller använda K2.
-- **K3** kan alla företag använda.
+- **K2** gäller bara mindre företag. Ett företag är större om det under vart och ett av de två senaste räkenskapsåren har haft mer än ett av: fler än 50 anställda i medeltal, en balansomslutning över 40 miljoner kronor och en nettoomsättning över 80 miljoner kronor, eller om det är noterat. För aktiebolag och ekonomiska föreningar visas också vilka andra företag som inte får använda K2 (BFNAR 2016:10 punkt 1.1A–1.1C enligt BFNAR 2025:2, för räkenskapsår som börjar efter den 31 december 2025), till exempel publika aktiebolag, moderföretag i en större koncern, företag med kryptotillgångar och – om företaget inte är mycket litet – företag med en väsentlig uppskjuten skatteskuld eller med byggnader som ger minst 75 procent av nettoomsättningen.
+- **K3** kan alla företag använda. NONOX tar ännu inte fram årsredovisningar enligt K3; se [Årsredovisning enligt K2](/manual/bokslut/arsredovisning#om-foretaget-anvander-k3).
 
-NONOX känner bara till företagsformen, inte omsättning, balansomslutning eller antal anställda. Därför stoppar NONOX bara det som företagsformen avgör. Storleken bekräftar du själv genom att kryssa i **Företaget uppfyller villkoren**. Är du osäker, välj K3 eller fråga din redovisningskonsult.
+NONOX känner bara till företagsformen, inte omsättning, balansomslutning eller antal anställda. Därför stoppar NONOX bara det som företagsformen avgör. Storleken bekräftar du själv genom att kryssa i **Företaget uppfyller villkoren ovan**. Är du osäker, fråga din redovisningskonsult innan du väljer. Väljer du K3 tar NONOX ännu inte fram årsredovisningen; bokföring, bokslut och inkomstdeklaration fungerar som vanligt.
 
 > [!NOTE]
 > Reglerna om räkenskapsår och regelverk bygger på en genomgång av bokföringslagen och Bokföringsnämndens allmänna råd. En jurist har ännu inte granskat dem.

@@ -638,3 +638,60 @@ finns särskilda skäl".
   opening balances; this split is our design.
 - No posted voucher, number or hash is touched: opening balances are not
   vouchers (ADR-008).
+
+## Annual report amounts in whole kronor (2026-11-06)
+
+- **Problem.** The annual report printed every amount cut to whole kronor on
+  its own (`intdiv`), lines and sums alike. With öre in the ledger a sum
+  could differ from its printed lines (100,60 + 100,60 printed 100 + 100 =
+  201), which a reader notices.
+- **Rule relied on.** None prescribes the method: ÅRL and BFNAR 2016:10 let
+  the report state its unit ("Om inte annat särskilt anges redovisas alla
+  belopp i hela kronor").
+- **Decision.** `App\Domain\AnnualReport\PrintedFigures`, applied in
+  `AnnualReportDocument::data()` for the preview and the PDF: each line
+  rounds to the nearest krona, half a krona away from zero; every subtotal,
+  section sum and total is the sum of the rounded lines. The balance sheet's
+  year result is the income statement's rounded result; a fixed asset line
+  with a note is the note's rounded book value. If the two sides of the
+  balance sheet then differ, the difference goes to the short-term line
+  Övriga skulder (created if absent). In the specification of changes in
+  equity, opening and closing come from the rounded balance sheet, the
+  year's result row is the rounded result, and what rounding leaves in a
+  column goes to Balanseras i ny räkning, else Övriga förändringar, else
+  Utdelning (an Övriga förändringar row is added if none of them has an
+  amount). The disposition's free equity is the balance sheet's rounded
+  Fritt eget kapital. `DividendLimit`, the booked disposition and the
+  fastställelseintyg's decision text stay exact in öre. A contingent
+  liability entered without an amount prints no amount (it printed 0).
+- **What changes in the PDF.** With öre in the ledger: a line can be one
+  krona higher than before (half-up instead of cut), every sum now equals
+  its printed lines, and a 1–2 krona line Övriga skulder can appear. With
+  whole-kronor bookkeeping nothing changes.
+- TODO(legal-verify): which line K2 practice puts a rounding difference on;
+  Övriga skulder and Balanseras i ny räkning are choices, not sourced.
+
+## No K2 annual report for a company on K3 (2026-11-06)
+
+- **Problem.** The annual report document states in note 1 that it follows
+  BFNAR 2016:10 (K2). A company that has chosen K3 (BFNAR 2012:1) got the
+  same document, which then said something false about the company.
+- **Decision.** `AnnualReportDocument::supports()` is true only for an
+  aktiebolag or an ekonomisk förening whose `reporting_framework` is K2;
+  `supportsLegalForm()` keeps the legal-form test, and `refusal()` gives the
+  Swedish reason. For K3 (or K1) the page Bokföring → Årsredovisning shows an
+  explanation instead of the form, the preview and the PDF answer 403, and
+  `SaveAnnualReport` refuses to save the texts. The income tax return
+  (INK2, `IncomeTaxForms`, `IncomeTaxReturns`) follows the legal form only and
+  is unchanged. Nothing in the ledger changes.
+- **K2 conditions.** The conditions a user confirms when choosing K2
+  (`ReportingFrameworkRules::conditions`) list, for an aktiebolag and an
+  ekonomisk förening, BFNAR 2016:10 punkt 1.1A–1.1C as amended by BFNAR
+  2025:2 (fiscal years beginning after 2025-12-31; source
+  <https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf>, read
+  2026-11-06). Companies that already confirmed K2 are not asked again; that
+  is a human decision. Enligt AI-utredning 2026-11-06, juristgranskning
+  återstår.
+- TODO(legal-verify): the plain-Swedish summary of 1.1A–1.1C; the
+  exclusions for other legal forms that prepare a K2 annual report; the
+  wording of punkt 1.1 for fiscal years beginning before 2026-01-01.

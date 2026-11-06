@@ -22,6 +22,10 @@ namespace App\Domain\Vat;
  * (accounts.vat_box, #64); invoices for triangulation create 3107 tied to
  * box 38 (ForeignSale, #97).
  *
+ * Boxes 20 and 23 also read BAS 2026's trading-goods accounts: 4075–4077
+ * Inköp av handelsvaror från annat EU-land and 4065–4067 Inköp av
+ * handelsvaror i Sverige, omvänd betalningsskyldighet, each by rate.
+ *
  * TODO(legal-verify): the account-to-box mapping follows the BAS 2026
  * chart's names. Confirm it against the current BAS momsrapport and
  * Skatteverket's box definitions.
@@ -47,10 +51,10 @@ final class VatBoxes
         10 => ['label' => 'Utgående moms 25 %', 'element' => 'MomsUtgHog', 'side' => self::CREDIT, 'accounts' => [[2610, 2613], [2616, 2616]]],
         11 => ['label' => 'Utgående moms 12 %', 'element' => 'MomsUtgMedel', 'side' => self::CREDIT, 'accounts' => [[2620, 2623], [2626, 2626]]],
         12 => ['label' => 'Utgående moms 6 %', 'element' => 'MomsUtgLag', 'side' => self::CREDIT, 'accounts' => [[2630, 2633], [2636, 2636]]],
-        20 => ['label' => 'Inköp av varor från ett annat EU-land', 'element' => 'InkopVaruAnnatEg', 'side' => self::DEBIT, 'accounts' => [[4515, 4517]]],
+        20 => ['label' => 'Inköp av varor från ett annat EU-land', 'element' => 'InkopVaruAnnatEg', 'side' => self::DEBIT, 'accounts' => [[4075, 4077], [4515, 4517]]],
         21 => ['label' => 'Inköp av tjänster från ett annat EU-land enligt huvudregeln', 'element' => 'InkopTjanstAnnatEg', 'side' => self::DEBIT, 'accounts' => [[4535, 4537]]],
         22 => ['label' => 'Inköp av tjänster från ett land utanför EU', 'element' => 'InkopTjanstUtomEg', 'side' => self::DEBIT, 'accounts' => [[4531, 4533]]],
-        23 => ['label' => 'Inköp av varor i Sverige som köparen är skattskyldig för', 'element' => 'InkopVaruSverige', 'side' => self::DEBIT, 'accounts' => [[4415, 4417]]],
+        23 => ['label' => 'Inköp av varor i Sverige som köparen är skattskyldig för', 'element' => 'InkopVaruSverige', 'side' => self::DEBIT, 'accounts' => [[4065, 4067], [4415, 4417]]],
         24 => ['label' => 'Övriga inköp av tjänster', 'element' => 'InkopTjanstSverige', 'side' => self::DEBIT, 'accounts' => [[4425, 4427]]],
         30 => ['label' => 'Utgående moms 25 % på inköp i ruta 20–24', 'element' => 'MomsInkopUtgHog', 'side' => self::CREDIT, 'accounts' => [[2614, 2614]]],
         31 => ['label' => 'Utgående moms 12 % på inköp i ruta 20–24', 'element' => 'MomsInkopUtgMedel', 'side' => self::CREDIT, 'accounts' => [[2624, 2624]]],

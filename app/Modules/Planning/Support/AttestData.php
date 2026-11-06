@@ -17,6 +17,7 @@ use App\Modules\Planning\Domain\BasisTerms;
 use App\Modules\Planning\Domain\DayBasis;
 use App\Modules\Planning\Domain\DayComparison;
 use App\Modules\Planning\Domain\Deviation;
+use App\Modules\Planning\Domain\OvertimeKinds;
 use App\Modules\Planning\Domain\OvertimeTerms;
 use App\Modules\Planning\Domain\PayrollBasis;
 use App\Modules\Planning\Domain\PlanVsActual;
@@ -232,9 +233,17 @@ final class AttestData
             $sent = $carrier->attestation?->details['week'] ?? null;
 
             if (is_array($sent)) {
-                $rows[$last] = $carrier->withWeek(null, [Deviation::info(Deviation::EXTRA_TIME, ($sent['comp_time_minutes'] ?? 0) > 0
+                $notes = [Deviation::info(Deviation::EXTRA_TIME, ($sent['comp_time_minutes'] ?? 0) > 0
                     ? __(':period: övertid och mertid är sparad som komptid (:hours).', ['period' => $label, 'hours' => WorkingTimeChecks::hours($sent['comp_time_minutes'])])
-                    : ($length > 1 ? __('Periodens övertid och mertid är skickad till lönen med den här dagen.') : __('Veckans övertid och mertid är skickad till lönen med den här dagen.')))]);
+                    : ($length > 1 ? __('Periodens övertid och mertid är skickad till lönen med den här dagen.') : __('Veckans övertid och mertid är skickad till lönen med den här dagen.')))];
+
+                foreach ($sent['take_backs_not_sent'] ?? [] as $dropped) {
+                    $notes[] = new Deviation(Deviation::EXTRA_TIME, $dropped['reason'] === 'NO_PAY_CODE'
+                        ? __(':date: :minutes min OB eller övertidstillägg på samma tid drogs inte tillbaka, eftersom lönearten :code saknas i lönen. Både OB och övertid är betalda; rätta i lönekörningen om ni vill.', ['date' => $dropped['date'], 'minutes' => abs((int) $dropped['minutes']), 'code' => $dropped['code']])
+                        : __(':date: :minutes min OB eller övertidstillägg på samma tid drogs inte tillbaka, eftersom dagen inte är skickad till lönen. När dagen skickas betalas dess OB i sin helhet; rätta i lönekörningen om ni vill.', ['date' => $dropped['date'], 'minutes' => abs((int) $dropped['minutes'])]));
+                }
+
+                $rows[$last] = $carrier->withWeek(null, $notes);
 
                 continue;
             }
@@ -249,7 +258,8 @@ final class AttestData
 
             [$overtimeCode, $extraTimeCode, $codeNotes] = self::periodCodes($settings, $hourly ? $agreement : null, $carrier->date);
             $included = $employment->overtime_compensation === 'INCLUDED_IN_SALARY';
-            $week = PayrollBasis::period($days, $leave[$carrier->employee->id] ?? [], OvertimeTerms::from($agreement), $contracted, $fullTime * $length, $overtimeCode, $extraTimeCode, $included, $length);
+            $kinds = $included ? null : OvertimeKinds::for($agreement, $carrier->date, $hourly, $contracted >= $fullTime * $length, PlanningSettings::code($settings, 'overtime_pay_code'), PlanningSettings::code($settings, 'extra_time_pay_code'), $employment->ob_compensation !== 'INCLUDED');
+            $week = PayrollBasis::period($days, $leave[$carrier->employee->id] ?? [], OvertimeTerms::from($agreement), $contracted, $fullTime * $length, $overtimeCode, $extraTimeCode, $included, $length, $kinds);
             $deviations = $week->hasExtraTime() ? [...$week->deviations, ...$codeNotes] : $week->deviations;
             $maximum = $agreement?->calculationPeriod($employment->salary_form);
 
@@ -262,7 +272,7 @@ final class AttestData
             }
 
             if (! $hourly && $week->hasExtraTime() && ! $included) {
-                $options = self::compTimeOptions($week, $agreement, $overtimeCode, $extraTimeCode, $settings);
+                $options = self::compTimeOptions($week, $agreement, $overtimeCode, $extraTimeCode, $settings, $carrier->date);
                 $chosen = $carrier->attestation?->details['week_choice'] ?? null;
                 $choice = in_array($chosen, [WeekBasis::PAY, WeekBasis::COMP_TIME], true)
                     ? $chosen
@@ -271,6 +281,14 @@ final class AttestData
 
                 if ($choice === WeekBasis::COMP_TIME) {
                     $deviations = [Deviation::info(Deviation::EXTRA_TIME, __(':period: :worked min övertid och mertid sparas som :hours komptid när dagen skickas till lönen.', ['period' => $label, 'worked' => $week->overtimeMinutes + $week->extraTimeMinutes, 'hours' => WorkingTimeChecks::hours($week->compTimeMinutes())]))];
+
+                    if (array_filter($week->parts, fn (array $part): bool => $part['type'] === OvertimeKinds::OB_OVERLAP) !== []) {
+                        $deviations[] = Deviation::info(Deviation::EXTRA_TIME, __('Övertid på OB-tid som tas ut som komptid: OB:n för samma tid betalas ändå. Kontrollera mot avtalet om ni ger både OB och komptid.'));
+                    }
+
+                    if (array_filter($week->parts, fn (array $part): bool => $part['minimum']) !== []) {
+                        $deviations[] = new Deviation(Deviation::EXTRA_TIME, __('Avtalets lägsta ersättning för övertid på en fridag betalas bara när övertiden betalas ut. Välj Betala ut, eller lägg in mellanskillnaden i lönekörningen.'));
+                    }
                 }
             }
 
@@ -349,24 +367,42 @@ final class AttestData
 
     /**
      * What the period's overtime and mertid would earn as comp time: per
-     * kind, the minutes times the agreement's factor for the code the kind
-     * is sent on, else the company's own factor.
+     * kind (and, when the agreement splits overtime by kind, per agreement
+     * code), the minutes times the agreement's factor for the code in force
+     * on the period's last day, else the company's own factor. A minimum
+     * payment for a day off is not worked time and earns no comp time.
      *
      * @param  array<string, mixed>  $settings
      * @return list<array{kind: string, code: ?string, worked: int, factor: string, minutes: int, source: string}>
      */
-    private static function compTimeOptions(WeekBasis $week, ?AgreementRules $agreement, ?string $overtimeCode, ?string $extraTimeCode, array $settings): array
+    private static function compTimeOptions(WeekBasis $week, ?AgreementRules $agreement, ?string $overtimeCode, ?string $extraTimeCode, array $settings, CarbonImmutable $day): array
     {
         $factors = $agreement?->compTime();
         $options = [];
+        $rows = [['OVERTIME', $overtimeCode, $week->overtimeMinutes], ['EXTRA_TIME', $extraTimeCode, $week->extraTimeMinutes]];
 
-        foreach ([['OVERTIME', $overtimeCode, $week->overtimeMinutes], ['EXTRA_TIME', $extraTimeCode, $week->extraTimeMinutes]] as [$kind, $code, $worked]) {
+        if ($week->parts !== []) {
+            $rows = [];
+
+            foreach ($week->parts as $part) {
+                if (! $part['minimum'] && $part['type'] !== OvertimeKinds::OB_OVERLAP) {
+                    $rows[] = [$part['type'], $part['code'], $part['minutes'], CarbonImmutable::parse($part['date'])];
+                }
+            }
+        }
+
+        foreach ($rows as $row) {
+            [$kind, $code, $worked] = $row;
+            // The factor in force on the day the time was worked (Detaljhandeln § 9.6 changes it with the rate on 1 April 2026).
+            $workedOn = $row[3] ?? $day;
+
             if ($worked <= 0) {
                 continue;
             }
 
-            $fromAgreement = $code !== null && $factors !== null && isset($factors['hours_per_hour'][$code]);
-            $factor = $fromAgreement ? $factors['hours_per_hour'][$code] : PlanningSettings::compTimeFactor($settings);
+            $agreed = $code === null ? null : $agreement?->compTimeFactor($code, $workedOn);
+            $fromAgreement = $agreed !== null && $factors !== null;
+            $factor = $agreed ?? PlanningSettings::compTimeFactor($settings);
             $options[] = [
                 'kind' => $kind,
                 'code' => $code,

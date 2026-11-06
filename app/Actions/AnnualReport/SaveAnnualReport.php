@@ -37,8 +37,10 @@ class SaveAnnualReport
             throw new AuthorizationException;
         }
 
-        if (! AnnualReportDocument::supports($company)) {
-            throw ValidationException::withMessages(['report' => __('Årsredovisningen görs här för aktiebolag och ekonomiska föreningar.')]);
+        $refusal = AnnualReportDocument::refusal($company);
+
+        if ($refusal !== null) {
+            throw ValidationException::withMessages(['report' => $refusal]);
         }
 
         $validated = Validator::make($input, [

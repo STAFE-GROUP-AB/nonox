@@ -78,8 +78,8 @@
                     <div class="error" role="alert">{{ $frameworkRefusal }}</div>
                 @else
                     @if($frameworkConditions)
-                        <span class="hint">{{ $frameworkConditions }}</span>
-                        <label class="choice"><input type="checkbox" wire:model="framework_confirmed"> Företaget uppfyller villkoren. Är du osäker, välj K3 eller fråga din redovisningskonsult.</label>
+                        <span class="hint" style="white-space: pre-line;">{{ $frameworkConditions }}</span>
+                        <label class="choice"><input type="checkbox" wire:model="framework_confirmed"> Företaget uppfyller villkoren ovan. Är du osäker, fråga din redovisningskonsult innan du väljer. Väljer du K3 tar NONOX ännu inte fram årsredovisningen; bokföring, bokslut och inkomstdeklaration fungerar som vanligt.</label>
                     @endif
                     @error('reporting_framework') <div class="error" role="alert">{{ $message }}</div> @enderror
                 @endif

@@ -265,8 +265,9 @@ final class ContextBuilder
             $code = $payCodes->get($codeId) ?? throw new PayrollBlockedException(__('En löneart saknas.'));
             $byDate = [];
 
-            foreach ($own->sortBy(fn (TimeReport $report): string => $report->date->toDateString()) as $report) {
-                $date = $report->date->toDateString();
+            // A report can be priced on another day than it is paid with (priced_on: overtime of a period sent with its last day, ADR-033 H.1).
+            foreach ($own->sortBy(fn (TimeReport $report): string => ($report->priced_on ?? $report->date)->toDateString()) as $report) {
+                $date = ($report->priced_on ?? $report->date)->toDateString();
                 $byDate[$date] = (string) BigDecimal::of($byDate[$date] ?? '0')->plus((string) $report->hours);
             }
 

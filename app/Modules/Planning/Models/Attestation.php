@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ?list<array{start: string, end: string, break_minutes: int}> $actual_override
  * @property ?array<string, int> $basis
  * @property ?list<array{code: string, message: string, blocking: bool, informational: bool}> $deviations
- * @property ?array{planned?: list<array{start: ?string, end: ?string, break_minutes: int}>, actual?: list<array{start: ?string, end: ?string, break_minutes: int}>, source?: string, ob?: array<string, int>, week?: array{from: string, overtime_minutes: int, extra_time_minutes: int, minutes: array<string, int>, time_report_ids: list<int>, comp_time_entry_ids?: list<int>, comp_time_minutes?: int, comp_time?: list<array<string, mixed>>}, week_choice?: string} $details
+ * @property ?array{planned?: list<array{start: ?string, end: ?string, break_minutes: int}>, actual?: list<array{start: ?string, end: ?string, break_minutes: int}>, source?: string, ob?: array<string, int>, week?: array{from: string, overtime_minutes: int, extra_time_minutes: int, minutes: array<string, int>, time_report_ids: list<int>, comp_time_entry_ids?: list<int>, comp_time_minutes?: int, comp_time?: list<array<string, mixed>>, take_backs_not_sent?: ?list<array{code: string, date: string, minutes: int, reason: string}>}, week_choice?: string} $details
  * @property ?list<int> $time_report_ids
  * @property ?string $note
  * @property ?int $attested_by

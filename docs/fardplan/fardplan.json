@@ -77,10 +77,10 @@
     {
       "id": "bankkoppling-i-drift",
       "rubrik": "Bankkoppling i drift",
-      "beskrivning": "Bankkopplingen med BankID finns redan för den som kör NONOX själv. I den tjänst vi driftar slås den på när de juridiska frågorna är besvarade.",
+      "beskrivning": "Bankkopplingen med BankID är byggd och kan användas av den som kör NONOX själv med ett eget avtal med en leverantör av öppen bankdata. I den tjänst vi driftar på nonox.app finns inget sådant avtal än, så där läser du in bankens filer. Den slås på när avtalet är klart och de juridiska frågorna är besvarade.",
       "status": "Planerat",
       "omrade": "Bank",
-      "uppdaterad": "2026-11-02"
+      "uppdaterad": "2026-11-06"
     },
     {
       "id": "import-utanfor-eu",

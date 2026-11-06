@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Payroll\Domain\Engine\Steps;
 
+use App\Modules\Payroll\Domain\Benefits\FuelBenefit;
 use App\Modules\Payroll\Domain\Engine\PayInput;
 use App\Modules\Payroll\Domain\Engine\PayrollBlockedException;
 use App\Modules\Payroll\Domain\Engine\PayrollContext;
@@ -75,7 +76,35 @@ final class Allowances implements Step
             }
         }
 
+        $this->fuelOwnPayment($context, $draft);
         $this->ownPayment($context, $draft, $benefits);
+    }
+
+    /**
+     * The employee's payment for fuel at a car benefit lowers the taxable fuel
+     * value and, up to the market value, the contribution basis; the AGI keeps
+     * the whole value in 018 and the payment in 098 (FuelBenefit).
+     */
+    private function fuelOwnPayment(PayrollContext $context, PayslipDraft $draft): void
+    {
+        $paid = array_sum(array_map(fn (PayInput $input): int => abs($input->total()), array_values(array_filter($context->inputs, fn (PayInput $input): bool => $input->code === FuelBenefit::OWN_PAYMENT))));
+
+        if ($paid === 0) {
+            return;
+        }
+
+        $fuel = array_values(array_filter($draft->lines, fn (PayslipLineResult $line): bool => $line->code === FuelBenefit::CODE));
+        $value = array_sum(array_map(fn (PayslipLineResult $line): int => $line->amountOre, $fuel));
+        $marketValue = array_sum(array_map(fn (PayslipLineResult $line): int => $line->contributionBasis ? ($line->contributionOre ?? $line->amountOre) : 0, $fuel));
+
+        if ($value <= 0) {
+            throw new PayrollBlockedException(__('Egen betalning för drivmedel vid bilförmån finns utan någon drivmedelsförmån i månaden. Lägg in drivmedelsförmånen eller ta bort betalningen.'));
+        }
+
+        $reduction = min($paid, $value);
+        $draft->add(new PayslipLineResult(FuelBenefit::CODE, __('Drivmedelsförmånen minskad med egen betalning'), -$reduction, PayslipLineResult::TAX_TABLE, true, false,
+            explanation: ['source' => FuelBenefit::PAYMENT_SOURCE, 'category' => 'BENEFIT', 'benefit' => true, 'paid_ore' => $paid, 'contribution_basis_ore' => -min($paid, $marketValue)],
+            contributionOre: -min($paid, $marketValue)));
     }
 
     private function allowance(PayrollContext $context, PayslipDraft $draft, PayInput $input): void

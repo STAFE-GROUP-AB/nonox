@@ -86,7 +86,8 @@ final class Features
         'control_visit' => ['name' => 'Kontrollbesök i personalliggaren', 'status' => self::LIVE, 'readme' => 'Kontrollbesöket ("Skatteverket är här") visar och exporterar liggaren', 'module' => 'Personalliggare'],
         'inbox' => ['name' => 'Inkorg för fakturor och kvitton', 'status' => self::LIVE, 'readme' => 'En egen e-postadress per företag för leverantörsfakturor, kvitton och dagsrapporter från kassasystem', 'module' => 'Inkorg'],
         'daily_reports' => ['name' => 'Dagsrapporter från kassasystemet', 'status' => self::LIVE, 'readme' => 'dagsrapporter läses utan AI, med mallar som en person godkänt', 'module' => 'Inkorg'],
-        'bank_feed' => ['name' => 'Bankkoppling med BankID', 'status' => self::LIVE, 'readme' => 'Företagets bankkonton kopplas med BankID genom öppen bankdata (PSD2)', 'module' => 'Bank'],
+        // Built (ADR-034) and dormant on the hosted service until the operator has an agreement with an open-banking provider; a self-hoster can switch it on with their own agreement.
+        'bank_feed' => ['name' => 'Bankkoppling med BankID', 'status' => self::SOON, 'readme' => 'Bankkoppling med BankID genom öppen bankdata (PSD2)', 'module' => 'Bank'],
         'ai' => ['name' => 'NONOX AI läser underlag', 'status' => self::LIVE, 'readme' => 'Läser leverantörsfakturor, kvitton och utlägg direkt när de laddats upp eller fotograferats, och föreslår konton och belopp med företagets egen nyckel', 'module' => 'NONOX AI'],
         'multi_company' => ['name' => 'Flera företag per användare', 'status' => self::LIVE, 'readme' => 'Flera företag per användare med roller'],
         'roles' => ['name' => 'Roller för konsult, attestant och revisor', 'status' => self::LIVE, 'readme' => 'ägare, administratör, redovisningskonsult, bokförare, attestant och revisor'],
@@ -132,6 +133,7 @@ final class Features
         'non_eu_goods_import' => ['import av varor'],
         'ixbrl' => ['iXBRL', 'digital inlämning av årsredovisningen'],
         'pos_integrations' => ['direktkoppling', 'kopplas direkt'],
+        'bank_feed' => ['bankkoppling', 'kopplas med bankid'],
     ];
 
     /** @return array<string, array{name: string, status: string, readme: string, module?: string}> */

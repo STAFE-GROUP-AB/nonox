@@ -9,6 +9,7 @@ use App\Domain\AnnualReport\AnnualAccounts;
 use App\Domain\AnnualReport\AnnualReportDocument;
 use App\Domain\AnnualReport\PledgedAssetKind;
 use App\Domain\Closing\DividendLimit;
+use App\Domain\Company\ReportingFramework;
 use App\Livewire\Concerns\ShowsToasts;
 use App\Models\AnnualReport;
 use App\Models\Company;
@@ -22,7 +23,8 @@ use Livewire\Component;
 
 /**
  * Bokföring → Årsredovisning: the texts of the K2 annual report, a preview
- * built from the books, and the PDF.
+ * built from the books, and the PDF. A company on K3 (or K1) gets an
+ * explanation instead (ADR-010, addendum 2026-11-06).
  */
 class AnnualReportPage extends Component
 {
@@ -70,6 +72,9 @@ class AnnualReportPage extends Component
             'years' => FiscalYear::query()->orderByDesc('start_date')->get(),
             'fiscalYear' => $fiscalYear,
             'supported' => $supported,
+            'refusal' => AnnualReportDocument::refusal($this->company()),
+            'legalFormSupported' => AnnualReportDocument::supportsLegalForm($this->company()),
+            'k3' => $this->company()->reporting_framework === ReportingFramework::K3,
             'freeEquity' => $supported ? DividendLimit::freeEquityOre($fiscalYear) : 0,
             'hasBankLoans' => $supported && self::hasBankLoans($fiscalYear),
             'netSalesVariations' => $supported ? AnnualAccounts::for($fiscalYear)->netSalesVariations() : [],
