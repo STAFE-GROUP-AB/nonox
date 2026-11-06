@@ -3338,6 +3338,21 @@ förslag från NONOX AI (ADR-033 §6).
   komptid; standard är anställningens uppgift om övertidsersättning.
   Komptiden blir timmar ledighet enligt avtalets faktor för lönearten
   (`overtime.comp_time.hours_per_hour`), annars företagets egen faktor.
+- **Övertidsarter per tillfälle (H.1, sedan 2026-11-06, ADR-033).** För
+  Gröna Riks och Detaljhandeln (`overtime.kinds` i avtalsfilen,
+  `OvertimeKinds`) läggs periodens övertid och mertid på arten för varje
+  tillfälle utanför schemat: de två första timmarna i anslutning, tid i
+  anslutning därutöver, tid som inte ansluter, fridag och i Detaljhandeln
+  kväll efter 20.00, helg och fridag på lördag, var och en på avtalets
+  löneart. En heltidsanställd i Detaljhandeln som gör övertid en fridag får
+  minst tre timmar. Tidrapporterna skickas med periodens sista dag men
+  prissätts med satsen för dagen tiden arbetades (`time_reports.priced_on`),
+  och komptiden räknas med faktorn för den dagen. I Detaljhandeln betalas
+  bara den procentuellt högsta av OB och övertid för samma minuter: den lägre
+  dras tillbaka med en negativ rad på samma dag (H.1b). En sådan rad skickas
+  inte för en dag vars egen tid inte är skickad till lönen eller när
+  lönearten saknas; det sparas på attesten och visas, och kan bara ge mer,
+  aldrig mindre. Enligt AI-utredning 2026-11-06, juristgranskning återstår.
   Saldot förs i Lön (`comp_time_entries`: intjänad, uttagen, utbetald,
   justering) och visas på Lön → Komptid, på lönespecen och i Min sida. En
   utbetalning och timavlönades uttag betalas i månadens lönekörning på
@@ -3443,8 +3458,8 @@ förslag från NONOX AI (ADR-033 §6).
   sjukperiodens första dag, avtalens timvärden och karens i tid, taket 105
   dagar, gruppen på sjukperiodens första dag, direkt övergång, fasta tillägg
   och rörligt snitt i månadslönen och deltid från dag 15.
-- **Inte byggt ännu.** Av A7–A8: övertidsarter per tillfälle och minst tre
-  timmar, kost- och bostadsförmån i avtalets månadslön för sjukavdraget och ett
+- **Inte byggt ännu.** Av A7–A8: övertidsarter per tillfälle i andra avtal än
+  Gröna Riks och Detaljhandeln, kost- och bostadsförmån i avtalets månadslön för sjukavdraget och ett
   mindre dagsavdrag för den som är deltidssjuk från dag 15. Av A9–A11: rörlig lön
   och 4,6 %-regeln i
   tjänstemannaavtalens semester, garantibelopp för deltid i handeln, ITP 2,
@@ -4281,4 +4296,4 @@ kontrollerat dem mot källan. Särskilt:
 | 0.112 | 2026-11-06 | Bilförmån räknas automatiskt (avsnitt 5b, ADR-061): registret Lön → Förmånsbilar ger varje månad en rad Bilförmån med en tolftedel av årsvärdet enligt inkomstskattelagen 61 kap. 5–9 §§ och den anställdas egna betalning (7388); förmånsvärdet bokförs som förut inte som kostnad, bara skatten och arbetsgivaravgiften på det. Äldre bilar räknas inte utan stoppar körningen. |
 | 0.113 | 2026-11-06 | Skärpt utlandsbetalning via betalfil (avsnitt 5a1c): automatisk bokföring bara inom 5 procent (500–5 000 kronor) av bankens dagskurs; betalningskod från 120 000 kronor; IBAN kontrolleras; SWIFT-tecken; en valuta per fil; land och adress ur leverantörsunderlaget. Ingen ny bokföringsregel. |
 | 0.114 | 2026-11-06 | Drivmedelsförmån rättad (avsnitt 5b, ADR-061): skatteavdraget räknas som förut på förmånsvärdet (marknadsvärdet × 1,2), men arbetsgivaravgiften nu på marknadsvärdet (socialavgiftslagen 2 kap. 10 a §); tidigare togs avgiften på hela förmånsvärdet. Den anställdas betalning för drivmedlet (löneart Egen betalning för drivmedel vid bilförmån, 7388) minskar den skattepliktiga förmånen och avgiftsunderlaget och redovisas i ruta 098, medan 018 har hela förmånsvärdet. Attesterade och bokförda löner ändras inte. Förmånsbilar: en period får inte omfatta en attesterad månad som bilen inte fanns i, och bara en bil per månad. |
-| 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. |
+| 0.115 | 2026-11-06 | Bekräftelse och kontroller före inlämning (ägarbeslut 10 och 16): momsdeklarationen och arbetsgivardeklarationen till Skatteverket, betalfilen för leverantörsbetalningar och lönefilen kräver att användaren bekräftar "Jag har granskat siffrorna", och bekräftelsen sparas i behandlingshistoriken (`figures.reviewed`); ett K2-företag bekräftar de nya K2-villkoren (BFNAR 2025:2) en gång innan bokslutet för ett räkenskapsår som börjar efter 2025-12-31 kan fortsätta (`company.k2_conditions_confirmed`). SIE-importen stoppar en fil vars ingående balanser inte summerar till noll, och rapporten säger bara att varje konto stämmer när utgående balanser eller resultat har kontrollerats. Drivmedelsförmån kräver en förmånsbil i perioden. OCR-nummer på leverantörsfakturor kontrolleras med kontrollsiffran. Parametrarna för NE och INK4 2026 är inte längre markerade som kontrollerade, så beräkningen spärras tills en människa har kontrollerat dem. Rättelserna som driftsattes separat under versionsnumret 0.105 samma morgon (rutorna 20 och 23, årsredovisning bara enligt K2, belopp i hela kronor, övertid och mertid per art i Gröna Riks och Detaljhandeln, arbetsgivaravgift på drivmedelsförmån) ingår i 0.107, 0.109, 0.110 och 0.114 och i avsnitt 5h. |

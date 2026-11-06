@@ -224,6 +224,14 @@
       "omrade": "Webbplats"
     },
     {
+      "id": "2026-11-06-bankkoppling-inte-i-drift",
+      "datum": "2026-11-06T01:15:00+01:00",
+      "rubrik": "Bankkopplingen står som på väg på nonox.app",
+      "beskrivning": "Webbplatsen visade bankkopplingen med BankID som i drift, men den driftade tjänsten på nonox.app har ännu inget avtal med en leverantör av öppen bankdata. Funktionen står nu som på väg, och manualen säger att du läser in bankens filer tills vidare. Den som kör NONOX själv kan fortfarande slå på modulen Bank med ett eget avtal.",
+      "typ": "Rättat",
+      "omrade": "Bank"
+    },
+    {
       "id": "2026-11-05-momsdeklarationen-till-skatteverket",
       "datum": "2026-11-05T12:10:00+01:00",
       "rubrik": "Momsdeklarationen direkt till Skatteverket förbereds",

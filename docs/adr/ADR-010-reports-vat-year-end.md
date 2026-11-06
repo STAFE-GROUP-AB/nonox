@@ -671,3 +671,28 @@ finns särskilda skäl".
   whole-kronor bookkeeping nothing changes.
 - TODO(legal-verify): which line K2 practice puts a rounding difference on;
   Övriga skulder and Balanseras i ny räkning are choices, not sourced.
+
+## No K2 annual report for a company on K3 (2026-11-06)
+
+- **Problem.** The annual report document states in note 1 that it follows
+  BFNAR 2016:10 (K2). A company that has chosen K3 (BFNAR 2012:1) got the
+  same document, which then said something false about the company.
+- **Decision.** `AnnualReportDocument::supports()` is true only for an
+  aktiebolag or an ekonomisk förening whose `reporting_framework` is K2;
+  `supportsLegalForm()` keeps the legal-form test, and `refusal()` gives the
+  Swedish reason. For K3 (or K1) the page Bokföring → Årsredovisning shows an
+  explanation instead of the form, the preview and the PDF answer 403, and
+  `SaveAnnualReport` refuses to save the texts. The income tax return
+  (INK2, `IncomeTaxForms`, `IncomeTaxReturns`) follows the legal form only and
+  is unchanged. Nothing in the ledger changes.
+- **K2 conditions.** The conditions a user confirms when choosing K2
+  (`ReportingFrameworkRules::conditions`) list, for an aktiebolag and an
+  ekonomisk förening, BFNAR 2016:10 punkt 1.1A–1.1C as amended by BFNAR
+  2025:2 (fiscal years beginning after 2025-12-31; source
+  <https://www.bfn.se/wp-content/uploads/vl16-10-k2ar-kons2025.pdf>, read
+  2026-11-06). Companies that already confirmed K2 are not asked again; that
+  is a human decision. Enligt AI-utredning 2026-11-06, juristgranskning
+  återstår.
+- TODO(legal-verify): the plain-Swedish summary of 1.1A–1.1C; the
+  exclusions for other legal forms that prepare a K2 annual report; the
+  wording of punkt 1.1 for fiscal years beginning before 2026-01-01.

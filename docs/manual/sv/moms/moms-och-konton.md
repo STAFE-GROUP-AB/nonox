@@ -81,9 +81,11 @@ För försäljningen i ruta 38 använder NONOX konto 3107. Det läggs upp och ko
 
 | Konton (25/12/6 %) | Vad | Ruta |
 |---|---|---|
+| 4075–4077 | Handelsvaror från annat EU-land | 20 |
 | 4515–4517 | Varor från annat EU-land | 20 |
 | 4535–4537 | Tjänster från annat EU-land | 21 |
 | 4531–4533 | Tjänster från land utanför EU | 22 |
+| 4065–4067 | Handelsvaror i Sverige, omvänd betalningsskyldighet | 23 |
 | 4415–4417 | Varor i Sverige, omvänd betalningsskyldighet | 23 |
 | 4425–4427 | Tjänster i Sverige, omvänd betalningsskyldighet | 24 |
 | 2614 / 2624 / 2634 | Utgående moms på inköpen ovan | 30 / 31 / 32 |
